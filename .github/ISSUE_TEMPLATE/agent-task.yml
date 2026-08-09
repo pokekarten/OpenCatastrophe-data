@@ -1,0 +1,117 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Agent task
+description: Define one bounded, collision-safe task for a human or AI agent using public-safe context only.
+title: "[Agent]: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Define one bounded task from current public repository state and authoritative public sources.
+        Do not include credentials, confidential information, customer/claims/portfolio data, restricted dataset bytes, proprietary model assets, temporary access URLs, private infrastructure details, private chat/repository content, screenshots of restricted systems, or machine-local storage paths.
+
+        For implementation work, opening a draft PR is the visible work claim. Re-read current `main` and active PRs before touching a shared/single-writer surface.
+
+  - type: textarea
+    id: agent_state
+    attributes:
+      label: Agent execution state
+      description: Keep these keys stable so humans and tools can project the issue into the v1 agent-task contract. Native GitHub dependencies remain the live planning relationship; `dependencies` below is an execution snapshot.
+      render: yaml
+      value: |
+        agent_task:
+          profile_version: "1.0.0"
+          task_id: <stable-task-id>
+          repository: pokekarten/OpenCatastrophe-data
+          state: ready
+          agent_ready: true
+          workstream: <short-stable-area>
+          reviewed_against:
+            ref: refs/heads/main
+            commit: <40-character-main-sha>
+            checked_at: <ISO-8601-date-time>
+          shared_surfaces:
+            - path/to/shared/file
+          data_boundary:
+            bytes_policy: metadata_only
+            source_identity: <dataset/product/version or none>
+          dependencies: []
+          next_action: <smallest coherent next action>
+          hard_stop: <condition that requires stopping rather than guessing>
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: State one bounded outcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and non-goals
+      description: List exact files/contracts/source identity and what is intentionally out of scope.
+    validations:
+      required: true
+
+  - type: textarea
+    id: rights
+    attributes:
+      label: Rights and provenance boundary
+      description: For external-source work, record provider/product identity, authoritative terms evidence, intended use, and byte state. Otherwise write N/A. Unknown or ambiguous rights remain blocking.
+      placeholder: |
+        Provider/product identity: ...
+        Authoritative licence/terms evidence: ...
+        External bytes acquired: no
+        External bytes committed: no
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance
+      description: Define independently checkable completion criteria, exact commands/evidence, and exact byte/admission state where relevant.
+    validations:
+      required: true
+
+  - type: textarea
+    id: coordination
+    attributes:
+      label: Coordination and handoff
+      description: Record current main identity, overlapping work checked, shared/single-writer surfaces, evidence, checks, assumptions, blockers, byte state, and the next independent task.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Repository and data boundaries
+      options:
+        - label: I read the applicable `AGENTS.md` instructions and will follow the stricter rule where instructions overlap.
+          required: true
+        - label: This task does not use confidential or restricted material as implementation source text.
+          required: true
+        - label: I will not commit credentials, temporary access URLs, restricted endpoints, machine-local storage paths, or unapproved external bytes.
+          required: true
+        - label: I will not broaden an admission state, validation rule, provenance conclusion, scientific conclusion, or rights conclusion merely to unblock implementation.
+          required: true
+
+  - type: checkboxes
+    id: public_safety
+    attributes:
+      label: Public-content safety
+      options:
+        - label: I confirmed this issue contains no credentials, confidential/customer/claims/portfolio data, restricted assets, temporary access URLs, restricted endpoints, or machine-local storage details.
+          required: true
+        - label: I did not paste internal working-context transcripts, private repository material, or restricted source material into this issue.
+          required: true
+        - label: I did not attach source dataset bytes, screenshots of restricted systems, archives, documents, or logs that may contain non-public content.
+          required: true
+        - label: Any fixture, example, or evidence is independently synthetic, metadata-only, or explicitly approved for the exact public redistribution scope.
+          required: true
