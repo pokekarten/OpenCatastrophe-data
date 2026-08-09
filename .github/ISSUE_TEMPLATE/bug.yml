@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Bug report
+description: Report a reproducible tooling or repository problem using synthetic inputs only.
+title: "[Bug]: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Public-safe content only.** Do not include secrets, signed/private URLs, private endpoints, customer/claims/portfolio data, confidential files, restricted dataset bytes, proprietary model assets or private repository/chat content.
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Describe a minimal synthetic reproduction and expected behavior.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Public-content safety
+      options:
+        - label: I confirmed this issue contains no secrets, confidential/customer/claims/portfolio data, private repository content or restricted dataset bytes.
+          required: true

@@ -1,0 +1,3 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+reuse[charset-normalizer]==6.2.0

@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Data source candidate
+description: Suggest a public source for metadata-first rights and scientific review. Do not upload data.
+title: "[Data source]: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Public-safe content only.** Do not include secrets, signed/private URLs, private endpoints, customer/claims/portfolio data, confidential files, restricted dataset bytes, proprietary model assets or private repository/chat content.
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Provide provider, exact product/version, canonical public page, authoritative licence/terms link and intended use.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Public-content safety
+      options:
+        - label: I confirmed this issue contains no secrets, confidential/customer/claims/portfolio data, private repository content or restricted dataset bytes.
+          required: true

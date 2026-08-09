@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+blank_issues_enabled: false
+contact_links:
+  - name: Security or sensitive-data exposure
+    url: https://github.com/pokekarten/OpenCatastrophe-data/security/policy
+    about: Do not disclose secrets, vulnerabilities or sensitive/restricted data in a public issue.
+  - name: Support guidance
+    url: https://github.com/pokekarten/OpenCatastrophe-data/blob/main/SUPPORT.md
+    about: Read the public-content boundary before opening an issue.
