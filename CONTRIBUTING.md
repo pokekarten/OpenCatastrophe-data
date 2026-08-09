@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 OpenCatastrophe-data welcomes public contributions to provenance, source admission, scientific clarity, interoperability, tooling, tests and documentation.
 
-Start with `README.md`, `AGENTS.md` and `ARCHITECTURE.md`. Source/admission changes also require `DATA_LICENSING.md` and the nearest scoped `AGENTS.md`; scientific-semantic changes require `SCIENTIFIC_METHOD.md`.
+Start with `README.md`, `AGENTS.md` and `ARCHITECTURE.md`. Source/admission changes also require `DATA_LICENSING.md`; scientific-semantic changes require `SCIENTIFIC_METHOD.md`.
 
 ## Workflow
 
@@ -32,7 +32,7 @@ Apply SPDX/REUSE metadata to repository-authored files. New direct software depe
 
 Record exact provider/product/version/query identity, authoritative rights evidence, reviewed publication scope and scientific semantics. Keep units, coordinate/reference systems, time meaning, quality flags, missingness, uncertainty and material transformations explicit. Unknown or conflicting rights stay blocked.
 
-Use independently synthetic fixtures unless redistribution of an exact external asset has been explicitly reviewed and admitted. The `dataset-admission` and `reproducibility-run` skills under `.github/skills/` provide narrow reusable workflows; they do not grant approval or replace review.
+Use independently synthetic fixtures unless redistribution of an exact external asset has been explicitly reviewed and admitted.
 
 ## Security reports
 
