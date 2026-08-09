@@ -49,6 +49,23 @@ class ManifestTests(unittest.TestCase):
         with self.assertRaises(vm.ManifestError):
             vm.validate_structure(payload)
 
+    def test_storage_reference_rejects_noncanonical_segments(self) -> None:
+        for reference in (
+            "external://synthetic//example",
+            "external://synthetic/./example",
+            "external://synthetic/../example",
+            "external://synthetic/.",
+            "external://synthetic/..",
+        ):
+            payload = copy.deepcopy(self.payload)
+            payload["raw_artifact"] = {
+                "byte_size": 1,
+                "sha256": "0" * 64,
+                "storage_reference": reference,
+            }
+            with self.subTest(reference=reference), self.assertRaises(vm.ManifestError):
+                vm.validate_structure(payload)
+
     def test_private_and_signed_urls_are_rejected(self) -> None:
         for url in (
             "http://" + "127.0.0.1" + "/source",
