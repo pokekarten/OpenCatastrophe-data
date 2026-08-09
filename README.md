@@ -5,6 +5,8 @@ SPDX-License-Identifier: Apache-2.0
 
 # OpenCatastrophe-data
 
+[![CI](https://github.com/pokekarten/OpenCatastrophe-data/actions/workflows/ci.yml/badge.svg)](https://github.com/pokekarten/OpenCatastrophe-data/actions/workflows/ci.yml)
+
 OpenCatastrophe-data is the open-source data registry, provenance, admission and transformation layer for OpenCatastrophe.
 
 It is **not a raw-data dump**. Its job is to make catastrophe-risk data inputs traceable, reproducible, licence-aware and scientifically inspectable while failing closed on confidential, restricted or unreviewed material.
