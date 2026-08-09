@@ -59,10 +59,26 @@ jobs:
       - name: Verify REUSE compliance
         run: reuse lint
 
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact workflow ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Reject newly introduced high-severity vulnerable dependencies
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+
   required:
     name: Required
     if: always()
-    needs: [check, reuse]
+    needs: [check, reuse, dependency-review]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
@@ -70,6 +86,8 @@ jobs:
         env:
           CHECK_RESULT: ${{ needs.check.result }}
           REUSE_RESULT: ${{ needs.reuse.result }}
+          DEPENDENCY_REVIEW_RESULT: ${{ needs.dependency-review.result }}
         run: |
           test "$CHECK_RESULT" = "success"
           test "$REUSE_RESULT" = "success"
+          test "$DEPENDENCY_REVIEW_RESULT" = "success" || test "$DEPENDENCY_REVIEW_RESULT" = "skipped"
