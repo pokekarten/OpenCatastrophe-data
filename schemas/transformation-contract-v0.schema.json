@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:opencatastrophe:schema:transformation-contract:0.1.0",
+  "$id": "urn:opencatastrophe:schema:transformation-contract:0.2.0",
   "title": "OpenCatastrophe-data transformation contract v0",
-  "description": "Closed structural contract. Full semantic acceptance additionally requires scripts/validate_transformation_contract.py for cross-field and cross-record invariants that JSON Schema cannot express portably.",
+  "description": "Closed pre-alpha structural contract for one-to-one field transformations with explicit two-sided reconciliation. Full semantic acceptance additionally requires scripts/validate_transformation_contract.py for cross-field and cross-record invariants that JSON Schema cannot express portably.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -11,17 +11,22 @@
     "mapping_version",
     "source_profile",
     "target_profile",
+    "row_semantics",
     "rules",
     "unsupported_fields",
     "semantics",
     "reconciliation_checks"
   ],
   "properties": {
-    "profile_version": {"const": "0.1.0"},
+    "profile_version": {"const": "0.2.0"},
     "mapping_id": {"$ref": "#/$defs/id"},
     "mapping_version": {"$ref": "#/$defs/version"},
     "source_profile": {"$ref": "#/$defs/profile"},
     "target_profile": {"$ref": "#/$defs/profile"},
+    "row_semantics": {
+      "const": "one_to_one",
+      "description": "v0 preserves one source row as one target row; filtering, joins, explode and aggregation require a future contract version."
+    },
     "rules": {
       "type": "array",
       "minItems": 1,
@@ -53,14 +58,29 @@
     },
     "version": {
       "type": "string",
-      "minLength": 1,
-      "maxLength": 64,
-      "pattern": "^\\S(?:.*\\S)?$",
-      "not": {"pattern": "^[Ll][Aa][Tt][Ee][Ss][Tt]$"}
+      "pattern": "^(?!(?:[Ll][Aa][Tt][Ee][Ss][Tt]|[Ss][Tt][Aa][Bb][Ll][Ee]|[Mm][Aa][Ii][Nn]|[Mm][Aa][Ss][Tt][Ee][Rr]|[Dd][Ee][Vv][Ee][Ll][Oo][Pp])$)[A-Za-z0-9][A-Za-z0-9._:+-]{0,63}$"
     },
     "field": {
       "type": "string",
       "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+    },
+    "bounded_text_64": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^(?!\\s)(?!.*\\s$)[^\\u0000-\\u001F\\u007F]+$"
+    },
+    "bounded_text_256": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^(?!\\s)(?!.*\\s$)[^\\u0000-\\u001F\\u007F]+$"
+    },
+    "bounded_text_1000": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "pattern": "^(?!\\s)(?!.*\\s$)[^\\u0000-\\u001F\\u007F]+$"
     },
     "profile": {
       "type": "object",
@@ -77,7 +97,7 @@
       "required": ["lossy", "notes"],
       "properties": {
         "lossy": {"type": "boolean"},
-        "notes": {"type": "string", "minLength": 1}
+        "notes": {"$ref": "#/$defs/bounded_text_1000"}
       }
     },
     "copy_rule": {
@@ -117,8 +137,8 @@
       "additionalProperties": false,
       "required": ["from", "to"],
       "properties": {
-        "from": {"type": "string", "minLength": 1},
-        "to": {"type": "string", "minLength": 1}
+        "from": {"$ref": "#/$defs/bounded_text_256"},
+        "to": {"$ref": "#/$defs/bounded_text_256"}
       }
     },
     "code_map_rule": {
@@ -149,8 +169,8 @@
         "target_field": {"$ref": "#/$defs/field"},
         "lossy": {"type": "boolean"},
         "reversible": {"type": "boolean"},
-        "from_unit": {"type": "string", "minLength": 1},
-        "to_unit": {"type": "string", "minLength": 1},
+        "from_unit": {"$ref": "#/$defs/bounded_text_64"},
+        "to_unit": {"$ref": "#/$defs/bounded_text_64"},
         "factor": {"type": "number", "not": {"const": 0}},
         "offset": {"type": "number"}
       },
@@ -158,36 +178,98 @@
         {"not": {"properties": {"lossy": {"const": true}, "reversible": {"const": true}}, "required": ["lossy", "reversible"]}}
       ]
     },
-    "comparison": {
+    "equal_relation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["method"],
+      "required": ["kind"],
+      "properties": {"kind": {"const": "equal"}}
+    },
+    "affine_relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "factor", "offset_per_record"],
       "properties": {
-        "method": {"enum": ["equal", "absolute_tolerance"]},
-        "tolerance": {"type": "number", "minimum": 0}
-      },
-      "allOf": [
+        "kind": {"const": "affine"},
+        "factor": {"type": "number", "not": {"const": 0}},
+        "offset_per_record": {"type": "number"}
+      }
+    },
+    "relation": {
+      "oneOf": [
+        {"$ref": "#/$defs/equal_relation"},
+        {"$ref": "#/$defs/affine_relation"}
+      ]
+    },
+    "comparison": {
+      "oneOf": [
         {
-          "if": {"properties": {"method": {"const": "equal"}}, "required": ["method"]},
-          "then": {"not": {"required": ["tolerance"]}}
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method"],
+          "properties": {"method": {"const": "equal"}}
         },
         {
-          "if": {"properties": {"method": {"const": "absolute_tolerance"}}, "required": ["method"]},
-          "then": {"required": ["tolerance"]}
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "tolerance"],
+          "properties": {
+            "method": {"const": "absolute_tolerance"},
+            "tolerance": {"type": "number", "minimum": 0}
+          }
         }
       ]
+    },
+    "group_fields": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/field"}
     },
     "reconciliation_check": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["check_id", "metric", "group_by", "comparison"],
+      "required": [
+        "check_id",
+        "metric",
+        "source_group_by",
+        "target_group_by",
+        "relation",
+        "comparison"
+      ],
       "properties": {
         "check_id": {"$ref": "#/$defs/id"},
         "metric": {"enum": ["count", "sum", "null_count", "unique_count"]},
-        "field": {"$ref": "#/$defs/field"},
-        "group_by": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/field"}},
+        "source_field": {"$ref": "#/$defs/field"},
+        "target_field": {"$ref": "#/$defs/field"},
+        "source_group_by": {"$ref": "#/$defs/group_fields"},
+        "target_group_by": {"$ref": "#/$defs/group_fields"},
+        "relation": {"$ref": "#/$defs/relation"},
         "comparison": {"$ref": "#/$defs/comparison"}
-      }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "metric": {"const": "count"},
+            "relation": {"$ref": "#/$defs/equal_relation"}
+          },
+          "not": {
+            "anyOf": [
+              {"required": ["source_field"]},
+              {"required": ["target_field"]}
+            ]
+          }
+        },
+        {
+          "properties": {"metric": {"const": "sum"}},
+          "required": ["source_field", "target_field"]
+        },
+        {
+          "properties": {
+            "metric": {"enum": ["null_count", "unique_count"]},
+            "relation": {"$ref": "#/$defs/equal_relation"}
+          },
+          "required": ["source_field", "target_field"]
+        }
+      ]
     }
   }
 }
