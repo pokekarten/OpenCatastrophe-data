@@ -56,6 +56,29 @@ class TransformationSchemaParityTests(unittest.TestCase):
         factor = self.schema["$defs"]["unit_conversion_rule"]["properties"]["factor"]
         self.assertEqual(factor["not"]["const"], 0)
 
+    def test_reconciliation_schema_matches_metric_field_shape(self) -> None:
+        reconciliation = self.schema["$defs"]["reconciliation_check"]
+        clauses = reconciliation["allOf"]
+        self.assertEqual(len(clauses), 2)
+        self.assertEqual(
+            clauses[0]["if"]["properties"]["metric"]["const"],
+            "count",
+        )
+        self.assertEqual(clauses[0]["then"]["not"]["required"], ["field"])
+        self.assertEqual(
+            clauses[1]["if"]["properties"]["metric"]["enum"],
+            ["sum", "null_count", "unique_count"],
+        )
+        self.assertEqual(clauses[1]["then"]["required"], ["field"])
+
+    def test_reconciliation_semantics_are_explicitly_projected_target_space(self) -> None:
+        top_level = self.schema["properties"]["reconciliation_checks"]["description"].lower()
+        check = self.schema["$defs"]["reconciliation_check"]["description"].lower()
+        self.assertIn("source-to-target", top_level)
+        self.assertIn("target-space", top_level)
+        self.assertIn("source-to-target", check)
+        self.assertIn("projected target-space", check)
+
 
 if __name__ == "__main__":
     unittest.main()
