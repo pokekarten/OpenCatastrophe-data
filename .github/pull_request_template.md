@@ -7,13 +7,15 @@ SPDX-License-Identifier: Apache-2.0
 
 <!-- What changes, why is it useful, and what is intentionally out of scope? -->
 
-## Public context
+## Public context and coordination
 
-- Related issue: <!-- #123 or N/A for a truly trivial fix -->
+- Related issue: <!-- #123; use N/A only for a truly trivial fix -->
 - Base `main` SHA: <!-- 40-character SHA when material to coordination/reproducibility -->
-- Durable contracts touched: <!-- schemas/manifests/data policy/CI, or none -->
+- Shared / single-writer surfaces: <!-- exact paths or none -->
+- Durable contracts touched: <!-- schemas/manifests/data policy/CI/agent contract, or none -->
 
 - [ ] I checked current `main` and overlapping public Issues/PRs before making a non-trivial change.
+- [ ] This PR is the visible implementation claim for the listed shared/single-writer surfaces; any overlap is explicitly coordinated.
 - [ ] This PR can be reviewed from public repository state and cited public evidence; it does not depend on hidden chat/private-repository context.
 
 ## Safety and scope
@@ -39,11 +41,12 @@ SPDX-License-Identifier: Apache-2.0
 - Evidence and competing interpretation considered:
 - Falsifiable validation or reference comparison:
 
-## Validation
+## Validation and handoff
 
-- [ ] `python scripts/check_all.py` passes.
+- [ ] `python scripts/check_all.py` passes on the exact PR head.
 - [ ] Tests added/updated for durable behavior, or the reason tests are unnecessary is stated below.
 - [ ] I inspected the complete diff for unintended files, generated/binary artifacts, rights broadening, and policy/schema changes.
+- [ ] If a formal task/run artifact is used, `scripts/validate_agent_artifact.py` accepts it against the intended repository/current-main identity.
 
-Evidence / limitations / follow-up:
+Evidence / limitations / blockers / next independent action:
 <!-- Keep concise. Link public evidence/issues instead of duplicating live project state. -->
