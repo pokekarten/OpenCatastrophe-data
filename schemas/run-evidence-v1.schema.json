@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:opencatastrophe:schema:run-evidence:1.0.0",
+  "title": "OpenCatastrophe Run Evidence Profile v1",
+  "description": "Closed scientific execution receipt for deterministic or stochastic OpenCatastrophe work, including bounded interoperability claims.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_version", "run_id", "repository", "execution", "inputs", "randomness", "outputs", "validation", "status", "claims", "limitations"],
+  "$defs": {
+    "command": {
+      "type": "object", "additionalProperties": false, "required": ["argv", "purpose"],
+      "properties": {
+        "argv": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "purpose": {"type": "string", "minLength": 1},
+        "cwd": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?![A-Za-z]:[\\\\/])(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[^\\x00]+$"}
+      }
+    },
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "relativePath": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?![A-Za-z]:[\\\\/])(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[^\\x00]+$"},
+    "timestamp": {"type": "string", "format": "date-time"}
+  },
+  "properties": {
+    "profile_version": {"const": "1.0.0"},
+    "run_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"},
+    "repository": {
+      "type": "object", "additionalProperties": false, "required": ["name", "commit", "dirty"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"},
+        "commit": {"$ref": "#/$defs/commit"}, "tree": {"$ref": "#/$defs/commit"}, "dirty": {"type": "boolean"}
+      }
+    },
+    "execution": {
+      "type": "object", "additionalProperties": false, "required": ["commands", "started_at", "ended_at", "exit_code"],
+      "properties": {
+        "commands": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/command"}},
+        "started_at": {"$ref": "#/$defs/timestamp"}, "ended_at": {"$ref": "#/$defs/timestamp"}, "exit_code": {"type": "integer"}
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["id", "kind", "identity"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1}, "kind": {"type": "string", "minLength": 1}, "identity": {"type": "string", "minLength": 1},
+          "sha256": {"$ref": "#/$defs/sha256"}, "version": {"type": "string", "minLength": 1, "not": {"const": "latest"}}
+        }
+      }
+    },
+    "randomness": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["mode"], "properties": {"mode": {"const": "deterministic"}}},
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["mode", "algorithm", "implementation", "seed_material", "stream_identity", "draw_protocol"],
+          "properties": {
+            "mode": {"const": "stochastic"}, "algorithm": {"type": "string", "minLength": 1}, "implementation": {"type": "string", "minLength": 1},
+            "seed_material": {"type": "string", "minLength": 1}, "stream_identity": {"type": "string", "minLength": 1}, "draw_protocol": {"type": "string", "minLength": 1}
+          }
+        }
+      ]
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["path", "sha256", "byte_size", "media_type"],
+        "properties": {
+          "path": {"$ref": "#/$defs/relativePath"}, "sha256": {"$ref": "#/$defs/sha256"}, "byte_size": {"type": "integer", "minimum": 0}, "media_type": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "validation": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["check", "status"],
+        "properties": {
+          "check": {"type": "string", "minLength": 1}, "status": {"enum": ["pass", "fail", "blocked", "not_comparable"]}, "evidence": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "status": {"enum": ["pass", "fail", "blocked", "not_comparable"]},
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["statement", "evidence_class", "references"],
+        "properties": {
+          "statement": {"type": "string", "minLength": 1},
+          "evidence_class": {"enum": ["repository_source", "external_evidence", "inference", "design_proposal"]},
+          "references": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+        }
+      }
+    },
+    "limitations": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "environment": {
+      "type": "object", "additionalProperties": false, "required": ["os", "architecture", "runtime"],
+      "properties": {
+        "os": {"type": "string", "minLength": 1}, "architecture": {"type": "string", "minLength": 1}, "runtime": {"type": "string", "minLength": 1},
+        "dependency_lock_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "semantics": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "currency": {"type": "string", "minLength": 1},
+        "loss_stage": {"enum": ["ground_up", "gross", "insured", "ceded", "recoverable", "net"]},
+        "horizon": {"type": "string", "minLength": 1}, "valuation_basis": {"type": "string", "minLength": 1}, "model_view": {"type": "string", "minLength": 1}
+      }
+    },
+    "interoperability": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["target", "version", "role", "status", "evidence"],
+        "properties": {
+          "target": {"type": "string", "minLength": 1}, "version": {"type": "string", "minLength": 1},
+          "role": {"enum": ["import", "export", "compare", "execute", "metadata"]},
+          "status": {"enum": ["planned", "experimental", "tested", "unsupported", "not_comparable"]},
+          "profile": {"type": "string", "minLength": 1},
+          "comparison_mode": {"enum": ["deterministic", "common_innovations", "distributional", "not_comparable"]},
+          "evidence": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"status": {"const": "tested"}}, "required": ["status"]},
+            "then": {"properties": {"evidence": {"minItems": 1}, "version": {"not": {"const": "latest"}}}}
+          }
+        ]
+      }
+    }
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "pass"}}, "required": ["status"]}, "then": {"properties": {"validation": {"items": {"properties": {"status": {"const": "pass"}}, "required": ["status"]}}}}},
+    {"if": {"properties": {"status": {"const": "fail"}}, "required": ["status"]}, "then": {"properties": {"validation": {"contains": {"properties": {"status": {"const": "fail"}}, "required": ["status"]}}}}},
+    {"if": {"properties": {"status": {"const": "blocked"}}, "required": ["status"]}, "then": {"properties": {"validation": {"contains": {"properties": {"status": {"const": "blocked"}}, "required": ["status"]}}}}},
+    {"if": {"properties": {"status": {"const": "not_comparable"}}, "required": ["status"]}, "then": {"properties": {"validation": {"contains": {"properties": {"status": {"const": "not_comparable"}}, "required": ["status"]}}}}}
+  ]
+}
