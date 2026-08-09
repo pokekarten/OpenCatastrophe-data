@@ -24,7 +24,8 @@ The top-level REUSE version is exact but its Python transitive environment is no
 `.github/workflows/ci.yml` uses reviewed immutable pins with read-only repository permissions:
 
 - `actions/checkout` `3d3c42e5aac5ba805825da76410c181273ba90b1` (`v7.0.1`, MIT; re-verified 2026-08-09), with `persist-credentials: false`;
-- `actions/setup-python` `5fda3b95a4ea91299a34e894583c3862153e4b97` (`v7.0.0`, MIT; re-verified 2026-08-09).
+- `actions/setup-python` `5fda3b95a4ea91299a34e894583c3862153e4b97` (`v7.0.0`, MIT; re-verified 2026-08-09);
+- `actions/dependency-review-action` `a1d282b36b6f3519aa1f3fc636f609c47dddb294` (`v5.0.0`, MIT; reviewed 2026-08-10), used only on pull requests to reject newly introduced high/critical known-vulnerability dependencies before the stable `Required` gate can pass.
 
 Re-review upstream licence/release identity before changing a pin.
 
