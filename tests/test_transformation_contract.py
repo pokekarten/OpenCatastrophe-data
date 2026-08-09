@@ -134,6 +134,12 @@ class TransformationContractTests(unittest.TestCase):
         with self.assertRaises(vt.TransformationContractError):
             vt.validate_contract(payload)
 
+    def test_extreme_integer_numeric_value_fails_closed(self) -> None:
+        payload = valid_contract()
+        payload["rules"][2]["factor"] = 10**400
+        with self.assertRaisesRegex(vt.TransformationContractError, "must be finite"):
+            vt.validate_contract(payload)
+
     def test_unit_conversion_requires_declared_unit_change_and_nonzero_factor(self) -> None:
         same_unit = valid_contract()
         same_unit["rules"][2]["to_unit"] = "ft2"
