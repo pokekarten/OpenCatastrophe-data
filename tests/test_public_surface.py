@@ -47,30 +47,6 @@ class PublicSurfaceTests(unittest.TestCase):
             with self.subTest(path=name):
                 self.assertNotIn(Path(name).suffix.lower(), blocked)
 
-    def test_scoped_agent_instructions_are_present(self) -> None:
-        for relative, required in (
-            ("manifests/AGENTS.md", "source-rights scope"),
-            ("schemas/AGENTS.md", "durable machine contract"),
-        ):
-            path = ROOT / relative
-            self.assertTrue(path.is_file(), relative)
-            text = path.read_text(encoding="utf-8").lower()
-            self.assertIn(required, text)
-            self.assertIn("python scripts/check_all.py", text)
-
-    def test_agent_skills_are_provider_neutral_and_fail_closed(self) -> None:
-        for relative in (
-            ".github/skills/dataset-admission/SKILL.md",
-            ".github/skills/reproducibility-run/SKILL.md",
-        ):
-            path = ROOT / relative
-            self.assertTrue(path.is_file(), relative)
-            text = path.read_text(encoding="utf-8").lower()
-            self.assertIn("license: apache-2.0", text)
-            self.assertIn("python scripts/check_all.py", text)
-            self.assertNotIn("target: github-copilot", text)
-            self.assertNotIn("private repository", text)
-
     def _text_files(self) -> list[Path]:
         result = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT, stdout=subprocess.PIPE, check=True)
         paths = []

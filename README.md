@@ -15,7 +15,7 @@ Humans and AI agents should be able to understand every admitted source and tran
 
 ## Who this is for
 
-- **AI agents and developers** get explicit repository/scoped instructions, machine-readable task and run-evidence contracts, narrow reusable skills, deterministic checks and public PR coordination.
+- **AI agents and developers** get explicit repository instructions, machine-readable task and run-evidence contracts, deterministic checks and public PR coordination.
 - **Scientists** get source identity, provenance, scientific semantics, limitations, citation metadata and reproducibility rules that distinguish evidence from inference and design.
 - **Insurers, reinsurers and brokers** get an auditable public data-contract layer that can support open hazard/risk workflows without turning customer portfolios, claims, treaties, confidential exposure or proprietary vendor data into public fixtures.
 
@@ -78,12 +78,10 @@ Development is intended to happen through the public repository. Current public 
 For contributors and coding agents:
 
 1. start with `AGENTS.md` and `ARCHITECTURE.md`;
-2. use the nearest scoped `AGENTS.md` for manifest/schema work;
-3. use the most specific Issue Form for non-trivial work and a draft PR as the visible implementation claim for shared surfaces;
-4. keep data-rights review and scientific validation separate;
-5. use `schemas/agent-task-v1.schema.json` and `schemas/run-evidence-v1.schema.json` when a formal machine-readable task/handoff is useful;
-6. use the narrow skills under `.github/skills/` for dataset admission and reproducibility workflows;
-7. run `python scripts/check_all.py` on the exact candidate before handoff.
+2. use the most specific Issue Form for non-trivial work and a draft PR as the visible implementation claim for shared surfaces;
+3. keep data-rights review and scientific validation separate;
+4. use `schemas/agent-task-v1.schema.json` and `schemas/run-evidence-v1.schema.json` when a formal machine-readable task/handoff is useful;
+5. run `python scripts/check_all.py` on the exact candidate before handoff.
 
 See `CONTRIBUTING.md` for contribution rules and `SUPPORT.md` before filing support requests. AI tooling is optional and never grants data rights or replaces repository evidence.
 
