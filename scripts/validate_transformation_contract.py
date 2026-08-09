@@ -75,7 +75,10 @@ def _bool(value: Any, where: str) -> bool:
 def _number(value: Any, where: str) -> float:
     if type(value) not in {int, float}:
         raise TransformationContractError(f"{where} must be a number")
-    result = float(value)
+    try:
+        result = float(value)
+    except (OverflowError, ValueError) as exc:
+        raise TransformationContractError(f"{where} must be finite") from exc
     if not math.isfinite(result):
         raise TransformationContractError(f"{where} must be finite")
     return result
