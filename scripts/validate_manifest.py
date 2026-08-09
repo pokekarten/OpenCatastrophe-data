@@ -171,6 +171,17 @@ def _public_url(value: Any, field: str) -> str:
     return text
 
 
+def _external_reference(value: Any, field: str) -> str:
+    text = _string(value, field)
+    assert text is not None
+    if not EXTERNAL_RE.fullmatch(text):
+        raise ManifestError(f"{field} must be a canonical external:// reference")
+    segments = text[len("external://"):].split("/")
+    if any(segment in {"", ".", ".."} for segment in segments):
+        raise ManifestError(f"{field} must not contain empty, dot, or parent path segments")
+    return text
+
+
 def _artifact(value: Any, field: str) -> dict[str, Any] | None:
     if value is None:
         return None
@@ -182,10 +193,7 @@ def _artifact(value: Any, field: str) -> dict[str, Any] | None:
     digest = obj["sha256"]
     if not isinstance(digest, str) or not SHA256_RE.fullmatch(digest):
         raise ManifestError(f"{field}.sha256 must be a lowercase SHA-256")
-    reference = _string(obj["storage_reference"], f"{field}.storage_reference")
-    assert reference is not None
-    if not EXTERNAL_RE.fullmatch(reference) or "//" in reference[len("external://"):] or "/../" in reference:
-        raise ManifestError(f"{field}.storage_reference must be a canonical external:// reference")
+    _external_reference(obj["storage_reference"], f"{field}.storage_reference")
     return obj
 
 

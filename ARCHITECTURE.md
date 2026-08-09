@@ -89,6 +89,26 @@ Transformation never creates new redistribution rights by itself.
 
 A model consumer should depend on stable exported contracts and content identities, not repository-relative assumptions about local storage. Consumer code must not require access to restricted source bytes merely to import or test its core package.
 
+## Public development plane
+
+Public GitHub state is the development and coordination plane. Current `main`, Issues, Pull Requests, accepted source reviews and machine-readable contracts are sufficient to understand accepted work; hidden chats, private archives or private task trackers are not authority.
+
+Human and AI contributors use the same review path. A draft PR is the visible implementation claim for shared/single-writer surfaces. Machine-readable agent-task and run-evidence artifacts are optional execution snapshots that improve coordination and reproducibility; they do not replace GitHub-native task state or human/scientific/data-rights review.
+
+Root `AGENTS.md` defines repository-wide rules. Scoped `AGENTS.md` files may strengthen rules for high-impact directories. Reusable Agent Skills may encode narrow workflows, but the repository must remain usable without a specific model provider, IDE, MCP host or paid AI service.
+
+## Contract evolution
+
+Public schemas and profile versions are durable interfaces. Do not silently reinterpret an existing `schema_version` or `profile_version`.
+
+- backward-compatible clarifications may keep the same contract version only when accepted inputs and semantics are not narrowed or redefined;
+- breaking semantic changes require a new version identity and an explicit compatibility/migration decision;
+- schema, executable validator behavior, documentation and negative tests must evolve together;
+- content identity and contract version are separate: changing JSON key order must not change deterministic manifest identity, while changing material content must;
+- mutable labels such as `latest` are discovery conveniences, not durable scientific or execution identities.
+
+The repository is pre-alpha and does not yet promise a stable release line. Versioned contracts still exist so agents, scientists and downstream industry users can detect incompatible changes rather than relying on implicit behavior.
+
 ## Security model
 
 The repository assumes eventual public disclosure of its full Git history. Prevention therefore happens before commit:

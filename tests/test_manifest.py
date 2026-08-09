@@ -6,6 +6,7 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -48,6 +49,39 @@ class ManifestTests(unittest.TestCase):
         }
         with self.assertRaises(vm.ManifestError):
             vm.validate_structure(payload)
+
+    def test_storage_reference_rejects_noncanonical_segments(self) -> None:
+        for reference in (
+            "external://synthetic//example",
+            "external://synthetic/./example",
+            "external://synthetic/../example",
+            "external://synthetic/.",
+            "external://synthetic/..",
+            "external://synthetic/",
+        ):
+            payload = copy.deepcopy(self.payload)
+            payload["raw_artifact"] = {
+                "byte_size": 1,
+                "sha256": "0" * 64,
+                "storage_reference": reference,
+            }
+            with self.subTest(reference=reference), self.assertRaises(vm.ManifestError):
+                vm.validate_structure(payload)
+
+    def test_storage_reference_schema_matches_validator_boundary(self) -> None:
+        schema = json.loads((ROOT / "schemas/dataset-manifest.schema.json").read_text(encoding="utf-8"))
+        pattern = schema["$defs"]["artifact"]["properties"]["storage_reference"]["pattern"]
+        self.assertIsNotNone(re.fullmatch(pattern, "external://synthetic/example"))
+        for reference in (
+            "external://synthetic//example",
+            "external://synthetic/./example",
+            "external://synthetic/../example",
+            "external://synthetic/.",
+            "external://synthetic/..",
+            "external://synthetic/",
+        ):
+            with self.subTest(reference=reference):
+                self.assertIsNone(re.fullmatch(pattern, reference))
 
     def test_private_and_signed_urls_are_rejected(self) -> None:
         for url in (
