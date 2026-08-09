@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+version = 1
+
+[[annotations]]
+path = ["schemas/*.json", "manifests/*.json"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 OpenCatastrophe contributors"
+SPDX-License-Identifier = "Apache-2.0"

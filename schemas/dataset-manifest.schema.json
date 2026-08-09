@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:opencatastrophe:schema:dataset-manifest:1.0.0",
+  "title": "OpenCatastrophe Dataset Admission Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["byte_size", "sha256", "storage_reference"],
+      "properties": {
+        "byte_size": {"type": "integer", "minimum": 0},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "storage_reference": {
+          "type": "string",
+          "pattern": "^external://[A-Za-z0-9][A-Za-z0-9._/-]*$"
+        }
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "provider",
+    "product_name",
+    "canonical_source",
+    "retrieved_at",
+    "access_class",
+    "modelling_layer",
+    "intended_use",
+    "licensing",
+    "redistribution",
+    "privacy",
+    "review"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "1.0.0"},
+    "dataset_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "provider": {"type": "string", "minLength": 1},
+    "product_name": {"type": "string", "minLength": 1},
+    "version_or_release": {"type": ["string", "null"]},
+    "canonical_source": {"type": "string", "format": "uri"},
+    "retrieved_at": {"type": "string", "format": "date-time"},
+    "retrieval_query_or_filters": {"type": ["string", "null"]},
+    "access_class": {
+      "type": "string",
+      "enum": ["open", "registration_required", "authenticated", "restricted", "unknown"]
+    },
+    "modelling_layer": {
+      "type": "string",
+      "enum": [
+        "event_catalogue",
+        "hazard",
+        "exposure",
+        "vulnerability",
+        "observed_loss",
+        "engine",
+        "standard",
+        "other"
+      ]
+    },
+    "intended_use": {"type": "string", "minLength": 1},
+    "raw_artifact": {
+      "anyOf": [{"$ref": "#/$defs/artifact"}, {"type": "null"}]
+    },
+    "derived_artifact": {
+      "anyOf": [{"$ref": "#/$defs/artifact"}, {"type": "null"}]
+    },
+    "licensing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "terms_reference",
+        "terms_reviewed_at",
+        "commercial_use_status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["verified", "unverified", "conflicting", "unknown"]
+        },
+        "spdx_expression": {"type": ["string", "null"]},
+        "licence_name": {"type": ["string", "null"]},
+        "terms_reference": {"type": "string", "format": "uri"},
+        "terms_reviewed_at": {"type": "string", "format": "date-time"},
+        "terms_version_or_date": {"type": ["string", "null"]},
+        "terms_content_sha256": {
+          "type": ["string", "null"],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "commercial_use_status": {
+          "type": "string",
+          "enum": ["allowed", "restricted", "prohibited", "unknown"]
+        },
+        "attribution_requirements": {"type": ["string", "null"]},
+        "share_alike_or_derivative_requirements": {"type": ["string", "null"]},
+        "notes": {"type": ["string", "null"]}
+      }
+    },
+    "redistribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "scope"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["allowed", "restricted", "prohibited", "unknown"]
+        },
+        "scope": {
+          "type": "string",
+          "enum": ["raw", "derived_only", "metadata_only", "none"]
+        },
+        "conditions": {"type": ["string", "null"]}
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["personal_data_status", "confidential_or_proprietary_status"],
+      "properties": {
+        "personal_data_status": {
+          "type": "string",
+          "enum": ["none", "contains", "unknown"]
+        },
+        "confidential_or_proprietary_status": {
+          "type": "string",
+          "enum": ["none", "contains", "unknown"]
+        },
+        "notes": {"type": ["string", "null"]}
+      }
+    },
+    "spatial": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "crs": {"type": ["string", "null"]},
+        "extent": {"type": ["string", "null"]}
+      }
+    },
+    "temporal": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "extent": {"type": ["string", "null"]}
+      }
+    },
+    "variables_and_units": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "unit"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "unit": {"type": ["string", "null"]},
+          "description": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "transformation": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["code_reference", "config_identity"],
+      "properties": {
+        "code_reference": {"type": "string", "minLength": 1},
+        "config_identity": {"type": "string", "minLength": 1}
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reviewed_at", "reviewer"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "approved_metadata_only",
+            "approved_derived",
+            "approved_raw",
+            "rejected"
+          ]
+        },
+        "reviewed_at": {"type": ["string", "null"], "format": "date-time"},
+        "reviewer": {"type": ["string", "null"]},
+        "notes": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

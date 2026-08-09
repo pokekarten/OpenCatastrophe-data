@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# High-impact data, validation, security and dependency surfaces.
+
+/.github/ @pokekarten
+/schemas/ @pokekarten
+/manifests/ @pokekarten
+/scripts/ @pokekarten
+/tests/ @pokekarten
+/docs/source-reviews/ @pokekarten
+/DATA_LICENSING.md @pokekarten
+/SCIENTIFIC_METHOD.md @pokekarten
+/SECURITY.md @pokekarten
+/requirements-dev.txt @pokekarten
+/THIRD_PARTY.md @pokekarten
+/REUSE.toml @pokekarten
+/LICENSE @pokekarten
+/CITATION.cff @pokekarten

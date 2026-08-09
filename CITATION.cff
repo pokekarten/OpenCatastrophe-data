@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+cff-version: 1.2.0
+message: "If you use OpenCatastrophe-data in research, please cite this software/metadata project and cite each external dataset from its own authoritative citation and licence metadata."
+title: "OpenCatastrophe-data"
+type: software
+authors:
+  - name: "OpenCatastrophe contributors"
+repository-code: "https://github.com/pokekarten/OpenCatastrophe-data"
+license: Apache-2.0
+abstract: "Licence-aware data registry, provenance, admission, and transformation tooling for transparent catastrophe-risk research."
+keywords:
+  - catastrophe risk
+  - research data provenance
+  - data licensing
+  - reproducibility
+  - open science

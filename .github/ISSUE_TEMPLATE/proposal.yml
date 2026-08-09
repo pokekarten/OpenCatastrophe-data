@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Project or tooling proposal
+description: Propose a bounded repository, tooling, documentation, interoperability, or workflow improvement.
+title: "[Proposal]: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for general public project improvements that are not primarily a bug, data-source review, scientific-method question, or already-bounded agent task. **Do not include secrets, private repository/chat/workspace content, customer/claims/portfolio data, restricted source bytes, signed URLs, or private infrastructure details.**
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal and user value
+      description: What public problem should this solve, for whom, and why is it worth adding?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Proposed scope and non-goals
+      description: Define the smallest useful change and what is intentionally out of scope.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and trade-offs
+      description: Name at least one reasonable alternative, including doing nothing, and explain the main trade-offs.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Public evidence or related standards/projects
+      description: Link authoritative public material where useful. If rights or scientific semantics are material, use the Data source or Scientific form instead of treating this proposal as approval.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance and verification
+      description: What observable tests, documentation, or GitHub behavior would show that the proposal is complete without weakening existing gates?
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Public-content safety
+      options:
+        - label: I confirmed this proposal contains no credentials, private endpoints, signed URLs, confidential/customer data, restricted source bytes, or private repository/chat/workspace material.
+          required: true
+        - label: I understand that a proposal does not itself authorize data acquisition, publication, rights expansion, or scientific claims.
+          required: true

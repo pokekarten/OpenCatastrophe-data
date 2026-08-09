@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Secrets and local configuration
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.keystore
+credentials*
+secrets/
+private/
+
+# Raw, downloaded, restricted and local datasets are never committed by default
+data/
+raw/
+downloads/
+external/
+restricted/
+quarantine/
+cache/
+artifacts/
+outputs/
+runs/
+
+# Common large geospatial/scientific formats
+*.nc
+*.nc4
+*.grib
+*.grib2
+*.tif
+*.tiff
+*.h5
+*.hdf5
+*.parquet
+*.feather
+*.gpkg
+*.sqlite
+*.db
+*.zip
+*.7z
+*.tar
+*.tar.gz
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+.cache/

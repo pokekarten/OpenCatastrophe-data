@@ -11,8 +11,6 @@ It is **not a raw-data dump**. Its job is to make catastrophe-risk data inputs t
 
 Humans and AI agents should be able to understand every admitted source and transformation from public repository state; hidden private data stores or chat context are never normative evidence.
 
-The repository is `pokekarten/OpenCatastrophe-data`. The `src/opencat_data` module is an internal pre-alpha implementation surface used by repository tooling and tests; it is **not currently published as a Python distribution**. A package/distribution contract will be introduced only when a concrete external consumer requires one.
-
 ## What belongs here
 
 - dataset manifests and stable source identities;
@@ -44,7 +42,7 @@ De-identifying confidential data does not automatically make it synthetic or saf
 
 One source has a metadata-only admission: DWD 10-minute extreme-wind station observations for Germany, version `v24.03`. No DWD measurement bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts.
 
-This keeps the repository data-byte-free while exercising real provenance, rights, registry and scientific-review contracts.
+This keeps the repository data-byte-free while exercising real provenance, rights and scientific-review contracts.
 
 ## Quick start
 
@@ -59,12 +57,11 @@ Focused tools include:
 ```bash
 python scripts/validate_manifest.py path/to/manifest.json
 python scripts/manifest_identity.py path/to/manifest.json
-python scripts/check_manifest_registry.py
 ```
 
-For contributors/agents, start with `AGENTS.md` and `ARCHITECTURE.md`. Load `DATA_LICENSING.md`, `SCIENTIFIC_METHOD.md`, the nearest scoped `AGENTS.md` and other policy only when relevant.
+For contributors and coding agents, start with `AGENTS.md` and `ARCHITECTURE.md`. Source/admission work also uses `DATA_LICENSING.md`; scientific interpretation uses `SCIENTIFIC_METHOD.md`.
 
-Public collaboration uses issues and pull requests as the live work surface. See `CONTRIBUTING.md` for contribution rules, `SUPPORT.md` before filing support requests, and `docs/github-agent-access.md` for optional GitHub/MCP agent access. MCP/AI tooling never grants data rights and is not a runtime dependency.
+Public collaboration uses GitHub Issues, Pull Requests and Projects as the live work surface. See `CONTRIBUTING.md` for contribution rules and `SUPPORT.md` before filing support requests. AI tooling is optional and never grants data rights or replaces repository evidence.
 
 ## Interoperability direction
 

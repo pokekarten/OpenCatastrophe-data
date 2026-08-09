@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Bug report
+description: Report a reproducible tooling or schema problem using synthetic inputs only.
+title: "[Bug]: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve OpenCatastrophe-data. **Do not include secrets, credentials, private repository content, customer/claims/portfolio data, confidential files, restricted datasets, or signed/private URLs.** Use synthetic manifests/data for reproduction.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: Describe the expected validation/admission behaviour and why.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal synthetic reproduction
+      description: Use only synthetic source names, URLs, hashes, and values. Do not paste real credentials or restricted data.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Python version, OS, OpenCatastrophe-data commit/version, and other non-sensitive environment information.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Public issue safety
+      options:
+        - label: I confirmed this issue contains no secrets, signed URLs, private endpoints, private repository content, personal/confidential/customer data, or restricted dataset bytes.
+          required: true
+        - label: The reproduction uses synthetic data only.
+          required: true

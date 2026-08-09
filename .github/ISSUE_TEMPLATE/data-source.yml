@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Data source candidate
+description: Suggest a public source for metadata-first rights and scientific review. Do not upload data.
+title: "[Data source]: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form starts **metadata-only review**. Do not upload dataset bytes, credentials, screenshots of private portals, signed URLs, confidential files, or copied licence text. Link to authoritative public provider/product and terms pages instead.
+  - type: input
+    id: provider
+    attributes:
+      label: Provider / publisher
+      placeholder: Authoritative organization or project
+    validations:
+      required: true
+  - type: input
+    id: product
+    attributes:
+      label: Product / dataset
+      placeholder: Exact product name and version/release if known
+    validations:
+      required: true
+  - type: input
+    id: canonical_source
+    attributes:
+      label: Canonical public product page
+      placeholder: https://...
+    validations:
+      required: true
+  - type: input
+    id: terms
+    attributes:
+      label: Authoritative licence / terms page
+      placeholder: https://...
+    validations:
+      required: true
+  - type: textarea
+    id: intended_use
+    attributes:
+      label: Proposed scientific/model use
+      description: Explain the modelling layer, peril/region if relevant, and why this source is useful. Do not assume rights from availability.
+    validations:
+      required: true
+  - type: textarea
+    id: known_rights
+    attributes:
+      label: Known rights or restrictions
+      description: Summarize only what you can support from the authoritative terms page. If uncertain, say unknown.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Submission safety
+      options:
+        - label: I did not attach or paste source data bytes, credentials, signed/private URLs, private repository content, or confidential information.
+          required: true
+        - label: I understand this suggestion does not authorize download, redistribution, commercial use, or inclusion in Git.
+          required: true

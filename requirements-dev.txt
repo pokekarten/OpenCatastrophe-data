@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# CI-only compliance dependency. This is not a runtime requirement.
+reuse[charset-normalizer]==6.2.0

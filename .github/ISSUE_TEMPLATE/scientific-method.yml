@@ -1,0 +1,81 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Scientific source or methodology proposal
+description: Propose or challenge a source interpretation, transformation, validation design, or interoperability mapping.
+title: "[Science/Data]: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form when scientific fitness, source semantics, or methodology is the main question. Rights/admission and scientific validity are separate gates. Do not include confidential/private data, credentials, signed URLs, or restricted source bytes.
+  - type: textarea
+    id: question
+    attributes:
+      label: Scientific question or intended use
+      description: State the narrow scientific question, source interpretation, transformation, or downstream use that should be evaluated.
+    validations:
+      required: true
+  - type: textarea
+    id: source_identity
+    attributes:
+      label: Exact source identity
+      description: Provider, product, version/release/query, time window, and authoritative metadata/terms references. Use stable identifiers where available.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and references
+      description: Separate authoritative external evidence, repository source, inference, and design proposal. Prefer DOI, standard/version, or pinned release identifiers.
+      placeholder: |
+        Authoritative external evidence:
+        - ...
+        Repository source:
+        - ...
+        Inference:
+        - ...
+        Design proposal:
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: semantics
+    attributes:
+      label: Scientific semantics
+      description: Record variables, units, coordinate/reference systems, timestamps/timezones, quality flags, observation/analysis/reanalysis/forecast status, missingness, and uncertainty that matter.
+    validations:
+      required: true
+  - type: textarea
+    id: rights
+    attributes:
+      label: Rights and admission state
+      description: Record access, commercial-use, redistribution, attribution/derivative obligations, and current repository admission state separately from scientific fitness.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation or transformation plan
+      description: Define a reproducible test, benchmark, continuity check, synthetic transformation fixture, or other falsifiable validation and its acceptance criteria.
+    validations:
+      required: true
+  - type: textarea
+    id: limitations
+    attributes:
+      label: Limitations and alternative interpretations
+      description: State known biases, coverage limits, uncertainty, unresolved questions, and what evidence would change the conclusion.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safeguards
+    attributes:
+      label: Scientific and public-safety checks
+      options:
+        - label: I have kept rights/admission separate from scientific fitness.
+          required: true
+        - label: I have not included confidential/private data, credentials, signed URLs, proprietary model assets, or restricted source bytes.
+          required: true
+        - label: I have read `SCIENTIFIC_METHOD.md`, `DATA_LICENSING.md`, and the applicable `AGENTS.md` instructions.
+          required: true
