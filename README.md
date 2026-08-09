@@ -13,6 +13,14 @@ It is **not a raw-data dump**. Its job is to make catastrophe-risk data inputs t
 
 Humans and AI agents should be able to understand every admitted source and transformation from public repository state; hidden private data stores or chat context are never normative evidence.
 
+## Who this is for
+
+- **AI agents and developers** get explicit repository/scoped instructions, machine-readable task and run-evidence contracts, narrow reusable skills, deterministic checks and public PR coordination.
+- **Scientists** get source identity, provenance, scientific semantics, limitations, citation metadata and reproducibility rules that distinguish evidence from inference and design.
+- **Insurers, reinsurers and brokers** get an auditable public data-contract layer that can support open hazard/risk workflows without turning customer portfolios, claims, treaties, confidential exposure or proprietary vendor data into public fixtures.
+
+The project is pre-alpha. A green repository check proves the recorded technical gates; it is not by itself a claim of scientific sufficiency, regulatory approval, production fitness or permission beyond the exact recorded data scope.
+
 ## What belongs here
 
 - dataset manifests and stable source identities;
@@ -59,11 +67,25 @@ Focused tools include:
 ```bash
 python scripts/validate_manifest.py path/to/manifest.json
 python scripts/manifest_identity.py path/to/manifest.json
+python scripts/validate_agent_artifact.py task task.json --expected-repository pokekarten/OpenCatastrophe-data --expected-main-sha <main-sha>
+python scripts/validate_agent_artifact.py run run.json --expected-repository pokekarten/OpenCatastrophe-data
 ```
 
-For contributors and coding agents, start with `AGENTS.md` and `ARCHITECTURE.md`. Source/admission work also uses `DATA_LICENSING.md`; scientific interpretation uses `SCIENTIFIC_METHOD.md`.
+## Development contract
 
-Public collaboration uses GitHub Issues, Pull Requests and Projects as the live work surface. See `CONTRIBUTING.md` for contribution rules and `SUPPORT.md` before filing support requests. AI tooling is optional and never grants data rights or replaces repository evidence.
+Development is intended to happen through the public repository. Current public `main`, Issues and Pull Requests are the collaboration source of truth; private chat or archive state must not be required to review an accepted change.
+
+For contributors and coding agents:
+
+1. start with `AGENTS.md` and `ARCHITECTURE.md`;
+2. use the nearest scoped `AGENTS.md` for manifest/schema work;
+3. use the most specific Issue Form for non-trivial work and a draft PR as the visible implementation claim for shared surfaces;
+4. keep data-rights review and scientific validation separate;
+5. use `schemas/agent-task-v1.schema.json` and `schemas/run-evidence-v1.schema.json` when a formal machine-readable task/handoff is useful;
+6. use the narrow skills under `.github/skills/` for dataset admission and reproducibility workflows;
+7. run `python scripts/check_all.py` on the exact candidate before handoff.
+
+See `CONTRIBUTING.md` for contribution rules and `SUPPORT.md` before filing support requests. AI tooling is optional and never grants data rights or replaces repository evidence.
 
 ## Interoperability direction
 
