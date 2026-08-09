@@ -95,7 +95,7 @@ Public GitHub state is the development and coordination plane. Current `main`, I
 
 Human and AI contributors use the same review path. A draft PR is the visible implementation claim for shared/single-writer surfaces. Machine-readable agent-task and run-evidence artifacts are optional execution snapshots that improve coordination and reproducibility; they do not replace GitHub-native task state or human/scientific/data-rights review.
 
-Root `AGENTS.md` defines repository-wide rules. Scoped `AGENTS.md` files may strengthen rules for high-impact directories. Reusable Agent Skills may encode narrow workflows, but the repository must remain usable without a specific model provider, IDE, MCP host or paid AI service.
+Root `AGENTS.md` and `.github/copilot-instructions.md` provide the intentionally small repository-wide agent surface. Durable behavior belongs in schemas, validators and tests rather than duplicated instruction layers. The repository must remain usable without a specific model provider, IDE, MCP host or paid AI service.
 
 ## Contract evolution
 
