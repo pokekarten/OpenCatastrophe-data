@@ -12,9 +12,21 @@ values or skill scores. The preregistered Dresden rule is:
 4. break a mismatch tie by minimum great-circle angular distance;
 5. break a remaining exact tie by latitude, then longitude, ascending.
 
-The historical >=500 km^2 calibration-scale context is not a separate selector
-here because the 10% Dresden area gate already implies model upstream area >=
-47,786.4 km^2. Duplicate coordinates and malformed metadata fail closed.
+The GloFAS v4.0 upstream-area ancillary contract is frozen here before values
+are inspected: ``uparea_glofas_v4_0.nc``, variable ``uparea`` in ``m2``, WGS84,
+0.05-degree centres, 3000 latitude rows and 7200 longitude columns. Official
+ECMWF/Copernicus training material for that exact v4.0 ancillary shows latitude
+stored north-to-south and longitude west-to-east, supporting the zero-based
+native index formula used below.
+
+Durable public evidence:
+- https://confluence.ecmwf.int/spaces/CEMS/pages/242067380/Auxiliary+Data
+- https://ecmwf-projects.github.io/copernicus-training-c3s/glofas-bangladesh-floods.html
+
+Candidate indices can therefore be determined before any upstream-area values
+are read. The historical >=500 km^2 calibration-scale context is not a separate
+selector here because the 10% Dresden area gate already implies model upstream
+area >= 47,786.4 km^2. Duplicate coordinates and malformed metadata fail closed.
 """
 
 from __future__ import annotations
@@ -26,9 +38,29 @@ DRESDEN_DRAINAGE_AREA_KM2 = 53_096.0
 MAX_ANGULAR_DISTANCE_DEGREES = 0.15
 MAX_RELATIVE_DRAINAGE_AREA_MISMATCH = 0.10
 
+GLOFAS_V4_UPSTREAM_AREA_FILENAME = "uparea_glofas_v4_0.nc"
+GLOFAS_V4_UPSTREAM_AREA_VARIABLE = "uparea"
+GLOFAS_V4_UPSTREAM_AREA_UNIT = "m2"
+GLOFAS_V4_GRID_RESOLUTION_DEGREES = 0.05
+GLOFAS_V4_LATITUDE_COUNT = 3000
+GLOFAS_V4_LONGITUDE_COUNT = 7200
+GLOFAS_V4_MAX_LATITUDE_CENTER = 89.975
+GLOFAS_V4_MIN_LATITUDE_CENTER = -59.975
+GLOFAS_V4_MIN_LONGITUDE_CENTER = -179.975
+GLOFAS_V4_MAX_LONGITUDE_CENTER = 179.975
+
 
 class GridMatchError(ValueError):
     """Raised when the preregistered grid-matching contract fails closed."""
+
+
+class GlofasGridPoint(NamedTuple):
+    """One exact v4.0 ancillary-grid centre and its zero-based NetCDF indices."""
+
+    latitude_index: int
+    longitude_index: int
+    latitude: float
+    longitude: float
 
 
 class GlofasGridCell(NamedTuple):
@@ -98,6 +130,60 @@ def great_circle_angular_distance_degrees(
     if not math.isfinite(angle):
         raise GridMatchError("great-circle angular distance must remain finite")
     return angle
+
+
+def glofas_v4_candidate_grid_points(
+    *,
+    station_latitude: float | int,
+    station_longitude: float | int,
+) -> tuple[GlofasGridPoint, ...]:
+    """Return all v4.0 ancillary cells inside the frozen 0.15-degree neighborhood.
+
+    Candidate indices are derived before upstream-area values are inspected.
+    Latitude rows whose absolute latitude difference already exceeds the
+    great-circle radius are skipped; every longitude centre on remaining rows is
+    evaluated by the exact same angular-distance function used by the selector.
+    The result is in native NetCDF row/column order and contains no data values.
+    """
+
+    station_lat = _latitude(station_latitude, "station_latitude")
+    station_lon = _longitude(station_longitude, "station_longitude")
+    points: list[GlofasGridPoint] = []
+
+    for latitude_index in range(GLOFAS_V4_LATITUDE_COUNT):
+        latitude = round(
+            GLOFAS_V4_MAX_LATITUDE_CENTER
+            - GLOFAS_V4_GRID_RESOLUTION_DEGREES * latitude_index,
+            12,
+        )
+        if abs(latitude - station_lat) > MAX_ANGULAR_DISTANCE_DEGREES:
+            continue
+
+        for longitude_index in range(GLOFAS_V4_LONGITUDE_COUNT):
+            longitude = round(
+                GLOFAS_V4_MIN_LONGITUDE_CENTER
+                + GLOFAS_V4_GRID_RESOLUTION_DEGREES * longitude_index,
+                12,
+            )
+            angular_distance = great_circle_angular_distance_degrees(
+                station_lat,
+                station_lon,
+                latitude,
+                longitude,
+            )
+            if angular_distance <= MAX_ANGULAR_DISTANCE_DEGREES:
+                points.append(
+                    GlofasGridPoint(
+                        latitude_index=latitude_index,
+                        longitude_index=longitude_index,
+                        latitude=latitude,
+                        longitude=longitude,
+                    )
+                )
+
+    if not points:
+        raise GridMatchError("no GloFAS v4.0 grid centre lies inside the frozen angular radius")
+    return tuple(points)
 
 
 def select_dresden_glofas_grid_cell(
