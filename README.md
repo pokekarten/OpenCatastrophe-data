@@ -94,11 +94,15 @@ python scripts/check_all.py
 Focused tools include:
 
 ```bash
+python scripts/query_source_landscape.py --category flood
+python scripts/query_source_landscape.py --text building
 python scripts/validate_manifest.py path/to/manifest.json
 python scripts/manifest_identity.py path/to/manifest.json
 python scripts/validate_agent_artifact.py task task.json --expected-repository pokekarten/OpenCatastrophe-data --expected-main-sha <main-sha>
 python scripts/validate_agent_artifact.py run run.json --expected-repository pokekarten/OpenCatastrophe-data
 ```
+
+Landscape query results always have `scope: non_admission_discovery_only`; matching a source never grants rights, scientific approval or admission.
 
 ## Development contract
 
