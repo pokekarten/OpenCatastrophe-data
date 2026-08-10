@@ -9,6 +9,7 @@ import unittest
 from scripts.hydrology_metrics import (
     MetricInputError,
     modified_kge_prime,
+    pearson_correlation,
     relative_mean_bias,
 )
 
@@ -61,6 +62,43 @@ class RelativeMeanBiasTests(unittest.TestCase):
     def test_ratio_overflow_fails_closed(self) -> None:
         with self.assertRaisesRegex(MetricInputError, "ratio must remain finite"):
             relative_mean_bias([1e308], [1e-308])
+
+
+class PearsonCorrelationTests(unittest.TestCase):
+    def test_perfect_agreement_is_one(self) -> None:
+        self.assertAlmostEqual(pearson_correlation([1.0, 2.0, 4.0], [1.0, 2.0, 4.0]), 1.0)
+
+    def test_perfect_inverse_is_minus_one(self) -> None:
+        self.assertAlmostEqual(pearson_correlation([1.0, 2.0, 3.0], [3.0, 2.0, 1.0]), -1.0)
+
+    def test_zero_means_are_valid(self) -> None:
+        self.assertAlmostEqual(pearson_correlation([-1.0, 1.0], [-2.0, 2.0]), 1.0)
+
+    def test_rejects_unequal_lengths(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "equal length"):
+            pearson_correlation([1.0, 2.0], [1.0])
+
+    def test_rejects_single_pair(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "at least two"):
+            pearson_correlation([1.0], [1.0])
+
+    def test_rejects_zero_variance(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "non-zero variance"):
+            pearson_correlation([2.0, 2.0], [1.0, 2.0])
+
+    def test_rejects_non_finite_and_type_confused_values(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "finite numeric"):
+            pearson_correlation([1.0, math.nan], [1.0, 2.0])
+        with self.assertRaisesRegex(MetricInputError, "finite numeric"):
+            pearson_correlation([1.0, True], [1.0, 2.0])
+
+    def test_denominator_overflow_fails_closed(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "denominator must remain finite"):
+            pearson_correlation([1e150, 2e150], [1e150, 3e150])
+
+    def test_denominator_underflow_fails_closed(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "denominator must remain positive"):
+            pearson_correlation([1e-100, 2e-100], [1e-100, 3e-100])
 
 
 class ModifiedKgePrimeTests(unittest.TestCase):
