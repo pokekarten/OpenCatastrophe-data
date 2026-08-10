@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "eiopa.catastrophe-data-hub.exposure.2023-12-05",
+  "provider": "European Insurance and Occupational Pensions Authority (EIOPA)",
+  "product_name": "Flood and Windstorm exposure data - catastrophe data hub.xlsx",
+  "version_or_release": "2023-12-05 public resource; underlying exposure as of year-end 2020",
+  "canonical_source": "https://www.eiopa.europa.eu/tools-and-data/catastrophe-data-hub_en",
+  "retrieved_at": "2026-08-10T01:10:00Z",
+  "retrieval_query_or_filters": "Metadata-only review of the EIOPA Catastrophe Data Hub exposure workbook listed on 2023-12-05. No XLSX bytes were acquired. Raw/derived redistribution remains unreviewed pending inspection of the exact workbook and any file-specific or third-party notices.",
+  "access_class": "open",
+  "modelling_layer": "exposure",
+  "intended_use": "Public aggregated European insured-exposure benchmark for flood and windstorm, useful for distinguishing insured exposure from physical building stock and confidential policy portfolios. The sample is not a 100% market view and must not be grossed up or reinterpreted without an explicit methodology.",
+  "raw_artifact": null,
+  "derived_artifact": null,
+  "licensing": {
+    "status": "verified",
+    "spdx_expression": null,
+    "licence_name": "EIOPA website copyright/reuse notice",
+    "terms_reference": "https://www.eiopa.europa.eu/legal-notice_en",
+    "terms_reviewed_at": "2026-08-10T01:10:00Z",
+    "terms_version_or_date": "EIOPA legal notice reviewed 2026-08-10; public resource dated 2023-12-05",
+    "terms_content_sha256": null,
+    "commercial_use_status": "allowed",
+    "attribution_requirements": "Acknowledge EIOPA as the source as required by the EIOPA legal notice. Follow its conditions for transformed/republished material and EIOPA material incorporated into sold documents.",
+    "share_alike_or_derivative_requirements": "No share-alike requirement is recorded in the general EIOPA website notice. Third-party material is excluded and must be reviewed separately.",
+    "notes": "Because the workbook is based on insurer submissions and has not been inspected for file-specific notices, only metadata-level reuse is cleared by this review. This is an engineering rights assessment, not legal advice."
+  },
+  "redistribution": {
+    "status": "allowed",
+    "scope": "metadata_only",
+    "conditions": "Only repository-authored metadata about the public EIOPA resource is cleared here. Raw or derived workbook redistribution remains blocked until exact-file and third-party rights are explicitly reviewed."
+  },
+  "privacy": {
+    "personal_data_status": "none",
+    "confidential_or_proprietary_status": "none",
+    "notes": "This admission describes only EIOPA's aggregated public release. The technical description states that data were aggregated to NUTS2 to ensure anonymity; undertaking-level submissions remain outside scope."
+  },
+  "spatial": {
+    "crs": null,
+    "extent": "EEA countries represented at country and NUTS2 level in the public analysis; exact workbook geography must be preserved"
+  },
+  "temporal": {
+    "extent": "Insured exposure as of year-end 2020; public workbook resource dated 2023-12-05"
+  },
+  "variables_and_units": [
+    {
+      "name": "sum insured",
+      "unit": null,
+      "description": "Aggregated monetary replacement value of insured residential/commercial buildings as defined by EIOPA, net of reinsurance business and coinsurance. Exact currency/value-unit conventions require workbook review."
+    }
+  ],
+  "transformation": null,
+  "review": {
+    "status": "approved_metadata_only",
+    "reviewed_at": "2026-08-10T01:10:00Z",
+    "reviewer": "OpenCatastrophe source audit",
+    "notes": "Metadata-only approval. Raw/derived XLSX publication remains blocked pending exact-file rights, byte identity and schema/unit review."
+  }
+}
