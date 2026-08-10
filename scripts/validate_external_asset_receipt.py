@@ -198,6 +198,7 @@ def validate_receipt(
     *,
     expected_intent_sha256: str | None = None,
     expected_manifest: str | None = None,
+    expected_manifest_sha256: str | None = None,
 ) -> None:
     """Validate one closed, secret-safe external acquisition receipt."""
 
@@ -216,11 +217,15 @@ def validate_receipt(
     manifest = _mapping(receipt["manifest"], "manifest")
     _closed(manifest, MANIFEST_KEYS, MANIFEST_KEYS, "manifest")
     manifest_path = _manifest_path(manifest["path"])
-    _sha256(manifest["sha256"], "manifest.sha256")
+    manifest_digest = _sha256(manifest["sha256"], "manifest.sha256")
     if expected_manifest is not None:
         expected_path = _manifest_path(expected_manifest)
         if manifest_path != expected_path:
             raise ReceiptError("manifest.path does not match expected admitted manifest")
+    if expected_manifest_sha256 is not None:
+        _sha256(expected_manifest_sha256, "expected_manifest_sha256")
+        if manifest_digest != expected_manifest_sha256:
+            raise ReceiptError("manifest.sha256 does not match expected admitted manifest identity")
 
     request = _mapping(receipt["request"], "request")
     _closed(request, REQUEST_KEYS, REQUEST_KEYS, "request")
@@ -238,6 +243,31 @@ def validate_receipt(
         raise ReceiptError("artifact.byte_size must be a positive integer")
     _sha256(artifact["sha256"], "artifact.sha256")
     _external_reference(artifact["storage_reference"])
+
+
+def verify_artifact(receipt: dict[str, Any], artifact_path: Path) -> None:
+    """Re-hash one local external file and compare it to the receipt."""
+
+    validate_receipt(receipt)
+    if artifact_path.is_symlink():
+        raise ReceiptError("artifact path must not be a symbolic link")
+    try:
+        if not artifact_path.is_file():
+            raise ReceiptError("artifact path must be a regular file")
+        hasher = hashlib.sha256()
+        byte_size = 0
+        with artifact_path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                byte_size += len(chunk)
+                hasher.update(chunk)
+    except OSError as exc:
+        raise ReceiptError(f"unable to read artifact bytes: {exc}") from exc
+
+    artifact = receipt["artifact"]
+    if byte_size != artifact["byte_size"]:
+        raise ReceiptError("artifact byte size does not match receipt")
+    if hasher.hexdigest() != artifact["sha256"]:
+        raise ReceiptError("artifact SHA-256 does not match receipt")
 
 
 def canonical_receipt_bytes(receipt: dict[str, Any]) -> bytes:
@@ -260,6 +290,8 @@ def main() -> int:
     parser.add_argument("receipt", type=Path)
     parser.add_argument("--expected-intent-sha256")
     parser.add_argument("--expected-manifest")
+    parser.add_argument("--expected-manifest-sha256")
+    parser.add_argument("--artifact", type=Path)
     parser.add_argument("--print-sha256", action="store_true")
     args = parser.parse_args()
 
@@ -269,7 +301,10 @@ def main() -> int:
             receipt,
             expected_intent_sha256=args.expected_intent_sha256,
             expected_manifest=args.expected_manifest,
+            expected_manifest_sha256=args.expected_manifest_sha256,
         )
+        if args.artifact is not None:
+            verify_artifact(receipt, args.artifact)
         digest = receipt_sha256(receipt) if args.print_sha256 else None
     except ReceiptError as exc:
         print(f"BLOCKED: {exc}")
