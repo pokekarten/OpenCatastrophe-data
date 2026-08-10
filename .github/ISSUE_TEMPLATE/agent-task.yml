@@ -4,7 +4,7 @@
 name: Agent task
 description: Define one bounded, collision-safe task for a human or AI agent using public-safe context only.
 title: "[Agent]: "
-labels: []
+labels: ["agent"]
 body:
   - type: markdown
     attributes:
@@ -104,6 +104,38 @@ body:
     attributes:
       label: Acceptance
       description: Define independently checkable completion criteria, exact commands/evidence, and exact byte/admission state where relevant. Keep this consistent with the machine-readable acceptance block above.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: review_tier
+    attributes:
+      label: Review tier
+      description: Choose the smallest review tier that matches the task risk. Tier 2 is for high-impact decisions, not routine changes.
+      options:
+        - Tier 0 — routine/reversible; CI and builder diff review
+        - Tier 1 — independent reviewer should try to falsify the change
+        - Tier 2 — independent reviewer plus challenger compares a credible alternative
+    validations:
+      required: true
+
+  - type: textarea
+    id: review_plan
+    attributes:
+      label: Independent review plan
+      description: State why the tier fits, what independence means for this task, and the key falsification/challenge questions. Agents sharing one GitHub account must use distinct agent/run IDs for independent roles. Required roles use state pending/completed/unavailable. Tier 1 reviewer unavailability needs an explicit maintainer decision; Tier 2 unavailable roles remain blocking unless the maintainer explicitly downgrades the task first.
+      placeholder: |
+        Builder agent/run ID: ...
+        Independent reviewer state: pending / completed / unavailable / N/A
+        Independent reviewer agent/run ID: pending / ... / N/A
+        Tier 1 reviewer-unavailable reason + maintainer decision: N/A / ...
+        Challenger state: pending / completed / unavailable / N/A
+        Challenger agent/run ID: N/A / pending / ...
+        Tier 2 unavailable role / explicit tier downgrade: N/A / ...
+        Why this tier: ...
+        Reviewer falsification target: ...
+        Tier 2 alternative/null hypothesis: N/A / ...
+        Decision criteria: ...
     validations:
       required: true
 
