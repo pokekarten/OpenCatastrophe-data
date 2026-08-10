@@ -23,6 +23,8 @@ RUN_STATUSES = {"pass", "fail", "blocked", "not_comparable"}
 INTEROP_ROLES = {"import", "export", "compare", "execute", "metadata"}
 INTEROP_STATUSES = {"planned", "experimental", "tested", "unsupported", "not_comparable"}
 EVIDENCE_CLASSES = {"repository_source", "external_evidence", "inference", "design_proposal"}
+LOSS_STAGES = {"ground_up", "gross", "insured", "ceded", "recoverable", "net"}
+COMPARISON_MODES = {"deterministic", "common_innovations", "distributional", "not_comparable"}
 
 
 class ContractError(ValueError):
@@ -324,6 +326,14 @@ def validate_run(payload: Any, *, expected_repository: str | None = None) -> Non
             _str(env[key], f"run.environment.{key}")
         if "dependency_lock_sha256" in env:
             _sha256(env["dependency_lock_sha256"], "run.environment.dependency_lock_sha256")
+    if "semantics" in run:
+        semantics = _obj(run["semantics"], "run.semantics")
+        allowed = {"currency", "loss_stage", "horizon", "valuation_basis", "model_view"}
+        _closed(semantics, "run.semantics", set(), allowed)
+        for key, value in semantics.items():
+            _str(value, f"run.semantics.{key}")
+        if "loss_stage" in semantics and semantics["loss_stage"] not in LOSS_STAGES:
+            raise ContractError(f"unsupported run.semantics.loss_stage: {semantics['loss_stage']}")
     if "interoperability" in run:
         for i, item in enumerate(_arr(run["interoperability"], "run.interoperability")):
             interop = _obj(item, f"run.interoperability[{i}]")
@@ -340,6 +350,10 @@ def validate_run(payload: Any, *, expected_repository: str | None = None) -> Non
                 raise ContractError("tested interoperability requires an exact version and explicit evidence")
             if "profile" in interop:
                 _str(interop["profile"], f"run.interoperability[{i}].profile")
+            if "comparison_mode" in interop and _str(
+                interop["comparison_mode"], f"run.interoperability[{i}].comparison_mode"
+            ) not in COMPARISON_MODES:
+                raise ContractError("unsupported interoperability comparison mode")
 
 
 def main(argv: list[str] | None = None) -> int:
