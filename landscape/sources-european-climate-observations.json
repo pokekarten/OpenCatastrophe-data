@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry of European gridded climate-observation sources relevant to catastrophe-risk validation and historical context.",
+  "review_date": "2026-08-10",
+  "entries": [
+    {
+      "candidate_id": "copernicus.c3s.e-obs.v33.0e",
+      "name": "E-OBS v33.0e European gridded observations",
+      "provider": "Copernicus Climate Change Service / ECA&D",
+      "categories": ["climate_observations", "precipitation", "temperature", "validation"],
+      "spatial_scope": "Europe, 25N-71.5N x 25W-45E",
+      "temporal_scope": "v33.0e full release 1950-01-01 to 2025-12-31; wind speed available from 1980 onward",
+      "resolution_or_granularity": "daily fields on 0.1 and 0.25 degree regular grids; 20-member ensemble with best-guess and uncertainty information",
+      "potential_roles": ["reanalysis_validation", "extreme_precipitation_validation", "temperature_extremes_validation", "historical_climate_context"],
+      "authoritative_url": "https://surfobs.climate.copernicus.eu/dataaccess/access_eobs.php",
+      "access_class_hint": "public_download_noncommercial_terms",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Station-derived spatially interpolated observational product, not raw station truth or reanalysis; preserve ensemble/best-guess/uncertainty semantics, variable-specific coverage and known sparse-network/outlier limitations. Variable-specific upstream lineage is material: wind-speed gridding uses ERA5 800 hPa monthly averaged wind speed as a covariate, while the global-radiation product incorporates CERES satellite-derived radiation, so validation against ERA5 or CERES requires a variable-specific independence and lineage check. Provider terms state non-commercial research/education use, so public access must not be treated as commercial model-use or redistribution permission."
+    }
+  ]
+}
