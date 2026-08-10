@@ -114,9 +114,15 @@ class ModifiedKgePrimeTests(unittest.TestCase):
         self.assertAlmostEqual(modified_kge_prime(simulated, observed), expected)
         self.assertNotAlmostEqual(modified_kge_prime(simulated, observed), 0.5)
 
-    def test_multiplicative_bias_preserves_variability_component(self) -> None:
+    def test_matches_hydrogof_2012_double_observation_reference_case(self) -> None:
+        # Independent implementation oracle: hydroGOF's documented KGE method="2012"
+        # example for sim = 2 * obs reports r=1, Beta=2, Gamma=1 and KGE'=0.
+        # https://mzb.cl/hydroGOF/reference/KGE.html
         observed = [1.0, 2.0, 4.0, 8.0]
         simulated = [2.0, 4.0, 8.0, 16.0]
+
+        self.assertAlmostEqual(pearson_correlation(simulated, observed), 1.0)
+        self.assertAlmostEqual(relative_mean_bias(simulated, observed), 1.0)
         self.assertAlmostEqual(modified_kge_prime(simulated, observed), 0.0)
 
     def test_rejects_unequal_lengths(self) -> None:
