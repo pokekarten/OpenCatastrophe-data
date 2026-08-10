@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "isric.soilgrids250m.v2.0",
+  "provider": "ISRIC - World Soil Information",
+  "product_name": "SoilGrids250m 2.0",
+  "version_or_release": "2.0",
+  "canonical_source": "https://docs.isric.org/globaldata/soilgrids/SoilGrids_faqs.html",
+  "retrieved_at": "2026-08-10T01:20:00Z",
+  "retrieval_query_or_filters": "Metadata-only review of SoilGrids250m version 2.0 global soil-property products. No raster bytes were acquired or committed.",
+  "access_class": "open",
+  "modelling_layer": "other",
+  "intended_use": "Global soil-property and uncertainty context for infiltration/runoff, landslide, drought, wildfire and terrain-conditioned hazard research. SoilGrids is modelled soil information and is not treated as direct field observation or a hazard event catalogue.",
+  "raw_artifact": null,
+  "derived_artifact": null,
+  "licensing": {
+    "status": "verified",
+    "spdx_expression": "CC-BY-4.0",
+    "licence_name": "Creative Commons Attribution 4.0 International",
+    "terms_reference": "https://docs.isric.org/globaldata/soilgrids/SoilGrids_faqs_02.html",
+    "terms_reviewed_at": "2026-08-10T01:20:00Z",
+    "terms_version_or_date": "SoilGrids documentation reviewed 2026-08-10; documentation last updated in 2026",
+    "terms_content_sha256": null,
+    "commercial_use_status": "allowed",
+    "attribution_requirements": "Provide CC BY 4.0 attribution and cite the SoilGrids 2.0 scientific reference appropriate to the property used.",
+    "share_alike_or_derivative_requirements": "CC BY 4.0 permits adaptation without a share-alike requirement; attribution and indication of changes remain required.",
+    "notes": "ISRIC's current SoilGrids documentation states that SoilGrids products have been provided under CC BY 4.0 since 2019. This review covers SoilGrids250m version 2.0 products, not upstream soil-profile observations or third-party covariates as independent datasets."
+  },
+  "redistribution": {
+    "status": "allowed",
+    "scope": "raw",
+    "conditions": "Source rights for SoilGrids products support redistribution under CC BY 4.0 subject to attribution. OpenCatastrophe approves metadata only; no exact raster layer or tile is admitted."
+  },
+  "privacy": {
+    "personal_data_status": "none",
+    "confidential_or_proprietary_status": "none",
+    "notes": "The reviewed outputs are public global gridded soil-property predictions and uncertainty layers."
+  },
+  "spatial": {
+    "crs": "Product access includes native global gridded services; exact CRS/projection must be preserved from the selected distribution",
+    "extent": "Global at 250 m spatial resolution"
+  },
+  "temporal": {
+    "extent": "SoilGrids250m version 2.0 modelled soil-property release; not an event time series"
+  },
+  "variables_and_units": [
+    {
+      "name": "clay content",
+      "unit": "g/kg",
+      "description": "Predicted clay content by standard depth interval; exact scaling and statistic must be taken from the selected layer metadata."
+    },
+    {
+      "name": "sand content",
+      "unit": "g/kg",
+      "description": "Predicted sand content by standard depth interval."
+    },
+    {
+      "name": "bulk density",
+      "unit": "kg/dm3",
+      "description": "Predicted fine-earth bulk density; source scaling conventions must be preserved by any adapter."
+    },
+    {
+      "name": "soil organic carbon",
+      "unit": "g/kg",
+      "description": "Predicted soil organic carbon content by standard depth interval."
+    },
+    {
+      "name": "prediction interval",
+      "unit": null,
+      "description": "Lower/upper uncertainty information corresponding to a 90% prediction interval, expressed in the units of the selected soil property."
+    }
+  ],
+  "transformation": null,
+  "review": {
+    "status": "approved_metadata_only",
+    "reviewed_at": "2026-08-10T01:20:00Z",
+    "reviewer": "OpenCatastrophe source audit",
+    "notes": "Metadata-only approval based on current ISRIC documentation and data-sharing policy. Future raw use must select exact property/statistic/depth/grid artifacts, preserve native scale/unit metadata and uncertainty layers, and record byte identities outside Git before asset-specific review."
+  }
+}
