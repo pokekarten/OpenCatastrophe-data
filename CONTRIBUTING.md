@@ -13,14 +13,15 @@ Start with `README.md`, `AGENTS.md` and `ARCHITECTURE.md`. Source/admission chan
 
 1. Re-check current `main`, existing Issues and active Pull Requests before starting non-trivial work.
 2. Open or reference the most specific Issue Form. For bounded agent work, use the Agent Task form when useful.
-3. Branch from current `main`, declare shared/single-writer surfaces, and keep the change focused.
+3. Create a short-lived branch from current `main`, declare shared/single-writer surfaces, and keep the change focused. `main` is the only persistent development branch; do not maintain long-lived agent, development, release or patch branches.
 4. Open a draft Pull Request once there is a coherent first change; it is the visible implementation claim for those shared surfaces.
 5. Add deterministic offline tests for durable behavior. Use the machine-readable agent-task/run-evidence contracts when formal execution or handoff evidence is useful rather than creating a second task tracker.
 6. Run `python scripts/check_all.py` on the exact candidate and inspect the complete diff.
 7. Address CI/review findings without weakening safety, rights, provenance or scientific gates.
 8. Handoff with exact commit identity, checks, evidence, assumptions, blockers, external-byte state and the next independent action when relevant.
+9. Delete the head branch after its Pull Request is merged or closed unless it is still the active head of another open Pull Request.
 
-Accepted work is squash-merged so one accepted PR maps to one mainline commit.
+Accepted work is squash-merged so one accepted PR maps to one mainline commit. Topic branches are disposable collaboration state, not durable project records; accepted history lives on `main` and review history lives in Issues and Pull Requests.
 
 ## Boundaries
 
