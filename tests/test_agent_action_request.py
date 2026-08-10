@@ -20,6 +20,7 @@ from scripts.validate_agent_action_request import (
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = ROOT / "schemas/agent-action-request-v1.schema.json"
+WORKFLOW = ROOT / ".github/workflows/agent-action-dispatch.yml"
 
 VALID = {
     "schema_version": "oc-action-request-v1",
@@ -70,6 +71,17 @@ class AgentActionRequestTests(unittest.TestCase):
                         "pattern": SAFE_ID.pattern,
                     },
                 )
+
+    def test_workflow_authorizes_only_repository_owner(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        normalized = " ".join(workflow.split())
+        self.assertIn(
+            "github.event.comment.user.login == github.event.repository.owner.login && "
+            "github.event.comment.author_association == 'OWNER'",
+            normalized,
+        )
+        self.assertNotIn("author_association == 'MEMBER'", workflow)
+        self.assertNotIn("author_association == 'COLLABORATOR'", workflow)
 
     def test_rejects_duplicate_json_key(self) -> None:
         payload = json.dumps(VALID)[:-1] + ',"action":"sample_audit"}'
