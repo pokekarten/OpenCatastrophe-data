@@ -29,6 +29,10 @@ When repository Issues are temporarily disabled, do not create a substitute task
 
 Accepted work is squash-merged so one accepted PR maps to one mainline commit. Topic branches are disposable collaboration state, not durable project records; accepted history lives on `main` and review history lives in Pull Requests plus public Issues when enabled.
 
+## Review quality
+
+`AGENTS.md` is the single detailed authority for the risk-tiered Builder/Reviewer/Challenger protocol. Contributors should choose the smallest justified tier and record the required review evidence in the Pull Request template. Independent roles are quality-control roles rather than competing writers, and shared GitHub accounts use distinct agent/run IDs. If an independent role is unavailable, record that truthfully and follow the exception/maintainer-decision rule in `AGENTS.md`; never fabricate independence to satisfy a checkbox.
+
 ## Canonical and generated representations
 
 Use one independently editable source for one set of facts. Structured facts should normally live in a versioned machine-readable contract; human or interoperability views should be deterministic projections from that contract when they repeat the same semantics.
