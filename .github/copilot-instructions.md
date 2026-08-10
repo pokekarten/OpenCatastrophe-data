@@ -13,4 +13,6 @@ Keep external bytes outside Git unless the exact asset scope is explicitly admit
 
 Keep rights/admission separate from scientific fitness. Do not infer permission, broaden admission or weaken validation to make a check pass. Prefer small changes and deterministic offline tests.
 
+Files marked `GENERATED FILE — DO NOT EDIT DIRECTLY` are verified projections, not authority. Change their declared canonical source and run `python scripts/render_public_views.py --write`; never hand-edit the generated file or create a second independently maintained representation of the same facts.
+
 Before handoff run `python scripts/check_all.py` and inspect the full diff.
