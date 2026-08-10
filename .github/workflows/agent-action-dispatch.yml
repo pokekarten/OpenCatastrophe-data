@@ -19,9 +19,8 @@ jobs:
     name: Validate authorized action request
     if: >-
       contains(github.event.comment.body, '<!-- oc-action-request-v1 -->') &&
-      (github.event.comment.author_association == 'OWNER' ||
-       github.event.comment.author_association == 'MEMBER' ||
-       github.event.comment.author_association == 'COLLABORATOR')
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
