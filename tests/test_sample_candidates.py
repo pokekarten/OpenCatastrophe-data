@@ -40,37 +40,42 @@ class SampleCandidateAuditTests(unittest.TestCase):
         expected_ids = sorted(path.stem for path in (ROOT / "manifests").glob("*.json"))
         self.assertEqual([result.dataset_id for result in first], expected_ids)
 
-    def test_known_open_raw_redistributable_sources_are_sample_review_candidates(self) -> None:
+    def test_current_registry_has_exact_expected_sample_rights_classification(self) -> None:
         results = {
             result.dataset_id: result for result in sample_audit.audit_manifest_directory()
         }
-        expected = {
+        expected_eligible = {
             "copernicus.c3s.european-windstorm-reanalysis.v1.0",
             "copernicus.cems.glofas-historical",
             "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03",
             "efehr.eshm20",
             "efehr.esrm20.european-exposure-model.v1.0",
+            "efehr.esrm20.vulnerability.v1.1",
             "google.open-buildings.v3",
             "microsoft.globalml-building-footprints",
             "storm.ibtracs.present-climate.v4",
             "wsv.pegelonline.elbe-dresden-discharge.2020-2023",
         }
-        self.assertTrue(expected.issubset(results))
-        for dataset_id in sorted(expected):
+        expected_blocked = {
+            "eiopa.catastrophe-data-hub.exposure.2023-12-05",
+            "eiopa.catastrophe-data-hub.historical-loss.2023-12-05",
+        }
+        actual_eligible = {
+            dataset_id
+            for dataset_id, result in results.items()
+            if result.source_rights_eligible
+        }
+        actual_blocked = set(results) - actual_eligible
+        self.assertEqual(actual_eligible, expected_eligible)
+        self.assertEqual(actual_blocked, expected_blocked)
+
+        for dataset_id in sorted(expected_eligible):
             with self.subTest(dataset_id=dataset_id):
                 result = results[dataset_id]
-                self.assertTrue(result.source_rights_eligible)
                 self.assertFalse(result.existing_raw_publication_ready)
                 self.assertEqual(result.status, "eligible_for_asset_specific_sample_review")
 
-    def test_metadata_only_or_derived_only_rights_do_not_become_raw_sample_permission(self) -> None:
-        results = {
-            result.dataset_id: result for result in sample_audit.audit_manifest_directory()
-        }
-        for dataset_id in (
-            "eiopa.catastrophe-data-hub.exposure.2023-12-05",
-            "eiopa.catastrophe-data-hub.historical-loss.2023-12-05",
-        ):
+        for dataset_id in sorted(expected_blocked):
             with self.subTest(dataset_id=dataset_id):
                 result = results[dataset_id]
                 self.assertFalse(result.source_rights_eligible)
