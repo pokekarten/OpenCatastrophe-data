@@ -15,20 +15,20 @@
   "licensing": {
     "status": "verified",
     "spdx_expression": null,
-    "licence_name": "NCEI IBTrACS Terms of Use / WDC full and open access with WMO Resolution 40 commercial-use guidance",
+    "licence_name": "NCEI IBTrACS Terms of Use / WDC full and open access; NCEI currently references WMO Resolution 40 for commercial-use guidance",
     "terms_reference": "https://www.ncei.noaa.gov/products/international-best-track-archive",
     "terms_reviewed_at": "2026-08-10T01:21:00Z",
-    "terms_version_or_date": "IBTrACS v04r01 Terms of Use and NCEI v4.01 metadata reviewed 2026-08-10",
+    "terms_version_or_date": "IBTrACS v04r01 Terms of Use and NCEI v4.01 metadata reviewed 2026-08-10; WMO current general policy context is Resolution 1 (Cg-Ext(2021))",
     "terms_content_sha256": null,
     "commercial_use_status": "allowed",
-    "attribution_requirements": "Use the versioned NCEI IBTrACS dataset citation, identify the subset used and access date, and cite the core IBTrACS scientific publication where applicable. Re-check applicable WMO Resolution 40/source conditions for the selected files before raw publication.",
-    "share_alike_or_derivative_requirements": "No product-specific share-alike requirement is recorded by NCEI for IBTrACS. WMO Resolution 40 can permit conditions on commercial re-export of some additional meteorological data, so exact current terms must be re-checked for a future raw publication proposal.",
-    "notes": "NCEI states that IBTrACS follows WDC full and open access, that contributing RSMC agreements make the IBTrACS data open for distribution, and that WMO Resolution 40 guides commercial use. The NCEI v4.01 metadata record lists citation/liability constraints rather than a product-specific non-commercial restriction. This is an engineering rights assessment, not legal advice."
+    "attribution_requirements": "Use the versioned NCEI IBTrACS dataset citation, identify the subset used and access date, and cite the core IBTrACS scientific publication where applicable. Before raw publication, re-check current NCEI product terms, selected source-agency conditions and current WMO policy context.",
+    "share_alike_or_derivative_requirements": "No product-specific share-alike requirement is recorded by NCEI for IBTrACS. NCEI's current product terms still reference historical WMO Resolution 40 for commercial-use guidance, while WMO's current general framework is Resolution 1 (Cg-Ext(2021)); future raw review must reconcile the then-current product/source conditions rather than infer rights from either WMO policy alone.",
+    "notes": "NCEI currently states that IBTrACS follows WDC full and open access, that contributing RSMC agreements make IBTrACS data open for distribution, and that its product Terms of Use use WMO Resolution 40 as the guide for commercial use. WMO describes Resolution 1 (Cg-Ext(2021), Unified Data Policy) as the comprehensive update building on the earlier Resolutions 40, 25 and 60. The NCEI v4.01 metadata record lists citation/liability constraints rather than a product-specific non-commercial restriction. This is an engineering rights assessment, not legal advice."
   },
   "redistribution": {
     "status": "allowed",
     "scope": "raw",
-    "conditions": "NCEI explicitly describes IBTrACS as open for distribution. OpenCatastrophe currently approves metadata only; future raw publication must re-check then-current IBTrACS Terms of Use, WMO/source conditions, exact subset/format and byte identity."
+    "conditions": "NCEI explicitly describes IBTrACS as open for distribution. OpenCatastrophe currently approves metadata only; future raw publication must re-check then-current NCEI IBTrACS Terms of Use, selected source-agency conditions, current WMO policy context, exact subset/format and byte identity."
   },
   "privacy": {
     "personal_data_status": "none",
@@ -64,6 +64,6 @@
     "status": "approved_metadata_only",
     "reviewed_at": "2026-08-10T01:21:00Z",
     "reviewer": "OpenCatastrophe source audit",
-    "notes": "Metadata-only approval for the rolling v04r01 product family. Raw/derived publication remains blocked until exact subset/format/file byte identities, current terms, source conventions, provisional/final status and known issues are independently pinned and reviewed."
+    "notes": "Metadata-only approval for the rolling v04r01 product family. Raw/derived publication remains blocked until exact subset/format/file byte identities, current NCEI/source terms, current WMO policy context, source conventions, provisional/final status and known issues are independently pinned and reviewed."
   }
 }
