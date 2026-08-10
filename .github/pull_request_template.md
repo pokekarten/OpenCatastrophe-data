@@ -12,6 +12,7 @@ SPDX-License-Identifier: Apache-2.0
 - Primary Issue: <!-- Prefer exactly one: `Closes #123` when merge completes it, otherwise `Refs #123`. If Issues are temporarily unavailable, write `Issues unavailable`. -->
 - Base `main` SHA: <!-- exact 40-character SHA reviewed before material work -->
 - Issue-scoped branch: <!-- prefer `agent/<issue-number>-<slug>` -->
+- Builder agent/run ID: <!-- stable identifier; required when multiple agents share one GitHub identity -->
 - Shared / single-writer surfaces: <!-- exact paths/contracts or none -->
 - Durable contracts touched: <!-- schemas/manifests/data policy/CI/agent contract, or none -->
 
@@ -64,6 +65,36 @@ If this PR stops before completion, next resumable action on the primary Issue:
 - Units / CRS / time / quality / missingness / uncertainty affected:
 - Evidence and competing interpretation considered:
 - Falsifiable validation or reference comparison:
+
+## Independent review and challenge
+
+Review tier: <!-- Tier 0 routine / Tier 1 independent review / Tier 2 review + challenge -->
+
+Independent reviewer state: <!-- Tier 1/2: pending / completed / unavailable; Tier 0: N/A -->
+Independent reviewer agent/run ID: <!-- completed: distinct execution identifier; otherwise N/A -->
+Reviewer GitHub identity: <!-- may match builder GitHub identity when multiple agents share one account -->
+Reviewer disposition: <!-- pending / approve / request changes / N/A -->
+Reviewer falsification attempts and strongest finding:
+<!-- What plausible defect, hidden assumption, provenance/right/scientific error, or scope failure did the reviewer actively try to expose? -->
+Reviewer-unavailable reason and maintainer decision: <!-- Tier 1 only: N/A unless state=unavailable; Tier 2 unavailable stays blocking unless the maintainer explicitly downgrades the tier -->
+
+For Tier 2 only:
+- Challenger state: <!-- pending / completed / unavailable -->
+- Challenger agent/run ID: <!-- completed: distinct execution identifier; otherwise N/A -->
+- Challenger GitHub identity: <!-- may share the repository account -->
+- Materially different approach, interpretation, or null hypothesis considered:
+- Comparison criteria: <!-- correctness, evidence, reversibility, complexity, maintenance, interoperability, scientific validity, rights/privacy risk, testability as applicable -->
+- Why the selected approach wins, or why the decision remains blocked:
+- Challenger-unavailable reason / tier-downgrade decision: <!-- N/A unless unavailable; Tier 2 cannot waive this role without an explicit lower-tier reclassification -->
+
+Tier downgrade, if any: <!-- N/A, or new tier + maintainer + public rationale -->
+Adjudication: <!-- N/A unless a material disagreement remains; otherwise identify independent maintainer/agent and decision rationale -->
+
+- [ ] Tier 0 is justified as routine/reversible, or the current tier's required independent roles are satisfied under `AGENTS.md`.
+- [ ] Tier 1/2 reviewer did not author or direct the proposed diff; another pass by the same agent/run is self-review, not independent review.
+- [ ] Tier 1 `unavailable` is not presented as completed review and has an explicit maintainer decision; Tier 2 `unavailable` remains blocking unless the task is explicitly downgraded first.
+- [ ] Tier 2, when applicable, compares a credible alternative without creating a competing implementation branch unless executable comparison is necessary.
+- [ ] Any unresolved material reviewer/challenger `BLOCKER:` remains merge-blocking.
 
 ## Validation and durable handoff
 
