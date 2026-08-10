@@ -19,6 +19,7 @@ Current accepted reviews:
 - `microsoft-globalml-building-footprints.md` — supports the metadata-only Microsoft Global ML Building Footprints exposure-geometry admission.
 - `copernicus-cems-glofas-historical.md` — supports the metadata-only CEMS GloFAS historical hydrology admission.
 - `storm-ibtracs-present-climate-v4.md` — supports the metadata-only STORM v4 synthetic tropical-cyclone event-catalogue admission.
+- `noaa-ncei-ibtracs-v04r01.md` — supports the metadata-only NOAA NCEI IBTrACS v04r01 observed/post-analysed tropical-cyclone event-catalogue admission.
 - `eiopa-catastrophe-data-hub-2023.md` — supports separate metadata-only EIOPA insured-exposure and historical incurred-loss admissions; raw/derived workbook redistribution remains blocked pending exact-file rights review.
 - `google-open-buildings-v3.md` — supports the metadata-only Google Open Buildings v3 exposure-geometry admission under the selected CC BY 4.0 reuse path.
 
