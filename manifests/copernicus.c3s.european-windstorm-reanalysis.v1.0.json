@@ -18,12 +18,12 @@
     "licence_name": "Creative Commons Attribution 4.0 International",
     "terms_reference": "https://cds.climate.copernicus.eu/licences/cc-by",
     "terms_reviewed_at": "2026-08-10T00:36:00Z",
-    "terms_version_or_date": "CDS CC-BY licence rev. 1; CDS terms of use version 1.2 (March 2024); reviewed 2026-08-10",
+    "terms_version_or_date": "CDS CC-BY licence rev. 1; CDS Terms of use rev. 11; reviewed 2026-08-10",
     "terms_content_sha256": null,
     "commercial_use_status": "allowed",
     "attribution_requirements": "Provide attribution required by CC BY 4.0 and the dataset citation/attribution guidance. Do not imply ECMWF or the European Union endorses the use.",
     "share_alike_or_derivative_requirements": "CC BY 4.0 permits adaptation without a share-alike requirement; attribution, licence reference and indication of changes remain required.",
-    "notes": "The authoritative CDS dataset/STAC metadata identifies the dataset licence as CC-BY-4.0. CDS download access requires registration and use remains subject to the licence attributed to the dataset and current CDS terms. This is an engineering rights assessment, not legal advice."
+    "notes": "The authoritative CDS dataset page identifies the dataset licence as CC-BY and the current CDS licence page identifies that licence as CC-BY licence rev. 1. Download requires registration under the current CDS Terms of use rev. 11. This is an engineering rights assessment, not legal advice."
   },
   "redistribution": {
     "status": "allowed",
@@ -74,6 +74,6 @@
     "status": "approved_metadata_only",
     "reviewed_at": "2026-08-10T00:36:00Z",
     "reviewer": "OpenCatastrophe source audit",
-    "notes": "Metadata-only engineering approval based on authoritative CDS dataset metadata, STAC metadata and CDS licence/terms pages. The monthly-updated catalogue is not a frozen byte identity. Raw or derived publication remains blocked until an exact request/output is independently identified, acquired outside Git, hashed and reviewed for the requested publication scope."
+    "notes": "Metadata-only engineering approval based on authoritative CDS dataset metadata and current CDS licence/terms pages. The monthly-updated catalogue is not a frozen byte identity. Raw or derived publication remains blocked until an exact request/output is independently identified, acquired outside Git, hashed and reviewed for the requested publication scope."
   }
 }
