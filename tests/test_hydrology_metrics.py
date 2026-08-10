@@ -121,6 +121,10 @@ class ModifiedKgePrimeTests(unittest.TestCase):
         with self.assertRaisesRegex(MetricInputError, "correlation denominator must remain finite"):
             modified_kge_prime([1e150, 2e150], [1e150, 3e150])
 
+    def test_correlation_denominator_underflow_fails_closed(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "correlation denominator must remain positive"):
+            modified_kge_prime([1e-100, 2e-100], [1e-100, 3e-100])
+
     def test_distance_component_overflow_fails_closed(self) -> None:
         with self.assertRaisesRegex(MetricInputError, "beta residual square must remain finite"):
             modified_kge_prime([1e100, 2e100], [1e-100, 2e-100])
