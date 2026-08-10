@@ -4,33 +4,6 @@
   "review_date": "2026-08-11",
   "entries": [
     {
-      "candidate_id": "noaa.ncei.ghcnd.daily",
-      "name": "Global Historical Climatology Network daily (GHCNd)",
-      "provider": "NOAA National Centers for Environmental Information",
-      "categories": [
-        "winter_hazard",
-        "snowfall",
-        "snow_depth",
-        "station_observations",
-        "validation"
-      ],
-      "spatial_scope": "global station network with strongly heterogeneous snow-variable coverage",
-      "temporal_scope": "station-dependent historical records through current daily updates; record lengths range from under one year to more than 175 years",
-      "resolution_or_granularity": "daily land-station summaries; snowfall and snow-depth elements where reported, with source, measurement and quality flags",
-      "potential_roles": [
-        "snowfall_validation",
-        "snow_depth_validation",
-        "winter_event_station_context"
-      ],
-      "authoritative_url": "https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily",
-      "access_class_hint": "public_https",
-      "candidate_status": "evidence_checked",
-      "rights_review_status": "not_reviewed",
-      "scientific_review_status": "not_reviewed",
-      "admission_status": "not_admitted",
-      "note": "Integrated, quality-assured station archive rather than a spatially homogeneous snow network. Snow reporting is uneven by station and geography; NCEI notes that many North American stations report snowfall and snow depth, while snow-depth observations outside the United States can originate from synoptic Global Summary of the Day inputs. Preserve element-specific inventory, source/measurement/quality flags, update/version identity and archive-quality replacement timing; do not treat missing snow reports as zero snow or the station sample as spatially representative without a separate design."
-    },
-    {
       "candidate_id": "nasa.nsidc.mod10a1f.v61",
       "name": "MODIS/Terra CGF Snow Cover Daily L3 Global 500m SIN Grid, Version 61",
       "provider": "NASA National Snow and Ice Data Center Distributed Active Archive Center",
@@ -56,34 +29,6 @@
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
       "note": "Cloud-gap-filled Level-3 snow cover derived from MOD10A1 by retaining prior clear-sky surface classifications for cloudy cells; the companion days-since-clear observation layer is scientifically material. This persistence can miss snowfall that appears and melts before clouds clear, and thin or ephemeral snow and polar darkness remain limitations. Freeze Version 61, tile/subset, observation-age handling and NDSI-to-binary/fractional interpretation before validation; do not treat gap-filled pixels as same-day direct observations."
-    },
-    {
-      "candidate_id": "noaa.ncei.storm-events",
-      "name": "NOAA Storm Events Database",
-      "provider": "NOAA National Centers for Environmental Information / National Weather Service",
-      "categories": [
-        "winter_hazard",
-        "event_catalogue",
-        "reported_impacts",
-        "snow",
-        "ice",
-        "validation"
-      ],
-      "spatial_scope": "United States and NOAA reporting areas",
-      "temporal_scope": "January 1950 to current database releases; all 48 standardized event types are digitally represented from 1996 onward",
-      "resolution_or_granularity": "event records with county- or forecast-zone geography; winter-relevant types include Blizzard, Heavy Snow, Ice Storm, Lake-Effect Snow, Sleet, Winter Storm and Winter Weather",
-      "potential_roles": [
-        "winter_event_occurrence_validation",
-        "event_window_definition",
-        "reported_impact_context"
-      ],
-      "authoritative_url": "https://www.ncei.noaa.gov/stormevents/index.jsp",
-      "access_class_hint": "public_web_and_bulk_csv",
-      "candidate_status": "evidence_checked",
-      "rights_review_status": "not_reviewed",
-      "scientific_review_status": "not_reviewed",
-      "admission_status": "not_admitted",
-      "note": "Official Storm Data event records are valuable occurrence and impact context but collection scope and processing changed substantially over time: before 1996 the digitized historical record does not contain the full modern event-type set. Winter events are generally zone-based, and reported property damage, injuries, fatalities and narratives are administrative/event reports rather than exposure-normalized loss observations. Freeze database release/access date and event-type definitions, model reporting-process bias explicitly, and never use raw damage amounts as homogeneous insurance-loss targets without separate validation."
     }
   ]
 }
