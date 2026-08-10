@@ -23,8 +23,14 @@ class PublicSurfaceTests(unittest.TestCase):
                     self.assertNotIn(token, text)
 
     def test_workflow_actions_are_exactly_pinned(self) -> None:
-        workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
-        uses = re.findall(r"^\s*uses:\s*([^\s#]+)", workflow, flags=re.MULTILINE)
+        workflows = "\n".join(
+            (ROOT / path).read_text(encoding="utf-8")
+            for path in (
+                ".github/workflows/ci.yml",
+                ".github/workflows/pr-file-collision.yml",
+            )
+        )
+        uses = re.findall(r"^\s*uses:\s*([^\s#]+)", workflows, flags=re.MULTILINE)
         checkout = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
         setup_python = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
         dependency_review = "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294"
@@ -40,38 +46,45 @@ class PublicSurfaceTests(unittest.TestCase):
         self.assertIn("permissions:\n  contents: read", workflow)
         self.assertIn("name: Required", workflow)
         self.assertIn(
-            "needs: [check, glofas-acquisition, reuse, dependency-review, pr-file-collisions]",
+            "needs: [check, glofas-acquisition, reuse, dependency-review]",
             workflow,
         )
         self.assertIn("GLOFAS_ACQUISITION_RESULT", workflow)
-        self.assertIn("PR_FILE_COLLISIONS_RESULT", workflow)
+        self.assertNotIn("PR_FILE_COLLISIONS_RESULT", workflow)
         self.assertNotIn("pull_request_target", workflow)
+        self.assertNotIn("GITHUB_TOKEN", workflow)
+        self.assertNotIn("check_pr_file_collisions.py", workflow)
         self.assertNotRegex(workflow, r"(?m)^\s*(?:contents|pull-requests|issues|actions):\s*write\s*$")
 
-    def test_pr_collision_job_is_pull_request_only_least_privilege_and_base_trusted(self) -> None:
-        workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
-        expected = """  pr-file-collisions:
-    name: PR file collision check
-    if: github.event_name == 'pull_request'
-    permissions:
-      contents: read
-      pull-requests: read
-"""
-        trusted_checkout = """      - name: Checkout trusted collision checker
+    def test_pr_collision_workflow_is_metadata_only_base_trusted_and_least_privilege(self) -> None:
+        workflow = (ROOT / ".github/workflows/pr-file-collision.yml").read_text(encoding="utf-8")
+        self.assertIn("pull_request_target:", workflow)
+        self.assertIn("permissions:\n  contents: read\n  pull-requests: read", workflow)
+        self.assertIn("name: PR file collision check", workflow)
+        trusted_checkout = """      - name: Checkout trusted default branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 1
           persist-credentials: false
 """
-        self.assertIn(expected, workflow)
         self.assertIn(trusted_checkout, workflow)
         self.assertIn("GITHUB_TOKEN: ${{ github.token }}", workflow)
-        self.assertIn("run: python scripts/check_pr_file_collisions.py", workflow)
-        self.assertIn(
-            'test "$PR_FILE_COLLISIONS_RESULT" = "success" || test "$PR_FILE_COLLISIONS_RESULT" = "skipped"',
-            workflow,
+        self.assertEqual(
+            re.findall(r"^\s*run:\s*(.+)$", workflow, flags=re.MULTILINE),
+            ["python scripts/check_pr_file_collisions.py"],
         )
+        for forbidden in (
+            "github.event.pull_request.head",
+            "github.head_ref",
+            "refs/pull/",
+            "allow-unsafe-pr-checkout",
+            "github.workflow_sha",
+            "secrets.",
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, workflow)
+        self.assertNotRegex(workflow, r"(?m)^\s*(?:contents|pull-requests|issues|actions):\s*write\s*$")
 
     def _text_files(self) -> list[Path]:
         result = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT, stdout=subprocess.PIPE, check=True)

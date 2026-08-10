@@ -96,34 +96,10 @@ jobs:
         with:
           fail-on-severity: high
 
-  pr-file-collisions:
-    name: PR file collision check
-    if: github.event_name == 'pull_request'
-    permissions:
-      contents: read
-      pull-requests: read
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - name: Checkout trusted collision checker
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.event.pull_request.base.sha }}
-          fetch-depth: 1
-          persist-credentials: false
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.14"
-      - name: Reject overlapping open-PR file claims
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: python scripts/check_pr_file_collisions.py
-
   required:
     name: Required
     if: always()
-    needs: [check, glofas-acquisition, reuse, dependency-review, pr-file-collisions]
+    needs: [check, glofas-acquisition, reuse, dependency-review]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
@@ -133,10 +109,8 @@ jobs:
           GLOFAS_ACQUISITION_RESULT: ${{ needs.glofas-acquisition.result }}
           REUSE_RESULT: ${{ needs.reuse.result }}
           DEPENDENCY_REVIEW_RESULT: ${{ needs.dependency-review.result }}
-          PR_FILE_COLLISIONS_RESULT: ${{ needs.pr-file-collisions.result }}
         run: |
           test "$CHECK_RESULT" = "success"
           test "$GLOFAS_ACQUISITION_RESULT" = "success"
           test "$REUSE_RESULT" = "success"
           test "$DEPENDENCY_REVIEW_RESULT" = "success" || test "$DEPENDENCY_REVIEW_RESULT" = "skipped"
-          test "$PR_FILE_COLLISIONS_RESULT" = "success" || test "$PR_FILE_COLLISIONS_RESULT" = "skipped"
