@@ -6,11 +6,13 @@
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import json
 import re
 import sys
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qsl, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_LANDSCAPE_DIR = ROOT / "landscape"
@@ -33,6 +35,25 @@ ENTRY_KEYS = {
     "admission_status",
     "note",
 }
+SENSITIVE_QUERY_KEYS = {
+    "access_key",
+    "access_token",
+    "api_key",
+    "apikey",
+    "auth",
+    "authorization",
+    "credential",
+    "key",
+    "secret",
+    "sig",
+    "signature",
+    "token",
+    "x-amz-credential",
+    "x-amz-signature",
+    "x-goog-credential",
+    "x-goog-signature",
+}
+LOCAL_HOST_SUFFIXES = (".local", ".localhost", ".internal")
 
 
 class LandscapeQueryError(ValueError):
@@ -78,6 +99,36 @@ def _require_string_list(entry: dict[str, Any], key: str, *, path: Path) -> tupl
     if not isinstance(value, list) or not value or not all(isinstance(item, str) and item for item in value):
         raise LandscapeQueryError(f"{path}: {key} must be a non-empty array of strings")
     return tuple(value)
+
+
+def _validate_authoritative_url(url: str, *, path: Path) -> None:
+    if any(ch.isspace() for ch in url):
+        raise LandscapeQueryError(f"{path}: authoritative_url must not contain whitespace")
+    try:
+        parsed = urlsplit(url)
+        hostname = parsed.hostname
+        parsed.port
+    except ValueError as exc:
+        raise LandscapeQueryError(f"{path}: authoritative_url is malformed") from exc
+
+    if parsed.scheme != "https" or not hostname:
+        raise LandscapeQueryError(f"{path}: authoritative_url must use HTTPS with a hostname")
+    if parsed.username is not None or parsed.password is not None:
+        raise LandscapeQueryError(f"{path}: authoritative_url must not embed credentials")
+
+    host = hostname.casefold().rstrip(".")
+    if host == "localhost" or host.endswith(LOCAL_HOST_SUFFIXES):
+        raise LandscapeQueryError(f"{path}: authoritative_url must not reference a local/private host")
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        address = None
+    if address is not None and not address.is_global:
+        raise LandscapeQueryError(f"{path}: authoritative_url must not reference a non-public IP address")
+
+    for key, _value in parse_qsl(parsed.query, keep_blank_values=True):
+        if key.casefold() in SENSITIVE_QUERY_KEYS:
+            raise LandscapeQueryError(f"{path}: authoritative_url must not contain credential or signature query parameters")
 
 
 def _normalize_search_text(value: str) -> str:
@@ -135,8 +186,7 @@ def load_landscape(directory: Path = DEFAULT_LANDSCAPE_DIR) -> tuple[dict[str, A
             _require_string_list(raw_entry, "potential_roles", path=path)
 
             url = _require_text(raw_entry, "authoritative_url", path=path)
-            if not url.startswith("https://"):
-                raise LandscapeQueryError(f"{path}: authoritative_url must use HTTPS")
+            _validate_authoritative_url(url, path=path)
             if raw_entry.get("candidate_status") != "evidence_checked":
                 raise LandscapeQueryError(f"{path}: candidate_status must remain evidence_checked")
             if raw_entry.get("rights_review_status") != "not_reviewed":

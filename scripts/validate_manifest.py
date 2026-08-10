@@ -20,10 +20,11 @@ DATASET_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 EXTERNAL_RE = re.compile(r"^external://[A-Za-z0-9][A-Za-z0-9._/-]*$")
 RFC3339_RE = re.compile(r"^\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[Zz]|[+-]\d{2}:\d{2})$")
 SENSITIVE_QUERY = {
-    "access_key", "api_key", "apikey", "auth", "authorization", "credential",
+    "access_key", "access_token", "api_key", "apikey", "auth", "authorization", "credential",
     "key", "secret", "sig", "signature", "token", "x-amz-credential",
     "x-amz-signature", "x-goog-credential", "x-goog-signature",
 }
+LOCAL_HOST_SUFFIXES = (".local", ".localhost", ".internal")
 
 TOP_KEYS = {
     "schema_version", "dataset_id", "provider", "product_name", "version_or_release",
@@ -148,16 +149,20 @@ def _public_url(value: Any, field: str) -> str:
     assert text is not None
     if any(ch.isspace() for ch in text):
         raise ManifestError(f"{field} must not contain whitespace")
-    parsed = urlparse(text)
+    try:
+        parsed = urlparse(text)
+        host = parsed.hostname
+        parsed.port
+    except ValueError as exc:
+        raise ManifestError(f"{field} is malformed") from exc
     if parsed.scheme not in {"https", "http"} or not parsed.netloc:
         raise ManifestError(f"{field} must be an absolute HTTP(S) URL")
     if parsed.username or parsed.password:
         raise ManifestError(f"{field} must not contain URL credentials")
-    host = parsed.hostname
     if not host:
         raise ManifestError(f"{field} must contain a hostname")
     lowered = host.lower().rstrip(".")
-    if lowered == "localhost" or lowered.endswith((".local", ".localhost", ".internal")):
+    if lowered == "localhost" or lowered.endswith(LOCAL_HOST_SUFFIXES):
         raise ManifestError(f"{field} must not reference a local/private hostname")
     try:
         address = ipaddress.ip_address(lowered)
