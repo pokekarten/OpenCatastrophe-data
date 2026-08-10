@@ -47,6 +47,8 @@ SPDX-License-Identifier: Apache-2.0
 - [ ] Tests added/updated for durable behavior, or the reason tests are unnecessary is stated below.
 - [ ] I inspected the complete diff for unintended files, generated/binary artifacts, rights broadening, and policy/schema changes.
 - [ ] If a formal task/run artifact is used, `scripts/validate_agent_artifact.py` accepts it against the intended repository/current-main identity.
+- [ ] Before moving a draft to ready, I re-read the exact current head, full diff, latest PR conversation/review threads and hosted checks.
+- [ ] No explicit unresolved `BLOCKER` / `keep draft` finding remains; any such finding is resolved or deliberately superseded in the PR record.
 
 Evidence / limitations / blockers / next independent action:
 <!-- Keep concise. Link public evidence/issues instead of duplicating live project state. -->
