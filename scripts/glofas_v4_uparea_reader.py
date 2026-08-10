@@ -252,8 +252,8 @@ def read_dresden_glofas_v4_uparea(
         missing_value = _float_attribute(uparea, "missing_value", "uparea")
         if not math.isclose(fill_value, OFFICIAL_FILL_VALUE, rel_tol=1e-7, abs_tol=0.0):
             raise GlofasUpareaError("uparea._FillValue differs from the documented v4 sentinel")
-        if not math.isclose(missing_value, OFFICIAL_FILL_VALUE, rel_tol=1e-7, abs_tol=0.0):
-            raise GlofasUpareaError("uparea.missing_value differs from the documented v4 sentinel")
+        if missing_value != fill_value:
+            raise GlofasUpareaError("uparea missing_value must equal _FillValue")
 
         uparea.set_auto_maskandscale(False)
         points = glofas_v4_candidate_grid_points(
