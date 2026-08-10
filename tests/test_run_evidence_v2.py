@@ -3,12 +3,15 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Iterator
 
 from scripts import validate_agent_artifact as validator
 
@@ -65,15 +68,54 @@ def valid_run_v2() -> dict[str, object]:
     }
 
 
-def data_input(*, input_id: str, identity: str, role: str, sha256: str) -> dict[str, object]:
+def data_input(
+    *,
+    input_id: str,
+    manifest: str,
+    identity: str,
+    role: str,
+    sha256: str,
+    artifact: str = "raw",
+) -> dict[str, object]:
     return {
         "id": input_id,
         "kind": "data",
         "identity": identity,
         "scientific_role": role,
-        "manifest": MANIFEST,
+        "manifest": manifest,
+        "artifact": artifact,
         "sha256": sha256,
     }
+
+
+@contextmanager
+def synthetic_manifest_root(
+    records: tuple[tuple[str, str, str], ...],
+) -> Iterator[Path]:
+    """Create valid synthetic manifest identities outside the repository tree."""
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        manifest_dir = root / "manifests"
+        manifest_dir.mkdir()
+        template = json.loads((ROOT / MANIFEST).read_text(encoding="utf-8"))
+        for dataset_id, sha256, storage_reference in records:
+            payload = copy.deepcopy(template)
+            payload["dataset_id"] = dataset_id
+            payload["raw_artifact"] = {
+                "byte_size": 3,
+                "sha256": sha256,
+                "storage_reference": storage_reference,
+            }
+            (manifest_dir / f"{dataset_id}.json").write_text(
+                json.dumps(payload), encoding="utf-8"
+            )
+        previous_root = validator.ROOT
+        validator.ROOT = root
+        try:
+            yield root
+        finally:
+            validator.ROOT = previous_root
 
 
 class RunEvidenceV2Tests(unittest.TestCase):
@@ -91,7 +133,14 @@ class RunEvidenceV2Tests(unittest.TestCase):
             path = Path(tmp) / "run-v2.json"
             path.write_text(json.dumps(valid_run_v2()), encoding="utf-8")
             result = subprocess.run(
-                [sys.executable, "scripts/validate_agent_artifact.py", "run", str(path), "--expected-repository", REPOSITORY],
+                [
+                    sys.executable,
+                    "scripts/validate_agent_artifact.py",
+                    "run",
+                    str(path),
+                    "--expected-repository",
+                    REPOSITORY,
+                ],
                 cwd=ROOT,
                 check=False,
                 capture_output=True,
@@ -101,23 +150,25 @@ class RunEvidenceV2Tests(unittest.TestCase):
         self.assertTrue(result.stdout.startswith("PASS: valid run artifact:"), result.stdout)
         self.assertEqual(result.stderr, "")
 
-    def test_data_requires_admitted_manifest_and_exact_hash(self) -> None:
+    def test_data_requires_manifest_artifact_and_exact_hash(self) -> None:
         payload = valid_run_v2()
         payload["inputs"] = [
-            {"id": "training", "kind": "data", "identity": "dataset:train", "scientific_role": "training", "sha256": SHA_A}
+            {
+                "id": "training",
+                "kind": "data",
+                "identity": "external://synthetic/train",
+                "scientific_role": "training",
+                "sha256": SHA_A,
+            }
         ]
-        with self.assertRaisesRegex(validator.ContractError, "requires admitted manifest and exact sha256"):
+        with self.assertRaisesRegex(validator.ContractError, "requires manifest, raw/derived artifact and exact sha256"):
             validator.validate_run(payload)
 
-        payload["inputs"][0]["manifest"] = MANIFEST
-        del payload["inputs"][0]["sha256"]
-        with self.assertRaisesRegex(validator.ContractError, "requires admitted manifest and exact sha256"):
-            validator.validate_run(payload)
-
-    def test_non_data_input_cannot_claim_manifest_admission(self) -> None:
+    def test_non_data_input_cannot_claim_manifest_artifact(self) -> None:
         payload = valid_run_v2()
         payload["inputs"][0]["manifest"] = MANIFEST
-        with self.assertRaisesRegex(validator.ContractError, "manifest is only valid for kind data"):
+        payload["inputs"][0]["artifact"] = "raw"
+        with self.assertRaisesRegex(validator.ContractError, "manifest/artifact are only valid for kind data"):
             validator.validate_run(payload)
 
     def test_scientific_role_must_match_input_kind(self) -> None:
@@ -126,23 +177,93 @@ class RunEvidenceV2Tests(unittest.TestCase):
         with self.assertRaisesRegex(validator.ContractError, "scientific_role"):
             validator.validate_run(payload)
 
-    def test_same_exact_bytes_cannot_cross_training_and_holdout_roles(self) -> None:
+    def test_current_metadata_only_manifest_cannot_pose_as_identified_data(self) -> None:
         payload = valid_run_v2()
         payload["inputs"] = [
-            data_input(input_id="training", identity="dataset:train", role="training", sha256=SHA_A),
-            data_input(input_id="holdout", identity="dataset:holdout", role="holdout", sha256=SHA_A),
+            data_input(
+                input_id="training",
+                manifest=MANIFEST,
+                identity="external://synthetic/not-identified",
+                role="training",
+                sha256=SHA_A,
+            )
         ]
         payload["claims"][0]["references"] = [{"kind": "input", "ref": "training"}]
-        with self.assertRaisesRegex(validator.ContractError, "duplicate exact input content sha256"):
+        with self.assertRaisesRegex(validator.ContractError, "raw artifact is not identified by the manifest"):
             validator.validate_run(payload)
 
-    def test_data_manifest_must_resolve_to_repository_admission(self) -> None:
-        payload = valid_run_v2()
-        payload["inputs"] = [data_input(input_id="training", identity="dataset:train", role="training", sha256=SHA_A)]
-        payload["inputs"][0]["manifest"] = "manifests/not-admitted.json"
-        payload["claims"][0]["references"] = [{"kind": "input", "ref": "training"}]
-        with self.assertRaisesRegex(validator.ContractError, "existing repository file"):
+    def test_data_identity_and_hash_must_match_selected_manifest_artifact(self) -> None:
+        manifest_ref = "manifests/synthetic.train.json"
+        storage = "external://synthetic/train"
+        with synthetic_manifest_root((("synthetic.train", SHA_A, storage),)):
+            payload = valid_run_v2()
+            payload["inputs"] = [
+                data_input(
+                    input_id="training",
+                    manifest=manifest_ref,
+                    identity=storage,
+                    role="training",
+                    sha256=SHA_A,
+                )
+            ]
+            payload["claims"][0]["references"] = [{"kind": "input", "ref": "training"}]
             validator.validate_run(payload)
+
+            payload["inputs"][0]["sha256"] = SHA_B
+            with self.assertRaisesRegex(validator.ContractError, "sha256 does not match"):
+                validator.validate_run(payload)
+
+            payload["inputs"][0]["sha256"] = SHA_A
+            payload["inputs"][0]["identity"] = "external://synthetic/wrong"
+            with self.assertRaisesRegex(validator.ContractError, "identity must match"):
+                validator.validate_run(payload)
+
+    def test_same_exact_bytes_cannot_cross_training_and_holdout_roles(self) -> None:
+        records = (
+            ("synthetic.train", SHA_A, "external://synthetic/train"),
+            ("synthetic.holdout", SHA_A, "external://synthetic/holdout"),
+        )
+        with synthetic_manifest_root(records):
+            payload = valid_run_v2()
+            payload["inputs"] = [
+                data_input(
+                    input_id="training",
+                    manifest="manifests/synthetic.train.json",
+                    identity="external://synthetic/train",
+                    role="training",
+                    sha256=SHA_A,
+                ),
+                data_input(
+                    input_id="holdout",
+                    manifest="manifests/synthetic.holdout.json",
+                    identity="external://synthetic/holdout",
+                    role="holdout",
+                    sha256=SHA_A,
+                ),
+            ]
+            payload["claims"][0]["references"] = [{"kind": "input", "ref": "training"}]
+            with self.assertRaisesRegex(validator.ContractError, "duplicate exact input content sha256"):
+                validator.validate_run(payload)
+
+    def test_manifest_path_and_dataset_identity_must_be_consistent(self) -> None:
+        records = (("synthetic.train", SHA_A, "external://synthetic/train"),)
+        with synthetic_manifest_root(records) as root:
+            original = root / "manifests/synthetic.train.json"
+            mismatched = root / "manifests/wrong-name.json"
+            mismatched.write_bytes(original.read_bytes())
+            payload = valid_run_v2()
+            payload["inputs"] = [
+                data_input(
+                    input_id="training",
+                    manifest="manifests/wrong-name.json",
+                    identity="external://synthetic/train",
+                    role="training",
+                    sha256=SHA_A,
+                )
+            ]
+            payload["claims"][0]["references"] = [{"kind": "input", "ref": "training"}]
+            with self.assertRaisesRegex(validator.ContractError, "filename must equal its dataset_id"):
+                validator.validate_run(payload)
 
     def test_claim_references_must_resolve_and_scope_must_be_bounded(self) -> None:
         payload = valid_run_v2()
