@@ -13,7 +13,7 @@ It does **not** mean that OpenCatastrophe has approved the source's data rights,
 
 ## Two registry levels
 
-- `landscape/sources.json` — broad discovery layer. Entries may exist without a current model consumer. Every entry remains `admission_status: not_admitted` until promoted through the accepted review path.
+- `landscape/sources*.json` — broad discovery layer. The registry may be split into thematic shards so independent contributors can add bounded source families without turning one large JSON file into a permanent single-writer surface. Entries may exist without a current model consumer and always remain `admission_status: not_admitted` until promoted through the accepted review path.
 - `manifests/` plus `docs/source-reviews/` — accepted layer. These are the only machine-readable admissions and durable source-specific acceptance evidence.
 
 The landscape must never be interpreted as an allow-list for downloads, redistribution or model use.
@@ -40,5 +40,7 @@ A source can therefore be valuable enough to remain in the landscape indefinitel
 ## Maintenance
 
 Keep entries compact. Prefer updating an existing candidate over adding duplicate records for aliases or mirrors. When a provider replaces a product, preserve the old product when scientifically useful and add the successor separately rather than silently rewriting historical identity.
+
+Use a new thematic `sources-*.json` shard when a bounded source family can be maintained independently. Every shard uses the same registry header and entry shape, and `tests/test_source_landscape.py` enforces globally unique candidate IDs plus the fail-closed non-admission/review state across all shards. Do not create a second index file or duplicate candidate records merely for navigation.
 
 Candidate research should not duplicate full source reviews. Detailed rights/scientific acceptance evidence belongs in `docs/source-reviews/` only when admission is actually being considered.
