@@ -12,7 +12,13 @@ license: Apache-2.0
 abstract: "Licence-aware data registry, provenance, admission, and transformation tooling for transparent catastrophe-risk research."
 keywords:
   - catastrophe risk
+  - catastrophe modelling
+  - insurance
+  - reinsurance
+  - risk analytics
   - research data provenance
   - data licensing
   - reproducibility
+  - reproducible research
   - open science
+  - AI agents
