@@ -109,7 +109,15 @@ Small size does not create permission. Sampling a restricted dataset does not au
 
 ## Restricted inputs
 
-Restricted inputs may be used only outside Git in an appropriate controlled environment and only when the intended use is permitted. Public code may define an interface for such inputs, but must not include their bytes, credentials, transient access URLs, reconstructed proprietary tables, or confidential metadata.
+`access_class` describes how source material is obtained; it is not itself a substitute for the separate licence, redistribution, privacy or repository-review decisions. OpenCatastrophe nevertheless treats `access_class: restricted` as a controlled-input boundary:
+
+- public metadata about a restricted source may be committed when the normal metadata rights, privacy and review gates pass and the metadata itself does not expose restricted content, credentials or private access details;
+- raw bytes obtained through a restricted access class remain outside Git and cannot pass the canonical raw public-asset gate, even when the recorded source-rights ceiling would otherwise permit raw redistribution;
+- a derived artifact is not automatically blocked solely because its input access class is restricted, but publication requires explicit source rights covering the derived scope, clear privacy/confidentiality, exact derived-artifact identity, transformation lineage and repository approval; it must not reconstruct or expose restricted, proprietary or confidential source content contrary to the reviewed terms.
+
+If a source previously classified as `restricted` later has a genuinely different public acquisition path, review and update the exact source/access evidence rather than bypassing the restricted-input gate. `registration_required` and `authenticated` remain distinct access classes and are not treated as `restricted` merely because acquisition requires an account or authentication.
+
+Restricted inputs may otherwise be used only outside Git in an appropriate controlled environment and only when the intended use is permitted. Public code may define an interface for such inputs, but must not include their bytes, credentials, transient access URLs, reconstructed proprietary tables, or confidential metadata.
 
 ## No licence laundering
 
