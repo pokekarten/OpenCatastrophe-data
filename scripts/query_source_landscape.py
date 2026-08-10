@@ -99,6 +99,7 @@ def _validate_authoritative_url(url: str, *, path: Path) -> None:
     try:
         parsed = urlsplit(url)
         hostname = parsed.hostname
+        parsed.port
     except ValueError as exc:
         raise LandscapeQueryError(f"{path}: authoritative_url is malformed") from exc
 
