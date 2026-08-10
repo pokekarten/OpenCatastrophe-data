@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry for critical-infrastructure exposure and cascading-risk context sources.",
+  "review_date": "2026-08-10",
+  "entries": [
+    {
+      "candidate_id": "globaldamwatch.gdw.v1.0",
+      "name": "Global Dam Watch database version 1.0",
+      "provider": "Global Dam Watch",
+      "categories": [
+        "critical_infrastructure",
+        "dams",
+        "reservoirs",
+        "hydrology"
+      ],
+      "spatial_scope": "global",
+      "temporal_scope": "version 1.0 released 2024",
+      "resolution_or_granularity": "river barrier points, reservoir polygons and linked infrastructure attributes",
+      "potential_roles": [
+        "dam_failure_context",
+        "cascading_flood_context",
+        "critical_infrastructure_exposure"
+      ],
+      "authoritative_url": "https://figshare.com/articles/dataset/Global_Dam_Watch_database_version_1_0/25988293",
+      "access_class_hint": "public_download",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Recent global dam-and-reservoir infrastructure reference with technical documentation. Treat it as exposure/context data, not as a dam-breach probability, fragility or downstream-loss model; exact rights and scientific suitability still require admission review."
+    },
+    {
+      "candidate_id": "wri.global-power-plant-database.v1.3.0",
+      "name": "Global Power Plant Database v1.3.0",
+      "provider": "World Resources Institute",
+      "categories": [
+        "critical_infrastructure",
+        "energy",
+        "exposure_context"
+      ],
+      "spatial_scope": "global",
+      "temporal_scope": "version 1.3.0 released June 2021",
+      "resolution_or_granularity": "plant-level geolocations, capacity, fuel, ownership and generation attributes",
+      "potential_roles": [
+        "critical_infrastructure_exposure",
+        "energy_asset_context",
+        "cascading_risk_context"
+      ],
+      "authoritative_url": "https://datasets.wri.org/datasets/global-power-plant-database",
+      "access_class_hint": "public_download",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Useful historical power-infrastructure baseline, but WRI states the database is no longer maintained. Never treat v1.3.0 as a current plant inventory; exact rights and scientific suitability still require admission review."
+    }
+  ]
+}
