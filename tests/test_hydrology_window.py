@@ -9,8 +9,10 @@ from datetime import datetime, timedelta, timezone
 
 from scripts.hydrology_window import (
     HydrologyWindowError,
+    aggregate_observed_discharge_for_glofas_dis24,
     assess_source_window,
     expected_observations_per_24h,
+    glofas_dis24_window,
     pegelonline_standard_time_to_utc,
 )
 
@@ -31,6 +33,23 @@ class PegelonlineTimeTests(unittest.TestCase):
     def test_invalid_source_timestamp_is_rejected(self) -> None:
         with self.assertRaisesRegex(HydrologyWindowError, "ISO-8601"):
             pegelonline_standard_time_to_utc("not-a-timestamp")
+
+
+class GlofasWindowTests(unittest.TestCase):
+    def test_dis24_timestamp_is_the_end_of_the_half_open_24h_window(self) -> None:
+        end = datetime(2026, 1, 2, 0, 0, tzinfo=UTC)
+        start, returned_end = glofas_dis24_window(end)
+        self.assertEqual(start, datetime(2026, 1, 1, 0, 0, tzinfo=UTC))
+        self.assertEqual(returned_end, end)
+
+    def test_dis24_window_requires_explicit_utc_and_whole_seconds(self) -> None:
+        for value in (
+            datetime(2026, 1, 2),
+            datetime(2026, 1, 2, tzinfo=timezone(timedelta(hours=1))),
+            datetime(2026, 1, 2, 0, 0, 0, 1, tzinfo=UTC),
+        ):
+            with self.subTest(value=value), self.assertRaises(HydrologyWindowError):
+                glofas_dis24_window(value)
 
 
 class ExpectedObservationTests(unittest.TestCase):
@@ -150,6 +169,66 @@ class WindowCompletenessTests(unittest.TestCase):
             assess_source_window(
                 [(self.start, 10**400)],
                 window_start_utc=self.start,
+                sampling_interval_seconds=self.interval,
+            )
+
+
+class ObservedDischargeAggregationTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.start = datetime(2026, 1, 1, tzinfo=UTC)
+        self.end = self.start + timedelta(days=1)
+        self.interval = 15 * 60
+
+    def _full_day(self) -> list[tuple[datetime, float]]:
+        return [
+            (self.start + timedelta(seconds=index * self.interval), float(index + 1))
+            for index in range(96)
+        ]
+
+    def test_valid_window_uses_equal_weight_mean_of_finite_grid_samples(self) -> None:
+        observations = self._full_day()
+        for index in range(9):
+            observations[index] = (observations[index][0], math.nan)
+        result = aggregate_observed_discharge_for_glofas_dis24(
+            observations,
+            glofas_timestamp_utc=self.end,
+            sampling_interval_seconds=self.interval,
+        )
+        self.assertTrue(result.completeness.valid)
+        self.assertEqual(result.completeness.finite_count, 87)
+        self.assertEqual(result.window_start_utc, self.start)
+        self.assertEqual(result.window_end_utc, self.end)
+        self.assertAlmostEqual(result.mean_discharge_m3s, sum(range(10, 97)) / 87)
+
+    def test_invalid_completeness_returns_no_daily_observed_value(self) -> None:
+        observations = self._full_day()[:86]
+        result = aggregate_observed_discharge_for_glofas_dis24(
+            observations,
+            glofas_timestamp_utc=self.end,
+            sampling_interval_seconds=self.interval,
+        )
+        self.assertFalse(result.completeness.valid)
+        self.assertIsNone(result.mean_discharge_m3s)
+
+    def test_end_timestamp_is_never_included_in_previous_daily_mean(self) -> None:
+        observations = self._full_day()
+        observations.append((self.end, 999.0))
+        with self.assertRaisesRegex(HydrologyWindowError, "outside the 24-hour window"):
+            aggregate_observed_discharge_for_glofas_dis24(
+                observations,
+                glofas_timestamp_utc=self.end,
+                sampling_interval_seconds=self.interval,
+            )
+
+    def test_mean_accumulation_overflow_fails_closed(self) -> None:
+        observations = [
+            (self.start + timedelta(seconds=index * self.interval), 1e308)
+            for index in range(96)
+        ]
+        with self.assertRaisesRegex(HydrologyWindowError, "sum must remain finite"):
+            aggregate_observed_discharge_for_glofas_dis24(
+                observations,
+                glofas_timestamp_utc=self.end,
                 sampling_interval_seconds=self.interval,
             )
 
