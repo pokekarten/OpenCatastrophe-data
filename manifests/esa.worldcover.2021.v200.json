@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "esa.worldcover.2021.v200",
+  "provider": "European Space Agency (ESA) WorldCover consortium",
+  "product_name": "ESA WorldCover 10 m 2021",
+  "version_or_release": "v200",
+  "canonical_source": "https://esa-worldcover.org/en/data-access",
+  "retrieved_at": "2026-08-10T01:20:00Z",
+  "retrieval_query_or_filters": "Metadata-only review of WorldCover 2021 v200 map and documented delivery mechanisms. No map or quality-layer bytes were acquired.",
+  "access_class": "open",
+  "modelling_layer": "other",
+  "intended_use": "Global land-cover context for exposure classification, runoff/imperviousness context, wildfire fuels/vegetation context and cross-peril geospatial stratification. WorldCover is a classified remote-sensing product, not a property portfolio or hazard event set.",
+  "raw_artifact": null,
+  "derived_artifact": null,
+  "licensing": {
+    "status": "verified",
+    "spdx_expression": "CC-BY-4.0",
+    "licence_name": "Creative Commons Attribution 4.0 International",
+    "terms_reference": "https://esa-worldcover.org/en/data-access",
+    "terms_reviewed_at": "2026-08-10T01:20:00Z",
+    "terms_version_or_date": "WorldCover data-access/licence page reviewed 2026-08-10; WorldCover 2021 v200 released 2022-10-28",
+    "terms_content_sha256": null,
+    "commercial_use_status": "allowed",
+    "attribution_requirements": "Use the WorldCover attribution and dataset citation specified by ESA, including acknowledgement of modified Copernicus Sentinel data where applicable.",
+    "share_alike_or_derivative_requirements": "CC BY 4.0 permits adaptation without a share-alike requirement; attribution and indication of changes remain required.",
+    "notes": "ESA states that the WorldCover product is free of charge without restriction of use under CC BY 4.0. This admission is bounded to the 2021 v200 product and does not conflate it with the newer operational Copernicus successor products."
+  },
+  "redistribution": {
+    "status": "allowed",
+    "scope": "raw",
+    "conditions": "Source rights permit redistribution/adaptation under CC BY 4.0 subject to attribution. OpenCatastrophe approves metadata only and has not selected or hashed any WorldCover tile or macro-tile."
+  },
+  "privacy": {
+    "personal_data_status": "none",
+    "confidential_or_proprietary_status": "none",
+    "notes": "The reviewed product is a public global land-cover classification derived from Sentinel imagery."
+  },
+  "spatial": {
+    "crs": "EPSG:4326",
+    "extent": "Global land cover at approximately 10 m resolution, delivered as tiled Cloud-Optimized GeoTIFF products"
+  },
+  "temporal": {
+    "extent": "Reference year 2021; v200 product snapshot, not a continuous event time series"
+  },
+  "variables_and_units": [
+    {
+      "name": "land cover class",
+      "unit": null,
+      "description": "Categorical 11-class global land-cover map. Class semantics must be preserved from the v200 product documentation."
+    },
+    {
+      "name": "input quality indicators",
+      "unit": null,
+      "description": "Per-pixel quality/support information available through specific delivery paths; availability differs from the map layer and must not be assumed for every distribution."
+    }
+  ],
+  "transformation": null,
+  "review": {
+    "status": "approved_metadata_only",
+    "reviewed_at": "2026-08-10T01:20:00Z",
+    "reviewer": "OpenCatastrophe source audit",
+    "notes": "Metadata-only approval based on ESA WorldCover's authoritative data-access/licence page and v200 identity. WorldCover 2020 v100 and the operational successor are distinct products and require separate identities if used. Future raw work must select exact tiles/distribution and hash acquired bytes outside Git."
+  }
+}
