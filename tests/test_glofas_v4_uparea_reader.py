@@ -92,7 +92,7 @@ class GlofasV4UpareaReaderTests(unittest.TestCase):
             )
             uparea.long_name = "Upstream area of each river pixel"
             uparea.units = unit
-            uparea.missing_value = OFFICIAL_FILL_VALUE
+            uparea.missing_value = uparea.getncattr("_FillValue")
 
             if latitude_count == GLOFAS_V4_LATITUDE_COUNT:
                 for index, point in enumerate(points):
