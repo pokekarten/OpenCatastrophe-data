@@ -123,7 +123,7 @@ class SampleCandidateAuditTests(unittest.TestCase):
         self.assertEqual(result.status, "blocked_by_source_contract")
         self.assertEqual(
             result.repository_publication_blocker,
-            "sample source contract blocks raw publication",
+            "restricted source access blocks raw source-byte publication",
         )
 
     def test_repository_review_and_exact_artifact_identity_remain_separate_gates(self) -> None:
