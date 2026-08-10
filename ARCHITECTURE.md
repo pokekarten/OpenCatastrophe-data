@@ -89,6 +89,10 @@ Transformation never creates new redistribution rights by itself.
 
 A model consumer should depend on stable exported contracts and content identities, not repository-relative assumptions about local storage. Consumer code must not require access to restricted source bytes merely to import or test its core package.
 
+The discovery landscape is never a model-input allow-list. Training, calibration, validation, benchmarking or holdout pipelines must bind every external data input to an admitted manifest and an exact version or content identity. Where the scientific result depends on an input's experimental role, that role and the split/selection protocol must be fixed in experiment or run evidence before target inspection. Admission for one bounded use does not silently authorize a different modelling role.
+
+This separation is deliberate preparation for OpenCatastrophe-owned models: discovery can stay broad, while model inputs remain reproducible, rights-aware and resistant to accidental training/validation leakage.
+
 ## Public development plane
 
 Public GitHub state is the development and coordination plane. Current `main`, Issues, Pull Requests, accepted source reviews and machine-readable contracts are sufficient to understand accepted work; hidden chats, private archives or private task trackers are not authority.
@@ -128,6 +132,8 @@ Public schemas and profile versions are durable interfaces. Do not silently rein
 - schema, executable validator behavior, documentation and negative tests must evolve together;
 - content identity and contract version are separate: changing JSON key order must not change deterministic manifest identity, while changing material content must;
 - mutable labels such as `latest` are discovery conveniences, not durable scientific or execution identities.
+
+A published JSON Schema is the portable structural interface for tools that understand JSON Schema. When a contract also has an executable repository validator, that validator is authoritative for documented policy, cross-record and security constraints that the structural schema cannot safely express. The schema must identify that boundary, consistency tests must bind the shared structural surface, and a schema-only pass must never be interpreted as admission, publication authorization or scientific fitness.
 
 The repository is pre-alpha and does not yet promise a stable release line. Versioned contracts still exist so agents, scientists and downstream industry users can detect incompatible changes rather than relying on implicit behavior.
 

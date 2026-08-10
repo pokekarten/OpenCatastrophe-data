@@ -8,7 +8,7 @@ import re
 import unittest
 from pathlib import Path
 
-from scripts import query_source_landscape as landscape
+from scripts import source_landscape_contract as landscape
 from scripts import validate_manifest as manifest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -65,6 +65,24 @@ class ContractConsistencyTests(unittest.TestCase):
             manifest.VARIABLE_KEYS,
         )
 
+    def test_source_landscape_schema_matches_executable_structural_surface(self) -> None:
+        schema = json.loads((ROOT / "schemas/source-landscape-v1.schema.json").read_text(encoding="utf-8"))
+        properties = schema["properties"]
+        entry = schema["$defs"]["entry"]
+
+        self.assertEqual(set(properties), landscape.HEADER_KEYS)
+        self.assertEqual(set(schema["required"]), landscape.HEADER_KEYS)
+        self.assertEqual(properties["schema_version"]["const"], landscape.SCHEMA_VERSION)
+        self.assertEqual(set(entry["properties"]), landscape.ENTRY_KEYS)
+        self.assertEqual(set(entry["required"]), landscape.ENTRY_KEYS)
+        self.assertEqual(entry["properties"]["candidate_id"]["pattern"], landscape.CANDIDATE_ID_RE.pattern)
+        self.assertEqual(entry["properties"]["candidate_status"]["const"], "evidence_checked")
+        self.assertEqual(entry["properties"]["rights_review_status"]["const"], "not_reviewed")
+        self.assertEqual(entry["properties"]["scientific_review_status"]["const"], "not_reviewed")
+        self.assertEqual(entry["properties"]["admission_status"]["const"], "not_admitted")
+        self.assertIn("source_landscape_contract.py", schema["$comment"])
+        self.assertIn("never implies", schema["$comment"])
+
     def test_public_url_security_boundaries_do_not_drift(self) -> None:
         self.assertEqual(landscape.SENSITIVE_QUERY_KEYS, manifest.SENSITIVE_QUERY)
         self.assertEqual(landscape.LOCAL_HOST_SUFFIXES, manifest.LOCAL_HOST_SUFFIXES)
@@ -82,7 +100,7 @@ class ContractConsistencyTests(unittest.TestCase):
         for url in unsafe_urls:
             with self.subTest(url=url), self.assertRaises(manifest.ManifestError):
                 manifest._public_url(url, "synthetic_url")
-            with self.subTest(url=url), self.assertRaises(landscape.LandscapeQueryError):
+            with self.subTest(url=url), self.assertRaises(landscape.LandscapeContractError):
                 landscape._validate_authoritative_url(url, path=Path("synthetic.json"))
 
         safe_url = "https://example.invalid/source?dataset=public"

@@ -8,10 +8,22 @@ from __future__ import annotations
 import argparse
 import difflib
 import html
-import json
 import sys
 from pathlib import Path
 from typing import Any
+
+if __package__:
+    from .source_landscape_contract import (
+        LandscapeContractError,
+        load_landscape_shard,
+        load_landscape_shards,
+    )
+else:
+    from source_landscape_contract import (
+        LandscapeContractError,
+        load_landscape_shard,
+        load_landscape_shards,
+    )
 
 ROOT = Path(__file__).resolve().parents[1]
 LANDSCAPE_DIR = ROOT / "landscape"
@@ -25,31 +37,13 @@ class ProjectionError(ValueError):
     """Raised when a canonical object cannot be projected deterministically."""
 
 
-def _strict_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for key, value in pairs:
-        if key in result:
-            raise ProjectionError(f"duplicate JSON key: {key}")
-        result[key] = value
-    return result
-
-
-def _reject_constant(value: str) -> None:
-    raise ProjectionError(f"non-finite JSON number is not allowed: {value}")
-
-
 def load_canonical_json(path: Path) -> dict[str, Any]:
+    """Load a canonical landscape shard through the authoritative contract."""
+
     try:
-        payload = json.loads(
-            path.read_text(encoding="utf-8"),
-            object_pairs_hook=_strict_object,
-            parse_constant=_reject_constant,
-        )
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        raise ProjectionError(f"{path}: unable to read strict JSON: {exc}") from exc
-    if not isinstance(payload, dict):
-        raise ProjectionError(f"{path}: canonical projection source must be a JSON object")
-    return payload
+        return load_landscape_shard(path)
+    except LandscapeContractError as exc:
+        raise ProjectionError(str(exc)) from exc
 
 
 def _text(value: Any, *, field: str, path: Path) -> str:
@@ -166,12 +160,13 @@ def render_landscape_markdown(path: Path, payload: dict[str, Any]) -> str:
 
 def expected_landscape_projections(directory: Path = LANDSCAPE_DIR) -> dict[Path, str]:
     outputs: dict[Path, str] = {}
-    source_paths = tuple(sorted(directory.glob("sources*.json")))
-    if not source_paths:
-        raise ProjectionError(f"{directory}: no canonical landscape JSON shards found")
-    for source_path in source_paths:
+    try:
+        shards = load_landscape_shards(directory)
+    except LandscapeContractError as exc:
+        raise ProjectionError(str(exc)) from exc
+    for source_path, payload in shards:
         output_path = source_path.with_suffix(".md")
-        outputs[output_path] = render_landscape_markdown(source_path, load_canonical_json(source_path))
+        outputs[output_path] = render_landscape_markdown(source_path, payload)
     return outputs
 
 

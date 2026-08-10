@@ -75,6 +75,18 @@ class PublicViewTests(unittest.TestCase):
             self.assertEqual((directory / "sources-synthetic.md").read_bytes(), first)
             self.assertTrue(views.check_landscape_projections(directory, stream=io.StringIO()))
 
+    def test_renderer_rejects_landscape_policy_escalation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            payload = self._payload()
+            payload["entries"][0]["admission_status"] = "admitted"
+            (directory / "sources-synthetic.json").write_text(
+                json.dumps(payload, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(views.ProjectionError, "admission_status must remain not_admitted"):
+                views.write_landscape_projections(directory)
+
     def test_check_fails_on_manual_edit_and_write_repairs_it(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)

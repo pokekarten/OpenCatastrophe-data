@@ -6,6 +6,7 @@
 /.github/ @pokekarten
 /schemas/ @pokekarten
 /manifests/ @pokekarten
+/landscape/ @pokekarten
 /scripts/ @pokekarten
 /tests/ @pokekarten
 /docs/source-reviews/ @pokekarten
