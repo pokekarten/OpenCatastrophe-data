@@ -29,19 +29,41 @@ class PublicSurfaceTests(unittest.TestCase):
         setup_python = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
         dependency_review = "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294"
         allowed = {checkout, setup_python, dependency_review}
-        self.assertEqual(len(uses), 8)
+        self.assertEqual(len(uses), 10)
         self.assertTrue(all(item in allowed for item in uses))
-        self.assertEqual(uses.count(checkout), 4)
-        self.assertEqual(uses.count(setup_python), 3)
+        self.assertEqual(uses.count(checkout), 5)
+        self.assertEqual(uses.count(setup_python), 4)
         self.assertEqual(uses.count(dependency_review), 1)
 
     def test_workflow_is_read_only_and_has_stable_required_job(self) -> None:
         workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
         self.assertIn("permissions:\n  contents: read", workflow)
         self.assertIn("name: Required", workflow)
-        self.assertIn("needs: [check, glofas-acquisition, reuse, dependency-review]", workflow)
+        self.assertIn(
+            "needs: [check, glofas-acquisition, reuse, dependency-review, pr-file-collisions]",
+            workflow,
+        )
         self.assertIn("GLOFAS_ACQUISITION_RESULT", workflow)
+        self.assertIn("PR_FILE_COLLISIONS_RESULT", workflow)
         self.assertNotIn("pull_request_target", workflow)
+        self.assertNotRegex(workflow, r"(?m)^\s*(?:contents|pull-requests|issues|actions):\s*write\s*$")
+
+    def test_pr_collision_job_is_pull_request_only_and_least_privilege(self) -> None:
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        expected = """  pr-file-collisions:
+    name: PR file collision check
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+"""
+        self.assertIn(expected, workflow)
+        self.assertIn("GITHUB_TOKEN: ${{ github.token }}", workflow)
+        self.assertIn("run: python scripts/check_pr_file_collisions.py", workflow)
+        self.assertIn(
+            'test "$PR_FILE_COLLISIONS_RESULT" = "success" || test "$PR_FILE_COLLISIONS_RESULT" = "skipped"',
+            workflow,
+        )
 
     def _text_files(self) -> list[Path]:
         result = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT, stdout=subprocess.PIPE, check=True)
