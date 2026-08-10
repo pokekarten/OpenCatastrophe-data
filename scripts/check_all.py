@@ -48,10 +48,16 @@ def main() -> int:
 
     manifests = sorted((ROOT / "manifests").glob("*.json"))
     for path in manifests:
-        if not run([sys.executable, "scripts/validate_manifest.py", str(path.relative_to(ROOT))]):
+        if not run([
+            sys.executable,
+            "scripts/validate_manifest.py",
+            str(path.relative_to(ROOT)),
+            "--public-asset",
+            "metadata",
+        ]):
             return 1
 
-    print(f"\nPASS: OpenCatastrophe-data checks succeeded ({len(manifests)} manifests)")
+    print(f"\nPASS: OpenCatastrophe-data checks succeeded ({len(manifests)} admitted manifests)")
     return 0
 
 
