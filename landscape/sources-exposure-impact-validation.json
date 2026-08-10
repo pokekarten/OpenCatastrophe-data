@@ -144,6 +144,90 @@
       "note": "USACE documents the 2026 Base as a public modeled national inventory and older NSI guidance states the public release removes fields derived from licensed data. A canonical current standard licence for redistribution/commercial reuse was not established in this landscape check, so rights stay fail-closed. Values and attributes are modeled estimates, not structure-by-structure truth."
     },
     {
+      "candidate_id": "fema.usa-structures",
+      "name": "FEMA USA Structures",
+      "provider": "U.S. Federal Emergency Management Agency / Oak Ridge National Laboratory / U.S. Geological Survey",
+      "categories": [
+        "built_environment",
+        "building_footprints",
+        "occupancy",
+        "exposure",
+        "emergency_management"
+      ],
+      "spatial_scope": "United States and territories",
+      "temporal_scope": "rolling national inventory; federal catalogue metadata last modified 2025-04-01",
+      "resolution_or_granularity": "building-footprint inventory of structures greater than 450 square feet with occupancy attribution",
+      "potential_roles": [
+        "us_building_exposure_baseline",
+        "structure_footprint_validation",
+        "occupancy_crosswalk",
+        "hazard_exposure_overlay"
+      ],
+      "authoritative_url": "https://catalog.data.gov/dataset/usa-structures-4749e",
+      "access_class_hint": "public_federal_geospatial_dataset",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "The federal catalogue identifies public access and U.S. government-works licensing guidance. A future admission must still freeze an exact FEMA/ArcGIS release or service snapshot and verify field-level provenance. Occupancy classifications combine automated inference and source fusion and are not cadastral or assessor truth."
+    },
+    {
+      "candidate_id": "fema.openfema.nfip-redacted-claims.v3",
+      "name": "OpenFEMA NFIP Redacted Claims v3",
+      "provider": "U.S. Federal Emergency Management Agency / National Flood Insurance Program",
+      "categories": [
+        "flood",
+        "insurance_claims",
+        "historical_losses",
+        "impact_validation",
+        "vulnerability"
+      ],
+      "spatial_scope": "United States National Flood Insurance Program",
+      "temporal_scope": "1970-present; service metadata declares monthly refresh",
+      "resolution_or_granularity": "redacted flood-insurance claim transactions; current v3 service contains more than 2.7 million records",
+      "potential_roles": [
+        "insured_flood_loss_validation",
+        "claims_frequency_and_severity_research",
+        "flood_vulnerability_calibration",
+        "hydrology_claims_linkage"
+      ],
+      "authoritative_url": "https://www.fema.gov/openfema-data-page/nfip-redacted-claims-v3",
+      "access_class_hint": "public_api_and_download",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "High-value empirical insurance-impact evidence, but current OpenFEMA v3 metadata marks access public while leaving the licence field unset; redistribution and commercial-use rights therefore remain fail-closed pending source-specific review. Preserve redaction, transaction semantics, monetary vintage and programme-policy changes rather than treating rows as homogeneous loss observations."
+    },
+    {
+      "candidate_id": "fema.openfema.nfip-redacted-policies.v3",
+      "name": "OpenFEMA NFIP Redacted Policies v3",
+      "provider": "U.S. Federal Emergency Management Agency / National Flood Insurance Program",
+      "categories": [
+        "flood",
+        "insurance_policies",
+        "insured_exposure",
+        "portfolio_context",
+        "validation"
+      ],
+      "spatial_scope": "United States National Flood Insurance Program",
+      "temporal_scope": "2009-present; service metadata declares monthly refresh",
+      "resolution_or_granularity": "redacted policy transactions; current v3 service contains more than 74 million records",
+      "potential_roles": [
+        "insured_exposure_baseline",
+        "claims_denominator",
+        "take_up_and_portfolio_research",
+        "flood_insurance_validation"
+      ],
+      "authoritative_url": "https://www.fema.gov/openfema-data-page/nfip-redacted-policies-v3",
+      "access_class_hint": "public_api_and_download",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "A natural exposure denominator and companion to NFIP claims, but current OpenFEMA v3 metadata marks access public while leaving the licence field unset; rights remain fail-closed pending source-specific review. Policy transaction rows must be reconstructed carefully and must not be treated directly as a clean contemporaneous in-force portfolio."
+    },
+    {
       "candidate_id": "fema.openfema.ia-multiple-loss-flood-properties.v1",
       "name": "OpenFEMA Individual Assistance Multiple Loss Flood Properties v1",
       "provider": "U.S. Federal Emergency Management Agency",
