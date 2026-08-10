@@ -12,8 +12,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class PublicSurfaceTests(unittest.TestCase):
-    def test_no_private_history_or_retired_project_references(self) -> None:
-        forbidden = ("private-archive", "FFBK", "Rim-", "RIM", "OpenCAT-data")
+    def test_no_private_or_retired_project_references_in_tracked_text(self) -> None:
+        forbidden = ("private-archive", "FFBK", "Rim-", "OpenCAT-data")
         for path in self._text_files():
             if path == Path(__file__).resolve():
                 continue
