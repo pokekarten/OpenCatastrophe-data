@@ -2,7 +2,8 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:opencatastrophe:schema:source-access:1.0.0",
   "title": "OpenCatastrophe Source Access Contract v1",
-  "description": "Fail-closed contract for an authoritative machine-access route to one or more catastrophe-risk data sources. Connectivity never implies rights clearance, scientific approval or data admission.",
+  "description": "Portable structural view of the fail-closed contract for an authoritative machine-access route. scripts/validate_source_access.py is the executable security authority for URL/IP/secret/path and cross-field constraints that JSON Schema cannot fully express. Connectivity never implies rights clearance, scientific approval or data admission.",
+  "$comment": "The executable validator additionally rejects duplicate JSON keys, non-finite values, local/private literal hosts, secret-bearing or signed query URLs, decoded path traversal/backslashes/URL smuggling, and enforces the same fail-closed rights/probe/implementation state machine below.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -30,7 +31,7 @@
   "$defs": {
     "httpsUrl": {
       "type": "string",
-      "pattern": "^https://[^\\s]+$"
+      "pattern": "^https://(?![^/?#]*@)(?!localhost(?:[:/]|$))(?!127\\.)(?!10\\.)(?!192\\.168\\.)(?!169\\.254\\.)[^\\s]+$"
     },
     "nullableHttpsUrl": {
       "anyOf": [
@@ -120,7 +121,17 @@
         },
         "registration_url": {"$ref": "#/$defs/nullableHttpsUrl"},
         "secret_in_repository": {"const": false}
-      }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"mode": {"const": "none"}}, "required": ["mode"]},
+          "then": {"properties": {"credential_reference": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"mode": {"enum": ["api_key", "bearer_token", "basic", "oauth2", "signed_request"]}}, "required": ["mode"]},
+          "then": {"properties": {"credential_reference": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,127}$"}}}
+        }
+      ]
     },
     "request_contract": {
       "type": "object",
@@ -136,7 +147,11 @@
         "path_templates": {
           "type": "array",
           "minItems": 1,
-          "items": {"type": "string", "pattern": "^/[^\\s]*$"}
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^/(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?/)(?!.*%2[eEfF]|%5[cC]|%3[fF]|%23)(?!.*://)(?!.*[?#])[^\\s]*$"
+          }
         },
         "parameter_rules": {"$ref": "#/$defs/nonBlank"}
       }
@@ -212,5 +227,89 @@
       "items": {"$ref": "#/$defs/httpsUrl"}
     },
     "notes": {"$ref": "#/$defs/nonBlank"}
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "rights_and_policy": {
+            "properties": {"dataset_rights_status": {"not": {"const": "verified"}}},
+            "required": ["dataset_rights_status"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "rights_and_policy": {
+            "properties": {
+              "commercial_automation_status": {"not": {"const": "allowed"}},
+              "redistribution_status": {"not": {"const": "allowed"}}
+            }
+          },
+          "probe_contract": {"properties": {"mode": {"const": "none"}, "operation": {"type": "null"}}},
+          "implementation_decision": {"enum": ["document_only", "do_not_automate"]}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "rights_and_policy": {
+            "properties": {"api_terms_status": {"enum": ["separate_unreviewed", "unknown"]}},
+            "required": ["api_terms_status"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "rights_and_policy": {"properties": {"commercial_automation_status": {"not": {"const": "allowed"}}}},
+          "probe_contract": {"properties": {"mode": {"const": "none"}, "operation": {"type": "null"}}},
+          "implementation_decision": {"enum": ["document_only", "do_not_automate"]}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "rights_and_policy": {
+            "properties": {"commercial_automation_status": {"not": {"const": "allowed"}}},
+            "required": ["commercial_automation_status"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "probe_contract": {"properties": {"mode": {"const": "none"}, "operation": {"type": "null"}}},
+          "implementation_decision": {"enum": ["document_only", "do_not_automate"]}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"enum": ["restricted_by_terms", "rejected", "deprecated"]}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "probe_contract": {"properties": {"mode": {"const": "none"}, "operation": {"type": "null"}}},
+          "implementation_decision": {"enum": ["document_only", "do_not_automate"]}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "probe_ready"}}, "required": ["status"]},
+      "then": {"properties": {"probe_contract": {"properties": {"mode": {"not": {"const": "none"}}}}}}
+    },
+    {
+      "if": {"properties": {"implementation_decision": {"const": "build_adapter_now"}}, "required": ["implementation_decision"]},
+      "then": {
+        "properties": {
+          "rights_and_policy": {
+            "properties": {
+              "dataset_rights_status": {"const": "verified"},
+              "api_terms_status": {"enum": ["same_as_dataset", "separate_reviewed"]},
+              "commercial_automation_status": {"const": "allowed"}
+            }
+          }
+        }
+      }
+    }
+  ]
 }
