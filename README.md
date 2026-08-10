@@ -77,7 +77,7 @@ De-identifying confidential data does not automatically make it synthetic or saf
 
 **Status: pre-alpha data foundation.**
 
-The project now keeps two deliberately separate source layers. [`landscape/sources.json`](landscape/sources.json) is the broad discovery registry for potentially useful public sources and never grants admission. The canonical accepted-source list is maintained in [`docs/source-reviews/README.md`](docs/source-reviews/README.md), alongside source-specific scientific and rights evidence; machine-readable admissions live in `manifests/`.
+The project keeps two deliberately separate source layers. [`landscape/`](landscape/) is the broad, sharded discovery registry for potentially useful public sources and never grants admission. The canonical accepted-source list is maintained in [`docs/source-reviews/README.md`](docs/source-reviews/README.md), alongside source-specific scientific and rights evidence; machine-readable admissions live in `manifests/`.
 
 Accepted sources currently span observation, hazard/hydrology, stochastic event catalogues, modelled/insured exposure, exposure geometry and observed insurance loss. Landscape candidates may cover additional terrain, climate, hydrology, earth-observation, seismic, wildfire, demographic and validation sources before a concrete OpenCatastrophe consumer exists.
 
