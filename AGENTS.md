@@ -36,15 +36,26 @@ OpenCatastrophe follows **one semantic truth, multiple verified views**. A file 
 
 ## Multi-agent coordination
 
-- Use a public issue for every non-trivial bounded task once Issues are enabled. Prefer GitHub-native parent/sub-issue and dependency relationships for live planning.
-- For implementation, open a draft pull request as soon as the branch has a coherent first change. The draft PR is the visible work claim; another agent should not start a competing writer on the same shared surface.
-- The contributor or agent currently owning that visible draft claim controls its ready-for-review transition. Another agent must not mark the draft ready merely because CI is green.
-- Before marking a draft ready, re-read the exact current head, full diff, latest conversation/review threads and hosted checks. An explicit unresolved `BLOCKER` or `keep draft` finding in the PR remains merge-blocking by project policy until the PR records how it was resolved or deliberately superseded.
-- Record the exact `main` commit reviewed before material work and re-check it before editing a shared schema, manifest/admission rule, CI policy, or other single-writer surface.
-- Declare shared/single-writer paths explicitly. If another active PR touches the same semantic contract, coordinate or choose an independent task instead of creating a parallel source of truth.
-- `.github/ISSUE_TEMPLATE/agent-task.yml` is the contributor-facing task form. `schemas/agent-task-v1.schema.json` and `scripts/validate_agent_artifact.py` provide the strict machine projection when an executable task artifact is needed.
-- `schemas/run-evidence-v2.schema.json` is the preferred machine-readable handoff receipt for new scientific or model-related runs. Material `data` inputs require an admitted manifest, a selected identified `raw`/`derived` manifest artifact, matching storage identity and SHA-256, plus an explicit scientific role; claims use typed resolvable references with bounded scope and limitations. `schemas/run-evidence-v1.schema.json` remains supported as a compatibility profile for existing/simple execution receipts but does not provide v2 split-integrity guarantees.
-- GitHub Issue/PR state remains canonical. Machine-readable task/run artifacts are versioned execution snapshots, not a second roadmap or hidden scheduler.
+GitHub Issues and Pull Requests are the public coordination bus. Agents must not depend on a private scheduler, chat transcript or hidden task queue to know who owns work.
+
+### Dispatch and claim protocol
+
+1. **Issue first.** Once Issues are enabled, every non-trivial bounded task starts from one public Issue before material edits. Use `.github/ISSUE_TEMPLATE/agent-task.yml` for agent work. The Issue declares one outcome, exact write/shared surfaces, non-goals, dependencies, acceptance criteria, a hard stop and the exact `main` commit reviewed.
+2. **Check for collisions before claiming.** Re-read current `main`, open Issues and open Pull Requests immediately before starting. If another task or PR owns the same file, generated/canonical pair, schema, manifest/admission rule, CI policy or semantic contract, do not start a second writer. Coordinate on the existing Issue/PR or choose an independent task.
+3. **One issue-scoped branch.** Prefer a short-lived branch named `agent/<issue-number>-<slug>` from current `main`. `main` is the only persistent development branch.
+4. **Draft PR is the visible write claim.** Open a draft Pull Request as soon as the branch has a coherent first change. Give it one primary Issue (`Closes #N` when merge should complete the task, otherwise `Refs #N`) and repeat the exact write/shared surfaces in the PR body. Another agent must not start a competing writer on those surfaces while the claim is active.
+5. **No silent scope growth.** An independent finding discovered during a task becomes a new linked Agent Task Issue instead of being absorbed into the current PR by default. Link it as `Follow-up to #N`, record any dependency, set its smallest `next_action`, and link it back from the current Issue or PR. This is the normal agent-to-agent handoff mechanism.
+6. **Claim follow-ups explicitly.** A later agent claims a ready follow-up through GitHub assignment when available and/or by opening its issue-scoped draft PR after repeating the collision check. Merely mentioning a task in chat or a PR comment is not a write claim.
+7. **Keep ownership narrow.** One PR should normally implement one primary Issue. If two Issues genuinely require the same atomic change, document why in the PR and close/reference both explicitly; do not use umbrella PRs as hidden multi-task queues.
+8. **Handoff durably.** Before requesting review or stopping, record the exact head commit, changed/shared surfaces, checks run, evidence, assumptions, blockers, external-byte state and linked follow-up Issues. If work is incomplete, leave the Issue state and `next_action` clear enough for another agent to resume without private context.
+
+When Issues are temporarily unavailable, use a draft PR as the durable public claim as described in `CONTRIBUTING.md`; do not invent a parallel task database. Issue-first dispatch is not considered active until repository Issues are enabled.
+
+The contributor or agent currently owning a visible draft claim controls its ready-for-review transition. Another agent must not mark the draft ready merely because CI is green. Before marking a draft ready, re-read the exact current head, full diff, latest conversation/review threads and hosted checks. An explicit unresolved `BLOCKER` or `keep draft` finding in the PR remains merge-blocking by project policy until the PR records how it was resolved or deliberately superseded.
+
+`.github/ISSUE_TEMPLATE/agent-task.yml` is the contributor-facing task form. `schemas/agent-task-v1.schema.json` and `scripts/validate_agent_artifact.py` provide the strict machine projection when an executable task artifact is needed. `schemas/run-evidence-v2.schema.json` is the preferred machine-readable handoff receipt for new scientific or model-related runs. Material `data` inputs require an admitted manifest, a selected identified `raw`/`derived` manifest artifact, matching storage identity and SHA-256, plus an explicit scientific role; claims use typed resolvable references with bounded scope and limitations. `schemas/run-evidence-v1.schema.json` remains supported as a compatibility profile for existing/simple execution receipts but does not provide v2 split-integrity guarantees.
+
+GitHub Issue/PR state remains canonical. Machine-readable task/run artifacts are versioned execution snapshots, not a second roadmap or hidden scheduler.
 
 ## Definition of done
 
