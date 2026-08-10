@@ -109,6 +109,15 @@ class SourceLandscapeQueryTests(unittest.TestCase):
             with self.assertRaisesRegex(LandscapeQueryError, "non-public IP address"):
                 load_landscape(directory)
 
+    def test_malformed_url_port_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            entry = self._entry("example.source")
+            entry["authoritative_url"] = "https://example.invalid:not-a-port/source"
+            self._write_shard(directory / "sources-a.json", [entry])
+            with self.assertRaisesRegex(LandscapeQueryError, "authoritative_url is malformed"):
+                load_landscape(directory)
+
     def test_signature_query_parameter_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)
