@@ -13,6 +13,18 @@ class MetricInputError(ValueError):
     """Raised when a metric cannot be evaluated without ambiguous semantics."""
 
 
+def _finite_floats(values: Sequence[float]) -> tuple[float, ...]:
+    converted: list[float] = []
+    for value in values:
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise MetricInputError("metric inputs must be finite numeric values")
+        number = float(value)
+        if not math.isfinite(number):
+            raise MetricInputError("metric inputs must be finite numeric values")
+        converted.append(number)
+    return tuple(converted)
+
+
 def modified_kge_prime(simulated: Sequence[float], observed: Sequence[float]) -> float:
     """Return modified Kling-Gupta Efficiency (KGE').
 
@@ -27,7 +39,8 @@ def modified_kge_prime(simulated: Sequence[float], observed: Sequence[float]) ->
     preregistered Dresden/GloFAS source review.
 
     Inputs fail closed when KGE' would be undefined: unequal lengths, fewer than
-    two pairs, non-finite values, zero means, or zero variance in either series.
+    two pairs, non-finite/non-numeric values, zero means, or zero variance in
+    either series.
     """
 
     if len(simulated) != len(observed):
@@ -35,14 +48,8 @@ def modified_kge_prime(simulated: Sequence[float], observed: Sequence[float]) ->
     if len(simulated) < 2:
         raise MetricInputError("at least two paired values are required")
 
-    try:
-        simulated_values = tuple(float(value) for value in simulated)
-        observed_values = tuple(float(value) for value in observed)
-    except (TypeError, ValueError, OverflowError) as exc:
-        raise MetricInputError("metric inputs must be finite numeric values") from exc
-
-    if not all(math.isfinite(value) for value in (*simulated_values, *observed_values)):
-        raise MetricInputError("metric inputs must be finite numeric values")
+    simulated_values = _finite_floats(simulated)
+    observed_values = _finite_floats(observed)
 
     count = len(simulated_values)
     mean_simulated = math.fsum(simulated_values) / count
