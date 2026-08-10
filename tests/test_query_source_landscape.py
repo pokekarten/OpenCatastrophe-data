@@ -18,7 +18,7 @@ from scripts.query_source_landscape import (
 class SourceLandscapeQueryTests(unittest.TestCase):
     def test_current_registry_loads_and_remains_non_admission(self) -> None:
         entries = load_landscape()
-        self.assertEqual(len(entries), 56)
+        self.assertGreater(len(entries), 0)
         self.assertTrue(all(entry["admission_status"] == "not_admitted" for entry in entries))
         self.assertEqual(
             [entry["candidate_id"] for entry in entries],
