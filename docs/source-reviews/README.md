@@ -7,10 +7,14 @@ SPDX-License-Identifier: Apache-2.0
 
 This directory contains **accepted, durable source-specific review evidence** that supports committed manifests/admissions.
 
-Live candidates, research plans and speculative source evaluations belong in GitHub Issues until they are ready to become reviewed repository evidence. This keeps the public tree from presenting planned work as accepted capability.
+Live candidates, research plans and speculative source evaluations belong in GitHub Issues when Issues are enabled. While the repository issue tracker is disabled, keep speculative candidate inventories out of this durable tree and open a Pull Request only once a source has enough authoritative public evidence for a bounded review/admission. This keeps the public tree from presenting planned work as accepted capability.
 
-Current accepted review:
+Current accepted reviews:
 
 - `dwd-extreme-wind-v24.03.md` — supports the metadata-only DWD extreme-wind admission.
+- `copernicus-c3s-european-windstorm-reanalysis-v1.0.md` — supports the metadata-only C3S Enhanced Windstorm Service admission.
+- `efehr-esrm20-european-exposure-model-v1.0.md` — supports the metadata-only EFEHR ESRM20 European Exposure Model admission.
+- `efehr-eshm20.md` — supports the metadata-only EFEHR ESHM20 earthquake-hazard admission.
+- `microsoft-globalml-building-footprints.md` — supports the metadata-only Microsoft Global ML Building Footprints exposure-geometry admission.
 
 A source review never broadens the machine-readable manifest scope by itself.
