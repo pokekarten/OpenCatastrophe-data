@@ -6,7 +6,49 @@ from __future__ import annotations
 import math
 import unittest
 
-from scripts.hydrology_metrics import MetricInputError, modified_kge_prime
+from scripts.hydrology_metrics import (
+    MetricInputError,
+    modified_kge_prime,
+    relative_mean_bias,
+)
+
+
+class RelativeMeanBiasTests(unittest.TestCase):
+    def test_perfect_mean_agreement_is_zero(self) -> None:
+        self.assertAlmostEqual(relative_mean_bias([1.0, 3.0], [2.0, 2.0]), 0.0)
+
+    def test_reports_relative_multiplicative_bias(self) -> None:
+        self.assertAlmostEqual(relative_mean_bias([2.0, 4.0], [1.0, 2.0]), 1.0)
+
+    def test_zero_simulated_mean_is_valid(self) -> None:
+        self.assertAlmostEqual(relative_mean_bias([0.0, 0.0], [1.0, 3.0]), -1.0)
+
+    def test_single_pair_is_defined(self) -> None:
+        self.assertAlmostEqual(relative_mean_bias([3.0], [2.0]), 0.5)
+
+    def test_rejects_unequal_lengths(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "equal length"):
+            relative_mean_bias([1.0, 2.0], [1.0])
+
+    def test_rejects_empty_series(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "at least one"):
+            relative_mean_bias([], [])
+
+    def test_rejects_non_finite_values(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "finite numeric"):
+            relative_mean_bias([1.0, math.nan], [1.0, 2.0])
+        with self.assertRaisesRegex(MetricInputError, "finite numeric"):
+            relative_mean_bias([1.0, 2.0], [1.0, math.inf])
+
+    def test_rejects_type_confusion(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "finite numeric"):
+            relative_mean_bias([1.0, "2.0"], [1.0, 2.0])  # type: ignore[list-item]
+        with self.assertRaisesRegex(MetricInputError, "finite numeric"):
+            relative_mean_bias([1.0, True], [1.0, 2.0])
+
+    def test_rejects_zero_observed_mean(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "non-zero observed mean"):
+            relative_mean_bias([1.0, 2.0], [-1.0, 1.0])
 
 
 class ModifiedKgePrimeTests(unittest.TestCase):
