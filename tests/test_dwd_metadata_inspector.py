@@ -10,6 +10,7 @@ import unittest
 import warnings
 import zipfile
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "scripts" / "inspect_dwd_metadata_zip.py"
@@ -47,7 +48,7 @@ class DwdMetadataInspectorTests(unittest.TestCase):
         first = inspector.inspect_zip(path)
         second = inspector.inspect_zip(path)
         self.assertEqual(first, second)
-        self.assertEqual(first["input"]["filename"], "metadata.zip")
+        self.assertEqual(first["input"]["local_filename"], "metadata.zip")
         self.assertRegex(first["input"]["sha256"], r"^[a-f0-9]{64}$")
         self.assertEqual(first["observed"]["station_ids"], ["01234", "05678"])
         self.assertEqual(first["observed"]["metadata_families"], ["equipment", "metadata", "station"])
@@ -63,6 +64,11 @@ class DwdMetadataInspectorTests(unittest.TestCase):
 
     def test_absolute_member_is_rejected(self) -> None:
         path = self._zip([("/absolute.txt", b"no")])
+        with self.assertRaises(inspector.InspectionError):
+            inspector.inspect_zip(path)
+
+    def test_windows_absolute_member_is_rejected(self) -> None:
+        path = self._zip([("C:/absolute.txt", b"no")])
         with self.assertRaises(inspector.InspectionError):
             inspector.inspect_zip(path)
 
@@ -92,6 +98,28 @@ class DwdMetadataInspectorTests(unittest.TestCase):
         path = self._zip([], symlink="station_01234.txt")
         with self.assertRaises(inspector.InspectionError):
             inspector.inspect_zip(path)
+
+    def test_symlink_input_is_rejected(self) -> None:
+        path = self._zip([("station_01234.txt", b"ok")])
+        link = path.with_name("metadata-link.zip")
+        link.symlink_to(path)
+        with self.assertRaises(inspector.InspectionError):
+            inspector.inspect_zip(link)
+
+    def test_input_byte_change_during_inspection_is_rejected(self) -> None:
+        path = self._zip([("station_01234.txt", b"ok")])
+        real_hash = inspector._sha256_stream
+        calls = 0
+
+        def changing_hash(handle: object) -> str:
+            nonlocal calls
+            calls += 1
+            digest = real_hash(handle)
+            return digest if calls == 1 else ("0" * 64)
+
+        with mock.patch.object(inspector, "_sha256_stream", side_effect=changing_hash):
+            with self.assertRaisesRegex(inspector.InspectionError, "changed during inspection"):
+                inspector.inspect_zip(path)
 
     def test_non_zip_file_is_rejected(self) -> None:
         tmp = tempfile.TemporaryDirectory()
