@@ -9,11 +9,19 @@ Reviewed inventory for direct software dependencies, workflow actions and distri
 
 ## Runtime/build dependencies
 
-None beyond Python and Git for the current repository-authored validation/tooling.
+None beyond Python and Git for repository-authored runtime/acquisition-independent tooling. Validation-only and acquisition-only dependencies are isolated below and are not model/runtime dependencies.
+
+## Validation-only YAML dependency
+
+The repository definition-of-done uses the official `PyYAML` package declared in `requirements-validation.txt` as `PyYAML==6.0.3` solely to parse GitHub Actions workflow YAML semantically for immutable action-pin enforcement. This replaces an incomplete lexical regex/denylist scanner that could miss valid YAML spellings of the semantic `uses` key.
+
+Upstream: `yaml/pyyaml`, release `6.0.3` (2025-09-25), MIT. PyPI declares Python >=3.8 and provides current classifiers/wheels covering the repository's Python 3.11–3.14 validation matrix. The validator uses a `SafeLoader` subclass only; arbitrary/custom constructors are not enabled. Repository tests additionally reject duplicate/non-string mapping keys, unsafe merge/custom-tag forms, recursive aliases and non-string `uses` values before the existing reviewed-action SHA allowlist is applied.
+
+The direct PyYAML version is exact but wheel/source hashes are not pinned in this bootstrap requirements file. GitHub Dependency Review remains required on pull requests, CI runs `pip check`, and the dependency has no repository write token or project secrets. Re-evaluate hash-locking or a digest-pinned validation image if publication/release assurance later depends on a frozen validation environment.
 
 ## Acquisition-only scientific I/O dependency
 
-The GloFAS v4 upstream-area reader uses the official Unidata `netCDF4` Python package declared in `requirements-glofas-acquisition.txt` as `netCDF4==1.7.4`. This dependency is **not** imported by the normal repository validation, landscape, manifest or model-evidence tooling. It is required only when an operator intentionally reads the external `uparea_glofas_v4_0.nc` NetCDF4 ancillary.
+The GloFAS v4 upstream-area reader uses the official Unidata `netCDF4` Python package declared in `requirements-glofas-acquisition.txt` as `netCDF4==1.7.4`. This dependency is **not** imported by the normal landscape, manifest or model-evidence tooling. It is required only when an operator intentionally reads the external `uparea_glofas_v4_0.nc` NetCDF4 ancillary.
 
 Upstream: `Unidata/netcdf4-python`, release `1.7.4` (2026-01-05), MIT. The upstream documentation identifies it as the Python interface to the netCDF C library and documents NetCDF4/HDF5 in-memory reads. PyPI declares Python >=3.10 and classifiers through Python 3.14. The repository records the Python package, netCDF-C and HDF5 runtime versions in every GloFAS extraction evidence record instead of pretending that a single Python-package pin freezes the complete native scientific-I/O stack.
 
