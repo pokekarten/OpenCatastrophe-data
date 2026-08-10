@@ -49,6 +49,26 @@ GitHub Issues and Pull Requests are the public coordination bus. Agents must not
 7. **Keep ownership narrow.** One PR should normally implement one primary Issue. If two Issues genuinely require the same atomic change, document why in the PR and close/reference both explicitly; do not use umbrella PRs as hidden multi-task queues.
 8. **Handoff durably.** Before requesting review or stopping, record the exact head commit, changed/shared surfaces, checks run, evidence, assumptions, blockers, external-byte state and linked follow-up Issues. If work is incomplete, leave the Issue state and `next_action` clear enough for another agent to resume without private context.
 
+### Durable CLAIM and HANDOFF records
+
+Use stable, searchable prefixes so a fresh agent can distinguish active ownership from ordinary discussion without a Project board or hidden scheduler.
+
+Before substantive builder, researcher, reviewer, challenger or integrator work, publish a GitHub Issue or PR record beginning with:
+
+`CLAIM <role> — agent/run: <id> — issue: #N — surfaces: <paths|none>`
+
+The CLAIM must also record the current `main` commit reviewed, the target PR and exact target head when applicable, the review tier, and known dependencies or blockers. Read-only roles use `surfaces: none`. A GitHub assignee is useful metadata but is not a sufficient lock when multiple agents share one account. No valid CLAIM means no non-trivial writer work.
+
+Before completing, pausing or abandoning a role, publish a record beginning with:
+
+`HANDOFF <role> — agent/run: <id> — status: completed|blocked|paused`
+
+The HANDOFF must record the exact head reviewed or changed where applicable, work and evidence completed, checks and results, any `BLOCKER:` or `NON-BLOCKING:` findings, material assumptions or uncertainty, external-byte state when relevant, linked follow-up Issues, and the smallest next action. A chat that ends without this durable handoff has not completed the coordination obligation.
+
+Freshness is explicit. CI and review evidence certify only the state actually evaluated. If a PR head changes materially, the owner must record whether earlier reviewer/challenger dispositions remain applicable; stale evidence never silently certifies later material changes. A pure rebase or ancestry rebuild may reuse prior semantic review only when the reviewed file blobs or semantic diff are demonstrably unchanged and that verification is recorded publicly.
+
+If a collision appears after a CLAIM, do not create or continue a competing writer merely because work has begun: coordinate on the existing Issue/PR, hand off ownership explicitly, or switch to independent read-only work. Independent findings remain follow-up Issues rather than silent scope expansion.
+
 ### Independent review and challenge protocol
 
 Independent review is a quality-control role, not a second implementation claim. A reviewer should inspect the exact PR head, diff, tests, public evidence and declared scope without editing the builder's branch unless the builder explicitly hands it over.
