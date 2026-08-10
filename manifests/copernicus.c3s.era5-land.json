@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "copernicus.c3s.era5-land",
+  "provider": "Copernicus Climate Change Service (C3S) / ECMWF",
+  "product_name": "ERA5-Land hourly data from 1950 to present",
+  "version_or_release": "rolling ERA5-Land product",
+  "canonical_source": "https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land",
+  "retrieved_at": "2026-08-10T01:20:00Z",
+  "retrieval_query_or_filters": "Metadata-only review of the rolling ERA5-Land hourly catalogue. No CDS request was submitted and no ERA5-Land bytes were acquired.",
+  "access_class": "registration_required",
+  "modelling_layer": "other",
+  "intended_use": "Global land-state and antecedent-condition reference for flood, drought, wildfire, heat, snow and landslide research. ERA5-Land is a land-surface reanalysis/simulation product and is not labelled as direct observation or as a catastrophe-event catalogue.",
+  "raw_artifact": null,
+  "derived_artifact": null,
+  "licensing": {
+    "status": "verified",
+    "spdx_expression": "CC-BY-4.0",
+    "licence_name": "Creative Commons Attribution 4.0 International",
+    "terms_reference": "https://cds.climate.copernicus.eu/licences/cc-by",
+    "terms_reviewed_at": "2026-08-10T01:20:00Z",
+    "terms_version_or_date": "CDS CC-BY licence rev. 1; dataset metadata updated July 2026; reviewed 2026-08-10",
+    "terms_content_sha256": null,
+    "commercial_use_status": "allowed",
+    "attribution_requirements": "Provide CC BY 4.0 attribution and the ERA5-Land dataset citation/DOI; indicate modifications and do not imply Copernicus/ECMWF endorsement.",
+    "share_alike_or_derivative_requirements": "CC BY 4.0 permits adaptation without a share-alike requirement; attribution, licence reference and indication of changes remain required.",
+    "notes": "The authoritative CDS catalogue identifies ERA5-Land as CC-BY-4.0 and DOI 10.24381/cds.e2161bac. Download through CDS requires registration and acceptance of the applicable terms."
+  },
+  "redistribution": {
+    "status": "allowed",
+    "scope": "raw",
+    "conditions": "Source rights support redistribution under CC BY 4.0 subject to attribution and applicable CDS conditions. OpenCatastrophe approves metadata only; no request output has been selected, acquired or hashed."
+  },
+  "privacy": {
+    "personal_data_status": "none",
+    "confidential_or_proprietary_status": "none",
+    "notes": "The reviewed product is a public gridded land-surface reanalysis/simulation dataset."
+  },
+  "spatial": {
+    "crs": "regular latitude-longitude grid",
+    "extent": "Global; catalogue distribution at 0.1° x 0.1° with native model resolution about 9 km"
+  },
+  "temporal": {
+    "extent": "January 1950 to present, hourly; rolling daily updates make 'present' mutable and not a byte identity"
+  },
+  "variables_and_units": [
+    {
+      "name": "volumetric soil water",
+      "unit": "m3/m3",
+      "description": "Land-surface soil-water state across model layers; exact layer and parameter identity must be pinned in any retrieval."
+    },
+    {
+      "name": "runoff",
+      "unit": "m",
+      "description": "Accumulated runoff-related model output; aggregation/time semantics must be preserved from the selected parameter."
+    },
+    {
+      "name": "snow depth water equivalent",
+      "unit": "m of water equivalent",
+      "description": "Modelled snow-water-equivalent state used as antecedent-condition evidence where scientifically appropriate."
+    },
+    {
+      "name": "2 metre temperature",
+      "unit": "K",
+      "description": "Modelled near-surface air temperature over land."
+    }
+  ],
+  "transformation": null,
+  "review": {
+    "status": "approved_metadata_only",
+    "reviewed_at": "2026-08-10T01:20:00Z",
+    "reviewer": "OpenCatastrophe source audit",
+    "notes": "Metadata-only approval. A future artifact must freeze the complete CDS request, catalogue state, variables, temporal/spatial subset, format and returned byte identities. ERA5-Land uncertainty and its model/reanalysis semantics must remain explicit."
+  }
+}
