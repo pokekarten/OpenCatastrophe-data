@@ -141,7 +141,7 @@ class SourceAccessInventoryTests(unittest.TestCase):
     def test_build_inventory_rejects_invalid_contract_before_it_can_influence_output(self) -> None:
         pegel = json.loads((ROOT / "access" / "wsv.pegelonline.rest-v2.dresden.json").read_text(encoding="utf-8"))
         pegel["rights_and_policy"]["api_terms_status"] = "separate_unreviewed"
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
             access_dir = Path(tmp)
             (access_dir / "invalid.json").write_text(json.dumps(pegel), encoding="utf-8")
             with mock.patch.object(inventory_module, "ACCESS_DIR", access_dir):
@@ -150,7 +150,7 @@ class SourceAccessInventoryTests(unittest.TestCase):
 
     def test_build_inventory_rejects_duplicate_access_ids(self) -> None:
         pegel = json.loads((ROOT / "access" / "wsv.pegelonline.rest-v2.dresden.json").read_text(encoding="utf-8"))
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
             access_dir = Path(tmp)
             for name in ("one.json", "two.json"):
                 (access_dir / name).write_text(json.dumps(pegel), encoding="utf-8")
@@ -161,7 +161,7 @@ class SourceAccessInventoryTests(unittest.TestCase):
     def test_build_inventory_rejects_dangling_source_reference(self) -> None:
         pegel = json.loads((ROOT / "access" / "wsv.pegelonline.rest-v2.dresden.json").read_text(encoding="utf-8"))
         pegel["source_ids"] = ["source.does.not.exist"]
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
             access_dir = Path(tmp)
             (access_dir / "dangling.json").write_text(json.dumps(pegel), encoding="utf-8")
             with mock.patch.object(inventory_module, "ACCESS_DIR", access_dir):
