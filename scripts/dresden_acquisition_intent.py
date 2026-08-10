@@ -32,7 +32,7 @@ from scripts.hydrology_window import (
 PROFILE_VERSION = "1.0.0"
 PEGELONLINE_MANIFEST = "manifests/wsv.pegelonline.elbe-dresden-discharge.2020-2023.json"
 PEGELONLINE_REVIEW = "docs/source-reviews/wsv-pegelonline-elbe-dresden-discharge-2020-2023.md"
-GLOFAS_MANIFEST = "manifests/copernicus.cems.glofas-historical.v4.0.json"
+GLOFAS_MANIFEST = "manifests/copernicus.cems.glofas-historical.json"
 GLOFAS_REVIEW = "docs/source-reviews/copernicus-cems-glofas-historical.md"
 PEGELONLINE_STATION_NUMBER = "501060"
 PEGELONLINE_STATION_UUID = "70272185-b2b3-4178-96b8-43bea330dcae"
