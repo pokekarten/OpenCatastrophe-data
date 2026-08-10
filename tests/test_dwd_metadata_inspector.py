@@ -21,10 +21,16 @@ SPEC.loader.exec_module(inspector)
 
 
 class DwdMetadataInspectorTests(unittest.TestCase):
-    def _zip(self, entries: list[tuple[str, bytes]], *, symlink: str | None = None) -> Path:
+    def _zip(
+        self,
+        entries: list[tuple[str, bytes]],
+        *,
+        symlink: str | None = None,
+        filename: str = "metadata.zip",
+    ) -> Path:
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        path = Path(tmp.name) / "metadata.zip"
+        path = Path(tmp.name) / filename
         with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             for name, content in entries:
                 with warnings.catch_warnings():
@@ -40,15 +46,16 @@ class DwdMetadataInspectorTests(unittest.TestCase):
     def test_report_is_deterministic_for_exact_input_bytes(self) -> None:
         path = self._zip(
             [
-                ("Meta_Daten_zehn_min_fx_01234.zip", b"station"),
+                ("metadata_01234.txt", b"station"),
                 ("equipment_01234.txt", b"instrument"),
                 ("station_05678.txt", b"location"),
-            ]
+            ],
+            filename="Meta_Daten_zehn_min_fx_01234.zip",
         )
         first = inspector.inspect_zip(path)
         second = inspector.inspect_zip(path)
         self.assertEqual(first, second)
-        self.assertEqual(first["input"]["local_filename"], "metadata.zip")
+        self.assertEqual(first["input"]["local_filename"], "Meta_Daten_zehn_min_fx_01234.zip")
         self.assertRegex(first["input"]["sha256"], r"^[a-f0-9]{64}$")
         self.assertEqual(first["observed"]["station_ids"], ["01234", "05678"])
         self.assertEqual(first["observed"]["metadata_families"], ["equipment", "metadata", "station"])
