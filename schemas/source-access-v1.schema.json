@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:opencatastrophe:schema:source-access:1.0.0",
+  "title": "OpenCatastrophe Source Access Contract v1",
+  "description": "Fail-closed contract for an authoritative machine-access route to one or more catastrophe-risk data sources. Connectivity never implies rights clearance, scientific approval or data admission.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "access_id",
+    "source_ids",
+    "provider",
+    "interface_type",
+    "status",
+    "documentation_url",
+    "service_root",
+    "api_version",
+    "access_scope",
+    "authentication",
+    "request_contract",
+    "response_contract",
+    "operational_constraints",
+    "rights_and_policy",
+    "probe_contract",
+    "implementation_decision",
+    "reviewed_at",
+    "evidence_urls",
+    "notes"
+  ],
+  "$defs": {
+    "httpsUrl": {
+      "type": "string",
+      "pattern": "^https://[^\\s]+$"
+    },
+    "nullableHttpsUrl": {
+      "anyOf": [
+        {"$ref": "#/$defs/httpsUrl"},
+        {"type": "null"}
+      ]
+    },
+    "nonBlank": {
+      "type": "string",
+      "pattern": "\\S"
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "access_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+    },
+    "source_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+      }
+    },
+    "provider": {"$ref": "#/$defs/nonBlank"},
+    "interface_type": {
+      "type": "string",
+      "enum": [
+        "rest",
+        "fdsn",
+        "ogc_api",
+        "stac",
+        "wms",
+        "wfs",
+        "wcs",
+        "arcgis_rest",
+        "mqtt_http",
+        "object_store",
+        "http_file",
+        "ftp_or_ftps",
+        "provider_sdk",
+        "web_portal",
+        "other_documented_machine_interface"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "documented_only",
+        "probe_ready",
+        "verified_anonymous",
+        "verified_authenticated",
+        "blocked_registration",
+        "blocked_credentials",
+        "restricted_by_terms",
+        "deprecated",
+        "rejected"
+      ]
+    },
+    "documentation_url": {"$ref": "#/$defs/httpsUrl"},
+    "service_root": {"$ref": "#/$defs/nullableHttpsUrl"},
+    "api_version": {"type": ["string", "null"]},
+    "access_scope": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["metadata", "catalogue", "sample", "bulk", "realtime", "other"]
+      }
+    },
+    "authentication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "credential_reference", "registration_url", "secret_in_repository"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["none", "api_key", "bearer_token", "basic", "oauth2", "provider_account", "signed_request", "other"]
+        },
+        "credential_reference": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Z][A-Z0-9_]{2,127}$"
+        },
+        "registration_url": {"$ref": "#/$defs/nullableHttpsUrl"},
+        "secret_in_repository": {"const": false}
+      }
+    },
+    "request_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_operations", "path_templates", "parameter_rules"],
+      "properties": {
+        "allowed_operations": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}
+        },
+        "path_templates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "pattern": "^/[^\\s]*$"}
+        },
+        "parameter_rules": {"$ref": "#/$defs/nonBlank"}
+      }
+    },
+    "response_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected_media_types", "format", "scientific_semantics"],
+      "properties": {
+        "expected_media_types": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[A-Za-z0-9.+-]+/[A-Za-z0-9.+-]+$"}
+        },
+        "format": {"$ref": "#/$defs/nonBlank"},
+        "scientific_semantics": {"$ref": "#/$defs/nonBlank"}
+      }
+    },
+    "operational_constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timeout_seconds", "max_probe_bytes", "max_sample_bytes", "retry_policy", "rate_limit_notes", "mutability_notes"],
+      "properties": {
+        "timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 120},
+        "max_probe_bytes": {"type": "integer", "minimum": 1, "maximum": 5242880},
+        "max_sample_bytes": {"type": "integer", "minimum": 1, "maximum": 52428800},
+        "retry_policy": {"type": "string", "enum": ["none", "bounded_backoff"]},
+        "rate_limit_notes": {"$ref": "#/$defs/nonBlank"},
+        "mutability_notes": {"$ref": "#/$defs/nonBlank"}
+      }
+    },
+    "rights_and_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dataset_rights_status", "api_terms_status", "terms_url", "commercial_automation_status", "redistribution_status", "notes"],
+      "properties": {
+        "dataset_rights_status": {"type": "string", "enum": ["verified", "not_reviewed", "conflicting", "restricted", "prohibited", "unknown"]},
+        "api_terms_status": {"type": "string", "enum": ["same_as_dataset", "separate_reviewed", "separate_unreviewed", "unknown"]},
+        "terms_url": {"$ref": "#/$defs/nullableHttpsUrl"},
+        "commercial_automation_status": {"type": "string", "enum": ["allowed", "restricted", "prohibited", "unknown"]},
+        "redistribution_status": {"type": "string", "enum": ["allowed", "restricted", "prohibited", "unknown"]},
+        "notes": {"$ref": "#/$defs/nonBlank"}
+      }
+    },
+    "probe_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "operation", "requires_credentials", "expected_evidence"],
+      "properties": {
+        "mode": {"type": "string", "enum": ["none", "metadata_get", "head", "catalogue_query", "provider_specific"]},
+        "operation": {"type": ["string", "null"]},
+        "requires_credentials": {"type": "boolean"},
+        "expected_evidence": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/nonBlank"}
+        }
+      }
+    },
+    "implementation_decision": {
+      "type": "string",
+      "enum": ["build_adapter_now", "document_only", "build_later", "do_not_automate"]
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "evidence_urls": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/httpsUrl"}
+    },
+    "notes": {"$ref": "#/$defs/nonBlank"}
+  }
+}
