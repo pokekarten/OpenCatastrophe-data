@@ -17,12 +17,12 @@ Humans and AI agents should be able to understand every admitted source and tran
 
 OpenCatastrophe-data treats coding agents as first-class contributors, not as scientific or legal authorities. A fresh agent should be able to re-ground from public GitHub state, understand the repository boundary, run one deterministic definition-of-done command, make one bounded change and hand off reproducible evidence without private context or a provider-specific AI service.
 
-Durable rules live in schemas, validators, tests and accepted source reviews rather than a growing prompt/framework layer. Humans and automated contributors use the same public Issues, Pull Requests and acceptance evidence.
+Durable rules live in schemas, validators, tests and accepted source reviews rather than a growing prompt/framework layer. Humans and automated contributors use the same public Pull Requests and, when enabled, Issues and acceptance evidence.
 
 ### 60-second agent start
 
 1. Read `AGENTS.md`, this `README.md` and `ARCHITECTURE.md`; add `DATA_LICENSING.md` or `SCIENTIFIC_METHOD.md` when the task touches those boundaries.
-2. Record the current `main` commit and check current Issues and Pull Requests for overlapping work.
+2. Record the current `main` commit and check current Pull Requests plus any enabled public issue tracker for overlapping work.
 3. Run `python scripts/check_all.py` before material work so the starting state is explicit.
 4. Keep the change bounded, deterministic and offline-testable; external bytes stay outside Git unless their exact public asset scope is explicitly admitted.
 5. Use a short-lived branch and a draft Pull Request as the visible work claim, then rerun the definition-of-done command and record exact evidence, assumptions and blockers before handoff.
@@ -75,13 +75,15 @@ De-identifying confidential data does not automatically make it synthetic or saf
 
 **Status: pre-alpha data foundation.**
 
-Three sources have metadata-only admissions:
+Five sources have metadata-only admissions across observation, hazard, modelled exposure and exposure-geometry layers:
 
 - [DWD 10-minute extreme-wind station observations for Germany, v24.03](manifests/dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03.json), with the accepted [source review](docs/source-reviews/dwd-extreme-wind-v24.03.md), provide an observational validation route.
 - [C3S Enhanced Windstorm Service, v1.0](manifests/copernicus.c3s.european-windstorm-reanalysis.v1.0.json), with the accepted [source review](docs/source-reviews/copernicus-c3s-european-windstorm-reanalysis-v1.0.md), provides a European event-track and hazard-footprint candidate.
-- [EFEHR ESRM20 European Exposure Model, v1.0](manifests/efehr.esrm20.european-exposure-model.v1.0.json), with the accepted [source review](docs/source-reviews/efehr-esrm20-european-exposure-model-v1.0.md), provides an open European building-stock exposure reference while remaining explicitly distinct from insured TIV or confidential portfolios.
+- [EFEHR ESRM20 European Exposure Model, v1.0](manifests/efehr.esrm20.european-exposure-model.v1.0.json), with the accepted [source review](docs/source-reviews/efehr-esrm20-european-exposure-model-v1.0.md), provides an open European modelled building-stock exposure reference while remaining explicitly distinct from insured TIV or confidential portfolios.
+- [EFEHR 2020 European Seismic Hazard Model (ESHM20)](manifests/efehr.eshm20.json), with the accepted [source review](docs/source-reviews/efehr-eshm20.md), provides a European earthquake-hazard and reproducibility/interoperability candidate.
+- [Microsoft Global ML Building Footprints](manifests/microsoft.globalml-building-footprints.json), with the accepted [source review](docs/source-reviews/microsoft-globalml-building-footprints.md), provides a global exposure-geometry candidate with explicit rolling-distribution, model-output, height and confidence semantics.
 
-No admitted external dataset bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts. The repository remains data-byte-free while exercising real provenance, rights and scientific-review contracts across observational hazard, event/footprint hazard and exposure layers.
+No admitted external dataset bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts. The repository remains data-byte-free while exercising real provenance, rights and scientific-review contracts across distinct modelling layers.
 
 ## Quick start
 
@@ -102,12 +104,12 @@ python scripts/validate_agent_artifact.py run run.json --expected-repository pok
 
 ## Development contract
 
-Development is intended to happen through the public repository. Current public `main`, Issues and Pull Requests are the collaboration source of truth; private chat or archive state must not be required to review an accepted change.
+Development is intended to happen through the public repository. Current public `main` and Pull Requests are the collaboration source of truth; Issues may provide public candidate/task intake when the repository enables them. Private chat or archive state must not be required to review an accepted change.
 
 For contributors and coding agents:
 
 1. start with `AGENTS.md` and `ARCHITECTURE.md`;
-2. use the most specific Issue Form for non-trivial work and a draft PR as the visible implementation claim for shared surfaces;
+2. use the most specific Issue Form when Issues are enabled; otherwise use a draft PR as the visible implementation claim once a non-trivial change has enough public evidence to review;
 3. keep data-rights review and scientific validation separate;
 4. use `schemas/agent-task-v1.schema.json` and `schemas/run-evidence-v1.schema.json` when a formal machine-readable task/handoff is useful;
 5. run `python scripts/check_all.py` on the exact candidate before handoff.
