@@ -13,29 +13,38 @@ from scripts.hydrology_window import (
     assess_source_window,
     expected_observations_per_24h,
     glofas_dis24_window,
-    pegelonline_download_standard_time_to_utc,
+    pegelonline_long_term_json_time_to_utc,
 )
 
 UTC = timezone.utc
 
 
-class PegelonlineDownloadTimeTests(unittest.TestCase):
-    def test_year_round_download_standard_time_conversion_never_applies_dst(self) -> None:
-        winter = pegelonline_download_standard_time_to_utc("2026-01-15T12:00:00")
-        summer = pegelonline_download_standard_time_to_utc("2026-07-15T12:00:00")
+class PegelonlineLongTermJsonTimeTests(unittest.TestCase):
+    def test_explicit_winter_and_summer_offsets_convert_to_utc(self) -> None:
+        winter = pegelonline_long_term_json_time_to_utc("2026-01-15T12:00:00+01:00")
+        summer = pegelonline_long_term_json_time_to_utc("2026-07-15T12:00:00+02:00")
         self.assertEqual(winter, datetime(2026, 1, 15, 11, 0, tzinfo=UTC))
-        self.assertEqual(summer, datetime(2026, 7, 15, 11, 0, tzinfo=UTC))
+        self.assertEqual(summer, datetime(2026, 7, 15, 10, 0, tzinfo=UTC))
 
-    def test_rest_style_offset_timestamp_is_rejected_by_download_converter(self) -> None:
-        # REST Measurement JSON uses local legal time with an explicit UTC offset;
-        # the fixed-CET converter is intentionally limited to PEGELONLINE files
-        # documented as year-round Central European winter/standard time.
-        with self.assertRaisesRegex(HydrologyWindowError, "download timestamp must be timezone-naive"):
-            pegelonline_download_standard_time_to_utc("2026-07-15T12:00:00+02:00")
+    def test_timezone_naive_long_term_json_timestamp_fails_closed(self) -> None:
+        with self.assertRaisesRegex(HydrologyWindowError, "explicit UTC offset"):
+            pegelonline_long_term_json_time_to_utc("2026-07-15T12:00:00")
 
-    def test_invalid_download_timestamp_is_rejected(self) -> None:
+    def test_non_german_legal_offset_fails_closed(self) -> None:
+        for value in (
+            "2026-07-15T12:00:00+00:00",
+            "2026-07-15T12:00:00+03:00",
+        ):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                HydrologyWindowError, "offset must be \+01:00 or \+02:00"
+            ):
+                pegelonline_long_term_json_time_to_utc(value)
+
+    def test_invalid_or_subsecond_long_term_json_timestamp_fails_closed(self) -> None:
         with self.assertRaisesRegex(HydrologyWindowError, "ISO-8601"):
-            pegelonline_download_standard_time_to_utc("not-a-timestamp")
+            pegelonline_long_term_json_time_to_utc("not-a-timestamp")
+        with self.assertRaisesRegex(HydrologyWindowError, "whole seconds"):
+            pegelonline_long_term_json_time_to_utc("2026-07-15T12:00:00.001+02:00")
 
 
 class GlofasWindowTests(unittest.TestCase):
@@ -79,7 +88,6 @@ class WindowCompletenessTests(unittest.TestCase):
         ]
 
     def test_90_percent_threshold_uses_ceiling_of_expected_slots(self) -> None:
-        # 96 expected 15-minute slots -> ceil(86.4) = 87 finite observations.
         passing = assess_source_window(
             self._observations(87),
             window_start_utc=self.start,
