@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry of potentially useful catastrophe-risk data sources.",
+  "review_date": "2026-08-10",
+  "entries": [
+    {
+      "candidate_id": "nasa.nsidc.smap.spl3smp-e.v6",
+      "name": "SMAP Enhanced L3 Radiometer Global and Polar Grid Daily 9 km EASE-Grid Soil Moisture, Version 6",
+      "provider": "NASA National Snow and Ice Data Center Distributed Active Archive Center",
+      "categories": [
+        "soil_moisture",
+        "drought",
+        "remote_sensing",
+        "validation"
+      ],
+      "spatial_scope": "global land surface",
+      "temporal_scope": "31 March 2015 to present",
+      "resolution_or_granularity": "daily composite; surface-soil-moisture retrievals posted to 9 km EASE-Grid 2.0",
+      "potential_roles": [
+        "soil_moisture_state_validation",
+        "drought_state_context",
+        "antecedent_wetness_context"
+      ],
+      "authoritative_url": "https://nsidc.org/data/spl3smp_e/versions/6",
+      "access_class_hint": "earthdata_login_required",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Enhanced Level-3 passive-microwave retrieval derived through the SMAP radiometer L2/L1C processing chain and Backus-Gilbert interpolation; the 9 km posting grid is not parcel-scale in-situ truth. The repository also tracks SMAP L4 SPL4SMGP v8, a distinct model/assimilation-derived product; L3 and L4 share SMAP/upstream observation lineage and must not be treated as automatically independent validation evidence. Freeze version, subset, time range, AM/PM semantics and retrieval/surface quality flags before scientific use."
+    }
+  ]
+}
