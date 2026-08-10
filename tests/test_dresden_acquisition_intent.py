@@ -11,6 +11,8 @@ from scripts.dresden_acquisition_intent import (
     GLOFAS_REVIEW,
     PEGELONLINE_MANIFEST,
     PEGELONLINE_REVIEW,
+    PEGELONLINE_STATION_NUMBER,
+    PEGELONLINE_STATION_UUID,
     AcquisitionIntentError,
     acquisition_intent,
     acquisition_intent_sha256,
@@ -83,6 +85,8 @@ class AcquisitionIntentTests(unittest.TestCase):
             GlofasGridCell(51.10, 13.74, DRESDEN_DRAINAGE_AREA_KM2 * 1.01),
         ]
         plan = finalize_acquisition_intent(
+            pegelonline_station_number=PEGELONLINE_STATION_NUMBER,
+            pegelonline_station_uuid=PEGELONLINE_STATION_UUID,
             pegelonline_equidistance_minutes=15,
             station_latitude=51.05,
             station_longitude=13.74,
@@ -92,6 +96,8 @@ class AcquisitionIntentTests(unittest.TestCase):
         self.assertFalse(plan["target_values_must_not_be_inspected"])
         self.assertEqual(plan["pegelonline"]["sampling_interval"]["equidistance_minutes"], 15)
         self.assertEqual(plan["pegelonline"]["sampling_interval"]["seconds"], 900)
+        self.assertEqual(plan["metadata_resolution"]["pegelonline_station_number"], PEGELONLINE_STATION_NUMBER)
+        self.assertEqual(plan["metadata_resolution"]["pegelonline_station_uuid"], PEGELONLINE_STATION_UUID)
         self.assertEqual(plan["metadata_resolution"]["pegelonline_equidistance_minutes"], 15)
         self.assertEqual(plan["metadata_resolution"]["pegelonline_sampling_interval_seconds"], 900)
         self.assertEqual(
@@ -113,25 +119,51 @@ class AcquisitionIntentTests(unittest.TestCase):
             GlofasGridCell(51.06, 13.74, DRESDEN_DRAINAGE_AREA_KM2 * 1.02),
             GlofasGridCell(51.10, 13.74, DRESDEN_DRAINAGE_AREA_KM2 * 1.01),
         ]
+        common = {
+            "pegelonline_station_number": PEGELONLINE_STATION_NUMBER,
+            "pegelonline_station_uuid": PEGELONLINE_STATION_UUID,
+            "pegelonline_equidistance_minutes": 15,
+            "station_latitude": 51.05,
+            "station_longitude": 13.74,
+        }
         forward = finalize_acquisition_intent(
-            pegelonline_equidistance_minutes=15,
-            station_latitude=51.05,
-            station_longitude=13.74,
+            **common,
             glofas_candidate_cells=candidates,
         )
         reverse = finalize_acquisition_intent(
-            pegelonline_equidistance_minutes=15,
-            station_latitude=51.05,
-            station_longitude=13.74,
+            **common,
             glofas_candidate_cells=reversed(candidates),
         )
         self.assertEqual(forward, reverse)
         self.assertEqual(acquisition_intent_sha256(forward), acquisition_intent_sha256(reverse))
 
+    def test_station_identity_mismatch_fails_closed_before_grid_selection(self) -> None:
+        candidate = GlofasGridCell(51.06, 13.74, DRESDEN_DRAINAGE_AREA_KM2)
+        with self.assertRaisesRegex(AcquisitionIntentError, "station_number"):
+            finalize_acquisition_intent(
+                pegelonline_station_number="different-station",
+                pegelonline_station_uuid=PEGELONLINE_STATION_UUID,
+                pegelonline_equidistance_minutes=15,
+                station_latitude=51.05,
+                station_longitude=13.74,
+                glofas_candidate_cells=[candidate],
+            )
+        with self.assertRaisesRegex(AcquisitionIntentError, "station_uuid"):
+            finalize_acquisition_intent(
+                pegelonline_station_number=PEGELONLINE_STATION_NUMBER,
+                pegelonline_station_uuid="different-station-uuid",
+                pegelonline_equidistance_minutes=15,
+                station_latitude=51.05,
+                station_longitude=13.74,
+                glofas_candidate_cells=[candidate],
+            )
+
     def test_invalid_sampling_or_no_matching_cell_fails_closed(self) -> None:
         good_candidate = GlofasGridCell(51.06, 13.74, DRESDEN_DRAINAGE_AREA_KM2)
         with self.assertRaisesRegex(AcquisitionIntentError, "sampling interval"):
             finalize_acquisition_intent(
+                pegelonline_station_number=PEGELONLINE_STATION_NUMBER,
+                pegelonline_station_uuid=PEGELONLINE_STATION_UUID,
                 pegelonline_equidistance_minutes=17,
                 station_latitude=51.05,
                 station_longitude=13.74,
@@ -140,6 +172,8 @@ class AcquisitionIntentTests(unittest.TestCase):
 
         with self.assertRaisesRegex(AcquisitionIntentError, "grid cell"):
             finalize_acquisition_intent(
+                pegelonline_station_number=PEGELONLINE_STATION_NUMBER,
+                pegelonline_station_uuid=PEGELONLINE_STATION_UUID,
                 pegelonline_equidistance_minutes=15,
                 station_latitude=51.05,
                 station_longitude=13.74,
@@ -152,6 +186,8 @@ class AcquisitionIntentTests(unittest.TestCase):
         candidate = GlofasGridCell(51.06, 13.74, DRESDEN_DRAINAGE_AREA_KM2)
         with self.assertRaisesRegex(AcquisitionIntentError, "equidistance_minutes"):
             finalize_acquisition_intent(
+                pegelonline_station_number=PEGELONLINE_STATION_NUMBER,
+                pegelonline_station_uuid=PEGELONLINE_STATION_UUID,
                 pegelonline_equidistance_minutes=True,
                 station_latitude=51.05,
                 station_longitude=13.74,
@@ -159,6 +195,8 @@ class AcquisitionIntentTests(unittest.TestCase):
             )
         with self.assertRaisesRegex(AcquisitionIntentError, "grid cell"):
             finalize_acquisition_intent(
+                pegelonline_station_number=PEGELONLINE_STATION_NUMBER,
+                pegelonline_station_uuid=PEGELONLINE_STATION_UUID,
                 pegelonline_equidistance_minutes=15,
                 station_latitude=True,
                 station_longitude=13.74,
