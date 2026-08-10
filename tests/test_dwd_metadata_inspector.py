@@ -40,7 +40,7 @@ class DwdMetadataInspectorTests(unittest.TestCase):
     def test_report_is_deterministic_for_exact_input_bytes(self) -> None:
         path = self._zip(
             [
-                ("Meta_Daten_zehn_min_ff_01234.zip", b"station"),
+                ("Meta_Daten_zehn_min_fx_01234.zip", b"station"),
                 ("equipment_01234.txt", b"instrument"),
                 ("station_05678.txt", b"location"),
             ]
