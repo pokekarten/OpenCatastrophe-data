@@ -25,7 +25,7 @@ Structured public information follows a **one semantic truth, multiple verified 
 
 1. Read `AGENTS.md`, this `README.md` and `ARCHITECTURE.md`; add `DATA_LICENSING.md` or `SCIENTIFIC_METHOD.md` when the task touches those boundaries.
 2. Record the current `main` commit and check current Pull Requests plus any enabled public issue tracker for overlapping work.
-3. Run `python scripts/check_all.py` before material work so the starting state is explicit.
+3. Install the validation-only dependency set with `python -m pip install --disable-pip-version-check --no-input -r requirements-validation.txt`, then run `python scripts/check_all.py` before material work so the starting state is explicit.
 4. Keep the change bounded, deterministic and offline-testable; external bytes stay outside Git unless their exact public asset scope is explicitly admitted.
 5. If changing canonical data that has committed generated views, regenerate them with `python scripts/render_public_views.py --write` rather than editing the generated files.
 6. Use a short-lived branch and a draft Pull Request as the visible work claim, then rerun the definition-of-done command and record exact evidence, assumptions and blockers before handoff.
@@ -90,9 +90,10 @@ For future OpenCatastrophe-owned models, discovery metadata is intentionally ins
 
 ## Quick start
 
-Requirements: Python 3.11+ and Git. Run the definition-of-done command from a Git checkout; source archives alone cannot prove the tracked file set, Git modes or index state used by the hygiene/licensing gates.
+Requirements: Python 3.11+ and Git. Install the exact validation-only dependency set, then run the definition-of-done command from a Git checkout; source archives alone cannot prove the tracked file set, Git modes or index state used by the hygiene/licensing gates.
 
 ```bash
+python -m pip install --disable-pip-version-check --no-input -r requirements-validation.txt
 python scripts/check_all.py
 ```
 
@@ -122,7 +123,7 @@ For contributors and coding agents:
 3. keep data-rights review and scientific validation separate;
 4. treat declared canonical machine contracts as the only editable authority for facts repeated in generated views;
 5. use `schemas/agent-task-v1.schema.json` when a formal machine-readable task is useful; use `schemas/run-evidence-v2.schema.json` for new scientific/model run evidence, while `schemas/run-evidence-v1.schema.json` remains a compatibility profile for existing/simple receipts;
-6. run `python scripts/check_all.py` on the exact candidate before handoff.
+6. install `requirements-validation.txt` and run `python scripts/check_all.py` on the exact candidate before handoff.
 
 See `CONTRIBUTING.md` for contribution rules and `SUPPORT.md` before filing support requests. AI tooling is optional and never grants data rights or replaces repository evidence.
 

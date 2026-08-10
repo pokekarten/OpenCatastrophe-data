@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# CI/local validation only. This is not a runtime or acquisition dependency.
+PyYAML==6.0.3
