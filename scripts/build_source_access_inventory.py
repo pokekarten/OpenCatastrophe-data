@@ -1,12 +1,13 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Build a deterministic first-pass access inventory for every source-landscape entry.
+"""Build a deterministic first-pass access inventory for every known source.
 
-The inventory is deliberately conservative. It translates the already reviewed
-``access_class_hint`` and source note into machine-access and rights work queues;
-it does not invent provider API facts or upgrade source rights. Concrete live
-interfaces belong in reviewed ``access/*.json`` source-access contracts.
+Coverage includes both non-admission ``landscape/sources*.json`` candidates and
+all admitted ``manifests/*.json`` datasets. The inventory is deliberately
+conservative: it translates already recorded access/rights evidence into a
+machine-access work queue, never invents provider API facts, and never upgrades
+rights. Concrete reviewed interfaces live in ``access/*.json`` contracts.
 """
 
 from __future__ import annotations
@@ -19,11 +20,13 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 LANDSCAPE_DIR = ROOT / "landscape"
-DEFAULT_OUTPUT = ROOT / "access" / "source-access-inventory.json"
+MANIFEST_DIR = ROOT / "manifests"
+ACCESS_DIR = ROOT / "access"
+DEFAULT_OUTPUT = ACCESS_DIR / "source-access-inventory.json"
 
 
 class InventoryError(ValueError):
-    """Raised when canonical source discovery cannot be inventoried safely."""
+    """Raised when canonical source state cannot be inventoried safely."""
 
 
 def _reject_constant(value: str) -> None:
@@ -53,14 +56,17 @@ def _contains(text: str, *needles: str) -> bool:
 
 
 def classify_access(hint: str, categories: list[str], note: str) -> dict[str, Any]:
-    evidence = " ".join([hint, *categories, note]).casefold()
+    """Conservatively classify recorded discovery hints without inventing API facts."""
 
-    api_like = _contains(hint, "api") or "api" in {value.casefold() for value in categories}
+    evidence = " ".join([hint, *categories, note]).casefold()
+    category_set = {value.casefold() for value in categories}
+
+    api_like = _contains(hint, "api") or "api" in category_set
     geospatial = _contains(hint, "stac", "wms", "wfs", "wcs", "arcgis", "web_services", "geospatial_service")
     federated = _contains(hint, "mqtt", "federated", "data_exchange")
     downloadable = _contains(hint, "download", "object", "cloud", "geoparquet", "repository", "ftp", "file", "bulk")
-    service = _contains(hint, "service", "portal", "catalog")
-    provider_gate = _contains(hint, "registration", "registered", "account", "token", "eu_login")
+    service = _contains(hint, "service", "portal", "catalog", "explorer")
+    provider_gate = _contains(hint, "registration", "registered", "account", "authenticated", "token", "eu_login", "earthdata")
     provider_agreement = _contains(hint, "agreement", "request", "paid", "license_request", "licence_request")
 
     if geospatial:
@@ -100,7 +106,7 @@ def classify_access(hint: str, categories: list[str], note: str) -> dict[str, An
         "commercial_use_restriction": ("commercial use not allowed", "commercial_use_restricted", "paid commercial", "commercial license", "commercial licence"),
         "separate_license_or_agreement": ("separate license", "separate licence", "by agreement", "license request", "licence request"),
         "redistribution_or_reuse_restriction": ("redistribution", "reuse restricted", "provider-specific access", "provider specific access"),
-        "registration_or_account_gate": ("registration", "registered", "account", "token", "eu login", "eu_login"),
+        "registration_or_account_gate": ("registration", "registered", "account", "authenticated", "token", "eu login", "eu_login", "earthdata"),
     }
     for flag, patterns in restriction_patterns.items():
         if any(pattern.casefold() in evidence for pattern in patterns):
@@ -120,7 +126,7 @@ def classify_access(hint: str, categories: list[str], note: str) -> dict[str, An
     if machine_access_class == "api":
         next_action = "Verify authoritative API docs, exact auth/version/rate limits and API-specific terms; then add a source-access contract."
     elif machine_access_class in {"geospatial_service", "federated_service"}:
-        next_action = "Verify exact service protocol/endpoints and terms; model it as a non-generic provider contract rather than forcing REST semantics."
+        next_action = "Verify exact service protocol/endpoints and terms; model it as a provider contract rather than forcing REST semantics."
     elif machine_access_class == "bulk_or_file":
         next_action = "Freeze authoritative machine-download resolution, version/mutability rules and byte-provenance receipt requirements."
     elif machine_access_class == "restricted_provider_access":
@@ -139,20 +145,119 @@ def classify_access(hint: str, categories: list[str], note: str) -> dict[str, An
     }
 
 
-def source_files() -> list[Path]:
+def landscape_files() -> list[Path]:
     paths = sorted(LANDSCAPE_DIR.glob("sources*.json"))
     if not paths:
         raise InventoryError("no canonical landscape/sources*.json files found")
     return paths
 
 
+def manifest_files() -> list[Path]:
+    paths = sorted(MANIFEST_DIR.glob("*.json"))
+    if not paths:
+        raise InventoryError("no admitted manifests/*.json files found")
+    return paths
+
+
+def contract_files() -> list[Path]:
+    if not ACCESS_DIR.exists():
+        return []
+    return sorted(path for path in ACCESS_DIR.glob("*.json") if path.name != DEFAULT_OUTPUT.name)
+
+
+def _contract_index() -> tuple[dict[str, list[dict[str, str]]], list[str]]:
+    by_source: dict[str, list[dict[str, str]]] = {}
+    files: list[str] = []
+    for path in contract_files():
+        payload = load_json(path)
+        if type(payload) is not dict:
+            raise InventoryError(f"{path.relative_to(ROOT)} must contain an access contract object")
+        access_id = payload.get("access_id")
+        source_ids = payload.get("source_ids")
+        interface_type = payload.get("interface_type")
+        implementation = payload.get("implementation_decision")
+        status = payload.get("status")
+        if not all(type(value) is str and value for value in (access_id, interface_type, implementation, status)):
+            raise InventoryError(f"{path.relative_to(ROOT)} lacks contract inventory fields")
+        if type(source_ids) is not list or not source_ids or not all(type(value) is str and value for value in source_ids):
+            raise InventoryError(f"{path.relative_to(ROOT)} source_ids must be non-empty strings")
+        relative = path.relative_to(ROOT).as_posix()
+        files.append(relative)
+        for source_id in source_ids:
+            by_source.setdefault(source_id, []).append({
+                "access_id": access_id,
+                "interface_type": interface_type,
+                "status": status,
+                "implementation_decision": implementation,
+            })
+    for contracts in by_source.values():
+        contracts.sort(key=lambda item: item["access_id"])
+    return by_source, files
+
+
+def _interface_class(interface_type: str) -> str:
+    if interface_type in {"rest", "fdsn", "ogc_api", "arcgis_rest"}:
+        return "api"
+    if interface_type in {"stac", "wms", "wfs", "wcs"}:
+        return "geospatial_service"
+    if interface_type == "mqtt_http":
+        return "federated_service"
+    if interface_type in {"object_store", "http_file", "ftp_or_ftps", "provider_sdk"}:
+        return "bulk_or_file"
+    return "portal_or_service"
+
+
+def _apply_contracts(classification: dict[str, Any], contracts: list[dict[str, str]]) -> dict[str, Any]:
+    if not contracts:
+        return {**classification, "contract_ids": []}
+    result = dict(classification)
+    result["contract_ids"] = [item["access_id"] for item in contracts]
+    result["api_status"] = "concrete_contract_present"
+    result["machine_access_class"] = _interface_class(contracts[0]["interface_type"])
+    result["automation_decision"] = contracts[0]["implementation_decision"]
+    result["next_action"] = "Execute the reviewed contract verification ladder; do not infer rights, scientific fitness or admission from connectivity."
+    return result
+
+
+def _manifest_rights(manifest: dict[str, Any], classification: dict[str, Any]) -> dict[str, Any]:
+    result = dict(classification)
+    licensing = manifest.get("licensing")
+    redistribution = manifest.get("redistribution")
+    if type(licensing) is not dict or type(redistribution) is not dict:
+        raise InventoryError("manifest licensing/redistribution must be objects")
+    status = licensing.get("status")
+    commercial = licensing.get("commercial_use_status")
+    redistribution_status = redistribution.get("status")
+    if not all(type(value) is str and value for value in (status, commercial, redistribution_status)):
+        raise InventoryError("manifest rights fields must be non-empty strings")
+
+    flags = set(result["license_or_terms_flags"])
+    if commercial in {"restricted", "prohibited"}:
+        flags.add(f"commercial_use_{commercial}")
+    if redistribution_status in {"restricted", "prohibited"}:
+        flags.add(f"redistribution_{redistribution_status}")
+
+    if status == "verified" and commercial == "allowed" and redistribution_status == "allowed":
+        result["rights_posture"] = "source_rights_verified"
+    elif status == "verified":
+        result["rights_posture"] = "known_restriction_requires_review"
+    else:
+        result["rights_posture"] = "license_review_required"
+    result["license_or_terms_flags"] = sorted(flags)
+    if result["rights_posture"] == "known_restriction_requires_review":
+        result["automation_decision"] = "document_only"
+    return result
+
+
 def build_inventory() -> dict[str, Any]:
     entries: list[dict[str, Any]] = []
-    seen: set[str] = set()
-    files: list[str] = []
+    seen_landscape: set[str] = set()
     review_dates: list[str] = []
+    contracts_by_source, contract_paths = _contract_index()
+    landscape_paths: list[str] = []
+    manifest_paths: list[str] = []
 
-    for path in source_files():
+    for path in landscape_files():
         payload = load_json(path)
         if type(payload) is not dict or type(payload.get("entries")) is not list:
             raise InventoryError(f"{path.relative_to(ROOT)} is not a source-landscape object")
@@ -161,16 +266,16 @@ def build_inventory() -> dict[str, Any]:
             raise InventoryError(f"{path.relative_to(ROOT)} lacks review_date")
         review_dates.append(review_date)
         relative = path.relative_to(ROOT).as_posix()
-        files.append(relative)
+        landscape_paths.append(relative)
         for index, source in enumerate(payload["entries"]):
             if type(source) is not dict:
                 raise InventoryError(f"{relative}: entries[{index}] must be an object")
             source_id = source.get("candidate_id")
             if type(source_id) is not str or not source_id:
                 raise InventoryError(f"{relative}: entries[{index}] lacks candidate_id")
-            if source_id in seen:
+            if source_id in seen_landscape:
                 raise InventoryError(f"duplicate source candidate_id across landscapes: {source_id}")
-            seen.add(source_id)
+            seen_landscape.add(source_id)
             provider = source.get("provider")
             authoritative_url = source.get("authoritative_url")
             hint = source.get("access_class_hint")
@@ -181,12 +286,16 @@ def build_inventory() -> dict[str, Any]:
                 raise InventoryError(f"{relative}: {source_id} lacks required access inventory inputs")
             if type(categories) is not list or not all(type(value) is str and value for value in categories):
                 raise InventoryError(f"{relative}: {source_id} categories must be non-empty strings")
-            classification = classify_access(hint, categories, note)
             if rights_review != "not_reviewed":
                 raise InventoryError(
                     f"{relative}: {source_id} rights state {rights_review!r} requires an explicit inventory policy update"
                 )
+            classification = _apply_contracts(
+                classify_access(hint, categories, note),
+                contracts_by_source.get(source_id, []),
+            )
             entries.append({
+                "record_type": "landscape_candidate",
                 "source_id": source_id,
                 "source_registry_path": relative,
                 "provider": provider,
@@ -195,12 +304,52 @@ def build_inventory() -> dict[str, Any]:
                 **classification,
             })
 
-    entries.sort(key=lambda item: item["source_id"])
+    for path in manifest_files():
+        manifest = load_json(path)
+        if type(manifest) is not dict:
+            raise InventoryError(f"{path.relative_to(ROOT)} must contain a manifest object")
+        source_id = manifest.get("dataset_id")
+        provider = manifest.get("provider")
+        authoritative_url = manifest.get("canonical_source")
+        access_class = manifest.get("access_class")
+        modelling_layer = manifest.get("modelling_layer")
+        intended_use = manifest.get("intended_use")
+        if not all(type(value) is str and value for value in (source_id, provider, authoritative_url, access_class, modelling_layer, intended_use)):
+            raise InventoryError(f"{path.relative_to(ROOT)} lacks required manifest inventory inputs")
+        review = manifest.get("review")
+        licensing = manifest.get("licensing")
+        note_parts = [intended_use]
+        if type(review) is dict and type(review.get("notes")) is str:
+            note_parts.append(review["notes"])
+        if type(licensing) is dict and type(licensing.get("notes")) is str:
+            note_parts.append(licensing["notes"])
+        classification = classify_access(access_class, [modelling_layer], " ".join(note_parts))
+        classification = _manifest_rights(manifest, classification)
+        classification = _apply_contracts(classification, contracts_by_source.get(source_id, []))
+        relative = path.relative_to(ROOT).as_posix()
+        manifest_paths.append(relative)
+        entries.append({
+            "record_type": "admitted_manifest",
+            "source_id": source_id,
+            "source_registry_path": relative,
+            "provider": provider,
+            "authoritative_url": authoritative_url,
+            "access_class_hint": access_class,
+            **classification,
+        })
+
+    entries.sort(key=lambda item: (item["source_id"], item["record_type"], item["source_registry_path"]))
+    landscape_count = sum(1 for entry in entries if entry["record_type"] == "landscape_candidate")
+    manifest_count = sum(1 for entry in entries if entry["record_type"] == "admitted_manifest")
     return {
         "schema_version": "1.0.0",
-        "purpose": "Deterministic fail-closed first-pass machine-access and licensing work queue for every current source-landscape candidate. This inventory is not an API verification, rights approval, scientific approval or data admission.",
+        "purpose": "Deterministic fail-closed first-pass machine-access and licensing work queue for every current source-landscape candidate and admitted dataset manifest. This inventory is not API verification, rights approval, scientific approval or data admission.",
         "source_review_date_max": max(review_dates),
-        "source_files": files,
+        "landscape_files": landscape_paths,
+        "manifest_files": manifest_paths,
+        "access_contract_files": contract_paths,
+        "landscape_entry_count": landscape_count,
+        "manifest_entry_count": manifest_count,
         "entry_count": len(entries),
         "entries": entries,
     }
@@ -217,11 +366,12 @@ def main(argv: list[str] | None = None) -> int:
     group.add_argument("--check", action="store_true", help="require checked-in inventory to equal deterministic output")
     args = parser.parse_args(argv)
     try:
-        expected = canonical_bytes(build_inventory())
+        inventory = build_inventory()
+        expected = canonical_bytes(inventory)
         if args.write:
             DEFAULT_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
             DEFAULT_OUTPUT.write_bytes(expected)
-            print(f"WROTE {DEFAULT_OUTPUT.relative_to(ROOT)}")
+            print(f"WROTE {DEFAULT_OUTPUT.relative_to(ROOT)} ({inventory['entry_count']} records)")
             return 0
         if args.check:
             actual = DEFAULT_OUTPUT.read_bytes()
@@ -231,7 +381,7 @@ def main(argv: list[str] | None = None) -> int:
                     file=sys.stderr,
                 )
                 return 1
-            print(f"PASS: {DEFAULT_OUTPUT.relative_to(ROOT)} covers {build_inventory()['entry_count']} source candidates")
+            print(f"PASS: {DEFAULT_OUTPUT.relative_to(ROOT)} covers {inventory['entry_count']} records")
             return 0
         sys.stdout.buffer.write(expected)
         return 0
