@@ -30,19 +30,22 @@ No IBTrACS bytes are admitted by this review.
 
 ## Rights assessment
 
-NCEI's IBTrACS Terms of Use state that the data policy follows the World Data Center for Meteorology approach of full and open access and that contributing Regional Specialized Meteorological Centers have agreements allowing IBTrACS data to be open for distribution. NCEI states that WMO Resolution 40 is used as the guide for commercial use.
+NCEI's current IBTrACS Terms of Use state that the data policy follows the World Data Center for Meteorology approach of full and open access and that contributing Regional Specialized Meteorological Centers have agreements allowing IBTrACS data to be open for distribution. The same NCEI product page currently says that WMO Resolution 40 is used as its guide for commercial use.
+
+That product-specific reference must not be confused with the current general WMO data-policy framework. WMO describes Resolution 1 (Cg-Ext(2021), the Unified Policy for the International Exchange of Earth System Data) as the comprehensive update that builds on the earlier Resolutions 40, 25 and 60 and replaces the former Essential/Additional terminology with Core/Recommended data.
 
 The NCEI v4.01 metadata record lists citation and liability language under Use Constraints and does not state an additional product-specific non-commercial restriction.
 
 Engineering interpretation for this metadata admission:
 
-- licence/terms identity: NCEI IBTrACS Terms of Use, WDC full/open-access policy, with WMO Resolution 40 commercial-use guidance;
-- commercial use: allowed for the reviewed IBTrACS distribution subject to the stated policy/guidance and any applicable source conditions;
-- redistribution: the IBTrACS page explicitly describes the dataset as open for distribution;
+- licence/terms identity: current NCEI IBTrACS Terms of Use and WDC full/open-access policy; the NCEI product page currently references WMO Resolution 40 for commercial-use guidance;
+- current WMO policy context: Resolution 1 (Cg-Ext(2021), Unified Data Policy), which is distinct from the historical Resolution 40 reference retained by the NCEI product terms;
+- commercial use: allowed for the reviewed IBTrACS distribution based on the current NCEI product terms, subject to any applicable source conditions;
+- redistribution: the current IBTrACS page explicitly describes the dataset as open for distribution;
 - attribution/citation: use the NCEI versioned dataset citation, identify subset and access date, and cite the core IBTrACS publication where applicable;
 - repository review scope: metadata only.
 
-WMO Resolution 40 distinguishes essential from additional meteorological data and allows some additional data to carry commercial re-export conditions. A future raw-publication proposal must therefore re-check the then-current IBTrACS Terms of Use and selected-file metadata instead of treating this metadata review as a permanent provider-wide licence shortcut.
+A future raw-publication proposal must re-check the then-current NCEI IBTrACS Terms of Use, selected-file/source-agency conditions and then-current WMO policy. This review does not use either historical Resolution 40 or current Resolution 1 as a provider-wide shortcut for rights not stated by NCEI or the selected source artifacts.
 
 This is an engineering rights assessment, not legal advice.
 
@@ -84,7 +87,7 @@ It is not sufficient by itself for error-free historical truth, building-level h
 
 Before any IBTrACS bytes can move beyond metadata-only status, a proposal must:
 
-1. re-check the current v04r01 product page, Terms of Use, metadata constraints and change log;
+1. re-check the current v04r01 product page, Terms of Use, selected source-agency conditions, current WMO policy context, metadata constraints and change log;
 2. freeze the exact subset, format, retrieval timestamp and file identity;
 3. acquire bytes outside Git and record byte size plus SHA-256;
 4. preserve storm/event identifiers, agency/source fields, provisional/final status, wind conventions, units and missing-value semantics;
@@ -100,4 +103,5 @@ Until then, no raw or derived IBTrACS bytes belong in this repository.
 - IBTrACS product, documentation, access and Terms of Use: `https://www.ncei.noaa.gov/products/international-best-track-archive`
 - v4.01 NCEI metadata record: `https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.ncdc%3AC01552`
 - Dataset DOI: `https://doi.org/10.25921/82ty-9e16`
-- WMO Resolution 40: `https://community.wmo.int/resolution-40`
+- WMO Unified Data Policy, Resolution 1 (Cg-Ext(2021)): `https://public.wmo.int/wmo-unified-data-policy-resolution-res1`
+- WMO Resolution 40 page referenced by the current NCEI IBTrACS Terms of Use: `https://community.wmo.int/resolution-40`
