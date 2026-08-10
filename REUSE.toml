@@ -4,7 +4,7 @@
 version = 1
 
 [[annotations]]
-path = ["schemas/*.json", "manifests/*.json", "landscape/*.json"]
+path = ["schemas/*.json", "manifests/*.json", "landscape/*.json", "access/*.json"]
 precedence = "override"
 SPDX-FileCopyrightText = "2026 OpenCatastrophe contributors"
 SPDX-License-Identifier = "Apache-2.0"
