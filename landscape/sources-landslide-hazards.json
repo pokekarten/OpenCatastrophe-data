@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry of landslide and mass-movement hazard sources relevant to catastrophe modelling, validation and compound-hazard analysis.",
+  "review_date": "2026-08-10",
+  "entries": [
+    {
+      "candidate_id": "usgs.landslide-inventories.v3",
+      "name": "USGS Landslide Inventories across the United States v3.0",
+      "provider": "U.S. Geological Survey Landslide Hazards Program",
+      "categories": [
+        "landslides",
+        "mass_movements",
+        "spatial_inventory",
+        "event_catalogue",
+        "hazard_validation"
+      ],
+      "spatial_scope": "United States",
+      "temporal_scope": "version 3.0 release dated February 2025; constituent inventories span heterogeneous historical periods and event-date precision",
+      "resolution_or_granularity": "integrated point and polygon inventories distributed as GPKG, SHP and CSV with USGS_ID, source-inventory linkage, machine-readable date bounds, landslide type and relative confidence metadata",
+      "potential_roles": [
+        "landslide_inventory_validation",
+        "spatial_susceptibility_benchmarking",
+        "source_lineage_analysis",
+        "regional_generalization_checks"
+      ],
+      "authoritative_url": "https://www.usgs.gov/data/landslide-inventories-across-united-states-ver-30-february-2025",
+      "access_class_hint": "public_data_release_multiple_geospatial_formats",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "USGS identifies DOI 10.5066/P14AJF8I and marks the v3.0 release CC0 1.0, but any future admission still needs exact file identities and scope review. The integrated database intentionally preserves heterogeneous constituent inventories: date ranges may be uncertain, classification methods vary, confidence is relative rather than a formal field-attribute accuracy score, and some retained features are not strictly landslides, including gullies or avalanche chutes. Preserve Inventory/Inv_URL provenance instead of treating the compilation as homogeneous ground truth."
+    },
+    {
+      "candidate_id": "nasa.lhasa.2.1",
+      "name": "NASA Landslide Hazard Assessment for Situational Awareness (LHASA) 2.1",
+      "provider": "NASA Goddard Space Flight Center",
+      "categories": [
+        "landslides",
+        "hazard_nowcast",
+        "model_output",
+        "rainfall_triggered_hazards",
+        "compound_hazards"
+      ],
+      "spatial_scope": "global",
+      "temporal_scope": "public web-map metadata states April 2021 to present with twice-daily updates at review time",
+      "resolution_or_granularity": "approximately 30 arcseconds (~1 km) global model-derived hazard nowcast/exposure layers using satellite and forecast inputs",
+      "potential_roles": [
+        "landslide_nowcast_benchmarking",
+        "rainfall_triggered_hazard_context",
+        "compound_hazard_screening",
+        "operational_model_comparison"
+      ],
+      "authoritative_url": "https://gis.earthdata.nasa.gov/portal/home/item.html?id=9e65a60a305b458bba6330baa93c0238",
+      "access_class_hint": "public_arcgis_feature_and_imagery_services",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "NASA describes LHASA 2.1 as a global monitoring/nowcast product and explicitly says it is not a substitute for local site investigations. This is model-derived hazard output, not observed landslide truth; public metadata cites GPM/SMAP inputs and a machine-learning nowcast. Because NASA landslide catalog observations are used to develop or verify landslide models, any future evaluation must establish lineage and split independence before using COOLR/GLC and LHASA together as supposedly independent evidence."
+    }
+  ]
+}
