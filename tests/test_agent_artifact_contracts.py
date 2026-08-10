@@ -135,6 +135,23 @@ class AgentArtifactContractTests(unittest.TestCase):
         with self.assertRaisesRegex(validator.ContractError, "agent_ready"):
             validator.validate_task(payload)
 
+    def test_task_external_source_rejects_private_or_signed_uri(self) -> None:
+        for uri in (
+            "https://localhost/source",
+            "https://example.invalid/source?token=" + "a" * 30,
+        ):
+            with self.subTest(uri=uri):
+                payload = valid_task()
+                payload["external_sources"] = [
+                    {
+                        "uri": uri,
+                        "role": "authoritative evidence",
+                        "reviewed_at": "2026-08-10T01:10:00+02:00",
+                    }
+                ]
+                with self.assertRaises(validator.ContractError):
+                    validator.validate_task(payload)
+
     def test_valid_deterministic_run(self) -> None:
         validator.validate_run(valid_run(), expected_repository=REPOSITORY)
 
