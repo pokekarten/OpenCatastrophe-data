@@ -284,9 +284,7 @@ def validate_task(payload: Any, *, expected_repository: str | None = None, expec
         for i, item in enumerate(_arr(task["external_sources"], "task.external_sources")):
             source = _obj(item, f"task.external_sources[{i}]")
             _closed(source, f"task.external_sources[{i}]", {"uri", "role", "reviewed_at"}, {"uri", "role", "reviewed_at", "version"})
-            uri = _str(source["uri"], f"task.external_sources[{i}].uri")
-            if not (uri.startswith("https://") or uri.startswith("urn:")):
-                raise ContractError("external source URI must use https:// or urn:")
+            _public_external_uri(source["uri"], f"task.external_sources[{i}].uri")
             _str(source["role"], f"task.external_sources[{i}].role")
             _timestamp(source["reviewed_at"], f"task.external_sources[{i}].reviewed_at")
             if "version" in source and _str(source["version"], f"task.external_sources[{i}].version").lower() == "latest":
