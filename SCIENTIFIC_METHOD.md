@@ -9,7 +9,7 @@ OpenCatastrophe-data exists to make the evidential basis of catastrophe-risk res
 
 ## Evidence classes
 
-Keep these categories explicit in issues, pull requests, source reviews, and release evidence:
+Keep these categories explicit in public Issues when enabled, Pull Requests, source reviews, and release evidence:
 
 1. **Repository source** — current, pinned manifests, schemas, code, tests, or accepted decision records.
 2. **Authoritative external evidence** — provider documentation, licence/terms, standards, peer-reviewed literature, or stable public metadata.
@@ -95,8 +95,10 @@ A new source, transformation, scientific interpretation, or interoperability map
 - limitations and plausible alternative interpretations;
 - whether any external bytes would enter Git and the exact permission supporting that scope.
 
-Use the scientific/methodology issue form for proposals that should be reviewed before implementation.
+Use the scientific/methodology Issue Form when Issues are enabled. When Issues are disabled, keep speculative candidate material out of the durable tree and open a bounded draft Pull Request only once enough authoritative public evidence exists for review.
 
 ## Current claim boundary
 
-The repository is pre-alpha and currently keeps the DWD extreme-wind source at metadata-only admission. Repository checks demonstrate consistency with current admission/provenance contracts; they do not establish that a source is scientifically sufficient for every catastrophe-risk use case or authorize broader redistribution than the exact recorded scope.
+The repository is pre-alpha and admits external sources only within the scope recorded by each manifest. The canonical current source inventory is `docs/source-reviews/README.md` together with the machine-readable manifests in `manifests/`.
+
+Repository checks demonstrate consistency with the current admission, provenance and public-metadata gates; they do not establish that any source is scientifically sufficient for every catastrophe-risk use case or authorize broader redistribution than the exact recorded scope. No external dataset byte becomes an OpenCatastrophe artifact merely because its metadata is admitted.
