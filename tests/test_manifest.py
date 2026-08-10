@@ -36,6 +36,26 @@ class ManifestTests(unittest.TestCase):
                 payload = vm.load_manifest(path)
                 vm.assert_public_asset_allowed(payload, "metadata")
 
+    def test_registry_manifest_identity_is_path_stable_and_unique(self) -> None:
+        manifests = sorted((ROOT / "manifests").glob("*.json"))
+        self.assertTrue(manifests)
+        dataset_ids: list[str] = []
+        for path in manifests:
+            payload = vm.load_manifest(path)
+            dataset_id = payload["dataset_id"]
+            with self.subTest(manifest=path.name):
+                self.assertEqual(
+                    path.stem,
+                    dataset_id,
+                    "registry manifest filename must equal its dataset_id",
+                )
+            dataset_ids.append(dataset_id)
+        self.assertEqual(
+            len(dataset_ids),
+            len(set(dataset_ids)),
+            "registry dataset_id values must be unique",
+        )
+
     def test_narrow_review_blocks_source_permitted_raw_and_derived(self) -> None:
         with self.assertRaises(vm.ManifestError):
             vm.assert_public_asset_allowed(self.payload, "raw")
