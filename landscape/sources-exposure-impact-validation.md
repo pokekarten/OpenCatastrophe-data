@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-08-10`  
 **Purpose:** Non-admission discovery registry of additional exposure, built-environment and impact-validation sources relevant to catastrophe risk.
 
-**Entries:** 10
+**Entries:** 11
 
 ## Google Open Buildings 2.5D Temporal Dataset v1
 
@@ -167,3 +167,18 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Useful as the event-identity spine for other OpenFEMA impact datasets. Current OpenFEMA metadata marks access as public but leaves its licence field unset, so source-specific reuse rights remain fail-closed pending terms review; county detail is unavailable before 1964 and historical records include known incompleteness and human-entry error.
+
+## Overture Maps Buildings
+
+**Candidate ID:** `overture.maps.buildings`  
+**Provider:** Overture Maps Foundation  
+**Categories:** `built_environment`, `building_footprints`, `entity_resolution`, `geospatial_interoperability`, `exposure_context`  
+**Spatial scope:** global  
+**Temporal scope:** monthly releases; official current release at review time 2026-06-17.0 with schema v1.17.0; later scheduled releases require re-check  
+**Resolution / granularity:** building and building_part vector features with polygon/multipolygon geometry, conflated upstream sources and GERS identifiers; no single raster resolution  
+**Potential roles:** `exposure_entity_resolution`, `cross_source_building_linkage`, `hazard_exposure_join`, `cross_release_entity_tracking`  
+**Access hint:** `public_cloud_geoparquet_and_query_tools`  
+**Authoritative source:** <https://docs.overturemaps.org/guides/buildings/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Overture documents the Buildings theme under ODbL 1.0 and conflates multiple community, national/municipal and ML-derived building sources. GERS can provide stable entity linkage across datasets/releases, including insurance-to-building joins, but conflated footprints are not cadastral, occupancy, value or portfolio truth. Public data releases are retained for at most 60 days, so any future use must pin an exact release/schema and byte identities; rights remain unreviewed in this discovery registry.
