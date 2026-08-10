@@ -13,6 +13,11 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, urlsplit
 
+if __package__:
+    from . import validate_manifest as manifest_contract
+else:
+    import validate_manifest as manifest_contract
+
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE_VERSION = "1.0.0"
 RUN_PROFILE_V1 = "1.0.0"
@@ -31,6 +36,7 @@ EVIDENCE_CLASSES = {"repository_source", "external_evidence", "inference", "desi
 LOSS_STAGES = {"ground_up", "gross", "insured", "ceded", "recoverable", "net"}
 COMPARISON_MODES = {"deterministic", "common_innovations", "distributional", "not_comparable"}
 RUN_INPUT_KINDS_V2 = {"data", "model", "config", "code", "fixture", "literature", "other"}
+DATA_ARTIFACT_KINDS_V2 = {"raw", "derived"}
 DATA_SCIENTIFIC_ROLES_V2 = {"training", "calibration", "validation", "holdout", "benchmark", "context"}
 RUN_ROLE_BY_KIND_V2 = {
     "model": {"model"},
@@ -287,6 +293,21 @@ def validate_task(payload: Any, *, expected_repository: str | None = None, expec
                 raise ContractError("external source version must not be mutable 'latest'")
 
 
+def _validated_manifest_binding(manifest_ref: str, artifact_kind: str, *, where: str) -> dict[str, Any]:
+    manifest_path = ROOT / manifest_ref
+    try:
+        manifest_payload = manifest_contract.load_manifest(manifest_path)
+        manifest_contract.validate_structure(manifest_payload)
+    except manifest_contract.ManifestError as exc:
+        raise ContractError(f"{where}.manifest does not satisfy the dataset-manifest contract: {exc}") from exc
+    if Path(manifest_ref).stem != manifest_payload["dataset_id"]:
+        raise ContractError(f"{where}.manifest filename must equal its dataset_id")
+    artifact = manifest_payload[f"{artifact_kind}_artifact"]
+    if artifact is None:
+        raise ContractError(f"{where} selected {artifact_kind} artifact is not identified by the manifest")
+    return artifact
+
+
 def _validate_run_v2_input(
     inp: dict[str, Any],
     *,
@@ -297,7 +318,7 @@ def _validate_run_v2_input(
 ) -> None:
     where = f"run.inputs[{index}]"
     required = {"id", "kind", "identity", "scientific_role"}
-    allowed = required | {"manifest", "sha256", "version"}
+    allowed = required | {"manifest", "artifact", "sha256", "version"}
     _closed(inp, where, required, allowed)
     input_id = _str(inp["id"], f"{where}.id")
     if input_id in input_ids:
@@ -316,16 +337,30 @@ def _validate_run_v2_input(
         raise ContractError(f"unsupported {where}.scientific_role {role!r} for kind {kind!r}")
     if "version" in inp and _str(inp["version"], f"{where}.version").lower() == "latest":
         raise ContractError(f"{where}.version must not be mutable 'latest'")
+
+    digest: str | None = None
     if kind == "data":
-        if "manifest" not in inp or "sha256" not in inp:
-            raise ContractError(f"{where} kind data requires admitted manifest and exact sha256")
-        manifest = _repository_file(inp["manifest"], f"{where}.manifest", prefix="manifests/", suffix=".json")
-        if len(Path(manifest).parts) != 2:
+        if "manifest" not in inp or "artifact" not in inp or "sha256" not in inp:
+            raise ContractError(f"{where} kind data requires manifest, raw/derived artifact and exact sha256")
+        manifest_ref = _repository_file(inp["manifest"], f"{where}.manifest", prefix="manifests/", suffix=".json")
+        if len(Path(manifest_ref).parts) != 2:
             raise ContractError(f"{where}.manifest must directly reference one manifests/*.json file")
-    elif "manifest" in inp:
-        raise ContractError(f"{where}.manifest is only valid for kind data")
-    if "sha256" in inp:
+        artifact_kind = _str(inp["artifact"], f"{where}.artifact")
+        if artifact_kind not in DATA_ARTIFACT_KINDS_V2:
+            raise ContractError(f"{where}.artifact must be raw or derived")
+        artifact = _validated_manifest_binding(manifest_ref, artifact_kind, where=where)
         digest = _sha256(inp["sha256"], f"{where}.sha256")
+        if artifact["sha256"] != digest:
+            raise ContractError(f"{where}.sha256 does not match the selected manifest artifact")
+        if artifact["storage_reference"] != identity:
+            raise ContractError(f"{where}.identity must match the selected manifest artifact storage_reference")
+    else:
+        if "manifest" in inp or "artifact" in inp:
+            raise ContractError(f"{where}.manifest/artifact are only valid for kind data")
+        if "sha256" in inp:
+            digest = _sha256(inp["sha256"], f"{where}.sha256")
+
+    if digest is not None:
         if digest in input_hashes:
             raise ContractError(
                 f"duplicate exact input content sha256: {digest}; split/model roles require distinct content identities"
