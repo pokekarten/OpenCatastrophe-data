@@ -19,11 +19,13 @@ import stat
 import sys
 import zipfile
 from pathlib import Path, PurePosixPath
+from typing import BinaryIO
 
 MAX_MEMBERS = 10_000
 MAX_MEMBER_BYTES = 256 * 1024 * 1024
 MAX_TOTAL_UNCOMPRESSED_BYTES = 1024 * 1024 * 1024
 STATION_ID_RE = re.compile(r"(?<!\d)(\d{5})(?!\d)")
+WINDOWS_DRIVE_RE = re.compile(r"^[A-Za-z]:/")
 METADATA_FAMILIES = (
     "equipment",
     "geography",
@@ -38,11 +40,10 @@ class InspectionError(ValueError):
     """Raised when an input cannot be inspected safely and deterministically."""
 
 
-def sha256_file(path: Path) -> str:
+def _sha256_stream(handle: BinaryIO) -> str:
     digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
+    for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+        digest.update(chunk)
     return digest.hexdigest()
 
 
@@ -50,7 +51,7 @@ def _safe_member_name(name: str) -> str:
     if not name or "\\" in name or "\x00" in name:
         raise InspectionError("ZIP member path must be a non-empty POSIX path")
     candidate = name[:-1] if name.endswith("/") else name
-    if not candidate or name.startswith("/"):
+    if not candidate or name.startswith("/") or WINDOWS_DRIVE_RE.match(candidate):
         raise InspectionError(f"unsafe ZIP member path: {name}")
     if any(part in {"", ".", ".."} for part in candidate.split("/")):
         raise InspectionError(f"unsafe ZIP member path: {name}")
@@ -76,45 +77,55 @@ def inspect_zip(path: Path) -> dict[str, object]:
     try:
         if path.is_symlink() or not path.is_file():
             raise InspectionError("input must be a regular file, not a symlink")
-        byte_size = path.stat().st_size
-        digest = sha256_file(path)
-        with zipfile.ZipFile(path) as archive:
-            infos = archive.infolist()
-            if len(infos) > MAX_MEMBERS:
-                raise InspectionError(f"ZIP contains more than {MAX_MEMBERS} members")
 
-            seen: set[str] = set()
-            members: list[dict[str, object]] = []
-            total_uncompressed = 0
-            station_ids: set[str] = set()
-            metadata_families: set[str] = set()
+        with path.open("rb") as handle:
+            handle.seek(0, 2)
+            byte_size = handle.tell()
+            handle.seek(0)
+            digest = _sha256_stream(handle)
+            handle.seek(0)
 
-            for info in infos:
-                name = _safe_member_name(info.filename)
-                if name in seen:
-                    raise InspectionError(f"duplicate ZIP member path: {name}")
-                seen.add(name)
-                if _is_symlink(info):
-                    raise InspectionError(f"ZIP symlink member is not allowed: {name}")
-                if info.file_size < 0 or info.file_size > MAX_MEMBER_BYTES:
-                    raise InspectionError(f"ZIP member exceeds safe size bound: {name}")
-                total_uncompressed += info.file_size
-                if total_uncompressed > MAX_TOTAL_UNCOMPRESSED_BYTES:
-                    raise InspectionError("ZIP exceeds total uncompressed size bound")
+            with zipfile.ZipFile(handle) as archive:
+                infos = archive.infolist()
+                if len(infos) > MAX_MEMBERS:
+                    raise InspectionError(f"ZIP contains more than {MAX_MEMBERS} members")
 
-                station_ids.update(STATION_ID_RE.findall(PurePosixPath(name).name))
-                family = _metadata_family(name)
-                if family is not None:
-                    metadata_families.add(family)
-                members.append(
-                    {
-                        "path": name,
-                        "compressed_bytes": info.compress_size,
-                        "uncompressed_bytes": info.file_size,
-                        "crc32": f"{info.CRC:08x}",
-                    }
-                )
-    except (OSError, zipfile.BadZipFile, InspectionError) as exc:
+                seen: set[str] = set()
+                members: list[dict[str, object]] = []
+                total_uncompressed = 0
+                station_ids: set[str] = set()
+                metadata_families: set[str] = set()
+
+                for info in infos:
+                    name = _safe_member_name(info.filename)
+                    if name in seen:
+                        raise InspectionError(f"duplicate ZIP member path: {name}")
+                    seen.add(name)
+                    if _is_symlink(info):
+                        raise InspectionError(f"ZIP symlink member is not allowed: {name}")
+                    if info.file_size < 0 or info.file_size > MAX_MEMBER_BYTES:
+                        raise InspectionError(f"ZIP member exceeds safe size bound: {name}")
+                    total_uncompressed += info.file_size
+                    if total_uncompressed > MAX_TOTAL_UNCOMPRESSED_BYTES:
+                        raise InspectionError("ZIP exceeds total uncompressed size bound")
+
+                    station_ids.update(STATION_ID_RE.findall(PurePosixPath(name).name))
+                    family = _metadata_family(name)
+                    if family is not None:
+                        metadata_families.add(family)
+                    members.append(
+                        {
+                            "path": name,
+                            "compressed_bytes": info.compress_size,
+                            "uncompressed_bytes": info.file_size,
+                            "crc32": f"{info.CRC:08x}",
+                        }
+                    )
+
+            handle.seek(0)
+            if _sha256_stream(handle) != digest:
+                raise InspectionError("input bytes changed during inspection")
+    except (OSError, zipfile.BadZipFile, zipfile.LargeZipFile, InspectionError) as exc:
         if isinstance(exc, InspectionError):
             raise
         raise InspectionError(str(exc)) from exc
@@ -123,7 +134,7 @@ def inspect_zip(path: Path) -> dict[str, object]:
     return {
         "profile": "opencatastrophe-dwd-metadata-zip-inspection-v1",
         "input": {
-            "filename": path.name,
+            "local_filename": path.name,
             "byte_size": byte_size,
             "sha256": digest,
         },
