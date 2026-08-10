@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 from scripts import source_landscape_contract as landscape
+from scripts import validate_agent_artifact as agent
 from scripts import validate_manifest as manifest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -83,9 +84,46 @@ class ContractConsistencyTests(unittest.TestCase):
         self.assertIn("source_landscape_contract.py", schema["$comment"])
         self.assertIn("never implies", schema["$comment"])
 
+    def test_run_evidence_v2_schema_matches_executable_model_provenance_surface(self) -> None:
+        schema = json.loads((ROOT / "schemas/run-evidence-v2.schema.json").read_text(encoding="utf-8"))
+        self.assertEqual(schema["properties"]["profile_version"]["const"], agent.RUN_PROFILE_V2)
+
+        input_schema = schema["properties"]["inputs"]["items"]
+        self.assertEqual(set(input_schema["properties"]["kind"]["enum"]), agent.RUN_INPUT_KINDS_V2)
+        schema_roles = set(input_schema["properties"]["scientific_role"]["enum"])
+        validator_roles = set(agent.DATA_SCIENTIFIC_ROLES_V2)
+        for roles in agent.RUN_ROLE_BY_KIND_V2.values():
+            validator_roles.update(roles)
+        self.assertEqual(schema_roles, validator_roles)
+
+        data_rule = next(
+            rule
+            for rule in input_schema["allOf"]
+            if rule.get("if", {}).get("properties", {}).get("kind", {}).get("const") == "data"
+        )
+        self.assertEqual(set(data_rule["then"]["required"]), {"manifest", "sha256"})
+        self.assertEqual(
+            set(data_rule["then"]["properties"]["scientific_role"]["enum"]),
+            agent.DATA_SCIENTIFIC_ROLES_V2,
+        )
+
+        claim_reference = schema["$defs"]["claimReference"]
+        self.assertEqual(
+            set(claim_reference["properties"]["kind"]["enum"]),
+            agent.CLAIM_REFERENCE_KINDS_V2,
+        )
+        self.assertEqual(
+            set(schema["$defs"]["claimScope"]["properties"]),
+            agent.CLAIM_SCOPE_KEYS_V2,
+        )
+        self.assertIn("validate_agent_artifact.py", schema["$comment"])
+        self.assertIn("does not establish rights", schema["$comment"])
+
     def test_public_url_security_boundaries_do_not_drift(self) -> None:
         self.assertEqual(landscape.SENSITIVE_QUERY_KEYS, manifest.SENSITIVE_QUERY)
+        self.assertEqual(agent.SENSITIVE_QUERY_KEYS, manifest.SENSITIVE_QUERY)
         self.assertEqual(landscape.LOCAL_HOST_SUFFIXES, manifest.LOCAL_HOST_SUFFIXES)
+        self.assertEqual(agent.LOCAL_HOST_SUFFIXES, manifest.LOCAL_HOST_SUFFIXES)
 
         unsafe_urls = (
             "https://user:secret@example.invalid/source",
@@ -102,10 +140,13 @@ class ContractConsistencyTests(unittest.TestCase):
                 manifest._public_url(url, "synthetic_url")
             with self.subTest(url=url), self.assertRaises(landscape.LandscapeContractError):
                 landscape._validate_authoritative_url(url, path=Path("synthetic.json"))
+            with self.subTest(url=url), self.assertRaises(agent.ContractError):
+                agent._public_external_uri(url, "synthetic_url")
 
         safe_url = "https://example.invalid/source?dataset=public"
         self.assertEqual(manifest._public_url(safe_url, "synthetic_url"), safe_url)
         landscape._validate_authoritative_url(safe_url, path=Path("synthetic.json"))
+        self.assertEqual(agent._public_external_uri(safe_url, "synthetic_url"), safe_url)
 
     def test_every_admitted_manifest_has_exact_source_review_reference(self) -> None:
         manifest_paths = {
