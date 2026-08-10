@@ -82,6 +82,16 @@ class SourceLandscapeQueryTests(unittest.TestCase):
             with self.assertRaisesRegex(LandscapeQueryError, "non-finite JSON number"):
                 load_landscape(path.parent)
 
+    def test_invalid_review_calendar_date_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            self._write_shard(directory / "sources-a.json", [self._entry("example.source")])
+            payload = json.loads((directory / "sources-a.json").read_text(encoding="utf-8"))
+            payload["review_date"] = "2026-02-30"
+            (directory / "sources-a.json").write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(LandscapeQueryError, "valid calendar date"):
+                load_landscape(directory)
+
     def test_admission_or_review_escalation_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)

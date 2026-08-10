@@ -10,6 +10,7 @@ import ipaddress
 import json
 import re
 import sys
+from datetime import date
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, urlsplit
@@ -157,6 +158,10 @@ def load_landscape(directory: Path = DEFAULT_LANDSCAPE_DIR) -> tuple[dict[str, A
         review_date = payload.get("review_date")
         if not isinstance(review_date, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", review_date):
             raise LandscapeQueryError(f"{path}: review_date must be YYYY-MM-DD")
+        try:
+            date.fromisoformat(review_date)
+        except ValueError as exc:
+            raise LandscapeQueryError(f"{path}: review_date must be a valid calendar date") from exc
         shard_entries = payload.get("entries")
         if not isinstance(shard_entries, list) or not shard_entries:
             raise LandscapeQueryError(f"{path}: entries must be a non-empty array")
