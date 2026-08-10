@@ -12,7 +12,7 @@ Start with `README.md`, `AGENTS.md` and `ARCHITECTURE.md`. Source/admission chan
 ## Workflow
 
 1. Re-check current `main`, existing Issues and active Pull Requests before starting non-trivial work.
-2. Open or reference the most specific Issue Form. For bounded agent work, use the Agent Task form when useful.
+2. When Issues are enabled, open or reference the most specific Issue Form. For bounded agent work, use the Agent Task form when useful. While Issues are disabled, do not create a substitute task tracker in the repository: start only bounded work that is already justified by current public repository/provider evidence, and use the draft Pull Request as the visible work claim.
 3. Create a short-lived branch from current `main`, declare shared/single-writer surfaces, and keep the change focused. `main` is the only persistent development branch; do not maintain long-lived agent, development, release or patch branches.
 4. Open a draft Pull Request once there is a coherent first change; it is the visible implementation claim for those shared surfaces.
 5. Add deterministic offline tests for durable behavior. Use the machine-readable agent-task/run-evidence contracts when formal execution or handoff evidence is useful rather than creating a second task tracker.
