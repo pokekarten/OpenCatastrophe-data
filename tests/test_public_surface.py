@@ -9,6 +9,21 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+USES_ENTRY_RE = re.compile(
+    r"(?m)(?:^|[{,])\s*(?:-\s*)?(?:[\"']?uses[\"']?)\s*:\s*([^\s#,}]+)"
+)
+UNSUPPORTED_WORKFLOW_YAML = (
+    (re.compile(r"(?m)(?:^|\s)[&*][A-Za-z0-9_-]+"), "YAML anchors and aliases"),
+    (re.compile(r'(?m)^\s*(?:-\s*)?"[^"\n]*\\[^"\n]*"\s*:'), "escaped quoted mapping keys"),
+    (re.compile(r"(?m)^\s*\?\s+"), "explicit mapping keys"),
+)
+
+
+def _workflow_uses(workflow: str) -> list[str]:
+    for pattern, feature in UNSUPPORTED_WORKFLOW_YAML:
+        if pattern.search(workflow):
+            raise ValueError(f"workflow uses unsupported syntax for action-pin scanning: {feature}")
+    return USES_ENTRY_RE.findall(workflow)
 
 
 class PublicSurfaceTests(unittest.TestCase):
@@ -23,23 +38,47 @@ class PublicSurfaceTests(unittest.TestCase):
                     self.assertNotIn(token, text)
 
     def test_workflow_actions_are_exactly_pinned(self) -> None:
-        workflows = "\n".join(
-            (ROOT / path).read_text(encoding="utf-8")
-            for path in (
-                ".github/workflows/ci.yml",
-                ".github/workflows/pr-file-collision.yml",
-            )
-        )
-        uses = re.findall(r"^\s*uses:\s*([^\s#]+)", workflows, flags=re.MULTILINE)
+        workflow_files = self._workflow_files()
+        self.assertTrue(workflow_files, "at least one tracked GitHub Actions workflow is expected")
+        uses = []
+        for path in workflow_files:
+            workflow = path.read_text(encoding="utf-8")
+            for item in _workflow_uses(workflow):
+                uses.append((path.relative_to(ROOT).as_posix(), item))
+
         checkout = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
         setup_python = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
         dependency_review = "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294"
         allowed = {checkout, setup_python, dependency_review}
-        self.assertEqual(len(uses), 10)
-        self.assertTrue(all(item in allowed for item in uses))
-        self.assertEqual(uses.count(checkout), 5)
-        self.assertEqual(uses.count(setup_python), 4)
-        self.assertEqual(uses.count(dependency_review), 1)
+
+        for workflow_path, item in uses:
+            with self.subTest(workflow=workflow_path, uses=item):
+                self.assertRegex(item, r"^[^@\s]+@[0-9a-f]{40}$")
+                self.assertIn(item, allowed)
+
+    def test_workflow_action_scanner_covers_yaml_list_and_flow_entries(self) -> None:
+        untrusted = "example/action@main"
+        cases = (
+            f"      - uses: {untrusted}\n",
+            f"      - uses : {untrusted}\n",
+            f"      - 'uses': {untrusted}\n",
+            f"      - {{name: example, uses: {untrusted}}}\n",
+        )
+        for workflow in cases:
+            with self.subTest(workflow=workflow):
+                self.assertEqual(_workflow_uses(workflow), [untrusted])
+
+    def test_workflow_action_scanner_rejects_ambiguous_yaml_syntax(self) -> None:
+        cases = (
+            "      - &step uses: example/action@main\n",
+            "      - *step\n",
+            '      - "u\\u0073es": example/action@main\n',
+            "      ? uses\n      : example/action@main\n",
+        )
+        for workflow in cases:
+            with self.subTest(workflow=workflow):
+                with self.assertRaises(ValueError):
+                    _workflow_uses(workflow)
 
     def test_workflow_is_read_only_and_has_stable_required_job(self) -> None:
         workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
@@ -85,6 +124,22 @@ class PublicSurfaceTests(unittest.TestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, workflow)
         self.assertNotRegex(workflow, r"(?m)^\s*(?:contents|pull-requests|issues|actions):\s*write\s*$")
+
+    def _workflow_files(self) -> list[Path]:
+        result = subprocess.run(
+            ["git", "ls-files", "-z", "--", ".github/workflows"],
+            cwd=ROOT,
+            stdout=subprocess.PIPE,
+            check=True,
+        )
+        paths = []
+        for raw in result.stdout.split(b"\0"):
+            if not raw:
+                continue
+            relative = Path(raw.decode("utf-8"))
+            if relative.suffix.lower() in {".yml", ".yaml"}:
+                paths.append(ROOT / relative)
+        return sorted(paths)
 
     def _text_files(self) -> list[Path]:
         result = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT, stdout=subprocess.PIPE, check=True)
