@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "isc-gem.global-instrumental-earthquake-catalogue.v12.1",
+  "provider": "International Seismological Centre (ISC) / GEM Foundation",
+  "product_name": "ISC-GEM Global Instrumental Earthquake Catalogue",
+  "version_or_release": "12.1",
+  "canonical_source": "https://www.isc.ac.uk/iscgem/download.php",
+  "retrieved_at": "2026-08-10T01:20:00Z",
+  "retrieval_query_or_filters": "Metadata-only review of ISC-GEM version 12.1 dated 27 November 2025. No catalogue CSV/KMZ bytes were acquired.",
+  "access_class": "open",
+  "modelling_layer": "event_catalogue",
+  "intended_use": "Observed instrumental earthquake-event reference for validating and contextualising the already admitted ESHM20 modelled seismic-hazard layer, historical event selection and cross-checking earthquake source/event semantics. It is not a ground-motion field, damage catalogue or insured-loss dataset.",
+  "raw_artifact": null,
+  "derived_artifact": null,
+  "licensing": {
+    "status": "verified",
+    "spdx_expression": "CC-BY-SA-3.0",
+    "licence_name": "Creative Commons Attribution-ShareAlike 3.0 Unported",
+    "terms_reference": "https://www.isc.ac.uk/iscgem/download.php",
+    "terms_reviewed_at": "2026-08-10T01:20:00Z",
+    "terms_version_or_date": "ISC-GEM download/legal page for catalogue version 12.1, reviewed 2026-08-10",
+    "terms_content_sha256": null,
+    "commercial_use_status": "allowed",
+    "attribution_requirements": "Provide attribution required by CC BY-SA 3.0 and cite the ISC-GEM catalogue/DOI as specified by ISC.",
+    "share_alike_or_derivative_requirements": "Adapted material/database use remains subject to the CC BY-SA 3.0 share-alike conditions described by the provider, including applicable neighbouring/database rights.",
+    "notes": "The authoritative ISC download/legal page states that version 12.1 is available under CC BY-SA 3.0 Unported and explicitly addresses database/neighbouring rights. This engineering review does not interpret a downstream transformation as escaping those conditions."
+  },
+  "redistribution": {
+    "status": "allowed",
+    "scope": "raw",
+    "conditions": "Source rights allow use/redistribution under CC BY-SA 3.0 subject to attribution and share-alike conditions. OpenCatastrophe approves metadata only; no catalogue file is admitted."
+  },
+  "privacy": {
+    "personal_data_status": "none",
+    "confidential_or_proprietary_status": "none",
+    "notes": "The reviewed scientific catalogue contains earthquake-event parameters, not person-level or confidential insured information."
+  },
+  "spatial": {
+    "crs": "geographic earthquake locations; exact coordinate semantics are defined by the catalogue",
+    "extent": "Global"
+  },
+  "temporal": {
+    "extent": "Global instrumental catalogue extending through 2021 in version 12.1; historical completeness varies by time, region and magnitude"
+  },
+  "variables_and_units": [
+    {
+      "name": "origin time",
+      "unit": "UTC date-time",
+      "description": "Reviewed earthquake origin-time field; exact precision and uncertainty must be preserved from the catalogue."
+    },
+    {
+      "name": "hypocentre",
+      "unit": "degree / km",
+      "description": "Earthquake latitude/longitude and depth with source-specific uncertainty/quality fields."
+    },
+    {
+      "name": "magnitude",
+      "unit": null,
+      "description": "Preferred/homogenized magnitude information, including moment magnitude where available or derived according to ISC-GEM methods."
+    }
+  ],
+  "transformation": null,
+  "review": {
+    "status": "approved_metadata_only",
+    "reviewed_at": "2026-08-10T01:20:00Z",
+    "reviewer": "OpenCatastrophe source audit",
+    "notes": "Metadata-only approval for exact version 12.1. The main and supplementary catalogues have different uncertainty semantics and must not be silently merged. Future raw work must select exact files, preserve catalogue fields/uncertainties/licence and record hashes outside Git."
+  }
+}
