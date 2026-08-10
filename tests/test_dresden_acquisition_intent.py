@@ -53,6 +53,10 @@ class AcquisitionIntentTests(unittest.TestCase):
             "2024-01-01T01:00:00+01:00",
         )
         self.assertEqual(intent["pegelonline"]["sampling_interval"]["status"], "unresolved")
+        self.assertEqual(
+            intent["pegelonline"]["sampling_interval"]["must_freeze_from"],
+            "retrieved_series_metadata.equidistance_minutes",
+        )
         self.assertEqual(intent["glofas"]["system_version"], "version_4_0")
         self.assertEqual(intent["glofas"]["hydrological_model"], "lisflood")
         self.assertEqual(intent["glofas"]["product_type"], "consolidated")
@@ -73,20 +77,23 @@ class AcquisitionIntentTests(unittest.TestCase):
         self.assertEqual(len(acquisition_intent_sha256(first)), 64)
         self.assertTrue(canonical_intent_bytes(first).startswith(b'{"glofas":'))
 
-    def test_finalization_invokes_grid_selector_and_freezes_sampling(self) -> None:
+    def test_finalization_accepts_source_equidistance_minutes_and_freezes_sampling(self) -> None:
         candidates = [
             GlofasGridCell(51.06, 13.74, DRESDEN_DRAINAGE_AREA_KM2 * 1.02),
             GlofasGridCell(51.10, 13.74, DRESDEN_DRAINAGE_AREA_KM2 * 1.01),
         ]
         plan = finalize_acquisition_intent(
-            pegelonline_sampling_interval_seconds=15 * 60,
+            pegelonline_equidistance_minutes=15,
             station_latitude=51.05,
             station_longitude=13.74,
             glofas_candidate_cells=candidates,
         )
         self.assertEqual(plan["phase"], "target_acquisition")
         self.assertFalse(plan["target_values_must_not_be_inspected"])
+        self.assertEqual(plan["pegelonline"]["sampling_interval"]["equidistance_minutes"], 15)
         self.assertEqual(plan["pegelonline"]["sampling_interval"]["seconds"], 900)
+        self.assertEqual(plan["metadata_resolution"]["pegelonline_equidistance_minutes"], 15)
+        self.assertEqual(plan["metadata_resolution"]["pegelonline_sampling_interval_seconds"], 900)
         self.assertEqual(
             plan["pegelonline"]["sampling_interval"]["expected_observations_per_24h"],
             96,
@@ -107,13 +114,13 @@ class AcquisitionIntentTests(unittest.TestCase):
             GlofasGridCell(51.10, 13.74, DRESDEN_DRAINAGE_AREA_KM2 * 1.01),
         ]
         forward = finalize_acquisition_intent(
-            pegelonline_sampling_interval_seconds=900,
+            pegelonline_equidistance_minutes=15,
             station_latitude=51.05,
             station_longitude=13.74,
             glofas_candidate_cells=candidates,
         )
         reverse = finalize_acquisition_intent(
-            pegelonline_sampling_interval_seconds=900,
+            pegelonline_equidistance_minutes=15,
             station_latitude=51.05,
             station_longitude=13.74,
             glofas_candidate_cells=reversed(candidates),
@@ -125,7 +132,7 @@ class AcquisitionIntentTests(unittest.TestCase):
         good_candidate = GlofasGridCell(51.06, 13.74, DRESDEN_DRAINAGE_AREA_KM2)
         with self.assertRaisesRegex(AcquisitionIntentError, "sampling interval"):
             finalize_acquisition_intent(
-                pegelonline_sampling_interval_seconds=1000,
+                pegelonline_equidistance_minutes=17,
                 station_latitude=51.05,
                 station_longitude=13.74,
                 glofas_candidate_cells=[good_candidate],
@@ -133,7 +140,7 @@ class AcquisitionIntentTests(unittest.TestCase):
 
         with self.assertRaisesRegex(AcquisitionIntentError, "grid cell"):
             finalize_acquisition_intent(
-                pegelonline_sampling_interval_seconds=900,
+                pegelonline_equidistance_minutes=15,
                 station_latitude=51.05,
                 station_longitude=13.74,
                 glofas_candidate_cells=[
@@ -141,11 +148,18 @@ class AcquisitionIntentTests(unittest.TestCase):
                 ],
             )
 
-    def test_type_confused_station_metadata_fails_through_canonical_selector(self) -> None:
+    def test_type_confused_equidistance_and_station_metadata_fail_closed(self) -> None:
         candidate = GlofasGridCell(51.06, 13.74, DRESDEN_DRAINAGE_AREA_KM2)
+        with self.assertRaisesRegex(AcquisitionIntentError, "equidistance_minutes"):
+            finalize_acquisition_intent(
+                pegelonline_equidistance_minutes=True,
+                station_latitude=51.05,
+                station_longitude=13.74,
+                glofas_candidate_cells=[candidate],
+            )
         with self.assertRaisesRegex(AcquisitionIntentError, "grid cell"):
             finalize_acquisition_intent(
-                pegelonline_sampling_interval_seconds=900,
+                pegelonline_equidistance_minutes=15,
                 station_latitude=True,
                 station_longitude=13.74,
                 glofas_candidate_cells=[candidate],
