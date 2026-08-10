@@ -7,23 +7,99 @@ import re
 import subprocess
 import unittest
 from pathlib import Path
+from typing import Any
+
+import yaml
+from yaml.nodes import MappingNode
 
 ROOT = Path(__file__).resolve().parents[1]
-USES_ENTRY_RE = re.compile(
-    r"(?m)(?:^|[{,])\s*(?:-\s*)?(?:[\"']?uses[\"']?)\s*:\s*([^\s#,}]+)"
-)
-UNSUPPORTED_WORKFLOW_YAML = (
-    (re.compile(r"(?m)(?:^|\s)[&*][A-Za-z0-9_-]+"), "YAML anchors and aliases"),
-    (re.compile(r'(?m)^\s*(?:-\s*)?"[^"\n]*\\[^"\n]*"\s*:'), "escaped quoted mapping keys"),
-    (re.compile(r"(?m)^\s*\?\s+"), "explicit mapping keys"),
-)
+
+
+class StrictWorkflowLoader(yaml.SafeLoader):
+    """Safe workflow loader with fail-closed mapping semantics."""
+
+
+# PyYAML's SafeLoader follows YAML 1.1 boolean resolution, where keys such as
+# `on` can become booleans. GitHub workflow syntax treats those keys as strings.
+# We only need structural/string semantics for action-pin validation, so disable
+# implicit boolean coercion rather than silently changing workflow keys.
+StrictWorkflowLoader.yaml_implicit_resolvers = {
+    key: list(resolvers) for key, resolvers in yaml.SafeLoader.yaml_implicit_resolvers.items()
+}
+for resolver_key, resolvers in list(StrictWorkflowLoader.yaml_implicit_resolvers.items()):
+    StrictWorkflowLoader.yaml_implicit_resolvers[resolver_key] = [
+        (tag, regexp) for tag, regexp in resolvers if tag != "tag:yaml.org,2002:bool"
+    ]
+
+
+def _construct_strict_mapping(
+    loader: StrictWorkflowLoader,
+    node: MappingNode,
+    deep: bool = False,
+) -> dict[str, Any]:
+    mapping: dict[str, Any] = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        if not isinstance(key, str):
+            raise ValueError("workflow mapping keys must be strings")
+        if key in mapping:
+            raise ValueError(f"workflow contains duplicate mapping key: {key!r}")
+        mapping[key] = loader.construct_object(value_node, deep=deep)
+    return mapping
+
+
+StrictWorkflowLoader.construct_mapping = _construct_strict_mapping  # type: ignore[method-assign]
 
 
 def _workflow_uses(workflow: str) -> list[str]:
-    for pattern, feature in UNSUPPORTED_WORKFLOW_YAML:
-        if pattern.search(workflow):
-            raise ValueError(f"workflow uses unsupported syntax for action-pin scanning: {feature}")
-    return USES_ENTRY_RE.findall(workflow)
+    try:
+        document = yaml.load(workflow, Loader=StrictWorkflowLoader)
+    except (yaml.YAMLError, ValueError) as exc:
+        raise ValueError(f"workflow YAML is not safely parseable: {exc}") from exc
+
+    uses: list[str] = []
+    visited: set[int] = set()
+    active: set[int] = set()
+
+    def walk(node: Any) -> None:
+        if isinstance(node, dict):
+            identity = id(node)
+            if identity in active:
+                raise ValueError("workflow YAML contains a recursive mapping alias")
+            if identity in visited:
+                return
+            active.add(identity)
+            for key, value in node.items():
+                if not isinstance(key, str):
+                    raise ValueError("workflow mapping keys must be strings")
+                if key == "uses":
+                    if not isinstance(value, str):
+                        raise ValueError("workflow uses value must be a string")
+                    uses.append(value)
+                walk(value)
+            active.remove(identity)
+            visited.add(identity)
+            return
+
+        if isinstance(node, list):
+            identity = id(node)
+            if identity in active:
+                raise ValueError("workflow YAML contains a recursive sequence alias")
+            if identity in visited:
+                return
+            active.add(identity)
+            for item in node:
+                walk(item)
+            active.remove(identity)
+            visited.add(identity)
+            return
+
+        if node is None or isinstance(node, (str, int, float, bool)):
+            return
+        raise ValueError(f"unsupported workflow YAML node type: {type(node).__name__}")
+
+    walk(document)
+    return uses
 
 
 class PublicSurfaceTests(unittest.TestCase):
@@ -56,24 +132,36 @@ class PublicSurfaceTests(unittest.TestCase):
                 self.assertRegex(item, r"^[^@\s]+@[0-9a-f]{40}$")
                 self.assertIn(item, allowed)
 
-    def test_workflow_action_scanner_covers_yaml_list_and_flow_entries(self) -> None:
+    def test_workflow_action_scanner_covers_semantic_yaml_forms(self) -> None:
         untrusted = "example/action@main"
         cases = (
             f"      - uses: {untrusted}\n",
             f"      - uses : {untrusted}\n",
             f"      - 'uses': {untrusted}\n",
             f"      - {{name: example, uses: {untrusted}}}\n",
+            f"      - &step uses: {untrusted}\n",
+            f"      - {{&step uses: {untrusted}}}\n",
+            f'      - {{"u\\u0073es": {untrusted}}}\n',
+            f"      - {{ ? uses : {untrusted} }}\n",
         )
         for workflow in cases:
             with self.subTest(workflow=workflow):
                 self.assertEqual(_workflow_uses(workflow), [untrusted])
 
-    def test_workflow_action_scanner_rejects_ambiguous_yaml_syntax(self) -> None:
+    def test_workflow_action_scanner_handles_non_recursive_aliases(self) -> None:
+        untrusted = "example/action@main"
+        workflow = f"first: &step {{uses: {untrusted}}}\nsecond: *step\n"
+        self.assertEqual(_workflow_uses(workflow), [untrusted])
+
+    def test_workflow_action_scanner_rejects_unsafe_or_ambiguous_yaml(self) -> None:
         cases = (
-            "      - &step uses: example/action@main\n",
-            "      - *step\n",
-            '      - "u\\u0073es": example/action@main\n',
-            "      ? uses\n      : example/action@main\n",
+            "uses: example/action@main\nuses: example/action@other\n",
+            '"u\\u0073es": example/action@main\nuses: example/action@other\n',
+            "1: value\n",
+            "uses: !custom example/action@main\n",
+            "defaults: &step {uses: example/action@main}\njob:\n  <<: *step\n",
+            "recursive: &loop [*loop]\n",
+            "uses:\n  nested: example/action@main\n",
         )
         for workflow in cases:
             with self.subTest(workflow=workflow):
