@@ -9,6 +9,13 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+USES_ENTRY_RE = re.compile(
+    r"(?m)(?:^|[{,])\s*(?:-\s*)?(?:[\"']?uses[\"']?)\s*:\s*([^\s#,}]+)"
+)
+
+
+def _workflow_uses(workflow: str) -> list[str]:
+    return USES_ENTRY_RE.findall(workflow)
 
 
 class PublicSurfaceTests(unittest.TestCase):
@@ -28,7 +35,7 @@ class PublicSurfaceTests(unittest.TestCase):
         uses = []
         for path in workflow_files:
             workflow = path.read_text(encoding="utf-8")
-            for item in re.findall(r"^\s*uses:\s*([^\s#]+)", workflow, flags=re.MULTILINE):
+            for item in _workflow_uses(workflow):
                 uses.append((path.relative_to(ROOT).as_posix(), item))
 
         checkout = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
@@ -40,6 +47,18 @@ class PublicSurfaceTests(unittest.TestCase):
             with self.subTest(workflow=workflow_path, uses=item):
                 self.assertRegex(item, r"^[^@\s]+@[0-9a-f]{40}$")
                 self.assertIn(item, allowed)
+
+    def test_workflow_action_scanner_covers_yaml_list_and_flow_entries(self) -> None:
+        untrusted = "example/action@main"
+        cases = (
+            f"      - uses: {untrusted}\n",
+            f"      - uses : {untrusted}\n",
+            f"      - 'uses': {untrusted}\n",
+            f"      - {{name: example, uses: {untrusted}}}\n",
+        )
+        for workflow in cases:
+            with self.subTest(workflow=workflow):
+                self.assertEqual(_workflow_uses(workflow), [untrusted])
 
     def test_workflow_is_read_only_and_has_stable_required_job(self) -> None:
         workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
