@@ -80,6 +80,10 @@ def _require_string_list(entry: dict[str, Any], key: str, *, path: Path) -> tupl
     return tuple(value)
 
 
+def _normalize_search_text(value: str) -> str:
+    return " ".join(re.sub(r"[-_]+", " ", value.casefold()).split())
+
+
 def load_landscape(directory: Path = DEFAULT_LANDSCAPE_DIR) -> tuple[dict[str, Any], ...]:
     """Load all landscape shards and enforce the public non-admission boundary."""
 
@@ -161,7 +165,7 @@ def query_entries(
     category_filters = tuple(value.casefold() for value in categories)
     role_filters = tuple(value.casefold() for value in roles)
     provider_filter = provider.casefold() if provider else None
-    text_filter = text.casefold() if text else None
+    text_filter = _normalize_search_text(text) if text else None
 
     matches: list[dict[str, Any]] = []
     for entry in entries:
@@ -176,19 +180,21 @@ def query_entries(
         if provider_filter is not None and provider_filter not in entry["provider"].casefold():
             continue
         if text_filter is not None:
-            searchable = " ".join(
-                [
-                    entry["candidate_id"],
-                    entry["name"],
-                    entry["provider"],
-                    entry["spatial_scope"],
-                    entry["temporal_scope"],
-                    entry["resolution_or_granularity"],
-                    *entry["categories"],
-                    *entry["potential_roles"],
-                    entry["note"],
-                ]
-            ).casefold()
+            searchable = _normalize_search_text(
+                " ".join(
+                    [
+                        entry["candidate_id"],
+                        entry["name"],
+                        entry["provider"],
+                        entry["spatial_scope"],
+                        entry["temporal_scope"],
+                        entry["resolution_or_granularity"],
+                        *entry["categories"],
+                        *entry["potential_roles"],
+                        entry["note"],
+                    ]
+                )
+            )
             if text_filter not in searchable:
                 continue
         matches.append(entry)
