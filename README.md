@@ -33,7 +33,6 @@ No LLM, MCP host, IDE extension, paid API or hidden service is required to valid
 
 - `manifests/` — accepted machine-readable source/admission records.
 - `docs/source-reviews/` — accepted source-specific rights and scientific evidence.
-- `docs/RISK_DATA_MODEL.md` — standards-first hazard/exposure/vulnerability/loss boundaries and promotion rules.
 - `schemas/` — versioned machine-readable contracts.
 - `scripts/` — strict validators, identity tools and repository checks.
 - `tests/` — deterministic offline regression and negative tests using synthetic inputs.
@@ -116,7 +115,7 @@ See `CONTRIBUTING.md` for contribution rules and `SUPPORT.md` before filing supp
 
 ## Interoperability direction
 
-The native admission/provenance contract remains authoritative for rights, privacy, exact artifact identity and lineage. [The risk data model boundary](docs/RISK_DATA_MODEL.md) defines where OpenCatastrophe uses native contracts and where established public standards should remain authoritative. RDLS/STAC are preferred for risk/geospatial metadata discovery, Oasis OED/ORD for insurance exposure/results exchange, and formats such as GeoParquet or CF/Zarr may be used for suitable artifacts. Any implementation must name an exact standard/profile version and preserve lossiness, rights and lineage; no external standard weakens native admission rules.
+The native admission/provenance contract remains authoritative for rights, privacy, exact artifact identity and lineage. Future interoperability may use RDLS/STAC for risk/geospatial metadata discovery, Oasis OED/ORD for insurance exposure/results exchange, and formats such as GeoParquet or CF/Zarr for suitable artifacts. Any implementation must name an exact standard/profile version and preserve lossiness, rights and lineage; no external standard weakens native admission rules.
 
 ## Licensing and citation
 
