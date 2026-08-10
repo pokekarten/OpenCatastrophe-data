@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:opencatastrophe:schema:source-landscape:1.0.0",
+  "title": "OpenCatastrophe Source Landscape v1",
+  "description": "Portable structural profile for the public non-admission source-discovery registry.",
+  "$comment": "scripts/source_landscape_contract.py is the authoritative executable policy validator. It additionally enforces strict JSON parsing, real calendar dates, globally unique candidate IDs and public-URL safety constraints that are not fully represented by this portable structural schema. Passing this schema never implies rights review, scientific approval, admission or permission for model use.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "purpose", "review_date", "entries"],
+  "$defs": {
+    "nonBlankText": {
+      "type": "string",
+      "pattern": "\\S"
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "name",
+        "provider",
+        "categories",
+        "spatial_scope",
+        "temporal_scope",
+        "resolution_or_granularity",
+        "potential_roles",
+        "authoritative_url",
+        "access_class_hint",
+        "candidate_status",
+        "rights_review_status",
+        "scientific_review_status",
+        "admission_status",
+        "note"
+      ],
+      "properties": {
+        "candidate_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "name": {"$ref": "#/$defs/nonBlankText"},
+        "provider": {"$ref": "#/$defs/nonBlankText"},
+        "categories": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "spatial_scope": {"$ref": "#/$defs/nonBlankText"},
+        "temporal_scope": {"$ref": "#/$defs/nonBlankText"},
+        "resolution_or_granularity": {"$ref": "#/$defs/nonBlankText"},
+        "potential_roles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "authoritative_url": {
+          "type": "string",
+          "pattern": "^https://\\S+$"
+        },
+        "access_class_hint": {"$ref": "#/$defs/nonBlankText"},
+        "candidate_status": {"const": "evidence_checked"},
+        "rights_review_status": {"const": "not_reviewed"},
+        "scientific_review_status": {"const": "not_reviewed"},
+        "admission_status": {"const": "not_admitted"},
+        "note": {"$ref": "#/$defs/nonBlankText"}
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "purpose": {
+      "type": "string",
+      "pattern": "Non-admission"
+    },
+    "review_date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/entry"}
+    }
+  }
+}
