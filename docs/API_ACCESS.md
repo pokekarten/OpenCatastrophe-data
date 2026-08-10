@@ -41,6 +41,20 @@ Admitted manifests may be classified `source_rights_verified` only when their ex
 
 The access inventory never turns a public URL, API, download button, account or successful HTTP response into a licence approval. A concrete source-access contract may use `dataset_rights_status=verified` only when a source-specific rights review already exists. Unreviewed/conflicting/unknown rights cannot claim that commercial automation or redistribution is allowed. Connectivity, scientific suitability, licence clearance, API/service terms, redistribution permission and repository admission remain separate gates.
 
+## Known licensing and access hotspots
+
+The existing discovery registry already contains several sources where automation must remain fail-closed until source-specific terms are resolved. This is a non-exhaustive human-readable index; the deterministic inventory remains the complete machine work queue.
+
+- `essl.eswd` — the recorded public subset is non-commercial and broader access is agreement-based. A concrete `do_not_automate` contract is checked in.
+- `ioc.vliz.slsmf` — the recorded facility policy prohibits commercial use of website data/products and directs commercial users to the underlying data originators; registration/API availability therefore does not clear commercial automation or redistribution.
+- `iavcei.wovodat.v2` — the registry records original-contributor ownership, redistribution restrictions and free use framed around crisis response, education and research. Commercial/redistribution use needs dedicated review.
+- `gem.global-exposure-model` and `gem.global-vulnerability-model` — the registry records open non-commercial/share-alike variants and separate commercial licensing for broader commercial use. Exact release and licence path must be frozen before automation.
+- `grdc.global-river-discharge` — the standard portal is recorded as non-commercial research access with redistribution restrictions; keep it separate from GRDC datasets explicitly released for broader reuse.
+- `cred.em-dat.public-data` — the registry records free registered non-commercial access and paid commercial access; redistribution and derived-use limits require dedicated review.
+- `perils.industry-exposure-database.2025` — this is a high-value insurance benchmark but not an open-data source; exact provider access, commercial and redistribution terms must be reviewed before any connector does more than document the route.
+
+Registration alone is not a licensing problem: Earthdata, Copernicus and similar provider accounts may be perfectly usable when their dataset/API terms allow the intended purpose. The inventory therefore records registration/account gates separately from commercial/redistribution restrictions, and a future credentialed contract must document both.
+
 ## Access classes
 
 The inventory deliberately distinguishes:
