@@ -19,29 +19,32 @@ OpenCatastrophe-data treats coding agents as first-class contributors, not as sc
 
 Durable rules live in schemas, validators, tests and accepted source reviews rather than a growing prompt/framework layer. Humans and automated contributors use the same public Pull Requests and, when enabled, Issues and acceptance evidence.
 
+Structured public information follows a **one semantic truth, multiple verified views** rule: one declared canonical contract owns the facts, while human-readable or interoperability representations are deterministic projections when they repeat those facts. Generated files are never an independently editable authority.
+
 ### 60-second agent start
 
 1. Read `AGENTS.md`, this `README.md` and `ARCHITECTURE.md`; add `DATA_LICENSING.md` or `SCIENTIFIC_METHOD.md` when the task touches those boundaries.
 2. Record the current `main` commit and check current Pull Requests plus any enabled public issue tracker for overlapping work.
 3. Run `python scripts/check_all.py` before material work so the starting state is explicit.
 4. Keep the change bounded, deterministic and offline-testable; external bytes stay outside Git unless their exact public asset scope is explicitly admitted.
-5. Use a short-lived branch and a draft Pull Request as the visible work claim, then rerun the definition-of-done command and record exact evidence, assumptions and blockers before handoff.
+5. If changing canonical data that has committed generated views, regenerate them with `python scripts/render_public_views.py --write` rather than editing the generated files.
+6. Use a short-lived branch and a draft Pull Request as the visible work claim, then rerun the definition-of-done command and record exact evidence, assumptions and blockers before handoff.
 
 No LLM, MCP host, IDE extension, paid API or hidden service is required to validate repository-authored behavior.
 
 ## Repository map
 
-- `landscape/` — broad machine-readable discovery registry of potentially useful sources; entries are explicitly not admissions.
+- `landscape/` — broad discovery registry of potentially useful sources; `sources*.json` is canonical machine-readable data and paired `sources*.md` files are generated human-readable views. Entries are explicitly not admissions.
 - `manifests/` — accepted machine-readable source/admission records.
-- `docs/source-reviews/` — accepted source-specific rights and scientific evidence.
+- `docs/source-reviews/` — accepted source-specific human-readable rights and scientific evidence, bound to admitted manifests.
 - `schemas/` — versioned machine-readable contracts.
-- `scripts/` — strict validators, identity tools and repository checks.
+- `scripts/` — strict validators, identity tools, projection tools and repository checks.
 - `tests/` — deterministic offline regression and negative tests using synthetic inputs.
 - `.github/` — public contribution intake, ownership and hosted CI configuration.
 
 ## Who this is for
 
-- **AI agents and developers** get explicit repository instructions, machine-readable task and run-evidence contracts, deterministic checks and public PR coordination.
+- **AI agents and developers** get explicit repository instructions, canonical machine contracts, generated human views, machine-readable task/run-evidence contracts, deterministic checks and public PR coordination.
 - **Scientists** get source identity, provenance, scientific semantics, limitations, citation metadata and reproducibility rules that distinguish evidence from inference and design.
 - **Insurers, reinsurers and brokers** get an auditable public data-contract layer that can support open hazard/risk workflows without turning customer portfolios, claims, treaties, confidential exposure or proprietary vendor data into public fixtures.
 
@@ -77,7 +80,7 @@ De-identifying confidential data does not automatically make it synthetic or saf
 
 **Status: pre-alpha data foundation.**
 
-The project keeps two deliberately separate source layers. [`landscape/`](landscape/) is the broad, sharded discovery registry for potentially useful public sources and never grants admission. The canonical accepted-source list is maintained in [`docs/source-reviews/README.md`](docs/source-reviews/README.md), alongside source-specific scientific and rights evidence; machine-readable admissions live in `manifests/`.
+The project keeps two deliberately separate source layers. [`landscape/`](landscape/) is the broad, sharded discovery registry for potentially useful public sources and never grants admission. Canonical landscape records are JSON with committed deterministic Markdown views for human inspection. The canonical accepted-source list is maintained in [`docs/source-reviews/README.md`](docs/source-reviews/README.md), alongside source-specific scientific and rights evidence; machine-readable admissions live in `manifests/`.
 
 Accepted sources currently span observation, hazard/hydrology, stochastic event catalogues, modelled/insured exposure, exposure geometry and observed insurance loss. Landscape candidates may cover additional terrain, climate, hydrology, earth-observation, seismic, wildfire, demographic and validation sources before a concrete OpenCatastrophe consumer exists.
 
@@ -96,13 +99,15 @@ Focused tools include:
 ```bash
 python scripts/query_source_landscape.py --category flood
 python scripts/query_source_landscape.py --text building
+python scripts/render_public_views.py --write
+python scripts/render_public_views.py --check
 python scripts/validate_manifest.py path/to/manifest.json
 python scripts/manifest_identity.py path/to/manifest.json
 python scripts/validate_agent_artifact.py task task.json --expected-repository pokekarten/OpenCatastrophe-data --expected-main-sha <main-sha>
 python scripts/validate_agent_artifact.py run run.json --expected-repository pokekarten/OpenCatastrophe-data
 ```
 
-Landscape query results always have `scope: non_admission_discovery_only`; matching a source never grants rights, scientific approval or admission.
+Landscape query results always have `scope: non_admission_discovery_only`; matching a source never grants rights, scientific approval or admission. `render_public_views.py --check` verifies that committed human-readable landscape views are byte-for-byte the deterministic projection of canonical JSON.
 
 ## Development contract
 
@@ -113,14 +118,15 @@ For contributors and coding agents:
 1. start with `AGENTS.md` and `ARCHITECTURE.md`;
 2. use the most specific Issue Form when Issues are enabled; otherwise use a draft PR as the visible implementation claim once a non-trivial change has enough public evidence to review;
 3. keep data-rights review and scientific validation separate;
-4. use `schemas/agent-task-v1.schema.json` and `schemas/run-evidence-v1.schema.json` when a formal machine-readable task/handoff is useful;
-5. run `python scripts/check_all.py` on the exact candidate before handoff.
+4. treat declared canonical machine contracts as the only editable authority for facts repeated in generated views;
+5. use `schemas/agent-task-v1.schema.json` and `schemas/run-evidence-v1.schema.json` when a formal machine-readable task/handoff is useful;
+6. run `python scripts/check_all.py` on the exact candidate before handoff.
 
 See `CONTRIBUTING.md` for contribution rules and `SUPPORT.md` before filing support requests. AI tooling is optional and never grants data rights or replaces repository evidence.
 
 ## Interoperability direction
 
-The native admission/provenance contract remains authoritative for rights, privacy, exact artifact identity and lineage. Future interoperability may use RDLS/STAC for risk/geospatial metadata discovery, Oasis OED/ORD for insurance exposure/results exchange, and formats such as GeoParquet or CF/Zarr for suitable artifacts. Any implementation must name an exact standard/profile version and preserve lossiness, rights and lineage; no external standard weakens native admission rules.
+The native admission/provenance contract remains authoritative for rights, privacy, exact artifact identity and lineage. Future interoperability may use RDLS/STAC for risk/geospatial metadata discovery, Oasis OED/ORD for insurance exposure/results exchange, and formats such as GeoParquet or CF/Zarr for suitable artifacts. Any implementation must name an exact standard/profile version, identify its canonical native source, preserve lossiness, rights and lineage, and include a deterministic consistency check; no external standard weakens native admission rules.
 
 ## Licensing and citation
 
