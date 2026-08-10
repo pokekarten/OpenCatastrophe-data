@@ -91,6 +91,33 @@ class SourceLandscapeQueryTests(unittest.TestCase):
             with self.assertRaisesRegex(LandscapeQueryError, "admission_status must remain not_admitted"):
                 load_landscape(directory)
 
+    def test_embedded_url_credentials_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            entry = self._entry("example.source")
+            entry["authoritative_url"] = "https://user:secret@example.invalid/source"
+            self._write_shard(directory / "sources-a.json", [entry])
+            with self.assertRaisesRegex(LandscapeQueryError, "must not embed credentials"):
+                load_landscape(directory)
+
+    def test_non_public_ip_url_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            entry = self._entry("example.source")
+            entry["authoritative_url"] = "https://192.0.2.10/source"
+            self._write_shard(directory / "sources-a.json", [entry])
+            with self.assertRaisesRegex(LandscapeQueryError, "non-public IP address"):
+                load_landscape(directory)
+
+    def test_signature_query_parameter_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            entry = self._entry("example.source")
+            entry["authoritative_url"] = "https://example.invalid/source?signature=synthetic"
+            self._write_shard(directory / "sources-a.json", [entry])
+            with self.assertRaisesRegex(LandscapeQueryError, "signature query parameters"):
+                load_landscape(directory)
+
     @staticmethod
     def _entry(candidate_id: str) -> dict[str, object]:
         return {
