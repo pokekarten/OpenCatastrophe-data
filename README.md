@@ -86,7 +86,7 @@ Accepted sources currently span observation, hazard/hydrology, stochastic event 
 
 No admitted external dataset bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts. The repository remains data-byte-free while exercising real provenance, rights and scientific-review contracts across distinct modelling layers and perils.
 
-For future OpenCatastrophe-owned models, discovery metadata is intentionally insufficient as an input contract. New scientific/model runs can use `schemas/run-evidence-v2.schema.json` to bind materially used data to admitted manifests, exact content hashes, explicit roles such as training/calibration/validation/holdout, and typed evidence references. This records split/provenance boundaries without pretending that a valid receipt alone establishes scientific adequacy or broader data rights.
+For future OpenCatastrophe-owned models, discovery metadata is intentionally insufficient as an input contract. New scientific/model runs can use `schemas/run-evidence-v2.schema.json` to bind materially used data to an admitted manifest's identified `raw` or `derived` artifact, matching storage identity and exact SHA-256, explicit roles such as training/calibration/validation/holdout, and typed evidence references. This records split/provenance boundaries without pretending that a valid receipt alone establishes scientific adequacy or broader data rights.
 
 ## Quick start
 
