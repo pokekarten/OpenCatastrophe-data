@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:opencatastrophe:schema:run-evidence:2.0.0",
+  "title": "OpenCatastrophe Run Evidence Profile v2",
+  "description": "Closed scientific execution receipt with explicit model-data roles, manifest-artifact bindings and resolvable claim references.",
+  "$comment": "scripts/validate_agent_artifact.py is the authoritative executable validator. For data inputs it validates the referenced manifest and requires identity and SHA-256 to match the selected raw/derived artifact. It also resolves typed references and enforces unique exact input identities/content. Schema validity alone does not establish rights, scientific fitness or absence of data leakage.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_version", "run_id", "repository", "execution", "inputs", "randomness", "outputs", "validation", "status", "claims", "limitations"],
+  "$defs": {
+    "nonBlankText": {"type": "string", "pattern": "\\S"},
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["argv", "purpose"],
+      "properties": {
+        "argv": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "purpose": {"$ref": "#/$defs/nonBlankText"},
+        "cwd": {"$ref": "#/$defs/relativePath"}
+      }
+    },
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "relativePath": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?![A-Za-z]:[\\\\/])(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[^\\x00]+$"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "claimReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ref"],
+      "properties": {
+        "kind": {"enum": ["input", "output", "validation", "manifest", "source_review", "repository_path", "external_uri"]},
+        "ref": {"$ref": "#/$defs/nonBlankText"}
+      }
+    },
+    "claimScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "peril": {"$ref": "#/$defs/nonBlankText"},
+        "geography": {"$ref": "#/$defs/nonBlankText"},
+        "temporal": {"$ref": "#/$defs/nonBlankText"},
+        "variable": {"$ref": "#/$defs/nonBlankText"},
+        "model_context": {"$ref": "#/$defs/nonBlankText"}
+      }
+    }
+  },
+  "properties": {
+    "profile_version": {"const": "2.0.0"},
+    "run_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"},
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "commit", "dirty"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"},
+        "commit": {"$ref": "#/$defs/commit"},
+        "tree": {"$ref": "#/$defs/commit"},
+        "dirty": {"type": "boolean"}
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commands", "started_at", "ended_at", "exit_code"],
+      "properties": {
+        "commands": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/command"}},
+        "started_at": {"$ref": "#/$defs/timestamp"},
+        "ended_at": {"$ref": "#/$defs/timestamp"},
+        "exit_code": {"type": "integer"}
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "identity", "scientific_role"],
+        "properties": {
+          "id": {"$ref": "#/$defs/nonBlankText"},
+          "kind": {"enum": ["data", "model", "config", "code", "fixture", "literature", "other"]},
+          "identity": {"$ref": "#/$defs/nonBlankText"},
+          "scientific_role": {"enum": ["training", "calibration", "validation", "holdout", "benchmark", "context", "configuration", "software", "model", "test_fixture"]},
+          "manifest": {"type": "string", "pattern": "^manifests/[A-Za-z0-9._-]+\\.json$"},
+          "artifact": {"enum": ["raw", "derived"]},
+          "sha256": {"$ref": "#/$defs/sha256"},
+          "version": {"type": "string", "minLength": 1, "not": {"const": "latest"}}
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"kind": {"const": "data"}}, "required": ["kind"]},
+            "then": {
+              "required": ["manifest", "artifact", "sha256"],
+              "properties": {"scientific_role": {"enum": ["training", "calibration", "validation", "holdout", "benchmark", "context"]}}
+            }
+          },
+          {
+            "if": {"properties": {"kind": {"const": "fixture"}}, "required": ["kind"]},
+            "then": {"properties": {"scientific_role": {"enum": ["validation", "benchmark", "context", "test_fixture"]}}}
+          },
+          {
+            "if": {"properties": {"kind": {"const": "model"}}, "required": ["kind"]},
+            "then": {"properties": {"scientific_role": {"const": "model"}}}
+          },
+          {
+            "if": {"properties": {"kind": {"const": "config"}}, "required": ["kind"]},
+            "then": {"properties": {"scientific_role": {"const": "configuration"}}}
+          },
+          {
+            "if": {"properties": {"kind": {"const": "code"}}, "required": ["kind"]},
+            "then": {"properties": {"scientific_role": {"const": "software"}}}
+          },
+          {
+            "if": {"properties": {"kind": {"enum": ["literature", "other"]}}, "required": ["kind"]},
+            "then": {"properties": {"scientific_role": {"const": "context"}}}
+          },
+          {
+            "if": {"properties": {"kind": {"not": {"const": "data"}}}, "required": ["kind"]},
+            "then": {"not": {"anyOf": [{"required": ["manifest"]}, {"required": ["artifact"]}]}}
+          }
+        ]
+      }
+    },
+    "randomness": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["mode"], "properties": {"mode": {"const": "deterministic"}}},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "algorithm", "implementation", "seed_material", "stream_identity", "draw_protocol"],
+          "properties": {
+            "mode": {"const": "stochastic"},
+            "algorithm": {"$ref": "#/$defs/nonBlankText"},
+            "implementation": {"$ref": "#/$defs/nonBlankText"},
+            "seed_material": {"$ref": "#/$defs/nonBlankText"},
+            "stream_identity": {"$ref": "#/$defs/nonBlankText"},
+            "draw_protocol": {"$ref": "#/$defs/nonBlankText"}
+          }
+        }
+      ]
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "byte_size", "media_type"],
+        "properties": {
+          "path": {"$ref": "#/$defs/relativePath"},
+          "sha256": {"$ref": "#/$defs/sha256"},
+          "byte_size": {"type": "integer", "minimum": 0},
+          "media_type": {"$ref": "#/$defs/nonBlankText"}
+        }
+      }
+    },
+    "validation": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["check", "status"],
+        "properties": {
+          "check": {"$ref": "#/$defs/nonBlankText"},
+          "status": {"enum": ["pass", "fail", "blocked", "not_comparable"]},
+          "evidence": {"$ref": "#/$defs/nonBlankText"}
+        }
+      }
+    },
+    "status": {"enum": ["pass", "fail", "blocked", "not_comparable"]},
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["statement", "evidence_class", "references", "scope", "limitations"],
+        "properties": {
+          "statement": {"$ref": "#/$defs/nonBlankText"},
+          "evidence_class": {"enum": ["repository_source", "external_evidence", "inference", "design_proposal"]},
+          "references": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/claimReference"}},
+          "scope": {"$ref": "#/$defs/claimScope"},
+          "limitations": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonBlankText"}}
+        }
+      }
+    },
+    "limitations": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonBlankText"}},
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["os", "architecture", "runtime"],
+      "properties": {
+        "os": {"$ref": "#/$defs/nonBlankText"},
+        "architecture": {"$ref": "#/$defs/nonBlankText"},
+        "runtime": {"$ref": "#/$defs/nonBlankText"},
+        "dependency_lock_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "semantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "currency": {"$ref": "#/$defs/nonBlankText"},
+        "loss_stage": {"enum": ["ground_up", "gross", "insured", "ceded", "recoverable", "net"]},
+        "horizon": {"$ref": "#/$defs/nonBlankText"},
+        "valuation_basis": {"$ref": "#/$defs/nonBlankText"},
+        "model_view": {"$ref": "#/$defs/nonBlankText"}
+      }
+    },
+    "interoperability": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target", "version", "role", "status", "evidence"],
+        "properties": {
+          "target": {"$ref": "#/$defs/nonBlankText"},
+          "version": {"type": "string", "minLength": 1},
+          "role": {"enum": ["import", "export", "compare", "execute", "metadata"]},
+          "status": {"enum": ["planned", "experimental", "tested", "unsupported", "not_comparable"]},
+          "profile": {"$ref": "#/$defs/nonBlankText"},
+          "comparison_mode": {"enum": ["deterministic", "common_innovations", "distributional", "not_comparable"]},
+          "evidence": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonBlankText"}}
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"status": {"const": "tested"}}, "required": ["status"]},
+            "then": {"properties": {"evidence": {"minItems": 1}, "version": {"not": {"const": "latest"}}}}
+          }
+        ]
+      }
+    }
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "pass"}}, "required": ["status"]}, "then": {"properties": {"validation": {"items": {"properties": {"status": {"const": "pass"}}, "required": ["status"]}}}}},
+    {"if": {"properties": {"status": {"const": "fail"}}, "required": ["status"]}, "then": {"properties": {"validation": {"contains": {"properties": {"status": {"const": "fail"}}, "required": ["status"]}}}}},
+    {"if": {"properties": {"status": {"const": "blocked"}}, "required": ["status"]}, "then": {"properties": {"validation": {"contains": {"properties": {"status": {"const": "blocked"}}, "required": ["status"]}}}}},
+    {"if": {"properties": {"status": {"const": "not_comparable"}}, "required": ["status"]}, "then": {"properties": {"validation": {"contains": {"properties": {"status": {"const": "not_comparable"}}, "required": ["status"]}}}}}
+  ]
+}

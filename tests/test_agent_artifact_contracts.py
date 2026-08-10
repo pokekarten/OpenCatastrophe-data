@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import subprocess
 import sys
@@ -11,12 +10,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from scripts import validate_agent_artifact as validator
+
 ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = ROOT / "scripts" / "validate_agent_artifact.py"
-SPEC = importlib.util.spec_from_file_location("validate_agent_artifact", MODULE_PATH)
-assert SPEC and SPEC.loader
-validator = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(validator)
 
 REPOSITORY = "pokekarten/OpenCatastrophe-data"
 MAIN_SHA = "1" * 40

@@ -3,17 +3,9 @@
 
 from __future__ import annotations
 
-import importlib.util
 import unittest
-from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-SPEC = importlib.util.spec_from_file_location(
-    "validate_agent_artifact", ROOT / "scripts" / "validate_agent_artifact.py"
-)
-assert SPEC and SPEC.loader
-validator = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(validator)
+from scripts import validate_agent_artifact as validator
 
 REPOSITORY = "pokekarten/OpenCatastrophe-data"
 COMMIT = "1" * 40

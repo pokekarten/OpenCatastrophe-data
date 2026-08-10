@@ -37,7 +37,7 @@ No LLM, MCP host, IDE extension, paid API or hidden service is required to valid
 - `landscape/` — broad discovery registry of potentially useful sources; `sources*.json` is canonical machine-readable data and paired `sources*.md` files are generated human-readable views. Entries are explicitly not admissions.
 - `manifests/` — accepted machine-readable source/admission records.
 - `docs/source-reviews/` — accepted source-specific human-readable rights and scientific evidence, bound to admitted manifests.
-- `schemas/` — versioned machine-readable contracts.
+- `schemas/` — versioned machine-readable contracts, including model-aware run-evidence profiles.
 - `scripts/` — strict validators, identity tools, projection tools and repository checks.
 - `tests/` — deterministic offline regression and negative tests using synthetic inputs.
 - `.github/` — public contribution intake, ownership and hosted CI configuration.
@@ -86,6 +86,8 @@ Accepted sources currently span observation, hazard/hydrology, stochastic event 
 
 No admitted external dataset bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts. The repository remains data-byte-free while exercising real provenance, rights and scientific-review contracts across distinct modelling layers and perils.
 
+For future OpenCatastrophe-owned models, discovery metadata is intentionally insufficient as an input contract. New scientific/model runs can use `schemas/run-evidence-v2.schema.json` to bind materially used data to an admitted manifest's identified `raw` or `derived` artifact, matching storage identity and exact SHA-256, explicit roles such as training/calibration/validation/holdout, and typed evidence references. This records split/provenance boundaries without pretending that a valid receipt alone establishes scientific adequacy or broader data rights.
+
 ## Quick start
 
 Requirements: Python 3.11+ and Git. Run the definition-of-done command from a Git checkout; source archives alone cannot prove the tracked file set, Git modes or index state used by the hygiene/licensing gates.
@@ -119,7 +121,7 @@ For contributors and coding agents:
 2. use the most specific Issue Form when Issues are enabled; otherwise use a draft PR as the visible implementation claim once a non-trivial change has enough public evidence to review;
 3. keep data-rights review and scientific validation separate;
 4. treat declared canonical machine contracts as the only editable authority for facts repeated in generated views;
-5. use `schemas/agent-task-v1.schema.json` and `schemas/run-evidence-v1.schema.json` when a formal machine-readable task/handoff is useful;
+5. use `schemas/agent-task-v1.schema.json` when a formal machine-readable task is useful; use `schemas/run-evidence-v2.schema.json` for new scientific/model run evidence, while `schemas/run-evidence-v1.schema.json` remains a compatibility profile for existing/simple receipts;
 6. run `python scripts/check_all.py` on the exact candidate before handoff.
 
 See `CONTRIBUTING.md` for contribution rules and `SUPPORT.md` before filing support requests. AI tooling is optional and never grants data rights or replaces repository evidence.
