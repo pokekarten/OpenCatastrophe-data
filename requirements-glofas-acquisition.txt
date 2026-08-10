@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Acquisition-only reader for the official GloFAS v4 NetCDF4 ancillary.
+# Core repository validation/tooling remains dependency-free.
+netCDF4==1.7.4

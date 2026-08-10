@@ -38,6 +38,27 @@ jobs:
       - name: Repository definition of done
         run: python scripts/check_all.py
 
+  glofas-acquisition:
+    name: GloFAS NetCDF4 acquisition
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact workflow ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Install reviewed acquisition dependency set
+        run: python -m pip install --disable-pip-version-check --no-input -r requirements-glofas-acquisition.txt
+      - name: Verify acquisition dependency consistency
+        run: python -m pip check
+      - name: Exercise real NetCDF4 reader with synthetic bytes
+        run: python -m unittest tests.test_glofas_v4_uparea_reader -v
+
   reuse:
     name: REUSE 6.2.0
     runs-on: ubuntu-24.04
@@ -78,16 +99,18 @@ jobs:
   required:
     name: Required
     if: always()
-    needs: [check, reuse, dependency-review]
+    needs: [check, glofas-acquisition, reuse, dependency-review]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
       - name: Verify required jobs
         env:
           CHECK_RESULT: ${{ needs.check.result }}
+          GLOFAS_ACQUISITION_RESULT: ${{ needs.glofas-acquisition.result }}
           REUSE_RESULT: ${{ needs.reuse.result }}
           DEPENDENCY_REVIEW_RESULT: ${{ needs.dependency-review.result }}
         run: |
           test "$CHECK_RESULT" = "success"
+          test "$GLOFAS_ACQUISITION_RESULT" = "success"
           test "$REUSE_RESULT" = "success"
           test "$DEPENDENCY_REVIEW_RESULT" = "success" || test "$DEPENDENCY_REVIEW_RESULT" = "skipped"

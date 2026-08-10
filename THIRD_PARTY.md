@@ -11,6 +11,14 @@ Reviewed inventory for direct software dependencies, workflow actions and distri
 
 None beyond Python and Git for the current repository-authored validation/tooling.
 
+## Acquisition-only scientific I/O dependency
+
+The GloFAS v4 upstream-area reader uses the official Unidata `netCDF4` Python package declared in `requirements-glofas-acquisition.txt` as `netCDF4==1.7.4`. This dependency is **not** imported by the normal repository validation, landscape, manifest or model-evidence tooling. It is required only when an operator intentionally reads the external `uparea_glofas_v4_0.nc` NetCDF4 ancillary.
+
+Upstream: `Unidata/netcdf4-python`, release `1.7.4` (2026-01-05), MIT. The upstream documentation identifies it as the Python interface to the netCDF C library and documents NetCDF4/HDF5 in-memory reads. PyPI declares Python >=3.10 and classifiers through Python 3.14. The repository records the Python package, netCDF-C and HDF5 runtime versions in every GloFAS extraction evidence record instead of pretending that a single Python-package pin freezes the complete native scientific-I/O stack.
+
+The direct `netCDF4` version is exact; its transitive Python/native environment is not fully hash-locked. That is an explicit acquisition-stage limitation. The dedicated hosted CI lane installs the exact direct dependency, runs `pip check`, creates a synthetic NetCDF4 file at runtime and exercises the real reader. A later production/release workflow that treats extraction output as publication-grade evidence should additionally freeze the complete acquisition environment or container image and record its immutable identity.
+
 ## CI-only compliance dependency
 
 The hosted licensing gate installs the official REUSE helper declared in `requirements-dev.txt` as `reuse[charset-normalizer]==6.2.0` from PyPI and runs `reuse lint`. It is CI-only: repository runtime/tooling does not import it, the workflow token is read-only, and the job receives no project secrets. The manifest keeps this direct development dependency visible to GitHub's dependency graph and Dependabot rather than hiding it only in workflow shell text.
