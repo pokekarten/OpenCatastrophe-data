@@ -36,10 +36,15 @@ ENTRY_KEYS = {
     "note",
 }
 SENSITIVE_QUERY_KEYS = {
+    "access_key",
     "access_token",
     "api_key",
     "apikey",
+    "auth",
+    "authorization",
+    "credential",
     "key",
+    "secret",
     "sig",
     "signature",
     "token",
@@ -48,6 +53,7 @@ SENSITIVE_QUERY_KEYS = {
     "x-goog-credential",
     "x-goog-signature",
 }
+LOCAL_HOST_SUFFIXES = (".local", ".localhost", ".internal")
 
 
 class LandscapeQueryError(ValueError):
@@ -96,6 +102,8 @@ def _require_string_list(entry: dict[str, Any], key: str, *, path: Path) -> tupl
 
 
 def _validate_authoritative_url(url: str, *, path: Path) -> None:
+    if any(ch.isspace() for ch in url):
+        raise LandscapeQueryError(f"{path}: authoritative_url must not contain whitespace")
     try:
         parsed = urlsplit(url)
         hostname = parsed.hostname
@@ -109,8 +117,8 @@ def _validate_authoritative_url(url: str, *, path: Path) -> None:
         raise LandscapeQueryError(f"{path}: authoritative_url must not embed credentials")
 
     host = hostname.casefold().rstrip(".")
-    if host == "localhost" or host.endswith(".localhost"):
-        raise LandscapeQueryError(f"{path}: authoritative_url must not reference a local host")
+    if host == "localhost" or host.endswith(LOCAL_HOST_SUFFIXES):
+        raise LandscapeQueryError(f"{path}: authoritative_url must not reference a local/private host")
     try:
         address = ipaddress.ip_address(host)
     except ValueError:
