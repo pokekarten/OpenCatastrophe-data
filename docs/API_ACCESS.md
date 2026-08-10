@@ -46,7 +46,7 @@ The access inventory never turns a public URL, API, download button, account or 
 The existing discovery registry already contains several sources where automation must remain fail-closed until source-specific terms are resolved. This is a non-exhaustive human-readable index; the deterministic inventory remains the complete machine work queue.
 
 - `essl.eswd` — the recorded public subset is non-commercial and broader access is agreement-based. A concrete `do_not_automate` contract is checked in.
-- `ioc.vliz.slsmf` — the recorded facility policy prohibits commercial use of website data/products and directs commercial users to the underlying data originators; registration/API availability therefore does not clear commercial automation or redistribution.
+- `ioc.vliz.slsmf` — the recorded facility policy prohibits commercial use of website data/products and directs commercial users to the underlying data originators; registration/API availability therefore does not clear commercial automation or redistribution. A documentation-only registered-API contract is checked in.
 - `iavcei.wovodat.v2` — the registry records original-contributor ownership, redistribution restrictions and free use framed around crisis response, education and research. Commercial/redistribution use needs dedicated review.
 - `gem.global-exposure-model` and `gem.global-vulnerability-model` — the registry records open non-commercial/share-alike variants and separate commercial licensing for broader commercial use. Exact release and licence path must be frozen before automation.
 - `grdc.global-river-discharge` — the standard portal is recorded as non-commercial research access with redistribution restrictions; keep it separate from GRDC datasets explicitly released for broader reuse.
@@ -71,11 +71,12 @@ Do not label a stable file directory, object store or web-service layer as REST 
 
 ## Concrete contracts
 
-The initial contracts deliberately exercise three different outcomes:
+The initial contracts deliberately exercise four different source/access outcomes:
 
 - `access/wsv.pegelonline.rest-v2.dresden.json` — anonymous REST-v2 station metadata for the already reviewed Dresden/Elbe hydrology pilot. The existing strict parser remains the scientific interpreter. Target discharge acquisition is intentionally outside this metadata-only contract.
 - `access/dwd.cdc.extreme-wind.http-file.json` — anonymous authoritative HTTP directory/file access for DWD historical extreme-wind observations. This proves that a source can receive a machine-access contract without having a native REST API.
 - `access/essl.eswd.public-subset.documented.json` — a documentation-only boundary for ESWD where the existing discovery evidence records non-commercial public use and broader agreement-based access. The correct machine-readable decision is `do_not_automate`, not a scraper.
+- `access/ioc.vliz.slsmf.registered-api.documented.json` — the registered IOC/VLIZ API is preserved as a real technical route, while the recorded non-commercial policy keeps automated data use blocked until originator/API terms are explicitly cleared.
 
 These contracts remain bounded by their existing dataset/source review and exact external-byte provenance requirements. A contract can intentionally document a prohibition or unresolved rights boundary; 100% access coverage does not mean 100% automated downloading.
 
