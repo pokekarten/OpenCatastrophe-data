@@ -28,6 +28,8 @@ Before changing code or data contracts, read `README.md` and `ARCHITECTURE.md`. 
 
 - Use a public issue for every non-trivial bounded task once Issues are enabled. Prefer GitHub-native parent/sub-issue and dependency relationships for live planning.
 - For implementation, open a draft pull request as soon as the branch has a coherent first change. The draft PR is the visible work claim; another agent should not start a competing writer on the same shared surface.
+- The contributor or agent currently owning that visible draft claim controls its ready-for-review transition. Another agent must not mark the draft ready merely because CI is green.
+- Before marking a draft ready, re-read the exact current head, full diff, latest conversation/review threads and hosted checks. An explicit unresolved `BLOCKER` or `keep draft` finding in the PR remains merge-blocking by project policy until the PR records how it was resolved or deliberately superseded.
 - Record the exact `main` commit reviewed before material work and re-check it before editing a shared schema, manifest/admission rule, CI policy, or other single-writer surface.
 - Declare shared/single-writer paths explicitly. If another active PR touches the same semantic contract, coordinate or choose an independent task instead of creating a parallel source of truth.
 - `.github/ISSUE_TEMPLATE/agent-task.yml` is the contributor-facing task form. `schemas/agent-task-v1.schema.json` and `scripts/validate_agent_artifact.py` provide the strict machine projection when an executable task artifact is needed.
