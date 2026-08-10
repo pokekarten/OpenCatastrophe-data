@@ -75,7 +75,7 @@ De-identifying confidential data does not automatically make it synthetic or saf
 
 **Status: pre-alpha data foundation.**
 
-Seven sources currently have metadata-only admissions across observation, hazard/hydrology, stochastic event catalogues, modelled exposure and exposure geometry. The canonical accepted-source list is maintained in [`docs/source-reviews/README.md`](docs/source-reviews/README.md), alongside the source-specific scientific and rights evidence; machine-readable admissions live in `manifests/`.
+Accepted sources currently span observation, hazard/hydrology, stochastic event catalogues, modelled/insured exposure, exposure geometry and observed insurance loss. The canonical accepted-source list is maintained in [`docs/source-reviews/README.md`](docs/source-reviews/README.md), alongside the source-specific scientific and rights evidence; machine-readable admissions live in `manifests/`.
 
 No admitted external dataset bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts. The repository remains data-byte-free while exercising real provenance, rights and scientific-review contracts across distinct modelling layers and perils.
 

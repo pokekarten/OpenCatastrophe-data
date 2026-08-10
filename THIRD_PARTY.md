@@ -33,12 +33,6 @@ Re-review upstream licence/release identity before changing a pin.
 
 None.
 
-## External source metadata admissions
-
-One metadata-only admission is recorded: DWD `10-minute station observations of extreme wind for Germany`, version `v24.03`; manifest `manifests/dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03.json`; source licence recorded as CC-BY-4.0 from authoritative DWD evidence reviewed 2026-08-08 and re-checked against current DWD Open Data guidance on 2026-08-09; OpenCatastrophe scope `approved_metadata_only`.
-
-No DWD measurement bytes or derived external data are committed/approved as OpenCatastrophe artifacts. The manifest/source-review document is authoritative; this inventory does not broaden scope.
-
 ## Update rule
 
-Record every new direct software dependency, workflow action or distributed third-party artifact in the same change. Data assets use the dataset-admission manifest as the primary rights/provenance record; repository-authored Apache-2.0 licensing never relicenses them.
+Record every new direct software dependency, workflow action or distributed third-party artifact in the same change. External dataset admissions are canonical in `manifests/`, with accepted source-specific evidence in `docs/source-reviews/`; do not duplicate them here. Repository-authored Apache-2.0 licensing never relicenses external data.
