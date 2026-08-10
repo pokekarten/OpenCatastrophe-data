@@ -34,7 +34,6 @@ from scripts.hydrology_window import (
     DRESDEN_HOLDOUT_EXPECTED_DAYS,
     DRESDEN_HOLDOUT_WINDOW_END_UTC_EXCLUSIVE,
     DRESDEN_HOLDOUT_WINDOW_START_UTC,
-    PEGELONLINE_STANDARD_OFFSET,
     HydrologyWindowError,
     aggregate_observed_discharge_for_glofas_dis24,
     dresden_holdout_glofas_timestamps,
@@ -62,19 +61,18 @@ class HoldoutPairing(NamedTuple):
     pairs: tuple[HoldoutDayPair, ...]
 
 
-def required_pegelonline_local_coverage() -> tuple[datetime, datetime]:
-    """Return fixed-CET local bounds needed to cover the physical UTC holdout.
+def required_pegelonline_utc_coverage() -> tuple[datetime, datetime]:
+    """Return the exact UTC bounds that the parsed long-term JSON must cover.
 
-    The returned datetimes are timezone-aware using PEGELONLINE's documented
-    year-round UTC+01:00 convention. Acquisition adapters may need to request a
-    wider date-based source file, but the parsed series supplied to
-    :func:`build_dresden_holdout_pairs` must be trimmed to the physical UTC
-    holdout exactly.
+    The provider-facing long-term download form may require broader civil-date
+    inputs. Acquisition code must preserve that exact request separately, parse
+    the JSON timestamps using their explicit source offsets, convert to UTC and
+    trim to these immutable physical holdout bounds before pairing.
     """
 
     return (
-        DRESDEN_HOLDOUT_WINDOW_START_UTC.astimezone(PEGELONLINE_STANDARD_OFFSET),
-        DRESDEN_HOLDOUT_WINDOW_END_UTC_EXCLUSIVE.astimezone(PEGELONLINE_STANDARD_OFFSET),
+        DRESDEN_HOLDOUT_WINDOW_START_UTC,
+        DRESDEN_HOLDOUT_WINDOW_END_UTC_EXCLUSIVE,
     )
 
 

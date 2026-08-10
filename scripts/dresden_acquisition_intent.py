@@ -21,7 +21,7 @@ import json
 from typing import Any, Iterable
 
 from scripts.hydrology_grid_matching import GlofasGridCell, select_dresden_glofas_grid_cell
-from scripts.hydrology_holdout import required_pegelonline_local_coverage
+from scripts.hydrology_holdout import required_pegelonline_utc_coverage
 from scripts.hydrology_window import (
     DRESDEN_HOLDOUT_EXPECTED_DAYS,
     DRESDEN_HOLDOUT_FIRST_GLOFAS_TIMESTAMP_UTC,
@@ -29,7 +29,7 @@ from scripts.hydrology_window import (
     expected_observations_per_24h,
 )
 
-PROFILE_VERSION = "1.0.0"
+PROFILE_VERSION = "2.0.0"
 PEGELONLINE_MANIFEST = "manifests/wsv.pegelonline.elbe-dresden-discharge.2020-2023.json"
 PEGELONLINE_REVIEW = "docs/source-reviews/wsv-pegelonline-elbe-dresden-discharge-2020-2023.md"
 GLOFAS_MANIFEST = "manifests/copernicus.cems.glofas-historical.json"
@@ -37,6 +37,8 @@ GLOFAS_REVIEW = "docs/source-reviews/copernicus-cems-glofas-historical.md"
 PEGELONLINE_STATION_NUMBER = "501060"
 PEGELONLINE_STATION_UUID = "70272185-b2b3-4178-96b8-43bea330dcae"
 PEGELONLINE_VARIABLE = "Q"
+PEGELONLINE_LONG_TERM_DOWNLOAD_FORMAT = "json"
+PEGELONLINE_TIMESTAMP_SEMANTICS = "iso8601_local_legal_time_explicit_utc_offset"
 GLOFAS_DATASET = "cems-glofas-historical"
 GLOFAS_SYSTEM_VERSION = "version_4_0"
 GLOFAS_HYDROLOGICAL_MODEL = "lisflood"
@@ -53,7 +55,7 @@ class AcquisitionIntentError(ValueError):
 def acquisition_intent() -> dict[str, Any]:
     """Return immutable pre-target source and metadata requirements."""
 
-    pegel_start, pegel_end = required_pegelonline_local_coverage()
+    pegel_start, pegel_end = required_pegelonline_utc_coverage()
     return {
         "profile_version": PROFILE_VERSION,
         "purpose": "dresden-pegelonline-glofas-v4-temporal-holdout",
@@ -65,9 +67,10 @@ def acquisition_intent() -> dict[str, Any]:
             "station_number": PEGELONLINE_STATION_NUMBER,
             "station_uuid": PEGELONLINE_STATION_UUID,
             "variable": PEGELONLINE_VARIABLE,
-            "time_convention": "fixed_CET_UTC_plus_01_year_round",
-            "required_local_coverage_start": pegel_start.isoformat(),
-            "required_local_coverage_end_exclusive": pegel_end.isoformat(),
+            "long_term_download_format": PEGELONLINE_LONG_TERM_DOWNLOAD_FORMAT,
+            "timestamp_semantics": PEGELONLINE_TIMESTAMP_SEMANTICS,
+            "required_utc_coverage_start": pegel_start.isoformat(),
+            "required_utc_coverage_end_exclusive": pegel_end.isoformat(),
             "sampling_interval": {
                 "status": "unresolved",
                 "must_freeze_from": "retrieved_series_metadata.equidistance_minutes",
@@ -98,6 +101,7 @@ def acquisition_intent() -> dict[str, Any]:
         },
         "hard_stops": [
             "do_not_load_holdout_target_values_before_sampling_interval_and_grid_cell_are_frozen",
+            "do_not_use_daily_file_fixed_CET_semantics_for_long_term_JSON_download",
             "do_not_relax_grid_time_or_completeness_rules_after_target_inspection",
             "do_not_commit_external_dataset_bytes_without_separate_exact_asset_admission",
         ],
@@ -184,6 +188,7 @@ def finalize_acquisition_intent(
         "upstream_area_km2": grid_match.cell.upstream_area_km2,
     }
     plan["hard_stops"] = [
+        "do_not_use_daily_file_fixed_CET_semantics_for_long_term_JSON_download",
         "do_not_relax_grid_time_or_completeness_rules_after_target_inspection",
         "do_not_commit_external_dataset_bytes_without_separate_exact_asset_admission",
         "acquired_bytes_must_receive_exact_size_sha256_and_manifest_artifact_identity_before_model_use",

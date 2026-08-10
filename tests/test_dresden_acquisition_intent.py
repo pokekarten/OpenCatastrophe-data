@@ -9,10 +9,12 @@ from pathlib import Path
 from scripts.dresden_acquisition_intent import (
     GLOFAS_MANIFEST,
     GLOFAS_REVIEW,
+    PEGELONLINE_LONG_TERM_DOWNLOAD_FORMAT,
     PEGELONLINE_MANIFEST,
     PEGELONLINE_REVIEW,
     PEGELONLINE_STATION_NUMBER,
     PEGELONLINE_STATION_UUID,
+    PEGELONLINE_TIMESTAMP_SEMANTICS,
     AcquisitionIntentError,
     acquisition_intent,
     acquisition_intent_sha256,
@@ -37,7 +39,7 @@ class AcquisitionIntentTests(unittest.TestCase):
 
     def test_pre_target_intent_freezes_known_scope_but_not_metadata_results(self) -> None:
         intent = acquisition_intent()
-        self.assertEqual(intent["profile_version"], "1.0.0")
+        self.assertEqual(intent["profile_version"], "2.0.0")
         self.assertEqual(intent["phase"], "metadata_resolution")
         self.assertTrue(intent["target_values_must_not_be_inspected"])
         self.assertEqual(intent["pegelonline"]["station_number"], "501060")
@@ -47,13 +49,23 @@ class AcquisitionIntentTests(unittest.TestCase):
         )
         self.assertEqual(intent["pegelonline"]["variable"], "Q")
         self.assertEqual(
-            intent["pegelonline"]["required_local_coverage_start"],
-            "2020-01-01T01:00:00+01:00",
+            intent["pegelonline"]["long_term_download_format"],
+            PEGELONLINE_LONG_TERM_DOWNLOAD_FORMAT,
         )
         self.assertEqual(
-            intent["pegelonline"]["required_local_coverage_end_exclusive"],
-            "2024-01-01T01:00:00+01:00",
+            intent["pegelonline"]["timestamp_semantics"],
+            PEGELONLINE_TIMESTAMP_SEMANTICS,
         )
+        self.assertEqual(
+            intent["pegelonline"]["required_utc_coverage_start"],
+            "2020-01-01T00:00:00+00:00",
+        )
+        self.assertEqual(
+            intent["pegelonline"]["required_utc_coverage_end_exclusive"],
+            "2024-01-01T00:00:00+00:00",
+        )
+        self.assertNotIn("time_convention", intent["pegelonline"])
+        self.assertNotIn("required_local_coverage_start", intent["pegelonline"])
         self.assertEqual(intent["pegelonline"]["sampling_interval"]["status"], "unresolved")
         self.assertEqual(
             intent["pegelonline"]["sampling_interval"]["must_freeze_from"],
@@ -70,6 +82,10 @@ class AcquisitionIntentTests(unittest.TestCase):
         self.assertEqual(intent["glofas"]["first_end_label_utc"], "2020-01-02T00:00:00+00:00")
         self.assertEqual(intent["glofas"]["last_end_label_utc"], "2024-01-01T00:00:00+00:00")
         self.assertEqual(intent["glofas"]["grid_cell"]["status"], "unresolved")
+        self.assertIn(
+            "do_not_use_daily_file_fixed_CET_semantics_for_long_term_JSON_download",
+            intent["hard_stops"],
+        )
 
     def test_canonical_bytes_and_hash_are_deterministic(self) -> None:
         first = acquisition_intent()

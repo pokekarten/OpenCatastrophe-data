@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 from scripts.hydrology_holdout import (
     HoldoutPairError,
     build_dresden_holdout_pairs,
-    required_pegelonline_local_coverage,
+    required_pegelonline_utc_coverage,
 )
 from scripts.hydrology_window import (
     DRESDEN_HOLDOUT_EXPECTED_DAYS,
@@ -37,10 +37,10 @@ def full_daily_model() -> list[tuple[datetime, float]]:
 
 
 class AcquisitionBoundaryTests(unittest.TestCase):
-    def test_fixed_cet_local_coverage_includes_2024_boundary_hour(self) -> None:
-        start, end = required_pegelonline_local_coverage()
-        self.assertEqual(start, datetime(2020, 1, 1, 1, 0, tzinfo=timezone(timedelta(hours=1))))
-        self.assertEqual(end, datetime(2024, 1, 1, 1, 0, tzinfo=timezone(timedelta(hours=1))))
+    def test_required_source_coverage_is_the_exact_physical_utc_holdout(self) -> None:
+        start, end = required_pegelonline_utc_coverage()
+        self.assertEqual(start, datetime(2020, 1, 1, 0, 0, tzinfo=UTC))
+        self.assertEqual(end, datetime(2024, 1, 1, 0, 0, tzinfo=UTC))
         self.assertEqual(end - start, timedelta(days=1461))
 
 

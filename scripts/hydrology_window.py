@@ -3,13 +3,13 @@
 
 """Fail-closed time/completeness primitives for the Dresden hydrology holdout.
 
-The preregistered comparison contract is now explicit:
+The preregistered comparison contract is explicit:
 
-- PEGELONLINE long-term/free-download file timestamps are interpreted as
-  year-round Central European standard time (fixed UTC+01:00), never as a
-  daylight-saving timezone. This rule is specific to that download-file
-  format; REST Measurement JSON timestamps carry explicit MEZ/MESZ offsets
-  and must not be passed through the download-file converter;
+- the selected PEGELONLINE long-term raw-download format is JSON, whose
+  timestamps carry an explicit local legal-time UTC offset; source timestamps
+  are converted from that offset to UTC before entering the holdout pipeline;
+- PEGELONLINE daily files are a separate product with different documented time
+  semantics and are not an interchangeable input to this long-term holdout;
 - the source sampling interval is supplied explicitly by the caller after it
   has been frozen from source metadata;
 - GloFAS ``dis24`` is a 24-hour mean whose timestamp marks the end of the
@@ -31,7 +31,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Iterable, NamedTuple
 
 SECONDS_PER_DAY = 24 * 60 * 60
-PEGELONLINE_STANDARD_OFFSET = timezone(timedelta(hours=1))
+PEGELONLINE_LEGAL_OFFSETS = frozenset({timedelta(hours=1), timedelta(hours=2)})
 UTC = timezone.utc
 DRESDEN_HOLDOUT_WINDOW_START_UTC = datetime(2020, 1, 1, tzinfo=UTC)
 DRESDEN_HOLDOUT_WINDOW_END_UTC_EXCLUSIVE = datetime(2024, 1, 1, tzinfo=UTC)
@@ -71,26 +71,38 @@ def dresden_holdout_glofas_timestamps() -> tuple[datetime, ...]:
     )
 
 
-def pegelonline_download_standard_time_to_utc(value: str) -> datetime:
-    """Convert a timezone-naive PEGELONLINE download-file timestamp from fixed CET.
+def pegelonline_long_term_json_time_to_utc(value: str) -> datetime:
+    """Convert one PEGELONLINE long-term JSON timestamp to UTC.
 
-    PEGELONLINE documents its downloadable measurement files as using
-    year-round Central European winter/standard time. REST Measurement JSON is
-    a different format: it carries explicit local legal-time offsets and must
-    be parsed from those offsets rather than routed through this function.
+    The official long-term JSON format carries complete ISO-8601 timezone
+    information using German local legal time. The source offset must therefore
+    be explicit and be either UTC+01:00 or UTC+02:00; timezone-naive values and
+    unrelated offsets fail closed rather than being guessed.
     """
 
-    if type(value) is not str or not value.strip():
-        raise HydrologyWindowError("PEGELONLINE download timestamp must be a non-empty string")
+    if type(value) is not str or not value.strip() or value != value.strip():
+        raise HydrologyWindowError(
+            "PEGELONLINE long-term JSON timestamp must be a non-empty trimmed string"
+        )
     try:
         parsed = datetime.fromisoformat(value)
     except ValueError as exc:
-        raise HydrologyWindowError("PEGELONLINE download timestamp must be ISO-8601 local time") from exc
-    if parsed.tzinfo is not None or parsed.utcoffset() is not None:
         raise HydrologyWindowError(
-            "PEGELONLINE download timestamp must be timezone-naive before fixed CET conversion"
+            "PEGELONLINE long-term JSON timestamp must be valid ISO-8601"
+        ) from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise HydrologyWindowError(
+            "PEGELONLINE long-term JSON timestamp must include an explicit UTC offset"
         )
-    return parsed.replace(tzinfo=PEGELONLINE_STANDARD_OFFSET).astimezone(UTC)
+    if parsed.utcoffset() not in PEGELONLINE_LEGAL_OFFSETS:
+        raise HydrologyWindowError(
+            "PEGELONLINE long-term JSON timestamp offset must be +01:00 or +02:00"
+        )
+    if parsed.microsecond != 0:
+        raise HydrologyWindowError(
+            "PEGELONLINE long-term JSON timestamp must be aligned to whole seconds"
+        )
+    return parsed.astimezone(UTC)
 
 
 def _require_utc_whole_second(value: datetime, where: str) -> datetime:

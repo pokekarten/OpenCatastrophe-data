@@ -32,7 +32,7 @@ PEGELONLINE describes the webservice values as **ungeprüfte Rohdaten** (unvalid
 
 Supporting state hydrology documentation explains that discharge is obtained from observed water level through a continuously monitored stage–discharge relationship. Therefore `Q` should be treated as an observation-derived hydrological quantity, not as a direct volumetric flow-meter measurement.
 
-The PEGELONLINE long-term download documentation states that file timestamps use Central European standard time throughout the year. Any comparison of those long-term download files with GloFAS UTC time must therefore convert source timestamps explicitly; daylight-saving assumptions must not be introduced for that target-file format.
+PEGELONLINE documents two different download-time conventions that must not be conflated. The separate free **daily-file** service states that timestamps are provided year-round in Central European standard time. The **long-term water-level/discharge download** instead uses local legal time; its JSON format carries ISO-8601 timestamps with complete timezone information, including the UTC offset for MEZ/MESZ. This Dresden pilot therefore freezes **long-term JSON** as the target format and converts each explicit source offset to UTC. The CSV long-term representation is not the scientific ingestion format because its simplified local-time strings omit the explicit offset and can be ambiguous around daylight-saving transitions.
 
 ### Pre-target REST metadata resolution
 
@@ -104,7 +104,8 @@ The 0.15° neighborhood and deterministic tie-break sequence are OpenCatastrophe
 
 ### Time alignment, observed aggregation and completeness
 
-- Convert timestamps from the PEGELONLINE **long-term raw download file format** using its documented year-round Central European standard-time convention to UTC.
+- Acquire the PEGELONLINE **long-term raw download in JSON format**. Parse its documented ISO-8601 timestamps with the explicit local legal-time UTC offset and convert each source timestamp to UTC. Do not apply the separate daily-file fixed-MEZ convention to this long-term JSON workflow.
+- Require the parsed/converted series to cover the exact physical UTC interval **`[2020-01-01T00:00:00Z, 2024-01-01T00:00:00Z)`** before trimming; a provider-facing civil-date request may be broader but may not narrow this UTC coverage.
 - Use the pre-target frozen `Q` sampling interval of **15 minutes / 900 seconds**, hence **96 expected observations per 24-hour window**.
 - For each GloFAS `dis24` timestamp `T`, use exactly the interval `[T - 24 hours, T)`.
 - A comparison day is valid only when at least 90% of the 96 expected regular PEGELONLINE source observations for that exact interval are present and finite. The executable threshold therefore requires at least **87 finite source observations**.
@@ -130,13 +131,14 @@ This pilot characterises one model/location/time comparison. It does not establi
 
 ## Requirements before any raw/derived publication
 
-For PEGELONLINE, freeze and fingerprint the exact metadata-only REST request/response used above plus the generated long-term `Q` download request/file, source timestamps, byte size and SHA-256. For GloFAS, freeze and fingerprint the exact v4.0 upstream-area ancillary request/file plus the complete EWDS target request, system version and returned target hashes. `scripts/dresden_acquisition_evidence.py` provides the pre-admission byte-identity bridge; obtaining those hashes does **not** itself promote either metadata-only manifest to raw publication. Any daily aggregation or comparison output additionally needs deterministic code/configuration identity and separate rights/derived-artifact review.
+For PEGELONLINE, freeze and fingerprint the exact metadata-only REST request/response used above plus the generated long-term **JSON** `Q` download request/file, source timestamp offsets, byte size and SHA-256. For GloFAS, freeze and fingerprint the exact v4.0 upstream-area ancillary request/file plus the complete EWDS target request, system version and returned target hashes. `scripts/dresden_acquisition_evidence.py` provides the pre-admission byte-identity bridge; obtaining those hashes does **not** itself promote either metadata-only manifest to raw publication. Any daily aggregation or comparison output additionally needs deterministic code/configuration identity and separate rights/derived-artifact review.
 
 ## Authoritative public references
 
 - PEGELONLINE station: `https://pegelonline.wsv.de/gast/stammdaten?pegelnr=501060`
 - PEGELONLINE REST-v2 Dresden metadata request: `https://pegelonline.wsv.de/webservices/rest-api/v2/stations/70272185-b2b3-4178-96b8-43bea330dcae.json?includeTimeseries=true`
 - PEGELONLINE downloads/licence: `https://www.pegelonline.wsv.de/webservice/downloads`
+- PEGELONLINE help / long-term download formats and timestamp semantics: `https://pegelonline.wsv.de/gast/hilfe`
 - PEGELONLINE REST API documentation: `https://pegelonline.wsv.de/webservice/dokuRestapi`
 - PEGELONLINE/HYDAS API documentation: `https://www.pegelonline.wsv.de/webservice/dokuHydasapi`
 - DL-DE-Zero-2.0: `https://www.govdata.de/dl-de/zero-2-0`
