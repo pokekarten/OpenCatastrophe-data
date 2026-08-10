@@ -106,6 +106,8 @@ def acquisition_intent() -> dict[str, Any]:
 
 def finalize_acquisition_intent(
     *,
+    pegelonline_station_number: str,
+    pegelonline_station_uuid: str,
     pegelonline_equidistance_minutes: int,
     station_latitude: float | int,
     station_longitude: float | int,
@@ -115,12 +117,18 @@ def finalize_acquisition_intent(
 
     PEGELONLINE documents ``equidistance`` in minutes. The function accepts that
     source-native unit explicitly, converts it once to seconds for the repository
-    window utilities, and records both values in the frozen intent.
+    window utilities, and records both values in the frozen intent. Retrieved
+    station identity must match the preregistered Dresden station before its
+    coordinates may influence GloFAS grid selection.
 
     The function deliberately invokes the canonical grid selector itself rather
     than accepting a caller-constructed match receipt.
     """
 
+    if pegelonline_station_number != PEGELONLINE_STATION_NUMBER:
+        raise AcquisitionIntentError("PEGELONLINE station_number does not match the frozen Dresden station")
+    if pegelonline_station_uuid != PEGELONLINE_STATION_UUID:
+        raise AcquisitionIntentError("PEGELONLINE station_uuid does not match the frozen Dresden station")
     if type(pegelonline_equidistance_minutes) is not int or pegelonline_equidistance_minutes <= 0:
         raise AcquisitionIntentError("PEGELONLINE equidistance_minutes must be a positive integer")
     pegelonline_sampling_interval_seconds = pegelonline_equidistance_minutes * SECONDS_PER_MINUTE
@@ -145,6 +153,8 @@ def finalize_acquisition_intent(
     plan["phase"] = "target_acquisition"
     plan["target_values_must_not_be_inspected"] = False
     plan["metadata_resolution"] = {
+        "pegelonline_station_number": pegelonline_station_number,
+        "pegelonline_station_uuid": pegelonline_station_uuid,
         "pegelonline_equidistance_minutes": pegelonline_equidistance_minutes,
         "pegelonline_sampling_interval_seconds": pegelonline_sampling_interval_seconds,
         "expected_source_observations_per_24h": expected_source_observations_per_day,
