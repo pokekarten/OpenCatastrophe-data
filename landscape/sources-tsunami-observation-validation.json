@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry of high-frequency tsunami sea-level observations relevant to coastal arrival-time and wave-height validation.",
+  "review_date": "2026-08-10",
+  "entries": [
+    {
+      "candidate_id": "ioc.vliz.slsmf",
+      "name": "IOC Sea Level Station Monitoring Facility",
+      "provider": "Intergovernmental Oceanographic Commission of UNESCO / Flanders Marine Institute (VLIZ)",
+      "categories": [
+        "tsunami",
+        "sea_level",
+        "tide_gauge",
+        "real_time_monitoring",
+        "coastal_observation",
+        "validation"
+      ],
+      "spatial_scope": "global and regional IOC sea-level networks, including GLOSS and tsunami-warning-system stations",
+      "temporal_scope": "near-real-time station streams with station- and operator-dependent historical continuity and availability",
+      "resolution_or_granularity": "raw station and sensor streams; the facility states that most stations provide minute-level values updated about every five minutes, while actual sampling and transmission intervals are station and sensor specific",
+      "potential_roles": [
+        "coastal_tsunami_arrival_validation",
+        "tsunami_wave_height_validation",
+        "event_cross_check",
+        "station_availability_and_sensor_context"
+      ],
+      "authoritative_url": "https://www.ioc-sealevelmonitoring.org/",
+      "access_class_hint": "public_monitoring_registered_api_access",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "The facility is designed for rapid inspection of raw real-time streams from heterogeneous station operators, not as a uniformly quality-controlled tsunami archive. Sensor type, datum, sampling, gaps and operator provenance must be retained. Some SLSMF stations expose DART feeds, so any future use must resolve station/feed lineage against the repository's existing DART candidate rather than counting the same underlying measurements twice. The facility's Data Policy states that data and products available through the website may not be used for commercial purposes and directs commercial users to the relevant data originators; this discovery entry does not resolve downstream rights or redistribution permission."
+    }
+  ]
+}
