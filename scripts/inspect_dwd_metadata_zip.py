@@ -49,10 +49,12 @@ def sha256_file(path: Path) -> str:
 def _safe_member_name(name: str) -> str:
     if not name or "\\" in name or "\x00" in name:
         raise InspectionError("ZIP member path must be a non-empty POSIX path")
-    path = PurePosixPath(name)
-    if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+    candidate = name[:-1] if name.endswith("/") else name
+    if not candidate or name.startswith("/"):
         raise InspectionError(f"unsafe ZIP member path: {name}")
-    return path.as_posix()
+    if any(part in {"", ".", ".."} for part in candidate.split("/")):
+        raise InspectionError(f"unsafe ZIP member path: {name}")
+    return name
 
 
 def _is_symlink(info: zipfile.ZipInfo) -> bool:
