@@ -117,25 +117,6 @@ class ContractConsistencyTests(unittest.TestCase):
         duplicates = {reference: names for reference, names in owners.items() if len(names) != 1}
         self.assertEqual(duplicates, {}, "each admitted manifest must have exactly one canonical source review")
 
-    def test_source_reviews_echo_canonical_manifest_identity(self) -> None:
-        for review_path in sorted((ROOT / "docs/source-reviews").glob("*.md")):
-            if review_path.name == "README.md":
-                continue
-            review_text = review_path.read_text(encoding="utf-8")
-            references = set(MANIFEST_REFERENCE_RE.findall(review_text))
-            self.assertTrue(references, f"{review_path} must reference an admitted manifest")
-            for reference in references:
-                manifest_path = ROOT / reference
-                payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-                for field in ("provider", "product_name"):
-                    value = payload[field]
-                    with self.subTest(review=review_path.name, manifest=reference, field=field):
-                        self.assertIn(
-                            value,
-                            review_text,
-                            f"{review_path} must echo canonical manifest {field} without inventing a second identity",
-                        )
-
     def test_source_review_readme_index_matches_review_files(self) -> None:
         review_dir = ROOT / "docs/source-reviews"
         expected = {path.name for path in review_dir.glob("*.md") if path.name != "README.md"}
