@@ -4,14 +4,19 @@
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import json
 import re
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qsl, urlsplit
 
+ROOT = Path(__file__).resolve().parents[1]
 PROFILE_VERSION = "1.0.0"
+RUN_PROFILE_V1 = "1.0.0"
+RUN_PROFILE_V2 = "2.0.0"
 COMMIT_RE = re.compile(r"^[a-f0-9]{40}$")
 SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
 REPOSITORY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
@@ -25,6 +30,26 @@ INTEROP_STATUSES = {"planned", "experimental", "tested", "unsupported", "not_com
 EVIDENCE_CLASSES = {"repository_source", "external_evidence", "inference", "design_proposal"}
 LOSS_STAGES = {"ground_up", "gross", "insured", "ceded", "recoverable", "net"}
 COMPARISON_MODES = {"deterministic", "common_innovations", "distributional", "not_comparable"}
+RUN_INPUT_KINDS_V2 = {"data", "model", "config", "code", "fixture", "literature", "other"}
+DATA_SCIENTIFIC_ROLES_V2 = {"training", "calibration", "validation", "holdout", "benchmark", "context"}
+RUN_ROLE_BY_KIND_V2 = {
+    "model": {"model"},
+    "config": {"configuration"},
+    "code": {"software"},
+    "fixture": {"validation", "benchmark", "context", "test_fixture"},
+    "literature": {"context"},
+    "other": {"context"},
+}
+CLAIM_REFERENCE_KINDS_V2 = {
+    "input", "output", "validation", "manifest", "source_review", "repository_path", "external_uri"
+}
+CLAIM_SCOPE_KEYS_V2 = {"peril", "geography", "temporal", "variable", "model_context"}
+SENSITIVE_QUERY_KEYS = {
+    "access_key", "access_token", "api_key", "apikey", "auth", "authorization", "credential", "key",
+    "secret", "sig", "signature", "token", "x-amz-credential", "x-amz-signature", "x-goog-credential",
+    "x-goog-signature",
+}
+LOCAL_HOST_SUFFIXES = (".local", ".localhost", ".internal")
 
 
 class ContractError(ValueError):
@@ -131,6 +156,49 @@ def _path(value: Any, where: str) -> str:
     return text
 
 
+def _repository_file(value: Any, where: str, *, prefix: str | None = None, suffix: str | None = None) -> str:
+    text = _path(value, where)
+    if prefix is not None and not text.startswith(prefix):
+        raise ContractError(f"{where} must reference {prefix}")
+    if suffix is not None and not text.endswith(suffix):
+        raise ContractError(f"{where} must end with {suffix}")
+    path = ROOT / text
+    if not path.is_file():
+        raise ContractError(f"{where} must resolve to an existing repository file: {text}")
+    return text
+
+
+def _public_external_uri(value: Any, where: str) -> str:
+    text = _str(value, where)
+    if any(ch.isspace() for ch in text):
+        raise ContractError(f"{where} must not contain whitespace")
+    if text.startswith("urn:"):
+        return text
+    try:
+        parsed = urlsplit(text)
+        hostname = parsed.hostname
+        parsed.port
+    except ValueError as exc:
+        raise ContractError(f"{where} is malformed") from exc
+    if parsed.scheme != "https" or not hostname:
+        raise ContractError(f"{where} must use public https:// or urn:")
+    if parsed.username is not None or parsed.password is not None:
+        raise ContractError(f"{where} must not embed credentials")
+    host = hostname.casefold().rstrip(".")
+    if host == "localhost" or host.endswith(LOCAL_HOST_SUFFIXES):
+        raise ContractError(f"{where} must not reference a local/private host")
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        address = None
+    if address is not None and not address.is_global:
+        raise ContractError(f"{where} must not reference a non-public IP address")
+    for key, _value in parse_qsl(parsed.query, keep_blank_values=True):
+        if key.casefold() in SENSITIVE_QUERY_KEYS:
+            raise ContractError(f"{where} must not contain credential or signature query parameters")
+    return text
+
+
 def _unique_strings(value: Any, where: str) -> list[str]:
     result = [_str(item, f"{where}[{i}]") for i, item in enumerate(_arr(value, where))]
     if len(result) != len(set(result)):
@@ -219,12 +287,100 @@ def validate_task(payload: Any, *, expected_repository: str | None = None, expec
                 raise ContractError("external source version must not be mutable 'latest'")
 
 
+def _validate_run_v2_input(
+    inp: dict[str, Any],
+    *,
+    index: int,
+    input_ids: set[str],
+    input_identities: set[str],
+    input_hashes: set[str],
+) -> None:
+    where = f"run.inputs[{index}]"
+    required = {"id", "kind", "identity", "scientific_role"}
+    allowed = required | {"manifest", "sha256", "version"}
+    _closed(inp, where, required, allowed)
+    input_id = _str(inp["id"], f"{where}.id")
+    if input_id in input_ids:
+        raise ContractError(f"duplicate run input id: {input_id}")
+    input_ids.add(input_id)
+    kind = _str(inp["kind"], f"{where}.kind")
+    if kind not in RUN_INPUT_KINDS_V2:
+        raise ContractError(f"unsupported {where}.kind: {kind}")
+    identity = _str(inp["identity"], f"{where}.identity")
+    if identity in input_identities:
+        raise ContractError(f"duplicate exact run input identity: {identity}")
+    input_identities.add(identity)
+    role = _str(inp["scientific_role"], f"{where}.scientific_role")
+    allowed_roles = DATA_SCIENTIFIC_ROLES_V2 if kind == "data" else RUN_ROLE_BY_KIND_V2[kind]
+    if role not in allowed_roles:
+        raise ContractError(f"unsupported {where}.scientific_role {role!r} for kind {kind!r}")
+    if "version" in inp and _str(inp["version"], f"{where}.version").lower() == "latest":
+        raise ContractError(f"{where}.version must not be mutable 'latest'")
+    if kind == "data":
+        if "manifest" not in inp or "sha256" not in inp:
+            raise ContractError(f"{where} kind data requires admitted manifest and exact sha256")
+        manifest = _repository_file(inp["manifest"], f"{where}.manifest", prefix="manifests/", suffix=".json")
+        if len(Path(manifest).parts) != 2:
+            raise ContractError(f"{where}.manifest must directly reference one manifests/*.json file")
+    elif "manifest" in inp:
+        raise ContractError(f"{where}.manifest is only valid for kind data")
+    if "sha256" in inp:
+        digest = _sha256(inp["sha256"], f"{where}.sha256")
+        if digest in input_hashes:
+            raise ContractError(
+                f"duplicate exact input content sha256: {digest}; split/model roles require distinct content identities"
+            )
+        input_hashes.add(digest)
+    if kind in {"model", "config", "fixture"} and "sha256" not in inp and "version" not in inp:
+        raise ContractError(f"{where} requires sha256 or exact version for kind {kind}")
+
+
+def _validate_v2_claim_reference(
+    value: Any,
+    *,
+    where: str,
+    input_ids: set[str],
+    output_paths: set[str],
+    validation_checks: set[str],
+) -> tuple[str, str]:
+    reference = _obj(value, where)
+    _closed(reference, where, {"kind", "ref"}, {"kind", "ref"})
+    kind = _str(reference["kind"], f"{where}.kind")
+    if kind not in CLAIM_REFERENCE_KINDS_V2:
+        raise ContractError(f"unsupported {where}.kind: {kind}")
+    ref = _str(reference["ref"], f"{where}.ref")
+    if kind == "input":
+        if ref not in input_ids:
+            raise ContractError(f"{where}.ref does not resolve to a run input id: {ref}")
+    elif kind == "output":
+        if ref not in output_paths:
+            raise ContractError(f"{where}.ref does not resolve to a run output path: {ref}")
+    elif kind == "validation":
+        if ref not in validation_checks:
+            raise ContractError(f"{where}.ref does not resolve to a validation check: {ref}")
+    elif kind == "manifest":
+        manifest = _repository_file(ref, f"{where}.ref", prefix="manifests/", suffix=".json")
+        if len(Path(manifest).parts) != 2:
+            raise ContractError(f"{where}.ref must directly reference one manifests/*.json file")
+    elif kind == "source_review":
+        review = _repository_file(ref, f"{where}.ref", prefix="docs/source-reviews/", suffix=".md")
+        if Path(review).name == "README.md" or len(Path(review).parts) != 3:
+            raise ContractError(f"{where}.ref must reference one canonical source-review document")
+    elif kind == "repository_path":
+        _repository_file(ref, f"{where}.ref")
+    else:
+        _public_external_uri(ref, f"{where}.ref")
+    return kind, ref
+
+
 def validate_run(payload: Any, *, expected_repository: str | None = None) -> None:
     run = _obj(payload, "run")
     required = {"profile_version", "run_id", "repository", "execution", "inputs", "randomness", "outputs", "validation", "status", "claims", "limitations"}
     _closed(run, "run", required, required | {"environment", "semantics", "interoperability"})
-    if _str(run["profile_version"], "run.profile_version") != PROFILE_VERSION:
-        raise ContractError(f"run.profile_version must equal {PROFILE_VERSION}")
+    profile_version = _str(run["profile_version"], "run.profile_version")
+    if profile_version not in {RUN_PROFILE_V1, RUN_PROFILE_V2}:
+        raise ContractError(f"run.profile_version must equal {RUN_PROFILE_V1} or {RUN_PROFILE_V2}")
+    is_v2 = profile_version == RUN_PROFILE_V2
     if not ID_RE.fullmatch(_str(run["run_id"], "run.run_id")):
         raise ContractError("run.run_id has an invalid format")
     repository = _obj(run["repository"], "run.repository")
@@ -247,8 +403,19 @@ def validate_run(payload: Any, *, expected_repository: str | None = None) -> Non
         raise ContractError("run.execution.ended_at must not precede started_at")
     exit_code = _int(execution["exit_code"], "run.execution.exit_code")
     input_ids: set[str] = set()
+    input_identities: set[str] = set()
+    input_hashes: set[str] = set()
     for i, item in enumerate(_arr(run["inputs"], "run.inputs")):
         inp = _obj(item, f"run.inputs[{i}]")
+        if is_v2:
+            _validate_run_v2_input(
+                inp,
+                index=i,
+                input_ids=input_ids,
+                input_identities=input_identities,
+                input_hashes=input_hashes,
+            )
+            continue
         _closed(inp, f"run.inputs[{i}]", {"id", "kind", "identity"}, {"id", "kind", "identity", "sha256", "version"})
         input_id = _str(inp["id"], f"run.inputs[{i}].id")
         if input_id in input_ids:
@@ -285,13 +452,17 @@ def validate_run(payload: Any, *, expected_repository: str | None = None) -> Non
         _int(out["byte_size"], f"run.outputs[{i}].byte_size", 0)
         _str(out["media_type"], f"run.outputs[{i}].media_type")
     validation_statuses: list[str] = []
+    validation_checks: set[str] = set()
     validations = _arr(run["validation"], "run.validation")
     if not validations:
         raise ContractError("run.validation must contain at least one check")
     for i, item in enumerate(validations):
         check = _obj(item, f"run.validation[{i}]")
         _closed(check, f"run.validation[{i}]", {"check", "status"}, {"check", "status", "evidence"})
-        _str(check["check"], f"run.validation[{i}].check")
+        check_id = _str(check["check"], f"run.validation[{i}].check")
+        if is_v2 and check_id in validation_checks:
+            raise ContractError(f"duplicate run validation check: {check_id}")
+        validation_checks.add(check_id)
         check_status = _str(check["status"], f"run.validation[{i}].status")
         if check_status not in RUN_STATUSES:
             raise ContractError(f"unsupported run.validation[{i}].status: {check_status}")
@@ -309,16 +480,54 @@ def validate_run(payload: Any, *, expected_repository: str | None = None) -> Non
         raise ContractError(f"run.status {status} requires at least one {status} validation")
     for i, item in enumerate(_arr(run["claims"], "run.claims")):
         claim = _obj(item, f"run.claims[{i}]")
-        _closed(claim, f"run.claims[{i}]", {"statement", "evidence_class", "references"}, {"statement", "evidence_class", "references"})
+        if not is_v2:
+            _closed(claim, f"run.claims[{i}]", {"statement", "evidence_class", "references"}, {"statement", "evidence_class", "references"})
+            _str(claim["statement"], f"run.claims[{i}].statement")
+            evidence_class = _str(claim["evidence_class"], f"run.claims[{i}].evidence_class")
+            if evidence_class not in EVIDENCE_CLASSES:
+                raise ContractError(f"unsupported evidence class: {evidence_class}")
+            refs = _unique_strings(claim["references"], f"run.claims[{i}].references")
+            if evidence_class == "external_evidence" and not refs:
+                raise ContractError("external_evidence claims require at least one reference")
+            continue
+        claim_required = {"statement", "evidence_class", "references", "scope", "limitations"}
+        _closed(claim, f"run.claims[{i}]", claim_required, claim_required)
         _str(claim["statement"], f"run.claims[{i}].statement")
         evidence_class = _str(claim["evidence_class"], f"run.claims[{i}].evidence_class")
         if evidence_class not in EVIDENCE_CLASSES:
             raise ContractError(f"unsupported evidence class: {evidence_class}")
-        refs = _unique_strings(claim["references"], f"run.claims[{i}].references")
-        if evidence_class == "external_evidence" and not refs:
-            raise ContractError("external_evidence claims require at least one reference")
-    for i, limitation in enumerate(_arr(run["limitations"], "run.limitations")):
-        _str(limitation, f"run.limitations[{i}]")
+        raw_refs = _arr(claim["references"], f"run.claims[{i}].references")
+        if not raw_refs:
+            raise ContractError(f"run.claims[{i}].references must contain at least one resolvable reference")
+        resolved_refs: list[tuple[str, str]] = []
+        for j, reference in enumerate(raw_refs):
+            resolved_refs.append(
+                _validate_v2_claim_reference(
+                    reference,
+                    where=f"run.claims[{i}].references[{j}]",
+                    input_ids=input_ids,
+                    output_paths=output_paths,
+                    validation_checks=validation_checks,
+                )
+            )
+        if len(resolved_refs) != len(set(resolved_refs)):
+            raise ContractError(f"run.claims[{i}].references must not contain duplicates")
+        if evidence_class == "external_evidence" and not any(
+            kind in {"manifest", "source_review", "repository_path", "external_uri"} for kind, _ref in resolved_refs
+        ):
+            raise ContractError("external_evidence claims require an external/repository evidence reference")
+        scope = _obj(claim["scope"], f"run.claims[{i}].scope")
+        _closed(scope, f"run.claims[{i}].scope", set(), CLAIM_SCOPE_KEYS_V2)
+        if not scope:
+            raise ContractError(f"run.claims[{i}].scope must contain at least one bounded scope field")
+        for key, value in scope.items():
+            _str(value, f"run.claims[{i}].scope.{key}")
+        _unique_strings(claim["limitations"], f"run.claims[{i}].limitations")
+    if is_v2:
+        _unique_strings(run["limitations"], "run.limitations")
+    else:
+        for i, limitation in enumerate(_arr(run["limitations"], "run.limitations")):
+            _str(limitation, f"run.limitations[{i}]")
     if "environment" in run:
         env = _obj(run["environment"], "run.environment")
         _closed(env, "run.environment", {"os", "architecture", "runtime"}, {"os", "architecture", "runtime", "dependency_lock_sha256"})
