@@ -49,6 +49,38 @@ GitHub Issues and Pull Requests are the public coordination bus. Agents must not
 7. **Keep ownership narrow.** One PR should normally implement one primary Issue. If two Issues genuinely require the same atomic change, document why in the PR and close/reference both explicitly; do not use umbrella PRs as hidden multi-task queues.
 8. **Handoff durably.** Before requesting review or stopping, record the exact head commit, changed/shared surfaces, checks run, evidence, assumptions, blockers, external-byte state and linked follow-up Issues. If work is incomplete, leave the Issue state and `next_action` clear enough for another agent to resume without private context.
 
+### Independent review and challenge protocol
+
+Independent review is a quality-control role, not a second implementation claim. A reviewer should inspect the exact PR head, diff, tests, public evidence and declared scope without editing the builder's branch unless the builder explicitly hands it over.
+
+Reviewer independence is a process property, not merely a GitHub login. Multiple agents may operate through the same GitHub account, so Tier 1/2 PRs must record distinct builder/reviewer/challenger agent or run identifiers when identities are shared. An independent reviewer must not have authored the proposed diff or directed its implementation. Separate context and a fresh evidence read are preferred; a second pass by the same agent/run is self-review, not independent review.
+
+Use three review tiers:
+
+1. **Tier 0 — routine.** Typographical changes, generated-view refreshes with unchanged semantics, narrowly mechanical refactors and similarly reversible low-risk work need normal CI plus the builder's full-diff check. A second agent is optional.
+2. **Tier 1 — independent review.** Non-trivial code, validators, data transformations, source reviews, manifests, schemas, dependency changes and durable public contracts should receive an independent reviewer before merge. The reviewer tries to falsify the change: inspect negative cases, hidden assumptions, scope drift, provenance, rights, scientific meaning and whether tests would detect a plausible defect. The builder must not count self-review as independent review.
+3. **Tier 2 — challenge before decision.** New architecture, irreversible or difficult-to-reverse data/admission decisions, changed scientific methodology or thresholds, security boundaries, rights/licensing interpretations, model-evaluation design and other high-impact choices should receive both an independent reviewer and a challenger. The challenger should develop at least one materially different approach, interpretation or null hypothesis and compare it against the proposal using explicit criteria. Do not open competing implementation branches merely to demonstrate alternatives; prefer an issue/PR review comment or bounded design artifact unless executable comparison is necessary to resolve the decision.
+
+Review-role availability must be truthful and explicit. For every Tier 1/2 role record one of `pending`, `completed` or `unavailable`. `unavailable` never counts as independent review, and `pending` keeps the PR draft/blocked. For **Tier 1**, an unavailable reviewer requires a reason and an explicit maintainer decision either to keep the PR blocked or exceptionally merge without independent review. For **Tier 2**, an unavailable reviewer or challenger remains merge-blocking; a maintainer may proceed only by explicitly downgrading the task to Tier 1 or Tier 0 with a public rationale, after which the lower tier's rules apply. Never silently waive a Tier 2 role, fabricate a reviewer/challenger identity, or downgrade a tier merely to satisfy the template.
+
+A challenger is not required to invent artificial disagreement. If the evidence strongly supports one approach, record the strongest credible alternative considered and why it loses. When two approaches remain genuinely competitive, compare them on correctness, evidence quality, reversibility, complexity, maintenance burden, interoperability, scientific validity, rights/privacy risk and testability rather than voting by agent count.
+
+If builder, reviewer and challenger still disagree on a material merge decision, keep the PR draft or blocked and request adjudication by a maintainer or an agent that did not author either competing position. The adjudicator must state the decision criteria and why one position is accepted, deferred or rejected. Unresolved material uncertainty is a valid blocking result.
+
+For research-heavy work, independent review should normally include:
+
+- trace each material claim to authoritative or primary evidence when available;
+- seek a second independent source for consequential claims when practical;
+- distinguish provider statements, repository inference and project design choices;
+- actively search for contradictory evidence, scope limitations and version/date drift;
+- verify that public availability has not been mistaken for reuse permission;
+- record uncertainty instead of converting absence of evidence into a positive conclusion;
+- check that the proposed evidence could falsify the claim rather than only confirm it.
+
+Review comments should be concise and actionable. Use `BLOCKER:` only for findings that truly prevent merge under repository policy; use `NON-BLOCKING:` for improvements that can safely become follow-up work. A reviewer who identifies an independent new task should create/link a follow-up Issue when Issues are available rather than broadening the current PR.
+
+Do not require multi-agent debate for every change. Additional agents are justified when their independence can materially reduce scientific, legal, security, architectural or provenance risk; otherwise extra review layers create queueing, duplicated context and false confidence without proportional quality benefit.
+
 When Issues are temporarily unavailable, use a draft PR as the durable public claim as described in `CONTRIBUTING.md`; do not invent a parallel task database. Issue-first dispatch is not considered active until repository Issues are enabled.
 
 The contributor or agent currently owning a visible draft claim controls its ready-for-review transition. Another agent must not mark the draft ready merely because CI is green. Before marking a draft ready, re-read the exact current head, full diff, latest conversation/review threads and hosted checks. An explicit unresolved `BLOCKER` or `keep draft` finding in the PR remains merge-blocking by project policy until the PR records how it was resolved or deliberately superseded.
