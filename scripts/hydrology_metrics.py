@@ -86,6 +86,80 @@ def relative_mean_bias(simulated: Sequence[float], observed: Sequence[float]) ->
     return _require_finite(ratio - 1.0, context="relative mean bias result")
 
 
+def pearson_correlation(simulated: Sequence[float], observed: Sequence[float]) -> float:
+    """Return the preregistered Pearson correlation coefficient.
+
+    Pearson correlation is defined for at least two paired finite observations
+    with non-zero variance in both series. Unlike KGE', zero series means are
+    valid. Numeric overflow or underflow in required intermediates fails closed.
+    """
+
+    if len(simulated) != len(observed):
+        raise MetricInputError("simulated and observed series must have equal length")
+    if len(simulated) < 2:
+        raise MetricInputError("at least two paired values are required")
+
+    simulated_values = _finite_floats(simulated)
+    observed_values = _finite_floats(observed)
+    count = len(simulated_values)
+
+    mean_simulated = _require_finite(
+        _finite_fsum(simulated_values, context="Pearson simulated mean") / count,
+        context="Pearson simulated mean",
+    )
+    mean_observed = _require_finite(
+        _finite_fsum(observed_values, context="Pearson observed mean") / count,
+        context="Pearson observed mean",
+    )
+    simulated_centered = tuple(
+        _require_finite(value - mean_simulated, context="Pearson simulated centered value")
+        for value in simulated_values
+    )
+    observed_centered = tuple(
+        _require_finite(value - mean_observed, context="Pearson observed centered value")
+        for value in observed_values
+    )
+    simulated_ss = _finite_fsum(
+        (
+            _finite_product(value, value, context="Pearson simulated squared deviation")
+            for value in simulated_centered
+        ),
+        context="Pearson simulated variance sum",
+    )
+    observed_ss = _finite_fsum(
+        (
+            _finite_product(value, value, context="Pearson observed squared deviation")
+            for value in observed_centered
+        ),
+        context="Pearson observed variance sum",
+    )
+    if simulated_ss == 0.0 or observed_ss == 0.0:
+        raise MetricInputError("Pearson correlation requires non-zero variance in both series")
+
+    covariance_sum = _finite_fsum(
+        (
+            _finite_product(
+                simulated_delta,
+                observed_delta,
+                context="Pearson covariance product",
+            )
+            for simulated_delta, observed_delta in zip(simulated_centered, observed_centered)
+        ),
+        context="Pearson covariance sum",
+    )
+    denominator_squared = _finite_product(
+        simulated_ss,
+        observed_ss,
+        context="Pearson correlation denominator",
+    )
+    if denominator_squared == 0.0:
+        raise MetricInputError("Pearson correlation denominator must remain positive")
+    return _require_finite(
+        covariance_sum / math.sqrt(denominator_squared),
+        context="Pearson correlation",
+    )
+
+
 def modified_kge_prime(simulated: Sequence[float], observed: Sequence[float]) -> float:
     """Return modified Kling-Gupta Efficiency (KGE').
 
