@@ -28,32 +28,6 @@
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
       "note": "Fixed GESLA-3 Part 1 archive assembled from many upstream providers; preserve station-specific datum, timing, quality and coverage semantics, and do not combine it silently with the separately archived Part 2 rights scope."
-    },
-    {
-      "candidate_id": "noaa.co-ops.water-levels",
-      "name": "NOAA CO-OPS Water Level Data",
-      "provider": "NOAA Center for Operational Oceanographic Products and Services",
-      "categories": [
-        "sea_level",
-        "tide_gauges",
-        "coastal_hazard",
-        "observations"
-      ],
-      "spatial_scope": "United States and associated coastal and Great Lakes station network",
-      "temporal_scope": "station- and product-dependent historical observations to current updates",
-      "resolution_or_granularity": "product-dependent; 6-minute water_level and verified hourly_height among supported products",
-      "potential_roles": [
-        "event_scale_water_level_validation",
-        "storm_surge_validation",
-        "coastal_flood_benchmark"
-      ],
-      "authoritative_url": "https://api.tidesandcurrents.noaa.gov/api/prod/",
-      "access_class_hint": "public_api",
-      "candidate_status": "evidence_checked",
-      "rights_review_status": "not_reviewed",
-      "scientific_review_status": "not_reviewed",
-      "admission_status": "not_admitted",
-      "note": "Water-level retrieval semantics depend on station, product, datum, time zone, units and time window; water_level may be preliminary or verified while hourly_height is verified. Gauge height is not a pure storm-surge residual."
     }
   ]
 }
