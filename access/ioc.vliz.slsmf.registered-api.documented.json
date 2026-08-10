@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "ioc.vliz.slsmf.registered-api.documented",
+  "source_ids": [
+    "ioc.vliz.slsmf"
+  ],
+  "provider": "Intergovernmental Oceanographic Commission of UNESCO / Flanders Marine Institute (VLIZ)",
+  "interface_type": "rest",
+  "status": "restricted_by_terms",
+  "documentation_url": "https://api.ioc-sealevelmonitoring.org/",
+  "service_root": "https://api.ioc-sealevelmonitoring.org",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "catalogue",
+    "realtime"
+  ],
+  "authentication": {
+    "mode": "provider_account",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_api_documentation"
+    ],
+    "path_templates": [
+      "/"
+    ],
+    "parameter_rules": "Documentation-only contract. The exact registration flow, endpoint/version contract and bounded station/data queries must be frozen in a later source-specific review. No automated data request is authorized here, and callers may not supply arbitrary hosts, paths or headers."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json",
+      "text/html"
+    ],
+    "format": "Registered IOC/VLIZ Sea Level Station Monitoring Facility API/service documentation and, only after a later review, station/sensor-specific service responses.",
+    "scientific_semantics": "The facility exposes heterogeneous raw real-time sea-level streams. Station operator, sensor, datum, sampling, gaps and feed lineage must be preserved; SLSMF feeds can overlap DART and must not automatically be counted as independent evidence."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 524288,
+    "max_sample_bytes": 1048576,
+    "retry_policy": "none",
+    "rate_limit_notes": "No automated provider API probing is authorized by this documentation-only restricted contract. Exact provider limits must be reviewed before any future credentialed probe.",
+    "mutability_notes": "The facility is operational and near-real-time; station availability, sensors, sampling and feeds can change. Any future accepted response requires retrieval time and source/feed lineage."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "restricted",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://www.ioc-sealevelmonitoring.org/",
+    "commercial_automation_status": "prohibited",
+    "redistribution_status": "unknown",
+    "notes": "The existing OpenCatastrophe source registry records that the facility Data Policy does not permit commercial use of data/products available through the website and directs commercial users to the relevant data originators. Registered API availability therefore does not clear commercial automation or downstream redistribution."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": true,
+    "expected_evidence": []
+  },
+  "implementation_decision": "do_not_automate",
+  "reviewed_at": "2026-08-10",
+  "evidence_urls": [
+    "https://www.ioc-sealevelmonitoring.org/",
+    "https://api.ioc-sealevelmonitoring.org/"
+  ],
+  "notes": "This contract captures the important distinction between technical API availability and legal usability. It intentionally preserves the registered API as a documented route while blocking automated data use for OpenCatastrophe's potentially commercial insurance context until the relevant originator/API terms are explicitly cleared."
+}
