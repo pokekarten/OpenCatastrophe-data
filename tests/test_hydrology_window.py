@@ -13,26 +13,29 @@ from scripts.hydrology_window import (
     assess_source_window,
     expected_observations_per_24h,
     glofas_dis24_window,
-    pegelonline_standard_time_to_utc,
+    pegelonline_download_standard_time_to_utc,
 )
 
 UTC = timezone.utc
 
 
-class PegelonlineTimeTests(unittest.TestCase):
-    def test_year_round_standard_time_conversion_never_applies_dst(self) -> None:
-        winter = pegelonline_standard_time_to_utc("2026-01-15T12:00:00")
-        summer = pegelonline_standard_time_to_utc("2026-07-15T12:00:00")
+class PegelonlineDownloadTimeTests(unittest.TestCase):
+    def test_year_round_download_standard_time_conversion_never_applies_dst(self) -> None:
+        winter = pegelonline_download_standard_time_to_utc("2026-01-15T12:00:00")
+        summer = pegelonline_download_standard_time_to_utc("2026-07-15T12:00:00")
         self.assertEqual(winter, datetime(2026, 1, 15, 11, 0, tzinfo=UTC))
         self.assertEqual(summer, datetime(2026, 7, 15, 11, 0, tzinfo=UTC))
 
-    def test_offset_bearing_source_timestamp_is_rejected(self) -> None:
-        with self.assertRaisesRegex(HydrologyWindowError, "timezone-naive"):
-            pegelonline_standard_time_to_utc("2026-07-15T12:00:00+02:00")
+    def test_rest_style_offset_timestamp_is_rejected_by_download_converter(self) -> None:
+        # REST Measurement JSON uses local legal time with an explicit UTC offset;
+        # the fixed-CET converter is intentionally limited to PEGELONLINE files
+        # documented as year-round Central European winter/standard time.
+        with self.assertRaisesRegex(HydrologyWindowError, "download timestamp must be timezone-naive"):
+            pegelonline_download_standard_time_to_utc("2026-07-15T12:00:00+02:00")
 
-    def test_invalid_source_timestamp_is_rejected(self) -> None:
+    def test_invalid_download_timestamp_is_rejected(self) -> None:
         with self.assertRaisesRegex(HydrologyWindowError, "ISO-8601"):
-            pegelonline_standard_time_to_utc("not-a-timestamp")
+            pegelonline_download_standard_time_to_utc("not-a-timestamp")
 
 
 class GlofasWindowTests(unittest.TestCase):

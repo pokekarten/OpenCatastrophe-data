@@ -5,8 +5,11 @@
 
 The preregistered comparison contract is now explicit:
 
-- PEGELONLINE timestamps are interpreted as year-round Central European
-  standard time (fixed UTC+01:00), never as a daylight-saving timezone;
+- PEGELONLINE long-term/free-download file timestamps are interpreted as
+  year-round Central European standard time (fixed UTC+01:00), never as a
+  daylight-saving timezone. This rule is specific to that download-file
+  format; REST Measurement JSON timestamps carry explicit MEZ/MESZ offsets
+  and must not be passed through the download-file converter;
 - the source sampling interval is supplied explicitly by the caller after it
   has been frozen from source metadata;
 - GloFAS ``dis24`` is a 24-hour mean whose timestamp marks the end of the
@@ -68,18 +71,24 @@ def dresden_holdout_glofas_timestamps() -> tuple[datetime, ...]:
     )
 
 
-def pegelonline_standard_time_to_utc(value: str) -> datetime:
-    """Interpret a PEGELONLINE local timestamp as fixed CET (UTC+01:00)."""
+def pegelonline_download_standard_time_to_utc(value: str) -> datetime:
+    """Convert a timezone-naive PEGELONLINE download-file timestamp from fixed CET.
+
+    PEGELONLINE documents its downloadable measurement files as using
+    year-round Central European winter/standard time. REST Measurement JSON is
+    a different format: it carries explicit local legal-time offsets and must
+    be parsed from those offsets rather than routed through this function.
+    """
 
     if type(value) is not str or not value.strip():
-        raise HydrologyWindowError("PEGELONLINE timestamp must be a non-empty string")
+        raise HydrologyWindowError("PEGELONLINE download timestamp must be a non-empty string")
     try:
         parsed = datetime.fromisoformat(value)
     except ValueError as exc:
-        raise HydrologyWindowError("PEGELONLINE timestamp must be ISO-8601 local time") from exc
+        raise HydrologyWindowError("PEGELONLINE download timestamp must be ISO-8601 local time") from exc
     if parsed.tzinfo is not None or parsed.utcoffset() is not None:
         raise HydrologyWindowError(
-            "PEGELONLINE source timestamp must be timezone-naive before fixed CET conversion"
+            "PEGELONLINE download timestamp must be timezone-naive before fixed CET conversion"
         )
     return parsed.replace(tzinfo=PEGELONLINE_STANDARD_OFFSET).astimezone(UTC)
 
