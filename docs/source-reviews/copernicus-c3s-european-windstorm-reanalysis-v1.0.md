@@ -27,7 +27,7 @@ These products must not be collapsed into one generic "wind data" object. Track,
 
 ## Source identity and mutability
 
-The authoritative CDS dataset page identifies product version `1.0`, temporal coverage from 1940 to the present and a monthly update cycle. The STAC catalogue also exposes current temporal extent and licence metadata.
+The authoritative CDS dataset page identifies product version `1.0`, temporal coverage from 1940 to the present and a monthly update cycle.
 
 `1.0` identifies the product design/version; it does **not** freeze the bytes represented by the mutable phrase `to present`. A reproducible acquisition therefore needs more than the product version. It must record the exact CDS request or asset identity, including as applicable:
 
@@ -45,17 +45,18 @@ No such raw artifact is admitted by this review.
 
 ## Rights assessment
 
-The authoritative CDS dataset/STAC metadata labels this dataset `CC-BY-4.0`. The CDS CC-BY licence page points to the Creative Commons Attribution licence, and the CDS terms state that content is used under the licence attributed to the product. Download access requires CDS registration.
+The authoritative CDS dataset page identifies the dataset licence as CC-BY. The current CDS licence page identifies it as **CC-BY licence rev. 1**, implementing Creative Commons Attribution 4.0 International. The current CDS access terms are **Terms of use of the Copernicus Climate Data Store rev. 11** and require registration before downloading content.
 
 Engineering interpretation for the reviewed product:
 
-- licence identity: `CC-BY-4.0`;
+- licence identity: `CC-BY-4.0`, CDS CC-BY licence rev. 1;
+- CDS access terms reviewed: rev. 11;
 - commercial use: permitted by CC BY 4.0;
 - redistribution/adaptation: permitted subject to attribution and licence conditions;
 - access: registration is required for download through the CDS;
-- endorsement: use must not imply ECMWF/EU endorsement.
+- endorsement: attribution must not imply ECMWF/EU endorsement.
 
-OpenCatastrophe deliberately approves **metadata only** at this stage even though source rights are broader. This prevents a monthly-changing catalogue or an unspecified CDS query from being mistaken for a reproducible admitted artifact.
+OpenCatastrophe deliberately approves **metadata only** at this stage even though source rights are broader. This prevents a monthly-changing catalogue or an unspecified CDS query from being mistaken for a reproducible admitted artifact. No terms-content hash is recorded because exact terms bytes were not deliberately captured and hashed for this review.
 
 ## Scientific semantics
 
@@ -128,6 +129,5 @@ Until then, no C3S raw or derived bytes belong in this repository.
 ## Authoritative public references
 
 - Dataset: `https://cds.climate.copernicus.eu/datasets/sis-european-wind-storm-reanalysis`
-- STAC collection: `https://cds.climate.copernicus.eu/stac-browser/collections/sis-european-wind-storm-reanalysis`
 - Dataset licence: `https://cds.climate.copernicus.eu/licences/cc-by`
 - CDS terms: `https://cds.climate.copernicus.eu/licences/terms-of-use-cds`
