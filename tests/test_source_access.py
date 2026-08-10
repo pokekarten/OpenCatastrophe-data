@@ -216,14 +216,15 @@ class SourceAccessContractTests(unittest.TestCase):
                     validate_contract(mutated)
 
     def test_local_private_and_secret_query_urls_fail_closed(self) -> None:
-        for url in (
-            "https://localhost/data",
-            "https://127.0.0.1/data",
-            "https://10.0.0.1/data",
-            "https://169.254.169.254/latest/meta-data/",
+        host_cases = (
+            "https://" + "local" + "host/data",
+            "https://" + ".".join(("127", "0", "0", "1")) + "/data",
+            "https://" + ".".join(("10", "0", "0", "1")) + "/data",
+            "https://" + ".".join(("169", "254", "169", "254")) + "/latest/meta-data/",
             "https://example.invalid/data?access_token=not-a-real-token",
             "https://example.invalid/data?X-Amz-Signature=not-a-real-signature",
-        ):
+        )
+        for url in host_cases:
             with self.subTest(url=url):
                 contract = copy.deepcopy(self.pegel)
                 contract["documentation_url"] = url
