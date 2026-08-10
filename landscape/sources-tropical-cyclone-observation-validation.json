@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry of tropical-cyclone observational and satellite-derived validation sources relevant to catastrophe risk.",
+  "review_date": "2026-08-10",
+  "entries": [
+    {
+      "candidate_id": "noaa.ncei.adt-hursat.v1",
+      "name": "NOAA NCEI Advanced Dvorak Technique Hurricane Satellite (ADT-HURSAT) v1",
+      "provider": "NOAA National Centers for Environmental Information / University of Wisconsin-Madison CIMSS",
+      "categories": ["tropical_cyclone", "intensity", "satellite_derived", "climate_validation"],
+      "spatial_scope": "global tropical-cyclone record",
+      "temporal_scope": "1978-2024; static first release published February 2026",
+      "resolution_or_granularity": "storm-centred tropical-cyclone intensity estimates derived by applying ADT v9.0 to homogenized HURSAT B1 infrared imagery",
+      "potential_roles": ["intensity_climatology_validation", "long_term_trend_context", "synthetic_catalogue_intensity_benchmark"],
+      "authoritative_url": "https://www.ncei.noaa.gov/products/advanced-dvorak-technique-hurricane-satellite",
+      "access_class_hint": "public_ncei_and_noaa_open_data",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "NOAA identifies v1 as a consistently derived 1978-2024 intensity record and explicitly warns that reduced HURSAT sampling does not preserve individual-storm intensity peaks and valleys; use it for climatology/trend-oriented comparison rather than authoritative event peak intensity, and preserve its HURSAT/IBTrACS lineage."
+    },
+    {
+      "candidate_id": "noaa.ncei.hursat-b1.v06",
+      "name": "NOAA NCEI Hurricane Satellite HURSAT-B1 v06",
+      "provider": "NOAA National Centers for Environmental Information",
+      "categories": ["tropical_cyclone", "satellite_imagery", "storm_structure", "historical_observations"],
+      "spatial_scope": "global tropical cyclones visible from the geostationary satellite constellation, with documented early Indian Ocean coverage limitations",
+      "temporal_scope": "1978-2015 for current HURSAT-B1 v06",
+      "resolution_or_granularity": "approximately 8 km, 3-hourly storm-centred geostationary imagery on a 301 x 301 grid",
+      "potential_roles": ["storm_structure_validation", "satellite_imagery_benchmark", "intensity_algorithm_input"],
+      "authoritative_url": "https://www.ncei.noaa.gov/products/hurricane-satellite-data",
+      "access_class_hint": "public_ncei_https_download",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "HURSAT-B1 v06 is derived from ISCCP B1 geostationary observations, but its storm-centred grids use temporally interpolated IBTrACS locations; it is therefore valuable satellite-image evidence but not independent track-validation truth. Preserve version, channel/satellite availability, calibration and centering lineage."
+    },
+    {
+      "candidate_id": "noaa.ncei.blended-seawinds.v2.0",
+      "name": "NOAA NCEI Blended Sea Winds (NBS) v2.0",
+      "provider": "NOAA CoastWatch / NOAA National Centers for Environmental Information",
+      "categories": ["tropical_cyclone", "ocean_wind", "satellite_observations", "hazard_footprint", "validation"],
+      "spatial_scope": "global ocean",
+      "temporal_scope": "retrospective science record since July 1987 plus near-real-time production with approximately one-day latency",
+      "resolution_or_granularity": "Level-4 10 m neutral sea-surface winds on a 0.25 degree global grid, with 6-hourly, daily and monthly products",
+      "potential_roles": ["ocean_wind_footprint_validation", "tropical_cyclone_wind_context", "marine_hazard_benchmark"],
+      "authoritative_url": "https://coastwatch.noaa.gov/cwn/products/noaa-ncei-blended-seawinds-nbs-v2.html",
+      "access_class_hint": "public_coastwatch_https_thredds_and_erddap",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "NBS v2.0 is a multi-sensor Level-4 blend rather than a direct point observation. Wind-speed/magnitude information is multi-sensor satellite-derived, including SMAP and AMSR2 inputs that improve retrieval of very high hurricane winds, while vector direction is supplied from ERA5 for the retrospective Science Quality stream and from GFS for NRT. Preserve exact science-versus-NRT stream, direction-model lineage, source-sensor availability, blending assumptions and ocean-only semantics before any footprint validation; do not treat the complete vector field as independent satellite evidence against ERA5 or GFS."
+    }
+  ]
+}
