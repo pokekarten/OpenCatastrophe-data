@@ -80,13 +80,17 @@ def audit_manifest(manifest: dict[str, Any]) -> SampleAuditResult:
     source_eligible = not blockers
 
     repository_blocker: str | None = None
-    existing_raw_ready = False
+    repository_raw_allowed = False
     try:
         assert_public_asset_allowed(manifest, "raw")
     except ManifestError as exc:
         repository_blocker = str(exc)
     else:
-        existing_raw_ready = True
+        repository_raw_allowed = True
+
+    existing_raw_ready = source_eligible and repository_raw_allowed
+    if repository_raw_allowed and not source_eligible:
+        repository_blocker = "sample source contract blocks raw publication"
 
     if existing_raw_ready:
         status = "existing_raw_publication_ready"
