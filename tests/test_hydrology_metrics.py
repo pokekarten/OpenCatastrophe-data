@@ -37,6 +37,12 @@ class ModifiedKgePrimeTests(unittest.TestCase):
         with self.assertRaisesRegex(MetricInputError, "finite numeric"):
             modified_kge_prime([1.0, 2.0], [1.0, math.inf])
 
+    def test_rejects_type_confusion(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "finite numeric"):
+            modified_kge_prime([1.0, "2.0"], [1.0, 2.0])  # type: ignore[list-item]
+        with self.assertRaisesRegex(MetricInputError, "finite numeric"):
+            modified_kge_prime([1.0, True], [1.0, 2.0])
+
     def test_rejects_zero_mean(self) -> None:
         with self.assertRaisesRegex(MetricInputError, "non-zero means"):
             modified_kge_prime([-1.0, 1.0], [1.0, 2.0])
