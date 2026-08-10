@@ -25,6 +25,36 @@ def _finite_floats(values: Sequence[float]) -> tuple[float, ...]:
     return tuple(converted)
 
 
+def relative_mean_bias(simulated: Sequence[float], observed: Sequence[float]) -> float:
+    """Return preregistered relative mean bias.
+
+    The Dresden/GloFAS comparison contract defines this metric as::
+
+        (mean_model / mean_observed) - 1
+
+    Inputs fail closed when the ratio would be undefined or ambiguous: unequal
+    lengths, no paired values, non-finite/non-numeric values, or a zero observed
+    mean. A zero simulated mean is valid and yields ``-1`` when the observed mean
+    is non-zero.
+    """
+
+    if len(simulated) != len(observed):
+        raise MetricInputError("simulated and observed series must have equal length")
+    if not simulated:
+        raise MetricInputError("at least one paired value is required")
+
+    simulated_values = _finite_floats(simulated)
+    observed_values = _finite_floats(observed)
+
+    count = len(simulated_values)
+    mean_simulated = math.fsum(simulated_values) / count
+    mean_observed = math.fsum(observed_values) / count
+    if mean_observed == 0.0:
+        raise MetricInputError("relative mean bias requires a non-zero observed mean")
+
+    return (mean_simulated / mean_observed) - 1.0
+
+
 def modified_kge_prime(simulated: Sequence[float], observed: Sequence[float]) -> float:
     """Return modified Kling-Gupta Efficiency (KGE').
 
