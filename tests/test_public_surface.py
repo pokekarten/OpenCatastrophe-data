@@ -48,7 +48,7 @@ class PublicSurfaceTests(unittest.TestCase):
         self.assertNotIn("pull_request_target", workflow)
         self.assertNotRegex(workflow, r"(?m)^\s*(?:contents|pull-requests|issues|actions):\s*write\s*$")
 
-    def test_pr_collision_job_is_pull_request_only_and_least_privilege(self) -> None:
+    def test_pr_collision_job_is_pull_request_only_least_privilege_and_base_trusted(self) -> None:
         workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
         expected = """  pr-file-collisions:
     name: PR file collision check
@@ -57,7 +57,15 @@ class PublicSurfaceTests(unittest.TestCase):
       contents: read
       pull-requests: read
 """
+        trusted_checkout = """      - name: Checkout trusted collision checker
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+"""
         self.assertIn(expected, workflow)
+        self.assertIn(trusted_checkout, workflow)
         self.assertIn("GITHUB_TOKEN: ${{ github.token }}", workflow)
         self.assertIn("run: python scripts/check_pr_file_collisions.py", workflow)
         self.assertIn(
