@@ -33,6 +33,7 @@ No LLM, MCP host, IDE extension, paid API or hidden service is required to valid
 
 - `manifests/` — accepted machine-readable source/admission records.
 - `docs/source-reviews/` — accepted source-specific rights and scientific evidence.
+- `docs/RISK_DATA_MODEL.md` — standards-first hazard/exposure/vulnerability/loss boundaries and promotion rules.
 - `schemas/` — versioned machine-readable contracts.
 - `scripts/` — strict validators, identity tools and repository checks.
 - `tests/` — deterministic offline regression and negative tests using synthetic inputs.
@@ -75,9 +76,12 @@ De-identifying confidential data does not automatically make it synthetic or saf
 
 **Status: pre-alpha data foundation.**
 
-One source has a metadata-only admission: DWD 10-minute extreme-wind station observations for Germany, version `v24.03`. The accepted evidence is public in the [machine-readable manifest](manifests/dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03.json) and [source review](docs/source-reviews/dwd-extreme-wind-v24.03.md).
+Two sources have metadata-only admissions:
 
-No DWD measurement bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts. This keeps the repository data-byte-free while exercising real provenance, rights and scientific-review contracts.
+- [DWD 10-minute extreme-wind station observations for Germany, v24.03](manifests/dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03.json), with the accepted [source review](docs/source-reviews/dwd-extreme-wind-v24.03.md), provide an observational validation route.
+- [C3S Enhanced Windstorm Service, v1.0](manifests/copernicus.c3s.european-windstorm-reanalysis.v1.0.json), with the accepted [source review](docs/source-reviews/copernicus-c3s-european-windstorm-reanalysis-v1.0.md), provides a European event-track and hazard-footprint candidate.
+
+No DWD or C3S measurement/model dataset bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts. The repository remains data-byte-free while exercising real provenance, rights and scientific-review contracts across observational and event/footprint layers.
 
 ## Quick start
 
@@ -112,7 +116,7 @@ See `CONTRIBUTING.md` for contribution rules and `SUPPORT.md` before filing supp
 
 ## Interoperability direction
 
-The native admission/provenance contract remains authoritative for rights, privacy, exact artifact identity and lineage. Future interoperability may use RDLS/STAC for risk/geospatial metadata discovery, Oasis OED/ORD for insurance exposure/results exchange, and formats such as GeoParquet or CF/Zarr for suitable artifacts. Any implementation must name an exact standard/profile version and preserve lossiness, rights and lineage; no external standard weakens native admission rules.
+The native admission/provenance contract remains authoritative for rights, privacy, exact artifact identity and lineage. [The risk data model boundary](docs/RISK_DATA_MODEL.md) defines where OpenCatastrophe uses native contracts and where established public standards should remain authoritative. RDLS/STAC are preferred for risk/geospatial metadata discovery, Oasis OED/ORD for insurance exposure/results exchange, and formats such as GeoParquet or CF/Zarr may be used for suitable artifacts. Any implementation must name an exact standard/profile version and preserve lossiness, rights and lineage; no external standard weakens native admission rules.
 
 ## Licensing and citation
 
