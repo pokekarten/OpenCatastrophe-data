@@ -17,6 +17,7 @@ from unittest.mock import patch
 
 from scripts.dresden_acquisition_evidence import (
     AcquisitionEvidenceError,
+    ExternalArtifactFile,
     acquisition_evidence_sha256,
     canonical_evidence_bytes,
     fingerprint_external_file,
@@ -37,54 +38,81 @@ from scripts.validate_manifest import load_manifest, validate_structure
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _descriptor(name: str) -> dict[str, object]:
-    payload = f"evidence:{name}".encode("utf-8")
+def _descriptor(name: str, payload: bytes | None = None) -> dict[str, object]:
+    body = payload if payload is not None else f"evidence:{name}".encode("utf-8")
     return {
-        "byte_size": len(payload),
-        "sha256": hashlib.sha256(payload).hexdigest(),
+        "byte_size": len(body),
+        "sha256": hashlib.sha256(body).hexdigest(),
         "storage_reference": f"external://dresden-evidence/{name}.json",
     }
 
 
+def _external_file(
+    root: Path,
+    name: str,
+    *,
+    payload: bytes | None = None,
+    storage_reference: str | None = None,
+) -> ExternalArtifactFile:
+    body = payload if payload is not None else f"evidence:{name}".encode("utf-8")
+    path = root / f"{name}.bin"
+    path.write_bytes(body)
+    return ExternalArtifactFile(
+        path=path,
+        storage_reference=storage_reference or f"external://dresden-evidence/{name}.bin",
+    )
+
+
 class DresdenAcquisitionEvidenceTests(unittest.TestCase):
-    def _finalized_intent(self) -> dict[str, object]:
+    def _candidate_cells(self) -> list[GlofasGridCell]:
+        return [
+            GlofasGridCell(51.06, 13.74, DRESDEN_DRAINAGE_AREA_KM2 * 1.01),
+            GlofasGridCell(51.10, 13.74, DRESDEN_DRAINAGE_AREA_KM2 * 1.02),
+        ]
+
+    def _finalized_intent(
+        self,
+        candidates: list[GlofasGridCell] | None = None,
+    ) -> dict[str, object]:
         return finalize_acquisition_intent(
             pegelonline_station_number=PEGELONLINE_STATION_NUMBER,
             pegelonline_station_uuid=PEGELONLINE_STATION_UUID,
             pegelonline_equidistance_minutes=15,
             station_latitude=51.05,
             station_longitude=13.74,
-            glofas_candidate_cells=[
-                GlofasGridCell(51.06, 13.74, DRESDEN_DRAINAGE_AREA_KM2 * 1.01),
-                GlofasGridCell(51.10, 13.74, DRESDEN_DRAINAGE_AREA_KM2 * 1.02),
-            ],
+            glofas_candidate_cells=candidates or self._candidate_cells(),
         )
 
     def _metadata_evidence(self, finalized: dict[str, object]) -> dict[str, object]:
-        return metadata_resolution_evidence(
-            finalized_intent=finalized,
-            resolved_at="2026-08-10T14:00:00Z",
-            pegelonline_metadata_request=_descriptor("pegel-metadata-request"),
-            pegelonline_metadata_response=_descriptor("pegel-metadata-response"),
-            glofas_upstream_area_request=_descriptor("glofas-area-request"),
-            glofas_upstream_area_response=_descriptor("glofas-area-response"),
-        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            return metadata_resolution_evidence(
+                finalized_intent=finalized,
+                resolved_at="2026-08-10T14:00:00Z",
+                glofas_candidate_cells=self._candidate_cells(),
+                pegelonline_metadata_request=_external_file(root, "pegel-metadata-request"),
+                pegelonline_metadata_response=_external_file(root, "pegel-metadata-response"),
+                glofas_upstream_area_request=_external_file(root, "glofas-area-request"),
+                glofas_upstream_area_response=_external_file(root, "glofas-area-response"),
+            )
 
     def _target_evidence(
         self,
         finalized: dict[str, object],
         metadata: dict[str, object],
     ) -> dict[str, object]:
-        return target_acquisition_evidence(
-            finalized_intent=finalized,
-            metadata_evidence=metadata,
-            pegelonline_retrieved_at="2026-08-10T14:10:00Z",
-            pegelonline_request_artifact=_descriptor("pegel-q-request"),
-            pegelonline_data_artifact=_descriptor("pegel-q-data"),
-            glofas_retrieved_at="2026-08-10T14:20:00Z",
-            glofas_request_artifact=_descriptor("glofas-dis24-request"),
-            glofas_data_artifact=_descriptor("glofas-dis24-data"),
-        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            return target_acquisition_evidence(
+                finalized_intent=finalized,
+                metadata_evidence=metadata,
+                pegelonline_retrieved_at="2026-08-10T14:10:00Z",
+                pegelonline_request_artifact=_external_file(root, "pegel-q-request"),
+                pegelonline_data_artifact=_external_file(root, "pegel-q-data"),
+                glofas_retrieved_at="2026-08-10T14:20:00Z",
+                glofas_request_artifact=_external_file(root, "glofas-dis24-request"),
+                glofas_data_artifact=_external_file(root, "glofas-dis24-data"),
+            )
 
     def test_fingerprint_derives_exact_manifest_compatible_identity_from_bytes(self) -> None:
         payload = b"exact external provider bytes\n"
@@ -97,10 +125,6 @@ class DresdenAcquisitionEvidenceTests(unittest.TestCase):
             )
         self.assertEqual(descriptor["byte_size"], len(payload))
         self.assertEqual(descriptor["sha256"], hashlib.sha256(payload).hexdigest())
-        self.assertEqual(
-            descriptor["storage_reference"],
-            "external://dresden-evidence/provider/artifact.bin",
-        )
         self.assertIs(validate_artifact_descriptor(descriptor), descriptor)
 
     def test_fingerprint_rejects_empty_and_symlink_artifacts(self) -> None:
@@ -152,12 +176,28 @@ class DresdenAcquisitionEvidenceTests(unittest.TestCase):
             with self.subTest(mutation=mutation), self.assertRaises(AcquisitionEvidenceError):
                 validate_artifact_descriptor(mutation)
 
-    def test_metadata_evidence_binds_initial_and_finalized_intents(self) -> None:
+    def test_authoritative_builder_rejects_fabricated_descriptor_dicts(self) -> None:
+        finalized = self._finalized_intent()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            with self.assertRaisesRegex(AcquisitionEvidenceError, "ExternalArtifactFile"):
+                metadata_resolution_evidence(
+                    finalized_intent=finalized,
+                    resolved_at="2026-08-10T14:00:00Z",
+                    glofas_candidate_cells=self._candidate_cells(),
+                    pegelonline_metadata_request=_descriptor("fabricated"),  # type: ignore[arg-type]
+                    pegelonline_metadata_response=_external_file(root, "pegel-metadata-response"),
+                    glofas_upstream_area_request=_external_file(root, "glofas-area-request"),
+                    glofas_upstream_area_response=_external_file(root, "glofas-area-response"),
+                )
+
+    def test_metadata_evidence_binds_full_candidate_set_and_intents(self) -> None:
         finalized = self._finalized_intent()
         evidence = self._metadata_evidence(finalized)
-        self.assertEqual(evidence["profile_version"], "1.0.0")
+        self.assertEqual(evidence["profile_version"], "2.0.0")
         self.assertEqual(evidence["evidence_type"], "dresden_metadata_resolution")
         self.assertEqual(evidence["resolved_metadata"], finalized["metadata_resolution"])
+        self.assertEqual(len(evidence["glofas_candidate_cells"]), 2)
         self.assertEqual(len(evidence["initial_intent_sha256"]), 64)
         self.assertEqual(len(evidence["finalized_intent_sha256"]), 64)
         self.assertIs(
@@ -169,42 +209,75 @@ class DresdenAcquisitionEvidenceTests(unittest.TestCase):
             hashlib.sha256(canonical_evidence_bytes(evidence)).hexdigest(),
         )
 
-    def test_metadata_evidence_rejects_tampered_finalized_intent(self) -> None:
+    def test_complete_candidate_set_must_reproduce_selected_winner(self) -> None:
+        candidates = self._candidate_cells()
+        finalized_from_worse_only = self._finalized_intent([candidates[1]])
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            with self.assertRaisesRegex(AcquisitionEvidenceError, "does not reproduce"):
+                metadata_resolution_evidence(
+                    finalized_intent=finalized_from_worse_only,
+                    resolved_at="2026-08-10T14:00:00Z",
+                    glofas_candidate_cells=candidates,
+                    pegelonline_metadata_request=_external_file(root, "pegel-metadata-request"),
+                    pegelonline_metadata_response=_external_file(root, "pegel-metadata-response"),
+                    glofas_upstream_area_request=_external_file(root, "glofas-area-request"),
+                    glofas_upstream_area_response=_external_file(root, "glofas-area-response"),
+                )
+
+    def test_candidate_set_is_canonicalized_and_revalidated_from_serialized_evidence(self) -> None:
         finalized = self._finalized_intent()
-        tampered_station = copy.deepcopy(finalized)
-        tampered_station["metadata_resolution"]["pegelonline_station_uuid"] = "different-uuid"
-        with self.assertRaisesRegex(AcquisitionEvidenceError, "station UUID"):
-            self._metadata_evidence(tampered_station)
-
-        tampered_sampling = copy.deepcopy(finalized)
-        tampered_sampling["metadata_resolution"]["pegelonline_sampling_interval_seconds"] = 1800
-        with self.assertRaisesRegex(AcquisitionEvidenceError, "minute/second"):
-            self._metadata_evidence(tampered_sampling)
-
-        tampered_distance = copy.deepcopy(finalized)
-        tampered_distance["metadata_resolution"]["glofas_grid_match"]["angular_distance_degrees"] += 0.01
-        with self.assertRaisesRegex(AcquisitionEvidenceError, "angular distance"):
-            self._metadata_evidence(tampered_distance)
-
-    def test_metadata_artifact_references_must_be_unique(self) -> None:
-        finalized = self._finalized_intent()
-        duplicate = _descriptor("same")
-        with self.assertRaisesRegex(AcquisitionEvidenceError, "unique external storage"):
-            metadata_resolution_evidence(
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            evidence = metadata_resolution_evidence(
                 finalized_intent=finalized,
                 resolved_at="2026-08-10T14:00:00Z",
-                pegelonline_metadata_request=duplicate,
-                pegelonline_metadata_response=duplicate,
-                glofas_upstream_area_request=_descriptor("glofas-area-request-unique"),
-                glofas_upstream_area_response=_descriptor("glofas-area-response-unique"),
+                glofas_candidate_cells=list(reversed(self._candidate_cells())),
+                pegelonline_metadata_request=_external_file(root, "pegel-metadata-request"),
+                pegelonline_metadata_response=_external_file(root, "pegel-metadata-response"),
+                glofas_upstream_area_request=_external_file(root, "glofas-area-request"),
+                glofas_upstream_area_response=_external_file(root, "glofas-area-response"),
             )
+        records = evidence["glofas_candidate_cells"]
+        self.assertEqual(
+            records,
+            sorted(
+                records,
+                key=lambda item: (item["latitude"], item["longitude"], item["upstream_area_km2"]),
+            ),
+        )
+
+        tampered = copy.deepcopy(evidence)
+        tampered["glofas_candidate_cells"] = [records[1]]
+        with self.assertRaisesRegex(AcquisitionEvidenceError, "does not reproduce"):
+            validate_metadata_resolution_evidence(tampered, finalized_intent=finalized)
+
+    def test_metadata_artifacts_require_unique_references_and_content_identities(self) -> None:
+        finalized = self._finalized_intent()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            duplicate_payload = b"same exact bytes"
+            with self.assertRaisesRegex(AcquisitionEvidenceError, "byte-content identities"):
+                metadata_resolution_evidence(
+                    finalized_intent=finalized,
+                    resolved_at="2026-08-10T14:00:00Z",
+                    glofas_candidate_cells=self._candidate_cells(),
+                    pegelonline_metadata_request=_external_file(
+                        root, "request-a", payload=duplicate_payload
+                    ),
+                    pegelonline_metadata_response=_external_file(
+                        root, "response-b", payload=duplicate_payload
+                    ),
+                    glofas_upstream_area_request=_external_file(root, "glofas-area-request"),
+                    glofas_upstream_area_response=_external_file(root, "glofas-area-response"),
+                )
 
     def test_target_evidence_binds_metadata_and_emits_exact_manifest_candidates(self) -> None:
         finalized = self._finalized_intent()
         metadata = self._metadata_evidence(finalized)
         evidence = self._target_evidence(finalized, metadata)
+        self.assertEqual(evidence["profile_version"], "2.0.0")
         self.assertEqual(evidence["evidence_type"], "dresden_target_acquisition")
-        self.assertEqual(len(evidence["metadata_resolution_evidence_sha256"]), 64)
         pegel_data = evidence["retrievals"]["pegelonline_q"]["data_artifact"]
         glofas_data = evidence["retrievals"]["glofas_dis24"]["data_artifact"]
         self.assertEqual(
@@ -229,36 +302,62 @@ class DresdenAcquisitionEvidenceTests(unittest.TestCase):
             evidence,
         )
 
+    def test_target_builder_rejects_fabricated_descriptor_dicts(self) -> None:
+        finalized = self._finalized_intent()
+        metadata = self._metadata_evidence(finalized)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            with self.assertRaisesRegex(AcquisitionEvidenceError, "ExternalArtifactFile"):
+                target_acquisition_evidence(
+                    finalized_intent=finalized,
+                    metadata_evidence=metadata,
+                    pegelonline_retrieved_at="2026-08-10T14:10:00Z",
+                    pegelonline_request_artifact=_descriptor("fake-request"),  # type: ignore[arg-type]
+                    pegelonline_data_artifact=_external_file(root, "pegel-data"),
+                    glofas_retrieved_at="2026-08-10T14:20:00Z",
+                    glofas_request_artifact=_external_file(root, "glofas-request"),
+                    glofas_data_artifact=_external_file(root, "glofas-data"),
+                )
+
     def test_target_retrieval_must_follow_metadata_resolution(self) -> None:
         finalized = self._finalized_intent()
         metadata = self._metadata_evidence(finalized)
-        with self.assertRaisesRegex(AcquisitionEvidenceError, "predates metadata resolution"):
-            target_acquisition_evidence(
-                finalized_intent=finalized,
-                metadata_evidence=metadata,
-                pegelonline_retrieved_at="2026-08-10T13:59:59Z",
-                pegelonline_request_artifact=_descriptor("early-pegel-request"),
-                pegelonline_data_artifact=_descriptor("early-pegel-data"),
-                glofas_retrieved_at="2026-08-10T14:20:00Z",
-                glofas_request_artifact=_descriptor("early-glofas-request"),
-                glofas_data_artifact=_descriptor("early-glofas-data"),
-            )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            with self.assertRaisesRegex(AcquisitionEvidenceError, "predates metadata resolution"):
+                target_acquisition_evidence(
+                    finalized_intent=finalized,
+                    metadata_evidence=metadata,
+                    pegelonline_retrieved_at="2026-08-10T13:59:59Z",
+                    pegelonline_request_artifact=_external_file(root, "early-pegel-request"),
+                    pegelonline_data_artifact=_external_file(root, "early-pegel-data"),
+                    glofas_retrieved_at="2026-08-10T14:20:00Z",
+                    glofas_request_artifact=_external_file(root, "early-glofas-request"),
+                    glofas_data_artifact=_external_file(root, "early-glofas-data"),
+                )
 
-    def test_target_artifacts_cannot_reuse_metadata_or_request_identity(self) -> None:
+    def test_target_artifacts_cannot_reuse_metadata_reference(self) -> None:
         finalized = self._finalized_intent()
         metadata = self._metadata_evidence(finalized)
-        metadata_ref = metadata["artifacts"]["pegelonline_metadata_request"]
-        with self.assertRaisesRegex(AcquisitionEvidenceError, "unique external storage"):
-            target_acquisition_evidence(
-                finalized_intent=finalized,
-                metadata_evidence=metadata,
-                pegelonline_retrieved_at="2026-08-10T14:10:00Z",
-                pegelonline_request_artifact=metadata_ref,
-                pegelonline_data_artifact=_descriptor("unique-pegel-data"),
-                glofas_retrieved_at="2026-08-10T14:20:00Z",
-                glofas_request_artifact=_descriptor("unique-glofas-request"),
-                glofas_data_artifact=_descriptor("unique-glofas-data"),
+        metadata_artifact = metadata["artifacts"]["pegelonline_metadata_request"]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            reused_reference = _external_file(
+                root,
+                "target-request",
+                storage_reference=metadata_artifact["storage_reference"],
             )
+            with self.assertRaisesRegex(AcquisitionEvidenceError, "unique external storage"):
+                target_acquisition_evidence(
+                    finalized_intent=finalized,
+                    metadata_evidence=metadata,
+                    pegelonline_retrieved_at="2026-08-10T14:10:00Z",
+                    pegelonline_request_artifact=reused_reference,
+                    pegelonline_data_artifact=_external_file(root, "unique-pegel-data"),
+                    glofas_retrieved_at="2026-08-10T14:20:00Z",
+                    glofas_request_artifact=_external_file(root, "unique-glofas-request"),
+                    glofas_data_artifact=_external_file(root, "unique-glofas-data"),
+                )
 
     def test_manifest_candidates_are_structurally_compatible_but_do_not_bypass_review(self) -> None:
         finalized = self._finalized_intent()

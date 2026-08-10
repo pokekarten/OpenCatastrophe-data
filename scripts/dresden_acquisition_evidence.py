@@ -3,13 +3,15 @@
 
 """Exact pre-admission acquisition evidence for the Dresden hydrology pilot.
 
-The frozen acquisition intent defines what may be acquired. This module binds
-that intent to the exact external metadata/request/data bytes used before those
-bytes are eligible for dataset-manifest admission or model use.
+The frozen acquisition intent defines what may be acquired. Authoritative
+builders in this module fingerprint real external files themselves and bind the
+complete GloFAS candidate set used for deterministic grid selection. Serialized
+validators remain pure and never claim that a caller-supplied digest proves
+bytes were observed by the builder.
 
 External provider bytes stay outside Git. Public evidence contains only
-canonical ``external://`` identities, byte sizes, SHA-256 digests, timestamps
-and intent/evidence hashes.
+canonical ``external://`` identities, byte sizes, SHA-256 digests, timestamps,
+candidate metadata and intent/evidence hashes.
 """
 
 from __future__ import annotations
@@ -20,28 +22,32 @@ import math
 import os
 import re
 import stat
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from scripts.dresden_acquisition_intent import (
     GLOFAS_MANIFEST,
     PEGELONLINE_MANIFEST,
-    PEGELONLINE_STATION_NUMBER,
-    PEGELONLINE_STATION_UUID,
+    AcquisitionIntentError,
     acquisition_intent,
     acquisition_intent_sha256,
 )
-from scripts.hydrology_grid_matching import GlofasGridCell, select_dresden_glofas_grid_cell
-from scripts.hydrology_window import expected_observations_per_24h
+from scripts.hydrology_grid_matching import (
+    GlofasGridCell,
+    GridMatchError,
+    select_dresden_glofas_grid_cell,
+)
 
-PROFILE_VERSION = "1.0.0"
+PROFILE_VERSION = "2.0.0"
 SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
 EXTERNAL_RE = re.compile(r"^external://[A-Za-z0-9][A-Za-z0-9._/-]*$")
 RFC3339_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[Zz]|[+-]\d{2}:\d{2})$"
 )
 ARTIFACT_KEYS = {"byte_size", "sha256", "storage_reference"}
+CANDIDATE_KEYS = {"latitude", "longitude", "upstream_area_km2"}
 METADATA_ARTIFACT_KEYS = {
     "pegelonline_metadata_request",
     "pegelonline_metadata_response",
@@ -49,19 +55,18 @@ METADATA_ARTIFACT_KEYS = {
     "glofas_upstream_area_response",
 }
 TARGET_RETRIEVAL_KEYS = {"pegelonline_q", "glofas_dis24"}
-METADATA_RESOLUTION_KEYS = {
-    "pegelonline_station_number",
-    "pegelonline_station_uuid",
-    "pegelonline_equidistance_minutes",
-    "pegelonline_sampling_interval_seconds",
-    "expected_source_observations_per_24h",
-    "station_coordinate_wgs84",
-    "glofas_grid_match",
-}
 
 
 class AcquisitionEvidenceError(ValueError):
     """Raised when acquisition evidence cannot be trusted or reproduced."""
+
+
+@dataclass(frozen=True, slots=True)
+class ExternalArtifactFile:
+    """One external file that the authoritative evidence builder must fingerprint."""
+
+    path: Path
+    storage_reference: str
 
 
 def _closed(obj: dict[str, Any], allowed: set[str], required: set[str], where: str) -> None:
@@ -96,7 +101,7 @@ def _require_external_reference(value: Any, where: str) -> str:
 
 
 def validate_artifact_descriptor(value: Any, where: str = "artifact") -> dict[str, Any]:
-    """Validate the manifest-compatible identity of one successful external artifact."""
+    """Validate a serialized manifest-compatible external artifact identity."""
 
     if type(value) is not dict:
         raise AcquisitionEvidenceError(f"{where} must be an object")
@@ -166,6 +171,14 @@ def fingerprint_external_file(path: Path, *, storage_reference: str) -> dict[str
     }
 
 
+def _fingerprint_external_input(value: Any, where: str) -> dict[str, Any]:
+    if type(value) is not ExternalArtifactFile:
+        raise AcquisitionEvidenceError(
+            f"{where} must be an ExternalArtifactFile so the builder fingerprints real bytes"
+        )
+    return fingerprint_external_file(value.path, storage_reference=value.storage_reference)
+
+
 def _finite_number(value: Any, where: str) -> float:
     if type(value) not in {int, float}:
         raise AcquisitionEvidenceError(f"{where} must be a finite numeric value and not boolean")
@@ -179,160 +192,149 @@ def _finite_number(value: Any, where: str) -> float:
 
 
 def _require_finalized_intent(intent: Any) -> dict[str, Any]:
-    """Revalidate the finalized intent instead of trusting a caller-built dict."""
+    """Require the exact repository-owned finalized intent contract."""
 
     if type(intent) is not dict:
         raise AcquisitionEvidenceError("finalized_intent must be an object")
-    baseline = acquisition_intent()
-    if intent.get("profile_version") != baseline["profile_version"]:
-        raise AcquisitionEvidenceError("finalized intent profile_version does not match the frozen profile")
-    if intent.get("purpose") != baseline["purpose"]:
-        raise AcquisitionEvidenceError("finalized intent purpose does not match the frozen Dresden pilot")
-    if intent.get("phase") != "target_acquisition" or intent.get("target_values_must_not_be_inspected") is not False:
+    if intent.get("phase") != "target_acquisition":
         raise AcquisitionEvidenceError("finalized intent must be in target_acquisition phase")
-
-    pegel = intent.get("pegelonline")
-    glofas = intent.get("glofas")
-    resolution = intent.get("metadata_resolution")
-    if type(pegel) is not dict or type(glofas) is not dict or type(resolution) is not dict:
-        raise AcquisitionEvidenceError("finalized intent is missing source/metadata-resolution sections")
-
-    fixed_pegel_fields = (
-        "manifest",
-        "source_review",
-        "station_number",
-        "station_uuid",
-        "variable",
-        "time_convention",
-        "required_local_coverage_start",
-        "required_local_coverage_end_exclusive",
-    )
-    fixed_glofas_fields = (
-        "manifest",
-        "source_review",
-        "dataset",
-        "system_version",
-        "hydrological_model",
-        "product_type",
-        "variable",
-        "grid_degrees",
-        "first_end_label_utc",
-        "last_end_label_utc",
-        "expected_daily_labels",
-    )
-    for field in fixed_pegel_fields:
-        if pegel.get(field) != baseline["pegelonline"].get(field):
-            raise AcquisitionEvidenceError(f"finalized intent drifted at pegelonline.{field}")
-    for field in fixed_glofas_fields:
-        if glofas.get(field) != baseline["glofas"].get(field):
-            raise AcquisitionEvidenceError(f"finalized intent drifted at glofas.{field}")
-
-    _closed(resolution, METADATA_RESOLUTION_KEYS, METADATA_RESOLUTION_KEYS, "metadata_resolution")
-    if resolution["pegelonline_station_number"] != PEGELONLINE_STATION_NUMBER:
-        raise AcquisitionEvidenceError("metadata_resolution station number is not Dresden")
-    if resolution["pegelonline_station_uuid"] != PEGELONLINE_STATION_UUID:
-        raise AcquisitionEvidenceError("metadata_resolution station UUID is not Dresden")
-
-    minutes = resolution["pegelonline_equidistance_minutes"]
-    seconds = resolution["pegelonline_sampling_interval_seconds"]
-    expected = resolution["expected_source_observations_per_24h"]
-    if type(minutes) is not int or minutes <= 0 or type(seconds) is not int or seconds <= 0:
-        raise AcquisitionEvidenceError("metadata_resolution contains invalid PEGELONLINE sampling interval")
-    if seconds != minutes * 60:
-        raise AcquisitionEvidenceError("metadata_resolution PEGELONLINE minute/second interval mismatch")
     try:
-        recomputed_expected = expected_observations_per_24h(seconds)
-    except ValueError as exc:
-        raise AcquisitionEvidenceError(f"metadata_resolution sampling interval is invalid: {exc}") from exc
-    if expected != recomputed_expected:
-        raise AcquisitionEvidenceError("metadata_resolution expected source-observation count is inconsistent")
-
-    sampling = pegel.get("sampling_interval")
-    if type(sampling) is not dict or sampling != {
-        "status": "frozen",
-        "equidistance_minutes": minutes,
-        "seconds": seconds,
-        "expected_observations_per_24h": expected,
-        "source": "retrieved_series_metadata.equidistance_minutes",
-    }:
-        raise AcquisitionEvidenceError("frozen PEGELONLINE sampling section disagrees with metadata_resolution")
-
-    station_coordinate = resolution["station_coordinate_wgs84"]
+        acquisition_intent_sha256(intent)
+    except AcquisitionIntentError as exc:
+        raise AcquisitionEvidenceError(f"finalized intent is not canonical: {exc}") from exc
+    resolution = intent.get("metadata_resolution")
+    if type(resolution) is not dict:
+        raise AcquisitionEvidenceError("finalized intent is missing metadata_resolution")
+    station_coordinate = resolution.get("station_coordinate_wgs84")
     if type(station_coordinate) is not dict or set(station_coordinate) != {"latitude", "longitude"}:
         raise AcquisitionEvidenceError("metadata_resolution station_coordinate_wgs84 is invalid")
-    station_latitude = _finite_number(station_coordinate["latitude"], "station latitude")
-    station_longitude = _finite_number(station_coordinate["longitude"], "station longitude")
-    if not -90.0 <= station_latitude <= 90.0 or not -180.0 <= station_longitude < 180.0:
+    latitude = _finite_number(station_coordinate["latitude"], "station latitude")
+    longitude = _finite_number(station_coordinate["longitude"], "station longitude")
+    if not -90.0 <= latitude <= 90.0 or not -180.0 <= longitude < 180.0:
         raise AcquisitionEvidenceError("metadata_resolution station coordinate is outside canonical WGS84 range")
-
-    grid_match = resolution["glofas_grid_match"]
-    grid_cell = glofas.get("grid_cell")
-    match_keys = {
-        "latitude",
-        "longitude",
-        "upstream_area_km2",
-        "angular_distance_degrees",
-        "relative_drainage_area_mismatch",
-    }
-    if type(grid_match) is not dict or set(grid_match) != match_keys:
-        raise AcquisitionEvidenceError("metadata_resolution glofas_grid_match is invalid")
-    if type(grid_cell) is not dict or set(grid_cell) != {"status", "latitude", "longitude", "upstream_area_km2"}:
-        raise AcquisitionEvidenceError("frozen GloFAS grid_cell is invalid")
-    if grid_cell.get("status") != "frozen":
-        raise AcquisitionEvidenceError("GloFAS grid_cell must be frozen")
-    for field in ("latitude", "longitude", "upstream_area_km2"):
-        if grid_cell[field] != grid_match[field]:
-            raise AcquisitionEvidenceError(f"frozen GloFAS grid_cell disagrees with metadata_resolution.{field}")
-
-    try:
-        replayed = select_dresden_glofas_grid_cell(
-            station_latitude=station_latitude,
-            station_longitude=station_longitude,
-            candidates=[
-                GlofasGridCell(
-                    grid_match["latitude"],
-                    grid_match["longitude"],
-                    grid_match["upstream_area_km2"],
-                )
-            ],
-        )
-    except ValueError as exc:
-        raise AcquisitionEvidenceError(f"frozen GloFAS grid cell no longer satisfies selector: {exc}") from exc
-    if replayed.angular_distance_degrees != grid_match["angular_distance_degrees"]:
-        raise AcquisitionEvidenceError("stored GloFAS angular distance is inconsistent")
-    if replayed.relative_drainage_area_mismatch != grid_match["relative_drainage_area_mismatch"]:
-        raise AcquisitionEvidenceError("stored GloFAS drainage-area mismatch is inconsistent")
     return intent
 
 
-def _validate_unique_references(artifacts: list[dict[str, Any]], where: str) -> None:
+def _candidate_records(
+    finalized_intent: dict[str, Any],
+    candidates: Iterable[GlofasGridCell],
+) -> list[dict[str, float]]:
+    try:
+        cells = list(candidates)
+    except TypeError as exc:
+        raise AcquisitionEvidenceError("glofas_candidate_cells must be iterable") from exc
+    if not cells:
+        raise AcquisitionEvidenceError("glofas_candidate_cells must not be empty")
+
+    resolution = finalized_intent["metadata_resolution"]
+    station = resolution["station_coordinate_wgs84"]
+    try:
+        replayed = select_dresden_glofas_grid_cell(
+            station_latitude=station["latitude"],
+            station_longitude=station["longitude"],
+            candidates=cells,
+        )
+    except (GridMatchError, ValueError) as exc:
+        raise AcquisitionEvidenceError(f"complete GloFAS candidate set is invalid: {exc}") from exc
+
+    expected_match = resolution.get("glofas_grid_match")
+    actual_match = {
+        "latitude": replayed.cell.latitude,
+        "longitude": replayed.cell.longitude,
+        "upstream_area_km2": replayed.cell.upstream_area_km2,
+        "angular_distance_degrees": replayed.angular_distance_degrees,
+        "relative_drainage_area_mismatch": replayed.relative_drainage_area_mismatch,
+    }
+    if expected_match != actual_match:
+        raise AcquisitionEvidenceError(
+            "complete GloFAS candidate set does not reproduce the finalized grid selection"
+        )
+
+    records = [
+        {
+            "latitude": float(cell.latitude),
+            "longitude": float(cell.longitude),
+            "upstream_area_km2": float(cell.upstream_area_km2),
+        }
+        for cell in cells
+    ]
+    return sorted(
+        records,
+        key=lambda item: (item["latitude"], item["longitude"], item["upstream_area_km2"]),
+    )
+
+
+def _candidate_cells_from_evidence(
+    value: Any,
+    *,
+    finalized_intent: dict[str, Any],
+) -> list[GlofasGridCell]:
+    if type(value) is not list or not value:
+        raise AcquisitionEvidenceError("glofas_candidate_cells must be a non-empty array")
+    cells: list[GlofasGridCell] = []
+    records: list[dict[str, float]] = []
+    for index, record in enumerate(value):
+        where = f"glofas_candidate_cells[{index}]"
+        if type(record) is not dict:
+            raise AcquisitionEvidenceError(f"{where} must be an object")
+        _closed(record, CANDIDATE_KEYS, CANDIDATE_KEYS, where)
+        latitude = _finite_number(record["latitude"], f"{where}.latitude")
+        longitude = _finite_number(record["longitude"], f"{where}.longitude")
+        upstream_area = _finite_number(record["upstream_area_km2"], f"{where}.upstream_area_km2")
+        cell = GlofasGridCell(latitude, longitude, upstream_area)
+        cells.append(cell)
+        records.append(
+            {
+                "latitude": latitude,
+                "longitude": longitude,
+                "upstream_area_km2": upstream_area,
+            }
+        )
+    canonical = sorted(
+        records,
+        key=lambda item: (item["latitude"], item["longitude"], item["upstream_area_km2"]),
+    )
+    if records != canonical:
+        raise AcquisitionEvidenceError("glofas_candidate_cells must be in canonical sorted order")
+    _candidate_records(finalized_intent, cells)
+    return cells
+
+
+def _validate_unique_artifacts(artifacts: list[dict[str, Any]], where: str) -> None:
     references = [artifact["storage_reference"] for artifact in artifacts]
     if len(references) != len(set(references)):
         raise AcquisitionEvidenceError(f"{where} must use unique external storage references")
+    content_identities = [(artifact["byte_size"], artifact["sha256"]) for artifact in artifacts]
+    if len(content_identities) != len(set(content_identities)):
+        raise AcquisitionEvidenceError(f"{where} must use unique byte-content identities")
 
 
 def metadata_resolution_evidence(
     *,
     finalized_intent: dict[str, Any],
     resolved_at: str,
-    pegelonline_metadata_request: dict[str, Any],
-    pegelonline_metadata_response: dict[str, Any],
-    glofas_upstream_area_request: dict[str, Any],
-    glofas_upstream_area_response: dict[str, Any],
+    glofas_candidate_cells: Iterable[GlofasGridCell],
+    pegelonline_metadata_request: ExternalArtifactFile,
+    pegelonline_metadata_response: ExternalArtifactFile,
+    glofas_upstream_area_request: ExternalArtifactFile,
+    glofas_upstream_area_response: ExternalArtifactFile,
 ) -> dict[str, Any]:
-    """Bind exact metadata request/response bytes to one finalized intent."""
+    """Build metadata evidence by hashing real files and replaying full grid selection."""
 
     final = _require_finalized_intent(finalized_intent)
     _parse_timestamp(resolved_at, "resolved_at")
-    artifacts = {
+    candidates = _candidate_records(final, glofas_candidate_cells)
+    inputs = {
         "pegelonline_metadata_request": pegelonline_metadata_request,
         "pegelonline_metadata_response": pegelonline_metadata_response,
         "glofas_upstream_area_request": glofas_upstream_area_request,
         "glofas_upstream_area_response": glofas_upstream_area_response,
     }
-    for name, artifact in artifacts.items():
-        validate_artifact_descriptor(artifact, f"artifacts.{name}")
-    _validate_unique_references(list(artifacts.values()), "metadata artifacts")
+    artifacts = {
+        name: _fingerprint_external_input(value, f"inputs.{name}")
+        for name, value in inputs.items()
+    }
+    _validate_unique_artifacts(list(artifacts.values()), "metadata artifacts")
     evidence = {
         "profile_version": PROFILE_VERSION,
         "evidence_type": "dresden_metadata_resolution",
@@ -340,6 +342,7 @@ def metadata_resolution_evidence(
         "initial_intent_sha256": acquisition_intent_sha256(acquisition_intent()),
         "finalized_intent_sha256": acquisition_intent_sha256(final),
         "artifacts": artifacts,
+        "glofas_candidate_cells": candidates,
         "resolved_metadata": final["metadata_resolution"],
     }
     validate_metadata_resolution_evidence(evidence, finalized_intent=final)
@@ -361,6 +364,7 @@ def validate_metadata_resolution_evidence(
         "initial_intent_sha256",
         "finalized_intent_sha256",
         "artifacts",
+        "glofas_candidate_cells",
         "resolved_metadata",
     }
     _closed(evidence, required, required, "metadata evidence")
@@ -373,12 +377,17 @@ def validate_metadata_resolution_evidence(
         raise AcquisitionEvidenceError("metadata evidence is not bound to the supplied finalized intent")
     if evidence["resolved_metadata"] != final["metadata_resolution"]:
         raise AcquisitionEvidenceError("metadata evidence resolved_metadata differs from finalized intent")
+    _candidate_cells_from_evidence(evidence["glofas_candidate_cells"], finalized_intent=final)
+
     artifacts = evidence["artifacts"]
     if type(artifacts) is not dict:
         raise AcquisitionEvidenceError("metadata evidence artifacts must be an object")
     _closed(artifacts, METADATA_ARTIFACT_KEYS, METADATA_ARTIFACT_KEYS, "metadata evidence artifacts")
-    validated = [validate_artifact_descriptor(value, f"artifacts.{name}") for name, value in artifacts.items()]
-    _validate_unique_references(validated, "metadata artifacts")
+    validated = [
+        validate_artifact_descriptor(value, f"artifacts.{name}")
+        for name, value in artifacts.items()
+    ]
+    _validate_unique_artifacts(validated, "metadata artifacts")
     return evidence
 
 
@@ -387,38 +396,58 @@ def target_acquisition_evidence(
     finalized_intent: dict[str, Any],
     metadata_evidence: dict[str, Any],
     pegelonline_retrieved_at: str,
-    pegelonline_request_artifact: dict[str, Any],
-    pegelonline_data_artifact: dict[str, Any],
+    pegelonline_request_artifact: ExternalArtifactFile,
+    pegelonline_data_artifact: ExternalArtifactFile,
     glofas_retrieved_at: str,
-    glofas_request_artifact: dict[str, Any],
-    glofas_data_artifact: dict[str, Any],
+    glofas_request_artifact: ExternalArtifactFile,
+    glofas_data_artifact: ExternalArtifactFile,
 ) -> dict[str, Any]:
-    """Bind the exact two target requests/data files to prior metadata evidence."""
+    """Build target evidence by fingerprinting exact request/data files."""
 
     final = _require_finalized_intent(finalized_intent)
     validate_metadata_resolution_evidence(metadata_evidence, finalized_intent=final)
+    retrieval_inputs = {
+        "pegelonline_q": {
+            "manifest": PEGELONLINE_MANIFEST,
+            "retrieved_at": pegelonline_retrieved_at,
+            "request": pegelonline_request_artifact,
+            "data": pegelonline_data_artifact,
+        },
+        "glofas_dis24": {
+            "manifest": GLOFAS_MANIFEST,
+            "retrieved_at": glofas_retrieved_at,
+            "request": glofas_request_artifact,
+            "data": glofas_data_artifact,
+        },
+    }
+    retrievals: dict[str, Any] = {}
+    for name, source in retrieval_inputs.items():
+        retrievals[name] = {
+            "manifest": source["manifest"],
+            "retrieved_at": source["retrieved_at"],
+            "request_artifact": _fingerprint_external_input(
+                source["request"], f"inputs.{name}.request_artifact"
+            ),
+            "data_artifact": _fingerprint_external_input(
+                source["data"], f"inputs.{name}.data_artifact"
+            ),
+        }
+
     evidence = {
         "profile_version": PROFILE_VERSION,
         "evidence_type": "dresden_target_acquisition",
         "finalized_intent_sha256": acquisition_intent_sha256(final),
         "metadata_resolution_evidence_sha256": acquisition_evidence_sha256(metadata_evidence),
-        "retrievals": {
-            "pegelonline_q": {
-                "manifest": PEGELONLINE_MANIFEST,
-                "retrieved_at": pegelonline_retrieved_at,
-                "request_artifact": pegelonline_request_artifact,
-                "data_artifact": pegelonline_data_artifact,
-            },
-            "glofas_dis24": {
-                "manifest": GLOFAS_MANIFEST,
-                "retrieved_at": glofas_retrieved_at,
-                "request_artifact": glofas_request_artifact,
-                "data_artifact": glofas_data_artifact,
-            },
-        },
+        "retrievals": retrievals,
         "manifest_raw_artifact_candidates": [
-            {"manifest": PEGELONLINE_MANIFEST, "raw_artifact": pegelonline_data_artifact},
-            {"manifest": GLOFAS_MANIFEST, "raw_artifact": glofas_data_artifact},
+            {
+                "manifest": PEGELONLINE_MANIFEST,
+                "raw_artifact": retrievals["pegelonline_q"]["data_artifact"],
+            },
+            {
+                "manifest": GLOFAS_MANIFEST,
+                "raw_artifact": retrievals["glofas_dis24"]["data_artifact"],
+            },
         ],
     }
     validate_target_acquisition_evidence(
@@ -479,19 +508,26 @@ def validate_target_acquisition_evidence(
         data_artifact = validate_artifact_descriptor(
             retrieval["data_artifact"], f"retrievals.{name}.data_artifact"
         )
-        if request_artifact["storage_reference"] == data_artifact["storage_reference"]:
-            raise AcquisitionEvidenceError(f"retrievals.{name} request and data must have distinct identities")
         target_artifacts.extend((request_artifact, data_artifact))
 
     metadata_artifacts = [
         validate_artifact_descriptor(value, f"metadata_artifacts.{name}")
         for name, value in metadata_evidence["artifacts"].items()
     ]
-    _validate_unique_references(metadata_artifacts + target_artifacts, "all Dresden acquisition artifacts")
+    _validate_unique_artifacts(
+        metadata_artifacts + target_artifacts,
+        "all Dresden acquisition artifacts",
+    )
 
     expected_candidates = [
-        {"manifest": PEGELONLINE_MANIFEST, "raw_artifact": retrievals["pegelonline_q"]["data_artifact"]},
-        {"manifest": GLOFAS_MANIFEST, "raw_artifact": retrievals["glofas_dis24"]["data_artifact"]},
+        {
+            "manifest": PEGELONLINE_MANIFEST,
+            "raw_artifact": retrievals["pegelonline_q"]["data_artifact"],
+        },
+        {
+            "manifest": GLOFAS_MANIFEST,
+            "raw_artifact": retrievals["glofas_dis24"]["data_artifact"],
+        },
     ]
     if evidence["manifest_raw_artifact_candidates"] != expected_candidates:
         raise AcquisitionEvidenceError("manifest raw-artifact candidates do not match target data artifacts")
