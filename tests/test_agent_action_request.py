@@ -5,9 +5,21 @@ from __future__ import annotations
 
 import json
 import unittest
+from pathlib import Path
 
-from scripts.validate_agent_action_request import RequestError, extract_request, validate_request
+from scripts.validate_agent_action_request import (
+    ALLOWED_ACTIONS,
+    REQUIRED_FIELDS,
+    SAFE_ID,
+    SCHEMA_VERSION,
+    SHA256_HEX,
+    RequestError,
+    extract_request,
+    validate_request,
+)
 
+ROOT = Path(__file__).resolve().parents[1]
+SCHEMA = ROOT / "schemas/agent-action-request-v1.schema.json"
 
 VALID = {
     "schema_version": "oc-action-request-v1",
@@ -27,6 +39,32 @@ class AgentActionRequestTests(unittest.TestCase):
     def test_accepts_exact_bounded_request(self) -> None:
         parsed = extract_request(comment(json.dumps(VALID)))
         self.assertEqual(validate_request(parsed, expected_issue=162), VALID)
+
+    def test_schema_matches_executable_security_contract(self) -> None:
+        schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
+        self.assertFalse(schema["additionalProperties"])
+        self.assertEqual(set(schema["required"]), REQUIRED_FIELDS)
+        self.assertEqual(set(schema["properties"]), REQUIRED_FIELDS)
+
+        properties = schema["properties"]
+        self.assertEqual(properties["schema_version"], {"const": SCHEMA_VERSION})
+        self.assertEqual(set(properties["action"]["enum"]), ALLOWED_ACTIONS)
+        self.assertEqual(properties["issue"], {"type": "integer", "minimum": 1})
+        self.assertEqual(
+            properties["target_sha"],
+            {"type": "string", "pattern": SHA256_HEX.pattern},
+        )
+        for field, limit in (("dataset_id", 160), ("requester", 128)):
+            with self.subTest(field=field):
+                self.assertEqual(
+                    properties[field],
+                    {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": limit,
+                        "pattern": SAFE_ID.pattern,
+                    },
+                )
 
     def test_rejects_duplicate_json_key(self) -> None:
         payload = json.dumps(VALID)[:-1] + ',"action":"sample_audit"}'
