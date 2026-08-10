@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry of high-frequency coastal sea-level observation sources relevant to storm-surge and extreme-water-level validation.",
+  "review_date": "2026-08-10",
+  "entries": [
+    {
+      "candidate_id": "gesla.global-extreme-sea-level.v3",
+      "name": "GESLA Version 3 higher-frequency sea-level dataset",
+      "provider": "GESLA collaboration / British Oceanographic Data Centre",
+      "categories": [
+        "sea_level",
+        "tide_gauges",
+        "storm_surge",
+        "coastal_flood",
+        "validation",
+        "in_situ_observations"
+      ],
+      "spatial_scope": "quasi-global tide-gauge network assembled from 36 contributing sources",
+      "temporal_scope": "historical records with the oldest record starting in 1805; Version 3 released in 2021",
+      "resolution_or_granularity": "5,119 tide-gauge records at least hourly, totaling 91,021 station-years, with per-record metadata and quality/use flags",
+      "potential_roles": [
+        "extreme_sea_level_validation",
+        "storm_surge_observation_benchmark",
+        "tide_gauge_benchmark",
+        "coastal_flood_context"
+      ],
+      "authoritative_url": "https://doi.org/10.1002/gdj3.174",
+      "access_class_hint": "public_dataset_split_by_reuse_terms",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "The peer-reviewed Version 3 description and BODC archives split the release into Part 1 (4,527 records, CC BY 4.0) and Part 2 (592 records, CC BY-NC 4.0 and research-only use); keep rights unresolved until the exact archive and intended use are reviewed. Tide-gauge water level is a point observation, not surge-only or flood-depth truth: preserve datum, gauge type, cadence, quality/use flags, gaps and contributor provenance, and do not assume independence from other tide-gauge networks such as PSMSL."
+    }
+  ]
+}
