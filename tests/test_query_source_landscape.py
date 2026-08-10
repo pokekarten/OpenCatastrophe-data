@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,6 +15,8 @@ from scripts.query_source_landscape import (
     load_landscape,
     query_entries,
 )
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class SourceLandscapeQueryTests(unittest.TestCase):
@@ -24,6 +28,21 @@ class SourceLandscapeQueryTests(unittest.TestCase):
             [entry["candidate_id"] for entry in entries],
             sorted(entry["candidate_id"] for entry in entries),
         )
+
+    def test_cli_executes_directly_and_returns_stable_machine_json(self) -> None:
+        result = subprocess.run(
+            [sys.executable, "scripts/query_source_landscape.py", "--id", "gfz.world-stress-map.2025"],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["profile"], "opencatastrophe-source-landscape-query-v1")
+        self.assertEqual(payload["scope"], "non_admission_discovery_only")
+        self.assertEqual(payload["count"], 1)
+        self.assertEqual(payload["results"][0]["candidate_id"], "gfz.world-stress-map.2025")
 
     def test_category_filter_is_exact_and_case_insensitive(self) -> None:
         entries = load_landscape()
