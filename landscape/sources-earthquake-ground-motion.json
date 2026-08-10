@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry of empirical earthquake ground-motion observation sources relevant to catastrophe-risk validation.",
+  "review_date": "2026-08-10",
+  "entries": [
+    {
+      "candidate_id": "orfeus.esm.3.0",
+      "name": "Engineering Strong-Motion Database (ESM) v3.0",
+      "provider": "ORFEUS Strong-Motion SMC / Istituto Nazionale di Geofisica e Vulcanologia",
+      "categories": ["earthquake", "strong_motion", "ground_motion_observations", "validation"],
+      "spatial_scope": "mainly European-Mediterranean regions and the Middle East",
+      "temporal_scope": "reviewed accelerometric records from qualifying events since 1969; ESM v3.0 released March 2026",
+      "resolution_or_granularity": "record-level raw and processed strong-motion waveforms, response spectra, intensity measures and associated event/station metadata",
+      "potential_roles": ["empirical_ground_motion_validation", "response_spectrum_benchmark", "site_response_context"],
+      "authoritative_url": "https://esm-db.eu/",
+      "access_class_hint": "public_web_portal_and_web_services_with_record_level_rights",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "ESM v3.0 reprocessed the database with updated processing and quality-control strategies and exposes record quality metadata. The ESM database states CC BY 4.0, but individual waveform/spectrum licences are provider-specific; preserve record licence, processing state, quality class/warnings and version before any admission or redistribution decision."
+    }
+  ]
+}
