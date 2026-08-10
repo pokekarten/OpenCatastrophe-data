@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "gem.global-active-faults.v2020",
+  "provider": "Global Earthquake Model Foundation (GEM)",
+  "product_name": "GEM Global Active Faults Database",
+  "version_or_release": "v2020",
+  "canonical_source": "https://www.globalquakemodel.org/product/active-faults-database",
+  "retrieved_at": "2026-08-10T01:20:00Z",
+  "retrieval_query_or_filters": "Metadata-only review of the open v2020 Global Active Faults Database product. No repository archive or GIS data bytes were acquired.",
+  "access_class": "open",
+  "modelling_layer": "hazard",
+  "intended_use": "Global tectonic-source and active-fault context for seismic-hazard research, source-model comparison and event-to-fault linkage. The database is not a probabilistic hazard curve, ground-motion field or loss model.",
+  "raw_artifact": null,
+  "derived_artifact": null,
+  "licensing": {
+    "status": "verified",
+    "spdx_expression": "CC-BY-SA-4.0",
+    "licence_name": "Creative Commons Attribution-ShareAlike 4.0 International",
+    "terms_reference": "https://www.globalquakemodel.org/product/active-faults-database",
+    "terms_reviewed_at": "2026-08-10T01:20:00Z",
+    "terms_version_or_date": "GEM product page v2020/licence reviewed 2026-08-10",
+    "terms_content_sha256": null,
+    "commercial_use_status": "allowed",
+    "attribution_requirements": "Provide attribution required by CC BY-SA 4.0 and cite the GEM Global Active Faults Database and relevant constituent/reference sources.",
+    "share_alike_or_derivative_requirements": "Derivatives/adaptations are subject to CC BY-SA 4.0 ShareAlike unless a separate tailored licence agreement applies; this admission covers the open CC BY-SA version only.",
+    "notes": "GEM's authoritative product page identifies the latest open version as v2020 and its licence as CC BY-SA 4.0. The database is assembled from constituent regional datasets and is designed to evolve; this admission pins v2020 rather than an unversioned repository head."
+  },
+  "redistribution": {
+    "status": "allowed",
+    "scope": "raw",
+    "conditions": "The open v2020 source is redistributable under CC BY-SA 4.0 subject to attribution/share-alike. OpenCatastrophe approves metadata only and has not identified or hashed an exact archive/file set."
+  },
+  "privacy": {
+    "personal_data_status": "none",
+    "confidential_or_proprietary_status": "none",
+    "notes": "The reviewed open product contains scientific active-fault geometries and attributes, not personal or confidential insured information."
+  },
+  "spatial": {
+    "crs": null,
+    "extent": "Global active-fault compilation; coverage and attribute completeness vary geographically"
+  },
+  "temporal": {
+    "extent": "v2020 compiled active-fault reference; fault activity attributes refer to geological/tectonic time scales rather than event timestamps"
+  },
+  "variables_and_units": [
+    {
+      "name": "fault geometry",
+      "unit": null,
+      "description": "Mapped active-fault traces/geometry compiled from regional sources."
+    },
+    {
+      "name": "kinematics",
+      "unit": null,
+      "description": "Fault movement/kinematic attributes where available."
+    },
+    {
+      "name": "slip rate",
+      "unit": "mm/year",
+      "description": "Fault slip-rate information where supplied; completeness and uncertainty vary by source and fault."
+    }
+  ],
+  "transformation": null,
+  "review": {
+    "status": "approved_metadata_only",
+    "reviewed_at": "2026-08-10T01:20:00Z",
+    "reviewer": "OpenCatastrophe source audit",
+    "notes": "Metadata-only approval for open v2020. Future raw work must pin exact repository/archive identity, preserve constituent-source references, geometry/attribute uncertainty and ShareAlike conditions, and record byte hashes outside Git before asset review."
+  }
+}
