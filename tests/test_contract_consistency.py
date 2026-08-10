@@ -90,6 +90,7 @@ class ContractConsistencyTests(unittest.TestCase):
 
         input_schema = schema["properties"]["inputs"]["items"]
         self.assertEqual(set(input_schema["properties"]["kind"]["enum"]), agent.RUN_INPUT_KINDS_V2)
+        self.assertEqual(set(input_schema["properties"]["artifact"]["enum"]), agent.DATA_ARTIFACT_KINDS_V2)
         schema_roles = set(input_schema["properties"]["scientific_role"]["enum"])
         validator_roles = set(agent.DATA_SCIENTIFIC_ROLES_V2)
         for roles in agent.RUN_ROLE_BY_KIND_V2.values():
@@ -101,7 +102,7 @@ class ContractConsistencyTests(unittest.TestCase):
             for rule in input_schema["allOf"]
             if rule.get("if", {}).get("properties", {}).get("kind", {}).get("const") == "data"
         )
-        self.assertEqual(set(data_rule["then"]["required"]), {"manifest", "sha256"})
+        self.assertEqual(set(data_rule["then"]["required"]), {"manifest", "artifact", "sha256"})
         self.assertEqual(
             set(data_rule["then"]["properties"]["scientific_role"]["enum"]),
             agent.DATA_SCIENTIFIC_ROLES_V2,
