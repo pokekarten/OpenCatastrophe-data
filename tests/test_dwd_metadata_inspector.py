@@ -7,6 +7,7 @@ import importlib.util
 import stat
 import tempfile
 import unittest
+import warnings
 import zipfile
 from pathlib import Path
 
@@ -25,7 +26,9 @@ class DwdMetadataInspectorTests(unittest.TestCase):
         path = Path(tmp.name) / "metadata.zip"
         with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             for name, content in entries:
-                archive.writestr(name, content)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", UserWarning)
+                    archive.writestr(name, content)
             if symlink is not None:
                 info = zipfile.ZipInfo(symlink)
                 info.create_system = 3
@@ -67,6 +70,18 @@ class DwdMetadataInspectorTests(unittest.TestCase):
         path = self._zip([("folder\\file.txt", b"no")])
         with self.assertRaises(inspector.InspectionError):
             inspector.inspect_zip(path)
+
+    def test_dot_and_empty_segments_are_rejected(self) -> None:
+        for member in ("folder/./file.txt", "folder//file.txt"):
+            path = self._zip([(member, b"no")])
+            with self.subTest(member=member), self.assertRaises(inspector.InspectionError):
+                inspector.inspect_zip(path)
+
+    def test_directory_member_is_allowed(self) -> None:
+        path = self._zip([("metadata/", b""), ("metadata/station_01234.txt", b"ok")])
+        result = inspector.inspect_zip(path)
+        self.assertEqual(result["zip"]["member_count"], 2)
+        self.assertEqual(result["observed"]["station_ids"], ["01234"])
 
     def test_duplicate_member_path_is_rejected(self) -> None:
         path = self._zip([("station_01234.txt", b"one"), ("station_01234.txt", b"two")])
