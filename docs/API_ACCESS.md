@@ -11,7 +11,7 @@ OpenCatastrophe treats machine access as a first-class property of every data so
 
 1. `landscape/sources*.json` remains the canonical non-admission discovery registry.
 2. `manifests/*.json` remains the canonical admitted-dataset provenance/rights layer.
-3. `scripts/build_source_access_inventory.py` deterministically traverses every current landscape source and creates a first-pass machine-access/licensing work queue from already recorded access hints and notes. It never upgrades rights or invents API facts.
+3. `scripts/build_source_access_inventory.py` deterministically traverses every current landscape source **and every admitted manifest**, links explicit access contracts, and creates a first-pass machine-access/licensing work queue from already recorded access and rights evidence. It never upgrades rights or invents API facts.
 4. `schemas/source-access-v1.schema.json` and `scripts/validate_source_access.py` define the strict contract for a provider interface once its exact access behavior is reviewed.
 5. `access/*.json` contains concrete reviewed access contracts. These contracts do not authorize data admission or raw-byte publication.
 
@@ -28,18 +28,18 @@ python scripts/build_source_access_inventory.py --write
 python scripts/build_source_access_inventory.py --check
 ```
 
-The generator discovers all `landscape/sources*.json` files. A newly added source therefore enters the access work queue automatically instead of silently missing API/access review.
+The generator discovers all `landscape/sources*.json` files and all `manifests/*.json` files. A newly added discovery candidate or admitted dataset therefore enters the access work queue automatically instead of silently missing API/access review. Tests assert that the generated inventory count equals the live repository source count.
 
 ## Fail-closed licensing rule
 
-The source landscape intentionally carries `rights_review_status=not_reviewed`. The access inventory therefore never turns a public URL, API, download button, account or successful HTTP response into a licence approval.
-
-Every source is initially classified as either:
+The source landscape intentionally carries `rights_review_status=not_reviewed`. Landscape candidates therefore remain either:
 
 - `license_review_required`; or
 - `known_restriction_requires_review` when existing source notes/access hints already signal restrictions such as non-commercial use, provider agreement, paid commercial access, separate licensing, registration/account gates or redistribution concerns.
 
-A concrete source-access contract may use `dataset_rights_status=verified` only when a source-specific rights review already exists. Unreviewed/conflicting/unknown rights cannot claim that commercial automation or redistribution is allowed. Connectivity, scientific suitability, licence clearance, redistribution permission and repository admission remain separate gates.
+Admitted manifests may be classified `source_rights_verified` only when their existing manifest has a verified licence and explicitly allows both commercial use and redistribution. That label describes the **dataset/source rights already reviewed in the manifest**; it does not automatically clear separate API/service terms or authorize raw publication.
+
+The access inventory never turns a public URL, API, download button, account or successful HTTP response into a licence approval. A concrete source-access contract may use `dataset_rights_status=verified` only when a source-specific rights review already exists. Unreviewed/conflicting/unknown rights cannot claim that commercial automation or redistribution is allowed. Connectivity, scientific suitability, licence clearance, API/service terms, redistribution permission and repository admission remain separate gates.
 
 ## Access classes
 
@@ -57,12 +57,13 @@ Do not label a stable file directory, object store or web-service layer as REST 
 
 ## Concrete contracts
 
-The first two contracts exercise different access models:
+The initial contracts deliberately exercise three different outcomes:
 
 - `access/wsv.pegelonline.rest-v2.dresden.json` — anonymous REST-v2 station metadata for the already reviewed Dresden/Elbe hydrology pilot. The existing strict parser remains the scientific interpreter. Target discharge acquisition is intentionally outside this metadata-only contract.
 - `access/dwd.cdc.extreme-wind.http-file.json` — anonymous authoritative HTTP directory/file access for DWD historical extreme-wind observations. This proves that a source can receive a machine-access contract without having a native REST API.
+- `access/essl.eswd.public-subset.documented.json` — a documentation-only boundary for ESWD where the existing discovery evidence records non-commercial public use and broader agreement-based access. The correct machine-readable decision is `do_not_automate`, not a scraper.
 
-Both remain bounded by the existing dataset/source review and by exact external-byte provenance requirements.
+These contracts remain bounded by their existing dataset/source review and exact external-byte provenance requirements. A contract can intentionally document a prohibition or unresolved rights boundary; 100% access coverage does not mean 100% automated downloading.
 
 ## Required contract behavior
 
