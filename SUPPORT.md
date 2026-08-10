@@ -7,16 +7,16 @@ SPDX-License-Identifier: Apache-2.0
 
 OpenCatastrophe-data is a pre-alpha, metadata-first research repository. Public support must preserve data rights, privacy and reproducibility.
 
-## Before opening an issue
+## Before opening public work
 
-1. Check `README.md`, `DATA_LICENSING.md`, `SCIENTIFIC_METHOD.md` and existing open issues.
+1. Check `README.md`, `DATA_LICENSING.md`, `SCIENTIFIC_METHOD.md`, active Pull Requests and any enabled public Issues.
 2. Run `python scripts/check_all.py` on current `main` for repository behavior.
-3. Use the most specific Issue Form: Bug, Data source, Scientific source or methodology proposal, or Project/tooling proposal.
-4. Start source discussions metadata-only unless an accepted admission explicitly permits bytes.
+3. When Issues are enabled, use the most specific Issue Form: Bug, Data source, Scientific source or methodology proposal, Project/tooling proposal, or Agent task. When Issues are disabled, use a draft Pull Request once a contribution has enough public evidence and a coherent first change to review.
+4. Start source discussions and implementation metadata-only unless an accepted admission explicitly permits bytes.
 
-## What belongs in a public issue
+## What belongs in public collaboration
 
-Public issues are appropriate for metadata/source questions, rights/admission review, reproducible tooling defects, scientific semantics and bounded public agent tasks. Identify providers/products/versions precisely and link authoritative public terms rather than copying restricted content.
+Public Issues when enabled, and Pull Requests for implementation, are appropriate for metadata/source questions, rights/admission review, reproducible tooling defects, scientific semantics and bounded public agent work. Identify providers/products/versions precisely and link authoritative public terms rather than copying restricted content.
 
 Do **not** publish credentials, signed/private URLs, customer/claims/portfolio data, restricted dataset bytes, proprietary model assets, private repository/chat/workspace content, screenshots of restricted systems or machine-local storage details. See `SECURITY.md` if a report cannot safely be public.
 

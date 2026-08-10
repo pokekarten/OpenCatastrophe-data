@@ -11,8 +11,8 @@ Start with `README.md`, `AGENTS.md` and `ARCHITECTURE.md`. Source/admission chan
 
 ## Workflow
 
-1. Re-check current `main`, existing Issues and active Pull Requests before starting non-trivial work.
-2. Open or reference the most specific Issue Form. For bounded agent work, use the Agent Task form when useful.
+1. Re-check current `main`, active Pull Requests and any enabled public Issues before starting non-trivial work.
+2. When Issues are enabled, open or reference the most specific Issue Form; for bounded agent work, use the Agent Task form when useful. When Issues are disabled, do not create a substitute task tracker: use a draft Pull Request as the durable public work claim once the change has enough public evidence and a coherent first diff.
 3. Create a short-lived branch from current `main`, declare shared/single-writer surfaces, and keep the change focused. `main` is the only persistent development branch; do not maintain long-lived agent, development, release or patch branches.
 4. Open a draft Pull Request once there is a coherent first change; it is the visible implementation claim for those shared surfaces.
 5. Add deterministic offline tests for durable behavior. Use the machine-readable agent-task/run-evidence contracts when formal execution or handoff evidence is useful rather than creating a second task tracker.
@@ -21,7 +21,7 @@ Start with `README.md`, `AGENTS.md` and `ARCHITECTURE.md`. Source/admission chan
 8. Handoff with exact commit identity, checks, evidence, assumptions, blockers, external-byte state and the next independent action when relevant.
 9. Delete the head branch after its Pull Request is merged or closed unless it is still the active head of another open Pull Request.
 
-Accepted work is squash-merged so one accepted PR maps to one mainline commit. Topic branches are disposable collaboration state, not durable project records; accepted history lives on `main` and review history lives in Issues and Pull Requests.
+Accepted work is squash-merged so one accepted PR maps to one mainline commit. Topic branches are disposable collaboration state, not durable project records; accepted history lives on `main` and review history lives in Pull Requests plus public Issues when enabled.
 
 ## Boundaries
 
