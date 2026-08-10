@@ -14,9 +14,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
+
+try:
+    from scripts.validate_source_access import SourceAccessError, validate_path
+except ModuleNotFoundError:  # pragma: no cover - direct script execution path
+    from validate_source_access import SourceAccessError, validate_path
 
 ROOT = Path(__file__).resolve().parents[1]
 LANDSCAPE_DIR = ROOT / "landscape"
@@ -55,13 +61,19 @@ def _contains(text: str, *needles: str) -> bool:
     return any(needle.casefold().replace("-", "_") in folded for needle in needles)
 
 
+def _tokens(text: str) -> set[str]:
+    return set(re.findall(r"[a-z0-9]+", text.casefold()))
+
+
 def classify_access(hint: str, categories: list[str], note: str) -> dict[str, Any]:
     """Conservatively classify recorded discovery hints without inventing API facts."""
 
     evidence = " ".join([hint, *categories, note]).casefold()
     category_set = {value.casefold() for value in categories}
 
-    api_like = _contains(hint, "api") or "api" in category_set
+    # API is a semantic token, not a substring: e.g. "rapid" and "capital" must
+    # not be promoted merely because their spelling happens to contain "api".
+    api_like = "api" in _tokens(hint) or "api" in category_set
     geospatial = _contains(hint, "stac", "wms", "wfs", "wcs", "arcgis", "web_services", "geospatial_service")
     federated = _contains(hint, "mqtt", "federated", "data_exchange")
     downloadable = _contains(hint, "download", "object", "cloud", "geoparquet", "repository", "ftp", "file", "bulk")
@@ -168,19 +180,20 @@ def contract_files() -> list[Path]:
 def _contract_index() -> tuple[dict[str, list[dict[str, str]]], list[str]]:
     by_source: dict[str, list[dict[str, str]]] = {}
     files: list[str] = []
+    seen_access_ids: set[str] = set()
     for path in contract_files():
-        payload = load_json(path)
-        if type(payload) is not dict:
-            raise InventoryError(f"{path.relative_to(ROOT)} must contain an access contract object")
-        access_id = payload.get("access_id")
-        source_ids = payload.get("source_ids")
-        interface_type = payload.get("interface_type")
-        implementation = payload.get("implementation_decision")
-        status = payload.get("status")
-        if not all(type(value) is str and value for value in (access_id, interface_type, implementation, status)):
-            raise InventoryError(f"{path.relative_to(ROOT)} lacks contract inventory fields")
-        if type(source_ids) is not list or not source_ids or not all(type(value) is str and value for value in source_ids):
-            raise InventoryError(f"{path.relative_to(ROOT)} source_ids must be non-empty strings")
+        try:
+            payload = validate_path(path)
+        except (OSError, SourceAccessError) as exc:
+            raise InventoryError(f"invalid source-access contract {path.relative_to(ROOT)}: {exc}") from exc
+        access_id = payload["access_id"]
+        if access_id in seen_access_ids:
+            raise InventoryError(f"duplicate source-access access_id: {access_id}")
+        seen_access_ids.add(access_id)
+        source_ids = payload["source_ids"]
+        interface_type = payload["interface_type"]
+        implementation = payload["implementation_decision"]
+        status = payload["status"]
         relative = path.relative_to(ROOT).as_posix()
         files.append(relative)
         for source_id in source_ids:
@@ -207,14 +220,57 @@ def _interface_class(interface_type: str) -> str:
     return "portal_or_service"
 
 
-def _apply_contracts(classification: dict[str, Any], contracts: list[dict[str, str]]) -> dict[str, Any]:
+def _more_restrictive_decision(left: str, right: str) -> str:
+    order = {
+        "build_adapter_now": 0,
+        "build_later": 1,
+        "document_only": 2,
+        "do_not_automate": 3,
+    }
+    if left not in order or right not in order:
+        raise InventoryError(f"unknown automation decision while aggregating contracts: {left!r}, {right!r}")
+    return left if order[left] >= order[right] else right
+
+
+def _apply_contracts(
+    classification: dict[str, Any],
+    contracts: list[dict[str, str]],
+    *,
+    allow_contract_promotion: bool = False,
+) -> dict[str, Any]:
     if not contracts:
         return {**classification, "contract_ids": []}
     result = dict(classification)
     result["contract_ids"] = [item["access_id"] for item in contracts]
+
+    if len(contracts) > 1:
+        # A source can legitimately expose multiple interfaces with different
+        # rights/scope/auth semantics. Source-level execution must not depend on
+        # lexicographic access_id ordering; keep the aggregate documentation-only
+        # and require the caller to choose/review an exact contract.
+        result["api_status"] = "multiple_concrete_contracts_present"
+        result["machine_access_class"] = "multiple_reviewed_interfaces"
+        result["automation_decision"] = _more_restrictive_decision(
+            result["automation_decision"], "document_only"
+        )
+        if any(item["implementation_decision"] == "do_not_automate" for item in contracts):
+            result["automation_decision"] = "do_not_automate"
+        result["next_action"] = (
+            "Select and verify one exact reviewed source-access contract by scope; "
+            "never derive a source-level execution decision from contract ordering."
+        )
+        return result
+
+    contract = contracts[0]
     result["api_status"] = "concrete_contract_present"
-    result["machine_access_class"] = _interface_class(contracts[0]["interface_type"])
-    result["automation_decision"] = contracts[0]["implementation_decision"]
+    result["machine_access_class"] = _interface_class(contract["interface_type"])
+    contract_decision = contract["implementation_decision"]
+    if allow_contract_promotion:
+        result["automation_decision"] = contract_decision
+    else:
+        result["automation_decision"] = _more_restrictive_decision(
+            result["automation_decision"], contract_decision
+        )
     result["next_action"] = "Execute the reviewed contract verification ladder; do not infer rights, scientific fitness or admission from connectivity."
     return result
 
@@ -244,7 +300,7 @@ def _manifest_rights(manifest: dict[str, Any], classification: dict[str, Any]) -
     else:
         result["rights_posture"] = "license_review_required"
     result["license_or_terms_flags"] = sorted(flags)
-    if result["rights_posture"] == "known_restriction_requires_review":
+    if result["rights_posture"] != "source_rights_verified":
         result["automation_decision"] = "document_only"
     return result
 
@@ -252,6 +308,8 @@ def _manifest_rights(manifest: dict[str, Any], classification: dict[str, Any]) -
 def build_inventory() -> dict[str, Any]:
     entries: list[dict[str, Any]] = []
     seen_landscape: set[str] = set()
+    seen_manifests: set[str] = set()
+    known_source_ids: set[str] = set()
     review_dates: list[str] = []
     contracts_by_source, contract_paths = _contract_index()
     landscape_paths: list[str] = []
@@ -276,6 +334,7 @@ def build_inventory() -> dict[str, Any]:
             if source_id in seen_landscape:
                 raise InventoryError(f"duplicate source candidate_id across landscapes: {source_id}")
             seen_landscape.add(source_id)
+            known_source_ids.add(source_id)
             provider = source.get("provider")
             authoritative_url = source.get("authoritative_url")
             hint = source.get("access_class_hint")
@@ -290,9 +349,16 @@ def build_inventory() -> dict[str, Any]:
                 raise InventoryError(
                     f"{relative}: {source_id} rights state {rights_review!r} requires an explicit inventory policy update"
                 )
+            classification = classify_access(hint, categories, note)
+            # Landscape discovery is explicitly non-admission and rights are not
+            # reviewed. Even a concrete interface contract cannot promote the
+            # source-level row to executable until the source rights state moves.
+            classification["rights_posture"] = "license_review_required"
+            classification["automation_decision"] = "document_only"
             classification = _apply_contracts(
-                classify_access(hint, categories, note),
+                classification,
                 contracts_by_source.get(source_id, []),
+                allow_contract_promotion=False,
             )
             entries.append({
                 "record_type": "landscape_candidate",
@@ -316,6 +382,10 @@ def build_inventory() -> dict[str, Any]:
         intended_use = manifest.get("intended_use")
         if not all(type(value) is str and value for value in (source_id, provider, authoritative_url, access_class, modelling_layer, intended_use)):
             raise InventoryError(f"{path.relative_to(ROOT)} lacks required manifest inventory inputs")
+        if source_id in seen_manifests:
+            raise InventoryError(f"duplicate admitted manifest dataset_id: {source_id}")
+        seen_manifests.add(source_id)
+        known_source_ids.add(source_id)
         review = manifest.get("review")
         licensing = manifest.get("licensing")
         note_parts = [intended_use]
@@ -325,7 +395,11 @@ def build_inventory() -> dict[str, Any]:
             note_parts.append(licensing["notes"])
         classification = classify_access(access_class, [modelling_layer], " ".join(note_parts))
         classification = _manifest_rights(manifest, classification)
-        classification = _apply_contracts(classification, contracts_by_source.get(source_id, []))
+        classification = _apply_contracts(
+            classification,
+            contracts_by_source.get(source_id, []),
+            allow_contract_promotion=classification["rights_posture"] == "source_rights_verified",
+        )
         relative = path.relative_to(ROOT).as_posix()
         manifest_paths.append(relative)
         entries.append({
@@ -337,6 +411,10 @@ def build_inventory() -> dict[str, Any]:
             "access_class_hint": access_class,
             **classification,
         })
+
+    dangling_sources = sorted(set(contracts_by_source) - known_source_ids)
+    if dangling_sources:
+        raise InventoryError(f"source-access contracts reference unknown source_ids: {dangling_sources}")
 
     entries.sort(key=lambda item: (item["source_id"], item["record_type"], item["source_registry_path"]))
     landscape_count = sum(1 for entry in entries if entry["record_type"] == "landscape_candidate")
