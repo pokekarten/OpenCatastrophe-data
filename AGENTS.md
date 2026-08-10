@@ -43,7 +43,7 @@ OpenCatastrophe follows **one semantic truth, multiple verified views**. A file 
 - Record the exact `main` commit reviewed before material work and re-check it before editing a shared schema, manifest/admission rule, CI policy, or other single-writer surface.
 - Declare shared/single-writer paths explicitly. If another active PR touches the same semantic contract, coordinate or choose an independent task instead of creating a parallel source of truth.
 - `.github/ISSUE_TEMPLATE/agent-task.yml` is the contributor-facing task form. `schemas/agent-task-v1.schema.json` and `scripts/validate_agent_artifact.py` provide the strict machine projection when an executable task artifact is needed.
-- `schemas/run-evidence-v1.schema.json` is the machine-readable handoff receipt for reproducible runs. It records exact repository/input/output identities, validation state, randomness provenance where relevant, claims and limitations; it never turns an agent result into scientific or legal authority.
+- `schemas/run-evidence-v2.schema.json` is the preferred machine-readable handoff receipt for new scientific or model-related runs. Material `data` inputs require an admitted manifest, exact SHA-256 and explicit scientific role; claims use typed resolvable references plus bounded scope and limitations. `schemas/run-evidence-v1.schema.json` remains supported as a compatibility profile for existing/simple execution receipts but does not provide v2 split-integrity guarantees.
 - GitHub Issue/PR state remains canonical. Machine-readable task/run artifacts are versioned execution snapshots, not a second roadmap or hidden scheduler.
 
 ## Definition of done
