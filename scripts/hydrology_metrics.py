@@ -165,6 +165,8 @@ def modified_kge_prime(simulated: Sequence[float], observed: Sequence[float]) ->
         observed_ss,
         context="KGE' correlation denominator",
     )
+    if correlation_denominator_squared == 0.0:
+        raise MetricInputError("KGE' correlation denominator must remain positive")
     correlation = _require_finite(
         covariance_sum / math.sqrt(correlation_denominator_squared),
         context="KGE' correlation",
