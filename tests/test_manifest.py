@@ -55,6 +55,41 @@ class ManifestTests(unittest.TestCase):
         with self.assertRaises(vm.ManifestError):
             vm.assert_public_asset_allowed(self.payload, "derived")
 
+    def test_restricted_access_still_allows_public_metadata_when_other_gates_pass(self) -> None:
+        payload = copy.deepcopy(self.payload)
+        payload["access_class"] = "restricted"
+        vm.assert_public_asset_allowed(payload, "metadata")
+
+    def test_restricted_access_blocks_raw_even_when_other_gates_pass(self) -> None:
+        payload = copy.deepcopy(self.payload)
+        payload["access_class"] = "restricted"
+        payload["review"]["status"] = "approved_raw"
+        payload["raw_artifact"] = {
+            "byte_size": 12,
+            "sha256": "0" * 64,
+            "storage_reference": "external://synthetic/restricted/raw.bin",
+        }
+        with self.assertRaisesRegex(
+            vm.ManifestError,
+            "restricted source access blocks raw source-byte publication",
+        ):
+            vm.assert_public_asset_allowed(payload, "raw")
+
+    def test_restricted_access_preserves_explicit_derived_publication_gates(self) -> None:
+        payload = copy.deepcopy(self.payload)
+        payload["access_class"] = "restricted"
+        payload["review"]["status"] = "approved_derived"
+        payload["derived_artifact"] = {
+            "byte_size": 12,
+            "sha256": "1" * 64,
+            "storage_reference": "external://synthetic/restricted/derived.bin",
+        }
+        payload["transformation"] = {
+            "code_reference": "scripts/example_transform.py@0123456789abcdef",
+            "config_identity": "sha256:" + "2" * 64,
+        }
+        vm.assert_public_asset_allowed(payload, "derived")
+
     def test_unknown_field_is_rejected(self) -> None:
         payload = copy.deepcopy(self.payload)
         payload["surprise"] = True
