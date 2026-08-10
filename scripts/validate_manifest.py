@@ -321,6 +321,8 @@ def assert_public_asset_allowed(manifest: dict[str, Any], asset_kind: str) -> No
     review = manifest["review"]
     if manifest["access_class"] == "unknown":
         raise ManifestError("source access class is unknown")
+    if asset_kind == "raw" and manifest["access_class"] == "restricted":
+        raise ManifestError("restricted source access blocks raw source-byte publication")
     if licensing["status"] != "verified" or licensing["commercial_use_status"] != "allowed":
         raise ManifestError("licensing is not verified for commercial use")
     if redistribution["status"] != "allowed":
