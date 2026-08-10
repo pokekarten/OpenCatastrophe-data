@@ -31,6 +31,7 @@ No LLM, MCP host, IDE extension, paid API or hidden service is required to valid
 
 ## Repository map
 
+- `landscape/` — broad machine-readable discovery registry of potentially useful sources; entries are explicitly not admissions.
 - `manifests/` — accepted machine-readable source/admission records.
 - `docs/source-reviews/` — accepted source-specific rights and scientific evidence.
 - `schemas/` — versioned machine-readable contracts.
@@ -48,6 +49,7 @@ The project is pre-alpha. A green repository check proves the recorded technical
 
 ## What belongs here
 
+- candidate source discovery metadata that is clearly separated from admission;
 - dataset manifests and stable source identities;
 - licence/terms and admission decisions;
 - retrieval/transformation code;
@@ -75,7 +77,9 @@ De-identifying confidential data does not automatically make it synthetic or saf
 
 **Status: pre-alpha data foundation.**
 
-Accepted sources currently span observation, hazard/hydrology, stochastic event catalogues, modelled/insured exposure, exposure geometry and observed insurance loss. The canonical accepted-source list is maintained in [`docs/source-reviews/README.md`](docs/source-reviews/README.md), alongside the source-specific scientific and rights evidence; machine-readable admissions live in `manifests/`.
+The project now keeps two deliberately separate source layers. [`landscape/sources.json`](landscape/sources.json) is the broad discovery registry for potentially useful public sources and never grants admission. The canonical accepted-source list is maintained in [`docs/source-reviews/README.md`](docs/source-reviews/README.md), alongside source-specific scientific and rights evidence; machine-readable admissions live in `manifests/`.
+
+Accepted sources currently span observation, hazard/hydrology, stochastic event catalogues, modelled/insured exposure, exposure geometry and observed insurance loss. Landscape candidates may cover additional terrain, climate, hydrology, earth-observation, seismic, wildfire, demographic and validation sources before a concrete OpenCatastrophe consumer exists.
 
 No admitted external dataset bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts. The repository remains data-byte-free while exercising real provenance, rights and scientific-review contracts across distinct modelling layers and perils.
 

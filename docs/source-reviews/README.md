@@ -7,13 +7,13 @@ SPDX-License-Identifier: Apache-2.0
 
 This directory contains **accepted, durable source-specific review evidence** that supports committed manifests/admissions.
 
-Live candidates, research plans and speculative source evaluations belong in GitHub Issues when Issues are enabled. While the repository issue tracker is disabled, keep speculative candidate inventories out of this durable tree and open a Pull Request only once a source has enough authoritative public evidence for a bounded review/admission. This keeps the public tree from presenting planned work as accepted capability.
+Broad source discovery is maintained separately in `landscape/`. A landscape entry is explicitly non-admission evidence: it may preserve a useful provider/product pointer before OpenCatastrophe has a current model role, completed rights review or completed scientific review. Detailed speculative plans and unresolved research discussion still belong in GitHub Issues when enabled or in bounded PR discussion when Issues are unavailable.
 
 ## Admission trigger
 
-The accepted registry is **capability-driven, not a source landscape**. A scientifically strong, well-licensed or generally useful dataset is not admitted merely because it exists.
+The accepted registry remains **capability-driven, not a source landscape**. A scientifically strong, well-licensed or generally useful dataset is not admitted merely because it exists or appears in `landscape/`.
 
-Add a durable source review and manifest only when the source has a named current role that existing accepted sources cannot provide, such as a required model-consumer component, a bounded interoperability dependency, or a predeclared scientific validation input with explicit comparison semantics. Keep each admission PR to one coherent source family/use case. Candidate benchmarks, baseline geography and possible future validation counterparts stay out of the accepted tree until that concrete role exists; preserve useful research in public Issues when enabled or in a closed/deferred PR record otherwise.
+Add a durable source review and manifest only when the source has a named current role that existing accepted sources cannot provide, such as a required model-consumer component, a bounded interoperability dependency, or a predeclared scientific validation input with explicit comparison semantics. Keep each admission PR to one coherent source family/use case. Candidate benchmarks, baseline geography and possible future validation counterparts may remain discoverable in `landscape/` until that concrete role exists without being presented as accepted capability.
 
 Current accepted reviews:
 
