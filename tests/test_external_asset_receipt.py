@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,6 +14,7 @@ from scripts.validate_external_asset_receipt import (
     load_receipt,
     receipt_sha256,
     validate_receipt,
+    verify_artifact,
 )
 
 
@@ -49,6 +51,7 @@ class ExternalAssetReceiptTests(unittest.TestCase):
             receipt,
             expected_intent_sha256="a" * 64,
             expected_manifest="manifests/example.dataset.json",
+            expected_manifest_sha256="b" * 64,
         )
         self.assertEqual(receipt_sha256(receipt), receipt_sha256(dict(reversed(list(receipt.items())))))
         self.assertTrue(canonical_receipt_bytes(receipt).startswith(b'{"acquisition_intent_sha256":'))
@@ -75,6 +78,27 @@ class ExternalAssetReceiptTests(unittest.TestCase):
             validate_receipt(receipt, expected_intent_sha256="d" * 64)
         with self.assertRaisesRegex(ReceiptError, "expected admitted manifest"):
             validate_receipt(receipt, expected_manifest="manifests/other.json")
+        with self.assertRaisesRegex(ReceiptError, "manifest identity"):
+            validate_receipt(receipt, expected_manifest_sha256="d" * 64)
+
+    def test_verify_artifact_rehashes_exact_external_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            artifact_path = Path(temp_dir) / "artifact.bin"
+            payload = b"exact external bytes\n"
+            artifact_path.write_bytes(payload)
+
+            receipt = self._receipt()
+            receipt["artifact"]["byte_size"] = len(payload)  # type: ignore[index]
+            receipt["artifact"]["sha256"] = hashlib.sha256(payload).hexdigest()  # type: ignore[index]
+            verify_artifact(receipt, artifact_path)
+
+            artifact_path.write_bytes(b"x" * len(payload))
+            with self.assertRaisesRegex(ReceiptError, "SHA-256"):
+                verify_artifact(receipt, artifact_path)
+
+            artifact_path.write_bytes(payload + b"drift")
+            with self.assertRaisesRegex(ReceiptError, "byte size"):
+                verify_artifact(receipt, artifact_path)
 
     def test_paths_hashes_timestamp_and_storage_are_strict(self) -> None:
         receipt = self._receipt()
