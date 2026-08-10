@@ -45,6 +45,8 @@ SENSITIVE_QUERY_KEYS = {
     "token",
     "x-amz-credential",
     "x-amz-signature",
+    "x-goog-credential",
+    "x-goog-signature",
 }
 
 
