@@ -28,12 +28,20 @@ CI runs `python scripts/render_public_views.py --check` through the repository d
 
 This pattern is intentionally extensible to future machine/interoperability views, but any additional representation must identify its canonical source and have a deterministic drift check. Do not add an independently maintained JSON/YAML/CSV/Markdown copy of the same landscape facts.
 
+## Executable contract and portable schema
+
+The version-1 structural profile is published as `schemas/source-landscape-v1.schema.json`. The authoritative executable policy validator is `scripts/source_landscape_contract.py`.
+
+The distinction is intentional. JSON Schema is useful to external tools and AI agents for portable shape validation, but repository policy also requires checks that are not safely represented by the structural schema alone: strict duplicate-key and non-finite-number rejection, real calendar dates, globally unique candidate IDs across shards, public-only authoritative URLs, rejection of credentials or signed URL parameters, and the fixed non-admission review state.
+
+Both `scripts/query_source_landscape.py` and `scripts/render_public_views.py` consume the same executable contract. Tests bind the schema's structural surface to that contract so the two cannot silently drift. A schema-only pass is never evidence that a candidate is admitted, rights-cleared, scientifically fit or permitted as a model input.
+
 ## Two registry levels
 
 - `landscape/sources*.json` — broad discovery layer and canonical machine-readable source. The registry may be split into thematic shards so independent contributors can add bounded source families without turning one large JSON file into a permanent single-writer surface. Entries may exist without a current model consumer and always remain `admission_status: not_admitted` until promoted through the accepted review path. Paired `sources*.md` files are generated human-readable views only.
 - `manifests/` plus `docs/source-reviews/` — accepted layer. Manifests are the machine-readable admission records; source reviews are durable human-readable rights/scientific evidence. These are the only accepted admissions/evidence and have a different purpose from the broad landscape.
 
-The landscape must never be interpreted as an allow-list for downloads, redistribution or model use.
+The landscape must never be interpreted as an allow-list for downloads, redistribution or model use. Future training, calibration, validation or benchmarking pipelines must select source identities through admitted manifests and explicit experiment evidence, not by reading candidate status from this discovery registry.
 
 ## What belongs in the landscape
 
@@ -58,6 +66,6 @@ A source can therefore be valuable enough to remain in the landscape indefinitel
 
 Keep canonical JSON entries compact. Prefer updating an existing candidate over adding duplicate records for aliases or mirrors. When a provider replaces a product, preserve the old product when scientifically useful and add the successor separately rather than silently rewriting historical identity.
 
-Use a new thematic `sources-*.json` shard when a bounded source family can be maintained independently. Every shard uses the same registry header and entry shape, and `tests/test_source_landscape.py` enforces globally unique candidate IDs plus the fail-closed non-admission/review state across all shards. The paired Markdown file is generated automatically from that shard; do not hand-maintain a second candidate index or duplicate candidate records merely for navigation.
+Use a new thematic `sources-*.json` shard when a bounded source family can be maintained independently. Every shard uses the same registry header and entry shape, and `scripts/source_landscape_contract.py` enforces globally unique candidate IDs plus the fail-closed non-admission/review state across all shards. The paired Markdown file is generated automatically from that validated shard; do not hand-maintain a second candidate index or duplicate candidate records merely for navigation.
 
 Candidate research should not duplicate full source reviews. Detailed rights/scientific acceptance evidence belongs in `docs/source-reviews/` only when admission is actually being considered.
