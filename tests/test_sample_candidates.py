@@ -107,6 +107,25 @@ class SampleCandidateAuditTests(unittest.TestCase):
                 self.assertIn(expected_blocker, result.source_blockers)
                 self.assertEqual(result.status, "blocked_by_source_contract")
 
+    def test_source_blocker_dominates_even_if_repository_raw_gate_passes(self) -> None:
+        payload = copy.deepcopy(self.dwd)
+        payload["access_class"] = "restricted"
+        payload["review"]["status"] = "approved_raw"
+        payload["raw_artifact"] = {
+            "byte_size": 12,
+            "sha256": "0" * 64,
+            "storage_reference": "external://sample-pilot/restricted/example.bin",
+        }
+        result = sample_audit.audit_manifest(payload)
+        self.assertFalse(result.source_rights_eligible)
+        self.assertIn("source_access_not_publicly_acquirable", result.source_blockers)
+        self.assertFalse(result.existing_raw_publication_ready)
+        self.assertEqual(result.status, "blocked_by_source_contract")
+        self.assertEqual(
+            result.repository_publication_blocker,
+            "sample source contract blocks raw publication",
+        )
+
     def test_repository_review_and_exact_artifact_identity_remain_separate_gates(self) -> None:
         current = sample_audit.audit_manifest(self.dwd)
         self.assertTrue(current.source_rights_eligible)
