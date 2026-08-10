@@ -72,6 +72,24 @@ A transformation that changes scientific meaning should have:
 
 Derived data do not automatically inherit unrestricted redistribution rights from their technical transformation.
 
+## Model development and split integrity
+
+OpenCatastrophe intends to use admitted data to build and evaluate its own models. Data provenance must therefore preserve experimental role as well as source identity.
+
+For a scientific/model run:
+
+- assign every materially used data input an explicit role such as `training`, `calibration`, `validation`, `holdout`, `benchmark`, or `context` before target inspection where practical;
+- bind actual data bytes to an admitted manifest plus an exact SHA-256; a landscape candidate is discovery metadata and is never a model-input allow-list;
+- do not represent the same exact content hash under multiple input identities or experimental roles in one run;
+- keep training/calibration decisions separate from holdout evaluation; once a holdout result is used to choose features, parameters, thresholds, models, stopping rules, or other modelling decisions, that dataset is no longer an untouched holdout for the resulting model and a new independent holdout is required for a fresh holdout claim;
+- predefine split/selection logic and preserve it as code/configuration or run evidence rather than reconstructing the split from memory after results are known;
+- record claim scope and claim-specific limitations so evidence for one peril, geography, period, variable, or model context cannot silently become a broader claim;
+- preserve exact input, output, validation and repository evidence references so a model result can be traced without hidden chat or local state.
+
+`schemas/run-evidence-v2.schema.json` and `scripts/validate_agent_artifact.py` make these boundaries machine-checkable for new scientific/model runs. The older v1 receipt remains a compatibility profile for existing/simple execution evidence; it must not be used to imply v2-style split-integrity guarantees that it does not record.
+
+These controls reduce accidental train/evaluation leakage, but a valid receipt is not by itself proof that a split is statistically independent, scientifically representative, legally usable, or sufficient for production modelling. Those remain explicit scientific and rights questions.
+
 ## Open standards and interoperability
 
 OpenCatastrophe-data should evaluate established open catastrophe-modelling standards before defining project-specific exchange formats. Oasis Open Data Standards, including OED for exposure inputs and ORD for results, are important interoperability references. Compatibility should be implemented through explicit adapters and versioned mappings rather than silently changing internal scientific semantics.
