@@ -75,9 +75,12 @@ De-identifying confidential data does not automatically make it synthetic or saf
 
 **Status: pre-alpha data foundation.**
 
-One source has a metadata-only admission: DWD 10-minute extreme-wind station observations for Germany, version `v24.03`. The accepted evidence is public in the [machine-readable manifest](manifests/dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03.json) and [source review](docs/source-reviews/dwd-extreme-wind-v24.03.md).
+Two sources have metadata-only admissions:
 
-No DWD measurement bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts. This keeps the repository data-byte-free while exercising real provenance, rights and scientific-review contracts.
+- [DWD 10-minute extreme-wind station observations for Germany, v24.03](manifests/dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03.json), with the accepted [source review](docs/source-reviews/dwd-extreme-wind-v24.03.md), provide an observational validation route.
+- [C3S Enhanced Windstorm Service, v1.0](manifests/copernicus.c3s.european-windstorm-reanalysis.v1.0.json), with the accepted [source review](docs/source-reviews/copernicus-c3s-european-windstorm-reanalysis-v1.0.md), provides a European event-track and hazard-footprint candidate.
+
+No DWD or C3S measurement/model dataset bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts. The repository remains data-byte-free while exercising real provenance, rights and scientific-review contracts across observational and event/footprint layers.
 
 ## Quick start
 
