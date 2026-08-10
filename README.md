@@ -29,6 +29,15 @@ Durable rules live in schemas, validators, tests and accepted source reviews rat
 
 No LLM, MCP host, IDE extension, paid API or hidden service is required to validate repository-authored behavior.
 
+## Repository map
+
+- `manifests/` — accepted machine-readable source/admission records.
+- `docs/source-reviews/` — accepted source-specific rights and scientific evidence.
+- `schemas/` — versioned machine-readable contracts.
+- `scripts/` — strict validators, identity tools and repository checks.
+- `tests/` — deterministic offline regression and negative tests using synthetic inputs.
+- `.github/` — public contribution intake, ownership and hosted CI configuration.
+
 ## Who this is for
 
 - **AI agents and developers** get explicit repository instructions, machine-readable task and run-evidence contracts, deterministic checks and public PR coordination.
@@ -66,9 +75,9 @@ De-identifying confidential data does not automatically make it synthetic or saf
 
 **Status: pre-alpha data foundation.**
 
-One source has a metadata-only admission: DWD 10-minute extreme-wind station observations for Germany, version `v24.03`. No DWD measurement bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts.
+One source has a metadata-only admission: DWD 10-minute extreme-wind station observations for Germany, version `v24.03`. The accepted evidence is public in the [machine-readable manifest](manifests/dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03.json) and [source review](docs/source-reviews/dwd-extreme-wind-v24.03.md).
 
-This keeps the repository data-byte-free while exercising real provenance, rights and scientific-review contracts.
+No DWD measurement bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts. This keeps the repository data-byte-free while exercising real provenance, rights and scientific-review contracts.
 
 ## Quick start
 
