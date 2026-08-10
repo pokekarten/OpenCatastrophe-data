@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "hydrosheds.hydroatlas.v1",
+  "provider": "HydroSHEDS / HydroATLAS",
+  "product_name": "HydroATLAS",
+  "version_or_release": "version 1",
+  "canonical_source": "https://www.hydrosheds.org/hydroatlas",
+  "retrieved_at": "2026-08-10T01:20:00Z",
+  "retrieval_query_or_filters": "Metadata-only review of HydroATLAS version 1 and its BasinATLAS, RiverATLAS and LakeATLAS sub-datasets. No vector/database bytes were acquired.",
+  "access_class": "open",
+  "modelling_layer": "other",
+  "intended_use": "Global hydrographic and hydro-environmental reference for catchment, river-network, lake, upstream-context and cross-peril hydrology research. HydroATLAS is contextual geography/attributes and not a discharge observation, inundation footprint or catastrophe event catalogue.",
+  "raw_artifact": null,
+  "derived_artifact": null,
+  "licensing": {
+    "status": "verified",
+    "spdx_expression": "CC-BY-4.0",
+    "licence_name": "Creative Commons Attribution 4.0 International",
+    "terms_reference": "https://www.hydrosheds.org/hydroatlas",
+    "terms_reviewed_at": "2026-08-10T01:20:00Z",
+    "terms_version_or_date": "HydroATLAS version 1 product/licence page reviewed 2026-08-10",
+    "terms_content_sha256": null,
+    "commercial_use_status": "allowed",
+    "attribution_requirements": "Provide CC BY 4.0 attribution and the requested HydroATLAS/HydroSHEDS scientific citations applicable to the selected sub-dataset.",
+    "share_alike_or_derivative_requirements": "CC BY 4.0 permits adaptation without a share-alike requirement; attribution and indication of changes remain required.",
+    "notes": "The authoritative HydroATLAS page licenses the HydroATLAS database under CC BY 4.0. HydroSHEDS hosts other products with product-specific licences; this admission must not be generalized to the entire HydroSHEDS catalogue."
+  },
+  "redistribution": {
+    "status": "allowed",
+    "scope": "raw",
+    "conditions": "HydroATLAS version 1 source rights support redistribution under CC BY 4.0 with attribution. OpenCatastrophe approves metadata only and has not selected an exact BasinATLAS, RiverATLAS or LakeATLAS artifact."
+  },
+  "privacy": {
+    "personal_data_status": "none",
+    "confidential_or_proprietary_status": "none",
+    "notes": "The reviewed product is public global hydrographic geometry and aggregated hydro-environmental attributes."
+  },
+  "spatial": {
+    "crs": null,
+    "extent": "Global sub-basins, river reaches and lakes; exact geometry resolution and CRS depend on the selected HydroATLAS sub-dataset/distribution"
+  },
+  "temporal": {
+    "extent": "HydroATLAS version 1 compiled reference attributes with heterogeneous upstream source periods; not an event time series"
+  },
+  "variables_and_units": [
+    {
+      "name": "hydrographic geometry",
+      "unit": null,
+      "description": "Sub-basin polygons, river-reach lines and lake polygons in BasinATLAS, RiverATLAS and LakeATLAS respectively."
+    },
+    {
+      "name": "hydro-environmental attributes",
+      "unit": null,
+      "description": "56 variables partitioned into 281 attributes across hydrology, physiography, climate, land cover/use, soils/geology and anthropogenic-influence categories; units are attribute-specific."
+    }
+  ],
+  "transformation": null,
+  "review": {
+    "status": "approved_metadata_only",
+    "reviewed_at": "2026-08-10T01:20:00Z",
+    "reviewer": "OpenCatastrophe source audit",
+    "notes": "Metadata-only approval for HydroATLAS version 1 specifically. Future raw work must select the exact sub-dataset, level/resolution and file identity, preserve attribute definitions/units and upstream-source semantics, and avoid inheriting this licence decision to other HydroSHEDS products."
+  }
+}
