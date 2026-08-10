@@ -45,6 +45,11 @@ class AgentActionRequestTests(unittest.TestCase):
         self.assertFalse(schema["additionalProperties"])
         self.assertEqual(set(schema["required"]), REQUIRED_FIELDS)
         self.assertEqual(set(schema["properties"]), REQUIRED_FIELDS)
+        self.assertIn("scripts/validate_agent_action_request.py", schema["description"])
+        boundary = schema["$comment"]
+        for phrase in ("1.0", "exact int type", "duplicate keys", "non-finite", "single-marker"):
+            with self.subTest(boundary_phrase=phrase):
+                self.assertIn(phrase, boundary)
 
         properties = schema["properties"]
         self.assertEqual(properties["schema_version"], {"const": SCHEMA_VERSION})
@@ -83,6 +88,11 @@ class AgentActionRequestTests(unittest.TestCase):
 
     def test_rejects_bool_as_issue_number(self) -> None:
         request = dict(VALID, issue=True)
+        with self.assertRaisesRegex(RequestError, "positive integer"):
+            validate_request(request)
+
+    def test_rejects_float_as_issue_number_even_when_integral(self) -> None:
+        request = dict(VALID, issue=162.0)
         with self.assertRaisesRegex(RequestError, "positive integer"):
             validate_request(request)
 
