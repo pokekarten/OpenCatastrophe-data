@@ -16,6 +16,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 LANDSCAPE_DIR = ROOT / "landscape"
 GENERATED_MARKER = "GENERATED FILE — DO NOT EDIT DIRECTLY"
+# Keep the generated SPDX line split in this source so REUSE does not parse it as
+# a second licence declaration belonging to this Python file.
+GENERATED_SPDX_LICENSE_LINE = "SPDX-" + "License-Identifier: Apache-2.0"
 
 
 class ProjectionError(ValueError):
@@ -86,7 +89,7 @@ def render_landscape_markdown(path: Path, payload: dict[str, Any]) -> str:
     lines = [
         "<!--",
         "SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors",
-        "SPDX-License-Identifier: Apache-2.0",
+        GENERATED_SPDX_LICENSE_LINE,
         "",
         GENERATED_MARKER,
         f"Canonical source: {canonical_source}",
