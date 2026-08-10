@@ -30,6 +30,13 @@ from typing import Iterable, NamedTuple
 SECONDS_PER_DAY = 24 * 60 * 60
 PEGELONLINE_STANDARD_OFFSET = timezone(timedelta(hours=1))
 UTC = timezone.utc
+DRESDEN_HOLDOUT_WINDOW_START_UTC = datetime(2020, 1, 1, tzinfo=UTC)
+DRESDEN_HOLDOUT_WINDOW_END_UTC_EXCLUSIVE = datetime(2024, 1, 1, tzinfo=UTC)
+DRESDEN_HOLDOUT_EXPECTED_DAYS = (
+    DRESDEN_HOLDOUT_WINDOW_END_UTC_EXCLUSIVE - DRESDEN_HOLDOUT_WINDOW_START_UTC
+).days
+DRESDEN_HOLDOUT_FIRST_GLOFAS_TIMESTAMP_UTC = DRESDEN_HOLDOUT_WINDOW_START_UTC + timedelta(days=1)
+DRESDEN_HOLDOUT_LAST_GLOFAS_TIMESTAMP_UTC = DRESDEN_HOLDOUT_WINDOW_END_UTC_EXCLUSIVE
 
 
 class HydrologyWindowError(ValueError):
@@ -50,6 +57,15 @@ class ObservedDischargeWindow(NamedTuple):
     window_end_utc: datetime
     completeness: WindowCompleteness
     mean_discharge_m3s: float | None
+
+
+def dresden_holdout_glofas_timestamps() -> tuple[datetime, ...]:
+    """Return the frozen chronological GloFAS ``dis24`` labels for 2020-2023."""
+
+    return tuple(
+        DRESDEN_HOLDOUT_FIRST_GLOFAS_TIMESTAMP_UTC + timedelta(days=index)
+        for index in range(DRESDEN_HOLDOUT_EXPECTED_DAYS)
+    )
 
 
 def pegelonline_standard_time_to_utc(value: str) -> datetime:
