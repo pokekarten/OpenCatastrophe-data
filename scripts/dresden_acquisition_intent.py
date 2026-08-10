@@ -43,6 +43,7 @@ GLOFAS_HYDROLOGICAL_MODEL = "lisflood"
 GLOFAS_PRODUCT_TYPE = "consolidated"
 GLOFAS_VARIABLE = "river_discharge_in_the_last_24_hours"
 GLOFAS_GRID_DEGREES = 0.05
+SECONDS_PER_MINUTE = 60
 
 
 class AcquisitionIntentError(ValueError):
@@ -105,16 +106,24 @@ def acquisition_intent() -> dict[str, Any]:
 
 def finalize_acquisition_intent(
     *,
-    pegelonline_sampling_interval_seconds: int,
+    pegelonline_equidistance_minutes: int,
     station_latitude: float | int,
     station_longitude: float | int,
     glofas_candidate_cells: Iterable[GlofasGridCell],
 ) -> dict[str, Any]:
     """Freeze metadata-only resolution and return the executable acquisition intent.
 
+    PEGELONLINE documents ``equidistance`` in minutes. The function accepts that
+    source-native unit explicitly, converts it once to seconds for the repository
+    window utilities, and records both values in the frozen intent.
+
     The function deliberately invokes the canonical grid selector itself rather
     than accepting a caller-constructed match receipt.
     """
+
+    if type(pegelonline_equidistance_minutes) is not int or pegelonline_equidistance_minutes <= 0:
+        raise AcquisitionIntentError("PEGELONLINE equidistance_minutes must be a positive integer")
+    pegelonline_sampling_interval_seconds = pegelonline_equidistance_minutes * SECONDS_PER_MINUTE
 
     try:
         expected_source_observations_per_day = expected_observations_per_24h(
@@ -136,6 +145,7 @@ def finalize_acquisition_intent(
     plan["phase"] = "target_acquisition"
     plan["target_values_must_not_be_inspected"] = False
     plan["metadata_resolution"] = {
+        "pegelonline_equidistance_minutes": pegelonline_equidistance_minutes,
         "pegelonline_sampling_interval_seconds": pegelonline_sampling_interval_seconds,
         "expected_source_observations_per_24h": expected_source_observations_per_day,
         "station_coordinate_wgs84": {
@@ -152,6 +162,7 @@ def finalize_acquisition_intent(
     }
     plan["pegelonline"]["sampling_interval"] = {
         "status": "frozen",
+        "equidistance_minutes": pegelonline_equidistance_minutes,
         "seconds": pegelonline_sampling_interval_seconds,
         "expected_observations_per_24h": expected_source_observations_per_day,
         "source": "retrieved_series_metadata.equidistance_minutes",
