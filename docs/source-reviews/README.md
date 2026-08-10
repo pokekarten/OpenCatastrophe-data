@@ -16,5 +16,7 @@ Current accepted reviews:
 - `efehr-esrm20-european-exposure-model-v1.0.md` — supports the metadata-only EFEHR ESRM20 European Exposure Model admission.
 - `efehr-eshm20.md` — supports the metadata-only EFEHR ESHM20 earthquake-hazard admission.
 - `microsoft-globalml-building-footprints.md` — supports the metadata-only Microsoft Global ML Building Footprints exposure-geometry admission.
+- `copernicus-cems-glofas-historical.md` — supports the metadata-only CEMS GloFAS historical hydrology admission.
+- `storm-ibtracs-present-climate-v4.md` — supports the metadata-only STORM v4 synthetic tropical-cyclone event-catalogue admission.
 
 A source review never broadens the machine-readable manifest scope by itself.

@@ -75,15 +75,17 @@ De-identifying confidential data does not automatically make it synthetic or saf
 
 **Status: pre-alpha data foundation.**
 
-Five sources have metadata-only admissions across observation, hazard, modelled exposure and exposure-geometry layers:
+Seven sources have metadata-only admissions across observation, hazard/hydrology, stochastic event catalogues, modelled exposure and exposure geometry:
 
 - [DWD 10-minute extreme-wind station observations for Germany, v24.03](manifests/dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03.json), with the accepted [source review](docs/source-reviews/dwd-extreme-wind-v24.03.md), provide an observational validation route.
 - [C3S Enhanced Windstorm Service, v1.0](manifests/copernicus.c3s.european-windstorm-reanalysis.v1.0.json), with the accepted [source review](docs/source-reviews/copernicus-c3s-european-windstorm-reanalysis-v1.0.md), provides a European event-track and hazard-footprint candidate.
 - [EFEHR ESRM20 European Exposure Model, v1.0](manifests/efehr.esrm20.european-exposure-model.v1.0.json), with the accepted [source review](docs/source-reviews/efehr-esrm20-european-exposure-model-v1.0.md), provides an open European modelled building-stock exposure reference while remaining explicitly distinct from insured TIV or confidential portfolios.
 - [EFEHR 2020 European Seismic Hazard Model (ESHM20)](manifests/efehr.eshm20.json), with the accepted [source review](docs/source-reviews/efehr-eshm20.md), provides a European earthquake-hazard and reproducibility/interoperability candidate.
 - [Microsoft Global ML Building Footprints](manifests/microsoft.globalml-building-footprints.json), with the accepted [source review](docs/source-reviews/microsoft-globalml-building-footprints.md), provides a global exposure-geometry candidate with explicit rolling-distribution, model-output, height and confidence semantics.
+- [CEMS GloFAS historical river discharge and related data](manifests/copernicus.cems.glofas-historical.json), with the accepted [source review](docs/source-reviews/copernicus-cems-glofas-historical.md), provides a global modelled-hydrology candidate while keeping discharge distinct from inundation and observed gauge data.
+- [STORM IBTrACS present-climate synthetic tropical cyclone tracks, v4](manifests/storm.ibtracs.present-climate.v4.json), with the accepted [source review](docs/source-reviews/storm-ibtracs-present-climate-v4.md), provides a versioned global synthetic tropical-cyclone event-catalogue candidate without implying future-climate or footprint semantics.
 
-No admitted external dataset bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts. The repository remains data-byte-free while exercising real provenance, rights and scientific-review contracts across distinct modelling layers.
+No admitted external dataset bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts. The repository remains data-byte-free while exercising real provenance, rights and scientific-review contracts across distinct modelling layers and perils.
 
 ## Quick start
 
