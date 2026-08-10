@@ -208,7 +208,48 @@ def canonical_intent_bytes(intent: dict[str, Any]) -> bytes:
         raise AcquisitionIntentError(f"intent is not canonical JSON data: {exc}") from exc
 
 
-def acquisition_intent_sha256(intent: dict[str, Any]) -> str:
-    """Return the stable SHA-256 identity of one acquisition intent."""
+def _require_canonical_frozen_intent(intent: dict[str, Any]) -> None:
+    """Reject intent drift before a provenance identity can be issued."""
 
+    phase = intent.get("phase")
+    if phase == "metadata_resolution":
+        expected = acquisition_intent()
+    elif phase == "target_acquisition":
+        resolution = intent.get("metadata_resolution")
+        if type(resolution) is not dict:
+            raise AcquisitionIntentError("finalized intent is missing metadata_resolution")
+        station_coordinate = resolution.get("station_coordinate_wgs84")
+        grid_match = resolution.get("glofas_grid_match")
+        if type(station_coordinate) is not dict or type(grid_match) is not dict:
+            raise AcquisitionIntentError("finalized intent metadata resolution is incomplete")
+        try:
+            expected = finalize_acquisition_intent(
+                pegelonline_station_number=resolution["pegelonline_station_number"],
+                pegelonline_station_uuid=resolution["pegelonline_station_uuid"],
+                pegelonline_equidistance_minutes=resolution["pegelonline_equidistance_minutes"],
+                station_latitude=station_coordinate["latitude"],
+                station_longitude=station_coordinate["longitude"],
+                glofas_candidate_cells=[
+                    GlofasGridCell(
+                        grid_match["latitude"],
+                        grid_match["longitude"],
+                        grid_match["upstream_area_km2"],
+                    )
+                ],
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise AcquisitionIntentError("finalized intent cannot be reproduced from frozen metadata") from exc
+    else:
+        raise AcquisitionIntentError("intent phase is not a supported frozen acquisition phase")
+
+    if intent != expected:
+        raise AcquisitionIntentError("intent differs from the canonical frozen acquisition contract")
+
+
+def acquisition_intent_sha256(intent: dict[str, Any]) -> str:
+    """Return the stable SHA-256 identity of one canonical frozen acquisition intent."""
+
+    if type(intent) is not dict:
+        raise AcquisitionIntentError("intent must be an object")
+    _require_canonical_frozen_intent(intent)
     return hashlib.sha256(canonical_intent_bytes(intent)).hexdigest()
