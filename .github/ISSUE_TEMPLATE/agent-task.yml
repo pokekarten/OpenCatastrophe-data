@@ -12,7 +12,9 @@ body:
         Define one bounded task from current public repository state and authoritative public sources.
         Do not include credentials, confidential information, customer/claims/portfolio data, restricted dataset bytes, proprietary model assets, temporary access URLs, private infrastructure details, private chat/repository content, screenshots of restricted systems, or machine-local storage paths.
 
-        For implementation work, opening a draft PR is the visible work claim. Re-read current `main` and active PRs before touching a shared/single-writer surface.
+        Before claiming the task, re-read current `main`, open Issues and open Pull Requests. Do not start a competing writer on a shared/single-writer surface. For implementation work, opening an issue-scoped draft PR is the visible write claim.
+
+        Independent work discovered during execution belongs in a new linked Agent Task Issue (`Follow-up to #N`) instead of silently expanding this task.
 
   - type: textarea
     id: agent_state
@@ -40,6 +42,13 @@ body:
           dependencies: []
           next_action: <smallest coherent next action>
           hard_stop: <condition that requires stopping rather than guessing>
+          acceptance:
+            criteria:
+              - <independently checkable completion criterion>
+            commands:
+              - argv: ["python", "scripts/check_all.py"]
+                purpose: validate repository definition of done
+            evidence: []
     validations:
       required: true
 
@@ -60,6 +69,24 @@ body:
       required: true
 
   - type: textarea
+    id: coordination_claim
+    attributes:
+      label: Coordination claim
+      description: Make ownership and agent-to-agent handoff discoverable from GitHub alone.
+      placeholder: |
+        Primary write/shared surfaces:
+        - path/to/file-or-contract
+
+        Parent/predecessor issue: none
+        Blocked by: none
+        Open Issue overlap check: none found / coordinated in #...
+        Open PR overlap check: none found / coordinated in #...
+        Planned branch: agent/<issue-number>-<slug>
+        Follow-up issues: none yet
+    validations:
+      required: true
+
+  - type: textarea
     id: rights
     attributes:
       label: Rights and provenance boundary
@@ -76,7 +103,7 @@ body:
     id: acceptance
     attributes:
       label: Acceptance
-      description: Define independently checkable completion criteria, exact commands/evidence, and exact byte/admission state where relevant.
+      description: Define independently checkable completion criteria, exact commands/evidence, and exact byte/admission state where relevant. Keep this consistent with the machine-readable acceptance block above.
     validations:
       required: true
 
@@ -84,9 +111,23 @@ body:
     id: coordination
     attributes:
       label: Coordination and handoff
-      description: Record current main identity, overlapping work checked, shared/single-writer surfaces, evidence, checks, assumptions, blockers, byte state, and the next independent task.
+      description: Record current main identity, overlapping work checked, shared/single-writer surfaces, evidence, checks, assumptions, blockers, byte state, linked follow-up Issues, and the next independent task.
     validations:
       required: true
+
+  - type: checkboxes
+    id: collision_safety
+    attributes:
+      label: Collision safety and handoff
+      options:
+        - label: I checked current `main`, open Issues and open Pull Requests immediately before claiming this task.
+          required: true
+        - label: No active writer owns the same shared/single-writer surface, or the coordination is explicitly linked above.
+          required: true
+        - label: I will open a draft PR as soon as there is a coherent first implementation change and repeat the exact write/shared surfaces there.
+          required: true
+        - label: I will create a new linked Agent Task Issue for independent follow-up work rather than silently expanding this task.
+          required: true
 
   - type: checkboxes
     id: boundaries
