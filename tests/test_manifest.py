@@ -7,6 +7,7 @@ import copy
 import importlib.util
 import json
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -149,6 +150,39 @@ class ManifestTests(unittest.TestCase):
             path.write_text('{"x": NaN}', encoding="utf-8")
             with self.assertRaises(vm.ManifestError):
                 vm.load_manifest(path)
+
+    def test_validate_manifest_cli_fails_closed_with_stable_exit_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "invalid.json"
+            path.write_text('{"schema_version":"1.0.0","schema_version":"1.0.0"}', encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, "scripts/validate_manifest.py", str(path)],
+                cwd=ROOT,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+        self.assertEqual(result.returncode, 1)
+        self.assertTrue(result.stdout.startswith("BLOCKED:"), result.stdout)
+        self.assertEqual(result.stderr, "")
+
+    def test_manifest_identity_cli_matches_library_digest(self) -> None:
+        sys.path.insert(0, str(ROOT / "scripts"))
+        try:
+            import manifest_identity as module
+        finally:
+            sys.path.pop(0)
+        expected = module.manifest_sha256(self.payload)
+        result = subprocess.run(
+            [sys.executable, "scripts/manifest_identity.py", str(MANIFEST.relative_to(ROOT))],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), expected)
+        self.assertEqual(result.stderr, "")
 
     def test_manifest_identity_is_deterministic(self) -> None:
         sys.path.insert(0, str(ROOT / "scripts"))

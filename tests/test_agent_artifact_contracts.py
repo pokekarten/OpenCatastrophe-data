@@ -4,6 +4,9 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -138,6 +141,28 @@ class AgentArtifactContractTests(unittest.TestCase):
 
     def test_valid_deterministic_run(self) -> None:
         validator.validate_run(valid_run(), expected_repository=REPOSITORY)
+
+    def test_run_cli_executes_directly_and_returns_stable_pass_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "run.json"
+            path.write_text(json.dumps(valid_run()), encoding="utf-8")
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "scripts/validate_agent_artifact.py",
+                    "run",
+                    str(path),
+                    "--expected-repository",
+                    REPOSITORY,
+                ],
+                cwd=ROOT,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue(result.stdout.startswith("PASS: valid run artifact:"), result.stdout)
+        self.assertEqual(result.stderr, "")
 
     def test_pass_run_cannot_hide_blocked_validation(self) -> None:
         payload = valid_run()
