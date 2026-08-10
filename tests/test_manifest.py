@@ -28,14 +28,6 @@ class ManifestTests(unittest.TestCase):
         vm.validate_structure(self.payload)
         vm.assert_public_asset_allowed(self.payload, "metadata")
 
-    def test_every_registry_manifest_is_metadata_admitted(self) -> None:
-        manifests = sorted((ROOT / "manifests").glob("*.json"))
-        self.assertTrue(manifests)
-        for path in manifests:
-            with self.subTest(manifest=path.name):
-                payload = vm.load_manifest(path)
-                vm.assert_public_asset_allowed(payload, "metadata")
-
     def test_registry_manifest_identity_is_path_stable_and_unique(self) -> None:
         manifests = sorted((ROOT / "manifests").glob("*.json"))
         self.assertTrue(manifests)

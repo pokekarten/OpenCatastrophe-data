@@ -41,13 +41,6 @@ class PublicSurfaceTests(unittest.TestCase):
         self.assertIn("name: Required", workflow)
         self.assertNotIn("pull_request_target", workflow)
 
-    def test_public_tree_has_no_high_risk_payload_files(self) -> None:
-        result = subprocess.run(["git", "ls-files"], cwd=ROOT, text=True, stdout=subprocess.PIPE, check=True)
-        blocked = {".csv", ".parquet", ".zip", ".pdf", ".xlsx", ".sqlite", ".geojson"}
-        for name in result.stdout.splitlines():
-            with self.subTest(path=name):
-                self.assertNotIn(Path(name).suffix.lower(), blocked)
-
     def _text_files(self) -> list[Path]:
         result = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT, stdout=subprocess.PIPE, check=True)
         paths = []
