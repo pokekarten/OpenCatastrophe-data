@@ -21,5 +21,6 @@ Current accepted reviews:
 - `storm-ibtracs-present-climate-v4.md` — supports the metadata-only STORM v4 synthetic tropical-cyclone event-catalogue admission.
 - `eiopa-catastrophe-data-hub-2023.md` — supports separate metadata-only EIOPA insured-exposure and historical incurred-loss admissions; raw/derived workbook redistribution remains blocked pending exact-file rights review.
 - `google-open-buildings-v3.md` — supports the metadata-only Google Open Buildings v3 exposure-geometry admission under the selected CC BY 4.0 reuse path.
+- `gebco-global-terrain-grid-2026.md` — supports the metadata-only GEBCO_2026 global terrain/bathymetry admission.
 
 A source review never broadens the machine-readable manifest scope by itself.
