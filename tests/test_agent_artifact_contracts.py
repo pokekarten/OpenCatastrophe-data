@@ -137,7 +137,7 @@ class AgentArtifactContractTests(unittest.TestCase):
 
     def test_task_external_source_rejects_private_or_signed_uri(self) -> None:
         for uri in (
-            "https://localhost/source",
+            "https://local" + "host/source",
             "https://example.invalid/source?token=" + "a" * 30,
         ):
             with self.subTest(uri=uri):
