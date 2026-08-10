@@ -12,9 +12,17 @@ ROOT = Path(__file__).resolve().parents[1]
 USES_ENTRY_RE = re.compile(
     r"(?m)(?:^|[{,])\s*(?:-\s*)?(?:[\"']?uses[\"']?)\s*:\s*([^\s#,}]+)"
 )
+UNSUPPORTED_WORKFLOW_YAML = (
+    (re.compile(r"(?m)(?:^|\s)[&*][A-Za-z0-9_-]+"), "YAML anchors and aliases"),
+    (re.compile(r'(?m)^\s*(?:-\s*)?"[^"\n]*\\[^"\n]*"\s*:'), "escaped quoted mapping keys"),
+    (re.compile(r"(?m)^\s*\?\s+"), "explicit mapping keys"),
+)
 
 
 def _workflow_uses(workflow: str) -> list[str]:
+    for pattern, feature in UNSUPPORTED_WORKFLOW_YAML:
+        if pattern.search(workflow):
+            raise ValueError(f"workflow uses unsupported syntax for action-pin scanning: {feature}")
     return USES_ENTRY_RE.findall(workflow)
 
 
@@ -59,6 +67,18 @@ class PublicSurfaceTests(unittest.TestCase):
         for workflow in cases:
             with self.subTest(workflow=workflow):
                 self.assertEqual(_workflow_uses(workflow), [untrusted])
+
+    def test_workflow_action_scanner_rejects_ambiguous_yaml_syntax(self) -> None:
+        cases = (
+            "      - &step uses: example/action@main\n",
+            "      - *step\n",
+            '      - "u\\u0073es": example/action@main\n',
+            "      ? uses\n      : example/action@main\n",
+        )
+        for workflow in cases:
+            with self.subTest(workflow=workflow):
+                with self.assertRaises(ValueError):
+                    _workflow_uses(workflow)
 
     def test_workflow_is_read_only_and_has_stable_required_job(self) -> None:
         workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
