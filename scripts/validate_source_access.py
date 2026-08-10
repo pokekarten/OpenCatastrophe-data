@@ -6,14 +6,14 @@
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import json
-import math
 import re
 import sys
 from datetime import date
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import parse_qsl, unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -62,6 +62,9 @@ ENV_RE = re.compile(r"^[A-Z][A-Z0-9_]{2,127}$")
 OP_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 MEDIA_RE = re.compile(r"^[A-Za-z0-9.+-]+/[A-Za-z0-9.+-]+$")
 SECRET_LIKE = re.compile(r"(?i)(bearer\s+[A-Za-z0-9._-]{12,}|api[_-]?key\s*[:=]\s*\S+|password\s*[:=]\s*\S+|secret\s*[:=]\s*\S+)")
+SECRET_QUERY_KEY = re.compile(
+    r"(?i)^(?:access[_-]?token|api[_-]?key|token|password|passwd|secret|signature|sig|credential|auth(?:orization)?)$"
+)
 
 
 class SourceAccessError(ValueError):
@@ -126,9 +129,33 @@ def _https_url(value: Any, where: str, *, nullable: bool = False, root: bool = F
     if value is None and nullable:
         return None
     text = _text(value, where)
+    if any(char.isspace() for char in text):
+        raise SourceAccessError(f"{where} must not contain whitespace")
     parsed = urlsplit(text)
-    if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password:
+    try:
+        hostname = parsed.hostname
+        _ = parsed.port
+    except ValueError as exc:
+        raise SourceAccessError(f"{where} has an invalid host or port") from exc
+    if parsed.scheme != "https" or not parsed.netloc or not hostname or parsed.username or parsed.password:
         raise SourceAccessError(f"{where} must be a public https URL without embedded credentials")
+
+    host = hostname.rstrip(".").casefold()
+    if host == "localhost" or host.endswith(".localhost") or host.endswith(".local"):
+        raise SourceAccessError(f"{where} must not target a local host")
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        address = None
+    if address is not None and not address.is_global:
+        raise SourceAccessError(f"{where} must not target a non-public IP address")
+
+    for key, query_value in parse_qsl(parsed.query, keep_blank_values=True):
+        folded = key.casefold()
+        if SECRET_QUERY_KEY.fullmatch(key) or folded.startswith("x-amz-") or folded.startswith("x-goog-"):
+            raise SourceAccessError(f"{where} must not contain token/signature query parameters")
+        if SECRET_LIKE.search(query_value):
+            raise SourceAccessError(f"{where} query appears to contain secret material")
     if root and (parsed.query or parsed.fragment):
         raise SourceAccessError(f"{where} service root must not contain query or fragment")
     return text
@@ -184,16 +211,28 @@ def validate_contract(contract: Any) -> dict[str, Any]:
     _https_url(auth["registration_url"], "authentication.registration_url", nullable=True)
     if auth_mode == "none" and credential is not None:
         raise SourceAccessError("anonymous access must not declare a credential reference")
-    if auth_mode != "none" and status in {"verified_anonymous"}:
+    if auth_mode in {"api_key", "bearer_token", "basic", "oauth2", "signed_request"} and credential is None:
+        raise SourceAccessError("credential-bearing authentication must declare a symbolic credential reference")
+    if auth_mode != "none" and status == "verified_anonymous":
         raise SourceAccessError("verified_anonymous conflicts with authenticated mode")
 
     request = _exact_keys(obj["request_contract"], {"allowed_operations", "path_templates", "parameter_rules"}, "request_contract")
     operations = _unique_text_list(request["allowed_operations"], "request_contract.allowed_operations", pattern=OP_RE)
     paths = _unique_text_list(request["path_templates"], "request_contract.path_templates")
     for path in paths:
-        if not path.startswith("/") or path.startswith("//") or ".." in path.split("/"):
+        decoded = path
+        for _ in range(2):
+            decoded = unquote(decoded)
+        if (
+            not path.startswith("/")
+            or path.startswith("//")
+            or "\\" in path
+            or "\\" in decoded
+            or decoded.startswith("//")
+            or any(part in {".", ".."} for part in decoded.split("/"))
+        ):
             raise SourceAccessError("request path templates must be relative-to-service-root absolute paths without traversal")
-        if "://" in path or "?" in path or "#" in path:
+        if any(marker in path or marker in decoded for marker in ("://", "?", "#")):
             raise SourceAccessError("request path templates must not contain a URL, query or fragment")
     _text(request["parameter_rules"], "request_contract.parameter_rules")
 
@@ -214,15 +253,13 @@ def validate_contract(contract: Any) -> dict[str, Any]:
 
     rights = _exact_keys(obj["rights_and_policy"], {"dataset_rights_status", "api_terms_status", "terms_url", "commercial_automation_status", "redistribution_status", "notes"}, "rights_and_policy")
     dataset_rights = _enum(rights["dataset_rights_status"], DATASET_RIGHTS, "rights_and_policy.dataset_rights_status")
-    _enum(rights["api_terms_status"], API_TERMS, "rights_and_policy.api_terms_status")
+    api_terms = _enum(rights["api_terms_status"], API_TERMS, "rights_and_policy.api_terms_status")
     _https_url(rights["terms_url"], "rights_and_policy.terms_url", nullable=True)
     commercial = _enum(rights["commercial_automation_status"], RIGHTS_DECISIONS, "rights_and_policy.commercial_automation_status")
     redistribution = _enum(rights["redistribution_status"], RIGHTS_DECISIONS, "rights_and_policy.redistribution_status")
     _text(rights["notes"], "rights_and_policy.notes")
-    if dataset_rights in {"not_reviewed", "conflicting", "unknown"} and (commercial == "allowed" or redistribution == "allowed"):
-        raise SourceAccessError("unreviewed/conflicting/unknown rights cannot claim allowed commercial automation or redistribution")
-    if dataset_rights == "prohibited" and status not in {"restricted_by_terms", "rejected", "documented_only"}:
-        raise SourceAccessError("prohibited rights require a non-executable status")
+    if dataset_rights != "verified" and (commercial == "allowed" or redistribution == "allowed"):
+        raise SourceAccessError("non-verified dataset rights cannot claim allowed commercial automation or redistribution")
 
     probe = _exact_keys(obj["probe_contract"], {"mode", "operation", "requires_credentials", "expected_evidence"}, "probe_contract")
     probe_mode = _enum(probe["mode"], PROBE_MODES, "probe_contract.mode")
@@ -244,7 +281,27 @@ def validate_contract(contract: Any) -> dict[str, Any]:
     for index, item in enumerate(evidence):
         _text(item, f"probe_contract.expected_evidence[{index}]")
 
-    _enum(obj["implementation_decision"], IMPLEMENTATION_DECISIONS, "implementation_decision")
+    implementation = _enum(obj["implementation_decision"], IMPLEMENTATION_DECISIONS, "implementation_decision")
+
+    api_terms_cleared = api_terms in {"same_as_dataset", "separate_reviewed"}
+    automation_rights_clear = dataset_rights == "verified" and api_terms_cleared and commercial == "allowed"
+    if not automation_rights_clear:
+        if probe_mode != "none":
+            raise SourceAccessError("active probes require verified dataset rights, reviewed API terms and allowed commercial automation")
+        if implementation not in {"document_only", "do_not_automate"}:
+            raise SourceAccessError("uncleared rights/API terms require a documentation-only implementation decision")
+    if status in {"restricted_by_terms", "rejected", "deprecated"}:
+        if probe_mode != "none":
+            raise SourceAccessError(f"status {status!r} requires probe mode none")
+        if implementation not in {"document_only", "do_not_automate"}:
+            raise SourceAccessError(f"status {status!r} requires a non-executable implementation decision")
+    if status == "probe_ready" and probe_mode == "none":
+        raise SourceAccessError("probe_ready status requires an active bounded probe")
+    if implementation == "build_adapter_now" and not automation_rights_clear:
+        raise SourceAccessError("build_adapter_now requires fully cleared automation rights")
+    if implementation == "do_not_automate" and probe_mode != "none":
+        raise SourceAccessError("do_not_automate must not declare an active probe")
+
     reviewed = _text(obj["reviewed_at"], "reviewed_at")
     try:
         date.fromisoformat(reviewed)
