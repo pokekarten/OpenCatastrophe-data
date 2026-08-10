@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry of potentially useful severe-convective and hail data sources.",
+  "review_date": "2026-08-10",
+  "entries": [
+    {
+      "candidate_id": "meteoswiss.national-hail-climatology",
+      "name": "MeteoSwiss National Hail Climatology Switzerland",
+      "provider": "Federal Office of Meteorology and Climatology MeteoSwiss",
+      "categories": [
+        "hail",
+        "radar",
+        "climatology",
+        "severe_weather"
+      ],
+      "spatial_scope": "Switzerland and nearby radar-covered regions",
+      "temporal_scope": "radar hail observations from 2002 onward with operational climatology updates",
+      "resolution_or_granularity": "1 km² radar-derived POH/MESHS fields at 5-minute resolution; climatologies and HailStoRe return-period products",
+      "potential_roles": [
+        "regional_hail_climatology",
+        "hail_hazard_validation",
+        "extreme_value_method_reference"
+      ],
+      "authoritative_url": "https://www.meteoswiss.admin.ch/climate/the-climate-of-switzerland/hail-climatology.html",
+      "access_class_hint": "public_climate_service",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Radar-generation and model changes limit temporal homogeneity; distinguish radar-derived POH/MESHS fields from HailStoRe resampled synthetic-event products and do not infer trends from the short record."
+    },
+    {
+      "candidate_id": "noaa.mrms.mesh",
+      "name": "NOAA MRMS Maximum Estimated Size of Hail (MESH)",
+      "provider": "NOAA National Weather Service / National Severe Storms Laboratory",
+      "categories": [
+        "hail",
+        "radar",
+        "severe_weather",
+        "derived_product"
+      ],
+      "spatial_scope": "MRMS operational domains, including CONUS and other supported U.S. domains",
+      "temporal_scope": "operational product with versioned MRMS processing",
+      "resolution_or_granularity": "0.01 degree gridded MESH at 2-minute resolution; swath maxima available for multiple windows",
+      "potential_roles": [
+        "hail_footprint_validation",
+        "hail_intensity_proxy",
+        "severe_storm_nowcast_context"
+      ],
+      "authoritative_url": "https://vlab.noaa.gov/web/wdtd/-/maximum-estimated-size-of-hail-mes-2",
+      "access_class_hint": "public_operational_product",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Radar/model-derived hail-size estimate in millimetres, not direct ground truth; preserve known storm-structure and temperature-profile biases plus exact MRMS version/product identity."
+    }
+  ]
+}
