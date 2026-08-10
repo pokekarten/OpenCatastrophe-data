@@ -6,11 +6,29 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 
 
 class MetricInputError(ValueError):
     """Raised when a metric cannot be evaluated without ambiguous semantics."""
+
+
+def _require_finite(value: float, *, context: str) -> float:
+    if not math.isfinite(value):
+        raise MetricInputError(f"{context} must remain finite")
+    return value
+
+
+def _finite_fsum(values: Iterable[float], *, context: str) -> float:
+    try:
+        total = math.fsum(values)
+    except OverflowError as exc:
+        raise MetricInputError(f"{context} must remain finite") from exc
+    return _require_finite(total, context=context)
+
+
+def _finite_product(left: float, right: float, *, context: str) -> float:
+    return _require_finite(left * right, context=context)
 
 
 def _finite_floats(values: Sequence[float]) -> tuple[float, ...]:
@@ -18,7 +36,10 @@ def _finite_floats(values: Sequence[float]) -> tuple[float, ...]:
     for value in values:
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             raise MetricInputError("metric inputs must be finite numeric values")
-        number = float(value)
+        try:
+            number = float(value)
+        except OverflowError as exc:
+            raise MetricInputError("metric inputs must be finite numeric values") from exc
         if not math.isfinite(number):
             raise MetricInputError("metric inputs must be finite numeric values")
         converted.append(number)
@@ -47,12 +68,22 @@ def relative_mean_bias(simulated: Sequence[float], observed: Sequence[float]) ->
     observed_values = _finite_floats(observed)
 
     count = len(simulated_values)
-    mean_simulated = math.fsum(simulated_values) / count
-    mean_observed = math.fsum(observed_values) / count
+    mean_simulated = _require_finite(
+        _finite_fsum(simulated_values, context="relative mean bias simulated mean") / count,
+        context="relative mean bias simulated mean",
+    )
+    mean_observed = _require_finite(
+        _finite_fsum(observed_values, context="relative mean bias observed mean") / count,
+        context="relative mean bias observed mean",
+    )
     if mean_observed == 0.0:
         raise MetricInputError("relative mean bias requires a non-zero observed mean")
 
-    return (mean_simulated / mean_observed) - 1.0
+    ratio = _require_finite(
+        mean_simulated / mean_observed,
+        context="relative mean bias ratio",
+    )
+    return _require_finite(ratio - 1.0, context="relative mean bias result")
 
 
 def modified_kge_prime(simulated: Sequence[float], observed: Sequence[float]) -> float:
@@ -69,8 +100,8 @@ def modified_kge_prime(simulated: Sequence[float], observed: Sequence[float]) ->
     preregistered Dresden/GloFAS source review.
 
     Inputs fail closed when KGE' would be undefined: unequal lengths, fewer than
-    two pairs, non-finite/non-numeric values, zero means, or zero variance in
-    either series.
+    two pairs, non-finite/non-numeric values, zero means, zero variance, or any
+    non-finite intermediate calculation.
     """
 
     if len(simulated) != len(observed):
@@ -82,29 +113,99 @@ def modified_kge_prime(simulated: Sequence[float], observed: Sequence[float]) ->
     observed_values = _finite_floats(observed)
 
     count = len(simulated_values)
-    mean_simulated = math.fsum(simulated_values) / count
-    mean_observed = math.fsum(observed_values) / count
+    mean_simulated = _require_finite(
+        _finite_fsum(simulated_values, context="KGE' simulated mean") / count,
+        context="KGE' simulated mean",
+    )
+    mean_observed = _require_finite(
+        _finite_fsum(observed_values, context="KGE' observed mean") / count,
+        context="KGE' observed mean",
+    )
     if mean_simulated == 0.0 or mean_observed == 0.0:
         raise MetricInputError("KGE' requires non-zero means")
 
-    simulated_centered = tuple(value - mean_simulated for value in simulated_values)
-    observed_centered = tuple(value - mean_observed for value in observed_values)
-    simulated_ss = math.fsum(value * value for value in simulated_centered)
-    observed_ss = math.fsum(value * value for value in observed_centered)
+    simulated_centered = tuple(
+        _require_finite(value - mean_simulated, context="KGE' simulated centered value")
+        for value in simulated_values
+    )
+    observed_centered = tuple(
+        _require_finite(value - mean_observed, context="KGE' observed centered value")
+        for value in observed_values
+    )
+    simulated_ss = _finite_fsum(
+        (
+            _finite_product(value, value, context="KGE' simulated squared deviation")
+            for value in simulated_centered
+        ),
+        context="KGE' simulated variance sum",
+    )
+    observed_ss = _finite_fsum(
+        (
+            _finite_product(value, value, context="KGE' observed squared deviation")
+            for value in observed_centered
+        ),
+        context="KGE' observed variance sum",
+    )
     if simulated_ss == 0.0 or observed_ss == 0.0:
         raise MetricInputError("KGE' requires non-zero variance in both series")
 
-    covariance_sum = math.fsum(
-        simulated_delta * observed_delta
-        for simulated_delta, observed_delta in zip(simulated_centered, observed_centered)
+    covariance_sum = _finite_fsum(
+        (
+            _finite_product(
+                simulated_delta,
+                observed_delta,
+                context="KGE' covariance product",
+            )
+            for simulated_delta, observed_delta in zip(simulated_centered, observed_centered)
+        ),
+        context="KGE' covariance sum",
     )
-    correlation = covariance_sum / math.sqrt(simulated_ss * observed_ss)
-    beta = mean_simulated / mean_observed
-    gamma = (
-        (math.sqrt(simulated_ss) / mean_simulated)
-        / (math.sqrt(observed_ss) / mean_observed)
+    correlation_denominator_squared = _finite_product(
+        simulated_ss,
+        observed_ss,
+        context="KGE' correlation denominator",
     )
+    if correlation_denominator_squared == 0.0:
+        raise MetricInputError("KGE' correlation denominator must remain positive")
+    correlation = _require_finite(
+        covariance_sum / math.sqrt(correlation_denominator_squared),
+        context="KGE' correlation",
+    )
+    beta = _require_finite(mean_simulated / mean_observed, context="KGE' beta")
+    simulated_cv = _require_finite(
+        math.sqrt(simulated_ss) / mean_simulated,
+        context="KGE' simulated coefficient of variation",
+    )
+    observed_cv = _require_finite(
+        math.sqrt(observed_ss) / mean_observed,
+        context="KGE' observed coefficient of variation",
+    )
+    gamma = _require_finite(simulated_cv / observed_cv, context="KGE' gamma")
 
-    return 1.0 - math.sqrt(
-        (correlation - 1.0) ** 2 + (beta - 1.0) ** 2 + (gamma - 1.0) ** 2
+    correlation_residual = _require_finite(
+        correlation - 1.0,
+        context="KGE' correlation residual",
     )
+    beta_residual = _require_finite(beta - 1.0, context="KGE' beta residual")
+    gamma_residual = _require_finite(gamma - 1.0, context="KGE' gamma residual")
+    distance_squared = _finite_fsum(
+        (
+            _finite_product(
+                correlation_residual,
+                correlation_residual,
+                context="KGE' correlation residual square",
+            ),
+            _finite_product(
+                beta_residual,
+                beta_residual,
+                context="KGE' beta residual square",
+            ),
+            _finite_product(
+                gamma_residual,
+                gamma_residual,
+                context="KGE' gamma residual square",
+            ),
+        ),
+        context="KGE' distance",
+    )
+    return _require_finite(1.0 - math.sqrt(distance_squared), context="KGE' result")

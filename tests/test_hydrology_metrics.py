@@ -50,6 +50,18 @@ class RelativeMeanBiasTests(unittest.TestCase):
         with self.assertRaisesRegex(MetricInputError, "non-zero observed mean"):
             relative_mean_bias([1.0, 2.0], [-1.0, 1.0])
 
+    def test_extreme_integer_conversion_fails_closed(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "finite numeric"):
+            relative_mean_bias([10**400], [1.0])
+
+    def test_mean_accumulation_overflow_fails_closed(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "simulated mean must remain finite"):
+            relative_mean_bias([1e308, 1e308], [1.0, 1.0])
+
+    def test_ratio_overflow_fails_closed(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "ratio must remain finite"):
+            relative_mean_bias([1e308], [1e-308])
+
 
 class ModifiedKgePrimeTests(unittest.TestCase):
     def test_perfect_agreement_is_one(self) -> None:
@@ -96,6 +108,26 @@ class ModifiedKgePrimeTests(unittest.TestCase):
     def test_rejects_single_pair(self) -> None:
         with self.assertRaisesRegex(MetricInputError, "at least two"):
             modified_kge_prime([1.0], [1.0])
+
+    def test_extreme_integer_conversion_fails_closed(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "finite numeric"):
+            modified_kge_prime([10**400, 1.0], [1.0, 2.0])
+
+    def test_squared_deviation_overflow_fails_closed(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "squared deviation must remain finite"):
+            modified_kge_prime([1e308, 1.0], [1.0, 2.0])
+
+    def test_correlation_denominator_overflow_fails_closed(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "correlation denominator must remain finite"):
+            modified_kge_prime([1e150, 2e150], [1e150, 3e150])
+
+    def test_correlation_denominator_underflow_fails_closed(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "correlation denominator must remain positive"):
+            modified_kge_prime([1e-100, 2e-100], [1e-100, 3e-100])
+
+    def test_distance_component_overflow_fails_closed(self) -> None:
+        with self.assertRaisesRegex(MetricInputError, "beta residual square must remain finite"):
+            modified_kge_prime([1e100, 2e100], [1e-100, 2e-100])
 
 
 if __name__ == "__main__":
