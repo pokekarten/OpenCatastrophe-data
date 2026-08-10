@@ -13,6 +13,7 @@ from scripts import validate_manifest as manifest
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_REFERENCE_RE = re.compile(r"`(manifests/[A-Za-z0-9._-]+\.json)`")
+REVIEW_FILENAME_RE = re.compile(r"`([A-Za-z0-9._-]+\.md)`")
 
 
 class ContractConsistencyTests(unittest.TestCase):
@@ -115,6 +116,18 @@ class ContractConsistencyTests(unittest.TestCase):
                 owners.setdefault(reference, []).append(review_name)
         duplicates = {reference: names for reference, names in owners.items() if len(names) != 1}
         self.assertEqual(duplicates, {}, "each admitted manifest must have exactly one canonical source review")
+
+    def test_source_review_readme_index_matches_review_files(self) -> None:
+        review_dir = ROOT / "docs/source-reviews"
+        expected = {path.name for path in review_dir.glob("*.md") if path.name != "README.md"}
+        self.assertTrue(expected)
+        readme = (review_dir / "README.md").read_text(encoding="utf-8")
+        listed = {name for name in REVIEW_FILENAME_RE.findall(readme) if name != "README.md"}
+        self.assertEqual(
+            listed,
+            expected,
+            "docs/source-reviews/README.md must list every canonical source review exactly through its filename",
+        )
 
 
 if __name__ == "__main__":

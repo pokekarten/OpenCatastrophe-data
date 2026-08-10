@@ -9,6 +9,12 @@ This directory contains **accepted, durable source-specific review evidence** th
 
 Broad source discovery is maintained separately in `landscape/`. A landscape entry is explicitly non-admission evidence: it may preserve a useful provider/product pointer before OpenCatastrophe has a current model role, completed rights review or completed scientific review. Detailed speculative plans and unresolved research discussion still belong in GitHub Issues when enabled or in bounded PR discussion when Issues are unavailable.
 
+## Canonical facts and narrative evidence
+
+Source reviews are human-authored narrative evidence: rationale, rights interpretation, scientific semantics, limitations and references belong here. `manifests/*.json` remains authoritative for the overlapping structured admission facts and machine contract. A source review may explain a manifest but cannot silently broaden or override its machine-readable scope.
+
+Every admitted manifest must be referenced by exactly one canonical source review, and `tests/test_contract_consistency.py` also requires this README to list the complete current set of source-review files. Do not add a second independently maintained machine copy of source-review facts merely for convenience; any future machine projection of narrative metadata must declare its canonical source and have an explicit drift check.
+
 ## Admission trigger
 
 The accepted registry remains **capability-driven, not a source landscape**. A scientifically strong, well-licensed or generally useful dataset is not admitted merely because it exists or appears in `landscape/`.

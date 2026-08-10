@@ -97,6 +97,28 @@ Human and AI contributors use the same review path. A draft PR is the visible im
 
 Root `AGENTS.md` and `.github/copilot-instructions.md` provide the intentionally small repository-wide agent surface. Durable behavior belongs in schemas, validators and tests rather than duplicated instruction layers. The repository must remain usable without a specific model provider, IDE, MCP host or paid AI service.
 
+## Public projection model
+
+OpenCatastrophe uses **one semantic truth, multiple verified views**. Repeating the same facts in two independently editable files is an architectural error because it creates unresolvable authority and drift questions for humans, agents and downstream tools.
+
+Repository information therefore falls into three classes:
+
+1. **Structured canonical facts.** Versioned JSON or another explicitly declared machine contract is authoritative. Human-readable or interoperability forms are deterministic projections and carry a generated-file marker. `landscape/sources*.json` is the first enforced example; paired `sources*.md` files are generated human views.
+2. **Narrative evidence and reasoning.** Human-authored Markdown remains canonical when the content is explanation, scientific interpretation, limitations, rationale or review evidence that should not be reduced to a synthetic key/value mirror.
+3. **Hybrid records.** A narrative document may refer to structured canonical facts, but overlapping facts retain one declared authority. Current source reviews are narrative evidence bound to machine-readable admissions in `manifests/`; a review cannot broaden the manifest scope by prose alone.
+
+Generated projections obey these rules:
+
+- the canonical source is named in the generated file;
+- generation is deterministic, dependency-light and repository-owned;
+- contributors change the canonical source and regenerate rather than editing the projection;
+- CI runs the renderer in check mode and fails on missing, stale or orphaned generated files;
+- CI never silently repairs or commits generated output;
+- a new JSONL, CSV, YAML, HTML, STAC, RDLS, Oasis or other representation must state its canonical source and whether the projection is lossless or intentionally scoped;
+- no projection changes data rights, scientific status, admission status or provenance by existing in another syntax.
+
+For current landscape projections, use `python scripts/render_public_views.py --write` to regenerate and `python scripts/render_public_views.py --check` to verify parity. The central `python scripts/check_all.py` gate includes the parity check.
+
 ## Contract evolution
 
 Public schemas and profile versions are durable interfaces. Do not silently reinterpret an existing `schema_version` or `profile_version`.
@@ -133,7 +155,8 @@ Unit tests use synthetic manifests and synthetic data only. Tests should include
 - mismatch between redistribution scope and publication request;
 - incomplete review identity;
 - unsafe storage references;
-- nondeterministic manifest identity.
+- nondeterministic manifest identity;
+- drift between canonical structured facts and committed generated views.
 
 ## Evolution rule
 
