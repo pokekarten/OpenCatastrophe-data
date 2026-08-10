@@ -89,7 +89,7 @@
           {
             "if": {"properties": {"kind": {"const": "data"}}, "required": ["kind"]},
             "then": {
-              "required": ["manifest"],
+              "required": ["manifest", "sha256"],
               "properties": {"scientific_role": {"enum": ["training", "calibration", "validation", "holdout", "benchmark", "context"]}}
             }
           },
