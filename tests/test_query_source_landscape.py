@@ -118,6 +118,15 @@ class SourceLandscapeQueryTests(unittest.TestCase):
             with self.assertRaisesRegex(LandscapeQueryError, "signature query parameters"):
                 load_landscape(directory)
 
+    def test_gcs_signed_url_parameter_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            entry = self._entry("example.source")
+            entry["authoritative_url"] = "https://example.invalid/source?X-Goog-Signature=synthetic"
+            self._write_shard(directory / "sources-a.json", [entry])
+            with self.assertRaisesRegex(LandscapeQueryError, "signature query parameters"):
+                load_landscape(directory)
+
     @staticmethod
     def _entry(candidate_id: str) -> dict[str, object]:
         return {
