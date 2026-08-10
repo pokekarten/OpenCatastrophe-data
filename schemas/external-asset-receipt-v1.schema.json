@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:opencatastrophe:schema:external-asset-receipt:1.0.0",
+  "title": "OpenCatastrophe External Asset Acquisition Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "acquisition_intent_sha256",
+    "manifest",
+    "request",
+    "artifact"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "1.0.0"},
+    "acquisition_intent_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^manifests/(?!.*//)(?!.*(?:/\\.{1,2})(?:/|$))[A-Za-z0-9][A-Za-z0-9._/-]*\\.json$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exact_request", "retrieved_at"],
+      "properties": {
+        "exact_request": {
+          "type": "object",
+          "minProperties": 1
+        },
+        "retrieved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["logical_identity", "byte_size", "sha256", "storage_reference"],
+      "properties": {
+        "logical_identity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "byte_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "storage_reference": {
+          "type": "string",
+          "pattern": "^external://(?!.*//)(?!.*(?:/\\.{1,2})(?:/|$))(?!.*\\/$)[A-Za-z0-9][A-Za-z0-9._/-]*$"
+        }
+      }
+    }
+  }
+}
