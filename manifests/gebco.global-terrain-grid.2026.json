@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "gebco.global-terrain-grid.2026",
+  "provider": "General Bathymetric Chart of the Oceans (GEBCO)",
+  "product_name": "GEBCO_2026 Grid",
+  "version_or_release": "GEBCO_2026",
+  "canonical_source": "https://www.gebco.net/data-products-gridded-bathymetry-data/gebco2026-grid",
+  "retrieved_at": "2026-08-10T01:20:00Z",
+  "retrieval_query_or_filters": "Metadata-only review of the published April 2026 global terrain grid and its Type Identifier companion. No GEBCO grid bytes were acquired or committed.",
+  "access_class": "open",
+  "modelling_layer": "other",
+  "intended_use": "Global terrain and bathymetry reference for tsunami, coastal-flood, storm-surge, terrain-context and cross-peril geospatial research. The grid is an interpolated information product and is not treated as navigation data, an event catalogue or direct hazard intensity.",
+  "raw_artifact": null,
+  "derived_artifact": null,
+  "licensing": {
+    "status": "verified",
+    "spdx_expression": null,
+    "licence_name": "GEBCO Grid Terms of Use (public-domain information product with attribution conditions)",
+    "terms_reference": "https://www.gebco.net/data-products/gridded-bathymetry/terms-of-use",
+    "terms_reviewed_at": "2026-08-10T01:20:00Z",
+    "terms_version_or_date": "GEBCO terms page reviewed 2026-08-10; GEBCO_2026 published April 2026",
+    "terms_content_sha256": null,
+    "commercial_use_status": "allowed",
+    "attribution_requirements": "Acknowledge the GEBCO_2026 Grid using the provider's dataset attribution; do not imply GEBCO/IHO/IOC endorsement and do not misrepresent the grid or its source.",
+    "share_alike_or_derivative_requirements": "The reviewed GEBCO terms permit copying, publication, distribution, transmission, adaptation and commercial exploitation; no share-alike requirement is stated for the GEBCO Grid information product.",
+    "notes": "GEBCO explicitly places the Grid information product in the public domain while imposing source acknowledgement and non-endorsement/non-misrepresentation conditions. The underlying source bathymetric measurements are not distributed as part of the GEBCO Grid and are outside this admission."
+  },
+  "redistribution": {
+    "status": "allowed",
+    "scope": "raw",
+    "conditions": "The source-rights ceiling permits redistribution/adaptation of the GEBCO Grid subject to the GEBCO acknowledgement and disclaimer conditions. OpenCatastrophe approves metadata only; no exact grid artifact is identified for publication."
+  },
+  "privacy": {
+    "personal_data_status": "none",
+    "confidential_or_proprietary_status": "none",
+    "notes": "The reviewed product is a public global terrain/bathymetry information product. This assessment does not apply to underlying source survey datasets not distributed as part of the Grid."
+  },
+  "spatial": {
+    "crs": "EPSG:4326 horizontal grid; elevations are metres and GEBCO documents heterogeneous source vertical datums with an assumed mean-sea-level basis",
+    "extent": "Global ocean and land at 15 arc-second intervals; ice-surface and under-ice variants are provided for polar regions"
+  },
+  "temporal": {
+    "extent": "GEBCO_2026 publication snapshot; source measurements have heterogeneous acquisition dates and are not an event time series"
+  },
+  "variables_and_units": [
+    {
+      "name": "elevation",
+      "unit": "m",
+      "description": "Pixel-centre terrain elevation/depth in the GEBCO_2026 Grid. Resolution must not be interpreted as measurement density or local accuracy."
+    },
+    {
+      "name": "type identifier",
+      "unit": null,
+      "description": "Companion TID Grid code describing the type of source information used for each corresponding grid cell."
+    }
+  ],
+  "transformation": null,
+  "review": {
+    "status": "approved_metadata_only",
+    "reviewed_at": "2026-08-10T01:20:00Z",
+    "reviewer": "OpenCatastrophe source audit",
+    "notes": "Metadata-only engineering approval based on the authoritative GEBCO_2026 product and terms pages. No external grid bytes are admitted. Any later raw proposal must select an exact variant/file or bounded subset, record byte identities and preserve the TID/errata/vertical-datum limitations relevant to the selected asset."
+  }
+}
