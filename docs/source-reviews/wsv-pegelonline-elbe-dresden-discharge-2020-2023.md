@@ -71,7 +71,7 @@ All exact EWDS requests and returned file hashes remain outside Git until separa
 1. Resolve the Dresden WGS84 coordinate from PEGELONLINE station metadata using the immutable UUID.
 2. Consider GloFAS river cells within 0.15° of that coordinate.
 3. Require model upstream area >= 500 km².
-4. Require relative drainage-area mismatch against the authoritative Dresden value 53,096 km² to be <= 10%, consistent with the drainage-area consistency criterion documented for recent GloFAS calibration.
+4. Require relative drainage-area mismatch against the authoritative Dresden value 53,096 km² to be <= 10%. This is an OpenCatastrophe pre-registration rule informed by the explicit `<10%` real-versus-model drainage-area consistency criterion documented for GloFAS v5 calibration stations; it is not evidence that GloFAS v4 selected Dresden or any other v4 calibration station using that same threshold.
 5. Select the eligible cell with minimum absolute relative drainage-area mismatch; break an exact tie by shortest geodesic distance to the station.
 6. If no cell satisfies the rule, **fail closed**. Do not expand the radius or relax the 10% threshold after inspecting discharge values.
 
@@ -112,3 +112,4 @@ For PEGELONLINE, freeze the generated long-term download request/file, source ti
 - GloFAS historical product: `https://ewds.climate.copernicus.eu/datasets/cems-glofas-historical`
 - GloFAS v4 calibration data/matching rationale: `https://confluence.ecmwf.int/spaces/CEMS/pages/340755424/GloFAS+v4+calibration+data`
 - GloFAS v4 calibration methodology and KGE′ objective: `https://confluence.ecmwf.int/spaces/CEMS/pages/340755426/GloFAS+v4+calibration+methodology+and+parameters`
+- GloFAS v5 calibration-station drainage-area consistency criterion: `https://confluence.ecmwf.int/spaces/CEMS/pages/673567677/GloFAS+v5+calibration+data`
