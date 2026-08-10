@@ -13,6 +13,31 @@ It is **not a raw-data dump**. Its job is to make catastrophe-risk data inputs t
 
 Humans and AI agents should be able to understand every admitted source and transformation from public repository state; hidden private data stores or chat context are never normative evidence.
 
+## Agent-first by design
+
+OpenCatastrophe-data treats coding agents as first-class contributors, not as scientific or legal authorities. A fresh agent should be able to re-ground from public GitHub state, understand the repository boundary, run one deterministic definition-of-done command, make one bounded change and hand off reproducible evidence without private context or a provider-specific AI service.
+
+Durable rules live in schemas, validators, tests and accepted source reviews rather than a growing prompt/framework layer. Humans and automated contributors use the same public Issues, Pull Requests and acceptance evidence.
+
+### 60-second agent start
+
+1. Read `AGENTS.md`, this `README.md` and `ARCHITECTURE.md`; add `DATA_LICENSING.md` or `SCIENTIFIC_METHOD.md` when the task touches those boundaries.
+2. Record the current `main` commit and check current Issues and Pull Requests for overlapping work.
+3. Run `python scripts/check_all.py` before material work so the starting state is explicit.
+4. Keep the change bounded, deterministic and offline-testable; external bytes stay outside Git unless their exact public asset scope is explicitly admitted.
+5. Use a short-lived branch and a draft Pull Request as the visible work claim, then rerun the definition-of-done command and record exact evidence, assumptions and blockers before handoff.
+
+No LLM, MCP host, IDE extension, paid API or hidden service is required to validate repository-authored behavior.
+
+## Repository map
+
+- `manifests/` — accepted machine-readable source/admission records.
+- `docs/source-reviews/` — accepted source-specific rights and scientific evidence.
+- `schemas/` — versioned machine-readable contracts.
+- `scripts/` — strict validators, identity tools and repository checks.
+- `tests/` — deterministic offline regression and negative tests using synthetic inputs.
+- `.github/` — public contribution intake, ownership and hosted CI configuration.
+
 ## Who this is for
 
 - **AI agents and developers** get explicit repository instructions, machine-readable task and run-evidence contracts, deterministic checks and public PR coordination.
@@ -50,9 +75,9 @@ De-identifying confidential data does not automatically make it synthetic or saf
 
 **Status: pre-alpha data foundation.**
 
-One source has a metadata-only admission: DWD 10-minute extreme-wind station observations for Germany, version `v24.03`. No DWD measurement bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts.
+One source has a metadata-only admission: DWD 10-minute extreme-wind station observations for Germany, version `v24.03`. The accepted evidence is public in the [machine-readable manifest](manifests/dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03.json) and [source review](docs/source-reviews/dwd-extreme-wind-v24.03.md).
 
-This keeps the repository data-byte-free while exercising real provenance, rights and scientific-review contracts.
+No DWD measurement bytes or derived external dataset bytes are committed or approved as OpenCatastrophe artifacts. This keeps the repository data-byte-free while exercising real provenance, rights and scientific-review contracts.
 
 ## Quick start
 
