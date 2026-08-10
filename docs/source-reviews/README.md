@@ -9,6 +9,12 @@ This directory contains **accepted, durable source-specific review evidence** th
 
 Live candidates, research plans and speculative source evaluations belong in GitHub Issues when Issues are enabled. While the repository issue tracker is disabled, keep speculative candidate inventories out of this durable tree and open a Pull Request only once a source has enough authoritative public evidence for a bounded review/admission. This keeps the public tree from presenting planned work as accepted capability.
 
+## Admission trigger
+
+The accepted registry is **capability-driven, not a source landscape**. A scientifically strong, well-licensed or generally useful dataset is not admitted merely because it exists.
+
+Add a durable source review and manifest only when the source has a named current role that existing accepted sources cannot provide, such as a required model-consumer component, a bounded interoperability dependency, or a predeclared scientific validation input with explicit comparison semantics. Keep each admission PR to one coherent source family/use case. Candidate benchmarks, baseline geography and possible future validation counterparts stay out of the accepted tree until that concrete role exists; preserve useful research in public Issues when enabled or in a closed/deferred PR record otherwise.
+
 Current accepted reviews:
 
 - `dwd-extreme-wind-v24.03.md` — supports the metadata-only DWD extreme-wind admission.
