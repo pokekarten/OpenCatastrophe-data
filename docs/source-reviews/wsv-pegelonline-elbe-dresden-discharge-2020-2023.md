@@ -89,7 +89,7 @@ The matching rule is a project pre-registration, not a claim that CEMS itself se
 
 Compute over all valid matched days in the frozen holdout:
 
-- Kling–Gupta Efficiency (KGE), because GloFAS calibration/evaluation uses KGE-family metrics;
+- modified Kling–Gupta Efficiency (KGE′), matching the objective used in GloFAS v4 calibration/evaluation; the implementation must document the exact equation/reference and must not silently substitute the original KGE formulation;
 - Pearson correlation coefficient;
 - relative mean bias `(mean_model / mean_observed) - 1`;
 - count and fraction of valid comparison days.
@@ -111,3 +111,4 @@ For PEGELONLINE, freeze the generated long-term download request/file, source ti
 - Dresden drainage-area support: `https://www.umwelt.sachsen.de/umwelt/infosysteme/hwims/portal/web/wasserstand-pegel-501060`
 - GloFAS historical product: `https://ewds.climate.copernicus.eu/datasets/cems-glofas-historical`
 - GloFAS v4 calibration data/matching rationale: `https://confluence.ecmwf.int/spaces/CEMS/pages/340755424/GloFAS+v4+calibration+data`
+- GloFAS v4 calibration methodology and KGE′ objective: `https://confluence.ecmwf.int/spaces/CEMS/pages/340755426/GloFAS+v4+calibration+methodology+and+parameters`
