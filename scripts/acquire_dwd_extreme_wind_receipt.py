@@ -10,6 +10,7 @@ import hashlib
 import http.client
 import ipaddress
 import json
+import math
 import os
 import queue
 import socket
@@ -303,15 +304,25 @@ def _validate_product_shape(
                 timestamp = fields[time_index].strip().strip('"')
                 for index in numeric_indexes:
                     try:
-                        float(fields[index].strip().strip('"'))
+                        value = float(fields[index].strip().strip('"'))
                     except ValueError as exc:
                         raise AcquisitionError(
                             "product row contains a non-numeric declared measurement"
                         ) from exc
+                    if not math.isfinite(value):
+                        raise AcquisitionError(
+                            "product row contains a non-finite declared measurement"
+                        )
                 if station.lstrip("0") != EXPECTED_STATION_ID.lstrip("0"):
                     raise AcquisitionError("product row station does not match frozen station")
                 if len(timestamp) != 12 or not timestamp.isdigit():
                     raise AcquisitionError("product timestamp is not YYYYMMDDHHMM")
+                try:
+                    datetime.strptime(timestamp, "%Y%m%d%H%M")
+                except ValueError as exc:
+                    raise AcquisitionError(
+                        "product timestamp is not a valid calendar time"
+                    ) from exc
                 date = timestamp[:8]
                 if date < EXPECTED_BEGIN_DATE or date > EXPECTED_END_DATE:
                     raise AcquisitionError(
