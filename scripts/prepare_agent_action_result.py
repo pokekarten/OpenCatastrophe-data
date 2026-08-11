@@ -37,15 +37,19 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def find_existing_result(comments: list[dict[str, Any]], semantic_id: str, *, owner_login: str) -> int | None:
-    trusted_logins = set(TRUSTED_RESULT_LOGINS)
-    trusted_logins.add(owner_login)
+def find_existing_result(comments: list[dict[str, Any]], semantic_id: str) -> int | None:
+    """Return a matching completed result emitted by the trusted Actions reporter.
+
+    Owner-authored comments are deliberately not trusted as execution receipts:
+    authorization to request work is separate from provenance that the workflow ran.
+    """
+
     for comment in comments:
         if type(comment) is not dict:
             raise LedgerError("repository comment ledger contains a non-object item")
         user = comment.get("user")
         login = user.get("login") if type(user) is dict else None
-        if login not in trusted_logins:
+        if login not in TRUSTED_RESULT_LOGINS:
             continue
         body = comment.get("body")
         if type(body) is not str:
@@ -176,7 +180,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--run-attempt", required=True)
     parser.add_argument("--repository", required=True)
-    parser.add_argument("--owner-login", required=True)
     parser.add_argument("--github-token-env", required=True)
     return parser.parse_args(argv)
 
@@ -198,7 +201,7 @@ def main(argv: list[str] | None = None) -> int:
         semantic_id = semantic_request_id(request, args.execution_sha, args.repository)
         try:
             comments = fetch_repository_comments(args.repository, token)
-            duplicate_id = find_existing_result(comments, semantic_id, owner_login=args.owner_login)
+            duplicate_id = find_existing_result(comments, semantic_id)
             result = build_result(
                 request,
                 repository=args.repository,
