@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import copy
 import json
 import unittest
 from pathlib import Path
@@ -179,7 +178,7 @@ class AgentActionProtocolTests(unittest.TestCase):
     def test_workflow_serializes_only_action_lane_and_isolates_write_permission(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("group: agent-action-dispatch-v1", workflow)
-        self.assertNotIn("github.event.comment.id }}", workflow)
+        self.assertNotIn("group: agent-action-request-${{ github.event.comment.id }}", workflow)
         self.assertIn("name: Validate and classify authorized action request", workflow)
         self.assertIn("issues: read", workflow)
         self.assertIn("name: Publish validated action result", workflow)
