@@ -215,6 +215,18 @@ class SourceAccessContractTests(unittest.TestCase):
                 with self.assertRaises(SourceAccessError):
                     validate_contract(mutated)
 
+    def test_percent_encoded_controls_and_malformed_escapes_fail_closed(self) -> None:
+        for path in (
+            "/safe/%0d%0aX-Test:1",
+            "/safe/%00/secret",
+            "/safe/%ZZ/secret",
+        ):
+            with self.subTest(path=path):
+                contract = copy.deepcopy(self.pegel)
+                contract["request_contract"]["path_templates"] = [path]
+                with self.assertRaises(SourceAccessError):
+                    validate_contract(contract)
+
     def test_local_private_and_secret_query_urls_fail_closed(self) -> None:
         host_cases = (
             "https://" + "local" + "host/data",
