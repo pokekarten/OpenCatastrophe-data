@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:opencatastrophe:schema:agent-action-result:1.0.0",
+  "title": "OpenCatastrophe Agent Action Result v1",
+  "description": "Portable closed result receipt for the owner-authorized trusted-main Agent Action Dispatch control plane. scripts/validate_agent_action_result.py is authoritative for exact Python scalar types and cross-field checks.",
+  "$comment": "This initial result profile records request-validation/duplicate evidence only. It does not claim that sample_audit acquired external bytes or completed a scientific sample operation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "semantic_request_id",
+    "action",
+    "source_issue",
+    "source_comment_id",
+    "target_sha",
+    "dataset_id",
+    "execution_sha",
+    "run_id",
+    "run_attempt",
+    "phase",
+    "status",
+    "external_bytes_persisted",
+    "duplicate_result_comment_id",
+    "failure_class"
+  ],
+  "properties": {
+    "schema_version": {"const": "oc-action-result-v1"},
+    "semantic_request_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "action": {"enum": ["sample_audit"]},
+    "source_issue": {"type": "integer", "minimum": 1},
+    "source_comment_id": {"type": "integer", "minimum": 1},
+    "target_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "dataset_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "execution_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "run_id": {"type": "integer", "minimum": 1},
+    "run_attempt": {"type": "integer", "minimum": 1},
+    "phase": {"const": "request_validation"},
+    "status": {"enum": ["pass", "duplicate", "blocked"]},
+    "external_bytes_persisted": {"const": false},
+    "duplicate_result_comment_id": {"type": ["integer", "null"], "minimum": 1},
+    "failure_class": {"type": ["string", "null"], "enum": [null, "duplicate_request", "ledger_incomplete"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "pass"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "duplicate_result_comment_id": {"type": "null"},
+          "failure_class": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "duplicate"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "duplicate_result_comment_id": {"type": "integer", "minimum": 1},
+          "failure_class": {"const": "duplicate_request"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "blocked"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "duplicate_result_comment_id": {"type": "null"},
+          "failure_class": {"const": "ledger_incomplete"}
+        }
+      }
+    }
+  ]
+}
