@@ -293,6 +293,8 @@ def validate_contract(contract: Any) -> dict[str, Any]:
     terms_url = _https_url(rights["terms_url"], "rights_and_policy.terms_url", nullable=True)
     if api_terms == "separate_reviewed" and terms_url is None:
         raise SourceAccessError("separate_reviewed API terms require an authoritative terms_url")
+    if api_terms == "same_as_dataset" and terms_url is None:
+        raise SourceAccessError("same_as_dataset API terms require an authoritative terms_url")
     commercial = _enum(rights["commercial_automation_status"], RIGHTS_DECISIONS, "rights_and_policy.commercial_automation_status")
     redistribution = _enum(rights["redistribution_status"], RIGHTS_DECISIONS, "rights_and_policy.redistribution_status")
     _text(rights["notes"], "rights_and_policy.notes")
@@ -321,6 +323,8 @@ def validate_contract(contract: Any) -> dict[str, Any]:
     active_probe = probe_mode != "none"
     if active_probe and not evidence:
         raise SourceAccessError("active probe mode requires non-empty expected evidence")
+    if active_probe and auth_mode != "none" and credential is None:
+        raise SourceAccessError("active authenticated probe requires a symbolic credential reference")
 
     implementation = _enum(obj["implementation_decision"], IMPLEMENTATION_DECISIONS, "implementation_decision")
 
