@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "fema.usa-structures",
+  "source_ids": [
+    "fema.usa-structures"
+  ],
+  "provider": "Federal Emergency Management Agency",
+  "interface_type": "arcgis_rest",
+  "status": "documented_only",
+  "documentation_url": "https://catalog.data.gov/dataset/usa-structures-4749e",
+  "service_root": "https://services.arcgis.com/VhMjCzR3cIjEkh7L",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "catalogue",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "usa_structures_service_metadata",
+      "bounded_structure_query"
+    ],
+    "path_templates": [
+      "/arcgis/rest/services/USA_Structures/FeatureServer",
+      "/arcgis/rest/services/USA_Structures/FeatureServer/0/query"
+    ],
+    "parameter_rules": "This static contract records the currently discoverable USA Structures ArcGIS service shape only. Callers may not supply a host, arbitrary path, free-form where clause, output-field list, geometry, pagination state, headers or unrestricted query parameters. Before executable probing is enabled, a separate review must bind the ArcGIS item/service to FEMA's current authoritative USA Structures release and freeze one exact low-byte metadata or feature query with deterministic ordering and result limit."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "ArcGIS REST JSON service metadata or a future bounded feature-query response for the USA Structures building-footprint inventory.",
+    "scientific_semantics": "USA Structures is a modeled national building-footprint inventory for structures larger than 450 square feet, assembled for emergency-management and flood-mitigation use. It is not parcel, ownership, insured-value or claims truth and does not meet National Map Accuracy standards for large-scale cartographic use. Any catastrophe-risk consumer must preserve release/vintage, geometry/source lineage and attribution fields and must not infer occupancy, value, construction characteristics, completeness or structure-level insurance exposure beyond what the exact reviewed release documents."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 262144,
+    "retry_policy": "none",
+    "rate_limit_notes": "No repository-specific rate-limit assumption is made. The discoverable ArcGIS service advertises a 2000-record maximum, but this contract does not authorize pagination, bulk extraction or harvesting; any future executable operation must be separately bounded far below that ceiling.",
+    "mutability_notes": "The public catalogue and ArcGIS service are mutable discovery/access surfaces. Reproducible use must bind the exact FEMA release/vintage separately from the live service URL and record retrieval UTC, normalized request identity, trusted execution-code SHA, response byte count and SHA-256 for any future receipt."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": "https://www.usa.gov/government-works",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "The federal data catalog currently marks USA Structures as public and points to the U.S. government-works licence reference, but this slice does not establish that the discovered ArcGIS service/item is the exact current FEMA release endpoint or that separate ArcGIS/API terms permit automated commercial extraction and redistribution. Public access is therefore not converted into execution or publication permission."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-11",
+  "evidence_urls": [
+    "https://catalog.data.gov/dataset/usa-structures-4749e",
+    "https://gis-fema.hub.arcgis.com/pages/usa-structures",
+    "https://services.arcgis.com/VhMjCzR3cIjEkh7L/arcgis/rest/services/USA_Structures/FeatureServer",
+    "https://www.usa.gov/government-works"
+  ],
+  "notes": "Static access contract only. Current federal metadata identifies USA Structures as FEMA dataset FEMA-0209 and reports a 2025-04-01 data-modified timestamp; current ArcGIS discovery exposes a USA_Structures FeatureServer with JSON query support. This contract deliberately remains documented_only because the exact authoritative binding between the current FEMA release and the discovered ArcGIS item/service, plus API automation/redistribution terms, has not been independently proven. No provider bytes, source admission, scientific-fit claim or publication authorization is created."
+}
