@@ -8,44 +8,33 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKFLOW = ROOT / ".github" / "workflows" / "sync-public-views.yml"
+WORKFLOWS = ROOT / ".github" / "workflows"
+SYNC_WORKFLOW = WORKFLOWS / "sync-public-views.yml"
+CHECK_ALL = ROOT / "scripts" / "check_all.py"
 
 
 class PublicViewWorkflowSecurityTests(unittest.TestCase):
-    def test_branch_validation_is_read_only_and_check_only(self):
-        text = WORKFLOW.read_text(encoding="utf-8")
-
-        self.assertIn("permissions:\n  contents: read\n", text)
-        self.assertNotIn("contents: write", text)
-        self.assertNotIn("actions: write", text)
-        self.assertIn("persist-credentials: false", text)
-        self.assertNotIn("persist-credentials: true", text)
-
-        self.assertIn(
-            "python scripts/render_public_views.py --check --scope all",
-            text,
+    def test_branch_controlled_sync_workflow_is_not_present(self):
+        self.assertFalse(
+            SYNC_WORKFLOW.exists(),
+            "public-view generation must not be performed by a branch-controlled write workflow",
         )
-        self.assertNotIn(
-            "python scripts/render_public_views.py --write --scope all",
-            text,
-        )
-        self.assertNotIn("git push", text)
-        self.assertNotIn("gh workflow run", text)
-        self.assertNotIn("git commit", text)
 
-    def test_workflow_never_exposes_a_write_capability(self):
-        text = WORKFLOW.read_text(encoding="utf-8")
-        forbidden = (
-            "write-all",
-            "contents: write",
-            "actions: write",
-            "pull-requests: write",
-            "issues: write",
-            "id-token: write",
-        )
-        for capability in forbidden:
-            with self.subTest(capability=capability):
-                self.assertNotIn(capability, text)
+    def test_definition_of_done_checks_public_views_fail_closed(self):
+        text = CHECK_ALL.read_text(encoding="utf-8")
+        self.assertIn('"scripts/render_public_views.py", "--check"', text)
+
+    def test_any_workflow_using_renderer_is_read_only_and_check_only(self):
+        for workflow in sorted(WORKFLOWS.glob("*.yml")):
+            text = workflow.read_text(encoding="utf-8")
+            if "render_public_views.py" not in text:
+                continue
+            with self.subTest(workflow=workflow.name):
+                self.assertNotIn("contents: write", text)
+                self.assertNotIn("actions: write", text)
+                self.assertNotIn("persist-credentials: true", text)
+                self.assertNotIn("render_public_views.py --write", text)
+                self.assertIn("render_public_views.py --check", text)
 
 
 if __name__ == "__main__":
