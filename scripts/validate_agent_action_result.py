@@ -20,9 +20,18 @@ try:
         RESULT_SCHEMA_VERSION,
         SAFE_ID_RE,
         ProtocolError,
+        semantic_request_id_from_result,
     )
 except ModuleNotFoundError:  # pragma: no cover - direct script execution path
-    from agent_action_protocol import DIGEST_RE, GIT_SHA_RE, REPOSITORY_RE, RESULT_SCHEMA_VERSION, SAFE_ID_RE, ProtocolError
+    from agent_action_protocol import (
+        DIGEST_RE,
+        GIT_SHA_RE,
+        REPOSITORY_RE,
+        RESULT_SCHEMA_VERSION,
+        SAFE_ID_RE,
+        ProtocolError,
+        semantic_request_id_from_result,
+    )
 
 REQUIRED_FIELDS = {
     "schema_version", "semantic_request_id", "repository", "action",
@@ -94,6 +103,12 @@ def validate_result(result: dict[str, Any]) -> dict[str, Any]:
     dataset_id = result["dataset_id"]
     if type(dataset_id) is not str or not (1 <= len(dataset_id) <= 160) or not SAFE_ID_RE.fullmatch(dataset_id):
         raise ResultError("dataset_id is not a safe bounded identifier")
+    try:
+        expected_semantic_id = semantic_request_id_from_result(result)
+    except ProtocolError as exc:
+        raise ResultError(f"semantic request binding is invalid: {exc}") from exc
+    if result["semantic_request_id"] != expected_semantic_id:
+        raise ResultError("semantic_request_id does not match bound repository/action/dataset/target/execution fields")
 
     started = _utc_second(result["started_at"], "started_at")
     finished = _utc_second(result["finished_at"], "finished_at")
