@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "noaa.coops.water-levels",
+  "source_ids": [
+    "noaa.coops.water-levels"
+  ],
+  "provider": "NOAA Center for Operational Oceanographic Products and Services (CO-OPS)",
+  "interface_type": "rest",
+  "status": "documented_only",
+  "documentation_url": "https://api.tidesandcurrents.noaa.gov/api/prod/",
+  "service_root": "https://api.tidesandcurrents.noaa.gov",
+  "api_version": "CO-OPS Data API v1",
+  "access_scope": [
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "bounded_water_level_observations"
+    ],
+    "path_templates": [
+      "/api/prod/datagetter"
+    ],
+    "parameter_rules": "Future execution must be repository-constructed and bounded to one explicitly reviewed CO-OPS station, product=water_level, a short fixed begin_date/end_date interval, datum, time_zone, units, application identifier and format=json. Callers must not supply a host, arbitrary path, headers, station identifier, product, datum, time zone, units, date range, application value or unrestricted query parameters. This static contract intentionally does not choose those scientific parameters; they require exact source/asset review before a probe is enabled."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "NOAA CO-OPS Data API JSON response for bounded water-level observations.",
+    "scientific_semantics": "CO-OPS water-level values are station observations whose interpretation depends on the requested station, product, datum, time zone, units and provider verification/quality state. Connectivity alone does not establish a hazard event, spatial footprint, return period, modelled loss or insured loss. Any later scientific use must preserve the exact request parameters, observation timestamps, datum and provider quality/verification semantics rather than treating the values as interchangeable generic sea level."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 1048576,
+    "max_sample_bytes": 1048576,
+    "retry_policy": "bounded_backoff",
+    "rate_limit_notes": "No repository-specific request-rate assumption is made. Future execution must remain a small single-station bounded query and must not widen this contract into bulk harvesting.",
+    "mutability_notes": "Operational observations and their quality/verification state can change. Every future receipt must bind retrieval UTC, exact trusted execution-code identity, normalized request identity, response byte count and SHA-256; scientific use must separately freeze the station/product/datum/time-zone/date-range identity it actually consumes."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Public anonymous API availability is recorded separately from rights. This builder did not establish an exact NOAA CO-OPS dataset-rights, commercial-use, redistribution or API-service-terms ceiling for future response bytes, so the contract remains fail-closed and documented-only. A dedicated rights review is required before any hosted probe or repository sample is authorized."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-12",
+  "evidence_urls": [
+    "https://api.tidesandcurrents.noaa.gov/api/prod/"
+  ],
+  "notes": "Static access contract only. Issue #173 records that the NOAA CO-OPS Data API connection has previously been observed live, but that observation is not promoted here into a reusable execution receipt. No provider request, sample, external byte, workflow, adapter or admission change is introduced. The next review must resolve exact rights/API policy and freeze one scientifically meaningful station/product/datum/time-zone/date-range recipe before status can advance beyond documented_only."
+}
