@@ -31,6 +31,7 @@ jobs:
       pull-requests: read
     outputs:
       result_json: ${{ steps.prepare-result.outputs.result_json }}
+      execution_sha: ${{ steps.prepare-result.outputs.execution_sha }}
     steps:
       - name: Checkout trusted default branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -65,6 +66,7 @@ jobs:
             --repository "$OC_ACTION_REPOSITORY" \
             --owner-login "$OC_ACTION_OWNER_LOGIN" \
             --github-token-env OC_ACTION_GITHUB_TOKEN)"
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
           echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
 
   report-result:
@@ -78,10 +80,10 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - name: Checkout trusted default branch
+      - name: Checkout exact trusted execution commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.repository.default_branch }}
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
           fetch-depth: 1
           persist-credentials: false
       - name: Set up Python
