@@ -3,7 +3,7 @@
   "$id": "urn:opencatastrophe:schema:source-access:1.0.0",
   "title": "OpenCatastrophe Source Access Contract v1",
   "description": "Portable structural view of the fail-closed contract for an authoritative machine-access route. scripts/validate_source_access.py is the executable security authority for URL/IP/secret/path and cross-field constraints that JSON Schema cannot fully express. Connectivity never implies rights clearance, scientific approval or data admission.",
-  "$comment": "The executable validator additionally rejects duplicate JSON keys, non-finite values, local/private literal hosts, secret-bearing or signed query URLs, decoded path traversal/backslashes/URL smuggling, and enforces the same fail-closed rights/probe/implementation state machine below.",
+  "$comment": "The executable validator additionally rejects duplicate JSON keys, non-finite values, local/private/legacy-numeric hosts, secret-bearing or signed query URLs, decoded path traversal/backslashes/URL smuggling, and enforces the same fail-closed rights/probe/implementation state machine below.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -296,7 +296,7 @@
       }
     },
     {
-      "if": {"properties": {"status": {"enum": ["restricted_by_terms", "rejected", "deprecated"]}}, "required": ["status"]},
+      "if": {"properties": {"status": {"enum": ["documented_only", "blocked_registration", "blocked_credentials", "restricted_by_terms", "rejected", "deprecated"]}}, "required": ["status"]},
       "then": {
         "properties": {
           "probe_contract": {"properties": {"mode": {"const": "none"}, "operation": {"type": "null"}}},
@@ -307,6 +307,43 @@
     {
       "if": {"properties": {"status": {"const": "probe_ready"}}, "required": ["status"]},
       "then": {"properties": {"probe_contract": {"properties": {"mode": {"not": {"const": "none"}}}}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "verified_anonymous"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "authentication": {"properties": {"mode": {"const": "none"}}},
+          "probe_contract": {
+            "properties": {
+              "mode": {"not": {"const": "none"}},
+              "expected_evidence": {"minItems": 1}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "verified_authenticated"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "authentication": {"properties": {"mode": {"not": {"const": "none"}}}},
+          "probe_contract": {
+            "properties": {
+              "mode": {"not": {"const": "none"}},
+              "expected_evidence": {"minItems": 1}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"probe_contract": {"properties": {"mode": {"not": {"const": "none"}}}, "required": ["mode"]}},
+        "required": ["probe_contract"]
+      },
+      "then": {
+        "properties": {"probe_contract": {"properties": {"expected_evidence": {"minItems": 1}}}}
+      }
     },
     {
       "if": {"properties": {"implementation_decision": {"const": "build_adapter_now"}}, "required": ["implementation_decision"]},
