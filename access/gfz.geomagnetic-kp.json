@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "gfz.geomagnetic-kp",
+  "source_ids": [
+    "gfz.geomagnetic-kp"
+  ],
+  "provider": "GFZ Helmholtz Centre for Geosciences",
+  "interface_type": "rest",
+  "status": "probe_ready",
+  "documentation_url": "https://kp.gfz.de/en/data",
+  "service_root": "https://kp.gfz.de",
+  "api_version": null,
+  "access_scope": [
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "definitive_kp_day_json"
+    ],
+    "path_templates": [
+      "/app/json/"
+    ],
+    "parameter_rules": "The probe request is repository-constructed only: start=2024-01-01T00:00:00Z, end=2024-01-01T23:59:59Z, index=Kp and status=def. The fixed one-day historical window intentionally requests only definitive Kp values. Callers cannot supply a host, arbitrary path, headers, index, status, time range or unrestricted query parameters. Any later realtime, nowcast, alternate-index or variable-window query requires a separately reviewed bounded operation rather than widening this probe contract."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "GFZ Kp Web Service JSON response for the fixed definitive-Kp probe window.",
+    "scientific_semantics": "Kp is GFZ's planetary three-hour geomagnetic activity index derived from contributing observatories. This contract deliberately requests definitive Kp only; it does not treat nowcast values, derived ap/Ap/Cp/C9 indices, Hp indices or forecasts as equivalent. A successful probe demonstrates service connectivity and response-contract compatibility only, not scientific fitness for infrastructure-loss modelling or an immutable identity for future operational data."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 65536,
+    "retry_policy": "none",
+    "rate_limit_notes": "No repository-specific rate-limit assumption is made. This contract permits exactly one small fixed historical probe request; any broader or repeated retrieval requires a separately reviewed execution decision that rechecks current provider guidance.",
+    "mutability_notes": "GFZ distinguishes continuously updated nowcast products from definitive Kp. The probe freezes a historical definitive window and status=def; every future receipt must still bind retrieval UTC, normalized request identity, trusted execution-code SHA, response byte count and SHA-256. The DOI archive is the durable scientific dataset identity, separate from this live service route."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "same_as_dataset",
+    "terms_url": "https://doi.org/10.5880/Kp.0001",
+    "commercial_automation_status": "allowed",
+    "redistribution_status": "allowed",
+    "notes": "GFZ Data Services records the Geomagnetic Kp index under CC BY 4.0, and the GFZ Kp data page explicitly provides the Web Service API for programmatic retrieval. This records the source-service rights ceiling only. The landscape source remains not admitted, so this contract does not authorize committing future response bytes, derived samples or model inputs without exact asset/sample, provenance and repository review."
+  },
+  "probe_contract": {
+    "mode": "provider_specific",
+    "operation": "definitive_kp_day_json",
+    "requires_credentials": false,
+    "expected_evidence": [
+      "provider success status without unsafe payload logging",
+      "application/json response media type",
+      "response byte count and SHA-256",
+      "bounded fixed-window definitive-Kp response-contract validation",
+      "retrieval UTC and trusted execution-code identity",
+      "external_bytes_persisted=false"
+    ]
+  },
+  "implementation_decision": "build_later",
+  "reviewed_at": "2026-08-11",
+  "evidence_urls": [
+    "https://kp.gfz.de/en/data",
+    "https://doi.org/10.5880/Kp.0001",
+    "https://dataservices.gfz-potsdam.de/panmetaworks/showshort.php?id=escidoc%3A5216888"
+  ],
+  "notes": "Static contract only. GFZ documents programmatic JSON access using start, end, index and optional definitive-status parameters. This slice freezes one definitive Kp day before any target-value inspection and adds no adapter or live network execution. Future hosted probing must use the reviewed trusted Actions network plane and must not treat connectivity as source admission, scientific validation or publication approval."
+}
