@@ -155,8 +155,8 @@ def _public_url(value: Any, field: str) -> str:
         parsed.port
     except ValueError as exc:
         raise ManifestError(f"{field} is malformed") from exc
-    if parsed.scheme not in {"https", "http"} or not parsed.netloc:
-        raise ManifestError(f"{field} must be an absolute HTTP(S) URL")
+    if not text.startswith("https://") or parsed.scheme != "https" or not parsed.netloc:
+        raise ManifestError(f"{field} must be an absolute HTTPS URL")
     if parsed.username or parsed.password:
         raise ManifestError(f"{field} must not contain URL credentials")
     if not host:

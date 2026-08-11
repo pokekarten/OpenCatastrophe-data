@@ -141,6 +141,7 @@ class ManifestTests(unittest.TestCase):
 
     def test_private_and_signed_urls_are_rejected(self) -> None:
         for url in (
+            "http://example.org/source",
             "http://" + "127.0.0.1" + "/source",
             "https://example.org/source?token=" + "a" * 30,
             "https://user:pass@example.org/source",
@@ -149,6 +150,19 @@ class ManifestTests(unittest.TestCase):
             payload["canonical_source"] = url
             with self.subTest(url=url), self.assertRaises(vm.ManifestError):
                 vm.validate_structure(payload)
+
+    def test_manifest_url_schema_matches_https_validator_boundary(self) -> None:
+        schema = json.loads((ROOT / "schemas/dataset-manifest.schema.json").read_text(encoding="utf-8"))
+        canonical_pattern = schema["properties"]["canonical_source"]["pattern"]
+        terms_pattern = schema["properties"]["licensing"]["properties"]["terms_reference"]["pattern"]
+        for pattern in (canonical_pattern, terms_pattern):
+            self.assertIsNotNone(re.match(pattern, "https://example.org/source"))
+            self.assertIsNone(re.match(pattern, "http://example.org/source"))
+
+        payload = copy.deepcopy(self.payload)
+        payload["licensing"]["terms_reference"] = "http://example.org/terms"
+        with self.assertRaisesRegex(vm.ManifestError, "absolute HTTPS URL"):
+            vm.validate_structure(payload)
 
     def test_unknown_rights_fail_closed(self) -> None:
         payload = copy.deepcopy(self.payload)
