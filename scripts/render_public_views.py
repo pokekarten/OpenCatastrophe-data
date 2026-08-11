@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Render and verify deterministic human-readable views of canonical public data contracts."""
+"""Render and verify deterministic human-readable views of canonical repository JSON."""
 
 from __future__ import annotations
 
@@ -226,10 +226,12 @@ def check_landscape_projections(directory: Path = LANDSCAPE_DIR, *, stream: Any 
         print(f"PASS: {len(outputs)} landscape Markdown projections match canonical JSON", file=stream)
     return ok
 
+
 if __package__:
     from .structured_public_views import (
         ACCESS_DIR,
         MANIFEST_DIR,
+        SCHEMA_DIR,
         ProjectionError as StructuredProjectionError,
         check_structured_projections,
         write_structured_projections,
@@ -238,6 +240,7 @@ else:
     from structured_public_views import (
         ACCESS_DIR,
         MANIFEST_DIR,
+        SCHEMA_DIR,
         ProjectionError as StructuredProjectionError,
         check_structured_projections,
         write_structured_projections,
@@ -246,11 +249,50 @@ else:
 
 def _selected_scopes(scope: str) -> tuple[str, ...]:
     if scope == "all":
-        return ("landscape", "access", "manifests")
+        return ("landscape", "access", "manifests", "schemas")
     return (scope,)
 
 
+def _supported_repository_json_paths() -> set[Path]:
+    paths = set(LANDSCAPE_DIR.glob("sources*.json"))
+    paths.update(ACCESS_DIR.glob("*.json"))
+    paths.update(MANIFEST_DIR.glob("*.json"))
+    paths.update(SCHEMA_DIR.glob("*.json"))
+    return paths
+
+
+def _repository_json_paths() -> set[Path]:
+    return {
+        path
+        for path in ROOT.rglob("*.json")
+        if ".git" not in path.parts
+    }
+
+
+def unsupported_repository_json_paths() -> tuple[Path, ...]:
+    """Return committed-style JSON paths not covered by a Markdown projection family."""
+
+    return tuple(sorted(_repository_json_paths() - _supported_repository_json_paths()))
+
+
+def assert_repository_json_coverage() -> None:
+    unsupported = unsupported_repository_json_paths()
+    if not unsupported:
+        return
+    labels = ", ".join(
+        path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.as_posix()
+        for path in unsupported
+    )
+    raise ProjectionError(
+        "repository JSON has no configured human-readable projection family: "
+        f"{labels}"
+    )
+
+
 def write_public_projections(scope: str = "all") -> tuple[Path, ...]:
+    if scope == "all":
+        assert_repository_json_coverage()
+
     written: list[Path] = []
     for selected in _selected_scopes(scope):
         if selected == "landscape":
@@ -259,12 +301,21 @@ def write_public_projections(scope: str = "all") -> tuple[Path, ...]:
             written.extend(write_structured_projections(ACCESS_DIR, kind="access"))
         elif selected == "manifests":
             written.extend(write_structured_projections(MANIFEST_DIR, kind="manifest"))
+        elif selected == "schemas":
+            written.extend(write_structured_projections(SCHEMA_DIR, kind="schema"))
         else:
             raise ProjectionError(f"unsupported projection scope: {selected}")
     return tuple(written)
 
 
 def check_public_projections(scope: str = "all", *, stream: Any = sys.stdout) -> bool:
+    if scope == "all":
+        try:
+            assert_repository_json_coverage()
+        except ProjectionError as exc:
+            print(f"DRIFT: {exc}", file=stream)
+            return False
+
     ok = True
     for selected in _selected_scopes(scope):
         if selected == "landscape":
@@ -273,6 +324,8 @@ def check_public_projections(scope: str = "all", *, stream: Any = sys.stdout) ->
             result = check_structured_projections(ACCESS_DIR, kind="access", stream=stream)
         elif selected == "manifests":
             result = check_structured_projections(MANIFEST_DIR, kind="manifest", stream=stream)
+        elif selected == "schemas":
+            result = check_structured_projections(SCHEMA_DIR, kind="schema", stream=stream)
         else:
             raise ProjectionError(f"unsupported projection scope: {selected}")
         ok = result and ok
@@ -286,7 +339,7 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--check", action="store_true", help="Fail if committed projections differ from canonical JSON")
     parser.add_argument(
         "--scope",
-        choices=("all", "landscape", "access", "manifests"),
+        choices=("all", "landscape", "access", "manifests", "schemas"),
         default="all",
         help="Projection family to regenerate or verify (default: all)",
     )

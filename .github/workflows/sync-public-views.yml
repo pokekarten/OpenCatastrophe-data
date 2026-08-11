@@ -1,0 +1,95 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Sync generated Markdown views
+
+on:
+  push:
+    branches-ignore:
+      - main
+    paths:
+      - "**/*.json"
+      - "scripts/render_public_views.py"
+      - "scripts/structured_public_views.py"
+      - ".github/workflows/sync-public-views.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: public-view-sync-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    name: Regenerate JSON Markdown projections
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Regenerate all human-readable JSON projections
+        run: python scripts/render_public_views.py --write --scope all
+
+      - name: Reject non-generated changes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          allowed_roots = {"access", "landscape", "manifests", "schemas"}
+          marker = "GENERATED FILE — DO NOT EDIT DIRECTLY"
+          changed = subprocess.run(
+              ["git", "diff", "--name-status", "--no-renames"],
+              check=True,
+              text=True,
+              capture_output=True,
+          ).stdout.splitlines()
+
+          for line in changed:
+              status, raw = line.split("\t", 1)
+              path = Path(raw)
+              if len(path.parts) != 2 or path.parts[0] not in allowed_roots or path.suffix != ".md":
+                  print(f"BLOCKED: renderer changed non-projection path: {raw}", file=sys.stderr)
+                  raise SystemExit(1)
+              if status == "D":
+                  text = subprocess.run(
+                      ["git", "show", f"HEAD:{raw}"],
+                      check=True,
+                      text=True,
+                      capture_output=True,
+                  ).stdout
+              else:
+                  text = path.read_text(encoding="utf-8")
+              if marker not in text:
+                  print(f"BLOCKED: changed Markdown lacks generated marker: {raw}", file=sys.stderr)
+                  raise SystemExit(1)
+          PY
+
+      - name: Commit regenerated Markdown
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "Generated Markdown already current."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- access landscape manifests schemas
+          git diff --cached --check
+          git commit -m "chore: regenerate public Markdown views"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
