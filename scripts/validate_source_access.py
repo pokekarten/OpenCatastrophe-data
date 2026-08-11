@@ -13,7 +13,12 @@ import sys
 from datetime import date
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qsl, unquote, urlsplit
+from urllib.parse import parse_qsl, urlsplit
+
+try:
+    from scripts.source_access_path import PercentDecodeError, stable_percent_decode
+except ModuleNotFoundError:  # pragma: no cover - direct script execution path
+    from source_access_path import PercentDecodeError, stable_percent_decode
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -220,9 +225,10 @@ def validate_contract(contract: Any) -> dict[str, Any]:
     operations = _unique_text_list(request["allowed_operations"], "request_contract.allowed_operations", pattern=OP_RE)
     paths = _unique_text_list(request["path_templates"], "request_contract.path_templates")
     for path in paths:
-        decoded = path
-        for _ in range(2):
-            decoded = unquote(decoded)
+        try:
+            decoded = stable_percent_decode(path)
+        except PercentDecodeError as exc:
+            raise SourceAccessError("request path templates must have bounded percent-encoding") from exc
         if (
             not path.startswith("/")
             or path.startswith("//")
