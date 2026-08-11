@@ -44,7 +44,7 @@
     "provider": {"type": "string", "minLength": 1},
     "product_name": {"type": "string", "minLength": 1},
     "version_or_release": {"type": ["string", "null"]},
-    "canonical_source": {"type": "string", "format": "uri"},
+    "canonical_source": {"type": "string", "format": "uri", "pattern": "^https://"},
     "retrieved_at": {"type": "string", "format": "date-time"},
     "retrieval_query_or_filters": {"type": ["string", "null"]},
     "access_class": {
@@ -87,7 +87,7 @@
         },
         "spdx_expression": {"type": ["string", "null"]},
         "licence_name": {"type": ["string", "null"]},
-        "terms_reference": {"type": "string", "format": "uri"},
+        "terms_reference": {"type": "string", "format": "uri", "pattern": "^https://"},
         "terms_reviewed_at": {"type": "string", "format": "date-time"},
         "terms_version_or_date": {"type": ["string", "null"]},
         "terms_content_sha256": {

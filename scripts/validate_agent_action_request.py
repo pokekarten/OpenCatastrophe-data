@@ -14,7 +14,11 @@ from typing import Any
 
 MARKER = "<!-- oc-action-request-v1 -->"
 SCHEMA_VERSION = "oc-action-request-v1"
-ALLOWED_ACTIONS = {"sample_audit"}
+SAMPLE_AUDIT_ACTION = "sample_audit"
+ACQUISITION_RECEIPT_ACTION = "acquisition_receipt"
+ACQUISITION_RECEIPT_ISSUE = 162
+ACQUISITION_RECEIPT_DATASET_ID = "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"
+ALLOWED_ACTIONS = {SAMPLE_AUDIT_ACTION, ACQUISITION_RECEIPT_ACTION}
 REQUIRED_FIELDS = {
     "schema_version",
     "action",
@@ -101,6 +105,12 @@ def validate_request(request: dict[str, Any], *, expected_issue: int | None = No
         value = request[field]
         if type(value) is not str or not (1 <= len(value) <= limit) or not SAFE_ID.fullmatch(value):
             raise RequestError(f"{field} is not a safe bounded identifier")
+
+    if request["action"] == ACQUISITION_RECEIPT_ACTION:
+        if request["issue"] != ACQUISITION_RECEIPT_ISSUE:
+            raise RequestError("acquisition_receipt is restricted to issue 162")
+        if request["dataset_id"] != ACQUISITION_RECEIPT_DATASET_ID:
+            raise RequestError("acquisition_receipt is restricted to the frozen DWD dataset")
 
     return request
 
