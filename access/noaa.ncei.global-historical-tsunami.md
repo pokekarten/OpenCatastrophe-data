@@ -1,0 +1,89 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+
+GENERATED FILE — DO NOT EDIT DIRECTLY
+Canonical source: access/noaa.ncei.global-historical-tsunami.json
+Renderer: scripts/render_public_views.py
+Change the canonical JSON and run `python scripts/render_public_views.py --write`.
+-->
+
+# Access contract: `noaa.ncei.global-historical-tsunami.json`
+
+> This Markdown file is a deterministic, lossless human-readable projection of the canonical JSON file named above. The JSON remains authoritative; this projection does not change rights, admission, publication or scientific-review state.
+
+```json
+{
+  "schema_version": "1.0.0",
+  "access_id": "noaa.ncei.global-historical-tsunami",
+  "source_ids": [
+    "noaa.ncei.global-historical-tsunami"
+  ],
+  "provider": "NOAA National Centers for Environmental Information",
+  "interface_type": "arcgis_rest",
+  "status": "documented_only",
+  "documentation_url": "https://www.ncei.noaa.gov/products/natural-hazards/tsunamis-earthquakes-volcanoes/tsunamis/global-historical-data",
+  "service_root": "https://gis.ngdc.noaa.gov",
+  "api_version": "ArcGIS Server 11.5",
+  "access_scope": [
+    "metadata",
+    "catalogue",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "tsunami_events_layer_metadata",
+      "bounded_tsunami_event_query"
+    ],
+    "path_templates": [
+      "/arcgis/rest/services/web_mercator/hazards/MapServer/0",
+      "/arcgis/rest/services/web_mercator/hazards/MapServer/0/query"
+    ],
+    "parameter_rules": "This contract records the NOAA/NCEI Tsunami Events feature layer and a future repository-constructed bounded query only. Callers may not supply a host, arbitrary path, free-form SQL where clause, output-field list, geometry, spatial filter, pagination state, headers or unrestricted query parameters. Before any executable probe is enabled, a separately reviewed operation must freeze an exact small query, output fields, ordering and result limit against the authoritative layer schema."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "ArcGIS REST JSON metadata or bounded feature-query response for NOAA/NCEI Tsunami Events layer 0.",
+    "scientific_semantics": "The layer represents historical tsunami-event records from NOAA/NCEI's global historical hazards holdings. Event presence, location, cause, validity, magnitude and runup-related fields reflect a curated historical database with uneven reporting through time and geography; absence of a record is not evidence that no tsunami occurred. ArcGIS service geometry and fields are an access view and do not replace the authoritative NCEI/HazEL database identity, DOI provenance or source interpretation guidance."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 262144,
+    "retry_policy": "none",
+    "rate_limit_notes": "No repository-specific rate-limit assumption is made. The current ArcGIS layer advertises MaxRecordCount=2000, but any future probe must be far smaller and separately reviewed; this static contract does not authorize harvesting or pagination.",
+    "mutability_notes": "The ArcGIS service is a mutable access surface. Reproducible scientific use must bind retrieval UTC, exact normalized request identity, trusted execution-code SHA and response byte hash/size, while preserving the NCEI database DOI and product identity separately from the live service URL."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Current authoritative evidence establishes a public NOAA/NCEI product page and anonymous ArcGIS REST access, but this slice does not establish an exact current commercial-automation or redistribution grant for the historical tsunami database/service. Public reachability is therefore not treated as permission. Any future executable query, persisted receipt or sample-publication decision requires a separate exact rights/API-terms review."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-11",
+  "evidence_urls": [
+    "https://www.ncei.noaa.gov/products/natural-hazards/tsunamis-earthquakes-volcanoes/tsunamis/global-historical-data",
+    "https://gis.ngdc.noaa.gov/arcgis/rest/services/web_mercator/hazards/MapServer",
+    "https://gis.ngdc.noaa.gov/arcgis/rest/services/web_mercator/hazards/MapServer/0",
+    "https://doi.org/10.7289/V5PN93H7"
+  ],
+  "notes": "Static contract only. NOAA/NCEI's current ArcGIS service exposes Tsunami Events layer 0 with JSON/GeoJSON/PBF query support and a 2000-record service maximum. This file deliberately remains documented_only until exact service/data rights and bounded query semantics are independently reviewed. No external provider bytes, source admission, scientific-fit claim or publication authorization is created by this contract."
+}
+```

@@ -1,0 +1,90 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+
+GENERATED FILE — DO NOT EDIT DIRECTLY
+Canonical source: access/wsv.pegelonline.rest-v2.dresden.json
+Renderer: scripts/render_public_views.py
+Change the canonical JSON and run `python scripts/render_public_views.py --write`.
+-->
+
+# Access contract: `wsv.pegelonline.rest-v2.dresden.json`
+
+> This Markdown file is a deterministic, lossless human-readable projection of the canonical JSON file named above. The JSON remains authoritative; this projection does not change rights, admission, publication or scientific-review state.
+
+```json
+{
+  "schema_version": "1.0.0",
+  "access_id": "wsv.pegelonline.rest-v2.dresden",
+  "source_ids": [
+    "wsv.pegelonline.elbe-dresden-discharge.2020-2023"
+  ],
+  "provider": "Wasserstraßen- und Schifffahrtsverwaltung des Bundes (WSV) / PEGELONLINE",
+  "interface_type": "rest",
+  "status": "probe_ready",
+  "documentation_url": "https://pegelonline.wsv.de/webservice/dokuRestapi",
+  "service_root": "https://pegelonline.wsv.de/webservices/rest-api/v2",
+  "api_version": "v2",
+  "access_scope": [
+    "metadata"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "resolve_station_metadata"
+    ],
+    "path_templates": [
+      "/stations/{station_uuid}.json"
+    ],
+    "parameter_rules": "Only the frozen Dresden station UUID 70272185-b2b3-4178-96b8-43bea330dcae is allowed for this contract. resolve_station_metadata adds includeTimeseries=true and must not request currentMeasurement or measurement values. Callers cannot supply a host, arbitrary path, headers or unrestricted query parameters."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "PEGELONLINE REST-v2 station JSON parsed by scripts/parse_pegelonline_metadata.py.",
+    "scientific_semantics": "The metadata response must resolve station 501060 / DRESDEN / ELBE and exactly one Q / ABFLUSS_ROHDATEN series in m³/s. The existing parser rejects currentMeasurement, station drift, Q-semantic drift, non-finite coordinates and incompatible sampling intervals."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 1048576,
+    "max_sample_bytes": 1048576,
+    "retry_policy": "bounded_backoff",
+    "rate_limit_notes": "No repository-specific rate-limit assumption is made. Use one bounded metadata request for a probe and respect current provider documentation before increasing request volume.",
+    "mutability_notes": "Live station metadata can change operationally. Every accepted probe receipt must record retrieval time, response byte count and SHA-256; frozen scientific identity is reviewed separately."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "separate_reviewed",
+    "terms_url": "https://www.pegelonline.wsv.de/webservice/downloads",
+    "commercial_automation_status": "allowed",
+    "redistribution_status": "allowed",
+    "notes": "The paired source review records PEGELONLINE webservice/download data under Datenlizenz Deutschland – Zero – Version 2.0. Repository admission remains metadata-only; this contract does not authorize committing acquired measurement bytes."
+  },
+  "probe_contract": {
+    "mode": "metadata_get",
+    "operation": "resolve_station_metadata",
+    "requires_credentials": false,
+    "expected_evidence": [
+      "HTTP/provider success status without unsafe payload logging",
+      "response media type",
+      "response byte count and SHA-256",
+      "strict parser result for the frozen station/Q metadata contract",
+      "external_bytes_persisted=false"
+    ]
+  },
+  "implementation_decision": "build_adapter_now",
+  "reviewed_at": "2026-08-10",
+  "evidence_urls": [
+    "https://pegelonline.wsv.de/webservice/dokuRestapi",
+    "https://www.pegelonline.wsv.de/webservice/downloads",
+    "https://pegelonline.wsv.de/gast/hilfe"
+  ],
+  "notes": "This is the first concrete OpenCatastrophe source-access contract. It covers the already implemented metadata-only REST path, not the separate long-term target-value download. The long-term JSON acquisition route remains governed by the existing preregistered Dresden evidence workflow and requires exact byte-level acquisition receipts before use."
+}
+```

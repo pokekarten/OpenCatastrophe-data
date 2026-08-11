@@ -1,0 +1,83 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+
+GENERATED FILE — DO NOT EDIT DIRECTLY
+Canonical source: access/essl.eswd.public-subset.documented.json
+Renderer: scripts/render_public_views.py
+Change the canonical JSON and run `python scripts/render_public_views.py --write`.
+-->
+
+# Access contract: `essl.eswd.public-subset.documented.json`
+
+> This Markdown file is a deterministic, lossless human-readable projection of the canonical JSON file named above. The JSON remains authoritative; this projection does not change rights, admission, publication or scientific-review state.
+
+```json
+{
+  "schema_version": "1.0.0",
+  "access_id": "essl.eswd.public-subset.documented",
+  "source_ids": [
+    "essl.eswd"
+  ],
+  "provider": "European Severe Storms Laboratory and partner networks",
+  "interface_type": "web_portal",
+  "status": "restricted_by_terms",
+  "documentation_url": "https://www.essl.org/cms/european-severe-weather-database/",
+  "service_root": "https://www.essl.org",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_public_access_terms"
+    ],
+    "path_templates": [
+      "/cms/european-severe-weather-database/"
+    ],
+    "parameter_rules": "Documentation-only contract. Do not add automated event-data acquisition until a source-specific rights/access review establishes the exact permitted interface, purpose and redistribution boundary. No arbitrary host, path, headers or query parameters are allowed."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/html"
+    ],
+    "format": "Provider access/description page only; no event-data payload is authorized by this contract.",
+    "scientific_semantics": "ESWD contains heterogeneous severe-weather reports with quality-control levels and source provenance. Any later statistical use must preserve report type, QC level, duplication/source semantics and coverage bias."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 524288,
+    "max_sample_bytes": 524288,
+    "retry_policy": "none",
+    "rate_limit_notes": "No automated dataset probing is authorized by this documentation-only contract.",
+    "mutability_notes": "Provider access rules and public-subset availability may change; re-review authoritative terms before changing this status."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "restricted",
+    "api_terms_status": "unknown",
+    "terms_url": "https://www.essl.org/cms/european-severe-weather-database/",
+    "commercial_automation_status": "prohibited",
+    "redistribution_status": "unknown",
+    "notes": "The existing source-landscape review records that commercial use of the public ESWD data is not allowed and that broader access is agreement-based. This contract therefore documents the boundary and deliberately does not create an automated data adapter. Exact rights must be re-reviewed before any use beyond provider-permitted public access."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "do_not_automate",
+  "reviewed_at": "2026-08-10",
+  "evidence_urls": [
+    "https://www.essl.org/cms/european-severe-weather-database/"
+  ],
+  "notes": "This is intentionally a documentation-only rights/access contract. It demonstrates that 100% connector coverage does not mean bypassing provider terms: where access is legally constrained, the correct machine-readable result is a durable prohibition or review gate, not a scraper."
+}
+```

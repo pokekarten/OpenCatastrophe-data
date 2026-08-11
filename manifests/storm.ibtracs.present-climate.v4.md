@@ -1,0 +1,69 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+
+GENERATED FILE — DO NOT EDIT DIRECTLY
+Canonical source: manifests/storm.ibtracs.present-climate.v4.json
+Renderer: scripts/render_public_views.py
+Change the canonical JSON and run `python scripts/render_public_views.py --write`.
+-->
+
+# Dataset manifest: `storm.ibtracs.present-climate.v4.json`
+
+> This Markdown file is a deterministic, lossless human-readable projection of the canonical JSON file named above. The JSON remains authoritative; this projection does not change rights, admission, publication or scientific-review state.
+
+```json
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "storm.ibtracs.present-climate.v4",
+  "provider": "4TU.ResearchData / Vrije Universiteit Amsterdam",
+  "product_name": "STORM IBTrACS present climate synthetic tropical cyclone tracks",
+  "version_or_release": "v4",
+  "canonical_source": "https://doi.org/10.4121/12706085.v4",
+  "retrieved_at": "2026-08-10T01:04:00Z",
+  "retrieval_query_or_filters": "Metadata-only review of version 4. No STORM dataset files were acquired. Any future raw proposal must select exact v4 assets and independently record their byte identities.",
+  "access_class": "open",
+  "modelling_layer": "event_catalogue",
+  "intended_use": "Global synthetic tropical-cyclone event-catalogue candidate for transparent event/year semantics, frequency/track validation and input to separately reviewed hazard transformations. The present-climate synthetic tracks are not observed historical events, future-climate projections, building-level wind footprints, vulnerability functions or insured-loss outputs.",
+  "raw_artifact": null,
+  "derived_artifact": null,
+  "licensing": {
+    "status": "verified",
+    "spdx_expression": "CC0-1.0",
+    "licence_name": "Creative Commons Zero v1.0 Universal",
+    "terms_reference": "https://research.vu.nl/en/datasets/storm-ibtracs-present-climate-synthetic-tropical-cyclone-tracks-6/",
+    "terms_reviewed_at": "2026-08-10T01:04:00Z",
+    "terms_version_or_date": "STORM IBTrACS version 4 public dataset record reviewed 2026-08-10",
+    "terms_content_sha256": null,
+    "commercial_use_status": "allowed",
+    "attribution_requirements": "The v4 record identifies CC0-1.0. OpenCatastrophe nevertheless requires scientific citation of the versioned dataset and associated publication as provenance practice.",
+    "share_alike_or_derivative_requirements": "No share-alike requirement is recorded for the CC0-1.0 dataset release.",
+    "notes": "The public institutional v4 record identifies the dataset access licence as Creative Commons Zero v1.0 Universal. This review is version-specific and does not generalize rights to unrelated STORM inputs, software or other datasets. This is an engineering rights assessment, not legal advice."
+  },
+  "redistribution": {
+    "status": "allowed",
+    "scope": "raw",
+    "conditions": "Source rights can support raw sharing under the recorded CC0-1.0 release. OpenCatastrophe currently approves metadata only; no exact v4 file has been selected, acquired, hashed or approved for Git publication."
+  },
+  "privacy": {
+    "personal_data_status": "none",
+    "confidential_or_proprietary_status": "none",
+    "notes": "The reviewed product is a public synthetic tropical-cyclone track dataset, not a person-, customer-, policy-, claims- or portfolio-level dataset."
+  },
+  "spatial": {
+    "crs": null,
+    "extent": "Global tropical-cyclone basins represented by the STORM v4 product; exact coordinate and basin semantics must be taken from the selected v4 files"
+  },
+  "temporal": {
+    "extent": "10,000 synthetic years representing present-climate conditions; synthetic year identifiers are model output rather than calendar projections"
+  },
+  "variables_and_units": [],
+  "transformation": null,
+  "review": {
+    "status": "approved_metadata_only",
+    "reviewed_at": "2026-08-10T01:04:00Z",
+    "reviewer": "OpenCatastrophe source audit",
+    "notes": "Metadata-only engineering approval for DOI 10.4121/12706085.v4 based on the public v4 dataset record and associated peer-reviewed method description. Raw/derived publication remains blocked until exact v4 file identity, byte hashes and file-level scientific semantics are independently pinned and reviewed."
+  }
+}
+```

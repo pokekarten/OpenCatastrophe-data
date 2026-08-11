@@ -1,0 +1,95 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+
+GENERATED FILE — DO NOT EDIT DIRECTLY
+Canonical source: access/dwd.cdc.extreme-wind.http-file.json
+Renderer: scripts/render_public_views.py
+Change the canonical JSON and run `python scripts/render_public_views.py --write`.
+-->
+
+# Access contract: `dwd.cdc.extreme-wind.http-file.json`
+
+> This Markdown file is a deterministic, lossless human-readable projection of the canonical JSON file named above. The JSON remains authoritative; this projection does not change rights, admission, publication or scientific-review state.
+
+```json
+{
+  "schema_version": "1.0.0",
+  "access_id": "dwd.cdc.extreme-wind.http-file",
+  "source_ids": [
+    "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"
+  ],
+  "provider": "Deutscher Wetterdienst (DWD) / Climate Data Center",
+  "interface_type": "http_file",
+  "status": "probe_ready",
+  "documentation_url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/",
+  "service_root": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind",
+  "api_version": "v24.03 dataset description; exact raw file identity remains file-specific",
+  "access_scope": [
+    "metadata",
+    "sample",
+    "bulk"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_historical_directory",
+      "fetch_exact_historical_file",
+      "fetch_metadata_file"
+    ],
+    "path_templates": [
+      "/historical/",
+      "/meta_data/"
+    ],
+    "parameter_rules": "This is a file/directory interface, not REST. A future adapter must resolve exact provider filenames from the trusted DWD directory, reject arbitrary hosts and traversal, prefer the versioned quality-controlled historical class for frozen research, and bind each selected file to retrieval time, byte count and SHA-256 before use."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/zip",
+      "text/html",
+      "text/plain"
+    ],
+    "format": "Provider directory metadata plus exact historical ZIP or metadata files selected by a reviewed bounded acquisition intent.",
+    "scientific_semantics": "Historical, recent, now and meta_data are distinct operational classes. Historical files are the preferred first reproducible research subset; recent/now data must not be silently mixed into a frozen historical reference. Timestamp and station/instrument metadata semantics from the source review remain mandatory."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 60,
+    "max_probe_bytes": 1048576,
+    "max_sample_bytes": 52428800,
+    "retry_policy": "bounded_backoff",
+    "rate_limit_notes": "No repository-specific request-rate assumption is made. Directory inspection and file acquisition must remain bounded and respect current DWD Open Data operational guidance.",
+    "mutability_notes": "Directory contents can change and dataset-level v24.03 is not a substitute for exact raw-byte identity. Every acquired file requires exact filename/time coverage, retrieval time, byte count and SHA-256."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "same_as_dataset",
+    "terms_url": "https://opendata.dwd.de/climate_environment/CDC/Terms_of_use.pdf",
+    "commercial_automation_status": "allowed",
+    "redistribution_status": "allowed",
+    "notes": "The admitted source review records CC BY 4.0 for this DWD CDC product and allows commercial reuse/redistribution subject to attribution and change indication. OpenCatastrophe still requires an exact asset-specific review before any raw bytes are published in Git."
+  },
+  "probe_contract": {
+    "mode": "provider_specific",
+    "operation": "inspect_historical_directory",
+    "requires_credentials": false,
+    "expected_evidence": [
+      "bounded provider directory response metadata",
+      "resolved exact candidate filename without downloading unbounded data",
+      "retrieval timestamp",
+      "external_bytes_persisted=false"
+    ]
+  },
+  "implementation_decision": "build_later",
+  "reviewed_at": "2026-08-10",
+  "evidence_urls": [
+    "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/",
+    "https://opendata.dwd.de/climate_environment/CDC/Terms_of_use.pdf"
+  ],
+  "notes": "This contract intentionally models authoritative machine-readable HTTP file access rather than inventing a REST API. It proves the source-access abstraction covers non-API providers while preserving the existing metadata-only admission boundary."
+}
+```

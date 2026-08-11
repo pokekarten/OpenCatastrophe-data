@@ -1,0 +1,90 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+
+GENERATED FILE — DO NOT EDIT DIRECTLY
+Canonical source: manifests/copernicus.cems.glofas-historical.json
+Renderer: scripts/render_public_views.py
+Change the canonical JSON and run `python scripts/render_public_views.py --write`.
+-->
+
+# Dataset manifest: `copernicus.cems.glofas-historical.json`
+
+> This Markdown file is a deterministic, lossless human-readable projection of the canonical JSON file named above. The JSON remains authoritative; this projection does not change rights, admission, publication or scientific-review state.
+
+```json
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "copernicus.cems.glofas-historical",
+  "provider": "Copernicus Emergency Management Service (CEMS) / European Commission Joint Research Centre",
+  "product_name": "River discharge and related historical data from the Global Flood Awareness System (GloFAS)",
+  "version_or_release": null,
+  "canonical_source": "https://ewds.climate.copernicus.eu/datasets/cems-glofas-historical",
+  "retrieved_at": "2026-08-10T01:04:00Z",
+  "retrieval_query_or_filters": "Metadata-only review of DOI 10.24381/cds.a4fdd6b9. No EWDS request was submitted and no data files were acquired. The catalogue is rolling; a future raw proposal must freeze the complete request, returned files and byte hashes.",
+  "access_class": "registration_required",
+  "modelling_layer": "hazard",
+  "intended_use": "Global/regional modelled hydrological-history source for river-discharge research, transparent event-detection experiments and comparison with independently admitted flood/hydraulic products. Discharge and related hydrological variables are not direct gauge observations, inundation depth/extent, vulnerability, insured loss or a stochastic event set.",
+  "raw_artifact": null,
+  "derived_artifact": null,
+  "licensing": {
+    "status": "verified",
+    "spdx_expression": null,
+    "licence_name": "CEMS-FLOODS datasets licence (rev. 1)",
+    "terms_reference": "https://cds.climate.copernicus.eu/licences/cems-floods",
+    "terms_reviewed_at": "2026-08-10T01:04:00Z",
+    "terms_version_or_date": "CEMS-FLOODS datasets licence rev. 1; reviewed 2026-08-10",
+    "terms_content_sha256": null,
+    "commercial_use_status": "allowed",
+    "attribution_requirements": "When distributing CEMS EFAS/GloFAS data, identify the source using the CEMS notice required by the licence; when data are adapted or modified, use the corresponding modified-information notice or a materially equivalent notice.",
+    "share_alike_or_derivative_requirements": "The CEMS-FLOODS licence permits adaptation, modification and combination; no share-alike requirement is recorded. Required source/modification notices and all other licence conditions still apply.",
+    "notes": "The reviewed historical GloFAS catalogue entry points to the CEMS-FLOODS licence. The licence permits reproduction, distribution, public communication, adaptation, modification and combination. Some other CEMS data can be restricted, so rights are not generalized beyond this exact catalogue entry. This is an engineering rights assessment, not legal advice."
+  },
+  "redistribution": {
+    "status": "allowed",
+    "scope": "raw",
+    "conditions": "Source rights can support redistribution of the covered GloFAS product under the CEMS-FLOODS licence and its required notices. OpenCatastrophe currently approves metadata only; no exact EWDS request or returned artifact has been selected, acquired, hashed or approved for Git publication."
+  },
+  "privacy": {
+    "personal_data_status": "none",
+    "confidential_or_proprietary_status": "none",
+    "notes": "The reviewed product is a publicly catalogued gridded hydrological model-data product, not a person-, customer-, policy-, claims- or portfolio-level dataset."
+  },
+  "spatial": {
+    "crs": null,
+    "extent": "Global GloFAS domain; exact grid, CRS and selected sub-area must be taken from the exact retrieval request and returned metadata"
+  },
+  "temporal": {
+    "extent": "Historical/rolling daily hydrological time series; exact requested date range and applicable system/version must be frozen per acquisition"
+  },
+  "variables_and_units": [
+    {
+      "name": "river discharge in the last 24 hours",
+      "unit": "m3 s-1",
+      "description": "Modelled volume rate of river flow for the GloFAS grid; not a direct river-gauge observation."
+    },
+    {
+      "name": "runoff water equivalent",
+      "unit": "kg m-2",
+      "description": "Modelled surface plus subsurface runoff water equivalent."
+    },
+    {
+      "name": "snow depth water equivalent",
+      "unit": "kg m-2",
+      "description": "Modelled water-equivalent mass associated with snow."
+    },
+    {
+      "name": "soil wetness index",
+      "unit": "dimensionless",
+      "description": "Modelled root-zone soil wetness index."
+    }
+  ],
+  "transformation": null,
+  "review": {
+    "status": "approved_metadata_only",
+    "reviewed_at": "2026-08-10T01:04:00Z",
+    "reviewer": "OpenCatastrophe source audit",
+    "notes": "Metadata-only engineering approval based on the exact EWDS GloFAS historical catalogue entry and CEMS-FLOODS datasets licence. Raw/derived publication remains blocked until the retrieval request, returned files, byte hashes, version/grid/time semantics, known issues and required notices are independently pinned and reviewed."
+  }
+}
+```
