@@ -53,7 +53,12 @@ STATUSES = {
     "documented_only", "probe_ready", "verified_anonymous", "verified_authenticated",
     "blocked_registration", "blocked_credentials", "restricted_by_terms", "deprecated", "rejected",
 }
+NONEXECUTABLE_STATUSES = {
+    "documented_only", "blocked_registration", "blocked_credentials",
+    "restricted_by_terms", "deprecated", "rejected",
+}
 AUTH_MODES = {"none", "api_key", "bearer_token", "basic", "oauth2", "provider_account", "signed_request", "other"}
+CREDENTIAL_AUTH_MODES = {"api_key", "bearer_token", "basic", "oauth2", "signed_request"}
 ACCESS_SCOPES = {"metadata", "catalogue", "sample", "bulk", "realtime", "other"}
 IMPLEMENTATION_DECISIONS = {"build_adapter_now", "document_only", "build_later", "do_not_automate"}
 DATASET_RIGHTS = {"verified", "not_reviewed", "conflicting", "restricted", "prohibited", "unknown"}
@@ -66,6 +71,7 @@ SOURCE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 ENV_RE = re.compile(r"^[A-Z][A-Z0-9_]{2,127}$")
 OP_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 MEDIA_RE = re.compile(r"^[A-Za-z0-9.+-]+/[A-Za-z0-9.+-]+$")
+NUMERIC_HOST_PART_RE = re.compile(r"^(?:0[xX][0-9A-Fa-f]+|[0-9]+)$")
 SECRET_LIKE = re.compile(r"(?i)(bearer\s+[A-Za-z0-9._-]{12,}|api[_-]?key\s*[:=]\s*\S+|password\s*[:=]\s*\S+|secret\s*[:=]\s*\S+)")
 SECRET_QUERY_KEY = re.compile(
     r"(?i)^(?:access[_-]?token|api[_-]?key|token|password|passwd|secret|signature|sig|credential|auth(?:orization)?)$"
@@ -130,6 +136,30 @@ def _enum(value: Any, allowed: set[str], where: str) -> str:
     return text
 
 
+def _ambiguous_numeric_host(host: str) -> bool:
+    """Reject legacy numeric IPv4 spellings before socket resolution can reinterpret them."""
+
+    if ":" in host:
+        return False
+    parts = host.split(".")
+    if not parts or not all(NUMERIC_HOST_PART_RE.fullmatch(part) for part in parts):
+        return False
+    if len(parts) != 4:
+        return True
+    for part in parts:
+        if part.lower().startswith("0x"):
+            return True
+        if len(part) > 1 and part.startswith("0"):
+            return True
+        try:
+            value = int(part, 10)
+        except ValueError:
+            return True
+        if not 0 <= value <= 255:
+            return True
+    return False
+
+
 def _https_url(value: Any, where: str, *, nullable: bool = False, root: bool = False) -> str | None:
     if value is None and nullable:
         return None
@@ -148,6 +178,8 @@ def _https_url(value: Any, where: str, *, nullable: bool = False, root: bool = F
     host = hostname.rstrip(".").casefold()
     if host == "localhost" or host.endswith(".localhost") or host.endswith(".local"):
         raise SourceAccessError(f"{where} must not target a local host")
+    if _ambiguous_numeric_host(host):
+        raise SourceAccessError(f"{where} must not use an ambiguous numeric host")
     try:
         address = ipaddress.ip_address(host)
     except ValueError:
@@ -216,10 +248,8 @@ def validate_contract(contract: Any) -> dict[str, Any]:
     _https_url(auth["registration_url"], "authentication.registration_url", nullable=True)
     if auth_mode == "none" and credential is not None:
         raise SourceAccessError("anonymous access must not declare a credential reference")
-    if auth_mode in {"api_key", "bearer_token", "basic", "oauth2", "signed_request"} and credential is None:
+    if auth_mode in CREDENTIAL_AUTH_MODES and credential is None:
         raise SourceAccessError("credential-bearing authentication must declare a symbolic credential reference")
-    if auth_mode != "none" and status == "verified_anonymous":
-        raise SourceAccessError("verified_anonymous conflicts with authenticated mode")
 
     request = _exact_keys(obj["request_contract"], {"allowed_operations", "path_templates", "parameter_rules"}, "request_contract")
     operations = _unique_text_list(request["allowed_operations"], "request_contract.allowed_operations", pattern=OP_RE)
@@ -288,26 +318,44 @@ def validate_contract(contract: Any) -> dict[str, Any]:
         raise SourceAccessError("probe_contract.expected_evidence must be an array")
     for index, item in enumerate(evidence):
         _text(item, f"probe_contract.expected_evidence[{index}]")
+    active_probe = probe_mode != "none"
+    if active_probe and not evidence:
+        raise SourceAccessError("active probe mode requires non-empty expected evidence")
 
     implementation = _enum(obj["implementation_decision"], IMPLEMENTATION_DECISIONS, "implementation_decision")
+
+    # Verification status is evidence, not decoration. A documentation/blocked
+    # state cannot carry an active probe, and verified states require the probe
+    # shape that justifies their claim.
+    if status in NONEXECUTABLE_STATUSES:
+        if active_probe:
+            raise SourceAccessError(f"status {status!r} requires probe mode none")
+        if implementation not in {"document_only", "do_not_automate"}:
+            raise SourceAccessError(f"status {status!r} requires a non-executable implementation decision")
+    elif status == "probe_ready":
+        if not active_probe:
+            raise SourceAccessError("probe_ready status requires an active bounded probe")
+    elif status == "verified_anonymous":
+        if auth_mode != "none":
+            raise SourceAccessError("verified_anonymous requires anonymous authentication mode")
+        if not active_probe or not evidence:
+            raise SourceAccessError("verified_anonymous requires an active probe with expected evidence")
+    elif status == "verified_authenticated":
+        if auth_mode == "none":
+            raise SourceAccessError("verified_authenticated requires authenticated access")
+        if not active_probe or not evidence:
+            raise SourceAccessError("verified_authenticated requires an active probe with expected evidence")
 
     api_terms_cleared = api_terms in {"same_as_dataset", "separate_reviewed"}
     automation_rights_clear = dataset_rights == "verified" and api_terms_cleared and commercial == "allowed"
     if not automation_rights_clear:
-        if probe_mode != "none":
+        if active_probe:
             raise SourceAccessError("active probes require verified dataset rights, reviewed API terms and allowed commercial automation")
         if implementation not in {"document_only", "do_not_automate"}:
             raise SourceAccessError("uncleared rights/API terms require a documentation-only implementation decision")
-    if status in {"restricted_by_terms", "rejected", "deprecated"}:
-        if probe_mode != "none":
-            raise SourceAccessError(f"status {status!r} requires probe mode none")
-        if implementation not in {"document_only", "do_not_automate"}:
-            raise SourceAccessError(f"status {status!r} requires a non-executable implementation decision")
-    if status == "probe_ready" and probe_mode == "none":
-        raise SourceAccessError("probe_ready status requires an active bounded probe")
     if implementation == "build_adapter_now" and not automation_rights_clear:
         raise SourceAccessError("build_adapter_now requires fully cleared automation rights")
-    if implementation == "do_not_automate" and probe_mode != "none":
+    if implementation == "do_not_automate" and active_probe:
         raise SourceAccessError("do_not_automate must not declare an active probe")
 
     reviewed = _text(obj["reviewed_at"], "reviewed_at")
