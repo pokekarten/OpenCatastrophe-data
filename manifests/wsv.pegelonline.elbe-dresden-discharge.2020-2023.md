@@ -10,7 +10,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 # Dataset manifest: `wsv.pegelonline.elbe-dresden-discharge.2020-2023.json`
 
-> This Markdown file is a deterministic human-readable projection of the canonical JSON file named above. The JSON remains authoritative; this view does not change rights, admission, scientific meaning or execution authority.
+> This Markdown file is a deterministic human-readable projection of the canonical JSON file named above. The JSON remains authoritative; this view does not change rights, admission, scientific meaning, validation semantics or execution authority.
 
 **Schema version:** 1.0.0
 
