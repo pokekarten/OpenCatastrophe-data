@@ -28,7 +28,6 @@ jobs:
     permissions:
       contents: read
       issues: read
-      pull-requests: read
     outputs:
       result_json: ${{ steps.prepare-result.outputs.result_json }}
       execution_sha: ${{ steps.prepare-result.outputs.execution_sha }}
@@ -78,7 +77,6 @@ jobs:
     permissions:
       contents: read
       issues: write
-      pull-requests: write
     steps:
       - name: Checkout exact trusted execution commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
