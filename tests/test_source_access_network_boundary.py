@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import unittest
 from pathlib import Path
 
@@ -64,6 +65,16 @@ class SourceAccessNetworkBoundaryTests(unittest.TestCase):
         contract["request_contract"]["path_templates"] = ["/safe/%ff"]
         with self.assertRaisesRegex(SourceAccessError, "bounded percent-encoding"):
             validate_contract(contract)
+
+    def test_portable_schema_mirrors_endpoint_state_boundaries(self) -> None:
+        schema = json.loads(
+            (ROOT / "schemas" / "source-access-v1.schema.json").read_text(encoding="utf-8")
+        )
+        self.assertIn("\\x21-\\x7E", schema["$defs"]["httpsUrl"]["pattern"])
+        rules = json.dumps(schema["allOf"], sort_keys=True)
+        self.assertIn("service_root", rules)
+        self.assertIn("ftp_or_ftps", rules)
+        self.assertIn("build_adapter_now", rules)
 
 
 if __name__ == "__main__":
