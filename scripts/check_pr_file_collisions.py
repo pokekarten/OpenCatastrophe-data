@@ -30,6 +30,7 @@ from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 
 API_VERSION = "2026-03-10"
+PUBLIC_GITHUB_API_ORIGIN = "https://api.github.com"
 PER_PAGE = 100
 MAX_OPEN_PR_PAGES = 100
 MAX_PR_FILE_PAGES = 30  # GitHub documents a hard maximum of 3,000 PR files.
@@ -55,14 +56,30 @@ def require_repository(value: Any) -> str:
 
 
 def require_api_url(value: Any) -> str:
-    """Require an HTTPS GitHub API base URL and remove a trailing slash."""
+    """Require the canonical public GitHub API origin before sending credentials."""
 
     if type(value) is not str or value != value.strip() or not value:
         raise CollisionCheckError("GitHub API URL must be a non-empty trimmed string")
-    parsed = urlparse(value)
-    if parsed.scheme != "https" or not parsed.netloc or parsed.query or parsed.fragment:
-        raise CollisionCheckError("GitHub API URL must be an HTTPS base URL without query/fragment")
-    return value.rstrip("/")
+    try:
+        parsed = urlparse(value)
+        port = parsed.port
+    except ValueError as exc:
+        raise CollisionCheckError("GitHub API URL is malformed") from exc
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname != "api.github.com"
+        or parsed.username is not None
+        or parsed.password is not None
+        or port is not None
+        or parsed.path not in {"", "/"}
+        or parsed.params
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise CollisionCheckError(
+            f"GitHub API URL must be the canonical public origin {PUBLIC_GITHUB_API_ORIGIN}"
+        )
+    return PUBLIC_GITHUB_API_ORIGIN
 
 
 def read_event_pull_request_number(path: Path) -> int:
