@@ -63,6 +63,18 @@ class SourceAccessFailClosedStateTests(unittest.TestCase):
         with self.assertRaisesRegex(SourceAccessError, "requires non-empty expected evidence"):
             validate_contract(contract)
 
+    def test_active_authenticated_probe_requires_symbolic_credential(self) -> None:
+        contract = self.mutated()
+        contract["authentication"] = {
+            "mode": "provider_account",
+            "credential_reference": None,
+            "registration_url": "https://example.org/register",
+            "secret_in_repository": False,
+        }
+        contract["probe_contract"]["requires_credentials"] = True
+        with self.assertRaisesRegex(SourceAccessError, "active authenticated probe requires a symbolic credential reference"):
+            validate_contract(contract)
+
     def test_legacy_numeric_loopback_spellings_fail_closed(self) -> None:
         for host in ("2130706433", "127.1", "0177.0.0.1", "0x7f000001"):
             with self.subTest(host=host):
@@ -91,6 +103,7 @@ class SourceAccessFailClosedStateTests(unittest.TestCase):
             "verified_anonymous",
             "verified_authenticated",
             "expected_evidence",
+            "credential_reference",
         ):
             self.assertIn(marker, serialized)
 
