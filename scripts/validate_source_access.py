@@ -260,7 +260,9 @@ def validate_contract(contract: Any) -> dict[str, Any]:
     rights = _exact_keys(obj["rights_and_policy"], {"dataset_rights_status", "api_terms_status", "terms_url", "commercial_automation_status", "redistribution_status", "notes"}, "rights_and_policy")
     dataset_rights = _enum(rights["dataset_rights_status"], DATASET_RIGHTS, "rights_and_policy.dataset_rights_status")
     api_terms = _enum(rights["api_terms_status"], API_TERMS, "rights_and_policy.api_terms_status")
-    _https_url(rights["terms_url"], "rights_and_policy.terms_url", nullable=True)
+    terms_url = _https_url(rights["terms_url"], "rights_and_policy.terms_url", nullable=True)
+    if api_terms == "separate_reviewed" and terms_url is None:
+        raise SourceAccessError("separate_reviewed API terms require an authoritative terms_url")
     commercial = _enum(rights["commercial_automation_status"], RIGHTS_DECISIONS, "rights_and_policy.commercial_automation_status")
     redistribution = _enum(rights["redistribution_status"], RIGHTS_DECISIONS, "rights_and_policy.redistribution_status")
     _text(rights["notes"], "rights_and_policy.notes")
