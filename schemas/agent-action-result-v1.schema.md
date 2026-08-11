@@ -24,7 +24,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 ## Required
 
@@ -94,9 +94,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
-**Maxlength:** `160`
+**Max length:** `160`
 
 **Pattern:** ^\[A-Za-z0-9\]\[A-Za-z0-9._:-\]\*$
 
@@ -150,7 +150,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -194,7 +194,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - duplicate_request
 - ledger_incomplete
 
-## Allof
+## All of
 
 ### Item 1
 

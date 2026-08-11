@@ -22,7 +22,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 ## Required
 
@@ -104,7 +104,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - string
 - null
 
-**Maxlength:** `512`
+**Max length:** `512`
 
 ### Last modified
 
@@ -113,7 +113,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - string
 - null
 
-**Maxlength:** `512`
+**Max length:** `512`
 
 ### Etag
 
@@ -122,7 +122,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - string
 - null
 
-**Maxlength:** `512`
+**Max length:** `512`
 
 ### Archive member count
 
@@ -144,9 +144,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
-**Maxlength:** `512`
+**Max length:** `512`
 
 **Pattern:** (^\|/)produkt_extrema_wind_\[^/\]+\\.txt$
 

@@ -20,7 +20,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 ## $defs
 
@@ -28,7 +28,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -84,7 +84,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 **Pattern:** ^\[A-Za-z0-9\]\[A-Za-z0-9._-\]\*$
 
@@ -92,13 +92,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ### Product name
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ### Version or release
 
@@ -157,11 +157,11 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ### Raw artifact
 
-#### Anyof
+#### Any of
 
 ##### Item 1
 
@@ -174,7 +174,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ### Derived artifact
 
-#### Anyof
+#### Any of
 
 ##### Item 1
 
@@ -189,7 +189,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -289,7 +289,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -331,7 +331,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -374,7 +374,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - object
 - null
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Properties
 
@@ -399,7 +399,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - object
 - null
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Properties
 
@@ -418,7 +418,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 ##### Required
 
@@ -431,7 +431,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ###### Unit
 
@@ -454,7 +454,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - object
 - null
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -467,19 +467,19 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ##### Config identity
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ### Review
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 

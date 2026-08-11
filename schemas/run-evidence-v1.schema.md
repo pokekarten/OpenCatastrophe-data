@@ -22,7 +22,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 ## Required
 
@@ -44,7 +44,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -57,25 +57,25 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** array
 
-**Minitems:** `1`
+**Min items:** `1`
 
 ###### Items
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ##### Purpose
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ##### Cwd
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 **Pattern:** ^(?\!/)(?\!\[A-Za-z\]:\[\\\\/\])(?\!.\*\\\\)(?\!.\*(?:^\|/)\\.\{1,2\}(?:/\|$))(?\!.\*//)\[^\\x00\]+$
 
@@ -91,11 +91,11 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Pattern:** ^\[a-f0-9\]\{40\}$
 
-### Relativepath
+### Relative path
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 **Pattern:** ^(?\!/)(?\!\[A-Za-z\]:\[\\\\/\])(?\!.\*\\\\)(?\!.\*(?:^\|/)\\.\{1,2\}(?:/\|$))(?\!.\*//)\[^\\x00\]+$
 
@@ -121,7 +121,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -153,7 +153,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -168,7 +168,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** array
 
-**Minitems:** `1`
+**Min items:** `1`
 
 ###### Items
 
@@ -194,7 +194,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 ##### Required
 
@@ -208,19 +208,19 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ###### Kind
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ###### Identity
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ###### Sha256
 
@@ -230,7 +230,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ###### Not
 
@@ -238,13 +238,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ### Randomness
 
-#### Oneof
+#### One of
 
 ##### Item 1
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 ###### Required
 
@@ -260,7 +260,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 ###### Required
 
@@ -281,31 +281,31 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ###### Implementation
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ###### Seed material
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ###### Stream identity
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ###### Draw protocol
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 
 ### Outputs
@@ -316,7 +316,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 ##### Required
 
@@ -345,19 +345,19 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ### Validation
 
 **Type:** array
 
-**Minitems:** `1`
+**Min items:** `1`
 
 #### Items
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 ##### Required
 
@@ -370,7 +370,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ###### Status
 
@@ -385,7 +385,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ### Status
 
@@ -404,7 +404,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 ##### Required
 
@@ -418,7 +418,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ###### Evidence class
 
@@ -433,13 +433,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** array
 
-**Uniqueitems:** `true`
+**Unique items:** `true`
 
 ###### Items
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ### Limitations
 
@@ -449,13 +449,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ### Environment
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -469,19 +469,19 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ##### Architecture
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ##### Runtime
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ##### Dependency lock sha256
 
@@ -491,7 +491,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Properties
 
@@ -499,7 +499,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ##### Loss stage
 
@@ -516,19 +516,19 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ##### Valuation basis
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ##### Model view
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ### Interoperability
 
@@ -538,7 +538,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 ##### Required
 
@@ -554,13 +554,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ###### Version
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ###### Role
 
@@ -586,7 +586,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ###### Comparison mode
 
@@ -601,15 +601,15 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** array
 
-**Uniqueitems:** `true`
+**Unique items:** `true`
 
 ###### Items
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
-##### Allof
+##### All of
 
 ###### Item 1
 
@@ -631,7 +631,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ###### Evidence
 
-**Minitems:** `1`
+**Min items:** `1`
 
 ###### Version
 
@@ -640,7 +640,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Const:** latest
 
 
-## Allof
+## All of
 
 ### Item 1
 

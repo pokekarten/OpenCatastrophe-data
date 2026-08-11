@@ -24,7 +24,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 ## Required
 
@@ -51,15 +51,15 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ## $defs
 
-### Httpsurl
+### Https url
 
 **Type:** string
 
 **Pattern:** ^https://(?\!\[^/?\#\]\*@)(?\!localhost(?:\[:/\]\|$))(?\!127\\.)(?\!10\\.)(?\!192\\.168\\.)(?\!169\\.254\\.)\[\\x21-\\x7E\]+$
 
-### Nullablehttpsurl
+### Nullable https url
 
-#### Anyof
+#### Any of
 
 ##### Item 1
 
@@ -70,7 +70,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Type:** null
 
 
-### Nonblank
+### Non blank
 
 **Type:** string
 
@@ -92,9 +92,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** array
 
-**Minitems:** `1`
+**Min items:** `1`
 
-**Uniqueitems:** `true`
+**Unique items:** `true`
 
 #### Items
 
@@ -163,9 +163,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** array
 
-**Minitems:** `1`
+**Min items:** `1`
 
-**Uniqueitems:** `true`
+**Unique items:** `true`
 
 #### Items
 
@@ -184,7 +184,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -227,7 +227,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Const:** `false`
 
-#### Allof
+#### All of
 
 ##### Item 1
 
@@ -286,7 +286,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -300,9 +300,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** array
 
-**Minitems:** `1`
+**Min items:** `1`
 
-**Uniqueitems:** `true`
+**Unique items:** `true`
 
 ###### Items
 
@@ -314,9 +314,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** array
 
-**Minitems:** `1`
+**Min items:** `1`
 
-**Uniqueitems:** `true`
+**Unique items:** `true`
 
 ###### Items
 
@@ -332,7 +332,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -346,9 +346,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** array
 
-**Minitems:** `1`
+**Min items:** `1`
 
-**Uniqueitems:** `true`
+**Unique items:** `true`
 
 ###### Items
 
@@ -368,7 +368,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -426,7 +426,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -493,7 +493,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **$ref:** \#/$defs/nonBlank
 
-#### Allof
+#### All of
 
 ##### Item 1
 
@@ -544,7 +544,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -609,9 +609,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** array
 
-**Minitems:** `1`
+**Min items:** `1`
 
-**Uniqueitems:** `true`
+**Unique items:** `true`
 
 #### Items
 
@@ -621,7 +621,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **$ref:** \#/$defs/nonBlank
 
-## Allof
+## All of
 
 ### Item 1
 
@@ -889,7 +889,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ###### Expected evidence
 
-**Minitems:** `1`
+**Min items:** `1`
 
 ### Item 7
 
@@ -931,7 +931,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ###### Expected evidence
 
-**Minitems:** `1`
+**Min items:** `1`
 
 ### Item 8
 
@@ -971,7 +971,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ###### Expected evidence
 
-**Minitems:** `1`
+**Min items:** `1`
 
 ### Item 9
 

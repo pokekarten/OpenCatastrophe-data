@@ -24,7 +24,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 ## Required
 
@@ -35,7 +35,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ## $defs
 
-### Nonblanktext
+### Non blank text
 
 **Type:** string
 
@@ -45,7 +45,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** object
 
-**Additionalproperties:** `false`
+**Additional properties:** `false`
 
 #### Required
 
@@ -85,13 +85,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** array
 
-**Minitems:** `1`
+**Min items:** `1`
 
 ###### Items
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ##### Spatial scope
 
@@ -109,13 +109,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** array
 
-**Minitems:** `1`
+**Min items:** `1`
 
 ###### Items
 
 **Type:** string
 
-**Minlength:** `1`
+**Min length:** `1`
 
 ##### Authoritative url
 
@@ -171,7 +171,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Type:** array
 
-**Minitems:** `1`
+**Min items:** `1`
 
 #### Items
 
