@@ -15,6 +15,7 @@ RESULT_SCHEMA_VERSION = "oc-action-result-v1"
 GIT_SHA_RE = re.compile(r"^[a-f0-9]{40}$")
 DIGEST_RE = re.compile(r"^[a-f0-9]{64}$")
 SAFE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")
+REPOSITORY_RE = re.compile(r"^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$")
 TRUSTED_RESULT_LOGINS = {"github-actions[bot]"}
 
 
@@ -22,16 +23,18 @@ class ProtocolError(ValueError):
     """Raised when durable action protocol state is invalid."""
 
 
-def semantic_request_id(request: dict[str, Any], execution_sha: str) -> str:
+def semantic_request_id(request: dict[str, Any], execution_sha: str, repository: str) -> str:
     """Return the cross-thread semantic identity of one trusted execution request.
 
     Transport-only fields such as source issue and requester are intentionally
-    excluded. The trusted execution-code SHA is included so a post-merge protocol
-    change starts a new semantic execution state instead of reusing stale evidence.
+    excluded. Repository and trusted execution-code SHA are included so receipts
+    cannot be reused across repositories or materially different protocol code.
     """
 
     if type(execution_sha) is not str or not GIT_SHA_RE.fullmatch(execution_sha):
         raise ProtocolError("execution_sha must be a lowercase 40-character Git commit SHA")
+    if type(repository) is not str or not REPOSITORY_RE.fullmatch(repository):
+        raise ProtocolError("repository must be canonical owner/name")
     for field in ("schema_version", "action", "target_sha", "dataset_id"):
         if field not in request:
             raise ProtocolError(f"request missing semantic field: {field}")
@@ -41,6 +44,7 @@ def semantic_request_id(request: dict[str, Any], execution_sha: str) -> str:
         "dataset_id": request["dataset_id"],
         "target_sha": request["target_sha"],
         "execution_sha": execution_sha,
+        "repository": repository,
     }
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")
     return hashlib.sha256(encoded).hexdigest()
