@@ -139,36 +139,46 @@ class AgentActionProtocolTests(unittest.TestCase):
         with self.assertRaisesRegex(ResultError, "must be boolean"):
             validate_result(type_confused)
 
-    def test_cross_thread_dedup_accepts_only_trusted_valid_results(self) -> None:
+    def test_cross_thread_dedup_accepts_only_actions_bot_results(self) -> None:
         result = result_for()
         semantic_id = result["semantic_request_id"]
         comments = [
-            {"id": 10, "body": canonical_result_comment(result), "user": {"login": "untrusted-user"}},
+            {"id": 9, "body": canonical_result_comment(result), "user": {"login": "untrusted-user"}},
+            {"id": 10, "body": canonical_result_comment(result), "user": {"login": "pokekarten"}},
             {"id": 11, "body": canonical_result_comment(result), "user": {"login": "github-actions[bot]"}},
         ]
-        self.assertEqual(find_existing_result(comments, semantic_id, owner_login="pokekarten"), 11)
+        self.assertEqual(find_existing_result(comments, semantic_id), 11)
+
+    def test_owner_authored_result_cannot_satisfy_execution_ledger(self) -> None:
+        result = result_for()
+        self.assertIsNone(
+            find_existing_result(
+                [{"id": 10, "body": canonical_result_comment(result), "user": {"login": "pokekarten"}}],
+                result["semantic_request_id"],
+            )
+        )
 
     def test_semantically_forged_trusted_result_fails_closed(self) -> None:
         result = result_for()
         forged = dict(result, dataset_id="other.dataset")
         comments = [{"id": 11, "body": canonical_result_comment(forged), "user": {"login": "github-actions[bot]"}}]
         with self.assertRaisesRegex(LedgerError, "fails result validation"):
-            find_existing_result(comments, result["semantic_request_id"], owner_login="pokekarten")
+            find_existing_result(comments, result["semantic_request_id"])
 
-    def test_malformed_trusted_result_fails_closed_but_untrusted_lookalike_is_ignored(self) -> None:
+    def test_malformed_trusted_result_fails_closed_but_nonbot_lookalike_is_ignored(self) -> None:
         malformed = RESULT_MARKER + "\n{not-json}"
-        self.assertIsNone(
-            find_existing_result(
-                [{"id": 10, "body": malformed, "user": {"login": "untrusted-user"}}],
-                "a" * 64,
-                owner_login="pokekarten",
-            )
-        )
+        for login in ("untrusted-user", "pokekarten"):
+            with self.subTest(login=login):
+                self.assertIsNone(
+                    find_existing_result(
+                        [{"id": 10, "body": malformed, "user": {"login": login}}],
+                        "a" * 64,
+                    )
+                )
         with self.assertRaises(LedgerError):
             find_existing_result(
                 [{"id": 11, "body": malformed, "user": {"login": "github-actions[bot]"}}],
                 "a" * 64,
-                owner_login="pokekarten",
             )
 
     def test_repository_comment_ledger_reads_until_short_page(self) -> None:
@@ -228,15 +238,20 @@ class AgentActionProtocolTests(unittest.TestCase):
                 opener=opener,
             )
 
-    def test_workflow_serializes_only_action_lane_and_uses_minimal_issue_permissions(self) -> None:
+    def test_workflow_isolates_untrusted_comments_and_uses_minimal_issue_permissions(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("group: agent-action-dispatch-v1", workflow)
-        self.assertNotIn("group: agent-action-request-${{ github.event.comment.id }}", workflow)
+        self.assertIn("'authorized-v1' || github.event.comment.id", workflow)
+        self.assertIn("github.event.comment.user.login == github.event.repository.owner.login", workflow)
+        self.assertIn("github.event.comment.author_association == 'OWNER'", workflow)
+        self.assertIn("contains(github.event.comment.body, '<!-- oc-action-request-v1 -->')", workflow)
+        self.assertNotIn("group: agent-action-dispatch-v1\n", workflow)
         self.assertIn("name: Validate and classify authorized action request", workflow)
         self.assertEqual(workflow.count("issues: read"), 1)
         self.assertIn("name: Publish validated action result", workflow)
         self.assertEqual(workflow.count("issues: write"), 1)
         self.assertNotIn("pull-requests:", workflow)
+        self.assertNotIn("OC_ACTION_OWNER_LOGIN", workflow)
+        self.assertNotIn("--owner-login", workflow)
         self.assertIn("execution_sha: ${{ steps.prepare-result.outputs.execution_sha }}", workflow)
         self.assertIn("ref: ${{ needs.validate-request.outputs.execution_sha }}", workflow)
         self.assertIn("python scripts/post_agent_action_result.py", workflow)
