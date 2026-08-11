@@ -11,7 +11,10 @@ import os
 import sys
 from typing import Any
 
-from agent_action_protocol import DIGEST_RE, GIT_SHA_RE, RESULT_SCHEMA_VERSION, SAFE_ID_RE, ProtocolError
+try:
+    from scripts.agent_action_protocol import DIGEST_RE, GIT_SHA_RE, RESULT_SCHEMA_VERSION, SAFE_ID_RE, ProtocolError
+except ModuleNotFoundError:  # pragma: no cover - direct script execution path
+    from agent_action_protocol import DIGEST_RE, GIT_SHA_RE, RESULT_SCHEMA_VERSION, SAFE_ID_RE, ProtocolError
 
 REQUIRED_FIELDS = {
     "schema_version",
