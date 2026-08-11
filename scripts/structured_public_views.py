@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Deterministic Markdown projections for structured repository JSON records."""
+"""Deterministic Markdown projections for structured access contracts and manifests."""
 
 from __future__ import annotations
 
@@ -16,12 +16,10 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 ACCESS_DIR = ROOT / "access"
 MANIFEST_DIR = ROOT / "manifests"
-SCHEMA_DIR = ROOT / "schemas"
 GENERATED_MARKER = "GENERATED FILE — DO NOT EDIT DIRECTLY"
 GENERATED_SPDX_LICENSE_LINE = "SPDX-" + "License-Identifier: Apache-2.0"
 MARKDOWN_ESCAPE_RE = re.compile(r"([\\`*\[\]{}#!|])")
 FULL_HTTPS_URL_RE = re.compile(r"https://[^\s<>]+$")
-CAMEL_CASE_BOUNDARY_RE = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
 
 
 class ProjectionError(ValueError):
@@ -58,11 +56,7 @@ def load_structured_json(path: Path) -> dict[str, Any]:
 
 
 def _label(key: str) -> str:
-    if key.startswith("$"):
-        return key
-    normalized = key.replace("_", " ").replace("-", " ")
-    normalized = CAMEL_CASE_BOUNDARY_RE.sub(" ", normalized)
-    return normalized.strip().capitalize()
+    return key.replace("_", " ").replace("-", " ").strip().capitalize()
 
 
 def _markdown_text(value: str) -> str:
@@ -124,18 +118,14 @@ def _render_field(lines: list[str], key: str, value: Any, *, level: int) -> None
 
 
 def render_structured_markdown(path: Path, payload: dict[str, Any], *, kind: str) -> str:
-    titles = {
-        "access": "Source access contract",
-        "manifest": "Dataset manifest",
-        "schema": "JSON Schema",
-    }
-    if kind not in titles:
+    if kind not in {"access", "manifest"}:
         raise ProjectionError(f"unsupported public record kind: {kind}")
     try:
         canonical_source = path.relative_to(ROOT).as_posix()
     except ValueError:
         canonical_source = path.as_posix()
 
+    title = "Source access contract" if kind == "access" else "Dataset manifest"
     lines = [
         "<!--",
         "SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors",
@@ -147,7 +137,7 @@ def render_structured_markdown(path: Path, payload: dict[str, Any], *, kind: str
         "Change the canonical JSON and run `python scripts/render_public_views.py --write`.",
         "-->",
         "",
-        f"# {titles[kind]}: `{path.name}`",
+        f"# {title}: `{path.name}`",
         "",
         "> This Markdown file is a deterministic human-readable projection of the canonical JSON file named above. "
         "The JSON remains authoritative; this view does not change rights, admission, scientific meaning or execution authority.",
