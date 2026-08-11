@@ -23,7 +23,8 @@ SCHEMA_VERSION = "oc-acquisition-receipt-v1"
 DATASET_ID = "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"
 FILENAME = "10minutenwerte_extrema_wind_00003_20100101_20110331_hist.zip"
 SOURCE_URL = (
-    "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/historical/" + FILENAME
+    "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/"
+    "10_minutes/extreme_wind/historical/" + FILENAME
 )
 EXPECTED_HOST = "opendata.dwd.de"
 MAX_BYTES = 52_428_800
@@ -43,6 +44,9 @@ def utc_now() -> str:
 
 
 def _safe_source_url(url: str) -> bool:
+    """Accept only the exact frozen HTTPS source identity."""
+    if url != SOURCE_URL:
+        return False
     parsed = urllib.parse.urlsplit(url)
     return (
         parsed.scheme == "https"
@@ -52,12 +56,26 @@ def _safe_source_url(url: str) -> bool:
         and parsed.port in (None, 443)
         and parsed.query == ""
         and parsed.fragment == ""
-        and parsed.path.endswith("/" + FILENAME)
     )
 
 
+class FrozenSourceRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Reject redirects before urllib follows them to any alternate resource."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001
+        resolved = urllib.parse.urljoin(req.full_url, newurl)
+        if resolved != SOURCE_URL:
+            raise AcquisitionError("provider redirect left the frozen source identity")
+        raise AcquisitionError("provider redirect is forbidden for the frozen source identity")
+
+
+def _open_frozen_source(request: urllib.request.Request, timeout: int):
+    opener = urllib.request.build_opener(FrozenSourceRedirectHandler())
+    return opener.open(request, timeout=timeout)
+
+
 def _validate_member_name(name: str) -> None:
-    if not name or "\\" in name or "\x00" in name:
+    if not name or len(name) > 512 or "\\" in name or "\x00" in name:
         raise AcquisitionError("archive contains an unsafe member name")
     path = PurePosixPath(name)
     if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
@@ -87,6 +105,8 @@ def _validate_zip(path: str) -> dict[str, Any]:
                 base = PurePosixPath(member.filename).name
                 if base.startswith(PRODUCT_MEMBER_PREFIX) and base.endswith(".txt"):
                     product_members.append(member.filename)
+            if total_uncompressed < 1:
+                raise AcquisitionError("archive uncompressed payload is empty")
             if len(product_members) != 1:
                 raise AcquisitionError("archive must contain exactly one DWD extreme-wind product text member")
             if archive.testzip() is not None:
@@ -111,11 +131,12 @@ def _header_value(response: Any, name: str) -> str | None:
     return value[:512] if value else None
 
 
-def acquire(*, opener: Any = urllib.request.urlopen, now: Any = utc_now) -> dict[str, Any]:
+def acquire(*, opener: Any | None = None, now: Any = utc_now) -> dict[str, Any]:
     """Download only the frozen DWD ZIP, validate it, then return a strict small receipt."""
-    if not _safe_source_url(SOURCE_URL):
+    if not _safe_source_url(SOURCE_URL):  # defensive constant-integrity check
         raise AcquisitionError("trusted source recipe is invalid")
     requested_at = now()
+    open_response = opener or _open_frozen_source
     request = urllib.request.Request(
         SOURCE_URL,
         headers={"Accept": "application/zip", "User-Agent": "OpenCatastrophe-acquisition-receipt-v1"},
@@ -131,7 +152,7 @@ def acquire(*, opener: Any = urllib.request.urlopen, now: Any = utc_now) -> dict
     with tempfile.TemporaryDirectory(prefix="oc-dwd-acquisition-") as tmpdir:
         target = os.path.join(tmpdir, FILENAME)
         try:
-            with opener(request, timeout=TIMEOUT_SECONDS) as response:
+            with open_response(request, timeout=TIMEOUT_SECONDS) as response:
                 status_code = getattr(response, "status", 200)
                 if type(status_code) is not int or status_code != 200:
                     raise AcquisitionError("provider response status is not 200")
