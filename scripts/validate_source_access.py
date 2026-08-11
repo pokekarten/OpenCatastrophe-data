@@ -72,6 +72,7 @@ ENV_RE = re.compile(r"^[A-Z][A-Z0-9_]{2,127}$")
 OP_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 MEDIA_RE = re.compile(r"^[A-Za-z0-9.+-]+/[A-Za-z0-9.+-]+$")
 NUMERIC_HOST_PART_RE = re.compile(r"^(?:0[xX][0-9A-Fa-f]+|[0-9]+)$")
+DNS_HOST_RE = re.compile(r"^[a-z0-9.-]+$")
 SECRET_LIKE = re.compile(r"(?i)(bearer\s+[A-Za-z0-9._-]{12,}|api[_-]?key\s*[:=]\s*\S+|password\s*[:=]\s*\S+|secret\s*[:=]\s*\S+)")
 SECRET_QUERY_KEY = re.compile(
     r"(?i)^(?:access[_-]?token|api[_-]?key|token|password|passwd|secret|signature|sig|credential|auth(?:orization)?)$"
@@ -175,6 +176,11 @@ def _https_url(value: Any, where: str, *, nullable: bool = False, root: bool = F
     if parsed.scheme != "https" or not parsed.netloc or not hostname or parsed.username or parsed.password:
         raise SourceAccessError(f"{where} must be a public https URL without embedded credentials")
 
+    try:
+        hostname.encode("ascii", errors="strict")
+    except UnicodeEncodeError as exc:
+        raise SourceAccessError(f"{where} host must use ASCII/IDNA-canonical form in source-access v1") from exc
+
     host = hostname.rstrip(".").casefold()
     if host == "localhost" or host.endswith(".localhost") or host.endswith(".local"):
         raise SourceAccessError(f"{where} must not target a local host")
@@ -184,8 +190,11 @@ def _https_url(value: Any, where: str, *, nullable: bool = False, root: bool = F
         address = ipaddress.ip_address(host)
     except ValueError:
         address = None
-    if address is not None and not address.is_global:
-        raise SourceAccessError(f"{where} must not target a non-public IP address")
+    if address is not None:
+        if not address.is_global:
+            raise SourceAccessError(f"{where} must not target a non-public IP address")
+    elif not DNS_HOST_RE.fullmatch(host) or host.startswith(".") or ".." in host:
+        raise SourceAccessError(f"{where} host must use canonical ASCII DNS syntax")
 
     for key, query_value in parse_qsl(parsed.query, keep_blank_values=True):
         folded = key.casefold()
@@ -229,10 +238,10 @@ def validate_contract(contract: Any) -> dict[str, Any]:
         raise SourceAccessError("access_id has invalid format")
     _unique_text_list(obj["source_ids"], "source_ids", pattern=SOURCE_ID_RE)
     _text(obj["provider"], "provider")
-    _enum(obj["interface_type"], INTERFACE_TYPES, "interface_type")
+    interface_type = _enum(obj["interface_type"], INTERFACE_TYPES, "interface_type")
     status = _enum(obj["status"], STATUSES, "status")
     _https_url(obj["documentation_url"], "documentation_url")
-    _https_url(obj["service_root"], "service_root", nullable=True, root=True)
+    service_root = _https_url(obj["service_root"], "service_root", nullable=True, root=True)
     if obj["api_version"] is not None:
         _text(obj["api_version"], "api_version")
     _unique_text_list(obj["access_scope"], "access_scope", allowed=ACCESS_SCOPES)
@@ -327,6 +336,10 @@ def validate_contract(contract: Any) -> dict[str, Any]:
         raise SourceAccessError("active authenticated probe requires a symbolic credential reference")
 
     implementation = _enum(obj["implementation_decision"], IMPLEMENTATION_DECISIONS, "implementation_decision")
+    if (active_probe or implementation == "build_adapter_now") and service_root is None:
+        raise SourceAccessError("active or immediately executable source access requires a concrete HTTPS service_root")
+    if interface_type == "ftp_or_ftps" and (active_probe or implementation == "build_adapter_now"):
+        raise SourceAccessError("ftp_or_ftps is documentation-only in source-access v1 until a protocol-specific endpoint model is reviewed")
 
     # Verification status is evidence, not decoration. A documentation/blocked
     # state cannot carry an active probe, and verified states require the probe
