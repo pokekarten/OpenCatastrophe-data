@@ -184,6 +184,8 @@ class AgentActionProtocolTests(unittest.TestCase):
         self.assertIn("name: Publish validated action result", workflow)
         self.assertIn("issues: write", workflow)
         self.assertIn("pull-requests: write", workflow)
+        self.assertIn("execution_sha: ${{ steps.prepare-result.outputs.execution_sha }}", workflow)
+        self.assertIn("ref: ${{ needs.validate-request.outputs.execution_sha }}", workflow)
         self.assertIn("python scripts/post_agent_action_result.py", workflow)
         self.assertNotIn("run_command", workflow)
         self.assertNotIn("curl ", workflow)
