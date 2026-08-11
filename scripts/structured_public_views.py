@@ -145,8 +145,7 @@ def render_structured_markdown(path: Path, payload: dict[str, Any], *, kind: str
         f"# {titles[kind]}: `{path.name}`",
         "",
         "> This Markdown file is a deterministic human-readable projection of the canonical JSON file named above. "
-        "The JSON remains authoritative; this view does not change rights, admission, scientific meaning, "
-        "validation semantics or execution authority.",
+        "The JSON remains authoritative; this view does not change rights, admission, scientific meaning or execution authority.",
         "",
     ]
     for key, value in payload.items():

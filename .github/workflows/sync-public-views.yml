@@ -42,6 +42,9 @@ jobs:
       - name: Regenerate all human-readable JSON projections
         run: python scripts/render_public_views.py --write --scope all
 
+      - name: Stage generated projection roots
+        run: git add -A -- access landscape manifests schemas
+
       - name: Reject non-generated changes
         shell: bash
         run: |
@@ -53,7 +56,7 @@ jobs:
           allowed_roots = {"access", "landscape", "manifests", "schemas"}
           marker = "GENERATED FILE — DO NOT EDIT DIRECTLY"
           changed = subprocess.run(
-              ["git", "diff", "--name-status", "--no-renames"],
+              ["git", "diff", "--cached", "--name-status", "--no-renames"],
               check=True,
               text=True,
               capture_output=True,
@@ -77,19 +80,39 @@ jobs:
               if marker not in text:
                   print(f"BLOCKED: changed Markdown lacks generated marker: {raw}", file=sys.stderr)
                   raise SystemExit(1)
+
+          unstaged = subprocess.run(
+              ["git", "diff", "--name-only"],
+              check=True,
+              text=True,
+              capture_output=True,
+          ).stdout.splitlines()
+          untracked = subprocess.run(
+              ["git", "ls-files", "--others", "--exclude-standard"],
+              check=True,
+              text=True,
+              capture_output=True,
+          ).stdout.splitlines()
+          leftovers = [*unstaged, *untracked]
+          if leftovers:
+              print(
+                  "BLOCKED: renderer left changes outside staged projection roots: "
+                  + ", ".join(leftovers),
+                  file=sys.stderr,
+              )
+              raise SystemExit(1)
           PY
 
       - name: Commit regenerated Markdown
         shell: bash
         run: |
-          if git diff --quiet; then
+          if git diff --cached --quiet; then
             echo "Generated Markdown already current."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- access landscape manifests schemas
           git diff --cached --check
           git commit -m "chore: regenerate public Markdown views"
           git push origin "HEAD:${GITHUB_REF_NAME}"
