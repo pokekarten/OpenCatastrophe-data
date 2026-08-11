@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:opencatastrophe:schema:acquisition-receipt:1.0.0",
+  "title": "OpenCatastrophe Acquisition Receipt v1",
+  "description": "Strict metadata-only evidence for one bounded ephemeral source acquisition. This receipt is not publication authorization and does not persist provider bytes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "dataset_id", "source_issue", "requested_url", "final_url", "filename",
+    "retrieved_at", "byte_count", "sha256", "content_type", "last_modified", "etag",
+    "archive_member_count", "archive_uncompressed_bytes", "product_member",
+    "external_bytes_persisted", "publication_authorized"
+  ],
+  "properties": {
+    "schema_version": {"const": "oc-acquisition-receipt-v1"},
+    "dataset_id": {"const": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"},
+    "source_issue": {"const": 162},
+    "requested_url": {"const": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/historical/10minutenwerte_extrema_wind_00003_20100101_20110331_hist.zip"},
+    "final_url": {"const": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/historical/10minutenwerte_extrema_wind_00003_20100101_20110331_hist.zip"},
+    "filename": {"const": "10minutenwerte_extrema_wind_00003_20100101_20110331_hist.zip"},
+    "retrieved_at": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "byte_count": {"type": "integer", "minimum": 1, "maximum": 52428800},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "content_type": {"type": ["string", "null"], "maxLength": 512},
+    "last_modified": {"type": ["string", "null"], "maxLength": 512},
+    "etag": {"type": ["string", "null"], "maxLength": 512},
+    "archive_member_count": {"type": "integer", "minimum": 1, "maximum": 32},
+    "archive_uncompressed_bytes": {"type": "integer", "minimum": 1, "maximum": 104857600},
+    "product_member": {"type": "string", "minLength": 1, "maxLength": 512, "pattern": "(^|/)produkt_extrema_wind_[^/]+\\.txt$"},
+    "external_bytes_persisted": {"const": false},
+    "publication_authorized": {"const": false}
+  }
+}
