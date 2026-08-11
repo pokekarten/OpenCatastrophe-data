@@ -113,6 +113,8 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Format:** uri
 
+**Pattern:** ^https://
+
 ### Retrieved at
 
 **Type:** string
@@ -230,6 +232,8 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Type:** string
 
 **Format:** uri
+
+**Pattern:** ^https://
 
 ##### Terms reviewed at
 

@@ -20,7 +20,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Description:** Portable structural view of the closed request contract for a bounded trusted-main GitHub Actions evidence operation. scripts/validate_agent_action_request.py is authoritative for executable security policy that JSON Schema cannot fully express.
 
-**$comment:** Draft 2020-12 treats zero-fraction JSON numbers such as 1.0 as integers. The executable validator additionally requires the parsed issue value to have exact int type (rejecting bool and float), rejects duplicate keys and non-finite JSON, and enforces the single-marker comment envelope.
+**$comment:** Draft 2020-12 treats zero-fraction JSON numbers such as 1.0 as integers. The executable validator additionally requires the parsed issue value to have exact int type (rejecting bool and float), rejects duplicate keys and non-finite JSON, enforces the single-marker comment envelope, and restricts acquisition_receipt to Issue 162 plus the frozen DWD dataset.
 
 **Type:** object
 
@@ -46,6 +46,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 #### Enum
 
 - sample_audit
+- acquisition_receipt
 
 ### Issue
 
@@ -78,3 +79,31 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Max length:** `128`
 
 **Pattern:** ^\[A-Za-z0-9\]\[A-Za-z0-9._:-\]\*$
+
+## All of
+
+### Item 1
+
+#### If
+
+##### Properties
+
+###### Action
+
+**Const:** acquisition_receipt
+
+##### Required
+
+- action
+
+#### Then
+
+##### Properties
+
+###### Issue
+
+**Const:** `162`
+
+###### Dataset id
+
+**Const:** dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03
