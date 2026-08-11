@@ -418,9 +418,15 @@ def _validate_zip(path: str, *, deadline: float, monotonic: Any) -> dict[str, An
                     deadline=deadline,
                     monotonic=monotonic,
                 )
-            product_members = [
+            text_members = [
                 member
                 for member in members
+                if not member.is_dir()
+                and PurePosixPath(member.filename).suffix.casefold() == ".txt"
+            ]
+            product_members = [
+                member
+                for member in text_members
                 if _member_matches_product_header(
                     archive,
                     member,
@@ -428,6 +434,8 @@ def _validate_zip(path: str, *, deadline: float, monotonic: Any) -> dict[str, An
                     monotonic=monotonic,
                 )
             ]
+            if not product_members and len(text_members) == 1:
+                product_members = text_members
             if len(product_members) != 1:
                 raise AcquisitionError(
                     "archive must contain exactly one text member matching the DWD extreme-wind product header"
