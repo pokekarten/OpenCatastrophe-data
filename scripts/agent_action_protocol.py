@@ -10,6 +10,7 @@ import json
 import re
 from typing import Any
 
+REQUEST_SCHEMA_VERSION = "oc-action-request-v1"
 RESULT_MARKER = "<!-- oc-action-result-v1 -->"
 RESULT_SCHEMA_VERSION = "oc-action-result-v1"
 GIT_SHA_RE = re.compile(r"^[a-f0-9]{40}$")
@@ -38,6 +39,8 @@ def semantic_request_id(request: dict[str, Any], execution_sha: str, repository:
     for field in ("schema_version", "action", "target_sha", "dataset_id"):
         if field not in request:
             raise ProtocolError(f"request missing semantic field: {field}")
+    if request["schema_version"] != REQUEST_SCHEMA_VERSION:
+        raise ProtocolError("unsupported request schema_version for semantic identity")
     payload = {
         "schema_version": request["schema_version"],
         "action": request["action"],
@@ -48,6 +51,22 @@ def semantic_request_id(request: dict[str, Any], execution_sha: str, repository:
     }
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def semantic_request_id_from_result(result: dict[str, Any]) -> str:
+    """Recompute a result receipt's semantic identity from its bound fields."""
+
+    required = ("action", "dataset_id", "target_sha", "execution_sha", "repository")
+    for field in required:
+        if field not in result:
+            raise ProtocolError(f"result missing semantic field: {field}")
+    request_view = {
+        "schema_version": REQUEST_SCHEMA_VERSION,
+        "action": result["action"],
+        "dataset_id": result["dataset_id"],
+        "target_sha": result["target_sha"],
+    }
+    return semantic_request_id(request_view, result["execution_sha"], result["repository"])
 
 
 def extract_result_comment(body: str) -> dict[str, Any] | None:
