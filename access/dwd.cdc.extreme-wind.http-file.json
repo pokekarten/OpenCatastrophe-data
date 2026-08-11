@@ -6,7 +6,7 @@
   ],
   "provider": "Deutscher Wetterdienst (DWD) / Climate Data Center",
   "interface_type": "http_file",
-  "status": "documented_only",
+  "status": "probe_ready",
   "documentation_url": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/",
   "service_root": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind",
   "api_version": "v24.03 dataset description; exact raw file identity remains file-specific",
