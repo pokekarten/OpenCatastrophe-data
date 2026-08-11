@@ -12,6 +12,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime, timezone
 from typing import Any
 
 try:
@@ -32,11 +33,11 @@ class LedgerError(RuntimeError):
     """Raised when the durable GitHub result ledger cannot be read completely."""
 
 
-def find_existing_result(
-    comments: list[dict[str, Any]], semantic_id: str, *, owner_login: str
-) -> int | None:
-    """Return a trusted completed result comment id for the same semantic request."""
+def utc_now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
 
+
+def find_existing_result(comments: list[dict[str, Any]], semantic_id: str, *, owner_login: str) -> int | None:
     trusted_logins = set(TRUSTED_RESULT_LOGINS)
     trusted_logins.add(owner_login)
     for comment in comments:
@@ -59,9 +60,7 @@ def find_existing_result(
             validate_result(result)
         except ResultError as exc:
             raise LedgerError(f"trusted result comment fails result validation: {exc}") from exc
-        if result["semantic_request_id"] != semantic_id:
-            continue
-        if result["status"] not in {"pass", "duplicate"}:
+        if result["semantic_request_id"] != semantic_id or result["status"] not in {"pass", "duplicate"}:
             continue
         comment_id = comment.get("id")
         if type(comment_id) is not int or comment_id < 1:
@@ -70,15 +69,7 @@ def find_existing_result(
     return None
 
 
-def fetch_repository_comments(
-    repository: str,
-    token: str,
-    *,
-    opener: Any = urllib.request.urlopen,
-    max_pages: int = MAX_LEDGER_PAGES,
-) -> list[dict[str, Any]]:
-    """Fetch the bounded repository-wide issue-comment ledger newest first."""
-
+def fetch_repository_comments(repository: str, token: str, *, opener: Any = urllib.request.urlopen, max_pages: int = MAX_LEDGER_PAGES) -> list[dict[str, Any]]:
     if type(repository) is not str or repository.count("/") != 1:
         raise LedgerError("repository must be owner/name")
     if type(token) is not str or not token:
@@ -88,12 +79,9 @@ def fetch_repository_comments(
 
     comments: list[dict[str, Any]] = []
     for page in range(1, max_pages + 1):
-        query = urllib.parse.urlencode(
-            {"sort": "created", "direction": "desc", "per_page": PER_PAGE, "page": page}
-        )
-        url = f"{API_ROOT}/repos/{repository}/issues/comments?{query}"
+        query = urllib.parse.urlencode({"sort": "created", "direction": "desc", "per_page": PER_PAGE, "page": page})
         request = urllib.request.Request(
-            url,
+            f"{API_ROOT}/repos/{repository}/issues/comments?{query}",
             headers={
                 "Accept": "application/vnd.github+json",
                 "Authorization": f"Bearer {token}",
@@ -115,35 +103,36 @@ def fetch_repository_comments(
         comments.extend(payload)
         if len(payload) < PER_PAGE:
             return comments
-    raise LedgerError(
-        f"GitHub result ledger exceeds the fail-closed scan bound of {max_pages * PER_PAGE} comments"
-    )
+    raise LedgerError(f"GitHub result ledger exceeds the fail-closed scan bound of {max_pages * PER_PAGE} comments")
 
 
 def build_result(
     request: dict[str, Any],
     *,
+    repository: str,
     execution_sha: str,
     source_comment_id: int,
     run_id: int,
     run_attempt: int,
+    started_at: str,
+    finished_at: str,
     duplicate_result_comment_id: int | None = None,
     ledger_incomplete: bool = False,
 ) -> dict[str, Any]:
-    semantic_id = semantic_request_id(request, execution_sha)
+    semantic_id = semantic_request_id(request, execution_sha, repository)
     if ledger_incomplete:
-        status = "blocked"
-        failure_class = "ledger_incomplete"
-        duplicate_result_comment_id = None
+        status, failure_class, duplicate_result_comment_id = "blocked", "ledger_incomplete", None
+        ledger_scan_complete, prior_result_reused = False, False
     elif duplicate_result_comment_id is not None:
-        status = "duplicate"
-        failure_class = "duplicate_request"
+        status, failure_class = "duplicate", "duplicate_request"
+        ledger_scan_complete, prior_result_reused = True, True
     else:
-        status = "pass"
-        failure_class = None
+        status, failure_class = "pass", None
+        ledger_scan_complete, prior_result_reused = True, False
     result = {
         "schema_version": RESULT_SCHEMA_VERSION,
         "semantic_request_id": semantic_id,
+        "repository": repository,
         "action": request["action"],
         "source_issue": request["issue"],
         "source_comment_id": source_comment_id,
@@ -152,9 +141,16 @@ def build_result(
         "execution_sha": execution_sha,
         "run_id": run_id,
         "run_attempt": run_attempt,
+        "started_at": started_at,
+        "finished_at": finished_at,
         "phase": "request_validation",
         "status": status,
         "external_bytes_persisted": False,
+        "evidence": {
+            "request_validated": True,
+            "ledger_scan_complete": ledger_scan_complete,
+            "prior_result_reused": prior_result_reused,
+        },
         "duplicate_result_comment_id": duplicate_result_comment_id,
         "failure_class": failure_class,
     }
@@ -187,6 +183,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    started_at = utc_now()
     body = os.environ.get(args.comment_body_env)
     token = os.environ.get(args.github_token_env)
     if body is None or token is None:
@@ -198,25 +195,31 @@ def main(argv: list[str] | None = None) -> int:
         run_id = positive_int(args.run_id, "run_id")
         run_attempt = positive_int(args.run_attempt, "run_attempt")
         request = validate_request(extract_request(body), expected_issue=issue)
-        semantic_id = semantic_request_id(request, args.execution_sha)
+        semantic_id = semantic_request_id(request, args.execution_sha, args.repository)
         try:
             comments = fetch_repository_comments(args.repository, token)
             duplicate_id = find_existing_result(comments, semantic_id, owner_login=args.owner_login)
             result = build_result(
                 request,
+                repository=args.repository,
                 execution_sha=args.execution_sha,
                 source_comment_id=source_comment_id,
                 run_id=run_id,
                 run_attempt=run_attempt,
+                started_at=started_at,
+                finished_at=utc_now(),
                 duplicate_result_comment_id=duplicate_id,
             )
         except LedgerError:
             result = build_result(
                 request,
+                repository=args.repository,
                 execution_sha=args.execution_sha,
                 source_comment_id=source_comment_id,
                 run_id=run_id,
                 run_attempt=run_attempt,
+                started_at=started_at,
+                finished_at=utc_now(),
                 ledger_incomplete=True,
             )
     except (RequestError, ResultError, ProtocolError, LedgerError) as exc:
