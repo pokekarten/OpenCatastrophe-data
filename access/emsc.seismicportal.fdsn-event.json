@@ -27,7 +27,7 @@
     "path_templates": [
       "/fdsnws/event/1/query"
     ],
-    "parameter_rules": "The initial probe is repository-constructed only: format=json, limit=1, includeallorigins=false and includearrivals=false. Callers cannot supply a host, arbitrary path, headers, event identifier, catalogue, contributor, geographic filter, time range, pagination offset or unrestricted query parameters. Any later parameterized scientific query requires a separately reviewed bounded operation rather than widening this probe contract."
+    "parameter_rules": "The initial probe is repository-constructed only: format=json, limit=1, orderby=time, nodata=204, includeallorigins=false and includearrivals=false. Callers cannot supply a host, arbitrary path, headers, event identifier, catalogue, contributor, geographic filter, time range, pagination offset or unrestricted query parameters. Any later parameterized scientific query requires a separately reviewed bounded operation rather than widening this probe contract."
   },
   "response_contract": {
     "expected_media_types": [
