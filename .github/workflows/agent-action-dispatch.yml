@@ -10,10 +10,11 @@ on:
 permissions:
   contents: read
 
-# Serialize only this bounded slot-action lane so cross-thread semantic
-# deduplication cannot race. This does not serialize normal CI or other agents.
+# Only owner-authorized action requests share the semantic serialization lane.
+# Unrelated/untrusted comments get a unique group and therefore cannot queue in
+# front of authorized requests. This does not serialize normal CI or other agents.
 concurrency:
-  group: agent-action-dispatch-v1
+  group: agent-action-dispatch-${{ github.event.comment.user.login == github.event.repository.owner.login && github.event.comment.author_association == 'OWNER' && contains(github.event.comment.body, '<!-- oc-action-request-v1 -->') && 'authorized-v1' || github.event.comment.id }}
   cancel-in-progress: false
 
 jobs:
@@ -49,7 +50,6 @@ jobs:
           OC_ACTION_TRIGGER_ISSUE: ${{ github.event.issue.number }}
           OC_ACTION_SOURCE_COMMENT_ID: ${{ github.event.comment.id }}
           OC_ACTION_REPOSITORY: ${{ github.repository }}
-          OC_ACTION_OWNER_LOGIN: ${{ github.event.repository.owner.login }}
           OC_ACTION_RUN_ID: ${{ github.run_id }}
           OC_ACTION_RUN_ATTEMPT: ${{ github.run_attempt }}
           OC_ACTION_GITHUB_TOKEN: ${{ github.token }}
@@ -63,7 +63,6 @@ jobs:
             --run-id "$OC_ACTION_RUN_ID" \
             --run-attempt "$OC_ACTION_RUN_ATTEMPT" \
             --repository "$OC_ACTION_REPOSITORY" \
-            --owner-login "$OC_ACTION_OWNER_LOGIN" \
             --github-token-env OC_ACTION_GITHUB_TOKEN)"
           echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
           echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
