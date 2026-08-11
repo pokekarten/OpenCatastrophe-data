@@ -85,20 +85,12 @@ class AgentActionProtocolTests(unittest.TestCase):
             {"request_validated": True, "ledger_scan_complete": True, "prior_result_reused": False},
         )
 
-        duplicate = result_for(
-            source_comment_id=101,
-            run_id=201,
-            duplicate_result_comment_id=99,
-        )
+        duplicate = result_for(source_comment_id=101, run_id=201, duplicate_result_comment_id=99)
         self.assertEqual(duplicate["status"], "duplicate")
         self.assertEqual(duplicate["failure_class"], "duplicate_request")
         self.assertTrue(duplicate["evidence"]["prior_result_reused"])
 
-        blocked = result_for(
-            source_comment_id=102,
-            run_id=202,
-            ledger_incomplete=True,
-        )
+        blocked = result_for(source_comment_id=102, run_id=202, ledger_incomplete=True)
         self.assertEqual(blocked["status"], "blocked")
         self.assertEqual(blocked["failure_class"], "ledger_incomplete")
         self.assertFalse(blocked["evidence"]["ledger_scan_complete"])
@@ -159,9 +151,7 @@ class AgentActionProtocolTests(unittest.TestCase):
     def test_semantically_forged_trusted_result_fails_closed(self) -> None:
         result = result_for()
         forged = dict(result, dataset_id="other.dataset")
-        comments = [
-            {"id": 11, "body": canonical_result_comment(forged), "user": {"login": "github-actions[bot]"}}
-        ]
+        comments = [{"id": 11, "body": canonical_result_comment(forged), "user": {"login": "github-actions[bot]"}}]
         with self.assertRaisesRegex(LedgerError, "fails result validation"):
             find_existing_result(comments, result["semantic_request_id"], owner_login="pokekarten")
 
@@ -208,10 +198,8 @@ class AgentActionProtocolTests(unittest.TestCase):
         self.assertEqual(schema["properties"]["external_bytes_persisted"], {"const": False})
         self.assertEqual(schema["properties"]["phase"], {"const": "request_validation"})
         self.assertEqual(set(schema["properties"]["status"]["enum"]), {"pass", "duplicate", "blocked"})
-        self.assertIn("repository", schema["required"])
-        self.assertIn("started_at", schema["required"])
-        self.assertIn("finished_at", schema["required"])
-        self.assertIn("evidence", schema["required"])
+        for field in ("repository", "started_at", "finished_at", "evidence"):
+            self.assertIn(field, schema["required"])
         self.assertFalse(schema["properties"]["evidence"]["additionalProperties"])
         self.assertIn("scripts/validate_agent_action_result.py", schema["description"])
 
@@ -225,13 +213,7 @@ class AgentActionProtocolTests(unittest.TestCase):
             seen["authorization"] = request.headers.get("Authorization")
             return FakeResponse({"id": 321})
 
-        comment_id = post_result(
-            result,
-            repository=REPOSITORY,
-            expected_issue=162,
-            token="test-token",
-            opener=opener,
-        )
+        comment_id = post_result(result, repository=REPOSITORY, expected_issue=162, token="test-token", opener=opener)
         self.assertEqual(comment_id, 321)
         self.assertEqual(seen["url"], f"https://api.github.com/repos/{REPOSITORY}/issues/162/comments")
         self.assertEqual(seen["body"], {"body": canonical_result_comment(result)})
@@ -246,15 +228,15 @@ class AgentActionProtocolTests(unittest.TestCase):
                 opener=opener,
             )
 
-    def test_workflow_serializes_only_action_lane_and_isolates_write_permission(self) -> None:
+    def test_workflow_serializes_only_action_lane_and_uses_minimal_issue_permissions(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("group: agent-action-dispatch-v1", workflow)
         self.assertNotIn("group: agent-action-request-${{ github.event.comment.id }}", workflow)
         self.assertIn("name: Validate and classify authorized action request", workflow)
-        self.assertIn("issues: read", workflow)
+        self.assertEqual(workflow.count("issues: read"), 1)
         self.assertIn("name: Publish validated action result", workflow)
-        self.assertIn("issues: write", workflow)
-        self.assertIn("pull-requests: write", workflow)
+        self.assertEqual(workflow.count("issues: write"), 1)
+        self.assertNotIn("pull-requests:", workflow)
         self.assertIn("execution_sha: ${{ steps.prepare-result.outputs.execution_sha }}", workflow)
         self.assertIn("ref: ${{ needs.validate-request.outputs.execution_sha }}", workflow)
         self.assertIn("python scripts/post_agent_action_result.py", workflow)
