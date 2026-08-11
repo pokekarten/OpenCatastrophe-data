@@ -12,10 +12,13 @@ permissions:
 
 # Only owner-authorized action requests share the semantic serialization lane.
 # Unrelated/untrusted comments get a unique group and therefore cannot queue in
-# front of authorized requests. This does not serialize normal CI or other agents.
+# front of authorized requests. Authorized requests are queued (up to GitHub's
+# bounded queue) so simultaneous hourly slots are serialized rather than dropped.
+# This does not serialize normal CI or other agents.
 concurrency:
   group: agent-action-dispatch-${{ github.event.comment.user.login == github.event.repository.owner.login && github.event.comment.author_association == 'OWNER' && contains(github.event.comment.body, '<!-- oc-action-request-v1 -->') && 'authorized-v1' || github.event.comment.id }}
   cancel-in-progress: false
+  queue: max
 
 jobs:
   validate-request:
