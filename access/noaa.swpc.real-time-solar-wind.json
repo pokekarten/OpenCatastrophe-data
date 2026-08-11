@@ -7,7 +7,7 @@
   "provider": "NOAA / NWS Space Weather Prediction Center",
   "interface_type": "http_file",
   "status": "probe_ready",
-  "documentation_url": "https://www.swpc.noaa.gov/products/real-time-solar-wind",
+  "documentation_url": "https://www.swpc.noaa.gov/products/solar-wind",
   "service_root": "https://services.swpc.noaa.gov",
   "api_version": null,
   "access_scope": [
@@ -68,7 +68,8 @@
   "implementation_decision": "build_later",
   "reviewed_at": "2026-08-11",
   "evidence_urls": [
-    "https://www.swpc.noaa.gov/products/real-time-solar-wind",
+    "https://www.swpc.noaa.gov/products/solar-wind",
+    "https://www.swpc.noaa.gov/content/data-access",
     "https://services.swpc.noaa.gov/json/rtsw/",
     "https://www.weather.gov/disclaimer"
   ],
