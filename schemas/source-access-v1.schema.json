@@ -3,7 +3,7 @@
   "$id": "urn:opencatastrophe:schema:source-access:1.0.0",
   "title": "OpenCatastrophe Source Access Contract v1",
   "description": "Portable structural view of the fail-closed contract for an authoritative machine-access route. scripts/validate_source_access.py is the executable security authority for URL/IP/secret/path and cross-field constraints that JSON Schema cannot fully express. Connectivity never implies rights clearance, scientific approval or data admission.",
-  "$comment": "The executable validator additionally rejects duplicate JSON keys, non-finite values, local/private/legacy-numeric hosts, secret-bearing or signed query URLs, decoded path traversal/backslashes/URL smuggling, and enforces the same fail-closed rights/probe/implementation state machine below.",
+  "$comment": "The executable validator additionally rejects duplicate JSON keys, non-finite values, non-ASCII/IDNA-uncanonical host forms, local/private/legacy-numeric hosts, secret-bearing or signed query URLs, invalid UTF-8 or decoded path traversal/backslashes/URL smuggling, and enforces the fail-closed rights/probe/endpoint/implementation state machine below. Runtime network workers must still re-resolve and validate DNS/redirect targets before connection.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -31,7 +31,7 @@
   "$defs": {
     "httpsUrl": {
       "type": "string",
-      "pattern": "^https://(?![^/?#]*@)(?!localhost(?:[:/]|$))(?!127\\.)(?!10\\.)(?!192\\.168\\.)(?!169\\.254\\.)[^\\s]+$"
+      "pattern": "^https://(?![^/?#]*@)(?!localhost(?:[:/]|$))(?!127\\.)(?!10\\.)(?!192\\.168\\.)(?!169\\.254\\.)[\\x21-\\x7E]+$"
     },
     "nullableHttpsUrl": {
       "anyOf": [
@@ -351,7 +351,10 @@
         "required": ["probe_contract"]
       },
       "then": {
-        "properties": {"probe_contract": {"properties": {"expected_evidence": {"minItems": 1}}}}
+        "properties": {
+          "service_root": {"$ref": "#/$defs/httpsUrl"},
+          "probe_contract": {"properties": {"expected_evidence": {"minItems": 1}}}
+        }
       }
     },
     {
@@ -371,9 +374,19 @@
       }
     },
     {
+      "if": {"properties": {"interface_type": {"const": "ftp_or_ftps"}}, "required": ["interface_type"]},
+      "then": {
+        "properties": {
+          "probe_contract": {"properties": {"mode": {"const": "none"}, "operation": {"type": "null"}}},
+          "implementation_decision": {"enum": ["document_only", "build_later", "do_not_automate"]}
+        }
+      }
+    },
+    {
       "if": {"properties": {"implementation_decision": {"const": "build_adapter_now"}}, "required": ["implementation_decision"]},
       "then": {
         "properties": {
+          "service_root": {"$ref": "#/$defs/httpsUrl"},
           "rights_and_policy": {
             "properties": {
               "dataset_rights_status": {"const": "verified"},
