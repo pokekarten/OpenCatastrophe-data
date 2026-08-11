@@ -351,9 +351,8 @@ def build_inventory() -> dict[str, Any]:
                 )
             classification = classify_access(hint, categories, note)
             # Landscape discovery is explicitly non-admission and rights are not
-            # reviewed. Even a concrete interface contract cannot promote the
-            # source-level row to executable until the source rights state moves.
-            classification["rights_posture"] = "license_review_required"
+            # reviewed. Preserve any known restriction signal discovered in the
+            # canonical note/hint, but never let that row become executable.
             classification["automation_decision"] = "document_only"
             classification = _apply_contracts(
                 classification,
@@ -395,9 +394,18 @@ def build_inventory() -> dict[str, Any]:
             note_parts.append(licensing["notes"])
         classification = classify_access(access_class, [modelling_layer], " ".join(note_parts))
         classification = _manifest_rights(manifest, classification)
+        contracts = contracts_by_source.get(source_id, [])
+        # Dataset/source rights alone never clear a separate provider API/service
+        # boundary. A heuristic API hint with no validated access contract may be
+        # a build candidate, but cannot become an executable adapter-now decision.
+        if not contracts and classification["automation_decision"] == "build_adapter_now":
+            classification["automation_decision"] = "build_later"
+            classification["next_action"] = (
+                "Add and validate an exact source-access contract with reviewed API/service terms before adapter execution."
+            )
         classification = _apply_contracts(
             classification,
-            contracts_by_source.get(source_id, []),
+            contracts,
             allow_contract_promotion=classification["rights_posture"] == "source_rights_verified",
         )
         relative = path.relative_to(ROOT).as_posix()
