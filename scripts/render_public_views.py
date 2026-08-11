@@ -8,7 +8,6 @@ from __future__ import annotations
 import argparse
 import difflib
 import html
-import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -28,8 +27,6 @@ else:
 
 ROOT = Path(__file__).resolve().parents[1]
 LANDSCAPE_DIR = ROOT / "landscape"
-ACCESS_DIR = ROOT / "access"
-MANIFESTS_DIR = ROOT / "manifests"
 GENERATED_MARKER = "GENERATED FILE — DO NOT EDIT DIRECTLY"
 # Keep the generated SPDX line split in this source so REUSE does not parse it as
 # a second licence declaration belonging to this Python file.
@@ -173,94 +170,9 @@ def expected_landscape_projections(directory: Path = LANDSCAPE_DIR) -> dict[Path
     return outputs
 
 
-def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for key, value in pairs:
-        if key in result:
-            raise ProjectionError(f"duplicate JSON key: {key}")
-        result[key] = value
-    return result
-
-
-def _reject_non_finite(value: str) -> None:
-    raise ProjectionError(f"non-finite JSON number is not allowed: {value}")
-
-
-def load_structured_json(path: Path) -> tuple[dict[str, Any], str]:
-    """Strictly load a public access/manifest object and return normalized JSON text."""
-
-    try:
-        text = path.read_text(encoding="utf-8")
-    except (OSError, UnicodeError) as exc:
-        raise ProjectionError(f"{path}: cannot read canonical JSON: {exc}") from exc
-    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
-    try:
-        payload = json.loads(
-            normalized,
-            object_pairs_hook=_reject_duplicate_keys,
-            parse_constant=_reject_non_finite,
-        )
-    except ProjectionError:
-        raise
-    except json.JSONDecodeError as exc:
-        raise ProjectionError(f"{path}: invalid JSON: {exc.msg}") from exc
-    if type(payload) is not dict:
-        raise ProjectionError(f"{path}: canonical public record must be a JSON object")
-    return payload, normalized.rstrip("\n") + "\n"
-
-
-def render_structured_markdown(path: Path, canonical_json: str, *, record_kind: str) -> str:
-    """Render a lossless public record view without reinterpreting canonical semantics."""
-
-    try:
-        canonical_source = path.relative_to(ROOT).as_posix()
-    except ValueError:
-        canonical_source = path.as_posix()
-    title = "Access contract" if record_kind == "access" else "Dataset manifest"
-    lines = [
-        "<!--",
-        "SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors",
-        GENERATED_SPDX_LICENSE_LINE,
-        "",
-        GENERATED_MARKER,
-        f"Canonical source: {canonical_source}",
-        "Renderer: scripts/render_public_views.py",
-        "Change the canonical JSON and run `python scripts/render_public_views.py --write`.",
-        "-->",
-        "",
-        f"# {title}: `{path.name}`",
-        "",
-        "> This Markdown file is a deterministic, lossless human-readable projection of the canonical JSON file named above. "
-        "The JSON remains authoritative; this projection does not change rights, admission, publication or scientific-review state.",
-        "",
-        "```json",
-        canonical_json.rstrip("\n"),
-        "```",
-        "",
-    ]
-    return "\n".join(lines)
-
-
-def expected_structured_projections(directory: Path, *, record_kind: str) -> dict[Path, str]:
-    outputs: dict[Path, str] = {}
-    for source_path in sorted(directory.glob("*.json")):
-        _payload, canonical_json = load_structured_json(source_path)
-        outputs[source_path.with_suffix(".md")] = render_structured_markdown(
-            source_path,
-            canonical_json,
-            record_kind=record_kind,
-        )
-    return outputs
-
-
-def _generated_orphan_paths(
-    directory: Path,
-    expected: set[Path],
-    *,
-    pattern: str = "sources*.md",
-) -> tuple[Path, ...]:
+def _generated_orphan_paths(directory: Path, expected: set[Path]) -> tuple[Path, ...]:
     orphans: list[Path] = []
-    for path in sorted(directory.glob(pattern)):
+    for path in sorted(directory.glob("sources*.md")):
         if path in expected:
             continue
         try:
@@ -272,128 +184,99 @@ def _generated_orphan_paths(
     return tuple(orphans)
 
 
-def _write_projection_set(
-    directory: Path,
-    outputs: dict[Path, str],
-    *,
-    orphan_pattern: str,
-) -> tuple[Path, ...]:
+def write_landscape_projections(directory: Path = LANDSCAPE_DIR) -> tuple[Path, ...]:
+    outputs = expected_landscape_projections(directory)
     written: list[Path] = []
     for path, expected in outputs.items():
         current = path.read_text(encoding="utf-8") if path.exists() else None
         if current != expected:
             path.write_text(expected, encoding="utf-8", newline="\n")
             written.append(path)
-    for orphan in _generated_orphan_paths(
-        directory,
-        set(outputs),
-        pattern=orphan_pattern,
-    ):
+    for orphan in _generated_orphan_paths(directory, set(outputs)):
         orphan.unlink()
         written.append(orphan)
     return tuple(written)
 
 
-def _check_projection_set(
-    directory: Path,
-    outputs: dict[Path, str],
-    *,
-    orphan_pattern: str,
-    label: str,
-    stream: Any,
-) -> bool:
+def check_landscape_projections(directory: Path = LANDSCAPE_DIR, *, stream: Any = sys.stdout) -> bool:
+    outputs = expected_landscape_projections(directory)
     ok = True
     for path, expected in outputs.items():
         current = path.read_text(encoding="utf-8") if path.exists() else ""
         if current == expected:
             continue
         ok = False
-        path_label = path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.as_posix()
-        print(f"DRIFT: {path_label} does not match its canonical JSON source", file=stream)
+        label = path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.as_posix()
+        print(f"DRIFT: {label} does not match its canonical JSON source", file=stream)
         diff = difflib.unified_diff(
             current.splitlines(keepends=True),
             expected.splitlines(keepends=True),
-            fromfile=path_label,
-            tofile=f"expected:{path_label}",
+            fromfile=label,
+            tofile=f"expected:{label}",
         )
         for line in diff:
             print(line, end="", file=stream)
 
-    for orphan in _generated_orphan_paths(
-        directory,
-        set(outputs),
-        pattern=orphan_pattern,
-    ):
+    for orphan in _generated_orphan_paths(directory, set(outputs)):
         ok = False
-        path_label = orphan.relative_to(ROOT).as_posix() if orphan.is_relative_to(ROOT) else orphan.as_posix()
-        print(f"DRIFT: orphan generated projection has no canonical JSON source: {path_label}", file=stream)
+        label = orphan.relative_to(ROOT).as_posix() if orphan.is_relative_to(ROOT) else orphan.as_posix()
+        print(f"DRIFT: orphan generated projection has no canonical JSON source: {label}", file=stream)
 
     if ok:
-        print(f"PASS: {len(outputs)} {label} Markdown projections match canonical JSON", file=stream)
+        print(f"PASS: {len(outputs)} landscape Markdown projections match canonical JSON", file=stream)
     return ok
 
-
-def write_landscape_projections(directory: Path = LANDSCAPE_DIR) -> tuple[Path, ...]:
-    return _write_projection_set(
-        directory,
-        expected_landscape_projections(directory),
-        orphan_pattern="sources*.md",
+if __package__:
+    from .structured_public_views import (
+        ACCESS_DIR,
+        MANIFEST_DIR,
+        ProjectionError as StructuredProjectionError,
+        check_structured_projections,
+        write_structured_projections,
+    )
+else:
+    from structured_public_views import (
+        ACCESS_DIR,
+        MANIFEST_DIR,
+        ProjectionError as StructuredProjectionError,
+        check_structured_projections,
+        write_structured_projections,
     )
 
 
-def check_landscape_projections(directory: Path = LANDSCAPE_DIR, *, stream: Any = sys.stdout) -> bool:
-    return _check_projection_set(
-        directory,
-        expected_landscape_projections(directory),
-        orphan_pattern="sources*.md",
-        label="landscape",
-        stream=stream,
-    )
-
-
-def write_structured_projections(directory: Path, *, record_kind: str) -> tuple[Path, ...]:
-    return _write_projection_set(
-        directory,
-        expected_structured_projections(directory, record_kind=record_kind),
-        orphan_pattern="*.md",
-    )
-
-
-def check_structured_projections(
-    directory: Path,
-    *,
-    record_kind: str,
-    stream: Any = sys.stdout,
-) -> bool:
-    return _check_projection_set(
-        directory,
-        expected_structured_projections(directory, record_kind=record_kind),
-        orphan_pattern="*.md",
-        label=record_kind,
-        stream=stream,
-    )
+def _selected_scopes(scope: str) -> tuple[str, ...]:
+    if scope == "all":
+        return ("landscape", "access", "manifests")
+    return (scope,)
 
 
 def write_public_projections(scope: str = "all") -> tuple[Path, ...]:
-    changed: list[Path] = []
-    if scope in {"all", "landscape"}:
-        changed.extend(write_landscape_projections())
-    if scope in {"all", "access"}:
-        changed.extend(write_structured_projections(ACCESS_DIR, record_kind="access"))
-    if scope in {"all", "manifests"}:
-        changed.extend(write_structured_projections(MANIFESTS_DIR, record_kind="manifests"))
-    return tuple(changed)
+    written: list[Path] = []
+    for selected in _selected_scopes(scope):
+        if selected == "landscape":
+            written.extend(write_landscape_projections())
+        elif selected == "access":
+            written.extend(write_structured_projections(ACCESS_DIR, kind="access"))
+        elif selected == "manifests":
+            written.extend(write_structured_projections(MANIFEST_DIR, kind="manifest"))
+        else:
+            raise ProjectionError(f"unsupported projection scope: {selected}")
+    return tuple(written)
 
 
 def check_public_projections(scope: str = "all", *, stream: Any = sys.stdout) -> bool:
-    checks: list[bool] = []
-    if scope in {"all", "landscape"}:
-        checks.append(check_landscape_projections(stream=stream))
-    if scope in {"all", "access"}:
-        checks.append(check_structured_projections(ACCESS_DIR, record_kind="access", stream=stream))
-    if scope in {"all", "manifests"}:
-        checks.append(check_structured_projections(MANIFESTS_DIR, record_kind="manifests", stream=stream))
-    return all(checks)
+    ok = True
+    for selected in _selected_scopes(scope):
+        if selected == "landscape":
+            result = check_landscape_projections(stream=stream)
+        elif selected == "access":
+            result = check_structured_projections(ACCESS_DIR, kind="access", stream=stream)
+        elif selected == "manifests":
+            result = check_structured_projections(MANIFEST_DIR, kind="manifest", stream=stream)
+        else:
+            raise ProjectionError(f"unsupported projection scope: {selected}")
+        ok = result and ok
+    return ok
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -405,7 +288,7 @@ def main(argv: list[str] | None = None) -> int:
         "--scope",
         choices=("all", "landscape", "access", "manifests"),
         default="all",
-        help="Projection family to write/check; default: all",
+        help="Projection family to regenerate or verify (default: all)",
     )
     args = parser.parse_args(argv)
 
@@ -419,7 +302,7 @@ def main(argv: list[str] | None = None) -> int:
                 print("PASS: public projections already current")
             return 0
         return 0 if check_public_projections(args.scope) else 1
-    except ProjectionError as exc:
+    except (ProjectionError, StructuredProjectionError) as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         return 2
 
