@@ -434,7 +434,13 @@ def _validate_zip(path: str, *, deadline: float, monotonic: Any) -> dict[str, An
                     monotonic=monotonic,
                 )
             ]
-            if not product_members and len(text_members) == 1:
+            if (
+                not product_members
+                and len(text_members) == 1
+                and PurePosixPath(text_members[0].filename).name.startswith(
+                    "produkt_extrema_wind_"
+                )
+            ):
                 product_members = text_members
             if len(product_members) != 1:
                 raise AcquisitionError(
