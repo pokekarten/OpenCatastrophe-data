@@ -36,7 +36,7 @@ class PegelonlineLongTermJsonTimeTests(unittest.TestCase):
             "2026-07-15T12:00:00+03:00",
         ):
             with self.subTest(value=value), self.assertRaisesRegex(
-                HydrologyWindowError, "offset must be \+01:00 or \+02:00"
+                HydrologyWindowError, r"offset must be \+01:00 or \+02:00"
             ):
                 pegelonline_long_term_json_time_to_utc(value)
 
