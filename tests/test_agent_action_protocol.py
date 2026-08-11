@@ -8,14 +8,17 @@ import urllib.parse
 import unittest
 from pathlib import Path
 
+from scripts.acquire_dwd_extreme_wind_receipt import AcquisitionError
 from scripts.agent_action_protocol import RESULT_MARKER, canonical_result_comment, semantic_request_id
 from scripts.post_agent_action_result import PostError, post_result
 from scripts.prepare_agent_action_result import (
     PER_PAGE,
     LedgerError,
+    build_acquisition_result,
     build_result,
     fetch_repository_comments,
     find_existing_result,
+    prepare_completed_result,
 )
 from scripts.validate_agent_action_result import ResultError, validate_result
 
@@ -24,7 +27,7 @@ WORKFLOW = ROOT / ".github/workflows/agent-action-dispatch.yml"
 SCHEMA = ROOT / "schemas/agent-action-result-v1.schema.json"
 REPOSITORY = "pokekarten/OpenCatastrophe-data"
 STARTED = "2026-08-11T08:00:00Z"
-FINISHED = "2026-08-11T08:00:01Z"
+FINISHED = "2026-08-11T08:00:02Z"
 
 REQUEST = {
     "schema_version": "oc-action-request-v1",
@@ -34,7 +37,41 @@ REQUEST = {
     "dataset_id": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03",
     "requester": "slot36-run-a",
 }
+ACQUISITION_REQUEST = dict(REQUEST, action="acquisition_receipt")
 EXECUTION_SHA = "b" * 40
+
+ACQUISITION_RECEIPT = {
+    "schema_version": "oc-acquisition-receipt-v1",
+    "dataset_id": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03",
+    "source_issue": 162,
+    "requested_url": (
+        "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/"
+        "10_minutes/extreme_wind/historical/"
+        "10minutenwerte_extrema_wind_00003_20100101_20110331_hist.zip"
+    ),
+    "final_url": (
+        "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/"
+        "10_minutes/extreme_wind/historical/"
+        "10minutenwerte_extrema_wind_00003_20100101_20110331_hist.zip"
+    ),
+    "filename": "10minutenwerte_extrema_wind_00003_20100101_20110331_hist.zip",
+    "retrieved_at": "2026-08-11T08:00:01Z",
+    "byte_count": 488338,
+    "sha256": "c" * 64,
+    "content_type": "application/zip",
+    "last_modified": "Tue, 30 Nov 2021 10:59:16 GMT",
+    "etag": None,
+    "archive_member_count": 2,
+    "archive_uncompressed_bytes": 1000000,
+    "product_member": "produkt_extrema_wind_20100101_20110331_00003.txt",
+    "product_station_id": "00003",
+    "product_begin_date": "20100101",
+    "product_end_date": "20110331",
+    "product_row_count": 65000,
+    "product_structure_validated": True,
+    "external_bytes_persisted": False,
+    "publication_authorized": False,
+}
 
 
 class FakeResponse:
@@ -51,7 +88,7 @@ class FakeResponse:
         return self.payload
 
 
-def result_for(**kwargs):
+def result_for(request=REQUEST, **kwargs):
     parameters = {
         "repository": REPOSITORY,
         "execution_sha": EXECUTION_SHA,
@@ -62,7 +99,22 @@ def result_for(**kwargs):
         "finished_at": FINISHED,
     }
     parameters.update(kwargs)
-    return build_result(REQUEST, **parameters)
+    return build_result(request, **parameters)
+
+
+def acquisition_result_for(receipt=ACQUISITION_RECEIPT, **kwargs):
+    parameters = {
+        "repository": REPOSITORY,
+        "execution_sha": EXECUTION_SHA,
+        "source_comment_id": 100,
+        "run_id": 200,
+        "run_attempt": 1,
+        "started_at": STARTED,
+        "finished_at": FINISHED,
+        "receipt": receipt,
+    }
+    parameters.update(kwargs)
+    return build_acquisition_result(ACQUISITION_REQUEST, **parameters)
 
 
 class AgentActionProtocolTests(unittest.TestCase):
@@ -74,7 +126,10 @@ class AgentActionProtocolTests(unittest.TestCase):
     def test_semantic_identity_changes_with_execution_code_or_repository(self) -> None:
         baseline = semantic_request_id(REQUEST, EXECUTION_SHA, REPOSITORY)
         self.assertNotEqual(baseline, semantic_request_id(REQUEST, "c" * 40, REPOSITORY))
-        self.assertNotEqual(baseline, semantic_request_id(REQUEST, EXECUTION_SHA, "pokekarten/OtherRepo"))
+        self.assertNotEqual(
+            baseline,
+            semantic_request_id(REQUEST, EXECUTION_SHA, "pokekarten/OtherRepo"),
+        )
 
     def test_pass_duplicate_and_blocked_results_are_closed(self) -> None:
         passed = result_for()
@@ -94,6 +149,98 @@ class AgentActionProtocolTests(unittest.TestCase):
         self.assertEqual(blocked["status"], "blocked")
         self.assertEqual(blocked["failure_class"], "ledger_incomplete")
         self.assertFalse(blocked["evidence"]["ledger_scan_complete"])
+
+    def test_acquisition_result_binds_closed_metadata_receipt(self) -> None:
+        result = acquisition_result_for()
+        self.assertEqual(result["action"], "acquisition_receipt")
+        self.assertEqual(result["phase"], "acquisition_receipt")
+        self.assertEqual(result["status"], "pass")
+        self.assertFalse(result["external_bytes_persisted"])
+        self.assertEqual(result["evidence"]["acquisition_receipt"], ACQUISITION_RECEIPT)
+
+        blocked = acquisition_result_for(receipt=None)
+        self.assertEqual(blocked["status"], "blocked")
+        self.assertEqual(blocked["failure_class"], "acquisition_failed")
+        self.assertIsNone(blocked["evidence"]["acquisition_receipt"])
+
+    def test_acquisition_result_rejects_receipt_identity_drift_and_payload_controls(self) -> None:
+        for field, value in (
+            ("dataset_id", "other.dataset"),
+            ("source_issue", 163),
+            ("final_url", "https://example.invalid/data.zip"),
+            ("external_bytes_persisted", True),
+            ("publication_authorized", True),
+            ("product_station_id", "99999"),
+        ):
+            with self.subTest(field=field):
+                mutated_receipt = dict(ACQUISITION_RECEIPT)
+                mutated_receipt[field] = value
+                with self.assertRaises(ResultError):
+                    acquisition_result_for(receipt=mutated_receipt)
+
+        mutated_receipt = dict(ACQUISITION_RECEIPT, etag="ok\nforged")
+        with self.assertRaisesRegex(ResultError, "control characters"):
+            acquisition_result_for(receipt=mutated_receipt)
+
+    def test_acquisition_receipt_timestamp_must_be_inside_action_bounds(self) -> None:
+        mutated_receipt = dict(ACQUISITION_RECEIPT, retrieved_at="2026-08-11T08:00:03Z")
+        with self.assertRaisesRegex(ResultError, "start/finish"):
+            acquisition_result_for(receipt=mutated_receipt)
+
+    def test_prepare_executes_acquisition_only_after_dedup_and_never_on_duplicate(self) -> None:
+        calls = []
+
+        def acquirer():
+            calls.append("called")
+            return dict(ACQUISITION_RECEIPT)
+
+        result = prepare_completed_result(
+            ACQUISITION_REQUEST,
+            [],
+            repository=REPOSITORY,
+            execution_sha=EXECUTION_SHA,
+            source_comment_id=100,
+            run_id=200,
+            run_attempt=1,
+            started_at=STARTED,
+            acquirer=acquirer,
+        )
+        self.assertEqual(result["status"], "pass")
+        self.assertEqual(calls, ["called"])
+
+        prior = acquisition_result_for()
+        comments = [
+            {
+                "id": 999,
+                "body": canonical_result_comment(prior),
+                "user": {"login": "github-actions[bot]"},
+            }
+        ]
+        duplicate = prepare_completed_result(
+            ACQUISITION_REQUEST,
+            comments,
+            repository=REPOSITORY,
+            execution_sha=EXECUTION_SHA,
+            source_comment_id=101,
+            run_id=201,
+            run_attempt=1,
+            started_at=STARTED,
+            acquirer=lambda: self.fail("duplicate acquisition must not execute worker"),
+        )
+        self.assertEqual(duplicate["status"], "duplicate")
+        self.assertEqual(duplicate["duplicate_result_comment_id"], 999)
+        self.assertEqual(duplicate["phase"], "request_validation")
+
+    def test_blocked_acquisition_is_completed_for_same_semantic_identity(self) -> None:
+        blocked = acquisition_result_for(receipt=None)
+        comments = [
+            {
+                "id": 998,
+                "body": canonical_result_comment(blocked),
+                "user": {"login": "github-actions[bot]"},
+            }
+        ]
+        self.assertEqual(find_existing_result(comments, blocked["semantic_request_id"]), 998)
 
     def test_result_validator_rejects_bool_as_integer_and_external_bytes(self) -> None:
         result = result_for()
@@ -202,15 +349,27 @@ class AgentActionProtocolTests(unittest.TestCase):
         with self.assertRaisesRegex(LedgerError, "exceeds the fail-closed scan bound"):
             fetch_repository_comments(REPOSITORY, "token", opener=opener, max_pages=1)
 
-    def test_result_schema_matches_self_contained_observability_boundary(self) -> None:
+    def test_result_schema_matches_closed_observability_and_acquisition_boundary(self) -> None:
         schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
         self.assertFalse(schema["additionalProperties"])
         self.assertEqual(schema["properties"]["external_bytes_persisted"], {"const": False})
-        self.assertEqual(schema["properties"]["phase"], {"const": "request_validation"})
+        self.assertEqual(
+            set(schema["properties"]["phase"]["enum"]),
+            {"request_validation", "acquisition_receipt"},
+        )
+        self.assertEqual(
+            set(schema["properties"]["action"]["enum"]),
+            {"sample_audit", "acquisition_receipt"},
+        )
         self.assertEqual(set(schema["properties"]["status"]["enum"]), {"pass", "duplicate", "blocked"})
         for field in ("repository", "started_at", "finished_at", "evidence"):
             self.assertIn(field, schema["required"])
-        self.assertFalse(schema["properties"]["evidence"]["additionalProperties"])
+        self.assertIn("acquisitionReceipt", schema["$defs"])
+        receipt_schema = schema["$defs"]["acquisitionReceipt"]
+        self.assertFalse(receipt_schema["additionalProperties"])
+        self.assertEqual(receipt_schema["properties"]["source_issue"], {"const": 162})
+        self.assertEqual(receipt_schema["properties"]["external_bytes_persisted"], {"const": False})
+        self.assertEqual(receipt_schema["properties"]["publication_authorized"], {"const": False})
         self.assertIn("scripts/validate_agent_action_result.py", schema["description"])
 
     def test_poster_revalidates_receipt_repository_and_posts_only_canonical_body(self) -> None:
@@ -223,7 +382,13 @@ class AgentActionProtocolTests(unittest.TestCase):
             seen["authorization"] = request.headers.get("Authorization")
             return FakeResponse({"id": 321})
 
-        comment_id = post_result(result, repository=REPOSITORY, expected_issue=162, token="test-token", opener=opener)
+        comment_id = post_result(
+            result,
+            repository=REPOSITORY,
+            expected_issue=162,
+            token="test-token",
+            opener=opener,
+        )
         self.assertEqual(comment_id, 321)
         self.assertEqual(seen["url"], f"https://api.github.com/repos/{REPOSITORY}/issues/162/comments")
         self.assertEqual(seen["body"], {"body": canonical_result_comment(result)})
@@ -257,6 +422,7 @@ class AgentActionProtocolTests(unittest.TestCase):
         self.assertIn("execution_sha: ${{ steps.prepare-result.outputs.execution_sha }}", workflow)
         self.assertIn("ref: ${{ needs.validate-request.outputs.execution_sha }}", workflow)
         self.assertIn("python scripts/post_agent_action_result.py", workflow)
+        self.assertIn("repository-owned frozen DWD worker", workflow)
         self.assertNotIn("run_command", workflow)
         self.assertNotIn("curl ", workflow)
         self.assertNotIn("github.event.pull_request.head", workflow)
