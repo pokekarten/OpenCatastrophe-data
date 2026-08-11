@@ -22,6 +22,12 @@ class RepositoryJsonProjectionCoverageTests(unittest.TestCase):
             ("landscape", "access", "manifests", "schemas"),
         )
 
+    def test_schema_keyword_labels_are_readable(self) -> None:
+        self.assertEqual(structured._label("additionalProperties"), "Additional properties")
+        self.assertEqual(structured._label("minItems"), "Min items")
+        self.assertEqual(structured._label("allOf"), "All of")
+        self.assertEqual(structured._label("$ref"), "$ref")
+
     def test_schema_projection_is_human_readable(self) -> None:
         payload = {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -47,7 +53,7 @@ class RepositoryJsonProjectionCoverageTests(unittest.TestCase):
         self.assertIn("## Properties", rendered)
         self.assertIn("**Minimum:** `0`", rendered)
         self.assertIn("- value", rendered)
-        self.assertIn("**Additionalproperties:** `false`", rendered)
+        self.assertIn("**Additional properties:** `false`", rendered)
 
 
 if __name__ == "__main__":

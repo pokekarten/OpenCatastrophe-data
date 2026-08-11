@@ -21,6 +21,7 @@ GENERATED_MARKER = "GENERATED FILE — DO NOT EDIT DIRECTLY"
 GENERATED_SPDX_LICENSE_LINE = "SPDX-" + "License-Identifier: Apache-2.0"
 MARKDOWN_ESCAPE_RE = re.compile(r"([\\`*\[\]{}#!|])")
 FULL_HTTPS_URL_RE = re.compile(r"https://[^\s<>]+$")
+CAMEL_CASE_BOUNDARY_RE = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
 
 
 class ProjectionError(ValueError):
@@ -57,7 +58,11 @@ def load_structured_json(path: Path) -> dict[str, Any]:
 
 
 def _label(key: str) -> str:
-    return key.replace("_", " ").replace("-", " ").strip().capitalize()
+    if key.startswith("$"):
+        return key
+    normalized = key.replace("_", " ").replace("-", " ")
+    normalized = CAMEL_CASE_BOUNDARY_RE.sub(" ", normalized)
+    return normalized.strip().capitalize()
 
 
 def _markdown_text(value: str) -> str:
