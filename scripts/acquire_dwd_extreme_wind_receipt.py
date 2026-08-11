@@ -45,7 +45,6 @@ MAX_UNCOMPRESSED_BYTES = 104_857_600
 TOTAL_DEADLINE_SECONDS = 60.0
 CHUNK_SIZE = 65_536
 MAX_ROW_BYTES = 4096
-PRODUCT_MEMBER_PREFIX = "produkt_extrema_wind_"
 ALLOWED_COMPRESSION_METHODS = frozenset({zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED})
 
 
@@ -210,6 +209,33 @@ def _normalized_columns(header_line: str) -> list[str]:
     return [part.strip().strip('"') for part in header_line.rstrip("\r\n").split(";")]
 
 
+def _member_matches_product_header(
+    archive: zipfile.ZipFile,
+    member: zipfile.ZipInfo,
+    *,
+    deadline: float,
+    monotonic: Any,
+) -> bool:
+    """Identify a product member from its bounded DWD header, never its provider filename."""
+    if member.is_dir() or PurePosixPath(member.filename).suffix.casefold() != ".txt":
+        return False
+    try:
+        with archive.open(member, "r") as raw:
+            _remaining(deadline, monotonic)
+            header_bytes = raw.readline(MAX_ROW_BYTES + 1)
+            _remaining(deadline, monotonic)
+    except RuntimeError as exc:
+        raise AcquisitionError("archive text member could not be inspected") from exc
+    if not header_bytes or len(header_bytes) > MAX_ROW_BYTES:
+        return False
+    try:
+        header = header_bytes.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return False
+    columns = _normalized_columns(header)
+    return "STATIONS_ID" in columns and all(column in columns for column in EXPECTED_COLUMNS)
+
+
 def _validate_member_crc(
     archive: zipfile.ZipFile,
     member: zipfile.ZipInfo,
@@ -366,7 +392,6 @@ def _validate_zip(path: str, *, deadline: float, monotonic: Any) -> dict[str, An
                     "archive member count is outside the bounded policy"
                 )
             total_uncompressed = 0
-            product_members: list[zipfile.ZipInfo] = []
             for member in members:
                 _remaining(deadline, monotonic)
                 _validate_member_name(member.filename)
@@ -384,21 +409,28 @@ def _validate_zip(path: str, *, deadline: float, monotonic: Any) -> dict[str, An
                 total_uncompressed += member.file_size
                 if total_uncompressed > MAX_UNCOMPRESSED_BYTES:
                     raise AcquisitionError("archive exceeds uncompressed-size bound")
-                base = PurePosixPath(member.filename).name
-                if base.startswith(PRODUCT_MEMBER_PREFIX) and base.endswith(".txt"):
-                    product_members.append(member)
             if total_uncompressed < 1:
                 raise AcquisitionError("archive uncompressed payload is empty")
-            if len(product_members) != 1:
-                raise AcquisitionError(
-                    "archive must contain exactly one DWD extreme-wind product text member"
-                )
             for member in members:
                 _validate_member_crc(
                     archive,
                     member,
                     deadline=deadline,
                     monotonic=monotonic,
+                )
+            product_members = [
+                member
+                for member in members
+                if _member_matches_product_header(
+                    archive,
+                    member,
+                    deadline=deadline,
+                    monotonic=monotonic,
+                )
+            ]
+            if len(product_members) != 1:
+                raise AcquisitionError(
+                    "archive must contain exactly one text member matching the DWD extreme-wind product header"
                 )
             product_evidence = _validate_product_shape(
                 archive,
