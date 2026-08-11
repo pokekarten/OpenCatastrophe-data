@@ -42,6 +42,7 @@ jobs:
       - name: Regenerate all human-readable JSON projections
         run: python scripts/render_public_views.py --write --scope all
 
+      # Stage first so newly generated, previously untracked Markdown is included in validation.
       - name: Stage generated projection roots
         run: git add -A -- access landscape manifests schemas
 
