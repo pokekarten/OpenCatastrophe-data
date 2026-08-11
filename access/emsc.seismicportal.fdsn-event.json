@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "emsc.seismicportal.fdsn-event",
+  "source_ids": [
+    "emsc.seismicportal.fdsn-event"
+  ],
+  "provider": "Euro-Mediterranean Seismological Centre (EMSC) / SeismicPortal",
+  "interface_type": "fdsn",
+  "status": "probe_ready",
+  "documentation_url": "https://www.seismicportal.eu/fdsn-wsevent.html",
+  "service_root": "https://www.seismicportal.eu",
+  "api_version": "FDSN Event service /1; OpenAPI 2.2",
+  "access_scope": [
+    "catalogue",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "latest_event_json"
+    ],
+    "path_templates": [
+      "/fdsnws/event/1/query"
+    ],
+    "parameter_rules": "The initial probe is repository-constructed only: format=json, limit=1, includeallorigins=false and includearrivals=false. Callers cannot supply a host, arbitrary path, headers, event identifier, catalogue, contributor, geographic filter, time range, pagination offset or unrestricted query parameters. Any later parameterized scientific query requires a separately reviewed bounded operation rather than widening this probe contract."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "EMSC SeismicPortal FDSN-event JSON response for one catalogue event.",
+    "scientific_semantics": "This service exposes EMSC earthquake event parameters under the FDSN Event interface. A successful probe demonstrates only service connectivity and response-contract compatibility; it does not establish catalogue completeness, event accuracy, suitability for hazard calibration or an immutable scientific event identity. Event parameters may be updated as the operational catalogue evolves."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 1048576,
+    "max_sample_bytes": 1048576,
+    "retry_policy": "bounded_backoff",
+    "rate_limit_notes": "No repository-specific request-rate assumption is made. The provider documents a maximum query limit of 20000 events; this contract intentionally fixes the probe limit to one event and must not be used for bulk harvesting.",
+    "mutability_notes": "The EMSC event catalogue is operational and mutable. Every future probe receipt must bind retrieval UTC, exact trusted execution code, normalized request identity, response byte count and SHA-256; a later scientific run must separately freeze the event/product identity it actually uses."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "separate_reviewed",
+    "terms_url": "https://www.seismicportal.eu/terms.html",
+    "commercial_automation_status": "allowed",
+    "redistribution_status": "allowed",
+    "notes": "The FDSN Event service documentation explicitly states that data provided by this service are distributed under CC BY 4.0. The general SeismicPortal terms note that service-specific datasets can carry CC BY 4.0 and direct users to each web-service documentation. This contract records that service-specific ceiling only; it does not authorize repository persistence/publication of future response bytes without the normal exact-asset/sample review and attribution/provenance evidence."
+  },
+  "probe_contract": {
+    "mode": "catalogue_query",
+    "operation": "latest_event_json",
+    "requires_credentials": false,
+    "expected_evidence": [
+      "provider success status without unsafe payload logging",
+      "application/json response media type",
+      "response byte count and SHA-256",
+      "bounded one-event response-contract validation",
+      "retrieval UTC and trusted execution-code identity",
+      "external_bytes_persisted=false"
+    ]
+  },
+  "implementation_decision": "build_later",
+  "reviewed_at": "2026-08-11",
+  "evidence_urls": [
+    "https://www.seismicportal.eu/fdsn-wsevent.html",
+    "https://www.seismicportal.eu/fdsnws/event/1/docs",
+    "https://www.seismicportal.eu/terms.html"
+  ],
+  "notes": "Static contract only. The provider documentation currently exposes query/count/catalog/contributor/version operations and JSON, QuakeML/XML and text outputs; this OpenCatastrophe slice deliberately contracts only one anonymous one-event JSON probe. No adapter or live network execution is added here. Future hosted probing must reuse the reviewed trusted Actions network plane and must not treat connectivity as admission, scientific fitness or publication approval."
+}
