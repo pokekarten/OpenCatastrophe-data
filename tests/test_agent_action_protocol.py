@@ -37,7 +37,7 @@ REQUEST = {
     "dataset_id": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03",
     "requester": "slot36-run-a",
 }
-ACQUISITION_REQUEST = dict(REQUEST, action="acquisition_receipt")
+ACQUISITION_REQUEST = dict(REQUEST, action="acquisition_receipt", target_sha="b" * 40)
 EXECUTION_SHA = "b" * 40
 
 ACQUISITION_RECEIPT = {
