@@ -57,7 +57,16 @@ class GithubShapeTests(unittest.TestCase):
         for value in ("pokekarten", " pokekarten/OpenCatastrophe-data", "https://github.com/pokekarten/OpenCatastrophe-data"):
             with self.subTest(value=value), self.assertRaises(collisions.CollisionCheckError):
                 collisions.require_repository(value)
-        for value in ("http://api.github.com", "https://api.github.com?token=bad", "api.github.com"):
+        for value in (
+            "http://api.github.com",
+            "https://api.github.com?token=bad",
+            "https://api.github.com#fragment",
+            "https://api.github.com/v3",
+            "https://api.github.com:443",
+            "https://user:pass@api.github.com",
+            "https://example.invalid",
+            "api.github.com",
+        ):
             with self.subTest(value=value), self.assertRaises(collisions.CollisionCheckError):
                 collisions.require_api_url(value)
 
