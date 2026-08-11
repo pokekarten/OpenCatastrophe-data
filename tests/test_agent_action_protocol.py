@@ -238,12 +238,14 @@ class AgentActionProtocolTests(unittest.TestCase):
                 opener=opener,
             )
 
-    def test_workflow_isolates_untrusted_comments_and_uses_minimal_issue_permissions(self) -> None:
+    def test_workflow_isolates_untrusted_comments_queues_authorized_slots_and_uses_minimal_permissions(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("'authorized-v1' || github.event.comment.id", workflow)
         self.assertIn("github.event.comment.user.login == github.event.repository.owner.login", workflow)
         self.assertIn("github.event.comment.author_association == 'OWNER'", workflow)
         self.assertIn("contains(github.event.comment.body, '<!-- oc-action-request-v1 -->')", workflow)
+        self.assertIn("queue: max", workflow)
+        self.assertIn("cancel-in-progress: false", workflow)
         self.assertNotIn("group: agent-action-dispatch-v1\n", workflow)
         self.assertIn("name: Validate and classify authorized action request", workflow)
         self.assertEqual(workflow.count("issues: read"), 1)
