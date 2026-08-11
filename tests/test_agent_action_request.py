@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from scripts.validate_agent_action_request import (
+    ACQUISITION_RECEIPT_DATASET_ID,
     ALLOWED_ACTIONS,
     REQUIRED_FIELDS,
     SAFE_ID,
@@ -41,6 +42,22 @@ class AgentActionRequestTests(unittest.TestCase):
         parsed = extract_request(comment(json.dumps(VALID)))
         self.assertEqual(validate_request(parsed, expected_issue=162), VALID)
 
+    def test_accepts_only_frozen_issue_and_dataset_for_acquisition_receipt(self) -> None:
+        request = dict(
+            VALID,
+            action="acquisition_receipt",
+            dataset_id=ACQUISITION_RECEIPT_DATASET_ID,
+        )
+        self.assertEqual(validate_request(request, expected_issue=162), request)
+
+        for mutation in (
+            {"issue": 163},
+            {"dataset_id": "other.dataset"},
+        ):
+            with self.subTest(mutation=mutation):
+                with self.assertRaisesRegex(RequestError, "acquisition_receipt is restricted"):
+                    validate_request(dict(request, **mutation))
+
     def test_schema_matches_executable_security_contract(self) -> None:
         schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
         self.assertFalse(schema["additionalProperties"])
@@ -71,6 +88,13 @@ class AgentActionRequestTests(unittest.TestCase):
                         "pattern": SAFE_ID.pattern,
                     },
                 )
+
+        acquisition_rule = schema["allOf"][0]["then"]["properties"]
+        self.assertEqual(acquisition_rule["issue"], {"const": 162})
+        self.assertEqual(
+            acquisition_rule["dataset_id"],
+            {"const": ACQUISITION_RECEIPT_DATASET_ID},
+        )
 
     def test_workflow_authorizes_only_repository_owner(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
