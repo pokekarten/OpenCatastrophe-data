@@ -26,28 +26,19 @@ class PostError(RuntimeError):
     """Raised when a validated result cannot be posted safely."""
 
 
-def post_result(
-    result: dict,
-    *,
-    repository: str,
-    expected_issue: int,
-    token: str,
-    opener=urllib.request.urlopen,
-) -> int:
+def post_result(result: dict, *, repository: str, expected_issue: int, token: str, opener=urllib.request.urlopen) -> int:
     result = validate_result(result)
     if result["source_issue"] != expected_issue:
         raise PostError("result source_issue does not match triggering issue")
+    if result["repository"] != repository:
+        raise PostError("result repository does not match workflow repository")
     if type(repository) is not str or repository.count("/") != 1:
         raise PostError("repository must be owner/name")
     if type(token) is not str or not token:
         raise PostError("GitHub token is absent")
 
     url = f"{API_ROOT}/repos/{repository}/issues/{expected_issue}/comments"
-    payload = json.dumps(
-        {"body": canonical_result_comment(result)},
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
+    payload = json.dumps({"body": canonical_result_comment(result)}, sort_keys=True, separators=(",", ":")).encode("utf-8")
     request = urllib.request.Request(
         url,
         data=payload,
