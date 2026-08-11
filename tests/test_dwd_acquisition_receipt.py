@@ -23,11 +23,13 @@ from scripts.acquire_dwd_extreme_wind_receipt import (  # noqa: E402
     FILENAME,
     EXPECTED_HOST,
     MAX_BYTES,
+    MAX_ROW_BYTES,
     SOURCE_URL,
     PublicOnlyHTTPSConnection,
     _classify_public_sockaddrs,
     _resolve_with_timeout,
     _validate_member_crc,
+    _validate_product_shape,
     acquire,
 )
 
@@ -260,6 +262,12 @@ class AcquisitionReceiptTests(unittest.TestCase):
         with self.assertRaisesRegex(AcquisitionError, "non-numeric"):
             acquire(opener=lambda request, timeout: FakeResponse(bad_numeric))
 
+    def test_rejects_overlong_product_row_without_reading_unbounded_line(self):
+        overlong_row = "3;201001010000;2;" + ("1" * MAX_ROW_BYTES) + "\n"
+        payload = make_zip(payload=(VALID_HEADER + overlong_row).encode())
+        with self.assertRaisesRegex(AcquisitionError, "row exceeds bounded"):
+            acquire(opener=lambda request, timeout: FakeResponse(payload))
+
     def test_total_deadline_blocks_drip_response(self):
         payload = make_zip()
         clock = FakeClock()
@@ -298,6 +306,19 @@ class AcquisitionReceiptTests(unittest.TestCase):
                 deadline=60.0,
                 monotonic=lambda: 0.0,
             )
+
+    def test_product_shape_validation_obeys_total_deadline(self):
+        payload = make_zip()
+        with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+            member = archive.infolist()[0]
+            clock = SequenceClock([0.0, 0.0, 0.0, 61.0])
+            with self.assertRaisesRegex(AcquisitionError, "total deadline"):
+                _validate_product_shape(
+                    archive,
+                    member,
+                    deadline=60.0,
+                    monotonic=clock,
+                )
 
     def test_dns_rejects_loopback_private_and_link_local(self):
         for address in ("127.0.0.1", "10.1.2.3", "169.254.1.2"):
