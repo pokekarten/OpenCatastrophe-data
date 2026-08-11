@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT))
 
 from scripts.acquire_dwd_extreme_wind_receipt import (  # noqa: E402
     AcquisitionError,
+    CHUNK_SIZE,
     FILENAME,
     EXPECTED_HOST,
     MAX_BYTES,
@@ -26,6 +27,7 @@ from scripts.acquire_dwd_extreme_wind_receipt import (  # noqa: E402
     PublicOnlyHTTPSConnection,
     _classify_public_sockaddrs,
     _resolve_with_timeout,
+    _validate_member_crc,
     acquire,
 )
 
@@ -81,6 +83,14 @@ class FakeClock:
 
     def __call__(self) -> float:
         return self.value
+
+
+class SequenceClock:
+    def __init__(self, values: list[float]) -> None:
+        self._values = iter(values)
+
+    def __call__(self) -> float:
+        return next(self._values)
 
 
 def make_zip(
@@ -261,6 +271,32 @@ class AcquisitionReceiptTests(unittest.TestCase):
                     advance_on_read=61.0,
                 ),
                 monotonic=clock,
+            )
+
+    def test_archive_crc_validation_obeys_total_deadline(self):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("payload.txt", b"x" * (CHUNK_SIZE * 2))
+        with zipfile.ZipFile(io.BytesIO(buffer.getvalue())) as archive:
+            member = archive.infolist()[0]
+            clock = SequenceClock([0.0, 61.0])
+            with self.assertRaisesRegex(AcquisitionError, "total deadline"):
+                _validate_member_crc(
+                    archive,
+                    member,
+                    deadline=60.0,
+                    monotonic=clock,
+                )
+
+    def test_archive_crc_validation_rejects_unsupported_compression(self):
+        member = zipfile.ZipInfo("payload.txt")
+        member.compress_type = zipfile.ZIP_BZIP2
+        with self.assertRaisesRegex(AcquisitionError, "unsupported compression"):
+            _validate_member_crc(
+                MagicMock(),
+                member,
+                deadline=60.0,
+                monotonic=lambda: 0.0,
             )
 
     def test_dns_rejects_loopback_private_and_link_local(self):
