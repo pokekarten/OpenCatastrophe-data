@@ -1,7 +1,12 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Prepare one durable request-validation result with repository-wide deduplication."""
+"""Prepare one durable action result with repository-wide deduplication.
+
+Only the closed acquisition_receipt action executes provider network work here,
+and only after request validation plus a complete duplicate-result ledger scan.
+The worker itself owns the exact DWD URL and all transport/archive bounds.
+"""
 
 from __future__ import annotations
 
@@ -13,16 +18,48 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Callable
 
 try:
-    from scripts.agent_action_protocol import ProtocolError, RESULT_SCHEMA_VERSION, TRUSTED_RESULT_LOGINS, extract_result_comment, semantic_request_id
-    from scripts.validate_agent_action_request import RequestError, extract_request, validate_request
-    from scripts.validate_agent_action_result import ResultError, validate_result
+    from scripts.acquire_dwd_extreme_wind_receipt import AcquisitionError, acquire
+    from scripts.agent_action_protocol import (
+        ProtocolError,
+        RESULT_SCHEMA_VERSION,
+        TRUSTED_RESULT_LOGINS,
+        extract_result_comment,
+        semantic_request_id,
+    )
+    from scripts.validate_agent_action_request import (
+        ACQUISITION_RECEIPT_ACTION,
+        RequestError,
+        extract_request,
+        validate_request,
+    )
+    from scripts.validate_agent_action_result import (
+        ACQUISITION_FAILURE_CLASS,
+        ResultError,
+        validate_result,
+    )
 except ModuleNotFoundError:  # pragma: no cover - direct script execution path
-    from agent_action_protocol import ProtocolError, RESULT_SCHEMA_VERSION, TRUSTED_RESULT_LOGINS, extract_result_comment, semantic_request_id
-    from validate_agent_action_request import RequestError, extract_request, validate_request
-    from validate_agent_action_result import ResultError, validate_result
+    from acquire_dwd_extreme_wind_receipt import AcquisitionError, acquire
+    from agent_action_protocol import (
+        ProtocolError,
+        RESULT_SCHEMA_VERSION,
+        TRUSTED_RESULT_LOGINS,
+        extract_result_comment,
+        semantic_request_id,
+    )
+    from validate_agent_action_request import (
+        ACQUISITION_RECEIPT_ACTION,
+        RequestError,
+        extract_request,
+        validate_request,
+    )
+    from validate_agent_action_result import (
+        ACQUISITION_FAILURE_CLASS,
+        ResultError,
+        validate_result,
+    )
 
 API_ROOT = "https://api.github.com"
 PER_PAGE = 100
@@ -64,7 +101,15 @@ def find_existing_result(comments: list[dict[str, Any]], semantic_id: str) -> in
             validate_result(result)
         except ResultError as exc:
             raise LedgerError(f"trusted result comment fails result validation: {exc}") from exc
-        if result["semantic_request_id"] != semantic_id or result["status"] not in {"pass", "duplicate"}:
+        if result["semantic_request_id"] != semantic_id:
+            continue
+        completed = result["status"] in {"pass", "duplicate"} or (
+            result["action"] == ACQUISITION_RECEIPT_ACTION
+            and result["phase"] == "acquisition_receipt"
+            and result["status"] == "blocked"
+            and result["failure_class"] == ACQUISITION_FAILURE_CLASS
+        )
+        if not completed:
             continue
         comment_id = comment.get("id")
         if type(comment_id) is not int or comment_id < 1:
@@ -73,7 +118,13 @@ def find_existing_result(comments: list[dict[str, Any]], semantic_id: str) -> in
     return None
 
 
-def fetch_repository_comments(repository: str, token: str, *, opener: Any = urllib.request.urlopen, max_pages: int = MAX_LEDGER_PAGES) -> list[dict[str, Any]]:
+def fetch_repository_comments(
+    repository: str,
+    token: str,
+    *,
+    opener: Any = urllib.request.urlopen,
+    max_pages: int = MAX_LEDGER_PAGES,
+) -> list[dict[str, Any]]:
     if type(repository) is not str or repository.count("/") != 1:
         raise LedgerError("repository must be owner/name")
     if type(token) is not str or not token:
@@ -83,7 +134,9 @@ def fetch_repository_comments(repository: str, token: str, *, opener: Any = urll
 
     comments: list[dict[str, Any]] = []
     for page in range(1, max_pages + 1):
-        query = urllib.parse.urlencode({"sort": "created", "direction": "desc", "per_page": PER_PAGE, "page": page})
+        query = urllib.parse.urlencode(
+            {"sort": "created", "direction": "desc", "per_page": PER_PAGE, "page": page}
+        )
         request = urllib.request.Request(
             f"{API_ROOT}/repos/{repository}/issues/comments?{query}",
             headers={
@@ -107,7 +160,9 @@ def fetch_repository_comments(repository: str, token: str, *, opener: Any = urll
         comments.extend(payload)
         if len(payload) < PER_PAGE:
             return comments
-    raise LedgerError(f"GitHub result ledger exceeds the fail-closed scan bound of {max_pages * PER_PAGE} comments")
+    raise LedgerError(
+        f"GitHub result ledger exceeds the fail-closed scan bound of {max_pages * PER_PAGE} comments"
+    )
 
 
 def build_result(
@@ -123,6 +178,7 @@ def build_result(
     duplicate_result_comment_id: int | None = None,
     ledger_incomplete: bool = False,
 ) -> dict[str, Any]:
+    """Build request-validation evidence, including dedup/ledger failure states."""
     semantic_id = semantic_request_id(request, execution_sha, repository)
     if ledger_incomplete:
         status, failure_class, duplicate_result_comment_id = "blocked", "ledger_incomplete", None
@@ -159,6 +215,109 @@ def build_result(
         "failure_class": failure_class,
     }
     return validate_result(result)
+
+
+def build_acquisition_result(
+    request: dict[str, Any],
+    *,
+    repository: str,
+    execution_sha: str,
+    source_comment_id: int,
+    run_id: int,
+    run_attempt: int,
+    started_at: str,
+    finished_at: str,
+    receipt: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Bind one successful or blocked frozen-DWD acquisition attempt."""
+    status = "pass" if receipt is not None else "blocked"
+    result = {
+        "schema_version": RESULT_SCHEMA_VERSION,
+        "semantic_request_id": semantic_request_id(request, execution_sha, repository),
+        "repository": repository,
+        "action": request["action"],
+        "source_issue": request["issue"],
+        "source_comment_id": source_comment_id,
+        "target_sha": request["target_sha"],
+        "dataset_id": request["dataset_id"],
+        "execution_sha": execution_sha,
+        "run_id": run_id,
+        "run_attempt": run_attempt,
+        "started_at": started_at,
+        "finished_at": finished_at,
+        "phase": "acquisition_receipt",
+        "status": status,
+        "external_bytes_persisted": False,
+        "evidence": {
+            "request_validated": True,
+            "ledger_scan_complete": True,
+            "prior_result_reused": False,
+            "acquisition_receipt": receipt,
+        },
+        "duplicate_result_comment_id": None,
+        "failure_class": None if receipt is not None else ACQUISITION_FAILURE_CLASS,
+    }
+    return validate_result(result)
+
+
+def prepare_completed_result(
+    request: dict[str, Any],
+    comments: list[dict[str, Any]],
+    *,
+    repository: str,
+    execution_sha: str,
+    source_comment_id: int,
+    run_id: int,
+    run_attempt: int,
+    started_at: str,
+    acquirer: Callable[[], dict[str, Any]] = acquire,
+) -> dict[str, Any]:
+    """Deduplicate first, then execute only the closed allowlisted acquisition action."""
+    semantic_id = semantic_request_id(request, execution_sha, repository)
+    duplicate_id = find_existing_result(comments, semantic_id)
+    if duplicate_id is not None:
+        return build_result(
+            request,
+            repository=repository,
+            execution_sha=execution_sha,
+            source_comment_id=source_comment_id,
+            run_id=run_id,
+            run_attempt=run_attempt,
+            started_at=started_at,
+            finished_at=utc_now(),
+            duplicate_result_comment_id=duplicate_id,
+        )
+
+    if request["action"] != ACQUISITION_RECEIPT_ACTION:
+        return build_result(
+            request,
+            repository=repository,
+            execution_sha=execution_sha,
+            source_comment_id=source_comment_id,
+            run_id=run_id,
+            run_attempt=run_attempt,
+            started_at=started_at,
+            finished_at=utc_now(),
+        )
+
+    try:
+        receipt = acquirer()
+    except AcquisitionError as exc:
+        # The durable result carries only a closed failure class. The trusted
+        # workflow log receives the bounded worker diagnostic for operators.
+        print(f"acquisition blocked: {exc}", file=sys.stderr)
+        receipt = None
+    return build_acquisition_result(
+        request,
+        repository=repository,
+        execution_sha=execution_sha,
+        source_comment_id=source_comment_id,
+        run_id=run_id,
+        run_attempt=run_attempt,
+        started_at=started_at,
+        finished_at=utc_now(),
+        receipt=receipt,
+    )
 
 
 def positive_int(value: str, field: str) -> int:
@@ -198,20 +357,17 @@ def main(argv: list[str] | None = None) -> int:
         run_id = positive_int(args.run_id, "run_id")
         run_attempt = positive_int(args.run_attempt, "run_attempt")
         request = validate_request(extract_request(body), expected_issue=issue)
-        semantic_id = semantic_request_id(request, args.execution_sha, args.repository)
         try:
             comments = fetch_repository_comments(args.repository, token)
-            duplicate_id = find_existing_result(comments, semantic_id)
-            result = build_result(
+            result = prepare_completed_result(
                 request,
+                comments,
                 repository=args.repository,
                 execution_sha=args.execution_sha,
                 source_comment_id=source_comment_id,
                 run_id=run_id,
                 run_attempt=run_attempt,
                 started_at=started_at,
-                finished_at=utc_now(),
-                duplicate_result_comment_id=duplicate_id,
             )
         except LedgerError:
             result = build_result(
