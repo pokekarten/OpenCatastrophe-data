@@ -195,7 +195,18 @@
         "commercial_automation_status": {"type": "string", "enum": ["allowed", "restricted", "prohibited", "unknown"]},
         "redistribution_status": {"type": "string", "enum": ["allowed", "restricted", "prohibited", "unknown"]},
         "notes": {"$ref": "#/$defs/nonBlank"}
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"api_terms_status": {"const": "separate_reviewed"}},
+            "required": ["api_terms_status"]
+          },
+          "then": {
+            "properties": {"terms_url": {"$ref": "#/$defs/httpsUrl"}}
+          }
+        }
+      ]
     },
     "probe_contract": {
       "type": "object",
