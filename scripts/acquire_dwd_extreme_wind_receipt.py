@@ -44,6 +44,7 @@ MAX_UNCOMPRESSED_BYTES = 104_857_600
 TOTAL_DEADLINE_SECONDS = 60.0
 CHUNK_SIZE = 65_536
 PRODUCT_MEMBER_PREFIX = "produkt_extrema_wind_"
+ALLOWED_COMPRESSION_METHODS = frozenset({zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED})
 
 
 class AcquisitionError(RuntimeError):
@@ -207,6 +208,40 @@ def _normalized_columns(header_line: str) -> list[str]:
     return [part.strip().strip('"') for part in header_line.rstrip("\r\n").split(";")]
 
 
+def _validate_member_crc(
+    archive: zipfile.ZipFile,
+    member: zipfile.ZipInfo,
+    *,
+    deadline: float,
+    monotonic: Any,
+) -> None:
+    """CRC/decompress one member in bounded chunks inside the total deadline."""
+    if member.compress_type not in ALLOWED_COMPRESSION_METHODS:
+        raise AcquisitionError("archive uses an unsupported compression method")
+    if member.is_dir():
+        if member.file_size != 0:
+            raise AcquisitionError("archive directory member has non-zero payload size")
+        return
+    observed = 0
+    try:
+        with archive.open(member, "r") as raw:
+            while True:
+                _remaining(deadline, monotonic)
+                chunk = raw.read(CHUNK_SIZE)
+                _remaining(deadline, monotonic)
+                if not chunk:
+                    break
+                observed += len(chunk)
+                if observed > member.file_size:
+                    raise AcquisitionError("archive member expanded beyond declared size")
+    except AcquisitionError:
+        raise
+    except RuntimeError as exc:
+        raise AcquisitionError("archive member CRC/decompression validation failed") from exc
+    if observed != member.file_size:
+        raise AcquisitionError("archive member size does not match decompressed bytes")
+
+
 def _validate_product_shape(
     archive: zipfile.ZipFile,
     member: zipfile.ZipInfo,
@@ -324,6 +359,8 @@ def _validate_zip(path: str, *, deadline: float, monotonic: Any) -> dict[str, An
                     raise AcquisitionError("encrypted archive members are forbidden")
                 if member.file_size < 0 or member.compress_size < 0:
                     raise AcquisitionError("archive member sizes are invalid")
+                if member.compress_type not in ALLOWED_COMPRESSION_METHODS:
+                    raise AcquisitionError("archive uses an unsupported compression method")
                 total_uncompressed += member.file_size
                 if total_uncompressed > MAX_UNCOMPRESSED_BYTES:
                     raise AcquisitionError("archive exceeds uncompressed-size bound")
@@ -336,10 +373,13 @@ def _validate_zip(path: str, *, deadline: float, monotonic: Any) -> dict[str, An
                 raise AcquisitionError(
                     "archive must contain exactly one DWD extreme-wind product text member"
                 )
-            _remaining(deadline, monotonic)
-            if archive.testzip() is not None:
-                raise AcquisitionError("archive CRC validation failed")
-            _remaining(deadline, monotonic)
+            for member in members:
+                _validate_member_crc(
+                    archive,
+                    member,
+                    deadline=deadline,
+                    monotonic=monotonic,
+                )
             product_evidence = _validate_product_shape(
                 archive,
                 product_members[0],
