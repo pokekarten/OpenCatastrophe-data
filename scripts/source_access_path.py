@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import string
-from urllib.parse import unquote
+from urllib.parse import unquote_to_bytes
 
 MAX_PERCENT_DECODE_PASSES = 16
 _HEX_DIGITS = frozenset(string.hexdigits)
@@ -36,11 +36,12 @@ def _reject_control_characters(value: str) -> None:
 def stable_percent_decode(value: str) -> str:
     """Decode nested percent-encoding to a fixed point within a hard bound.
 
-    Every encoded layer must use strict ``%HH`` grammar. The bound prevents
-    attacker-controlled nesting from turning validation into unbounded work,
-    and decoded C0/DEL controls fail closed before downstream URL/request/log
-    consumers can interpret them differently. Callers must apply traversal,
-    URL and query checks to the fully normalized return value.
+    Every encoded layer must use strict ``%HH`` grammar and decode as strict
+    UTF-8. The bound prevents attacker-controlled nesting from turning
+    validation into unbounded work, while invalid byte sequences and decoded
+    C0/DEL controls fail closed before downstream URL/request/log consumers can
+    interpret them differently. Callers must apply traversal, URL and query
+    checks to the fully normalized return value.
     """
     if type(value) is not str:
         raise PercentDecodeError("percent-decoded value must be text")
@@ -48,7 +49,10 @@ def stable_percent_decode(value: str) -> str:
     current = value
     for _ in range(MAX_PERCENT_DECODE_PASSES):
         _validate_percent_escapes(current)
-        decoded = unquote(current)
+        try:
+            decoded = unquote_to_bytes(current).decode("utf-8", errors="strict")
+        except UnicodeDecodeError as exc:
+            raise PercentDecodeError("invalid UTF-8 in percent-decoded request path") from exc
         _reject_control_characters(decoded)
         if decoded == current:
             return decoded
