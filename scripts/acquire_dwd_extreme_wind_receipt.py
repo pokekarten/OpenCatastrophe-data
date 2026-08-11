@@ -43,6 +43,7 @@ MAX_ARCHIVE_MEMBERS = 32
 MAX_UNCOMPRESSED_BYTES = 104_857_600
 TOTAL_DEADLINE_SECONDS = 60.0
 CHUNK_SIZE = 65_536
+MAX_ROW_BYTES = 4096
 PRODUCT_MEMBER_PREFIX = "produkt_extrema_wind_"
 ALLOWED_COMPRESSION_METHODS = frozenset({zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED})
 
@@ -252,9 +253,13 @@ def _validate_product_shape(
     """Validate station/time/header structure without retaining measurement values."""
     try:
         with archive.open(member, "r") as raw:
-            header_bytes = raw.readline(4096)
-            if not header_bytes or len(header_bytes) >= 4096:
-                raise AcquisitionError("product header is missing or exceeds bounded size")
+            _remaining(deadline, monotonic)
+            header_bytes = raw.readline(MAX_ROW_BYTES + 1)
+            _remaining(deadline, monotonic)
+            if not header_bytes:
+                raise AcquisitionError("product header is missing")
+            if len(header_bytes) > MAX_ROW_BYTES:
+                raise AcquisitionError("product header exceeds bounded size")
             try:
                 header = header_bytes.decode("utf-8-sig")
             except UnicodeDecodeError as exc:
@@ -277,12 +282,16 @@ def _validate_product_shape(
             first_timestamp: str | None = None
             last_timestamp: str | None = None
             row_count = 0
-            for raw_line in raw:
+            while True:
                 _remaining(deadline, monotonic)
+                raw_line = raw.readline(MAX_ROW_BYTES + 1)
+                _remaining(deadline, monotonic)
+                if not raw_line:
+                    break
+                if len(raw_line) > MAX_ROW_BYTES:
+                    raise AcquisitionError("product row exceeds bounded structural size")
                 if not raw_line.strip():
                     continue
-                if len(raw_line) > 4096:
-                    raise AcquisitionError("product row exceeds bounded structural size")
                 try:
                     line = raw_line.decode("utf-8")
                 except UnicodeDecodeError as exc:
