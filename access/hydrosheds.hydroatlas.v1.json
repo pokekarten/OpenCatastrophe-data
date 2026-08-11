@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "hydrosheds.hydroatlas.v1",
+  "source_ids": [
+    "hydrosheds.hydroatlas.v1"
+  ],
+  "provider": "HydroSHEDS / HydroATLAS",
+  "interface_type": "rest",
+  "status": "documented_only",
+  "documentation_url": "https://www.hydrosheds.org/hydroatlas",
+  "service_root": "https://api.figshare.com",
+  "api_version": "v2",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "basin_river_v10_archive_metadata"
+    ],
+    "path_templates": [
+      "/v2/articles/9890531"
+    ],
+    "parameter_rules": "Static documentation contract only. The archival metadata identity is fixed to Figshare public article 9890531 for HydroATLAS version 1.0 (BasinATLAS and RiverATLAS). A future reviewed implementation may resolve only this fixed article and the exact listed BasinATLAS_Data_v10.gdb.zip metadata identity; callers must not supply a host, article ID, file name, path, headers, arbitrary query parameters or download URL. The Figshare API is secondary archival metadata infrastructure and must not be represented as a native HydroATLAS scientific query API."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "Figshare public article metadata JSON for the fixed HydroATLAS v1 archival record.",
+    "scientific_semantics": "The fixed archive record identifies HydroATLAS version 1.0 and its BasinATLAS/RiverATLAS global release files. HydroATLAS is a value-added hydro-environmental attribute database on the HydroSHEDS framework, not an event observation or hazard time series. BasinATLAS, RiverATLAS and LakeATLAS are distinct products; local-catchment and total-upstream attributes are not interchangeable, and topology/resolution and network-threshold limitations must remain explicit in any later model-facing sample."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 131072,
+    "max_sample_bytes": 131072,
+    "retry_policy": "none",
+    "rate_limit_notes": "No repository-specific Figshare API rate-limit assumption is made. This contract is documentation-only and authorizes no live probe. Any future metadata receipt must remain a single fixed-record lookup under separately reviewed API/service terms.",
+    "mutability_notes": "The scientific release is pinned to HydroATLAS version 1.0 and Figshare article 9890531. The public metadata service is an access route, not scientific byte identity. Any later acquired file must bind its exact provider file identity, retrieval UTC, byte count and SHA-256 before scientific or publication use."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://www.hydrosheds.org/terms-of-use",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "restricted",
+    "notes": "HydroATLAS version 1.0 is published as a CC BY 4.0 collective database, while individual released attribute columns retain recorded source-derived CC BY 4.0 or ODbL 1.0 obligations and source-specific attribution. The Figshare archival record is public, but separate automation/API terms have not been reviewed for this repository contract, so execution remains blocked. This source-rights evidence does not authorize committing raw multi-gigabyte archives or derived samples; any later persisted sample must bind the exact Basin/River/Lake asset, selected columns, provenance, licence obligations and repository review scope."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-11",
+  "evidence_urls": [
+    "https://www.hydrosheds.org/hydroatlas",
+    "https://www.hydrosheds.org/terms-of-use",
+    "https://figshare.com/articles/dataset/HydroATLAS_version_1_0/9890531",
+    "https://doi.org/10.6084/m9.figshare.9890531",
+    "https://docs.figshare.com/"
+  ],
+  "notes": "Static metadata/access boundary only. The primary scientific distribution remains the versioned HydroATLAS bulk-file release; Figshare REST is recorded solely as a secondary archival metadata/identity route. No provider bytes, live request, adapter, action dispatch, admission promotion or publication decision is introduced. Do not substitute HydroBASINS/HydroRIVERS/HydroLAKES for HydroATLAS merely to obtain smaller files, and do not treat connectivity as catastrophe-model fitness."
+}
