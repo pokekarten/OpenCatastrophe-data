@@ -205,6 +205,15 @@
           "then": {
             "properties": {"terms_url": {"$ref": "#/$defs/httpsUrl"}}
           }
+        },
+        {
+          "if": {
+            "properties": {"api_terms_status": {"const": "same_as_dataset"}},
+            "required": ["api_terms_status"]
+          },
+          "then": {
+            "properties": {"terms_url": {"$ref": "#/$defs/httpsUrl"}}
+          }
         }
       ]
     },
@@ -343,6 +352,22 @@
       },
       "then": {
         "properties": {"probe_contract": {"properties": {"expected_evidence": {"minItems": 1}}}}
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "authentication": {"properties": {"mode": {"not": {"const": "none"}}}, "required": ["mode"]},
+          "probe_contract": {"properties": {"mode": {"not": {"const": "none"}}}, "required": ["mode"]}
+        },
+        "required": ["authentication", "probe_contract"]
+      },
+      "then": {
+        "properties": {
+          "authentication": {
+            "properties": {"credential_reference": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,127}$"}}
+          }
+        }
       }
     },
     {
