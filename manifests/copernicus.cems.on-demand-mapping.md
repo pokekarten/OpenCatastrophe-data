@@ -26,13 +26,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retrieved at:** 2026-08-12T08:31:00Z
 
-**Retrieval query or filters:** Metadata-only review of the public CEMS On-Demand Mapping portal, harvesting documentation, Emergency Response API documentation and terms. No activation product bytes were downloaded or admitted. Initial machine-access scope is the anonymous public Rapid Mapping activation catalogue and bounded activation metadata; the admitted metadata slice excludes free-text narrative, sensitive/restricted records and third-party-bearing content. Any future product acquisition must freeze activation code, AOI, product type/version, acquisition time, returned files and byte hashes.
+**Retrieval query or filters:** Metadata-only review of the public CEMS On-Demand Mapping portal, harvesting documentation, Emergency Response API documentation, Rapid Mapping product documentation and terms. No activation product bytes were downloaded or admitted. The documented machine-access scope is the anonymous public Rapid Mapping activation catalogue and bounded activation metadata, but no execution is authorized until service/API-use terms are independently cleared. The admitted metadata slice excludes free-text narrative, sensitive/restricted records and third-party-bearing content. Any future product acquisition must freeze activation code, AOI, product type/version, imagery acquisition/sensor, feasibility/status, delivery time, returned files and byte hashes.
 
 **Access class:** open
 
-**Modelling layer:** hazard
+**Modelling layer:** other
 
-**Intended use:** Post-event event-footprint, hazard-observation and damage-grading validation source for floods, wildfires, storms, earthquakes and other mapped emergencies. Public activation/AOI/product metadata can link observed event geometry, satellite acquisition context and mapped impact statistics to independently modelled hazard outputs. CEMS mapping products are not a stochastic event catalogue, vulnerability function, insured-loss dataset or universal ground-truth layer, and product feasibility/quality varies by activation and sensor conditions.
+**Intended use:** Post-event validation and model-challenge evidence from provider-derived Earth-observation/geospatial mapping outputs for floods, wildfires, storms, earthquakes and other mapped emergencies. Public activation, AOI, product and imagery metadata can link independently modelled event footprints to CEMS delineation, grading, reference or situational products while preserving each product type's distinct semantics. CEMS Rapid Mapping products are operational interpretations derived from satellite imagery and other geospatial data; they are not direct physical hazard-intensity observations, surveyed damage, exposure inventory, vulnerability functions, insured-loss observations or universal ground truth.
 
 **Raw artifact:** `null`
 
@@ -60,7 +60,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Share alike or derivative requirements:** The reviewed terms permit adaptation, modification and combination with other data and information; no share-alike requirement is recorded. Source attribution and all other applicable terms remain required.
 
-**Notes:** The reviewed terms grant free access and permit reproduction, distribution, public communication, adaptation, modification and combination for CEMS On-Demand Mapping data. Some CEMS data may be restricted under applicable law, and third-party information linked from the portal can have separate licence terms. Those cases require asset-specific review and are not cleared by this manifest. This is an engineering rights assessment, not legal advice.
+**Notes:** The reviewed terms grant free access and permit reproduction, distribution, public communication, adaptation, modification and combination for covered CEMS On-Demand Mapping data. Some CEMS data may be restricted under applicable law, and third-party information linked from or incorporated through the service can have separate licence terms. Those cases require asset-specific review and are not cleared by this manifest. These dataset reuse terms do not by themselves establish service/API automation rights; those are represented separately in the source-access contract. This is an engineering rights assessment, not legal advice.
 
 ## Redistribution
 
@@ -100,27 +100,27 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ### Item 2
 
-**Name:** AOI and event/product extent geometry
+**Name:** AOI and product geometry metadata
 
 **Unit:** `null`
 
-**Description:** Event, Area of Interest and product geometries exposed by the public mapping interfaces; geometry representation/CRS must be preserved from the exact response or product metadata.
+**Description:** Area of Interest and product geometries exposed by the public mapping interfaces; geometry representation/CRS and the provider product type must be preserved from the exact response or product metadata.
 
 ### Item 3
 
-**Name:** mapped event delineation or grading
+**Name:** provider-derived delineation and grading product metadata
 
 **Unit:** `null`
 
-**Description:** Product-specific observed-event, delineation or grading layers derived from Earth-observation imagery and other geospatial information.
+**Description:** Metadata describing CEMS products derived from Earth-observation imagery and other geospatial information. Delineation/event-extent and grading/damage-assessment semantics must remain distinct and must not be represented as direct physical hazard measurements or surveyed damage.
 
 ### Item 4
 
-**Name:** impact and exposure summary statistics
+**Name:** exposure and consequence summary metadata
 
 **Unit:** varies
 
-**Description:** Product-specific statistics can include affected area in hectares, road length in kilometres, building counts and estimated population; field names, units and missing-value semantics must be retained exactly.
+**Description:** Product-specific summary metadata can refer to event extent, affected or exposed population, assets, land use and related counts/areas/lengths. These provider-derived estimates are product/context dependent and must not be collapsed into hazard, exposure-inventory, vulnerability or insured-loss observations.
 
 ### Item 5
 
@@ -141,4 +141,4 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Reviewer:** OpenCatastrophe source audit
 
-**Notes:** Metadata-only engineering approval for public CEMS On-Demand Mapping activation and mapping-product metadata, with a concrete validation role against independently modelled hazard/event outputs. Raw/derived publication remains blocked until an exact public activation/product is selected, sensitivity and third-party rights are checked, product/version semantics are pinned and returned bytes are hashed and reviewed.
+**Notes:** Metadata-only engineering approval for public CEMS On-Demand Mapping activation and mapping-product metadata, with a bounded role as provider-derived post-event evidence for validating or challenging independently modelled event outputs. Product classes and mixed hazard/impact/exposure semantics must remain explicit. Raw/derived publication remains blocked until an exact public activation/product is selected, sensitivity and third-party rights are checked, product/version and imagery semantics are pinned and returned bytes are hashed and reviewed.
