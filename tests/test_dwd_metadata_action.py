@@ -10,6 +10,7 @@ import time
 import unittest
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
 from scripts.acquire_dwd_extreme_wind_receipt import AcquisitionError
 from scripts.acquire_dwd_metadata_receipt import (
@@ -172,7 +173,7 @@ class DwdMetadataActionTests(unittest.TestCase):
                 with self.assertRaises(AcquisitionError):
                     _inspect(path)
 
-    def test_unsupported_compression_and_special_file_fail_closed(self) -> None:
+    def test_unsupported_compression_special_file_and_encryption_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / FILENAME
             _write_zip(
@@ -199,6 +200,34 @@ class DwdMetadataActionTests(unittest.TestCase):
             with self.assertRaisesRegex(AcquisitionError, "special-file"):
                 _inspect(path)
 
+        class FakeEncryptedArchive:
+            def __init__(self, member: zipfile.ZipInfo) -> None:
+                self.member = member
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb) -> bool:
+                return False
+
+            def infolist(self) -> list[zipfile.ZipInfo]:
+                return [self.member]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / FILENAME
+            path.write_bytes(b"x")
+            encrypted = zipfile.ZipInfo("Metadaten_Geographie_00003.txt")
+            encrypted.flag_bits = 0x1
+            encrypted.compress_type = zipfile.ZIP_STORED
+            encrypted.compress_size = 1
+            encrypted.file_size = 1
+            encrypted.external_attr = (stat.S_IFREG | 0o644) << 16
+            with patch(
+                "scripts.acquire_dwd_metadata_receipt.zipfile.ZipFile",
+                return_value=FakeEncryptedArchive(encrypted),
+            ), self.assertRaisesRegex(AcquisitionError, "encrypted"):
+                _inspect(path)
+
     def test_metadata_receipt_is_closed_and_temporal_coverage_cannot_be_promoted(self) -> None:
         self.assertEqual(validate_dwd_metadata_receipt(dict(METADATA_RECEIPT)), METADATA_RECEIPT)
         for field, value in (
@@ -209,6 +238,19 @@ class DwdMetadataActionTests(unittest.TestCase):
         ):
             with self.subTest(field=field), self.assertRaises(ResultError):
                 validate_dwd_metadata_receipt(dict(METADATA_RECEIPT, **{field: value}))
+
+        forged_family = dict(METADATA_RECEIPT)
+        forged_family["metadata_members"] = [dict(item) for item in METADATA_RECEIPT["metadata_members"]]
+        forged_family["metadata_members"][0]["path"] = "Metadaten_Parameter_00003.txt"
+        with self.assertRaisesRegex(ResultError, "provider-native family"):
+            validate_dwd_metadata_receipt(forged_family)
+
+        forged_station = dict(METADATA_RECEIPT)
+        forged_station["metadata_members"] = [dict(item) for item in METADATA_RECEIPT["metadata_members"]]
+        forged_station["metadata_members"][0]["path"] = "Metadaten_Geraete_99999.txt"
+        with self.assertRaisesRegex(ResultError, "station 00003"):
+            validate_dwd_metadata_receipt(forged_station)
+
         schema = json.loads(METADATA_SCHEMA.read_text(encoding="utf-8"))
         self.assertFalse(schema["additionalProperties"])
         self.assertEqual(schema["properties"]["temporal_coverage_status"], {"const": "unverified"})
