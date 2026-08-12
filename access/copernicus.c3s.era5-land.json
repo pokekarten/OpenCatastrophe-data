@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "copernicus.c3s.era5-land",
+  "source_ids": [
+    "copernicus.c3s.era5-land"
+  ],
+  "provider": "Copernicus Climate Change Service (C3S) / ECMWF",
+  "interface_type": "provider_sdk",
+  "status": "blocked_credentials",
+  "documentation_url": "https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land?tab=documentation",
+  "service_root": "https://cds.climate.copernicus.eu",
+  "api_version": null,
+  "access_scope": [
+    "metadata",
+    "sample",
+    "bulk"
+  ],
+  "authentication": {
+    "mode": "api_key",
+    "credential_reference": "CDS_PERSONAL_ACCESS_TOKEN",
+    "registration_url": "https://cds.climate.copernicus.eu/",
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "retrieve_reviewed_era5_land_subset"
+    ],
+    "path_templates": [
+      "/api"
+    ],
+    "parameter_rules": "Use only the official cdsapi client with dataset short name reanalysis-era5-land. This static contract does not authorize a retrieval. A later execution review must freeze the exact variable set, year/month/day/hour, geographic area or full-grid choice, grid, data format and target representation before any provider request. The request identity must include dataset short name, DOI 10.24381/cds.e2161bac and every selection parameter. Do not substitute reanalysis-era5-land-timeseries or another ERA5/ERA5-Land representation under this operation. Caller-supplied service roots, arbitrary dataset names, unrestricted date ranges or unreviewed variables are outside this contract."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/x-grib",
+      "application/x-netcdf",
+      "application/octet-stream"
+    ],
+    "format": "Provider-generated ERA5-Land gridded output for an independently reviewed cdsapi request; the exact selected output format must be receipt-bound before execution.",
+    "scientific_semantics": "ERA5-Land is a global land-surface reanalysis produced by replaying the land component of ERA5 at enhanced spatial resolution. Its land fields are model estimates forced by ERA5 atmospheric fields and are not direct station observations. Preserve the canonical gridded reanalysis identity, spatial/temporal resolution, variables, units, accumulation conventions and requested representation. The separate ARCO point time-series product reanalysis-era5-land-timeseries is a regridded analysis-ready representation that selects the nearest grid point and must not be treated as byte- or representation-equivalent to the canonical gridded product."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 120,
+    "max_probe_bytes": 1048576,
+    "max_sample_bytes": 10485760,
+    "retry_policy": "none",
+    "rate_limit_notes": "No repository-specific CDS quota or concurrency assumption is made. CDS request limits and queue behaviour can change; any future execution must use one separately reviewed bounded request and must not widen this static contract into an unrestricted CDS client.",
+    "mutability_notes": "The ERA5-Land catalogue is updated daily and the live service is operationally mutable. Reproducible evidence must bind retrieval UTC, dataset short name, DOI, complete normalized request parameters, selected output representation, response byte count/SHA-256 and trusted execution-code identity. Historical scientific identity must not be inferred from a moving latest-service response alone."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "separate_reviewed",
+    "terms_url": "https://cds.climate.copernicus.eu/licences/terms-of-use-cds",
+    "commercial_automation_status": "allowed",
+    "redistribution_status": "allowed",
+    "notes": "The current ERA5-Land CDS record identifies DOI 10.24381/cds.e2161bac and CC BY 4.0. CDS Terms of Use govern access to the service and defer Content use to the licence attributed to each dataset; the official CDS API documentation requires registration, a personal access token and manual acceptance of the dataset Terms of Use before download. This records the source/service rights ceiling only. It does not authorize repository publication of future response bytes or derived samples without exact asset, attribution, provenance and admission review."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": true,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-12",
+  "evidence_urls": [
+    "https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land?tab=documentation",
+    "https://cds.climate.copernicus.eu/stac-browser/collections/reanalysis-era5-land",
+    "https://cds.climate.copernicus.eu/how-to-api",
+    "https://cds.climate.copernicus.eu/licences/terms-of-use-cds",
+    "https://cds.climate.copernicus.eu/licences/licence-to-use-copernicus-products",
+    "https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land-timeseries?tab=overview"
+  ],
+  "notes": "Static credential-gated source-access contract only. The official CDS product remains reanalysis-era5-land, ERA5-Land hourly data from 1950 to present, DOI 10.24381/cds.e2161bac. No CDS credential has been provisioned or used by this repository lane, no provider request is executed, and no external bytes are persisted. A later credentialed execution slice must recheck current CDS/API terms, freeze a tiny historical request before inspecting target values, and keep connectivity separate from scientific fitness, data admission and publication approval."
+}
