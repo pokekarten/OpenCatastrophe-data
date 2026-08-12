@@ -8,9 +8,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 import sys
 from datetime import datetime, timezone
+from pathlib import PurePosixPath
 from typing import Any
 
 try:
@@ -78,7 +78,6 @@ ALLOWED_ACTIONS = {"sample_audit", "acquisition_receipt"}
 ALLOWED_PHASES = {"request_validation", "acquisition_receipt"}
 ALLOWED_STATUSES = {"pass", "duplicate", "blocked"}
 ACQUISITION_FAILURE_CLASS = "acquisition_failed"
-PRODUCT_MEMBER_RE = re.compile(r"(^|/)produkt_extrema_wind_[^/]+\.txt$")
 
 
 class ResultError(ValueError):
@@ -131,6 +130,29 @@ def _positive_bounded_int(value: Any, field: str, maximum: int) -> None:
         raise ResultError(f"acquisition_receipt.{field} must be an integer in [1,{maximum}]")
 
 
+def _validate_product_member(value: Any) -> None:
+    """Require bounded canonical relative POSIX text-member evidence.
+
+    The acquisition worker proves product identity from the bounded DWD header and
+    validates every ZIP member before emitting this path.  The durable receipt
+    validator therefore constrains the returned path itself rather than restoring
+    the superseded provider-filename-prefix assumption.
+    """
+
+    if type(value) is not str or not (1 <= len(value) <= 512):
+        raise ResultError("acquisition_receipt.product_member must be bounded text")
+    if "\\" in value or "\x00" in value:
+        raise ResultError("acquisition_receipt.product_member must be a safe relative POSIX path")
+    if any(ord(character) < 32 or ord(character) == 127 for character in value):
+        raise ResultError("acquisition_receipt.product_member contains control characters")
+    path = PurePosixPath(value)
+    raw_parts = value.split("/")
+    if path.is_absolute() or any(part in {"", ".", ".."} for part in raw_parts):
+        raise ResultError("acquisition_receipt.product_member must be a safe relative POSIX path")
+    if path.suffix.casefold() != ".txt":
+        raise ResultError("acquisition_receipt.product_member must identify a text member")
+
+
 def validate_acquisition_receipt(receipt: Any) -> dict[str, Any]:
     if type(receipt) is not dict:
         raise ResultError("acquisition_receipt must be a JSON object")
@@ -172,9 +194,7 @@ def validate_acquisition_receipt(receipt: Any) -> dict[str, Any]:
         "archive_uncompressed_bytes",
         MAX_UNCOMPRESSED_BYTES,
     )
-    member = receipt["product_member"]
-    if type(member) is not str or not (1 <= len(member) <= 512) or not PRODUCT_MEMBER_RE.fullmatch(member):
-        raise ResultError("acquisition_receipt.product_member does not match the frozen product contract")
+    _validate_product_member(receipt["product_member"])
     _positive_bounded_int(receipt["product_row_count"], "product_row_count", 1_000_000)
     return receipt
 
