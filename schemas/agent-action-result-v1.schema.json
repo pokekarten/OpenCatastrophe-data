@@ -3,7 +3,7 @@
   "$id": "urn:opencatastrophe:schema:agent-action-result:1.0.0",
   "title": "OpenCatastrophe Agent Action Result v1",
   "description": "Portable closed result receipt for the owner-authorized trusted-main Agent Action Dispatch control plane. scripts/validate_agent_action_result.py is authoritative for exact Python scalar types, UTC ordering, acquisition-receipt identity and cross-field checks.",
-  "$comment": "request_validation records strict validation/dedup state. acquisition_receipt is allowed only for Issue 162 and the frozen DWD dataset, carries metadata-only evidence from the trusted repository-owned worker, and always requires external_bytes_persisted=false.",
+  "$comment": "request_validation records strict validation/dedup state. acquisition_receipt is allowed only for Issue 162 and the frozen DWD dataset, carries metadata-only evidence from the trusted repository-owned worker, and always requires external_bytes_persisted=false. product_member is evidence for the safe text member selected by bounded DWD header semantics; the executable validator, not a provider filename prefix, owns path safety.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -97,7 +97,7 @@
         "etag": {"type": ["string", "null"], "maxLength": 512},
         "archive_member_count": {"type": "integer", "minimum": 1, "maximum": 32},
         "archive_uncompressed_bytes": {"type": "integer", "minimum": 1, "maximum": 104857600},
-        "product_member": {"type": "string", "minLength": 1, "maxLength": 512, "pattern": "(^|/)produkt_extrema_wind_[^/]+\\.txt$"},
+        "product_member": {"type": "string", "minLength": 1, "maxLength": 512, "pattern": "\\.[Tt][Xx][Tt]$"},
         "product_station_id": {"const": "00003"},
         "product_begin_date": {"const": "20100101"},
         "product_end_date": {"const": "20110331"},

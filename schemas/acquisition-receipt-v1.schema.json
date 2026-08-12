@@ -3,6 +3,7 @@
   "$id": "urn:opencatastrophe:schema:acquisition-receipt:1.0.0",
   "title": "OpenCatastrophe Acquisition Receipt v1",
   "description": "Strict metadata-only evidence for one bounded ephemeral source acquisition. This receipt is not publication authorization and does not persist provider bytes.",
+  "$comment": "product_member records the safe text member already selected and structurally validated by the trusted acquisition worker. scripts/validate_agent_action_result.py is authoritative for canonical relative POSIX path, dot-segment, backslash and control-character rejection; provider filename prefixes are not scientific identity.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -44,7 +45,7 @@
     "etag": {"type": ["string", "null"], "maxLength": 512},
     "archive_member_count": {"type": "integer", "minimum": 1, "maximum": 32},
     "archive_uncompressed_bytes": {"type": "integer", "minimum": 1, "maximum": 104857600},
-    "product_member": {"type": "string", "minLength": 1, "maxLength": 512, "pattern": "(^|/)produkt_extrema_wind_[^/]+\\.txt$"},
+    "product_member": {"type": "string", "minLength": 1, "maxLength": 512, "pattern": "\\.[Tt][Xx][Tt]$"},
     "product_station_id": {"const": "00003"},
     "product_begin_date": {"const": "20100101"},
     "product_end_date": {"const": "20110331"},
