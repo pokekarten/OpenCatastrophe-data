@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "epos.efehr.edsf.efsm20",
+  "source_ids": [
+    "epos.efehr.edsf"
+  ],
+  "provider": "Istituto Nazionale di Geofisica e Vulcanologia / Seismofaults / EFEHR / EPOS",
+  "interface_type": "wfs",
+  "status": "documented_only",
+  "documentation_url": "https://www.seismofaults.eu/efsm20documentation",
+  "service_root": "https://services.seismofaults.eu",
+  "api_version": "EFSM20 main dataset 2020; portal publication 2022; DOI 10.13127/efsm20; OGC WFS",
+  "access_scope": [
+    "metadata",
+    "catalogue",
+    "bulk"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "get_capabilities",
+      "describe_feature_type",
+      "get_feature"
+    ],
+    "path_templates": [
+      "/EFSM20/ows"
+    ],
+    "parameter_rules": "Documentation-only contract; no WFS request is authorized yet. Future execution must keep the service root and /EFSM20/ows path repository-controlled and compile only GetCapabilities, DescribeFeatureType or a small bounded GetFeature request. Callers must never supply an arbitrary URL, dataset/version path, typeName/QName, CQL/filter expression, property list, CRS/SRS, output format, paging/sort clause or header. Current EFSM20 documentation lists ten main-dataset tables distributed via OGC WFS: EFSM20_CF_TOP, EFSM20_CF_BOT, EFSM20_CF_MID, EFSM20_CF_PLD, EFSM20_CFDepths, EFSM20_SlabDepths, EFSM20_SI_Parameters, EFSM20_SI_Discretization, EFSM20_SI_Realizations and EFSM20_IS_Lattice. Those documented table names are evidence only; before a GetFeature adapter is enabled, re-fetch current GetCapabilities and DescribeFeatureType and freeze the exact WFS QName, schema, supported WFS version, CRS and output encoding. EDSF13 paths/names and EFSM20 Meshes paths/names are explicitly outside this contract."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/xml",
+      "text/xml",
+      "application/gml+xml"
+    ],
+    "format": "OGC WFS service metadata, feature schemas and vector-feature responses for the EFSM20 main dataset. EFSM20 is also distributed as downloadable GIS files including GeoJSON, but this contract freezes only the current WFS service family and does not infer an executable GeoJSON-download path.",
+    "scientific_semantics": "The European Fault-Source Model 2020 (EFSM20) is a continental-scale Euro-Mediterranean fault-source model developed as geologic input to ESHM20. The main dataset contains fault geometry and activity parameters for two principal source categories: crustal faults and subduction systems. Current provider documentation describes 1,248 crustal faults spanning about 95,100 km and four subduction systems, with coverage focused on a 300 km buffer around target European countries and slab depths to 300 km. The model is epistemically uncertain and is not guaranteed complete, accurate or current for other applications; local/site-specific investigations remain necessary for local decisions. Absence of a mapped fault is not evidence of zero seismic hazard. EFSM20 is distinct from ESHM20 hazard outputs and from the separately published 2024 EFSM20 3D triangular-mesh derived product."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 60,
+    "max_probe_bytes": 262144,
+    "max_sample_bytes": 5242880,
+    "retry_policy": "none",
+    "rate_limit_notes": "The Seismofaults/INGV portal documents public WFS services and monitors them operationally, but no repository-specific numeric request budget or durable automated/commercial service entitlement was established in this review. This documented-only contract authorizes no capabilities request, schema request, GetFeature query, pagination loop, retry or bulk mirror.",
+    "mutability_notes": "Scientific identity is pinned to the EFSM20 main dataset, model/version year 2020, DOI 10.13127/efsm20 and the main EFSM20 WFS service family. The 2025 portal report records the main dataset as published 10/2022 with ten WFS and six WMS layers, while the separately derived EFSM20 Meshes product is version 2024/published 11/2024 with its own DOI and six WFS layers. Any future extraction must freeze current capabilities/schema, exact QName, request fingerprint, retrieval UTC, response byte count/SHA-256 and provider metadata. Do not silently substitute EDSF13, EFSM20 Meshes or a later differently versioned fault model."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "allowed",
+    "notes": "The authoritative EFSM20 dataset and documentation pages state that, except where otherwise noted, EFSM20 is licensed under CC BY 4.0 and provide DOI 10.13127/efsm20. This supports dataset reuse and redistribution with attribution, subject to any dataset-specific exception noted by the provider. The platform separately warns that each distributed dataset has its own licence. This review did not establish separate WFS service automation/commercial terms or a numeric request policy, so automated execution remains disabled despite verified dataset reuse rights. Any persisted sample still requires exact feature/schema provenance and attribution review."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-12",
+  "evidence_urls": [
+    "https://www.seismofaults.eu/efsm20",
+    "https://www.seismofaults.eu/efsm20documentation",
+    "https://seismofaults.eu/services/efsm20-services",
+    "https://data.ingv.it/metadata/web_service_eng",
+    "https://doi.org/10.13127/efsm20",
+    "https://seismofaults.eu/documentation/portal-reports/portal-report-2025",
+    "https://www.seismofaults.eu/documentation/portal-reports/portal-report-2024"
+  ],
+  "notes": "Bounded current-child access resolution for Issue #262 / #173. The existing landscape source `epos.efehr.edsf` remains the discovery/service-family identity; this access ID deliberately selects current EFSM20 main-dataset semantics rather than obsolete EDSF13. EDSF13 is deprecated and retained for reproducibility only. EFSM20 Meshes (DOI 10.13127/efsm20/meshes) is a separate derived product and is not authorized here. No provider request, XML/GML/GeoJSON byte, parser, adapter, workflow, admission promotion or publication decision is introduced."
+}
