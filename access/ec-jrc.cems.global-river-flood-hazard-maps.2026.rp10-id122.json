@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "ec-jrc.cems.global-river-flood-hazard-maps.2026.rp10-id122",
+  "source_ids": [
+    "ec-jrc.cems.global-river-flood-hazard-maps.2026"
+  ],
+  "provider": "European Commission Joint Research Centre / Copernicus Emergency Management Service / GloFAS",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://data.jrc.ec.europa.eu/dataset/jrc-floods-floodmapgl_rp50y-tif",
+  "service_root": "https://jeodpp.jrc.ec.europa.eu",
+  "api_version": "CEMS-GLOFAS Global river flood hazard maps v2.1.2; RP10 tile ID122 N50_E10; JRC catalogue DOI 10.2905/JRC.VD32YWG",
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "fetch_rp10_depth",
+      "fetch_rp10_depth_reclass",
+      "fetch_permanent_water",
+      "fetch_spurious_depth_areas"
+    ],
+    "path_templates": [
+      "/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/RP10/ID122_N50_E10_RP10_depth.tif",
+      "/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/RP10/ID122_N50_E10_RP10_depth_reclass.tif",
+      "/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/Permanent_WaterBodies/ID122_N50_E10_permanent_water.tif",
+      "/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/Spurious_Depths/ID122_N50_E10_spurious_depth_areas.tif"
+    ],
+    "parameter_rules": "Documentation-only exact-asset contract. No HTTP request is authorized yet. Future execution may select only one of the four repository-controlled ID122/N50_E10 paths above at a time; callers must not supply return period, tile ID, latitude/longitude token, filename, directory, host, query string, header, redirect target, representation or release substitution. No directory crawl, tile-index expansion, wildcard, adjacent-tile fetch, other-return-period substitution or global mirror is authorized. A scientific use of the raw or categorized depth tile must preserve the companion permanent-water and spurious-depth identities in run provenance even when those companion files are not downloaded in the same request."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "image/tiff",
+      "application/octet-stream"
+    ],
+    "format": "Four fixed GeoTIFF assets for global flood-hazard tile ID122 / N50_E10. The RP10 raw tile contains flood water depth in metres; the categorized RP10 tile encodes classes 1: <1 m, 2: 1-<3 m, 3: 3-<10 m, 4: >10 m and excludes the separate Permanent water class. Companion rasters identify permanent water bodies and RP10 spurious-depth areas.",
+    "scientific_semantics": "CEMS Global river flood hazard maps v2.1.2 are modelled return-period inundation surfaces produced from LISFLOOD hydrological flows and LISFLOOD-FP inundation simulations on a WGS84 3-arc-second (~90 m) grid. RP10 is a modelled 1-in-10-year hazard scenario, not an observed event footprint, gauge measurement or annual probability assigned to an individual asset. The spurious-depth companion identifies areas where depths above 10 m are predicted in small channels below 3,000 km² for the RP10 scenario plus a 2 km buffer; provider documentation also warns that unrealistically high depths can result from hydraulic-model limitations, DEM sinks, tile-boundary effects and residual DEM issues. Permanent water must remain distinct from flood depth, and excluded/flagged companion semantics must not be silently converted into unqualified inundation truth. The JRC catalogue states that this dataset is not an official flood hazard map and local/national authoritative maps remain scientifically distinct."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 60,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 26214400,
+    "retry_policy": "none",
+    "rate_limit_notes": "JRC exposes the fixed flood-hazard directories anonymously. This documented-only contract authorizes no network request, retry loop, directory crawl, tile-index traversal or batch acquisition. No repository-specific numeric request budget or separate automated-download entitlement for the JEODPP host was established. The current provider index reports the raw ID122 RP10 depth tile at about 15 MiB, the reclassified tile at about 2.2 MiB, the permanent-water tile at about 810 KiB and the spurious-depth tile at about 185 KiB; each fits the current 25 MiB per-sample ceiling individually.",
+    "mutability_notes": "Scientific identity is pinned to CEMS-GLOFAS Global river flood hazard maps dataset version 2.1.2, README update 2026-01-12, return period RP10, tile ID122 / N50_E10 and the exact four filenames. The v2.1.2 README itself records DOI/PID as NA, while the current JRC Data Catalogue cites the broader dataset as DOI 10.2905/JRC.VD32YWG / PID jrc-floods-floodmapgl_rp50y-tif; this contract preserves that distinction and does not invent a version-specific DOI. Any future acquisition must bind requested/final URL, retrieval UTC, byte count, SHA-256, GeoTIFF CRS/grid/nodata/dtype and companion-mask identities. Do not silently mix older v2.x tiles or substitute a later release."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "allowed",
+    "notes": "The v2.1.2 README describes the source as a free and open Copernicus product with no restrictions. The current CEMS-GLOFAS copyright notice states that European Union copyright and/or sui-generis rights on the dataset are licensed under CC BY 4.0, requiring appropriate credit and indication of changes. This verifies dataset reuse/redistribution rights for the provider assets under that notice. A separate automated-service/commercial policy or numeric request budget for the static JEODPP delivery host was not established, so commercial automation remains unknown and execution stays disabled. Any persisted sample still requires exact asset hashes, attribution and repository publication review."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-12",
+  "evidence_urls": [
+    "https://data.jrc.ec.europa.eu/dataset/jrc-floods-floodmapgl_rp50y-tif",
+    "https://doi.org/10.2905/JRC.VD32YWG",
+    "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/README.txt",
+    "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/CHANGELOG.txt",
+    "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/copyright.txt",
+    "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/RP10/",
+    "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/Permanent_WaterBodies/",
+    "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/Spurious_Depths/"
+  ],
+  "notes": "Bounded EU-relevant global-flood access documentation for Issue #265 / #173 and future pilot #270. The exact ID122/N50_E10 RP10 raw/reclass/permanent-water/spurious-depth quartet is intended to exercise hazard-intensity plus quality-mask semantics before any broader tile adapter exists. No provider request, GeoTIFF byte, parser, spatial transform, workflow, admission promotion or publication decision is introduced."
+}
