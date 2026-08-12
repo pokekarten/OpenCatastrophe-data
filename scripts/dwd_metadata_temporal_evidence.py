@@ -18,6 +18,7 @@ import json
 import sys
 import zipfile
 from pathlib import Path, PurePosixPath
+from typing import BinaryIO
 
 try:
     from scripts.inspect_dwd_metadata_zip import InspectionError, inspect_zip
@@ -60,7 +61,7 @@ def _member_sha256(archive: zipfile.ZipFile, name: str) -> str:
     return digest.hexdigest()
 
 
-def _handle_sha256(handle: object) -> str:
+def _handle_sha256(handle: BinaryIO) -> str:
     digest = hashlib.sha256()
     handle.seek(0)
     for chunk in iter(lambda: handle.read(1024 * 1024), b""):
