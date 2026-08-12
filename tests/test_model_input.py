@@ -187,30 +187,45 @@ class ModelInputTests(unittest.TestCase):
                 payload["sha256"] = SHA_B
                 validator.validate_model_input(payload, root=self.root)
 
-    def test_manifest_scientific_facts_are_consistency_bound(self) -> None:
-        payload = valid_model_input()
-        payload["measure"]["quantity"] = "precipitation"
-        with self.assertRaisesRegex(validator.ModelInputError, "measure.quantity/unit"):
-            validator.validate_model_input(payload, root=self.root)
-
-        payload = valid_model_input()
-        payload["measure"]["unit"] = "km/h"
-        with self.assertRaisesRegex(validator.ModelInputError, "measure.quantity/unit"):
-            validator.validate_model_input(payload, root=self.root)
-
-        payload = valid_model_input()
-        payload["spatial"]["crs"] = "EPSG:3857"
-        with self.assertRaisesRegex(validator.ModelInputError, "spatial.crs"):
-            validator.validate_model_input(payload, root=self.root)
-
-    def test_manifest_null_unit_does_not_match_explicit_model_unit(self) -> None:
+    def test_model_semantics_are_not_overloaded_from_dataset_metadata(self) -> None:
         manifest = valid_manifest()
         manifest["variables_and_units"] = [
-            {"name": "wind_speed", "unit": None, "description": "Unit unresolved."}
+            {"name": "FX_10", "unit": "m/s", "description": "Provider-native variable."}
         ]
+        manifest["spatial"] = {"crs": "EPSG:4326", "extent": "synthetic"}
         self.write_manifest(manifest)
-        with self.assertRaisesRegex(validator.ModelInputError, "measure.quantity/unit"):
-            validator.validate_model_input(valid_model_input(), root=self.root)
+
+        payload = valid_model_input()
+        payload["measure"]["quantity"] = "maximum_wind_speed"
+        payload["measure"]["unit"] = "km/h"
+        payload["spatial"]["crs"] = "EPSG:3857"
+        validator.validate_model_input(payload, root=self.root)
+
+    def test_derived_model_semantics_may_reflect_transformation(self) -> None:
+        manifest = valid_manifest()
+        manifest["variables_and_units"] = [
+            {"name": "FX_10", "unit": "m/s", "description": "Provider-native variable."}
+        ]
+        manifest["derived_artifact"] = {
+            "byte_size": 4,
+            "sha256": SHA_B,
+            "storage_reference": DERIVED_STORAGE,
+        }
+        manifest["transformation"] = {
+            "code_reference": "scripts/synthetic.py",
+            "config_identity": "synthetic-v1",
+        }
+        manifest["review"]["status"] = "approved_derived"
+        self.write_manifest(manifest)
+
+        payload = valid_model_input()
+        payload["artifact"] = "derived"
+        payload["storage_reference"] = DERIVED_STORAGE
+        payload["sha256"] = SHA_B
+        payload["measure"]["quantity"] = "maximum_wind_speed"
+        payload["measure"]["unit"] = "km/h"
+        payload["spatial"]["crs"] = "EPSG:3857"
+        validator.validate_model_input(payload, root=self.root)
 
     def test_metadata_only_manifest_cannot_pose_as_model_input(self) -> None:
         manifest = valid_manifest()
