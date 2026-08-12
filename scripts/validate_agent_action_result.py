@@ -278,6 +278,8 @@ def validate_dwd_metadata_receipt(receipt: Any) -> dict[str, Any]:
     members = receipt["metadata_members"]
     if type(members) is not list or not (3 <= len(members) <= DWD_METADATA_MAX_ARCHIVE_MEMBERS):
         raise ResultError(f"{prefix}.metadata_members must be a bounded evidence list")
+    if len(members) > receipt["archive_member_count"]:
+        raise ResultError(f"{prefix}.metadata_members cannot exceed archive_member_count")
     seen_paths: set[str] = set()
     seen_families: set[str] = set()
     previous_key: tuple[str, str] | None = None
