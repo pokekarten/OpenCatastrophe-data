@@ -26,7 +26,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retrieved at:** 2026-08-12T08:31:00Z
 
-**Retrieval query or filters:** Metadata-only review of the public CEMS On-Demand Mapping portal, harvesting documentation, Emergency Response API documentation and terms. No activation product bytes were downloaded or admitted. Initial machine-access scope is the anonymous public Rapid Mapping activation catalogue and activation metadata; any future product acquisition must freeze activation code, AOI, product type/version, acquisition time, returned files and byte hashes.
+**Retrieval query or filters:** Metadata-only review of the public CEMS On-Demand Mapping portal, harvesting documentation, Emergency Response API documentation and terms. No activation product bytes were downloaded or admitted. Initial machine-access scope is the anonymous public Rapid Mapping activation catalogue and bounded activation metadata; the admitted metadata slice excludes free-text narrative, sensitive/restricted records and third-party-bearing content. Any future product acquisition must freeze activation code, AOI, product type/version, acquisition time, returned files and byte hashes.
 
 **Access class:** open
 
@@ -72,11 +72,11 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ## Privacy
 
-**Personal data status:** unknown
+**Personal data status:** none
 
-**Confidential or proprietary status:** unknown
+**Confidential or proprietary status:** none
 
-**Notes:** Public activation metadata and geospatial products are the reviewed scope, but activation records can identify requesting organisations and may contain operational narrative. Sensitive/restricted activations are explicitly outside this admission. Any future persisted sample must be reviewed for personal, sensitive or third-party content before publication.
+**Notes:** The admitted metadata slice is limited to public provider/product/event geospatial metadata and organisational activation context; it contains no natural-person, customer, policy, claims, portfolio or confidential/proprietary fields. Free-text narrative, sensitive/restricted activations and third-party-bearing content are outside this admission and require separate review before persistence or publication.
 
 ## Spatial
 
