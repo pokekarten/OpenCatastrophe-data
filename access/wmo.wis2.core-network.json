@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "wmo.wis2.core-network",
+  "source_ids": [
+    "wmo.wis2"
+  ],
+  "provider": "World Meteorological Organization and participating WIS2 Global Service operators",
+  "interface_type": "mqtt_http",
+  "status": "documented_only",
+  "documentation_url": "https://community.wmo.int/site/knowledge-hub/programmes-and-initiatives/wmo-information-system-wis/wis2-overview",
+  "service_root": null,
+  "api_version": "WIS2 operational network",
+  "access_scope": [
+    "metadata",
+    "catalogue",
+    "realtime"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "discover_core_datasets",
+      "subscribe_core_notifications",
+      "download_core_data"
+    ],
+    "path_templates": [
+      "/"
+    ],
+    "parameter_rules": "This is a federation-level documentation contract, not an executable endpoint contract. Any future implementation must first select one authoritative WIS2 Global Discovery Catalogue, Global Broker or Global Cache from the current WMO Global Services registry and bind its centre identifier and exact HTTPS/MQTT endpoint. Only WIS2 topics and discovery records explicitly classified as `core` are in scope. The selected topic, centre ID, discovery metadata identifier, canonical data link and retrieval time must be fixed before payload retrieval. Recommended-data topics, provider-node fallbacks, caller-supplied brokers/hosts/paths, arbitrary topic wildcards beyond a preregistered core namespace, credentials/tokens and unrestricted recursive harvesting are outside this contract and require a separate provider/license-specific review."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json",
+      "application/octet-stream"
+    ],
+    "format": "WIS2 Notification Message and WCMP2 discovery metadata, plus provider-defined core data payloads referenced by canonical HTTPS links.",
+    "scientific_semantics": "WIS2 is a federated dissemination and discovery network, not one homogeneous scientific dataset. A WIS2 notification or discovery record establishes network provenance and a provider-declared route to data; it does not make the referenced payload scientifically homogeneous, immutable or fit for catastrophe modelling. Future evidence must preserve the publishing centre, WIS2 topic, data-policy class, discovery metadata identifier, canonical link, observation/product identity, units, quality/status flags, temporal semantics and the original data provider. This contract covers only the network transport/discovery boundary for `core` data and does not collapse station observations, forecasts, analyses, hydrology or other Earth-system products into one observation class."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 262144,
+    "max_sample_bytes": 5242880,
+    "retry_policy": "bounded_backoff",
+    "rate_limit_notes": "No OpenCatastrophe request-rate or subscription entitlement is assumed from public WIS2 availability. No provider request is authorized by this documentation-only contract. Any later implementation must select one registered Global Service, use a narrowly preregistered core topic or discovery query, bound message/payload counts and bytes, and avoid broad wildcard subscriptions or recursive cache harvesting unless separately reviewed.",
+    "mutability_notes": "WIS2 is operational and continuously publishes notifications, discovery metadata and data. Global Service operators and endpoints can change, and source records can be updated. Any future receipt must bind retrieval UTC, exact selected Global Service centre ID and endpoint, WIS2 topic, notification/discovery identifier, canonical data URL, response byte count and SHA-256 where bytes are retrieved, plus the provider/product identity needed for scientific reproducibility."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "unknown",
+    "terms_url": "https://public.wmo.int/wmo-unified-data-policy-resolution-res1",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "allowed",
+    "notes": "This contract is intentionally limited to WIS2 data explicitly classified as `core`. WMO's Unified Data Policy and WIS2 guidance describe core data as free and unrestricted, without charge and without conditions on use; Global Caches make core data available without access restrictions. Recommended data are different: they may carry conditions/licences and access controls, are not cached by Global Caches and are outside this contract. The data-policy clearance for core payloads is not treated as proof of separate service/API automation terms for every Global Broker, Discovery Catalogue or Cache, so service execution and commercial automation remain fail closed until independently reviewed."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-12",
+  "evidence_urls": [
+    "https://community.wmo.int/site/knowledge-hub/programmes-and-initiatives/wmo-information-system-wis/wis2-overview",
+    "https://community.wmo.int/site/knowledge-hub/programmes-and-initiatives/wmo-information-system-wis/wis-20-global-services",
+    "https://public.wmo.int/wmo-unified-data-policy-resolution-res1",
+    "https://docs.wis2box.wis.wmo.int/en/latest/user/recommended.html"
+  ],
+  "notes": "Static WIS2 core-network access contract only. It documents the provider's federated MQTT/HTTP discovery-notification-cache architecture and the core-versus-recommended data-policy split without selecting or contacting a live Global Service. No MQTT subscription, Discovery Catalogue query, Global Cache download, provider-node request or external data byte was performed or persisted by this builder. A later executable proposal must first choose one exact Global Service endpoint and prove service-use/automation terms; any scientific sample must then receive dataset/product-specific provenance and fitness review beyond this network contract."
+}
