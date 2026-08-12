@@ -13,7 +13,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 > This Markdown file is a deterministic human-readable projection of the canonical JSON file named above. It does not create a second source of truth or change admission, rights or scientific-review state.
 
 **Schema version:** `1.0.0`  
-**Review date:** `2026-08-10`  
+**Review date:** `2026-08-12`  
 **Purpose:** Non-admission discovery registry of observation and physical-context sources relevant to catastrophe risk.
 
 **Entries:** 17
@@ -85,13 +85,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Categories:** `terrestrial_water_storage`, `groundwater_context`, `drought`, `hydrology`  
 **Spatial scope:** global  
 **Temporal scope:** 2002-present  
-**Resolution / granularity:** monthly gridded equivalent-water-height anomalies with Coastal Resolution Improvement filtering  
+**Resolution / granularity:** Level-3 monthly gridded global water-storage/equivalent-water-height anomalies relative to a time mean, with Coastal Resolution Improvement filtering  
 **Potential roles:** `water_storage_anomaly`, `drought_and_groundwater_context`, `large_scale_hydrology_validation`  
 **Access hint:** `earthdata_access`  
 **Authoritative source:** <https://podaac.jpl.nasa.gov/dataset/TELLUS_GRAC-GRFO_MASCON_CRI_GRID_RL06.3_V4>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Monthly mass anomalies are spatially smoothed geophysical estimates, not local groundwater measurements; preserve release, filtering, scaling and leakage semantics.
+**Note:** RL06.3Mv04 is a spatially smoothed GRACE/GRACE-FO mass-change product: the CRI filter is intended to reduce signal leakage across coastlines, but the field remains a large-scale water-storage/equivalent-water-height anomaly rather than a local groundwater measurement or independent in-situ truth. Freeze the exact release, anomaly reference and filtering treatment before validation.
 
 ## USGS ShakeMap
 
@@ -115,13 +115,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Categories:** `earthquake`, `landslide`, `liquefaction`, `secondary_peril`, `validation`  
 **Spatial scope:** global collection of event inventories  
 **Temporal scope:** historical earthquake-triggered inventories  
-**Resolution / granularity:** original digital inventories plus integrated records with mapping-method and completeness metadata  
+**Resolution / granularity:** original digital landslide/liquefaction inventories when available plus an integrated database with uniform attributes and per-inventory mapping-method/completeness metadata  
 **Potential roles:** `secondary_peril_validation`, `landslide_susceptibility_validation`, `liquefaction_validation`  
 **Access hint:** `public_sciencebase_repository`  
 **Authoritative source:** <https://www.usgs.gov/programs/landslide-hazards/science/global-earthquake-triggered-ground-failure-inventory-database>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** The repository mixes USGS and non-USGS inventory authorship and heterogeneous mapping completeness; exact inventory-level provenance and rights must be preserved.
+**Note:** USGS aggregates inventories from USGS and non-USGS authors; mapping method and completeness are inventory-specific and, where recorded, reported by the original authors. Treat each event inventory as a provenance-bound validation case: do not infer uniform negative labels from unmapped areas or pool inventories as equally complete ground truth.
 
 ## European Ground Motion Service Basic
 
@@ -204,14 +204,14 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Provider:** NOAA National Centers for Environmental Information  
 **Categories:** `upper_air`, `weather_observations`, `wind`, `humidity`, `validation`  
 **Spatial scope:** global network of more than 2,800 stations  
-**Temporal scope:** 1905-present with near-real-time data from a subset of stations  
-**Resolution / granularity:** radiosonde and pilot-balloon soundings at pressure and height levels plus derived parameters  
+**Temporal scope:** 1905-present; near-real-time updates from about 800 stations within a network of more than 2,800  
+**Resolution / granularity:** quality-controlled radiosonde and pilot-balloon soundings at pressure/height levels, plus separate monthly-mean and sounding-derived-parameter products  
 **Potential roles:** `upper_air_validation`, `wind_profile_validation`, `convective_environment_context`  
 **Access hint:** `public_https_download`  
 **Authoritative source:** <https://www.ncei.noaa.gov/products/weather-balloon/integrated-global-radiosonde-archive>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Station history, source streams, pressure/height level types and sounding-derived parameters must remain distinct; network coverage changes substantially over time.
+**Note:** IGRA v2.2, introduced in 2023, added two BUFR input streams to maintain coverage as reporting formats changed. NCEI applies gross-error quality control but does not homogenize jumps from station relocation, instrumentation or observing-practice changes; some records are composited from nearby stations. Freeze station identity/history, source stream, level type and whether raw soundings or derived products are used.
 
 ## Randolph Glacier Inventory v7
 
