@@ -30,6 +30,7 @@ Current accepted reviews:
 - `efehr-esrm20-vulnerability-v1.1.md` — supports the metadata-only EFEHR ESRM20 European Building Vulnerability Database v1.1 admission.
 - `microsoft-globalml-building-footprints.md` — supports the metadata-only Microsoft Global ML Building Footprints exposure-geometry admission.
 - `copernicus-cems-glofas-historical.md` — supports the metadata-only CEMS GloFAS historical hydrology admission.
+- `copernicus-cems-gfm-v4.1.1.md` — supports the metadata-only CEMS Global Flood Monitoring v4.1.1 satellite flood-observation admission for bounded validation/model challenge.
 - `copernicus-cems-on-demand-mapping.md` — supports the metadata-only CEMS On-Demand Mapping admission as provider-derived post-event geospatial evidence for validation/model challenge, with API/service automation remaining documentation-only until separately cleared.
 - `wsv-pegelonline-elbe-dresden-discharge-2020-2023.md` — supports a metadata-only PEGELONLINE Dresden `Q` observation slice with a predeclared 2020–2023 temporal holdout comparison against GloFAS v4.0.
 - `storm-ibtracs-present-climate-v4.md` — supports the metadata-only STORM v4 synthetic tropical-cyclone event-catalogue admission.
