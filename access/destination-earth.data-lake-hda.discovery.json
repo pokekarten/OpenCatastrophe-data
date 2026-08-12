@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "destination-earth.data-lake-hda.discovery",
+  "source_ids": [
+    "destination-earth.data-lake"
+  ],
+  "provider": "Destination Earth Data Lake / European Commission",
+  "interface_type": "stac",
+  "status": "documented_only",
+  "documentation_url": "https://destine-data-lake-docs.data.destination-earth.eu/en/latest/dedl-discovery-and-data-access/Harmonized-Data-Access/Harmonized-Data-Access.html",
+  "service_root": "https://hda.data.destination-earth.eu",
+  "api_version": "Harmonised Data Access API / recommended STAC API v2 path; STAC API 1.0.0",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "list_services",
+      "get_stac_root",
+      "get_conformance",
+      "list_collections"
+    ],
+    "path_templates": [
+      "/services",
+      "/stac/v2",
+      "/stac/v2/conformance",
+      "/stac/v2/collections"
+    ],
+    "parameter_rules": "Documentation-only anonymous discovery contract. No request is authorized yet. A future reviewed discovery adapter may issue only parameter-free GET requests to the four repository-controlled paths above. Callers must not supply service IDs, collection IDs, item IDs, free-text queries, bbox/datetime, CQL2/query expressions, sort clauses, paging, order payloads, data-asset paths, federation backends, URLs, headers or credentials. `/stac` legacy paths are explicitly excluded because current provider documentation marks the legacy STAC interface deprecated in favour of `/stac/v2`. Item search/browsing, `/stac/v2/search`, `/collections/{collectionId}/items`, `/data/...`, ECMWF ordering, notifications and any private/restricted collection access are outside this contract."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "Destination Earth HDA service-discovery and STAC API v2 catalogue metadata responses. The allowed operations expose infrastructure/service descriptions, STAC capabilities/conformance and collection metadata only; no STAC Item or provider data asset is within the response contract.",
+    "scientific_semantics": "The Destination Earth HDA is a federated access infrastructure, not a homogeneous scientific dataset. A collection listing only establishes that a provider collection is discoverable through the HDA service; it does not establish scientific variable semantics, model generation, scenario/member identity, temporal/spatial validity, quality, licence, redistribution rights or suitability for catastrophe-model use. Every future OpenCatastrophe scientific consumer must pin a concrete collection and then separately freeze its model/product version, variables, scenario/member, spatial/temporal request, item/asset identity, processing lineage and collection-specific rights before any item search or download. Digital Twin outputs and other restricted collections can have additional permission boundaries and must never inherit authority from this generic discovery contract."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 262144,
+    "max_sample_bytes": 1048576,
+    "retry_policy": "none",
+    "rate_limit_notes": "Current HDA documentation publishes default authenticated-service quotas including 4 requests per second, 20 Mbps per connection and 6 TB/month in the general API guide, with role-specific quota documentation also available. This discovery contract intentionally authorizes no request and needs no high-volume quota. Any future anonymous metadata probe should be a single request with no paging/retry loop. Authenticated item/data access must be designed separately under least-privilege credentials and provider quotas.",
+    "mutability_notes": "The HDA is a live federation whose collection catalogue and backend mappings can change independently of this repository. The stable interface choice reviewed here is the recommended `/stac/v2` API family; the provider marks legacy `/stac` deprecated. Any future metadata probe must bind retrieval UTC, final URL, response byte count/SHA-256 and collection identifiers observed at that time. A collection discovered today must not be assumed to retain identical items, backend, queryables, access policy or scientific content later."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "HDA is an access federation and does not supply one provider-wide dataset licence for all collections. This review establishes technical documentation for anonymous discovery only and does not resolve HDA service automation/commercial terms or the rights of any discovered collection. Collection/item/asset rights must be reviewed individually before data access, persistence, redistribution or model use. Public collection metadata must not be interpreted as permission to download or republish underlying data."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-12",
+  "evidence_urls": [
+    "https://hda.data.destination-earth.eu/docs/",
+    "https://destine-data-lake-docs.data.destination-earth.eu/en/latest/dedl-discovery-and-data-access/Harmonized-Data-Access/API-Architecture/API-Architecture.html",
+    "https://destine-data-lake-docs.data.destination-earth.eu/en/latest/dedl-discovery-and-data-access/Harmonized-Data-Access/API-Guide/Authentication-And-Quotas.html",
+    "https://destine-data-lake-docs.data.destination-earth.eu/en/latest/dedl-discovery-and-data-access/Harmonized-Data-Access/API-Guide/Services-and-Data-Discovery.html",
+    "https://destine-data-lake-docs.data.destination-earth.eu/en/latest/dedl-discovery-and-data-access/Harmonized-Data-Access/API-Guide/Data-Access.html"
+  ],
+  "notes": "Bounded infrastructure-discovery documentation for Issue #266 / #173. Current provider authentication guidance states that public service/collection discovery does not require authentication, while item search/browsing and data access use DestinE authentication; access tokens are documented at about 10 hours and some Digital Twin Outputs require additional approval. This contract intentionally stops before those credential/data boundaries. No provider request, token, STAC Item, data byte, adapter, workflow, admission promotion or publication decision is introduced."
+}
