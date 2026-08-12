@@ -83,6 +83,39 @@ class DwdMetadataTemporalEvidenceTests(unittest.TestCase):
             with self.assertRaisesRegex(evidence.TemporalEvidenceError, "changed after ZIP inspection"):
                 evidence._collect(path, inspection["input"]["sha256"], "00003")
 
+    def test_member_hashes_use_immutable_snapshot(self) -> None:
+        tempdir, path = self._zip({
+            "Metadaten_Geographie_00003.txt": b"geo-content",
+            "Metadaten_Geraete_00003.txt": b"equipment-content",
+            "Metadaten_Parameter_00003.txt": b"parameter-content",
+        })
+        self.addCleanup(tempdir.cleanup)
+        inspection = self._inspection(path, ["equipment", "geography", "parameter"])
+        original_member_sha256 = evidence._member_sha256
+        mutated = False
+
+        def mutate_path_then_hash(archive: zipfile.ZipFile, name: str) -> str:
+            nonlocal mutated
+            if not mutated:
+                mutated = True
+                self._write_zip(path, {
+                    "Metadaten_Geographie_00003.txt": b"changed-geo",
+                    "Metadaten_Geraete_00003.txt": b"changed-equipment",
+                    "Metadaten_Parameter_00003.txt": b"changed-parameter",
+                })
+            return original_member_sha256(archive, name)
+
+        with patch.object(evidence, "inspect_zip", return_value=inspection):
+            with patch.object(evidence, "_member_sha256", side_effect=mutate_path_then_hash):
+                result = evidence._collect(path, inspection["input"]["sha256"], "00003")
+
+        self.assertTrue(mutated)
+        self.assertEqual(
+            result["required_family_members"]["geography"][0]["sha256"],
+            hashlib.sha256(b"geo-content").hexdigest(),
+        )
+        self.assertNotEqual(hashlib.sha256(path.read_bytes()).hexdigest(), inspection["input"]["sha256"])
+
     def test_rejects_wrong_frozen_sha(self) -> None:
         tempdir, path = self._zip({"Metadaten_Geographie_00003.txt": b"x"})
         self.addCleanup(tempdir.cleanup)
