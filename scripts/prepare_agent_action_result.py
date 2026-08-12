@@ -3,9 +3,10 @@
 
 """Prepare one durable action result with repository-wide deduplication.
 
-Only the closed acquisition_receipt action executes provider network work here,
+Only closed, repository-owned acquisition actions execute provider network work,
 and only after request validation plus a complete duplicate-result ledger scan.
-The worker itself owns the exact DWD URL and all transport/archive bounds.
+Each worker owns its exact DWD URL and all transport/archive bounds; requests
+cannot supply network targets.
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ from typing import Any, Callable
 
 try:
     from scripts.acquire_dwd_extreme_wind_receipt import AcquisitionError, acquire
+    from scripts.acquire_dwd_metadata_receipt import acquire as acquire_dwd_metadata
     from scripts.agent_action_protocol import (
         ProtocolError,
         RESULT_SCHEMA_VERSION,
@@ -31,6 +33,7 @@ try:
     )
     from scripts.validate_agent_action_request import (
         ACQUISITION_RECEIPT_ACTION,
+        DWD_METADATA_RECEIPT_ACTION,
         RequestError,
         extract_request,
         validate_request,
@@ -42,6 +45,7 @@ try:
     )
 except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     from acquire_dwd_extreme_wind_receipt import AcquisitionError, acquire
+    from acquire_dwd_metadata_receipt import acquire as acquire_dwd_metadata
     from agent_action_protocol import (
         ProtocolError,
         RESULT_SCHEMA_VERSION,
@@ -51,6 +55,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     )
     from validate_agent_action_request import (
         ACQUISITION_RECEIPT_ACTION,
+        DWD_METADATA_RECEIPT_ACTION,
         RequestError,
         extract_request,
         validate_request,
@@ -64,6 +69,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
 API_ROOT = "https://api.github.com"
 PER_PAGE = 100
 MAX_LEDGER_PAGES = 20
+NETWORK_ACTIONS = frozenset({ACQUISITION_RECEIPT_ACTION, DWD_METADATA_RECEIPT_ACTION})
 
 
 class LedgerError(RuntimeError):
@@ -104,7 +110,7 @@ def find_existing_result(comments: list[dict[str, Any]], semantic_id: str) -> in
         if result["semantic_request_id"] != semantic_id:
             continue
         completed = result["status"] in {"pass", "duplicate"} or (
-            result["action"] == ACQUISITION_RECEIPT_ACTION
+            result["action"] in NETWORK_ACTIONS
             and result["phase"] == "acquisition_receipt"
             and result["status"] == "blocked"
             and result["failure_class"] == ACQUISITION_FAILURE_CLASS
@@ -217,6 +223,14 @@ def build_result(
     return validate_result(result)
 
 
+def _receipt_field(action: str) -> str:
+    if action == ACQUISITION_RECEIPT_ACTION:
+        return "acquisition_receipt"
+    if action == DWD_METADATA_RECEIPT_ACTION:
+        return "dwd_metadata_receipt"
+    raise LedgerError("unsupported closed acquisition action")
+
+
 def build_acquisition_result(
     request: dict[str, Any],
     *,
@@ -229,8 +243,9 @@ def build_acquisition_result(
     finished_at: str,
     receipt: dict[str, Any] | None,
 ) -> dict[str, Any]:
-    """Bind one successful or blocked frozen-DWD acquisition attempt."""
+    """Bind one successful or blocked closed DWD acquisition attempt."""
     status = "pass" if receipt is not None else "blocked"
+    receipt_field = _receipt_field(request["action"])
     result = {
         "schema_version": RESULT_SCHEMA_VERSION,
         "semantic_request_id": semantic_request_id(request, execution_sha, repository),
@@ -252,7 +267,7 @@ def build_acquisition_result(
             "request_validated": True,
             "ledger_scan_complete": True,
             "prior_result_reused": False,
-            "acquisition_receipt": receipt,
+            receipt_field: receipt,
         },
         "duplicate_result_comment_id": None,
         "failure_class": None if receipt is not None else ACQUISITION_FAILURE_CLASS,
@@ -271,8 +286,9 @@ def prepare_completed_result(
     run_attempt: int,
     started_at: str,
     acquirer: Callable[[], dict[str, Any]] = acquire,
+    metadata_acquirer: Callable[[], dict[str, Any]] = acquire_dwd_metadata,
 ) -> dict[str, Any]:
-    """Deduplicate first, then execute only the closed allowlisted acquisition action."""
+    """Deduplicate first, then execute only one closed allowlisted acquisition action."""
     semantic_id = semantic_request_id(request, execution_sha, repository)
     duplicate_id = find_existing_result(comments, semantic_id)
     if duplicate_id is not None:
@@ -288,7 +304,11 @@ def prepare_completed_result(
             duplicate_result_comment_id=duplicate_id,
         )
 
-    if request["action"] != ACQUISITION_RECEIPT_ACTION:
+    if request["action"] == ACQUISITION_RECEIPT_ACTION:
+        selected_acquirer = acquirer
+    elif request["action"] == DWD_METADATA_RECEIPT_ACTION:
+        selected_acquirer = metadata_acquirer
+    else:
         return build_result(
             request,
             repository=repository,
@@ -301,7 +321,7 @@ def prepare_completed_result(
         )
 
     try:
-        receipt = acquirer()
+        receipt = selected_acquirer()
     except AcquisitionError as exc:
         # The durable result carries only a closed failure class. The trusted
         # workflow log receives the bounded worker diagnostic for operators.
