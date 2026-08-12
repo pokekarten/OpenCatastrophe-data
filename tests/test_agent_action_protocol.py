@@ -359,17 +359,24 @@ class AgentActionProtocolTests(unittest.TestCase):
         )
         self.assertEqual(
             set(schema["properties"]["action"]["enum"]),
-            {"sample_audit", "acquisition_receipt"},
+            {"sample_audit", "acquisition_receipt", "dwd_metadata_receipt"},
         )
         self.assertEqual(set(schema["properties"]["status"]["enum"]), {"pass", "duplicate", "blocked"})
         for field in ("repository", "started_at", "finished_at", "evidence"):
             self.assertIn(field, schema["required"])
         self.assertIn("acquisitionReceipt", schema["$defs"])
+        self.assertIn("dwdMetadataReceipt", schema["$defs"])
         receipt_schema = schema["$defs"]["acquisitionReceipt"]
         self.assertFalse(receipt_schema["additionalProperties"])
         self.assertEqual(receipt_schema["properties"]["source_issue"], {"const": 162})
         self.assertEqual(receipt_schema["properties"]["external_bytes_persisted"], {"const": False})
         self.assertEqual(receipt_schema["properties"]["publication_authorized"], {"const": False})
+        metadata_schema = schema["$defs"]["dwdMetadataReceipt"]
+        self.assertFalse(metadata_schema["additionalProperties"])
+        self.assertEqual(metadata_schema["properties"]["source_issue"], {"const": 211})
+        self.assertEqual(metadata_schema["properties"]["temporal_coverage_status"], {"const": "unverified"})
+        self.assertEqual(metadata_schema["properties"]["external_bytes_persisted"], {"const": False})
+        self.assertEqual(metadata_schema["properties"]["publication_authorized"], {"const": False})
         self.assertIn("scripts/validate_agent_action_result.py", schema["description"])
 
     def test_poster_revalidates_receipt_repository_and_posts_only_canonical_body(self) -> None:
