@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "psmsl.global-tide-gauge-sea-level",
+  "source_ids": [
+    "psmsl.global-tide-gauge-sea-level"
+  ],
+  "provider": "Permanent Service for Mean Sea Level (PSMSL), National Oceanography Centre",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://psmsl.org/data/obtaining/notes.php",
+  "service_root": "https://psmsl.org",
+  "api_version": null,
+  "access_scope": [
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "fetch_rlr_monthly_station"
+    ],
+    "path_templates": [
+      "/data/obtaining/rlr.monthly.data/{station_id}.rlrdata"
+    ],
+    "parameter_rules": "Future execution must be repository-constructed for one scientifically preselected numeric PSMSL Station ID and the RLR monthly representation only. The trusted implementation must substitute a canonical decimal station ID into the fixed path template and must not accept an arbitrary host, URL, path, headers, representation, filename or query parameters from a caller. Before enabling a probe/sample, freeze the station identity, confirm RLR availability, review the station documentation and data authority, and bind the PSMSL extraction/release identity. Metric data must not be silently substituted for RLR. Complete-dataset ZIPs and permanent year-end archives are authoritative secondary reproducibility infrastructure but are intentionally not executable paths in this first contract."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/plain"
+    ],
+    "format": "PSMSL RLR monthly semicolon-delimited station text: decimal year-month, monthly mean sea level, missing-day count and attention/QC flag.",
+    "scientific_semantics": "PSMSL monthly RLR values are calendar-month mean relative sea level in millimetres, reduced to a station-specific Revised Local Reference datum using datum-history information supplied by the data authority. The decimal date is year + (month - 0.5)/12. Missing months inside the record are padded with -99999; an interpolated month uses missing-day count 99. Attention flag 001 means the associated documentation should be read, and 010 identifies mean tidal level content in a mean-sea-level series. RLR is generally the appropriate representation for time-series/trend analysis; Metric data are not an interchangeable fallback. Tide-gauge RLR observations are relative to local land and station datum, so values are not directly interchangeable between stations and do not by themselves define a storm-surge or tsunami event, hazard footprint, return period, damage/loss or insured loss."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 1048576,
+    "max_sample_bytes": 2097152,
+    "retry_policy": "bounded_backoff",
+    "rate_limit_notes": "No repository-specific request-rate assumption is made. Future execution must remain a single small preselected station-file request and must not turn the deterministic file service into bulk harvesting.",
+    "mutability_notes": "Live station files reflect the current PSMSL database extraction and may change as source data, QC or datum history are updated. Every future receipt must bind retrieval UTC, numeric Station ID, RLR monthly representation, PSMSL extraction/release identity, response byte count and SHA-256. For release-stable bulk reproducibility, PSMSL's permanent year-end archives are preferable, but archive acquisition is outside this contract's executable path."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "PSMSL states that its data, products, archives, documentation and training information are free for all to use, and its referencing guidance asks users to cite the dataset and include the database extraction/retrieval date. This verifies a broad source-use statement but does not, in this review, establish a separate automated HTTP-service policy or an exact repository raw-byte redistribution ceiling. Commercial automation and raw persistence/publication therefore remain unknown and blocked until independently reviewed for the exact station/asset and intended repository scope."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-12",
+  "evidence_urls": [
+    "https://psmsl.org/data/obtaining/notes.php",
+    "https://psmsl.org/data/obtaining/rlr.php",
+    "https://psmsl.org/data/obtaining/complete.php",
+    "https://psmsl.org/data/obtaining/year_end/",
+    "https://psmsl.org/data/obtaining/reference.php",
+    "https://psmsl.org/about_us/support_us.php"
+  ],
+  "notes": "Static access contract only. It selects one deterministic RLR monthly station file as the future bounded machine operation and records complete distributions/permanent year-end archives only as secondary reproducibility infrastructure. The current complete PSMSL distribution is stamped as extracted from the database on 2026-07-13, but this contract does not pin or acquire those bytes. No provider request, sample, ZIP, external byte, adapter or admission change is introduced. Before status can advance beyond documented_only, an independent review must freeze one scientifically justified Station ID and extraction/release identity, confirm the station's RLR/data-authority/QC semantics, and resolve the exact automated-service/persistence/redistribution scope."
+}
