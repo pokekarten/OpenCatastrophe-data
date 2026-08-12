@@ -28,6 +28,7 @@ Current accepted reviews:
 - `efehr-esrm20-european-exposure-model-v1.0.md` — supports the metadata-only EFEHR ESRM20 European Exposure Model admission.
 - `efehr-eshm20.md` — supports the metadata-only EFEHR ESHM20 earthquake-hazard admission.
 - `efehr-esrm20-vulnerability-v1.1.md` — supports the metadata-only EFEHR ESRM20 European Building Vulnerability Database v1.1 admission.
+- `efehr-esrm20-risk-inputs-v1.0.md` — supports the metadata-only EFEHR ESRM20 v1.0 OpenQuake-engine risk-input/configuration admission.
 - `microsoft-globalml-building-footprints.md` — supports the metadata-only Microsoft Global ML Building Footprints exposure-geometry admission.
 - `copernicus-cems-glofas-historical.md` — supports the metadata-only CEMS GloFAS historical hydrology admission.
 - `copernicus-cems-gfm-v4.1.1.md` — supports the metadata-only CEMS Global Flood Monitoring v4.1.1 satellite flood-observation admission for bounded validation/model challenge.
