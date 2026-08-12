@@ -26,6 +26,11 @@ class DwdMetadataTemporalEvidenceTests(unittest.TestCase):
                 archive.writestr(name, content)
         return tempdir, path
 
+    def _write_zip(self, path: Path, members: dict[str, bytes]) -> None:
+        with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+            for name, content in members.items():
+                archive.writestr(name, content)
+
     def _inspection(self, path: Path, families: list[str]) -> dict[str, object]:
         blob = path.read_bytes()
         with zipfile.ZipFile(path) as archive:
@@ -56,6 +61,27 @@ class DwdMetadataTemporalEvidenceTests(unittest.TestCase):
             result["required_family_members"]["geography"][0]["sha256"],
             hashlib.sha256(b"geo-content").hexdigest(),
         )
+
+    def test_rejects_path_replacement_after_inspection(self) -> None:
+        tempdir, path = self._zip({
+            "Metadaten_Geographie_00003.txt": b"geo-content",
+            "Metadaten_Geraete_00003.txt": b"equipment-content",
+            "Metadaten_Parameter_00003.txt": b"parameter-content",
+        })
+        self.addCleanup(tempdir.cleanup)
+        inspection = self._inspection(path, ["equipment", "geography", "parameter"])
+
+        def inspect_then_replace(_: Path) -> dict[str, object]:
+            self._write_zip(path, {
+                "Metadaten_Geographie_00003.txt": b"changed-geo",
+                "Metadaten_Geraete_00003.txt": b"changed-equipment",
+                "Metadaten_Parameter_00003.txt": b"changed-parameter",
+            })
+            return inspection
+
+        with patch.object(evidence, "inspect_zip", side_effect=inspect_then_replace):
+            with self.assertRaisesRegex(evidence.TemporalEvidenceError, "changed after ZIP inspection"):
+                evidence._collect(path, inspection["input"]["sha256"], "00003")
 
     def test_rejects_wrong_frozen_sha(self) -> None:
         tempdir, path = self._zip({"Metadaten_Geographie_00003.txt": b"x"})
