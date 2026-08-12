@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "eurostat.gisco.census-population-grid.2021",
+  "source_ids": [
+    "eurostat.gisco.census-population-grid.2021"
+  ],
+  "provider": "Eurostat / GISCO / European Commission",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://ec.europa.eu/eurostat/web/gisco/geodata/population-distribution/population-grids",
+  "service_root": "https://gisco-services.ec.europa.eu",
+  "api_version": "Census Grid 2021; Version 2021 (30 May 2026); V3",
+  "access_scope": [
+    "metadata",
+    "bulk"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "fetch_census_grid_2021_v3_zip"
+    ],
+    "path_templates": [
+      "/census/2021/Eurostat_Census-GRID_2021_V3.zip"
+    ],
+    "parameter_rules": "Static documentation contract only. The release is fixed to the GISCO-listed Census Grid 2021 Version 2021 dated 30 May 2026 and the exact V3 ZIP path above. This contract authorizes no HTTP request yet. A future reviewed worker must keep host, path, query, headers and redirects repository-controlled; caller-selected years, versions, filenames, directories, mirrors, arbitrary redirects and silent upgrades to future releases are forbidden."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/zip",
+      "application/octet-stream"
+    ],
+    "format": "One fixed ZIP distribution for Census Grid 2021 V3. The official GISCO listing identifies CSV, GeoPackage and raster representations. Any later acquisition must inventory the exact archive members and bind their parser/metadata identities before use rather than assuming an internal layout from the filename alone.",
+    "scientific_semantics": "Harmonised 2021 population and housing census statistics on an EU-wide 1 km² grid. Eurostat lists 13 census variables covering total population/usual residence, sex, age, employment where available, place of birth and prior usual residence categories. Raster and GeoPackage representations use ETRS89 / LAEA (EPSG:3035). These are census counts/categories, not structure-level or insured exposure; national census source/method choices can differ despite EU harmonisation, employment is availability/voluntary-basis dependent, and missingness or suppression must remain explicit. Do not infer building occupancy, asset value, damage, vulnerability or insured loss from the grid alone."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 60,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 52428800,
+    "retry_policy": "none",
+    "rate_limit_notes": "The current GISCO page exposes a static anonymous ZIP link, but this review did not establish a separate repository-specific automated-service request budget or commercial automation entitlement. This documented-only contract therefore authorizes no HEAD, GET, Range request, retry loop, directory crawl or scheduled mirroring.",
+    "mutability_notes": "The scientific/release identity is pinned to Census Grid 2021 Version 2021 dated 30 May 2026 and filename V3. The provider may publish later 2021 revisions at new download links. Any future acquisition must freeze requested/final URL, retrieval UTC, exact byte count and SHA-256, archive-member inventory, metadata/read-me identity, representation, CRS/grid semantics and variable definitions; never silently replace V3 with a later release."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "unknown",
+    "terms_url": "https://ec.europa.eu/eurostat/web/gisco/geodata/population-distribution",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "allowed",
+    "notes": "Eurostat's current population-distribution rights section states that the Eurostat Census Grid 2021 is subject to EU copyright rules with CC BY 4.0 licensing. This 2021 census-grid statement must not be conflated with the materially more restrictive historical GEOSTAT 2006/2011 terms shown on the same page. CC BY 4.0 supports reuse and redistribution with attribution, but successful static-file access is not repository publication/admission approval and no separate automated-service/commercial-automation entitlement was established here."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-12",
+  "evidence_urls": [
+    "https://ec.europa.eu/eurostat/web/gisco/geodata/population-distribution/population-grids",
+    "https://ec.europa.eu/eurostat/web/gisco/geodata/population-distribution",
+    "https://ec.europa.eu/eurostat/web/population-demography/population-housing-censuses/information-data",
+    "https://gisco-services.ec.europa.eu/census/2021/Eurostat_Census-GRID_2021_V3.zip",
+    "https://creativecommons.org/licenses/by/4.0/"
+  ],
+  "notes": "Static metadata/access boundary for #259 and the later #270 flood × census exposure pilot. No provider request, external byte, parser, adapter, admission promotion or model-input authorization is introduced. A future exact-byte task must preserve V3 identity, archive metadata, census-cell identifiers, representation, CRS/grid, variable definitions, missingness/suppression and attribution before scientific or publication use."
+}
