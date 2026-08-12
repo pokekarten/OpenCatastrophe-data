@@ -6,74 +6,14 @@ PASS: 15 manifest Markdown projections match canonical JSON
 PASS: 11 canonical schemas have exact paired Markdown projections
 PASS: 88 canonical JSON files belong to registered projection families
 test_current_repository_inventory_is_fully_registered (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_current_repository_inventory_is_fully_registered) ... ok
-test_missing_registered_checker_fails_closed (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_missing_registered_checker_fails_closed) ... ERROR
-test_nested_or_misnamed_json_does_not_expand_a_family_implicitly (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_nested_or_misnamed_json_does_not_expand_a_family_implicitly) ... ERROR
-test_registered_families_accept_exact_same_basename_pairs (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_registered_families_accept_exact_same_basename_pairs) ... ERROR
-test_registered_json_without_projection_fails (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_registered_json_without_projection_fails) ... ERROR
+test_missing_registered_checker_fails_closed (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_missing_registered_checker_fails_closed) ... ok
+test_nested_or_misnamed_json_does_not_expand_a_family_implicitly (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_nested_or_misnamed_json_does_not_expand_a_family_implicitly) ... ok
+test_registered_families_accept_exact_same_basename_pairs (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_registered_families_accept_exact_same_basename_pairs) ... ok
+test_registered_json_without_projection_fails (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_registered_json_without_projection_fails) ... ok
 test_shared_checker_commands_are_deduplicated (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_shared_checker_commands_are_deduplicated) ... ok
-test_unknown_family_fails_even_with_handwritten_markdown (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_unknown_family_fails_even_with_handwritten_markdown) ... ERROR
-
-======================================================================
-ERROR: test_missing_registered_checker_fails_closed (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_missing_registered_checker_fails_closed)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/runner/work/OpenCatastrophe-data/OpenCatastrophe-data/tests/test_check_projection_families.py", line 77, in test_missing_registered_checker_fails_closed
-    root = self._root(temporary)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/runner/work/OpenCatastrophe-data/OpenCatastrophe-data/tests/test_check_projection_families.py", line 17, in _root
-    root = Path(temporary.name)
-                ^^^^^^^^^^^^^^
-AttributeError: 'str' object has no attribute 'name'
-
-======================================================================
-ERROR: test_nested_or_misnamed_json_does_not_expand_a_family_implicitly (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_nested_or_misnamed_json_does_not_expand_a_family_implicitly)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/runner/work/OpenCatastrophe-data/OpenCatastrophe-data/tests/test_check_projection_families.py", line 65, in test_nested_or_misnamed_json_does_not_expand_a_family_implicitly
-    root = self._root(temporary)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/runner/work/OpenCatastrophe-data/OpenCatastrophe-data/tests/test_check_projection_families.py", line 17, in _root
-    root = Path(temporary.name)
-                ^^^^^^^^^^^^^^
-AttributeError: 'str' object has no attribute 'name'
-
-======================================================================
-ERROR: test_registered_families_accept_exact_same_basename_pairs (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_registered_families_accept_exact_same_basename_pairs)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/runner/work/OpenCatastrophe-data/OpenCatastrophe-data/tests/test_check_projection_families.py", line 36, in test_registered_families_accept_exact_same_basename_pairs
-    root = self._root(temporary)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/runner/work/OpenCatastrophe-data/OpenCatastrophe-data/tests/test_check_projection_families.py", line 17, in _root
-    root = Path(temporary.name)
-                ^^^^^^^^^^^^^^
-AttributeError: 'str' object has no attribute 'name'
-
-======================================================================
-ERROR: test_registered_json_without_projection_fails (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_registered_json_without_projection_fails)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/runner/work/OpenCatastrophe-data/OpenCatastrophe-data/tests/test_check_projection_families.py", line 55, in test_registered_json_without_projection_fails
-    root = self._root(temporary)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/runner/work/OpenCatastrophe-data/OpenCatastrophe-data/tests/test_check_projection_families.py", line 17, in _root
-    root = Path(temporary.name)
-                ^^^^^^^^^^^^^^
-AttributeError: 'str' object has no attribute 'name'
-
-======================================================================
-ERROR: test_unknown_family_fails_even_with_handwritten_markdown (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_unknown_family_fails_even_with_handwritten_markdown)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/runner/work/OpenCatastrophe-data/OpenCatastrophe-data/tests/test_check_projection_families.py", line 47, in test_unknown_family_fails_even_with_handwritten_markdown
-    root = self._root(temporary)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/runner/work/OpenCatastrophe-data/OpenCatastrophe-data/tests/test_check_projection_families.py", line 17, in _root
-    root = Path(temporary.name)
-                ^^^^^^^^^^^^^^
-AttributeError: 'str' object has no attribute 'name'
+test_unknown_family_fails_even_with_handwritten_markdown (tests.test_check_projection_families.ProjectionFamilyGuardTests.test_unknown_family_fails_even_with_handwritten_markdown) ... ok
 
 ----------------------------------------------------------------------
-Ran 7 tests in 0.014s
+Ran 7 tests in 0.021s
 
-FAILED (errors=5)
+OK
