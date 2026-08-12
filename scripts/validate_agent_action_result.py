@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import PurePosixPath
@@ -110,6 +111,12 @@ ALLOWED_ACTIONS = {"sample_audit", "acquisition_receipt", "dwd_metadata_receipt"
 ALLOWED_PHASES = {"request_validation", "acquisition_receipt"}
 ALLOWED_STATUSES = {"pass", "duplicate", "blocked"}
 ACQUISITION_FAILURE_CLASS = "acquisition_failed"
+DWD_METADATA_PROVIDER_PREFIXES = {
+    "equipment": "metadaten_geraete",
+    "geography": "metadaten_geographie",
+    "parameter": "metadaten_parameter",
+}
+DWD_METADATA_STATION_ID_RE = re.compile(r"(?<!\d)(\d{5})(?!\d)")
 
 
 class ResultError(ValueError):
@@ -177,6 +184,19 @@ def _validate_product_member(value: Any) -> None:
     path = _validate_safe_text_path(value, "acquisition_receipt.product_member")
     if PurePosixPath(path).suffix.casefold() != ".txt":
         raise ResultError("acquisition_receipt.product_member must identify a text member")
+
+
+def _validate_dwd_metadata_member_binding(path: str, family: str, prefix: str) -> None:
+    basename = PurePosixPath(path).name.casefold()
+    expected_prefix = DWD_METADATA_PROVIDER_PREFIXES[family]
+    if not basename.startswith(expected_prefix):
+        raise ResultError(f"{prefix}.metadata_members path does not match its provider-native family")
+    suffix = basename[len(expected_prefix):]
+    if suffix and suffix[0] not in "_.-":
+        raise ResultError(f"{prefix}.metadata_members path does not match its provider-native family")
+    station_ids = DWD_METADATA_STATION_ID_RE.findall(PurePosixPath(path).name)
+    if station_ids != [DWD_METADATA_STATION_ID]:
+        raise ResultError(f"{prefix}.metadata_members path is not bound exactly to station {DWD_METADATA_STATION_ID}")
 
 
 def validate_acquisition_receipt(receipt: Any) -> dict[str, Any]:
@@ -268,6 +288,7 @@ def validate_dwd_metadata_receipt(receipt: Any) -> dict[str, Any]:
         family = member["family"]
         if type(family) is not str or family not in REQUIRED_METADATA_FAMILIES:
             raise ResultError(f"{prefix}.metadata_members.family is outside the frozen family set")
+        _validate_dwd_metadata_member_binding(path, family, prefix)
         if path in seen_paths:
             raise ResultError(f"{prefix}.metadata_members paths must be unique")
         seen_paths.add(path)
