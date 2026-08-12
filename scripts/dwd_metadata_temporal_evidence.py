@@ -19,7 +19,10 @@ import sys
 import zipfile
 from pathlib import Path, PurePosixPath
 
-from inspect_dwd_metadata_zip import InspectionError, inspect_zip
+try:
+    from scripts.inspect_dwd_metadata_zip import InspectionError, inspect_zip
+except ModuleNotFoundError:  # direct execution via `python scripts/...`
+    from inspect_dwd_metadata_zip import InspectionError, inspect_zip
 
 EXPECTED_METADATA_SHA256 = "1703b0a7b464da98f83a9fe60ca8ad4725fa8fa9b53685c04491e1a2cfcbd657"
 EXPECTED_STATION_ID = "00003"
