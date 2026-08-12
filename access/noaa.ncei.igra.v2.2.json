@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "noaa.ncei.igra.v2.2",
+  "source_ids": [
+    "noaa.ncei.igra.v2.2"
+  ],
+  "provider": "NOAA National Centers for Environmental Information (NCEI)",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://www.ncei.noaa.gov/products/weather-balloon/integrated-global-radiosonde-archive",
+  "service_root": "https://www.ncei.noaa.gov",
+  "api_version": "IGRA v2.2",
+  "access_scope": [
+    "metadata",
+    "bulk"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "sounding_period_of_record",
+      "sounding_year_to_date"
+    ],
+    "path_templates": [
+      "/data/integrated-global-radiosonde-archive/access/data-por/",
+      "/data/integrated-global-radiosonde-archive/access/data-y2d/"
+    ],
+    "parameter_rules": "Documentation-only file contract. A future reviewed resolver must accept only an IGRA station identifier selected from the authoritative station inventory and exactly one sounding scope: period-of-record (data-por) or recent/year-to-date (data-y2d). Period-of-record sounding files use the provider pattern <IGRA-station-id>-data.txt.zip. Callers must not supply a host, arbitrary path, URL, headers, query string or filename. Monthly-mean and derived-parameter products are distinct products and are not authorized by these operations."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/zip"
+    ],
+    "format": "IGRA station sounding text packaged as a provider ZIP, using the separately published IGRA v2 sounding format definition.",
+    "scientific_semantics": "IGRA v2.2 is an actively maintained radiosonde archive. Sounding observations are station- and launch-time-indexed vertical profiles; native record fields, source/background/quality flags, pressure/height/temperature/moisture/wind units and missing-value semantics must be preserved according to the provider format documentation. Period-of-record and recent/year-to-date products have different update scopes and must not be conflated. Monthly means and derived parameters are separate provider products and cannot substitute for sounding observations."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 131072,
+    "max_sample_bytes": 5242880,
+    "retry_policy": "none",
+    "rate_limit_notes": "No repository-specific numeric NCEI rate-limit assumption is made. This contract authorizes no live request; any future retrieval must remain one preselected station/product-scope request under current provider guidance.",
+    "mutability_notes": "IGRA v2.2 began in 2023 and the public station archives are actively refreshed. A live path is therefore not immutable scientific byte identity. Any later receipt must bind IGRA v2.2, exact station identifier, POR versus Y2D scope, retrieval UTC, provider path, exact byte count and SHA-256, plus the station-list/version identity used for selection."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Anonymous public NCEI file access is connectivity evidence only and is not represented as redistribution, derivative-use or commercial-automation permission. Exact dataset/use constraints and any attribution requirements require independent asset-specific review before repository persistence or publication."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-12",
+  "evidence_urls": [
+    "https://www.ncei.noaa.gov/products/weather-balloon/integrated-global-radiosonde-archive",
+    "https://www.ncei.noaa.gov/data/integrated-global-radiosonde-archive/access/",
+    "https://www.ncei.noaa.gov/data/integrated-global-radiosonde-archive/doc/igra2-data-format.txt",
+    "https://doi.org/10.7289/V5X63K0Q"
+  ],
+  "notes": "Static IGRA v2.2 sounding-access boundary only. No provider request, station sample, external byte, parser execution, admission promotion, hazard-model claim or publication decision is introduced. A future bounded sample must preselect station and POR/Y2D scope before inspecting target values and must retain provider flags and vertical-profile semantics."
+}
