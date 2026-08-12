@@ -4,13 +4,17 @@
 from __future__ import annotations
 
 import hashlib
+import sys
 import tempfile
 import unittest
 import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
-import dwd_metadata_temporal_evidence as evidence
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from scripts import dwd_metadata_temporal_evidence as evidence  # noqa: E402
 
 
 class DwdMetadataTemporalEvidenceTests(unittest.TestCase):
