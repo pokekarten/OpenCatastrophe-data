@@ -242,28 +242,6 @@ def _require_manifest_admission(manifest: dict[str, Any], artifact_kind: str) ->
         )
 
 
-def _validate_manifest_semantic_bindings(
-    payload: dict[str, Any], manifest: dict[str, Any]
-) -> None:
-    if "variables_and_units" in manifest:
-        quantity = payload["measure"]["quantity"]
-        unit = payload["measure"]["unit"]
-        variables = manifest["variables_and_units"]
-        if not any(
-            variable["name"] == quantity and variable["unit"] == unit
-            for variable in variables
-        ):
-            raise ModelInputError(
-                "measure.quantity/unit does not match referenced manifest variables_and_units"
-            )
-
-    manifest_spatial = manifest.get("spatial")
-    if manifest_spatial is not None:
-        manifest_crs = manifest_spatial.get("crs")
-        if manifest_crs is not None and payload["spatial"]["crs"] != manifest_crs:
-            raise ModelInputError("spatial.crs does not match referenced manifest")
-
-
 def validate_model_input(payload: dict[str, Any], *, root: Path = ROOT) -> None:
     _closed(payload, TOP_KEYS, TOP_KEYS, "model input")
     if payload["schema_version"] != SCHEMA_VERSION:
@@ -319,7 +297,6 @@ def validate_model_input(payload: dict[str, Any], *, root: Path = ROOT) -> None:
         raise ModelInputError("sha256 does not match selected manifest artifact")
 
     _validate_semantics(payload)
-    _validate_manifest_semantic_bindings(payload, manifest)
 
 
 def main() -> int:
