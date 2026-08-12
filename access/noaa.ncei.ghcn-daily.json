@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "noaa.ncei.ghcn-daily",
+  "source_ids": [
+    "noaa.ncei.ghcn-daily"
+  ],
+  "provider": "NOAA National Centers for Environmental Information (NCEI)",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt",
+  "service_root": "https://www.ncei.noaa.gov",
+  "api_version": "GHCN-Daily 3.34; current rolling update 3.34-upd-2026080518",
+  "access_scope": [
+    "metadata",
+    "catalogue",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "read_station_metadata",
+      "read_station_file",
+      "read_station_period_csv"
+    ],
+    "path_templates": [
+      "/pub/data/ghcn/daily/ghcnd-stations.txt",
+      "/pub/data/ghcn/daily/all/",
+      "/pub/data/ghcn/daily/by_station/"
+    ],
+    "parameter_rules": "This contract documents only the anonymous GHCN-Daily bulk/file distribution and authorizes no execution. A future bounded station operation must accept only one previously selected canonical GHCN station identifier, construct the provider path inside the fixed all/ or by_station/ directory, and reject caller-supplied hosts, arbitrary paths, headers, query strings, redirects to unrelated products, date-window widening or bulk crawling. NCEI Climate Data Online Web Services v2 is a separate token-authenticated interface and must not be executed through this anonymous file contract."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/plain",
+      "text/csv"
+    ],
+    "format": "Provider-native GHCN-Daily station metadata, fixed-width .dly station records, or provider by_station period-of-record CSV.",
+    "scientific_semantics": "GHCN-Daily is a rolling, quality-controlled daily station dataset assembled from many national, international and observing-network sources. Values carry measurement, quality and source flags; source provenance and station history can differ across records. Daily elements are not interchangeable measurements, and some semantics such as TAVG depend on source protocol. A successful future file retrieval would prove only byte identity and parser compatibility, not station homogeneity, source-rights uniformity, climatological representativeness, hazard fitness or model validity."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 1048576,
+    "max_sample_bytes": 5242880,
+    "retry_policy": "bounded_backoff",
+    "rate_limit_notes": "No repository-specific rate or crawl entitlement is assumed. The anonymous archive is a bulk/file distribution surface; any future operation must select one exact station-scoped file and must not enumerate or mirror the archive. The separate CDO v2 service uses an access token and provider request limits and is outside this contract.",
+    "mutability_notes": "GHCN-Daily is updated as new and revised observations arrive. The provider currently identifies Version 3.34 with rolling update 3.34-upd-2026080518 and a separately recorded last fully reprocessed version. Any future receipt must bind retrieval UTC, exact file path, byte count and SHA-256, the provider version/update identity available at retrieval, station identity, selected elements and relevant MFLAG/QFLAG/SFLAG provenance."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "GHCN-Daily aggregates observations from numerous national, international and community/source networks. Provider documentation exposes source flags and records that some contributed data were historically withheld until source-service permission was granted. NCEI hosting and anonymous technical availability therefore are not treated as evidence of one uniform commercial-automation or redistribution grant for every contributing record. Exact station/source composition and intended publication scope require a dedicated rights review before any repository sample or automation promotion."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-12",
+  "evidence_urls": [
+    "https://www.ncei.noaa.gov/pub/data/ghcn/daily/",
+    "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt",
+    "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme-by_station.txt",
+    "https://www.ncei.noaa.gov/pub/data/ghcn/daily/ghcnd-version.txt",
+    "https://www.ncei.noaa.gov/cdo-web/webservices/v2"
+  ],
+  "notes": "Static documentation contract only. The primary boundary here is NCEI's anonymous GHCN-Daily file distribution. CDO Web Services v2 is documented separately by NCEI, requires a token and must remain a separate credentialed contract if later needed. No NCEI observation/archive bytes or token request were acquired or persisted; no raw/derived admission, publication promotion or live provider probe is authorized by this change."
+}
