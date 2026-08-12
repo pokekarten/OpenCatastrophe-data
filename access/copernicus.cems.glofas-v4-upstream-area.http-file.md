@@ -24,13 +24,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Interface type:** http_file
 
-**Status:** probe_ready
+**Status:** documented_only
 
 **Documentation url:** <https://confluence.ecmwf.int/spaces/CEMS/pages/242067380/Auxiliary+Data>
 
 **Service root:** <https://confluence.ecmwf.int/download/attachments/242067380>
 
-**Api version:** GloFAS v4.0 auxiliary data; exact upstream-area filename frozen
+**Api version:** GloFAS v4.0 auxiliary data; exact upstream-area provider link version=2 documented
 
 ## Access scope
 
@@ -58,7 +58,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - /uparea_glofas_v4_0.nc
 
-**Parameter rules:** This contract freezes one provider-published GloFAS v4.0 ancillary object only. A caller must not supply or override host, attachment id, path, filename, query, headers or redirects. The query-free canonical path is the semantic object identity; any provider-added transport query or redirect must be recorded in the execution receipt and may not select another attachment. The HEAD operation is the only probe authorized by this contract. The fetch operation is descriptive future scope and is not executable under the generic source-access sample budget: a full-body worker requires separate Tier-2 review with a dataset-specific bound above the provider-declared approximately 87 MB.
+**Parameter rules:** This contract documents one provider-published GloFAS v4.0 ancillary object only and authorizes no network operation yet. The authoritative CEMS page publishes the attachment with fixed provider query parameters api=v2, modificationDate=1668604690076 and version=2. The query-free service root plus path are therefore not asserted to identify that exact attachment revision by themselves. A future source-specific worker must freeze those provider-supplied query values as reviewed code/config constants, never caller input, and must record requested and final URLs. Caller-controlled host, attachment id, path, filename, query, headers and redirect targets remain forbidden. The approximately 87 MB body also exceeds the generic source-access sample budget and requires separate Tier-2 review before any fetch implementation.
 
 ## Response contract
 
@@ -68,7 +68,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - application/netcdf
 - application/octet-stream
 
-**Format:** One exact GloFAS v4.0 upstream-area NetCDF file. Media type or provider-reported size is discovery evidence only; later scientific use requires exact acquired-byte identity and structural validation.
+**Format:** One exact GloFAS v4.0 upstream-area NetCDF file. Media type, provider-reported size or a query-free attachment path is discovery evidence only; later scientific use requires exact acquired-byte identity, exact revision request evidence and structural validation.
 
 **Scientific semantics:** The file provides upstream catchment area for each GloFAS river pixel in m2 on the v4.0 WGS84/EPSG:4326 grid (7200 longitude by 3000 latitude). Upstream area is model-configuration ancillary data, not river discharge, a gauge observation or a holdout target. GloFAS auxiliary data are version-specific and must not be mixed across model cycles. For the Dresden preregistration, only the already frozen candidate cells may be read after exact bytes and v4.0 structure are verified.
 
@@ -82,50 +82,46 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** none
 
-**Rate limit notes:** No repository-specific request-rate entitlement is assumed. The contract authorizes at most a bounded metadata/HEAD probe. Do not use Range requests, pagination, crawling or repeated probes to reconstruct the NetCDF body.
+**Rate limit notes:** No repository-specific request-rate or automated-access entitlement for the ECMWF Confluence attachment service is established by current evidence. This documented-only contract authorizes no HEAD, GET, Range, crawling or repeated probe. Any future probe first requires a separately reviewed service/access-terms decision and exact-revision request recipe.
 
-**Mutability notes:** The provider documents the object as about 87 MB, which exceeds the schema's generic 50-MiB sample ceiling. That ceiling is not full-download authority. A 2022 GloFAS known issue records that an erroneous upstream-area file in older documentation was corrected; therefore filename/version documentation, requested and final URL, retrieval UTC, exact byte count and SHA-256 must be bound at acquisition, and the NetCDF dimensions/coordinates/variable/units/fill value must be validated before scientific use.
+**Mutability notes:** The provider documents the object as about 87 MB, which exceeds the schema's generic 50-MiB sample ceiling. That ceiling is not full-download authority. The provider-published link includes fixed attachment-version/modification query parameters, while the query-free attachment path may be mutable; exact revision identity must therefore be preserved in future request evidence. A 2022 GloFAS known issue also records that an erroneous upstream-area file in older documentation was corrected. Any later acquisition must bind requested/final URL, retrieval UTC, exact byte count and SHA-256 and validate NetCDF dimensions, coordinates, variable, units and fill value before scientific use.
 
 ## Rights and policy
 
 **Dataset rights status:** verified
 
-**Api terms status:** same_as_dataset
+**Api terms status:** unknown
 
 **Terms url:** <https://ecds.ecmwf.int/licences/cems-floods>
 
-**Commercial automation status:** allowed
+**Commercial automation status:** unknown
 
 **Redistribution status:** allowed
 
-**Notes:** The current CEMS-FLOODS datasets licence applies to CEMS EFAS &amp; GloFAS data and grants free access plus reproduction, distribution, public communication, adaptation/modification and combination subject to its terms and required source or modified-information notices. The licence warns that third-party information can carry different terms. No exact NetCDF bytes are admitted by this contract; a later acquisition must inspect provider response/file metadata for any contrary third-party notice before publication or redistribution.
+**Notes:** The current CEMS-FLOODS datasets licence applies to CEMS EFAS &amp; GloFAS data and supports covered-data reuse and redistribution subject to its terms, required source or modified-information notices, and its third-party-information caveat. That dataset licence is not treated here as proof that automated requests to the separate ECMWF Confluence attachment service are permitted; service/API terms remain unknown, so this contract authorizes no network probe or fetch. No exact NetCDF bytes are admitted by this contract, and any later publication must also inspect exact asset evidence for contrary third-party notices.
 
 ## Probe contract
 
-**Mode:** head
+**Mode:** none
 
-**Operation:** head_exact_upstream_area
+**Operation:** `null`
 
 **Requires credentials:** `false`
 
 ### Expected evidence
 
-- requested exact canonical provider URL
-- final URL after bounded redirect validation
-- retrieval timestamp
-- HTTP status and safe response metadata
-- provider-reported content length and media type when present
-- external_bytes_persisted=false
+_Empty array._
 
-**Implementation decision:** build_later
+**Implementation decision:** document_only
 
 **Reviewed at:** 2026-08-12
 
 ## Evidence urls
 
 - <https://confluence.ecmwf.int/spaces/CEMS/pages/242067380/Auxiliary+Data>
+- <https://confluence.ecmwf.int/download/attachments/242067380/uparea_glofas_v4_0.nc?api=v2&amp;modificationDate=1668604690076&amp;version=2>
 - <https://confluence.ecmwf.int/spaces/CEMS/pages/242067397/Data+Structure+and+Formats>
 - <https://confluence.ecmwf.int/spaces/CEMS/pages/348807401/GloFAS+-+Known+Issues>
 - <https://ecds.ecmwf.int/licences/cems-floods>
 
-**Notes:** This is a narrow pre-acquisition contract for \#115/\#173. It deliberately separates a safe exact-object metadata probe from the later ~87-MB acquisition worker. It does not widen Agent Action request/result contracts, authorize caller-controlled URLs, persist external bytes, change the frozen Dresden selector/holdout protocol, or promote raw/publication state.
+**Notes:** This is a narrow documented pre-acquisition contract for \#115/\#173. It records the exact provider-published v4.0 attachment recipe and dataset-rights ceiling but deliberately grants no active network authority while Confluence service automation terms and exact-revision request handling remain separately unresolved. It does not widen Agent Action request/result contracts, persist external bytes, change the frozen Dresden selector/holdout protocol, or promote raw/publication state.
