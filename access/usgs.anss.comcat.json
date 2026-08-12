@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "usgs.anss.comcat",
+  "source_ids": [
+    "usgs.anss.comcat"
+  ],
+  "provider": "U.S. Geological Survey (USGS) Earthquake Hazards Program / Advanced National Seismic System (ANSS)",
+  "interface_type": "fdsn",
+  "status": "documented_only",
+  "documentation_url": "https://earthquake.usgs.gov/fdsnws/event/1/",
+  "service_root": "https://earthquake.usgs.gov",
+  "api_version": "FDSN Event Web Service v1",
+  "access_scope": [
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "latest_earthquake_geojson"
+    ],
+    "path_templates": [
+      "/fdsnws/event/1/query"
+    ],
+    "parameter_rules": "No execution is authorized by this static contract. A later reviewed probe may construct exactly one bounded catalogue request with format=geojson, limit=1, orderby=time, eventtype=earthquake and nodata=204. Callers must not supply a host, arbitrary path, headers, callback, eventid, productcode/producttype, catalogue/contributor, geographic or time filters, pagination, include-all flags, deleted/superseded controls, or unrestricted query parameters. Product URLs exposed inside ComCat responses are downstream assets and must not be followed under this access contract."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "USGS FDSN Event GeoJSON FeatureCollection containing at most one current earthquake catalogue event for the bounded future connectivity recipe.",
+    "scientific_semantics": "ComCat aggregates earthquake source parameters and associated products from contributing seismic networks. A response is an operational catalogue representation, not immutable event truth: preferred origins, magnitudes, review status and associated products can change, network coverage varies through space and time, and historic regional catalogues are not uniformly complete. Connectivity or receipt validity does not establish catalogue completeness, hazard-model fitness, surveyed damage, insured loss, or scientific approval of downstream products."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 1048576,
+    "max_sample_bytes": 1048576,
+    "retry_policy": "none",
+    "rate_limit_notes": "No request-rate entitlement is assumed and no execution is authorized here. USGS documents a query-result ceiling of 20000 events and recommends real-time GeoJSON feeds for automated display applications; any future OpenCatastrophe probe is intentionally limited to one event and must not be widened into bulk harvesting or a display/feed workload without separate review.",
+    "mutability_notes": "ComCat is operational and mutable. Any future trusted receipt must bind retrieval UTC, exact execution-code identity, normalized request identity, response byte count and SHA-256. Scientific use must separately freeze the exact event identifier, preferred origin/magnitude state, contributor/catalogue context and any downstream product revision actually consumed."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "unknown",
+    "terms_url": "https://www.usgs.gov/media/files/advanced-national-seismic-system-anss-data-and-products-policy",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "allowed",
+    "notes": "The current USGS ANSS Data and Products Policy is published with Sources/Usage: Public Domain, and USGS states that USGS-authored or produced data and information are generally in the U.S. Public Domain. That supports the dataset-reuse ceiling recorded here. The FDSN Event API documentation establishes an anonymous technical interface but does not, by itself, establish a separate service/API automation term. API/service-use and commercial automation therefore remain fail-closed and unknown; this contract does not authorize provider requests or publication of future response bytes."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-12",
+  "evidence_urls": [
+    "https://earthquake.usgs.gov/fdsnws/event/1/",
+    "https://www.usgs.gov/programs/earthquake-hazards/anss-comprehensive-earthquake-catalog-comcat-documentation",
+    "https://www.usgs.gov/media/files/advanced-national-seismic-system-anss-data-and-products-policy",
+    "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits"
+  ],
+  "notes": "Static documentation contract only. The source-access route and one bounded future catalogue recipe are recorded so later trusted execution can be reviewed without accepting arbitrary ComCat or product URLs. No USGS request or response byte is executed or persisted by this change. A future execution proposal must independently clear service/API-use terms, then use the existing trusted network plane and preserve event/product revision semantics; downstream ShakeMap, PAGER, moment-tensor or other product assets require their own bounded scientific/rights review."
+}
