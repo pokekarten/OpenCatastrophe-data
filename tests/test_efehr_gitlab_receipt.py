@@ -22,6 +22,15 @@ RETRIEVED = "2026-08-13T00:30:00Z"
 
 
 class EfehrGitlabReceiptTests(unittest.TestCase):
+    def _mapping_target(self):
+        return validate_target(
+            source_issue=283,
+            dataset_id="efehr.esrm20.vulnerability.v1.1",
+            project_id=269,
+            commit_sha=COMMIT,
+            repository_path="Vulnerability/esrm20_exposure_vulnerability_mapping.csv",
+        )
+
     def test_kosovo_exposure_targets_are_exactly_allowlisted(self) -> None:
         target = validate_target(
             source_issue=282,
@@ -47,13 +56,7 @@ class EfehrGitlabReceiptTests(unittest.TestCase):
                 )
 
     def test_mapping_is_exact_and_vulnerability_files_fail_closed_until_derived(self) -> None:
-        mapping = validate_target(
-            source_issue=283,
-            dataset_id="efehr.esrm20.vulnerability.v1.1",
-            project_id=269,
-            commit_sha=COMMIT,
-            repository_path="Vulnerability/esrm20_exposure_vulnerability_mapping.csv",
-        )
+        mapping = self._mapping_target()
         self.assertEqual(mapping.project_path, "efehr/esrm20")
         with self.assertRaisesRegex(EfehrReceiptError, "source-derived"):
             validate_target(
@@ -108,13 +111,7 @@ class EfehrGitlabReceiptTests(unittest.TestCase):
                 validate_target(**dict(base, **mutation))
 
     def test_receipt_hashes_exact_bytes_without_persistence(self) -> None:
-        target = validate_target(
-            source_issue=283,
-            dataset_id="efehr.esrm20.vulnerability.v1.1",
-            project_id=269,
-            commit_sha=COMMIT,
-            repository_path="Vulnerability/esrm20_exposure_vulnerability_mapping.csv",
-        )
+        target = self._mapping_target()
         payload = b"taxonomy,vulnerability_id\nA,vm1\n"
         url = raw_file_api_url(target)
         receipt = receipt_from_stream(
@@ -131,13 +128,7 @@ class EfehrGitlabReceiptTests(unittest.TestCase):
         self.assertEqual(receipt["commit_sha"], COMMIT)
 
     def test_stream_bounds_length_mismatch_empty_and_nonbytes_fail_closed(self) -> None:
-        target = validate_target(
-            source_issue=283,
-            dataset_id="efehr.esrm20.vulnerability.v1.1",
-            project_id=269,
-            commit_sha=COMMIT,
-            repository_path="Vulnerability/esrm20_exposure_vulnerability_mapping.csv",
-        )
+        target = self._mapping_target()
         url = raw_file_api_url(target)
         cases = (
             (io.BytesIO(b""), {}, 10),
@@ -167,14 +158,55 @@ class EfehrGitlabReceiptTests(unittest.TestCase):
                 retrieved_at=RETRIEVED,
             )
 
-    def test_final_url_and_dns_boundary_fail_closed(self) -> None:
-        target = validate_target(
-            source_issue=283,
-            dataset_id="efehr.esrm20.vulnerability.v1.1",
-            project_id=269,
-            commit_sha=COMMIT,
-            repository_path="Vulnerability/esrm20_exposure_vulnerability_mapping.csv",
+    def test_receipt_timestamp_must_be_canonical_and_calendar_valid(self) -> None:
+        target = self._mapping_target()
+        url = raw_file_api_url(target)
+        payload = b"x"
+        receipt = receipt_from_stream(
+            target,
+            io.BytesIO(payload),
+            final_url=url,
+            retrieved_at="2026-08-13T00:30:00.123456Z",
         )
+        self.assertEqual(receipt["retrieved_at"], "2026-08-13T00:30:00.123456Z")
+
+        for timestamp in (
+            "xxxxxxxxxxxxxxxxxxxZ",
+            "2026-13-13T00:30:00Z",
+            "2026-08-13T24:30:00Z",
+            "2026-08-13T00:30:00+00:00",
+            "2026-08-13T00:30Z",
+            "2026-08-13T00:30:00.1234567Z",
+        ):
+            with self.subTest(timestamp=timestamp), self.assertRaises(EfehrReceiptError):
+                receipt_from_stream(
+                    target,
+                    io.BytesIO(payload),
+                    final_url=url,
+                    retrieved_at=timestamp,
+                )
+
+    def test_receipt_headers_reject_control_characters_and_oversize_values(self) -> None:
+        target = self._mapping_target()
+        url = raw_file_api_url(target)
+        payload = b"x"
+        for headers in (
+            {"Content-Type": "text/csv\r\nInjected: true"},
+            {"ETag": "unsafe\x00value"},
+            {"ETag": "x" * 1025},
+            {"Content-Length": "1\t"},
+        ):
+            with self.subTest(headers=headers), self.assertRaises(EfehrReceiptError):
+                receipt_from_stream(
+                    target,
+                    io.BytesIO(payload),
+                    final_url=url,
+                    retrieved_at=RETRIEVED,
+                    headers=headers,
+                )
+
+    def test_final_url_and_dns_boundary_fail_closed(self) -> None:
+        target = self._mapping_target()
         expected = raw_file_api_url(target)
         self.assertEqual(validate_final_url(target, expected), expected)
         for url in (
