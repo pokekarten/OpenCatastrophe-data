@@ -13,8 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ProjectionFamilyGuardTests(unittest.TestCase):
-    def _root(self, temporary: tempfile.TemporaryDirectory[str]) -> Path:
-        root = Path(temporary.name)
+    def _root(self, temporary_path: str) -> Path:
+        root = Path(temporary_path)
         (root / "scripts").mkdir()
         (root / "scripts/render_public_views.py").write_text("pass\n", encoding="utf-8")
         (root / "scripts/schema_reference.py").write_text("pass\n", encoding="utf-8")
