@@ -8,6 +8,7 @@ from __future__ import annotations
 import difflib
 import html
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -39,12 +40,20 @@ def _reject_constant(value: str) -> None:
     raise ProjectionError(f"non-finite JSON number is not allowed: {value}")
 
 
+def _strict_float(value: str) -> float:
+    parsed = float(value)
+    if not math.isfinite(parsed):
+        raise ProjectionError(f"non-finite JSON number is not allowed: {value}")
+    return parsed
+
+
 def load_structured_json(path: Path) -> dict[str, Any]:
     try:
         payload = json.loads(
             path.read_text(encoding="utf-8"),
             object_pairs_hook=_strict_object,
             parse_constant=_reject_constant,
+            parse_float=_strict_float,
         )
     except ProjectionError:
         raise
