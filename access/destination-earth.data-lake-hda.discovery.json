@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "access_id": "destination-earth.data-lake-hda.discovery",
   "source_ids": [
-    "destination-earth.data-lake-hda"
+    "destination-earth.data-lake"
   ],
   "provider": "Destination Earth Data Lake / European Commission",
   "interface_type": "stac",
