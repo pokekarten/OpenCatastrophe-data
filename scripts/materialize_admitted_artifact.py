@@ -84,6 +84,34 @@ def _prepare_cache_root(cache_root: Path, *, root: Path) -> Path:
     return resolved
 
 
+def _prepare_cache_parent(cache_root: Path, relative_parent: Path) -> Path:
+    """Create a trusted relative directory chain without following cache-internal symlinks."""
+
+    current = cache_root
+    for segment in relative_parent.parts:
+        if segment in {"", ".", ".."}:
+            raise MaterializationError("cache key contains a noncanonical path segment")
+        candidate = current / segment
+        if candidate.exists() or candidate.is_symlink():
+            if candidate.is_symlink():
+                raise MaterializationError("cache directory chain must not contain symlinks")
+            try:
+                mode = candidate.lstat().st_mode
+            except OSError as exc:
+                raise MaterializationError(f"cannot inspect cache directory chain: {exc}") from exc
+            if not stat.S_ISDIR(mode):
+                raise MaterializationError("cache directory chain must contain only directories")
+        else:
+            try:
+                candidate.mkdir()
+            except OSError as exc:
+                raise MaterializationError(f"cannot create cache directory: {exc}") from exc
+            if candidate.is_symlink() or not candidate.is_dir():
+                raise MaterializationError("created cache directory is not a real directory")
+        current = candidate
+    return current
+
+
 def _hash_stream(stream: BinaryIO) -> tuple[str, int]:
     digest = hashlib.sha256()
     size = 0
@@ -151,9 +179,8 @@ def _copy_and_verify(
     expected_sha256: str,
     expected_size: int,
 ) -> None:
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    if destination.parent.is_symlink():
-        raise MaterializationError("cache destination parent must not be a symlink")
+    if destination.parent.is_symlink() or not destination.parent.is_dir():
+        raise MaterializationError("cache destination parent must be a real directory")
 
     temp_path: Path | None = None
     try:
@@ -226,7 +253,8 @@ def materialize(
     resolved_cache_root = _prepare_cache_root(cache_root, root=root)
 
     cache_key = Path(payload["dataset_id"]) / payload["artifact"] / expected_sha256
-    destination = resolved_cache_root / cache_key
+    parent = _prepare_cache_parent(resolved_cache_root, cache_key.parent)
+    destination = parent / cache_key.name
     if source == _resolved(destination):
         raise MaterializationError("source file must not already be the cache destination")
 
