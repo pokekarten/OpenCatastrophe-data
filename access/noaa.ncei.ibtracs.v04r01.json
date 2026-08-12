@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "noaa.ncei.ibtracs.v04r01",
+  "source_ids": [
+    "noaa.ncei.ibtracs.v04r01"
+  ],
+  "provider": "NOAA National Centers for Environmental Information (NCEI)",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://www.ncei.noaa.gov/products/international-best-track-archive",
+  "service_root": "https://www.ncei.noaa.gov",
+  "api_version": "IBTrACS Version 4r01 / 4.01; DOI 10.25921/82ty-9e16",
+  "access_scope": [
+    "metadata",
+    "catalogue",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "read_global_netcdf"
+    ],
+    "path_templates": [
+      "/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/netcdf/IBTrACS.ALL.v04r01.nc"
+    ],
+    "parameter_rules": "This contract documents one exact provider-versioned global NetCDF object and authorizes no execution. A future acquisition must be separately reviewed and repository-constructed from the fixed service root and exact v04r01 path; callers must not supply a host, arbitrary path, headers, basin/subset selector, version, filename, query string, redirect target or downstream asset URL. Basin, since1980, last3years, ACTIVE, CSV and shapefile variants are separate provider distributions and must not be silently substituted for the documented global NetCDF identity."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/x-netcdf",
+      "application/octet-stream"
+    ],
+    "format": "NOAA/NCEI IBTrACS v04r01 global NetCDF distribution object `IBTrACS.ALL.v04r01.nc`.",
+    "scientific_semantics": "IBTrACS is a globally merged tropical-cyclone best-track archive assembled from multiple agencies and source records. Agency-specific positions, intensities, wind conventions, pressure values, identifiers, missingness and revision histories can differ; merged or harmonized fields must not be treated as universal physical ground truth. Scientific use must freeze the exact IBTrACS release, subset/file identity, storm and source-agency fields actually consumed, and document any choice among agency-specific or harmonized variables before hazard calibration or validation. Connectivity alone does not establish event truth, loss semantics or model fitness."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 60,
+    "max_probe_bytes": 1048576,
+    "max_sample_bytes": 52428800,
+    "retry_policy": "bounded_backoff",
+    "rate_limit_notes": "No repository-specific crawl or download-rate entitlement is assumed. This contract is documentation-only; any later acquisition must target one exact reviewed object and must not enumerate, mirror or switch among provider subsets/formats without separate review.",
+    "mutability_notes": "The v04r01 directory is versioned, but provider distributions and auxiliary subsets may be updated or republished. Any future trusted receipt must bind retrieval UTC, exact final URL, byte count and SHA-256, provider release/version, exact filename and selected scientific variable/source-agency semantics. A different IBTrACS release or subset is a different scientific input."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "NCEI provides public anonymous electronic distribution and dataset citation/use-liability information, but the reviewed evidence does not establish one uniform downstream redistribution or commercial-automation grant for the globally merged multi-agency best-track record. Public availability is therefore not promoted into a rights decision. Exact dataset reuse/publication scope and any service-use terms require dedicated review before provider execution, repository sample persistence or redistribution."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-12",
+  "evidence_urls": [
+    "https://www.ncei.noaa.gov/products/international-best-track-archive",
+    "https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/netcdf/",
+    "https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.ncdc:C01552"
+  ],
+  "notes": "Static documentation contract only. This source is NOAA/NCEI observed best-track IBTrACS v04r01 and is explicitly distinct from the repository's synthetic STORM present-climate dataset. No provider file was fetched or persisted by this change. Any future acquisition or admission must independently review exact rights, freeze one versioned object and preserve multi-agency provenance and variable semantics."
+}
