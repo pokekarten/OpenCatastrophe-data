@@ -18,7 +18,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ## Source ids
 
-- destination-earth.data-lake-hda
+- destination-earth.data-lake
 
 **Provider:** Destination Earth Data Lake / European Commission
 
