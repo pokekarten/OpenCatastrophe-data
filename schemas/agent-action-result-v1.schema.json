@@ -178,7 +178,10 @@
     },
     {
       "if": {"properties": {"phase": {"const": "acquisition_receipt"}}, "required": ["phase"]},
-      "then": {"properties": {"duplicate_result_comment_id": {"type": "null"}}}
+      "then": {"properties": {
+        "action": {"enum": ["acquisition_receipt", "dwd_metadata_receipt"]},
+        "duplicate_result_comment_id": {"type": "null"}
+      }}
     },
     {
       "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "acquisition_receipt"}}, "required": ["phase", "action"]},
