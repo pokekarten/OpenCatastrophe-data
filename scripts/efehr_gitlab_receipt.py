@@ -49,7 +49,7 @@ PROJECTS: dict[int, dict[str, Any]] = {
     269: {
         "project_path": "efehr/esrm20",
         "issues": frozenset({283}),
-        "datasets": frozenset({"efehr.esrm20.vulnerability.v1.1"}),
+        "datasets": frozenset({"efehr.esrm20.risk-inputs.v1.0"}),
     },
 }
 

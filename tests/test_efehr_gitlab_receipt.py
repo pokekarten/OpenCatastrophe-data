@@ -25,7 +25,7 @@ class EfehrGitlabReceiptTests(unittest.TestCase):
     def _mapping_target(self):
         return validate_target(
             source_issue=283,
-            dataset_id="efehr.esrm20.vulnerability.v1.1",
+            dataset_id="efehr.esrm20.risk-inputs.v1.0",
             project_id=269,
             commit_sha=COMMIT,
             repository_path="Vulnerability/esrm20_exposure_vulnerability_mapping.csv",
@@ -55,9 +55,20 @@ class EfehrGitlabReceiptTests(unittest.TestCase):
                     repository_path=path,
                 )
 
-    def test_mapping_is_exact_and_vulnerability_files_fail_closed_until_derived(self) -> None:
+    def test_mapping_has_distinct_risk_input_identity_and_vulnerability_stays_separate(self) -> None:
         mapping = self._mapping_target()
         self.assertEqual(mapping.project_path, "efehr/esrm20")
+        self.assertEqual(mapping.dataset_id, "efehr.esrm20.risk-inputs.v1.0")
+
+        with self.assertRaisesRegex(EfehrReceiptError, "binding is not allow-listed"):
+            validate_target(
+                source_issue=283,
+                dataset_id="efehr.esrm20.vulnerability.v1.1",
+                project_id=269,
+                commit_sha=COMMIT,
+                repository_path="Vulnerability/esrm20_exposure_vulnerability_mapping.csv",
+            )
+
         with self.assertRaisesRegex(EfehrReceiptError, "source-derived"):
             validate_target(
                 source_issue=283,
@@ -121,6 +132,7 @@ class EfehrGitlabReceiptTests(unittest.TestCase):
             retrieved_at=RETRIEVED,
             headers={"Content-Length": str(len(payload)), "Content-Type": "text/csv"},
         )
+        self.assertEqual(receipt["dataset_id"], "efehr.esrm20.risk-inputs.v1.0")
         self.assertEqual(receipt["byte_count"], len(payload))
         self.assertEqual(receipt["sha256"], hashlib.sha256(payload).hexdigest())
         self.assertFalse(receipt["external_bytes_persisted"])
