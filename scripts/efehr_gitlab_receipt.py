@@ -16,6 +16,7 @@ import ipaddress
 import re
 import urllib.parse
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, BinaryIO, Iterable, Mapping
 
 SCHEMA_VERSION = "oc-efehr-gitlab-artifact-receipt-v1"
@@ -23,7 +24,9 @@ PROVIDER_HOST = "gitlab.seismo.ethz.ch"
 PROVIDER_ROOT = f"https://{PROVIDER_HOST}"
 GIT_SHA_RE = re.compile(r"^[a-f0-9]{40}$")
 SAFE_DATASET_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$")
+UTC_TIMESTAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$")
 MAX_PATH_BYTES = 512
+MAX_HEADER_BYTES = 1024
 MAX_FILE_BYTES = 64 * 1024 * 1024
 CHUNK_SIZE = 64 * 1024
 
@@ -196,6 +199,16 @@ def validate_public_addresses(addresses: Iterable[str]) -> tuple[str, ...]:
     return tuple(sorted(set(validated)))
 
 
+def _validate_retrieved_at(value: str) -> str:
+    if type(value) is not str or not UTC_TIMESTAMP_RE.fullmatch(value):
+        raise EfehrReceiptError("retrieved_at must be a canonical UTC timestamp ending in Z")
+    try:
+        datetime.fromisoformat(value[:-1] + "+00:00")
+    except ValueError as exc:
+        raise EfehrReceiptError("retrieved_at is not a valid UTC timestamp") from exc
+    return value
+
+
 def _header(headers: Mapping[str, Any] | None, name: str) -> str | None:
     if headers is None:
         return None
@@ -208,6 +221,10 @@ def _header(headers: Mapping[str, Any] | None, name: str) -> str | None:
         return None
     if type(value) is not str:
         raise EfehrReceiptError(f"{name} header must be a string")
+    if len(value.encode("utf-8")) > MAX_HEADER_BYTES:
+        raise EfehrReceiptError(f"{name} header exceeds byte-length bound")
+    if any(ord(ch) < 0x20 or ord(ch) == 0x7F for ch in value):
+        raise EfehrReceiptError(f"{name} header contains control characters")
     return value
 
 
@@ -224,8 +241,7 @@ def receipt_from_stream(
     if type(target) is not ArtifactTarget:
         raise EfehrReceiptError("target must be a validated ArtifactTarget")
     validate_final_url(target, final_url)
-    if type(retrieved_at) is not str or not retrieved_at.endswith("Z") or len(retrieved_at) < 20:
-        raise EfehrReceiptError("retrieved_at must be an explicit UTC timestamp")
+    retrieved_at = _validate_retrieved_at(retrieved_at)
     if type(max_bytes) is not int or isinstance(max_bytes, bool) or not (1 <= max_bytes <= MAX_FILE_BYTES):
         raise EfehrReceiptError("max_bytes is outside the bounded policy")
     if not hasattr(stream, "read"):
