@@ -37,8 +37,7 @@ def main() -> int:
     commands = [
         [sys.executable, "-m", "compileall", "-q", "scripts", "tests"],
         [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test*.py", "-v"],
-        [sys.executable, "scripts/render_public_views.py", "--check"],
-        [sys.executable, "scripts/schema_reference.py", "--check"],
+        [sys.executable, "scripts/check_projection_families.py"],
         [sys.executable, "scripts/check_repository_hygiene.py"],
         [sys.executable, "scripts/check_license_metadata.py"],
         ["git", "diff", "--check"],
