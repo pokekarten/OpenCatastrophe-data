@@ -7,6 +7,7 @@
 /schemas/ @pokekarten
 /manifests/ @pokekarten
 /landscape/ @pokekarten
+/access/ @pokekarten
 /scripts/ @pokekarten
 /tests/ @pokekarten
 /docs/source-reviews/ @pokekarten
@@ -18,6 +19,8 @@
 /SCIENTIFIC_METHOD.md @pokekarten
 /SECURITY.md @pokekarten
 /requirements-dev.txt @pokekarten
+/requirements-validation.txt @pokekarten
+/requirements-glofas-acquisition.txt @pokekarten
 /THIRD_PARTY.md @pokekarten
 /REUSE.toml @pokekarten
 /LICENSE @pokekarten
