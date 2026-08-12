@@ -43,16 +43,16 @@
     "max_probe_bytes": 65536,
     "max_sample_bytes": 52428800,
     "retry_policy": "none",
-    "rate_limit_notes": "The provider and AWS Open Data Registry document public no-sign bucket access, but this repository has not separately established a service-automation entitlement or rate budget. This documented-only contract authorizes no S3 ListObjects, HEAD, GET, Range request, prefix sync, crawling or repeated probe.",
+    "rate_limit_notes": "The official WorldCover data-access page explicitly documents programmatic AWS CLI sync and Python subset download using the public no-sign bucket. No repository-specific request-rate entitlement or rate budget is stated in the reviewed evidence. This documented-only contract still authorizes no S3 ListObjects, HEAD, GET, Range request, prefix sync, crawling or repeated probe because no exact tile object/canary has been frozen.",
     "mutability_notes": "The product identity is versioned as 2021 v200 and is also anchored by immutable release DOI 10.5281/zenodo.7254221. The official AWS prefix is v200/2021/map, but no exact tile object is frozen by this contract. Any later acquisition must bind the exact object key and requested/final storage identity, retrieval UTC, byte count and SHA-256, validate the COG structure, EPSG:4326 grid/extent and class coding, and preserve the v200 product identity before scientific use."
   },
   "rights_and_policy": {
     "dataset_rights_status": "verified",
-    "api_terms_status": "unknown",
-    "terms_url": "https://creativecommons.org/licenses/by/4.0/",
-    "commercial_automation_status": "unknown",
+    "api_terms_status": "separate_reviewed",
+    "terms_url": "https://esa-worldcover.org/en/data-access",
+    "commercial_automation_status": "allowed",
     "redistribution_status": "allowed",
-    "notes": "The official WorldCover data-access page states that the WorldCover product is provided free of charge without restriction under Creative Commons Attribution 4.0 and requires acknowledgement to the ESA WorldCover project. Those dataset reuse and redistribution rights are recorded separately from AWS/S3 service automation permission. Public no-sign availability is not by itself treated as proof of unrestricted automated service use, so this contract authorizes no network probe or fetch and admits no raster bytes."
+    "notes": "The official WorldCover data-access page states that the WorldCover product is provided free of charge without restriction under Creative Commons Attribution 4.0, requires acknowledgement to the ESA WorldCover project, and explicitly documents programmatic AWS CLI no-sign sync plus a Python subset-download route. Dataset commercial reuse/redistribution and documented programmatic service use are therefore supported by reviewed provider evidence. This contract nevertheless authorizes no network probe or fetch until one exact v200/2021 tile object and its bounded evidence contract are separately frozen; no raster bytes are admitted."
   },
   "probe_contract": {
     "mode": "none",
