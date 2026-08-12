@@ -14,11 +14,11 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import sys
 import zipfile
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO
 
 try:
     from scripts.inspect_dwd_metadata_zip import InspectionError, inspect_zip
@@ -61,15 +61,6 @@ def _member_sha256(archive: zipfile.ZipFile, name: str) -> str:
     return digest.hexdigest()
 
 
-def _handle_sha256(handle: BinaryIO) -> str:
-    digest = hashlib.sha256()
-    handle.seek(0)
-    for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-        digest.update(chunk)
-    handle.seek(0)
-    return digest.hexdigest()
-
-
 def _collect(path: Path, expected_sha256: str, expected_station_id: str) -> dict[str, object]:
     try:
         inspection = inspect_zip(path)
@@ -89,13 +80,19 @@ def _collect(path: Path, expected_sha256: str, expected_station_id: str) -> dict
         missing = ", ".join(sorted(required - observed_required))
         raise TemporalEvidenceError(f"required provider metadata families missing: {missing}")
 
-    members_by_family: dict[str, list[dict[str, object]]] = {family: [] for family in sorted(required)}
-    with path.open("rb") as raw_handle:
-        opened_sha256 = _handle_sha256(raw_handle)
-        if opened_sha256 != expected_sha256 or opened_sha256 != input_info["sha256"]:
-            raise TemporalEvidenceError("metadata bytes changed after ZIP inspection")
+    try:
+        snapshot = path.read_bytes()
+    except OSError as exc:
+        raise TemporalEvidenceError(str(exc)) from exc
+    snapshot_sha256 = hashlib.sha256(snapshot).hexdigest()
+    if snapshot_sha256 != expected_sha256 or snapshot_sha256 != input_info["sha256"]:
+        raise TemporalEvidenceError("metadata bytes changed after ZIP inspection")
+    if len(snapshot) != input_info["byte_size"]:
+        raise TemporalEvidenceError("metadata byte size changed after ZIP inspection")
 
-        with zipfile.ZipFile(raw_handle) as archive:
+    members_by_family: dict[str, list[dict[str, object]]] = {family: [] for family in sorted(required)}
+    try:
+        with zipfile.ZipFile(io.BytesIO(snapshot)) as archive:
             for member in inspection["zip"]["members"]:
                 name = str(member["path"])
                 family = _family_for_member(name)
@@ -107,9 +104,8 @@ def _collect(path: Path, expected_sha256: str, expected_station_id: str) -> dict
                     "crc32": member["crc32"],
                     "sha256": _member_sha256(archive, name),
                 })
-
-        if _handle_sha256(raw_handle) != opened_sha256:
-            raise TemporalEvidenceError("metadata bytes changed while member hashes were collected")
+    except (OSError, zipfile.BadZipFile, zipfile.LargeZipFile) as exc:
+        raise TemporalEvidenceError(str(exc)) from exc
 
     for family, members in members_by_family.items():
         if not members:
