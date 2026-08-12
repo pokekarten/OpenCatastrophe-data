@@ -140,10 +140,20 @@ class StructuredPublicViewTests(unittest.TestCase):
             with self.assertRaisesRegex(views.ProjectionError, "duplicate JSON key"):
                 views.load_structured_json(duplicate)
 
-            nonfinite = directory / "nonfinite.json"
-            nonfinite.write_text('{"x": NaN}', encoding="utf-8")
-            with self.assertRaisesRegex(views.ProjectionError, "non-finite JSON number"):
-                views.load_structured_json(nonfinite)
+            for name, source in (
+                ("nonfinite-literal.json", '{"x": NaN}'),
+                ("positive-overflow.json", '{"x": 1e400}'),
+                ("negative-overflow.json", '{"x": -1e400}'),
+            ):
+                with self.subTest(source=source):
+                    nonfinite = directory / name
+                    nonfinite.write_text(source, encoding="utf-8")
+                    with self.assertRaisesRegex(views.ProjectionError, "non-finite JSON number"):
+                        views.load_structured_json(nonfinite)
+
+            finite = directory / "finite-large.json"
+            finite.write_text('{"x": 1e308}', encoding="utf-8")
+            self.assertEqual(views.load_structured_json(finite), {"x": 1e308})
 
     def test_root_must_be_an_object(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
