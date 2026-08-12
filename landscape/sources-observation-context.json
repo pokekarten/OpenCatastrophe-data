@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "purpose": "Non-admission discovery registry of observation and physical-context sources relevant to catastrophe risk.",
-  "review_date": "2026-08-10",
+  "review_date": "2026-08-12",
   "entries": [
     {
       "candidate_id": "dwd.radklim.rw.v2017.002",
@@ -78,7 +78,7 @@
       "categories": ["terrestrial_water_storage", "groundwater_context", "drought", "hydrology"],
       "spatial_scope": "global",
       "temporal_scope": "2002-present",
-      "resolution_or_granularity": "monthly gridded equivalent-water-height anomalies with Coastal Resolution Improvement filtering",
+      "resolution_or_granularity": "Level-3 monthly gridded global water-storage/equivalent-water-height anomalies relative to a time mean, with Coastal Resolution Improvement filtering",
       "potential_roles": ["water_storage_anomaly", "drought_and_groundwater_context", "large_scale_hydrology_validation"],
       "authoritative_url": "https://podaac.jpl.nasa.gov/dataset/TELLUS_GRAC-GRFO_MASCON_CRI_GRID_RL06.3_V4",
       "access_class_hint": "earthdata_access",
@@ -86,7 +86,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Monthly mass anomalies are spatially smoothed geophysical estimates, not local groundwater measurements; preserve release, filtering, scaling and leakage semantics."
+      "note": "RL06.3Mv04 is a spatially smoothed GRACE/GRACE-FO mass-change product: the CRI filter is intended to reduce signal leakage across coastlines, but the field remains a large-scale water-storage/equivalent-water-height anomaly rather than a local groundwater measurement or independent in-situ truth. Freeze the exact release, anomaly reference and filtering treatment before validation."
     },
     {
       "candidate_id": "usgs.shakemap",
@@ -112,7 +112,7 @@
       "categories": ["earthquake", "landslide", "liquefaction", "secondary_peril", "validation"],
       "spatial_scope": "global collection of event inventories",
       "temporal_scope": "historical earthquake-triggered inventories",
-      "resolution_or_granularity": "original digital inventories plus integrated records with mapping-method and completeness metadata",
+      "resolution_or_granularity": "original digital landslide/liquefaction inventories when available plus an integrated database with uniform attributes and per-inventory mapping-method/completeness metadata",
       "potential_roles": ["secondary_peril_validation", "landslide_susceptibility_validation", "liquefaction_validation"],
       "authoritative_url": "https://www.usgs.gov/programs/landslide-hazards/science/global-earthquake-triggered-ground-failure-inventory-database",
       "access_class_hint": "public_sciencebase_repository",
@@ -120,7 +120,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "The repository mixes USGS and non-USGS inventory authorship and heterogeneous mapping completeness; exact inventory-level provenance and rights must be preserved."
+      "note": "USGS aggregates inventories from USGS and non-USGS authors; mapping method and completeness are inventory-specific and, where recorded, reported by the original authors. Treat each event inventory as a provenance-bound validation case: do not infer uniform negative labels from unmapped areas or pool inventories as equally complete ground truth."
     },
     {
       "candidate_id": "copernicus.clms.egms.basic.v1",
@@ -213,8 +213,8 @@
       "provider": "NOAA National Centers for Environmental Information",
       "categories": ["upper_air", "weather_observations", "wind", "humidity", "validation"],
       "spatial_scope": "global network of more than 2,800 stations",
-      "temporal_scope": "1905-present with near-real-time data from a subset of stations",
-      "resolution_or_granularity": "radiosonde and pilot-balloon soundings at pressure and height levels plus derived parameters",
+      "temporal_scope": "1905-present; near-real-time updates from about 800 stations within a network of more than 2,800",
+      "resolution_or_granularity": "quality-controlled radiosonde and pilot-balloon soundings at pressure/height levels, plus separate monthly-mean and sounding-derived-parameter products",
       "potential_roles": ["upper_air_validation", "wind_profile_validation", "convective_environment_context"],
       "authoritative_url": "https://www.ncei.noaa.gov/products/weather-balloon/integrated-global-radiosonde-archive",
       "access_class_hint": "public_https_download",
@@ -222,7 +222,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Station history, source streams, pressure/height level types and sounding-derived parameters must remain distinct; network coverage changes substantially over time."
+      "note": "IGRA v2.2, introduced in 2023, added two BUFR input streams to maintain coverage as reporting formats changed. NCEI applies gross-error quality control but does not homogenize jumps from station relocation, instrumentation or observing-practice changes; some records are composited from nearby stations. Freeze station identity/history, source stream, level type and whether raw soundings or derived products are used."
     },
     {
       "candidate_id": "nsidc.rgi.v7",
