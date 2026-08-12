@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "meteoswiss.national-hail-climatology",
+  "source_ids": [
+    "meteoswiss.national-hail-climatology"
+  ],
+  "provider": "Federal Office of Meteorology and Climatology MeteoSwiss / Federal Spatial Data Infrastructure",
+  "interface_type": "stac",
+  "status": "documented_only",
+  "documentation_url": "https://opendatadocs.meteoswiss.ch/c-climate-data/c5-radar-based-climate-data",
+  "service_root": "https://data.geo.admin.ch",
+  "api_version": "STAC 1.0.0",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "collection_metadata_get"
+    ],
+    "path_templates": [
+      "/api/stac/v1/collections/ch.meteoschweiz.ogd-radar-derived-grid"
+    ],
+    "parameter_rules": "This initial contract documents only one repository-constructed HTTPS GET of the exact MeteoSwiss hail-climatology STAC collection metadata path, with no query string and no caller-supplied host, path, headers, bbox, search expression, item ID, asset href, product selector, month, year or return period. Selecting or downloading a NetCDF asset requires a later scientific and asset-specific review that freezes one product family and exact STAC item/asset identity before values are inspected."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "FSDI STAC Collection metadata for ch.meteoschweiz.ogd-radar-derived-grid; hail data assets referenced by the collection are NetCDF.",
+    "scientific_semantics": "The collection contains several non-interchangeable radar-derived hail climate product families: monthly/yearly MESHS and anomalies, monthly/yearly hail-day counts and anomalies, long-term hail-day climatologies and standard deviations, and separate HailStoRe-derived return-value hazard maps. Hail fields are radar/algorithm-derived pseudo-observations rather than comprehensive ground measurements; return-value maps additionally depend on stochastic resampling and represent annual exceedance hazard under today's climate, not observed event catalogues. A hail day uses the provider-defined 06 UTC to 06 UTC window. The hail-climatology datasets are calculated only for the April-through-September hail season; absence or non-publication for October through March must not be interpreted as an observed zero, a verified no-hail day or month, or complete year-round observational coverage. Monthly and yearly products update over time, while return-value maps are static. Data are provided on the Swiss LV95 / EPSG:2056 grid at approximately 1 km scale. Any later asset consumer must preserve exact product class, temporal/release identity, observed-versus-model-derived status and CRS rather than treating the collection as one homogeneous hail variable."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 262144,
+    "max_sample_bytes": 5242880,
+    "retry_policy": "none",
+    "rate_limit_notes": "FSDI geoservices are available without registration but are subject to fair-use and operating conditions. Excessive request frequency or volume may be restricted, and high-intensity automated scraping is discouraged. This documented-only contract therefore authorizes no polling cadence and no asset download; any later probe should be one bounded collection-metadata request through the trusted execution plane.",
+    "mutability_notes": "The STAC collection metadata and current monthly/yearly item inventory are mutable as MeteoSwiss publishes updates. Provider documentation states monthly updates are available after the following month and yearly updates at the end of October, while hail-hazard return values are static. Any future asset receipt must bind retrieval UTC, exact collection/item/asset identity, final provider URL, byte count and SHA-256."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "separate_reviewed",
+    "terms_url": "https://www.geo.admin.ch/en/general-terms-of-use-fsdi",
+    "commercial_automation_status": "allowed",
+    "redistribution_status": "allowed",
+    "notes": "MeteoSwiss states that its Open Data may be reused without restriction, including commercially, and publishes it under CC BY 4.0; reproduction or redistribution requires source acknowledgement as 'Source: MeteoSwiss'. Automatic access is delivered through FSDI, whose separately reviewed service terms allow registration-free use subject to fair-use, operating and dataset-specific conditions. These are source/service ceilings only: this contract does not authorize repository persistence or publication of a future NetCDF asset before exact asset identity, attribution, provenance and admission scope are reviewed."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-12",
+  "evidence_urls": [
+    "https://opendatadocs.meteoswiss.ch/c-climate-data/c5-radar-based-climate-data",
+    "https://www.meteoswiss.admin.ch/climate/the-climate-of-switzerland/hail-climatology.html",
+    "https://www.meteoswiss.admin.ch/climate/the-climate-of-switzerland/hail-climatology/data-and-methods.html",
+    "https://opendatadocs.meteoswiss.ch/general/terms-of-use",
+    "https://www.geo.admin.ch/en/general-terms-of-use-fsdi",
+    "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-radar-derived-grid"
+  ],
+  "notes": "Static source-access documentation only. The durable collection identifier is ch.meteoschweiz.ogd-radar-derived-grid and the provider dataset DOI is 10.18751/Climate/Griddata/CHHC/1.0. No STAC probe, item search, asset selection, NetCDF download, provider byte persistence, source admission, publication promotion, event-set construction, damage/loss inference or insured-loss semantics are performed or authorized by this contract."
+}

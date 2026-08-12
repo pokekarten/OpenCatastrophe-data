@@ -1,0 +1,313 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:opencatastrophe:schema:model-input:1.0.0",
+  "title": "OpenCatastrophe Model Input Contract v1",
+  "description": "Closed model-consumer binding for one exact admitted dataset artifact plus explicit model-facing scientific semantics. Executable validation against the referenced manifest is authoritative for cross-record identity parity.",
+  "$comment": "scripts/validate_model_input.py resolves the referenced manifest, validates it with the repository manifest validator, and requires dataset_id, artifact identity, SHA-256 and modelling_layer parity. Schema validity alone does not establish data rights, scientific fitness, calibration quality or production suitability.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "manifest",
+    "dataset_id",
+    "artifact",
+    "storage_reference",
+    "sha256",
+    "modelling_layer",
+    "scientific_role",
+    "peril",
+    "measure",
+    "spatial",
+    "temporal",
+    "quality"
+  ],
+  "$defs": {
+    "nonBlankText": {
+      "type": "string",
+      "pattern": "\\S"
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "positiveNumber": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "positiveIntegerOrNull": {
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "manifest": {
+      "type": "string",
+      "pattern": "^manifests/[A-Za-z0-9][A-Za-z0-9._-]*\\.json$"
+    },
+    "dataset_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "artifact": {
+      "enum": [
+        "raw",
+        "derived"
+      ]
+    },
+    "storage_reference": {
+      "type": "string",
+      "pattern": "^external://(?!.*//)(?!.*(?:/\\.\\.?)(?:/|$))(?!.*\\/$)[A-Za-z0-9][A-Za-z0-9._/-]*$"
+    },
+    "sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "modelling_layer": {
+      "enum": [
+        "event_catalogue",
+        "hazard",
+        "exposure",
+        "vulnerability",
+        "observed_loss",
+        "engine",
+        "standard",
+        "other"
+      ]
+    },
+    "scientific_role": {
+      "enum": [
+        "training",
+        "calibration",
+        "validation",
+        "holdout",
+        "benchmark",
+        "context"
+      ]
+    },
+    "peril": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "subperil"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "subperil": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "measure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quantity",
+        "unit",
+        "aggregation"
+      ],
+      "properties": {
+        "quantity": {
+          "$ref": "#/$defs/identifier"
+        },
+        "unit": {
+          "$ref": "#/$defs/nonBlankText"
+        },
+        "aggregation": {
+          "enum": [
+            "instantaneous",
+            "mean",
+            "maximum",
+            "minimum",
+            "accumulation",
+            "count",
+            "probability",
+            "categorical",
+            "other"
+          ]
+        }
+      }
+    },
+    "spatial": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "crs",
+        "support",
+        "resolution"
+      ],
+      "properties": {
+        "crs": {
+          "$ref": "#/$defs/nonBlankText"
+        },
+        "support": {
+          "enum": [
+            "point",
+            "line",
+            "polygon",
+            "grid_cell",
+            "raster_cell",
+            "administrative_area",
+            "asset",
+            "event",
+            "other"
+          ]
+        },
+        "resolution": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "value",
+                "unit"
+              ],
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/positiveNumber"
+                },
+                "unit": {
+                  "$ref": "#/$defs/nonBlankText"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "temporal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support",
+        "start",
+        "end",
+        "step_seconds",
+        "aggregation_window_seconds"
+      ],
+      "properties": {
+        "support": {
+          "enum": [
+            "static",
+            "instant_series",
+            "interval_series",
+            "event_series",
+            "climatology"
+          ]
+        },
+        "start": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "end": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "step_seconds": {
+          "$ref": "#/$defs/positiveIntegerOrNull"
+        },
+        "aggregation_window_seconds": {
+          "$ref": "#/$defs/positiveIntegerOrNull"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "support": {
+                "const": "static"
+              }
+            },
+            "required": [
+              "support"
+            ]
+          },
+          "then": {
+            "properties": {
+              "start": {
+                "type": "null"
+              },
+              "end": {
+                "type": "null"
+              },
+              "step_seconds": {
+                "type": "null"
+              },
+              "aggregation_window_seconds": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "start": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "end": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "missing_value_policy",
+        "quality_flag_policy"
+      ],
+      "properties": {
+        "missing_value_policy": {
+          "enum": [
+            "forbidden",
+            "explicit",
+            "source_defined"
+          ]
+        },
+        "quality_flag_policy": {
+          "enum": [
+            "none",
+            "preserved",
+            "filtered",
+            "source_defined"
+          ]
+        }
+      }
+    }
+  }
+}
