@@ -3,35 +3,19 @@
   "$id": "urn:opencatastrophe:schema:agent-action-result:1.0.0",
   "title": "OpenCatastrophe Agent Action Result v1",
   "description": "Portable closed result receipt for the owner-authorized trusted-main Agent Action Dispatch control plane. scripts/validate_agent_action_result.py is authoritative for exact Python scalar types, UTC ordering, acquisition-receipt identity and cross-field checks.",
-  "$comment": "request_validation records strict validation/dedup state. acquisition_receipt is allowed only for Issue 162 and the frozen DWD dataset, carries metadata-only evidence from the trusted repository-owned worker, and always requires external_bytes_persisted=false. product_member is evidence for the safe text member selected by bounded DWD header semantics; the executable validator, not a provider filename prefix, owns path safety.",
+  "$comment": "request_validation records strict validation/dedup state. acquisition_receipt phase is shared by two closed network actions: measurement acquisition_receipt for Issue 162 and dwd_metadata_receipt for Issue 211. Both always require external_bytes_persisted=false. The metadata receipt proves byte/member/family provenance only and keeps temporal coverage unverified.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version",
-    "semantic_request_id",
-    "repository",
-    "action",
-    "source_issue",
-    "source_comment_id",
-    "target_sha",
-    "dataset_id",
-    "execution_sha",
-    "run_id",
-    "run_attempt",
-    "started_at",
-    "finished_at",
-    "phase",
-    "status",
-    "external_bytes_persisted",
-    "evidence",
-    "duplicate_result_comment_id",
-    "failure_class"
+    "schema_version", "semantic_request_id", "repository", "action", "source_issue", "source_comment_id",
+    "target_sha", "dataset_id", "execution_sha", "run_id", "run_attempt", "started_at", "finished_at",
+    "phase", "status", "external_bytes_persisted", "evidence", "duplicate_result_comment_id", "failure_class"
   ],
   "properties": {
     "schema_version": {"const": "oc-action-result-v1"},
     "semantic_request_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "repository": {"type": "string", "pattern": "^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$"},
-    "action": {"enum": ["sample_audit", "acquisition_receipt"]},
+    "action": {"enum": ["sample_audit", "acquisition_receipt", "dwd_metadata_receipt"]},
     "source_issue": {"type": "integer", "minimum": 1},
     "source_comment_id": {"type": "integer", "minimum": 1},
     "target_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
@@ -65,6 +49,17 @@
             "ledger_scan_complete": {"const": true},
             "prior_result_reused": {"const": false},
             "acquisition_receipt": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/acquisitionReceipt"}]}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "dwd_metadata_receipt"],
+          "properties": {
+            "request_validated": {"const": true},
+            "ledger_scan_complete": {"const": true},
+            "prior_result_reused": {"const": false},
+            "dwd_metadata_receipt": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/dwdMetadataReceipt"}]}
           }
         }
       ]
@@ -106,12 +101,58 @@
         "external_bytes_persisted": {"const": false},
         "publication_authorized": {"const": false}
       }
+    },
+    "dwdMetadataReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version", "dataset_id", "source_issue", "requested_url", "final_url", "filename", "retrieved_at",
+        "byte_count", "sha256", "content_type", "last_modified", "etag", "archive_member_count", "archive_uncompressed_bytes",
+        "station_id", "required_metadata_families", "metadata_members", "temporal_coverage_status",
+        "external_bytes_persisted", "publication_authorized"
+      ],
+      "properties": {
+        "schema_version": {"const": "oc-dwd-metadata-receipt-v1"},
+        "dataset_id": {"const": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"},
+        "source_issue": {"const": 211},
+        "requested_url": {"const": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/meta_data/Meta_Daten_zehn_min_fx_00003.zip"},
+        "final_url": {"const": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/meta_data/Meta_Daten_zehn_min_fx_00003.zip"},
+        "filename": {"const": "Meta_Daten_zehn_min_fx_00003.zip"},
+        "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+        "byte_count": {"type": "integer", "minimum": 1, "maximum": 5242880},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "content_type": {"type": ["string", "null"], "maxLength": 512},
+        "last_modified": {"type": ["string", "null"], "maxLength": 512},
+        "etag": {"type": ["string", "null"], "maxLength": 512},
+        "archive_member_count": {"type": "integer", "minimum": 1, "maximum": 128},
+        "archive_uncompressed_bytes": {"type": "integer", "minimum": 1, "maximum": 20971520},
+        "station_id": {"const": "00003"},
+        "required_metadata_families": {"const": ["equipment", "geography", "parameter"]},
+        "metadata_members": {
+          "type": "array", "minItems": 3, "maxItems": 128,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["path", "family"],
+            "properties": {
+              "path": {"type": "string", "minLength": 1, "maxLength": 512},
+              "family": {"enum": ["equipment", "geography", "parameter"]}
+            }
+          }
+        },
+        "temporal_coverage_status": {"const": "unverified"},
+        "external_bytes_persisted": {"const": false},
+        "publication_authorized": {"const": false}
+      }
     }
   },
   "allOf": [
     {
       "if": {"properties": {"phase": {"const": "request_validation"}}, "required": ["phase"]},
-      "then": {"properties": {"evidence": {"not": {"required": ["acquisition_receipt"]}}}}
+      "then": {"properties": {
+        "evidence": {"allOf": [
+          {"not": {"required": ["acquisition_receipt"]}},
+          {"not": {"required": ["dwd_metadata_receipt"]}}
+        ]}
+      }}
     },
     {
       "if": {"properties": {"phase": {"const": "request_validation"}, "status": {"const": "pass"}}, "required": ["phase", "status"]},
@@ -137,25 +178,49 @@
     },
     {
       "if": {"properties": {"phase": {"const": "acquisition_receipt"}}, "required": ["phase"]},
+      "then": {"properties": {"duplicate_result_comment_id": {"type": "null"}}}
+    },
+    {
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "acquisition_receipt"}}, "required": ["phase", "action"]},
       "then": {"properties": {
-        "action": {"const": "acquisition_receipt"},
         "source_issue": {"const": 162},
         "dataset_id": {"const": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"},
-        "duplicate_result_comment_id": {"type": "null"},
         "evidence": {"required": ["acquisition_receipt"]}
       }}
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "status": {"const": "pass"}}, "required": ["phase", "status"]},
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "dwd_metadata_receipt"}}, "required": ["phase", "action"]},
       "then": {"properties": {
-        "evidence": {"required": ["acquisition_receipt"], "properties": {"acquisition_receipt": {"$ref": "#/$defs/acquisitionReceipt"}}},
+        "source_issue": {"const": 211},
+        "dataset_id": {"const": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"},
+        "evidence": {"required": ["dwd_metadata_receipt"]}
+      }}
+    },
+    {
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "acquisition_receipt"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
+      "then": {"properties": {
+        "evidence": {"properties": {"acquisition_receipt": {"$ref": "#/$defs/acquisitionReceipt"}}},
         "failure_class": {"type": "null"}
       }}
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "status": {"const": "blocked"}}, "required": ["phase", "status"]},
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "dwd_metadata_receipt"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
       "then": {"properties": {
-        "evidence": {"required": ["acquisition_receipt"], "properties": {"acquisition_receipt": {"type": "null"}}},
+        "evidence": {"properties": {"dwd_metadata_receipt": {"$ref": "#/$defs/dwdMetadataReceipt"}}},
+        "failure_class": {"type": "null"}
+      }}
+    },
+    {
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "acquisition_receipt"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
+      "then": {"properties": {
+        "evidence": {"properties": {"acquisition_receipt": {"type": "null"}}},
+        "failure_class": {"const": "acquisition_failed"}
+      }}
+    },
+    {
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "dwd_metadata_receipt"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
+      "then": {"properties": {
+        "evidence": {"properties": {"dwd_metadata_receipt": {"type": "null"}}},
         "failure_class": {"const": "acquisition_failed"}
       }}
     }

@@ -3,70 +3,32 @@
   "$id": "urn:opencatastrophe:schema:agent-action-request:1.0.0",
   "title": "OpenCatastrophe Agent Action Request v1",
   "description": "Portable structural view of the closed request contract for a bounded trusted-main GitHub Actions evidence operation. scripts/validate_agent_action_request.py is authoritative for executable security policy that JSON Schema cannot fully express.",
-  "$comment": "Draft 2020-12 treats zero-fraction JSON numbers such as 1.0 as integers. The executable validator additionally requires the parsed issue value to have exact int type (rejecting bool and float), rejects duplicate keys and non-finite JSON, enforces the single-marker comment envelope, and restricts acquisition_receipt to Issue 162 plus the frozen DWD dataset.",
+  "$comment": "Draft 2020-12 treats zero-fraction JSON numbers such as 1.0 as integers. The executable validator additionally requires the parsed issue value to have exact int type (rejecting bool and float), rejects duplicate keys and non-finite JSON, enforces the single-marker comment envelope, restricts acquisition_receipt to Issue 162 plus the frozen DWD dataset, and restricts dwd_metadata_receipt to Issue 211 plus that same frozen DWD dataset. Neither network action accepts a caller-supplied URL/path/header target.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "schema_version",
-    "action",
-    "issue",
-    "target_sha",
-    "dataset_id",
-    "requester"
-  ],
+  "required": ["schema_version", "action", "issue", "target_sha", "dataset_id", "requester"],
   "properties": {
-    "schema_version": {
-      "const": "oc-action-request-v1"
-    },
-    "action": {
-      "enum": [
-        "sample_audit",
-        "acquisition_receipt"
-      ]
-    },
-    "issue": {
-      "type": "integer",
-      "minimum": 1
-    },
-    "target_sha": {
-      "type": "string",
-      "pattern": "^[a-f0-9]{40}$"
-    },
-    "dataset_id": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 160,
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
-    },
-    "requester": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 128,
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
-    }
+    "schema_version": {"const": "oc-action-request-v1"},
+    "action": {"enum": ["sample_audit", "acquisition_receipt", "dwd_metadata_receipt"]},
+    "issue": {"type": "integer", "minimum": 1},
+    "target_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "dataset_id": {"type": "string", "minLength": 1, "maxLength": 160, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"},
+    "requester": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"}
   },
   "allOf": [
     {
-      "if": {
-        "properties": {
-          "action": {
-            "const": "acquisition_receipt"
-          }
-        },
-        "required": [
-          "action"
-        ]
-      },
-      "then": {
-        "properties": {
-          "issue": {
-            "const": 162
-          },
-          "dataset_id": {
-            "const": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"
-          }
-        }
-      }
+      "if": {"properties": {"action": {"const": "acquisition_receipt"}}, "required": ["action"]},
+      "then": {"properties": {
+        "issue": {"const": 162},
+        "dataset_id": {"const": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"}
+      }}
+    },
+    {
+      "if": {"properties": {"action": {"const": "dwd_metadata_receipt"}}, "required": ["action"]},
+      "then": {"properties": {
+        "issue": {"const": 211},
+        "dataset_id": {"const": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"}
+      }}
     }
   ]
 }
