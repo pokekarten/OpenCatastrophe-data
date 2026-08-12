@@ -194,9 +194,14 @@ def _copy_and_verify(
                 chunk = input_stream.read(CHUNK_SIZE)
                 if not chunk:
                     break
+                next_size = size + len(chunk)
+                if next_size > expected_size:
+                    raise MaterializationError(
+                        f"source byte size mismatch: expected {expected_size}, got more than {expected_size}"
+                    )
                 output_stream.write(chunk)
                 digest.update(chunk)
-                size += len(chunk)
+                size = next_size
             output_stream.flush()
             os.fsync(output_stream.fileno())
 
