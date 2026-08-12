@@ -16,6 +16,8 @@ import argparse
 import hashlib
 import io
 import json
+import os
+import stat
 import sys
 import zipfile
 from pathlib import Path, PurePosixPath
@@ -61,6 +63,51 @@ def _member_sha256(archive: zipfile.ZipFile, name: str) -> str:
     return digest.hexdigest()
 
 
+def _read_bounded_regular_snapshot(path: Path, expected_byte_size: int) -> bytes:
+    if type(expected_byte_size) is not int or expected_byte_size < 0:
+        raise TemporalEvidenceError("inspected metadata byte size is invalid")
+    if not hasattr(os, "O_NOFOLLOW"):
+        raise TemporalEvidenceError("platform cannot enforce no-follow metadata ZIP reopen")
+
+    flags = os.O_RDONLY | os.O_NOFOLLOW
+    if hasattr(os, "O_NONBLOCK"):
+        flags |= os.O_NONBLOCK
+    if hasattr(os, "O_CLOEXEC"):
+        flags |= os.O_CLOEXEC
+    if hasattr(os, "O_BINARY"):
+        flags |= os.O_BINARY
+
+    try:
+        fd = os.open(path, flags)
+    except OSError as exc:
+        raise TemporalEvidenceError("metadata ZIP could not be reopened as a no-follow regular file") from exc
+
+    try:
+        reopened = os.fstat(fd)
+        if not stat.S_ISREG(reopened.st_mode):
+            raise TemporalEvidenceError("metadata ZIP reopened object is not a regular file")
+        if reopened.st_size != expected_byte_size:
+            raise TemporalEvidenceError("metadata byte size changed after ZIP inspection")
+
+        chunks: list[bytes] = []
+        remaining = expected_byte_size + 1
+        while remaining:
+            try:
+                chunk = os.read(fd, min(1024 * 1024, remaining))
+            except OSError as exc:
+                raise TemporalEvidenceError("metadata ZIP bounded read failed") from exc
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        snapshot = b"".join(chunks)
+        if len(snapshot) != expected_byte_size:
+            raise TemporalEvidenceError("metadata byte size changed after ZIP inspection")
+        return snapshot
+    finally:
+        os.close(fd)
+
+
 def _collect(path: Path, expected_sha256: str, expected_station_id: str) -> dict[str, object]:
     try:
         inspection = inspect_zip(path)
@@ -80,15 +127,10 @@ def _collect(path: Path, expected_sha256: str, expected_station_id: str) -> dict
         missing = ", ".join(sorted(required - observed_required))
         raise TemporalEvidenceError(f"required provider metadata families missing: {missing}")
 
-    try:
-        snapshot = path.read_bytes()
-    except OSError as exc:
-        raise TemporalEvidenceError(str(exc)) from exc
+    snapshot = _read_bounded_regular_snapshot(path, input_info["byte_size"])
     snapshot_sha256 = hashlib.sha256(snapshot).hexdigest()
     if snapshot_sha256 != expected_sha256 or snapshot_sha256 != input_info["sha256"]:
         raise TemporalEvidenceError("metadata bytes changed after ZIP inspection")
-    if len(snapshot) != input_info["byte_size"]:
-        raise TemporalEvidenceError("metadata byte size changed after ZIP inspection")
 
     members_by_family: dict[str, list[dict[str, object]]] = {family: [] for family in sorted(required)}
     try:
