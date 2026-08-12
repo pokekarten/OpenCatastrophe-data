@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import sys
 import tempfile
 import unittest
@@ -82,6 +83,44 @@ class DwdMetadataTemporalEvidenceTests(unittest.TestCase):
         with patch.object(evidence, "inspect_zip", side_effect=inspect_then_replace):
             with self.assertRaisesRegex(evidence.TemporalEvidenceError, "changed after ZIP inspection"):
                 evidence._collect(path, inspection["input"]["sha256"], "00003")
+
+    @unittest.skipUnless(hasattr(os, "O_NOFOLLOW"), "secure no-follow open is not available")
+    def test_rejects_byte_identical_symlink_replacement_after_inspection(self) -> None:
+        tempdir, path = self._zip({
+            "Metadaten_Geographie_00003.txt": b"geo-content",
+            "Metadaten_Geraete_00003.txt": b"equipment-content",
+            "Metadaten_Parameter_00003.txt": b"parameter-content",
+        })
+        self.addCleanup(tempdir.cleanup)
+        inspection = self._inspection(path, ["equipment", "geography", "parameter"])
+        target = path.with_name("frozen-target.zip")
+
+        def inspect_then_symlink(_: Path) -> dict[str, object]:
+            path.replace(target)
+            path.symlink_to(target.name)
+            return inspection
+
+        with patch.object(evidence, "inspect_zip", side_effect=inspect_then_symlink):
+            with self.assertRaisesRegex(evidence.TemporalEvidenceError, "no-follow regular file"):
+                evidence._collect(path, inspection["input"]["sha256"], "00003")
+
+    def test_rejects_oversized_replacement_before_read(self) -> None:
+        tempdir, path = self._zip({
+            "Metadaten_Geographie_00003.txt": b"geo-content",
+            "Metadaten_Geraete_00003.txt": b"equipment-content",
+            "Metadaten_Parameter_00003.txt": b"parameter-content",
+        })
+        self.addCleanup(tempdir.cleanup)
+        inspection = self._inspection(path, ["equipment", "geography", "parameter"])
+
+        def inspect_then_oversize(_: Path) -> dict[str, object]:
+            path.write_bytes(b"x" * (inspection["input"]["byte_size"] + 1))
+            return inspection
+
+        with patch.object(evidence, "inspect_zip", side_effect=inspect_then_oversize):
+            with patch.object(evidence.os, "read", side_effect=AssertionError("read must not occur")):
+                with self.assertRaisesRegex(evidence.TemporalEvidenceError, "byte size changed"):
+                    evidence._collect(path, inspection["input"]["sha256"], "00003")
 
     def test_member_hashes_use_immutable_snapshot(self) -> None:
         tempdir, path = self._zip({
