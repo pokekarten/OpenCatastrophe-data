@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry of operational drought, landslide and severe-convective hazard monitoring services relevant to catastrophe risk.",
+  "review_date": "2026-08-12",
+  "entries": [
+    {
+      "candidate_id": "copernicus.cems.gdo.wms-wcs",
+      "name": "Copernicus Global and European Drought Observatory WMS/WCS services",
+      "provider": "Copernicus Emergency Management Service / European Commission Joint Research Centre",
+      "categories": [
+        "drought",
+        "soil_moisture",
+        "precipitation",
+        "water_storage",
+        "agriculture",
+        "web_services"
+      ],
+      "spatial_scope": "global and European products depending on indicator",
+      "temporal_scope": "operational indicators with indicator-specific archives and update cadences",
+      "resolution_or_granularity": "WMS map layers and WCS coverages for indicators including SPI, soil-moisture anomalies, GRACE TWS anomalies, forecasts and drought-impact indicators; WCS supports GeoTIFF output",
+      "potential_roles": [
+        "drought_state_monitoring",
+        "drought_event_definition",
+        "hydroclimate_validation",
+        "agricultural_drought_context"
+      ],
+      "authoritative_url": "https://drought.emergency.copernicus.eu/data/wcs-service",
+      "access_class_hint": "public_ogc_wms_wcs_geotiff_services",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "The current CEMS drought service documents WCS GetCoverage/DescribeCoverage and a companion WMS service for GDO/EDO indicators. Do not collapse different indicator families or versions into one variable: freeze coverage/layer ID, selected timescale, date, CRS, processing version and whether a field is observed, reanalysis-derived, forecast or composite."
+    },
+    {
+      "candidate_id": "nasa.gsfc.lhasa.v2.1",
+      "name": "NASA Landslide Hazard Nowcast and Exposure (LHASA) 2.1",
+      "provider": "NASA Goddard Space Flight Center / NASA Earthdata",
+      "categories": [
+        "landslide",
+        "near_real_time",
+        "hazard_nowcast",
+        "exposure",
+        "machine_learning",
+        "gis_services"
+      ],
+      "spatial_scope": "global land coverage approximately 56°S to 84°N in the current exposure service",
+      "temporal_scope": "April 2021-present; current overview states twice-daily updates",
+      "resolution_or_granularity": "approximately 30 arcseconds (~1 km) hazard nowcast plus administrative exposure summaries; ArcGIS feature service supports JSON, GeoJSON and PBF",
+      "potential_roles": [
+        "landslide_nowcast",
+        "hazard_validation",
+        "population_road_exposure_context",
+        "event_triggering"
+      ],
+      "authoritative_url": "https://gis.earthdata.nasa.gov/portal/home/item.html?id=9e65a60a305b458bba6330baa93c0238",
+      "access_class_hint": "public_arcgis_map_and_feature_services",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "LHASA 2.1 combines GPM precipitation with SMAP antecedent soil moisture and machine learning, and the current NASA service includes exposure summaries. It is a global situational-awareness nowcast rather than local slope-stability truth; preserve model version, valid time, upstream product lineage, hazard field, administrative geometry and exposure semantics."
+    },
+    {
+      "candidate_id": "noaa.nssl.mrms",
+      "name": "NOAA Multi-Radar/Multi-Sensor System (MRMS) operational products",
+      "provider": "NOAA National Severe Storms Laboratory / National Weather Service",
+      "categories": [
+        "weather_radar",
+        "severe_convective_storm",
+        "hail",
+        "precipitation",
+        "flash_flood",
+        "near_real_time"
+      ],
+      "spatial_scope": "United States operational MRMS domains; product/domain dependent",
+      "temporal_scope": "operational real-time service plus product-specific archives",
+      "resolution_or_granularity": "GRIB2 multi-radar/multi-sensor grids; current operational tables include 2-minute MESH and multiple hail-swath accumulations alongside precipitation and other severe-weather products",
+      "potential_roles": [
+        "hail_footprint_observation",
+        "severe_convective_validation",
+        "extreme_precipitation_observation",
+        "flash_flood_context"
+      ],
+      "authoritative_url": "https://nssl.noaa.gov/projects/mrms/MRMS_data.php",
+      "access_class_hint": "public_operational_http_grib2_with_product_specific_archives",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "NOAA documents real-time operational MRMS delivery by HTTP/LDM in GRIB2, while product tables define fields such as Maximum Estimated Size of Hail (MESH). MESH is radar/model-derived estimated hail size, not direct ground truth; preserve MRMS version, domain, product code, units, cadence, valid time, QC state and any archive/reanalysis distinction."
+    }
+  ]
+}

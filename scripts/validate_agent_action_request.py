@@ -16,9 +16,12 @@ MARKER = "<!-- oc-action-request-v1 -->"
 SCHEMA_VERSION = "oc-action-request-v1"
 SAMPLE_AUDIT_ACTION = "sample_audit"
 ACQUISITION_RECEIPT_ACTION = "acquisition_receipt"
+DWD_METADATA_RECEIPT_ACTION = "dwd_metadata_receipt"
 ACQUISITION_RECEIPT_ISSUE = 162
+DWD_METADATA_RECEIPT_ISSUE = 211
 ACQUISITION_RECEIPT_DATASET_ID = "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"
-ALLOWED_ACTIONS = {SAMPLE_AUDIT_ACTION, ACQUISITION_RECEIPT_ACTION}
+DWD_METADATA_RECEIPT_DATASET_ID = ACQUISITION_RECEIPT_DATASET_ID
+ALLOWED_ACTIONS = {SAMPLE_AUDIT_ACTION, ACQUISITION_RECEIPT_ACTION, DWD_METADATA_RECEIPT_ACTION}
 REQUIRED_FIELDS = {
     "schema_version",
     "action",
@@ -79,7 +82,6 @@ def extract_request(comment_body: str) -> dict[str, Any]:
         raise RequestError("unexpected content after action-request JSON")
     if type(value) is not dict:
         raise RequestError("request must be a JSON object")
-    # Reparse through the strict loader so non-finite constants are rejected too.
     return _load_strict_json(payload)
 
 
@@ -111,6 +113,11 @@ def validate_request(request: dict[str, Any], *, expected_issue: int | None = No
             raise RequestError("acquisition_receipt is restricted to issue 162")
         if request["dataset_id"] != ACQUISITION_RECEIPT_DATASET_ID:
             raise RequestError("acquisition_receipt is restricted to the frozen DWD dataset")
+    elif request["action"] == DWD_METADATA_RECEIPT_ACTION:
+        if request["issue"] != DWD_METADATA_RECEIPT_ISSUE:
+            raise RequestError("dwd_metadata_receipt is restricted to issue 211")
+        if request["dataset_id"] != DWD_METADATA_RECEIPT_DATASET_ID:
+            raise RequestError("dwd_metadata_receipt is restricted to the frozen DWD dataset")
 
     return request
 

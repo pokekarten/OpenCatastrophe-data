@@ -1,0 +1,149 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry of operational disaster alert, rapid-mapping, event-response and loss-and-damage tracking services relevant to catastrophe risk.",
+  "review_date": "2026-08-12",
+  "entries": [
+    {
+      "candidate_id": "ec-jrc.gdacs.api",
+      "name": "Global Disaster Alert and Coordination System (GDACS) API",
+      "provider": "European Commission Joint Research Centre / United Nations partner network",
+      "categories": [
+        "multi_hazard",
+        "event_catalogue",
+        "alerting",
+        "api",
+        "geospatial"
+      ],
+      "spatial_scope": "global",
+      "temporal_scope": "operational near-real-time event monitoring plus historical event resources; event-type dependent",
+      "resolution_or_granularity": "event and episode records plus GeoJSON/CAP resources, hazard geometries, cyclone areas of interest and earthquake ShakeMap-linked products",
+      "potential_roles": [
+        "global_event_detection",
+        "event_identity_crosswalk",
+        "alert_context",
+        "hazard_geometry_discovery"
+      ],
+      "authoritative_url": "https://www.gdacs.org/gdacsapi/swagger/index.html",
+      "access_class_hint": "public_openapi_and_public_event_resources",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "GDACS documents an OAS 3.0 Web API with event-list, polygon, cyclone-AOI, ShakeMap and related endpoints, and public event resource directories expose GeoJSON/CAP artifacts. Treat automated alert/model outputs as event-discovery and context evidence rather than unquestioned ground truth; freeze event type, event/episode identifiers, retrieval time and resource identity."
+    },
+    {
+      "candidate_id": "dlr.zki.activations",
+      "name": "DLR Center for Satellite Based Crisis Information (ZKI) Activations",
+      "provider": "German Aerospace Center (DLR) / Center for Satellite Based Crisis Information",
+      "categories": [
+        "rapid_mapping",
+        "satellite_observations",
+        "emergency_response",
+        "event_catalogue",
+        "geospatial"
+      ],
+      "spatial_scope": "global and Germany-focused activations depending on tasking and event",
+      "temporal_scope": "historical activation archive plus current crisis-mapping exercises and operational products",
+      "resolution_or_granularity": "activation records with event metadata and downloadable mapping products; activation catalogue exposes GeoJSON and GeoRSS feeds",
+      "potential_roles": [
+        "rapid_mapping_discovery",
+        "independent_damage_mapping",
+        "event_response_validation",
+        "activation_crosswalk"
+      ],
+      "authoritative_url": "https://activations.zki.dlr.de/en/activations/",
+      "access_class_hint": "public_activation_catalog_with_geojson_georss_and_product_specific_access",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "ZKI exposes GeoJSON and GeoRSS activation feeds and publishes event-specific map products in formats that can include GeoPDF, KMZ and image products. Availability, downstream imagery rights and product formats vary by activation, so each concrete product still requires asset-level provenance and rights review."
+    },
+    {
+      "candidate_id": "nasa.disasters.mapping-portal",
+      "name": "NASA Disasters Mapping Portal",
+      "provider": "NASA Earth Science / Disasters Program",
+      "categories": [
+        "rapid_mapping",
+        "near_real_time",
+        "remote_sensing",
+        "gis_services",
+        "multi_hazard"
+      ],
+      "spatial_scope": "global, event- and product-dependent",
+      "temporal_scope": "near-real-time products plus disaster-specific event products",
+      "resolution_or_granularity": "heterogeneous GIS layers and products exposed through Esri REST and open-source-compatible WMS endpoints",
+      "potential_roles": [
+        "rapid_mapping_discovery",
+        "event_observation",
+        "cross_source_validation",
+        "gis_service_ingestion"
+      ],
+      "authoritative_url": "https://disasters.nasa.gov/what-we-do/disasters/practitioner-resources",
+      "access_class_hint": "public_rest_and_wms_no_login",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "NASA documents the Disasters Mapping Portal as freely accessible without login and exposes products through REST and WMS. The portal is a distribution layer over heterogeneous upstream products, so preserve layer/service identifiers, source mission or model, event, timestamps, processing level and upstream rights rather than treating the portal as one homogeneous dataset."
+    },
+    {
+      "candidate_id": "nasa-jpl.aria.event-response",
+      "name": "NASA/JPL ARIA Event Response Products",
+      "provider": "NASA Jet Propulsion Laboratory / Advanced Rapid Imaging and Analysis (ARIA)",
+      "categories": [
+        "rapid_mapping",
+        "sar",
+        "earthquake",
+        "flood",
+        "damage_proxy",
+        "event_response"
+      ],
+      "spatial_scope": "event-specific coverage where suitable SAR/GNSS observations are available",
+      "temporal_scope": "historical and current urgent-response products; event dependent",
+      "resolution_or_granularity": "event-response Damage Proxy Maps, Flood Proxy Maps, InSAR and GPS results with sensor- and event-specific resolution",
+      "potential_roles": [
+        "damage_proxy_validation",
+        "flood_extent_validation",
+        "earthquake_response_observation",
+        "independent_rapid_mapping"
+      ],
+      "authoritative_url": "https://aria.jpl.nasa.gov/products/index.html",
+      "access_class_hint": "public_event_response_share_no_login_with_separate_standard_product_login",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "ARIA states that event-response products are available through ARIA Share without login, while standard product search uses NASA Earthdata authentication. Damage and flood proxy maps are derived remote-sensing products, not direct structure-level loss observations; freeze event, input sensor/acquisition pair, product version, processing method and mask/quality semantics."
+    },
+    {
+      "candidate_id": "undrr.delta-resilience",
+      "name": "UNDRR DELTA Resilience",
+      "provider": "United Nations Office for Disaster Risk Reduction and partner organizations",
+      "categories": [
+        "disaster_loss",
+        "damage",
+        "hazard_events",
+        "impact_tracking",
+        "interoperability",
+        "api"
+      ],
+      "spatial_scope": "country-owned national and subnational deployments with global methodological framework",
+      "temporal_scope": "operational rollout from 2025 onward, building on DesInventar historical loss-and-damage practice",
+      "resolution_or_granularity": "hazardous-event and disaster-impact records with sectoral, human, economic and non-economic loss-and-damage dimensions and UUID-based linkage",
+      "potential_roles": [
+        "loss_damage_interoperability",
+        "official_impact_linkage",
+        "event_impact_crosswalk",
+        "loss_model_validation"
+      ],
+      "authoritative_url": "https://www.undrr.org/building-risk-knowledge/disaster-losses-and-damages-tracking-system-delta-resilience",
+      "access_class_hint": "open_source_toolkit_with_open_api_capability_and_country_specific_data_governance",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "UNDRR describes DELTA as a standards-based system that supports open APIs and links hazardous events to observed impacts using UUIDs and WMO-CHE-aligned methods. The software architecture and methodological framework do not imply that every country deployment or national dataset is openly redistributable; data governance and rights must remain instance- and dataset-specific."
+    }
+  ]
+}
