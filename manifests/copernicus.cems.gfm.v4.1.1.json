@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "copernicus.cems.gfm.v4.1.1",
+  "provider": "Copernicus Emergency Management Service (CEMS) / European Commission Joint Research Centre",
+  "product_name": "Global Flood Monitoring (GFM)",
+  "version_or_release": "4.1.1 (released 2026-06-11)",
+  "canonical_source": "https://extwiki.eodc.eu/GFM/GFMVersioning",
+  "retrieved_at": "2026-08-12T19:17:00Z",
+  "retrieval_query_or_filters": "Metadata-only review of current GFM v4.1.1 versioning, Product User Manual/Product Definition documentation, dissemination documentation and CEMS Early Warning Data Store terms. No GFM REST, WMS-T or STAC request was executed and no provider bytes were acquired.",
+  "access_class": "open",
+  "modelling_layer": "hazard",
+  "intended_use": "Satellite-derived observed flood/water extent evidence for bounded flood-footprint validation and model challenge. Preserve GFM version, Sentinel-1 acquisition metadata, Reference Water Mask, Exclusion Mask, Likelihood Values and Advisory Flags. Do not reinterpret GFM as river discharge, flood depth or velocity, return-period hazard intensity, surveyed damage, vulnerability, insured loss or universal ground truth.",
+  "raw_artifact": null,
+  "derived_artifact": null,
+  "licensing": {
+    "status": "verified",
+    "spdx_expression": null,
+    "licence_name": "Terms of use of the CEMS Early Warning Data Store (rev. 11)",
+    "terms_reference": "https://ewds.climate.copernicus.eu/licences/terms-of-use-cems",
+    "terms_reviewed_at": "2026-08-12T19:17:00Z",
+    "terms_version_or_date": "rev. 11; page states last modified 2023-06-07; reviewed 2026-08-12",
+    "terms_content_sha256": null,
+    "commercial_use_status": "allowed",
+    "attribution_requirements": "When communicating or distributing covered CEMS early-warning/monitoring data, identify the source using the required Copernicus Emergency Management Service notice or similar; adapted or modified data require a modified-information notice.",
+    "share_alike_or_derivative_requirements": "The reviewed CEMS terms permit reproduction, distribution, public communication, adaptation, modification and combination. No share-alike requirement is recorded; source/modification notices, restricted-data rules and third-party terms still apply.",
+    "notes": "The CEMS terms explicitly describe the early-warning and monitoring systems as including Global Flood Monitoring. Some CEMS data can be restricted and third-party information may have separate terms, so rights are not generalized beyond covered GFM information. Dataset reuse rights are kept separate from service/API automation policy. This is an engineering rights assessment, not legal advice."
+  },
+  "redistribution": {
+    "status": "allowed",
+    "scope": "raw",
+    "conditions": "The reviewed CEMS terms support redistribution of covered GFM information subject to required source/modification notices and restricted/third-party caveats. OpenCatastrophe currently approves metadata only; no exact GFM scene, API response or product asset has been selected, acquired, hashed or approved for Git publication."
+  },
+  "privacy": {
+    "personal_data_status": "none",
+    "confidential_or_proprietary_status": "none",
+    "notes": "The admitted role concerns satellite-derived flood/water products and associated geospatial metadata, not person-, policy-, claims- or portfolio-level data. Derived affected-population/land-cover layers have separate semantics and are not the primary validation evidence admitted here."
+  },
+  "spatial": {
+    "crs": null,
+    "extent": "Global Sentinel-1 IW coverage; current PUM states GFM processing uses the 20 m spatial resolution of the Sentinel-1 pre-processed data cube. Exact CRS, footprint and pixel/grid semantics must be frozen from the selected product asset."
+  },
+  "temporal": {
+    "extent": "GFM version 4.1.1 is operational from 2026-06-11. Exact Sentinel-1 acquisition time and product version must be frozen per validation asset; GFM documentation states data layers from different MAJOR versions are incompatible and must not be silently combined."
+  },
+  "variables_and_units": [
+    {
+      "name": "Observed Flood Extent",
+      "unit": null,
+      "description": "Ensemble Sentinel-1 SAR-derived classification of floodwater extent, excluding normal permanent/seasonal water via the Reference Water Mask and subject to masking/quality limitations."
+    },
+    {
+      "name": "Observed Water Extent",
+      "unit": null,
+      "description": "Sentinel-1 SAR-derived open/calm water extent; distinct from flood-only extent."
+    },
+    {
+      "name": "Reference Water Mask",
+      "unit": null,
+      "description": "Reference permanent/seasonal water context used to distinguish normal water from observed flooding."
+    },
+    {
+      "name": "Exclusion Mask",
+      "unit": null,
+      "description": "Mask identifying locations where robust SAR flood/water classification is not technically feasible because of static surface, topographic, shadow or coverage effects."
+    },
+    {
+      "name": "Likelihood Values",
+      "unit": "%",
+      "description": "GFM appraisal of flood-classification confidence on a 0-100 scale; preserve exact product semantics and masking behavior."
+    },
+    {
+      "name": "Advisory Flags",
+      "unit": null,
+      "description": "Flags for conditions such as wind, frozen conditions, snow or dry soil that may impair flood/water detection; flagged pixels are not necessarily excluded."
+    },
+    {
+      "name": "Sentinel-1 Footprint and Metadata",
+      "unit": null,
+      "description": "Scene footprint and acquisition metadata required to bind a GFM observation to the underlying Sentinel-1 acquisition."
+    }
+  ],
+  "transformation": null,
+  "review": {
+    "status": "approved_metadata_only",
+    "reviewed_at": "2026-08-12T19:17:00Z",
+    "reviewer": "OpenCatastrophe source audit",
+    "notes": "Metadata-only admission for a bounded flood-observation validation role. No GFM provider request or external byte was executed or persisted. Any future raw/API sample must freeze the exact GFM version, Sentinel-1 scene/acquisition, AOI, requested layer(s), Exclusion Mask/Advisory context, response/file hashes and current service/API terms, with independent science/rights review before publication."
+  }
+}
