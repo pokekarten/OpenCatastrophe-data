@@ -215,6 +215,25 @@ class MaterializeAdmittedArtifactTests(unittest.TestCase):
                 root=self.root,
             )
 
+    def test_symlink_inside_cache_directory_chain_is_rejected(self) -> None:
+        outside = self.source_root / "outside-cache"
+        outside.mkdir()
+        intermediate = self.cache_root / "synthetic.hazard"
+        try:
+            intermediate.symlink_to(outside, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlinks unavailable")
+
+        with self.assertRaisesRegex(materializer.MaterializationError, "directory chain must not contain symlinks"):
+            self.materialize()
+        self.assertEqual(list(outside.iterdir()), [])
+
+    def test_non_directory_inside_cache_chain_is_rejected(self) -> None:
+        intermediate = self.cache_root / "synthetic.hazard"
+        intermediate.write_text("not-a-directory", encoding="utf-8")
+        with self.assertRaisesRegex(materializer.MaterializationError, "must contain only directories"):
+            self.materialize()
+
     def test_existing_wrong_cache_content_is_rejected(self) -> None:
         destination = self.cache_root / f"synthetic.hazard/raw/{SHA}"
         destination.parent.mkdir(parents=True)
