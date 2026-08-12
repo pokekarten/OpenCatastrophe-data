@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "gfz.world-stress-map.2025",
+  "source_ids": [
+    "gfz.world-stress-map.2025"
+  ],
+  "provider": "GFZ Helmholtz Centre for Geosciences / World Stress Map Project",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://dataservices.gfz-potsdam.de/wsm/showshort.php?id=a23de1c9-1f73-11f0-914a-f12b0080820d",
+  "service_root": "https://datapub.gfz.de",
+  "api_version": "World Stress Map Database Release 2025; DOI 10.5880/WSM.2025.001",
+  "access_scope": [
+    "metadata",
+    "bulk"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "fetch_wsm2025_csv"
+    ],
+    "path_templates": [
+      "/download/10.5880.WSM.2025.001-Scbwez/WSM_Database_2025.csv"
+    ],
+    "parameter_rules": "Static documentation contract only. The scientific release identity is fixed to World Stress Map Database Release 2025, DOI 10.5880/WSM.2025.001, and the documented transport identity is the current DOI-linked GFZ Data Services CSV path WSM_Database_2025.csv. This contract authorizes no HTTP request yet. A future reviewed worker must keep host, exact path, query, headers and redirect targets repository-controlled and must re-resolve the DOI/landing evidence before execution because the direct datapub path is transport identity, not scientific identity. Caller-selected files, directory crawling, alternate mirrors, spreadsheet substitution and arbitrary redirects are forbidden."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/csv",
+      "application/octet-stream"
+    ],
+    "format": "The fixed release file WSM_Database_2025.csv is the comma-separated representation of World Stress Map Database Release 2025; GFZ also publishes a separate Excel representation, which is not authorized by this contract.",
+    "scientific_semantics": "World Stress Map Database Release 2025 is a global, heterogeneous, quality-ranked compilation of 100,842 present-day crustal stress indicator records. Indicator type, quality class and source/provenance remain material scientific fields. The separately published World Stress Map 2025, DOI 10.5880/WSM.2025.002, displays reliable A-C quality records and must not be conflated with the complete database release DOI 10.5880/WSM.2025.001. Database presence or absence does not establish earthquake occurrence probability, seismic hazard, fault activity probability, vulnerability, damage, loss or insured loss."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 60,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 20971520,
+    "retry_policy": "none",
+    "rate_limit_notes": "GFZ and the World Stress Map download page document public/free download of the 2025 database, but no repository-specific numeric request budget or separate automated-service entitlement was established in this review. This documented-only contract authorizes no HEAD, GET, Range request, retry loop, directory crawl or repeated probe.",
+    "mutability_notes": "The scientific database release is pinned by DOI 10.5880/WSM.2025.001. The current direct datapub path is a delivery route and may be operationally mutable even when the DOI identity remains stable. Any later acquisition must re-resolve authoritative landing evidence, freeze requested/final URL identity, retrieval UTC, byte count and SHA-256, validate the expected CSV/file identity and bind parser/field semantics before scientific or publication use."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "allowed",
+    "notes": "GFZ Data Services identifies World Stress Map Database Release 2025 as CC BY 4.0, and the World Stress Map project states that database download and usage are free of charge while requiring citation of the project and release. CC BY 4.0 supports reuse and redistribution with attribution. This does not by itself establish a separate automated-service entitlement for the current datapub transport path, so service automation remains unknown and execution stays disabled. Any persisted sample still requires exact asset identity, provenance, attribution and repository review before bytes are committed or published."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-08-12",
+  "evidence_urls": [
+    "https://doi.org/10.5880/WSM.2025.001",
+    "https://dataservices.gfz-potsdam.de/wsm/showshort.php?id=a23de1c9-1f73-11f0-914a-f12b0080820d",
+    "https://www.world-stress-map.org/download/",
+    "https://doi.org/10.48440/wsm.2025.001",
+    "https://creativecommons.org/licenses/by/4.0/"
+  ],
+  "notes": "Static release/access boundary only for #173/#246. No provider request, external byte, parser, adapter, Agent Action dispatch, admission promotion or publication decision is introduced. A future exact-byte task must preserve release DOI, representation, quality/indicator semantics and attribution, and must not infer hazard or loss from stress-indicator coverage."
+}
