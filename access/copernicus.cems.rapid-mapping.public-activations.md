@@ -24,7 +24,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Interface type:** rest
 
-**Status:** probe_ready
+**Status:** documented_only
 
 **Documentation url:** <https://mapping.emergency.copernicus.eu/about/how-to-harvest-cems-mapping-data/emergency-response-data/>
 
@@ -59,7 +59,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - /backend/dashboard-api/public-activations-info/
 - /backend/dashboard-api/public-activations/
 
-**Parameter rules:** The initial probe is repository-constructed only: list_public_activations fixes limit=1 and does not accept caller-supplied host, path, headers, offset, ordering, download URL or unrestricted query parameters. A future get_public_activation operation may accept exactly one validated public Rapid Mapping activation code and map it to the documented code query parameter; it must reject sensitive/restricted records and must not follow product download URLs under this contract. Any product ZIP, GeoPackage, GeoJSON, COG, vector-tile or other asset fetch requires a separately reviewed bounded sample/acquisition operation.
+**Parameter rules:** The documented public interface exposes activation-list and activation-detail operations, but this contract does not currently authorize execution. Any future implementation must be repository-constructed only: a catalogue check must fix a minimal limit and must not accept caller-supplied host, path, headers, offset, ordering, download URL or unrestricted query parameters. A future get_public_activation operation may accept exactly one validated public Rapid Mapping activation code and map it to the documented code query parameter; it must reject sensitive/restricted records and must not follow product download URLs under this contract. Any product ZIP, GeoPackage, GeoJSON, COG, vector-tile or other asset fetch requires a separately reviewed bounded sample/acquisition operation.
 
 ## Response contract
 
@@ -69,7 +69,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Format:** Copernicus CEMS Rapid Mapping public dashboard JSON for activation catalogue or bounded activation metadata.
 
-**Scientific semantics:** The public Rapid Mapping interface exposes operational emergency-mapping activation, AOI, product, imagery, layer and summary-statistics metadata. A successful probe demonstrates only anonymous service connectivity and response-contract compatibility. It does not make an activation immutable, prove product completeness or accuracy, clear sensitive/third-party content, or authorize a mapping product as universal ground truth.
+**Scientific semantics:** The documented Rapid Mapping interface exposes operational emergency-mapping activation, AOI, product, imagery, layer and summary-statistics metadata. Rapid Mapping products are provider-derived geospatial outputs produced from satellite imagery and other geospatial data for specific AOIs and acquisition times. Technical public accessibility does not make an activation immutable, establish API automation rights, prove product completeness or accuracy, clear sensitive/third-party content, or turn delineation, grading, exposure or consequence outputs into direct physical hazard observations, surveyed damage or universal ground truth.
 
 ## Operational constraints
 
@@ -81,42 +81,37 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** bounded_backoff
 
-**Rate limit notes:** No repository-specific request-rate entitlement is assumed. The initial contract permits only a one-record catalogue probe and bounded single-activation metadata lookup; bulk harvesting, pagination and concurrent crawling are outside this contract.
+**Rate limit notes:** No execution or repository-specific request-rate entitlement is authorized under the current contract. If service-use terms are independently cleared later, any connection check must remain a minimal bounded request; bulk harvesting, pagination and concurrent crawling remain outside this contract unless separately reviewed.
 
-**Mutability notes:** The service is an operational rolling catalogue. Activation status, AOIs, products, imagery, statistics and product versions can change. Every future execution receipt must bind retrieval UTC, exact trusted execution-code identity, normalized request identity, response byte count and SHA-256; scientific use must separately freeze the exact activation/AOI/product/version selected.
+**Mutability notes:** The service is an operational rolling catalogue. Activation status, AOIs, products, imagery, statistics and product versions can change. Any future execution receipt must bind retrieval UTC, exact trusted execution-code identity, normalized request identity, response byte count and SHA-256; scientific use must separately freeze the exact activation/AOI/product type/version, imagery acquisition/sensor, feasibility/status and known limitations selected.
 
 ## Rights and policy
 
 **Dataset rights status:** verified
 
-**Api terms status:** same_as_dataset
+**Api terms status:** unknown
 
-**Terms url:** <https://mapping.emergency.copernicus.eu/terms-and-conditions/>
+**Terms url:** `null`
 
-**Commercial automation status:** allowed
+**Commercial automation status:** unknown
 
 **Redistribution status:** allowed
 
-**Notes:** The reviewed CEMS On-Demand Mapping terms permit reproduction, distribution, public communication, adaptation, modification and combination of covered data subject to source citation. Some CEMS data can be restricted and third-party information can carry separate terms. This contract therefore covers only documented public Rapid Mapping catalogue/metadata access and does not authorize persistence or redistribution of a future sensitive, restricted or third-party-bearing response without asset-specific review.
+**Notes:** The reviewed CEMS On-Demand Mapping terms permit reproduction, distribution, public communication, adaptation, modification and combination of covered public CEMS data subject to source citation, with restricted data and third-party information requiring separate treatment. The provider's Rapid Mapping API documentation establishes anonymous technical access, but no authoritative service/API automation term has been identified that proves those dataset reuse terms are also the service-use terms. Dataset reuse rights therefore remain verified while API/service-use and commercial automation remain fail-closed and unknown.
 
 ## Probe contract
 
-**Mode:** catalogue_query
+**Mode:** none
 
-**Operation:** list_public_activations
+**Operation:** `null`
 
 **Requires credentials:** `false`
 
 ### Expected evidence
 
-- provider success status without unsafe payload logging
-- application/json response media type
-- response byte count and SHA-256
-- bounded one-record activation-catalogue response validation
-- retrieval UTC and trusted execution-code identity
-- external_bytes_persisted=false
+_Empty array._
 
-**Implementation decision:** build_adapter_now
+**Implementation decision:** document_only
 
 **Reviewed at:** 2026-08-12
 
@@ -124,6 +119,8 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - <https://mapping.emergency.copernicus.eu/about/how-to-harvest-cems-mapping-data/>
 - <https://mapping.emergency.copernicus.eu/about/how-to-harvest-cems-mapping-data/emergency-response-data/>
+- <https://mapping.emergency.copernicus.eu/about/rapid-mapping-manual/product-overview/what-is-a-product/>
+- <https://mapping.emergency.copernicus.eu/about/rapid-mapping-portfolio/>
 - <https://mapping.emergency.copernicus.eu/terms-and-conditions/>
 
-**Notes:** Static access contract for a future trusted read-only adapter. The provider documentation exposes richer activation/product metadata and product download links, but this first contract intentionally stops at public catalogue and bounded activation metadata. Product acquisition must be added as a separate reviewed operation after exact product/version, sensitivity, third-party rights, size and provenance requirements are defined.
+**Notes:** Static documentation contract only. The official documentation identifies public activation-list and activation-detail JSON routes and richer product metadata/download links, but no provider request is authorized here while service/API-use terms remain unresolved. A later execution proposal must independently clear service-use terms before enabling any probe, then preserve product-specific semantics and keep product acquisition as a separately reviewed operation. No external provider bytes were acquired or persisted by this remediation.
