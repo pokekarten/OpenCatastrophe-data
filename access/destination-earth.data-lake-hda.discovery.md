@@ -63,7 +63,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - /stac/v2/conformance
 - /stac/v2/collections
 
-**Parameter rules:** Documentation-only anonymous discovery contract. No request is authorized yet. A future reviewed discovery adapter may issue only parameter-free GET requests to the four repository-controlled paths above. Callers must not supply service IDs, collection IDs, item IDs, free-text queries, bbox/datetime, CQL2/query expressions, sort clauses, paging, order payloads, data-asset paths, federation backends, URLs, headers or credentials. `/stac` legacy paths are explicitly excluded because current provider documentation marks the legacy STAC interface deprecated in favour of `/stac/v2`. Item search/browsing, `/stac/v2/search`, `/collections/{collectionId}/items`, `/data/...`, ECMWF ordering, notifications and any private/restricted collection access are outside this contract.
+**Parameter rules:** Documentation-only anonymous discovery contract. No request is authorized yet. A future reviewed discovery adapter may issue only parameter-free GET requests to the four repository-controlled paths above. Callers must not supply service IDs, collection IDs, item IDs, free-text queries, bbox/datetime, CQL2/query expressions, sort clauses, paging, order payloads, data-asset paths, federation backends, URLs, headers or credentials. \`/stac\` legacy paths are explicitly excluded because current provider documentation marks the legacy STAC interface deprecated in favour of \`/stac/v2\`. Item search/browsing, \`/stac/v2/search\`, \`/collections/\{collectionId\}/items\`, \`/data/...\`, ECMWF ordering, notifications and any private/restricted collection access are outside this contract.
 
 ## Response contract
 
@@ -87,7 +87,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Rate limit notes:** Current HDA documentation publishes default authenticated-service quotas including 4 requests per second, 20 Mbps per connection and 6 TB/month in the general API guide, with role-specific quota documentation also available. This discovery contract intentionally authorizes no request and needs no high-volume quota. Any future anonymous metadata probe should be a single request with no paging/retry loop. Authenticated item/data access must be designed separately under least-privilege credentials and provider quotas.
 
-**Mutability notes:** The HDA is a live federation whose collection catalogue and backend mappings can change independently of this repository. The stable interface choice reviewed here is the recommended `/stac/v2` API family; the provider marks legacy `/stac` deprecated. Any future metadata probe must bind retrieval UTC, final URL, response byte count/SHA-256 and collection identifiers observed at that time. A collection discovered today must not be assumed to retain identical items, backend, queryables, access policy or scientific content later.
+**Mutability notes:** The HDA is a live federation whose collection catalogue and backend mappings can change independently of this repository. The stable interface choice reviewed here is the recommended \`/stac/v2\` API family; the provider marks legacy \`/stac\` deprecated. Any future metadata probe must bind retrieval UTC, final URL, response byte count/SHA-256 and collection identifiers observed at that time. A collection discovered today must not be assumed to retain identical items, backend, queryables, access policy or scientific content later.
 
 ## Rights and policy
 
