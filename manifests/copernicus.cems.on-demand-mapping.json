@@ -6,7 +6,7 @@
   "version_or_release": null,
   "canonical_source": "https://mapping.emergency.copernicus.eu/",
   "retrieved_at": "2026-08-12T08:31:00Z",
-  "retrieval_query_or_filters": "Metadata-only review of the public CEMS On-Demand Mapping portal, harvesting documentation, Emergency Response API documentation and terms. No activation product bytes were downloaded or admitted. Initial machine-access scope is the anonymous public Rapid Mapping activation catalogue and activation metadata; any future product acquisition must freeze activation code, AOI, product type/version, acquisition time, returned files and byte hashes.",
+  "retrieval_query_or_filters": "Metadata-only review of the public CEMS On-Demand Mapping portal, harvesting documentation, Emergency Response API documentation and terms. No activation product bytes were downloaded or admitted. Initial machine-access scope is the anonymous public Rapid Mapping activation catalogue and bounded activation metadata; the admitted metadata slice excludes free-text narrative, sensitive/restricted records and third-party-bearing content. Any future product acquisition must freeze activation code, AOI, product type/version, acquisition time, returned files and byte hashes.",
   "access_class": "open",
   "modelling_layer": "hazard",
   "intended_use": "Post-event event-footprint, hazard-observation and damage-grading validation source for floods, wildfires, storms, earthquakes and other mapped emergencies. Public activation/AOI/product metadata can link observed event geometry, satellite acquisition context and mapped impact statistics to independently modelled hazard outputs. CEMS mapping products are not a stochastic event catalogue, vulnerability function, insured-loss dataset or universal ground-truth layer, and product feasibility/quality varies by activation and sensor conditions.",
@@ -31,9 +31,9 @@
     "conditions": "The reviewed CEMS terms support redistribution of covered public On-Demand Mapping data with required source attribution. OpenCatastrophe currently admits metadata only: no activation product bytes are committed. Restricted/sensitive records and third-party inputs or linked information require separate rights review before acquisition or publication."
   },
   "privacy": {
-    "personal_data_status": "unknown",
-    "confidential_or_proprietary_status": "unknown",
-    "notes": "Public activation metadata and geospatial products are the reviewed scope, but activation records can identify requesting organisations and may contain operational narrative. Sensitive/restricted activations are explicitly outside this admission. Any future persisted sample must be reviewed for personal, sensitive or third-party content before publication."
+    "personal_data_status": "none",
+    "confidential_or_proprietary_status": "none",
+    "notes": "The admitted metadata slice is limited to public provider/product/event geospatial metadata and organisational activation context; it contains no natural-person, customer, policy, claims, portfolio or confidential/proprietary fields. Free-text narrative, sensitive/restricted activations and third-party-bearing content are outside this admission and require separate review before persistence or publication."
   },
   "spatial": {
     "crs": null,
