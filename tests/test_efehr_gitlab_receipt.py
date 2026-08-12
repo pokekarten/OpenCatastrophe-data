@@ -31,6 +31,15 @@ class EfehrGitlabReceiptTests(unittest.TestCase):
             repository_path="Vulnerability/esrm20_exposure_vulnerability_mapping.csv",
         )
 
+    def _site_target(self):
+        return validate_target(
+            source_issue=284,
+            dataset_id="efehr.esrm20.risk-inputs.v1.0",
+            project_id=269,
+            commit_sha=COMMIT,
+            repository_path="Vs30/Site_model_Kosovo.xml",
+        )
+
     def test_kosovo_exposure_targets_are_exactly_allowlisted(self) -> None:
         target = validate_target(
             source_issue=282,
@@ -54,6 +63,45 @@ class EfehrGitlabReceiptTests(unittest.TestCase):
                     commit_sha=COMMIT,
                     repository_path=path,
                 )
+
+    def test_kosovo_site_model_is_exactly_allowlisted_under_issue_284(self) -> None:
+        site = self._site_target()
+        self.assertEqual(site.project_path, "efehr/esrm20")
+        self.assertEqual(site.dataset_id, "efehr.esrm20.risk-inputs.v1.0")
+        self.assertEqual(site.repository_path, "Vs30/Site_model_Kosovo.xml")
+        self.assertIn("Vs30%2FSite_model_Kosovo.xml", raw_file_api_url(site))
+
+        for mutation in (
+            {"source_issue": 283},
+            {"dataset_id": "efehr.esrm20.vulnerability.v1.1"},
+            {"project_id": 188},
+            {"repository_path": "Vs30/Site_model_Albania.xml"},
+            {"repository_path": "Vs30/Site_model_Kosovo.csv"},
+            {"repository_path": "Vulnerability/esrm20_exposure_vulnerability_mapping.csv"},
+        ):
+            base = dict(
+                source_issue=284,
+                dataset_id="efehr.esrm20.risk-inputs.v1.0",
+                project_id=269,
+                commit_sha=COMMIT,
+                repository_path="Vs30/Site_model_Kosovo.xml",
+            )
+            with self.subTest(mutation=mutation), self.assertRaises(EfehrReceiptError):
+                validate_target(**dict(base, **mutation))
+
+        payload = b"<siteModel>synthetic-test-only</siteModel>"
+        receipt = receipt_from_stream(
+            site,
+            io.BytesIO(payload),
+            final_url=raw_file_api_url(site),
+            retrieved_at=RETRIEVED,
+            headers={"Content-Length": str(len(payload)), "Content-Type": "application/xml"},
+        )
+        self.assertEqual(receipt["source_issue"], 284)
+        self.assertEqual(receipt["repository_path"], "Vs30/Site_model_Kosovo.xml")
+        self.assertEqual(receipt["sha256"], hashlib.sha256(payload).hexdigest())
+        self.assertFalse(receipt["external_bytes_persisted"])
+        self.assertFalse(receipt["publication_authorized"])
 
     def test_mapping_has_distinct_risk_input_identity_and_vulnerability_stays_separate(self) -> None:
         mapping = self._mapping_target()
