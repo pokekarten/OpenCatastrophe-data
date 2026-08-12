@@ -153,14 +153,23 @@ class MaterializeAdmittedArtifactTests(unittest.TestCase):
         self.assertEqual(first["cache_key"], second["cache_key"])
 
     def test_hash_or_size_mismatch_fails_closed_without_cache_file(self) -> None:
+        destination = self.cache_root / f"synthetic.hazard/raw/{SHA}"
+
         self.source_path.write_bytes(b"abd")
         with self.assertRaisesRegex(materializer.MaterializationError, "SHA-256"):
             self.materialize()
-        self.assertFalse((self.cache_root / f"synthetic.hazard/raw/{SHA}").exists())
+        self.assertFalse(destination.exists())
 
         self.source_path.write_bytes(b"ab")
         with self.assertRaisesRegex(materializer.MaterializationError, "byte size mismatch"):
             self.materialize()
+        self.assertFalse(destination.exists())
+
+        self.source_path.write_bytes(b"abcd")
+        with self.assertRaisesRegex(materializer.MaterializationError, "byte size mismatch"):
+            self.materialize()
+        self.assertFalse(destination.exists())
+        self.assertEqual(list(self.cache_root.rglob(".oc-materialize-*")), [])
 
     def test_metadata_only_manifest_cannot_materialize(self) -> None:
         manifest = valid_manifest()
