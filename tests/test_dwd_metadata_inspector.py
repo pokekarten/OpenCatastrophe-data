@@ -64,6 +64,50 @@ class DwdMetadataInspectorTests(unittest.TestCase):
         member_paths = [item["path"] for item in first["zip"]["members"]]
         self.assertEqual(member_paths, sorted(member_paths))
 
+    def test_provider_native_dwd_families_are_normalized(self) -> None:
+        path = self._zip(
+            [
+                ("Metadaten_Geographie_00003.txt", b"geography"),
+                ("Metadaten_Geraete_00003.txt", b"equipment"),
+                ("Metadaten_Parameter_00003.txt", b"parameter"),
+            ]
+        )
+        result = inspector.inspect_zip(path)
+        self.assertEqual(result["observed"]["station_ids"], ["00003"])
+        self.assertEqual(
+            result["observed"]["metadata_families"],
+            ["equipment", "geography", "parameter"],
+        )
+
+    def test_provider_native_family_matching_is_case_normalized(self) -> None:
+        path = self._zip([("METADATEN_GEOGRAPHIE_00003.TXT", b"geography")])
+        result = inspector.inspect_zip(path)
+        self.assertEqual(result["observed"]["metadata_families"], ["geography"])
+
+    def test_generic_metadaten_does_not_satisfy_required_provider_family(self) -> None:
+        path = self._zip([("Metadaten_Sonstiges_00003.txt", b"generic")])
+        result = inspector.inspect_zip(path)
+        self.assertEqual(result["observed"]["metadata_families"], ["metadata"])
+
+    def test_embedded_provider_token_does_not_satisfy_required_family(self) -> None:
+        path = self._zip(
+            [
+                ("not_Metadaten_Geographie_00003.txt", b"decoy"),
+                ("not_Metadaten_Parameter_00003.txt", b"decoy"),
+            ]
+        )
+        result = inspector.inspect_zip(path)
+        self.assertEqual(result["observed"]["metadata_families"], ["metadata"])
+
+    def test_ambiguous_provider_native_family_is_rejected(self) -> None:
+        path = self._zip(
+            [("Metadaten_Geographie_Metadaten_Geraete_00003.txt", b"ambiguous")]
+        )
+        with self.assertRaisesRegex(
+            inspector.InspectionError, "ambiguous DWD metadata family"
+        ):
+            inspector.inspect_zip(path)
+
     def test_parent_traversal_member_is_rejected(self) -> None:
         path = self._zip([("../secret.txt", b"no")])
         with self.assertRaises(inspector.InspectionError):

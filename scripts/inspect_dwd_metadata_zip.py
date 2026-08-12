@@ -34,6 +34,11 @@ METADATA_FAMILIES = (
     "parameter",
     "station",
 )
+DWD_PROVIDER_METADATA_FAMILIES = (
+    ("metadaten_geographie", "geography"),
+    ("metadaten_geraete", "equipment"),
+    ("metadaten_parameter", "parameter"),
+)
 
 
 class InspectionError(ValueError):
@@ -64,7 +69,21 @@ def _is_symlink(info: zipfile.ZipInfo) -> bool:
 
 
 def _metadata_family(name: str) -> str | None:
-    lowered = PurePosixPath(name).name.lower()
+    lowered = PurePosixPath(name).name.casefold()
+    provider_matches = [
+        (token, normalized)
+        for token, normalized in DWD_PROVIDER_METADATA_FAMILIES
+        if token in lowered
+    ]
+    if len(provider_matches) > 1:
+        raise InspectionError(f"ambiguous DWD metadata family in ZIP member: {name}")
+    if provider_matches:
+        token, normalized = provider_matches[0]
+        if lowered.startswith(token):
+            suffix = lowered[len(token):]
+            if not suffix or suffix[0] in "_.-":
+                return normalized
+        return "metadata"
     for family in METADATA_FAMILIES:
         if family in lowered:
             return family
