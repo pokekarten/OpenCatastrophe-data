@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SHA_A = "a" * 64
 SHA_B = "b" * 64
 STORAGE = "external://synthetic/hazard"
+DERIVED_STORAGE = "external://synthetic/hazard-derived"
 
 
 def valid_manifest() -> dict[str, object]:
@@ -150,12 +151,73 @@ class ModelInputTests(unittest.TestCase):
         with self.assertRaisesRegex(validator.ModelInputError, "modelling_layer does not match"):
             validator.validate_model_input(payload, root=self.root)
 
+    def test_manifest_review_scope_must_admit_selected_artifact(self) -> None:
+        for status in ("pending", "rejected", "approved_metadata_only", "approved_derived"):
+            with self.subTest(status=status):
+                manifest = valid_manifest()
+                manifest["review"]["status"] = status
+                if status == "pending":
+                    manifest["review"]["reviewed_at"] = None
+                    manifest["review"]["reviewer"] = None
+                self.write_manifest(manifest)
+                with self.assertRaisesRegex(
+                    validator.ModelInputError, "review/admission scope"
+                ):
+                    validator.validate_model_input(valid_model_input(), root=self.root)
+
+    def test_derived_artifact_is_admitted_by_derived_or_raw_review(self) -> None:
+        for status in ("approved_derived", "approved_raw"):
+            with self.subTest(status=status):
+                manifest = valid_manifest()
+                manifest["derived_artifact"] = {
+                    "byte_size": 4,
+                    "sha256": SHA_B,
+                    "storage_reference": DERIVED_STORAGE,
+                }
+                manifest["transformation"] = {
+                    "code_reference": "scripts/synthetic.py",
+                    "config_identity": "synthetic-v1",
+                }
+                manifest["review"]["status"] = status
+                self.write_manifest(manifest)
+
+                payload = valid_model_input()
+                payload["artifact"] = "derived"
+                payload["storage_reference"] = DERIVED_STORAGE
+                payload["sha256"] = SHA_B
+                validator.validate_model_input(payload, root=self.root)
+
+    def test_manifest_scientific_facts_are_consistency_bound(self) -> None:
+        payload = valid_model_input()
+        payload["measure"]["quantity"] = "precipitation"
+        with self.assertRaisesRegex(validator.ModelInputError, "measure.quantity/unit"):
+            validator.validate_model_input(payload, root=self.root)
+
+        payload = valid_model_input()
+        payload["measure"]["unit"] = "km/h"
+        with self.assertRaisesRegex(validator.ModelInputError, "measure.quantity/unit"):
+            validator.validate_model_input(payload, root=self.root)
+
+        payload = valid_model_input()
+        payload["spatial"]["crs"] = "EPSG:3857"
+        with self.assertRaisesRegex(validator.ModelInputError, "spatial.crs"):
+            validator.validate_model_input(payload, root=self.root)
+
+    def test_manifest_null_unit_does_not_match_explicit_model_unit(self) -> None:
+        manifest = valid_manifest()
+        manifest["variables_and_units"] = [
+            {"name": "wind_speed", "unit": None, "description": "Unit unresolved."}
+        ]
+        self.write_manifest(manifest)
+        with self.assertRaisesRegex(validator.ModelInputError, "measure.quantity/unit"):
+            validator.validate_model_input(valid_model_input(), root=self.root)
+
     def test_metadata_only_manifest_cannot_pose_as_model_input(self) -> None:
         manifest = valid_manifest()
         manifest["raw_artifact"] = None
         manifest["review"]["status"] = "approved_metadata_only"
         self.write_manifest(manifest)
-        with self.assertRaisesRegex(validator.ModelInputError, "raw artifact is not identified"):
+        with self.assertRaisesRegex(validator.ModelInputError, "review/admission scope"):
             validator.validate_model_input(valid_model_input(), root=self.root)
 
     def test_mutable_latest_manifest_is_rejected(self) -> None:
@@ -204,10 +266,20 @@ class ModelInputTests(unittest.TestCase):
         with self.assertRaisesRegex(validator.ModelInputError, "duplicate JSON key"):
             validator.load_strict_json(duplicate)
 
-        nonfinite = self.root / "nonfinite.json"
-        nonfinite.write_text('{"value":NaN}', encoding="utf-8")
-        with self.assertRaisesRegex(validator.ModelInputError, "non-finite JSON number"):
-            validator.load_strict_json(nonfinite)
+        for name, source in (
+            ("nonfinite-literal.json", '{"value":NaN}'),
+            ("positive-overflow.json", '{"value":1e400}'),
+            ("negative-overflow.json", '{"value":-1e400}'),
+        ):
+            with self.subTest(source=source):
+                nonfinite = self.root / name
+                nonfinite.write_text(source, encoding="utf-8")
+                with self.assertRaisesRegex(validator.ModelInputError, "non-finite JSON number"):
+                    validator.load_strict_json(nonfinite)
+
+        finite = self.root / "finite-large.json"
+        finite.write_text('{"value":1e308}', encoding="utf-8")
+        self.assertEqual(validator.load_strict_json(finite), {"value": 1e308})
 
     def test_unsafe_manifest_and_storage_paths_are_rejected(self) -> None:
         payload = valid_model_input()
