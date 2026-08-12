@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "efehr.esrm20.risk-inputs.v1.0",
+  "provider": "European Facilities for Earthquake Hazard and Risk (EFEHR)",
+  "product_name": "European Seismic Risk Model 2020 (ESRM20) OpenQuake-engine input files",
+  "version_or_release": "v1.0",
+  "canonical_source": "https://gitlab.seismo.ethz.ch/efehr/esrm20/-/tree/v1.0",
+  "retrieved_at": "2026-08-12T22:48:00Z",
+  "retrieval_query_or_filters": "Metadata-only review of the public efehr/esrm20 risk-input repository release v1.0. No repository archive, mapping, site-model, OpenQuake configuration or other provider bytes were acquired. Exact consumer artifacts require immutable commit/path identity plus byte count and SHA-256.",
+  "access_class": "open",
+  "modelling_layer": "other",
+  "intended_use": "Versioned public ESRM20 executable/configuration reference inputs that connect separately admitted scientific components for reproducible research and OpenQuake interoperability, including exposure-to-vulnerability mapping and site-model inputs. This source is not itself a substitute for ESHM20 hazard, ESRM20 exposure, ESRM20 vulnerability, observed damage, insured loss, policy terms or production fitness.",
+  "raw_artifact": null,
+  "derived_artifact": null,
+  "licensing": {
+    "status": "verified",
+    "spdx_expression": "CC-BY-4.0",
+    "licence_name": "Creative Commons Attribution 4.0 International",
+    "terms_reference": "https://www.efehr.org/Earthquake-risk/data-access/",
+    "terms_reviewed_at": "2026-08-12T22:48:00Z",
+    "terms_version_or_date": "EFEHR earthquake-risk data-access guidance reviewed 2026-08-13; ESRM20 risk-input repository release v1.0",
+    "terms_content_sha256": null,
+    "commercial_use_status": "allowed",
+    "attribution_requirements": "Provide CC BY 4.0 attribution and cite the applicable ESRM20 technical report and source-specific scientific references for any selected input component.",
+    "share_alike_or_derivative_requirements": "CC BY 4.0 permits adaptation without a share-alike requirement; attribution, licence reference and indication of changes remain required.",
+    "notes": "EFEHR states that scientific data available through risk.EFEHR and its public GitLab are licensed under CC BY 4.0. This metadata admission is intentionally narrower than the source-rights ceiling and does not approve any exact provider byte for Git publication."
+  },
+  "redistribution": {
+    "status": "allowed",
+    "scope": "raw",
+    "conditions": "Source rights can support redistribution under CC BY 4.0 subject to its conditions. OpenCatastrophe currently approves metadata only; no exact ESRM20 risk-input artifact has been selected, acquired, hashed or approved for Git publication."
+  },
+  "privacy": {
+    "personal_data_status": "none",
+    "confidential_or_proprietary_status": "none",
+    "notes": "The reviewed source is a public scientific risk-model input/configuration repository, not person-level data, claims, customer portfolios or proprietary insurance terms."
+  },
+  "spatial": {
+    "crs": null,
+    "extent": "Europe; exact spatial support and coordinate/reference semantics depend on the selected input file and must be preserved independently"
+  },
+  "temporal": null,
+  "variables_and_units": [],
+  "transformation": null,
+  "review": {
+    "status": "approved_metadata_only",
+    "reviewed_at": "2026-08-12T22:48:00Z",
+    "reviewer": "OpenCatastrophe source audit",
+    "notes": "Metadata-only engineering approval for the separate ESRM20 v1.0 risk-input repository. Raw/derived promotion remains blocked until exact commit/path/file identity, SHA-256, scientific role, dependencies, semantics and attribution are independently reviewed."
+  }
+}
