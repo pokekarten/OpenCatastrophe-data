@@ -84,7 +84,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ## Rights and policy
 
-**Dataset rights status:** verified
+**Dataset rights status:** unknown
 
 **Api terms status:** unknown
 
@@ -92,9 +92,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Commercial automation status:** unknown
 
-**Redistribution status:** allowed
+**Redistribution status:** unknown
 
-**Notes:** The current USGS ANSS Data and Products Policy is published with Sources/Usage: Public Domain, and USGS states that USGS-authored or produced data and information are generally in the U.S. Public Domain. That supports the dataset-reuse ceiling recorded here. The FDSN Event API documentation establishes an anonymous technical interface but does not, by itself, establish a separate service/API automation term. API/service-use and commercial automation therefore remain fail-closed and unknown; this contract does not authorize provider requests or publication of future response bytes.
+**Notes:** ComCat aggregates parameters and products from USGS and contributing seismic networks/catalogues. USGS-authored federal data may be public domain, but current provider and USGS licensing guidance does not establish one uniform downstream redistribution grant for every partner/contributor record returned by an unrestricted ComCat query. Dataset reuse and redistribution therefore remain fail-closed and unknown for this contract. The FDSN Event API documentation establishes anonymous technical access only; API/service-use and commercial automation also remain unknown. This contract authorizes no provider request or publication of future response bytes.
 
 ## Probe contract
 
