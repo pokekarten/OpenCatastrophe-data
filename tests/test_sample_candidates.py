@@ -52,6 +52,7 @@ class SampleCandidateAuditTests(unittest.TestCase):
             "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03",
             "efehr.eshm20",
             "efehr.esrm20.european-exposure-model.v1.0",
+            "efehr.esrm20.risk-inputs.v1.0",
             "efehr.esrm20.vulnerability.v1.1",
             "google.open-buildings.v3",
             "microsoft.globalml-building-footprints",
