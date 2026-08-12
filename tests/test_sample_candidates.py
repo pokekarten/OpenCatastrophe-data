@@ -47,6 +47,7 @@ class SampleCandidateAuditTests(unittest.TestCase):
         expected_eligible = {
             "copernicus.c3s.european-windstorm-reanalysis.v1.0",
             "copernicus.cems.glofas-historical",
+            "copernicus.cems.on-demand-mapping",
             "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03",
             "efehr.eshm20",
             "efehr.esrm20.european-exposure-model.v1.0",
