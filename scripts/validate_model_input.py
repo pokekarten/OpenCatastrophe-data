@@ -63,6 +63,13 @@ def _reject_constant(value: str) -> None:
     raise ModelInputError(f"non-finite JSON number is forbidden: {value}")
 
 
+def _strict_float(value: str) -> float:
+    parsed = float(value)
+    if not math.isfinite(parsed):
+        raise ModelInputError(f"non-finite JSON number is forbidden: {value}")
+    return parsed
+
+
 def _strict_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     result: dict[str, Any] = {}
     for key, value in pairs:
@@ -78,6 +85,7 @@ def load_strict_json(path: Path) -> dict[str, Any]:
             path.read_text(encoding="utf-8"),
             object_pairs_hook=_strict_object,
             parse_constant=_reject_constant,
+            parse_float=_strict_float,
         )
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise ModelInputError(str(exc)) from exc
@@ -225,6 +233,37 @@ def _validate_semantics(payload: dict[str, Any]) -> None:
         raise ModelInputError("invalid quality.quality_flag_policy")
 
 
+def _require_manifest_admission(manifest: dict[str, Any], artifact_kind: str) -> None:
+    review_status = manifest["review"]["status"]
+    admitted_kinds = validate_manifest.REVIEW_KINDS[review_status]
+    if artifact_kind not in admitted_kinds:
+        raise ModelInputError(
+            f"{artifact_kind} artifact is outside referenced manifest review/admission scope"
+        )
+
+
+def _validate_manifest_semantic_bindings(
+    payload: dict[str, Any], manifest: dict[str, Any]
+) -> None:
+    if "variables_and_units" in manifest:
+        quantity = payload["measure"]["quantity"]
+        unit = payload["measure"]["unit"]
+        variables = manifest["variables_and_units"]
+        if not any(
+            variable["name"] == quantity and variable["unit"] == unit
+            for variable in variables
+        ):
+            raise ModelInputError(
+                "measure.quantity/unit does not match referenced manifest variables_and_units"
+            )
+
+    manifest_spatial = manifest.get("spatial")
+    if manifest_spatial is not None:
+        manifest_crs = manifest_spatial.get("crs")
+        if manifest_crs is not None and payload["spatial"]["crs"] != manifest_crs:
+            raise ModelInputError("spatial.crs does not match referenced manifest")
+
+
 def validate_model_input(payload: dict[str, Any], *, root: Path = ROOT) -> None:
     _closed(payload, TOP_KEYS, TOP_KEYS, "model input")
     if payload["schema_version"] != SCHEMA_VERSION:
@@ -269,6 +308,8 @@ def validate_model_input(payload: dict[str, Any], *, root: Path = ROOT) -> None:
     if manifest["modelling_layer"] != payload["modelling_layer"]:
         raise ModelInputError("modelling_layer does not match referenced manifest")
 
+    _require_manifest_admission(manifest, payload["artifact"])
+
     manifest_artifact = manifest.get(f"{payload['artifact']}_artifact")
     if manifest_artifact is None:
         raise ModelInputError(f"{payload['artifact']} artifact is not identified by the manifest")
@@ -278,6 +319,7 @@ def validate_model_input(payload: dict[str, Any], *, root: Path = ROOT) -> None:
         raise ModelInputError("sha256 does not match selected manifest artifact")
 
     _validate_semantics(payload)
+    _validate_manifest_semantic_bindings(payload, manifest)
 
 
 def main() -> int:
