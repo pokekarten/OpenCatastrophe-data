@@ -153,6 +153,16 @@ ordinary_setting = ../Ignored/not_a_dependency.txt
                 ):
                     extract_openquake_config_references(text, config_path=CONFIG_PATH)
 
+    def test_all_raw_percent_syntax_fails_closed_before_classification(self) -> None:
+        for raw_value in ("../Hazard/foo%%bar.xml", "../Hazard/foo%2Fbar.xml"):
+            text = f"[input]\nsource_model_logic_tree_file = {raw_value}\n"
+            with self.subTest(raw_value=raw_value):
+                with self.assertRaisesRegex(
+                    OpenQuakeConfigError,
+                    "unsupported interpolation or placeholder",
+                ):
+                    extract_openquake_config_references(text, config_path=CONFIG_PATH)
+
     def test_ambiguous_non_file_forms_are_rejected(self) -> None:
         for path in (".", "directory/", "one.xml,two.xml"):
             with self.subTest(path=path):
