@@ -193,16 +193,16 @@ def _next_page(response: Any, *, current_page: int, item_count: int) -> int | No
     raw_next = _header_value(response, "X-Next-Page")
     raw_page = _header_value(response, "X-Page")
     raw_per_page = _header_value(response, "X-Per-Page")
-    if raw_page is not None and raw_page != str(current_page):
+    if raw_next is None or raw_page is None or raw_per_page is None:
+        raise EfehrAcquisitionError(
+            "EFEHR tree pagination headers are incomplete"
+        )
+    if raw_page != str(current_page):
         raise EfehrAcquisitionError("EFEHR tree pagination current-page header drifted")
-    if raw_per_page is not None and raw_per_page != str(TREE_PER_PAGE):
+    if raw_per_page != str(TREE_PER_PAGE):
         raise EfehrAcquisitionError("EFEHR tree pagination per-page header drifted")
 
-    if raw_next is None or raw_next == "":
-        if raw_next is None and item_count == TREE_PER_PAGE:
-            raise EfehrAcquisitionError(
-                "EFEHR tree pagination is ambiguous at a full page boundary"
-            )
+    if raw_next == "":
         return None
     if not raw_next.isdigit():
         raise EfehrAcquisitionError("EFEHR tree next-page header is malformed")
