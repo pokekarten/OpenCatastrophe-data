@@ -37,6 +37,10 @@ _MULTI_FILE_OPTIONS_3_14 = frozenset(
 )
 
 
+def _contains_unsupported_placeholder(value: str) -> bool:
+    return "%(" in value or "${" in value
+
+
 def _is_file_option(option: str, value: str) -> bool:
     normalized = option.casefold()
     return normalized.endswith(_INPUT_SUFFIXES) or value.strip().endswith(".hdf5")
@@ -74,7 +78,7 @@ def normalize_repository_reference(config_path: str, raw_path: str) -> str:
         raise OpenQuakeConfigError("dependency path must be non-empty")
     if any(ord(char) < 32 for char in candidate):
         raise OpenQuakeConfigError("dependency path contains control characters")
-    if "%" in candidate or "$" in candidate:
+    if _contains_unsupported_placeholder(candidate):
         raise OpenQuakeConfigError(
             "dependency path contains unsupported interpolation or placeholder syntax"
         )
@@ -147,6 +151,10 @@ def extract_openquake_config_references(
         raise OpenQuakeConfigError("configuration must contain at least one section")
 
     for option, value in parser.defaults().items():
+        if _contains_unsupported_placeholder(value):
+            raise OpenQuakeConfigError(
+                f"unsupported interpolation or placeholder syntax in DEFAULT option {option}"
+            )
         if _is_file_option(option, value) and value.strip():
             raise OpenQuakeConfigError("file-valued DEFAULT options are not supported")
 
@@ -156,6 +164,10 @@ def extract_openquake_config_references(
 
     for section in parser.sections():
         for option, value in parser.items(section, raw=True):
+            if _contains_unsupported_placeholder(value):
+                raise OpenQuakeConfigError(
+                    f"unsupported interpolation or placeholder syntax in [{section}] {option}"
+                )
             normalized_option = option.casefold()
             if not _is_file_option(normalized_option, value):
                 continue
