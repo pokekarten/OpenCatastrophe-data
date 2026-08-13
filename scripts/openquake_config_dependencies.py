@@ -74,6 +74,10 @@ def normalize_repository_reference(config_path: str, raw_path: str) -> str:
         raise OpenQuakeConfigError("dependency path must be non-empty")
     if any(ord(char) < 32 for char in candidate):
         raise OpenQuakeConfigError("dependency path contains control characters")
+    if "%" in candidate or "$" in candidate:
+        raise OpenQuakeConfigError(
+            "dependency path contains unsupported interpolation or placeholder syntax"
+        )
     if "\\" in candidate or ":" in candidate or "?" in candidate or "#" in candidate:
         raise OpenQuakeConfigError("dependency path is not a plain POSIX repository path")
     if candidate.startswith("/"):
@@ -114,7 +118,8 @@ def extract_openquake_config_references(
     accept whitespace-separated file lists. Other file-valued options are
     single-path inputs. Mapping-valued file options are deliberately rejected
     until a concrete public consumer requires them and tests can freeze their
-    semantics.
+    semantics. OpenQuake interpolation and special placeholder syntax are also
+    deliberately rejected instead of being reimplemented here.
 
     Empty file options declare no dependency here; whether a scientific
     workflow requires a particular input is a separate contract.
