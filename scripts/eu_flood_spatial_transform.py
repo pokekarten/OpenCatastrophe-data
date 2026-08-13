@@ -20,7 +20,7 @@ from scripts.eu_flood_exposure_semantic import CensusCell, HazardSupport
 
 SOURCE_CRS = "EPSG:4326"
 TARGET_CRS = "EPSG:3035"
-TRANSFORM_CONFIG_ID = "eu_flood_spatial_a1_epsg4326_to_epsg3035_v1"
+TRANSFORM_CONFIG_ID = "eu_flood_spatial_a1_epsg4326_to_epsg3035_v2"
 FRACTION_TOLERANCE = 1e-9
 SOURCE_SEGMENT_MAX_DEGREES = 1e-4
 
@@ -52,6 +52,7 @@ def transform_metadata() -> dict[str, object]:
         "allow_ballpark": False,
         "only_best": True,
         "fraction_tolerance": format(FRACTION_TOLERANCE, ".1e"),
+        "source_segment_max_degrees": format(SOURCE_SEGMENT_MAX_DEGREES, ".1e"),
         "input_kind": "fixture",
         "scientific_role": "test_fixture",
     }
