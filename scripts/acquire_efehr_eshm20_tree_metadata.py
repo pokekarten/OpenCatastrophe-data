@@ -207,8 +207,8 @@ def _next_page(response: Any, *, current_page: int, item_count: int) -> int | No
     if not raw_next.isdigit():
         raise EfehrAcquisitionError("EFEHR tree next-page header is malformed")
     next_page = int(raw_next)
-    if next_page <= current_page or next_page > MAX_TREE_PAGES:
-        raise EfehrAcquisitionError("EFEHR tree pagination left the bounded sequence")
+    if next_page != current_page + 1 or next_page > MAX_TREE_PAGES:
+        raise EfehrAcquisitionError("EFEHR tree pagination left the contiguous bounded sequence")
     return next_page
 
 
