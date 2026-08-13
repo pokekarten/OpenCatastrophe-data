@@ -16,14 +16,8 @@ RESULT_SCHEMA_VERSION = "oc-action-result-v1"
 ACQUISITION_RECEIPT_ACTION = "acquisition_receipt"
 DWD_METADATA_RECEIPT_ACTION = "dwd_metadata_receipt"
 EFEHR_README_RECEIPT_ACTION = "efehr_readme_receipt"
-EFEHR_ESHM20_TREE_METADATA_ACTION = "efehr_eshm20_tree_metadata"
 NETWORK_ACQUISITION_ACTIONS = frozenset(
-    {
-        ACQUISITION_RECEIPT_ACTION,
-        DWD_METADATA_RECEIPT_ACTION,
-        EFEHR_README_RECEIPT_ACTION,
-        EFEHR_ESHM20_TREE_METADATA_ACTION,
-    }
+    {ACQUISITION_RECEIPT_ACTION, DWD_METADATA_RECEIPT_ACTION, EFEHR_README_RECEIPT_ACTION}
 )
 GIT_SHA_RE = re.compile(r"^[a-f0-9]{40}$")
 DIGEST_RE = re.compile(r"^[a-f0-9]{64}$")
@@ -44,7 +38,7 @@ def semantic_request_id(request: dict[str, Any], execution_sha: str, repository:
     cannot be reused across repositories or materially different protocol code.
     Each closed network acquisition action also requires its semantic target to
     equal the trusted execution commit. The action itself participates in the
-    identity, keeping measurement, station metadata and closed EFEHR operations
+    identity, keeping measurement, station-metadata and EFEHR README receipts
     distinct without introducing a caller-controlled network target.
     """
 
