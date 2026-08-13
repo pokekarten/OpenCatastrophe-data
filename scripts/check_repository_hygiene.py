@@ -137,6 +137,14 @@ def check_file(path: Path, *, git_mode: str | None = None) -> list[str]:
         problems.append(f"tracked file exceeds {MAX_TRACKED_BYTES} bytes")
         return problems
     content = path.read_bytes()
+    if content:
+        try:
+            content.decode("utf-8", errors="strict")
+        except UnicodeDecodeError:
+            pass
+        else:
+            if not content.endswith(b"\n"):
+                problems.append("tracked UTF-8 text file is missing final newline")
     for label, pattern in {
         **SECRET_PATTERNS,
         **LOCAL_PATH_PATTERNS,

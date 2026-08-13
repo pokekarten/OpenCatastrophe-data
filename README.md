@@ -35,6 +35,7 @@ No LLM, MCP host, IDE extension, paid API or hidden service is required to valid
 ## Repository map
 
 - `landscape/` — broad discovery registry of potentially useful sources; `sources*.json` is canonical machine-readable data and paired `sources*.md` files are generated human-readable views. Entries are explicitly not admissions.
+- `access/` — validated source-access contracts and deterministic inventory/projection views that record machine-access boundaries, authentication/rights state, probe status and implementation decisions; they do not by themselves authorize acquisition, admission or publication.
 - `manifests/` — accepted machine-readable source/admission records.
 - `docs/source-reviews/` — accepted source-specific human-readable rights and scientific evidence, bound to admitted manifests.
 - `schemas/` — versioned machine-readable contracts, including model-aware run-evidence profiles.
