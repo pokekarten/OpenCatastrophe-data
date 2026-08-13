@@ -65,6 +65,34 @@ class EuFloodSpatialTransformTests(unittest.TestCase):
         self.assertLess(abs(Decimal(row["hazard_support_missing"])), Decimal("0.000001"))
         self.assertGreater(Decimal(row["depth_gt_1_le_3m"]), Decimal("99.999999"))
 
+    def test_one_hazard_polygon_spans_multiple_census_cells_without_double_counting(self) -> None:
+        full = self.source_box(11.50, 48.10, 11.52, 48.12)
+        left_source = self.source_box(11.50, 48.10, 11.51, 48.12)
+        right_source = self.source_box(11.51, 48.10, 11.52, 48.12)
+        support = mod.SpatialHazardSupport("wet", full, depth_m="2")
+        left = mod.build_spatial_census_cell(
+            cell_id="A",
+            population="100",
+            census_geometry_epsg3035=self.target(left_source),
+            aoi_geometry_epsg3035=self.target(left_source),
+            supports=(support,),
+        )
+        right = mod.build_spatial_census_cell(
+            cell_id="B",
+            population="150",
+            census_geometry_epsg3035=self.target(right_source),
+            aoi_geometry_epsg3035=self.target(right_source),
+            supports=(support,),
+        )
+        result = aggregate_cells([left, right])
+        rows = {row["cell_id"]: row for row in result["cells"]}
+        self.assertLess(abs(Decimal(rows["A"]["hazard_support_missing"])), Decimal("0.000001"))
+        self.assertLess(abs(Decimal(rows["B"]["hazard_support_missing"])), Decimal("0.000001"))
+        wet_total = sum(Decimal(row["depth_gt_1_le_3m"]) for row in rows.values())
+        self.assertLess(abs(wet_total - Decimal("250")), Decimal("0.000001"))
+        source_total = sum(Decimal(row["source_population"]) for row in rows.values())
+        self.assertEqual(source_total, Decimal("250"))
+
     def test_split_support_and_order_invariance(self) -> None:
         full = self.source_box(11.50, 48.10, 11.52, 48.12)
         left = self.source_box(11.50, 48.10, 11.51, 48.12)
