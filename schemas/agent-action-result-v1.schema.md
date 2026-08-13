@@ -18,7 +18,7 @@ Change the canonical JSON Schema and run `python scripts/schema_reference.py --w
 
 Portable closed result receipt for the owner-authorized trusted-main Agent Action Dispatch control plane. scripts/validate_agent_action_result.py is authoritative for exact Python scalar types, UTC ordering, acquisition-receipt identity and cross-field checks.
 
-**Executable authority note:** request_validation records strict validation/dedup state. acquisition_receipt phase is shared by two closed network actions: measurement acquisition_receipt for Issue 162 and dwd_metadata_receipt for Issue 211. Both always require external_bytes_persisted=false. The metadata receipt proves byte/member/family provenance only and keeps temporal coverage unverified.
+**Executable authority note:** request_validation records strict validation/dedup state. acquisition_receipt phase is shared by three closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, and efehr_readme_receipt for Issue 298. All require external_bytes_persisted=false. The EFEHR README receipt proves bounded transport and immutable byte identity only; it does not establish scientific fitness, model-use eligibility or publication authorization.
 
 ## Contract structure
 
@@ -32,7 +32,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 #### `action` — **required**
 
-**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt"]`
+**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt"]`
 
 #### `dataset_id` — **required**
 
@@ -117,6 +117,38 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### Branch 2
 
 **Constraints:** `$ref`=`#/$defs/dwdMetadataReceipt`
+
+###### `ledger_scan_complete` — **required**
+
+**Constraints:** `const`=`true`
+
+###### `prior_result_reused` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `request_validated` — **required**
+
+**Constraints:** `const`=`true`
+
+###### Branch 4
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `request_validated`, `ledger_scan_complete`, `prior_result_reused`, `efehr_readme_receipt`
+
+###### Properties
+
+###### `efehr_readme_receipt` — **required**
+
+###### anyOf
+
+###### Branch 1
+
+**Constraints:** type=`null`
+
+###### Branch 2
+
+**Constraints:** `$ref`=`#/$defs/efehrReadmeReceipt`
 
 ###### `ledger_scan_complete` — **required**
 
@@ -392,6 +424,94 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`unverified`
 
+#### `efehrReadmeReceipt`
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `schema_version`, `operation_id`, `release_tag`, `tag_api_url`, `source_issue`, `dataset_id`, `provider_host`, `project_id`, `project_path`, `commit_sha`, `repository_path`, `requested_url`, `final_url`, `retrieved_at`, `byte_count`, `sha256`, `content_type`, `etag`, `external_bytes_persisted`, `publication_authorized`
+
+##### Properties
+
+###### `byte_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`1`; `maximum`=`1048576`
+
+###### `commit_sha` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^[a-f0-9]{40}$`
+
+###### `content_type` — **required**
+
+**Constraints:** type=`string | null`; `maxLength`=`512`
+
+###### `dataset_id` — **required**
+
+**Constraints:** `const`=`efehr.esrm20.european-exposure-model.v1.0`
+
+###### `etag` — **required**
+
+**Constraints:** type=`string | null`; `maxLength`=`512`
+
+###### `external_bytes_persisted` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `final_url` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^https://gitlab\.seismo\.ethz\.ch/api/v4/projects/186/repository/files/_exposure_models%2FReadMe_Exposure_Model_Format\.txt/raw\?ref=[a-f0-9]{40}$`
+
+###### `operation_id` — **required**
+
+**Constraints:** `const`=`esrm20-exposure-format-readme-v1`
+
+###### `project_id` — **required**
+
+**Constraints:** `const`=`186`
+
+###### `project_path` — **required**
+
+**Constraints:** `const`=`efehr/esrm20_exposure`
+
+###### `provider_host` — **required**
+
+**Constraints:** `const`=`gitlab.seismo.ethz.ch`
+
+###### `publication_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `release_tag` — **required**
+
+**Constraints:** `const`=`v1.0`
+
+###### `repository_path` — **required**
+
+**Constraints:** `const`=`_exposure_models/ReadMe_Exposure_Model_Format.txt`
+
+###### `requested_url` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^https://gitlab\.seismo\.ethz\.ch/api/v4/projects/186/repository/files/_exposure_models%2FReadMe_Exposure_Model_Format\.txt/raw\?ref=[a-f0-9]{40}$`
+
+###### `retrieved_at` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`
+
+###### `schema_version` — **required**
+
+**Constraints:** `const`=`oc-efehr-trusted-acquisition-v1`
+
+###### `sha256` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^[a-f0-9]{64}$`
+
+###### `source_issue` — **required**
+
+**Constraints:** `const`=`282`
+
+###### `tag_api_url` — **required**
+
+**Constraints:** `const`=`https://gitlab.seismo.ethz.ch/api/v4/projects/186/repository/tags/v1.0`
+
 ### allOf
 
 #### Branch 1
@@ -429,6 +549,12 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### not
 
 **Required here:** `dwd_metadata_receipt`
+
+###### Branch 3
+
+###### not
+
+**Required here:** `efehr_readme_receipt`
 
 #### Branch 2
 
@@ -590,7 +716,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### `action`
 
-**Constraints:** `enum`=`["acquisition_receipt","dwd_metadata_receipt"]`
+**Constraints:** `enum`=`["acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt"]`
 
 ###### `duplicate_result_comment_id`
 
@@ -674,6 +800,42 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`object (implicit)`
 
+**Required here:** `phase`, `action`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_readme_receipt`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `dataset_id`
+
+**Constraints:** `const`=`efehr.esrm20.european-exposure-model.v1.0`
+
+###### `evidence`
+
+**Required here:** `efehr_readme_receipt`
+
+###### `source_issue`
+
+**Constraints:** `const`=`298`
+
+#### Branch 9
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
 **Required here:** `phase`, `action`, `status`
 
 ###### Properties
@@ -710,7 +872,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 9
+#### Branch 10
 
 ##### if
 
@@ -752,7 +914,49 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 10
+#### Branch 11
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`, `status`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_readme_receipt`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+###### `status` — **required**
+
+**Constraints:** `const`=`pass`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `evidence`
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `efehr_readme_receipt`
+
+**Constraints:** `$ref`=`#/$defs/efehrReadmeReceipt`
+
+###### `failure_class`
+
+**Constraints:** type=`null`
+
+#### Branch 12
 
 ##### if
 
@@ -794,7 +998,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 11
+#### Branch 13
 
 ##### if
 
@@ -829,6 +1033,48 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### Properties
 
 ###### `dwd_metadata_receipt`
+
+**Constraints:** type=`null`
+
+###### `failure_class`
+
+**Constraints:** `const`=`acquisition_failed`
+
+#### Branch 14
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`, `status`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_readme_receipt`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+###### `status` — **required**
+
+**Constraints:** `const`=`blocked`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `evidence`
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `efehr_readme_receipt`
 
 **Constraints:** type=`null`
 
