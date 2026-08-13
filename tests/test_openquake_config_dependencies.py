@@ -92,6 +92,12 @@ ordinary_setting = ../Ignored/not_a_dependency.txt
                 with self.assertRaises(OpenQuakeConfigError):
                     normalize_repository_reference(CONFIG_PATH, path)
 
+    def test_ambiguous_non_file_forms_are_rejected(self) -> None:
+        for path in (".", "directory/", "one.xml,two.xml"):
+            with self.subTest(path=path):
+                with self.assertRaisesRegex(OpenQuakeConfigError, "ambiguous or not file-like"):
+                    normalize_repository_reference(CONFIG_PATH, path)
+
     def test_noncanonical_config_path_is_rejected(self) -> None:
         for path in (
             "Configuration_files/../example.ini",
