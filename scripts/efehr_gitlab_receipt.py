@@ -48,7 +48,7 @@ PROJECTS: dict[int, dict[str, Any]] = {
     },
     269: {
         "project_path": "efehr/esrm20",
-        "issues": frozenset({283}),
+        "issues": frozenset({283, 284}),
         "datasets": frozenset({"efehr.esrm20.risk-inputs.v1.0"}),
     },
 }
@@ -63,6 +63,11 @@ EXACT_PATHS: dict[tuple[int, int], frozenset[str]] = {
     (283, 269): frozenset(
         {
             "Vulnerability/esrm20_exposure_vulnerability_mapping.csv",
+        }
+    ),
+    (284, 269): frozenset(
+        {
+            "Vs30/Site_model_Kosovo.xml",
         }
     ),
 }
@@ -114,7 +119,7 @@ def validate_target(
     repository_path: str,
 ) -> ArtifactTarget:
     """Validate one immutable P0 EFEHR target and return its canonical identity."""
-    if type(source_issue) is not int or source_issue not in {281, 282, 283}:
+    if type(source_issue) is not int or source_issue not in {281, 282, 283, 284}:
         raise EfehrReceiptError("source_issue is outside the P0 EFEHR allow-list")
     if type(dataset_id) is not str or not SAFE_DATASET_RE.fullmatch(dataset_id):
         raise EfehrReceiptError("dataset_id is invalid")
