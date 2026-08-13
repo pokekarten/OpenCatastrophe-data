@@ -160,8 +160,10 @@ class OpenQuakeSourceModelLogicTreeDependencyTests(unittest.TestCase):
         relevant = branch_set("sourceModel", (("b1", "a.xml"),))
         cases = (
             f"<foo><logicTree>{relevant}</logicTree></foo>",
+            f"<nrml>{relevant}</nrml>",
             f"<nrml><wrapper><logicTree>{relevant}</logicTree></wrapper></nrml>",
             f"<nrml><logicTree><wrapper>{relevant}</wrapper></logicTree></nrml>",
+            f"<nrml><logicTree>{relevant}</logicTree>{relevant}</nrml>",
         )
         for xml in cases:
             with self.subTest(xml=xml):
@@ -169,6 +171,29 @@ class OpenQuakeSourceModelLogicTreeDependencyTests(unittest.TestCase):
                     extract_source_model_logic_tree_dependencies(
                         xml, logic_tree_path=TREE
                     )
+
+    def test_relevant_branch_set_rejects_unexpected_direct_child(self) -> None:
+        xml = wrap(
+            '<logicTreeBranchSet uncertaintyType="sourceModel">'
+            '<logicTreeBranch branchID="b1">'
+            '<uncertaintyModel>a.xml</uncertaintyModel>'
+            '</logicTreeBranch>'
+            '<unexpected />'
+            '</logicTreeBranchSet>'
+        )
+        with self.assertRaisesRegex(OpenQuakeLogicTreeError, "unsupported direct child"):
+            extract_source_model_logic_tree_dependencies(xml, logic_tree_path=TREE)
+
+    def test_legacy_branching_level_rejects_multiple_branch_sets(self) -> None:
+        first = branch_set("sourceModel", (("b1", "a.xml"),), branch_set_id="one")
+        second = branch_set("extendModel", (("b2", "b.xml"),), branch_set_id="two")
+        xml = wrap(
+            '<logicTreeBranchingLevel branchingLevelID="bl1">'
+            f"{first}{second}"
+            '</logicTreeBranchingLevel>'
+        )
+        with self.assertRaisesRegex(OpenQuakeLogicTreeError, "exactly one direct"):
+            extract_source_model_logic_tree_dependencies(xml, logic_tree_path=TREE)
 
     def test_duplicate_raw_and_normalized_dependencies_fail_closed(self) -> None:
         duplicate = wrap(branch_set("sourceModel", (("b1", "a.xml a.xml"),)))
