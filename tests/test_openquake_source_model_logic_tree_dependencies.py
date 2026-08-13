@@ -172,6 +172,18 @@ class OpenQuakeSourceModelLogicTreeDependencyTests(unittest.TestCase):
                         xml, logic_tree_path=TREE
                     )
 
+    def test_branch_set_requires_uncertainty_type(self) -> None:
+        xml = wrap(
+            '<logicTreeBranchSet branchSetID="missing-type">'
+            '<logicTreeBranch branchID="b1">'
+            '<uncertaintyModel>a.xml</uncertaintyModel>'
+            '<uncertaintyWeight>1</uncertaintyWeight>'
+            '</logicTreeBranch>'
+            '</logicTreeBranchSet>'
+        )
+        with self.assertRaisesRegex(OpenQuakeLogicTreeError, "uncertaintyType"):
+            extract_source_model_logic_tree_dependencies(xml, logic_tree_path=TREE)
+
     def test_relevant_branch_set_rejects_unexpected_direct_child(self) -> None:
         xml = wrap(
             '<logicTreeBranchSet uncertaintyType="sourceModel">'
