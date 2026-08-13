@@ -38,7 +38,7 @@ _MULTI_FILE_OPTIONS_3_14 = frozenset(
 
 
 def _contains_unsupported_placeholder(value: str) -> bool:
-    return "%(" in value or "${" in value
+    return "%" in value or "${" in value
 
 
 def _is_file_option(option: str, value: str) -> bool:
