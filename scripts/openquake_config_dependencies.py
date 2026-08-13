@@ -76,6 +76,8 @@ def normalize_repository_reference(config_path: str, raw_path: str) -> str:
         raise OpenQuakeConfigError("dependency path is not a plain POSIX repository path")
     if candidate.startswith("/"):
         raise OpenQuakeConfigError("dependency path must be repository-relative")
+    if candidate in {".", ".."} or candidate.endswith("/") or "," in candidate:
+        raise OpenQuakeConfigError("dependency path is ambiguous or not file-like")
 
     parent = posixpath.dirname(canonical_config_path)
     resolved = posixpath.normpath(posixpath.join(parent, candidate))
