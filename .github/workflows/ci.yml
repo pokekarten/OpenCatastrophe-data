@@ -19,6 +19,7 @@ concurrency:
 jobs:
   check:
     name: Python ${{ matrix.python-version }}
+    needs: [eu-flood-spatial]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     strategy:
@@ -124,7 +125,7 @@ jobs:
   required:
     name: Required
     if: always()
-    needs: [check, glofas-acquisition, eu-flood-spatial, reuse, dependency-review]
+    needs: [check, glofas-acquisition, reuse, dependency-review]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
@@ -132,12 +133,10 @@ jobs:
         env:
           CHECK_RESULT: ${{ needs.check.result }}
           GLOFAS_ACQUISITION_RESULT: ${{ needs.glofas-acquisition.result }}
-          EU_FLOOD_SPATIAL_RESULT: ${{ needs.eu-flood-spatial.result }}
           REUSE_RESULT: ${{ needs.reuse.result }}
           DEPENDENCY_REVIEW_RESULT: ${{ needs.dependency-review.result }}
         run: |
           test "$CHECK_RESULT" = "success"
           test "$GLOFAS_ACQUISITION_RESULT" = "success"
-          test "$EU_FLOOD_SPATIAL_RESULT" = "success"
           test "$REUSE_RESULT" = "success"
           test "$DEPENDENCY_REVIEW_RESULT" = "success" || test "$DEPENDENCY_REVIEW_RESULT" = "skipped"
