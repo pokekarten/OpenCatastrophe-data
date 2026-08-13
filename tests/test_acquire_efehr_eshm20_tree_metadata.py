@@ -6,6 +6,7 @@ from __future__ import annotations
 import inspect
 import json
 import unittest
+from unittest.mock import patch
 
 from scripts.acquire_efehr_gitlab_receipt import EfehrAcquisitionError
 from scripts.acquire_efehr_eshm20_tree_metadata import (
@@ -145,6 +146,24 @@ class Eshm20TreeMetadataTests(unittest.TestCase):
                         now=lambda: "2026-08-13T21:15:00Z",
                         monotonic=lambda: 0.0,
                     )
+
+    def test_aggregate_metadata_byte_bound_includes_branch_response(self):
+        branch = branch_response()
+        tree = tree_response(TREE_PREFIX + "job.ini")
+        responses = [branch, tree]
+        with patch(
+            "scripts.acquire_efehr_eshm20_tree_metadata.MAX_TOTAL_METADATA_BYTES",
+            len(tree._payload),
+        ):
+            with self.assertRaisesRegex(
+                EfehrAcquisitionError,
+                "aggregate total byte bound",
+            ):
+                acquire_eshm20_tree_metadata(
+                    opener=lambda request, timeout: responses.pop(0),
+                    now=lambda: "2026-08-13T21:15:00Z",
+                    monotonic=lambda: 0.0,
+                )
 
 
 if __name__ == "__main__":
