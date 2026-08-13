@@ -19,6 +19,7 @@ concurrency:
 jobs:
   check:
     name: Python ${{ matrix.python-version }}
+    needs: [eu-flood-spatial]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     strategy:
@@ -62,6 +63,27 @@ jobs:
         run: python -m pip check
       - name: Exercise real NetCDF4 reader with synthetic bytes
         run: python -m unittest tests.test_glofas_v4_uparea_reader -v
+
+  eu-flood-spatial:
+    name: EU flood spatial A1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact workflow ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Install reviewed EU flood spatial dependency set
+        run: python -m pip install --disable-pip-version-check --no-input -r requirements-eu-flood-spatial.txt
+      - name: Verify EU flood spatial dependency consistency
+        run: python -m pip check
+      - name: Exercise synthetic EU flood spatial transform
+        run: python -m unittest tests.test_eu_flood_spatial_transform -v
 
   reuse:
     name: REUSE 6.2.0
