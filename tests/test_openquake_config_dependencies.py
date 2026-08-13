@@ -130,6 +130,29 @@ ordinary_setting = ../Ignored/not_a_dependency.txt
         ):
             extract_openquake_config_references(text, config_path=CONFIG_PATH)
 
+    def test_placeholder_fails_before_input_classification(self) -> None:
+        interpolated_extension = "%" + "(ext)s"
+        mosaic_placeholder = "$" + "{mosaic}/tree.xml"
+        configs = (
+            (
+                "[DEFAULT]\n"
+                "ext = hdf5\n"
+                "[reqv]\n"
+                f"active_crust = ../Hazard/equivalent_distance.{interpolated_extension}\n"
+            ),
+            (
+                "[general]\n"
+                f"ordinary_setting = {mosaic_placeholder}\n"
+            ),
+        )
+        for text in configs:
+            with self.subTest(text=text):
+                with self.assertRaisesRegex(
+                    OpenQuakeConfigError,
+                    "unsupported interpolation or placeholder",
+                ):
+                    extract_openquake_config_references(text, config_path=CONFIG_PATH)
+
     def test_ambiguous_non_file_forms_are_rejected(self) -> None:
         for path in (".", "directory/", "one.xml,two.xml"):
             with self.subTest(path=path):
