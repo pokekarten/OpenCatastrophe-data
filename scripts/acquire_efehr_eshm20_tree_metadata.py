@@ -215,6 +215,7 @@ def _next_page(response: Any, *, current_page: int, item_count: int) -> int | No
 def _inventory_tree(
     commit_sha: str,
     *,
+    branch_bytes: int,
     opener: Any,
     deadline: float,
     monotonic: Any,
@@ -222,7 +223,7 @@ def _inventory_tree(
     entries: dict[str, dict[str, str]] = {}
     page = 1
     seen_pages: set[int] = set()
-    total_bytes = 0
+    tree_bytes = 0
     page_count = 0
 
     while True:
@@ -266,10 +267,10 @@ def _inventory_tree(
                 f"EFEHR tree metadata retrieval failed: {type(exc).__name__}"
             ) from exc
 
-        total_bytes += len(raw)
-        if total_bytes > MAX_TOTAL_METADATA_BYTES:
+        tree_bytes += len(raw)
+        if branch_bytes + tree_bytes > MAX_TOTAL_METADATA_BYTES:
             raise EfehrAcquisitionError(
-                "EFEHR tree metadata exceeded the total byte bound"
+                "EFEHR metadata exceeded the aggregate total byte bound"
             )
         for item in payload:
             entry = _canonical_tree_entry(item)
@@ -288,7 +289,7 @@ def _inventory_tree(
 
     if not entries:
         raise EfehrAcquisitionError("EFEHR selected tree prefix is empty")
-    return tuple(entries[path] for path in sorted(entries)), page_count, total_bytes
+    return tuple(entries[path] for path in sorted(entries)), page_count, tree_bytes
 
 
 def acquire_eshm20_tree_metadata(
@@ -308,6 +309,7 @@ def acquire_eshm20_tree_metadata(
     )
     entries, page_count, tree_bytes = _inventory_tree(
         commit_sha,
+        branch_bytes=branch_bytes,
         opener=open_response,
         deadline=deadline,
         monotonic=monotonic,
