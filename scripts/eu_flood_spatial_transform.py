@@ -22,6 +22,7 @@ SOURCE_CRS = "EPSG:4326"
 TARGET_CRS = "EPSG:3035"
 TRANSFORM_CONFIG_ID = "eu_flood_spatial_a1_epsg4326_to_epsg3035_v1"
 FRACTION_TOLERANCE = 1e-9
+SOURCE_SEGMENT_MAX_DEGREES = 1e-4
 
 
 class SpatialTransformError(ValueError):
@@ -120,6 +121,8 @@ def transform_wgs84_geometry(geometry: BaseGeometry) -> BaseGeometry:
 
     source = _validate_polygonal_geometry(geometry, label="geometry_wgs84")
     _validate_wgs84_coordinates(source)
+    source = shapely.segmentize(source, max_segment_length=SOURCE_SEGMENT_MAX_DEGREES)
+    source = _validate_polygonal_geometry(source, label="geometry_wgs84")
     transformer = _transformer()
 
     def project(x, y):
