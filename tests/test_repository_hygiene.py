@@ -30,6 +30,20 @@ class RepositoryHygieneTests(unittest.TestCase):
         path = self._file()
         self.assertEqual(hygiene.check_file(path, git_mode="100644"), [])
 
+    def test_utf8_text_without_final_newline_is_rejected(self) -> None:
+        path = self._file(b"safe text")
+        self.assertIn(
+            "tracked UTF-8 text file is missing final newline",
+            hygiene.check_file(path, git_mode="100644"),
+        )
+
+    def test_non_utf8_bytes_are_not_subject_to_text_newline_rule(self) -> None:
+        path = self._file(b"\xff")
+        self.assertNotIn(
+            "tracked UTF-8 text file is missing final newline",
+            hygiene.check_file(path, git_mode="100644"),
+        )
+
     def test_every_blocked_directory_is_enforced_by_the_central_policy(self) -> None:
         for segment in hygiene.BLOCKED_SEGMENTS:
             with self.subTest(segment=segment):
