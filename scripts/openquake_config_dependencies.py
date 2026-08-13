@@ -5,6 +5,9 @@
 
 The parser is intentionally narrow: it identifies first-order file references
 without fetching provider bytes or interpreting scientific parameter values.
+Input-option recognition follows the OpenQuake Engine 3.14 ``readinput``
+contract used by the published ESHM20 reference, while path handling is more
+fail-closed for public provenance work.
 """
 
 from __future__ import annotations
@@ -28,16 +31,15 @@ class OpenQuakeConfigReference:
     resolved_path: str
 
 
-_EXPLICIT_FILE_OPTIONS = frozenset({"sites_csv"})
+_INPUT_SUFFIXES = ("_file", "_csv", "_hdf5")
+_MULTI_FILE_OPTIONS_3_14 = frozenset(
+    {"hazard_curves_csv", "site_model_file", "exposure_file"}
+)
 
 
-def _is_file_option(option: str) -> bool:
+def _is_file_option(option: str, value: str) -> bool:
     normalized = option.casefold()
-    return (
-        normalized in _EXPLICIT_FILE_OPTIONS
-        or normalized.endswith("_file")
-        or normalized.endswith("_files")
-    )
+    return normalized.endswith(_INPUT_SUFFIXES) or value.strip().endswith(".hdf5")
 
 
 def _validate_repository_path(path: str, *, label: str) -> str:
@@ -86,6 +88,19 @@ def normalize_repository_reference(config_path: str, raw_path: str) -> str:
     return resolved
 
 
+def _raw_dependency_paths(option: str, value: str) -> tuple[str, ...]:
+    stripped = value.strip()
+    if not stripped:
+        return ()
+    if stripped.startswith("{"):
+        raise OpenQuakeConfigError(
+            f"mapping-valued file option is not supported yet: {option}"
+        )
+    if option in _MULTI_FILE_OPTIONS_3_14:
+        return tuple(stripped.split())
+    return (stripped,)
+
+
 def extract_openquake_config_references(
     config_text: str,
     *,
@@ -93,10 +108,16 @@ def extract_openquake_config_references(
 ) -> tuple[OpenQuakeConfigReference, ...]:
     """Return deterministic first-order file references from OpenQuake INI text.
 
-    Options ending in ``_file`` or ``_files`` and the OpenQuake ``sites_csv``
-    option are treated as file-valued. Multi-file values use one continuation
-    line per path. Empty file options declare no dependency here; whether a
-    scientific workflow requires a particular option is a separate contract.
+    OpenQuake 3.14 treats options ending in ``_file``, ``_csv`` or ``_hdf5``
+    as input paths and also recognizes legacy HDF5-valued parameters. In that
+    release, ``hazard_curves_csv``, ``site_model_file`` and ``exposure_file``
+    accept whitespace-separated file lists. Other file-valued options are
+    single-path inputs. Mapping-valued file options are deliberately rejected
+    until a concrete public consumer requires them and tests can freeze their
+    semantics.
+
+    Empty file options declare no dependency here; whether a scientific
+    workflow requires a particular input is a separate contract.
     """
 
     canonical_config_path = _validate_repository_path(config_path, label="config_path")
@@ -122,26 +143,34 @@ def extract_openquake_config_references(
         raise OpenQuakeConfigError("configuration must contain at least one section")
 
     for option, value in parser.defaults().items():
-        if _is_file_option(option) and value.strip():
+        if _is_file_option(option, value) and value.strip():
             raise OpenQuakeConfigError("file-valued DEFAULT options are not supported")
 
     references: list[OpenQuakeConfigReference] = []
-    seen: set[tuple[str, str, str]] = set()
+    seen_dependencies: set[tuple[str, str, str]] = set()
+    option_sections: dict[str, str] = {}
 
     for section in parser.sections():
         for option, value in parser.items(section, raw=True):
             normalized_option = option.casefold()
-            if not _is_file_option(normalized_option):
+            if not _is_file_option(normalized_option, value):
                 continue
 
-            for raw_path in (line.strip() for line in value.splitlines() if line.strip()):
+            previous_section = option_sections.get(normalized_option)
+            if previous_section is not None and previous_section != section:
+                raise OpenQuakeConfigError(
+                    f"file-valued option {normalized_option} is defined in multiple sections"
+                )
+            option_sections[normalized_option] = section
+
+            for raw_path in _raw_dependency_paths(normalized_option, value):
                 resolved = normalize_repository_reference(canonical_config_path, raw_path)
                 identity = (section, normalized_option, resolved)
-                if identity in seen:
+                if identity in seen_dependencies:
                     raise OpenQuakeConfigError(
                         f"duplicate dependency in [{section}] {normalized_option}: {resolved}"
                     )
-                seen.add(identity)
+                seen_dependencies.add(identity)
                 references.append(
                     OpenQuakeConfigReference(
                         section=section,
