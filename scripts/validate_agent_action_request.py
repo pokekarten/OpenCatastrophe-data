@@ -17,11 +17,19 @@ SCHEMA_VERSION = "oc-action-request-v1"
 SAMPLE_AUDIT_ACTION = "sample_audit"
 ACQUISITION_RECEIPT_ACTION = "acquisition_receipt"
 DWD_METADATA_RECEIPT_ACTION = "dwd_metadata_receipt"
+EFEHR_README_RECEIPT_ACTION = "efehr_readme_receipt"
 ACQUISITION_RECEIPT_ISSUE = 162
 DWD_METADATA_RECEIPT_ISSUE = 211
+EFEHR_README_RECEIPT_ISSUE = 298
 ACQUISITION_RECEIPT_DATASET_ID = "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"
 DWD_METADATA_RECEIPT_DATASET_ID = ACQUISITION_RECEIPT_DATASET_ID
-ALLOWED_ACTIONS = {SAMPLE_AUDIT_ACTION, ACQUISITION_RECEIPT_ACTION, DWD_METADATA_RECEIPT_ACTION}
+EFEHR_README_RECEIPT_DATASET_ID = "efehr.esrm20.european-exposure-model.v1.0"
+ALLOWED_ACTIONS = {
+    SAMPLE_AUDIT_ACTION,
+    ACQUISITION_RECEIPT_ACTION,
+    DWD_METADATA_RECEIPT_ACTION,
+    EFEHR_README_RECEIPT_ACTION,
+}
 REQUIRED_FIELDS = {
     "schema_version",
     "action",
@@ -118,6 +126,11 @@ def validate_request(request: dict[str, Any], *, expected_issue: int | None = No
             raise RequestError("dwd_metadata_receipt is restricted to issue 211")
         if request["dataset_id"] != DWD_METADATA_RECEIPT_DATASET_ID:
             raise RequestError("dwd_metadata_receipt is restricted to the frozen DWD dataset")
+    elif request["action"] == EFEHR_README_RECEIPT_ACTION:
+        if request["issue"] != EFEHR_README_RECEIPT_ISSUE:
+            raise RequestError("efehr_readme_receipt is restricted to issue 298")
+        if request["dataset_id"] != EFEHR_README_RECEIPT_DATASET_ID:
+            raise RequestError("efehr_readme_receipt is restricted to the frozen ESRM20 exposure dataset")
 
     return request
 

@@ -359,13 +359,14 @@ class AgentActionProtocolTests(unittest.TestCase):
         )
         self.assertEqual(
             set(schema["properties"]["action"]["enum"]),
-            {"sample_audit", "acquisition_receipt", "dwd_metadata_receipt"},
+            {"sample_audit", "acquisition_receipt", "dwd_metadata_receipt", "efehr_readme_receipt"},
         )
         self.assertEqual(set(schema["properties"]["status"]["enum"]), {"pass", "duplicate", "blocked"})
         for field in ("repository", "started_at", "finished_at", "evidence"):
             self.assertIn(field, schema["required"])
         self.assertIn("acquisitionReceipt", schema["$defs"])
         self.assertIn("dwdMetadataReceipt", schema["$defs"])
+        self.assertIn("efehrReadmeReceipt", schema["$defs"])
         receipt_schema = schema["$defs"]["acquisitionReceipt"]
         self.assertFalse(receipt_schema["additionalProperties"])
         self.assertEqual(receipt_schema["properties"]["source_issue"], {"const": 162})
@@ -377,6 +378,16 @@ class AgentActionProtocolTests(unittest.TestCase):
         self.assertEqual(metadata_schema["properties"]["temporal_coverage_status"], {"const": "unverified"})
         self.assertEqual(metadata_schema["properties"]["external_bytes_persisted"], {"const": False})
         self.assertEqual(metadata_schema["properties"]["publication_authorized"], {"const": False})
+        efehr_schema = schema["$defs"]["efehrReadmeReceipt"]
+        self.assertFalse(efehr_schema["additionalProperties"])
+        self.assertEqual(efehr_schema["properties"]["source_issue"], {"const": 282})
+        self.assertEqual(efehr_schema["properties"]["project_id"], {"const": 186})
+        self.assertEqual(
+            efehr_schema["properties"]["repository_path"],
+            {"const": "_exposure_models/ReadMe_Exposure_Model_Format.txt"},
+        )
+        self.assertEqual(efehr_schema["properties"]["external_bytes_persisted"], {"const": False})
+        self.assertEqual(efehr_schema["properties"]["publication_authorized"], {"const": False})
         self.assertIn("scripts/validate_agent_action_result.py", schema["description"])
 
     def test_poster_revalidates_receipt_repository_and_posts_only_canonical_body(self) -> None:

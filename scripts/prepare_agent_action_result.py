@@ -5,8 +5,8 @@
 
 Only closed, repository-owned acquisition actions execute provider network work,
 and only after request validation plus a complete duplicate-result ledger scan.
-Each worker owns its exact DWD URL and all transport/archive bounds; requests
-cannot supply network targets.
+Each worker owns its exact provider target and all transport/archive bounds;
+requests cannot supply network targets.
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ from typing import Any, Callable
 try:
     from scripts.acquire_dwd_extreme_wind_receipt import AcquisitionError, acquire
     from scripts.acquire_dwd_metadata_receipt import acquire as acquire_dwd_metadata
+    from scripts.acquire_efehr_gitlab_receipt import EfehrAcquisitionError, acquire_canary
     from scripts.agent_action_protocol import (
         ProtocolError,
         RESULT_SCHEMA_VERSION,
@@ -34,6 +35,7 @@ try:
     from scripts.validate_agent_action_request import (
         ACQUISITION_RECEIPT_ACTION,
         DWD_METADATA_RECEIPT_ACTION,
+        EFEHR_README_RECEIPT_ACTION,
         RequestError,
         extract_request,
         validate_request,
@@ -46,6 +48,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     from acquire_dwd_extreme_wind_receipt import AcquisitionError, acquire
     from acquire_dwd_metadata_receipt import acquire as acquire_dwd_metadata
+    from acquire_efehr_gitlab_receipt import EfehrAcquisitionError, acquire_canary
     from agent_action_protocol import (
         ProtocolError,
         RESULT_SCHEMA_VERSION,
@@ -56,6 +59,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     from validate_agent_action_request import (
         ACQUISITION_RECEIPT_ACTION,
         DWD_METADATA_RECEIPT_ACTION,
+        EFEHR_README_RECEIPT_ACTION,
         RequestError,
         extract_request,
         validate_request,
@@ -69,7 +73,9 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
 API_ROOT = "https://api.github.com"
 PER_PAGE = 100
 MAX_LEDGER_PAGES = 20
-NETWORK_ACTIONS = frozenset({ACQUISITION_RECEIPT_ACTION, DWD_METADATA_RECEIPT_ACTION})
+NETWORK_ACTIONS = frozenset(
+    {ACQUISITION_RECEIPT_ACTION, DWD_METADATA_RECEIPT_ACTION, EFEHR_README_RECEIPT_ACTION}
+)
 
 
 class LedgerError(RuntimeError):
@@ -228,6 +234,8 @@ def _receipt_field(action: str) -> str:
         return "acquisition_receipt"
     if action == DWD_METADATA_RECEIPT_ACTION:
         return "dwd_metadata_receipt"
+    if action == EFEHR_README_RECEIPT_ACTION:
+        return "efehr_readme_receipt"
     raise LedgerError("unsupported closed acquisition action")
 
 
@@ -243,7 +251,7 @@ def build_acquisition_result(
     finished_at: str,
     receipt: dict[str, Any] | None,
 ) -> dict[str, Any]:
-    """Bind one successful or blocked closed DWD acquisition attempt."""
+    """Bind one successful or blocked closed acquisition attempt."""
     status = "pass" if receipt is not None else "blocked"
     receipt_field = _receipt_field(request["action"])
     result = {
@@ -287,6 +295,7 @@ def prepare_completed_result(
     started_at: str,
     acquirer: Callable[[], dict[str, Any]] = acquire,
     metadata_acquirer: Callable[[], dict[str, Any]] = acquire_dwd_metadata,
+    efehr_acquirer: Callable[[], dict[str, Any]] = acquire_canary,
 ) -> dict[str, Any]:
     """Deduplicate first, then execute only one closed allowlisted acquisition action."""
     semantic_id = semantic_request_id(request, execution_sha, repository)
@@ -308,6 +317,8 @@ def prepare_completed_result(
         selected_acquirer = acquirer
     elif request["action"] == DWD_METADATA_RECEIPT_ACTION:
         selected_acquirer = metadata_acquirer
+    elif request["action"] == EFEHR_README_RECEIPT_ACTION:
+        selected_acquirer = efehr_acquirer
     else:
         return build_result(
             request,
@@ -322,7 +333,7 @@ def prepare_completed_result(
 
     try:
         receipt = selected_acquirer()
-    except AcquisitionError as exc:
+    except (AcquisitionError, EfehrAcquisitionError) as exc:
         # The durable result carries only a closed failure class. The trusted
         # workflow log receives the bounded worker diagnostic for operators.
         print(f"acquisition blocked: {exc}", file=sys.stderr)
