@@ -42,20 +42,33 @@ truncation_level = 3
             ],
         )
 
-    def test_recognizes_generic_file_suffix_and_sites_csv(self) -> None:
+    def test_matches_openquake_314_input_suffixes(self) -> None:
         text = """
 [input]
 rupture_model_file = ../Hazard/ruptures.xml
 sites_csv = ../Sites/sites.csv
+model_cache_hdf5 = ../Hazard/cache.hdf5
+source_model_files = ../Ignored/not_an_oq314_input.xml
 ordinary_setting = ../Ignored/not_a_dependency.txt
 """
         references = extract_openquake_config_references(text, config_path=CONFIG_PATH)
         self.assertEqual(
             [(item.option, item.resolved_path) for item in references],
             [
+                ("model_cache_hdf5", "Hazard/cache.hdf5"),
                 ("rupture_model_file", "Hazard/ruptures.xml"),
                 ("sites_csv", "Sites/sites.csv"),
             ],
+        )
+
+    def test_legacy_hdf5_value_is_recognized(self) -> None:
+        references = extract_openquake_config_references(
+            "[reqv]\nactive_crust = ../Hazard/equivalent_distance.hdf5\n",
+            config_path=CONFIG_PATH,
+        )
+        self.assertEqual(
+            [(item.option, item.resolved_path) for item in references],
+            [("active_crust", "Hazard/equivalent_distance.hdf5")],
         )
 
     def test_empty_file_option_declares_no_dependency(self) -> None:
@@ -125,6 +138,27 @@ source_model_logic_tree_file = ../Hazard/one.xml
 source_model_logic_tree_file = ../Hazard/two.xml
 """
         with self.assertRaisesRegex(OpenQuakeConfigError, "invalid INI configuration"):
+            extract_openquake_config_references(text, config_path=CONFIG_PATH)
+
+    def test_file_valued_option_in_multiple_sections_is_rejected(self) -> None:
+        text = """
+[hazard]
+source_model_logic_tree_file = ../Hazard/one.xml
+
+[risk]
+source_model_logic_tree_file = ../Hazard/two.xml
+"""
+        with self.assertRaisesRegex(OpenQuakeConfigError, "defined in multiple sections"):
+            extract_openquake_config_references(text, config_path=CONFIG_PATH)
+
+    def test_generic_file_option_cannot_become_an_implicit_file_list(self) -> None:
+        text = """
+[calculation]
+source_model_logic_tree_file =
+    ../Hazard/one.xml
+    ../Hazard/two.xml
+"""
+        with self.assertRaises(OpenQuakeConfigError):
             extract_openquake_config_references(text, config_path=CONFIG_PATH)
 
     def test_file_valued_default_is_rejected(self) -> None:
