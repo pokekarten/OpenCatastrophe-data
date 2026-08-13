@@ -115,9 +115,12 @@ def _logic_tree_branch_sets(root: ET.Element) -> tuple[ET.Element, ...]:
     if _local_name(root.tag) != "nrml":
         raise OpenQuakeLogicTreeError("logic-tree XML root must be nrml")
 
-    logic_trees = [child for child in list(root) if _local_name(child.tag) == "logicTree"]
+    root_children = list(root)
+    logic_trees = [child for child in root_children if _local_name(child.tag) == "logicTree"]
     if len(logic_trees) != 1:
         raise OpenQuakeLogicTreeError("nrml must contain exactly one direct logicTree")
+    if len(root_children) != 1:
+        raise OpenQuakeLogicTreeError("nrml must not contain direct children outside logicTree")
 
     branch_sets: list[ET.Element] = []
     for child in list(logic_trees[0]):
@@ -205,11 +208,16 @@ def extract_source_model_logic_tree_dependencies(
 
     for branch_set in relevant_sets:
         uncertainty_type = branch_set.attrib["uncertaintyType"]
+        branch_set_children = list(branch_set)
         branches = [
             child
-            for child in list(branch_set)
+            for child in branch_set_children
             if _local_name(child.tag) == "logicTreeBranch"
         ]
+        if len(branches) != len(branch_set_children):
+            raise OpenQuakeLogicTreeError(
+                f"{uncertainty_type} branch set contains an unsupported direct child"
+            )
         if not branches:
             raise OpenQuakeLogicTreeError(
                 f"{uncertainty_type} branch set must contain at least one direct logicTreeBranch"
