@@ -38,6 +38,7 @@ def main() -> int:
         [sys.executable, "-m", "compileall", "-q", "scripts", "tests"],
         [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test*.py", "-v"],
         [sys.executable, "scripts/check_projection_families.py"],
+        [sys.executable, "scripts/check_markdown_links.py"],
         [sys.executable, "scripts/check_repository_hygiene.py"],
         [sys.executable, "scripts/check_license_metadata.py"],
         ["git", "diff", "--check"],
