@@ -132,7 +132,6 @@ def extract_openquake_config_references(
         interpolation=None,
         strict=True,
         empty_lines_in_values=False,
-        inline_comment_prefixes=("#", ";"),
     )
     try:
         parser.read_string(config_text)
