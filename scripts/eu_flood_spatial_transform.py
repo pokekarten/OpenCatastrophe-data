@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import lru_cache
-from math import isfinite
+from math import ceil, hypot, isfinite
 from typing import Sequence
 
 import shapely
@@ -20,9 +20,10 @@ from scripts.eu_flood_exposure_semantic import CensusCell, HazardSupport
 
 SOURCE_CRS = "EPSG:4326"
 TARGET_CRS = "EPSG:3035"
-TRANSFORM_CONFIG_ID = "eu_flood_spatial_a1_epsg4326_to_epsg3035_v2"
+TRANSFORM_CONFIG_ID = "eu_flood_spatial_a1_epsg4326_to_epsg3035_v3"
 FRACTION_TOLERANCE = 1e-9
 SOURCE_SEGMENT_MAX_DEGREES = 1e-4
+MAX_DENSIFIED_SEGMENTS = 200_000
 
 
 class SpatialTransformError(ValueError):
@@ -53,6 +54,7 @@ def transform_metadata() -> dict[str, object]:
         "only_best": True,
         "fraction_tolerance": format(FRACTION_TOLERANCE, ".1e"),
         "source_segment_max_degrees": format(SOURCE_SEGMENT_MAX_DEGREES, ".1e"),
+        "max_densified_segments": MAX_DENSIFIED_SEGMENTS,
         "input_kind": "fixture",
         "scientific_role": "test_fixture",
     }
@@ -117,11 +119,35 @@ def _validate_wgs84_coordinates(geometry: BaseGeometry) -> None:
             raise SpatialTransformError("WGS84 latitude must be in [-90, 90]")
 
 
+def _enforce_densification_budget(geometry: BaseGeometry) -> None:
+    """Reject geometry whose reviewed segmentization policy would be too expensive."""
+
+    polygons = (geometry,) if geometry.geom_type == "Polygon" else tuple(geometry.geoms)
+    estimated_segments = 0
+    for polygon in polygons:
+        rings = (polygon.exterior, *tuple(polygon.interiors))
+        for ring in rings:
+            coordinates = ring.coords
+            for index in range(1, len(coordinates)):
+                x1, y1 = coordinates[index - 1][:2]
+                x2, y2 = coordinates[index][:2]
+                source_length = hypot(float(x2) - float(x1), float(y2) - float(y1))
+                estimated_segments += max(
+                    1,
+                    ceil(source_length / SOURCE_SEGMENT_MAX_DEGREES),
+                )
+                if estimated_segments > MAX_DENSIFIED_SEGMENTS:
+                    raise SpatialTransformError(
+                        "geometry exceeds the pre-transform densification budget"
+                    )
+
+
 def transform_wgs84_geometry(geometry: BaseGeometry) -> BaseGeometry:
     """Transform one synthetic polygon from WGS84 lon/lat into EPSG:3035."""
 
     source = _validate_polygonal_geometry(geometry, label="geometry_wgs84")
     _validate_wgs84_coordinates(source)
+    _enforce_densification_budget(source)
     source = shapely.segmentize(source, max_segment_length=SOURCE_SEGMENT_MAX_DEGREES)
     source = _validate_polygonal_geometry(source, label="geometry_wgs84")
     transformer = _transformer()
