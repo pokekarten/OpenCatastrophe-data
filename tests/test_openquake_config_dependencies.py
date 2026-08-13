@@ -105,6 +105,31 @@ ordinary_setting = ../Ignored/not_a_dependency.txt
                 with self.assertRaises(OpenQuakeConfigError):
                     normalize_repository_reference(CONFIG_PATH, path)
 
+    def test_interpolation_and_special_placeholders_are_rejected(self) -> None:
+        basic_interpolation = "%" + "(base)s/tree.xml"
+        mosaic_placeholder = "$" + "{mosaic}/tree.xml"
+        for path in (basic_interpolation, mosaic_placeholder):
+            with self.subTest(path=path):
+                with self.assertRaisesRegex(
+                    OpenQuakeConfigError,
+                    "unsupported interpolation or placeholder",
+                ):
+                    normalize_repository_reference(CONFIG_PATH, path)
+
+    def test_placeholder_syntax_fails_during_dependency_extraction(self) -> None:
+        placeholder = "%" + "(base)s/tree.xml"
+        text = (
+            "[DEFAULT]\n"
+            "base = ../Hazard\n"
+            "[input]\n"
+            f"source_model_logic_tree_file = {placeholder}\n"
+        )
+        with self.assertRaisesRegex(
+            OpenQuakeConfigError,
+            "unsupported interpolation or placeholder",
+        ):
+            extract_openquake_config_references(text, config_path=CONFIG_PATH)
+
     def test_ambiguous_non_file_forms_are_rejected(self) -> None:
         for path in (".", "directory/", "one.xml,two.xml"):
             with self.subTest(path=path):
