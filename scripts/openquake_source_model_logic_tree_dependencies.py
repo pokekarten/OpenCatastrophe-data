@@ -197,11 +197,13 @@ def extract_source_model_logic_tree_dependencies(
     inventory = _canonical_inventory(repository_inventory)
     root = _parse_xml(xml_text)
 
-    relevant_sets = [
-        element
-        for element in _logic_tree_branch_sets(root)
-        if element.attrib.get("uncertaintyType") in _RELEVANT_UNCERTAINTY_TYPES
-    ]
+    relevant_sets: list[ET.Element] = []
+    for element in _logic_tree_branch_sets(root):
+        uncertainty_type = _nonblank_identifier(
+            element.attrib.get("uncertaintyType"), label="uncertaintyType"
+        )
+        if uncertainty_type in _RELEVANT_UNCERTAINTY_TYPES:
+            relevant_sets.append(element)
 
     path_origins: dict[str, set[LogicTreeDependencyOrigin]] = {}
     seen_branch_ids: set[str] = set()
