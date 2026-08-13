@@ -7,6 +7,7 @@ import importlib.util
 import math
 import unittest
 from decimal import Decimal
+from unittest.mock import patch
 
 SPATIAL_DEPS_AVAILABLE = (
     importlib.util.find_spec("pyproj") is not None
@@ -206,6 +207,13 @@ class EuFloodSpatialTransformTests(unittest.TestCase):
         with self.assertRaises(mod.SpatialTransformError):
             mod.transform_wgs84_geometry(nonfinite)
 
+    def test_densification_budget_rejects_before_segmentize(self) -> None:
+        over_budget = self.source_box(-170, -80, 170, 80)
+        with patch.object(mod.shapely, "segmentize") as segmentize:
+            with self.assertRaisesRegex(mod.SpatialTransformError, "densification budget"):
+                mod.transform_wgs84_geometry(over_budget)
+            segmentize.assert_not_called()
+
     def test_fraction_bounds_and_conservation_are_mechanical(self) -> None:
         source = self.source_box(11.50, 48.10, 11.51, 48.11)
         census = self.target(source)
@@ -247,6 +255,11 @@ class EuFloodSpatialTransformTests(unittest.TestCase):
         self.assertEqual(metadata["axis_order"], "xy_lon_lat_to_easting_northing")
         self.assertFalse(metadata["allow_ballpark"])
         self.assertTrue(metadata["only_best"])
+        self.assertEqual(
+            metadata["source_segment_max_degrees"],
+            format(mod.SOURCE_SEGMENT_MAX_DEGREES, ".1e"),
+        )
+        self.assertEqual(metadata["max_densified_segments"], mod.MAX_DENSIFIED_SEGMENTS)
         self.assertEqual(metadata["input_kind"], "fixture")
         self.assertEqual(metadata["scientific_role"], "test_fixture")
 
