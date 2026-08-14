@@ -72,7 +72,7 @@ def expected_url() -> str:
 
 class Esrm20MappingReceiptTests(unittest.TestCase):
     def test_fixed_worker_hashes_only_the_immutable_mapping_csv(self) -> None:
-        payload = b"taxonomy,vulnerability_id\nCR_LFINF-CDN-H2,CR_LFINF-CDN-H2\n"
+        payload = b"synthetic mapping receipt payload\n"
         url = expected_url()
         calls = []
 
@@ -125,7 +125,7 @@ class Esrm20MappingReceiptTests(unittest.TestCase):
 
     def test_response_identity_and_status_drift_fail_closed(self) -> None:
         url = expected_url()
-        payload = b"a,b\n1,2\n"
+        payload = b"synthetic payload\n"
         for response in (
             FakeResponse(payload, url + "&unexpected=1"),
             FakeResponse(payload, url, status=206),
