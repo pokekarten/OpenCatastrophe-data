@@ -72,6 +72,16 @@ try:
         SOURCE_ISSUE as EFEHR_ESHM20_SOURCE_ISSUE,
         TREE_PREFIX as EFEHR_ESHM20_TREE_PREFIX,
     )
+    from scripts.acquire_efehr_eshm20_root_config_receipt import (
+        COMMIT_SHA as EFEHR_ESHM20_ROOT_CONFIG_COMMIT_SHA,
+        DATASET_ID as EFEHR_ESHM20_ROOT_CONFIG_DATASET_ID,
+        MAX_ROOT_CONFIG_BYTES as EFEHR_ESHM20_ROOT_CONFIG_MAX_BYTES,
+        OPERATION_ID as EFEHR_ESHM20_ROOT_CONFIG_OPERATION_ID,
+        PROJECT_ID as EFEHR_ESHM20_ROOT_CONFIG_PROJECT_ID,
+        REPOSITORY_PATH as EFEHR_ESHM20_ROOT_CONFIG_REPOSITORY_PATH,
+        SCHEMA_VERSION as EFEHR_ESHM20_ROOT_CONFIG_SCHEMA_VERSION,
+        SOURCE_ISSUE as EFEHR_ESHM20_ROOT_CONFIG_SOURCE_ISSUE,
+    )
     from scripts.efehr_gitlab_receipt import (
         PROJECTS as EFEHR_PROJECTS,
         PROVIDER_HOST as EFEHR_PROVIDER_HOST,
@@ -81,6 +91,7 @@ try:
     )
     from scripts.validate_agent_action_request import (
         EFEHR_ESHM20_TREE_METADATA_ISSUE as EFEHR_ESHM20_ACTION_ISSUE,
+        EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE as EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE,
         EFEHR_README_RECEIPT_ISSUE as EFEHR_ACTION_ISSUE,
     )
 except ModuleNotFoundError:  # pragma: no cover - direct script execution path
@@ -141,6 +152,16 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         SOURCE_ISSUE as EFEHR_ESHM20_SOURCE_ISSUE,
         TREE_PREFIX as EFEHR_ESHM20_TREE_PREFIX,
     )
+    from acquire_efehr_eshm20_root_config_receipt import (
+        COMMIT_SHA as EFEHR_ESHM20_ROOT_CONFIG_COMMIT_SHA,
+        DATASET_ID as EFEHR_ESHM20_ROOT_CONFIG_DATASET_ID,
+        MAX_ROOT_CONFIG_BYTES as EFEHR_ESHM20_ROOT_CONFIG_MAX_BYTES,
+        OPERATION_ID as EFEHR_ESHM20_ROOT_CONFIG_OPERATION_ID,
+        PROJECT_ID as EFEHR_ESHM20_ROOT_CONFIG_PROJECT_ID,
+        REPOSITORY_PATH as EFEHR_ESHM20_ROOT_CONFIG_REPOSITORY_PATH,
+        SCHEMA_VERSION as EFEHR_ESHM20_ROOT_CONFIG_SCHEMA_VERSION,
+        SOURCE_ISSUE as EFEHR_ESHM20_ROOT_CONFIG_SOURCE_ISSUE,
+    )
     from efehr_gitlab_receipt import (
         PROJECTS as EFEHR_PROJECTS,
         PROVIDER_HOST as EFEHR_PROVIDER_HOST,
@@ -150,6 +171,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     )
     from validate_agent_action_request import (
         EFEHR_ESHM20_TREE_METADATA_ISSUE as EFEHR_ESHM20_ACTION_ISSUE,
+        EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE as EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE,
         EFEHR_README_RECEIPT_ISSUE as EFEHR_ACTION_ISSUE,
     )
 
@@ -163,8 +185,9 @@ REQUEST_EVIDENCE_FIELDS = {"request_validated", "ledger_scan_complete", "prior_r
 ACQUISITION_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"acquisition_receipt"}
 DWD_METADATA_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"dwd_metadata_receipt"}
 EFEHR_README_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_readme_receipt"}
-EFEHR_ESHM20_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {
-    "efehr_eshm20_tree_metadata"
+EFEHR_ESHM20_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_eshm20_tree_metadata"}
+EFEHR_ESHM20_ROOT_CONFIG_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {
+    "efehr_eshm20_root_config_receipt"
 }
 ACQUISITION_RECEIPT_FIELDS = {
     "schema_version", "dataset_id", "source_issue", "requested_url", "final_url",
@@ -194,9 +217,16 @@ EFEHR_ESHM20_RECEIPT_FIELDS = {
     "tree_entry_count", "metadata_byte_count", "entries",
     "external_bytes_persisted", "publication_authorized",
 }
+EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_FIELDS = {
+    "schema_version", "operation_id", "source_issue", "dataset_id", "provider_host",
+    "project_id", "project_path", "commit_sha", "repository_path", "requested_url",
+    "final_url", "retrieved_at", "byte_count", "sha256", "content_type", "etag",
+    "external_bytes_persisted", "publication_authorized",
+}
 ALLOWED_ACTIONS = {
     "sample_audit", "acquisition_receipt", "dwd_metadata_receipt",
     "efehr_readme_receipt", "efehr_eshm20_tree_metadata",
+    "efehr_eshm20_root_config_receipt",
 }
 ALLOWED_PHASES = {"request_validation", "acquisition_receipt"}
 ALLOWED_STATUSES = {"pass", "duplicate", "blocked"}
@@ -482,22 +512,13 @@ def validate_efehr_eshm20_tree_metadata(receipt: Any) -> dict[str, Any]:
         )
     _utc_second(receipt["retrieved_at"], f"{prefix}.retrieved_at")
     _positive_bounded_int(
-        receipt["tree_page_count"],
-        "tree_page_count",
-        EFEHR_ESHM20_MAX_TREE_PAGES,
-        prefix=prefix,
+        receipt["tree_page_count"], "tree_page_count", EFEHR_ESHM20_MAX_TREE_PAGES, prefix=prefix
     )
     _positive_bounded_int(
-        receipt["tree_entry_count"],
-        "tree_entry_count",
-        EFEHR_ESHM20_MAX_TREE_ENTRIES,
-        prefix=prefix,
+        receipt["tree_entry_count"], "tree_entry_count", EFEHR_ESHM20_MAX_TREE_ENTRIES, prefix=prefix
     )
     _positive_bounded_int(
-        receipt["metadata_byte_count"],
-        "metadata_byte_count",
-        EFEHR_ESHM20_MAX_METADATA_BYTES,
-        prefix=prefix,
+        receipt["metadata_byte_count"], "metadata_byte_count", EFEHR_ESHM20_MAX_METADATA_BYTES, prefix=prefix
     )
     entries = receipt["entries"]
     if type(entries) is not list or len(entries) != receipt["tree_entry_count"]:
@@ -505,9 +526,7 @@ def validate_efehr_eshm20_tree_metadata(receipt: Any) -> dict[str, Any]:
     previous_path: str | None = None
     for entry in entries:
         if type(entry) is not dict or set(entry) != {"path", "type", "id", "mode"}:
-            raise ResultError(
-                f"{prefix}.entries items must contain exactly path/type/id/mode"
-            )
+            raise ResultError(f"{prefix}.entries items must contain exactly path/type/id/mode")
         path = entry["path"]
         if type(path) is not str or not (1 <= len(path) <= 1024):
             raise ResultError(f"{prefix}.entries path must be bounded text")
@@ -532,6 +551,61 @@ def validate_efehr_eshm20_tree_metadata(receipt: Any) -> dict[str, Any]:
     return receipt
 
 
+def validate_efehr_eshm20_root_config_receipt(receipt: Any) -> dict[str, Any]:
+    prefix = "efehr_eshm20_root_config_receipt"
+    if type(receipt) is not dict:
+        raise ResultError(f"{prefix} must be a JSON object")
+    keys = set(receipt)
+    if keys != EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_FIELDS:
+        raise ResultError(
+            f"{prefix} fields mismatch; "
+            f"missing={sorted(EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_FIELDS - keys)}, "
+            f"unexpected={sorted(keys - EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_FIELDS)}"
+        )
+    expected_project_path = str(
+        EFEHR_PROJECTS[EFEHR_ESHM20_ROOT_CONFIG_PROJECT_ID]["project_path"]
+    )
+    exact_values = {
+        "schema_version": EFEHR_ESHM20_ROOT_CONFIG_SCHEMA_VERSION,
+        "operation_id": EFEHR_ESHM20_ROOT_CONFIG_OPERATION_ID,
+        "source_issue": EFEHR_ESHM20_ROOT_CONFIG_SOURCE_ISSUE,
+        "dataset_id": EFEHR_ESHM20_ROOT_CONFIG_DATASET_ID,
+        "provider_host": EFEHR_PROVIDER_HOST,
+        "project_id": EFEHR_ESHM20_ROOT_CONFIG_PROJECT_ID,
+        "project_path": expected_project_path,
+        "commit_sha": EFEHR_ESHM20_ROOT_CONFIG_COMMIT_SHA,
+        "repository_path": EFEHR_ESHM20_ROOT_CONFIG_REPOSITORY_PATH,
+        "external_bytes_persisted": False,
+        "publication_authorized": False,
+    }
+    for field, expected in exact_values.items():
+        if type(receipt[field]) is not type(expected) or receipt[field] != expected:
+            raise ResultError(f"{prefix}.{field} does not match the frozen contract")
+    try:
+        target = validate_efehr_target(
+            source_issue=EFEHR_ESHM20_ROOT_CONFIG_SOURCE_ISSUE,
+            dataset_id=EFEHR_ESHM20_ROOT_CONFIG_DATASET_ID,
+            project_id=EFEHR_ESHM20_ROOT_CONFIG_PROJECT_ID,
+            commit_sha=EFEHR_ESHM20_ROOT_CONFIG_COMMIT_SHA,
+            repository_path=EFEHR_ESHM20_ROOT_CONFIG_REPOSITORY_PATH,
+        )
+        expected_url = efehr_raw_file_api_url(target)
+    except EfehrReceiptError as exc:
+        raise ResultError(f"{prefix} target binding is invalid: {exc}") from exc
+    for field in ("requested_url", "final_url"):
+        if type(receipt[field]) is not str or receipt[field] != expected_url:
+            raise ResultError(f"{prefix}.{field} does not match the frozen immutable target")
+    _utc_second(receipt["retrieved_at"], f"{prefix}.retrieved_at")
+    _positive_bounded_int(
+        receipt["byte_count"], "byte_count", EFEHR_ESHM20_ROOT_CONFIG_MAX_BYTES, prefix=prefix
+    )
+    if type(receipt["sha256"]) is not str or not DIGEST_RE.fullmatch(receipt["sha256"]):
+        raise ResultError(f"{prefix}.sha256 must be a lowercase SHA-256 digest")
+    for field in ("content_type", "etag"):
+        _bounded_header(receipt[field], field, prefix=prefix)
+    return receipt
+
+
 def _validate_request_evidence(evidence: Any) -> dict[str, Any]:
     if type(evidence) is not dict or set(evidence) != REQUEST_EVIDENCE_FIELDS:
         raise ResultError("evidence must be a closed request-validation evidence object")
@@ -549,6 +623,7 @@ def _validate_network_evidence(evidence: Any, *, receipt_field: str) -> dict[str
         "dwd_metadata_receipt": DWD_METADATA_EVIDENCE_FIELDS,
         "efehr_readme_receipt": EFEHR_README_EVIDENCE_FIELDS,
         "efehr_eshm20_tree_metadata": EFEHR_ESHM20_EVIDENCE_FIELDS,
+        "efehr_eshm20_root_config_receipt": EFEHR_ESHM20_ROOT_CONFIG_EVIDENCE_FIELDS,
     }
     expected_fields = expected_by_field.get(receipt_field)
     if expected_fields is None:
@@ -651,11 +726,19 @@ def validate_result(result: dict[str, Any]) -> dict[str, Any]:
             result["source_issue"] != EFEHR_ESHM20_ACTION_ISSUE
             or result["dataset_id"] != EFEHR_ESHM20_DATASET_ID
         ):
-            raise ResultError(
-                "efehr_eshm20_tree_metadata result is outside the frozen issue/dataset boundary"
-            )
+            raise ResultError("efehr_eshm20_tree_metadata result is outside the frozen issue/dataset boundary")
         receipt_field = "efehr_eshm20_tree_metadata"
         receipt_validator = validate_efehr_eshm20_tree_metadata
+    elif action == "efehr_eshm20_root_config_receipt":
+        if (
+            result["source_issue"] != EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE
+            or result["dataset_id"] != EFEHR_ESHM20_ROOT_CONFIG_DATASET_ID
+        ):
+            raise ResultError(
+                "efehr_eshm20_root_config_receipt result is outside the frozen issue/dataset boundary"
+            )
+        receipt_field = "efehr_eshm20_root_config_receipt"
+        receipt_validator = validate_efehr_eshm20_root_config_receipt
     else:
         raise ResultError("acquisition_receipt phase requires a closed network acquisition action")
     evidence = _validate_network_evidence(result["evidence"], receipt_field=receipt_field)
