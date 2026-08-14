@@ -48,12 +48,18 @@ PROJECTS: dict[int, dict[str, Any]] = {
     },
     269: {
         "project_path": "efehr/esrm20",
-        "issues": frozenset({283, 284}),
+        "issues": frozenset({281, 283, 284}),
         "datasets": frozenset({"efehr.esrm20.risk-inputs.v1.0"}),
     },
 }
 
 EXACT_PATHS: dict[tuple[int, int], frozenset[str]] = {
+    (281, 269): frozenset(
+        {
+            "Configuration_files/config_event_hazard_Group1.ini",
+            "Configuration_files/config_event_hazard_Group2.ini",
+        }
+    ),
     (282, 186): frozenset(
         {
             "_exposure_models/Exposure_Model_Kosovo_Res.csv",

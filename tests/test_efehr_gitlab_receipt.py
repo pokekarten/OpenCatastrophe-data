@@ -126,6 +126,54 @@ class EfehrGitlabReceiptTests(unittest.TestCase):
                 repository_path="vulnerability_models/example.csv",
             )
 
+    def test_esrm20_event_hazard_roots_are_exactly_allowlisted_under_issue_281(self) -> None:
+        for path in (
+            "Configuration_files/config_event_hazard_Group1.ini",
+            "Configuration_files/config_event_hazard_Group2.ini",
+        ):
+            with self.subTest(path=path):
+                target = validate_target(
+                    source_issue=281,
+                    dataset_id="efehr.esrm20.risk-inputs.v1.0",
+                    project_id=269,
+                    commit_sha=COMMIT,
+                    repository_path=path,
+                )
+                self.assertEqual(target.project_path, "efehr/esrm20")
+                self.assertEqual(target.repository_path, path)
+                self.assertIn("Configuration_files%2Fconfig_event_hazard_Group", raw_file_api_url(target))
+
+        for path in (
+            "Configuration_files/config_event_hazard_Group3.ini",
+            "Configuration_files/other.ini",
+            "Hazard/gmpe_logic_tree_5br_slope_geology.xml",
+            "Vulnerability/esrm20_exposure_vulnerability_mapping.csv",
+            "Vs30/Site_model_Kosovo.xml",
+        ):
+            with self.subTest(path=path), self.assertRaises(EfehrReceiptError):
+                validate_target(
+                    source_issue=281,
+                    dataset_id="efehr.esrm20.risk-inputs.v1.0",
+                    project_id=269,
+                    commit_sha=COMMIT,
+                    repository_path=path,
+                )
+
+        for mutation in (
+            {"source_issue": 283},
+            {"dataset_id": "efehr.eshm20"},
+            {"project_id": 197},
+        ):
+            base = dict(
+                source_issue=281,
+                dataset_id="efehr.esrm20.risk-inputs.v1.0",
+                project_id=269,
+                commit_sha=COMMIT,
+                repository_path="Configuration_files/config_event_hazard_Group1.ini",
+            )
+            with self.subTest(mutation=mutation), self.assertRaises(EfehrReceiptError):
+                validate_target(**dict(base, **mutation))
+
     def test_eshm20_is_restricted_to_selected_configuration_and_safe_file_types(self) -> None:
         valid = ESHM20_PREFIX + "source_model_logic_tree_eshm20_model_v12e.xml"
         validate_target(
