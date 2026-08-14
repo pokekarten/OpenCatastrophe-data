@@ -121,6 +121,9 @@ class Eshm20RootConfigReceiptTests(unittest.TestCase):
     def test_worker_has_no_caller_controlled_provider_target_surface(self) -> None:
         parameters = set(inspect.signature(acquire_eshm20_root_config_receipt).parameters)
         self.assertEqual(parameters, {"opener", "now", "monotonic"})
+        self.assertEqual(SOURCE_ISSUE, 281)
+        self.assertEqual(DATASET_ID, "efehr.eshm20")
+        self.assertEqual(OPERATION_ID, "eshm20-root-config-v12e-region-main-v1")
         self.assertEqual(COMMIT_SHA, "fbd334de68f85d72669f73fc5a314a113db67317")
         self.assertEqual(PROJECT_ID, 197)
         self.assertEqual(
