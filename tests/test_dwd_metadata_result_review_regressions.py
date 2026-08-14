@@ -58,7 +58,12 @@ class DwdMetadataResultReviewRegressions(unittest.TestCase):
         allowed_actions = matching_rules[0]["then"]["properties"]["action"]["enum"]
         self.assertEqual(
             set(allowed_actions),
-            {"acquisition_receipt", "dwd_metadata_receipt", "efehr_readme_receipt"},
+            {
+                "acquisition_receipt",
+                "dwd_metadata_receipt",
+                "efehr_readme_receipt",
+                "efehr_eshm20_tree_metadata",
+            },
         )
         self.assertNotIn("sample_audit", allowed_actions)
 
