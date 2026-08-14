@@ -18,7 +18,7 @@ Change the canonical JSON Schema and run `python scripts/schema_reference.py --w
 
 Portable closed result receipt for the owner-authorized trusted-main Agent Action Dispatch control plane. scripts/validate_agent_action_result.py is authoritative for exact Python scalar types, UTC ordering, acquisition-receipt identity and cross-field checks.
 
-**Executable authority note:** request_validation records strict validation/dedup state. acquisition_receipt phase is shared by four closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, and efehr_eshm20_tree_metadata for Issue 332. All require external_bytes_persisted=false. EFEHR receipts prove only their bounded transport or repository-metadata identity; they do not establish scientific fitness, model-use eligibility, file-byte identity, completeness outside the selected prefix or publication authorization.
+**Executable authority note:** request_validation records strict validation/dedup state. acquisition_receipt phase is shared by five closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, and efehr_eshm20_root_config_receipt for Issue 335. All require external_bytes_persisted=false. EFEHR receipts prove only their bounded transport, repository-metadata, or fixed-file byte identity; they do not establish scientific fitness, model-use eligibility, completeness outside the selected target or publication authorization.
 
 ## Contract structure
 
@@ -32,7 +32,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 #### `action` — **required**
 
-**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata"]`
+**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt"]`
 
 #### `dataset_id` — **required**
 
@@ -181,6 +181,38 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### Branch 2
 
 **Constraints:** `$ref`=`#/$defs/efehrEshm20TreeMetadata`
+
+###### `ledger_scan_complete` — **required**
+
+**Constraints:** `const`=`true`
+
+###### `prior_result_reused` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `request_validated` — **required**
+
+**Constraints:** `const`=`true`
+
+###### Branch 6
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `request_validated`, `ledger_scan_complete`, `prior_result_reused`, `efehr_eshm20_root_config_receipt`
+
+###### Properties
+
+###### `efehr_eshm20_root_config_receipt` — **required**
+
+###### anyOf
+
+###### Branch 1
+
+**Constraints:** type=`null`
+
+###### Branch 2
+
+**Constraints:** `$ref`=`#/$defs/efehrEshm20RootConfigReceipt`
 
 ###### `ledger_scan_complete` — **required**
 
@@ -456,6 +488,86 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`unverified`
 
+#### `efehrEshm20RootConfigReceipt`
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `schema_version`, `operation_id`, `source_issue`, `dataset_id`, `provider_host`, `project_id`, `project_path`, `commit_sha`, `repository_path`, `requested_url`, `final_url`, `retrieved_at`, `byte_count`, `sha256`, `content_type`, `etag`, `external_bytes_persisted`, `publication_authorized`
+
+##### Properties
+
+###### `byte_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`1`; `maximum`=`1048576`
+
+###### `commit_sha` — **required**
+
+**Constraints:** `const`=`fbd334de68f85d72669f73fc5a314a113db67317`
+
+###### `content_type` — **required**
+
+**Constraints:** type=`string | null`; `maxLength`=`512`
+
+###### `dataset_id` — **required**
+
+**Constraints:** `const`=`efehr.eshm20`
+
+###### `etag` — **required**
+
+**Constraints:** type=`string | null`; `maxLength`=`512`
+
+###### `external_bytes_persisted` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `final_url` — **required**
+
+**Constraints:** `const`=`https://gitlab.seismo.ethz.ch/api/v4/projects/197/repository/files/oq_computational%2Foq_configuration_eshm20_v12e_region_main%2Fconfig_eshm20_v12e_main_region.ini/raw?ref=fbd334de68f85d72669f73fc5a314a113db67317`
+
+###### `operation_id` — **required**
+
+**Constraints:** `const`=`eshm20-root-config-v12e-region-main-v1`
+
+###### `project_id` — **required**
+
+**Constraints:** `const`=`197`
+
+###### `project_path` — **required**
+
+**Constraints:** `const`=`efehr/eshm20`
+
+###### `provider_host` — **required**
+
+**Constraints:** `const`=`gitlab.seismo.ethz.ch`
+
+###### `publication_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `repository_path` — **required**
+
+**Constraints:** `const`=`oq_computational/oq_configuration_eshm20_v12e_region_main/config_eshm20_v12e_main_region.ini`
+
+###### `requested_url` — **required**
+
+**Constraints:** `const`=`https://gitlab.seismo.ethz.ch/api/v4/projects/197/repository/files/oq_computational%2Foq_configuration_eshm20_v12e_region_main%2Fconfig_eshm20_v12e_main_region.ini/raw?ref=fbd334de68f85d72669f73fc5a314a113db67317`
+
+###### `retrieved_at` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`
+
+###### `schema_version` — **required**
+
+**Constraints:** `const`=`oc-efehr-trusted-acquisition-v1`
+
+###### `sha256` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^[a-f0-9]{64}$`
+
+###### `source_issue` — **required**
+
+**Constraints:** `const`=`281`
+
 #### `efehrEshm20TreeMetadata`
 
 **Constraints:** type=`object`; `additionalProperties`=`false`
@@ -694,6 +806,12 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Required here:** `efehr_eshm20_tree_metadata`
 
+###### Branch 5
+
+###### not
+
+**Required here:** `efehr_eshm20_root_config_receipt`
+
 #### Branch 2
 
 ##### if
@@ -854,7 +972,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### `action`
 
-**Constraints:** `enum`=`["acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata"]`
+**Constraints:** `enum`=`["acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt"]`
 
 ###### `duplicate_result_comment_id`
 
@@ -1010,6 +1128,42 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`object (implicit)`
 
+**Required here:** `phase`, `action`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_eshm20_root_config_receipt`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `dataset_id`
+
+**Constraints:** `const`=`efehr.eshm20`
+
+###### `evidence`
+
+**Required here:** `efehr_eshm20_root_config_receipt`
+
+###### `source_issue`
+
+**Constraints:** `const`=`335`
+
+#### Branch 11
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
 **Required here:** `phase`, `action`, `status`
 
 ###### Properties
@@ -1046,7 +1200,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 11
+#### Branch 12
 
 ##### if
 
@@ -1088,7 +1242,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 12
+#### Branch 13
 
 ##### if
 
@@ -1130,7 +1284,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 13
+#### Branch 14
 
 ##### if
 
@@ -1172,7 +1326,49 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 14
+#### Branch 15
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`, `status`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_eshm20_root_config_receipt`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+###### `status` — **required**
+
+**Constraints:** `const`=`pass`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `evidence`
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `efehr_eshm20_root_config_receipt`
+
+**Constraints:** `$ref`=`#/$defs/efehrEshm20RootConfigReceipt`
+
+###### `failure_class`
+
+**Constraints:** type=`null`
+
+#### Branch 16
 
 ##### if
 
@@ -1214,7 +1410,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 15
+#### Branch 17
 
 ##### if
 
@@ -1256,7 +1452,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 16
+#### Branch 18
 
 ##### if
 
@@ -1298,7 +1494,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 17
+#### Branch 19
 
 ##### if
 
@@ -1333,6 +1529,48 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### Properties
 
 ###### `efehr_eshm20_tree_metadata`
+
+**Constraints:** type=`null`
+
+###### `failure_class`
+
+**Constraints:** `const`=`acquisition_failed`
+
+#### Branch 20
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`, `status`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_eshm20_root_config_receipt`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+###### `status` — **required**
+
+**Constraints:** `const`=`blocked`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `evidence`
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `efehr_eshm20_root_config_receipt`
 
 **Constraints:** type=`null`
 

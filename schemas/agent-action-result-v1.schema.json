@@ -3,7 +3,7 @@
   "$id": "urn:opencatastrophe:schema:agent-action-result:1.0.0",
   "title": "OpenCatastrophe Agent Action Result v1",
   "description": "Portable closed result receipt for the owner-authorized trusted-main Agent Action Dispatch control plane. scripts/validate_agent_action_result.py is authoritative for exact Python scalar types, UTC ordering, acquisition-receipt identity and cross-field checks.",
-  "$comment": "request_validation records strict validation/dedup state. acquisition_receipt phase is shared by four closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, and efehr_eshm20_tree_metadata for Issue 332. All require external_bytes_persisted=false. EFEHR receipts prove only their bounded transport or repository-metadata identity; they do not establish scientific fitness, model-use eligibility, file-byte identity, completeness outside the selected prefix or publication authorization.",
+  "$comment": "request_validation records strict validation/dedup state. acquisition_receipt phase is shared by five closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, and efehr_eshm20_root_config_receipt for Issue 335. All require external_bytes_persisted=false. EFEHR receipts prove only their bounded transport, repository-metadata, or fixed-file byte identity; they do not establish scientific fitness, model-use eligibility, completeness outside the selected target or publication authorization.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -15,7 +15,7 @@
     "schema_version": {"const": "oc-action-result-v1"},
     "semantic_request_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "repository": {"type": "string", "pattern": "^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$"},
-    "action": {"enum": ["sample_audit", "acquisition_receipt", "dwd_metadata_receipt", "efehr_readme_receipt", "efehr_eshm20_tree_metadata"]},
+    "action": {"enum": ["sample_audit", "acquisition_receipt", "dwd_metadata_receipt", "efehr_readme_receipt", "efehr_eshm20_tree_metadata", "efehr_eshm20_root_config_receipt"]},
     "source_issue": {"type": "integer", "minimum": 1},
     "source_comment_id": {"type": "integer", "minimum": 1},
     "target_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
@@ -82,6 +82,17 @@
             "ledger_scan_complete": {"const": true},
             "prior_result_reused": {"const": false},
             "efehr_eshm20_tree_metadata": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/efehrEshm20TreeMetadata"}]}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "efehr_eshm20_root_config_receipt"],
+          "properties": {
+            "request_validated": {"const": true},
+            "ledger_scan_complete": {"const": true},
+            "prior_result_reused": {"const": false},
+            "efehr_eshm20_root_config_receipt": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/efehrEshm20RootConfigReceipt"}]}
           }
         }
       ]
@@ -237,6 +248,36 @@
         "external_bytes_persisted": {"const": false},
         "publication_authorized": {"const": false}
       }
+    },
+    "efehrEshm20RootConfigReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version", "operation_id", "source_issue", "dataset_id", "provider_host",
+        "project_id", "project_path", "commit_sha", "repository_path", "requested_url",
+        "final_url", "retrieved_at", "byte_count", "sha256", "content_type", "etag",
+        "external_bytes_persisted", "publication_authorized"
+      ],
+      "properties": {
+        "schema_version": {"const": "oc-efehr-trusted-acquisition-v1"},
+        "operation_id": {"const": "eshm20-root-config-v12e-region-main-v1"},
+        "source_issue": {"const": 281},
+        "dataset_id": {"const": "efehr.eshm20"},
+        "provider_host": {"const": "gitlab.seismo.ethz.ch"},
+        "project_id": {"const": 197},
+        "project_path": {"const": "efehr/eshm20"},
+        "commit_sha": {"const": "fbd334de68f85d72669f73fc5a314a113db67317"},
+        "repository_path": {"const": "oq_computational/oq_configuration_eshm20_v12e_region_main/config_eshm20_v12e_main_region.ini"},
+        "requested_url": {"const": "https://gitlab.seismo.ethz.ch/api/v4/projects/197/repository/files/oq_computational%2Foq_configuration_eshm20_v12e_region_main%2Fconfig_eshm20_v12e_main_region.ini/raw?ref=fbd334de68f85d72669f73fc5a314a113db67317"},
+        "final_url": {"const": "https://gitlab.seismo.ethz.ch/api/v4/projects/197/repository/files/oq_computational%2Foq_configuration_eshm20_v12e_region_main%2Fconfig_eshm20_v12e_main_region.ini/raw?ref=fbd334de68f85d72669f73fc5a314a113db67317"},
+        "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+        "byte_count": {"type": "integer", "minimum": 1, "maximum": 1048576},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "content_type": {"type": ["string", "null"], "maxLength": 512},
+        "etag": {"type": ["string", "null"], "maxLength": 512},
+        "external_bytes_persisted": {"const": false},
+        "publication_authorized": {"const": false}
+      }
     }
   },
   "allOf": [
@@ -247,7 +288,8 @@
           {"not": {"required": ["acquisition_receipt"]}},
           {"not": {"required": ["dwd_metadata_receipt"]}},
           {"not": {"required": ["efehr_readme_receipt"]}},
-          {"not": {"required": ["efehr_eshm20_tree_metadata"]}}
+          {"not": {"required": ["efehr_eshm20_tree_metadata"]}},
+          {"not": {"required": ["efehr_eshm20_root_config_receipt"]}}
         ]}
       }}
     },
@@ -276,7 +318,7 @@
     {
       "if": {"properties": {"phase": {"const": "acquisition_receipt"}}, "required": ["phase"]},
       "then": {"properties": {
-        "action": {"enum": ["acquisition_receipt", "dwd_metadata_receipt", "efehr_readme_receipt", "efehr_eshm20_tree_metadata"]},
+        "action": {"enum": ["acquisition_receipt", "dwd_metadata_receipt", "efehr_readme_receipt", "efehr_eshm20_tree_metadata", "efehr_eshm20_root_config_receipt"]},
         "duplicate_result_comment_id": {"type": "null"}
       }}
     },
@@ -313,6 +355,14 @@
       }}
     },
     {
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_root_config_receipt"}}, "required": ["phase", "action"]},
+      "then": {"properties": {
+        "source_issue": {"const": 335},
+        "dataset_id": {"const": "efehr.eshm20"},
+        "evidence": {"required": ["efehr_eshm20_root_config_receipt"]}
+      }}
+    },
+    {
       "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "acquisition_receipt"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
       "then": {"properties": {
         "evidence": {"properties": {"acquisition_receipt": {"$ref": "#/$defs/acquisitionReceipt"}}},
@@ -341,6 +391,13 @@
       }}
     },
     {
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_root_config_receipt"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
+      "then": {"properties": {
+        "evidence": {"properties": {"efehr_eshm20_root_config_receipt": {"$ref": "#/$defs/efehrEshm20RootConfigReceipt"}}},
+        "failure_class": {"type": "null"}
+      }}
+    },
+    {
       "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "acquisition_receipt"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
       "then": {"properties": {
         "evidence": {"properties": {"acquisition_receipt": {"type": "null"}}},
@@ -365,6 +422,13 @@
       "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_tree_metadata"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
       "then": {"properties": {
         "evidence": {"properties": {"efehr_eshm20_tree_metadata": {"type": "null"}}},
+        "failure_class": {"const": "acquisition_failed"}
+      }}
+    },
+    {
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_root_config_receipt"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
+      "then": {"properties": {
+        "evidence": {"properties": {"efehr_eshm20_root_config_receipt": {"type": "null"}}},
         "failure_class": {"const": "acquisition_failed"}
       }}
     }

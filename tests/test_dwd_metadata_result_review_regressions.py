@@ -63,6 +63,7 @@ class DwdMetadataResultReviewRegressions(unittest.TestCase):
                 "dwd_metadata_receipt",
                 "efehr_readme_receipt",
                 "efehr_eshm20_tree_metadata",
+                "efehr_eshm20_root_config_receipt",
             },
         )
         self.assertNotIn("sample_audit", allowed_actions)
