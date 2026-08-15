@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import csv
 import hashlib
-import inspect
 import io
 import time
 import urllib.error
@@ -70,7 +69,6 @@ FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID = 5301857400
 FIRST_ORDER_RECEIPT_RESULT_COMMENT_ID = 5301858821
 FIRST_ORDER_RECEIPT_RUN_ID = 31880089623
 FIRST_ORDER_RECEIPT_EXECUTION_SHA = "ab66e3e4c58c9b8f18587f1a8a51cf67cf9851b1"
-FIRST_ORDER_RECEIPT_RETRIEVED_AT = "2026-08-15T10:40:15Z"
 INVENTORY_RECEIPT_COMMENT_ID = 5290449064
 MAX_COLUMNS = 128
 MAX_HEADER_UTF8_BYTES = 512
@@ -171,9 +169,11 @@ def _profile_csv_text(text: str) -> dict[str, Any]:
         raise Eshm20SiteModelProfileError("verified site-model CSV contains no data rows")
 
     for index, profile in enumerate(profiles):
-        if minima[index] is not None:
-            profile["numeric_min"] = _canonical_decimal(minima[index])
-            profile["numeric_max"] = _canonical_decimal(maxima[index])  # type: ignore[arg-type]
+        minimum = minima[index]
+        maximum = maxima[index]
+        if minimum is not None and maximum is not None:
+            profile["numeric_min"] = _canonical_decimal(minimum)
+            profile["numeric_max"] = _canonical_decimal(maximum)
 
     return {
         "header": list(header),
@@ -216,7 +216,6 @@ def extract_verified_site_model_profile(payload: bytes) -> dict[str, Any]:
         "first_order_receipt_result_comment_id": FIRST_ORDER_RECEIPT_RESULT_COMMENT_ID,
         "first_order_receipt_run_id": FIRST_ORDER_RECEIPT_RUN_ID,
         "first_order_receipt_execution_sha": FIRST_ORDER_RECEIPT_EXECUTION_SHA,
-        "first_order_receipt_retrieved_at": FIRST_ORDER_RECEIPT_RETRIEVED_AT,
         "profile": profile,
         "schema_interpretation_authorized": False,
         "crs_authorized": False,
