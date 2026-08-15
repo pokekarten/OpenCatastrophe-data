@@ -56,6 +56,20 @@ jobs:
           if prepare.count(old) != 1:
               raise SystemExit('expected exact acquisition failure block once')
           prepare_path.write_text(prepare.replace(old, new), encoding='utf-8')
+
+          anchor = '                "efehr_eshm20_gsim_resource_profile",\n'
+          for test_name in (
+              'tests/test_agent_action_protocol.py',
+              'tests/test_dwd_metadata_result_review_regressions.py',
+          ):
+              test_path = Path(test_name)
+              text = test_path.read_text(encoding='utf-8')
+              if text.count(anchor) != 1:
+                  raise SystemExit(f'expected exactly one explicit acquisition-action anchor in {test_name}')
+              test_path.write_text(
+                  text.replace(anchor, anchor + '                "efehr_kosovo_taxonomy_identity",\n'),
+                  encoding='utf-8',
+              )
           PY
       - name: Layer taxonomy validator over reviewed GMM validator
         run: |
