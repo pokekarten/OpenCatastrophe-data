@@ -187,6 +187,8 @@ def profile_verified_mapping_bytes(raw: bytes) -> dict[str, Any]:
     seen_rows: set[tuple[str, ...]] = set()
     columns: list[list[str]] = [[] for _ in header]
     for row in rows:
+        if all(value == "" for value in row):
+            raise MappingStructureProfileError("verified mapping CSV contains a blank record")
         row_key = tuple(row)
         if row_key in seen_rows:
             raise MappingStructureProfileError("verified mapping CSV contains a duplicate exact record")
