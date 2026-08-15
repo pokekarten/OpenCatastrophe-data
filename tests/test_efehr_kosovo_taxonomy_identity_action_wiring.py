@@ -146,11 +146,18 @@ class KosovoTaxonomyIdentityActionTests(unittest.TestCase):
                 with self.assertRaises(ResultError):
                     result_with(changed)
 
-    def test_validator_rejects_impossible_canonical_artifact_byte_count(self) -> None:
-        changed = receipt()
-        changed["taxonomy_artifact_byte_count"] = taxonomy.EXPECTED_DISTINCT_COUNT * 9 - 1
-        with self.assertRaisesRegex(ResultError, "taxonomy_artifact_byte_count"):
-            result_with(changed)
+    def test_validator_enforces_canonical_artifact_byte_count_bounds(self) -> None:
+        minimum = taxonomy.EXPECTED_DISTINCT_COUNT * 9
+        valid = receipt()
+        valid["taxonomy_artifact_byte_count"] = minimum
+        self.assertEqual(validate_result(result_with(valid)), result_with(valid))
+
+        for value in (minimum - 1, True, taxonomy.exposure.EXPECTED_BYTE_COUNT + 1):
+            with self.subTest(value=value):
+                changed = receipt()
+                changed["taxonomy_artifact_byte_count"] = value
+                with self.assertRaisesRegex(ResultError, "taxonomy_artifact_byte_count"):
+                    result_with(changed)
 
     def test_validator_rejects_literal_value_or_other_extra_field(self) -> None:
         for key, value in (
