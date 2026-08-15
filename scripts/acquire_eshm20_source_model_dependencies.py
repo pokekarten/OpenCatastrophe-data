@@ -55,11 +55,10 @@ except ModuleNotFoundError:  # pragma: no cover - direct script import path
     import openquake_source_model_logic_tree_dependencies as parser
     import verify_eshm20_root_config_dependencies as root_bridge
 
-SCHEMA_VERSION = "oc-eshm20-source-model-dependency-profile-v2"
-
 # Reuse the already-reviewed #361 fixed capability rather than declaring a
 # second provider target. Identity, not merely equal field values, binds this
 # worker to the exact source-model logic-tree object selected by #353/#361.
+_CANONICAL_SCHEMA_VERSION = "oc-eshm20-source-model-dependency-profile-v2"
 _CANONICAL_SOURCE_SPEC = first_order_authority._SOURCE_MODEL_LOGIC_TREE
 _CANONICAL_SOURCE_ISSUE = first_order_authority.SOURCE_ISSUE
 _CANONICAL_CONTROL_ISSUE = 367
@@ -88,6 +87,7 @@ _CANONICAL_FIRST_ORDER_RECEIPT_EXECUTION_SHA = (
 # Public aliases remain reviewable and backwards-compatible, but production
 # authority below comes only from the private canonical bindings after an exact
 # pre-network drift guard.
+SCHEMA_VERSION = _CANONICAL_SCHEMA_VERSION
 SOURCE_ISSUE = _CANONICAL_SOURCE_ISSUE
 CONTROL_ISSUE = _CANONICAL_CONTROL_ISSUE
 DATASET_ID = _CANONICAL_DATASET_ID
@@ -136,6 +136,7 @@ def _require_canonical_target() -> first_order_authority.DependencySpec:
         )
 
     exact_aliases = (
+        (SCHEMA_VERSION, _CANONICAL_SCHEMA_VERSION, "schema version"),
         (SOURCE_ISSUE, _CANONICAL_SOURCE_ISSUE, "source issue"),
         (CONTROL_ISSUE, _CANONICAL_CONTROL_ISSUE, "control issue"),
         (DATASET_ID, _CANONICAL_DATASET_ID, "dataset id"),
@@ -371,7 +372,7 @@ def extract_verified_source_model_dependencies(payload: bytes) -> dict[str, Any]
 
     serialized = _serialize_dependencies(dependencies, inventory=inventory)
     return {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": _CANONICAL_SCHEMA_VERSION,
         "source_issue": _CANONICAL_SOURCE_ISSUE,
         "control_issue": _CANONICAL_CONTROL_ISSUE,
         "dataset_id": _CANONICAL_DATASET_ID,
