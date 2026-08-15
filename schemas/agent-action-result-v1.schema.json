@@ -966,7 +966,14 @@
       }}
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "esrm20_event_hazard_group2_receipt"}, "required": ["phase", "action"]},
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "esrm20_event_hazard_group2_receipt"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
+      "then": {"properties": {
+        "evidence": {"properties": {"esrm20_event_hazard_group2_receipt": {"type": "null"}}},
+        "failure_class": {"const": "acquisition_failed"}
+      }}
+    },
+    {
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_first_order_receipts"}}, "required": ["phase", "action"]},
       "then": {"properties": {
         "source_issue": {"const": 361},
         "dataset_id": {"const": "efehr.eshm20"},
