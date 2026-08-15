@@ -1,0 +1,77 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Temporary taxonomy byte-bound repair
+
+on:
+  push:
+    branches:
+      - agent/363-taxonomy-action-port
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Refresh ancestry onto current main
+        run: |
+          git config user.name 'OpenCatastrophe repair bot'
+          git config user.email '287434260+pokekarten@users.noreply.github.com'
+          git fetch origin main
+          git merge --no-edit origin/main
+
+      - name: Tighten representation-derived byte-count bound
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          validator = Path('scripts/validate_agent_action_result.py')
+          text = validator.read_text(encoding='utf-8')
+          old = '''    artifact_byte_count = receipt["taxonomy_artifact_byte_count"]\n    if type(artifact_byte_count) is not int or not (1 <= artifact_byte_count <= exposure.EXPECTED_BYTE_COUNT):\n        raise ResultError(f"{prefix}.taxonomy_artifact_byte_count is outside bounded policy")\n'''
+          new = '''    artifact_byte_count = receipt["taxonomy_artifact_byte_count"]\n    minimum_artifact_byte_count = _taxonomy.EXPECTED_DISTINCT_COUNT * 9\n    if type(artifact_byte_count) is not int or not (\n        minimum_artifact_byte_count <= artifact_byte_count <= exposure.EXPECTED_BYTE_COUNT\n    ):\n        raise ResultError(f"{prefix}.taxonomy_artifact_byte_count is outside bounded policy")\n'''
+          if text.count(old) != 1:
+              raise SystemExit('validator byte-count anchor not singular')
+          validator.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          schema = Path('schemas/agent-action-result-v1.schema.json')
+          text = schema.read_text(encoding='utf-8')
+          old = '''        "taxonomy_artifact_byte_count": {\n          "type": "integer",\n          "minimum": 1,\n          "maximum": 316789\n        },\n'''
+          new = '''        "taxonomy_artifact_byte_count": {\n          "type": "integer",\n          "minimum": 774,\n          "maximum": 316789\n        },\n'''
+          if text.count(old) != 1:
+              raise SystemExit('schema byte-count anchor not singular')
+          schema.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          tests = Path('tests/test_efehr_kosovo_taxonomy_identity_action_wiring.py')
+          text = tests.read_text(encoding='utf-8')
+          anchor = '''    def test_validator_rejects_identity_and_authority_drift(self) -> None:\n'''
+          addition = '''    def test_validator_enforces_representation_derived_artifact_byte_count(self) -> None:\n        minimum = taxonomy.EXPECTED_DISTINCT_COUNT * 9\n        valid = receipt()\n        valid["taxonomy_artifact_byte_count"] = minimum\n        result = result_with(valid)\n        self.assertEqual(validate_result(result), result)\n\n        for value in (minimum - 1, True, taxonomy.exposure.EXPECTED_BYTE_COUNT + 1):\n            with self.subTest(value=value):\n                changed = receipt()\n                changed["taxonomy_artifact_byte_count"] = value\n                with self.assertRaisesRegex(ResultError, "outside bounded policy"):\n                    result_with(changed)\n\n'''
+          if text.count(anchor) != 1:
+              raise SystemExit('test insertion anchor not singular')
+          tests.write_text(text.replace(anchor, addition + anchor, 1), encoding='utf-8')
+          PY
+
+      - name: Regenerate schema projections and validate final tree
+        run: |
+          python scripts/schema_reference.py --write
+          python -m unittest tests.test_efehr_kosovo_taxonomy_identity_action_wiring
+          python scripts/check_all.py
+          git diff --check
+
+      - name: Remove temporary workflow and publish repaired branch
+        run: |
+          git rm .github/workflows/temp-fix-taxonomy-byte-bound.yml
+          git add scripts/validate_agent_action_result.py \
+                  schemas/agent-action-result-v1.schema.json \
+                  schemas/agent-action-result-v1.schema.md \
+                  tests/test_efehr_kosovo_taxonomy_identity_action_wiring.py
+          git diff --cached --check
+          git commit -m 'Tighten Kosovo taxonomy artifact byte bound'
+          git push origin HEAD:agent/363-taxonomy-action-port
