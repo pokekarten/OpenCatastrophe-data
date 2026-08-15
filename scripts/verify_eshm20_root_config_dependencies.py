@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import stat
 import sys
 from pathlib import Path
@@ -48,50 +49,27 @@ class VerifiedRootConfigError(ValueError):
     """Raised when root bytes cannot be proven identical to the trusted receipt."""
 
 
-def _verify_payload_identity(
-    payload: bytes,
-    *,
-    expected_byte_count: int = EXPECTED_BYTE_COUNT,
-    expected_sha256: str = EXPECTED_SHA256,
-) -> str:
-    """Recompute and verify byte identity before any decoding or parsing."""
+def _verify_payload_identity(payload: bytes) -> str:
+    """Recompute the frozen receipt identity before any decoding or parsing."""
 
     if type(payload) is not bytes:
         raise VerifiedRootConfigError("root payload must be immutable bytes")
-    if type(expected_byte_count) is not int or expected_byte_count < 1:
-        raise VerifiedRootConfigError("expected_byte_count must be a positive integer")
-    if (
-        type(expected_sha256) is not str
-        or len(expected_sha256) != 64
-        or any(char not in "0123456789abcdef" for char in expected_sha256)
-    ):
-        raise VerifiedRootConfigError("expected_sha256 must be a lowercase SHA-256 digest")
-
-    observed_sha256 = hashlib.sha256(payload).hexdigest()
-    if len(payload) != expected_byte_count:
+    if len(payload) != EXPECTED_BYTE_COUNT:
         raise VerifiedRootConfigError(
-            f"root byte count mismatch: observed {len(payload)}, expected {expected_byte_count}"
+            f"root byte count mismatch: observed {len(payload)}, expected {EXPECTED_BYTE_COUNT}"
         )
-    if observed_sha256 != expected_sha256:
+    observed_sha256 = hashlib.sha256(payload).hexdigest()
+    if observed_sha256 != EXPECTED_SHA256:
         raise VerifiedRootConfigError(
-            f"root SHA-256 mismatch: observed {observed_sha256}, expected {expected_sha256}"
+            f"root SHA-256 mismatch: observed {observed_sha256}, expected {EXPECTED_SHA256}"
         )
     return observed_sha256
 
 
-def extract_verified_root_dependencies(
-    payload: bytes,
-    *,
-    expected_byte_count: int = EXPECTED_BYTE_COUNT,
-    expected_sha256: str = EXPECTED_SHA256,
-) -> dict[str, Any]:
-    """Return derived dependency metadata only after exact byte verification."""
+def extract_verified_root_dependencies(payload: bytes) -> dict[str, Any]:
+    """Return derived dependency metadata only after frozen byte verification."""
 
-    observed_sha256 = _verify_payload_identity(
-        payload,
-        expected_byte_count=expected_byte_count,
-        expected_sha256=expected_sha256,
-    )
+    observed_sha256 = _verify_payload_identity(payload)
     try:
         config_text = payload.decode("utf-8", errors="strict")
     except UnicodeDecodeError as exc:
@@ -131,23 +109,56 @@ def extract_verified_root_dependencies(
     }
 
 
+def _file_identity(info: os.stat_result) -> tuple[int, int, int, int, int]:
+    return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+
+
 def _read_regular_file(path: Path) -> bytes:
-    """Read one local regular file without following a symlink."""
+    """Read one bounded regular file while rejecting symlink/path replacement."""
 
     try:
-        info = path.lstat()
+        before = path.lstat()
     except OSError as exc:
         raise VerifiedRootConfigError(f"cannot stat root payload: {type(exc).__name__}") from exc
-    if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode):
+    if stat.S_ISLNK(before.st_mode) or not stat.S_ISREG(before.st_mode):
         raise VerifiedRootConfigError("root payload path must be a non-symlink regular file")
-    if info.st_size != EXPECTED_BYTE_COUNT:
+    if before.st_size != EXPECTED_BYTE_COUNT:
         raise VerifiedRootConfigError(
-            f"root byte count mismatch: observed {info.st_size}, expected {EXPECTED_BYTE_COUNT}"
+            f"root byte count mismatch: observed {before.st_size}, expected {EXPECTED_BYTE_COUNT}"
         )
+
+    flags = os.O_RDONLY
+    flags |= getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
     try:
-        payload = path.read_bytes()
+        fd = os.open(path, flags)
+    except OSError as exc:
+        raise VerifiedRootConfigError(f"cannot open root payload: {type(exc).__name__}") from exc
+    try:
+        opened = os.fstat(fd)
+        if not stat.S_ISREG(opened.st_mode) or _file_identity(opened) != _file_identity(before):
+            raise VerifiedRootConfigError("root payload identity changed before read")
+        chunks: list[bytes] = []
+        remaining = EXPECTED_BYTE_COUNT + 1
+        while remaining:
+            chunk = os.read(fd, min(65536, remaining))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        after = os.fstat(fd)
+        if _file_identity(after) != _file_identity(opened):
+            raise VerifiedRootConfigError("root payload identity changed during read")
     except OSError as exc:
         raise VerifiedRootConfigError(f"cannot read root payload: {type(exc).__name__}") from exc
+    finally:
+        os.close(fd)
+
+    payload = b"".join(chunks)
+    if len(payload) != EXPECTED_BYTE_COUNT:
+        raise VerifiedRootConfigError(
+            f"root byte count mismatch: observed {len(payload)}, expected {EXPECTED_BYTE_COUNT}"
+        )
     return payload
 
 
