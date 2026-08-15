@@ -104,6 +104,44 @@ class Eshm20FirstOrderDependencyReceiptTests(unittest.TestCase):
             "bd146a19fa4a1dc85b616288ec6d24946336a483",
         )
 
+    def test_constructed_dependency_specs_are_rejected_before_provider_work(self) -> None:
+        equal_but_distinct_site_spec = worker._DependencySpec(
+            operation_id=worker._SITE_MODEL.operation_id,
+            scientific_role=worker._SITE_MODEL.scientific_role,
+            repository_path=worker._SITE_MODEL.repository_path,
+            parent_section=worker._SITE_MODEL.parent_section,
+            parent_option=worker._SITE_MODEL.parent_option,
+            accept=worker._SITE_MODEL.accept,
+        )
+        forged_fourth_spec = worker._DependencySpec(
+            operation_id="forged-fourth-first-order-receipt-v1",
+            scientific_role="forged_first_order_dependency",
+            repository_path=worker.ROOT_REPOSITORY_PATH,
+            parent_section="calculation",
+            parent_option="forged_file",
+            accept="text/plain,application/octet-stream;q=0.8",
+        )
+
+        for spec in (equal_but_distinct_site_spec, forged_fourth_spec):
+            calls: list[tuple[object, object]] = []
+
+            def opener(request, timeout):
+                calls.append((request, timeout))
+                raise AssertionError("unauthorized spec reached provider transport")
+
+            with self.subTest(repository_path=spec.repository_path):
+                with self.assertRaisesRegex(
+                    EfehrAcquisitionError,
+                    "not an authorized first-order target",
+                ):
+                    worker._acquire_dependency_receipt(
+                        spec,
+                        opener=opener,
+                        now=lambda: RETRIEVED_AT,
+                        monotonic=lambda: 0.0,
+                    )
+                self.assertEqual(calls, [])
+
     def test_fixed_workers_receipt_only_the_three_root_proven_paths(self) -> None:
         payloads = {
             worker._SITE_MODEL.repository_path: b"lon,lat,vs30\n1,2,760\n",
