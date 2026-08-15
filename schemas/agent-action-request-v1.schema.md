@@ -32,7 +32,7 @@ Portable structural view of the closed request contract for a bounded trusted-ma
 
 #### `action` — **required**
 
-**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity","esrm20_exposure_vulnerability_mapping_receipt"]`
+**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity","esrm20_exposure_vulnerability_mapping_receipt","efehr_eshm20_source_model_dependencies"]`
 
 #### `dataset_id` — **required**
 
@@ -447,3 +447,31 @@ Portable structural view of the closed request contract for a bounded trusted-ma
 ###### `issue`
 
 **Constraints:** `const`=`376`
+
+#### Branch 15
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `action`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_eshm20_source_model_dependencies`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `dataset_id`
+
+**Constraints:** `const`=`efehr.eshm20`
+
+###### `issue`
+
+**Constraints:** `const`=`397`

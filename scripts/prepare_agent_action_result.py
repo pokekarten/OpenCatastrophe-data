@@ -48,6 +48,10 @@ try:
         Eshm20GsimResourceProfileError,
         acquire_eshm20_gsim_resource_profile,
     )
+    from scripts.acquire_eshm20_source_model_dependencies import (
+        Eshm20SourceModelDependencyError,
+        acquire_eshm20_source_model_dependencies,
+    )
     from scripts.acquire_efehr_esrm20_event_hazard_receipts import (
         acquire_event_hazard_group1_receipt,
         acquire_event_hazard_group2_receipt,
@@ -72,6 +76,7 @@ try:
         EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,
         EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION,
         EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION,
+        EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ACTION,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
         ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION,
         ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION,
@@ -111,6 +116,10 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         Eshm20GsimResourceProfileError,
         acquire_eshm20_gsim_resource_profile,
     )
+    from acquire_eshm20_source_model_dependencies import (
+        Eshm20SourceModelDependencyError,
+        acquire_eshm20_source_model_dependencies,
+    )
     from acquire_efehr_esrm20_event_hazard_receipts import (
         acquire_event_hazard_group1_receipt,
         acquire_event_hazard_group2_receipt,
@@ -135,6 +144,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,
         EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION,
         EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION,
+        EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ACTION,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
         ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION,
         ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION,
@@ -164,6 +174,7 @@ NETWORK_ACTIONS = frozenset(
         EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,
         EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION,
         EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION,
+        EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ACTION,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
         ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION,
         ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION,
@@ -369,6 +380,8 @@ def _receipt_field(action: str) -> str:
         return "efehr_eshm20_first_order_receipts"
     if action == EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION:
         return "efehr_eshm20_gsim_resource_profile"
+    if action == EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ACTION:
+        return "efehr_eshm20_source_model_dependencies"
     if action == EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION:
         return "efehr_eshm20_root_config_receipt"
     if action == ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION:
@@ -444,6 +457,7 @@ def prepare_completed_result(
     eshm20_root_dependency_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_root_dependencies,
     eshm20_first_order_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_first_order_receipts,
     eshm20_gsim_resource_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_gsim_resource_profile,
+    eshm20_source_model_dependencies_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_source_model_dependencies,
     event_hazard_group1_acquirer: Callable[[], dict[str, Any]] = acquire_event_hazard_group1_receipt,
     event_hazard_group2_acquirer: Callable[[], dict[str, Any]] = acquire_event_hazard_group2_receipt,
 ) -> dict[str, Any]:
@@ -485,6 +499,8 @@ def prepare_completed_result(
         selected_acquirer = eshm20_first_order_acquirer
     elif request["action"] == EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION:
         selected_acquirer = eshm20_gsim_resource_acquirer
+    elif request["action"] == EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ACTION:
+        selected_acquirer = eshm20_source_model_dependencies_acquirer
     elif request["action"] == EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION:
         selected_acquirer = eshm20_root_config_acquirer
     elif request["action"] == ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION:
@@ -524,6 +540,17 @@ def prepare_completed_result(
                 )
             receipt = dict(receipt)
             receipt["profiled_at"] = utc_now()
+        elif request["action"] == EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ACTION:
+            if type(receipt) is not dict:
+                raise Eshm20SourceModelDependencyError(
+                    "ESHM20 source-model dependency worker returned a non-object result"
+                )
+            receipt = dict(receipt)
+            receipt["dependency_receipt_authorized"] = False
+            receipt["model_use_authorized"] = False
+    except Eshm20SourceModelDependencyError:
+        print("acquisition blocked: ESHM20 source-model dependency acquisition failed closed", file=sys.stderr)
+        receipt = None
     except KosovoTaxonomyAcquisitionError:
         # The taxonomy worker may surface provider text. Keep both the durable
         # result and the trusted workflow log value-free for this action.
