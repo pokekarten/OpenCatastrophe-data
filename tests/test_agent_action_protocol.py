@@ -369,6 +369,7 @@ class AgentActionProtocolTests(unittest.TestCase):
                 "efehr_kosovo_exposure_profile",
                 "efehr_eshm20_root_dependency_profile",
                 "efehr_eshm20_first_order_receipts",
+                "efehr_eshm20_gsim_resource_profile",
                 "efehr_eshm20_root_config_receipt",
                 "esrm20_event_hazard_group1_receipt",
                 "esrm20_event_hazard_group2_receipt",
