@@ -264,7 +264,7 @@ Portable structural view of the closed request contract for a bounded trusted-ma
 
 ###### `action` — **required**
 
-**Constraints:** `const`=`esrm20_event_hazard_group1_receipt`
+**Constraints:** `const`=`efehr_kosovo_taxonomy_identity`
 
 ##### then
 
@@ -274,11 +274,11 @@ Portable structural view of the closed request contract for a bounded trusted-ma
 
 ###### `dataset_id`
 
-**Constraints:** `const`=`efehr.esrm20.risk-inputs.v1.0`
+**Constraints:** `const`=`efehr.esrm20.european-exposure-model.v1.0`
 
 ###### `issue`
 
-**Constraints:** `const`=`346`
+**Constraints:** `const`=`363`
 
 #### Branch 9
 
@@ -292,7 +292,7 @@ Portable structural view of the closed request contract for a bounded trusted-ma
 
 ###### `action` — **required**
 
-**Constraints:** `const`=`esrm20_event_hazard_group2_receipt`
+**Constraints:** `const`=`esrm20_event_hazard_group1_receipt`
 
 ##### then
 
@@ -320,6 +320,34 @@ Portable structural view of the closed request contract for a bounded trusted-ma
 
 ###### `action` — **required**
 
+**Constraints:** `const`=`esrm20_event_hazard_group2_receipt`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `dataset_id`
+
+**Constraints:** `const`=`efehr.esrm20.risk-inputs.v1.0`
+
+###### `issue`
+
+**Constraints:** `const`=`346`
+
+#### Branch 11
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `action`
+
+###### Properties
+
+###### `action` — **required**
+
 **Constraints:** `const`=`efehr_eshm20_root_dependency_profile`
 
 ##### then
@@ -336,7 +364,7 @@ Portable structural view of the closed request contract for a bounded trusted-ma
 
 **Constraints:** `const`=`353`
 
-#### Branch 11
+#### Branch 12
 
 ##### if
 

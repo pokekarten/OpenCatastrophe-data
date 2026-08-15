@@ -66,6 +66,13 @@
       }}
     },
     {
+      "if": {"properties": {"action": {"const": "efehr_kosovo_taxonomy_identity"}}, "required": ["action"]},
+      "then": {"properties": {
+        "issue": {"const": 363},
+        "dataset_id": {"const": "efehr.esrm20.european-exposure-model.v1.0"}
+      }}
+    },
+    {
       "if": {"properties": {"action": {"const": "esrm20_event_hazard_group1_receipt"}}, "required": ["action"]},
       "then": {"properties": {
         "issue": {"const": 346},
