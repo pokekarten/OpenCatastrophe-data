@@ -105,6 +105,7 @@ try:
         SOURCE_ISSUE as ESRM20_EVENT_HAZARD_SOURCE_ISSUE,
     )
     from scripts import profile_efehr_kosovo_exposure as EFEHR_KOSOVO_PROFILE
+    from scripts import acquire_eshm20_root_dependencies as EFEHR_ESHM20_ROOT_DEPENDENCY
     from scripts.efehr_gitlab_receipt import (
         PROJECTS as EFEHR_PROJECTS,
         PROVIDER_HOST as EFEHR_PROVIDER_HOST,
@@ -116,6 +117,7 @@ try:
         EFEHR_ESHM20_TREE_METADATA_ISSUE as EFEHR_ESHM20_ACTION_ISSUE,
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ISSUE as EFEHR_KOSOVO_ACTION_ISSUE,
         EFEHR_KOSOVO_EXPOSURE_PROFILE_ISSUE as EFEHR_KOSOVO_PROFILE_ACTION_ISSUE,
+        EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ISSUE as EFEHR_ESHM20_ROOT_DEPENDENCY_ACTION_ISSUE,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE as EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE,
         EFEHR_README_RECEIPT_ISSUE as EFEHR_ACTION_ISSUE,
         ESRM20_EVENT_HAZARD_RECEIPT_ISSUE as ESRM20_EVENT_HAZARD_ACTION_ISSUE,
@@ -211,6 +213,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         SOURCE_ISSUE as ESRM20_EVENT_HAZARD_SOURCE_ISSUE,
     )
     import profile_efehr_kosovo_exposure as EFEHR_KOSOVO_PROFILE
+    import acquire_eshm20_root_dependencies as EFEHR_ESHM20_ROOT_DEPENDENCY
     from efehr_gitlab_receipt import (
         PROJECTS as EFEHR_PROJECTS,
         PROVIDER_HOST as EFEHR_PROVIDER_HOST,
@@ -222,6 +225,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         EFEHR_ESHM20_TREE_METADATA_ISSUE as EFEHR_ESHM20_ACTION_ISSUE,
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ISSUE as EFEHR_KOSOVO_ACTION_ISSUE,
         EFEHR_KOSOVO_EXPOSURE_PROFILE_ISSUE as EFEHR_KOSOVO_PROFILE_ACTION_ISSUE,
+        EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ISSUE as EFEHR_ESHM20_ROOT_DEPENDENCY_ACTION_ISSUE,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE as EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE,
         EFEHR_README_RECEIPT_ISSUE as EFEHR_ACTION_ISSUE,
         ESRM20_EVENT_HAZARD_RECEIPT_ISSUE as ESRM20_EVENT_HAZARD_ACTION_ISSUE,
@@ -240,6 +244,9 @@ EFEHR_README_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_readme_receipt"
 EFEHR_ESHM20_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_eshm20_tree_metadata"}
 EFEHR_KOSOVO_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_kosovo_exposure_receipt"}
 EFEHR_KOSOVO_PROFILE_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_kosovo_exposure_profile"}
+EFEHR_ESHM20_ROOT_DEPENDENCY_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {
+    "efehr_eshm20_root_dependency_profile"
+}
 EFEHR_ESHM20_ROOT_CONFIG_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {
     "efehr_eshm20_root_config_receipt"
 }
@@ -291,11 +298,18 @@ EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_FIELDS = {
     "external_bytes_persisted", "publication_authorized",
 }
 ESRM20_EVENT_HAZARD_RECEIPT_FIELDS = EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_FIELDS
+EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_FIELDS = {
+    "schema_version", "source_issue", "dataset_id", "project_id", "project_path",
+    "commit_sha", "repository_path", "byte_count", "sha256", "parser",
+    "inventory_receipt_comment_id", "root_receipt_comment_id", "root_receipt_run_id",
+    "root_receipt_execution_sha", "dependencies", "dependency_inventory_authorized",
+    "profiled_at", "external_bytes_persisted", "publication_authorized",
+}
 ALLOWED_ACTIONS = {
     "sample_audit", "acquisition_receipt", "dwd_metadata_receipt",
     "efehr_readme_receipt", "efehr_eshm20_tree_metadata",
     "efehr_kosovo_exposure_receipt", "efehr_kosovo_exposure_profile",
-    "efehr_eshm20_root_config_receipt",
+    "efehr_eshm20_root_dependency_profile", "efehr_eshm20_root_config_receipt",
     "esrm20_event_hazard_group1_receipt", "esrm20_event_hazard_group2_receipt",
 }
 ALLOWED_PHASES = {"request_validation", "acquisition_receipt"}
@@ -920,6 +934,69 @@ def validate_esrm20_event_hazard_receipt(receipt: Any, *, group: int) -> dict[st
     return receipt
 
 
+def validate_efehr_eshm20_root_dependency_profile(profile: Any) -> dict[str, Any]:
+    prefix = "efehr_eshm20_root_dependency_profile"
+    if type(profile) is not dict:
+        raise ResultError(f"{prefix} must be a JSON object")
+    keys = set(profile)
+    if keys != EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_FIELDS:
+        raise ResultError(
+            f"{prefix} fields mismatch; missing={sorted(EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_FIELDS - keys)}, "
+            f"unexpected={sorted(keys - EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_FIELDS)}"
+        )
+    bridge = EFEHR_ESHM20_ROOT_DEPENDENCY.bridge
+    exact_values = {
+        "schema_version": bridge.SCHEMA_VERSION,
+        "source_issue": bridge.SOURCE_ISSUE,
+        "dataset_id": bridge.DATASET_ID,
+        "project_id": bridge.PROJECT_ID,
+        "project_path": bridge.PROJECT_PATH,
+        "commit_sha": bridge.COMMIT_SHA,
+        "repository_path": bridge.REPOSITORY_PATH,
+        "byte_count": bridge.EXPECTED_BYTE_COUNT,
+        "sha256": bridge.EXPECTED_SHA256,
+        "parser": bridge.PARSER_ID,
+        "inventory_receipt_comment_id": bridge.INVENTORY_RECEIPT_COMMENT_ID,
+        "root_receipt_comment_id": EFEHR_ESHM20_ROOT_DEPENDENCY.ROOT_RECEIPT_COMMENT_ID,
+        "root_receipt_run_id": EFEHR_ESHM20_ROOT_DEPENDENCY.ROOT_RECEIPT_RUN_ID,
+        "root_receipt_execution_sha": EFEHR_ESHM20_ROOT_DEPENDENCY.ROOT_RECEIPT_EXECUTION_SHA,
+        "dependency_inventory_authorized": False,
+        "external_bytes_persisted": False,
+        "publication_authorized": False,
+    }
+    for field, expected in exact_values.items():
+        if type(profile[field]) is not type(expected) or profile[field] != expected:
+            raise ResultError(f"{prefix}.{field} does not match the frozen contract")
+    _utc_second(profile["profiled_at"], f"{prefix}.profiled_at")
+    dependencies = profile["dependencies"]
+    if type(dependencies) is not list or not (1 <= len(dependencies) <= 128):
+        raise ResultError(f"{prefix}.dependencies must be a non-empty bounded list")
+    previous_key: tuple[str, str, str, str] | None = None
+    seen_resolved: set[str] = set()
+    for dependency in dependencies:
+        if type(dependency) is not dict or set(dependency) != {"section", "option", "raw_path", "resolved_path"}:
+            raise ResultError(f"{prefix}.dependencies items have a closed four-field shape")
+        values: dict[str, str] = {}
+        for field in ("section", "option", "raw_path", "resolved_path"):
+            value = dependency[field]
+            if type(value) is not str or not (1 <= len(value) <= 512):
+                raise ResultError(f"{prefix}.dependencies.{field} must be bounded text")
+            if any(ord(character) < 32 or ord(character) == 127 for character in value):
+                raise ResultError(f"{prefix}.dependencies.{field} contains control characters")
+            values[field] = value
+        resolved = _validate_safe_text_path(values["resolved_path"], f"{prefix}.dependencies.resolved_path")
+        if resolved not in bridge.FROZEN_INVENTORY_PATHS:
+            raise ResultError(f"{prefix}.dependencies resolved path is outside the frozen inventory")
+        if resolved in seen_resolved:
+            raise ResultError(f"{prefix}.dependencies resolved paths must be unique")
+        seen_resolved.add(resolved)
+        key = (resolved, values["section"], values["option"], values["raw_path"])
+        if previous_key is not None and key <= previous_key:
+            raise ResultError(f"{prefix}.dependencies must be strictly sorted")
+        previous_key = key
+    return profile
+
+
 def _validate_request_evidence(evidence: Any) -> dict[str, Any]:
     if type(evidence) is not dict or set(evidence) != REQUEST_EVIDENCE_FIELDS:
         raise ResultError("evidence must be a closed request-validation evidence object")
@@ -939,6 +1016,7 @@ def _validate_network_evidence(evidence: Any, *, receipt_field: str) -> dict[str
         "efehr_eshm20_tree_metadata": EFEHR_ESHM20_EVIDENCE_FIELDS,
         "efehr_kosovo_exposure_receipt": EFEHR_KOSOVO_EVIDENCE_FIELDS,
         "efehr_kosovo_exposure_profile": EFEHR_KOSOVO_PROFILE_EVIDENCE_FIELDS,
+        "efehr_eshm20_root_dependency_profile": EFEHR_ESHM20_ROOT_DEPENDENCY_EVIDENCE_FIELDS,
         "efehr_eshm20_root_config_receipt": EFEHR_ESHM20_ROOT_CONFIG_EVIDENCE_FIELDS,
         "esrm20_event_hazard_group1_receipt": ESRM20_EVENT_HAZARD_GROUP1_EVIDENCE_FIELDS,
         "esrm20_event_hazard_group2_receipt": ESRM20_EVENT_HAZARD_GROUP2_EVIDENCE_FIELDS,
@@ -1067,6 +1145,16 @@ def validate_result(result: dict[str, Any]) -> dict[str, Any]:
             )
         receipt_field = "efehr_kosovo_exposure_profile"
         receipt_validator = validate_efehr_kosovo_exposure_profile
+    elif action == "efehr_eshm20_root_dependency_profile":
+        if (
+            result["source_issue"] != EFEHR_ESHM20_ROOT_DEPENDENCY_ACTION_ISSUE
+            or result["dataset_id"] != EFEHR_ESHM20_ROOT_DEPENDENCY.bridge.DATASET_ID
+        ):
+            raise ResultError(
+                "efehr_eshm20_root_dependency_profile result is outside the frozen issue/dataset boundary"
+            )
+        receipt_field = "efehr_eshm20_root_dependency_profile"
+        receipt_validator = validate_efehr_eshm20_root_dependency_profile
     elif action == "efehr_eshm20_root_config_receipt":
         if (
             result["source_issue"] != EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE
@@ -1109,7 +1197,12 @@ def validate_result(result: dict[str, Any]) -> dict[str, Any]:
             raise ResultError("successful acquisition_receipt cannot carry failure_class")
         receipt = receipt_validator(evidence[receipt_field])
         timestamp_field = (
-            "profiled_at" if receipt_field == "efehr_kosovo_exposure_profile" else "retrieved_at"
+            "profiled_at"
+            if receipt_field in {
+                "efehr_kosovo_exposure_profile",
+                "efehr_eshm20_root_dependency_profile",
+            }
+            else "retrieved_at"
         )
         observed_at = _utc_second(receipt[timestamp_field], f"{receipt_field}.{timestamp_field}")
         if observed_at < started or observed_at > finished:
