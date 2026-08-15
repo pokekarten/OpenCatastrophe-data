@@ -82,6 +82,7 @@ class Eshm20FirstOrderReceiptWorkerTests(unittest.TestCase):
                 for parameter in signature.parameters.values()
             )
         )
+        self.assertIs(worker.DEPENDENCIES, worker._CANONICAL_DEPENDENCIES)
 
     def test_receipts_exact_three_paths_in_frozen_order_with_parent_binding(self) -> None:
         captured: list[tuple[str, float]] = []
@@ -191,19 +192,80 @@ class Eshm20FirstOrderReceiptWorkerTests(unittest.TestCase):
         self.assertIn("OSError", str(caught.exception))
         self.assertNotIn("PROVIDER_SECRET_BODY", str(caught.exception))
 
-    def test_internal_duplicate_or_reordered_frozen_set_fails_before_network(self) -> None:
+    def test_internal_duplicate_reordered_clone_or_replacement_set_fails_before_network(self) -> None:
         duplicate = (
             worker.DEPENDENCIES[0],
             worker.DEPENDENCIES[0],
             worker.DEPENDENCIES[2],
         )
         reordered = tuple(reversed(worker.DEPENDENCIES))
-        for mutated in (duplicate, reordered):
+        equal_clones = tuple(
+            worker.DependencySpec(
+                repository_path=spec.repository_path,
+                parent_section=spec.parent_section,
+                parent_option=spec.parent_option,
+            )
+            for spec in worker.DEPENDENCIES
+        )
+        forged_root = worker.DependencySpec(
+            repository_path=(
+                "oq_computational/oq_configuration_eshm20_v12e_region_main/"
+                "config_eshm20_v12e_main_region.ini"
+            ),
+            parent_section="calculation",
+            parent_option="forged_file",
+        )
+        replacement = tuple(
+            sorted(
+                (forged_root, worker._GMPE_LOGIC_TREE, worker._SOURCE_MODEL_LOGIC_TREE),
+                key=lambda spec: spec.repository_path,
+            )
+        )
+        self.assertEqual(len({spec.repository_path for spec in replacement}), 3)
+        self.assertEqual(
+            tuple(spec.repository_path for spec in replacement),
+            tuple(sorted(spec.repository_path for spec in replacement)),
+        )
+
+        for mutated in (duplicate, reordered, equal_clones, replacement):
             with self.subTest(mutated=mutated):
                 opener = mock.Mock()
                 with mock.patch.object(worker, "DEPENDENCIES", mutated):
-                    with self.assertRaises(worker.Eshm20FirstOrderReceiptError):
+                    with self.assertRaisesRegex(
+                        worker.Eshm20FirstOrderReceiptError,
+                        "dependency set identity is invalid",
+                    ):
                         worker.acquire_eshm20_first_order_receipts(opener=opener)
+                opener.assert_not_called()
+
+    def test_direct_helper_rejects_constructed_spec_before_network(self) -> None:
+        equal_clone = worker.DependencySpec(
+            repository_path=worker._SITE_MODEL.repository_path,
+            parent_section=worker._SITE_MODEL.parent_section,
+            parent_option=worker._SITE_MODEL.parent_option,
+        )
+        forged_fourth = worker.DependencySpec(
+            repository_path=(
+                "oq_computational/oq_configuration_eshm20_v12e_region_main/"
+                "config_eshm20_v12e_main_region.ini"
+            ),
+            parent_section="calculation",
+            parent_option="forged_file",
+        )
+        for spec in (equal_clone, forged_fourth):
+            opener = mock.Mock()
+            with self.subTest(spec=spec):
+                with self.assertRaisesRegex(
+                    worker.Eshm20FirstOrderReceiptError,
+                    "not an authorized fixed target",
+                ):
+                    worker._receipt_one(
+                        spec,
+                        deadline=100.0,
+                        opener=opener,
+                        now=lambda: "2026-08-15T10:10:01Z",
+                        monotonic=lambda: 10.0,
+                    )
                 opener.assert_not_called()
 
     def test_worker_rejects_widened_nested_receipt_authority(self) -> None:
