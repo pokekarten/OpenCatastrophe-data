@@ -26,17 +26,23 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retrieved at:** 2026-08-10T00:55:00Z
 
-**Retrieval query or filters:** Metadata-only source review of the tagged v1.0 European Exposure Model. No GitLab archive, model file or derived exposure bytes were acquired. Any later raw-artifact proposal must identify exact tagged files/archive bytes and hash them independently.
+**Retrieval query or filters:** Metadata review plus exact bounded Kosovo-residential evidence. The selected source object is EFEHR project 186, immutable commit 900433ada80fbb424c0976c34d72eeef97bab1af, path _exposure_models/Exposure_Model_Kosovo_Res.csv, 316789 bytes, SHA-256 4d562ad4925c527d518834b8dcd39a083cfd3b87b622031a84958ae7b4d8c5ea. Provider bytes remain outside Git. The only repository-approved derivative is the exact canonical TAXONOMY-set byte stream identified below.
 
 **Access class:** open
 
 **Modelling layer:** exposure
 
-**Intended use:** Open European building-stock exposure reference for catastrophe-risk research, exposure-contract testing and future hazard/vulnerability linkage. It is not an insured portfolio, policy file, claims dataset or direct statement of total insured value.
+**Intended use:** Open European building-stock exposure reference for catastrophe-risk research, exposure-contract testing and hazard/vulnerability linkage. The approved derived scope is limited to the exact Kosovo-residential source TAXONOMY set identity; this is not an insured portfolio, policy file, claims dataset or direct statement of total insured value.
 
 **Raw artifact:** `null`
 
-**Derived artifact:** `null`
+## Derived artifact
+
+**Byte size:** `2666`
+
+**Sha256:** d5e6fe4e32489cdd2222b6b3facfd30937e2af61bbcf0ecead37ccf97202a945
+
+**Storage reference:** external://derived/efehr.esrm20.european-exposure-model.v1.0/kosovo-residential/taxonomy/oc-taxonomy-u64be-utf8-sorted-v1
 
 ## Licensing
 
@@ -48,19 +54,19 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Terms reference:** <https://www.efehr.org/Earthquake-risk/data-access/>
 
-**Terms reviewed at:** 2026-08-10T00:55:00Z
+**Terms reviewed at:** 2026-08-15T17:34:00Z
 
-**Terms version or date:** EFEHR seismic-risk data-access and download guidance reviewed 2026-08-10; European Exposure Model release v1.0
+**Terms version or date:** EFEHR seismic-risk data-access and download guidance rechecked 2026-08-15; European Exposure Model release v1.0
 
 **Terms content sha256:** `null`
 
 **Commercial use status:** allowed
 
-**Attribution requirements:** Provide CC BY 4.0 attribution and cite the applicable ESRM20 scientific products, including the ESRM20 technical report and exposure-model documentation when the exposure data are used.
+**Attribution requirements:** Provide CC BY 4.0 attribution and cite the applicable ESRM20 scientific products, including the ESRM20 technical report and exposure-model documentation when the exposure data or the approved Kosovo TAXONOMY-set derivative are used. Identify the derivative as an exact no-normalization extraction from the v1.0 Kosovo-residential exposure object.
 
 **Share alike or derivative requirements:** CC BY 4.0 permits adaptation without a share-alike requirement; attribution, licence reference and indication of changes remain required.
 
-**Notes:** EFEHR states that scientific risk data available through risk.EFEHR and its public GitLab are licensed under CC BY 4.0. EFEHR's download guidance explicitly permits private, scientific, commercial and non-commercial use with adequate citation. This is an engineering rights assessment, not legal advice.
+**Notes:** EFEHR states that scientific risk data available through risk.EFEHR and its public GitLab are licensed under CC BY 4.0. EFEHR's current download guidance explicitly permits private, scientific, commercial and non-commercial use with adequate citation. The repository approval in this manifest is intentionally narrower than the source-rights ceiling: it covers only the exact canonical Kosovo TAXONOMY-set derivative, not the raw exposure CSV. This is an engineering rights assessment, not legal advice.
 
 ## Redistribution
 
@@ -68,7 +74,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Scope:** raw
 
-**Conditions:** Source rights support redistribution under CC BY 4.0 subject to attribution. OpenCatastrophe currently approves metadata only; no ESRM20 exposure artifact has been selected, acquired, hashed or approved for Git publication.
+**Conditions:** Source rights support raw and derived redistribution under CC BY 4.0 subject to attribution. OpenCatastrophe repository review currently approves only the exact 2666-byte canonical Kosovo-residential TAXONOMY-set derivative identified here; the raw Kosovo CSV and all other source artifacts remain outside repository publication scope.
 
 ## Privacy
 
@@ -76,17 +82,17 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Confidential or proprietary status:** none
 
-**Notes:** The reviewed product is a public scientific exposure model describing aggregated European building stock and occupants, not person-level records or confidential insured portfolios.
+**Notes:** The reviewed product is a public scientific exposure model describing aggregated European building stock and occupants, not person-level records or confidential insured portfolios. The approved derivative contains building-taxonomy identifiers only.
 
 ## Spatial
 
 **Crs:** `null`
 
-**Extent:** Europe; exact spatial units, geometries and resolution depend on the selected v1.0 exposure-model files and must be preserved by any future adapter
+**Extent:** Europe at product level; the approved derivative is taxonomy-only metadata derived from the predeclared Kosovo-residential source slice and carries no geometry or coordinate values
 
 ## Temporal
 
-**Extent:** European Exposure Model release v1.0; this is a modelled building-stock exposure snapshot rather than an event time series, and exact source vintages must be preserved from the selected files
+**Extent:** European Exposure Model release v1.0; this is a modelled building-stock exposure snapshot rather than an event time series, and the approved derivative preserves only source taxonomy identity
 
 ## Variables and units
 
@@ -123,14 +129,18 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Description:** Modelled replacement-cost value. Currency/value basis must be taken from the exact selected source file and must not be reinterpreted as insured TIV.
 
 
-**Transformation:** `null`
+## Transformation
+
+**Code reference:** f2fcfa1d94f1a44f738353ef0bae8d467351a2eb:scripts/acquire_efehr_kosovo_taxonomy.py
+
+**Config identity:** canonicalizer-_canonical_artifact_identity/upstream-extractor-scripts-extract_efehr_kosovo_taxonomy.py/issue-363-result-5303346187/source-receipt-5300981864/source-sha256-4d562ad4925c527d518834b8dcd39a083cfd3b87b622031a84958ae7b4d8c5ea/TAXONOMY/count-86/oc-taxonomy-u64be-utf8-sorted-v1/no-normalization
 
 ## Review
 
-**Status:** approved_metadata_only
+**Status:** approved_derived
 
-**Reviewed at:** 2026-08-10T00:55:00Z
+**Reviewed at:** 2026-08-15T17:34:00Z
 
 **Reviewer:** OpenCatastrophe source audit
 
-**Notes:** Metadata-only engineering approval based on authoritative EFEHR data-access/licensing pages and the tagged v1.0 exposure repository. No source archive or exposure-model bytes are admitted. Raw or derived publication remains blocked pending exact artifact identity and asset-specific review.
+**Notes:** Asset-specific approval is limited to the exact canonical taxonomy-set byte stream produced from the frozen Kosovo-residential exposure source: 2666 bytes, SHA-256 d5e6fe4e32489cdd2222b6b3facfd30937e2af61bbcf0ecead37ccf97202a945, representation oc-taxonomy-u64be-utf8-sorted-v1, literal source field TAXONOMY, count 86, no normalization. Canonical byte construction is bound to f2fcfa1d94f1a44f738353ef0bae8d467351a2eb:scripts/acquire_efehr_kosovo_taxonomy.py::_canonical_artifact_identity; scripts/extract_efehr_kosovo_taxonomy.py at the same execution SHA remains the upstream verified extraction dependency. Trusted identity evidence is GitHub Action result comment 5303346187 on Issue \#363, executed from f2fcfa1d94f1a44f738353ef0bae8d467351a2eb. Current EFEHR CC BY 4.0 data-access and download guidance was rechecked on 2026-08-15. This approval does not admit the 316789-byte raw Kosovo CSV, alternate serializations of the taxonomy values, mapping outcomes, vulnerability selections, model inputs, insured-loss semantics or any broader ESRM20 artifact.
