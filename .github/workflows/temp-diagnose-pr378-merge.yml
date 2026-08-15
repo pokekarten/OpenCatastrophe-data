@@ -23,6 +23,8 @@ jobs:
       - name: Simulate merge with current main
         shell: bash
         run: |
+          git config user.name 'PR378 merge diagnosis'
+          git config user.email 'noreply@example.invalid'
           git fetch --no-tags origin main
           set +e
           git merge --no-commit --no-ff origin/main
@@ -37,7 +39,7 @@ jobs:
           while IFS= read -r path; do
             test -n "$path" || continue
             echo "--- $path ---"
-            grep -n -C 6 -E '^(<<<<<<<|=======|>>>>>>>)' "$path" || true
+            grep -n -C 8 -E '^(<<<<<<<|=======|>>>>>>>)' "$path" || true
           done < <(git diff --name-only --diff-filter=U | sort)
           git merge --abort || true
           exit 0
