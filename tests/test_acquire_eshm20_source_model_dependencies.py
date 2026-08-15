@@ -255,6 +255,32 @@ class FixedEshm20SourceModelDependencyWorkerTests(unittest.TestCase):
             ):
                 worker.extract_verified_source_model_dependencies(RAW)
 
+    def test_malformed_exact_origin_identities_fail_before_serialization(self) -> None:
+        malformed_origins = (
+            worker.parser.LogicTreeDependencyOrigin("sourceModel", ""),
+            worker.parser.LogicTreeDependencyOrigin("sourceModel", "   "),
+            worker.parser.LogicTreeDependencyOrigin("sourceModel", " bad"),
+            worker.parser.LogicTreeDependencyOrigin("sourceModel", "bad\nbranch"),
+            worker.parser.LogicTreeDependencyOrigin("sourceModel\t", "b1"),
+            worker.parser.LogicTreeDependencyOrigin(" sourceModel", "b1"),
+        )
+        count_patch, hash_patch = self.patched_identity(RAW)
+        with count_patch, hash_patch:
+            for origin in malformed_origins:
+                with self.subTest(origin=origin):
+                    dependency = worker.parser.SourceModelDependency(
+                        SOURCE_PATH,
+                        (origin,),
+                        False,
+                    )
+                    with mock.patch.object(
+                        worker.parser,
+                        "extract_source_model_logic_tree_dependencies",
+                        return_value=(dependency,),
+                    ):
+                        with self.assertRaises(worker.Eshm20SourceModelDependencyError):
+                            worker.extract_verified_source_model_dependencies(RAW)
+
     def test_noncanonical_or_duplicate_dependency_output_fails_closed(self) -> None:
         origin = (worker.parser.LogicTreeDependencyOrigin("sourceModel", "b1"),)
         first = worker.parser.SourceModelDependency(SOURCE_PATH, origin, False)
