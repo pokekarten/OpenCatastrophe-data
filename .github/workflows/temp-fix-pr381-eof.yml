@@ -43,7 +43,7 @@ jobs:
       - name: Remove temporary workflow and verify write scope
         run: |
           git rm .github/workflows/temp-fix-pr381-eof.yml
-          changed="$(git diff --name-only | sort)"
+          changed="$(git diff HEAD --name-only | sort)"
           expected="$(printf '%s\n%s\n' '.github/workflows/temp-fix-pr381-eof.yml' 'schemas/agent-action-result-v1.schema.json' | sort)"
           test "$changed" = "$expected"
           git diff --check
