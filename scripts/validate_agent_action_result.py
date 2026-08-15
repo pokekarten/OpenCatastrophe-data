@@ -1,11 +1,12 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Fail-closed Agent Action result validation with a bounded #363 extension.
+"""Fail-closed Agent Action result validation with bounded #397 source-model wiring.
 
-All pre-existing actions delegate to the reviewed GMM-aware validator layer.
-Only the Kosovo taxonomy identity action is handled here so its durable result
-can remain identity-only while participating in the same trusted result ledger.
+All pre-existing actions delegate to the reviewed mapping-aware validator layer.
+This layer handles the ESHM20 source-model dependency action and retains the
+already-reviewed Kosovo taxonomy identity handling without widening either
+closed result contract.
 """
 
 from __future__ import annotations
@@ -62,6 +63,7 @@ _SOURCE_MODEL_RECEIPT_FIELDS = {
     "dependency_inventory_authorized", "dependency_receipt_authorized",
     "external_bytes_persisted", "publication_authorized", "model_use_authorized",
 }
+_SOURCE_MODEL_MAX_ORIGINS = 512
 
 
 def _source_text(value: Any, field: str) -> str:
@@ -120,8 +122,10 @@ def validate_efehr_eshm20_source_model_dependencies(receipt: Any) -> dict[str, A
         if dependency["is_hdf5_companion"] is not False:
             raise ResultError(f"{label}.is_hdf5_companion must remain false")
         origins = dependency["origins"]
-        if type(origins) is not list or not origins:
-            raise ResultError(f"{label}.origins must be a non-empty array")
+        if type(origins) is not list or not (1 <= len(origins) <= _SOURCE_MODEL_MAX_ORIGINS):
+            raise ResultError(
+                f"{label}.origins must contain 1..{_SOURCE_MODEL_MAX_ORIGINS} canonical origins"
+            )
         origin_keys: list[tuple[str, str]] = []
         for origin_index, origin in enumerate(origins):
             origin_label = f"{label}.origins[{origin_index}]"

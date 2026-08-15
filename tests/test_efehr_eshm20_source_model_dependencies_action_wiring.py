@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import copy
 import io
+import json
 import unittest
 from contextlib import redirect_stderr
+from pathlib import Path
 
 from scripts import acquire_eshm20_source_model_dependencies as worker
 from scripts import prepare_agent_action_result as prepare
@@ -96,6 +98,36 @@ class SourceTreeActionTests(unittest.TestCase):
         bad_origin = copy.deepcopy(base); bad_origin["dependencies"][0]["origins"][0]["uncertainty_type"] = "gmpeModel"
         with self.assertRaises(result_validator.ResultError):
             result_validator.validate_efehr_eshm20_source_model_dependencies(bad_origin)
+
+        for invalid_branch_id in ("", " b1", "b1\n"):
+            with self.subTest(branch_id=repr(invalid_branch_id)):
+                drifted = copy.deepcopy(base)
+                drifted["dependencies"][0]["origins"][0]["branch_id"] = invalid_branch_id
+                with self.assertRaises(result_validator.ResultError):
+                    result_validator.validate_efehr_eshm20_source_model_dependencies(drifted)
+
+        unordered = copy.deepcopy(base)
+        unordered["dependencies"][0]["origins"] = [
+            {"uncertainty_type": "sourceModel", "branch_id": "b2"},
+            {"uncertainty_type": "sourceModel", "branch_id": "b1"},
+        ]
+        with self.assertRaises(result_validator.ResultError):
+            result_validator.validate_efehr_eshm20_source_model_dependencies(unordered)
+
+    def test_origin_cardinality_matches_portable_schema(self) -> None:
+        schema = json.loads(Path("schemas/agent-action-result-v1.schema.json").read_text(encoding="utf-8"))
+        origins_schema = schema["$defs"]["efehrEshm20SourceModelDependency"]["properties"]["origins"]
+        self.assertEqual(origins_schema["minItems"], 1)
+        self.assertEqual(origins_schema["maxItems"], result_validator._SOURCE_MODEL_MAX_ORIGINS)
+        self.assertTrue(origins_schema["uniqueItems"])
+
+        oversized = receipt()
+        oversized["dependencies"][0]["origins"] = [
+            {"uncertainty_type": "sourceModel", "branch_id": f"b{index:03d}"}
+            for index in range(result_validator._SOURCE_MODEL_MAX_ORIGINS + 1)
+        ]
+        with self.assertRaises(result_validator.ResultError):
+            result_validator.validate_efehr_eshm20_source_model_dependencies(oversized)
 
     def test_dedup_precedes_worker_and_failure_log_is_sanitized(self) -> None:
         calls: list[str] = []
