@@ -26,6 +26,7 @@ try:
     from scripts.acquire_dwd_metadata_receipt import acquire as acquire_dwd_metadata
     from scripts.acquire_efehr_gitlab_receipt import EfehrAcquisitionError, acquire_canary
     from scripts.acquire_efehr_eshm20_tree_metadata import acquire_eshm20_tree_metadata
+    from scripts.acquire_efehr_kosovo_receipt import acquire_kosovo_receipt
     from scripts.acquire_efehr_eshm20_root_config_receipt import acquire_eshm20_root_config_receipt
     from scripts.agent_action_protocol import (
         ProtocolError,
@@ -39,6 +40,7 @@ try:
         DWD_METADATA_RECEIPT_ACTION,
         EFEHR_README_RECEIPT_ACTION,
         EFEHR_ESHM20_TREE_METADATA_ACTION,
+        EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
         RequestError,
         extract_request,
@@ -54,6 +56,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     from acquire_dwd_metadata_receipt import acquire as acquire_dwd_metadata
     from acquire_efehr_gitlab_receipt import EfehrAcquisitionError, acquire_canary
     from acquire_efehr_eshm20_tree_metadata import acquire_eshm20_tree_metadata
+    from acquire_efehr_kosovo_receipt import acquire_kosovo_receipt
     from acquire_efehr_eshm20_root_config_receipt import acquire_eshm20_root_config_receipt
     from agent_action_protocol import (
         ProtocolError,
@@ -67,6 +70,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         DWD_METADATA_RECEIPT_ACTION,
         EFEHR_README_RECEIPT_ACTION,
         EFEHR_ESHM20_TREE_METADATA_ACTION,
+        EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
         RequestError,
         extract_request,
@@ -87,6 +91,7 @@ NETWORK_ACTIONS = frozenset(
         DWD_METADATA_RECEIPT_ACTION,
         EFEHR_README_RECEIPT_ACTION,
         EFEHR_ESHM20_TREE_METADATA_ACTION,
+        EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
     }
 )
@@ -276,6 +281,8 @@ def _receipt_field(action: str) -> str:
         return "efehr_readme_receipt"
     if action == EFEHR_ESHM20_TREE_METADATA_ACTION:
         return "efehr_eshm20_tree_metadata"
+    if action == EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION:
+        return "efehr_kosovo_exposure_receipt"
     if action == EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION:
         return "efehr_eshm20_root_config_receipt"
     raise LedgerError("unsupported closed acquisition action")
@@ -339,6 +346,7 @@ def prepare_completed_result(
     metadata_acquirer: Callable[[], dict[str, Any]] = acquire_dwd_metadata,
     efehr_acquirer: Callable[[], dict[str, Any]] = acquire_canary,
     eshm20_tree_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_tree_metadata,
+    kosovo_exposure_acquirer: Callable[[], dict[str, Any]] = acquire_kosovo_receipt,
     eshm20_root_config_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_root_config_receipt,
 ) -> dict[str, Any]:
     """Deduplicate first, then execute only one closed allowlisted acquisition action."""
@@ -365,6 +373,8 @@ def prepare_completed_result(
         selected_acquirer = efehr_acquirer
     elif request["action"] == EFEHR_ESHM20_TREE_METADATA_ACTION:
         selected_acquirer = eshm20_tree_acquirer
+    elif request["action"] == EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION:
+        selected_acquirer = kosovo_exposure_acquirer
     elif request["action"] == EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION:
         selected_acquirer = eshm20_root_config_acquirer
     else:

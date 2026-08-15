@@ -19,16 +19,19 @@ ACQUISITION_RECEIPT_ACTION = "acquisition_receipt"
 DWD_METADATA_RECEIPT_ACTION = "dwd_metadata_receipt"
 EFEHR_README_RECEIPT_ACTION = "efehr_readme_receipt"
 EFEHR_ESHM20_TREE_METADATA_ACTION = "efehr_eshm20_tree_metadata"
+EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION = "efehr_kosovo_exposure_receipt"
 EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION = "efehr_eshm20_root_config_receipt"
 ACQUISITION_RECEIPT_ISSUE = 162
 DWD_METADATA_RECEIPT_ISSUE = 211
 EFEHR_README_RECEIPT_ISSUE = 298
 EFEHR_ESHM20_TREE_METADATA_ISSUE = 332
+EFEHR_KOSOVO_EXPOSURE_RECEIPT_ISSUE = 328
 EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE = 335
 ACQUISITION_RECEIPT_DATASET_ID = "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"
 DWD_METADATA_RECEIPT_DATASET_ID = ACQUISITION_RECEIPT_DATASET_ID
 EFEHR_README_RECEIPT_DATASET_ID = "efehr.esrm20.european-exposure-model.v1.0"
 EFEHR_ESHM20_TREE_METADATA_DATASET_ID = "efehr.eshm20"
+EFEHR_KOSOVO_EXPOSURE_RECEIPT_DATASET_ID = EFEHR_README_RECEIPT_DATASET_ID
 EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_DATASET_ID = EFEHR_ESHM20_TREE_METADATA_DATASET_ID
 ALLOWED_ACTIONS = {
     SAMPLE_AUDIT_ACTION,
@@ -36,6 +39,7 @@ ALLOWED_ACTIONS = {
     DWD_METADATA_RECEIPT_ACTION,
     EFEHR_README_RECEIPT_ACTION,
     EFEHR_ESHM20_TREE_METADATA_ACTION,
+    EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION,
     EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
 }
 REQUIRED_FIELDS = {
@@ -145,6 +149,13 @@ def validate_request(request: dict[str, Any], *, expected_issue: int | None = No
         if request["dataset_id"] != EFEHR_ESHM20_TREE_METADATA_DATASET_ID:
             raise RequestError(
                 "efehr_eshm20_tree_metadata is restricted to the frozen ESHM20 dataset"
+            )
+    elif request["action"] == EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION:
+        if request["issue"] != EFEHR_KOSOVO_EXPOSURE_RECEIPT_ISSUE:
+            raise RequestError("efehr_kosovo_exposure_receipt is restricted to issue 328")
+        if request["dataset_id"] != EFEHR_KOSOVO_EXPOSURE_RECEIPT_DATASET_ID:
+            raise RequestError(
+                "efehr_kosovo_exposure_receipt is restricted to the frozen ESRM20 exposure dataset"
             )
     elif request["action"] == EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION:
         if request["issue"] != EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE:

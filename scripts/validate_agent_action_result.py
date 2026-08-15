@@ -72,6 +72,16 @@ try:
         SOURCE_ISSUE as EFEHR_ESHM20_SOURCE_ISSUE,
         TREE_PREFIX as EFEHR_ESHM20_TREE_PREFIX,
     )
+    from scripts.acquire_efehr_kosovo_receipt import (
+        COMMIT_SHA as EFEHR_KOSOVO_COMMIT_SHA,
+        DATASET_ID as EFEHR_KOSOVO_DATASET_ID,
+        MAX_FILE_BYTES as EFEHR_KOSOVO_MAX_BYTES,
+        OPERATION_ID as EFEHR_KOSOVO_OPERATION_ID,
+        PROJECT_ID as EFEHR_KOSOVO_PROJECT_ID,
+        REPOSITORY_PATH as EFEHR_KOSOVO_REPOSITORY_PATH,
+        SCHEMA_VERSION as EFEHR_KOSOVO_SCHEMA_VERSION,
+        SOURCE_ISSUE as EFEHR_KOSOVO_SOURCE_ISSUE,
+    )
     from scripts.acquire_efehr_eshm20_root_config_receipt import (
         COMMIT_SHA as EFEHR_ESHM20_ROOT_CONFIG_COMMIT_SHA,
         DATASET_ID as EFEHR_ESHM20_ROOT_CONFIG_DATASET_ID,
@@ -91,6 +101,7 @@ try:
     )
     from scripts.validate_agent_action_request import (
         EFEHR_ESHM20_TREE_METADATA_ISSUE as EFEHR_ESHM20_ACTION_ISSUE,
+        EFEHR_KOSOVO_EXPOSURE_RECEIPT_ISSUE as EFEHR_KOSOVO_ACTION_ISSUE,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE as EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE,
         EFEHR_README_RECEIPT_ISSUE as EFEHR_ACTION_ISSUE,
     )
@@ -152,6 +163,16 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         SOURCE_ISSUE as EFEHR_ESHM20_SOURCE_ISSUE,
         TREE_PREFIX as EFEHR_ESHM20_TREE_PREFIX,
     )
+    from acquire_efehr_kosovo_receipt import (
+        COMMIT_SHA as EFEHR_KOSOVO_COMMIT_SHA,
+        DATASET_ID as EFEHR_KOSOVO_DATASET_ID,
+        MAX_FILE_BYTES as EFEHR_KOSOVO_MAX_BYTES,
+        OPERATION_ID as EFEHR_KOSOVO_OPERATION_ID,
+        PROJECT_ID as EFEHR_KOSOVO_PROJECT_ID,
+        REPOSITORY_PATH as EFEHR_KOSOVO_REPOSITORY_PATH,
+        SCHEMA_VERSION as EFEHR_KOSOVO_SCHEMA_VERSION,
+        SOURCE_ISSUE as EFEHR_KOSOVO_SOURCE_ISSUE,
+    )
     from acquire_efehr_eshm20_root_config_receipt import (
         COMMIT_SHA as EFEHR_ESHM20_ROOT_CONFIG_COMMIT_SHA,
         DATASET_ID as EFEHR_ESHM20_ROOT_CONFIG_DATASET_ID,
@@ -171,6 +192,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     )
     from validate_agent_action_request import (
         EFEHR_ESHM20_TREE_METADATA_ISSUE as EFEHR_ESHM20_ACTION_ISSUE,
+        EFEHR_KOSOVO_EXPOSURE_RECEIPT_ISSUE as EFEHR_KOSOVO_ACTION_ISSUE,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE as EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE,
         EFEHR_README_RECEIPT_ISSUE as EFEHR_ACTION_ISSUE,
     )
@@ -186,6 +208,7 @@ ACQUISITION_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"acquisition_receipt"}
 DWD_METADATA_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"dwd_metadata_receipt"}
 EFEHR_README_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_readme_receipt"}
 EFEHR_ESHM20_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_eshm20_tree_metadata"}
+EFEHR_KOSOVO_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_kosovo_exposure_receipt"}
 EFEHR_ESHM20_ROOT_CONFIG_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {
     "efehr_eshm20_root_config_receipt"
 }
@@ -217,6 +240,13 @@ EFEHR_ESHM20_RECEIPT_FIELDS = {
     "tree_entry_count", "metadata_byte_count", "entries",
     "external_bytes_persisted", "publication_authorized",
 }
+EFEHR_KOSOVO_RECEIPT_FIELDS = {
+    "schema_version", "operation_id", "source_issue", "dataset_id",
+    "provider_host", "project_id", "project_path", "commit_sha",
+    "repository_path", "requested_url", "final_url", "retrieved_at",
+    "byte_count", "sha256", "content_type", "etag",
+    "external_bytes_persisted", "publication_authorized",
+}
 EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_FIELDS = {
     "schema_version", "operation_id", "source_issue", "dataset_id", "provider_host",
     "project_id", "project_path", "commit_sha", "repository_path", "requested_url",
@@ -226,7 +256,7 @@ EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_FIELDS = {
 ALLOWED_ACTIONS = {
     "sample_audit", "acquisition_receipt", "dwd_metadata_receipt",
     "efehr_readme_receipt", "efehr_eshm20_tree_metadata",
-    "efehr_eshm20_root_config_receipt",
+    "efehr_kosovo_exposure_receipt", "efehr_eshm20_root_config_receipt",
 }
 ALLOWED_PHASES = {"request_validation", "acquisition_receipt"}
 ALLOWED_STATUSES = {"pass", "duplicate", "blocked"}
@@ -551,6 +581,56 @@ def validate_efehr_eshm20_tree_metadata(receipt: Any) -> dict[str, Any]:
     return receipt
 
 
+def validate_efehr_kosovo_exposure_receipt(receipt: Any) -> dict[str, Any]:
+    prefix = "efehr_kosovo_exposure_receipt"
+    if type(receipt) is not dict:
+        raise ResultError(f"{prefix} must be a JSON object")
+    keys = set(receipt)
+    if keys != EFEHR_KOSOVO_RECEIPT_FIELDS:
+        raise ResultError(
+            f"{prefix} fields mismatch; missing={sorted(EFEHR_KOSOVO_RECEIPT_FIELDS - keys)}, "
+            f"unexpected={sorted(keys - EFEHR_KOSOVO_RECEIPT_FIELDS)}"
+        )
+    expected_project_path = str(EFEHR_PROJECTS[EFEHR_KOSOVO_PROJECT_ID]["project_path"])
+    exact_values = {
+        "schema_version": EFEHR_KOSOVO_SCHEMA_VERSION,
+        "operation_id": EFEHR_KOSOVO_OPERATION_ID,
+        "source_issue": EFEHR_KOSOVO_SOURCE_ISSUE,
+        "dataset_id": EFEHR_KOSOVO_DATASET_ID,
+        "provider_host": EFEHR_PROVIDER_HOST,
+        "project_id": EFEHR_KOSOVO_PROJECT_ID,
+        "project_path": expected_project_path,
+        "commit_sha": EFEHR_KOSOVO_COMMIT_SHA,
+        "repository_path": EFEHR_KOSOVO_REPOSITORY_PATH,
+        "external_bytes_persisted": False,
+        "publication_authorized": False,
+    }
+    for field, expected in exact_values.items():
+        if type(receipt[field]) is not type(expected) or receipt[field] != expected:
+            raise ResultError(f"{prefix}.{field} does not match the frozen contract")
+    try:
+        target = validate_efehr_target(
+            source_issue=EFEHR_KOSOVO_SOURCE_ISSUE,
+            dataset_id=EFEHR_KOSOVO_DATASET_ID,
+            project_id=EFEHR_KOSOVO_PROJECT_ID,
+            commit_sha=EFEHR_KOSOVO_COMMIT_SHA,
+            repository_path=EFEHR_KOSOVO_REPOSITORY_PATH,
+        )
+        expected_url = efehr_raw_file_api_url(target)
+    except EfehrReceiptError as exc:
+        raise ResultError(f"{prefix} target binding is invalid: {exc}") from exc
+    for field in ("requested_url", "final_url"):
+        if type(receipt[field]) is not str or receipt[field] != expected_url:
+            raise ResultError(f"{prefix}.{field} does not match the immutable frozen target")
+    _utc_second(receipt["retrieved_at"], f"{prefix}.retrieved_at")
+    _positive_bounded_int(receipt["byte_count"], "byte_count", EFEHR_KOSOVO_MAX_BYTES, prefix=prefix)
+    if type(receipt["sha256"]) is not str or not DIGEST_RE.fullmatch(receipt["sha256"]):
+        raise ResultError(f"{prefix}.sha256 must be a lowercase SHA-256 digest")
+    for field in ("content_type", "etag"):
+        _bounded_header(receipt[field], field, prefix=prefix)
+    return receipt
+
+
 def validate_efehr_eshm20_root_config_receipt(receipt: Any) -> dict[str, Any]:
     prefix = "efehr_eshm20_root_config_receipt"
     if type(receipt) is not dict:
@@ -623,6 +703,7 @@ def _validate_network_evidence(evidence: Any, *, receipt_field: str) -> dict[str
         "dwd_metadata_receipt": DWD_METADATA_EVIDENCE_FIELDS,
         "efehr_readme_receipt": EFEHR_README_EVIDENCE_FIELDS,
         "efehr_eshm20_tree_metadata": EFEHR_ESHM20_EVIDENCE_FIELDS,
+        "efehr_kosovo_exposure_receipt": EFEHR_KOSOVO_EVIDENCE_FIELDS,
         "efehr_eshm20_root_config_receipt": EFEHR_ESHM20_ROOT_CONFIG_EVIDENCE_FIELDS,
     }
     expected_fields = expected_by_field.get(receipt_field)
@@ -729,6 +810,16 @@ def validate_result(result: dict[str, Any]) -> dict[str, Any]:
             raise ResultError("efehr_eshm20_tree_metadata result is outside the frozen issue/dataset boundary")
         receipt_field = "efehr_eshm20_tree_metadata"
         receipt_validator = validate_efehr_eshm20_tree_metadata
+    elif action == "efehr_kosovo_exposure_receipt":
+        if (
+            result["source_issue"] != EFEHR_KOSOVO_ACTION_ISSUE
+            or result["dataset_id"] != EFEHR_KOSOVO_DATASET_ID
+        ):
+            raise ResultError(
+                "efehr_kosovo_exposure_receipt result is outside the frozen issue/dataset boundary"
+            )
+        receipt_field = "efehr_kosovo_exposure_receipt"
+        receipt_validator = validate_efehr_kosovo_exposure_receipt
     elif action == "efehr_eshm20_root_config_receipt":
         if (
             result["source_issue"] != EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE
