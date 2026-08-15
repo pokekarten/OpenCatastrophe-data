@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: One-shot final-newline normalization
+
+on:
+  push:
+    branches:
+      - agent/346-esrm20-event-hazard-actions
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact pushed branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Normalize exactly one final LF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "33cace011f46ad16279d9fd70489aca55b55a511"
+          test "$(git hash-object scripts/validate_agent_action_result.py)" = "c1325d850f4b0c36ad2008b6e2685e3f0b1bb9f0"
+          before_size="$(git cat-file -s c1325d850f4b0c36ad2008b6e2685e3f0b1bb9f0)"
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/validate_agent_action_result.py')
+          payload = path.read_bytes()
+          if payload.endswith(b'\n'):
+              raise SystemExit('already newline-terminated; refusing unexpected no-op')
+          path.write_bytes(payload + b'\n')
+          PY
+          test "$(wc -c < scripts/validate_agent_action_result.py)" -eq "$((before_size + 1))"
+          git diff --check
+          test "$(git status --porcelain=v1)" = " M scripts/validate_agent_action_result.py"
+
+      - name: Commit only newline normalization and self-delete workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/validate_agent_action_result.py
+          git rm .github/workflows/one-shot-final-newline.yml
+          files="$(git diff --cached --name-only | sort | paste -sd ' ' -)"
+          test "$files" = ".github/workflows/one-shot-final-newline.yml scripts/validate_agent_action_result.py"
+          git commit -m 'Normalize agent action result validator newline'
+
+      - name: Push verified follow-up commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:${GITHUB_REF_NAME}"
