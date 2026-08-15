@@ -99,6 +99,20 @@ def _local_name(tag: object) -> str:
     return tag.rsplit("}", 1)[-1]
 
 
+def _require_safe_xml_identity(value: object, field: str) -> str:
+    """Require safe exact XML identifiers before grouping or serialization."""
+
+    if type(value) is not str or not value or value != value.strip():
+        raise Eshm20GsimResourceProfileError(
+            f"GMM {field} is missing, empty or not already trimmed"
+        )
+    if any(ord(char) < 32 or ord(char) == 127 for char in value):
+        raise Eshm20GsimResourceProfileError(
+            f"GMM {field} contains control characters"
+        )
+    return value
+
+
 def _verify_payload_identity(payload: bytes) -> str:
     if type(payload) is not bytes:
         raise Eshm20GsimResourceProfileError("GMM logic-tree payload must be immutable bytes")
@@ -274,9 +288,9 @@ def _extract_resources(
             raise Eshm20GsimResourceProfileError(
                 "GMM logic tree contains a non-gmpeModel branch set"
             )
-        branch_set_id = branch_set.attrib.get("branchSetID")
-        if type(branch_set_id) is not str or not branch_set_id:
-            raise Eshm20GsimResourceProfileError("GMM branchSetID is missing or invalid")
+        branch_set_id = _require_safe_xml_identity(
+            branch_set.attrib.get("branchSetID"), "branchSetID"
+        )
         if branch_set_id in branch_set_ids:
             raise Eshm20GsimResourceProfileError("GMM branchSetID is duplicated")
         branch_set_ids.add(branch_set_id)
@@ -293,9 +307,9 @@ def _extract_resources(
             raise Eshm20GsimResourceProfileError("GMM branch count exceeds bounds")
 
         for branch in branches:
-            branch_id = branch.attrib.get("branchID")
-            if type(branch_id) is not str or not branch_id:
-                raise Eshm20GsimResourceProfileError("GMM branchID is missing or invalid")
+            branch_id = _require_safe_xml_identity(
+                branch.attrib.get("branchID"), "branchID"
+            )
             if branch_id in branch_ids:
                 raise Eshm20GsimResourceProfileError("GMM branchID is duplicated")
             branch_ids.add(branch_id)

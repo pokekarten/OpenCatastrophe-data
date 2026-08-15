@@ -288,6 +288,35 @@ class Eshm20GsimResourceProfileTests(unittest.TestCase):
                 with self.assertRaises(worker.Eshm20GsimResourceProfileError):
                     worker.extract_verified_gsim_resource_profile(raw)
 
+    def test_branch_identifiers_must_be_trimmed_and_control_free(self) -> None:
+        cases = (
+            ("", "b1"),
+            ("   ", "b1"),
+            (" bs1", "b1"),
+            ("bs1 ", "b1"),
+            ("bs&#10;1", "b1"),
+            ("bs&#x7F;1", "b1"),
+            ("bs1", ""),
+            ("bs1", "   "),
+            ("bs1", " b1"),
+            ("bs1", "b1 "),
+            ("bs1", "b&#10;1"),
+            ("bs1", "b&#x7F;1"),
+        )
+        for branch_set_id, branch_id in cases:
+            raw = (
+                "<nrml><logicTree>"
+                f"<logicTreeBranchSet branchSetID='{branch_set_id}' uncertaintyType='gmpeModel'>"
+                f"<logicTreeBranch branchID='{branch_id}'><uncertaintyModel>"
+                "coeff_file = 'a.csv'"
+                "</uncertaintyModel></logicTreeBranch>"
+                "</logicTreeBranchSet></logicTree></nrml>"
+            ).encode("utf-8")
+            count_patch, hash_patch = self.patched_identity(raw)
+            with self.subTest(branch_set_id=branch_set_id, branch_id=branch_id), count_patch, hash_patch:
+                with self.assertRaises(worker.Eshm20GsimResourceProfileError):
+                    worker.extract_verified_gsim_resource_profile(raw)
+
     def test_worker_uses_fixed_provider_target(self) -> None:
         raw = gmm_xml()
         captured: list[str] = []
