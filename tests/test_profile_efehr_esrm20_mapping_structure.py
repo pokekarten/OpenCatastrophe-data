@@ -137,6 +137,10 @@ class Esrm20MappingStructureProfileTests(unittest.TestCase):
                 self.assert_synthetic_rejected(raw)
 
         self.assert_synthetic_rejected(
+            b"a,b\n,\n",
+            "blank record",
+        )
+        self.assert_synthetic_rejected(
             b"a,b\n1,2\n1,2\n",
             "duplicate exact record",
         )
