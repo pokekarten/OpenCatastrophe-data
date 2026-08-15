@@ -104,6 +104,7 @@ try:
         SCHEMA_VERSION as ESRM20_EVENT_HAZARD_SCHEMA_VERSION,
         SOURCE_ISSUE as ESRM20_EVENT_HAZARD_SOURCE_ISSUE,
     )
+    from scripts import profile_efehr_kosovo_exposure as EFEHR_KOSOVO_PROFILE
     from scripts.efehr_gitlab_receipt import (
         PROJECTS as EFEHR_PROJECTS,
         PROVIDER_HOST as EFEHR_PROVIDER_HOST,
@@ -114,6 +115,7 @@ try:
     from scripts.validate_agent_action_request import (
         EFEHR_ESHM20_TREE_METADATA_ISSUE as EFEHR_ESHM20_ACTION_ISSUE,
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ISSUE as EFEHR_KOSOVO_ACTION_ISSUE,
+        EFEHR_KOSOVO_EXPOSURE_PROFILE_ISSUE as EFEHR_KOSOVO_PROFILE_ACTION_ISSUE,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE as EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE,
         EFEHR_README_RECEIPT_ISSUE as EFEHR_ACTION_ISSUE,
         ESRM20_EVENT_HAZARD_RECEIPT_ISSUE as ESRM20_EVENT_HAZARD_ACTION_ISSUE,
@@ -208,6 +210,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         SCHEMA_VERSION as ESRM20_EVENT_HAZARD_SCHEMA_VERSION,
         SOURCE_ISSUE as ESRM20_EVENT_HAZARD_SOURCE_ISSUE,
     )
+    import profile_efehr_kosovo_exposure as EFEHR_KOSOVO_PROFILE
     from efehr_gitlab_receipt import (
         PROJECTS as EFEHR_PROJECTS,
         PROVIDER_HOST as EFEHR_PROVIDER_HOST,
@@ -218,6 +221,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     from validate_agent_action_request import (
         EFEHR_ESHM20_TREE_METADATA_ISSUE as EFEHR_ESHM20_ACTION_ISSUE,
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ISSUE as EFEHR_KOSOVO_ACTION_ISSUE,
+        EFEHR_KOSOVO_EXPOSURE_PROFILE_ISSUE as EFEHR_KOSOVO_PROFILE_ACTION_ISSUE,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE as EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE,
         EFEHR_README_RECEIPT_ISSUE as EFEHR_ACTION_ISSUE,
         ESRM20_EVENT_HAZARD_RECEIPT_ISSUE as ESRM20_EVENT_HAZARD_ACTION_ISSUE,
@@ -235,6 +239,7 @@ DWD_METADATA_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"dwd_metadata_receipt"
 EFEHR_README_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_readme_receipt"}
 EFEHR_ESHM20_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_eshm20_tree_metadata"}
 EFEHR_KOSOVO_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_kosovo_exposure_receipt"}
+EFEHR_KOSOVO_PROFILE_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_kosovo_exposure_profile"}
 EFEHR_ESHM20_ROOT_CONFIG_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {
     "efehr_eshm20_root_config_receipt"
 }
@@ -289,7 +294,8 @@ ESRM20_EVENT_HAZARD_RECEIPT_FIELDS = EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_FIELDS
 ALLOWED_ACTIONS = {
     "sample_audit", "acquisition_receipt", "dwd_metadata_receipt",
     "efehr_readme_receipt", "efehr_eshm20_tree_metadata",
-    "efehr_kosovo_exposure_receipt", "efehr_eshm20_root_config_receipt",
+    "efehr_kosovo_exposure_receipt", "efehr_kosovo_exposure_profile",
+    "efehr_eshm20_root_config_receipt",
     "esrm20_event_hazard_group1_receipt", "esrm20_event_hazard_group2_receipt",
 }
 ALLOWED_PHASES = {"request_validation", "acquisition_receipt"}
@@ -665,6 +671,136 @@ def validate_efehr_kosovo_exposure_receipt(receipt: Any) -> dict[str, Any]:
     return receipt
 
 
+
+def validate_efehr_kosovo_exposure_profile(receipt: Any) -> dict[str, Any]:
+    prefix = "efehr_kosovo_exposure_profile"
+    receipt_fields = {
+        "schema_version", "source_issue", "dataset_id", "project_id", "project_path",
+        "commit_sha", "repository_path", "receipt_comment_id", "receipt_execution_sha",
+        "byte_count", "sha256", "profiled_at", "profile",
+        "external_bytes_persisted", "publication_authorized",
+    }
+    if type(receipt) is not dict or set(receipt) != receipt_fields:
+        missing = sorted(receipt_fields - set(receipt)) if type(receipt) is dict else sorted(receipt_fields)
+        unexpected = sorted(set(receipt) - receipt_fields) if type(receipt) is dict else []
+        raise ResultError(f"{prefix} fields mismatch; missing={missing}, unexpected={unexpected}")
+    exact = {
+        "schema_version": EFEHR_KOSOVO_PROFILE.SCHEMA_VERSION,
+        "source_issue": EFEHR_KOSOVO_PROFILE.SOURCE_ISSUE,
+        "dataset_id": EFEHR_KOSOVO_PROFILE.DATASET_ID,
+        "project_id": EFEHR_KOSOVO_PROFILE.PROJECT_ID,
+        "project_path": EFEHR_KOSOVO_PROFILE.PROJECT_PATH,
+        "commit_sha": EFEHR_KOSOVO_PROFILE.COMMIT_SHA,
+        "repository_path": EFEHR_KOSOVO_PROFILE.REPOSITORY_PATH,
+        "receipt_comment_id": EFEHR_KOSOVO_PROFILE.RECEIPT_COMMENT_ID,
+        "receipt_execution_sha": EFEHR_KOSOVO_PROFILE.RECEIPT_EXECUTION_SHA,
+        "byte_count": EFEHR_KOSOVO_PROFILE.EXPECTED_BYTE_COUNT,
+        "sha256": EFEHR_KOSOVO_PROFILE.EXPECTED_SHA256,
+        "external_bytes_persisted": False,
+        "publication_authorized": False,
+    }
+    for field, expected in exact.items():
+        if type(receipt[field]) is not type(expected) or receipt[field] != expected:
+            raise ResultError(f"{prefix}.{field} does not match the frozen contract")
+    _utc_second(receipt["profiled_at"], f"{prefix}.profiled_at")
+
+    profile = receipt["profile"]
+    profile_fields = {
+        "schema_version", "parser", "record_count", "header", "columns",
+        "raw_rows_returned", "external_bytes_persisted", "publication_authorized",
+    }
+    if type(profile) is not dict or set(profile) != profile_fields:
+        raise ResultError(f"{prefix}.profile must be a closed structural-profile object")
+    if profile["schema_version"] != EFEHR_KOSOVO_PROFILE.SCHEMA_VERSION:
+        raise ResultError(f"{prefix}.profile.schema_version does not match the frozen contract")
+    for field in ("raw_rows_returned", "external_bytes_persisted", "publication_authorized"):
+        if type(profile[field]) is not bool or profile[field] is not False:
+            raise ResultError(f"{prefix}.profile.{field} must be exactly false")
+
+    record_count = profile["record_count"]
+    if type(record_count) is not int or not (1 <= record_count <= EFEHR_KOSOVO_PROFILE.EXPECTED_BYTE_COUNT):
+        raise ResultError(f"{prefix}.profile.record_count is outside bounded policy")
+
+    parser = profile["parser"]
+    if type(parser) is not dict or set(parser) != {"encoding", "bom_present", "delimiter", "line_endings"}:
+        raise ResultError(f"{prefix}.profile.parser must be a closed parser-evidence object")
+    if type(parser["encoding"]) is not str or parser["encoding"] not in {"utf-8", "utf-8-sig"}:
+        raise ResultError(f"{prefix}.profile.parser.encoding is outside the closed encoding set")
+    if type(parser["bom_present"]) is not bool:
+        raise ResultError(f"{prefix}.profile.parser.bom_present must be boolean")
+    if (parser["encoding"] == "utf-8-sig") is not parser["bom_present"]:
+        raise ResultError(f"{prefix}.profile parser BOM/encoding evidence is inconsistent")
+    if parser["delimiter"] != EFEHR_KOSOVO_PROFILE.DELIMITER:
+        raise ResultError(f"{prefix}.profile.parser.delimiter does not match the frozen parser")
+    line_endings = parser["line_endings"]
+    if type(line_endings) is not dict or set(line_endings) != {"crlf_count", "lf_count", "cr_count"}:
+        raise ResultError(f"{prefix}.profile.parser.line_endings must be closed")
+    for field, value in line_endings.items():
+        if type(value) is not int or not (0 <= value <= EFEHR_KOSOVO_PROFILE.EXPECTED_BYTE_COUNT):
+            raise ResultError(f"{prefix}.profile.parser.line_endings.{field} is outside bounded policy")
+
+    header = profile["header"]
+    if type(header) is not list or not (EFEHR_KOSOVO_PROFILE.MIN_COLUMNS <= len(header) <= EFEHR_KOSOVO_PROFILE.MAX_COLUMNS):
+        raise ResultError(f"{prefix}.profile.header is outside bounded column policy")
+    for name in header:
+        if type(name) is not str or not name or len(name.encode("utf-8")) > EFEHR_KOSOVO_PROFILE.MAX_HEADER_UTF8_BYTES:
+            raise ResultError(f"{prefix}.profile.header contains an invalid bounded name")
+        if any(ord(character) < 32 or ord(character) == 127 for character in name):
+            raise ResultError(f"{prefix}.profile.header contains control characters")
+    if len(set(header)) != len(header):
+        raise ResultError(f"{prefix}.profile.header values must be unique")
+
+    columns = profile["columns"]
+    if type(columns) is not list or len(columns) != len(header):
+        raise ResultError(f"{prefix}.profile.columns must align one-to-one with header")
+    column_fields = {
+        "name", "record_count", "empty_count", "nonempty_count", "distinct_count",
+        "exact_value_set_sha256", "decimal_summary",
+    }
+    decimal_fields = {
+        "all_nonempty_decimal", "finite_decimal_count", "leading_or_trailing_whitespace_count",
+    }
+    for index, column in enumerate(columns):
+        if type(column) is not dict or set(column) != column_fields:
+            raise ResultError(f"{prefix}.profile.columns items must be closed")
+        if column["name"] != header[index] or type(column["name"]) is not str:
+            raise ResultError(f"{prefix}.profile.columns order/name must match header exactly")
+        if type(column["record_count"]) is not int or column["record_count"] != record_count:
+            raise ResultError(f"{prefix}.profile.columns record_count must match profile")
+        for field in ("empty_count", "nonempty_count", "distinct_count"):
+            value = column[field]
+            if type(value) is not int or not (0 <= value <= record_count):
+                raise ResultError(f"{prefix}.profile.columns.{field} is outside bounded policy")
+        if column["empty_count"] + column["nonempty_count"] != record_count:
+            raise ResultError(f"{prefix}.profile column counts must conserve record_count")
+        if column["distinct_count"] < 1:
+            raise ResultError(f"{prefix}.profile distinct_count must be positive")
+        digest = column["exact_value_set_sha256"]
+        if type(digest) is not str or not DIGEST_RE.fullmatch(digest):
+            raise ResultError(f"{prefix}.profile exact_value_set_sha256 must be lowercase SHA-256")
+        decimal = column["decimal_summary"]
+        if type(decimal) is not dict or set(decimal) != decimal_fields:
+            raise ResultError(f"{prefix}.profile decimal_summary must be closed")
+        if type(decimal["all_nonempty_decimal"]) is not bool:
+            raise ResultError(f"{prefix}.profile all_nonempty_decimal must be boolean")
+        for field in ("finite_decimal_count", "leading_or_trailing_whitespace_count"):
+            value = decimal[field]
+            if type(value) is not int or not (0 <= value <= column["nonempty_count"]):
+                raise ResultError(f"{prefix}.profile decimal_summary.{field} is outside bounded policy")
+        if (
+            decimal["finite_decimal_count"]
+            + decimal["leading_or_trailing_whitespace_count"]
+            > column["nonempty_count"]
+        ):
+            raise ResultError(f"{prefix}.profile decimal_summary counts overlap impossibly")
+        expected_all_nonempty_decimal = (
+            column["nonempty_count"] > 0
+            and decimal["finite_decimal_count"] == column["nonempty_count"]
+        )
+        if decimal["all_nonempty_decimal"] is not expected_all_nonempty_decimal:
+            raise ResultError(f"{prefix}.profile all_nonempty_decimal contradicts finite count")
+    return receipt
+
 def validate_efehr_eshm20_root_config_receipt(receipt: Any) -> dict[str, Any]:
     prefix = "efehr_eshm20_root_config_receipt"
     if type(receipt) is not dict:
@@ -802,6 +938,7 @@ def _validate_network_evidence(evidence: Any, *, receipt_field: str) -> dict[str
         "efehr_readme_receipt": EFEHR_README_EVIDENCE_FIELDS,
         "efehr_eshm20_tree_metadata": EFEHR_ESHM20_EVIDENCE_FIELDS,
         "efehr_kosovo_exposure_receipt": EFEHR_KOSOVO_EVIDENCE_FIELDS,
+        "efehr_kosovo_exposure_profile": EFEHR_KOSOVO_PROFILE_EVIDENCE_FIELDS,
         "efehr_eshm20_root_config_receipt": EFEHR_ESHM20_ROOT_CONFIG_EVIDENCE_FIELDS,
         "esrm20_event_hazard_group1_receipt": ESRM20_EVENT_HAZARD_GROUP1_EVIDENCE_FIELDS,
         "esrm20_event_hazard_group2_receipt": ESRM20_EVENT_HAZARD_GROUP2_EVIDENCE_FIELDS,
@@ -920,6 +1057,16 @@ def validate_result(result: dict[str, Any]) -> dict[str, Any]:
             )
         receipt_field = "efehr_kosovo_exposure_receipt"
         receipt_validator = validate_efehr_kosovo_exposure_receipt
+    elif action == "efehr_kosovo_exposure_profile":
+        if (
+            result["source_issue"] != EFEHR_KOSOVO_PROFILE_ACTION_ISSUE
+            or result["dataset_id"] != EFEHR_KOSOVO_PROFILE.DATASET_ID
+        ):
+            raise ResultError(
+                "efehr_kosovo_exposure_profile result is outside the frozen issue/dataset boundary"
+            )
+        receipt_field = "efehr_kosovo_exposure_profile"
+        receipt_validator = validate_efehr_kosovo_exposure_profile
     elif action == "efehr_eshm20_root_config_receipt":
         if (
             result["source_issue"] != EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE
@@ -961,9 +1108,14 @@ def validate_result(result: dict[str, Any]) -> dict[str, Any]:
         if failure_class is not None:
             raise ResultError("successful acquisition_receipt cannot carry failure_class")
         receipt = receipt_validator(evidence[receipt_field])
-        retrieved = _utc_second(receipt["retrieved_at"], f"{receipt_field}.retrieved_at")
-        if retrieved < started or retrieved > finished:
-            raise ResultError(f"{receipt_field}.retrieved_at must fall within action start/finish bounds")
+        timestamp_field = (
+            "profiled_at" if receipt_field == "efehr_kosovo_exposure_profile" else "retrieved_at"
+        )
+        observed_at = _utc_second(receipt[timestamp_field], f"{receipt_field}.{timestamp_field}")
+        if observed_at < started or observed_at > finished:
+            raise ResultError(
+                f"{receipt_field}.{timestamp_field} must fall within action start/finish bounds"
+            )
     elif status == "blocked":
         if failure_class != ACQUISITION_FAILURE_CLASS:
             raise ResultError("blocked acquisition_receipt must identify acquisition_failed")

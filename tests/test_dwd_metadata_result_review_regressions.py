@@ -64,6 +64,7 @@ class DwdMetadataResultReviewRegressions(unittest.TestCase):
                 "efehr_readme_receipt",
                 "efehr_eshm20_tree_metadata",
                 "efehr_kosovo_exposure_receipt",
+                "efehr_kosovo_exposure_profile",
                 "efehr_eshm20_root_config_receipt",
                 "esrm20_event_hazard_group1_receipt",
                 "esrm20_event_hazard_group2_receipt",

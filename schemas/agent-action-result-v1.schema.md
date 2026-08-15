@@ -18,7 +18,7 @@ Change the canonical JSON Schema and run `python scripts/schema_reference.py --w
 
 Portable closed result receipt for the owner-authorized trusted-main Agent Action Dispatch control plane. scripts/validate_agent_action_result.py is authoritative for exact Python scalar types, UTC ordering, acquisition-receipt identity and cross-field checks.
 
-**Executable authority note:** request_validation records strict validation/dedup state. acquisition_receipt phase is shared by eight closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, efehr_kosovo_exposure_receipt for Issue 328, efehr_eshm20_root_config_receipt for Issue 335, and the two ESRM20 event-hazard Group1/Group2 receipt actions for Issue 346. All require external_bytes_persisted=false. EFEHR/ESRM20 receipts prove only their bounded transport, repository-metadata, or exact selected-file byte identity; they do not establish scientific fitness, dependency closure, model-use eligibility, completeness outside the selected scope or publication authorization.
+**Executable authority note:** request_validation records strict validation/dedup state. acquisition_receipt phase is shared by nine closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, efehr_kosovo_exposure_receipt for Issue 328, efehr_eshm20_root_config_receipt for Issue 335, the two ESRM20 event-hazard Group1/Group2 receipt actions for Issue 346, and efehr_kosovo_exposure_profile for Issue 351. All require external_bytes_persisted=false. EFEHR/ESRM20 receipts prove only their bounded transport, repository-metadata, or exact selected-file byte identity; they do not establish scientific fitness, dependency closure, model-use eligibility, completeness outside the selected scope or publication authorization.
 
 ## Contract structure
 
@@ -32,7 +32,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 #### `action` — **required**
 
-**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt"]`
+**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile"]`
 
 #### `dataset_id` — **required**
 
@@ -230,6 +230,38 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`object`; `additionalProperties`=`false`
 
+**Required here:** `request_validated`, `ledger_scan_complete`, `prior_result_reused`, `efehr_kosovo_exposure_profile`
+
+###### Properties
+
+###### `efehr_kosovo_exposure_profile` — **required**
+
+###### anyOf
+
+###### Branch 1
+
+**Constraints:** type=`null`
+
+###### Branch 2
+
+**Constraints:** `$ref`=`#/$defs/efehrKosovoExposureProfile`
+
+###### `ledger_scan_complete` — **required**
+
+**Constraints:** `const`=`true`
+
+###### `prior_result_reused` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `request_validated` — **required**
+
+**Constraints:** `const`=`true`
+
+###### Branch 8
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
 **Required here:** `request_validated`, `ledger_scan_complete`, `prior_result_reused`, `efehr_eshm20_root_config_receipt`
 
 ###### Properties
@@ -258,7 +290,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`true`
 
-###### Branch 8
+###### Branch 9
 
 **Constraints:** type=`object`; `additionalProperties`=`false`
 
@@ -290,7 +322,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`true`
 
-###### Branch 9
+###### Branch 10
 
 **Constraints:** type=`object`; `additionalProperties`=`false`
 
@@ -764,6 +796,202 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`oq_computational/oq_configuration_eshm20_v12e_region_main/`
 
+#### `efehrKosovoExposureProfile`
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `schema_version`, `source_issue`, `dataset_id`, `project_id`, `project_path`, `commit_sha`, `repository_path`, `receipt_comment_id`, `receipt_execution_sha`, `byte_count`, `sha256`, `profiled_at`, `profile`, `external_bytes_persisted`, `publication_authorized`
+
+##### Properties
+
+###### `byte_count` — **required**
+
+**Constraints:** `const`=`316789`
+
+###### `commit_sha` — **required**
+
+**Constraints:** `const`=`900433ada80fbb424c0976c34d72eeef97bab1af`
+
+###### `dataset_id` — **required**
+
+**Constraints:** `const`=`efehr.esrm20.european-exposure-model.v1.0`
+
+###### `external_bytes_persisted` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `profile` — **required**
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `schema_version`, `parser`, `record_count`, `header`, `columns`, `raw_rows_returned`, `external_bytes_persisted`, `publication_authorized`
+
+###### Properties
+
+###### `columns` — **required**
+
+**Constraints:** type=`array`; `minItems`=`2`; `maxItems`=`128`
+
+###### Array items
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `name`, `record_count`, `empty_count`, `nonempty_count`, `distinct_count`, `exact_value_set_sha256`, `decimal_summary`
+
+###### Properties
+
+###### `decimal_summary` — **required**
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `all_nonempty_decimal`, `finite_decimal_count`, `leading_or_trailing_whitespace_count`
+
+###### Properties
+
+###### `all_nonempty_decimal` — **required**
+
+**Constraints:** type=`boolean`
+
+###### `finite_decimal_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`0`; `maximum`=`316789`
+
+###### `leading_or_trailing_whitespace_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`0`; `maximum`=`316789`
+
+###### `distinct_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`1`; `maximum`=`316789`
+
+###### `empty_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`0`; `maximum`=`316789`
+
+###### `exact_value_set_sha256` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^[a-f0-9]{64}$`
+
+###### `name` — **required**
+
+**Constraints:** type=`string`; `minLength`=`1`; `maxLength`=`256`
+
+###### `nonempty_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`0`; `maximum`=`316789`
+
+###### `record_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`1`; `maximum`=`316789`
+
+###### `external_bytes_persisted` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `header` — **required**
+
+**Constraints:** type=`array`; `minItems`=`2`; `maxItems`=`128`; `uniqueItems`=`true`
+
+###### Array items
+
+**Constraints:** type=`string`; `minLength`=`1`; `maxLength`=`256`
+
+###### `parser` — **required**
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `encoding`, `bom_present`, `delimiter`, `line_endings`
+
+###### Properties
+
+###### `bom_present` — **required**
+
+**Constraints:** type=`boolean`
+
+###### `delimiter` — **required**
+
+**Constraints:** `const`=`,`
+
+###### `encoding` — **required**
+
+**Constraints:** `enum`=`["utf-8","utf-8-sig"]`
+
+###### `line_endings` — **required**
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `crlf_count`, `lf_count`, `cr_count`
+
+###### Properties
+
+###### `cr_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`0`; `maximum`=`316789`
+
+###### `crlf_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`0`; `maximum`=`316789`
+
+###### `lf_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`0`; `maximum`=`316789`
+
+###### `publication_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `raw_rows_returned` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `record_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`1`; `maximum`=`316789`
+
+###### `schema_version` — **required**
+
+**Constraints:** `const`=`oc-esrm20-exposure-content-profile-v0`
+
+###### `profiled_at` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`
+
+###### `project_id` — **required**
+
+**Constraints:** `const`=`186`
+
+###### `project_path` — **required**
+
+**Constraints:** `const`=`efehr/esrm20_exposure`
+
+###### `publication_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `receipt_comment_id` — **required**
+
+**Constraints:** `const`=`5300981864`
+
+###### `receipt_execution_sha` — **required**
+
+**Constraints:** `const`=`46d054930025553ad19d8b05fff9018dc2a49b5f`
+
+###### `repository_path` — **required**
+
+**Constraints:** `const`=`_exposure_models/Exposure_Model_Kosovo_Res.csv`
+
+###### `schema_version` — **required**
+
+**Constraints:** `const`=`oc-esrm20-exposure-content-profile-v0`
+
+###### `sha256` — **required**
+
+**Constraints:** `const`=`4d562ad4925c527d518834b8dcd39a083cfd3b87b622031a84958ae7b4d8c5ea`
+
+###### `source_issue` — **required**
+
+**Constraints:** `const`=`282`
+
 #### `efehrKosovoExposureReceipt`
 
 **Constraints:** type=`object`; `additionalProperties`=`false`
@@ -1152,15 +1380,21 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### not
 
-**Required here:** `efehr_eshm20_root_config_receipt`
+**Required here:** `efehr_kosovo_exposure_profile`
 
 ###### Branch 7
 
 ###### not
 
-**Required here:** `esrm20_event_hazard_group1_receipt`
+**Required here:** `efehr_eshm20_root_config_receipt`
 
 ###### Branch 8
+
+###### not
+
+**Required here:** `esrm20_event_hazard_group1_receipt`
+
+###### Branch 9
 
 ###### not
 
@@ -1326,7 +1560,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### `action`
 
-**Constraints:** `enum`=`["acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt"]`
+**Constraints:** `enum`=`["acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile"]`
 
 ###### `duplicate_result_comment_id`
 
@@ -1524,6 +1758,42 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### `action` — **required**
 
+**Constraints:** `const`=`efehr_kosovo_exposure_profile`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `dataset_id`
+
+**Constraints:** `const`=`efehr.esrm20.european-exposure-model.v1.0`
+
+###### `evidence`
+
+**Required here:** `efehr_kosovo_exposure_profile`
+
+###### `source_issue`
+
+**Constraints:** `const`=`351`
+
+#### Branch 12
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`
+
+###### Properties
+
+###### `action` — **required**
+
 **Constraints:** `const`=`efehr_eshm20_root_config_receipt`
 
 ###### `phase` — **required**
@@ -1548,7 +1818,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`335`
 
-#### Branch 12
+#### Branch 13
 
 ##### if
 
@@ -1584,7 +1854,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`346`
 
-#### Branch 13
+#### Branch 14
 
 ##### if
 
@@ -1620,7 +1890,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`346`
 
-#### Branch 14
+#### Branch 15
 
 ##### if
 
@@ -1662,7 +1932,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 15
+#### Branch 16
 
 ##### if
 
@@ -1704,7 +1974,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 16
+#### Branch 17
 
 ##### if
 
@@ -1746,7 +2016,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 17
+#### Branch 18
 
 ##### if
 
@@ -1788,7 +2058,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 18
+#### Branch 19
 
 ##### if
 
@@ -1830,7 +2100,49 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 19
+#### Branch 20
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`, `status`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_kosovo_exposure_profile`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+###### `status` — **required**
+
+**Constraints:** `const`=`pass`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `evidence`
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `efehr_kosovo_exposure_profile`
+
+**Constraints:** `$ref`=`#/$defs/efehrKosovoExposureProfile`
+
+###### `failure_class`
+
+**Constraints:** type=`null`
+
+#### Branch 21
 
 ##### if
 
@@ -1872,7 +2184,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 20
+#### Branch 22
 
 ##### if
 
@@ -1914,7 +2226,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 21
+#### Branch 23
 
 ##### if
 
@@ -1956,7 +2268,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 22
+#### Branch 24
 
 ##### if
 
@@ -1998,7 +2310,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 23
+#### Branch 25
 
 ##### if
 
@@ -2040,7 +2352,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 24
+#### Branch 26
 
 ##### if
 
@@ -2082,7 +2394,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 25
+#### Branch 27
 
 ##### if
 
@@ -2124,7 +2436,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 26
+#### Branch 28
 
 ##### if
 
@@ -2166,7 +2478,49 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 27
+#### Branch 29
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`, `status`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_kosovo_exposure_profile`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+###### `status` — **required**
+
+**Constraints:** `const`=`blocked`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `evidence`
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `efehr_kosovo_exposure_profile`
+
+**Constraints:** type=`null`
+
+###### `failure_class`
+
+**Constraints:** `const`=`acquisition_failed`
+
+#### Branch 30
 
 ##### if
 
@@ -2208,7 +2562,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 28
+#### Branch 31
 
 ##### if
 
@@ -2250,7 +2604,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 29
+#### Branch 32
 
 ##### if
 
