@@ -148,6 +148,7 @@ def fetch_repository_comments(
     repository: str,
     token: str,
     *,
+    issue: int | None = None,
     opener: Any = urllib.request.urlopen,
     max_pages: int = MAX_LEDGER_PAGES,
 ) -> list[dict[str, Any]]:
@@ -155,16 +156,22 @@ def fetch_repository_comments(
         raise LedgerError("repository must be owner/name")
     if type(token) is not str or not token:
         raise LedgerError("GitHub token is absent")
+    if issue is not None and (type(issue) is not int or issue < 1):
+        raise LedgerError("issue must be a positive integer when supplied")
     if type(max_pages) is not int or max_pages < 1:
         raise LedgerError("max_pages must be a positive integer")
 
     comments: list[dict[str, Any]] = []
     for page in range(1, max_pages + 1):
-        query = urllib.parse.urlencode(
-            {"sort": "created", "direction": "desc", "per_page": PER_PAGE, "page": page}
-        )
+        query_parameters = {"per_page": PER_PAGE, "page": page}
+        if issue is None:
+            query_parameters.update({"sort": "created", "direction": "desc"})
+            ledger_path = f"/repos/{repository}/issues/comments"
+        else:
+            ledger_path = f"/repos/{repository}/issues/{issue}/comments"
+        query = urllib.parse.urlencode(query_parameters)
         request = urllib.request.Request(
-            f"{API_ROOT}/repos/{repository}/issues/comments?{query}",
+            f"{API_ROOT}{ledger_path}?{query}",
             headers={
                 "Accept": "application/vnd.github+json",
                 "Authorization": f"Bearer {token}",
@@ -191,8 +198,25 @@ def fetch_repository_comments(
     )
 
 
+def ledger_issue_for_request(request: dict[str, Any]) -> int | None:
+    """Return the complete durable ledger scope for one validated request.
+
+    Closed network actions are validator-bound to one exact issue/dataset pair,
+    and their canonical result is posted to that same issue. Scanning that issue
+    is complete for network dedup while avoiding unrelated repository comment
+    growth. Non-network actions retain repository-wide ledger semantics.
+    """
+
+    if request.get("action") not in NETWORK_ACTIONS:
+        return None
+    issue = request.get("issue")
+    if type(issue) is not int or issue < 1:
+        raise LedgerError("validated network request lacks a positive integer issue")
+    return issue
+
+
 def build_result(
-    request: dict[str, Any],
+        request: dict[str, Any],
     *,
     repository: str,
     execution_sha: str,
@@ -413,7 +437,11 @@ def main(argv: list[str] | None = None) -> int:
         run_attempt = positive_int(args.run_attempt, "run_attempt")
         request = validate_request(extract_request(body), expected_issue=issue)
         try:
-            comments = fetch_repository_comments(args.repository, token)
+            comments = fetch_repository_comments(
+                args.repository,
+                token,
+                issue=ledger_issue_for_request(request),
+            )
             result = prepare_completed_result(
                 request,
                 comments,
