@@ -18,7 +18,7 @@ Change the canonical JSON Schema and run `python scripts/schema_reference.py --w
 
 Portable closed result receipt for the owner-authorized trusted-main Agent Action Dispatch control plane. scripts/validate_agent_action_result.py is authoritative for exact Python scalar types, UTC ordering, acquisition-receipt identity and cross-field checks.
 
-**Executable authority note:** request_validation records strict validation/dedup state. acquisition_receipt phase is shared by twelve closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, efehr_kosovo_exposure_receipt for Issue 328, efehr_eshm20_root_config_receipt for Issue 335, the two ESRM20 event-hazard Group1/Group2 receipt actions for Issue 346, efehr_kosovo_exposure_profile for Issue 351, and efehr_eshm20_gsim_resource_profile for Issue 376. All require external_bytes_persisted=false. EFEHR/ESRM20 receipts prove only their bounded transport, repository-metadata, or exact selected-file byte identity; they do not establish scientific fitness, dependency closure, model-use eligibility, completeness outside the selected scope or publication authorization. efehr_eshm20_root_dependency_profile for Issue 353 persists only verified first-order dependency metadata; dependency inventory, transitive closure, model use and publication remain unauthorized. efehr_eshm20_first_order_receipts for Issue 361 persists only exact byte receipts for the three \#353-selected first-order candidates; dependency inventory, semantics, closure, model use and publication remain unauthorized. efehr_eshm20_gsim_resource_profile persists only bounded structural _file/_table resource-reference metadata from the exact \#361-receipted GMM logic-tree bytes; dependency receipts, dependency closure, GSIM runtime validity, model use and publication remain unauthorized.
+**Executable authority note:** request_validation records strict validation/dedup state. acquisition_receipt phase is shared by twelve closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, efehr_kosovo_exposure_receipt for Issue 328, efehr_eshm20_root_config_receipt for Issue 335, the two ESRM20 event-hazard Group1/Group2 receipt actions for Issue 346, efehr_kosovo_exposure_profile for Issue 351, and efehr_eshm20_gsim_resource_profile for Issue 376. All require external_bytes_persisted=false. EFEHR/ESRM20 receipts prove only their bounded transport, repository-metadata, or exact selected-file byte identity; they do not establish scientific fitness, dependency closure, model-use eligibility, completeness outside the selected scope or publication authorization. efehr_eshm20_root_dependency_profile for Issue 353 persists only verified first-order dependency metadata; dependency inventory, transitive closure, model use and publication remain unauthorized. efehr_eshm20_first_order_receipts for Issue 361 persists only exact byte receipts for the three \#353-selected first-order candidates; dependency inventory, semantics, closure, model use and publication remain unauthorized. efehr_eshm20_gsim_resource_profile persists only bounded structural _file/_table resource-reference metadata from the exact \#361-receipted GMM logic-tree bytes; dependency receipts, dependency closure, GSIM runtime validity, model use and publication remain unauthorized. efehr_kosovo_taxonomy_identity for Issue 363 persists only the exact pre-publication identity of the 86-value Kosovo residential TAXONOMY set; literal taxonomy values, provider bytes, normalization, mapping interpretation, vulnerability selection, publication and model use remain unauthorized.
 
 ## Contract structure
 
@@ -32,7 +32,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 #### `action` — **required**
 
-**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile"]`
+**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity"]`
 
 #### `dataset_id` — **required**
 
@@ -437,6 +437,38 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### Branch 2
 
 **Constraints:** `$ref`=`#/$defs/efehrEshm20GsimResourceProfile`
+
+###### `ledger_scan_complete` — **required**
+
+**Constraints:** `const`=`true`
+
+###### `prior_result_reused` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `request_validated` — **required**
+
+**Constraints:** `const`=`true`
+
+###### Branch 14
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `request_validated`, `ledger_scan_complete`, `prior_result_reused`, `efehr_kosovo_taxonomy_identity`
+
+###### Properties
+
+###### `efehr_kosovo_taxonomy_identity` — **required**
+
+###### anyOf
+
+###### Branch 1
+
+**Constraints:** type=`null`
+
+###### Branch 2
+
+**Constraints:** `$ref`=`#/$defs/efehrKosovoTaxonomyIdentity`
 
 ###### `ledger_scan_complete` — **required**
 
@@ -1612,6 +1644,118 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`282`
 
+#### `efehrKosovoTaxonomyIdentity`
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `schema_version`, `operation_id`, `control_issue`, `worker_identity`, `retrieved_at`, `source_issue`, `dataset_id`, `project_id`, `project_path`, `commit_sha`, `repository_path`, `receipt_comment_id`, `receipt_execution_sha`, `source_byte_count`, `source_sha256`, `taxonomy_field`, `taxonomy_count`, `taxonomy_artifact_representation`, `taxonomy_artifact_byte_count`, `taxonomy_artifact_sha256`, `taxonomy_values_returned`, `normalization_applied`, `raw_rows_returned`, `external_bytes_persisted`, `derived_artifact_persisted`, `publication_authorized`
+
+##### Properties
+
+###### `commit_sha` — **required**
+
+**Constraints:** `const`=`900433ada80fbb424c0976c34d72eeef97bab1af`
+
+###### `control_issue` — **required**
+
+**Constraints:** `const`=`363`
+
+###### `dataset_id` — **required**
+
+**Constraints:** `const`=`efehr.esrm20.european-exposure-model.v1.0`
+
+###### `derived_artifact_persisted` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `external_bytes_persisted` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `normalization_applied` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `operation_id` — **required**
+
+**Constraints:** `const`=`esrm20-kosovo-residential-taxonomy-identity-v1`
+
+###### `project_id` — **required**
+
+**Constraints:** `const`=`186`
+
+###### `project_path` — **required**
+
+**Constraints:** `const`=`efehr/esrm20_exposure`
+
+###### `publication_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `raw_rows_returned` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `receipt_comment_id` — **required**
+
+**Constraints:** `const`=`5300981864`
+
+###### `receipt_execution_sha` — **required**
+
+**Constraints:** `const`=`46d054930025553ad19d8b05fff9018dc2a49b5f`
+
+###### `repository_path` — **required**
+
+**Constraints:** `const`=`_exposure_models/Exposure_Model_Kosovo_Res.csv`
+
+###### `retrieved_at` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`
+
+###### `schema_version` — **required**
+
+**Constraints:** `const`=`oc-esrm20-kosovo-taxonomy-artifact-identity-v1`
+
+###### `source_byte_count` — **required**
+
+**Constraints:** `const`=`316789`
+
+###### `source_issue` — **required**
+
+**Constraints:** `const`=`282`
+
+###### `source_sha256` — **required**
+
+**Constraints:** `const`=`4d562ad4925c527d518834b8dcd39a083cfd3b87b622031a84958ae7b4d8c5ea`
+
+###### `taxonomy_artifact_byte_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`774`; `maximum`=`316789`
+
+###### `taxonomy_artifact_representation` — **required**
+
+**Constraints:** `const`=`oc-taxonomy-u64be-utf8-sorted-v1`
+
+###### `taxonomy_artifact_sha256` — **required**
+
+**Constraints:** `const`=`d5e6fe4e32489cdd2222b6b3facfd30937e2af61bbcf0ecead37ccf97202a945`
+
+###### `taxonomy_count` — **required**
+
+**Constraints:** `const`=`86`
+
+###### `taxonomy_field` — **required**
+
+**Constraints:** `const`=`TAXONOMY`
+
+###### `taxonomy_values_returned` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `worker_identity` — **required**
+
+**Constraints:** `const`=`scripts.extract_efehr_kosovo_taxonomy.extract_verified_kosovo_taxonomy`
+
 #### `efehrReadmeReceipt`
 
 **Constraints:** type=`object`; `additionalProperties`=`false`
@@ -1982,6 +2126,12 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Required here:** `efehr_eshm20_gsim_resource_profile`
 
+###### Branch 13
+
+###### not
+
+**Required here:** `efehr_kosovo_taxonomy_identity`
+
 #### Branch 2
 
 ##### if
@@ -2142,7 +2292,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### `action`
 
-**Constraints:** `enum`=`["acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile"]`
+**Constraints:** `enum`=`["acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity"]`
 
 ###### `duplicate_result_comment_id`
 
@@ -3581,6 +3731,126 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### Properties
 
 ###### `efehr_eshm20_gsim_resource_profile`
+
+**Constraints:** type=`null`
+
+###### `failure_class`
+
+**Constraints:** `const`=`acquisition_failed`
+
+#### Branch 42
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_kosovo_taxonomy_identity`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `dataset_id`
+
+**Constraints:** `const`=`efehr.esrm20.european-exposure-model.v1.0`
+
+###### `evidence`
+
+**Required here:** `efehr_kosovo_taxonomy_identity`
+
+###### `source_issue`
+
+**Constraints:** `const`=`363`
+
+#### Branch 43
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`, `status`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_kosovo_taxonomy_identity`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+###### `status` — **required**
+
+**Constraints:** `const`=`pass`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `evidence`
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `efehr_kosovo_taxonomy_identity`
+
+**Constraints:** `$ref`=`#/$defs/efehrKosovoTaxonomyIdentity`
+
+###### `failure_class`
+
+**Constraints:** type=`null`
+
+#### Branch 44
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`, `status`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_kosovo_taxonomy_identity`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+###### `status` — **required**
+
+**Constraints:** `const`=`blocked`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `evidence`
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `efehr_kosovo_taxonomy_identity`
 
 **Constraints:** type=`null`
 
