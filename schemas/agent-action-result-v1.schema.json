@@ -882,21 +882,21 @@
       }}
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "esrm20_event_hazard_group2_receipt"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "esrm20_event_hazard_group2_receipt"}, "status": {"const": "pass"}},
       "then": {"properties": {
         "evidence": {"properties": {"esrm20_event_hazard_group2_receipt": {"$ref": "#/$defs/esrm20EventHazardGroup2Receipt"}}},
         "failure_class": {"type": "null"}
       }}
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_root_dependency_profile"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_root_dependency_profile"}, "status": {"const": "pass"}},
       "then": {"properties": {
         "evidence": {"properties": {"efehr_eshm20_root_dependency_profile": {"$ref": "#/$defs/efehrEshm20RootDependencyProfile"}}},
         "failure_class": {"type": "null"}
       }}
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_gsim_resource_profile"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_gsim_resource_profile"}, "status": {"const": "pass"}},
       "then": {"properties": {
         "evidence": {"properties": {"efehr_eshm20_gsim_resource_profile": {"$ref": "#/$defs/efehrEshm20GsimResourceProfile"}}},
         "failure_class": {"type": "null"}
