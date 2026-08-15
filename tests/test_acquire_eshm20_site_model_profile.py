@@ -98,6 +98,19 @@ class FixedEshm20SiteModelProfileTests(unittest.TestCase):
             worker.EXPECTED_SHA256,
             "d4d95f3e482a0361a90d1b0796545eaf075d0e212d66d025f975973497b29529",
         )
+        self.assertEqual(
+            worker.INVENTORY_RECEIPT_COMMENT_ID,
+            worker.inventory_authority.INVENTORY_RECEIPT_COMMENT_ID,
+        )
+        self.assertEqual(worker.INVENTORY_RECEIPT_COMMENT_ID, 5290449064)
+        self.assertEqual(
+            worker.ROOT_DEPENDENCY_RESULT_COMMENT_ID,
+            worker.first_order_authority.SELECTION_RESULT_COMMENT_ID,
+        )
+        self.assertNotEqual(
+            worker.INVENTORY_RECEIPT_COMMENT_ID,
+            worker.ROOT_DEPENDENCY_RESULT_COMMENT_ID,
+        )
         self.assertEqual(worker.FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID, 5301857400)
         self.assertEqual(worker.FIRST_ORDER_RECEIPT_RUN_ID, 31880089623)
         self.assertFalse(
@@ -141,6 +154,18 @@ class FixedEshm20SiteModelProfileTests(unittest.TestCase):
             },
         )
         self.assertEqual(profile["columns"][2]["distinct_count"], 3)
+        self.assertEqual(
+            result["inventory_receipt_comment_id"],
+            worker.inventory_authority.INVENTORY_RECEIPT_COMMENT_ID,
+        )
+        self.assertEqual(
+            result["root_dependency_result_comment_id"],
+            worker.first_order_authority.SELECTION_RESULT_COMMENT_ID,
+        )
+        self.assertNotEqual(
+            result["inventory_receipt_comment_id"],
+            result["root_dependency_result_comment_id"],
+        )
         self.assertNotIn("numeric_min", json.dumps(result, sort_keys=True))
         self.assertNotIn("numeric_max", json.dumps(result, sort_keys=True))
         for field in (
@@ -261,6 +286,8 @@ class FixedEshm20SiteModelProfileTests(unittest.TestCase):
                 "oq_computational/oq_configuration_eshm20_v12e_region_main/"
                 "gmpe_complete_logic_tree_5br.xml",
             ),
+            ("EXPECTED_BYTE_COUNT", worker.EXPECTED_BYTE_COUNT + 1),
+            ("EXPECTED_SHA256", "0" * 64),
         )
         for name, replacement in cases:
             with self.subTest(name=name), mock.patch.object(
