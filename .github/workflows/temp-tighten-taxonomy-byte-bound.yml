@@ -1,0 +1,83 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Temporary tighten taxonomy byte bound
+
+on:
+  push:
+    branches:
+      - agent/363-taxonomy-action-port
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact port head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Tighten executable and portable taxonomy byte-count contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          validator_path = Path('scripts/validate_agent_action_result.py')
+          validator = validator_path.read_text(encoding='utf-8')
+          old = '''    artifact_byte_count = receipt["taxonomy_artifact_byte_count"]\n    if type(artifact_byte_count) is not int or not (1 <= artifact_byte_count <= exposure.EXPECTED_BYTE_COUNT):\n        raise ResultError(f"{prefix}.taxonomy_artifact_byte_count is outside bounded policy")\n'''
+          new = '''    artifact_byte_count = receipt["taxonomy_artifact_byte_count"]\n    minimum_artifact_byte_count = _taxonomy.EXPECTED_DISTINCT_COUNT * 9\n    if type(artifact_byte_count) is not int or not (\n        minimum_artifact_byte_count <= artifact_byte_count <= exposure.EXPECTED_BYTE_COUNT\n    ):\n        raise ResultError(f"{prefix}.taxonomy_artifact_byte_count is outside bounded policy")\n'''
+          if validator.count(old) != 1:
+              raise SystemExit('expected exact taxonomy artifact-byte validator block once')
+          validator_path.write_text(validator.replace(old, new), encoding='utf-8')
+
+          schema_path = Path('schemas/agent-action-result-v1.schema.json')
+          schema = json.loads(schema_path.read_text(encoding='utf-8'))
+          prop = schema['$defs']['efehrKosovoTaxonomyIdentity']['properties']['taxonomy_artifact_byte_count']
+          if prop != {'type': 'integer', 'minimum': 1, 'maximum': 316789}:
+              raise SystemExit(f'unexpected taxonomy_artifact_byte_count schema before repair: {prop!r}')
+          prop['minimum'] = 86 * 9
+          schema_path.write_text(json.dumps(schema, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+
+          test_path = Path('tests/test_efehr_kosovo_taxonomy_identity_action_wiring.py')
+          tests = test_path.read_text(encoding='utf-8')
+          anchor = '''    def test_validator_rejects_literal_value_or_other_extra_field(self) -> None:\n'''
+          regression = '''    def test_validator_rejects_impossible_canonical_artifact_byte_count(self) -> None:\n        changed = receipt()\n        changed["taxonomy_artifact_byte_count"] = taxonomy.EXPECTED_DISTINCT_COUNT * 9 - 1\n        with self.assertRaisesRegex(ResultError, "taxonomy_artifact_byte_count"):\n            result_with(changed)\n\n'''
+          if tests.count(anchor) != 1 or regression in tests:
+              raise SystemExit('taxonomy byte-count regression anchor drifted')
+          test_path.write_text(tests.replace(anchor, regression + anchor), encoding='utf-8')
+          PY
+      - name: Regenerate schema projection and run full definition of done
+        run: |
+          python scripts/schema_reference.py --write
+          python scripts/check_all.py
+          git diff --check
+      - name: Remove temporary workflow and verify bounded write scope
+        run: |
+          git rm .github/workflows/temp-tighten-taxonomy-byte-bound.yml
+          python - <<'PY'
+          import subprocess
+          allowed = {
+              '.github/workflows/temp-tighten-taxonomy-byte-bound.yml',
+              'scripts/validate_agent_action_result.py',
+              'schemas/agent-action-result-v1.schema.json',
+              'schemas/agent-action-result-v1.schema.md',
+              'tests/test_efehr_kosovo_taxonomy_identity_action_wiring.py',
+          }
+          changed = set(subprocess.check_output(['git', 'diff', 'HEAD', '--name-only'], text=True).splitlines())
+          if '.github/workflows/temp-tighten-taxonomy-byte-bound.yml' not in changed:
+              raise SystemExit('temporary workflow deletion missing from bounded diff')
+          if not changed <= allowed:
+              raise SystemExit(f'unexpected changed paths: {sorted(changed - allowed)}')
+          PY
+          git diff HEAD --check
+      - name: Commit bounded scientific contract repair
+        run: |
+          git config user.name 'OpenCatastrophe repair bot'
+          git config user.email '287434260+pokekarten@users.noreply.github.com'
+          git add -A
+          git commit -m 'Tighten Kosovo taxonomy artifact byte bound'
+          git push origin HEAD:agent/363-taxonomy-action-port
