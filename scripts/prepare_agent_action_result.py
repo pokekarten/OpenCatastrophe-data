@@ -31,6 +31,10 @@ try:
         ExposureProfileError,
         acquire_and_profile_kosovo_exposure,
     )
+    from scripts.acquire_efehr_kosovo_taxonomy import (
+        KosovoTaxonomyAcquisitionError,
+        acquire_verified_kosovo_taxonomy_identity,
+    )
     from scripts.acquire_efehr_eshm20_root_config_receipt import acquire_eshm20_root_config_receipt
     from scripts.acquire_eshm20_root_dependencies import (
         Eshm20RootDependencyAcquisitionError,
@@ -62,6 +66,7 @@ try:
         EFEHR_ESHM20_TREE_METADATA_ACTION,
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION,
         EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,
+        EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,
         EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,
         EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION,
         EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION,
@@ -86,6 +91,10 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     from profile_efehr_kosovo_exposure import (
         ExposureProfileError,
         acquire_and_profile_kosovo_exposure,
+    )
+    from acquire_efehr_kosovo_taxonomy import (
+        KosovoTaxonomyAcquisitionError,
+        acquire_verified_kosovo_taxonomy_identity,
     )
     from acquire_efehr_eshm20_root_config_receipt import acquire_eshm20_root_config_receipt
     from acquire_eshm20_root_dependencies import (
@@ -118,6 +127,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         EFEHR_ESHM20_TREE_METADATA_ACTION,
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION,
         EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,
+        EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,
         EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,
         EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION,
         EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION,
@@ -145,6 +155,7 @@ NETWORK_ACTIONS = frozenset(
         EFEHR_ESHM20_TREE_METADATA_ACTION,
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION,
         EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,
+        EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,
         EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,
         EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION,
         EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION,
@@ -343,6 +354,8 @@ def _receipt_field(action: str) -> str:
         return "efehr_kosovo_exposure_receipt"
     if action == EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION:
         return "efehr_kosovo_exposure_profile"
+    if action == EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION:
+        return "efehr_kosovo_taxonomy_identity"
     if action == EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION:
         return "efehr_eshm20_root_dependency_profile"
     if action == EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION:
@@ -418,6 +431,7 @@ def prepare_completed_result(
     eshm20_tree_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_tree_metadata,
     kosovo_exposure_acquirer: Callable[[], dict[str, Any]] = acquire_kosovo_receipt,
     kosovo_profile_acquirer: Callable[[], dict[str, Any]] = acquire_and_profile_kosovo_exposure,
+    kosovo_taxonomy_identity_acquirer: Callable[[], dict[str, Any]] = acquire_verified_kosovo_taxonomy_identity,
     eshm20_root_config_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_root_config_receipt,
     eshm20_root_dependency_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_root_dependencies,
     eshm20_first_order_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_first_order_receipts,
@@ -453,6 +467,8 @@ def prepare_completed_result(
         selected_acquirer = kosovo_exposure_acquirer
     elif request["action"] == EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION:
         selected_acquirer = kosovo_profile_acquirer
+    elif request["action"] == EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION:
+        selected_acquirer = kosovo_taxonomy_identity_acquirer
     elif request["action"] == EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION:
         selected_acquirer = eshm20_root_dependency_acquirer
     elif request["action"] == EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION:
@@ -498,6 +514,11 @@ def prepare_completed_result(
                 )
             receipt = dict(receipt)
             receipt["profiled_at"] = utc_now()
+    except KosovoTaxonomyAcquisitionError:
+        # The taxonomy worker may surface provider text. Keep both the durable
+        # result and the trusted workflow log value-free for this action.
+        print("acquisition blocked: Kosovo taxonomy acquisition failed closed", file=sys.stderr)
+        receipt = None
     except (
         AcquisitionError, EfehrAcquisitionError, ExposureProfileError,
         Eshm20RootDependencyAcquisitionError, Eshm20FirstOrderReceiptError,
