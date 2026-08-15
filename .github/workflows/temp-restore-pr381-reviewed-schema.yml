@@ -64,9 +64,6 @@ jobs:
         run: |
           git config user.name 'OpenCatastrophe repair bot'
           git config user.email '287434260+pokekarten@users.noreply.github.com'
-          git add schemas/agent-action-result-v1.schema.json schemas/agent-action-result-v1.schema.md .github/workflows/temp-restore-pr381-reviewed-schema.yml
-          if test -e .github/workflows/temp-fix-pr381-eof.yml || git ls-files --error-unmatch .github/workflows/temp-fix-pr381-eof.yml >/dev/null 2>&1; then
-            git add -A .github/workflows/temp-fix-pr381-eof.yml
-          fi
+          git add schemas/agent-action-result-v1.schema.json schemas/agent-action-result-v1.schema.md
           git commit -m 'Restore reviewed PR381 result schema contract'
           git push origin HEAD:agent/376-gsim-resource-profile-action
