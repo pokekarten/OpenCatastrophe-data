@@ -82,7 +82,7 @@ class VerifiedEshm20SourceModelLogicTreeDependenciesTests(unittest.TestCase):
             result = module.extract_verified_source_model_dependencies(payload)
         self.assertEqual(
             [(item["resolved_path"], item["is_hdf5_companion"]) for item in result["dependencies"]],
-            [(source, False), (companion, True)],
+            [(companion, True), (source, False)],
         )
         self.assertFalse(result["dependency_inventory_authorized"])
 
