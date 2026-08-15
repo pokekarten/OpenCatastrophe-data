@@ -90,7 +90,6 @@ class FixedEshm20SourceModelDependencyWorkerTests(unittest.TestCase):
             "root_dependency_section": worker.ROOT_DEPENDENCY_SECTION,
             "root_dependency_option": worker.ROOT_DEPENDENCY_OPTION,
             "first_order_receipt_request_comment_id": worker.FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID,
-            "first_order_receipt_result_comment_id": worker.FIRST_ORDER_RECEIPT_RESULT_COMMENT_ID,
             "first_order_receipt_run_id": worker.FIRST_ORDER_RECEIPT_RUN_ID,
             "first_order_receipt_execution_sha": worker.FIRST_ORDER_RECEIPT_EXECUTION_SHA,
             "first_order_receipt_retrieved_at": worker.FIRST_ORDER_RECEIPT_RETRIEVED_AT,
@@ -102,8 +101,46 @@ class FixedEshm20SourceModelDependencyWorkerTests(unittest.TestCase):
 
     def patched_identity(self, raw: bytes):
         return (
-            mock.patch.object(worker, "EXPECTED_BYTE_COUNT", len(raw)),
-            mock.patch.object(worker, "EXPECTED_SHA256", hashlib.sha256(raw).hexdigest()),
+            mock.patch.object(worker, "_CANONICAL_EXPECTED_BYTE_COUNT", len(raw)),
+            mock.patch.object(
+                worker, "_CANONICAL_EXPECTED_SHA256", hashlib.sha256(raw).hexdigest()
+            ),
+        )
+
+    def test_frozen_source_capability_and_receipt_identity_are_exact(self) -> None:
+        self.assertIs(
+            worker._CANONICAL_SOURCE_SPEC,
+            worker.first_order_authority._SOURCE_MODEL_LOGIC_TREE,
+        )
+        self.assertEqual(worker.PROJECT_ID, worker.first_order_authority.PROJECT_ID)
+        self.assertEqual(worker.COMMIT_SHA, worker.first_order_authority.COMMIT_SHA)
+        self.assertEqual(
+            worker.REPOSITORY_PATH,
+            worker.first_order_authority._SOURCE_MODEL_LOGIC_TREE.repository_path,
+        )
+        self.assertEqual(worker.EXPECTED_BYTE_COUNT, 17_579)
+        self.assertEqual(
+            worker.EXPECTED_SHA256,
+            "97a37911f9eae73766f386686b112e5a4e111965da3e4e1543627c28d4201867",
+        )
+        self.assertEqual(worker.INVENTORY_RECEIPT_COMMENT_ID, 5290449064)
+        self.assertEqual(
+            worker.INVENTORY_RECEIPT_COMMENT_ID,
+            worker.root_bridge.INVENTORY_RECEIPT_COMMENT_ID,
+        )
+        self.assertEqual(
+            worker.ROOT_DEPENDENCY_RESULT_COMMENT_ID,
+            worker.first_order_authority.SELECTION_RESULT_COMMENT_ID,
+        )
+        self.assertNotEqual(
+            worker.INVENTORY_RECEIPT_COMMENT_ID,
+            worker.ROOT_DEPENDENCY_RESULT_COMMENT_ID,
+        )
+        self.assertEqual(worker.FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID, 5301857400)
+        self.assertEqual(worker.FIRST_ORDER_RECEIPT_RUN_ID, 31880089623)
+        self.assertFalse(
+            hasattr(worker, "FIRST_ORDER_RECEIPT_RESULT_COMMENT_ID"),
+            "complete #361 GitHub result-comment identity is not verified offline",
         )
 
     def test_public_worker_exposes_no_target_parser_or_inventory_selector(self) -> None:
@@ -116,7 +153,7 @@ class FixedEshm20SourceModelDependencyWorkerTests(unittest.TestCase):
             )
         )
 
-    def test_worker_uses_only_fixed_project_commit_and_source_tree_path(self) -> None:
+    def test_worker_uses_only_canonical_source_capability(self) -> None:
         captured: list[str] = []
         with mock.patch.object(
             worker,
@@ -128,10 +165,74 @@ class FixedEshm20SourceModelDependencyWorkerTests(unittest.TestCase):
             )
 
         self.assertEqual(len(captured), 1)
-        self.assertIn(f"/api/v4/projects/{worker.PROJECT_ID}/", captured[0])
-        self.assertIn(worker.COMMIT_SHA, captured[0])
+        self.assertIn(f"/api/v4/projects/{worker._CANONICAL_PROJECT_ID}/", captured[0])
+        self.assertIn(worker._CANONICAL_COMMIT_SHA, captured[0])
         self.assertIn("source_model_logic_tree_eshm20_model_v12e.xml", result["repository_path"])
         verified_bridge.assert_called_once_with(RAW)
+
+    def test_equal_but_distinct_source_spec_fails_before_network(self) -> None:
+        original = worker.first_order_authority._SOURCE_MODEL_LOGIC_TREE
+        replacement = worker.first_order_authority.DependencySpec(
+            repository_path=original.repository_path,
+            parent_section=original.parent_section,
+            parent_option=original.parent_option,
+        )
+        opened: list[bool] = []
+
+        def opener(request, timeout):
+            opened.append(True)
+            raise AssertionError("provider must not be called")
+
+        with mock.patch.object(
+            worker.first_order_authority,
+            "_SOURCE_MODEL_LOGIC_TREE",
+            replacement,
+        ):
+            with self.assertRaisesRegex(
+                worker.Eshm20SourceModelDependencyError, "capability identity drifted"
+            ):
+                worker.acquire_eshm20_source_model_dependencies(opener=opener)
+        self.assertEqual(opened, [])
+
+    def test_fixed_authority_alias_drift_fails_before_network(self) -> None:
+        cases = (
+            ("PROJECT_ID", worker.PROJECT_ID + 1),
+            ("COMMIT_SHA", "0" * 40),
+            (
+                "REPOSITORY_PATH",
+                worker.first_order_authority._GMPE_LOGIC_TREE.repository_path,
+            ),
+            ("EXPECTED_BYTE_COUNT", worker.EXPECTED_BYTE_COUNT + 1),
+            ("EXPECTED_SHA256", "0" * 64),
+            ("INVENTORY_RECEIPT_COMMENT_ID", worker.INVENTORY_RECEIPT_COMMENT_ID + 1),
+            (
+                "ROOT_DEPENDENCY_RESULT_COMMENT_ID",
+                worker.ROOT_DEPENDENCY_RESULT_COMMENT_ID + 1,
+            ),
+            ("ROOT_DEPENDENCY_SECTION", "other"),
+            ("ROOT_DEPENDENCY_OPTION", "other"),
+            (
+                "FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID",
+                worker.FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID + 1,
+            ),
+            ("FIRST_ORDER_RECEIPT_RUN_ID", worker.FIRST_ORDER_RECEIPT_RUN_ID + 1),
+            ("FIRST_ORDER_RECEIPT_EXECUTION_SHA", "0" * 40),
+            ("FIRST_ORDER_RECEIPT_RETRIEVED_AT", "2026-08-15T10:40:17Z"),
+        )
+        for name, replacement in cases:
+            opened: list[bool] = []
+
+            def opener(request, timeout):
+                opened.append(True)
+                raise AssertionError("provider must not be called")
+
+            with self.subTest(name=name), mock.patch.object(worker, name, replacement):
+                with self.assertRaisesRegex(
+                    worker.Eshm20SourceModelDependencyError,
+                    "frozen ESHM20 source-model",
+                ):
+                    worker.acquire_eshm20_source_model_dependencies(opener=opener)
+            self.assertEqual(opened, [])
 
     def test_receipt_identity_is_checked_before_decode_or_parser(self) -> None:
         good_count, good_hash = self.patched_identity(RAW)
@@ -181,23 +282,28 @@ class FixedEshm20SourceModelDependencyWorkerTests(unittest.TestCase):
             [{"uncertainty_type": "sourceModel", "branch_id": "b1"}],
         )
         self.assertFalse(dependency["is_hdf5_companion"])
-        self.assertFalse(any(path.endswith(".hdf5") for path in worker.root_bridge.FROZEN_INVENTORY_PATHS))
+        self.assertFalse(any(path.endswith(".hdf5") for path in worker._CANONICAL_INVENTORY))
         self.assertFalse(result["dependency_inventory_authorized"])
         self.assertFalse(result["external_bytes_persisted"])
         self.assertFalse(result["publication_authorized"])
 
-    def test_profile_rebinds_parent_receipt_and_parser_identity(self) -> None:
+    def test_profile_rebinds_parent_receipt_and_parser_identity_without_result_comment(self) -> None:
         count_patch, hash_patch = self.patched_identity(RAW)
         with count_patch, hash_patch:
             result = worker.extract_verified_source_model_dependencies(RAW)
 
         self.assertEqual(result["source_issue"], 281)
         self.assertEqual(result["control_issue"], 367)
+        self.assertEqual(result["inventory_receipt_comment_id"], 5290449064)
         self.assertEqual(result["root_dependency_result_comment_id"], 5301726249)
+        self.assertNotEqual(
+            result["inventory_receipt_comment_id"],
+            result["root_dependency_result_comment_id"],
+        )
         self.assertEqual(result["root_dependency_section"], "calculation")
         self.assertEqual(result["root_dependency_option"], "source_model_logic_tree_file")
         self.assertEqual(result["first_order_receipt_request_comment_id"], 5301857400)
-        self.assertEqual(result["first_order_receipt_result_comment_id"], 5301858821)
+        self.assertNotIn("first_order_receipt_result_comment_id", result)
         self.assertEqual(result["first_order_receipt_run_id"], 31880089623)
         self.assertEqual(
             result["first_order_receipt_execution_sha"],
@@ -336,7 +442,7 @@ class FixedEshm20SourceModelDependencyWorkerTests(unittest.TestCase):
         def wrong_status_opener(request, timeout):
             return FakeResponse(RAW, request.full_url, status=206)
 
-        oversize = b"x" * (worker.EXPECTED_BYTE_COUNT + 1)
+        oversize = b"x" * (worker._CANONICAL_EXPECTED_BYTE_COUNT + 1)
 
         for opener in (
             wrong_url_opener,
@@ -371,6 +477,7 @@ class FixedEshm20SourceModelDependencyWorkerTests(unittest.TestCase):
                 opener=self.opener_for(PRIVATE_MARKER_RAW, [])
             )
         self.assertNotIn("PROVIDER_PRIVATE_BODY", repr(observed))
+        self.assertNotIn("first_order_receipt_result_comment_id", observed)
 
         for mutation in (
             {"dependency_inventory_authorized": True},
