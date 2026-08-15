@@ -128,8 +128,11 @@ def trusted_result() -> dict[str, object]:
 class Eq1FirstOrderReceiptBridgeTests(unittest.TestCase):
     def test_actual_trusted_pass_shape_reduces_through_unmocked_canonical_validator(self) -> None:
         reduced = validate_and_reduce(trusted_result())
+        self.assertEqual(reduced["authority"]["source_issue"], 361)
+        self.assertEqual(reduced["authority"]["source_comment_id"], TRUSTED_SOURCE_COMMENT_ID)
         self.assertEqual(reduced["authority"]["run_id"], TRUSTED_RUN_ID)
         self.assertEqual(reduced["authority"]["execution_sha"], TRUSTED_EXECUTION_SHA)
+        self.assertNotIn("result_comment_id", reduced["authority"])
         self.assertEqual(
             [artifact["role"] for artifact in reduced["artifacts"]],
             ["site_model", "gmm_logic_tree", "source_model_logic_tree"],
@@ -218,6 +221,36 @@ class Eq1FirstOrderReceiptBridgeTests(unittest.TestCase):
         result["evidence"]["efehr_eshm20_first_order_receipts"]["receipts"][0]["byte_count"] = True
         with self.assertRaises(Eq1FirstOrderBridgeError):
             validate_and_reduce(result)
+
+    def test_bounded_runtime_and_header_drift_is_not_promoted_to_exact_comment_identity(self) -> None:
+        baseline = validate_and_reduce(trusted_result())
+        mutations: list[tuple[str, dict[str, object]]] = []
+
+        action_time = trusted_result()
+        action_time["started_at"] = "2026-08-15T10:40:11Z"
+        mutations.append(("action_time", action_time))
+
+        retrieved_at = trusted_result()
+        retrieved_at["evidence"]["efehr_eshm20_first_order_receipts"]["receipts"][0][
+            "retrieved_at"
+        ] = "2026-08-15T10:40:15Z"
+        mutations.append(("retrieved_at", retrieved_at))
+
+        content_type = trusted_result()
+        content_type["evidence"]["efehr_eshm20_first_order_receipts"]["receipts"][0][
+            "content_type"
+        ] = "application/octet-stream"
+        mutations.append(("content_type", content_type))
+
+        etag = trusted_result()
+        etag["evidence"]["efehr_eshm20_first_order_receipts"]["receipts"][0]["etag"] = 'W/"example"'
+        mutations.append(("etag", etag))
+
+        for label, result in mutations:
+            with self.subTest(field=label):
+                reduced = validate_and_reduce(result)
+                self.assertEqual(reduced, baseline)
+                self.assertNotIn("result_comment_id", reduced["authority"])
 
     def test_canonical_validator_failure_is_not_bypassed(self) -> None:
         result = trusted_result()
