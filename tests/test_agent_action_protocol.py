@@ -365,6 +365,7 @@ class AgentActionProtocolTests(unittest.TestCase):
                 "dwd_metadata_receipt",
                 "efehr_readme_receipt",
                 "efehr_eshm20_tree_metadata",
+                "efehr_kosovo_exposure_receipt",
                 "efehr_eshm20_root_config_receipt",
             },
         )
@@ -375,6 +376,7 @@ class AgentActionProtocolTests(unittest.TestCase):
         self.assertIn("dwdMetadataReceipt", schema["$defs"])
         self.assertIn("efehrReadmeReceipt", schema["$defs"])
         self.assertIn("efehrEshm20TreeMetadata", schema["$defs"])
+        self.assertIn("efehrKosovoExposureReceipt", schema["$defs"])
         self.assertIn("efehrEshm20RootConfigReceipt", schema["$defs"])
         receipt_schema = schema["$defs"]["acquisitionReceipt"]
         self.assertFalse(receipt_schema["additionalProperties"])

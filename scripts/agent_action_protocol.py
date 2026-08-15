@@ -17,6 +17,7 @@ ACQUISITION_RECEIPT_ACTION = "acquisition_receipt"
 DWD_METADATA_RECEIPT_ACTION = "dwd_metadata_receipt"
 EFEHR_README_RECEIPT_ACTION = "efehr_readme_receipt"
 EFEHR_ESHM20_TREE_METADATA_ACTION = "efehr_eshm20_tree_metadata"
+EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION = "efehr_kosovo_exposure_receipt"
 EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION = "efehr_eshm20_root_config_receipt"
 NETWORK_ACQUISITION_ACTIONS = frozenset(
     {
@@ -24,6 +25,7 @@ NETWORK_ACQUISITION_ACTIONS = frozenset(
         DWD_METADATA_RECEIPT_ACTION,
         EFEHR_README_RECEIPT_ACTION,
         EFEHR_ESHM20_TREE_METADATA_ACTION,
+        EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
     }
 )
@@ -47,8 +49,8 @@ def semantic_request_id(request: dict[str, Any], execution_sha: str, repository:
     Each closed network acquisition action also requires its semantic target to
     equal the trusted execution commit. The action itself participates in the
     identity, keeping measurement, station-metadata, EFEHR README, ESHM20
-    tree-metadata and ESHM20 root-config receipts distinct without introducing a
-    caller-controlled network target.
+    tree-metadata, Kosovo exposure and ESHM20 root-config receipts distinct
+    without introducing a caller-controlled network target.
     """
 
     if type(execution_sha) is not str or not GIT_SHA_RE.fullmatch(execution_sha):
