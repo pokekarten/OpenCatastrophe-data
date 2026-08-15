@@ -56,22 +56,22 @@ except ModuleNotFoundError:  # pragma: no cover - direct script import path
     import verify_eshm20_root_config_dependencies as root_bridge
 
 SCHEMA_VERSION = "oc-eshm20-source-model-dependency-profile-v2"
-SOURCE_ISSUE = 281
-CONTROL_ISSUE = 367
-DATASET_ID = "efehr.eshm20"
-PROJECT_PATH = "efehr/eshm20"
-PARSER_ID = (
-    "scripts.openquake_source_model_logic_tree_dependencies."
-    "extract_source_model_logic_tree_dependencies"
-)
 
 # Reuse the already-reviewed #361 fixed capability rather than declaring a
 # second provider target. Identity, not merely equal field values, binds this
 # worker to the exact source-model logic-tree object selected by #353/#361.
 _CANONICAL_SOURCE_SPEC = first_order_authority._SOURCE_MODEL_LOGIC_TREE
+_CANONICAL_SOURCE_ISSUE = first_order_authority.SOURCE_ISSUE
+_CANONICAL_CONTROL_ISSUE = 367
+_CANONICAL_DATASET_ID = first_order_authority.DATASET_ID
 _CANONICAL_PROJECT_ID = first_order_authority.PROJECT_ID
+_CANONICAL_PROJECT_PATH = first_order_authority.PROJECT_PATH
 _CANONICAL_COMMIT_SHA = first_order_authority.COMMIT_SHA
 _CANONICAL_REPOSITORY_PATH = _CANONICAL_SOURCE_SPEC.repository_path
+_CANONICAL_PARSER_ID = (
+    "scripts.openquake_source_model_logic_tree_dependencies."
+    "extract_source_model_logic_tree_dependencies"
+)
 _CANONICAL_EXPECTED_BYTE_COUNT = 17_579
 _CANONICAL_EXPECTED_SHA256 = (
     "97a37911f9eae73766f386686b112e5a4e111965da3e4e1543627c28d4201867"
@@ -84,14 +84,18 @@ _CANONICAL_FIRST_ORDER_RECEIPT_RUN_ID = 31880089623
 _CANONICAL_FIRST_ORDER_RECEIPT_EXECUTION_SHA = (
     "ab66e3e4c58c9b8f18587f1a8a51cf67cf9851b1"
 )
-_CANONICAL_FIRST_ORDER_RECEIPT_RETRIEVED_AT = "2026-08-15T10:40:16Z"
 
 # Public aliases remain reviewable and backwards-compatible, but production
 # authority below comes only from the private canonical bindings after an exact
 # pre-network drift guard.
+SOURCE_ISSUE = _CANONICAL_SOURCE_ISSUE
+CONTROL_ISSUE = _CANONICAL_CONTROL_ISSUE
+DATASET_ID = _CANONICAL_DATASET_ID
 PROJECT_ID = _CANONICAL_PROJECT_ID
+PROJECT_PATH = _CANONICAL_PROJECT_PATH
 COMMIT_SHA = _CANONICAL_COMMIT_SHA
 REPOSITORY_PATH = _CANONICAL_REPOSITORY_PATH
+PARSER_ID = _CANONICAL_PARSER_ID
 EXPECTED_BYTE_COUNT = _CANONICAL_EXPECTED_BYTE_COUNT
 EXPECTED_SHA256 = _CANONICAL_EXPECTED_SHA256
 INVENTORY_RECEIPT_COMMENT_ID = _CANONICAL_INVENTORY_RECEIPT_COMMENT_ID
@@ -101,7 +105,6 @@ ROOT_DEPENDENCY_OPTION = _CANONICAL_SOURCE_SPEC.parent_option
 FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID = _CANONICAL_FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID
 FIRST_ORDER_RECEIPT_RUN_ID = _CANONICAL_FIRST_ORDER_RECEIPT_RUN_ID
 FIRST_ORDER_RECEIPT_EXECUTION_SHA = _CANONICAL_FIRST_ORDER_RECEIPT_EXECUTION_SHA
-FIRST_ORDER_RECEIPT_RETRIEVED_AT = _CANONICAL_FIRST_ORDER_RECEIPT_RETRIEVED_AT
 
 
 class Eshm20SourceModelDependencyError(RuntimeError):
@@ -133,9 +136,14 @@ def _require_canonical_target() -> first_order_authority.DependencySpec:
         )
 
     exact_aliases = (
+        (SOURCE_ISSUE, _CANONICAL_SOURCE_ISSUE, "source issue"),
+        (CONTROL_ISSUE, _CANONICAL_CONTROL_ISSUE, "control issue"),
+        (DATASET_ID, _CANONICAL_DATASET_ID, "dataset id"),
         (PROJECT_ID, _CANONICAL_PROJECT_ID, "project id"),
+        (PROJECT_PATH, _CANONICAL_PROJECT_PATH, "project path"),
         (COMMIT_SHA, _CANONICAL_COMMIT_SHA, "commit"),
         (REPOSITORY_PATH, _CANONICAL_REPOSITORY_PATH, "repository path"),
+        (PARSER_ID, _CANONICAL_PARSER_ID, "parser id"),
         (EXPECTED_BYTE_COUNT, _CANONICAL_EXPECTED_BYTE_COUNT, "expected byte count"),
         (EXPECTED_SHA256, _CANONICAL_EXPECTED_SHA256, "expected SHA-256"),
         (
@@ -172,11 +180,6 @@ def _require_canonical_target() -> first_order_authority.DependencySpec:
             FIRST_ORDER_RECEIPT_EXECUTION_SHA,
             _CANONICAL_FIRST_ORDER_RECEIPT_EXECUTION_SHA,
             "first-order receipt execution SHA",
-        ),
-        (
-            FIRST_ORDER_RECEIPT_RETRIEVED_AT,
-            _CANONICAL_FIRST_ORDER_RECEIPT_RETRIEVED_AT,
-            "first-order receipt retrieval time",
         ),
     )
     for observed, expected, label in exact_aliases:
@@ -369,16 +372,16 @@ def extract_verified_source_model_dependencies(payload: bytes) -> dict[str, Any]
     serialized = _serialize_dependencies(dependencies, inventory=inventory)
     return {
         "schema_version": SCHEMA_VERSION,
-        "source_issue": SOURCE_ISSUE,
-        "control_issue": CONTROL_ISSUE,
-        "dataset_id": DATASET_ID,
+        "source_issue": _CANONICAL_SOURCE_ISSUE,
+        "control_issue": _CANONICAL_CONTROL_ISSUE,
+        "dataset_id": _CANONICAL_DATASET_ID,
         "project_id": _CANONICAL_PROJECT_ID,
-        "project_path": PROJECT_PATH,
+        "project_path": _CANONICAL_PROJECT_PATH,
         "commit_sha": _CANONICAL_COMMIT_SHA,
         "repository_path": _CANONICAL_REPOSITORY_PATH,
         "byte_count": len(payload),
         "sha256": observed_sha256,
-        "parser": PARSER_ID,
+        "parser": _CANONICAL_PARSER_ID,
         "inventory_receipt_comment_id": _CANONICAL_INVENTORY_RECEIPT_COMMENT_ID,
         "root_dependency_result_comment_id": _CANONICAL_ROOT_DEPENDENCY_RESULT_COMMENT_ID,
         "root_dependency_section": _CANONICAL_SOURCE_SPEC.parent_section,
@@ -386,7 +389,6 @@ def extract_verified_source_model_dependencies(payload: bytes) -> dict[str, Any]
         "first_order_receipt_request_comment_id": _CANONICAL_FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID,
         "first_order_receipt_run_id": _CANONICAL_FIRST_ORDER_RECEIPT_RUN_ID,
         "first_order_receipt_execution_sha": _CANONICAL_FIRST_ORDER_RECEIPT_EXECUTION_SHA,
-        "first_order_receipt_retrieved_at": _CANONICAL_FIRST_ORDER_RECEIPT_RETRIEVED_AT,
         "dependencies": serialized,
         "dependency_inventory_authorized": False,
         "external_bytes_persisted": False,
@@ -402,8 +404,8 @@ def acquire_eshm20_source_model_dependencies(
     spec = _require_canonical_target()
     try:
         target = validate_target(
-            source_issue=SOURCE_ISSUE,
-            dataset_id=DATASET_ID,
+            source_issue=_CANONICAL_SOURCE_ISSUE,
+            dataset_id=_CANONICAL_DATASET_ID,
             project_id=_CANONICAL_PROJECT_ID,
             commit_sha=_CANONICAL_COMMIT_SHA,
             repository_path=spec.repository_path,
