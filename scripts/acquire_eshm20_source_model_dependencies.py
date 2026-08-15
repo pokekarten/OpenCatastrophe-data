@@ -21,6 +21,7 @@ import urllib.request
 from typing import Any
 
 try:
+    from scripts import acquire_eshm20_first_order_receipts as first_order_authority
     from scripts.acquire_efehr_gitlab_receipt import (
         EfehrAcquisitionError,
         TOTAL_DEADLINE_SECONDS,
@@ -37,6 +38,7 @@ try:
     from scripts import openquake_source_model_logic_tree_dependencies as parser
     from scripts import verify_eshm20_root_config_dependencies as root_bridge
 except ModuleNotFoundError:  # pragma: no cover - direct script import path
+    import acquire_eshm20_first_order_receipts as first_order_authority
     from acquire_efehr_gitlab_receipt import (
         EfehrAcquisitionError,
         TOTAL_DEADLINE_SECONDS,
@@ -53,36 +55,140 @@ except ModuleNotFoundError:  # pragma: no cover - direct script import path
     import openquake_source_model_logic_tree_dependencies as parser
     import verify_eshm20_root_config_dependencies as root_bridge
 
-SCHEMA_VERSION = "oc-eshm20-source-model-dependency-profile-v1"
-SOURCE_ISSUE = 281
-CONTROL_ISSUE = 367
-DATASET_ID = "efehr.eshm20"
-PROJECT_ID = 197
-PROJECT_PATH = "efehr/eshm20"
-COMMIT_SHA = "fbd334de68f85d72669f73fc5a314a113db67317"
-REPOSITORY_PATH = (
-    "oq_computational/oq_configuration_eshm20_v12e_region_main/"
-    "source_model_logic_tree_eshm20_model_v12e.xml"
-)
-EXPECTED_BYTE_COUNT = 17579
-EXPECTED_SHA256 = "97a37911f9eae73766f386686b112e5a4e111965da3e4e1543627c28d4201867"
-PARSER_ID = (
+# Reuse the already-reviewed #361 fixed capability rather than declaring a
+# second provider target. Identity, not merely equal field values, binds this
+# worker to the exact source-model logic-tree object selected by #353/#361.
+_CANONICAL_SCHEMA_VERSION = "oc-eshm20-source-model-dependency-profile-v2"
+_CANONICAL_SOURCE_SPEC = first_order_authority._SOURCE_MODEL_LOGIC_TREE
+_CANONICAL_SOURCE_ISSUE = first_order_authority.SOURCE_ISSUE
+_CANONICAL_CONTROL_ISSUE = 367
+_CANONICAL_DATASET_ID = first_order_authority.DATASET_ID
+_CANONICAL_PROJECT_ID = first_order_authority.PROJECT_ID
+_CANONICAL_PROJECT_PATH = first_order_authority.PROJECT_PATH
+_CANONICAL_COMMIT_SHA = first_order_authority.COMMIT_SHA
+_CANONICAL_REPOSITORY_PATH = _CANONICAL_SOURCE_SPEC.repository_path
+_CANONICAL_PARSER_ID = (
     "scripts.openquake_source_model_logic_tree_dependencies."
     "extract_source_model_logic_tree_dependencies"
 )
-ROOT_DEPENDENCY_RESULT_COMMENT_ID = 5301726249
-ROOT_DEPENDENCY_SECTION = "calculation"
-ROOT_DEPENDENCY_OPTION = "source_model_logic_tree_file"
-FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID = 5301857400
-FIRST_ORDER_RECEIPT_RESULT_COMMENT_ID = 5301858821
-FIRST_ORDER_RECEIPT_RUN_ID = 31880089623
-FIRST_ORDER_RECEIPT_EXECUTION_SHA = "ab66e3e4c58c9b8f18587f1a8a51cf67cf9851b1"
-FIRST_ORDER_RECEIPT_RETRIEVED_AT = "2026-08-15T10:40:16Z"
-INVENTORY_RECEIPT_COMMENT_ID = root_bridge.INVENTORY_RECEIPT_COMMENT_ID
+_CANONICAL_EXPECTED_BYTE_COUNT = 17_579
+_CANONICAL_EXPECTED_SHA256 = (
+    "97a37911f9eae73766f386686b112e5a4e111965da3e4e1543627c28d4201867"
+)
+_CANONICAL_INVENTORY = root_bridge.FROZEN_INVENTORY_PATHS
+_CANONICAL_INVENTORY_RECEIPT_COMMENT_ID = root_bridge.INVENTORY_RECEIPT_COMMENT_ID
+_CANONICAL_ROOT_DEPENDENCY_RESULT_COMMENT_ID = first_order_authority.SELECTION_RESULT_COMMENT_ID
+_CANONICAL_FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID = 5301857400
+_CANONICAL_FIRST_ORDER_RECEIPT_RUN_ID = 31880089623
+_CANONICAL_FIRST_ORDER_RECEIPT_EXECUTION_SHA = (
+    "ab66e3e4c58c9b8f18587f1a8a51cf67cf9851b1"
+)
+
+# Public aliases remain reviewable and backwards-compatible, but production
+# authority below comes only from the private canonical bindings after an exact
+# pre-network drift guard.
+SCHEMA_VERSION = _CANONICAL_SCHEMA_VERSION
+SOURCE_ISSUE = _CANONICAL_SOURCE_ISSUE
+CONTROL_ISSUE = _CANONICAL_CONTROL_ISSUE
+DATASET_ID = _CANONICAL_DATASET_ID
+PROJECT_ID = _CANONICAL_PROJECT_ID
+PROJECT_PATH = _CANONICAL_PROJECT_PATH
+COMMIT_SHA = _CANONICAL_COMMIT_SHA
+REPOSITORY_PATH = _CANONICAL_REPOSITORY_PATH
+PARSER_ID = _CANONICAL_PARSER_ID
+EXPECTED_BYTE_COUNT = _CANONICAL_EXPECTED_BYTE_COUNT
+EXPECTED_SHA256 = _CANONICAL_EXPECTED_SHA256
+INVENTORY_RECEIPT_COMMENT_ID = _CANONICAL_INVENTORY_RECEIPT_COMMENT_ID
+ROOT_DEPENDENCY_RESULT_COMMENT_ID = _CANONICAL_ROOT_DEPENDENCY_RESULT_COMMENT_ID
+ROOT_DEPENDENCY_SECTION = _CANONICAL_SOURCE_SPEC.parent_section
+ROOT_DEPENDENCY_OPTION = _CANONICAL_SOURCE_SPEC.parent_option
+FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID = _CANONICAL_FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID
+FIRST_ORDER_RECEIPT_RUN_ID = _CANONICAL_FIRST_ORDER_RECEIPT_RUN_ID
+FIRST_ORDER_RECEIPT_EXECUTION_SHA = _CANONICAL_FIRST_ORDER_RECEIPT_EXECUTION_SHA
 
 
 class Eshm20SourceModelDependencyError(RuntimeError):
     """Raised when the fixed source-tree dependency profile cannot close safely."""
+
+
+def _require_canonical_target() -> first_order_authority.DependencySpec:
+    """Fail before provider work if any published fixed authority drifts."""
+
+    if first_order_authority._SOURCE_MODEL_LOGIC_TREE is not _CANONICAL_SOURCE_SPEC:
+        raise Eshm20SourceModelDependencyError(
+            "canonical #361 ESHM20 source-model capability identity drifted"
+        )
+    try:
+        authorized = first_order_authority._require_authorized_spec(
+            _CANONICAL_SOURCE_SPEC
+        )
+    except first_order_authority.Eshm20FirstOrderReceiptError as exc:
+        raise Eshm20SourceModelDependencyError(
+            "canonical #361 ESHM20 source-model capability is no longer authorized"
+        ) from exc
+    if authorized is not _CANONICAL_SOURCE_SPEC:
+        raise Eshm20SourceModelDependencyError(
+            "canonical #361 ESHM20 source-model capability identity is invalid"
+        )
+    if root_bridge.FROZEN_INVENTORY_PATHS is not _CANONICAL_INVENTORY:
+        raise Eshm20SourceModelDependencyError(
+            "canonical ESHM20 provider inventory identity drifted"
+        )
+
+    exact_aliases = (
+        (SCHEMA_VERSION, _CANONICAL_SCHEMA_VERSION, "schema version"),
+        (SOURCE_ISSUE, _CANONICAL_SOURCE_ISSUE, "source issue"),
+        (CONTROL_ISSUE, _CANONICAL_CONTROL_ISSUE, "control issue"),
+        (DATASET_ID, _CANONICAL_DATASET_ID, "dataset id"),
+        (PROJECT_ID, _CANONICAL_PROJECT_ID, "project id"),
+        (PROJECT_PATH, _CANONICAL_PROJECT_PATH, "project path"),
+        (COMMIT_SHA, _CANONICAL_COMMIT_SHA, "commit"),
+        (REPOSITORY_PATH, _CANONICAL_REPOSITORY_PATH, "repository path"),
+        (PARSER_ID, _CANONICAL_PARSER_ID, "parser id"),
+        (EXPECTED_BYTE_COUNT, _CANONICAL_EXPECTED_BYTE_COUNT, "expected byte count"),
+        (EXPECTED_SHA256, _CANONICAL_EXPECTED_SHA256, "expected SHA-256"),
+        (
+            INVENTORY_RECEIPT_COMMENT_ID,
+            _CANONICAL_INVENTORY_RECEIPT_COMMENT_ID,
+            "inventory receipt comment id",
+        ),
+        (
+            ROOT_DEPENDENCY_RESULT_COMMENT_ID,
+            _CANONICAL_ROOT_DEPENDENCY_RESULT_COMMENT_ID,
+            "root dependency result comment id",
+        ),
+        (
+            ROOT_DEPENDENCY_SECTION,
+            _CANONICAL_SOURCE_SPEC.parent_section,
+            "root dependency section",
+        ),
+        (
+            ROOT_DEPENDENCY_OPTION,
+            _CANONICAL_SOURCE_SPEC.parent_option,
+            "root dependency option",
+        ),
+        (
+            FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID,
+            _CANONICAL_FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID,
+            "first-order receipt request comment id",
+        ),
+        (
+            FIRST_ORDER_RECEIPT_RUN_ID,
+            _CANONICAL_FIRST_ORDER_RECEIPT_RUN_ID,
+            "first-order receipt run id",
+        ),
+        (
+            FIRST_ORDER_RECEIPT_EXECUTION_SHA,
+            _CANONICAL_FIRST_ORDER_RECEIPT_EXECUTION_SHA,
+            "first-order receipt execution SHA",
+        ),
+    )
+    for observed, expected, label in exact_aliases:
+        if type(observed) is not type(expected) or observed != expected:
+            raise Eshm20SourceModelDependencyError(
+                f"frozen ESHM20 source-model {label} drifted"
+            )
+    return _CANONICAL_SOURCE_SPEC
 
 
 def _verify_payload_identity(payload: bytes) -> str:
@@ -90,12 +196,12 @@ def _verify_payload_identity(payload: bytes) -> str:
         raise Eshm20SourceModelDependencyError(
             "source-model logic-tree payload must be immutable bytes"
         )
-    if len(payload) != EXPECTED_BYTE_COUNT:
+    if len(payload) != _CANONICAL_EXPECTED_BYTE_COUNT:
         raise Eshm20SourceModelDependencyError(
             "source-model logic-tree byte count does not match the trusted receipt"
         )
     observed_sha256 = hashlib.sha256(payload).hexdigest()
-    if observed_sha256 != EXPECTED_SHA256:
+    if observed_sha256 != _CANONICAL_EXPECTED_SHA256:
         raise Eshm20SourceModelDependencyError(
             "source-model logic-tree SHA-256 does not match the trusted receipt"
         )
@@ -103,12 +209,12 @@ def _verify_payload_identity(payload: bytes) -> str:
 
 
 def _validate_frozen_inventory() -> frozenset[str]:
-    inventory = root_bridge.FROZEN_INVENTORY_PATHS
+    inventory = _CANONICAL_INVENTORY
     if type(inventory) is not frozenset or len(inventory) != 62:
         raise Eshm20SourceModelDependencyError(
             "frozen ESHM20 provider inventory identity is invalid"
         )
-    if REPOSITORY_PATH not in inventory:
+    if _CANONICAL_REPOSITORY_PATH not in inventory:
         raise Eshm20SourceModelDependencyError(
             "source-model logic tree is absent from the frozen ESHM20 inventory"
         )
@@ -256,7 +362,7 @@ def extract_verified_source_model_dependencies(payload: bytes) -> dict[str, Any]
     try:
         dependencies = parser.extract_source_model_logic_tree_dependencies(
             xml_text,
-            logic_tree_path=REPOSITORY_PATH,
+            logic_tree_path=_CANONICAL_REPOSITORY_PATH,
             repository_inventory=inventory,
         )
     except parser.OpenQuakeLogicTreeError as exc:
@@ -266,26 +372,24 @@ def extract_verified_source_model_dependencies(payload: bytes) -> dict[str, Any]
 
     serialized = _serialize_dependencies(dependencies, inventory=inventory)
     return {
-        "schema_version": SCHEMA_VERSION,
-        "source_issue": SOURCE_ISSUE,
-        "control_issue": CONTROL_ISSUE,
-        "dataset_id": DATASET_ID,
-        "project_id": PROJECT_ID,
-        "project_path": PROJECT_PATH,
-        "commit_sha": COMMIT_SHA,
-        "repository_path": REPOSITORY_PATH,
+        "schema_version": _CANONICAL_SCHEMA_VERSION,
+        "source_issue": _CANONICAL_SOURCE_ISSUE,
+        "control_issue": _CANONICAL_CONTROL_ISSUE,
+        "dataset_id": _CANONICAL_DATASET_ID,
+        "project_id": _CANONICAL_PROJECT_ID,
+        "project_path": _CANONICAL_PROJECT_PATH,
+        "commit_sha": _CANONICAL_COMMIT_SHA,
+        "repository_path": _CANONICAL_REPOSITORY_PATH,
         "byte_count": len(payload),
         "sha256": observed_sha256,
-        "parser": PARSER_ID,
-        "inventory_receipt_comment_id": INVENTORY_RECEIPT_COMMENT_ID,
-        "root_dependency_result_comment_id": ROOT_DEPENDENCY_RESULT_COMMENT_ID,
-        "root_dependency_section": ROOT_DEPENDENCY_SECTION,
-        "root_dependency_option": ROOT_DEPENDENCY_OPTION,
-        "first_order_receipt_request_comment_id": FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID,
-        "first_order_receipt_result_comment_id": FIRST_ORDER_RECEIPT_RESULT_COMMENT_ID,
-        "first_order_receipt_run_id": FIRST_ORDER_RECEIPT_RUN_ID,
-        "first_order_receipt_execution_sha": FIRST_ORDER_RECEIPT_EXECUTION_SHA,
-        "first_order_receipt_retrieved_at": FIRST_ORDER_RECEIPT_RETRIEVED_AT,
+        "parser": _CANONICAL_PARSER_ID,
+        "inventory_receipt_comment_id": _CANONICAL_INVENTORY_RECEIPT_COMMENT_ID,
+        "root_dependency_result_comment_id": _CANONICAL_ROOT_DEPENDENCY_RESULT_COMMENT_ID,
+        "root_dependency_section": _CANONICAL_SOURCE_SPEC.parent_section,
+        "root_dependency_option": _CANONICAL_SOURCE_SPEC.parent_option,
+        "first_order_receipt_request_comment_id": _CANONICAL_FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID,
+        "first_order_receipt_run_id": _CANONICAL_FIRST_ORDER_RECEIPT_RUN_ID,
+        "first_order_receipt_execution_sha": _CANONICAL_FIRST_ORDER_RECEIPT_EXECUTION_SHA,
         "dependencies": serialized,
         "dependency_inventory_authorized": False,
         "external_bytes_persisted": False,
@@ -298,13 +402,14 @@ def acquire_eshm20_source_model_dependencies(
 ) -> dict[str, Any]:
     """Re-materialize and profile only the fixed receipted ESHM20 source tree."""
 
+    spec = _require_canonical_target()
     try:
         target = validate_target(
-            source_issue=SOURCE_ISSUE,
-            dataset_id=DATASET_ID,
-            project_id=PROJECT_ID,
-            commit_sha=COMMIT_SHA,
-            repository_path=REPOSITORY_PATH,
+            source_issue=_CANONICAL_SOURCE_ISSUE,
+            dataset_id=_CANONICAL_DATASET_ID,
+            project_id=_CANONICAL_PROJECT_ID,
+            commit_sha=_CANONICAL_COMMIT_SHA,
+            repository_path=spec.repository_path,
         )
     except EfehrReceiptError as exc:
         raise Eshm20SourceModelDependencyError(
@@ -316,7 +421,7 @@ def acquire_eshm20_source_model_dependencies(
         file_url,
         headers={
             "Accept": "application/xml,text/xml,text/plain;q=0.9,application/octet-stream;q=0.8",
-            "User-Agent": "OpenCatastrophe-ESHM20-source-model-dependency-profile-v1",
+            "User-Agent": "OpenCatastrophe-ESHM20-source-model-dependency-profile-v2",
         },
         method="GET",
     )
@@ -329,7 +434,7 @@ def acquire_eshm20_source_model_dependencies(
             raw = _read_bounded(
                 response,
                 deadline=deadline,
-                maximum=EXPECTED_BYTE_COUNT,
+                maximum=_CANONICAL_EXPECTED_BYTE_COUNT,
                 monotonic=monotonic,
             )
     except Eshm20SourceModelDependencyError:
