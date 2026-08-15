@@ -1,0 +1,187 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Temporary finish taxonomy action port
+
+on:
+  push:
+    branches:
+      - agent/363-taxonomy-action-port
+
+permissions:
+  contents: write
+
+jobs:
+  finish:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact port head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Layer taxonomy validator over reviewed GMM validator
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('scripts/validate_agent_action_result.py')
+          text = path.read_text(encoding='utf-8')
+          replacements = {
+              'from scripts import validate_agent_action_result_legacy as _legacy':
+                  'from scripts import validate_agent_action_result_gsim as _legacy',
+              'import validate_agent_action_result_legacy as _legacy':
+                  'import validate_agent_action_result_gsim as _legacy',
+              'All pre-existing actions delegate byte-for-byte to the legacy v1 validator.':
+                  'All pre-existing actions delegate to the reviewed GMM-aware validator layer.',
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f'expected exactly one validator marker: {old!r}')
+              text = text.replace(old, new)
+          path.write_text(text, encoding='utf-8')
+          PY
+      - name: Add closed taxonomy identity result schema
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('schemas/agent-action-result-v1.schema.json')
+          schema = json.loads(path.read_text(encoding='utf-8'))
+          action = 'efehr_kosovo_taxonomy_identity'
+          evidence_key = action
+          dataset = 'efehr.esrm20.european-exposure-model.v1.0'
+
+          actions = schema['properties']['action']['enum']
+          if action in actions:
+              raise SystemExit('taxonomy action unexpectedly already present in result schema')
+          if 'efehr_eshm20_gsim_resource_profile' not in actions:
+              raise SystemExit('reviewed GMM action missing before taxonomy extension')
+          actions.append(action)
+
+          evidence_variants = schema['properties']['evidence']['oneOf']
+          evidence_variants.append({
+              'type': 'object',
+              'additionalProperties': False,
+              'required': ['request_validated', 'ledger_scan_complete', 'prior_result_reused', evidence_key],
+              'properties': {
+                  'request_validated': {'const': True},
+                  'ledger_scan_complete': {'const': True},
+                  'prior_result_reused': {'const': False},
+                  evidence_key: {'anyOf': [{'type': 'null'}, {'$ref': '#/$defs/efehrKosovoTaxonomyIdentity'}]},
+              },
+          })
+
+          schema['$defs']['efehrKosovoTaxonomyIdentity'] = {
+              'type': 'object',
+              'additionalProperties': False,
+              'required': [
+                  'schema_version', 'operation_id', 'control_issue', 'worker_identity', 'retrieved_at',
+                  'source_issue', 'dataset_id', 'project_id', 'project_path', 'commit_sha', 'repository_path',
+                  'receipt_comment_id', 'receipt_execution_sha', 'source_byte_count', 'source_sha256',
+                  'taxonomy_field', 'taxonomy_count', 'taxonomy_artifact_representation',
+                  'taxonomy_artifact_byte_count', 'taxonomy_artifact_sha256', 'taxonomy_values_returned',
+                  'normalization_applied', 'raw_rows_returned', 'external_bytes_persisted',
+                  'derived_artifact_persisted', 'publication_authorized',
+              ],
+              'properties': {
+                  'schema_version': {'const': 'oc-esrm20-kosovo-taxonomy-artifact-identity-v1'},
+                  'operation_id': {'const': 'esrm20-kosovo-residential-taxonomy-identity-v1'},
+                  'control_issue': {'const': 363},
+                  'worker_identity': {'const': 'scripts.extract_efehr_kosovo_taxonomy.extract_verified_kosovo_taxonomy'},
+                  'retrieved_at': {'type': 'string', 'pattern': r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$'},
+                  'source_issue': {'const': 282},
+                  'dataset_id': {'const': dataset},
+                  'project_id': {'const': 186},
+                  'project_path': {'const': 'efehr/esrm20_exposure'},
+                  'commit_sha': {'const': '900433ada80fbb424c0976c34d72eeef97bab1af'},
+                  'repository_path': {'const': '_exposure_models/Exposure_Model_Kosovo_Res.csv'},
+                  'receipt_comment_id': {'const': 5300981864},
+                  'receipt_execution_sha': {'const': '46d054930025553ad19d8b05fff9018dc2a49b5f'},
+                  'source_byte_count': {'const': 316789},
+                  'source_sha256': {'const': '4d562ad4925c527d518834b8dcd39a083cfd3b87b622031a84958ae7b4d8c5ea'},
+                  'taxonomy_field': {'const': 'TAXONOMY'},
+                  'taxonomy_count': {'const': 86},
+                  'taxonomy_artifact_representation': {'const': 'oc-taxonomy-u64be-utf8-sorted-v1'},
+                  'taxonomy_artifact_byte_count': {'type': 'integer', 'minimum': 1, 'maximum': 316789},
+                  'taxonomy_artifact_sha256': {'const': 'd5e6fe4e32489cdd2222b6b3facfd30937e2af61bbcf0ecead37ccf97202a945'},
+                  'taxonomy_values_returned': {'const': False},
+                  'normalization_applied': {'const': False},
+                  'raw_rows_returned': {'const': False},
+                  'external_bytes_persisted': {'const': False},
+                  'derived_artifact_persisted': {'const': False},
+                  'publication_authorized': {'const': False},
+              },
+          }
+
+          all_of = schema['allOf']
+          request_guard = None
+          acquisition_guard = None
+          for branch in all_of:
+              condition = branch.get('if', {})
+              props = condition.get('properties', {})
+              required = condition.get('required')
+              if props == {'phase': {'const': 'request_validation'}} and required == ['phase']:
+                  request_guard = branch
+              if props == {'phase': {'const': 'acquisition_receipt'}} and required == ['phase']:
+                  acquisition_guard = branch
+          if request_guard is None or acquisition_guard is None:
+              raise SystemExit('canonical phase guards not found')
+          request_all_of = request_guard['then']['properties']['evidence']['allOf']
+          request_all_of.append({'not': {'required': [evidence_key]}})
+          acquisition_actions = acquisition_guard['then']['properties']['action']['enum']
+          if action in acquisition_actions:
+              raise SystemExit('taxonomy action unexpectedly already present in acquisition enum')
+          acquisition_actions.append(action)
+
+          all_of.extend([
+              {
+                  'if': {'properties': {'phase': {'const': 'acquisition_receipt'}, 'action': {'const': action}}, 'required': ['phase', 'action']},
+                  'then': {'properties': {
+                      'source_issue': {'const': 363},
+                      'dataset_id': {'const': dataset},
+                      'evidence': {'required': [evidence_key]},
+                  }},
+              },
+              {
+                  'if': {'properties': {'phase': {'const': 'acquisition_receipt'}, 'action': {'const': action}, 'status': {'const': 'pass'}}, 'required': ['phase', 'action', 'status']},
+                  'then': {'properties': {
+                      'evidence': {'properties': {evidence_key: {'$ref': '#/$defs/efehrKosovoTaxonomyIdentity'}}},
+                      'failure_class': {'type': 'null'},
+                  }},
+              },
+              {
+                  'if': {'properties': {'phase': {'const': 'acquisition_receipt'}, 'action': {'const': action}, 'status': {'const': 'blocked'}}, 'required': ['phase', 'action', 'status']},
+                  'then': {'properties': {
+                      'evidence': {'properties': {evidence_key: {'type': 'null'}}},
+                      'failure_class': {'const': 'acquisition_failed'},
+                  }},
+              },
+          ])
+
+          schema['$comment'] += (
+              ' efehr_kosovo_taxonomy_identity for Issue 363 persists only the exact pre-publication identity '
+              'of the 86-value Kosovo residential TAXONOMY set; literal taxonomy values, provider bytes, '
+              'normalization, mapping interpretation, vulnerability selection, publication and model use remain unauthorized.'
+          )
+          path.write_text(json.dumps(schema, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+          PY
+      - name: Regenerate schema reference and run focused falsification tests
+        run: |
+          python scripts/schema_reference.py --write
+          python -m unittest \
+            tests.test_efehr_kosovo_taxonomy_identity_action_wiring \
+            tests.test_efehr_eshm20_gsim_resource_action_wiring \
+            tests.test_agent_action_result_schema_branch_regression -v
+          python scripts/schema_reference.py --check
+          git diff --check
+      - name: Remove temporary workflow and commit bounded port
+        run: |
+          git rm .github/workflows/temp-finish-taxonomy-action-port.yml
+          git diff --check
+          git config user.name 'OpenCatastrophe port bot'
+          git config user.email '287434260+pokekarten@users.noreply.github.com'
+          git add scripts/validate_agent_action_result.py schemas/agent-action-result-v1.schema.json schemas/agent-action-result-v1.schema.md .github/workflows/temp-finish-taxonomy-action-port.yml
+          git commit -m 'Complete Kosovo taxonomy identity action port'
+          git push origin HEAD:agent/363-taxonomy-action-port
