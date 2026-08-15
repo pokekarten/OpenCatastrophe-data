@@ -111,6 +111,7 @@ class FixedEshm20SourceModelDependencyWorkerTests(unittest.TestCase):
             worker._CANONICAL_SOURCE_SPEC,
             worker.first_order_authority._SOURCE_MODEL_LOGIC_TREE,
         )
+        self.assertEqual(worker.SCHEMA_VERSION, worker._CANONICAL_SCHEMA_VERSION)
         self.assertEqual(worker.SOURCE_ISSUE, worker.first_order_authority.SOURCE_ISSUE)
         self.assertEqual(worker.DATASET_ID, worker.first_order_authority.DATASET_ID)
         self.assertEqual(worker.PROJECT_ID, worker.first_order_authority.PROJECT_ID)
@@ -202,6 +203,7 @@ class FixedEshm20SourceModelDependencyWorkerTests(unittest.TestCase):
 
     def test_fixed_authority_alias_drift_fails_before_network(self) -> None:
         cases = (
+            ("SCHEMA_VERSION", "oc-eshm20-source-model-dependency-profile-v999"),
             ("SOURCE_ISSUE", worker.SOURCE_ISSUE + 1),
             ("CONTROL_ISSUE", worker.CONTROL_ISSUE + 1),
             ("DATASET_ID", "efehr.other"),
@@ -297,11 +299,22 @@ class FixedEshm20SourceModelDependencyWorkerTests(unittest.TestCase):
         self.assertFalse(result["external_bytes_persisted"])
         self.assertFalse(result["publication_authorized"])
 
+    def test_public_schema_alias_drift_cannot_change_offline_durable_identity(self) -> None:
+        count_patch, hash_patch = self.patched_identity(RAW)
+        with count_patch, hash_patch, mock.patch.object(
+            worker,
+            "SCHEMA_VERSION",
+            "oc-eshm20-source-model-dependency-profile-v999",
+        ):
+            result = worker.extract_verified_source_model_dependencies(RAW)
+        self.assertEqual(result["schema_version"], worker._CANONICAL_SCHEMA_VERSION)
+
     def test_profile_rebinds_parent_receipt_and_parser_identity_without_unverified_comment_or_time(self) -> None:
         count_patch, hash_patch = self.patched_identity(RAW)
         with count_patch, hash_patch:
             result = worker.extract_verified_source_model_dependencies(RAW)
 
+        self.assertEqual(result["schema_version"], worker._CANONICAL_SCHEMA_VERSION)
         self.assertEqual(result["source_issue"], 281)
         self.assertEqual(result["control_issue"], 367)
         self.assertEqual(result["dataset_id"], "efehr.eshm20")
