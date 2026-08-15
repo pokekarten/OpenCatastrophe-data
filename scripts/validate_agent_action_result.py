@@ -111,7 +111,10 @@ def validate_efehr_kosovo_taxonomy_identity(receipt: Any) -> dict[str, Any]:
 
     _legacy._utc_second(receipt["retrieved_at"], f"{prefix}.retrieved_at")
     artifact_byte_count = receipt["taxonomy_artifact_byte_count"]
-    if type(artifact_byte_count) is not int or not (1 <= artifact_byte_count <= exposure.EXPECTED_BYTE_COUNT):
+    minimum_artifact_byte_count = _taxonomy.EXPECTED_DISTINCT_COUNT * 9
+    if type(artifact_byte_count) is not int or not (
+        minimum_artifact_byte_count <= artifact_byte_count <= exposure.EXPECTED_BYTE_COUNT
+    ):
         raise ResultError(f"{prefix}.taxonomy_artifact_byte_count is outside bounded policy")
     return receipt
 

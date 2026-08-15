@@ -1730,7 +1730,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### `taxonomy_artifact_byte_count` — **required**
 
-**Constraints:** type=`integer`; `minimum`=`1`; `maximum`=`316789`
+**Constraints:** type=`integer`; `minimum`=`774`; `maximum`=`316789`
 
 ###### `taxonomy_artifact_representation` — **required**
 
