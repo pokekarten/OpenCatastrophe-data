@@ -72,6 +72,7 @@ FIRST_ORDER_RECEIPT_EXECUTION_SHA = "ab66e3e4c58c9b8f18587f1a8a51cf67cf9851b1"
 INVENTORY_RECEIPT_COMMENT_ID = 5290449064
 MAX_COLUMNS = 128
 MAX_HEADER_UTF8_BYTES = 512
+MAX_NUMERIC_EXTREMA_CHARS = 256
 
 
 class Eshm20SiteModelProfileError(RuntimeError):
@@ -94,9 +95,32 @@ def _verify_payload_identity(payload: bytes) -> str:
 
 
 def _canonical_decimal(value: Decimal) -> str:
+    """Serialize one finite Decimal exactly without consulting ambient context."""
+
+    if not value.is_finite():
+        raise Eshm20SiteModelProfileError(
+            "site-model numeric extrema must be finite"
+        )
     if value == 0:
         return "0"
-    return str(value.normalize())
+
+    parts = value.as_tuple()
+    exponent = parts.exponent
+    if type(exponent) is not int:
+        raise Eshm20SiteModelProfileError(
+            "site-model numeric extrema exponent is invalid"
+        )
+    digits = list(parts.digits)
+    while len(digits) > 1 and digits[-1] == 0:
+        digits.pop()
+        exponent += 1
+
+    rendered = str(Decimal((parts.sign, tuple(digits), exponent)))
+    if len(rendered) > MAX_NUMERIC_EXTREMA_CHARS:
+        raise Eshm20SiteModelProfileError(
+            "site-model numeric extrema exceeds bounded serialization policy"
+        )
+    return rendered
 
 
 def _profile_csv_text(text: str) -> dict[str, Any]:

@@ -8,6 +8,7 @@ import inspect
 import json
 import unittest
 import urllib.error
+from decimal import Context, Decimal, localcontext
 from unittest import mock
 
 from scripts import acquire_eshm20_site_model_profile as worker
@@ -142,6 +143,38 @@ class FixedEshm20SiteModelProfileTests(unittest.TestCase):
         ):
             self.assertIs(result[field], False)
         self.assertNotIn("PROVIDER_PRIVATE_BODY", json.dumps(result, sort_keys=True))
+
+    def test_numeric_extrema_are_exact_and_context_independent(self) -> None:
+        raw = b"value\n123456789012345678901234567890.123000\n"
+        expected = "123456789012345678901234567890.123"
+
+        count_patch, hash_patch = self.patched_identity(raw)
+        with count_patch, hash_patch:
+            default_result = worker.extract_verified_site_model_profile(raw)
+
+        count_patch, hash_patch = self.patched_identity(raw)
+        with localcontext(Context(prec=5, Emax=9, Emin=-9)), count_patch, hash_patch:
+            constrained_result = worker.extract_verified_site_model_profile(raw)
+
+        default_column = default_result["profile"]["columns"][0]
+        constrained_column = constrained_result["profile"]["columns"][0]
+        self.assertEqual(default_column["numeric_min"], expected)
+        self.assertEqual(default_column["numeric_max"], expected)
+        self.assertEqual(constrained_column, default_column)
+
+    def test_numeric_extrema_large_exponent_is_compact_and_bounded(self) -> None:
+        raw = b"value\n1e999999999\n"
+        count_patch, hash_patch = self.patched_identity(raw)
+        with count_patch, hash_patch:
+            result = worker.extract_verified_site_model_profile(raw)
+
+        rendered = result["profile"]["columns"][0]["numeric_max"]
+        self.assertEqual(rendered, "1E+999999999")
+        self.assertLessEqual(len(rendered), worker.MAX_NUMERIC_EXTREMA_CHARS)
+
+        oversized = Decimal("1" * (worker.MAX_NUMERIC_EXTREMA_CHARS + 1))
+        with self.assertRaisesRegex(worker.Eshm20SiteModelProfileError, "bounded"):
+            worker._canonical_decimal(oversized)
 
     def test_identity_fails_before_decode_or_csv_profile(self) -> None:
         count_patch, hash_patch = self.patched_identity(RAW)
