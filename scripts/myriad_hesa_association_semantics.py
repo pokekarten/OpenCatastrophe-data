@@ -237,8 +237,15 @@ def _temporal_overlap(
     *,
     lag_days: int,
 ) -> bool:
-    lag = timedelta(days=lag_days)
-    return left.start <= right.end + lag and right.start <= left.end + lag
+    try:
+        lag = timedelta(days=lag_days)
+        left_end = left.end + lag
+        right_end = right.end + lag
+    except OverflowError as exc:
+        raise AssociationSemanticError(
+            "lag_days exceeds supported temporal range"
+        ) from exc
+    return left.start <= right_end and right.start <= left_end
 
 
 def _connected_event_sets(

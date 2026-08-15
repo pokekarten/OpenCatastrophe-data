@@ -226,6 +226,15 @@ class MyriadHesaAssociationSemanticTests(unittest.TestCase):
                 (PairEvidence("A", "B", True),),
                 config=AssociationConfig(lag_days=-1),
             )
+        with self.assertRaisesRegex(AssociationSemanticError, "supported temporal range"):
+            associate_events(
+                (
+                    event("A", "2020-01-01T00:00:00Z", "2020-01-02T00:00:00Z"),
+                    event("B", "2020-01-01T00:00:00Z", "2020-01-02T00:00:00Z"),
+                ),
+                (PairEvidence("A", "B", True),),
+                config=AssociationConfig(lag_days=1_000_000_000),
+            )
 
     def test_source_hazard_codes_and_noncausal_boundary_are_preserved(self) -> None:
         events = (
