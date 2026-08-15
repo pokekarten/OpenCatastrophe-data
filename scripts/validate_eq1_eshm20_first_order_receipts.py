@@ -26,6 +26,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script import path
 
 
 SOURCE_ISSUE = 361
+TRUSTED_REPOSITORY = "pokekarten/OpenCatastrophe-data"
 TRUSTED_SOURCE_COMMENT_ID = 5301857400
 TRUSTED_RUN_ID = 31880089623
 TRUSTED_EXECUTION_SHA = "ab66e3e4c58c9b8f18587f1a8a51cf67cf9851b1"
@@ -99,6 +100,7 @@ def validate_and_reduce(result: Any) -> dict[str, object]:
     except canonical_result.ResultError as exc:
         raise Eq1FirstOrderBridgeError("canonical Agent Action result validation failed") from exc
 
+    _exact(validated["repository"], TRUSTED_REPOSITORY, "repository")
     _exact(validated["action"], ACTION, "action")
     _exact(validated["source_issue"], SOURCE_ISSUE, "source_issue")
     _exact(validated["source_comment_id"], TRUSTED_SOURCE_COMMENT_ID, "source_comment_id")
@@ -177,7 +179,7 @@ def validate_and_reduce(result: Any) -> dict[str, object]:
     return {
         "schema_version": "eq1-eshm20-first-order-receipt-bridge-v1",
         "authority": {
-            "repository": "pokekarten/OpenCatastrophe-data",
+            "repository": TRUSTED_REPOSITORY,
             "source_issue": SOURCE_ISSUE,
             "source_comment_id": TRUSTED_SOURCE_COMMENT_ID,
             "run_id": TRUSTED_RUN_ID,

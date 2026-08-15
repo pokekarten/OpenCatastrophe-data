@@ -7,6 +7,7 @@ import copy
 import unittest
 
 from scripts import acquire_eshm20_first_order_receipts as authority
+from scripts import agent_action_protocol as protocol
 from scripts.efehr_gitlab_receipt import raw_file_api_url, validate_target
 from scripts.validate_eq1_eshm20_first_order_receipts import (
     Eq1FirstOrderBridgeError,
@@ -251,6 +252,13 @@ class Eq1FirstOrderReceiptBridgeTests(unittest.TestCase):
                 reduced = validate_and_reduce(result)
                 self.assertEqual(reduced, baseline)
                 self.assertNotIn("result_comment_id", reduced["authority"])
+
+    def test_repository_drift_with_recomputed_semantic_identity_fails_closed(self) -> None:
+        result = trusted_result()
+        result["repository"] = "pokekarten/OtherRepository"
+        result["semantic_request_id"] = protocol.semantic_request_id_from_result(result)
+        with self.assertRaisesRegex(Eq1FirstOrderBridgeError, "repository"):
+            validate_and_reduce(result)
 
     def test_canonical_validator_failure_is_not_bypassed(self) -> None:
         result = trusted_result()
