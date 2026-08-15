@@ -1,0 +1,43 @@
+name: PR378 rebuild main re-fence
+
+on:
+  push:
+    branches:
+      - agent/363-kosovo-taxonomy-identity-action
+
+permissions:
+  contents: write
+
+jobs:
+  refence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Update rebuild fence only
+        env:
+          BRANCH: agent/363-kosovo-taxonomy-identity-action
+          NEW_MAIN: edb0324d9988bf24ee62b905c3e568506c28cbef
+        run: |
+          set -euo pipefail
+          git fetch origin main "$BRANCH"
+          test "$(git rev-parse origin/main)" = "$NEW_MAIN"
+          test "$(git rev-parse origin/$BRANCH)" = "$GITHUB_SHA"
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('.github/workflows/pr378-post381-rebuild.yml')
+          text = p.read_text(encoding='utf-8')
+          old = '          EXPECTED_MAIN: 4e7e869b7188fe204d2354454ff17e86c003f0cc\n'
+          new = '          EXPECTED_MAIN: edb0324d9988bf24ee62b905c3e568506c28cbef\n'
+          if text.count(old) != 1:
+              raise SystemExit('rebuild expected-main anchor drift')
+          p.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+          git rm .github/workflows/pr378-rebuild-refence.yml
+          git config user.name "pokekarten"
+          git config user.email "287434260+pokekarten@users.noreply.github.com"
+          git add .github/workflows/pr378-post381-rebuild.yml
+          git commit -m "Re-fence PR378 rebuild to current main"
+          git push --force-with-lease="refs/heads/$BRANCH:$GITHUB_SHA" origin HEAD:"refs/heads/$BRANCH"
