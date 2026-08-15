@@ -20,6 +20,43 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: true
+      - name: Close request and provider-failure contracts
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          action = 'efehr_kosovo_taxonomy_identity'
+          dataset = 'efehr.esrm20.european-exposure-model.v1.0'
+
+          request_path = Path('schemas/agent-action-request-v1.schema.json')
+          request_schema = json.loads(request_path.read_text(encoding='utf-8'))
+          actions = request_schema['properties']['action']['enum']
+          if action in actions:
+              raise SystemExit('taxonomy action unexpectedly already present in request enum')
+          if not any(
+              branch.get('if', {}).get('properties', {}).get('action', {}).get('const') == action
+              and branch.get('then', {}).get('properties', {}).get('issue', {}).get('const') == 363
+              and branch.get('then', {}).get('properties', {}).get('dataset_id', {}).get('const') == dataset
+              for branch in request_schema['allOf']
+          ):
+              raise SystemExit('closed taxonomy request binding is missing')
+          actions.append(action)
+          request_schema['$comment'] += (
+              ' efehr_kosovo_taxonomy_identity is restricted to Issue 363 plus the frozen ESRM20 '
+              'Kosovo exposure dataset and exposes no caller-controlled provider, representation, taxonomy, '
+              'mapping, vulnerability, or publication selector.'
+          )
+          request_path.write_text(json.dumps(request_schema, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+
+          prepare_path = Path('scripts/prepare_agent_action_result.py')
+          prepare = prepare_path.read_text(encoding='utf-8')
+          old = '''    except (\n        AcquisitionError, EfehrAcquisitionError, ExposureProfileError,\n        Eshm20RootDependencyAcquisitionError, Eshm20FirstOrderReceiptError,\n        Eshm20GsimResourceProfileError,\n    ) as exc:\n        # The durable result carries only a closed failure class. The trusted\n        # workflow log receives the bounded worker diagnostic for operators.\n        print(f"acquisition blocked: {exc}", file=sys.stderr)\n        receipt = None\n'''
+          new = '''    except KosovoTaxonomyAcquisitionError:\n        # The taxonomy worker may surface provider text. Keep both the durable\n        # result and the trusted workflow log value-free for this action.\n        print("acquisition blocked: Kosovo taxonomy acquisition failed closed", file=sys.stderr)\n        receipt = None\n    except (\n        AcquisitionError, EfehrAcquisitionError, ExposureProfileError,\n        Eshm20RootDependencyAcquisitionError, Eshm20FirstOrderReceiptError,\n        Eshm20GsimResourceProfileError,\n    ) as exc:\n        # The durable result carries only a closed failure class. The trusted\n        # workflow log receives the bounded worker diagnostic for operators.\n        print(f"acquisition blocked: {exc}", file=sys.stderr)\n        receipt = None\n'''
+          if prepare.count(old) != 1:
+              raise SystemExit('expected exact acquisition failure block once')
+          prepare_path.write_text(prepare.replace(old, new), encoding='utf-8')
+          PY
       - name: Layer taxonomy validator over reviewed GMM validator
         run: |
           python - <<'PY'
@@ -50,9 +87,7 @@ jobs:
           path = Path('schemas/agent-action-result-v1.schema.json')
           schema = json.loads(path.read_text(encoding='utf-8'))
           action = 'efehr_kosovo_taxonomy_identity'
-          evidence_key = action
           dataset = 'efehr.esrm20.european-exposure-model.v1.0'
-
           actions = schema['properties']['action']['enum']
           if action in actions:
               raise SystemExit('taxonomy action unexpectedly already present in result schema')
@@ -60,19 +95,17 @@ jobs:
               raise SystemExit('reviewed GMM action missing before taxonomy extension')
           actions.append(action)
 
-          evidence_variants = schema['properties']['evidence']['oneOf']
-          evidence_variants.append({
+          schema['properties']['evidence']['oneOf'].append({
               'type': 'object',
               'additionalProperties': False,
-              'required': ['request_validated', 'ledger_scan_complete', 'prior_result_reused', evidence_key],
+              'required': ['request_validated', 'ledger_scan_complete', 'prior_result_reused', action],
               'properties': {
                   'request_validated': {'const': True},
                   'ledger_scan_complete': {'const': True},
                   'prior_result_reused': {'const': False},
-                  evidence_key: {'anyOf': [{'type': 'null'}, {'$ref': '#/$defs/efehrKosovoTaxonomyIdentity'}]},
+                  action: {'anyOf': [{'type': 'null'}, {'$ref': '#/$defs/efehrKosovoTaxonomyIdentity'}]},
               },
           })
-
           schema['$defs']['efehrKosovoTaxonomyIdentity'] = {
               'type': 'object',
               'additionalProperties': False,
@@ -115,51 +148,35 @@ jobs:
               },
           }
 
-          all_of = schema['allOf']
-          request_guard = None
-          acquisition_guard = None
-          for branch in all_of:
-              condition = branch.get('if', {})
-              props = condition.get('properties', {})
-              required = condition.get('required')
+          request_guard = acquisition_guard = None
+          for branch in schema['allOf']:
+              props = branch.get('if', {}).get('properties', {})
+              required = branch.get('if', {}).get('required')
               if props == {'phase': {'const': 'request_validation'}} and required == ['phase']:
                   request_guard = branch
               if props == {'phase': {'const': 'acquisition_receipt'}} and required == ['phase']:
                   acquisition_guard = branch
           if request_guard is None or acquisition_guard is None:
               raise SystemExit('canonical phase guards not found')
-          request_all_of = request_guard['then']['properties']['evidence']['allOf']
-          request_all_of.append({'not': {'required': [evidence_key]}})
+          request_guard['then']['properties']['evidence']['allOf'].append({'not': {'required': [action]}})
           acquisition_actions = acquisition_guard['then']['properties']['action']['enum']
           if action in acquisition_actions:
               raise SystemExit('taxonomy action unexpectedly already present in acquisition enum')
           acquisition_actions.append(action)
-
-          all_of.extend([
+          schema['allOf'].extend([
               {
                   'if': {'properties': {'phase': {'const': 'acquisition_receipt'}, 'action': {'const': action}}, 'required': ['phase', 'action']},
-                  'then': {'properties': {
-                      'source_issue': {'const': 363},
-                      'dataset_id': {'const': dataset},
-                      'evidence': {'required': [evidence_key]},
-                  }},
+                  'then': {'properties': {'source_issue': {'const': 363}, 'dataset_id': {'const': dataset}, 'evidence': {'required': [action]}}},
               },
               {
                   'if': {'properties': {'phase': {'const': 'acquisition_receipt'}, 'action': {'const': action}, 'status': {'const': 'pass'}}, 'required': ['phase', 'action', 'status']},
-                  'then': {'properties': {
-                      'evidence': {'properties': {evidence_key: {'$ref': '#/$defs/efehrKosovoTaxonomyIdentity'}}},
-                      'failure_class': {'type': 'null'},
-                  }},
+                  'then': {'properties': {'evidence': {'properties': {action: {'$ref': '#/$defs/efehrKosovoTaxonomyIdentity'}}}, 'failure_class': {'type': 'null'}}},
               },
               {
                   'if': {'properties': {'phase': {'const': 'acquisition_receipt'}, 'action': {'const': action}, 'status': {'const': 'blocked'}}, 'required': ['phase', 'action', 'status']},
-                  'then': {'properties': {
-                      'evidence': {'properties': {evidence_key: {'type': 'null'}}},
-                      'failure_class': {'const': 'acquisition_failed'},
-                  }},
+                  'then': {'properties': {'evidence': {'properties': {action: {'type': 'null'}}}, 'failure_class': {'const': 'acquisition_failed'}}},
               },
           ])
-
           schema['$comment'] += (
               ' efehr_kosovo_taxonomy_identity for Issue 363 persists only the exact pre-publication identity '
               'of the 86-value Kosovo residential TAXONOMY set; literal taxonomy values, provider bytes, '
@@ -167,21 +184,18 @@ jobs:
           )
           path.write_text(json.dumps(schema, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
           PY
-      - name: Regenerate schema reference and run focused falsification tests
+      - name: Regenerate portable projections
+        run: python scripts/schema_reference.py --write
+      - name: Remove temporary workflow before definition of done
+        run: git rm .github/workflows/temp-finish-taxonomy-action-port.yml
+      - name: Run full repository definition of done
         run: |
-          python scripts/schema_reference.py --write
-          python -m unittest \
-            tests.test_efehr_kosovo_taxonomy_identity_action_wiring \
-            tests.test_efehr_eshm20_gsim_resource_action_wiring \
-            tests.test_agent_action_result_schema_branch_regression -v
-          python scripts/schema_reference.py --check
+          python scripts/check_all.py
           git diff --check
-      - name: Remove temporary workflow and commit bounded port
+      - name: Commit bounded port
         run: |
-          git rm .github/workflows/temp-finish-taxonomy-action-port.yml
-          git diff --check
           git config user.name 'OpenCatastrophe port bot'
           git config user.email '287434260+pokekarten@users.noreply.github.com'
-          git add scripts/validate_agent_action_result.py schemas/agent-action-result-v1.schema.json schemas/agent-action-result-v1.schema.md .github/workflows/temp-finish-taxonomy-action-port.yml
+          git add -A
           git commit -m 'Complete Kosovo taxonomy identity action port'
           git push origin HEAD:agent/363-taxonomy-action-port
