@@ -21,18 +21,22 @@ EFEHR_README_RECEIPT_ACTION = "efehr_readme_receipt"
 EFEHR_ESHM20_TREE_METADATA_ACTION = "efehr_eshm20_tree_metadata"
 EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION = "efehr_kosovo_exposure_receipt"
 EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION = "efehr_eshm20_root_config_receipt"
+ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION = "esrm20_event_hazard_group1_receipt"
+ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION = "esrm20_event_hazard_group2_receipt"
 ACQUISITION_RECEIPT_ISSUE = 162
 DWD_METADATA_RECEIPT_ISSUE = 211
 EFEHR_README_RECEIPT_ISSUE = 298
 EFEHR_ESHM20_TREE_METADATA_ISSUE = 332
 EFEHR_KOSOVO_EXPOSURE_RECEIPT_ISSUE = 328
 EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE = 335
+ESRM20_EVENT_HAZARD_RECEIPT_ISSUE = 346
 ACQUISITION_RECEIPT_DATASET_ID = "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"
 DWD_METADATA_RECEIPT_DATASET_ID = ACQUISITION_RECEIPT_DATASET_ID
 EFEHR_README_RECEIPT_DATASET_ID = "efehr.esrm20.european-exposure-model.v1.0"
 EFEHR_ESHM20_TREE_METADATA_DATASET_ID = "efehr.eshm20"
 EFEHR_KOSOVO_EXPOSURE_RECEIPT_DATASET_ID = EFEHR_README_RECEIPT_DATASET_ID
 EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_DATASET_ID = EFEHR_ESHM20_TREE_METADATA_DATASET_ID
+ESRM20_EVENT_HAZARD_RECEIPT_DATASET_ID = "efehr.esrm20.risk-inputs.v1.0"
 ALLOWED_ACTIONS = {
     SAMPLE_AUDIT_ACTION,
     ACQUISITION_RECEIPT_ACTION,
@@ -41,6 +45,8 @@ ALLOWED_ACTIONS = {
     EFEHR_ESHM20_TREE_METADATA_ACTION,
     EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION,
     EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
+    ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION,
+    ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION,
 }
 REQUIRED_FIELDS = {
     "schema_version",
@@ -163,6 +169,16 @@ def validate_request(request: dict[str, Any], *, expected_issue: int | None = No
         if request["dataset_id"] != EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_DATASET_ID:
             raise RequestError(
                 "efehr_eshm20_root_config_receipt is restricted to the frozen ESHM20 dataset"
+            )
+    elif request["action"] in {
+        ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION,
+        ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION,
+    }:
+        if request["issue"] != ESRM20_EVENT_HAZARD_RECEIPT_ISSUE:
+            raise RequestError("ESRM20 event-hazard receipt actions are restricted to issue 346")
+        if request["dataset_id"] != ESRM20_EVENT_HAZARD_RECEIPT_DATASET_ID:
+            raise RequestError(
+                "ESRM20 event-hazard receipt actions are restricted to the frozen ESRM20 risk-input dataset"
             )
 
     return request

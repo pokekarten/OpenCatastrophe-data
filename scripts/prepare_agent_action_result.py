@@ -28,6 +28,10 @@ try:
     from scripts.acquire_efehr_eshm20_tree_metadata import acquire_eshm20_tree_metadata
     from scripts.acquire_efehr_kosovo_receipt import acquire_kosovo_receipt
     from scripts.acquire_efehr_eshm20_root_config_receipt import acquire_eshm20_root_config_receipt
+    from scripts.acquire_efehr_esrm20_event_hazard_receipts import (
+        acquire_event_hazard_group1_receipt,
+        acquire_event_hazard_group2_receipt,
+    )
     from scripts.agent_action_protocol import (
         ProtocolError,
         RESULT_SCHEMA_VERSION,
@@ -42,6 +46,8 @@ try:
         EFEHR_ESHM20_TREE_METADATA_ACTION,
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
+        ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION,
+        ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION,
         RequestError,
         extract_request,
         validate_request,
@@ -58,6 +64,10 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     from acquire_efehr_eshm20_tree_metadata import acquire_eshm20_tree_metadata
     from acquire_efehr_kosovo_receipt import acquire_kosovo_receipt
     from acquire_efehr_eshm20_root_config_receipt import acquire_eshm20_root_config_receipt
+    from acquire_efehr_esrm20_event_hazard_receipts import (
+        acquire_event_hazard_group1_receipt,
+        acquire_event_hazard_group2_receipt,
+    )
     from agent_action_protocol import (
         ProtocolError,
         RESULT_SCHEMA_VERSION,
@@ -72,6 +82,8 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         EFEHR_ESHM20_TREE_METADATA_ACTION,
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
+        ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION,
+        ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION,
         RequestError,
         extract_request,
         validate_request,
@@ -93,6 +105,8 @@ NETWORK_ACTIONS = frozenset(
         EFEHR_ESHM20_TREE_METADATA_ACTION,
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
+        ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION,
+        ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION,
     }
 )
 
@@ -285,6 +299,10 @@ def _receipt_field(action: str) -> str:
         return "efehr_kosovo_exposure_receipt"
     if action == EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION:
         return "efehr_eshm20_root_config_receipt"
+    if action == ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION:
+        return "esrm20_event_hazard_group1_receipt"
+    if action == ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION:
+        return "esrm20_event_hazard_group2_receipt"
     raise LedgerError("unsupported closed acquisition action")
 
 
@@ -348,6 +366,8 @@ def prepare_completed_result(
     eshm20_tree_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_tree_metadata,
     kosovo_exposure_acquirer: Callable[[], dict[str, Any]] = acquire_kosovo_receipt,
     eshm20_root_config_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_root_config_receipt,
+    event_hazard_group1_acquirer: Callable[[], dict[str, Any]] = acquire_event_hazard_group1_receipt,
+    event_hazard_group2_acquirer: Callable[[], dict[str, Any]] = acquire_event_hazard_group2_receipt,
 ) -> dict[str, Any]:
     """Deduplicate first, then execute only one closed allowlisted acquisition action."""
     semantic_id = semantic_request_id(request, execution_sha, repository)
@@ -377,6 +397,10 @@ def prepare_completed_result(
         selected_acquirer = kosovo_exposure_acquirer
     elif request["action"] == EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION:
         selected_acquirer = eshm20_root_config_acquirer
+    elif request["action"] == ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION:
+        selected_acquirer = event_hazard_group1_acquirer
+    elif request["action"] == ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION:
+        selected_acquirer = event_hazard_group2_acquirer
     else:
         return build_result(
             request,

@@ -367,6 +367,8 @@ class AgentActionProtocolTests(unittest.TestCase):
                 "efehr_eshm20_tree_metadata",
                 "efehr_kosovo_exposure_receipt",
                 "efehr_eshm20_root_config_receipt",
+                "esrm20_event_hazard_group1_receipt",
+                "esrm20_event_hazard_group2_receipt",
             },
         )
         self.assertEqual(set(schema["properties"]["status"]["enum"]), {"pass", "duplicate", "blocked"})
@@ -378,6 +380,8 @@ class AgentActionProtocolTests(unittest.TestCase):
         self.assertIn("efehrEshm20TreeMetadata", schema["$defs"])
         self.assertIn("efehrKosovoExposureReceipt", schema["$defs"])
         self.assertIn("efehrEshm20RootConfigReceipt", schema["$defs"])
+        self.assertIn("esrm20EventHazardGroup1Receipt", schema["$defs"])
+        self.assertIn("esrm20EventHazardGroup2Receipt", schema["$defs"])
         receipt_schema = schema["$defs"]["acquisitionReceipt"]
         self.assertFalse(receipt_schema["additionalProperties"])
         self.assertEqual(receipt_schema["properties"]["source_issue"], {"const": 162})
