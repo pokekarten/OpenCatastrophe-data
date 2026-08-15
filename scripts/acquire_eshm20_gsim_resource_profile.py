@@ -164,7 +164,34 @@ def _canonical_relative_resource(value: object) -> tuple[str, str]:
     return relative, resolved
 
 
-def _resource_assignments(model_text: object) -> tuple[tuple[str, str], ...]:
+def _normalize_resource_key(raw_key: str) -> tuple[str, bool]:
+    """Return a safe argument key while preserving the OQ 3.14 comment quirk.
+
+    ``gsim_lt.rel_paths`` checks ``name.rstrip().endswith`` directly and does
+    not remove TOML comments first. Therefore a single ``# coeff_file = ...``
+    line can still become a collected dependency in that reference runtime.
+    We retain that dependency but mark the origin as comment-prefixed so it is
+    never misrepresented as an active GSIM argument.
+    """
+
+    key = raw_key.strip()
+    comment_prefixed = key.startswith("#")
+    if comment_prefixed:
+        key = key[1:].strip()
+    if not key or any(not (char.isalnum() or char == "_") for char in key):
+        raise Eshm20GsimResourceProfileError(
+            "GSIM external resource argument name is invalid"
+        )
+    if not key.endswith(("_file", "_table")):
+        raise Eshm20GsimResourceProfileError(
+            "GSIM external resource argument lost its required suffix"
+        )
+    return key, comment_prefixed
+
+
+def _resource_assignments(
+    model_text: object,
+) -> tuple[tuple[str, str, bool], ...]:
     if type(model_text) is not str:
         raise Eshm20GsimResourceProfileError(
             "GSIM uncertaintyModel text must be a string"
@@ -175,10 +202,10 @@ def _resource_assignments(model_text: object) -> tuple[tuple[str, str], ...]:
     if len(lines) > MAX_MODEL_LINES:
         raise Eshm20GsimResourceProfileError("GSIM uncertaintyModel line count exceeds bounds")
 
-    found: list[tuple[str, str]] = []
+    found: list[tuple[str, str, bool]] = []
     for raw_line in lines:
         line = raw_line.strip()
-        if not line or line.startswith("#"):
+        if not line:
             continue
         parts = line.split("=")
         if len(parts) != 2:
@@ -189,14 +216,10 @@ def _resource_assignments(model_text: object) -> tuple[tuple[str, str], ...]:
                 )
             continue
         name, raw_value = parts
-        key = name.rstrip()
-        if not key.endswith(("_file", "_table")):
+        raw_key = name.rstrip()
+        if not raw_key.endswith(("_file", "_table")):
             continue
-        key = key.strip()
-        if not key or any(not (char.isalnum() or char == "_") for char in key):
-            raise Eshm20GsimResourceProfileError(
-                "GSIM external resource argument name is invalid"
-            )
+        key, comment_prefixed = _normalize_resource_key(raw_key)
         try:
             value = ast.literal_eval(raw_value.strip())
         except (ValueError, SyntaxError) as exc:
@@ -204,7 +227,7 @@ def _resource_assignments(model_text: object) -> tuple[tuple[str, str], ...]:
                 "GSIM external resource value is not a literal string"
             ) from exc
         relative, _ = _canonical_relative_resource(value)
-        found.append((key, relative))
+        found.append((key, relative, comment_prefixed))
         if len(found) > MAX_RESOURCE_REFERENCES:
             raise Eshm20GsimResourceProfileError(
                 "GSIM external resource reference count exceeds bounds"
@@ -233,7 +256,9 @@ def _extract_resources(
     *,
     inventory: frozenset[str],
 ) -> tuple[int, int, list[dict[str, Any]]]:
-    branch_sets = [node for node in root.iter() if _local_name(node.tag) == "logicTreeBranchSet"]
+    branch_sets = [
+        node for node in root.iter() if _local_name(node.tag) == "logicTreeBranchSet"
+    ]
     if not branch_sets or len(branch_sets) > MAX_BRANCH_SETS:
         raise Eshm20GsimResourceProfileError(
             "GMM logic-tree branch-set count is invalid or exceeds bounds"
@@ -242,7 +267,7 @@ def _extract_resources(
     branch_set_ids: set[str] = set()
     branch_ids: set[str] = set()
     branch_count = 0
-    grouped: dict[tuple[str, str, bool], set[tuple[str, str]]] = {}
+    grouped: dict[tuple[str, str, bool, bool], set[tuple[str, str]]] = {}
 
     for branch_set in branch_sets:
         if branch_set.attrib.get("uncertaintyType") != "gmpeModel":
@@ -285,15 +310,18 @@ def _extract_resources(
                     "GMM branch must contain exactly one uncertaintyModel"
                 )
             model_text = models[0].text or ""
-            for argument_key, relative_path in _resource_assignments(model_text):
-                relative, resolved = _canonical_relative_resource(relative_path)
+            for argument_key, relative_path, comment_prefixed in _resource_assignments(
+                model_text
+            ):
+                _, resolved = _canonical_relative_resource(relative_path)
                 member = resolved in inventory
-                key = (argument_key, resolved, member)
+                key = (argument_key, resolved, member, comment_prefixed)
                 grouped.setdefault(key, set()).add((branch_set_id, branch_id))
 
     resources: list[dict[str, Any]] = []
-    for (argument_key, resolved, member), origins in sorted(
-        grouped.items(), key=lambda item: (item[0][1], item[0][0], item[0][2])
+    for (argument_key, resolved, member, comment_prefixed), origins in sorted(
+        grouped.items(),
+        key=lambda item: (item[0][1], item[0][0], item[0][3], item[0][2]),
     ):
         base = posixpath.dirname(REPOSITORY_PATH)
         relative = posixpath.relpath(resolved, base)
@@ -303,6 +331,7 @@ def _extract_resources(
                 "relative_path": relative,
                 "resolved_path": resolved,
                 "selected_prefix_inventory_member": member,
+                "comment_prefixed": comment_prefixed,
                 "origins": [
                     {"branch_set_id": branch_set_id, "branch_id": branch_id}
                     for branch_set_id, branch_id in sorted(origins)
