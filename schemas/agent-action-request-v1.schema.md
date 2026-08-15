@@ -18,7 +18,7 @@ Change the canonical JSON Schema and run `python scripts/schema_reference.py --w
 
 Portable structural view of the closed request contract for a bounded trusted-main GitHub Actions evidence operation. scripts/validate_agent_action_request.py is authoritative for executable security policy that JSON Schema cannot fully express.
 
-**Executable authority note:** Draft 2020-12 treats zero-fraction JSON numbers such as 1.0 as integers. The executable validator additionally requires the parsed issue value to have exact int type (rejecting bool and float), rejects duplicate keys and non-finite JSON, enforces the single-marker comment envelope, restricts acquisition_receipt to Issue 162 plus the frozen DWD dataset, restricts dwd_metadata_receipt to Issue 211 plus that same frozen DWD dataset, restricts efehr_readme_receipt to Issue 298 plus the frozen ESRM20 exposure dataset, restricts efehr_eshm20_tree_metadata to Issue 332 plus the frozen ESHM20 dataset, restricts efehr_kosovo_exposure_receipt to Issue 328 plus the frozen ESRM20 exposure dataset, restricts efehr_eshm20_root_config_receipt to Issue 335 plus the frozen ESHM20 dataset, and restricts esrm20_event_hazard_group1_receipt plus esrm20_event_hazard_group2_receipt to Issue 346 plus the frozen ESRM20 risk-input dataset, and restricts efehr_kosovo_exposure_profile to Issue 351 plus the frozen ESRM20 exposure dataset. No network action accepts a caller-supplied URL/path/header/provider/project/ref/commit/group/parser/content target. efehr_eshm20_root_dependency_profile is restricted to Issue 353 plus the frozen ESHM20 dataset. efehr_eshm20_first_order_receipts is restricted to Issue 361 plus the frozen three-file ESHM20 first-order set. efehr_eshm20_gsim_resource_profile is restricted to Issue 376 plus the frozen ESHM20 dataset and exposes no caller-controlled GMM/resource target.
+**Executable authority note:** Draft 2020-12 treats zero-fraction JSON numbers such as 1.0 as integers. The executable validator additionally requires the parsed issue value to have exact int type (rejecting bool and float), rejects duplicate keys and non-finite JSON, enforces the single-marker comment envelope, restricts acquisition_receipt to Issue 162 plus the frozen DWD dataset, restricts dwd_metadata_receipt to Issue 211 plus that same frozen DWD dataset, restricts efehr_readme_receipt to Issue 298 plus the frozen ESRM20 exposure dataset, restricts efehr_eshm20_tree_metadata to Issue 332 plus the frozen ESHM20 dataset, restricts efehr_kosovo_exposure_receipt to Issue 328 plus the frozen ESRM20 exposure dataset, restricts efehr_eshm20_root_config_receipt to Issue 335 plus the frozen ESHM20 dataset, and restricts esrm20_event_hazard_group1_receipt plus esrm20_event_hazard_group2_receipt to Issue 346 plus the frozen ESRM20 risk-input dataset, and restricts efehr_kosovo_exposure_profile to Issue 351 plus the frozen ESRM20 exposure dataset. No network action accepts a caller-supplied URL/path/header/provider/project/ref/commit/group/parser/content target. efehr_eshm20_root_dependency_profile is restricted to Issue 353 plus the frozen ESHM20 dataset. efehr_eshm20_first_order_receipts is restricted to Issue 361 plus the frozen three-file ESHM20 first-order set. efehr_eshm20_gsim_resource_profile is restricted to Issue 376 plus the frozen ESHM20 dataset and exposes no caller-controlled GMM/resource target. efehr_kosovo_taxonomy_identity is restricted to Issue 363 plus the frozen ESRM20 Kosovo exposure dataset and exposes no caller-controlled provider, representation, taxonomy, mapping, vulnerability, or publication selector.
 
 ## Contract structure
 
@@ -32,7 +32,7 @@ Portable structural view of the closed request contract for a bounded trusted-ma
 
 #### `action` — **required**
 
-**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile"]`
+**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity"]`
 
 #### `dataset_id` — **required**
 
@@ -392,7 +392,7 @@ Portable structural view of the closed request contract for a bounded trusted-ma
 
 **Constraints:** `const`=`361`
 
-#### Branch 12
+#### Branch 13
 
 ##### if
 

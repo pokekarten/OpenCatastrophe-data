@@ -3,7 +3,7 @@
 
 """Fail-closed Agent Action result validation with a bounded #363 extension.
 
-All pre-existing actions delegate byte-for-byte to the legacy v1 validator.
+All pre-existing actions delegate to the reviewed GMM-aware validator layer.
 Only the Kosovo taxonomy identity action is handled here so its durable result
 can remain identity-only while participating in the same trusted result ledger.
 """
@@ -17,14 +17,14 @@ import sys
 from typing import Any
 
 try:
-    from scripts import validate_agent_action_result_legacy as _legacy
+    from scripts import validate_agent_action_result_gsim as _legacy
     from scripts import acquire_efehr_kosovo_taxonomy as _taxonomy
     from scripts.validate_agent_action_request import (
         EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,
         EFEHR_KOSOVO_TAXONOMY_IDENTITY_ISSUE,
     )
 except ModuleNotFoundError:  # pragma: no cover - direct script execution path
-    import validate_agent_action_result_legacy as _legacy
+    import validate_agent_action_result_gsim as _legacy
     import acquire_efehr_kosovo_taxonomy as _taxonomy
     from validate_agent_action_request import (
         EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,

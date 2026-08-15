@@ -69,6 +69,7 @@ class DwdMetadataResultReviewRegressions(unittest.TestCase):
                 "efehr_eshm20_first_order_receipts",
                 "efehr_eshm20_gsim_resource_profile",
                 "efehr_kosovo_taxonomy_identity",
+                "efehr_kosovo_taxonomy_identity",
                 "efehr_eshm20_root_config_receipt",
                 "esrm20_event_hazard_group1_receipt",
                 "esrm20_event_hazard_group2_receipt",

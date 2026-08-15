@@ -514,6 +514,11 @@ def prepare_completed_result(
                 )
             receipt = dict(receipt)
             receipt["profiled_at"] = utc_now()
+    except KosovoTaxonomyAcquisitionError:
+        # The taxonomy worker may surface provider text. Keep both the durable
+        # result and the trusted workflow log value-free for this action.
+        print("acquisition blocked: Kosovo taxonomy acquisition failed closed", file=sys.stderr)
+        receipt = None
     except (
         AcquisitionError, EfehrAcquisitionError, ExposureProfileError,
         Eshm20RootDependencyAcquisitionError, Eshm20FirstOrderReceiptError,

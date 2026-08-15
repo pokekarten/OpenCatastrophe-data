@@ -3,1003 +3,3829 @@
   "$id": "urn:opencatastrophe:schema:agent-action-result:1.0.0",
   "title": "OpenCatastrophe Agent Action Result v1",
   "description": "Portable closed result receipt for the owner-authorized trusted-main Agent Action Dispatch control plane. scripts/validate_agent_action_result.py is authoritative for exact Python scalar types, UTC ordering, acquisition-receipt identity and cross-field checks.",
-  "$comment": "request_validation records strict validation/dedup state. acquisition_receipt phase is shared by twelve closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, efehr_kosovo_exposure_receipt for Issue 328, efehr_eshm20_root_config_receipt for Issue 335, the two ESRM20 event-hazard Group1/Group2 receipt actions for Issue 346, efehr_kosovo_exposure_profile for Issue 351, and efehr_eshm20_gsim_resource_profile for Issue 376. All require external_bytes_persisted=false. EFEHR/ESRM20 receipts prove only their bounded transport, repository-metadata, or exact selected-file byte identity; they do not establish scientific fitness, dependency closure, model-use eligibility, completeness outside the selected scope or publication authorization. efehr_eshm20_root_dependency_profile for Issue 353 persists only verified first-order dependency metadata; dependency inventory, transitive closure, model use and publication remain unauthorized. efehr_eshm20_first_order_receipts for Issue 361 persists only exact byte receipts for the three #353-selected first-order candidates; dependency inventory, semantics, closure, model use and publication remain unauthorized. efehr_eshm20_gsim_resource_profile persists only bounded structural _file/_table resource-reference metadata from the exact #361-receipted GMM logic-tree bytes; dependency receipts, dependency closure, GSIM runtime validity, model use and publication remain unauthorized.",
+  "$comment": "request_validation records strict validation/dedup state. acquisition_receipt phase is shared by twelve closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, efehr_kosovo_exposure_receipt for Issue 328, efehr_eshm20_root_config_receipt for Issue 335, the two ESRM20 event-hazard Group1/Group2 receipt actions for Issue 346, efehr_kosovo_exposure_profile for Issue 351, and efehr_eshm20_gsim_resource_profile for Issue 376. All require external_bytes_persisted=false. EFEHR/ESRM20 receipts prove only their bounded transport, repository-metadata, or exact selected-file byte identity; they do not establish scientific fitness, dependency closure, model-use eligibility, completeness outside the selected scope or publication authorization. efehr_eshm20_root_dependency_profile for Issue 353 persists only verified first-order dependency metadata; dependency inventory, transitive closure, model use and publication remain unauthorized. efehr_eshm20_first_order_receipts for Issue 361 persists only exact byte receipts for the three #353-selected first-order candidates; dependency inventory, semantics, closure, model use and publication remain unauthorized. efehr_eshm20_gsim_resource_profile persists only bounded structural _file/_table resource-reference metadata from the exact #361-receipted GMM logic-tree bytes; dependency receipts, dependency closure, GSIM runtime validity, model use and publication remain unauthorized. efehr_kosovo_taxonomy_identity for Issue 363 persists only the exact pre-publication identity of the 86-value Kosovo residential TAXONOMY set; literal taxonomy values, provider bytes, normalization, mapping interpretation, vulnerability selection, publication and model use remain unauthorized.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version", "semantic_request_id", "repository", "action", "source_issue", "source_comment_id",
-    "target_sha", "dataset_id", "execution_sha", "run_id", "run_attempt", "started_at", "finished_at",
-    "phase", "status", "external_bytes_persisted", "evidence", "duplicate_result_comment_id", "failure_class"
+    "schema_version",
+    "semantic_request_id",
+    "repository",
+    "action",
+    "source_issue",
+    "source_comment_id",
+    "target_sha",
+    "dataset_id",
+    "execution_sha",
+    "run_id",
+    "run_attempt",
+    "started_at",
+    "finished_at",
+    "phase",
+    "status",
+    "external_bytes_persisted",
+    "evidence",
+    "duplicate_result_comment_id",
+    "failure_class"
   ],
   "properties": {
-    "schema_version": {"const": "oc-action-result-v1"},
-    "semantic_request_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-    "repository": {"type": "string", "pattern": "^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$"},
-    "action": {"enum": ["sample_audit", "acquisition_receipt", "dwd_metadata_receipt", "efehr_readme_receipt", "efehr_eshm20_tree_metadata", "efehr_eshm20_root_config_receipt", "efehr_kosovo_exposure_receipt", "esrm20_event_hazard_group1_receipt", "esrm20_event_hazard_group2_receipt", "efehr_kosovo_exposure_profile", "efehr_eshm20_root_dependency_profile", "efehr_eshm20_first_order_receipts", "efehr_eshm20_gsim_resource_profile"]},
-    "source_issue": {"type": "integer", "minimum": 1},
-    "source_comment_id": {"type": "integer", "minimum": 1},
-    "target_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
-    "dataset_id": {"type": "string", "minLength": 1, "maxLength": 160, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"},
-    "execution_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
-    "run_id": {"type": "integer", "minimum": 1},
-    "run_attempt": {"type": "integer", "minimum": 1},
-    "started_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
-    "finished_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
-    "phase": {"enum": ["request_validation", "acquisition_receipt"]},
-    "status": {"enum": ["pass", "duplicate", "blocked"]},
-    "external_bytes_persisted": {"const": false},
+    "schema_version": {
+      "const": "oc-action-result-v1"
+    },
+    "semantic_request_id": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$"
+    },
+    "action": {
+      "enum": [
+        "sample_audit",
+        "acquisition_receipt",
+        "dwd_metadata_receipt",
+        "efehr_readme_receipt",
+        "efehr_eshm20_tree_metadata",
+        "efehr_eshm20_root_config_receipt",
+        "efehr_kosovo_exposure_receipt",
+        "esrm20_event_hazard_group1_receipt",
+        "esrm20_event_hazard_group2_receipt",
+        "efehr_kosovo_exposure_profile",
+        "efehr_eshm20_root_dependency_profile",
+        "efehr_eshm20_first_order_receipts",
+        "efehr_eshm20_gsim_resource_profile",
+        "efehr_kosovo_taxonomy_identity"
+      ]
+    },
+    "source_issue": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source_comment_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "target_sha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "dataset_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "execution_sha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "run_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "run_attempt": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "started_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "finished_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "phase": {
+      "enum": [
+        "request_validation",
+        "acquisition_receipt"
+      ]
+    },
+    "status": {
+      "enum": [
+        "pass",
+        "duplicate",
+        "blocked"
+      ]
+    },
+    "external_bytes_persisted": {
+      "const": false
+    },
     "evidence": {
       "oneOf": [
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused"],
+          "required": [
+            "request_validated",
+            "ledger_scan_complete",
+            "prior_result_reused"
+          ],
           "properties": {
-            "request_validated": {"const": true},
-            "ledger_scan_complete": {"type": "boolean"},
-            "prior_result_reused": {"type": "boolean"}
+            "request_validated": {
+              "const": true
+            },
+            "ledger_scan_complete": {
+              "type": "boolean"
+            },
+            "prior_result_reused": {
+              "type": "boolean"
+            }
           }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "acquisition_receipt"],
+          "required": [
+            "request_validated",
+            "ledger_scan_complete",
+            "prior_result_reused",
+            "acquisition_receipt"
+          ],
           "properties": {
-            "request_validated": {"const": true},
-            "ledger_scan_complete": {"const": true},
-            "prior_result_reused": {"const": false},
-            "acquisition_receipt": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/acquisitionReceipt"}]}
+            "request_validated": {
+              "const": true
+            },
+            "ledger_scan_complete": {
+              "const": true
+            },
+            "prior_result_reused": {
+              "const": false
+            },
+            "acquisition_receipt": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/acquisitionReceipt"
+                }
+              ]
+            }
           }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "dwd_metadata_receipt"],
+          "required": [
+            "request_validated",
+            "ledger_scan_complete",
+            "prior_result_reused",
+            "dwd_metadata_receipt"
+          ],
           "properties": {
-            "request_validated": {"const": true},
-            "ledger_scan_complete": {"const": true},
-            "prior_result_reused": {"const": false},
-            "dwd_metadata_receipt": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/dwdMetadataReceipt"}]}
+            "request_validated": {
+              "const": true
+            },
+            "ledger_scan_complete": {
+              "const": true
+            },
+            "prior_result_reused": {
+              "const": false
+            },
+            "dwd_metadata_receipt": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/dwdMetadataReceipt"
+                }
+              ]
+            }
           }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "efehr_readme_receipt"],
+          "required": [
+            "request_validated",
+            "ledger_scan_complete",
+            "prior_result_reused",
+            "efehr_readme_receipt"
+          ],
           "properties": {
-            "request_validated": {"const": true},
-            "ledger_scan_complete": {"const": true},
-            "prior_result_reused": {"const": false},
-            "efehr_readme_receipt": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/efehrReadmeReceipt"}]}
+            "request_validated": {
+              "const": true
+            },
+            "ledger_scan_complete": {
+              "const": true
+            },
+            "prior_result_reused": {
+              "const": false
+            },
+            "efehr_readme_receipt": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/efehrReadmeReceipt"
+                }
+              ]
+            }
           }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "efehr_eshm20_tree_metadata"],
+          "required": [
+            "request_validated",
+            "ledger_scan_complete",
+            "prior_result_reused",
+            "efehr_eshm20_tree_metadata"
+          ],
           "properties": {
-            "request_validated": {"const": true},
-            "ledger_scan_complete": {"const": true},
-            "prior_result_reused": {"const": false},
-            "efehr_eshm20_tree_metadata": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/efehrEshm20TreeMetadata"}]}
+            "request_validated": {
+              "const": true
+            },
+            "ledger_scan_complete": {
+              "const": true
+            },
+            "prior_result_reused": {
+              "const": false
+            },
+            "efehr_eshm20_tree_metadata": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/efehrEshm20TreeMetadata"
+                }
+              ]
+            }
           }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "efehr_kosovo_exposure_receipt"],
+          "required": [
+            "request_validated",
+            "ledger_scan_complete",
+            "prior_result_reused",
+            "efehr_kosovo_exposure_receipt"
+          ],
           "properties": {
-            "request_validated": {"const": true},
-            "ledger_scan_complete": {"const": true},
-            "prior_result_reused": {"const": false},
-            "efehr_kosovo_exposure_receipt": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/efehrKosovoExposureReceipt"}]}
-          }
-        },
-        {
-"type": "object",
-"additionalProperties": false,
-"required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "efehr_kosovo_exposure_profile"],
-"properties": {
-  "request_validated": {"const": true},
-  "ledger_scan_complete": {"const": true},
-  "prior_result_reused": {"const": false},
-  "efehr_kosovo_exposure_profile": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/efehrKosovoExposureProfile"}]}
-}
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "efehr_eshm20_root_config_receipt"],
-          "properties": {
-            "request_validated": {"const": true},
-            "ledger_scan_complete": {"const": true},
-            "prior_result_reused": {"const": false},
-            "efehr_eshm20_root_config_receipt": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/efehrEshm20RootConfigReceipt"}]}
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "esrm20_event_hazard_group1_receipt"],
-          "properties": {
-            "request_validated": {"const": true},
-            "ledger_scan_complete": {"const": true},
-            "prior_result_reused": {"const": false},
-            "esrm20_event_hazard_group1_receipt": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/esrm20EventHazardGroup1Receipt"}]}
+            "request_validated": {
+              "const": true
+            },
+            "ledger_scan_complete": {
+              "const": true
+            },
+            "prior_result_reused": {
+              "const": false
+            },
+            "efehr_kosovo_exposure_receipt": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/efehrKosovoExposureReceipt"
+                }
+              ]
+            }
           }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "esrm20_event_hazard_group2_receipt"],
+          "required": [
+            "request_validated",
+            "ledger_scan_complete",
+            "prior_result_reused",
+            "efehr_kosovo_exposure_profile"
+          ],
           "properties": {
-            "request_validated": {"const": true},
-            "ledger_scan_complete": {"const": true},
-            "prior_result_reused": {"const": false},
-            "esrm20_event_hazard_group2_receipt": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/esrm20EventHazardGroup2Receipt"}]}
+            "request_validated": {
+              "const": true
+            },
+            "ledger_scan_complete": {
+              "const": true
+            },
+            "prior_result_reused": {
+              "const": false
+            },
+            "efehr_kosovo_exposure_profile": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/efehrKosovoExposureProfile"
+                }
+              ]
+            }
           }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "efehr_eshm20_root_dependency_profile"],
+          "required": [
+            "request_validated",
+            "ledger_scan_complete",
+            "prior_result_reused",
+            "efehr_eshm20_root_config_receipt"
+          ],
           "properties": {
-            "request_validated": {"const": true},
-            "ledger_scan_complete": {"const": true},
-            "prior_result_reused": {"const": false},
-            "efehr_eshm20_root_dependency_profile": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/efehrEshm20RootDependencyProfile"}]}
+            "request_validated": {
+              "const": true
+            },
+            "ledger_scan_complete": {
+              "const": true
+            },
+            "prior_result_reused": {
+              "const": false
+            },
+            "efehr_eshm20_root_config_receipt": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/efehrEshm20RootConfigReceipt"
+                }
+              ]
+            }
           }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "efehr_eshm20_first_order_receipts"],
+          "required": [
+            "request_validated",
+            "ledger_scan_complete",
+            "prior_result_reused",
+            "esrm20_event_hazard_group1_receipt"
+          ],
           "properties": {
-            "request_validated": {"const": true},
-            "ledger_scan_complete": {"const": true},
-            "prior_result_reused": {"const": false},
-            "efehr_eshm20_first_order_receipts": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/efehrEshm20FirstOrderReceiptSet"}]}
+            "request_validated": {
+              "const": true
+            },
+            "ledger_scan_complete": {
+              "const": true
+            },
+            "prior_result_reused": {
+              "const": false
+            },
+            "esrm20_event_hazard_group1_receipt": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/esrm20EventHazardGroup1Receipt"
+                }
+              ]
+            }
           }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "efehr_eshm20_gsim_resource_profile"],
+          "required": [
+            "request_validated",
+            "ledger_scan_complete",
+            "prior_result_reused",
+            "esrm20_event_hazard_group2_receipt"
+          ],
           "properties": {
-            "request_validated": {"const": true},
-            "ledger_scan_complete": {"const": true},
-            "prior_result_reused": {"const": false},
-            "efehr_eshm20_gsim_resource_profile": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/efehrEshm20GsimResourceProfile"}]}
+            "request_validated": {
+              "const": true
+            },
+            "ledger_scan_complete": {
+              "const": true
+            },
+            "prior_result_reused": {
+              "const": false
+            },
+            "esrm20_event_hazard_group2_receipt": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/esrm20EventHazardGroup2Receipt"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "request_validated",
+            "ledger_scan_complete",
+            "prior_result_reused",
+            "efehr_eshm20_root_dependency_profile"
+          ],
+          "properties": {
+            "request_validated": {
+              "const": true
+            },
+            "ledger_scan_complete": {
+              "const": true
+            },
+            "prior_result_reused": {
+              "const": false
+            },
+            "efehr_eshm20_root_dependency_profile": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/efehrEshm20RootDependencyProfile"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "request_validated",
+            "ledger_scan_complete",
+            "prior_result_reused",
+            "efehr_eshm20_first_order_receipts"
+          ],
+          "properties": {
+            "request_validated": {
+              "const": true
+            },
+            "ledger_scan_complete": {
+              "const": true
+            },
+            "prior_result_reused": {
+              "const": false
+            },
+            "efehr_eshm20_first_order_receipts": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/efehrEshm20FirstOrderReceiptSet"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "request_validated",
+            "ledger_scan_complete",
+            "prior_result_reused",
+            "efehr_eshm20_gsim_resource_profile"
+          ],
+          "properties": {
+            "request_validated": {
+              "const": true
+            },
+            "ledger_scan_complete": {
+              "const": true
+            },
+            "prior_result_reused": {
+              "const": false
+            },
+            "efehr_eshm20_gsim_resource_profile": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/efehrEshm20GsimResourceProfile"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "request_validated",
+            "ledger_scan_complete",
+            "prior_result_reused",
+            "efehr_kosovo_taxonomy_identity"
+          ],
+          "properties": {
+            "request_validated": {
+              "const": true
+            },
+            "ledger_scan_complete": {
+              "const": true
+            },
+            "prior_result_reused": {
+              "const": false
+            },
+            "efehr_kosovo_taxonomy_identity": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/efehrKosovoTaxonomyIdentity"
+                }
+              ]
+            }
           }
         }
       ]
     },
-    "duplicate_result_comment_id": {"type": ["integer", "null"], "minimum": 1},
-    "failure_class": {"type": ["string", "null"], "enum": [null, "duplicate_request", "ledger_incomplete", "acquisition_failed"]}
+    "duplicate_result_comment_id": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "failure_class": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        null,
+        "duplicate_request",
+        "ledger_incomplete",
+        "acquisition_failed"
+      ]
+    }
   },
   "$defs": {
     "acquisitionReceipt": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "schema_version", "dataset_id", "source_issue", "requested_url", "final_url", "filename", "retrieved_at",
-        "byte_count", "sha256", "content_type", "last_modified", "etag", "archive_member_count", "archive_uncompressed_bytes",
-        "product_member", "product_station_id", "product_begin_date", "product_end_date", "product_row_count",
-        "product_structure_validated", "external_bytes_persisted", "publication_authorized"
+        "schema_version",
+        "dataset_id",
+        "source_issue",
+        "requested_url",
+        "final_url",
+        "filename",
+        "retrieved_at",
+        "byte_count",
+        "sha256",
+        "content_type",
+        "last_modified",
+        "etag",
+        "archive_member_count",
+        "archive_uncompressed_bytes",
+        "product_member",
+        "product_station_id",
+        "product_begin_date",
+        "product_end_date",
+        "product_row_count",
+        "product_structure_validated",
+        "external_bytes_persisted",
+        "publication_authorized"
       ],
       "properties": {
-        "schema_version": {"const": "oc-acquisition-receipt-v1"},
-        "dataset_id": {"const": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"},
-        "source_issue": {"const": 162},
-        "requested_url": {"const": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/historical/10minutenwerte_extrema_wind_00003_20100101_20110331_hist.zip"},
-        "final_url": {"const": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/historical/10minutenwerte_extrema_wind_00003_20100101_20110331_hist.zip"},
-        "filename": {"const": "10minutenwerte_extrema_wind_00003_20100101_20110331_hist.zip"},
-        "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
-        "byte_count": {"type": "integer", "minimum": 1, "maximum": 52428800},
-        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "content_type": {"type": ["string", "null"], "maxLength": 512},
-        "last_modified": {"type": ["string", "null"], "maxLength": 512},
-        "etag": {"type": ["string", "null"], "maxLength": 512},
-        "archive_member_count": {"type": "integer", "minimum": 1, "maximum": 32},
-        "archive_uncompressed_bytes": {"type": "integer", "minimum": 1, "maximum": 104857600},
-        "product_member": {"type": "string", "minLength": 1, "maxLength": 512, "pattern": "\\.[Tt][Xx][Tt]$"},
-        "product_station_id": {"const": "00003"},
-        "product_begin_date": {"const": "20100101"},
-        "product_end_date": {"const": "20110331"},
-        "product_row_count": {"type": "integer", "minimum": 1, "maximum": 1000000},
-        "product_structure_validated": {"const": true},
-        "external_bytes_persisted": {"const": false},
-        "publication_authorized": {"const": false}
+        "schema_version": {
+          "const": "oc-acquisition-receipt-v1"
+        },
+        "dataset_id": {
+          "const": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"
+        },
+        "source_issue": {
+          "const": 162
+        },
+        "requested_url": {
+          "const": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/historical/10minutenwerte_extrema_wind_00003_20100101_20110331_hist.zip"
+        },
+        "final_url": {
+          "const": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/historical/10minutenwerte_extrema_wind_00003_20100101_20110331_hist.zip"
+        },
+        "filename": {
+          "const": "10minutenwerte_extrema_wind_00003_20100101_20110331_hist.zip"
+        },
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "byte_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 52428800
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "content_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "last_modified": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "etag": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "archive_member_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32
+        },
+        "archive_uncompressed_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 104857600
+        },
+        "product_member": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "\\.[Tt][Xx][Tt]$"
+        },
+        "product_station_id": {
+          "const": "00003"
+        },
+        "product_begin_date": {
+          "const": "20100101"
+        },
+        "product_end_date": {
+          "const": "20110331"
+        },
+        "product_row_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "product_structure_validated": {
+          "const": true
+        },
+        "external_bytes_persisted": {
+          "const": false
+        },
+        "publication_authorized": {
+          "const": false
+        }
       }
     },
     "dwdMetadataReceipt": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "schema_version", "dataset_id", "source_issue", "requested_url", "final_url", "filename", "retrieved_at",
-        "byte_count", "sha256", "content_type", "last_modified", "etag", "archive_member_count", "archive_uncompressed_bytes",
-        "station_id", "required_metadata_families", "metadata_members", "temporal_coverage_status",
-        "external_bytes_persisted", "publication_authorized"
+        "schema_version",
+        "dataset_id",
+        "source_issue",
+        "requested_url",
+        "final_url",
+        "filename",
+        "retrieved_at",
+        "byte_count",
+        "sha256",
+        "content_type",
+        "last_modified",
+        "etag",
+        "archive_member_count",
+        "archive_uncompressed_bytes",
+        "station_id",
+        "required_metadata_families",
+        "metadata_members",
+        "temporal_coverage_status",
+        "external_bytes_persisted",
+        "publication_authorized"
       ],
       "properties": {
-        "schema_version": {"const": "oc-dwd-metadata-receipt-v1"},
-        "dataset_id": {"const": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"},
-        "source_issue": {"const": 211},
-        "requested_url": {"const": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/meta_data/Meta_Daten_zehn_min_fx_00003.zip"},
-        "final_url": {"const": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/meta_data/Meta_Daten_zehn_min_fx_00003.zip"},
-        "filename": {"const": "Meta_Daten_zehn_min_fx_00003.zip"},
-        "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
-        "byte_count": {"type": "integer", "minimum": 1, "maximum": 5242880},
-        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "content_type": {"type": ["string", "null"], "maxLength": 512},
-        "last_modified": {"type": ["string", "null"], "maxLength": 512},
-        "etag": {"type": ["string", "null"], "maxLength": 512},
-        "archive_member_count": {"type": "integer", "minimum": 1, "maximum": 128},
-        "archive_uncompressed_bytes": {"type": "integer", "minimum": 1, "maximum": 20971520},
-        "station_id": {"const": "00003"},
-        "required_metadata_families": {"const": ["equipment", "geography", "parameter"]},
+        "schema_version": {
+          "const": "oc-dwd-metadata-receipt-v1"
+        },
+        "dataset_id": {
+          "const": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"
+        },
+        "source_issue": {
+          "const": 211
+        },
+        "requested_url": {
+          "const": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/meta_data/Meta_Daten_zehn_min_fx_00003.zip"
+        },
+        "final_url": {
+          "const": "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/meta_data/Meta_Daten_zehn_min_fx_00003.zip"
+        },
+        "filename": {
+          "const": "Meta_Daten_zehn_min_fx_00003.zip"
+        },
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "byte_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5242880
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "content_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "last_modified": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "etag": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "archive_member_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128
+        },
+        "archive_uncompressed_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20971520
+        },
+        "station_id": {
+          "const": "00003"
+        },
+        "required_metadata_families": {
+          "const": [
+            "equipment",
+            "geography",
+            "parameter"
+          ]
+        },
         "metadata_members": {
-          "type": "array", "minItems": 3, "maxItems": 128,
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 128,
           "items": {
-            "type": "object", "additionalProperties": false, "required": ["path", "family"],
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "family"
+            ],
             "properties": {
-              "path": {"type": "string", "minLength": 1, "maxLength": 512},
-              "family": {"enum": ["equipment", "geography", "parameter"]}
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "family": {
+                "enum": [
+                  "equipment",
+                  "geography",
+                  "parameter"
+                ]
+              }
             }
           }
         },
-        "temporal_coverage_status": {"const": "unverified"},
-        "external_bytes_persisted": {"const": false},
-        "publication_authorized": {"const": false}
+        "temporal_coverage_status": {
+          "const": "unverified"
+        },
+        "external_bytes_persisted": {
+          "const": false
+        },
+        "publication_authorized": {
+          "const": false
+        }
       }
     },
     "efehrReadmeReceipt": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "schema_version", "operation_id", "release_tag", "tag_api_url", "source_issue", "dataset_id",
-        "provider_host", "project_id", "project_path", "commit_sha", "repository_path", "requested_url",
-        "final_url", "retrieved_at", "byte_count", "sha256", "content_type", "etag",
-        "external_bytes_persisted", "publication_authorized"
+        "schema_version",
+        "operation_id",
+        "release_tag",
+        "tag_api_url",
+        "source_issue",
+        "dataset_id",
+        "provider_host",
+        "project_id",
+        "project_path",
+        "commit_sha",
+        "repository_path",
+        "requested_url",
+        "final_url",
+        "retrieved_at",
+        "byte_count",
+        "sha256",
+        "content_type",
+        "etag",
+        "external_bytes_persisted",
+        "publication_authorized"
       ],
       "properties": {
-        "schema_version": {"const": "oc-efehr-trusted-acquisition-v1"},
-        "operation_id": {"const": "esrm20-exposure-format-readme-v1"},
-        "release_tag": {"const": "v1.0"},
-        "tag_api_url": {"const": "https://gitlab.seismo.ethz.ch/api/v4/projects/186/repository/tags/v1.0"},
-        "source_issue": {"const": 282},
-        "dataset_id": {"const": "efehr.esrm20.european-exposure-model.v1.0"},
-        "provider_host": {"const": "gitlab.seismo.ethz.ch"},
-        "project_id": {"const": 186},
-        "project_path": {"const": "efehr/esrm20_exposure"},
-        "commit_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
-        "repository_path": {"const": "_exposure_models/ReadMe_Exposure_Model_Format.txt"},
-        "requested_url": {"type": "string", "pattern": "^https://gitlab\\.seismo\\.ethz\\.ch/api/v4/projects/186/repository/files/_exposure_models%2FReadMe_Exposure_Model_Format\\.txt/raw\\?ref=[a-f0-9]{40}$"},
-        "final_url": {"type": "string", "pattern": "^https://gitlab\\.seismo\\.ethz\\.ch/api/v4/projects/186/repository/files/_exposure_models%2FReadMe_Exposure_Model_Format\\.txt/raw\\?ref=[a-f0-9]{40}$"},
-        "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
-        "byte_count": {"type": "integer", "minimum": 1, "maximum": 1048576},
-        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "content_type": {"type": ["string", "null"], "maxLength": 512},
-        "etag": {"type": ["string", "null"], "maxLength": 512},
-        "external_bytes_persisted": {"const": false},
-        "publication_authorized": {"const": false}
+        "schema_version": {
+          "const": "oc-efehr-trusted-acquisition-v1"
+        },
+        "operation_id": {
+          "const": "esrm20-exposure-format-readme-v1"
+        },
+        "release_tag": {
+          "const": "v1.0"
+        },
+        "tag_api_url": {
+          "const": "https://gitlab.seismo.ethz.ch/api/v4/projects/186/repository/tags/v1.0"
+        },
+        "source_issue": {
+          "const": 282
+        },
+        "dataset_id": {
+          "const": "efehr.esrm20.european-exposure-model.v1.0"
+        },
+        "provider_host": {
+          "const": "gitlab.seismo.ethz.ch"
+        },
+        "project_id": {
+          "const": 186
+        },
+        "project_path": {
+          "const": "efehr/esrm20_exposure"
+        },
+        "commit_sha": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "repository_path": {
+          "const": "_exposure_models/ReadMe_Exposure_Model_Format.txt"
+        },
+        "requested_url": {
+          "type": "string",
+          "pattern": "^https://gitlab\\.seismo\\.ethz\\.ch/api/v4/projects/186/repository/files/_exposure_models%2FReadMe_Exposure_Model_Format\\.txt/raw\\?ref=[a-f0-9]{40}$"
+        },
+        "final_url": {
+          "type": "string",
+          "pattern": "^https://gitlab\\.seismo\\.ethz\\.ch/api/v4/projects/186/repository/files/_exposure_models%2FReadMe_Exposure_Model_Format\\.txt/raw\\?ref=[a-f0-9]{40}$"
+        },
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "byte_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "content_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "etag": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "external_bytes_persisted": {
+          "const": false
+        },
+        "publication_authorized": {
+          "const": false
+        }
       }
     },
     "efehrEshm20TreeMetadata": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "schema_version", "operation_id", "source_issue", "dataset_id", "provider_host",
-        "project_id", "project_path", "branch", "resolved_commit_sha", "tree_prefix",
-        "retrieved_at", "tree_page_count", "tree_entry_count", "metadata_byte_count",
-        "entries", "external_bytes_persisted", "publication_authorized"
+        "schema_version",
+        "operation_id",
+        "source_issue",
+        "dataset_id",
+        "provider_host",
+        "project_id",
+        "project_path",
+        "branch",
+        "resolved_commit_sha",
+        "tree_prefix",
+        "retrieved_at",
+        "tree_page_count",
+        "tree_entry_count",
+        "metadata_byte_count",
+        "entries",
+        "external_bytes_persisted",
+        "publication_authorized"
       ],
       "properties": {
-        "schema_version": {"const": "oc-efehr-eshm20-tree-metadata-v1"},
-        "operation_id": {"const": "eshm20-master-tree-metadata-v1"},
-        "source_issue": {"const": 320},
-        "dataset_id": {"const": "efehr.eshm20"},
-        "provider_host": {"const": "gitlab.seismo.ethz.ch"},
-        "project_id": {"const": 197},
-        "project_path": {"const": "efehr/eshm20"},
-        "branch": {"const": "master"},
-        "resolved_commit_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
-        "tree_prefix": {"const": "oq_computational/oq_configuration_eshm20_v12e_region_main/"},
-        "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
-        "tree_page_count": {"type": "integer", "minimum": 1, "maximum": 20},
-        "tree_entry_count": {"type": "integer", "minimum": 1, "maximum": 2000},
-        "metadata_byte_count": {"type": "integer", "minimum": 1, "maximum": 8388608},
+        "schema_version": {
+          "const": "oc-efehr-eshm20-tree-metadata-v1"
+        },
+        "operation_id": {
+          "const": "eshm20-master-tree-metadata-v1"
+        },
+        "source_issue": {
+          "const": 320
+        },
+        "dataset_id": {
+          "const": "efehr.eshm20"
+        },
+        "provider_host": {
+          "const": "gitlab.seismo.ethz.ch"
+        },
+        "project_id": {
+          "const": 197
+        },
+        "project_path": {
+          "const": "efehr/eshm20"
+        },
+        "branch": {
+          "const": "master"
+        },
+        "resolved_commit_sha": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "tree_prefix": {
+          "const": "oq_computational/oq_configuration_eshm20_v12e_region_main/"
+        },
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "tree_page_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "tree_entry_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2000
+        },
+        "metadata_byte_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8388608
+        },
         "entries": {
-          "type": "array", "minItems": 1, "maxItems": 2000, "uniqueItems": true,
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2000,
+          "uniqueItems": true,
           "items": {
-            "type": "object", "additionalProperties": false,
-            "required": ["path", "type", "id", "mode"],
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "type",
+              "id",
+              "mode"
+            ],
             "properties": {
-              "path": {"type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^oq_computational/oq_configuration_eshm20_v12e_region_main/.+"},
-              "type": {"enum": ["blob", "tree"]},
-              "id": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
-              "mode": {"type": "string", "pattern": "^[0-7]{6}$"}
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024,
+                "pattern": "^oq_computational/oq_configuration_eshm20_v12e_region_main/.+"
+              },
+              "type": {
+                "enum": [
+                  "blob",
+                  "tree"
+                ]
+              },
+              "id": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{40}$"
+              },
+              "mode": {
+                "type": "string",
+                "pattern": "^[0-7]{6}$"
+              }
             }
           }
         },
-        "external_bytes_persisted": {"const": false},
-        "publication_authorized": {"const": false}
+        "external_bytes_persisted": {
+          "const": false
+        },
+        "publication_authorized": {
+          "const": false
+        }
       }
     },
     "efehrKosovoExposureReceipt": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "schema_version", "operation_id", "source_issue", "dataset_id", "provider_host",
-        "project_id", "project_path", "commit_sha", "repository_path", "requested_url",
-        "final_url", "retrieved_at", "byte_count", "sha256", "content_type", "etag",
-        "external_bytes_persisted", "publication_authorized"
+        "schema_version",
+        "operation_id",
+        "source_issue",
+        "dataset_id",
+        "provider_host",
+        "project_id",
+        "project_path",
+        "commit_sha",
+        "repository_path",
+        "requested_url",
+        "final_url",
+        "retrieved_at",
+        "byte_count",
+        "sha256",
+        "content_type",
+        "etag",
+        "external_bytes_persisted",
+        "publication_authorized"
       ],
       "properties": {
-        "schema_version": {"const": "oc-efehr-trusted-acquisition-v1"},
-        "operation_id": {"const": "esrm20-kosovo-residential-exposure-v1"},
-        "source_issue": {"const": 282},
-        "dataset_id": {"const": "efehr.esrm20.european-exposure-model.v1.0"},
-        "provider_host": {"const": "gitlab.seismo.ethz.ch"},
-        "project_id": {"const": 186},
-        "project_path": {"const": "efehr/esrm20_exposure"},
-        "commit_sha": {"const": "900433ada80fbb424c0976c34d72eeef97bab1af"},
-        "repository_path": {"const": "_exposure_models/Exposure_Model_Kosovo_Res.csv"},
-        "requested_url": {"const": "https://gitlab.seismo.ethz.ch/api/v4/projects/186/repository/files/_exposure_models%2FExposure_Model_Kosovo_Res.csv/raw?ref=900433ada80fbb424c0976c34d72eeef97bab1af"},
-        "final_url": {"const": "https://gitlab.seismo.ethz.ch/api/v4/projects/186/repository/files/_exposure_models%2FExposure_Model_Kosovo_Res.csv/raw?ref=900433ada80fbb424c0976c34d72eeef97bab1af"},
-        "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
-        "byte_count": {"type": "integer", "minimum": 1, "maximum": 67108864},
-        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "content_type": {"type": ["string", "null"], "maxLength": 512},
-        "etag": {"type": ["string", "null"], "maxLength": 512},
-        "external_bytes_persisted": {"const": false},
-        "publication_authorized": {"const": false}
+        "schema_version": {
+          "const": "oc-efehr-trusted-acquisition-v1"
+        },
+        "operation_id": {
+          "const": "esrm20-kosovo-residential-exposure-v1"
+        },
+        "source_issue": {
+          "const": 282
+        },
+        "dataset_id": {
+          "const": "efehr.esrm20.european-exposure-model.v1.0"
+        },
+        "provider_host": {
+          "const": "gitlab.seismo.ethz.ch"
+        },
+        "project_id": {
+          "const": 186
+        },
+        "project_path": {
+          "const": "efehr/esrm20_exposure"
+        },
+        "commit_sha": {
+          "const": "900433ada80fbb424c0976c34d72eeef97bab1af"
+        },
+        "repository_path": {
+          "const": "_exposure_models/Exposure_Model_Kosovo_Res.csv"
+        },
+        "requested_url": {
+          "const": "https://gitlab.seismo.ethz.ch/api/v4/projects/186/repository/files/_exposure_models%2FExposure_Model_Kosovo_Res.csv/raw?ref=900433ada80fbb424c0976c34d72eeef97bab1af"
+        },
+        "final_url": {
+          "const": "https://gitlab.seismo.ethz.ch/api/v4/projects/186/repository/files/_exposure_models%2FExposure_Model_Kosovo_Res.csv/raw?ref=900433ada80fbb424c0976c34d72eeef97bab1af"
+        },
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "byte_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 67108864
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "content_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "etag": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "external_bytes_persisted": {
+          "const": false
+        },
+        "publication_authorized": {
+          "const": false
+        }
       }
     },
     "efehrKosovoExposureProfile": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "schema_version", "source_issue", "dataset_id", "project_id", "project_path", "commit_sha",
-        "repository_path", "receipt_comment_id", "receipt_execution_sha", "byte_count", "sha256",
-        "profiled_at", "profile", "external_bytes_persisted", "publication_authorized"
+        "schema_version",
+        "source_issue",
+        "dataset_id",
+        "project_id",
+        "project_path",
+        "commit_sha",
+        "repository_path",
+        "receipt_comment_id",
+        "receipt_execution_sha",
+        "byte_count",
+        "sha256",
+        "profiled_at",
+        "profile",
+        "external_bytes_persisted",
+        "publication_authorized"
       ],
       "properties": {
-        "schema_version": {"const": "oc-esrm20-exposure-content-profile-v0"},
-        "source_issue": {"const": 282},
-        "dataset_id": {"const": "efehr.esrm20.european-exposure-model.v1.0"},
-        "project_id": {"const": 186},
-        "project_path": {"const": "efehr/esrm20_exposure"},
-        "commit_sha": {"const": "900433ada80fbb424c0976c34d72eeef97bab1af"},
-        "repository_path": {"const": "_exposure_models/Exposure_Model_Kosovo_Res.csv"},
-        "receipt_comment_id": {"const": 5300981864},
-        "receipt_execution_sha": {"const": "46d054930025553ad19d8b05fff9018dc2a49b5f"},
-        "byte_count": {"const": 316789},
-        "sha256": {"const": "4d562ad4925c527d518834b8dcd39a083cfd3b87b622031a84958ae7b4d8c5ea"},
-        "profiled_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
-        "profile": {
-"type": "object",
-"additionalProperties": false,
-"required": ["schema_version", "parser", "record_count", "header", "columns", "raw_rows_returned", "external_bytes_persisted", "publication_authorized"],
-"properties": {
-  "schema_version": {"const": "oc-esrm20-exposure-content-profile-v0"},
-  "parser": {
-    "type": "object", "additionalProperties": false,
-    "required": ["encoding", "bom_present", "delimiter", "line_endings"],
-    "properties": {
-      "encoding": {"enum": ["utf-8", "utf-8-sig"]},
-      "bom_present": {"type": "boolean"},
-      "delimiter": {"const": ","},
-      "line_endings": {
-        "type": "object", "additionalProperties": false,
-        "required": ["crlf_count", "lf_count", "cr_count"],
-        "properties": {
-          "crlf_count": {"type": "integer", "minimum": 0, "maximum": 316789},
-          "lf_count": {"type": "integer", "minimum": 0, "maximum": 316789},
-          "cr_count": {"type": "integer", "minimum": 0, "maximum": 316789}
-        }
-      }
-    }
-  },
-  "record_count": {"type": "integer", "minimum": 1, "maximum": 316789},
-  "header": {"type": "array", "minItems": 2, "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 256}},
-  "columns": {
-    "type": "array", "minItems": 2, "maxItems": 128,
-    "items": {
-      "type": "object", "additionalProperties": false,
-      "required": ["name", "record_count", "empty_count", "nonempty_count", "distinct_count", "exact_value_set_sha256", "decimal_summary"],
-      "properties": {
-        "name": {"type": "string", "minLength": 1, "maxLength": 256},
-        "record_count": {"type": "integer", "minimum": 1, "maximum": 316789},
-        "empty_count": {"type": "integer", "minimum": 0, "maximum": 316789},
-        "nonempty_count": {"type": "integer", "minimum": 0, "maximum": 316789},
-        "distinct_count": {"type": "integer", "minimum": 1, "maximum": 316789},
-        "exact_value_set_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "decimal_summary": {
-          "type": "object", "additionalProperties": false,
-          "required": ["all_nonempty_decimal", "finite_decimal_count", "leading_or_trailing_whitespace_count"],
-          "properties": {
-            "all_nonempty_decimal": {"type": "boolean"},
-            "finite_decimal_count": {"type": "integer", "minimum": 0, "maximum": 316789},
-            "leading_or_trailing_whitespace_count": {"type": "integer", "minimum": 0, "maximum": 316789}
-          }
-        }
-      }
-    }
-  },
-  "raw_rows_returned": {"const": false},
-  "external_bytes_persisted": {"const": false},
-  "publication_authorized": {"const": false}
-}
+        "schema_version": {
+          "const": "oc-esrm20-exposure-content-profile-v0"
         },
-        "external_bytes_persisted": {"const": false},
-        "publication_authorized": {"const": false}
+        "source_issue": {
+          "const": 282
+        },
+        "dataset_id": {
+          "const": "efehr.esrm20.european-exposure-model.v1.0"
+        },
+        "project_id": {
+          "const": 186
+        },
+        "project_path": {
+          "const": "efehr/esrm20_exposure"
+        },
+        "commit_sha": {
+          "const": "900433ada80fbb424c0976c34d72eeef97bab1af"
+        },
+        "repository_path": {
+          "const": "_exposure_models/Exposure_Model_Kosovo_Res.csv"
+        },
+        "receipt_comment_id": {
+          "const": 5300981864
+        },
+        "receipt_execution_sha": {
+          "const": "46d054930025553ad19d8b05fff9018dc2a49b5f"
+        },
+        "byte_count": {
+          "const": 316789
+        },
+        "sha256": {
+          "const": "4d562ad4925c527d518834b8dcd39a083cfd3b87b622031a84958ae7b4d8c5ea"
+        },
+        "profiled_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "profile": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema_version",
+            "parser",
+            "record_count",
+            "header",
+            "columns",
+            "raw_rows_returned",
+            "external_bytes_persisted",
+            "publication_authorized"
+          ],
+          "properties": {
+            "schema_version": {
+              "const": "oc-esrm20-exposure-content-profile-v0"
+            },
+            "parser": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "encoding",
+                "bom_present",
+                "delimiter",
+                "line_endings"
+              ],
+              "properties": {
+                "encoding": {
+                  "enum": [
+                    "utf-8",
+                    "utf-8-sig"
+                  ]
+                },
+                "bom_present": {
+                  "type": "boolean"
+                },
+                "delimiter": {
+                  "const": ","
+                },
+                "line_endings": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "crlf_count",
+                    "lf_count",
+                    "cr_count"
+                  ],
+                  "properties": {
+                    "crlf_count": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 316789
+                    },
+                    "lf_count": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 316789
+                    },
+                    "cr_count": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 316789
+                    }
+                  }
+                }
+              }
+            },
+            "record_count": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 316789
+            },
+            "header": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 128,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            },
+            "columns": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 128,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "record_count",
+                  "empty_count",
+                  "nonempty_count",
+                  "distinct_count",
+                  "exact_value_set_sha256",
+                  "decimal_summary"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  "record_count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 316789
+                  },
+                  "empty_count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 316789
+                  },
+                  "nonempty_count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 316789
+                  },
+                  "distinct_count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 316789
+                  },
+                  "exact_value_set_sha256": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "decimal_summary": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "all_nonempty_decimal",
+                      "finite_decimal_count",
+                      "leading_or_trailing_whitespace_count"
+                    ],
+                    "properties": {
+                      "all_nonempty_decimal": {
+                        "type": "boolean"
+                      },
+                      "finite_decimal_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 316789
+                      },
+                      "leading_or_trailing_whitespace_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 316789
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "raw_rows_returned": {
+              "const": false
+            },
+            "external_bytes_persisted": {
+              "const": false
+            },
+            "publication_authorized": {
+              "const": false
+            }
+          }
+        },
+        "external_bytes_persisted": {
+          "const": false
+        },
+        "publication_authorized": {
+          "const": false
+        }
       }
     },
     "efehrEshm20RootConfigReceipt": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "schema_version", "operation_id", "source_issue", "dataset_id", "provider_host",
-        "project_id", "project_path", "commit_sha", "repository_path", "requested_url",
-        "final_url", "retrieved_at", "byte_count", "sha256", "content_type", "etag",
-        "external_bytes_persisted", "publication_authorized"
+        "schema_version",
+        "operation_id",
+        "source_issue",
+        "dataset_id",
+        "provider_host",
+        "project_id",
+        "project_path",
+        "commit_sha",
+        "repository_path",
+        "requested_url",
+        "final_url",
+        "retrieved_at",
+        "byte_count",
+        "sha256",
+        "content_type",
+        "etag",
+        "external_bytes_persisted",
+        "publication_authorized"
       ],
       "properties": {
-        "schema_version": {"const": "oc-efehr-trusted-acquisition-v1"},
-        "operation_id": {"const": "eshm20-root-config-v12e-region-main-v1"},
-        "source_issue": {"const": 281},
-        "dataset_id": {"const": "efehr.eshm20"},
-        "provider_host": {"const": "gitlab.seismo.ethz.ch"},
-        "project_id": {"const": 197},
-        "project_path": {"const": "efehr/eshm20"},
-        "commit_sha": {"const": "fbd334de68f85d72669f73fc5a314a113db67317"},
-        "repository_path": {"const": "oq_computational/oq_configuration_eshm20_v12e_region_main/config_eshm20_v12e_main_region.ini"},
-        "requested_url": {"const": "https://gitlab.seismo.ethz.ch/api/v4/projects/197/repository/files/oq_computational%2Foq_configuration_eshm20_v12e_region_main%2Fconfig_eshm20_v12e_main_region.ini/raw?ref=fbd334de68f85d72669f73fc5a314a113db67317"},
-        "final_url": {"const": "https://gitlab.seismo.ethz.ch/api/v4/projects/197/repository/files/oq_computational%2Foq_configuration_eshm20_v12e_region_main%2Fconfig_eshm20_v12e_main_region.ini/raw?ref=fbd334de68f85d72669f73fc5a314a113db67317"},
-        "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
-        "byte_count": {"type": "integer", "minimum": 1, "maximum": 1048576},
-        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "content_type": {"type": ["string", "null"], "maxLength": 512},
-        "etag": {"type": ["string", "null"], "maxLength": 512},
-        "external_bytes_persisted": {"const": false},
-        "publication_authorized": {"const": false}
+        "schema_version": {
+          "const": "oc-efehr-trusted-acquisition-v1"
+        },
+        "operation_id": {
+          "const": "eshm20-root-config-v12e-region-main-v1"
+        },
+        "source_issue": {
+          "const": 281
+        },
+        "dataset_id": {
+          "const": "efehr.eshm20"
+        },
+        "provider_host": {
+          "const": "gitlab.seismo.ethz.ch"
+        },
+        "project_id": {
+          "const": 197
+        },
+        "project_path": {
+          "const": "efehr/eshm20"
+        },
+        "commit_sha": {
+          "const": "fbd334de68f85d72669f73fc5a314a113db67317"
+        },
+        "repository_path": {
+          "const": "oq_computational/oq_configuration_eshm20_v12e_region_main/config_eshm20_v12e_main_region.ini"
+        },
+        "requested_url": {
+          "const": "https://gitlab.seismo.ethz.ch/api/v4/projects/197/repository/files/oq_computational%2Foq_configuration_eshm20_v12e_region_main%2Fconfig_eshm20_v12e_main_region.ini/raw?ref=fbd334de68f85d72669f73fc5a314a113db67317"
+        },
+        "final_url": {
+          "const": "https://gitlab.seismo.ethz.ch/api/v4/projects/197/repository/files/oq_computational%2Foq_configuration_eshm20_v12e_region_main%2Fconfig_eshm20_v12e_main_region.ini/raw?ref=fbd334de68f85d72669f73fc5a314a113db67317"
+        },
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "byte_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "content_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "etag": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "external_bytes_persisted": {
+          "const": false
+        },
+        "publication_authorized": {
+          "const": false
+        }
       }
     },
     "esrm20EventHazardGroup1Receipt": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "schema_version", "operation_id", "source_issue", "dataset_id", "provider_host",
-        "project_id", "project_path", "commit_sha", "repository_path", "requested_url",
-        "final_url", "retrieved_at", "byte_count", "sha256", "content_type", "etag",
-        "external_bytes_persisted", "publication_authorized"
+        "schema_version",
+        "operation_id",
+        "source_issue",
+        "dataset_id",
+        "provider_host",
+        "project_id",
+        "project_path",
+        "commit_sha",
+        "repository_path",
+        "requested_url",
+        "final_url",
+        "retrieved_at",
+        "byte_count",
+        "sha256",
+        "content_type",
+        "etag",
+        "external_bytes_persisted",
+        "publication_authorized"
       ],
       "properties": {
-        "schema_version": {"const": "oc-efehr-trusted-acquisition-v1"},
-        "operation_id": {"const": "esrm20-event-hazard-group1-config-v1"},
-        "source_issue": {"const": 281},
-        "dataset_id": {"const": "efehr.esrm20.risk-inputs.v1.0"},
-        "provider_host": {"const": "gitlab.seismo.ethz.ch"},
-        "project_id": {"const": 269},
-        "project_path": {"const": "efehr/esrm20"},
-        "commit_sha": {"const": "05f83bbc9df81d02ee8ddb1801d9d781355ce783"},
-        "repository_path": {"const": "Configuration_files/config_event_hazard_Group1.ini"},
-        "requested_url": {"const": "https://gitlab.seismo.ethz.ch/api/v4/projects/269/repository/files/Configuration_files%2Fconfig_event_hazard_Group1.ini/raw?ref=05f83bbc9df81d02ee8ddb1801d9d781355ce783"},
-        "final_url": {"const": "https://gitlab.seismo.ethz.ch/api/v4/projects/269/repository/files/Configuration_files%2Fconfig_event_hazard_Group1.ini/raw?ref=05f83bbc9df81d02ee8ddb1801d9d781355ce783"},
-        "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
-        "byte_count": {"type": "integer", "minimum": 1, "maximum": 1048576},
-        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "content_type": {"type": ["string", "null"], "maxLength": 512},
-        "etag": {"type": ["string", "null"], "maxLength": 512},
-        "external_bytes_persisted": {"const": false},
-        "publication_authorized": {"const": false}
+        "schema_version": {
+          "const": "oc-efehr-trusted-acquisition-v1"
+        },
+        "operation_id": {
+          "const": "esrm20-event-hazard-group1-config-v1"
+        },
+        "source_issue": {
+          "const": 281
+        },
+        "dataset_id": {
+          "const": "efehr.esrm20.risk-inputs.v1.0"
+        },
+        "provider_host": {
+          "const": "gitlab.seismo.ethz.ch"
+        },
+        "project_id": {
+          "const": 269
+        },
+        "project_path": {
+          "const": "efehr/esrm20"
+        },
+        "commit_sha": {
+          "const": "05f83bbc9df81d02ee8ddb1801d9d781355ce783"
+        },
+        "repository_path": {
+          "const": "Configuration_files/config_event_hazard_Group1.ini"
+        },
+        "requested_url": {
+          "const": "https://gitlab.seismo.ethz.ch/api/v4/projects/269/repository/files/Configuration_files%2Fconfig_event_hazard_Group1.ini/raw?ref=05f83bbc9df81d02ee8ddb1801d9d781355ce783"
+        },
+        "final_url": {
+          "const": "https://gitlab.seismo.ethz.ch/api/v4/projects/269/repository/files/Configuration_files%2Fconfig_event_hazard_Group1.ini/raw?ref=05f83bbc9df81d02ee8ddb1801d9d781355ce783"
+        },
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "byte_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "content_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "etag": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "external_bytes_persisted": {
+          "const": false
+        },
+        "publication_authorized": {
+          "const": false
+        }
       }
     },
     "esrm20EventHazardGroup2Receipt": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "schema_version", "operation_id", "source_issue", "dataset_id", "provider_host",
-        "project_id", "project_path", "commit_sha", "repository_path", "requested_url",
-        "final_url", "retrieved_at", "byte_count", "sha256", "content_type", "etag",
-        "external_bytes_persisted", "publication_authorized"
+        "schema_version",
+        "operation_id",
+        "source_issue",
+        "dataset_id",
+        "provider_host",
+        "project_id",
+        "project_path",
+        "commit_sha",
+        "repository_path",
+        "requested_url",
+        "final_url",
+        "retrieved_at",
+        "byte_count",
+        "sha256",
+        "content_type",
+        "etag",
+        "external_bytes_persisted",
+        "publication_authorized"
       ],
       "properties": {
-        "schema_version": {"const": "oc-efehr-trusted-acquisition-v1"},
-        "operation_id": {"const": "esrm20-event-hazard-group2-config-v1"},
-        "source_issue": {"const": 281},
-        "dataset_id": {"const": "efehr.esrm20.risk-inputs.v1.0"},
-        "provider_host": {"const": "gitlab.seismo.ethz.ch"},
-        "project_id": {"const": 269},
-        "project_path": {"const": "efehr/esrm20"},
-        "commit_sha": {"const": "05f83bbc9df81d02ee8ddb1801d9d781355ce783"},
-        "repository_path": {"const": "Configuration_files/config_event_hazard_Group2.ini"},
-        "requested_url": {"const": "https://gitlab.seismo.ethz.ch/api/v4/projects/269/repository/files/Configuration_files%2Fconfig_event_hazard_Group2.ini/raw?ref=05f83bbc9df81d02ee8ddb1801d9d781355ce783"},
-        "final_url": {"const": "https://gitlab.seismo.ethz.ch/api/v4/projects/269/repository/files/Configuration_files%2Fconfig_event_hazard_Group2.ini/raw?ref=05f83bbc9df81d02ee8ddb1801d9d781355ce783"},
-        "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
-        "byte_count": {"type": "integer", "minimum": 1, "maximum": 1048576},
-        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "content_type": {"type": ["string", "null"], "maxLength": 512},
-        "etag": {"type": ["string", "null"], "maxLength": 512},
-        "external_bytes_persisted": {"const": false},
-        "publication_authorized": {"const": false}
+        "schema_version": {
+          "const": "oc-efehr-trusted-acquisition-v1"
+        },
+        "operation_id": {
+          "const": "esrm20-event-hazard-group2-config-v1"
+        },
+        "source_issue": {
+          "const": 281
+        },
+        "dataset_id": {
+          "const": "efehr.esrm20.risk-inputs.v1.0"
+        },
+        "provider_host": {
+          "const": "gitlab.seismo.ethz.ch"
+        },
+        "project_id": {
+          "const": 269
+        },
+        "project_path": {
+          "const": "efehr/esrm20"
+        },
+        "commit_sha": {
+          "const": "05f83bbc9df81d02ee8ddb1801d9d781355ce783"
+        },
+        "repository_path": {
+          "const": "Configuration_files/config_event_hazard_Group2.ini"
+        },
+        "requested_url": {
+          "const": "https://gitlab.seismo.ethz.ch/api/v4/projects/269/repository/files/Configuration_files%2Fconfig_event_hazard_Group2.ini/raw?ref=05f83bbc9df81d02ee8ddb1801d9d781355ce783"
+        },
+        "final_url": {
+          "const": "https://gitlab.seismo.ethz.ch/api/v4/projects/269/repository/files/Configuration_files%2Fconfig_event_hazard_Group2.ini/raw?ref=05f83bbc9df81d02ee8ddb1801d9d781355ce783"
+        },
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "byte_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "content_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "etag": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "external_bytes_persisted": {
+          "const": false
+        },
+        "publication_authorized": {
+          "const": false
+        }
       }
     },
     "eshm20Dependency": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["section", "option", "raw_path", "resolved_path"],
+      "required": [
+        "section",
+        "option",
+        "raw_path",
+        "resolved_path"
+      ],
       "properties": {
-        "section": {"type": "string", "minLength": 1, "maxLength": 512},
-        "option": {"type": "string", "minLength": 1, "maxLength": 512},
-        "raw_path": {"type": "string", "minLength": 1, "maxLength": 512},
-        "resolved_path": {"type": "string", "minLength": 1, "maxLength": 512}
+        "section": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "option": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "raw_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "resolved_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        }
       }
     },
     "efehrEshm20RootDependencyProfile": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "schema_version", "source_issue", "dataset_id", "project_id", "project_path", "commit_sha",
-        "repository_path", "byte_count", "sha256", "parser", "inventory_receipt_comment_id",
-        "root_receipt_comment_id", "root_receipt_run_id", "root_receipt_execution_sha", "dependencies",
-        "dependency_inventory_authorized", "profiled_at", "external_bytes_persisted", "publication_authorized"
+        "schema_version",
+        "source_issue",
+        "dataset_id",
+        "project_id",
+        "project_path",
+        "commit_sha",
+        "repository_path",
+        "byte_count",
+        "sha256",
+        "parser",
+        "inventory_receipt_comment_id",
+        "root_receipt_comment_id",
+        "root_receipt_run_id",
+        "root_receipt_execution_sha",
+        "dependencies",
+        "dependency_inventory_authorized",
+        "profiled_at",
+        "external_bytes_persisted",
+        "publication_authorized"
       ],
       "properties": {
-        "schema_version": {"const": "oc-eshm20-root-dependency-bridge-v1"},
-        "source_issue": {"const": 281},
-        "dataset_id": {"const": "efehr.eshm20"},
-        "project_id": {"const": 197},
-        "project_path": {"const": "efehr/eshm20"},
-        "commit_sha": {"const": "fbd334de68f85d72669f73fc5a314a113db67317"},
-        "repository_path": {"const": "oq_computational/oq_configuration_eshm20_v12e_region_main/config_eshm20_v12e_main_region.ini"},
-        "byte_count": {"const": 2719},
-        "sha256": {"const": "f1f4dabc48e1b8a478dbdb96b01c8f58cc68c98abd6f9004671c5fba9eb7e714"},
-        "parser": {"const": "scripts.openquake_config_dependencies.extract_openquake_config_references"},
-        "inventory_receipt_comment_id": {"const": 5290449064},
-        "root_receipt_comment_id": {"const": 5299422143},
-        "root_receipt_run_id": {"const": 31853044582},
-        "root_receipt_execution_sha": {"const": "0e28297e784e7cac590c068d66fde519c292abdb"},
-        "dependencies": {"type": "array", "minItems": 1, "maxItems": 128, "items": {"$ref": "#/$defs/eshm20Dependency"}},
-        "dependency_inventory_authorized": {"const": false},
-        "profiled_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
-        "external_bytes_persisted": {"const": false},
-        "publication_authorized": {"const": false}
+        "schema_version": {
+          "const": "oc-eshm20-root-dependency-bridge-v1"
+        },
+        "source_issue": {
+          "const": 281
+        },
+        "dataset_id": {
+          "const": "efehr.eshm20"
+        },
+        "project_id": {
+          "const": 197
+        },
+        "project_path": {
+          "const": "efehr/eshm20"
+        },
+        "commit_sha": {
+          "const": "fbd334de68f85d72669f73fc5a314a113db67317"
+        },
+        "repository_path": {
+          "const": "oq_computational/oq_configuration_eshm20_v12e_region_main/config_eshm20_v12e_main_region.ini"
+        },
+        "byte_count": {
+          "const": 2719
+        },
+        "sha256": {
+          "const": "f1f4dabc48e1b8a478dbdb96b01c8f58cc68c98abd6f9004671c5fba9eb7e714"
+        },
+        "parser": {
+          "const": "scripts.openquake_config_dependencies.extract_openquake_config_references"
+        },
+        "inventory_receipt_comment_id": {
+          "const": 5290449064
+        },
+        "root_receipt_comment_id": {
+          "const": 5299422143
+        },
+        "root_receipt_run_id": {
+          "const": 31853044582
+        },
+        "root_receipt_execution_sha": {
+          "const": "0e28297e784e7cac590c068d66fde519c292abdb"
+        },
+        "dependencies": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "items": {
+            "$ref": "#/$defs/eshm20Dependency"
+          }
+        },
+        "dependency_inventory_authorized": {
+          "const": false
+        },
+        "profiled_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "external_bytes_persisted": {
+          "const": false
+        },
+        "publication_authorized": {
+          "const": false
+        }
       }
     },
     "efehrEshm20FirstOrderArtifactReceipt": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["schema_version", "source_issue", "dataset_id", "provider_host", "project_id", "project_path", "commit_sha", "repository_path", "requested_url", "final_url", "retrieved_at", "byte_count", "sha256", "content_type", "etag", "external_bytes_persisted", "publication_authorized", "parent_result_comment_id", "parent_section", "parent_option"],
+      "required": [
+        "schema_version",
+        "source_issue",
+        "dataset_id",
+        "provider_host",
+        "project_id",
+        "project_path",
+        "commit_sha",
+        "repository_path",
+        "requested_url",
+        "final_url",
+        "retrieved_at",
+        "byte_count",
+        "sha256",
+        "content_type",
+        "etag",
+        "external_bytes_persisted",
+        "publication_authorized",
+        "parent_result_comment_id",
+        "parent_section",
+        "parent_option"
+      ],
       "properties": {
-        "schema_version": {"const": "oc-efehr-gitlab-artifact-receipt-v1"},
-        "source_issue": {"const": 281},
-        "dataset_id": {"const": "efehr.eshm20"},
-        "provider_host": {"const": "gitlab.seismo.ethz.ch"},
-        "project_id": {"const": 197},
-        "project_path": {"const": "efehr/eshm20"},
-        "commit_sha": {"const": "fbd334de68f85d72669f73fc5a314a113db67317"},
-        "repository_path": {"enum": ["oq_computational/oq_configuration_eshm20_v12e_region_main/eshm20_site_model_v06d.csv", "oq_computational/oq_configuration_eshm20_v12e_region_main/gmpe_complete_logic_tree_5br.xml", "oq_computational/oq_configuration_eshm20_v12e_region_main/source_model_logic_tree_eshm20_model_v12e.xml"]},
-        "requested_url": {"type": "string", "minLength": 1, "maxLength": 1024},
-        "final_url": {"type": "string", "minLength": 1, "maxLength": 1024},
-        "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
-        "byte_count": {"type": "integer", "minimum": 1, "maximum": 67108864},
-        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "content_type": {"type": ["string", "null"], "maxLength": 512},
-        "etag": {"type": ["string", "null"], "maxLength": 512},
-        "external_bytes_persisted": {"const": false},
-        "publication_authorized": {"const": false},
-        "parent_result_comment_id": {"const": 5301726249},
-        "parent_section": {"enum": ["site_params", "calculation"]},
-        "parent_option": {"enum": ["site_model_file", "gsim_logic_tree_file", "source_model_logic_tree_file"]}
+        "schema_version": {
+          "const": "oc-efehr-gitlab-artifact-receipt-v1"
+        },
+        "source_issue": {
+          "const": 281
+        },
+        "dataset_id": {
+          "const": "efehr.eshm20"
+        },
+        "provider_host": {
+          "const": "gitlab.seismo.ethz.ch"
+        },
+        "project_id": {
+          "const": 197
+        },
+        "project_path": {
+          "const": "efehr/eshm20"
+        },
+        "commit_sha": {
+          "const": "fbd334de68f85d72669f73fc5a314a113db67317"
+        },
+        "repository_path": {
+          "enum": [
+            "oq_computational/oq_configuration_eshm20_v12e_region_main/eshm20_site_model_v06d.csv",
+            "oq_computational/oq_configuration_eshm20_v12e_region_main/gmpe_complete_logic_tree_5br.xml",
+            "oq_computational/oq_configuration_eshm20_v12e_region_main/source_model_logic_tree_eshm20_model_v12e.xml"
+          ]
+        },
+        "requested_url": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "final_url": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "byte_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 67108864
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "content_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "etag": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "external_bytes_persisted": {
+          "const": false
+        },
+        "publication_authorized": {
+          "const": false
+        },
+        "parent_result_comment_id": {
+          "const": 5301726249
+        },
+        "parent_section": {
+          "enum": [
+            "site_params",
+            "calculation"
+          ]
+        },
+        "parent_option": {
+          "enum": [
+            "site_model_file",
+            "gsim_logic_tree_file",
+            "source_model_logic_tree_file"
+          ]
+        }
       }
     },
     "efehrEshm20FirstOrderReceiptSet": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["schema_version", "operation_id", "control_issue", "source_issue", "dataset_id", "provider_host", "project_id", "project_path", "commit_sha", "selection_request_comment_id", "selection_result_comment_id", "selection_run_id", "selection_execution_sha", "retrieved_at", "receipts", "dependency_inventory_authorized", "external_bytes_persisted", "publication_authorized"],
+      "required": [
+        "schema_version",
+        "operation_id",
+        "control_issue",
+        "source_issue",
+        "dataset_id",
+        "provider_host",
+        "project_id",
+        "project_path",
+        "commit_sha",
+        "selection_request_comment_id",
+        "selection_result_comment_id",
+        "selection_run_id",
+        "selection_execution_sha",
+        "retrieved_at",
+        "receipts",
+        "dependency_inventory_authorized",
+        "external_bytes_persisted",
+        "publication_authorized"
+      ],
       "properties": {
-        "schema_version": {"const": "oc-eshm20-first-order-receipt-set-v1"},
-        "operation_id": {"const": "eshm20-first-order-dependencies-v12e-region-main-v1"},
-        "control_issue": {"const": 361},
-        "source_issue": {"const": 281},
-        "dataset_id": {"const": "efehr.eshm20"},
-        "provider_host": {"const": "gitlab.seismo.ethz.ch"},
-        "project_id": {"const": 197},
-        "project_path": {"const": "efehr/eshm20"},
-        "commit_sha": {"const": "fbd334de68f85d72669f73fc5a314a113db67317"},
-        "selection_request_comment_id": {"const": 5301725105},
-        "selection_result_comment_id": {"const": 5301726249},
-        "selection_run_id": {"const": 31878511737},
-        "selection_execution_sha": {"const": "bd146a19fa4a1dc85b616288ec6d24946336a483"},
-        "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
-        "receipts": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/efehrEshm20FirstOrderArtifactReceipt"}},
-        "dependency_inventory_authorized": {"const": false},
-        "external_bytes_persisted": {"const": false},
-        "publication_authorized": {"const": false}
+        "schema_version": {
+          "const": "oc-eshm20-first-order-receipt-set-v1"
+        },
+        "operation_id": {
+          "const": "eshm20-first-order-dependencies-v12e-region-main-v1"
+        },
+        "control_issue": {
+          "const": 361
+        },
+        "source_issue": {
+          "const": 281
+        },
+        "dataset_id": {
+          "const": "efehr.eshm20"
+        },
+        "provider_host": {
+          "const": "gitlab.seismo.ethz.ch"
+        },
+        "project_id": {
+          "const": 197
+        },
+        "project_path": {
+          "const": "efehr/eshm20"
+        },
+        "commit_sha": {
+          "const": "fbd334de68f85d72669f73fc5a314a113db67317"
+        },
+        "selection_request_comment_id": {
+          "const": 5301725105
+        },
+        "selection_result_comment_id": {
+          "const": 5301726249
+        },
+        "selection_run_id": {
+          "const": 31878511737
+        },
+        "selection_execution_sha": {
+          "const": "bd146a19fa4a1dc85b616288ec6d24946336a483"
+        },
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "receipts": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/efehrEshm20FirstOrderArtifactReceipt"
+          }
+        },
+        "dependency_inventory_authorized": {
+          "const": false
+        },
+        "external_bytes_persisted": {
+          "const": false
+        },
+        "publication_authorized": {
+          "const": false
+        }
       }
     },
     "efehrEshm20GsimResourceOrigin": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["branch_set_id", "branch_id"],
+      "required": [
+        "branch_set_id",
+        "branch_id"
+      ],
       "properties": {
-        "branch_set_id": {"type": "string", "minLength": 1, "maxLength": 512},
-        "branch_id": {"type": "string", "minLength": 1, "maxLength": 512}
+        "branch_set_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "branch_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        }
       }
     },
     "efehrEshm20GsimResource": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["argument_key", "relative_path", "resolved_path", "selected_prefix_inventory_member", "comment_prefixed", "origins"],
+      "required": [
+        "argument_key",
+        "relative_path",
+        "resolved_path",
+        "selected_prefix_inventory_member",
+        "comment_prefixed",
+        "origins"
+      ],
       "properties": {
-        "argument_key": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9_]+_(?:file|table)$"},
-        "relative_path": {"type": "string", "minLength": 1, "maxLength": 512},
-        "resolved_path": {"type": "string", "minLength": 1, "maxLength": 512},
-        "selected_prefix_inventory_member": {"type": "boolean"},
-        "comment_prefixed": {"type": "boolean"},
-        "origins": {"type": "array", "minItems": 1, "maxItems": 512, "uniqueItems": true, "items": {"$ref": "#/$defs/efehrEshm20GsimResourceOrigin"}}
+        "argument_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_]+_(?:file|table)$"
+        },
+        "relative_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "resolved_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "selected_prefix_inventory_member": {
+          "type": "boolean"
+        },
+        "comment_prefixed": {
+          "type": "boolean"
+        },
+        "origins": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 512,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/efehrEshm20GsimResourceOrigin"
+          }
+        }
       }
     },
     "efehrEshm20GsimResourceProfile": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "schema_version", "source_issue", "control_issue", "dataset_id", "project_id", "project_path", "commit_sha",
-        "repository_path", "byte_count", "sha256", "openquake_reference", "inventory_receipt_comment_id",
-        "root_dependency_result_comment_id", "root_dependency_section", "root_dependency_option",
-        "first_order_receipt_request_comment_id", "first_order_receipt_result_comment_id", "first_order_receipt_run_id",
-        "first_order_receipt_execution_sha", "first_order_receipt_retrieved_at", "branch_set_count", "branch_count",
-        "resource_reference_count", "resources", "dependency_inventory_authorized", "dependency_receipt_authorized",
-        "external_bytes_persisted", "publication_authorized", "model_use_authorized", "profiled_at"
+        "schema_version",
+        "source_issue",
+        "control_issue",
+        "dataset_id",
+        "project_id",
+        "project_path",
+        "commit_sha",
+        "repository_path",
+        "byte_count",
+        "sha256",
+        "openquake_reference",
+        "inventory_receipt_comment_id",
+        "root_dependency_result_comment_id",
+        "root_dependency_section",
+        "root_dependency_option",
+        "first_order_receipt_request_comment_id",
+        "first_order_receipt_result_comment_id",
+        "first_order_receipt_run_id",
+        "first_order_receipt_execution_sha",
+        "first_order_receipt_retrieved_at",
+        "branch_set_count",
+        "branch_count",
+        "resource_reference_count",
+        "resources",
+        "dependency_inventory_authorized",
+        "dependency_receipt_authorized",
+        "external_bytes_persisted",
+        "publication_authorized",
+        "model_use_authorized",
+        "profiled_at"
       ],
       "properties": {
-        "schema_version": {"const": "oc-eshm20-gsim-resource-profile-v1"},
-        "source_issue": {"const": 281},
-        "control_issue": {"const": 374},
-        "dataset_id": {"const": "efehr.eshm20"},
-        "project_id": {"const": 197},
-        "project_path": {"const": "efehr/eshm20"},
-        "commit_sha": {"const": "fbd334de68f85d72669f73fc5a314a113db67317"},
-        "repository_path": {"const": "oq_computational/oq_configuration_eshm20_v12e_region_main/gmpe_complete_logic_tree_5br.xml"},
-        "byte_count": {"const": 33760},
-        "sha256": {"const": "e2c53f11174b8cd4de1f65af4dafc5af2e7a6848563e8a4c0ada44a54f22ff62"},
-        "openquake_reference": {"const": "gem/oq-engine@v3.14.0:openquake/hazardlib/gsim_lt.py::rel_paths/collect_files"},
-        "inventory_receipt_comment_id": {"const": 5290449064},
-        "root_dependency_result_comment_id": {"const": 5301726249},
-        "root_dependency_section": {"const": "calculation"},
-        "root_dependency_option": {"const": "gsim_logic_tree_file"},
-        "first_order_receipt_request_comment_id": {"const": 5301857400},
-        "first_order_receipt_result_comment_id": {"const": 5301858821},
-        "first_order_receipt_run_id": {"const": 31880089623},
-        "first_order_receipt_execution_sha": {"const": "ab66e3e4c58c9b8f18587f1a8a51cf67cf9851b1"},
-        "first_order_receipt_retrieved_at": {"const": "2026-08-15T10:40:16Z"},
-        "branch_set_count": {"type": "integer", "minimum": 1, "maximum": 64},
-        "branch_count": {"type": "integer", "minimum": 1, "maximum": 512},
-        "resource_reference_count": {"type": "integer", "minimum": 0, "maximum": 256},
-        "resources": {"type": "array", "minItems": 0, "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/efehrEshm20GsimResource"}},
-        "dependency_inventory_authorized": {"const": false},
-        "dependency_receipt_authorized": {"const": false},
-        "external_bytes_persisted": {"const": false},
-        "publication_authorized": {"const": false},
-        "model_use_authorized": {"const": false},
-        "profiled_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"}
+        "schema_version": {
+          "const": "oc-eshm20-gsim-resource-profile-v1"
+        },
+        "source_issue": {
+          "const": 281
+        },
+        "control_issue": {
+          "const": 374
+        },
+        "dataset_id": {
+          "const": "efehr.eshm20"
+        },
+        "project_id": {
+          "const": 197
+        },
+        "project_path": {
+          "const": "efehr/eshm20"
+        },
+        "commit_sha": {
+          "const": "fbd334de68f85d72669f73fc5a314a113db67317"
+        },
+        "repository_path": {
+          "const": "oq_computational/oq_configuration_eshm20_v12e_region_main/gmpe_complete_logic_tree_5br.xml"
+        },
+        "byte_count": {
+          "const": 33760
+        },
+        "sha256": {
+          "const": "e2c53f11174b8cd4de1f65af4dafc5af2e7a6848563e8a4c0ada44a54f22ff62"
+        },
+        "openquake_reference": {
+          "const": "gem/oq-engine@v3.14.0:openquake/hazardlib/gsim_lt.py::rel_paths/collect_files"
+        },
+        "inventory_receipt_comment_id": {
+          "const": 5290449064
+        },
+        "root_dependency_result_comment_id": {
+          "const": 5301726249
+        },
+        "root_dependency_section": {
+          "const": "calculation"
+        },
+        "root_dependency_option": {
+          "const": "gsim_logic_tree_file"
+        },
+        "first_order_receipt_request_comment_id": {
+          "const": 5301857400
+        },
+        "first_order_receipt_result_comment_id": {
+          "const": 5301858821
+        },
+        "first_order_receipt_run_id": {
+          "const": 31880089623
+        },
+        "first_order_receipt_execution_sha": {
+          "const": "ab66e3e4c58c9b8f18587f1a8a51cf67cf9851b1"
+        },
+        "first_order_receipt_retrieved_at": {
+          "const": "2026-08-15T10:40:16Z"
+        },
+        "branch_set_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "branch_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 512
+        },
+        "resource_reference_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 256
+        },
+        "resources": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/efehrEshm20GsimResource"
+          }
+        },
+        "dependency_inventory_authorized": {
+          "const": false
+        },
+        "dependency_receipt_authorized": {
+          "const": false
+        },
+        "external_bytes_persisted": {
+          "const": false
+        },
+        "publication_authorized": {
+          "const": false
+        },
+        "model_use_authorized": {
+          "const": false
+        },
+        "profiled_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        }
+      }
+    },
+    "efehrKosovoTaxonomyIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation_id",
+        "control_issue",
+        "worker_identity",
+        "retrieved_at",
+        "source_issue",
+        "dataset_id",
+        "project_id",
+        "project_path",
+        "commit_sha",
+        "repository_path",
+        "receipt_comment_id",
+        "receipt_execution_sha",
+        "source_byte_count",
+        "source_sha256",
+        "taxonomy_field",
+        "taxonomy_count",
+        "taxonomy_artifact_representation",
+        "taxonomy_artifact_byte_count",
+        "taxonomy_artifact_sha256",
+        "taxonomy_values_returned",
+        "normalization_applied",
+        "raw_rows_returned",
+        "external_bytes_persisted",
+        "derived_artifact_persisted",
+        "publication_authorized"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "oc-esrm20-kosovo-taxonomy-artifact-identity-v1"
+        },
+        "operation_id": {
+          "const": "esrm20-kosovo-residential-taxonomy-identity-v1"
+        },
+        "control_issue": {
+          "const": 363
+        },
+        "worker_identity": {
+          "const": "scripts.extract_efehr_kosovo_taxonomy.extract_verified_kosovo_taxonomy"
+        },
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "source_issue": {
+          "const": 282
+        },
+        "dataset_id": {
+          "const": "efehr.esrm20.european-exposure-model.v1.0"
+        },
+        "project_id": {
+          "const": 186
+        },
+        "project_path": {
+          "const": "efehr/esrm20_exposure"
+        },
+        "commit_sha": {
+          "const": "900433ada80fbb424c0976c34d72eeef97bab1af"
+        },
+        "repository_path": {
+          "const": "_exposure_models/Exposure_Model_Kosovo_Res.csv"
+        },
+        "receipt_comment_id": {
+          "const": 5300981864
+        },
+        "receipt_execution_sha": {
+          "const": "46d054930025553ad19d8b05fff9018dc2a49b5f"
+        },
+        "source_byte_count": {
+          "const": 316789
+        },
+        "source_sha256": {
+          "const": "4d562ad4925c527d518834b8dcd39a083cfd3b87b622031a84958ae7b4d8c5ea"
+        },
+        "taxonomy_field": {
+          "const": "TAXONOMY"
+        },
+        "taxonomy_count": {
+          "const": 86
+        },
+        "taxonomy_artifact_representation": {
+          "const": "oc-taxonomy-u64be-utf8-sorted-v1"
+        },
+        "taxonomy_artifact_byte_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 316789
+        },
+        "taxonomy_artifact_sha256": {
+          "const": "d5e6fe4e32489cdd2222b6b3facfd30937e2af61bbcf0ecead37ccf97202a945"
+        },
+        "taxonomy_values_returned": {
+          "const": false
+        },
+        "normalization_applied": {
+          "const": false
+        },
+        "raw_rows_returned": {
+          "const": false
+        },
+        "external_bytes_persisted": {
+          "const": false
+        },
+        "derived_artifact_persisted": {
+          "const": false
+        },
+        "publication_authorized": {
+          "const": false
+        }
       }
     }
   },
   "allOf": [
     {
-      "if": {"properties": {"phase": {"const": "request_validation"}}, "required": ["phase"]},
-      "then": {"properties": {
-        "evidence": {"allOf": [
-          {"not": {"required": ["acquisition_receipt"]}},
-          {"not": {"required": ["dwd_metadata_receipt"]}},
-          {"not": {"required": ["efehr_readme_receipt"]}},
-          {"not": {"required": ["efehr_eshm20_tree_metadata"]}},
-          {"not": {"required": ["efehr_kosovo_exposure_receipt"]}},
-          {"not": {"required": ["efehr_kosovo_exposure_profile"]}},
-          {"not": {"required": ["efehr_eshm20_root_config_receipt"]}},
-          {"not": {"required": ["esrm20_event_hazard_group1_receipt"]}},
-          {"not": {"required": ["esrm20_event_hazard_group2_receipt"]}},
-          {"not": {"required": ["efehr_eshm20_root_dependency_profile"]}},
-          {"not": {"required": ["efehr_eshm20_first_order_receipts"]}},
-          {"not": {"required": ["efehr_eshm20_gsim_resource_profile"]}}
-        ]}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "request_validation"
+          }
+        },
+        "required": [
+          "phase"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "allOf": [
+              {
+                "not": {
+                  "required": [
+                    "acquisition_receipt"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "dwd_metadata_receipt"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "efehr_readme_receipt"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "efehr_eshm20_tree_metadata"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "efehr_kosovo_exposure_receipt"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "efehr_kosovo_exposure_profile"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "efehr_eshm20_root_config_receipt"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "esrm20_event_hazard_group1_receipt"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "esrm20_event_hazard_group2_receipt"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "efehr_eshm20_root_dependency_profile"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "efehr_eshm20_first_order_receipts"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "efehr_eshm20_gsim_resource_profile"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "efehr_kosovo_taxonomy_identity"
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "request_validation"}, "status": {"const": "pass"}}, "required": ["phase", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"ledger_scan_complete": {"const": true}, "prior_result_reused": {"const": false}}},
-        "duplicate_result_comment_id": {"type": "null"}, "failure_class": {"type": "null"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "request_validation"
+          },
+          "status": {
+            "const": "pass"
+          }
+        },
+        "required": [
+          "phase",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "ledger_scan_complete": {
+                "const": true
+              },
+              "prior_result_reused": {
+                "const": false
+              }
+            }
+          },
+          "duplicate_result_comment_id": {
+            "type": "null"
+          },
+          "failure_class": {
+            "type": "null"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"status": {"const": "duplicate"}}, "required": ["status"]},
-      "then": {"properties": {
-        "phase": {"const": "request_validation"},
-        "evidence": {"properties": {"ledger_scan_complete": {"const": true}, "prior_result_reused": {"const": true}}},
-        "duplicate_result_comment_id": {"type": "integer", "minimum": 1}, "failure_class": {"const": "duplicate_request"}
-      }}
+      "if": {
+        "properties": {
+          "status": {
+            "const": "duplicate"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "phase": {
+            "const": "request_validation"
+          },
+          "evidence": {
+            "properties": {
+              "ledger_scan_complete": {
+                "const": true
+              },
+              "prior_result_reused": {
+                "const": true
+              }
+            }
+          },
+          "duplicate_result_comment_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "failure_class": {
+            "const": "duplicate_request"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "request_validation"}, "status": {"const": "blocked"}}, "required": ["phase", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"ledger_scan_complete": {"const": false}, "prior_result_reused": {"const": false}}},
-        "duplicate_result_comment_id": {"type": "null"}, "failure_class": {"const": "ledger_incomplete"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "request_validation"
+          },
+          "status": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "phase",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "ledger_scan_complete": {
+                "const": false
+              },
+              "prior_result_reused": {
+                "const": false
+              }
+            }
+          },
+          "duplicate_result_comment_id": {
+            "type": "null"
+          },
+          "failure_class": {
+            "const": "ledger_incomplete"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}}, "required": ["phase"]},
-      "then": {"properties": {
-        "action": {"enum": ["acquisition_receipt", "dwd_metadata_receipt", "efehr_readme_receipt", "efehr_eshm20_tree_metadata", "efehr_eshm20_root_config_receipt", "efehr_kosovo_exposure_receipt", "esrm20_event_hazard_group1_receipt", "esrm20_event_hazard_group2_receipt", "efehr_kosovo_exposure_profile", "efehr_eshm20_root_dependency_profile", "efehr_eshm20_first_order_receipts", "efehr_eshm20_gsim_resource_profile"]},
-        "duplicate_result_comment_id": {"type": "null"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          }
+        },
+        "required": [
+          "phase"
+        ]
+      },
+      "then": {
+        "properties": {
+          "action": {
+            "enum": [
+              "acquisition_receipt",
+              "dwd_metadata_receipt",
+              "efehr_readme_receipt",
+              "efehr_eshm20_tree_metadata",
+              "efehr_eshm20_root_config_receipt",
+              "efehr_kosovo_exposure_receipt",
+              "esrm20_event_hazard_group1_receipt",
+              "esrm20_event_hazard_group2_receipt",
+              "efehr_kosovo_exposure_profile",
+              "efehr_eshm20_root_dependency_profile",
+              "efehr_eshm20_first_order_receipts",
+              "efehr_eshm20_gsim_resource_profile",
+              "efehr_kosovo_taxonomy_identity"
+            ]
+          },
+          "duplicate_result_comment_id": {
+            "type": "null"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "acquisition_receipt"}}, "required": ["phase", "action"]},
-      "then": {"properties": {
-        "source_issue": {"const": 162},
-        "dataset_id": {"const": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"},
-        "evidence": {"required": ["acquisition_receipt"]}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "acquisition_receipt"
+          }
+        },
+        "required": [
+          "phase",
+          "action"
+        ]
+      },
+      "then": {
+        "properties": {
+          "source_issue": {
+            "const": 162
+          },
+          "dataset_id": {
+            "const": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"
+          },
+          "evidence": {
+            "required": [
+              "acquisition_receipt"
+            ]
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "dwd_metadata_receipt"}}, "required": ["phase", "action"]},
-      "then": {"properties": {
-        "source_issue": {"const": 211},
-        "dataset_id": {"const": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"},
-        "evidence": {"required": ["dwd_metadata_receipt"]}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "dwd_metadata_receipt"
+          }
+        },
+        "required": [
+          "phase",
+          "action"
+        ]
+      },
+      "then": {
+        "properties": {
+          "source_issue": {
+            "const": 211
+          },
+          "dataset_id": {
+            "const": "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"
+          },
+          "evidence": {
+            "required": [
+              "dwd_metadata_receipt"
+            ]
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_readme_receipt"}}, "required": ["phase", "action"]},
-      "then": {"properties": {
-        "source_issue": {"const": 298},
-        "dataset_id": {"const": "efehr.esrm20.european-exposure-model.v1.0"},
-        "evidence": {"required": ["efehr_readme_receipt"]}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_readme_receipt"
+          }
+        },
+        "required": [
+          "phase",
+          "action"
+        ]
+      },
+      "then": {
+        "properties": {
+          "source_issue": {
+            "const": 298
+          },
+          "dataset_id": {
+            "const": "efehr.esrm20.european-exposure-model.v1.0"
+          },
+          "evidence": {
+            "required": [
+              "efehr_readme_receipt"
+            ]
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_tree_metadata"}}, "required": ["phase", "action"]},
-      "then": {"properties": {
-        "source_issue": {"const": 332},
-        "dataset_id": {"const": "efehr.eshm20"},
-        "evidence": {"required": ["efehr_eshm20_tree_metadata"]}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_eshm20_tree_metadata"
+          }
+        },
+        "required": [
+          "phase",
+          "action"
+        ]
+      },
+      "then": {
+        "properties": {
+          "source_issue": {
+            "const": 332
+          },
+          "dataset_id": {
+            "const": "efehr.eshm20"
+          },
+          "evidence": {
+            "required": [
+              "efehr_eshm20_tree_metadata"
+            ]
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_kosovo_exposure_receipt"}}, "required": ["phase", "action"]},
-      "then": {"properties": {
-        "source_issue": {"const": 328},
-        "dataset_id": {"const": "efehr.esrm20.european-exposure-model.v1.0"},
-        "evidence": {"required": ["efehr_kosovo_exposure_receipt"]}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_kosovo_exposure_receipt"
+          }
+        },
+        "required": [
+          "phase",
+          "action"
+        ]
+      },
+      "then": {
+        "properties": {
+          "source_issue": {
+            "const": 328
+          },
+          "dataset_id": {
+            "const": "efehr.esrm20.european-exposure-model.v1.0"
+          },
+          "evidence": {
+            "required": [
+              "efehr_kosovo_exposure_receipt"
+            ]
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_kosovo_exposure_profile"}}, "required": ["phase", "action"]},
-      "then": {"properties": {
-        "source_issue": {"const": 351},
-        "dataset_id": {"const": "efehr.esrm20.european-exposure-model.v1.0"},
-        "evidence": {"required": ["efehr_kosovo_exposure_profile"]}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_kosovo_exposure_profile"
+          }
+        },
+        "required": [
+          "phase",
+          "action"
+        ]
+      },
+      "then": {
+        "properties": {
+          "source_issue": {
+            "const": 351
+          },
+          "dataset_id": {
+            "const": "efehr.esrm20.european-exposure-model.v1.0"
+          },
+          "evidence": {
+            "required": [
+              "efehr_kosovo_exposure_profile"
+            ]
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_root_config_receipt"}}, "required": ["phase", "action"]},
-      "then": {"properties": {
-        "source_issue": {"const": 335},
-        "dataset_id": {"const": "efehr.eshm20"},
-        "evidence": {"required": ["efehr_eshm20_root_config_receipt"]}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_eshm20_root_config_receipt"
+          }
+        },
+        "required": [
+          "phase",
+          "action"
+        ]
+      },
+      "then": {
+        "properties": {
+          "source_issue": {
+            "const": 335
+          },
+          "dataset_id": {
+            "const": "efehr.eshm20"
+          },
+          "evidence": {
+            "required": [
+              "efehr_eshm20_root_config_receipt"
+            ]
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "esrm20_event_hazard_group1_receipt"}}, "required": ["phase", "action"]},
-      "then": {"properties": {
-        "source_issue": {"const": 346},
-        "dataset_id": {"const": "efehr.esrm20.risk-inputs.v1.0"},
-        "evidence": {"required": ["esrm20_event_hazard_group1_receipt"]}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "esrm20_event_hazard_group1_receipt"
+          }
+        },
+        "required": [
+          "phase",
+          "action"
+        ]
+      },
+      "then": {
+        "properties": {
+          "source_issue": {
+            "const": 346
+          },
+          "dataset_id": {
+            "const": "efehr.esrm20.risk-inputs.v1.0"
+          },
+          "evidence": {
+            "required": [
+              "esrm20_event_hazard_group1_receipt"
+            ]
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "esrm20_event_hazard_group2_receipt"}}, "required": ["phase", "action"]},
-      "then": {"properties": {
-        "source_issue": {"const": 346},
-        "dataset_id": {"const": "efehr.esrm20.risk-inputs.v1.0"},
-        "evidence": {"required": ["esrm20_event_hazard_group2_receipt"]}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "esrm20_event_hazard_group2_receipt"
+          }
+        },
+        "required": [
+          "phase",
+          "action"
+        ]
+      },
+      "then": {
+        "properties": {
+          "source_issue": {
+            "const": 346
+          },
+          "dataset_id": {
+            "const": "efehr.esrm20.risk-inputs.v1.0"
+          },
+          "evidence": {
+            "required": [
+              "esrm20_event_hazard_group2_receipt"
+            ]
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_root_dependency_profile"}}, "required": ["phase", "action"]},
-      "then": {"properties": {
-        "source_issue": {"const": 353},
-        "dataset_id": {"const": "efehr.eshm20"},
-        "evidence": {"required": ["efehr_eshm20_root_dependency_profile"]}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_eshm20_root_dependency_profile"
+          }
+        },
+        "required": [
+          "phase",
+          "action"
+        ]
+      },
+      "then": {
+        "properties": {
+          "source_issue": {
+            "const": 353
+          },
+          "dataset_id": {
+            "const": "efehr.eshm20"
+          },
+          "evidence": {
+            "required": [
+              "efehr_eshm20_root_dependency_profile"
+            ]
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_gsim_resource_profile"}}, "required": ["phase", "action"]},
-      "then": {"properties": {
-        "source_issue": {"const": 376},
-        "dataset_id": {"const": "efehr.eshm20"},
-        "evidence": {"required": ["efehr_eshm20_gsim_resource_profile"]}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_eshm20_gsim_resource_profile"
+          }
+        },
+        "required": [
+          "phase",
+          "action"
+        ]
+      },
+      "then": {
+        "properties": {
+          "source_issue": {
+            "const": 376
+          },
+          "dataset_id": {
+            "const": "efehr.eshm20"
+          },
+          "evidence": {
+            "required": [
+              "efehr_eshm20_gsim_resource_profile"
+            ]
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "acquisition_receipt"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"acquisition_receipt": {"$ref": "#/$defs/acquisitionReceipt"}}},
-        "failure_class": {"type": "null"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "acquisition_receipt"
+          },
+          "status": {
+            "const": "pass"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "acquisition_receipt": {
+                "$ref": "#/$defs/acquisitionReceipt"
+              }
+            }
+          },
+          "failure_class": {
+            "type": "null"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "dwd_metadata_receipt"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"dwd_metadata_receipt": {"$ref": "#/$defs/dwdMetadataReceipt"}}},
-        "failure_class": {"type": "null"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "dwd_metadata_receipt"
+          },
+          "status": {
+            "const": "pass"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "dwd_metadata_receipt": {
+                "$ref": "#/$defs/dwdMetadataReceipt"
+              }
+            }
+          },
+          "failure_class": {
+            "type": "null"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_readme_receipt"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"efehr_readme_receipt": {"$ref": "#/$defs/efehrReadmeReceipt"}}},
-        "failure_class": {"type": "null"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_readme_receipt"
+          },
+          "status": {
+            "const": "pass"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_readme_receipt": {
+                "$ref": "#/$defs/efehrReadmeReceipt"
+              }
+            }
+          },
+          "failure_class": {
+            "type": "null"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_tree_metadata"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"efehr_eshm20_tree_metadata": {"$ref": "#/$defs/efehrEshm20TreeMetadata"}}},
-        "failure_class": {"type": "null"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_eshm20_tree_metadata"
+          },
+          "status": {
+            "const": "pass"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_eshm20_tree_metadata": {
+                "$ref": "#/$defs/efehrEshm20TreeMetadata"
+              }
+            }
+          },
+          "failure_class": {
+            "type": "null"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_kosovo_exposure_receipt"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"efehr_kosovo_exposure_receipt": {"$ref": "#/$defs/efehrKosovoExposureReceipt"}}},
-        "failure_class": {"type": "null"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_kosovo_exposure_receipt"
+          },
+          "status": {
+            "const": "pass"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_kosovo_exposure_receipt": {
+                "$ref": "#/$defs/efehrKosovoExposureReceipt"
+              }
+            }
+          },
+          "failure_class": {
+            "type": "null"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_kosovo_exposure_profile"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"efehr_kosovo_exposure_profile": {"$ref": "#/$defs/efehrKosovoExposureProfile"}}},
-        "failure_class": {"type": "null"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_kosovo_exposure_profile"
+          },
+          "status": {
+            "const": "pass"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_kosovo_exposure_profile": {
+                "$ref": "#/$defs/efehrKosovoExposureProfile"
+              }
+            }
+          },
+          "failure_class": {
+            "type": "null"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_root_config_receipt"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"efehr_eshm20_root_config_receipt": {"$ref": "#/$defs/efehrEshm20RootConfigReceipt"}}},
-        "failure_class": {"type": "null"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_eshm20_root_config_receipt"
+          },
+          "status": {
+            "const": "pass"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_eshm20_root_config_receipt": {
+                "$ref": "#/$defs/efehrEshm20RootConfigReceipt"
+              }
+            }
+          },
+          "failure_class": {
+            "type": "null"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "esrm20_event_hazard_group1_receipt"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"esrm20_event_hazard_group1_receipt": {"$ref": "#/$defs/esrm20EventHazardGroup1Receipt"}}},
-        "failure_class": {"type": "null"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "esrm20_event_hazard_group1_receipt"
+          },
+          "status": {
+            "const": "pass"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "esrm20_event_hazard_group1_receipt": {
+                "$ref": "#/$defs/esrm20EventHazardGroup1Receipt"
+              }
+            }
+          },
+          "failure_class": {
+            "type": "null"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "esrm20_event_hazard_group2_receipt"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"esrm20_event_hazard_group2_receipt": {"$ref": "#/$defs/esrm20EventHazardGroup2Receipt"}}},
-        "failure_class": {"type": "null"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "esrm20_event_hazard_group2_receipt"
+          },
+          "status": {
+            "const": "pass"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "esrm20_event_hazard_group2_receipt": {
+                "$ref": "#/$defs/esrm20EventHazardGroup2Receipt"
+              }
+            }
+          },
+          "failure_class": {
+            "type": "null"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_root_dependency_profile"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"efehr_eshm20_root_dependency_profile": {"$ref": "#/$defs/efehrEshm20RootDependencyProfile"}}},
-        "failure_class": {"type": "null"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_eshm20_root_dependency_profile"
+          },
+          "status": {
+            "const": "pass"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_eshm20_root_dependency_profile": {
+                "$ref": "#/$defs/efehrEshm20RootDependencyProfile"
+              }
+            }
+          },
+          "failure_class": {
+            "type": "null"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_gsim_resource_profile"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"efehr_eshm20_gsim_resource_profile": {"$ref": "#/$defs/efehrEshm20GsimResourceProfile"}}},
-        "failure_class": {"type": "null"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_eshm20_gsim_resource_profile"
+          },
+          "status": {
+            "const": "pass"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_eshm20_gsim_resource_profile": {
+                "$ref": "#/$defs/efehrEshm20GsimResourceProfile"
+              }
+            }
+          },
+          "failure_class": {
+            "type": "null"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "acquisition_receipt"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"acquisition_receipt": {"type": "null"}}},
-        "failure_class": {"const": "acquisition_failed"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "acquisition_receipt"
+          },
+          "status": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "acquisition_receipt": {
+                "type": "null"
+              }
+            }
+          },
+          "failure_class": {
+            "const": "acquisition_failed"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "dwd_metadata_receipt"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"dwd_metadata_receipt": {"type": "null"}}},
-        "failure_class": {"const": "acquisition_failed"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "dwd_metadata_receipt"
+          },
+          "status": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "dwd_metadata_receipt": {
+                "type": "null"
+              }
+            }
+          },
+          "failure_class": {
+            "const": "acquisition_failed"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_readme_receipt"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"efehr_readme_receipt": {"type": "null"}}},
-        "failure_class": {"const": "acquisition_failed"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_readme_receipt"
+          },
+          "status": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_readme_receipt": {
+                "type": "null"
+              }
+            }
+          },
+          "failure_class": {
+            "const": "acquisition_failed"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_tree_metadata"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"efehr_eshm20_tree_metadata": {"type": "null"}}},
-        "failure_class": {"const": "acquisition_failed"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_eshm20_tree_metadata"
+          },
+          "status": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_eshm20_tree_metadata": {
+                "type": "null"
+              }
+            }
+          },
+          "failure_class": {
+            "const": "acquisition_failed"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_kosovo_exposure_receipt"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"efehr_kosovo_exposure_receipt": {"type": "null"}}},
-        "failure_class": {"const": "acquisition_failed"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_kosovo_exposure_receipt"
+          },
+          "status": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_kosovo_exposure_receipt": {
+                "type": "null"
+              }
+            }
+          },
+          "failure_class": {
+            "const": "acquisition_failed"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_kosovo_exposure_profile"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"efehr_kosovo_exposure_profile": {"type": "null"}}},
-        "failure_class": {"const": "acquisition_failed"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_kosovo_exposure_profile"
+          },
+          "status": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_kosovo_exposure_profile": {
+                "type": "null"
+              }
+            }
+          },
+          "failure_class": {
+            "const": "acquisition_failed"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_root_config_receipt"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"efehr_eshm20_root_config_receipt": {"type": "null"}}},
-        "failure_class": {"const": "acquisition_failed"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_eshm20_root_config_receipt"
+          },
+          "status": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_eshm20_root_config_receipt": {
+                "type": "null"
+              }
+            }
+          },
+          "failure_class": {
+            "const": "acquisition_failed"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "esrm20_event_hazard_group1_receipt"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"esrm20_event_hazard_group1_receipt": {"type": "null"}}},
-        "failure_class": {"const": "acquisition_failed"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "esrm20_event_hazard_group1_receipt"
+          },
+          "status": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "esrm20_event_hazard_group1_receipt": {
+                "type": "null"
+              }
+            }
+          },
+          "failure_class": {
+            "const": "acquisition_failed"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_root_dependency_profile"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"efehr_eshm20_root_dependency_profile": {"type": "null"}}},
-        "failure_class": {"const": "acquisition_failed"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_eshm20_root_dependency_profile"
+          },
+          "status": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_eshm20_root_dependency_profile": {
+                "type": "null"
+              }
+            }
+          },
+          "failure_class": {
+            "const": "acquisition_failed"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "esrm20_event_hazard_group2_receipt"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"esrm20_event_hazard_group2_receipt": {"type": "null"}}},
-        "failure_class": {"const": "acquisition_failed"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "esrm20_event_hazard_group2_receipt"
+          },
+          "status": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "esrm20_event_hazard_group2_receipt": {
+                "type": "null"
+              }
+            }
+          },
+          "failure_class": {
+            "const": "acquisition_failed"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_first_order_receipts"}}, "required": ["phase", "action"]},
-      "then": {"properties": {
-        "source_issue": {"const": 361},
-        "dataset_id": {"const": "efehr.eshm20"},
-        "evidence": {"required": ["efehr_eshm20_first_order_receipts"]}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_eshm20_first_order_receipts"
+          }
+        },
+        "required": [
+          "phase",
+          "action"
+        ]
+      },
+      "then": {
+        "properties": {
+          "source_issue": {
+            "const": 361
+          },
+          "dataset_id": {
+            "const": "efehr.eshm20"
+          },
+          "evidence": {
+            "required": [
+              "efehr_eshm20_first_order_receipts"
+            ]
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_first_order_receipts"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"efehr_eshm20_first_order_receipts": {"$ref": "#/$defs/efehrEshm20FirstOrderReceiptSet"}}},
-        "failure_class": {"type": "null"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_eshm20_first_order_receipts"
+          },
+          "status": {
+            "const": "pass"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_eshm20_first_order_receipts": {
+                "$ref": "#/$defs/efehrEshm20FirstOrderReceiptSet"
+              }
+            }
+          },
+          "failure_class": {
+            "type": "null"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_first_order_receipts"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"efehr_eshm20_first_order_receipts": {"type": "null"}}},
-        "failure_class": {"const": "acquisition_failed"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_eshm20_first_order_receipts"
+          },
+          "status": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_eshm20_first_order_receipts": {
+                "type": "null"
+              }
+            }
+          },
+          "failure_class": {
+            "const": "acquisition_failed"
+          }
+        }
+      }
     },
     {
-      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_gsim_resource_profile"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
-      "then": {"properties": {
-        "evidence": {"properties": {"efehr_eshm20_gsim_resource_profile": {"type": "null"}}},
-        "failure_class": {"const": "acquisition_failed"}
-      }}
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_eshm20_gsim_resource_profile"
+          },
+          "status": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_eshm20_gsim_resource_profile": {
+                "type": "null"
+              }
+            }
+          },
+          "failure_class": {
+            "const": "acquisition_failed"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_kosovo_taxonomy_identity"
+          }
+        },
+        "required": [
+          "phase",
+          "action"
+        ]
+      },
+      "then": {
+        "properties": {
+          "source_issue": {
+            "const": 363
+          },
+          "dataset_id": {
+            "const": "efehr.esrm20.european-exposure-model.v1.0"
+          },
+          "evidence": {
+            "required": [
+              "efehr_kosovo_taxonomy_identity"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_kosovo_taxonomy_identity"
+          },
+          "status": {
+            "const": "pass"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_kosovo_taxonomy_identity": {
+                "$ref": "#/$defs/efehrKosovoTaxonomyIdentity"
+              }
+            }
+          },
+          "failure_class": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "acquisition_receipt"
+          },
+          "action": {
+            "const": "efehr_kosovo_taxonomy_identity"
+          },
+          "status": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "phase",
+          "action",
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "efehr_kosovo_taxonomy_identity": {
+                "type": "null"
+              }
+            }
+          },
+          "failure_class": {
+            "const": "acquisition_failed"
+          }
+        }
+      }
     }
   ]
 }
