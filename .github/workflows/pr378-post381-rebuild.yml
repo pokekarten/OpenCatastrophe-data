@@ -1,0 +1,246 @@
+name: PR378 post-381 rebuild
+
+on:
+  push:
+    branches:
+      - agent/363-kosovo-taxonomy-identity-action
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Rebuild taxonomy action on current trusted main
+        env:
+          EXPECTED_MAIN: 4e7e869b7188fe204d2354454ff17e86c003f0cc
+          OLD_HEAD: 35f0dc9c4cded6230ad41fe1ed3ad6c0eaee0a8f
+          BRANCH: agent/363-kosovo-taxonomy-identity-action
+        run: |
+          set -euo pipefail
+          git fetch origin main "$BRANCH"
+          test "$(git rev-parse origin/main)" = "$EXPECTED_MAIN"
+          test "$(git rev-parse origin/$BRANCH)" = "$GITHUB_SHA"
+          git show "$OLD_HEAD:tests/test_efehr_kosovo_taxonomy_identity_action_wiring.py" > /tmp/taxonomy_test.py
+          git show "$OLD_HEAD:scripts/validate_agent_action_result.py" > /tmp/old_taxonomy_result.py
+          git reset --hard origin/main
+
+          python - <<'PY'
+          from pathlib import Path
+
+          def edit(path, old, new, count=1):
+              p = Path(path)
+              text = p.read_text(encoding="utf-8")
+              actual = text.count(old)
+              if actual != count:
+                  raise SystemExit(f"{path}: expected {count} anchor(s), found {actual}: {old[:80]!r}")
+              p.write_text(text.replace(old, new), encoding="utf-8")
+
+          # Request validator: additive closed action only.
+          p = "scripts/validate_agent_action_request.py"
+          edit(p,
+               'EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION = "efehr_kosovo_exposure_profile"\nEFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION',
+               'EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION = "efehr_kosovo_exposure_profile"\nEFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION = "efehr_kosovo_taxonomy_identity"\nEFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION')
+          edit(p,
+               'EFEHR_KOSOVO_EXPOSURE_PROFILE_ISSUE = 351\nEFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ISSUE',
+               'EFEHR_KOSOVO_EXPOSURE_PROFILE_ISSUE = 351\nEFEHR_KOSOVO_TAXONOMY_IDENTITY_ISSUE = 363\nEFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ISSUE')
+          edit(p,
+               'EFEHR_KOSOVO_EXPOSURE_PROFILE_DATASET_ID = EFEHR_README_RECEIPT_DATASET_ID\nEFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_DATASET_ID',
+               'EFEHR_KOSOVO_EXPOSURE_PROFILE_DATASET_ID = EFEHR_README_RECEIPT_DATASET_ID\nEFEHR_KOSOVO_TAXONOMY_IDENTITY_DATASET_ID = EFEHR_README_RECEIPT_DATASET_ID\nEFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_DATASET_ID')
+          edit(p,
+               '    EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,\n    EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,',
+               '    EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,\n    EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,\n    EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,')
+          edit(p,
+               '    elif request["action"] == EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION:\n',
+               '    elif request["action"] == EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION:\n'
+               '        if request["issue"] != EFEHR_KOSOVO_TAXONOMY_IDENTITY_ISSUE:\n'
+               '            raise RequestError("efehr_kosovo_taxonomy_identity is restricted to issue 363")\n'
+               '        if request["dataset_id"] != EFEHR_KOSOVO_TAXONOMY_IDENTITY_DATASET_ID:\n'
+               '            raise RequestError(\n'
+               '                "efehr_kosovo_taxonomy_identity is restricted to the frozen ESRM20 exposure dataset"\n'
+               '            )\n'
+               '    elif request["action"] == EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION:\n')
+
+          # Protocol action classification.
+          p = "scripts/agent_action_protocol.py"
+          edit(p,
+               'EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION = "efehr_kosovo_exposure_profile"\nEFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION',
+               'EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION = "efehr_kosovo_exposure_profile"\nEFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION = "efehr_kosovo_taxonomy_identity"\nEFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION')
+          edit(p,
+               '        EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,\n        EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,',
+               '        EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,\n        EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,\n        EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,')
+
+          # Dispatcher: fixed merged worker, same network/dedup boundary.
+          p = "scripts/prepare_agent_action_result.py"
+          edit(p,
+               '    from scripts.acquire_efehr_eshm20_root_config_receipt import acquire_eshm20_root_config_receipt\n',
+               '    from scripts.acquire_efehr_kosovo_taxonomy import (\n'
+               '        KosovoTaxonomyAcquisitionError,\n'
+               '        acquire_verified_kosovo_taxonomy_identity,\n'
+               '    )\n'
+               '    from scripts.acquire_efehr_eshm20_root_config_receipt import acquire_eshm20_root_config_receipt\n')
+          edit(p,
+               '    from acquire_efehr_eshm20_root_config_receipt import acquire_eshm20_root_config_receipt\n',
+               '    from acquire_efehr_kosovo_taxonomy import (\n'
+               '        KosovoTaxonomyAcquisitionError,\n'
+               '        acquire_verified_kosovo_taxonomy_identity,\n'
+               '    )\n'
+               '    from acquire_efehr_eshm20_root_config_receipt import acquire_eshm20_root_config_receipt\n')
+          edit(p,
+               '        EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,\n        EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,',
+               '        EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,\n        EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,\n        EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,', count=2)
+          edit(p,
+               '        EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,\n        EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,',
+               '        EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,\n        EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,\n        EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,') if False else None
+          # NETWORK_ACTIONS has four-space indentation, imports have eight.
+          edit(p,
+               '        EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,\n        EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,',
+               '        EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,\n        EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,\n        EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,') if False else None
+          # The two import blocks are already changed above; update the set separately.
+          edit(p,
+               '        EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,\n        EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,',
+               '        EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,\n        EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,\n        EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,') if False else None
+          # Add to NETWORK_ACTIONS by anchoring around the GMM-free exposure/root pair remaining after imports.
+          text = Path(p).read_text(encoding="utf-8")
+          network_anchor = '        EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,\n        EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,'
+          if network_anchor in text:
+              text = text.replace(network_anchor,
+                                  '        EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,\n        EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,\n        EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,', 1)
+              Path(p).write_text(text, encoding="utf-8")
+          edit(p,
+               '    if action == EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION:\n        return "efehr_kosovo_exposure_profile"\n    if action == EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION:',
+               '    if action == EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION:\n        return "efehr_kosovo_exposure_profile"\n    if action == EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION:\n        return "efehr_kosovo_taxonomy_identity"\n    if action == EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION:')
+          edit(p,
+               '    kosovo_profile_acquirer: Callable[[], dict[str, Any]] = acquire_and_profile_kosovo_exposure,\n    eshm20_root_config_acquirer:',
+               '    kosovo_profile_acquirer: Callable[[], dict[str, Any]] = acquire_and_profile_kosovo_exposure,\n    kosovo_taxonomy_identity_acquirer: Callable[[], dict[str, Any]] = acquire_verified_kosovo_taxonomy_identity,\n    eshm20_root_config_acquirer:')
+          edit(p,
+               '    elif request["action"] == EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION:\n        selected_acquirer = kosovo_profile_acquirer\n    elif request["action"] == EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION:',
+               '    elif request["action"] == EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION:\n        selected_acquirer = kosovo_profile_acquirer\n    elif request["action"] == EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION:\n        selected_acquirer = kosovo_taxonomy_identity_acquirer\n    elif request["action"] == EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION:')
+          edit(p,
+               '        AcquisitionError, EfehrAcquisitionError, ExposureProfileError,\n        Eshm20RootDependencyAcquisitionError, Eshm20FirstOrderReceiptError,',
+               '        AcquisitionError, EfehrAcquisitionError, ExposureProfileError,\n        KosovoTaxonomyAcquisitionError, Eshm20RootDependencyAcquisitionError, Eshm20FirstOrderReceiptError,')
+
+          # Result wrapper: extract reviewed taxonomy-only blocks from old #378, insert into current GMM wrapper.
+          old = Path('/tmp/old_taxonomy_result.py').read_text(encoding='utf-8')
+          current_path = Path('scripts/validate_agent_action_result.py')
+          current = current_path.read_text(encoding='utf-8')
+          current = current.replace(
+              '    from scripts import acquire_eshm20_gsim_resource_profile as _gsim\n',
+              '    from scripts import acquire_eshm20_gsim_resource_profile as _gsim\n    from scripts import acquire_efehr_kosovo_taxonomy as _taxonomy\n', 1)
+          current = current.replace(
+              '    import acquire_eshm20_gsim_resource_profile as _gsim\n',
+              '    import acquire_eshm20_gsim_resource_profile as _gsim\n    import acquire_efehr_kosovo_taxonomy as _taxonomy\n', 1)
+          current = current.replace(
+              '        EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ISSUE,\n    )',
+              '        EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ISSUE,\n        EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,\n        EFEHR_KOSOVO_TAXONOMY_IDENTITY_ISSUE,\n    )', 2)
+          current = current.replace(
+              'ALLOWED_ACTIONS = _legacy.ALLOWED_ACTIONS | {EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION}',
+              'ALLOWED_ACTIONS = _legacy.ALLOWED_ACTIONS | {EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION, EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION}', 1)
+          tax_start = old.index('_TAXONOMY_RECEIPT_FIELD =')
+          tax_mid = old.index('def _validate_taxonomy_result', tax_start)
+          tax_end = old.index('def validate_result', tax_mid)
+          tax_block = old[tax_start:tax_end].rstrip() + '\n\n\n'
+          marker = 'def _validate_gsim_result(result: dict[str, Any]) -> dict[str, Any]:\n'
+          if current.count(marker) != 1:
+              raise SystemExit('current GMM wrapper marker drift')
+          current = current.replace(marker, tax_block + marker, 1)
+          dispatch = ('def validate_result(result: dict[str, Any]) -> dict[str, Any]:\n'
+                      '    if type(result) is dict and result.get("action") == EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION:\n'
+                      '        return _validate_gsim_result(result)\n'
+                      '    return _legacy.validate_result(result)\n')
+          dispatch2 = ('def validate_result(result: dict[str, Any]) -> dict[str, Any]:\n'
+                       '    if type(result) is dict and result.get("action") == EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION:\n'
+                       '        return _validate_taxonomy_result(result)\n'
+                       '    if type(result) is dict and result.get("action") == EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION:\n'
+                       '        return _validate_gsim_result(result)\n'
+                       '    return _legacy.validate_result(result)\n')
+          if current.count(dispatch) != 1:
+              raise SystemExit('current validate_result dispatch drift')
+          current_path.write_text(current.replace(dispatch, dispatch2, 1), encoding='utf-8')
+
+          # Request JSON Schema: preserve formatting/current GMM contract, add taxonomy branch.
+          p = 'schemas/agent-action-request-v1.schema.json'
+          edit(p,
+               '"efehr_kosovo_exposure_profile", "efehr_eshm20_root_dependency_profile"',
+               '"efehr_kosovo_exposure_profile", "efehr_kosovo_taxonomy_identity", "efehr_eshm20_root_dependency_profile"')
+          edit(p,
+               '    {\n      "if": {"properties": {"action": {"const": "efehr_eshm20_root_dependency_profile"}}, "required": ["action"]},',
+               '    {\n      "if": {"properties": {"action": {"const": "efehr_kosovo_taxonomy_identity"}}, "required": ["action"]},\n      "then": {"properties": {\n        "issue": {"const": 363},\n        "dataset_id": {"const": "efehr.esrm20.european-exposure-model.v1.0"}\n      }}\n    },\n    {\n      "if": {"properties": {"action": {"const": "efehr_eshm20_root_dependency_profile"}}, "required": ["action"]},')
+
+          # Result JSON Schema, marker-bound additive taxonomy identity branch.
+          p = 'schemas/agent-action-result-v1.schema.json'
+          edit(p,
+               '"efehr_kosovo_exposure_profile", "efehr_eshm20_root_dependency_profile"',
+               '"efehr_kosovo_exposure_profile", "efehr_kosovo_taxonomy_identity", "efehr_eshm20_root_dependency_profile"')
+          evidence_anchor = '''        {\n          "type": "object",\n          "additionalProperties": false,\n          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "efehr_eshm20_gsim_resource_profile"],'''
+          evidence_block = '''        {\n          "type": "object",\n          "additionalProperties": false,\n          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "efehr_kosovo_taxonomy_identity"],\n          "properties": {\n            "request_validated": {"const": true},\n            "ledger_scan_complete": {"const": true},\n            "prior_result_reused": {"const": false},\n            "efehr_kosovo_taxonomy_identity": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/efehrKosovoTaxonomyIdentity"}]}\n          }\n        },\n'''
+          edit(p, evidence_anchor, evidence_block + evidence_anchor)
+          defs_anchor = '    "efehrEshm20GsimResourceProfile": {\n'
+          taxonomy_def = '''    "efehrKosovoTaxonomyIdentity": {\n      "type": "object",\n      "additionalProperties": false,\n      "required": [\n        "schema_version", "operation_id", "control_issue", "worker_identity", "retrieved_at", "source_issue",\n        "dataset_id", "project_id", "project_path", "commit_sha", "repository_path", "receipt_comment_id",\n        "receipt_execution_sha", "source_byte_count", "source_sha256", "taxonomy_field", "taxonomy_count",\n        "taxonomy_artifact_representation", "taxonomy_artifact_byte_count", "taxonomy_artifact_sha256",\n        "taxonomy_values_returned", "normalization_applied", "raw_rows_returned", "external_bytes_persisted",\n        "derived_artifact_persisted", "publication_authorized"\n      ],\n      "properties": {\n        "schema_version": {"const": "oc-efehr-kosovo-taxonomy-identity-v1"},\n        "operation_id": {"const": "efehr-kosovo-taxonomy-identity-v1"},\n        "control_issue": {"const": 363},\n        "worker_identity": {"const": "acquire_verified_kosovo_taxonomy_identity"},\n        "retrieved_at": {"type": "string", "pattern": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}Z$"},\n        "source_issue": {"const": 282},\n        "dataset_id": {"const": "efehr.esrm20.european-exposure-model.v1.0"},\n        "project_id": {"const": 186},\n        "project_path": {"const": "efehr/esrm20_exposure"},\n        "commit_sha": {"const": "900433ada80fbb424c0976c34d72eeef97bab1af"},\n        "repository_path": {"const": "_exposure_models/Exposure_Model_Kosovo_Res.csv"},\n        "receipt_comment_id": {"const": 5300981864},\n        "receipt_execution_sha": {"const": "46d054930025553ad19d8b05fff9018dc2a49b5f"},\n        "source_byte_count": {"const": 316789},\n        "source_sha256": {"const": "4d562ad4925c527d518834b8dcd39a083cfd3b87b622031a84958ae7b4d8c5ea"},\n        "taxonomy_field": {"const": "TAXONOMY"},\n        "taxonomy_count": {"const": 86},\n        "taxonomy_artifact_representation": {"const": "oc-taxonomy-u64be-utf8-sorted-v1"},\n        "taxonomy_artifact_byte_count": {"type": "integer", "minimum": 1, "maximum": 316789},\n        "taxonomy_artifact_sha256": {"const": "d5e6fe4e32489cdd2222b6b3facfd30937e2af61bbcf0ecead37ccf97202a945"},\n        "taxonomy_values_returned": {"const": false},\n        "normalization_applied": {"const": false},\n        "raw_rows_returned": {"const": false},\n        "external_bytes_persisted": {"const": false},\n        "derived_artifact_persisted": {"const": false},\n        "publication_authorized": {"const": false}\n      }\n    },\n'''
+          edit(p, defs_anchor, taxonomy_def + defs_anchor)
+          edit(p,
+               '          {"not": {"required": ["efehr_eshm20_gsim_resource_profile"]}}',
+               '          {"not": {"required": ["efehr_kosovo_taxonomy_identity"]}},\n          {"not": {"required": ["efehr_eshm20_gsim_resource_profile"]}}')
+          edit(p,
+               '"efehr_kosovo_exposure_profile", "efehr_eshm20_root_dependency_profile"',
+               '"efehr_kosovo_exposure_profile", "efehr_kosovo_taxonomy_identity", "efehr_eshm20_root_dependency_profile"')
+          gsim_bind = '''    {\n      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_gsim_resource_profile"}}, "required": ["phase", "action"]},'''
+          tax_bind = '''    {\n      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_kosovo_taxonomy_identity"}}, "required": ["phase", "action"]},\n      "then": {"properties": {\n        "source_issue": {"const": 363},\n        "dataset_id": {"const": "efehr.esrm20.european-exposure-model.v1.0"},\n        "evidence": {"required": ["efehr_kosovo_taxonomy_identity"]}\n      }}\n    },\n'''
+          edit(p, gsim_bind, tax_bind + gsim_bind)
+          gsim_pass = '''    {\n      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_gsim_resource_profile"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},'''
+          tax_pass = '''    {\n      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_kosovo_taxonomy_identity"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},\n      "then": {"properties": {\n        "evidence": {"properties": {"efehr_kosovo_taxonomy_identity": {"$ref": "#/$defs/efehrKosovoTaxonomyIdentity"}}},\n        "failure_class": {"type": "null"}\n      }}\n    },\n'''
+          edit(p, gsim_pass, tax_pass + gsim_pass)
+          gsim_block = '''    {\n      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_gsim_resource_profile"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},'''
+          tax_block = '''    {\n      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_kosovo_taxonomy_identity"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},\n      "then": {"properties": {\n        "evidence": {"properties": {"efehr_kosovo_taxonomy_identity": {"type": "null"}}},\n        "failure_class": {"const": "acquisition_failed"}\n      }}\n    },\n'''
+          edit(p, gsim_block, tax_block + gsim_block)
+
+          # Existing protocol regression: keep its hard-coded set current and assert taxonomy def exists.
+          p = 'tests/test_agent_action_protocol.py'
+          edit(p,
+               '                "efehr_kosovo_exposure_profile",\n                "efehr_eshm20_root_dependency_profile",',
+               '                "efehr_kosovo_exposure_profile",\n                "efehr_kosovo_taxonomy_identity",\n                "efehr_eshm20_root_dependency_profile",')
+          edit(p,
+               '        self.assertIn("efehrKosovoExposureProfile", schema["$defs"])\n',
+               '        self.assertIn("efehrKosovoExposureProfile", schema["$defs"])\n        self.assertIn("efehrKosovoTaxonomyIdentity", schema["$defs"])\n')
+
+          # Carry the already-reviewed focused action wiring tests from the original #378 head.
+          Path('tests/test_efehr_kosovo_taxonomy_identity_action_wiring.py').write_text(
+              Path('/tmp/taxonomy_test.py').read_text(encoding='utf-8'), encoding='utf-8')
+
+          # Dedicated portable-contract regression closes the old review blocker.
+          Path('tests/test_efehr_kosovo_taxonomy_result_schema.py').write_text('''# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors\n# SPDX-License-Identifier: Apache-2.0\n\nimport json\nimport unittest\nfrom pathlib import Path\n\nfrom scripts.validate_agent_action_result import ALLOWED_ACTIONS\n\nROOT = Path(__file__).resolve().parents[1]\nSCHEMA = ROOT / "schemas/agent-action-result-v1.schema.json"\n\n\nclass KosovoTaxonomyResultSchemaTests(unittest.TestCase):\n    def test_portable_actions_match_executable_actions_and_taxonomy_receipt_is_closed(self):\n        schema = json.loads(SCHEMA.read_text(encoding="utf-8"))\n        self.assertEqual(set(schema["properties"]["action"]["enum"]), set(ALLOWED_ACTIONS))\n        receipt = schema["$defs"]["efehrKosovoTaxonomyIdentity"]\n        self.assertFalse(receipt["additionalProperties"])\n        props = receipt["properties"]\n        self.assertEqual(props["source_issue"], {"const": 282})\n        self.assertEqual(props["project_id"], {"const": 186})\n        self.assertEqual(props["repository_path"], {"const": "_exposure_models/Exposure_Model_Kosovo_Res.csv"})\n        self.assertEqual(props["taxonomy_field"], {"const": "TAXONOMY"})\n        self.assertEqual(props["taxonomy_count"], {"const": 86})\n        self.assertEqual(props["taxonomy_artifact_representation"], {"const": "oc-taxonomy-u64be-utf8-sorted-v1"})\n        self.assertEqual(props["taxonomy_artifact_byte_count"], {"type": "integer", "minimum": 1, "maximum": 316789})\n        self.assertEqual(props["taxonomy_artifact_sha256"], {"const": "d5e6fe4e32489cdd2222b6b3facfd30937e2af61bbcf0ecead37ccf97202a945"})\n        for field in ("taxonomy_values_returned", "normalization_applied", "raw_rows_returned", "external_bytes_persisted", "derived_artifact_persisted", "publication_authorized"):\n            self.assertEqual(props[field], {"const": False})\n        for forbidden in ("taxonomy_values", "raw_rows", "provider_bytes", "canonical_bytes"):\n            self.assertNotIn(forbidden, props)\n\n\nif __name__ == "__main__":\n    unittest.main()\n''', encoding='utf-8')
+          PY
+
+          python scripts/schema_reference.py --write
+          python -m unittest \
+            tests.test_efehr_kosovo_taxonomy_identity_action_wiring \
+            tests.test_efehr_kosovo_taxonomy_result_schema \
+            tests.test_agent_action_result_schema_branch_regression
+          python scripts/check_all.py
+          git diff --check
+          git diff --exit-code origin/main -- scripts/validate_agent_action_result_legacy.py
+          git diff --exit-code origin/main -- tests/test_agent_action_result_schema_branch_regression.py
+          test ! -e .github/workflows/pr378-post381-rebuild.yml
+
+          git config user.name "pokekarten"
+          git config user.email "287434260+pokekarten@users.noreply.github.com"
+          git add \
+            schemas/agent-action-request-v1.schema.json \
+            schemas/agent-action-request-v1.schema.md \
+            schemas/agent-action-result-v1.schema.json \
+            schemas/agent-action-result-v1.schema.md \
+            scripts/agent_action_protocol.py \
+            scripts/prepare_agent_action_result.py \
+            scripts/validate_agent_action_request.py \
+            scripts/validate_agent_action_result.py \
+            tests/test_agent_action_protocol.py \
+            tests/test_efehr_kosovo_taxonomy_identity_action_wiring.py \
+            tests/test_efehr_kosovo_taxonomy_result_schema.py
+          git commit -m "Rebuild Kosovo taxonomy action on merged control plane"
+          git push --force-with-lease="refs/heads/$BRANCH:$GITHUB_SHA" origin HEAD:"refs/heads/$BRANCH"
