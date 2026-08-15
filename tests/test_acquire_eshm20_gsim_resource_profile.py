@@ -240,13 +240,15 @@ class Eshm20GsimResourceProfileTests(unittest.TestCase):
                 with self.assertRaises(worker.Eshm20GsimResourceProfileError):
                     worker._resource_assignments(model_text)
 
-    def test_unsafe_resource_paths_fail_closed(self) -> None:
+    def test_unsafe_or_noncanonical_resource_paths_fail_closed(self) -> None:
         for path in (
             "/tmp/a.csv",
             "https://example.test/a.csv",
             "C:\\tmp\\a.csv",
             "../a.csv",
             "tables/../a.csv",
+            "tables//a.csv",
+            "tables/./a.csv",
             "a.csv?token=x",
             "a.csv#fragment",
             "a\x00.csv",
