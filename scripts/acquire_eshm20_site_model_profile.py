@@ -23,6 +23,7 @@ from typing import Any
 
 try:
     from scripts import acquire_eshm20_first_order_receipts as first_order_authority
+    from scripts import verify_eshm20_root_config_dependencies as inventory_authority
     from scripts.acquire_efehr_gitlab_receipt import (
         EfehrAcquisitionError,
         TOTAL_DEADLINE_SECONDS,
@@ -38,6 +39,7 @@ try:
     )
 except ModuleNotFoundError:  # pragma: no cover - direct script import path
     import acquire_eshm20_first_order_receipts as first_order_authority
+    import verify_eshm20_root_config_dependencies as inventory_authority
     from acquire_efehr_gitlab_receipt import (
         EfehrAcquisitionError,
         TOTAL_DEADLINE_SECONDS,
@@ -79,6 +81,7 @@ REPOSITORY_PATH = _CANONICAL_REPOSITORY_PATH
 EXPECTED_BYTE_COUNT = _CANONICAL_EXPECTED_BYTE_COUNT
 EXPECTED_SHA256 = _CANONICAL_EXPECTED_SHA256
 
+INVENTORY_RECEIPT_COMMENT_ID = inventory_authority.INVENTORY_RECEIPT_COMMENT_ID
 ROOT_DEPENDENCY_RESULT_COMMENT_ID = first_order_authority.SELECTION_RESULT_COMMENT_ID
 ROOT_DEPENDENCY_SECTION = _CANONICAL_SITE_SPEC.parent_section
 ROOT_DEPENDENCY_OPTION = _CANONICAL_SITE_SPEC.parent_option
@@ -330,7 +333,7 @@ def extract_verified_site_model_profile(payload: bytes) -> dict[str, Any]:
             "bom_present": utf8_bom_present,
             "line_endings": _line_ending_profile(payload),
         },
-        "inventory_receipt_comment_id": first_order_authority.SELECTION_RESULT_COMMENT_ID,
+        "inventory_receipt_comment_id": INVENTORY_RECEIPT_COMMENT_ID,
         "root_dependency_result_comment_id": ROOT_DEPENDENCY_RESULT_COMMENT_ID,
         "root_dependency_section": ROOT_DEPENDENCY_SECTION,
         "root_dependency_option": ROOT_DEPENDENCY_OPTION,
