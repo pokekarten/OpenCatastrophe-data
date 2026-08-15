@@ -229,6 +229,32 @@ class FixedEshm20SourceModelDependencyWorkerTests(unittest.TestCase):
             ):
                 worker.extract_verified_source_model_dependencies(RAW)
 
+    def test_type_confused_parser_output_fails_before_ordering(self) -> None:
+        class TypeConfusedDependency:
+            resolved_path = 7
+            is_hdf5_companion = False
+            origins = ()
+
+        legitimate = worker.parser.SourceModelDependency(
+            SOURCE_PATH,
+            (worker.parser.LogicTreeDependencyOrigin("sourceModel", "b1"),),
+            False,
+        )
+        count_patch, hash_patch = self.patched_identity(RAW)
+        with (
+            count_patch,
+            hash_patch,
+            mock.patch.object(
+                worker.parser,
+                "extract_source_model_logic_tree_dependencies",
+                return_value=(legitimate, TypeConfusedDependency()),
+            ),
+        ):
+            with self.assertRaisesRegex(
+                worker.Eshm20SourceModelDependencyError, "invalid item"
+            ):
+                worker.extract_verified_source_model_dependencies(RAW)
+
     def test_noncanonical_or_duplicate_dependency_output_fails_closed(self) -> None:
         origin = (worker.parser.LogicTreeDependencyOrigin("sourceModel", "b1"),)
         first = worker.parser.SourceModelDependency(SOURCE_PATH, origin, False)
