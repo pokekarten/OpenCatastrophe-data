@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Temporary PR381 EOF repair
+
+on:
+  push:
+    branches:
+      - agent/376-gsim-resource-profile-action
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Append exactly one final newline
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('schemas/agent-action-result-v1.schema.json')
+          before = path.read_bytes()
+          if not before:
+              raise SystemExit('schema unexpectedly empty')
+          if before.endswith(b'\n'):
+              raise SystemExit('schema already ends with newline; refusing unexpected state')
+          path.write_bytes(before + b'\n')
+          after = path.read_bytes()
+          if after != before + b'\n':
+              raise SystemExit('unexpected byte mutation')
+          PY
+      - name: Verify canonical projections and hygiene
+        run: |
+          python scripts/schema_reference.py --check
+          python scripts/check_repository_hygiene.py
+      - name: Remove temporary workflow and verify write scope
+        run: |
+          git rm .github/workflows/temp-fix-pr381-eof.yml
+          changed="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n%s\n' '.github/workflows/temp-fix-pr381-eof.yml' 'schemas/agent-action-result-v1.schema.json' | sort)"
+          test "$changed" = "$expected"
+          git diff --check
+      - name: Commit bounded repair
+        run: |
+          git config user.name 'OpenCatastrophe repair bot'
+          git config user.email '287434260+pokekarten@users.noreply.github.com'
+          git add schemas/agent-action-result-v1.schema.json .github/workflows/temp-fix-pr381-eof.yml
+          git commit -m 'Fix PR381 result schema final newline'
+          git push origin HEAD:agent/376-gsim-resource-profile-action
