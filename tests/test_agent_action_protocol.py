@@ -367,6 +367,7 @@ class AgentActionProtocolTests(unittest.TestCase):
                 "efehr_eshm20_tree_metadata",
                 "efehr_kosovo_exposure_receipt",
                 "efehr_kosovo_exposure_profile",
+                "efehr_eshm20_root_dependency_profile",
                 "efehr_eshm20_root_config_receipt",
                 "esrm20_event_hazard_group1_receipt",
                 "esrm20_event_hazard_group2_receipt",
@@ -381,6 +382,7 @@ class AgentActionProtocolTests(unittest.TestCase):
         self.assertIn("efehrEshm20TreeMetadata", schema["$defs"])
         self.assertIn("efehrKosovoExposureReceipt", schema["$defs"])
         self.assertIn("efehrKosovoExposureProfile", schema["$defs"])
+        self.assertIn("efehrEshm20RootDependencyProfile", schema["$defs"])
         self.assertIn("efehrEshm20RootConfigReceipt", schema["$defs"])
         self.assertIn("esrm20EventHazardGroup1Receipt", schema["$defs"])
         self.assertIn("esrm20EventHazardGroup2Receipt", schema["$defs"])
