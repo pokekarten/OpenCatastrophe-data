@@ -56,19 +56,18 @@ except ModuleNotFoundError:  # pragma: no cover - direct script import path
         validate_target,
     )
 
-SCHEMA_VERSION = "oc-esrm20-exposure-vulnerability-mapping-structure-v1"
-OPERATION_ID = "esrm20-exposure-vulnerability-mapping-structure-v1"
-PROFILE_ISSUE = 283
-RECEIPT_CONTROL_ISSUE = 340
-RECEIPT_RESULT_COMMENT_ID = 5303466667
-RECEIPT_RUN_ID = 31899242278
-PARSER_IDENTITY = (
+# Freeze every durable identity. Public aliases below remain reviewable, while
+# production acquisition and durable output use only the private bindings.
+_CANONICAL_SCHEMA_VERSION = "oc-esrm20-exposure-vulnerability-mapping-structure-v1"
+_CANONICAL_OPERATION_ID = "esrm20-exposure-vulnerability-mapping-structure-v1"
+_CANONICAL_PROFILE_ISSUE = 283
+_CANONICAL_RECEIPT_CONTROL_ISSUE = 340
+_CANONICAL_RECEIPT_RESULT_COMMENT_ID = 5303466667
+_CANONICAL_RECEIPT_RUN_ID = 31899242278
+_CANONICAL_PARSER_IDENTITY = (
     "scripts.profile_efehr_esrm20_mapping_structure."
     "profile_verified_esrm20_mapping_structure"
 )
-
-# Freeze the already-reviewed mapping target once at module import. Production
-# authority below never follows mutable public aliases from the receipt module.
 _CANONICAL_SOURCE_ISSUE = mapping_receipt.SOURCE_ISSUE
 _CANONICAL_DATASET_ID = mapping_receipt.DATASET_ID
 _CANONICAL_PROJECT_ID = mapping_receipt.PROJECT_ID
@@ -78,6 +77,15 @@ _CANONICAL_EXPECTED_BYTE_COUNT = 83_585
 _CANONICAL_EXPECTED_SHA256 = (
     "94b9ee800e9435a346ca200ecf34d0d46c8d8b895cc56e3be85c323006b4ee4c"
 )
+
+SCHEMA_VERSION = _CANONICAL_SCHEMA_VERSION
+OPERATION_ID = _CANONICAL_OPERATION_ID
+PROFILE_ISSUE = _CANONICAL_PROFILE_ISSUE
+RECEIPT_CONTROL_ISSUE = _CANONICAL_RECEIPT_CONTROL_ISSUE
+RECEIPT_RESULT_COMMENT_ID = _CANONICAL_RECEIPT_RESULT_COMMENT_ID
+RECEIPT_RUN_ID = _CANONICAL_RECEIPT_RUN_ID
+PARSER_IDENTITY = _CANONICAL_PARSER_IDENTITY
+
 _DELIMITER_CANDIDATES = (
     ("comma", ","),
     ("semicolon", ";"),
@@ -88,6 +96,33 @@ _DELIMITER_CANDIDATES = (
 
 class Esrm20MappingStructureError(RuntimeError):
     """Raised when fixed mapping bytes cannot be profiled unambiguously."""
+
+
+def _require_canonical_aliases() -> None:
+    """Fail before provider work if a published fixed identity has drifted."""
+
+    exact_aliases = (
+        (SCHEMA_VERSION, _CANONICAL_SCHEMA_VERSION, "schema version"),
+        (OPERATION_ID, _CANONICAL_OPERATION_ID, "operation id"),
+        (PROFILE_ISSUE, _CANONICAL_PROFILE_ISSUE, "profile issue"),
+        (
+            RECEIPT_CONTROL_ISSUE,
+            _CANONICAL_RECEIPT_CONTROL_ISSUE,
+            "receipt control issue",
+        ),
+        (
+            RECEIPT_RESULT_COMMENT_ID,
+            _CANONICAL_RECEIPT_RESULT_COMMENT_ID,
+            "receipt result comment id",
+        ),
+        (RECEIPT_RUN_ID, _CANONICAL_RECEIPT_RUN_ID, "receipt run id"),
+        (PARSER_IDENTITY, _CANONICAL_PARSER_IDENTITY, "parser identity"),
+    )
+    for observed, expected, label in exact_aliases:
+        if type(observed) is not type(expected) or observed != expected:
+            raise Esrm20MappingStructureError(
+                f"frozen ESRM20 mapping structure {label} drifted"
+            )
 
 
 def _verify_payload_identity(payload: bytes) -> str:
@@ -232,19 +267,19 @@ def profile_verified_esrm20_mapping_structure(payload: bytes) -> dict[str, Any]:
     header, record_count = _parse_rows(text, delimiter)
 
     return {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": _CANONICAL_SCHEMA_VERSION,
         "source_issue": _CANONICAL_SOURCE_ISSUE,
-        "profile_issue": PROFILE_ISSUE,
-        "receipt_control_issue": RECEIPT_CONTROL_ISSUE,
+        "profile_issue": _CANONICAL_PROFILE_ISSUE,
+        "receipt_control_issue": _CANONICAL_RECEIPT_CONTROL_ISSUE,
         "dataset_id": _CANONICAL_DATASET_ID,
         "project_id": _CANONICAL_PROJECT_ID,
         "commit_sha": _CANONICAL_COMMIT_SHA,
         "repository_path": _CANONICAL_REPOSITORY_PATH,
-        "receipt_result_comment_id": RECEIPT_RESULT_COMMENT_ID,
-        "receipt_run_id": RECEIPT_RUN_ID,
+        "receipt_result_comment_id": _CANONICAL_RECEIPT_RESULT_COMMENT_ID,
+        "receipt_run_id": _CANONICAL_RECEIPT_RUN_ID,
         "source_byte_count": len(payload),
         "source_sha256": observed_sha256,
-        "parser_identity": PARSER_IDENTITY,
+        "parser_identity": _CANONICAL_PARSER_IDENTITY,
         "encoding": "utf-8",
         "utf8_bom": utf8_bom,
         "newline_style": newline_style,
@@ -275,6 +310,7 @@ def acquire_verified_esrm20_mapping_structure(
 ) -> dict[str, Any]:
     """Re-materialize only the frozen mapping object and profile it in memory."""
 
+    _require_canonical_aliases()
     deadline = monotonic() + TOTAL_DEADLINE_SECONDS
     open_response = opener or _open_fixed
     try:
@@ -322,7 +358,7 @@ def acquire_verified_esrm20_mapping_structure(
         raw = b""
 
     return {
-        "operation_id": OPERATION_ID,
+        "operation_id": _CANONICAL_OPERATION_ID,
         "retrieved_at": retrieved_at,
         **profile,
     }
