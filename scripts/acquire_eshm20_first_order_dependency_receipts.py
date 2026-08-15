@@ -117,8 +117,14 @@ def _acquire_dependency_receipt(
     now: Any,
     monotonic: Any,
 ) -> dict[str, Any]:
-    if type(spec) is not _DependencySpec:
-        raise EfehrAcquisitionError("ESHM20 dependency spec is invalid")
+    if type(spec) is not _DependencySpec or (
+        spec is not _SITE_MODEL
+        and spec is not _GMPE_LOGIC_TREE
+        and spec is not _SOURCE_MODEL_LOGIC_TREE
+    ):
+        raise EfehrAcquisitionError(
+            "ESHM20 dependency spec is not an authorized first-order target"
+        )
 
     deadline = monotonic() + TOTAL_DEADLINE_SECONDS
     open_response = opener or _open_fixed
