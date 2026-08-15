@@ -19,6 +19,7 @@ EFEHR_README_RECEIPT_ACTION = "efehr_readme_receipt"
 EFEHR_ESHM20_TREE_METADATA_ACTION = "efehr_eshm20_tree_metadata"
 EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION = "efehr_kosovo_exposure_receipt"
 EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION = "efehr_kosovo_exposure_profile"
+EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION = "efehr_kosovo_taxonomy_identity"
 EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION = "efehr_eshm20_root_dependency_profile"
 EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION = "efehr_eshm20_first_order_receipts"
 EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION = "efehr_eshm20_root_config_receipt"
@@ -32,6 +33,7 @@ NETWORK_ACQUISITION_ACTIONS = frozenset(
         EFEHR_ESHM20_TREE_METADATA_ACTION,
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION,
         EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,
+        EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,
         EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,
         EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
@@ -59,8 +61,9 @@ def semantic_request_id(request: dict[str, Any], execution_sha: str, repository:
     Each closed network acquisition action also requires its semantic target to
     equal the trusted execution commit. The action itself participates in the
     identity, keeping measurement, station-metadata, EFEHR README, ESHM20
-    tree-metadata, Kosovo exposure, ESHM20 root-config and ESRM20 Group1/Group2
-    event-hazard receipts distinct without introducing a caller-controlled network target.
+    tree-metadata, Kosovo exposure/taxonomy, ESHM20 root-config and ESRM20
+    Group1/Group2 event-hazard receipts distinct without introducing a
+    caller-controlled network target.
     """
 
     if type(execution_sha) is not str or not GIT_SHA_RE.fullmatch(execution_sha):
