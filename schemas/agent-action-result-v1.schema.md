@@ -18,7 +18,7 @@ Change the canonical JSON Schema and run `python scripts/schema_reference.py --w
 
 Portable closed result receipt for the owner-authorized trusted-main Agent Action Dispatch control plane. scripts/validate_agent_action_result.py is authoritative for exact Python scalar types, UTC ordering, acquisition-receipt identity and cross-field checks.
 
-**Executable authority note:** request_validation records strict validation/dedup state. acquisition_receipt phase is shared by eleven closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, efehr_kosovo_exposure_receipt for Issue 328, efehr_eshm20_root_config_receipt for Issue 335, the two ESRM20 event-hazard Group1/Group2 receipt actions for Issue 346, and efehr_kosovo_exposure_profile for Issue 351. All require external_bytes_persisted=false. EFEHR/ESRM20 receipts prove only their bounded transport, repository-metadata, or exact selected-file byte identity; they do not establish scientific fitness, dependency closure, model-use eligibility, completeness outside the selected scope or publication authorization. efehr_eshm20_root_dependency_profile for Issue 353 persists only verified first-order dependency metadata; dependency inventory, transitive closure, model use and publication remain unauthorized. efehr_eshm20_first_order_receipts for Issue 361 persists only exact byte receipts for the three \#353-selected first-order candidates; dependency inventory, semantics, closure, model use and publication remain unauthorized.
+**Executable authority note:** request_validation records strict validation/dedup state. acquisition_receipt phase is shared by twelve closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, efehr_kosovo_exposure_receipt for Issue 328, efehr_eshm20_root_config_receipt for Issue 335, the two ESRM20 event-hazard Group1/Group2 receipt actions for Issue 346, efehr_kosovo_exposure_profile for Issue 351, and efehr_eshm20_gsim_resource_profile for Issue 376. All require external_bytes_persisted=false. EFEHR/ESRM20 receipts prove only their bounded transport, repository-metadata, or exact selected-file byte identity; they do not establish scientific fitness, dependency closure, model-use eligibility, completeness outside the selected scope or publication authorization. efehr_eshm20_root_dependency_profile for Issue 353 persists only verified first-order dependency metadata; dependency inventory, transitive closure, model use and publication remain unauthorized. efehr_eshm20_first_order_receipts for Issue 361 persists only exact byte receipts for the three \#353-selected first-order candidates; dependency inventory, semantics, closure, model use and publication remain unauthorized. efehr_eshm20_gsim_resource_profile persists only bounded structural _file/_table resource-reference metadata from the exact \#361-receipted GMM logic-tree bytes; dependency receipts, dependency closure, GSIM runtime validity, model use and publication remain unauthorized.
 
 ## Contract structure
 
@@ -32,7 +32,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 #### `action` — **required**
 
-**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts"]`
+**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile"]`
 
 #### `dataset_id` — **required**
 
@@ -405,6 +405,38 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### Branch 2
 
 **Constraints:** `$ref`=`#/$defs/efehrEshm20FirstOrderReceiptSet`
+
+###### `ledger_scan_complete` — **required**
+
+**Constraints:** `const`=`true`
+
+###### `prior_result_reused` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `request_validated` — **required**
+
+**Constraints:** `const`=`true`
+
+###### Branch 13
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `request_validated`, `ledger_scan_complete`, `prior_result_reused`, `efehr_eshm20_gsim_resource_profile`
+
+###### Properties
+
+###### `efehr_eshm20_gsim_resource_profile` — **required**
+
+###### anyOf
+
+###### Branch 1
+
+**Constraints:** type=`null`
+
+###### Branch 2
+
+**Constraints:** `$ref`=`#/$defs/efehrEshm20GsimResourceProfile`
 
 ###### `ledger_scan_complete` — **required**
 
@@ -847,6 +879,190 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### `selection_run_id` — **required**
 
 **Constraints:** `const`=`31878511737`
+
+###### `source_issue` — **required**
+
+**Constraints:** `const`=`281`
+
+#### `efehrEshm20GsimResource`
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `argument_key`, `relative_path`, `resolved_path`, `selected_prefix_inventory_member`, `comment_prefixed`, `origins`
+
+##### Properties
+
+###### `argument_key` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^[A-Za-z0-9_]+_(?:file|table)$`; `minLength`=`1`; `maxLength`=`128`
+
+###### `comment_prefixed` — **required**
+
+**Constraints:** type=`boolean`
+
+###### `origins` — **required**
+
+**Constraints:** type=`array`; `minItems`=`1`; `maxItems`=`512`; `uniqueItems`=`true`
+
+###### Array items
+
+**Constraints:** `$ref`=`#/$defs/efehrEshm20GsimResourceOrigin`
+
+###### `relative_path` — **required**
+
+**Constraints:** type=`string`; `minLength`=`1`; `maxLength`=`512`
+
+###### `resolved_path` — **required**
+
+**Constraints:** type=`string`; `minLength`=`1`; `maxLength`=`512`
+
+###### `selected_prefix_inventory_member` — **required**
+
+**Constraints:** type=`boolean`
+
+#### `efehrEshm20GsimResourceOrigin`
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `branch_set_id`, `branch_id`
+
+##### Properties
+
+###### `branch_id` — **required**
+
+**Constraints:** type=`string`; `minLength`=`1`; `maxLength`=`512`
+
+###### `branch_set_id` — **required**
+
+**Constraints:** type=`string`; `minLength`=`1`; `maxLength`=`512`
+
+#### `efehrEshm20GsimResourceProfile`
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `schema_version`, `source_issue`, `control_issue`, `dataset_id`, `project_id`, `project_path`, `commit_sha`, `repository_path`, `byte_count`, `sha256`, `openquake_reference`, `inventory_receipt_comment_id`, `root_dependency_result_comment_id`, `root_dependency_section`, `root_dependency_option`, `first_order_receipt_request_comment_id`, `first_order_receipt_result_comment_id`, `first_order_receipt_run_id`, `first_order_receipt_execution_sha`, `first_order_receipt_retrieved_at`, `branch_set_count`, `branch_count`, `resource_reference_count`, `resources`, `dependency_inventory_authorized`, `dependency_receipt_authorized`, `external_bytes_persisted`, `publication_authorized`, `model_use_authorized`, `profiled_at`
+
+##### Properties
+
+###### `branch_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`1`; `maximum`=`512`
+
+###### `branch_set_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`1`; `maximum`=`64`
+
+###### `byte_count` — **required**
+
+**Constraints:** `const`=`33760`
+
+###### `commit_sha` — **required**
+
+**Constraints:** `const`=`fbd334de68f85d72669f73fc5a314a113db67317`
+
+###### `control_issue` — **required**
+
+**Constraints:** `const`=`374`
+
+###### `dataset_id` — **required**
+
+**Constraints:** `const`=`efehr.eshm20`
+
+###### `dependency_inventory_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `dependency_receipt_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `external_bytes_persisted` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `first_order_receipt_execution_sha` — **required**
+
+**Constraints:** `const`=`ab66e3e4c58c9b8f18587f1a8a51cf67cf9851b1`
+
+###### `first_order_receipt_request_comment_id` — **required**
+
+**Constraints:** `const`=`5301857400`
+
+###### `first_order_receipt_result_comment_id` — **required**
+
+**Constraints:** `const`=`5301858821`
+
+###### `first_order_receipt_retrieved_at` — **required**
+
+**Constraints:** `const`=`2026-08-15T10:40:16Z`
+
+###### `first_order_receipt_run_id` — **required**
+
+**Constraints:** `const`=`31880089623`
+
+###### `inventory_receipt_comment_id` — **required**
+
+**Constraints:** `const`=`5290449064`
+
+###### `model_use_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `openquake_reference` — **required**
+
+**Constraints:** `const`=`gem/oq-engine@v3.14.0:openquake/hazardlib/gsim_lt.py::rel_paths/collect_files`
+
+###### `profiled_at` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`
+
+###### `project_id` — **required**
+
+**Constraints:** `const`=`197`
+
+###### `project_path` — **required**
+
+**Constraints:** `const`=`efehr/eshm20`
+
+###### `publication_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `repository_path` — **required**
+
+**Constraints:** `const`=`oq_computational/oq_configuration_eshm20_v12e_region_main/gmpe_complete_logic_tree_5br.xml`
+
+###### `resource_reference_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`0`; `maximum`=`256`
+
+###### `resources` — **required**
+
+**Constraints:** type=`array`; `minItems`=`0`; `maxItems`=`256`; `uniqueItems`=`true`
+
+###### Array items
+
+**Constraints:** `$ref`=`#/$defs/efehrEshm20GsimResource`
+
+###### `root_dependency_option` — **required**
+
+**Constraints:** `const`=`gsim_logic_tree_file`
+
+###### `root_dependency_result_comment_id` — **required**
+
+**Constraints:** `const`=`5301726249`
+
+###### `root_dependency_section` — **required**
+
+**Constraints:** `const`=`calculation`
+
+###### `schema_version` — **required**
+
+**Constraints:** `const`=`oc-eshm20-gsim-resource-profile-v1`
+
+###### `sha256` — **required**
+
+**Constraints:** `const`=`e2c53f11174b8cd4de1f65af4dafc5af2e7a6848563e8a4c0ada44a54f22ff62`
 
 ###### `source_issue` — **required**
 
@@ -1760,6 +1976,12 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Required here:** `efehr_eshm20_first_order_receipts`
 
+###### Branch 12
+
+###### not
+
+**Required here:** `efehr_eshm20_gsim_resource_profile`
+
 #### Branch 2
 
 ##### if
@@ -1920,7 +2142,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### `action`
 
-**Constraints:** `enum`=`["acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts"]`
+**Constraints:** `enum`=`["acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile"]`
 
 ###### `duplicate_result_comment_id`
 
@@ -2292,6 +2514,42 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`object (implicit)`
 
+**Required here:** `phase`, `action`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_eshm20_gsim_resource_profile`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `dataset_id`
+
+**Constraints:** `const`=`efehr.eshm20`
+
+###### `evidence`
+
+**Required here:** `efehr_eshm20_gsim_resource_profile`
+
+###### `source_issue`
+
+**Constraints:** `const`=`376`
+
+#### Branch 17
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
 **Required here:** `phase`, `action`, `status`
 
 ###### Properties
@@ -2328,7 +2586,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 17
+#### Branch 18
 
 ##### if
 
@@ -2370,7 +2628,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 18
+#### Branch 19
 
 ##### if
 
@@ -2412,7 +2670,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 19
+#### Branch 20
 
 ##### if
 
@@ -2454,7 +2712,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 20
+#### Branch 21
 
 ##### if
 
@@ -2496,7 +2754,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 21
+#### Branch 22
 
 ##### if
 
@@ -2538,7 +2796,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 22
+#### Branch 23
 
 ##### if
 
@@ -2580,7 +2838,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 23
+#### Branch 24
 
 ##### if
 
@@ -2622,7 +2880,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 24
+#### Branch 25
 
 ##### if
 
@@ -2664,7 +2922,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 25
+#### Branch 26
 
 ##### if
 
@@ -2706,7 +2964,49 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 26
+#### Branch 27
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`, `status`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_eshm20_gsim_resource_profile`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+###### `status` — **required**
+
+**Constraints:** `const`=`pass`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `evidence`
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `efehr_eshm20_gsim_resource_profile`
+
+**Constraints:** `$ref`=`#/$defs/efehrEshm20GsimResourceProfile`
+
+###### `failure_class`
+
+**Constraints:** type=`null`
+
+#### Branch 28
 
 ##### if
 
@@ -2748,7 +3048,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 27
+#### Branch 29
 
 ##### if
 
@@ -2790,7 +3090,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 28
+#### Branch 30
 
 ##### if
 
@@ -2832,7 +3132,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 29
+#### Branch 31
 
 ##### if
 
@@ -2874,7 +3174,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 30
+#### Branch 32
 
 ##### if
 
@@ -2916,7 +3216,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 31
+#### Branch 33
 
 ##### if
 
@@ -2958,7 +3258,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 32
+#### Branch 34
 
 ##### if
 
@@ -3000,7 +3300,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 33
+#### Branch 35
 
 ##### if
 
@@ -3042,7 +3342,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 34
+#### Branch 36
 
 ##### if
 
@@ -3084,7 +3384,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 35
+#### Branch 37
 
 ##### if
 
@@ -3126,7 +3426,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 36
+#### Branch 38
 
 ##### if
 
@@ -3162,7 +3462,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`361`
 
-#### Branch 37
+#### Branch 39
 
 ##### if
 
@@ -3204,7 +3504,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 38
+#### Branch 40
 
 ##### if
 
@@ -3239,6 +3539,48 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### Properties
 
 ###### `efehr_eshm20_first_order_receipts`
+
+**Constraints:** type=`null`
+
+###### `failure_class`
+
+**Constraints:** `const`=`acquisition_failed`
+
+#### Branch 41
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`, `status`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_eshm20_gsim_resource_profile`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+###### `status` — **required**
+
+**Constraints:** `const`=`blocked`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `evidence`
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `efehr_eshm20_gsim_resource_profile`
 
 **Constraints:** type=`null`
 
