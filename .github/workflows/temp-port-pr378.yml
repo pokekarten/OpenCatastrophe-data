@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Temporary PR378 semantic port
+
+on:
+  push:
+    branches:
+      - agent/363-taxonomy-action-port
+
+permissions:
+  contents: write
+
+jobs:
+  port:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact port branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Merge reviewed taxonomy branch conservatively
+        run: |
+          git config user.name 'OpenCatastrophe port bot'
+          git config user.email '287434260+pokekarten@users.noreply.github.com'
+          git fetch origin agent/363-kosovo-taxonomy-identity-action
+          git merge --no-ff --no-edit -X ours origin/agent/363-kosovo-taxonomy-identity-action
+      - name: Remove temporary workflow and verify retained GMM action
+        run: |
+          git rm .github/workflows/temp-port-pr378.yml
+          grep -q 'efehr_eshm20_gsim_resource_profile' scripts/agent_action_protocol.py
+          grep -q 'efehr_eshm20_gsim_resource_profile' scripts/validate_agent_action_request.py
+          grep -q 'efehr_eshm20_gsim_resource_profile' scripts/validate_agent_action_result.py
+          grep -q 'efehr_kosovo_taxonomy_identity' scripts/agent_action_protocol.py
+          grep -q 'efehr_kosovo_taxonomy_identity' scripts/validate_agent_action_request.py
+          grep -q 'efehr_kosovo_taxonomy_identity' scripts/prepare_agent_action_result.py
+          git diff --check
+          git commit -am 'Remove temporary PR378 port workflow'
+      - name: Push ported branch
+        run: git push origin HEAD:agent/363-taxonomy-action-port
