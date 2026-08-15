@@ -1,12 +1,11 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Fail-closed Agent Action result validation with a bounded #340 extension.
+"""Fail-closed Agent Action result validation with a bounded #363 extension.
 
-All pre-existing actions delegate byte-for-byte to the reviewed taxonomy-aware
-validator layer. Only the frozen ESRM20 exposure-to-vulnerability mapping byte
-receipt action is handled here. The action proves selected-file byte identity;
-it does not interpret mapping rows or select/authorize vulnerability functions.
+All pre-existing actions delegate to the reviewed GMM-aware validator layer.
+Only the Kosovo taxonomy identity action is handled here so its durable result
+can remain identity-only while participating in the same trusted result ledger.
 """
 
 from __future__ import annotations
@@ -18,95 +17,111 @@ import sys
 from typing import Any
 
 try:
-    from scripts import acquire_efehr_esrm20_mapping_receipt as _mapping
-    from scripts import validate_agent_action_result_taxonomy as _legacy
-    from scripts.efehr_gitlab_receipt import PROJECTS, PROVIDER_HOST, raw_file_api_url, validate_target
+    from scripts import validate_agent_action_result_gsim as _legacy
+    from scripts import acquire_efehr_kosovo_taxonomy as _taxonomy
     from scripts.validate_agent_action_request import (
-        ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION,
-        ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ISSUE,
+        EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,
+        EFEHR_KOSOVO_TAXONOMY_IDENTITY_ISSUE,
     )
 except ModuleNotFoundError:  # pragma: no cover - direct script execution path
-    import acquire_efehr_esrm20_mapping_receipt as _mapping
-    import validate_agent_action_result_taxonomy as _legacy
-    from efehr_gitlab_receipt import PROJECTS, PROVIDER_HOST, raw_file_api_url, validate_target
+    import validate_agent_action_result_gsim as _legacy
+    import acquire_efehr_kosovo_taxonomy as _taxonomy
     from validate_agent_action_request import (
-        ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION,
-        ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ISSUE,
+        EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,
+        EFEHR_KOSOVO_TAXONOMY_IDENTITY_ISSUE,
     )
 
+# Preserve the historical public validator surface for existing imports/tests.
 for _name in dir(_legacy):
     if not _name.startswith("_"):
         globals()[_name] = getattr(_legacy, _name)
 
 _strict_json = _legacy._strict_json
-ALLOWED_ACTIONS = _legacy.ALLOWED_ACTIONS | {ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION}
+_utc_second = _legacy._utc_second
+_validate_request_evidence = _legacy._validate_request_evidence
+ALLOWED_ACTIONS = _legacy.ALLOWED_ACTIONS | {EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION}
 
-_MAPPING_RECEIPT_FIELD = "esrm20_exposure_vulnerability_mapping_receipt"
-_MAPPING_EVIDENCE_FIELDS = _legacy.REQUEST_EVIDENCE_FIELDS | {_MAPPING_RECEIPT_FIELD}
-_MAPPING_RECEIPT_FIELDS = {
-    "schema_version", "operation_id", "source_issue", "dataset_id", "provider_host",
-    "project_id", "project_path", "commit_sha", "repository_path", "requested_url",
-    "final_url", "retrieved_at", "byte_count", "sha256", "content_type", "etag",
-    "external_bytes_persisted", "publication_authorized",
+_TAXONOMY_RECEIPT_FIELD = "efehr_kosovo_taxonomy_identity"
+_TAXONOMY_EVIDENCE_FIELDS = _legacy.REQUEST_EVIDENCE_FIELDS | {_TAXONOMY_RECEIPT_FIELD}
+_TAXONOMY_RECEIPT_FIELDS = {
+    "schema_version",
+    "operation_id",
+    "control_issue",
+    "worker_identity",
+    "retrieved_at",
+    "source_issue",
+    "dataset_id",
+    "project_id",
+    "project_path",
+    "commit_sha",
+    "repository_path",
+    "receipt_comment_id",
+    "receipt_execution_sha",
+    "source_byte_count",
+    "source_sha256",
+    "taxonomy_field",
+    "taxonomy_count",
+    "taxonomy_artifact_representation",
+    "taxonomy_artifact_byte_count",
+    "taxonomy_artifact_sha256",
+    "taxonomy_values_returned",
+    "normalization_applied",
+    "raw_rows_returned",
+    "external_bytes_persisted",
+    "derived_artifact_persisted",
+    "publication_authorized",
 }
 
 
-def _bounded_nullable_header(value: Any, field: str) -> None:
-    if value is None:
-        return
-    if type(value) is not str or len(value) > 512:
-        raise ResultError(f"{field} must be null or bounded text")
-    if any(ord(character) < 32 or ord(character) == 127 for character in value):
-        raise ResultError(f"{field} contains control characters")
-
-
-def validate_esrm20_exposure_vulnerability_mapping_receipt(receipt: Any) -> dict[str, Any]:
-    prefix = _MAPPING_RECEIPT_FIELD
-    if type(receipt) is not dict or set(receipt) != _MAPPING_RECEIPT_FIELDS:
-        missing = sorted(_MAPPING_RECEIPT_FIELDS - set(receipt)) if type(receipt) is dict else sorted(_MAPPING_RECEIPT_FIELDS)
-        unexpected = sorted(set(receipt) - _MAPPING_RECEIPT_FIELDS) if type(receipt) is dict else []
+def validate_efehr_kosovo_taxonomy_identity(receipt: Any) -> dict[str, Any]:
+    prefix = _TAXONOMY_RECEIPT_FIELD
+    if type(receipt) is not dict or set(receipt) != _TAXONOMY_RECEIPT_FIELDS:
+        missing = sorted(_TAXONOMY_RECEIPT_FIELDS - set(receipt)) if type(receipt) is dict else sorted(_TAXONOMY_RECEIPT_FIELDS)
+        unexpected = sorted(set(receipt) - _TAXONOMY_RECEIPT_FIELDS) if type(receipt) is dict else []
         raise ResultError(f"{prefix} fields mismatch; missing={missing}, unexpected={unexpected}")
 
-    target = validate_target(
-        source_issue=_mapping.SOURCE_ISSUE,
-        dataset_id=_mapping.DATASET_ID,
-        project_id=_mapping.PROJECT_ID,
-        commit_sha=_mapping.COMMIT_SHA,
-        repository_path=_mapping.REPOSITORY_PATH,
-    )
-    expected_url = raw_file_api_url(target)
+    exposure = _taxonomy.exposure
     exact_values = {
-        "schema_version": _mapping.SCHEMA_VERSION,
-        "operation_id": _mapping.OPERATION_ID,
-        "source_issue": _mapping.SOURCE_ISSUE,
-        "dataset_id": _mapping.DATASET_ID,
-        "provider_host": PROVIDER_HOST,
-        "project_id": _mapping.PROJECT_ID,
-        "project_path": PROJECTS[_mapping.PROJECT_ID]["project_path"],
-        "commit_sha": _mapping.COMMIT_SHA,
-        "repository_path": _mapping.REPOSITORY_PATH,
-        "requested_url": expected_url,
-        "final_url": expected_url,
+        "schema_version": _taxonomy.SCHEMA_VERSION,
+        "operation_id": _taxonomy.OPERATION_ID,
+        "control_issue": _taxonomy.CONTROL_ISSUE,
+        "worker_identity": _taxonomy.WORKER_IDENTITY,
+        "source_issue": exposure.SOURCE_ISSUE,
+        "dataset_id": exposure.DATASET_ID,
+        "project_id": exposure.PROJECT_ID,
+        "project_path": exposure.PROJECT_PATH,
+        "commit_sha": exposure.COMMIT_SHA,
+        "repository_path": exposure.REPOSITORY_PATH,
+        "receipt_comment_id": exposure.RECEIPT_COMMENT_ID,
+        "receipt_execution_sha": exposure.RECEIPT_EXECUTION_SHA,
+        "source_byte_count": exposure.EXPECTED_BYTE_COUNT,
+        "source_sha256": exposure.EXPECTED_SHA256,
+        "taxonomy_field": _taxonomy.TAXONOMY_FIELD,
+        "taxonomy_count": _taxonomy.EXPECTED_DISTINCT_COUNT,
+        "taxonomy_artifact_representation": _taxonomy.ARTIFACT_REPRESENTATION,
+        "taxonomy_artifact_sha256": _taxonomy.EXPECTED_VALUE_SET_SHA256,
+        "taxonomy_values_returned": False,
+        "normalization_applied": False,
+        "raw_rows_returned": False,
         "external_bytes_persisted": False,
+        "derived_artifact_persisted": False,
         "publication_authorized": False,
     }
     for field, expected in exact_values.items():
         if type(receipt[field]) is not type(expected) or receipt[field] != expected:
-            raise ResultError(f"{prefix}.{field} does not match the frozen mapping byte-receipt contract")
+            raise ResultError(f"{prefix}.{field} does not match the frozen identity-only contract")
 
     _legacy._utc_second(receipt["retrieved_at"], f"{prefix}.retrieved_at")
-    byte_count = receipt["byte_count"]
-    if type(byte_count) is not int or not (1 <= byte_count <= _mapping.MAX_FILE_BYTES):
-        raise ResultError(f"{prefix}.byte_count is outside bounded policy")
-    sha256 = receipt["sha256"]
-    if type(sha256) is not str or not _legacy.DIGEST_RE.fullmatch(sha256):
-        raise ResultError(f"{prefix}.sha256 must be a lowercase SHA-256 digest")
-    _bounded_nullable_header(receipt["content_type"], f"{prefix}.content_type")
-    _bounded_nullable_header(receipt["etag"], f"{prefix}.etag")
+    artifact_byte_count = receipt["taxonomy_artifact_byte_count"]
+    minimum_artifact_byte_count = _taxonomy.EXPECTED_DISTINCT_COUNT * 9
+    if type(artifact_byte_count) is not int or not (
+        minimum_artifact_byte_count <= artifact_byte_count <= exposure.EXPECTED_BYTE_COUNT
+    ):
+        raise ResultError(f"{prefix}.taxonomy_artifact_byte_count is outside bounded policy")
     return receipt
 
 
-def _validate_mapping_result(result: dict[str, Any]) -> dict[str, Any]:
+def _validate_taxonomy_result(result: dict[str, Any]) -> dict[str, Any]:
     if type(result) is not dict:
         raise ResultError("result must be a JSON object")
     keys = set(result)
@@ -121,8 +136,8 @@ def _validate_mapping_result(result: dict[str, Any]) -> dict[str, Any]:
         raise ResultError("semantic_request_id must be a lowercase SHA-256 digest")
     if type(result["repository"]) is not str or not _legacy.REPOSITORY_RE.fullmatch(result["repository"]):
         raise ResultError("repository must be canonical owner/name")
-    if result["action"] != ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION:
-        raise ResultError("unsupported ESRM20 mapping receipt action")
+    if result["action"] != EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION:
+        raise ResultError("unsupported taxonomy identity action")
     for field in ("source_issue", "source_comment_id", "run_id", "run_attempt"):
         if type(result[field]) is not int or result[field] < 1:
             raise ResultError(f"{field} must be a positive integer")
@@ -158,10 +173,10 @@ def _validate_mapping_result(result: dict[str, Any]) -> dict[str, Any]:
     if failure_class is not None and type(failure_class) is not str:
         raise ResultError("failure_class must be null or text")
 
-    if result["source_issue"] != ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ISSUE:
-        raise ResultError("mapping receipt result is outside frozen control issue 340")
-    if result["dataset_id"] != _mapping.DATASET_ID:
-        raise ResultError("mapping receipt result is outside the frozen ESRM20 risk-input dataset")
+    if result["source_issue"] != EFEHR_KOSOVO_TAXONOMY_IDENTITY_ISSUE:
+        raise ResultError("taxonomy identity result is outside frozen issue 363")
+    if result["dataset_id"] != _taxonomy.exposure.DATASET_ID:
+        raise ResultError("taxonomy identity result is outside the frozen ESRM20 exposure dataset")
 
     if phase == "request_validation":
         evidence = _legacy._validate_request_evidence(result["evidence"])
@@ -183,10 +198,10 @@ def _validate_mapping_result(result: dict[str, Any]) -> dict[str, Any]:
         return result
 
     if phase != "acquisition_receipt":
-        raise ResultError("mapping network result requires acquisition_receipt phase")
+        raise ResultError("taxonomy identity network result requires acquisition_receipt phase")
     evidence = result["evidence"]
-    if type(evidence) is not dict or set(evidence) != _MAPPING_EVIDENCE_FIELDS:
-        raise ResultError("evidence must be a closed ESRM20 mapping receipt evidence object")
+    if type(evidence) is not dict or set(evidence) != _TAXONOMY_EVIDENCE_FIELDS:
+        raise ResultError("evidence must be a closed efehr_kosovo_taxonomy_identity evidence object")
     for field in _legacy.REQUEST_EVIDENCE_FIELDS:
         if type(evidence[field]) is not bool:
             raise ResultError(f"evidence.{field} must be boolean")
@@ -200,14 +215,14 @@ def _validate_mapping_result(result: dict[str, Any]) -> dict[str, Any]:
     if status == "pass":
         if failure_class is not None:
             raise ResultError("successful acquisition_receipt cannot carry failure_class")
-        receipt = validate_esrm20_exposure_vulnerability_mapping_receipt(evidence[_MAPPING_RECEIPT_FIELD])
-        retrieved = _legacy._utc_second(receipt["retrieved_at"], f"{_MAPPING_RECEIPT_FIELD}.retrieved_at")
+        receipt = validate_efehr_kosovo_taxonomy_identity(evidence[_TAXONOMY_RECEIPT_FIELD])
+        retrieved = _legacy._utc_second(receipt["retrieved_at"], f"{_TAXONOMY_RECEIPT_FIELD}.retrieved_at")
         if retrieved < started or retrieved > finished:
-            raise ResultError(f"{_MAPPING_RECEIPT_FIELD}.retrieved_at must fall within action start/finish bounds")
+            raise ResultError(f"{_TAXONOMY_RECEIPT_FIELD}.retrieved_at must fall within action start/finish bounds")
     elif status == "blocked":
         if failure_class != _legacy.ACQUISITION_FAILURE_CLASS:
             raise ResultError("blocked acquisition_receipt must identify acquisition_failed")
-        if evidence[_MAPPING_RECEIPT_FIELD] is not None:
+        if evidence[_TAXONOMY_RECEIPT_FIELD] is not None:
             raise ResultError("blocked acquisition_receipt cannot carry a receipt")
     else:
         raise ResultError("duplicate network acquisition must remain in request_validation phase")
@@ -215,8 +230,8 @@ def _validate_mapping_result(result: dict[str, Any]) -> dict[str, Any]:
 
 
 def validate_result(result: dict[str, Any]) -> dict[str, Any]:
-    if type(result) is dict and result.get("action") == ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION:
-        return _validate_mapping_result(result)
+    if type(result) is dict and result.get("action") == EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION:
+        return _validate_taxonomy_result(result)
     return _legacy.validate_result(result)
 
 

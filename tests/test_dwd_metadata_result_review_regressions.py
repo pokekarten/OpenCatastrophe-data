@@ -73,6 +73,7 @@ class DwdMetadataResultReviewRegressions(unittest.TestCase):
                 "efehr_eshm20_root_config_receipt",
                 "esrm20_event_hazard_group1_receipt",
                 "esrm20_event_hazard_group2_receipt",
+                "esrm20_exposure_vulnerability_mapping_receipt",
             },
         )
         self.assertNotIn("sample_audit", allowed_actions)
