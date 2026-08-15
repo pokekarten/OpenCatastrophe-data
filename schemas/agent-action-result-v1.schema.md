@@ -32,7 +32,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 #### `action` — **required**
 
-**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity","esrm20_exposure_vulnerability_mapping_receipt"]`
+**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity","esrm20_exposure_vulnerability_mapping_receipt","efehr_eshm20_source_model_dependencies"]`
 
 #### `dataset_id` — **required**
 
@@ -501,6 +501,38 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### Branch 2
 
 **Constraints:** `$ref`=`#/$defs/efehrKosovoTaxonomyIdentity`
+
+###### `ledger_scan_complete` — **required**
+
+**Constraints:** `const`=`true`
+
+###### `prior_result_reused` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `request_validated` — **required**
+
+**Constraints:** `const`=`true`
+
+###### Branch 16
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `request_validated`, `ledger_scan_complete`, `prior_result_reused`, `efehr_eshm20_source_model_dependencies`
+
+###### Properties
+
+###### `efehr_eshm20_source_model_dependencies` — **required**
+
+###### anyOf
+
+###### Branch 1
+
+**Constraints:** type=`null`
+
+###### Branch 2
+
+**Constraints:** `$ref`=`#/$defs/efehrEshm20SourceModelDependencies`
 
 ###### `ledger_scan_complete` — **required**
 
@@ -1299,6 +1331,154 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### `source_issue` — **required**
 
 **Constraints:** `const`=`281`
+
+#### `efehrEshm20SourceModelDependencies`
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `schema_version`, `source_issue`, `control_issue`, `dataset_id`, `project_id`, `project_path`, `commit_sha`, `repository_path`, `byte_count`, `sha256`, `parser`, `inventory_receipt_comment_id`, `root_dependency_result_comment_id`, `root_dependency_section`, `root_dependency_option`, `first_order_receipt_request_comment_id`, `first_order_receipt_run_id`, `first_order_receipt_execution_sha`, `dependencies`, `dependency_inventory_authorized`, `dependency_receipt_authorized`, `external_bytes_persisted`, `publication_authorized`, `model_use_authorized`
+
+##### Properties
+
+###### `byte_count` — **required**
+
+**Constraints:** `const`=`17579`
+
+###### `commit_sha` — **required**
+
+**Constraints:** `const`=`fbd334de68f85d72669f73fc5a314a113db67317`
+
+###### `control_issue` — **required**
+
+**Constraints:** `const`=`367`
+
+###### `dataset_id` — **required**
+
+**Constraints:** `const`=`efehr.eshm20`
+
+###### `dependencies` — **required**
+
+**Constraints:** type=`array`; `minItems`=`1`; `maxItems`=`62`; `uniqueItems`=`true`
+
+###### Array items
+
+**Constraints:** `$ref`=`#/$defs/efehrEshm20SourceModelDependency`
+
+###### `dependency_inventory_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `dependency_receipt_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `external_bytes_persisted` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `first_order_receipt_execution_sha` — **required**
+
+**Constraints:** `const`=`ab66e3e4c58c9b8f18587f1a8a51cf67cf9851b1`
+
+###### `first_order_receipt_request_comment_id` — **required**
+
+**Constraints:** `const`=`5301857400`
+
+###### `first_order_receipt_run_id` — **required**
+
+**Constraints:** `const`=`31880089623`
+
+###### `inventory_receipt_comment_id` — **required**
+
+**Constraints:** `const`=`5290449064`
+
+###### `model_use_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `parser` — **required**
+
+**Constraints:** `const`=`scripts.openquake_source_model_logic_tree_dependencies.extract_source_model_logic_tree_dependencies`
+
+###### `project_id` — **required**
+
+**Constraints:** `const`=`197`
+
+###### `project_path` — **required**
+
+**Constraints:** `const`=`efehr/eshm20`
+
+###### `publication_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `repository_path` — **required**
+
+**Constraints:** `const`=`oq_computational/oq_configuration_eshm20_v12e_region_main/source_model_logic_tree_eshm20_model_v12e.xml`
+
+###### `root_dependency_option` — **required**
+
+**Constraints:** `const`=`source_model_logic_tree_file`
+
+###### `root_dependency_result_comment_id` — **required**
+
+**Constraints:** `const`=`5301726249`
+
+###### `root_dependency_section` — **required**
+
+**Constraints:** `const`=`calculation`
+
+###### `schema_version` — **required**
+
+**Constraints:** `const`=`oc-eshm20-source-model-dependency-profile-v2`
+
+###### `sha256` — **required**
+
+**Constraints:** `const`=`97a37911f9eae73766f386686b112e5a4e111965da3e4e1543627c28d4201867`
+
+###### `source_issue` — **required**
+
+**Constraints:** `const`=`281`
+
+#### `efehrEshm20SourceModelDependency`
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `resolved_path`, `origins`, `is_hdf5_companion`
+
+##### Properties
+
+###### `is_hdf5_companion` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `origins` — **required**
+
+**Constraints:** type=`array`; `minItems`=`1`; `maxItems`=`512`; `uniqueItems`=`true`
+
+###### Array items
+
+**Constraints:** `$ref`=`#/$defs/efehrEshm20SourceModelOrigin`
+
+###### `resolved_path` — **required**
+
+**Constraints:** type=`string`; `minLength`=`1`; `maxLength`=`512`
+
+#### `efehrEshm20SourceModelOrigin`
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `uncertainty_type`, `branch_id`
+
+##### Properties
+
+###### `branch_id` — **required**
+
+**Constraints:** type=`string`; `minLength`=`1`; `maxLength`=`512`
+
+###### `uncertainty_type` — **required**
+
+**Constraints:** `enum`=`["sourceModel","extendModel"]`
 
 #### `efehrEshm20TreeMetadata`
 
@@ -2248,6 +2428,12 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### not
 
+**Required here:** `efehr_eshm20_source_model_dependencies`
+
+###### Branch 15
+
+###### not
+
 **Required here:** `esrm20_exposure_vulnerability_mapping_receipt`
 
 #### Branch 2
@@ -2410,7 +2596,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### `action`
 
-**Constraints:** `enum`=`["acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity","esrm20_exposure_vulnerability_mapping_receipt"]`
+**Constraints:** `enum`=`["acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity","esrm20_exposure_vulnerability_mapping_receipt","efehr_eshm20_source_model_dependencies"]`
 
 ###### `duplicate_result_comment_id`
 
@@ -4089,6 +4275,126 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### Properties
 
 ###### `efehr_kosovo_taxonomy_identity`
+
+**Constraints:** type=`null`
+
+###### `failure_class`
+
+**Constraints:** `const`=`acquisition_failed`
+
+#### Branch 48
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_eshm20_source_model_dependencies`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `dataset_id`
+
+**Constraints:** `const`=`efehr.eshm20`
+
+###### `evidence`
+
+**Required here:** `efehr_eshm20_source_model_dependencies`
+
+###### `source_issue`
+
+**Constraints:** `const`=`397`
+
+#### Branch 49
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`, `status`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_eshm20_source_model_dependencies`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+###### `status` — **required**
+
+**Constraints:** `const`=`pass`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `evidence`
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `efehr_eshm20_source_model_dependencies`
+
+**Constraints:** `$ref`=`#/$defs/efehrEshm20SourceModelDependencies`
+
+###### `failure_class`
+
+**Constraints:** type=`null`
+
+#### Branch 50
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`, `status`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_eshm20_source_model_dependencies`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+###### `status` — **required**
+
+**Constraints:** `const`=`blocked`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `evidence`
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `efehr_eshm20_source_model_dependencies`
 
 **Constraints:** type=`null`
 
