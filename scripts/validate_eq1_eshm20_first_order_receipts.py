@@ -1,13 +1,15 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Reduce the trusted #361 ESHM20 first-order PASS to consumer-safe identities.
+"""Reduce trusted #361 ESHM20 first-order receipt evidence to safe identities.
 
 This is an offline bridge over an already-trusted Agent Action result. It first
-runs the merged canonical result validator and then binds the exact trusted
-execution plus the three byte identities recorded by Issue #361 PASS comment
-5301858821. The projection deliberately carries no provider URLs, payloads,
-model semantics, dependency-closure authority, or model-use authority.
+runs the merged canonical result validator and then binds the trusted execution,
+selection provenance and three exact byte identities established by Issue #361.
+It deliberately does not claim byte-for-byte identity with one GitHub result
+comment because bounded canonical-valid runtime/header fields are not pinned by
+this bridge. The projection carries no provider URLs, payloads, model semantics,
+dependency-closure authority, or model-use authority.
 """
 
 from __future__ import annotations
@@ -24,7 +26,6 @@ except ModuleNotFoundError:  # pragma: no cover - direct script import path
 
 
 SOURCE_ISSUE = 361
-TRUSTED_RESULT_COMMENT_ID = 5301858821
 TRUSTED_SOURCE_COMMENT_ID = 5301857400
 TRUSTED_RUN_ID = 31880089623
 TRUSTED_EXECUTION_SHA = "ab66e3e4c58c9b8f18587f1a8a51cf67cf9851b1"
@@ -91,7 +92,7 @@ def _exact(value: object, expected: object, field: str) -> None:
 
 
 def validate_and_reduce(result: Any) -> dict[str, object]:
-    """Validate one canonical #361 PASS and return a bounded identity projection."""
+    """Validate one trusted #361 PASS shape and return a bounded projection."""
 
     try:
         validated = canonical_result.validate_result(result)
@@ -177,7 +178,8 @@ def validate_and_reduce(result: Any) -> dict[str, object]:
         "schema_version": "eq1-eshm20-first-order-receipt-bridge-v1",
         "authority": {
             "repository": "pokekarten/OpenCatastrophe-data",
-            "result_comment_id": TRUSTED_RESULT_COMMENT_ID,
+            "source_issue": SOURCE_ISSUE,
+            "source_comment_id": TRUSTED_SOURCE_COMMENT_ID,
             "run_id": TRUSTED_RUN_ID,
             "execution_sha": TRUSTED_EXECUTION_SHA,
             "provider_commit": receipt_authority.COMMIT_SHA,
