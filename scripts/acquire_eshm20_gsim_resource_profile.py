@@ -150,11 +150,11 @@ def _canonical_relative_resource(value: object) -> tuple[str, str]:
         )
 
     pure = PurePosixPath(value)
-    if any(part in {"", ".", ".."} for part in pure.parts):
+    relative = pure.as_posix()
+    if relative != value or any(part in {"", ".", ".."} for part in pure.parts):
         raise Eshm20GsimResourceProfileError(
             "GSIM external resource path is not canonical"
         )
-    relative = pure.as_posix()
     base = posixpath.dirname(REPOSITORY_PATH)
     resolved = posixpath.normpath(posixpath.join(base, relative))
     if resolved == ".." or resolved.startswith("../") or resolved.startswith("/"):
