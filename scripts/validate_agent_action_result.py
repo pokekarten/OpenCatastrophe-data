@@ -106,6 +106,7 @@ try:
     )
     from scripts import profile_efehr_kosovo_exposure as EFEHR_KOSOVO_PROFILE
     from scripts import acquire_eshm20_root_dependencies as EFEHR_ESHM20_ROOT_DEPENDENCY
+    from scripts import acquire_eshm20_first_order_receipts as EFEHR_ESHM20_FIRST_ORDER
     from scripts.efehr_gitlab_receipt import (
         PROJECTS as EFEHR_PROJECTS,
         PROVIDER_HOST as EFEHR_PROVIDER_HOST,
@@ -118,6 +119,7 @@ try:
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ISSUE as EFEHR_KOSOVO_ACTION_ISSUE,
         EFEHR_KOSOVO_EXPOSURE_PROFILE_ISSUE as EFEHR_KOSOVO_PROFILE_ACTION_ISSUE,
         EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ISSUE as EFEHR_ESHM20_ROOT_DEPENDENCY_ACTION_ISSUE,
+        EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ISSUE as EFEHR_ESHM20_FIRST_ORDER_ACTION_ISSUE,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE as EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE,
         EFEHR_README_RECEIPT_ISSUE as EFEHR_ACTION_ISSUE,
         ESRM20_EVENT_HAZARD_RECEIPT_ISSUE as ESRM20_EVENT_HAZARD_ACTION_ISSUE,
@@ -214,6 +216,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     )
     import profile_efehr_kosovo_exposure as EFEHR_KOSOVO_PROFILE
     import acquire_eshm20_root_dependencies as EFEHR_ESHM20_ROOT_DEPENDENCY
+    import acquire_eshm20_first_order_receipts as EFEHR_ESHM20_FIRST_ORDER
     from efehr_gitlab_receipt import (
         PROJECTS as EFEHR_PROJECTS,
         PROVIDER_HOST as EFEHR_PROVIDER_HOST,
@@ -226,6 +229,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ISSUE as EFEHR_KOSOVO_ACTION_ISSUE,
         EFEHR_KOSOVO_EXPOSURE_PROFILE_ISSUE as EFEHR_KOSOVO_PROFILE_ACTION_ISSUE,
         EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ISSUE as EFEHR_ESHM20_ROOT_DEPENDENCY_ACTION_ISSUE,
+        EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ISSUE as EFEHR_ESHM20_FIRST_ORDER_ACTION_ISSUE,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE as EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE,
         EFEHR_README_RECEIPT_ISSUE as EFEHR_ACTION_ISSUE,
         ESRM20_EVENT_HAZARD_RECEIPT_ISSUE as ESRM20_EVENT_HAZARD_ACTION_ISSUE,
@@ -246,6 +250,9 @@ EFEHR_KOSOVO_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_kosovo_exposure
 EFEHR_KOSOVO_PROFILE_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_kosovo_exposure_profile"}
 EFEHR_ESHM20_ROOT_DEPENDENCY_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {
     "efehr_eshm20_root_dependency_profile"
+}
+EFEHR_ESHM20_FIRST_ORDER_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {
+    "efehr_eshm20_first_order_receipts"
 }
 EFEHR_ESHM20_ROOT_CONFIG_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {
     "efehr_eshm20_root_config_receipt"
@@ -305,11 +312,31 @@ EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_FIELDS = {
     "root_receipt_execution_sha", "dependencies", "dependency_inventory_authorized",
     "profiled_at", "external_bytes_persisted", "publication_authorized",
 }
+EFEHR_ESHM20_FIRST_ORDER_FIELDS = {
+    "schema_version", "operation_id", "control_issue", "source_issue", "dataset_id",
+    "provider_host", "project_id", "project_path", "commit_sha",
+    "selection_request_comment_id", "selection_result_comment_id", "selection_run_id",
+    "selection_execution_sha", "retrieved_at", "receipts",
+    "dependency_inventory_authorized", "external_bytes_persisted", "publication_authorized",
+}
+EFEHR_ESHM20_FIRST_ORDER_ITEM_FIELDS = {
+    "schema_version", "source_issue", "dataset_id", "provider_host", "project_id",
+    "project_path", "commit_sha", "repository_path", "requested_url", "final_url",
+    "retrieved_at", "byte_count", "sha256", "content_type", "etag",
+    "external_bytes_persisted", "publication_authorized", "parent_result_comment_id",
+    "parent_section", "parent_option",
+}
+EFEHR_ESHM20_FIRST_ORDER_BINDINGS = (
+    ("oq_computational/oq_configuration_eshm20_v12e_region_main/eshm20_site_model_v06d.csv", "site_params", "site_model_file"),
+    ("oq_computational/oq_configuration_eshm20_v12e_region_main/gmpe_complete_logic_tree_5br.xml", "calculation", "gsim_logic_tree_file"),
+    ("oq_computational/oq_configuration_eshm20_v12e_region_main/source_model_logic_tree_eshm20_model_v12e.xml", "calculation", "source_model_logic_tree_file"),
+)
 ALLOWED_ACTIONS = {
     "sample_audit", "acquisition_receipt", "dwd_metadata_receipt",
     "efehr_readme_receipt", "efehr_eshm20_tree_metadata",
     "efehr_kosovo_exposure_receipt", "efehr_kosovo_exposure_profile",
-    "efehr_eshm20_root_dependency_profile", "efehr_eshm20_root_config_receipt",
+    "efehr_eshm20_root_dependency_profile", "efehr_eshm20_first_order_receipts",
+    "efehr_eshm20_root_config_receipt",
     "esrm20_event_hazard_group1_receipt", "esrm20_event_hazard_group2_receipt",
 }
 ALLOWED_PHASES = {"request_validation", "acquisition_receipt"}
@@ -997,6 +1024,96 @@ def validate_efehr_eshm20_root_dependency_profile(profile: Any) -> dict[str, Any
     return profile
 
 
+def validate_efehr_eshm20_first_order_receipts(receipt: Any) -> dict[str, Any]:
+    prefix = "efehr_eshm20_first_order_receipts"
+    if type(receipt) is not dict or set(receipt) != EFEHR_ESHM20_FIRST_ORDER_FIELDS:
+        raise ResultError(f"{prefix} must be a closed receipt-set object")
+    expected_outer = {
+        "schema_version": EFEHR_ESHM20_FIRST_ORDER.SCHEMA_VERSION,
+        "operation_id": EFEHR_ESHM20_FIRST_ORDER.OPERATION_ID,
+        "control_issue": EFEHR_ESHM20_FIRST_ORDER.CONTROL_ISSUE,
+        "source_issue": EFEHR_ESHM20_FIRST_ORDER.SOURCE_ISSUE,
+        "dataset_id": EFEHR_ESHM20_FIRST_ORDER.DATASET_ID,
+        "provider_host": EFEHR_ESHM20_FIRST_ORDER.PROVIDER_HOST,
+        "project_id": EFEHR_ESHM20_FIRST_ORDER.PROJECT_ID,
+        "project_path": EFEHR_ESHM20_FIRST_ORDER.PROJECT_PATH,
+        "commit_sha": EFEHR_ESHM20_FIRST_ORDER.COMMIT_SHA,
+        "selection_request_comment_id": EFEHR_ESHM20_FIRST_ORDER.SELECTION_REQUEST_COMMENT_ID,
+        "selection_result_comment_id": EFEHR_ESHM20_FIRST_ORDER.SELECTION_RESULT_COMMENT_ID,
+        "selection_run_id": EFEHR_ESHM20_FIRST_ORDER.SELECTION_RUN_ID,
+        "selection_execution_sha": EFEHR_ESHM20_FIRST_ORDER.SELECTION_EXECUTION_SHA,
+        "dependency_inventory_authorized": False,
+        "external_bytes_persisted": False,
+        "publication_authorized": False,
+    }
+    for field, expected in expected_outer.items():
+        if type(receipt[field]) is not type(expected) or receipt[field] != expected:
+            raise ResultError(f"{prefix}.{field} does not match the frozen contract")
+    outer_time = _utc_second(receipt["retrieved_at"], f"{prefix}.retrieved_at")
+
+    worker_bindings = tuple(
+        (spec.repository_path, spec.parent_section, spec.parent_option)
+        for spec in EFEHR_ESHM20_FIRST_ORDER.DEPENDENCIES
+    )
+    if worker_bindings != EFEHR_ESHM20_FIRST_ORDER_BINDINGS:
+        raise ResultError(f"{prefix} worker target set drifted from the durable contract")
+
+    items = receipt["receipts"]
+    if type(items) is not list or len(items) != len(EFEHR_ESHM20_FIRST_ORDER_BINDINGS):
+        raise ResultError(f"{prefix}.receipts must contain exactly three items")
+    previous_time: datetime | None = None
+    for item, binding in zip(items, EFEHR_ESHM20_FIRST_ORDER_BINDINGS, strict=True):
+        repository_path, parent_section, parent_option = binding
+        if type(item) is not dict or set(item) != EFEHR_ESHM20_FIRST_ORDER_ITEM_FIELDS:
+            raise ResultError(f"{prefix}.receipts items must have the closed receipt shape")
+        exact_values = {
+            "schema_version": "oc-efehr-gitlab-artifact-receipt-v1",
+            "source_issue": 281,
+            "dataset_id": "efehr.eshm20",
+            "provider_host": EFEHR_ESHM20_FIRST_ORDER.PROVIDER_HOST,
+            "project_id": 197,
+            "project_path": "efehr/eshm20",
+            "commit_sha": "fbd334de68f85d72669f73fc5a314a113db67317",
+            "repository_path": repository_path,
+            "parent_result_comment_id": 5301726249,
+            "parent_section": parent_section,
+            "parent_option": parent_option,
+            "external_bytes_persisted": False,
+            "publication_authorized": False,
+        }
+        for field, expected in exact_values.items():
+            if type(item[field]) is not type(expected) or item[field] != expected:
+                raise ResultError(f"{prefix}.receipts.{field} does not match the frozen contract")
+        try:
+            target = validate_efehr_target(
+                source_issue=281,
+                dataset_id="efehr.eshm20",
+                project_id=197,
+                commit_sha="fbd334de68f85d72669f73fc5a314a113db67317",
+                repository_path=repository_path,
+            )
+            expected_url = efehr_raw_file_api_url(target)
+        except EfehrReceiptError as exc:
+            raise ResultError(f"{prefix} target binding is invalid: {exc}") from exc
+        for field in ("requested_url", "final_url"):
+            if type(item[field]) is not str or item[field] != expected_url:
+                raise ResultError(f"{prefix}.receipts.{field} does not match the frozen immutable target")
+        observed = _utc_second(item["retrieved_at"], f"{prefix}.receipts.retrieved_at")
+        if previous_time is not None and observed < previous_time:
+            raise ResultError(f"{prefix}.receipts retrieval times must be nondecreasing")
+        previous_time = observed
+        _positive_bounded_int(
+            item["byte_count"], "byte_count", EFEHR_ESHM20_FIRST_ORDER.MAX_ARTIFACT_BYTES, prefix=prefix
+        )
+        if type(item["sha256"]) is not str or not DIGEST_RE.fullmatch(item["sha256"]):
+            raise ResultError(f"{prefix}.receipts.sha256 must be a lowercase SHA-256 digest")
+        for field in ("content_type", "etag"):
+            _bounded_header(item[field], field, prefix=prefix)
+    if previous_time != outer_time:
+        raise ResultError(f"{prefix}.retrieved_at must equal the final member retrieval time")
+    return receipt
+
+
 def _validate_request_evidence(evidence: Any) -> dict[str, Any]:
     if type(evidence) is not dict or set(evidence) != REQUEST_EVIDENCE_FIELDS:
         raise ResultError("evidence must be a closed request-validation evidence object")
@@ -1017,6 +1134,7 @@ def _validate_network_evidence(evidence: Any, *, receipt_field: str) -> dict[str
         "efehr_kosovo_exposure_receipt": EFEHR_KOSOVO_EVIDENCE_FIELDS,
         "efehr_kosovo_exposure_profile": EFEHR_KOSOVO_PROFILE_EVIDENCE_FIELDS,
         "efehr_eshm20_root_dependency_profile": EFEHR_ESHM20_ROOT_DEPENDENCY_EVIDENCE_FIELDS,
+        "efehr_eshm20_first_order_receipts": EFEHR_ESHM20_FIRST_ORDER_EVIDENCE_FIELDS,
         "efehr_eshm20_root_config_receipt": EFEHR_ESHM20_ROOT_CONFIG_EVIDENCE_FIELDS,
         "esrm20_event_hazard_group1_receipt": ESRM20_EVENT_HAZARD_GROUP1_EVIDENCE_FIELDS,
         "esrm20_event_hazard_group2_receipt": ESRM20_EVENT_HAZARD_GROUP2_EVIDENCE_FIELDS,
@@ -1155,6 +1273,16 @@ def validate_result(result: dict[str, Any]) -> dict[str, Any]:
             )
         receipt_field = "efehr_eshm20_root_dependency_profile"
         receipt_validator = validate_efehr_eshm20_root_dependency_profile
+    elif action == "efehr_eshm20_first_order_receipts":
+        if (
+            result["source_issue"] != EFEHR_ESHM20_FIRST_ORDER_ACTION_ISSUE
+            or result["dataset_id"] != EFEHR_ESHM20_FIRST_ORDER.DATASET_ID
+        ):
+            raise ResultError(
+                "efehr_eshm20_first_order_receipts result is outside the frozen issue/dataset boundary"
+            )
+        receipt_field = "efehr_eshm20_first_order_receipts"
+        receipt_validator = validate_efehr_eshm20_first_order_receipts
     elif action == "efehr_eshm20_root_config_receipt":
         if (
             result["source_issue"] != EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE
@@ -1209,6 +1337,16 @@ def validate_result(result: dict[str, Any]) -> dict[str, Any]:
             raise ResultError(
                 f"{receipt_field}.{timestamp_field} must fall within action start/finish bounds"
             )
+        if receipt_field == "efehr_eshm20_first_order_receipts":
+            for index, item in enumerate(receipt["receipts"]):
+                member_at = _utc_second(
+                    item["retrieved_at"],
+                    f"{receipt_field}.receipts[{index}].retrieved_at",
+                )
+                if member_at < started or member_at > finished:
+                    raise ResultError(
+                        f"{receipt_field}.receipts[{index}].retrieved_at must fall within action start/finish bounds"
+                    )
     elif status == "blocked":
         if failure_class != ACQUISITION_FAILURE_CLASS:
             raise ResultError("blocked acquisition_receipt must identify acquisition_failed")

@@ -3,7 +3,7 @@
   "$id": "urn:opencatastrophe:schema:agent-action-result:1.0.0",
   "title": "OpenCatastrophe Agent Action Result v1",
   "description": "Portable closed result receipt for the owner-authorized trusted-main Agent Action Dispatch control plane. scripts/validate_agent_action_result.py is authoritative for exact Python scalar types, UTC ordering, acquisition-receipt identity and cross-field checks.",
-  "$comment": "request_validation records strict validation/dedup state. acquisition_receipt phase is shared by ten closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, efehr_kosovo_exposure_receipt for Issue 328, efehr_eshm20_root_config_receipt for Issue 335, the two ESRM20 event-hazard Group1/Group2 receipt actions for Issue 346, and efehr_kosovo_exposure_profile for Issue 351. All require external_bytes_persisted=false. EFEHR/ESRM20 receipts prove only their bounded transport, repository-metadata, or exact selected-file byte identity; they do not establish scientific fitness, dependency closure, model-use eligibility, completeness outside the selected scope or publication authorization. efehr_eshm20_root_dependency_profile for Issue 353 persists only verified first-order dependency metadata; dependency inventory, transitive closure, model use and publication remain unauthorized.",
+  "$comment": "request_validation records strict validation/dedup state. acquisition_receipt phase is shared by eleven closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, efehr_kosovo_exposure_receipt for Issue 328, efehr_eshm20_root_config_receipt for Issue 335, the two ESRM20 event-hazard Group1/Group2 receipt actions for Issue 346, and efehr_kosovo_exposure_profile for Issue 351. All require external_bytes_persisted=false. EFEHR/ESRM20 receipts prove only their bounded transport, repository-metadata, or exact selected-file byte identity; they do not establish scientific fitness, dependency closure, model-use eligibility, completeness outside the selected scope or publication authorization. efehr_eshm20_root_dependency_profile for Issue 353 persists only verified first-order dependency metadata; dependency inventory, transitive closure, model use and publication remain unauthorized. efehr_eshm20_first_order_receipts for Issue 361 persists only exact byte receipts for the three #353-selected first-order candidates; dependency inventory, semantics, closure, model use and publication remain unauthorized.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -15,7 +15,7 @@
     "schema_version": {"const": "oc-action-result-v1"},
     "semantic_request_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "repository": {"type": "string", "pattern": "^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$"},
-    "action": {"enum": ["sample_audit", "acquisition_receipt", "dwd_metadata_receipt", "efehr_readme_receipt", "efehr_eshm20_tree_metadata", "efehr_eshm20_root_config_receipt", "efehr_kosovo_exposure_receipt", "esrm20_event_hazard_group1_receipt", "esrm20_event_hazard_group2_receipt", "efehr_kosovo_exposure_profile", "efehr_eshm20_root_dependency_profile"]},
+    "action": {"enum": ["sample_audit", "acquisition_receipt", "dwd_metadata_receipt", "efehr_readme_receipt", "efehr_eshm20_tree_metadata", "efehr_eshm20_root_config_receipt", "efehr_kosovo_exposure_receipt", "esrm20_event_hazard_group1_receipt", "esrm20_event_hazard_group2_receipt", "efehr_kosovo_exposure_profile", "efehr_eshm20_root_dependency_profile", "efehr_eshm20_first_order_receipts"]},
     "source_issue": {"type": "integer", "minimum": 1},
     "source_comment_id": {"type": "integer", "minimum": 1},
     "target_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
@@ -148,6 +148,17 @@
             "ledger_scan_complete": {"const": true},
             "prior_result_reused": {"const": false},
             "efehr_eshm20_root_dependency_profile": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/efehrEshm20RootDependencyProfile"}]}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "efehr_eshm20_first_order_receipts"],
+          "properties": {
+            "request_validated": {"const": true},
+            "ledger_scan_complete": {"const": true},
+            "prior_result_reused": {"const": false},
+            "efehr_eshm20_first_order_receipts": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/efehrEshm20FirstOrderReceiptSet"}]}
           }
         }
       ]
@@ -545,6 +556,58 @@
         "external_bytes_persisted": {"const": false},
         "publication_authorized": {"const": false}
       }
+    },
+    "efehrEshm20FirstOrderArtifactReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "source_issue", "dataset_id", "provider_host", "project_id", "project_path", "commit_sha", "repository_path", "requested_url", "final_url", "retrieved_at", "byte_count", "sha256", "content_type", "etag", "external_bytes_persisted", "publication_authorized", "parent_result_comment_id", "parent_section", "parent_option"],
+      "properties": {
+        "schema_version": {"const": "oc-efehr-gitlab-artifact-receipt-v1"},
+        "source_issue": {"const": 281},
+        "dataset_id": {"const": "efehr.eshm20"},
+        "provider_host": {"const": "gitlab.seismo.ethz.ch"},
+        "project_id": {"const": 197},
+        "project_path": {"const": "efehr/eshm20"},
+        "commit_sha": {"const": "fbd334de68f85d72669f73fc5a314a113db67317"},
+        "repository_path": {"enum": ["oq_computational/oq_configuration_eshm20_v12e_region_main/eshm20_site_model_v06d.csv", "oq_computational/oq_configuration_eshm20_v12e_region_main/gmpe_complete_logic_tree_5br.xml", "oq_computational/oq_configuration_eshm20_v12e_region_main/source_model_logic_tree_eshm20_model_v12e.xml"]},
+        "requested_url": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "final_url": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+        "byte_count": {"type": "integer", "minimum": 1, "maximum": 67108864},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "content_type": {"type": ["string", "null"], "maxLength": 512},
+        "etag": {"type": ["string", "null"], "maxLength": 512},
+        "external_bytes_persisted": {"const": false},
+        "publication_authorized": {"const": false},
+        "parent_result_comment_id": {"const": 5301726249},
+        "parent_section": {"enum": ["site_params", "calculation"]},
+        "parent_option": {"enum": ["site_model_file", "gsim_logic_tree_file", "source_model_logic_tree_file"]}
+      }
+    },
+    "efehrEshm20FirstOrderReceiptSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "operation_id", "control_issue", "source_issue", "dataset_id", "provider_host", "project_id", "project_path", "commit_sha", "selection_request_comment_id", "selection_result_comment_id", "selection_run_id", "selection_execution_sha", "retrieved_at", "receipts", "dependency_inventory_authorized", "external_bytes_persisted", "publication_authorized"],
+      "properties": {
+        "schema_version": {"const": "oc-eshm20-first-order-receipt-set-v1"},
+        "operation_id": {"const": "eshm20-first-order-dependencies-v12e-region-main-v1"},
+        "control_issue": {"const": 361},
+        "source_issue": {"const": 281},
+        "dataset_id": {"const": "efehr.eshm20"},
+        "provider_host": {"const": "gitlab.seismo.ethz.ch"},
+        "project_id": {"const": 197},
+        "project_path": {"const": "efehr/eshm20"},
+        "commit_sha": {"const": "fbd334de68f85d72669f73fc5a314a113db67317"},
+        "selection_request_comment_id": {"const": 5301725105},
+        "selection_result_comment_id": {"const": 5301726249},
+        "selection_run_id": {"const": 31878511737},
+        "selection_execution_sha": {"const": "bd146a19fa4a1dc85b616288ec6d24946336a483"},
+        "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+        "receipts": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/efehrEshm20FirstOrderArtifactReceipt"}},
+        "dependency_inventory_authorized": {"const": false},
+        "external_bytes_persisted": {"const": false},
+        "publication_authorized": {"const": false}
+      }
     }
   },
   "allOf": [
@@ -561,7 +624,8 @@
           {"not": {"required": ["efehr_eshm20_root_config_receipt"]}},
           {"not": {"required": ["esrm20_event_hazard_group1_receipt"]}},
           {"not": {"required": ["esrm20_event_hazard_group2_receipt"]}},
-          {"not": {"required": ["efehr_eshm20_root_dependency_profile"]}}
+          {"not": {"required": ["efehr_eshm20_root_dependency_profile"]}},
+          {"not": {"required": ["efehr_eshm20_first_order_receipts"]}}
         ]}
       }}
     },
@@ -590,7 +654,7 @@
     {
       "if": {"properties": {"phase": {"const": "acquisition_receipt"}}, "required": ["phase"]},
       "then": {"properties": {
-        "action": {"enum": ["acquisition_receipt", "dwd_metadata_receipt", "efehr_readme_receipt", "efehr_eshm20_tree_metadata", "efehr_eshm20_root_config_receipt", "efehr_kosovo_exposure_receipt", "esrm20_event_hazard_group1_receipt", "esrm20_event_hazard_group2_receipt", "efehr_kosovo_exposure_profile", "efehr_eshm20_root_dependency_profile"]},
+        "action": {"enum": ["acquisition_receipt", "dwd_metadata_receipt", "efehr_readme_receipt", "efehr_eshm20_tree_metadata", "efehr_eshm20_root_config_receipt", "efehr_kosovo_exposure_receipt", "esrm20_event_hazard_group1_receipt", "esrm20_event_hazard_group2_receipt", "efehr_kosovo_exposure_profile", "efehr_eshm20_root_dependency_profile", "efehr_eshm20_first_order_receipts"]},
         "duplicate_result_comment_id": {"type": "null"}
       }}
     },
@@ -811,6 +875,28 @@
       "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "esrm20_event_hazard_group2_receipt"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
       "then": {"properties": {
         "evidence": {"properties": {"esrm20_event_hazard_group2_receipt": {"type": "null"}}},
+        "failure_class": {"const": "acquisition_failed"}
+      }}
+    },
+    {
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_first_order_receipts"}}, "required": ["phase", "action"]},
+      "then": {"properties": {
+        "source_issue": {"const": 361},
+        "dataset_id": {"const": "efehr.eshm20"},
+        "evidence": {"required": ["efehr_eshm20_first_order_receipts"]}
+      }}
+    },
+    {
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_first_order_receipts"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
+      "then": {"properties": {
+        "evidence": {"properties": {"efehr_eshm20_first_order_receipts": {"$ref": "#/$defs/efehrEshm20FirstOrderReceiptSet"}}},
+        "failure_class": {"type": "null"}
+      }}
+    },
+    {
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_first_order_receipts"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
+      "then": {"properties": {
+        "evidence": {"properties": {"efehr_eshm20_first_order_receipts": {"type": "null"}}},
         "failure_class": {"const": "acquisition_failed"}
       }}
     }
