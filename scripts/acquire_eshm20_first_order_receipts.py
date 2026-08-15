@@ -80,36 +80,69 @@ class DependencySpec:
     parent_option: str
 
 
-DEPENDENCIES: tuple[DependencySpec, ...] = (
-    DependencySpec(
-        repository_path=(
-            "oq_computational/oq_configuration_eshm20_v12e_region_main/"
-            "eshm20_site_model_v06d.csv"
-        ),
-        parent_section="site_params",
-        parent_option="site_model_file",
+_SITE_MODEL = DependencySpec(
+    repository_path=(
+        "oq_computational/oq_configuration_eshm20_v12e_region_main/"
+        "eshm20_site_model_v06d.csv"
     ),
-    DependencySpec(
-        repository_path=(
-            "oq_computational/oq_configuration_eshm20_v12e_region_main/"
-            "gmpe_complete_logic_tree_5br.xml"
-        ),
-        parent_section="calculation",
-        parent_option="gsim_logic_tree_file",
-    ),
-    DependencySpec(
-        repository_path=(
-            "oq_computational/oq_configuration_eshm20_v12e_region_main/"
-            "source_model_logic_tree_eshm20_model_v12e.xml"
-        ),
-        parent_section="calculation",
-        parent_option="source_model_logic_tree_file",
-    ),
+    parent_section="site_params",
+    parent_option="site_model_file",
 )
+_GMPE_LOGIC_TREE = DependencySpec(
+    repository_path=(
+        "oq_computational/oq_configuration_eshm20_v12e_region_main/"
+        "gmpe_complete_logic_tree_5br.xml"
+    ),
+    parent_section="calculation",
+    parent_option="gsim_logic_tree_file",
+)
+_SOURCE_MODEL_LOGIC_TREE = DependencySpec(
+    repository_path=(
+        "oq_computational/oq_configuration_eshm20_v12e_region_main/"
+        "source_model_logic_tree_eshm20_model_v12e.xml"
+    ),
+    parent_section="calculation",
+    parent_option="source_model_logic_tree_file",
+)
+_CANONICAL_DEPENDENCIES: tuple[DependencySpec, ...] = (
+    _SITE_MODEL,
+    _GMPE_LOGIC_TREE,
+    _SOURCE_MODEL_LOGIC_TREE,
+)
+# Retain the published module-level tuple used by focused tests and downstream
+# review tooling, but require it to remain the exact code-owned tuple before any
+# provider work. Equality is deliberately insufficient: equal-but-distinct
+# DependencySpec values are not capabilities.
+DEPENDENCIES = _CANONICAL_DEPENDENCIES
 
 
 class Eshm20FirstOrderReceiptError(RuntimeError):
     """Raised when the fixed three-file ESHM20 receipt set cannot close safely."""
+
+
+def _require_authorized_spec(spec: object) -> DependencySpec:
+    if type(spec) is not DependencySpec or not any(
+        spec is candidate for candidate in _CANONICAL_DEPENDENCIES
+    ):
+        raise Eshm20FirstOrderReceiptError(
+            "ESHM20 first-order dependency spec is not an authorized fixed target"
+        )
+    return spec
+
+
+def _require_canonical_dependency_set() -> tuple[DependencySpec, ...]:
+    if DEPENDENCIES is not _CANONICAL_DEPENDENCIES or any(
+        active is not expected
+        for active, expected in zip(
+            DEPENDENCIES,
+            _CANONICAL_DEPENDENCIES,
+            strict=True,
+        )
+    ):
+        raise Eshm20FirstOrderReceiptError(
+            "frozen ESHM20 first-order dependency set identity is invalid"
+        )
+    return _CANONICAL_DEPENDENCIES
 
 
 def _receipt_one(
@@ -120,6 +153,7 @@ def _receipt_one(
     now: Any,
     monotonic: Any,
 ) -> dict[str, Any]:
+    spec = _require_authorized_spec(spec)
     try:
         target = validate_target(
             source_issue=SOURCE_ISSUE,
@@ -201,17 +235,7 @@ def acquire_eshm20_first_order_receipts(
     retrieving any one member raises and returns no partial receipt object.
     """
 
-    if tuple(spec.repository_path for spec in DEPENDENCIES) != tuple(
-        sorted(spec.repository_path for spec in DEPENDENCIES)
-    ):
-        raise Eshm20FirstOrderReceiptError(
-            "frozen ESHM20 first-order dependency set is not canonically ordered"
-        )
-    if len(DEPENDENCIES) != 3 or len({spec.repository_path for spec in DEPENDENCIES}) != 3:
-        raise Eshm20FirstOrderReceiptError(
-            "frozen ESHM20 first-order dependency set identity is invalid"
-        )
-
+    dependencies = _require_canonical_dependency_set()
     deadline = monotonic() + TOTAL_DEADLINE_SECONDS
     open_response = opener or _open_fixed
     receipts = tuple(
@@ -222,7 +246,7 @@ def acquire_eshm20_first_order_receipts(
             now=now,
             monotonic=monotonic,
         )
-        for spec in DEPENDENCIES
+        for spec in dependencies
     )
     final_retrieved_at = receipts[-1]["retrieved_at"]
     return {
