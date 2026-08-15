@@ -3,7 +3,7 @@
   "$id": "urn:opencatastrophe:schema:agent-action-result:1.0.0",
   "title": "OpenCatastrophe Agent Action Result v1",
   "description": "Portable closed result receipt for the owner-authorized trusted-main Agent Action Dispatch control plane. scripts/validate_agent_action_result.py is authoritative for exact Python scalar types, UTC ordering, acquisition-receipt identity and cross-field checks.",
-  "$comment": "request_validation records strict validation/dedup state. acquisition_receipt phase is shared by twelve closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, efehr_kosovo_exposure_receipt for Issue 328, efehr_eshm20_root_config_receipt for Issue 335, the two ESRM20 event-hazard Group1/Group2 receipt actions for Issue 346, efehr_kosovo_exposure_profile for Issue 351, and efehr_eshm20_gsim_resource_profile for Issue 376. All require external_bytes_persisted=false. EFEHR/ESRM20 receipts prove only their bounded transport, repository-metadata, or exact selected-file byte identity; they do not establish scientific fitness, dependency closure, model-use eligibility, completeness outside the selected scope or publication authorization. efehr_eshm20_root_dependency_profile for Issue 353 persists only verified first-order dependency metadata; dependency inventory, transitive closure, model use and publication remain unauthorized. efehr_eshm20_first_order_receipts for Issue 361 persists only exact byte receipts for the three #353-selected first-order candidates; dependency inventory, semantics, closure, model use and publication remain unauthorized. efehr_eshm20_gsim_resource_profile persists only bounded structural _file/_table resource-reference metadata from the exact #361-receipted GMM logic-tree bytes; dependency receipts, dependency closure, GSIM runtime validity, model use and publication remain unauthorized. efehr_kosovo_taxonomy_identity for Issue 363 persists only the exact pre-publication identity of the 86-value Kosovo residential TAXONOMY set; literal taxonomy values, provider bytes, normalization, mapping interpretation, vulnerability selection, publication and model use remain unauthorized.",
+  "$comment": "request_validation records strict validation/dedup state. acquisition_receipt phase is shared by closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, efehr_kosovo_exposure_receipt for Issue 328, efehr_eshm20_root_config_receipt for Issue 335, the two ESRM20 event-hazard Group1/Group2 receipt actions for Issue 346, efehr_kosovo_exposure_profile for Issue 351, and efehr_eshm20_gsim_resource_profile for Issue 376. All require external_bytes_persisted=false. EFEHR/ESRM20 receipts prove only their bounded transport, repository-metadata, or exact selected-file byte identity; they do not establish scientific fitness, dependency closure, model-use eligibility, completeness outside the selected scope or publication authorization. efehr_eshm20_root_dependency_profile for Issue 353 persists only verified first-order dependency metadata; dependency inventory, transitive closure, model use and publication remain unauthorized. efehr_eshm20_first_order_receipts for Issue 361 persists only exact byte receipts for the three #353-selected first-order candidates; dependency inventory, semantics, closure, model use and publication remain unauthorized. efehr_eshm20_gsim_resource_profile persists only bounded structural _file/_table resource-reference metadata from the exact #361-receipted GMM logic-tree bytes; dependency receipts, dependency closure, GSIM runtime validity, model use and publication remain unauthorized. efehr_kosovo_taxonomy_identity for Issue 363 persists only the exact pre-publication identity of the 86-value Kosovo residential TAXONOMY set; literal taxonomy values, provider bytes, normalization, mapping interpretation, vulnerability selection, publication and model use remain unauthorized. esrm20_exposure_vulnerability_mapping_receipt for Issue 340 persists only the exact selected mapping-file byte receipt; mapping-row interpretation, taxonomy-to-vulnerability resolution, vulnerability selection, provider-byte publication and model use remain unauthorized.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -15,7 +15,7 @@
     "schema_version": {"const": "oc-action-result-v1"},
     "semantic_request_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "repository": {"type": "string", "pattern": "^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$"},
-    "action": {"enum": ["sample_audit", "acquisition_receipt", "dwd_metadata_receipt", "efehr_readme_receipt", "efehr_eshm20_tree_metadata", "efehr_eshm20_root_config_receipt", "efehr_kosovo_exposure_receipt", "esrm20_event_hazard_group1_receipt", "esrm20_event_hazard_group2_receipt", "efehr_kosovo_exposure_profile", "efehr_eshm20_root_dependency_profile", "efehr_eshm20_first_order_receipts", "efehr_eshm20_gsim_resource_profile", "efehr_kosovo_taxonomy_identity"]},
+    "action": {"enum": ["sample_audit", "acquisition_receipt", "dwd_metadata_receipt", "efehr_readme_receipt", "efehr_eshm20_tree_metadata", "efehr_eshm20_root_config_receipt", "efehr_kosovo_exposure_receipt", "esrm20_event_hazard_group1_receipt", "esrm20_event_hazard_group2_receipt", "efehr_kosovo_exposure_profile", "efehr_eshm20_root_dependency_profile", "efehr_eshm20_first_order_receipts", "efehr_eshm20_gsim_resource_profile", "efehr_kosovo_taxonomy_identity", "esrm20_exposure_vulnerability_mapping_receipt"]},
     "source_issue": {"type": "integer", "minimum": 1},
     "source_comment_id": {"type": "integer", "minimum": 1},
     "target_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
@@ -170,6 +170,17 @@
             "ledger_scan_complete": {"const": true},
             "prior_result_reused": {"const": false},
             "efehr_eshm20_gsim_resource_profile": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/efehrEshm20GsimResourceProfile"}]}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["request_validated", "ledger_scan_complete", "prior_result_reused", "esrm20_exposure_vulnerability_mapping_receipt"],
+          "properties": {
+            "request_validated": {"const": true},
+            "ledger_scan_complete": {"const": true},
+            "prior_result_reused": {"const": false},
+            "esrm20_exposure_vulnerability_mapping_receipt": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/esrm20ExposureVulnerabilityMappingReceipt"}]}
           }
         },
         {
@@ -718,6 +729,36 @@
         "profiled_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"}
       }
     },
+    "esrm20ExposureVulnerabilityMappingReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version", "operation_id", "source_issue", "dataset_id", "provider_host",
+        "project_id", "project_path", "commit_sha", "repository_path", "requested_url",
+        "final_url", "retrieved_at", "byte_count", "sha256", "content_type", "etag",
+        "external_bytes_persisted", "publication_authorized"
+      ],
+      "properties": {
+        "schema_version": {"const": "oc-efehr-trusted-acquisition-v1"},
+        "operation_id": {"const": "esrm20-exposure-vulnerability-mapping-v1"},
+        "source_issue": {"const": 283},
+        "dataset_id": {"const": "efehr.esrm20.risk-inputs.v1.0"},
+        "provider_host": {"const": "gitlab.seismo.ethz.ch"},
+        "project_id": {"const": 269},
+        "project_path": {"const": "efehr/esrm20"},
+        "commit_sha": {"const": "05f83bbc9df81d02ee8ddb1801d9d781355ce783"},
+        "repository_path": {"const": "Vulnerability/esrm20_exposure_vulnerability_mapping.csv"},
+        "requested_url": {"const": "https://gitlab.seismo.ethz.ch/api/v4/projects/269/repository/files/Vulnerability%2Fesrm20_exposure_vulnerability_mapping.csv/raw?ref=05f83bbc9df81d02ee8ddb1801d9d781355ce783"},
+        "final_url": {"const": "https://gitlab.seismo.ethz.ch/api/v4/projects/269/repository/files/Vulnerability%2Fesrm20_exposure_vulnerability_mapping.csv/raw?ref=05f83bbc9df81d02ee8ddb1801d9d781355ce783"},
+        "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+        "byte_count": {"type": "integer", "minimum": 1, "maximum": 1048576},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "content_type": {"type": ["string", "null"], "maxLength": 512},
+        "etag": {"type": ["string", "null"], "maxLength": 512},
+        "external_bytes_persisted": {"const": false},
+        "publication_authorized": {"const": false}
+      }
+    },
     "efehrKosovoTaxonomyIdentity": {
       "type": "object",
       "additionalProperties": false,
@@ -851,7 +892,8 @@
           {"not": {"required": ["efehr_eshm20_root_dependency_profile"]}},
           {"not": {"required": ["efehr_eshm20_first_order_receipts"]}},
           {"not": {"required": ["efehr_eshm20_gsim_resource_profile"]}},
-          {"not": {"required": ["efehr_kosovo_taxonomy_identity"]}}
+          {"not": {"required": ["efehr_kosovo_taxonomy_identity"]}},
+          {"not": {"required": ["esrm20_exposure_vulnerability_mapping_receipt"]}}
         ]}
       }}
     },
@@ -880,7 +922,7 @@
     {
       "if": {"properties": {"phase": {"const": "acquisition_receipt"}}, "required": ["phase"]},
       "then": {"properties": {
-        "action": {"enum": ["acquisition_receipt", "dwd_metadata_receipt", "efehr_readme_receipt", "efehr_eshm20_tree_metadata", "efehr_eshm20_root_config_receipt", "efehr_kosovo_exposure_receipt", "esrm20_event_hazard_group1_receipt", "esrm20_event_hazard_group2_receipt", "efehr_kosovo_exposure_profile", "efehr_eshm20_root_dependency_profile", "efehr_eshm20_first_order_receipts", "efehr_eshm20_gsim_resource_profile", "efehr_kosovo_taxonomy_identity"]},
+        "action": {"enum": ["acquisition_receipt", "dwd_metadata_receipt", "efehr_readme_receipt", "efehr_eshm20_tree_metadata", "efehr_eshm20_root_config_receipt", "efehr_kosovo_exposure_receipt", "esrm20_event_hazard_group1_receipt", "esrm20_event_hazard_group2_receipt", "efehr_kosovo_exposure_profile", "efehr_eshm20_root_dependency_profile", "efehr_eshm20_first_order_receipts", "efehr_eshm20_gsim_resource_profile", "efehr_kosovo_taxonomy_identity", "esrm20_exposure_vulnerability_mapping_receipt"]},
         "duplicate_result_comment_id": {"type": "null"}
       }}
     },
@@ -1145,6 +1187,28 @@
       "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "efehr_eshm20_gsim_resource_profile"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
       "then": {"properties": {
         "evidence": {"properties": {"efehr_eshm20_gsim_resource_profile": {"type": "null"}}},
+        "failure_class": {"const": "acquisition_failed"}
+      }}
+    },
+    {
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "esrm20_exposure_vulnerability_mapping_receipt"}}, "required": ["phase", "action"]},
+      "then": {"properties": {
+        "source_issue": {"const": 340},
+        "dataset_id": {"const": "efehr.esrm20.risk-inputs.v1.0"},
+        "evidence": {"required": ["esrm20_exposure_vulnerability_mapping_receipt"]}
+      }}
+    },
+    {
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "esrm20_exposure_vulnerability_mapping_receipt"}, "status": {"const": "pass"}}, "required": ["phase", "action", "status"]},
+      "then": {"properties": {
+        "evidence": {"properties": {"esrm20_exposure_vulnerability_mapping_receipt": {"$ref": "#/$defs/esrm20ExposureVulnerabilityMappingReceipt"}}},
+        "failure_class": {"type": "null"}
+      }}
+    },
+    {
+      "if": {"properties": {"phase": {"const": "acquisition_receipt"}, "action": {"const": "esrm20_exposure_vulnerability_mapping_receipt"}, "status": {"const": "blocked"}}, "required": ["phase", "action", "status"]},
+      "then": {"properties": {
+        "evidence": {"properties": {"esrm20_exposure_vulnerability_mapping_receipt": {"type": "null"}}},
         "failure_class": {"const": "acquisition_failed"}
       }}
     },
