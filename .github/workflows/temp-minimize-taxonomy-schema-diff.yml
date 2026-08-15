@@ -33,9 +33,7 @@ jobs:
           ACTION = 'efehr_kosovo_taxonomy_identity'
 
           def base_text(path: str) -> str:
-              return subprocess.check_output(
-                  ['git', 'show', f'{BASE}:{path}'], text=True
-              )
+              return subprocess.check_output(['git', 'show', f'{BASE}:{path}'], text=True)
 
           def replace_once(text: str, old: str, new: str, label: str) -> str:
               count = text.count(old)
@@ -51,39 +49,53 @@ jobs:
               lines = json.dumps(value, indent=2, ensure_ascii=False).splitlines()
               return f'    {json.dumps(name)}: {lines[0]}\n' + '\n'.join('    ' + line for line in lines[1:])
 
-          # Request schema: keep the trusted-main presentation and introduce only
-          # the exact semantic delta already proven by the fully green port.
           request_path = Path('schemas/agent-action-request-v1.schema.json')
           request_target = json.loads(request_path.read_text(encoding='utf-8'))
-          request_base = json.loads(base_text(str(request_path)))
-          request = base_text(str(request_path))
+          request_base_text = base_text(str(request_path))
+          request_base = json.loads(request_base_text)
+          request = request_base_text
 
-          old_comment_line = f'  "$comment": {json.dumps(request_base["$comment"])},'
-          new_comment_line = f'  "$comment": {json.dumps(request_target["$comment"])},'
-          request = replace_once(request, old_comment_line, new_comment_line, 'request comment')
-
-          old_enum_line = f'    "action": {json.dumps(request_base["properties"]["action"], separators=(",", ":"))},'
-          # Preserve the repository's compact list style rather than minifying separators.
-          old_enum_line = next(line for line in base_text(str(request_path)).splitlines() if line.strip().startswith('"action": {"enum":'))
+          request = replace_once(
+              request,
+              f'  "$comment": {json.dumps(request_base["$comment"])},',
+              f'  "$comment": {json.dumps(request_target["$comment"])},',
+              'request comment',
+          )
+          old_enum_line = next(
+              line for line in request_base_text.splitlines()
+              if line.strip().startswith('"action": {"enum":')
+          )
           new_enum_line = '    "action": {"enum": ' + json.dumps(request_target['properties']['action']['enum']) + '},'
           request = replace_once(request, old_enum_line, new_enum_line, 'request action enum')
 
-          taxonomy_request_rules = [
-              rule for rule in request_target['allOf']
+          taxonomy_request_indexes = [
+              index for index, rule in enumerate(request_target['allOf'])
               if rule.get('if', {}).get('properties', {}).get('action', {}).get('const') == ACTION
           ]
-          if len(taxonomy_request_rules) != 1:
+          if len(taxonomy_request_indexes) != 1:
               raise SystemExit('expected one taxonomy request rule')
-          suffix = '    }\n  ]\n}\n'
-          if not request.endswith(suffix):
-              raise SystemExit('unexpected request schema suffix')
-          request = request[:-len(suffix)] + '    },\n' + indented_json(taxonomy_request_rules[0], 4) + '\n  ]\n}\n'
+          taxonomy_index = taxonomy_request_indexes[0]
+          taxonomy_rule = request_target['allOf'][taxonomy_index]
+          if taxonomy_index >= len(request_target['allOf']) - 1:
+              raise SystemExit('taxonomy request rule unexpectedly has no following reviewed rule')
+          next_rule = request_target['allOf'][taxonomy_index + 1]
+          next_action = next_rule.get('if', {}).get('properties', {}).get('action', {}).get('const')
+          if not isinstance(next_action, str) or next_action == ACTION:
+              raise SystemExit('cannot identify stable following request-rule action')
+          next_anchor = (
+              '    {\n'
+              f'      "if": {{"properties": {{"action": {{"const": "{next_action}"}}}}, "required": ["action"]}},'
+          )
+          request = replace_once(
+              request,
+              next_anchor,
+              indented_json(taxonomy_rule, 4) + ',\n' + next_anchor,
+              'taxonomy request rule ordered insertion',
+          )
           if json.loads(request) != request_target:
               raise SystemExit('format-preserving request schema is not semantically identical to green target')
           request_path.write_text(request, encoding='utf-8')
 
-          # Result schema: same principle, but preserve each existing action branch
-          # byte-for-byte and append only the exact taxonomy evidence surface.
           result_path = Path('schemas/agent-action-result-v1.schema.json')
           result_target = json.loads(result_path.read_text(encoding='utf-8'))
           result_base_text = base_text(str(result_path))
@@ -96,7 +108,6 @@ jobs:
               f'  "$comment": {json.dumps(result_target["$comment"])},',
               'result comment',
           )
-
           enum_anchor = '"efehr_eshm20_gsim_resource_profile"]}'
           if result.count(enum_anchor) != 2:
               raise SystemExit(f'expected two result action enum anchors, found {result.count(enum_anchor)}')
@@ -122,19 +133,17 @@ jobs:
           taxonomy_def = result_target['$defs'].get('efehrKosovoTaxonomyIdentity')
           if taxonomy_def is None:
               raise SystemExit('taxonomy result definition missing from green target')
-          defs_suffix = '    }\n  },\n  "allOf": ['
           result = replace_once(
               result,
-              defs_suffix,
+              '    }\n  },\n  "allOf": [',
               '    },\n' + def_entry('efehrKosovoTaxonomyIdentity', taxonomy_def) + '\n  },\n  "allOf": [',
               'taxonomy definition insertion',
           )
 
-          gsim_guard = '          {"not": {"required": ["efehr_eshm20_gsim_resource_profile"]}}\n'
           result = replace_once(
               result,
-              gsim_guard,
-              '          {"not": {"required": ["efehr_eshm20_gsim_resource_profile"]}},\n'
+              '          {"not": {"required": ["efehr_eshm20_gsim_resource_profile"]}}\n',
+              '          {"not": {"required": ["efehr_eshm20_gsim_resource_profile"]}},\n',
               'request-validation guard comma',
           )
           result = replace_once(
@@ -156,7 +165,6 @@ jobs:
               raise SystemExit('unexpected result schema suffix')
           rendered_rules = ',\n'.join(indented_json(rule, 4) for rule in taxonomy_rules)
           result = result[:-len(result_suffix)] + '    },\n' + rendered_rules + '\n  ]\n}\n'
-
           if json.loads(result) != result_target:
               raise SystemExit('format-preserving result schema is not semantically identical to green target')
           result_path.write_text(result, encoding='utf-8')
