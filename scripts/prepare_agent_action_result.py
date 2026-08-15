@@ -36,6 +36,10 @@ try:
         Eshm20RootDependencyAcquisitionError,
         acquire_eshm20_root_dependencies,
     )
+    from scripts.acquire_eshm20_first_order_receipts import (
+        Eshm20FirstOrderReceiptError,
+        acquire_eshm20_first_order_receipts,
+    )
     from scripts.acquire_efehr_esrm20_event_hazard_receipts import (
         acquire_event_hazard_group1_receipt,
         acquire_event_hazard_group2_receipt,
@@ -55,6 +59,7 @@ try:
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION,
         EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,
         EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,
+        EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
         ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION,
         ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION,
@@ -82,6 +87,10 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         Eshm20RootDependencyAcquisitionError,
         acquire_eshm20_root_dependencies,
     )
+    from acquire_eshm20_first_order_receipts import (
+        Eshm20FirstOrderReceiptError,
+        acquire_eshm20_first_order_receipts,
+    )
     from acquire_efehr_esrm20_event_hazard_receipts import (
         acquire_event_hazard_group1_receipt,
         acquire_event_hazard_group2_receipt,
@@ -101,6 +110,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION,
         EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,
         EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,
+        EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
         ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION,
         ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION,
@@ -126,6 +136,7 @@ NETWORK_ACTIONS = frozenset(
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION,
         EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,
         EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,
+        EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
         ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION,
         ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION,
@@ -323,6 +334,8 @@ def _receipt_field(action: str) -> str:
         return "efehr_kosovo_exposure_profile"
     if action == EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION:
         return "efehr_eshm20_root_dependency_profile"
+    if action == EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION:
+        return "efehr_eshm20_first_order_receipts"
     if action == EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION:
         return "efehr_eshm20_root_config_receipt"
     if action == ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION:
@@ -394,6 +407,7 @@ def prepare_completed_result(
     kosovo_profile_acquirer: Callable[[], dict[str, Any]] = acquire_and_profile_kosovo_exposure,
     eshm20_root_config_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_root_config_receipt,
     eshm20_root_dependency_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_root_dependencies,
+    eshm20_first_order_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_first_order_receipts,
     event_hazard_group1_acquirer: Callable[[], dict[str, Any]] = acquire_event_hazard_group1_receipt,
     event_hazard_group2_acquirer: Callable[[], dict[str, Any]] = acquire_event_hazard_group2_receipt,
 ) -> dict[str, Any]:
@@ -427,6 +441,8 @@ def prepare_completed_result(
         selected_acquirer = kosovo_profile_acquirer
     elif request["action"] == EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION:
         selected_acquirer = eshm20_root_dependency_acquirer
+    elif request["action"] == EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION:
+        selected_acquirer = eshm20_first_order_acquirer
     elif request["action"] == EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION:
         selected_acquirer = eshm20_root_config_acquirer
     elif request["action"] == ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION:
@@ -461,7 +477,7 @@ def prepare_completed_result(
             receipt["profiled_at"] = utc_now()
     except (
         AcquisitionError, EfehrAcquisitionError, ExposureProfileError,
-        Eshm20RootDependencyAcquisitionError,
+        Eshm20RootDependencyAcquisitionError, Eshm20FirstOrderReceiptError,
     ) as exc:
         # The durable result carries only a closed failure class. The trusted
         # workflow log receives the bounded worker diagnostic for operators.
