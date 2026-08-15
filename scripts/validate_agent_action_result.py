@@ -92,6 +92,18 @@ try:
         SCHEMA_VERSION as EFEHR_ESHM20_ROOT_CONFIG_SCHEMA_VERSION,
         SOURCE_ISSUE as EFEHR_ESHM20_ROOT_CONFIG_SOURCE_ISSUE,
     )
+    from scripts.acquire_efehr_esrm20_event_hazard_receipts import (
+        COMMIT_SHA as ESRM20_EVENT_HAZARD_COMMIT_SHA,
+        DATASET_ID as ESRM20_EVENT_HAZARD_DATASET_ID,
+        GROUP1_OPERATION_ID as ESRM20_EVENT_HAZARD_GROUP1_OPERATION_ID,
+        GROUP1_REPOSITORY_PATH as ESRM20_EVENT_HAZARD_GROUP1_REPOSITORY_PATH,
+        GROUP2_OPERATION_ID as ESRM20_EVENT_HAZARD_GROUP2_OPERATION_ID,
+        GROUP2_REPOSITORY_PATH as ESRM20_EVENT_HAZARD_GROUP2_REPOSITORY_PATH,
+        MAX_CONFIG_BYTES as ESRM20_EVENT_HAZARD_MAX_BYTES,
+        PROJECT_ID as ESRM20_EVENT_HAZARD_PROJECT_ID,
+        SCHEMA_VERSION as ESRM20_EVENT_HAZARD_SCHEMA_VERSION,
+        SOURCE_ISSUE as ESRM20_EVENT_HAZARD_SOURCE_ISSUE,
+    )
     from scripts.efehr_gitlab_receipt import (
         PROJECTS as EFEHR_PROJECTS,
         PROVIDER_HOST as EFEHR_PROVIDER_HOST,
@@ -104,6 +116,7 @@ try:
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ISSUE as EFEHR_KOSOVO_ACTION_ISSUE,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE as EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE,
         EFEHR_README_RECEIPT_ISSUE as EFEHR_ACTION_ISSUE,
+        ESRM20_EVENT_HAZARD_RECEIPT_ISSUE as ESRM20_EVENT_HAZARD_ACTION_ISSUE,
     )
 except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     from agent_action_protocol import (
@@ -183,6 +196,18 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         SCHEMA_VERSION as EFEHR_ESHM20_ROOT_CONFIG_SCHEMA_VERSION,
         SOURCE_ISSUE as EFEHR_ESHM20_ROOT_CONFIG_SOURCE_ISSUE,
     )
+    from acquire_efehr_esrm20_event_hazard_receipts import (
+        COMMIT_SHA as ESRM20_EVENT_HAZARD_COMMIT_SHA,
+        DATASET_ID as ESRM20_EVENT_HAZARD_DATASET_ID,
+        GROUP1_OPERATION_ID as ESRM20_EVENT_HAZARD_GROUP1_OPERATION_ID,
+        GROUP1_REPOSITORY_PATH as ESRM20_EVENT_HAZARD_GROUP1_REPOSITORY_PATH,
+        GROUP2_OPERATION_ID as ESRM20_EVENT_HAZARD_GROUP2_OPERATION_ID,
+        GROUP2_REPOSITORY_PATH as ESRM20_EVENT_HAZARD_GROUP2_REPOSITORY_PATH,
+        MAX_CONFIG_BYTES as ESRM20_EVENT_HAZARD_MAX_BYTES,
+        PROJECT_ID as ESRM20_EVENT_HAZARD_PROJECT_ID,
+        SCHEMA_VERSION as ESRM20_EVENT_HAZARD_SCHEMA_VERSION,
+        SOURCE_ISSUE as ESRM20_EVENT_HAZARD_SOURCE_ISSUE,
+    )
     from efehr_gitlab_receipt import (
         PROJECTS as EFEHR_PROJECTS,
         PROVIDER_HOST as EFEHR_PROVIDER_HOST,
@@ -195,6 +220,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         EFEHR_KOSOVO_EXPOSURE_RECEIPT_ISSUE as EFEHR_KOSOVO_ACTION_ISSUE,
         EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE as EFEHR_ESHM20_ROOT_CONFIG_ACTION_ISSUE,
         EFEHR_README_RECEIPT_ISSUE as EFEHR_ACTION_ISSUE,
+        ESRM20_EVENT_HAZARD_RECEIPT_ISSUE as ESRM20_EVENT_HAZARD_ACTION_ISSUE,
     )
 
 REQUIRED_FIELDS = {
@@ -211,6 +237,12 @@ EFEHR_ESHM20_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_eshm20_tree_met
 EFEHR_KOSOVO_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {"efehr_kosovo_exposure_receipt"}
 EFEHR_ESHM20_ROOT_CONFIG_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {
     "efehr_eshm20_root_config_receipt"
+}
+ESRM20_EVENT_HAZARD_GROUP1_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {
+    "esrm20_event_hazard_group1_receipt"
+}
+ESRM20_EVENT_HAZARD_GROUP2_EVIDENCE_FIELDS = REQUEST_EVIDENCE_FIELDS | {
+    "esrm20_event_hazard_group2_receipt"
 }
 ACQUISITION_RECEIPT_FIELDS = {
     "schema_version", "dataset_id", "source_issue", "requested_url", "final_url",
@@ -253,10 +285,12 @@ EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_FIELDS = {
     "final_url", "retrieved_at", "byte_count", "sha256", "content_type", "etag",
     "external_bytes_persisted", "publication_authorized",
 }
+ESRM20_EVENT_HAZARD_RECEIPT_FIELDS = EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_FIELDS
 ALLOWED_ACTIONS = {
     "sample_audit", "acquisition_receipt", "dwd_metadata_receipt",
     "efehr_readme_receipt", "efehr_eshm20_tree_metadata",
     "efehr_kosovo_exposure_receipt", "efehr_eshm20_root_config_receipt",
+    "esrm20_event_hazard_group1_receipt", "esrm20_event_hazard_group2_receipt",
 }
 ALLOWED_PHASES = {"request_validation", "acquisition_receipt"}
 ALLOWED_STATUSES = {"pass", "duplicate", "blocked"}
@@ -686,6 +720,70 @@ def validate_efehr_eshm20_root_config_receipt(receipt: Any) -> dict[str, Any]:
     return receipt
 
 
+def validate_esrm20_event_hazard_receipt(receipt: Any, *, group: int) -> dict[str, Any]:
+    if group not in {1, 2}:
+        raise ResultError("ESRM20 event-hazard group is outside the closed action set")
+    prefix = f"esrm20_event_hazard_group{group}_receipt"
+    if type(receipt) is not dict:
+        raise ResultError(f"{prefix} must be a JSON object")
+    keys = set(receipt)
+    if keys != ESRM20_EVENT_HAZARD_RECEIPT_FIELDS:
+        raise ResultError(
+            f"{prefix} fields mismatch; missing={sorted(ESRM20_EVENT_HAZARD_RECEIPT_FIELDS - keys)}, "
+            f"unexpected={sorted(keys - ESRM20_EVENT_HAZARD_RECEIPT_FIELDS)}"
+        )
+    operation_id = (
+        ESRM20_EVENT_HAZARD_GROUP1_OPERATION_ID
+        if group == 1
+        else ESRM20_EVENT_HAZARD_GROUP2_OPERATION_ID
+    )
+    repository_path = (
+        ESRM20_EVENT_HAZARD_GROUP1_REPOSITORY_PATH
+        if group == 1
+        else ESRM20_EVENT_HAZARD_GROUP2_REPOSITORY_PATH
+    )
+    expected_project_path = str(EFEHR_PROJECTS[ESRM20_EVENT_HAZARD_PROJECT_ID]["project_path"])
+    exact_values = {
+        "schema_version": ESRM20_EVENT_HAZARD_SCHEMA_VERSION,
+        "operation_id": operation_id,
+        "source_issue": ESRM20_EVENT_HAZARD_SOURCE_ISSUE,
+        "dataset_id": ESRM20_EVENT_HAZARD_DATASET_ID,
+        "provider_host": EFEHR_PROVIDER_HOST,
+        "project_id": ESRM20_EVENT_HAZARD_PROJECT_ID,
+        "project_path": expected_project_path,
+        "commit_sha": ESRM20_EVENT_HAZARD_COMMIT_SHA,
+        "repository_path": repository_path,
+        "external_bytes_persisted": False,
+        "publication_authorized": False,
+    }
+    for field, expected in exact_values.items():
+        if type(receipt[field]) is not type(expected) or receipt[field] != expected:
+            raise ResultError(f"{prefix}.{field} does not match the frozen contract")
+    try:
+        target = validate_efehr_target(
+            source_issue=ESRM20_EVENT_HAZARD_SOURCE_ISSUE,
+            dataset_id=ESRM20_EVENT_HAZARD_DATASET_ID,
+            project_id=ESRM20_EVENT_HAZARD_PROJECT_ID,
+            commit_sha=ESRM20_EVENT_HAZARD_COMMIT_SHA,
+            repository_path=repository_path,
+        )
+        expected_url = efehr_raw_file_api_url(target)
+    except EfehrReceiptError as exc:
+        raise ResultError(f"{prefix} target binding is invalid: {exc}") from exc
+    for field in ("requested_url", "final_url"):
+        if type(receipt[field]) is not str or receipt[field] != expected_url:
+            raise ResultError(f"{prefix}.{field} does not match the frozen immutable target")
+    _utc_second(receipt["retrieved_at"], f"{prefix}.retrieved_at")
+    _positive_bounded_int(
+        receipt["byte_count"], "byte_count", ESRM20_EVENT_HAZARD_MAX_BYTES, prefix=prefix
+    )
+    if type(receipt["sha256"]) is not str or not DIGEST_RE.fullmatch(receipt["sha256"]):
+        raise ResultError(f"{prefix}.sha256 must be a lowercase SHA-256 digest")
+    for field in ("content_type", "etag"):
+        _bounded_header(receipt[field], field, prefix=prefix)
+    return receipt
+
+
 def _validate_request_evidence(evidence: Any) -> dict[str, Any]:
     if type(evidence) is not dict or set(evidence) != REQUEST_EVIDENCE_FIELDS:
         raise ResultError("evidence must be a closed request-validation evidence object")
@@ -705,6 +803,8 @@ def _validate_network_evidence(evidence: Any, *, receipt_field: str) -> dict[str
         "efehr_eshm20_tree_metadata": EFEHR_ESHM20_EVIDENCE_FIELDS,
         "efehr_kosovo_exposure_receipt": EFEHR_KOSOVO_EVIDENCE_FIELDS,
         "efehr_eshm20_root_config_receipt": EFEHR_ESHM20_ROOT_CONFIG_EVIDENCE_FIELDS,
+        "esrm20_event_hazard_group1_receipt": ESRM20_EVENT_HAZARD_GROUP1_EVIDENCE_FIELDS,
+        "esrm20_event_hazard_group2_receipt": ESRM20_EVENT_HAZARD_GROUP2_EVIDENCE_FIELDS,
     }
     expected_fields = expected_by_field.get(receipt_field)
     if expected_fields is None:
@@ -830,6 +930,26 @@ def validate_result(result: dict[str, Any]) -> dict[str, Any]:
             )
         receipt_field = "efehr_eshm20_root_config_receipt"
         receipt_validator = validate_efehr_eshm20_root_config_receipt
+    elif action == "esrm20_event_hazard_group1_receipt":
+        if (
+            result["source_issue"] != ESRM20_EVENT_HAZARD_ACTION_ISSUE
+            or result["dataset_id"] != ESRM20_EVENT_HAZARD_DATASET_ID
+        ):
+            raise ResultError(
+                "esrm20_event_hazard_group1_receipt result is outside the frozen issue/dataset boundary"
+            )
+        receipt_field = "esrm20_event_hazard_group1_receipt"
+        receipt_validator = lambda receipt: validate_esrm20_event_hazard_receipt(receipt, group=1)
+    elif action == "esrm20_event_hazard_group2_receipt":
+        if (
+            result["source_issue"] != ESRM20_EVENT_HAZARD_ACTION_ISSUE
+            or result["dataset_id"] != ESRM20_EVENT_HAZARD_DATASET_ID
+        ):
+            raise ResultError(
+                "esrm20_event_hazard_group2_receipt result is outside the frozen issue/dataset boundary"
+            )
+        receipt_field = "esrm20_event_hazard_group2_receipt"
+        receipt_validator = lambda receipt: validate_esrm20_event_hazard_receipt(receipt, group=2)
     else:
         raise ResultError("acquisition_receipt phase requires a closed network acquisition action")
     evidence = _validate_network_evidence(result["evidence"], receipt_field=receipt_field)
