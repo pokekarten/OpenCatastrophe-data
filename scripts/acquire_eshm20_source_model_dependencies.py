@@ -119,6 +119,47 @@ def _validate_frozen_inventory() -> frozenset[str]:
     return inventory
 
 
+def _validate_dependency_shape(dependency: object) -> parser.SourceModelDependency:
+    """Reject parser-return type confusion before ordering/comparison operations."""
+
+    if type(dependency) is not parser.SourceModelDependency:
+        raise Eshm20SourceModelDependencyError(
+            "source-model dependency parser returned an invalid item"
+        )
+    if type(dependency.resolved_path) is not str:
+        raise Eshm20SourceModelDependencyError(
+            "source-model dependency path has an invalid type"
+        )
+    if type(dependency.is_hdf5_companion) is not bool:
+        raise Eshm20SourceModelDependencyError(
+            "source-model dependency companion flag has an invalid type"
+        )
+    if type(dependency.origins) is not tuple or not dependency.origins:
+        raise Eshm20SourceModelDependencyError(
+            "source-model dependency must retain at least one declaring branch"
+        )
+    for origin in dependency.origins:
+        if type(origin) is not parser.LogicTreeDependencyOrigin:
+            raise Eshm20SourceModelDependencyError(
+                "source-model dependency origin has an invalid type"
+            )
+        if type(origin.uncertainty_type) is not str or type(origin.branch_id) is not str:
+            raise Eshm20SourceModelDependencyError(
+                "source-model dependency origin contains invalid identities"
+            )
+    return dependency
+
+
+def _dependency_order_key(
+    dependency: parser.SourceModelDependency,
+) -> tuple[str, bool, tuple[tuple[str, str], ...]]:
+    return (
+        dependency.resolved_path,
+        dependency.is_hdf5_companion,
+        tuple((origin.uncertainty_type, origin.branch_id) for origin in dependency.origins),
+    )
+
+
 def _serialize_dependencies(
     dependencies: object,
     *,
@@ -129,30 +170,18 @@ def _serialize_dependencies(
             "source-model dependency parser returned an invalid collection"
         )
 
-    expected_order = tuple(
-        sorted(
-            dependencies,
-            key=lambda item: (
-                getattr(item, "resolved_path", ""),
-                getattr(item, "is_hdf5_companion", False),
-                getattr(item, "origins", ()),
-            ),
-        )
-    )
-    if dependencies != expected_order:
+    typed_dependencies = tuple(_validate_dependency_shape(item) for item in dependencies)
+    expected_order = tuple(sorted(typed_dependencies, key=_dependency_order_key))
+    if typed_dependencies != expected_order:
         raise Eshm20SourceModelDependencyError(
             "source-model dependencies are not in canonical order"
         )
 
     seen_paths: set[str] = set()
     output: list[dict[str, Any]] = []
-    for dependency in dependencies:
-        if type(dependency) is not parser.SourceModelDependency:
-            raise Eshm20SourceModelDependencyError(
-                "source-model dependency parser returned an invalid item"
-            )
+    for dependency in typed_dependencies:
         path = dependency.resolved_path
-        if type(path) is not str or path not in inventory:
+        if path not in inventory:
             raise Eshm20SourceModelDependencyError(
                 "source-model dependency is absent from the frozen ESHM20 inventory"
             )
@@ -162,33 +191,23 @@ def _serialize_dependencies(
             )
         seen_paths.add(path)
 
-        if type(dependency.is_hdf5_companion) is not bool:
-            raise Eshm20SourceModelDependencyError(
-                "source-model dependency companion flag has an invalid type"
-            )
         if dependency.is_hdf5_companion or path.endswith(".hdf5"):
             raise Eshm20SourceModelDependencyError(
                 "source-model dependency invented an HDF5 companion absent from inventory"
             )
-        if type(dependency.origins) is not tuple or not dependency.origins:
-            raise Eshm20SourceModelDependencyError(
-                "source-model dependency must retain at least one declaring branch"
+        expected_origins = tuple(
+            sorted(
+                dependency.origins,
+                key=lambda origin: (origin.uncertainty_type, origin.branch_id),
             )
-        if dependency.origins != tuple(sorted(dependency.origins)):
+        )
+        if dependency.origins != expected_origins:
             raise Eshm20SourceModelDependencyError(
                 "source-model dependency origins are not in canonical order"
             )
 
         origins: list[dict[str, str]] = []
         for origin in dependency.origins:
-            if type(origin) is not parser.LogicTreeDependencyOrigin:
-                raise Eshm20SourceModelDependencyError(
-                    "source-model dependency origin has an invalid type"
-                )
-            if type(origin.uncertainty_type) is not str or type(origin.branch_id) is not str:
-                raise Eshm20SourceModelDependencyError(
-                    "source-model dependency origin contains invalid identities"
-                )
             if origin.uncertainty_type not in {"sourceModel", "extendModel"}:
                 raise Eshm20SourceModelDependencyError(
                     "source-model dependency origin widened parser semantics"
