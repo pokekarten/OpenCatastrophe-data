@@ -119,8 +119,22 @@ def _validate_frozen_inventory() -> frozenset[str]:
     return inventory
 
 
+def _require_safe_origin_identity(value: object, field: str) -> str:
+    """Require bounded textual identity before ordering or durable serialization."""
+
+    if type(value) is not str or not value or value != value.strip():
+        raise Eshm20SourceModelDependencyError(
+            f"source-model dependency {field} is empty or not already trimmed"
+        )
+    if any(ord(char) < 32 or ord(char) == 127 for char in value):
+        raise Eshm20SourceModelDependencyError(
+            f"source-model dependency {field} contains control characters"
+        )
+    return value
+
+
 def _validate_dependency_shape(dependency: object) -> parser.SourceModelDependency:
-    """Reject parser-return type confusion before ordering/comparison operations."""
+    """Reject parser-return type/identity confusion before ordering operations."""
 
     if type(dependency) is not parser.SourceModelDependency:
         raise Eshm20SourceModelDependencyError(
@@ -143,10 +157,8 @@ def _validate_dependency_shape(dependency: object) -> parser.SourceModelDependen
             raise Eshm20SourceModelDependencyError(
                 "source-model dependency origin has an invalid type"
             )
-        if type(origin.uncertainty_type) is not str or type(origin.branch_id) is not str:
-            raise Eshm20SourceModelDependencyError(
-                "source-model dependency origin contains invalid identities"
-            )
+        _require_safe_origin_identity(origin.uncertainty_type, "uncertainty type")
+        _require_safe_origin_identity(origin.branch_id, "branch id")
     return dependency
 
 
