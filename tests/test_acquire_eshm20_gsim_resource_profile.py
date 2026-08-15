@@ -151,7 +151,11 @@ class Eshm20GsimResourceProfileTests(unittest.TestCase):
     def test_receipt_identity_precedes_utf8_and_xml_inspection(self) -> None:
         raw = gmm_xml()
         count_patch, hash_patch = self.patched_identity(raw)
-        with count_patch, hash_patch, mock.patch.object(worker, "_parse_xml", wraps=worker._parse_xml) as parse:
+        with (
+            count_patch,
+            hash_patch,
+            mock.patch.object(worker, "_parse_xml", wraps=worker._parse_xml) as parse,
+        ):
             worker.extract_verified_gsim_resource_profile(raw)
             parse.assert_called_once()
             parse.reset_mock()
@@ -181,6 +185,7 @@ class Eshm20GsimResourceProfileTests(unittest.TestCase):
         coeff = by_key["coeff_file"]
         self.assertEqual(coeff["relative_path"], INVENTORY_RESOURCE)
         self.assertTrue(coeff["selected_prefix_inventory_member"])
+        self.assertFalse(coeff["comment_prefixed"])
         self.assertEqual(
             coeff["origins"],
             [
@@ -191,14 +196,39 @@ class Eshm20GsimResourceProfileTests(unittest.TestCase):
         table = by_key["secondary_table"]
         self.assertEqual(table["relative_path"], OUTSIDE_RESOURCE)
         self.assertFalse(table["selected_prefix_inventory_member"])
+        self.assertFalse(table["comment_prefixed"])
         self.assertFalse(any(item["argument_key"] == "ignored_file_extra" for item in resources))
 
     def test_similar_suffixes_are_ignored_but_exact_suffixes_are_detected(self) -> None:
         self.assertEqual(worker._resource_assignments("thing_file_extra = 'a.csv'"), ())
         self.assertEqual(
             worker._resource_assignments("thing_file = 'a.csv'\nthing_table = 'b.csv'"),
-            (("thing_file", "a.csv"), ("thing_table", "b.csv")),
+            (("thing_file", "a.csv", False), ("thing_table", "b.csv", False)),
         )
+
+    def test_openquake_314_comment_prefixed_resource_quirk_is_preserved(self) -> None:
+        self.assertEqual(
+            worker._resource_assignments("# coeff_file = 'commented.csv'"),
+            (("coeff_file", "commented.csv", True),),
+        )
+        raw = (
+            "<nrml><logicTree>"
+            "<logicTreeBranchSet branchSetID='bs1' uncertaintyType='gmpeModel'>"
+            "<logicTreeBranch branchID='b1'><uncertaintyModel>"
+            "# coeff_file = 'commented.csv'"
+            "</uncertaintyModel></logicTreeBranch>"
+            "</logicTreeBranchSet></logicTree></nrml>"
+        ).encode()
+        count_patch, hash_patch = self.patched_identity(raw)
+        with count_patch, hash_patch:
+            result = worker.extract_verified_gsim_resource_profile(raw)
+        self.assertEqual(result["resource_reference_count"], 1)
+        self.assertEqual(result["resources"][0]["argument_key"], "coeff_file")
+        self.assertTrue(result["resources"][0]["comment_prefixed"])
+
+    def test_multiple_comment_markers_fail_closed_instead_of_silent_underreporting(self) -> None:
+        with self.assertRaisesRegex(worker.Eshm20GsimResourceProfileError, "argument name"):
+            worker._resource_assignments("## coeff_file = 'commented.csv'")
 
     def test_nonliteral_or_ambiguous_resource_assignment_fails_closed(self) -> None:
         for model_text in (
@@ -277,7 +307,11 @@ class Eshm20GsimResourceProfileTests(unittest.TestCase):
         raw = gmm_xml()
 
         def wrong_url(request, timeout):
-            return FakeResponse(raw, request.full_url, final_url="https://gitlab.seismo.ethz.ch/unexpected")
+            return FakeResponse(
+                raw,
+                request.full_url,
+                final_url="https://gitlab.seismo.ethz.ch/unexpected",
+            )
 
         def wrong_status(request, timeout):
             return FakeResponse(raw, request.full_url, status=206)
