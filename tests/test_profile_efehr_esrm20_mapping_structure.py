@@ -131,7 +131,12 @@ class Esrm20MappingStructureTests(unittest.TestCase):
 
     def test_byte_identity_fails_before_decode_or_csv_detection(self) -> None:
         tampered = RAW[:-1] + bytes([RAW[-1] ^ 1])
-        with mock.patch.object(worker, "_detect_delimiter") as detect:
+        count_patch, hash_patch = self.identity_patches(RAW)
+        with (
+            count_patch,
+            hash_patch,
+            mock.patch.object(worker, "_detect_delimiter") as detect,
+        ):
             with self.assertRaisesRegex(
                 worker.Esrm20MappingStructureError, "SHA-256"
             ):
