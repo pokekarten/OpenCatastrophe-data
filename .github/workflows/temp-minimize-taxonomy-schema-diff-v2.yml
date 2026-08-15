@@ -1,0 +1,155 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Temporary minimize taxonomy schema diff v2
+
+on:
+  push:
+    branches:
+      - agent/363-taxonomy-action-port
+
+permissions:
+  contents: write
+
+jobs:
+  minimize:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Rebuild schemas from reviewed-main formatting
+        run: |
+          python - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          BASE = '4e7e869b7188fe204d2354454ff17e86c003f0cc'
+          ACTION = 'efehr_kosovo_taxonomy_identity'
+
+          def show(path):
+              return subprocess.check_output(['git', 'show', f'{BASE}:{path}'], text=True)
+
+          def one(text, old, new, label):
+              if text.count(old) != 1:
+                  raise SystemExit(f'{label}: expected one anchor, found {text.count(old)}')
+              return text.replace(old, new, 1)
+
+          def render(value, indent):
+              prefix = ' ' * indent
+              return '\n'.join(prefix + line for line in json.dumps(value, indent=2, ensure_ascii=False).splitlines())
+
+          def def_entry(name, value):
+              lines = json.dumps(value, indent=2, ensure_ascii=False).splitlines()
+              return f'    {json.dumps(name)}: {lines[0]}\n' + '\n'.join('    ' + line for line in lines[1:])
+
+          # Request contract.
+          req_path = Path('schemas/agent-action-request-v1.schema.json')
+          req_target = json.loads(req_path.read_text(encoding='utf-8'))
+          req_base_text = show(str(req_path))
+          req_base = json.loads(req_base_text)
+          req = req_base_text
+          req = one(req, f'  "$comment": {json.dumps(req_base["$comment"])},', f'  "$comment": {json.dumps(req_target["$comment"])},', 'request comment')
+          req_old_enum = '    "action": {"enum": ' + json.dumps(req_base['properties']['action']['enum']) + '},'
+          req_new_enum = '    "action": {"enum": ' + json.dumps(req_target['properties']['action']['enum']) + '},'
+          req = one(req, req_old_enum, req_new_enum, 'request enum')
+          req_indexes = [i for i, rule in enumerate(req_target['allOf']) if rule.get('if', {}).get('properties', {}).get('action', {}).get('const') == ACTION]
+          if len(req_indexes) != 1 or req_indexes[0] + 1 >= len(req_target['allOf']):
+              raise SystemExit('taxonomy request-rule position is not singular and bounded')
+          idx = req_indexes[0]
+          tax_req = req_target['allOf'][idx]
+          next_action = req_target['allOf'][idx + 1].get('if', {}).get('properties', {}).get('action', {}).get('const')
+          if not isinstance(next_action, str):
+              raise SystemExit('taxonomy request-rule next action missing')
+          anchor = '    {\n' + f'      "if": {{"properties": {{"action": {{"const": "{next_action}"}}}}, "required": ["action"]}},'
+          req = one(req, anchor, render(tax_req, 4) + ',\n' + anchor, 'taxonomy request insertion')
+          if json.loads(req) != req_target:
+              raise SystemExit('minimized request contract differs semantically from green target')
+          req_path.write_text(req, encoding='utf-8')
+
+          # Result contract.
+          res_path = Path('schemas/agent-action-result-v1.schema.json')
+          res_target = json.loads(res_path.read_text(encoding='utf-8'))
+          res_base_text = show(str(res_path))
+          res_base = json.loads(res_base_text)
+          res = res_base_text
+          res = one(res, f'  "$comment": {json.dumps(res_base["$comment"])},', f'  "$comment": {json.dumps(res_target["$comment"])},', 'result comment')
+          top_old = '    "action": {"enum": ' + json.dumps(res_base['properties']['action']['enum']) + '},'
+          top_new = '    "action": {"enum": ' + json.dumps(res_target['properties']['action']['enum']) + '},'
+          res = one(res, top_old, top_new, 'result top-level enum')
+
+          def phase_only(rule):
+              cond = rule.get('if', {})
+              return cond.get('properties') == {'phase': {'const': 'acquisition_receipt'}} and cond.get('required') == ['phase']
+
+          base_phase = [rule for rule in res_base['allOf'] if phase_only(rule)]
+          target_phase = [rule for rule in res_target['allOf'] if phase_only(rule)]
+          if len(base_phase) != 1 or len(target_phase) != 1:
+              raise SystemExit('acquisition phase enum guard not singular')
+          old_actions = base_phase[0]['then']['properties']['action']['enum']
+          new_actions = target_phase[0]['then']['properties']['action']['enum']
+          res = one(
+              res,
+              '        "action": {"enum": ' + json.dumps(old_actions) + '},',
+              '        "action": {"enum": ' + json.dumps(new_actions) + '},',
+              'result acquisition enum',
+          )
+
+          evidence = [item for item in res_target['properties']['evidence']['oneOf'] if ACTION in item.get('properties', {})]
+          if len(evidence) != 1:
+              raise SystemExit('taxonomy evidence variant not singular')
+          res = one(
+              res,
+              '        }\n      ]\n    },\n    "duplicate_result_comment_id"',
+              '        },\n' + render(evidence[0], 8) + '\n      ]\n    },\n    "duplicate_result_comment_id"',
+              'taxonomy evidence insertion',
+          )
+          tax_def = res_target['$defs'].get('efehrKosovoTaxonomyIdentity')
+          if tax_def is None:
+              raise SystemExit('taxonomy result definition missing')
+          res = one(
+              res,
+              '    }\n  },\n  "allOf": [',
+              '    },\n' + def_entry('efehrKosovoTaxonomyIdentity', tax_def) + '\n  },\n  "allOf": [',
+              'taxonomy result definition insertion',
+          )
+          res = one(
+              res,
+              '          {"not": {"required": ["efehr_eshm20_gsim_resource_profile"]}}\n',
+              '          {"not": {"required": ["efehr_eshm20_gsim_resource_profile"]}},\n',
+              'taxonomy request guard comma',
+          )
+          res = one(
+              res,
+              '          {"not": {"required": ["efehr_eshm20_gsim_resource_profile"]}},\n        ]',
+              '          {"not": {"required": ["efehr_eshm20_gsim_resource_profile"]}},\n          {"not": {"required": ["efehr_kosovo_taxonomy_identity"]}}\n        ]',
+              'taxonomy request guard insertion',
+          )
+          tax_rules = [rule for rule in res_target['allOf'] if rule.get('if', {}).get('properties', {}).get('action', {}).get('const') == ACTION]
+          if len(tax_rules) != 3:
+              raise SystemExit(f'expected three taxonomy result rules, found {len(tax_rules)}')
+          suffix = '    }\n  ]\n}\n'
+          if not res.endswith(suffix):
+              raise SystemExit('unexpected result schema suffix')
+          res = res[:-len(suffix)] + '    },\n' + ',\n'.join(render(rule, 4) for rule in tax_rules) + '\n  ]\n}\n'
+          if json.loads(res) != res_target:
+              raise SystemExit('minimized result contract differs semantically from green target')
+          res_path.write_text(res, encoding='utf-8')
+          PY
+      - name: Regenerate projections and run full definition of done
+        run: |
+          python scripts/schema_reference.py --write
+          python scripts/check_all.py
+          git diff --check
+      - name: Remove temporary minimizers and publish clean diff
+        run: |
+          git rm -f .github/workflows/temp-minimize-taxonomy-schema-diff.yml .github/workflows/temp-minimize-taxonomy-schema-diff-v2.yml
+          git diff --check
+          git config user.name 'OpenCatastrophe port bot'
+          git config user.email '287434260+pokekarten@users.noreply.github.com'
+          git add -A
+          git commit -m 'Minimize Kosovo taxonomy action schema diff'
+          git push origin HEAD:agent/363-taxonomy-action-port
