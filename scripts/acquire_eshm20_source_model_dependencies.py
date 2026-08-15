@@ -1,15 +1,15 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Profile dependencies from only the receipted ESHM20 source-model logic tree.
+"""Profile dependencies from only the canonical receipted ESHM20 source tree.
 
-Issue #361 already established the exact immutable byte identity of the one
-source-model logic-tree file selected by the verified ESHM20 root config. This
-worker re-materializes only that fixed provider object, verifies its exact byte
-count and SHA-256 before decoding, delegates interpretation to the existing
-reviewed offline source-model logic-tree parser, and returns bounded derived
-metadata. Provider bytes are never returned or persisted and callers cannot
-select provider/project/ref/path/parser/inventory or dependency expansion.
+Issue #361 established the exact immutable byte identity of the one source-model
+logic-tree file selected by the verified ESHM20 root config. This worker reuses
+that code-owned first-order capability as its only provider authority, verifies
+the exact receipted bytes before decoding, delegates interpretation to the
+existing reviewed offline source-model logic-tree parser, and returns bounded
+derived metadata. Provider bytes are never returned or persisted and callers
+cannot select provider/project/ref/path/parser/inventory or dependency expansion.
 """
 
 from __future__ import annotations
@@ -21,6 +21,9 @@ import urllib.request
 from typing import Any
 
 try:
+    from scripts import acquire_eshm20_first_order_receipts as first_order_authority
+    from scripts import openquake_source_model_logic_tree_dependencies as parser
+    from scripts import verify_eshm20_root_config_dependencies as root_bridge
     from scripts.acquire_efehr_gitlab_receipt import (
         EfehrAcquisitionError,
         TOTAL_DEADLINE_SECONDS,
@@ -34,9 +37,10 @@ try:
         raw_file_api_url,
         validate_target,
     )
-    from scripts import openquake_source_model_logic_tree_dependencies as parser
-    from scripts import verify_eshm20_root_config_dependencies as root_bridge
 except ModuleNotFoundError:  # pragma: no cover - direct script import path
+    import acquire_eshm20_first_order_receipts as first_order_authority
+    import openquake_source_model_logic_tree_dependencies as parser
+    import verify_eshm20_root_config_dependencies as root_bridge
     from acquire_efehr_gitlab_receipt import (
         EfehrAcquisitionError,
         TOTAL_DEADLINE_SECONDS,
@@ -50,31 +54,41 @@ except ModuleNotFoundError:  # pragma: no cover - direct script import path
         raw_file_api_url,
         validate_target,
     )
-    import openquake_source_model_logic_tree_dependencies as parser
-    import verify_eshm20_root_config_dependencies as root_bridge
 
-SCHEMA_VERSION = "oc-eshm20-source-model-dependency-profile-v1"
+SCHEMA_VERSION = "oc-eshm20-source-model-dependency-profile-v2"
 SOURCE_ISSUE = 281
 CONTROL_ISSUE = 367
 DATASET_ID = "efehr.eshm20"
-PROJECT_ID = 197
 PROJECT_PATH = "efehr/eshm20"
-COMMIT_SHA = "fbd334de68f85d72669f73fc5a314a113db67317"
-REPOSITORY_PATH = (
-    "oq_computational/oq_configuration_eshm20_v12e_region_main/"
-    "source_model_logic_tree_eshm20_model_v12e.xml"
+
+# Reuse the already-reviewed #361 first-order source-model capability instead of
+# declaring a second provider target. Identity, not merely value equality, binds
+# network authority to the exact code-owned DependencySpec selected by #353/#361.
+_CANONICAL_SOURCE_SPEC = first_order_authority._SOURCE_MODEL_LOGIC_TREE
+_CANONICAL_PROJECT_ID = first_order_authority.PROJECT_ID
+_CANONICAL_COMMIT_SHA = first_order_authority.COMMIT_SHA
+_CANONICAL_REPOSITORY_PATH = _CANONICAL_SOURCE_SPEC.repository_path
+_CANONICAL_EXPECTED_BYTE_COUNT = 17579
+_CANONICAL_EXPECTED_SHA256 = (
+    "97a37911f9eae73766f386686b112e5a4e111965da3e4e1543627c28d4201867"
 )
-EXPECTED_BYTE_COUNT = 17579
-EXPECTED_SHA256 = "97a37911f9eae73766f386686b112e5a4e111965da3e4e1543627c28d4201867"
+
+# Public aliases remain useful to review/tests. Production provider access is
+# built only from the private canonical bindings after the exact drift guard.
+PROJECT_ID = _CANONICAL_PROJECT_ID
+COMMIT_SHA = _CANONICAL_COMMIT_SHA
+REPOSITORY_PATH = _CANONICAL_REPOSITORY_PATH
+EXPECTED_BYTE_COUNT = _CANONICAL_EXPECTED_BYTE_COUNT
+EXPECTED_SHA256 = _CANONICAL_EXPECTED_SHA256
+
 PARSER_ID = (
     "scripts.openquake_source_model_logic_tree_dependencies."
     "extract_source_model_logic_tree_dependencies"
 )
-ROOT_DEPENDENCY_RESULT_COMMENT_ID = 5301726249
-ROOT_DEPENDENCY_SECTION = "calculation"
-ROOT_DEPENDENCY_OPTION = "source_model_logic_tree_file"
+ROOT_DEPENDENCY_RESULT_COMMENT_ID = first_order_authority.SELECTION_RESULT_COMMENT_ID
+ROOT_DEPENDENCY_SECTION = _CANONICAL_SOURCE_SPEC.parent_section
+ROOT_DEPENDENCY_OPTION = _CANONICAL_SOURCE_SPEC.parent_option
 FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID = 5301857400
-FIRST_ORDER_RECEIPT_RESULT_COMMENT_ID = 5301858821
 FIRST_ORDER_RECEIPT_RUN_ID = 31880089623
 FIRST_ORDER_RECEIPT_EXECUTION_SHA = "ab66e3e4c58c9b8f18587f1a8a51cf67cf9851b1"
 FIRST_ORDER_RECEIPT_RETRIEVED_AT = "2026-08-15T10:40:16Z"
@@ -85,19 +99,58 @@ class Eshm20SourceModelDependencyError(RuntimeError):
     """Raised when the fixed source-tree dependency profile cannot close safely."""
 
 
+def _require_canonical_target() -> first_order_authority.DependencySpec:
+    """Fail before provider work if source capability or public aliases drift."""
+
+    if first_order_authority._SOURCE_MODEL_LOGIC_TREE is not _CANONICAL_SOURCE_SPEC:
+        raise Eshm20SourceModelDependencyError(
+            "canonical #361 ESHM20 source-model capability identity drifted"
+        )
+    try:
+        authorized = first_order_authority._require_authorized_spec(
+            _CANONICAL_SOURCE_SPEC
+        )
+    except first_order_authority.Eshm20FirstOrderReceiptError as exc:
+        raise Eshm20SourceModelDependencyError(
+            "canonical #361 ESHM20 source-model capability is no longer authorized"
+        ) from exc
+    if authorized is not _CANONICAL_SOURCE_SPEC:
+        raise Eshm20SourceModelDependencyError(
+            "canonical #361 ESHM20 source-model capability identity is invalid"
+        )
+
+    exact_aliases = (
+        (PROJECT_ID, _CANONICAL_PROJECT_ID, "project id"),
+        (COMMIT_SHA, _CANONICAL_COMMIT_SHA, "commit"),
+        (REPOSITORY_PATH, _CANONICAL_REPOSITORY_PATH, "repository path"),
+        (
+            EXPECTED_BYTE_COUNT,
+            _CANONICAL_EXPECTED_BYTE_COUNT,
+            "expected byte count",
+        ),
+        (EXPECTED_SHA256, _CANONICAL_EXPECTED_SHA256, "expected SHA-256"),
+    )
+    for observed, expected, label in exact_aliases:
+        if type(observed) is not type(expected) or observed != expected:
+            raise Eshm20SourceModelDependencyError(
+                f"frozen ESHM20 source-model {label} drifted"
+            )
+    return _CANONICAL_SOURCE_SPEC
+
+
 def _verify_payload_identity(payload: bytes) -> str:
     if type(payload) is not bytes:
         raise Eshm20SourceModelDependencyError(
             "source-model logic-tree payload must be immutable bytes"
         )
-    if len(payload) != EXPECTED_BYTE_COUNT:
+    if len(payload) != _CANONICAL_EXPECTED_BYTE_COUNT:
         raise Eshm20SourceModelDependencyError(
-            "source-model logic-tree byte count does not match the trusted receipt"
+            "source-model logic-tree byte count does not match the trusted #361 receipt"
         )
     observed_sha256 = hashlib.sha256(payload).hexdigest()
-    if observed_sha256 != EXPECTED_SHA256:
+    if observed_sha256 != _CANONICAL_EXPECTED_SHA256:
         raise Eshm20SourceModelDependencyError(
-            "source-model logic-tree SHA-256 does not match the trusted receipt"
+            "source-model logic-tree SHA-256 does not match the trusted #361 receipt"
         )
     return observed_sha256
 
@@ -108,7 +161,7 @@ def _validate_frozen_inventory() -> frozenset[str]:
         raise Eshm20SourceModelDependencyError(
             "frozen ESHM20 provider inventory identity is invalid"
         )
-    if REPOSITORY_PATH not in inventory:
+    if _CANONICAL_REPOSITORY_PATH not in inventory:
         raise Eshm20SourceModelDependencyError(
             "source-model logic tree is absent from the frozen ESHM20 inventory"
         )
@@ -242,7 +295,7 @@ def _serialize_dependencies(
 
 
 def extract_verified_source_model_dependencies(payload: bytes) -> dict[str, Any]:
-    """Verify exact source-tree bytes, then derive bounded dependency metadata."""
+    """Verify exact #361 source-tree bytes, then derive bounded metadata."""
 
     observed_sha256 = _verify_payload_identity(payload)
     inventory = _validate_frozen_inventory()
@@ -256,7 +309,7 @@ def extract_verified_source_model_dependencies(payload: bytes) -> dict[str, Any]
     try:
         dependencies = parser.extract_source_model_logic_tree_dependencies(
             xml_text,
-            logic_tree_path=REPOSITORY_PATH,
+            logic_tree_path=_CANONICAL_REPOSITORY_PATH,
             repository_inventory=inventory,
         )
     except parser.OpenQuakeLogicTreeError as exc:
@@ -270,10 +323,10 @@ def extract_verified_source_model_dependencies(payload: bytes) -> dict[str, Any]
         "source_issue": SOURCE_ISSUE,
         "control_issue": CONTROL_ISSUE,
         "dataset_id": DATASET_ID,
-        "project_id": PROJECT_ID,
+        "project_id": _CANONICAL_PROJECT_ID,
         "project_path": PROJECT_PATH,
-        "commit_sha": COMMIT_SHA,
-        "repository_path": REPOSITORY_PATH,
+        "commit_sha": _CANONICAL_COMMIT_SHA,
+        "repository_path": _CANONICAL_REPOSITORY_PATH,
         "byte_count": len(payload),
         "sha256": observed_sha256,
         "parser": PARSER_ID,
@@ -282,7 +335,6 @@ def extract_verified_source_model_dependencies(payload: bytes) -> dict[str, Any]
         "root_dependency_section": ROOT_DEPENDENCY_SECTION,
         "root_dependency_option": ROOT_DEPENDENCY_OPTION,
         "first_order_receipt_request_comment_id": FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID,
-        "first_order_receipt_result_comment_id": FIRST_ORDER_RECEIPT_RESULT_COMMENT_ID,
         "first_order_receipt_run_id": FIRST_ORDER_RECEIPT_RUN_ID,
         "first_order_receipt_execution_sha": FIRST_ORDER_RECEIPT_EXECUTION_SHA,
         "first_order_receipt_retrieved_at": FIRST_ORDER_RECEIPT_RETRIEVED_AT,
@@ -296,15 +348,16 @@ def extract_verified_source_model_dependencies(payload: bytes) -> dict[str, Any]
 def acquire_eshm20_source_model_dependencies(
     *, opener: Any | None = None, monotonic: Any = time.monotonic
 ) -> dict[str, Any]:
-    """Re-materialize and profile only the fixed receipted ESHM20 source tree."""
+    """Re-materialize and profile only the fixed #361 source-model logic tree."""
 
+    source_spec = _require_canonical_target()
     try:
         target = validate_target(
             source_issue=SOURCE_ISSUE,
             dataset_id=DATASET_ID,
-            project_id=PROJECT_ID,
-            commit_sha=COMMIT_SHA,
-            repository_path=REPOSITORY_PATH,
+            project_id=_CANONICAL_PROJECT_ID,
+            commit_sha=_CANONICAL_COMMIT_SHA,
+            repository_path=source_spec.repository_path,
         )
     except EfehrReceiptError as exc:
         raise Eshm20SourceModelDependencyError(
@@ -316,7 +369,7 @@ def acquire_eshm20_source_model_dependencies(
         file_url,
         headers={
             "Accept": "application/xml,text/xml,text/plain;q=0.9,application/octet-stream;q=0.8",
-            "User-Agent": "OpenCatastrophe-ESHM20-source-model-dependency-profile-v1",
+            "User-Agent": "OpenCatastrophe-ESHM20-source-model-dependency-profile-v2",
         },
         method="GET",
     )
@@ -329,7 +382,7 @@ def acquire_eshm20_source_model_dependencies(
             raw = _read_bounded(
                 response,
                 deadline=deadline,
-                maximum=EXPECTED_BYTE_COUNT,
+                maximum=_CANONICAL_EXPECTED_BYTE_COUNT,
                 monotonic=monotonic,
             )
     except Eshm20SourceModelDependencyError:
