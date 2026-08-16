@@ -35,14 +35,33 @@ def _join_result():
             "reason_code": "exact_mapping_rows_valid",
             "targets": [{"risk_id": f"RISK-{index:03d}", "weight": "1"}],
         }
-        for index in range(86)
+        for index in range(subject.EXPECTED_TAXONOMY_COUNT)
     ]
     return {
         "schema_version": subject.join_kernel.SCHEMA_VERSION,
         "source_issue": 283,
         "semantic_decision_issue": 410,
-        "taxonomy_source": {"taxonomy_count": 86},
-        "mapping_source": {"headers": ["taxonomy", "conversion", "weight"]},
+        "taxonomy_source": {
+            "dataset_id": subject._EXPOSURE["dataset_id"],
+            "project_id": subject._EXPOSURE["project_id"],
+            "project_path": subject._EXPOSURE["project_path"],
+            "commit_sha": subject._EXPOSURE["commit_sha"],
+            "repository_path": subject._EXPOSURE["repository_path"],
+            "byte_count": subject._EXPOSURE["byte_count"],
+            "sha256": subject._EXPOSURE["sha256"],
+            "taxonomy_count": subject.EXPECTED_TAXONOMY_COUNT,
+            "taxonomy_value_set_sha256": subject.EXPECTED_TAXONOMY_VALUE_SET_SHA256,
+        },
+        "mapping_source": {
+            "dataset_id": subject._MAPPING["dataset_id"],
+            "project_id": subject._MAPPING["project_id"],
+            "project_path": subject._MAPPING["project_path"],
+            "commit_sha": subject._MAPPING["commit_sha"],
+            "repository_path": subject._MAPPING["repository_path"],
+            "byte_count": subject._MAPPING["byte_count"],
+            "sha256": subject._MAPPING["sha256"],
+            "headers": ["taxonomy", "conversion", "weight"],
+        },
         "rights": {
             "provider": subject.join_kernel.RIGHTS_PROVIDER,
             "license_id": subject.join_kernel.RIGHTS_LICENSE_ID,
@@ -51,7 +70,7 @@ def _join_result():
             "transformation_notice": subject.join_kernel.RIGHTS_TRANSFORMATION_NOTICE,
         },
         "classification_counts": {
-            "resolved": 86,
+            "resolved": subject.EXPECTED_TAXONOMY_COUNT,
             "unsupported": 0,
             "ambiguous": 0,
         },
@@ -151,6 +170,24 @@ class LedgerTests(unittest.TestCase):
         with self.assertRaises(subject.KosovoMappingJoinExecutionError):
             subject._parse_terminal_result(body, execution_sha=EXECUTION_SHA)
 
+    def test_trusted_result_record_count_tamper_fails_closed(self):
+        result = _execution_result()
+        result["join"]["records"].pop()
+        body = subject.RESULT_MARKER + "\n" + json.dumps(result, separators=(",", ":"))
+        with self.assertRaisesRegex(
+            subject.KosovoMappingJoinExecutionError, "record set"
+        ):
+            subject._parse_terminal_result(body, execution_sha=EXECUTION_SHA)
+
+    def test_trusted_result_source_identity_tamper_fails_closed(self):
+        result = _execution_result()
+        result["join"]["mapping_source"]["sha256"] = "0" * 64
+        body = subject.RESULT_MARKER + "\n" + json.dumps(result, separators=(",", ":"))
+        with self.assertRaisesRegex(
+            subject.KosovoMappingJoinExecutionError, "source identity drifted"
+        ):
+            subject._parse_terminal_result(body, execution_sha=EXECUTION_SHA)
+
 
 class ExecutionTests(unittest.TestCase):
     def test_duplicate_stops_before_provider_acquisition(self):
@@ -181,11 +218,13 @@ class ExecutionTests(unittest.TestCase):
                 execution_sha=EXECUTION_SHA,
             )
         self.assertEqual(result["status"], "pass")
-        self.assertEqual(result["join"]["classification_counts"]["resolved"], 86)
+        self.assertEqual(
+            result["join"]["classification_counts"]["resolved"],
+            subject.EXPECTED_TAXONOMY_COUNT,
+        )
         self.assertFalse(result["external_bytes_persisted"])
         self.assertFalse(result["publication_authorized"])
         self.assertFalse(result["model_use_authorized"])
-        self.assertNotIn("exposure", json.dumps(result))
         self.assertEqual(acquire.call_count, 2)
 
     def test_authority_rebinding_is_detected_before_network(self):
@@ -197,7 +236,10 @@ class ExecutionTests(unittest.TestCase):
 
     def test_result_size_limit_fails_closed(self):
         join = _join_result()
-        join["records"][0]["targets"][0]["risk_id"] = "R" * subject.MAX_RESULT_UTF8_BYTES
+        for index, record in enumerate(join["records"]):
+            record["targets"][0]["risk_id"] = (
+                f"R{index:03d}-" + "X" * 795
+            )
         with (
             mock.patch.object(subject, "_require_authority"),
             mock.patch.object(subject, "has_terminal_result", return_value=False),
