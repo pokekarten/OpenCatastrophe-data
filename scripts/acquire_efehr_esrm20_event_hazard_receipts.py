@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Trusted receipt workers for frozen ESRM20 v1.0 event-hazard configs.
+"""Trusted receipt workers for frozen ESRM20 v1.0 event-hazard inputs.
 
-The two public entry points expose no provider-target selector. Project, commit,
+The public entry points expose no provider-target selector. Project, commit,
 repository path, dataset identity and operation identity are fixed in trusted
 code. A successful receipt proves byte identity only; dependency closure and
 scientific interpretation remain post-receipt #281 work.
@@ -58,8 +58,14 @@ PROJECT_ID = 269
 COMMIT_SHA = "05f83bbc9df81d02ee8ddb1801d9d781355ce783"
 GROUP1_REPOSITORY_PATH = "Configuration_files/config_event_hazard_Group1.ini"
 GROUP2_REPOSITORY_PATH = "Configuration_files/config_event_hazard_Group2.ini"
+GSIM_LOGIC_TREE_REPOSITORY_PATH = "Hazard/gmpe_logic_tree_5br_slope_geology.xml"
+SOURCE_MODEL_LOGIC_TREE_REPOSITORY_PATH = (
+    "Hazard/source_model_logic_tree_eshm20_v12e_collapsed_risk_model.xml"
+)
 GROUP1_OPERATION_ID = "esrm20-event-hazard-group1-config-v1"
 GROUP2_OPERATION_ID = "esrm20-event-hazard-group2-config-v1"
+GSIM_LOGIC_TREE_OPERATION_ID = "esrm20-event-hazard-gsim-logic-tree-v1"
+SOURCE_MODEL_LOGIC_TREE_OPERATION_ID = "esrm20-event-hazard-collapsed-source-logic-tree-v1"
 MAX_CONFIG_BYTES = 1024 * 1024
 
 
@@ -88,7 +94,7 @@ def _acquire_config_receipt(
     request = urllib.request.Request(
         file_url,
         headers={
-            "Accept": "text/plain,text/x-ini;q=0.9,application/octet-stream;q=0.8",
+            "Accept": "application/xml,text/xml;q=0.9,text/plain;q=0.8,text/x-ini;q=0.7,application/octet-stream;q=0.6",
             "User-Agent": "OpenCatastrophe-EFEHR-acquisition-v1",
         },
         method="GET",
@@ -161,6 +167,32 @@ def acquire_event_hazard_group2_receipt(
     return _acquire_config_receipt(
         repository_path=GROUP2_REPOSITORY_PATH,
         operation_id=GROUP2_OPERATION_ID,
+        opener=opener,
+        now=now,
+        monotonic=monotonic,
+    )
+
+
+def acquire_event_hazard_gsim_logic_tree_receipt(
+    *, opener: Any | None = None, now: Any = utc_now, monotonic: Any = time.monotonic
+) -> dict[str, Any]:
+    """Receipt only the Group1/Group2 source-derived ESRM20 GSIM logic tree."""
+    return _acquire_config_receipt(
+        repository_path=GSIM_LOGIC_TREE_REPOSITORY_PATH,
+        operation_id=GSIM_LOGIC_TREE_OPERATION_ID,
+        opener=opener,
+        now=now,
+        monotonic=monotonic,
+    )
+
+
+def acquire_event_hazard_source_model_logic_tree_receipt(
+    *, opener: Any | None = None, now: Any = utc_now, monotonic: Any = time.monotonic
+) -> dict[str, Any]:
+    """Receipt only the source-derived collapsed ESRM20 source-model logic tree."""
+    return _acquire_config_receipt(
+        repository_path=SOURCE_MODEL_LOGIC_TREE_REPOSITORY_PATH,
+        operation_id=SOURCE_MODEL_LOGIC_TREE_OPERATION_ID,
         opener=opener,
         now=now,
         monotonic=monotonic,
