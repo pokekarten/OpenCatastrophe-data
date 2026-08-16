@@ -169,6 +169,26 @@ class MappingHeaderAcquisitionTests(unittest.TestCase):
                     worker.acquire_esrm20_mapping_headers()
                 private.assert_not_called()
 
+    def test_public_worker_rejects_acquisition_primitive_rebinding(self) -> None:
+        fake_reader = lambda *_args, **_kwargs: RAW
+        cases = (
+            ("_read_bounded", fake_reader, "production response reader drifted"),
+            ("raw_file_api_url", object(), "production URL builder drifted"),
+            ("validate_target", object(), "production target validator drifted"),
+        )
+        for field, replacement, message in cases:
+            with self.subTest(field=field):
+                with (
+                    mock.patch.object(worker, field, replacement),
+                    mock.patch.object(worker, "_acquire_esrm20_mapping_headers") as private,
+                    self.assertRaisesRegex(
+                        worker.Esrm20MappingHeaderAcquisitionError,
+                        message,
+                    ),
+                ):
+                    worker.acquire_esrm20_mapping_headers()
+                private.assert_not_called()
+
     def test_private_worker_returns_only_bounded_header_evidence(self) -> None:
         captured: list[bytes] = []
         digest = hashlib.sha256(RAW).hexdigest()
