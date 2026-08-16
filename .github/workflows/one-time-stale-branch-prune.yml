@@ -1,0 +1,61 @@
+name: One-time stale branch prune
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Delete only branches with zero commits ahead of main
+        shell: bash
+        run: |
+          set -euo pipefail
+          branches=(
+            'agent/131-gem-vulnerability-landscape'
+            'agent/136-coastal-extremes-landscape'
+            'agent/151-integrator-takeover-refresh-work'
+            'agent/173-smithsonian-gvp-v540-access'
+            'agent/196-schema-paired-views'
+            'agent/202-noaa-ndbc-dart-sync-0226'
+            'agent/211-dwd-metadata-receipt'
+            'agent/286-consumer-cache-impl'
+            'agent/319-openquake-smlt-dependencies-fix-prep'
+            'agent/328-kosovo-action-wiring-v2'
+            'agent/340-esrm20-mapping-receipt-action'
+            'agent/367-eshm20-source-tree-profile'
+            'agent/377-taxonomy-identity-action'
+            'agent/410-final'
+            'agent/410-headers'
+            'agent/410-mapping-header-disclosure-pr'
+            'agent/410-mapping-header-disclosure-ready'
+            'agent/410-mapping-header-disclosure-temp'
+            'agent/410-mapping-header-disclosure-work'
+            'agent/410-pr'
+            'agent/417-hesa-grouping-semantics'
+            'do-not-use'
+            'noop'
+            'noop-should-not-create'
+            'science/118-esm3-current-main'
+          )
+
+          for branch in "${branches[@]}"; do
+            if ! gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${branch}" >/dev/null 2>&1; then
+              echo "already absent: ${branch}"
+              continue
+            fi
+            ahead="$(gh api "repos/${GITHUB_REPOSITORY}/compare/main...${branch}" --jq '.ahead_by')"
+            if [[ "$ahead" != "0" ]]; then
+              echo "REFUSE: ${branch} is ${ahead} commit(s) ahead of main" >&2
+              exit 1
+            fi
+            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch}"
+            echo "deleted ${branch}"
+          done
