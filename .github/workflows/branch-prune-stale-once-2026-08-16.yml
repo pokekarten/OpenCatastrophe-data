@@ -1,0 +1,78 @@
+name: One-time stale branch audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/branch-prune-stale-once-2026-08-16.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+  issues: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Identify stale inactive branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          AUDIT_ISSUE: "438"
+          STALE_HOURS: "72"
+          DRY_RUN: "true"
+        shell: bash
+        run: |
+          set -euo pipefail
+          owner="${REPO%%/*}"
+          now_epoch="$(date -u +%s)"
+          : > /tmp/candidates.tsv
+          : > /tmp/preserved.tsv
+          gh api --paginate "/repos/$REPO/branches?per_page=100" --jq '.[] | [.name, .commit.sha, .protected] | @tsv' > /tmp/branches.tsv
+          while IFS=$'\t' read -r branch sha protected; do
+            if [[ "$branch" == "$DEFAULT_BRANCH" || "$protected" == "true" ]]; then
+              printf '%s\t%s\n' "$branch" "default-or-protected" >> /tmp/preserved.tsv
+              continue
+            fi
+            open_count="$(gh api -X GET "/repos/$REPO/pulls" -f state=open -f "head=$owner:$branch" -f per_page=100 --jq 'length')"
+            if [[ "$open_count" != "0" ]]; then
+              printf '%s\t%s\n' "$branch" "open-pr" >> /tmp/preserved.tsv
+              continue
+            fi
+            committed_at="$(gh api "/repos/$REPO/commits/$sha" --jq '.commit.committer.date')"
+            commit_epoch="$(date -u -d "$committed_at" +%s)"
+            age_hours="$(( (now_epoch - commit_epoch) / 3600 ))"
+            if (( age_hours < STALE_HOURS )); then
+              printf '%s\t%s\n' "$branch" "recent-${age_hours}h" >> /tmp/preserved.tsv
+              continue
+            fi
+            branch_enc="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$branch")"
+            current_sha="$(gh api "/repos/$REPO/branches/$branch_enc" --jq '.commit.sha' 2>/dev/null || true)"
+            current_open_count="$(gh api -X GET "/repos/$REPO/pulls" -f state=open -f "head=$owner:$branch" -f per_page=100 --jq 'length')"
+            if [[ -z "$current_sha" || "$current_sha" != "$sha" || "$current_open_count" != "0" ]]; then
+              printf '%s\t%s\n' "$branch" "race-or-drift" >> /tmp/preserved.tsv
+              continue
+            fi
+            printf '%s\t%s\t%s\t%sh\n' "$branch" "$sha" "$committed_at" "$age_hours" >> /tmp/candidates.tsv
+          done < /tmp/branches.tsv
+
+          count="$(wc -l < /tmp/candidates.tsv | tr -d ' ')"
+          echo "STALE_CANDIDATES=$count"
+          cat /tmp/candidates.tsv
+          {
+            echo "# Stale branch audit"
+            echo
+            echo "Policy: no open PR, unprotected, >= ${STALE_HOURS}h since head commit."
+            echo "Dry run: $DRY_RUN"
+            echo "Candidates: $count"
+            echo
+            cat /tmp/candidates.tsv
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ -s /tmp/candidates.tsv ]]; then
+            body="$(printf 'Dry-run candidates under the 72-hour inactive policy:\n\n```text\n'; cat /tmp/candidates.tsv; printf '\n```\n')"
+            gh issue comment "$AUDIT_ISSUE" --repo "$REPO" --body "$body"
+          fi
