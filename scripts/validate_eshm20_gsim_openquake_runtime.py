@@ -324,6 +324,11 @@ def _evaluate_verified_payload(
             "commit": OPENQUAKE_COMMIT,
             "version": OPENQUAKE_VERSION,
         },
+        # Bind the complete already-validated fingerprint evidence into this
+        # result. This is deliberately the validator's bounded public output,
+        # not the caller's raw input object, so a later receipt can reproduce
+        # exactly which Python/platform/package/container observation passed.
+        "reference_runtime_fingerprint": fingerprint,
         "branch_count": len(records),
         "branches": records,
         "unique_resolved_gsim_classes": sorted(resolved_classes),
