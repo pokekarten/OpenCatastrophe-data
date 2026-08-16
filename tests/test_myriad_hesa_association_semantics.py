@@ -139,7 +139,7 @@ class MyriadHesaAssociationSemanticTests(unittest.TestCase):
         self.assertEqual(result.event_sets, ())
         self.assertEqual(result.unassociated_event_ids, ("A", "B"))
 
-    def test_transitive_event_set_preserves_direct_edge_semantics(self) -> None:
+    def test_transitive_chain_does_not_form_three_event_group(self) -> None:
         events = (
             event("A", "2020-01-01T00:00:00Z", "2020-01-04T00:00:00Z"),
             event("B", "2020-01-01T00:00:00Z", "2020-01-04T00:00:00Z"),
@@ -160,8 +160,48 @@ class MyriadHesaAssociationSemanticTests(unittest.TestCase):
                 AssociationEdge("B", "C", 0, False),
             ),
         )
+        self.assertEqual(result.event_sets, (("A", "B"), ("B", "C")))
+        self.assertNotIn(("A", "B", "C"), result.event_sets)
+        self.assertEqual(result.unassociated_event_ids, ())
+
+    def test_pairwise_complete_triangle_forms_three_event_group(self) -> None:
+        events = (
+            event("A", "2020-01-01T00:00:00Z", "2020-01-04T00:00:00Z"),
+            event("B", "2020-01-01T00:00:00Z", "2020-01-04T00:00:00Z"),
+            event("C", "2020-01-01T00:00:00Z", "2020-01-04T00:00:00Z"),
+        )
+        result = associate_events(
+            events,
+            (
+                PairEvidence("A", "B", True),
+                PairEvidence("A", "C", True),
+                PairEvidence("B", "C", True),
+            ),
+        )
         self.assertEqual(result.event_sets, (("A", "B", "C"),))
-        self.assertNotIn(AssociationEdge("A", "C", 0, False), result.direct_edges)
+        self.assertEqual(len(result.direct_edges), 3)
+        self.assertEqual(result.unassociated_event_ids, ())
+
+    def test_overlapping_maximal_groups_remain_separate(self) -> None:
+        events = tuple(
+            event(name, "2020-01-01T00:00:00Z", "2020-01-04T00:00:00Z")
+            for name in ("A", "B", "C", "D")
+        )
+        result = associate_events(
+            events,
+            (
+                PairEvidence("A", "B", True),
+                PairEvidence("A", "C", True),
+                PairEvidence("A", "D", False),
+                PairEvidence("B", "C", True),
+                PairEvidence("B", "D", True),
+                PairEvidence("C", "D", True),
+            ),
+        )
+        self.assertEqual(
+            result.event_sets,
+            (("A", "B", "C"), ("B", "C", "D")),
+        )
 
     def test_input_and_evidence_order_are_deterministic(self) -> None:
         events = (
@@ -177,6 +217,7 @@ class MyriadHesaAssociationSemanticTests(unittest.TestCase):
         first = associate_events(events, evidence)
         second = associate_events(tuple(reversed(events)), tuple(reversed(evidence)))
         self.assertEqual(first, second)
+        self.assertEqual(first.event_sets, (("A", "B"), ("B", "C")))
 
     def test_pair_and_event_evidence_fail_closed(self) -> None:
         events = (
@@ -261,6 +302,10 @@ class MyriadHesaAssociationSemanticTests(unittest.TestCase):
         self.assertEqual(result.input_kind, "fixture")
         self.assertEqual(result.scientific_role, "benchmark")
         self.assertEqual(result.semantic_boundary, "association_not_causality")
+        self.assertEqual(
+            result.grouping_semantics,
+            "pairwise_complete_maximal_groups",
+        )
         self.assertEqual(result.reference_repository, "judithclaassen/MYRIAD-HESA")
         self.assertEqual(
             result.reference_commit,
