@@ -24,9 +24,15 @@ except ModuleNotFoundError:  # pragma: no cover - direct script import path
     import profile_efehr_esrm20_mapping_structure as mapping_structure
 
 
-SCHEMA_VERSION = "oc-esrm20-mapping-header-disclosure-v1"
-DECISION_ISSUE = 410
-DISCLOSURE_SCOPE = "exact_header_strings_only"
+_CANONICAL_SCHEMA_VERSION = "oc-esrm20-mapping-header-disclosure-v1"
+_CANONICAL_DECISION_ISSUE = 410
+_CANONICAL_DISCLOSURE_SCOPE = "exact_header_strings_only"
+
+# Review/back-compat aliases only. Production serialization uses the private
+# canonical values and alias drift fails before the structure profiler runs.
+SCHEMA_VERSION = _CANONICAL_SCHEMA_VERSION
+DECISION_ISSUE = _CANONICAL_DECISION_ISSUE
+DISCLOSURE_SCOPE = _CANONICAL_DISCLOSURE_SCOPE
 
 _STRUCTURE_PROFILER = mapping_structure.profile_verified_mapping_bytes
 _EXPECTED_STRUCTURE_SCHEMA = "oc-esrm20-mapping-structure-profile-v0"
@@ -34,6 +40,19 @@ _EXPECTED_STRUCTURE_SCHEMA = "oc-esrm20-mapping-structure-profile-v0"
 
 class MappingHeaderDisclosureError(RuntimeError):
     """Raised when bounded exact-header disclosure cannot be proven safely."""
+
+
+def _require_canonical_aliases() -> None:
+    aliases = (
+        (SCHEMA_VERSION, _CANONICAL_SCHEMA_VERSION, "schema version"),
+        (DECISION_ISSUE, _CANONICAL_DECISION_ISSUE, "decision issue"),
+        (DISCLOSURE_SCOPE, _CANONICAL_DISCLOSURE_SCOPE, "disclosure scope"),
+    )
+    for observed, expected, label in aliases:
+        if type(observed) is not type(expected) or observed != expected:
+            raise MappingHeaderDisclosureError(
+                f"mapping header disclosure {label} drifted"
+            )
 
 
 def _length_prefixed_sha256(values: Sequence[str]) -> str:
@@ -186,9 +205,8 @@ def _disclose_headers(
     if type(raw) is not bytes:
         raise MappingHeaderDisclosureError("mapping input must be bytes")
 
-    # This call is deliberately first: production therefore inherits #407's
-    # exact byte-count/SHA check and complete CSV validation before this module
-    # decodes or exposes a single literal.
+    # This call is deliberately first for byte/content work: production checks
+    # this helper's own canonical aliases before entering this private function.
     try:
         structure = structure_profiler(raw)
     except Exception as exc:
@@ -200,8 +218,8 @@ def _disclose_headers(
     headers = _extract_header(raw, profile)
 
     return {
-        "schema_version": SCHEMA_VERSION,
-        "decision_issue": DECISION_ISSUE,
+        "schema_version": _CANONICAL_SCHEMA_VERSION,
+        "decision_issue": _CANONICAL_DECISION_ISSUE,
         "source_issue": structure["source_issue"],
         "profile_issue": structure["profile_issue"],
         "dataset_id": structure["dataset_id"],
@@ -217,7 +235,7 @@ def _disclose_headers(
         "column_count": profile["column_count"],
         "ordered_header_sha256": profile["ordered_header_sha256"],
         "headers": headers,
-        "disclosure_scope": DISCLOSURE_SCOPE,
+        "disclosure_scope": _CANONICAL_DISCLOSURE_SCOPE,
         "header_strings_returned": True,
         "cell_values_returned": False,
         "raw_rows_returned": False,
@@ -235,6 +253,7 @@ def _disclose_headers(
 def disclose_verified_mapping_headers(raw: bytes) -> dict[str, Any]:
     """Disclose only headers from the exact mapping identity already frozen by #340."""
 
+    _require_canonical_aliases()
     if mapping_structure.profile_verified_mapping_bytes is not _STRUCTURE_PROFILER:
         raise MappingHeaderDisclosureError(
             "mapping structure profiler identity drifted"
