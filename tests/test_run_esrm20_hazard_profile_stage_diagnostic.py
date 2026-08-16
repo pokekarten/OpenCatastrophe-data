@@ -44,7 +44,7 @@ class HazardProfileStageDiagnosticTests(unittest.TestCase):
         self.assertNotIn("model.xml", json.dumps(result))
         self.assertNotIn("BooreAtkinson2008", json.dumps(result))
 
-    def test_source_and_gsim_failures_are_distinguished(self) -> None:
+    def test_expected_and_unexpected_parser_failures_are_content_free(self) -> None:
         with mock.patch.object(
             subject,
             "extract_source_model_logic_tree_dependencies",
@@ -66,7 +66,7 @@ class HazardProfileStageDiagnosticTests(unittest.TestCase):
         ), mock.patch.object(
             subject.gsim_identity,
             "_profile_xml_text",
-            side_effect=subject.gsim_identity.Eshm20GsimIdentityProfileError("secret gsim content"),
+            side_effect=RuntimeError("unexpected secret gsim content"),
         ):
             result = subject.diagnose_texts(source_text="x", gsim_text="y")
         self.assertTrue(result["source_parser_pass"])
@@ -93,6 +93,66 @@ class HazardProfileStageDiagnosticTests(unittest.TestCase):
         self.assertFalse(result["external_bytes_persisted"])
         self.assertFalse(result["publication_authorized"])
         self.assertFalse(result["model_use_authorized"])
+
+    def test_acquisition_failures_are_stage_specific_and_atomic(self) -> None:
+        with mock.patch.object(
+            subject.subject,
+            "_acquire_exact_bytes",
+            side_effect=subject.EfehrAcquisitionError("secret provider error"),
+        ):
+            result = subject.run_diagnostic(execution_sha=EXECUTION_SHA)
+        self.assertEqual(result["failure_class"], "gsim_acquisition_failure")
+        self.assertIsNone(result["diagnostic"])
+        self.assertNotIn("secret", json.dumps(result))
+
+        with mock.patch.object(
+            subject.subject,
+            "_acquire_exact_bytes",
+            side_effect=[b"<nrml/>", subject.EfehrAcquisitionError("secret source error")],
+        ):
+            result = subject.run_diagnostic(execution_sha=EXECUTION_SHA)
+        self.assertEqual(result["failure_class"], "source_acquisition_failure")
+        self.assertIsNone(result["diagnostic"])
+        self.assertNotIn("secret", json.dumps(result))
+
+    def test_receipt_verification_and_runtime_failures_are_stage_specific(self) -> None:
+        with mock.patch.object(
+            subject.subject,
+            "_acquire_exact_bytes",
+            side_effect=subject.subject.HazardLogicTreeProfileActionError("secret identity"),
+        ):
+            result = subject.run_diagnostic(execution_sha=EXECUTION_SHA)
+        self.assertEqual(result["failure_class"], "gsim_receipt_verification_failure")
+        self.assertIsNone(result["diagnostic"])
+
+        with mock.patch.object(
+            subject.subject,
+            "_acquire_exact_bytes",
+            side_effect=[b"<nrml/>", RuntimeError("secret runtime")],
+        ):
+            result = subject.run_diagnostic(execution_sha=EXECUTION_SHA)
+        self.assertEqual(result["failure_class"], "source_runtime_failure")
+        self.assertIsNone(result["diagnostic"])
+        self.assertNotIn("secret", json.dumps(result))
+
+    def test_decode_failures_are_stage_specific(self) -> None:
+        with mock.patch.object(
+            subject.subject,
+            "_acquire_exact_bytes",
+            side_effect=[b"\xff", b"<nrml/>"],
+        ):
+            result = subject.run_diagnostic(execution_sha=EXECUTION_SHA)
+        self.assertEqual(result["failure_class"], "gsim_decode_failure")
+        self.assertIsNone(result["diagnostic"])
+
+        with mock.patch.object(
+            subject.subject,
+            "_acquire_exact_bytes",
+            side_effect=[b"<nrml/>", b"\xff"],
+        ):
+            result = subject.run_diagnostic(execution_sha=EXECUTION_SHA)
+        self.assertEqual(result["failure_class"], "source_decode_failure")
+        self.assertIsNone(result["diagnostic"])
 
 
 if __name__ == "__main__":
