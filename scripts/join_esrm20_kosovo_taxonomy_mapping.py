@@ -30,6 +30,7 @@ SCHEMA_VERSION = "oc-esrm20-kosovo-taxonomy-mapping-join-v1"
 SOURCE_ISSUE = 283
 DECISION_ISSUE = 410
 EXPECTED_MAPPING_HEADER = ("taxonomy", "conversion", "weight")
+OPENQUAKE_WEIGHT_PRECISION = Decimal("1E-7")
 
 # Bind the production path to the exact object already receipted/profiled.
 _MAPPING_BYTE_COUNT = 83_585
@@ -179,12 +180,13 @@ def _join_exact_taxonomies(
         weights = [_weight(weight) for _, weight in rows]
         if any(weight is None for weight in weights):  # defensive; checked above
             raise KosovoMappingJoinError("weight validation became inconsistent")
-        if sum(weights, Decimal(0)) != Decimal(1):
+        weight_error = abs(sum(weights, Decimal(0)) - Decimal(1))
+        if weight_error > OPENQUAKE_WEIGHT_PRECISION:
             result.append(
                 {
                     "taxonomy": taxonomy,
                     "status": "ambiguous",
-                    "reason_code": "weights_do_not_sum_to_one",
+                    "reason_code": "weights_outside_openquake_precision",
                     "targets": [],
                 }
             )
@@ -267,7 +269,7 @@ def join_verified_kosovo_taxonomy_mapping(
         "taxonomy_matching": "exact_literal_equality_only",
         "normalization_applied": False,
         "wildcard_or_fallback_matching_applied": False,
-        "mapping_weight_rule": "positive_finite_decimal_sum_exactly_one",
+        "mapping_weight_rule": "positive_finite_decimal_sum_within_openquake_1e-7",
         "vulnerability_file_selection_authorized": False,
         "raw_mapping_rows_returned": False,
         "external_bytes_persisted": False,
