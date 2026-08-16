@@ -23,6 +23,7 @@ EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION = "efehr_kosovo_exposure_receipt"
 EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION = "efehr_kosovo_exposure_profile"
 EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION = "efehr_kosovo_taxonomy_identity"
 ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION = "esrm20_exposure_vulnerability_mapping_receipt"
+ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION = "esrm20_exposure_vulnerability_mapping_headers"
 EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION = "efehr_eshm20_root_dependency_profile"
 EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION = "efehr_eshm20_first_order_receipts"
 EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION = "efehr_eshm20_gsim_resource_profile"
@@ -39,6 +40,7 @@ EFEHR_KOSOVO_EXPOSURE_RECEIPT_ISSUE = 328
 EFEHR_KOSOVO_EXPOSURE_PROFILE_ISSUE = 351
 EFEHR_KOSOVO_TAXONOMY_IDENTITY_ISSUE = 363
 ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ISSUE = 340
+ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ISSUE = 410
 EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ISSUE = 353
 EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ISSUE = 361
 EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ISSUE = 376
@@ -54,6 +56,7 @@ EFEHR_KOSOVO_EXPOSURE_RECEIPT_DATASET_ID = EFEHR_README_RECEIPT_DATASET_ID
 EFEHR_KOSOVO_EXPOSURE_PROFILE_DATASET_ID = EFEHR_README_RECEIPT_DATASET_ID
 EFEHR_KOSOVO_TAXONOMY_IDENTITY_DATASET_ID = EFEHR_README_RECEIPT_DATASET_ID
 ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_DATASET_ID = "efehr.esrm20.risk-inputs.v1.0"
+ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_DATASET_ID = ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_DATASET_ID
 EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_DATASET_ID = EFEHR_ESHM20_TREE_METADATA_DATASET_ID
 EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_DATASET_ID = EFEHR_ESHM20_TREE_METADATA_DATASET_ID
 EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_DATASET_ID = EFEHR_ESHM20_TREE_METADATA_DATASET_ID
@@ -71,6 +74,7 @@ ALLOWED_ACTIONS = {
     EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,
     EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,
     ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION,
+    ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION,
     EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,
     EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION,
     EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION,
@@ -185,79 +189,62 @@ def validate_request(request: dict[str, Any], *, expected_issue: int | None = No
         if request["issue"] != EFEHR_ESHM20_TREE_METADATA_ISSUE:
             raise RequestError("efehr_eshm20_tree_metadata is restricted to issue 332")
         if request["dataset_id"] != EFEHR_ESHM20_TREE_METADATA_DATASET_ID:
-            raise RequestError(
-                "efehr_eshm20_tree_metadata is restricted to the frozen ESHM20 dataset"
-            )
+            raise RequestError("efehr_eshm20_tree_metadata is restricted to the frozen ESHM20 dataset")
     elif request["action"] == EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION:
         if request["issue"] != EFEHR_KOSOVO_EXPOSURE_RECEIPT_ISSUE:
             raise RequestError("efehr_kosovo_exposure_receipt is restricted to issue 328")
         if request["dataset_id"] != EFEHR_KOSOVO_EXPOSURE_RECEIPT_DATASET_ID:
-            raise RequestError(
-                "efehr_kosovo_exposure_receipt is restricted to the frozen ESRM20 exposure dataset"
-            )
+            raise RequestError("efehr_kosovo_exposure_receipt is restricted to the frozen ESRM20 exposure dataset")
     elif request["action"] == EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION:
         if request["issue"] != EFEHR_KOSOVO_EXPOSURE_PROFILE_ISSUE:
             raise RequestError("efehr_kosovo_exposure_profile is restricted to issue 351")
         if request["dataset_id"] != EFEHR_KOSOVO_EXPOSURE_PROFILE_DATASET_ID:
-            raise RequestError(
-                "efehr_kosovo_exposure_profile is restricted to the frozen ESRM20 exposure dataset"
-            )
+            raise RequestError("efehr_kosovo_exposure_profile is restricted to the frozen ESRM20 exposure dataset")
     elif request["action"] == EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION:
         if request["issue"] != EFEHR_KOSOVO_TAXONOMY_IDENTITY_ISSUE:
             raise RequestError("efehr_kosovo_taxonomy_identity is restricted to issue 363")
         if request["dataset_id"] != EFEHR_KOSOVO_TAXONOMY_IDENTITY_DATASET_ID:
-            raise RequestError(
-                "efehr_kosovo_taxonomy_identity is restricted to the frozen ESRM20 exposure dataset"
-            )
+            raise RequestError("efehr_kosovo_taxonomy_identity is restricted to the frozen ESRM20 exposure dataset")
     elif request["action"] == ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION:
         if request["issue"] != ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ISSUE:
             raise RequestError("esrm20_exposure_vulnerability_mapping_receipt is restricted to issue 340")
         if request["dataset_id"] != ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_DATASET_ID:
-            raise RequestError(
-                "esrm20_exposure_vulnerability_mapping_receipt is restricted to the frozen ESRM20 risk-input dataset"
-            )
+            raise RequestError("esrm20_exposure_vulnerability_mapping_receipt is restricted to the frozen ESRM20 risk-input dataset")
+    elif request["action"] == ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION:
+        if request["issue"] != ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ISSUE:
+            raise RequestError("esrm20_exposure_vulnerability_mapping_headers is restricted to issue 410")
+        if request["dataset_id"] != ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_DATASET_ID:
+            raise RequestError("esrm20_exposure_vulnerability_mapping_headers is restricted to the frozen ESRM20 risk-input dataset")
     elif request["action"] == EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION:
         if request["issue"] != EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ISSUE:
             raise RequestError("efehr_eshm20_root_dependency_profile is restricted to issue 353")
         if request["dataset_id"] != EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_DATASET_ID:
-            raise RequestError(
-                "efehr_eshm20_root_dependency_profile is restricted to the frozen ESHM20 dataset"
-            )
+            raise RequestError("efehr_eshm20_root_dependency_profile is restricted to the frozen ESHM20 dataset")
     elif request["action"] == EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION:
         if request["issue"] != EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ISSUE:
             raise RequestError("efehr_eshm20_first_order_receipts is restricted to issue 361")
         if request["dataset_id"] != EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_DATASET_ID:
-            raise RequestError(
-                "efehr_eshm20_first_order_receipts is restricted to the frozen ESHM20 dataset"
-            )
+            raise RequestError("efehr_eshm20_first_order_receipts is restricted to the frozen ESHM20 dataset")
     elif request["action"] == EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION:
         if request["issue"] != EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ISSUE:
             raise RequestError("efehr_eshm20_gsim_resource_profile is restricted to issue 376")
         if request["dataset_id"] != EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_DATASET_ID:
-            raise RequestError(
-                "efehr_eshm20_gsim_resource_profile is restricted to the frozen ESHM20 dataset"
-            )
+            raise RequestError("efehr_eshm20_gsim_resource_profile is restricted to the frozen ESHM20 dataset")
     elif request["action"] == EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ACTION:
         if request["issue"] != EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ISSUE:
             raise RequestError("efehr_eshm20_source_model_dependencies is restricted to issue 397")
         if request["dataset_id"] != EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_DATASET_ID:
-            raise RequestError(
-                "efehr_eshm20_source_model_dependencies is restricted to the frozen ESHM20 dataset"
-            )
+            raise RequestError("efehr_eshm20_source_model_dependencies is restricted to the frozen ESHM20 dataset")
     elif request["action"] == EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_ACTION:
         if request["issue"] != EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_ISSUE:
             raise RequestError("efehr_eshm20_source_model_child_receipts is restricted to issue 414")
         if request["dataset_id"] != EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_DATASET_ID:
-            raise RequestError(
-                "efehr_eshm20_source_model_child_receipts is restricted to the frozen ESHM20 dataset"
-            )
+            raise RequestError("efehr_eshm20_source_model_child_receipts is restricted to the frozen ESHM20 dataset")
     elif request["action"] == EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION:
         if request["issue"] != EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE:
             raise RequestError("efehr_eshm20_root_config_receipt is restricted to issue 335")
         if request["dataset_id"] != EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_DATASET_ID:
-            raise RequestError(
-                "efehr_eshm20_root_config_receipt is restricted to the frozen ESHM20 dataset"
-            )
+            raise RequestError("efehr_eshm20_root_config_receipt is restricted to the frozen ESHM20 dataset")
     elif request["action"] in {
         ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION,
         ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION,
@@ -265,9 +252,7 @@ def validate_request(request: dict[str, Any], *, expected_issue: int | None = No
         if request["issue"] != ESRM20_EVENT_HAZARD_RECEIPT_ISSUE:
             raise RequestError("ESRM20 event-hazard receipt actions are restricted to issue 346")
         if request["dataset_id"] != ESRM20_EVENT_HAZARD_RECEIPT_DATASET_ID:
-            raise RequestError(
-                "ESRM20 event-hazard receipt actions are restricted to the frozen ESRM20 risk-input dataset"
-            )
+            raise RequestError("ESRM20 event-hazard receipt actions are restricted to the frozen ESRM20 risk-input dataset")
 
     return request
 
