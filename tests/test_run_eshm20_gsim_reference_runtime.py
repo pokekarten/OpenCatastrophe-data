@@ -74,6 +74,19 @@ def _gate_result():
     }
 
 
+def _terminal_comment():
+    result = subject._bounded_result(
+        _gate_result(), execution_sha=EXECUTION_SHA, image_digest=IMAGE_DIGEST
+    )
+    return {
+        "id": 2001,
+        "user": {"login": subject.TRUSTED_RESULT_LOGIN},
+        "body": subject.RESULT_MARKER
+        + "\n"
+        + json.dumps(result, sort_keys=True, separators=(",", ":")),
+    }
+
+
 class ReferenceRuntimeRequestTests(unittest.TestCase):
     def test_request_is_bound_to_issue_and_exact_trusted_sha(self):
         parsed = subject.validate_request(
@@ -115,6 +128,73 @@ class ReferenceRuntimeRequestTests(unittest.TestCase):
                 body,
                 expected_issue=subject.SOURCE_ISSUE,
                 execution_sha=EXECUTION_SHA,
+            )
+
+
+class ReferenceRuntimeLedgerTests(unittest.TestCase):
+    def test_terminal_result_beyond_first_100_comments_is_detected(self):
+        comments = [
+            {"id": index + 1, "user": {"login": "someone"}, "body": "noise"}
+            for index in range(100)
+        ]
+        comments.append(_terminal_comment())
+        with mock.patch.object(
+            subject, "fetch_repository_comments", return_value=comments
+        ) as fetch:
+            self.assertTrue(
+                subject.has_terminal_runtime_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="token",
+                    execution_sha=EXECUTION_SHA,
+                )
+            )
+        fetch.assert_called_once_with(
+            "pokekarten/OpenCatastrophe-data",
+            "token",
+            issue=subject.SOURCE_ISSUE,
+            max_pages=20,
+        )
+
+    def test_incomplete_or_over_bound_ledger_fails_closed(self):
+        with mock.patch.object(
+            subject,
+            "fetch_repository_comments",
+            side_effect=subject.LedgerError("scan bound exceeded"),
+        ):
+            with self.assertRaisesRegex(
+                subject.ReferenceRuntimeExecutionError, "ledger is incomplete"
+            ):
+                subject.has_terminal_runtime_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="token",
+                    execution_sha=EXECUTION_SHA,
+                )
+
+    def test_malformed_trusted_terminal_result_fails_closed(self):
+        malformed = _terminal_comment()
+        malformed["body"] = subject.RESULT_MARKER + "\n{}"
+        with mock.patch.object(
+            subject, "fetch_repository_comments", return_value=[malformed]
+        ):
+            with self.assertRaises(subject.ReferenceRuntimeExecutionError):
+                subject.has_terminal_runtime_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="token",
+                    execution_sha=EXECUTION_SHA,
+                )
+
+    def test_untrusted_matching_comment_does_not_deduplicate(self):
+        comment = _terminal_comment()
+        comment["user"] = {"login": "attacker"}
+        with mock.patch.object(
+            subject, "fetch_repository_comments", return_value=[comment]
+        ):
+            self.assertFalse(
+                subject.has_terminal_runtime_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="token",
+                    execution_sha=EXECUTION_SHA,
+                )
             )
 
 
