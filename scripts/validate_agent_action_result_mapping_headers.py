@@ -10,6 +10,7 @@ from typing import Any, Sequence
 
 try:
     from scripts import acquire_efehr_esrm20_mapping_headers as worker
+    from scripts import profile_efehr_esrm20_mapping_structure as structure
     from scripts import validate_agent_action_result_mapping as legacy
     from scripts.validate_agent_action_request import (
         ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION,
@@ -17,6 +18,7 @@ try:
     )
 except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     import acquire_efehr_esrm20_mapping_headers as worker
+    import profile_efehr_esrm20_mapping_structure as structure
     import validate_agent_action_result_mapping as legacy
     from validate_agent_action_request import (
         ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION,
@@ -100,8 +102,14 @@ def _length_prefixed_sha256(values: Sequence[str]) -> str:
 
 
 def _bounded_header(value: Any, field: str) -> str:
-    if type(value) is not str or not (1 <= len(value) <= 512):
+    if type(value) is not str or not value:
         raise ResultError(f"{field} must be bounded non-empty text")
+    try:
+        encoded = value.encode("utf-8")
+    except UnicodeEncodeError as exc:
+        raise ResultError(f"{field} must be valid UTF-8 text") from exc
+    if len(encoded) > structure.MAX_HEADER_FIELD_BYTES:
+        raise ResultError(f"{field} exceeds the frozen UTF-8 byte bound")
     if any(ord(char) < 32 or ord(char) == 127 for char in value):
         raise ResultError(f"{field} contains control characters")
     return value
@@ -145,8 +153,14 @@ def _validate_disclosure(disclosure: Any) -> dict[str, Any]:
             raise ResultError(f"{prefix}.{field} does not match the frozen disclosure contract")
 
     count = disclosure["column_count"]
-    if type(count) is not int or isinstance(count, bool) or count <= 0 or count > 4096:
-        raise ResultError(f"{prefix}.column_count must be a positive bounded non-bool integer")
+    if (
+        type(count) is not int
+        or isinstance(count, bool)
+        or not (structure.MIN_COLUMNS <= count <= structure.MAX_COLUMNS)
+    ):
+        raise ResultError(
+            f"{prefix}.column_count must stay within frozen structure-profile bounds"
+        )
     headers = disclosure["headers"]
     if type(headers) is not list or len(headers) != count:
         raise ResultError(f"{prefix}.headers must match column_count")
@@ -154,6 +168,8 @@ def _validate_disclosure(disclosure: Any) -> dict[str, Any]:
         _bounded_header(value, f"{prefix}.headers[{index}]")
         for index, value in enumerate(headers)
     ]
+    if sum(len(value.encode("utf-8")) for value in canonical_headers) > structure.MAX_TOTAL_HEADER_BYTES:
+        raise ResultError(f"{prefix}.headers exceed the frozen aggregate UTF-8 byte bound")
     if len(set(canonical_headers)) != len(canonical_headers):
         raise ResultError(f"{prefix}.headers must be ordered unique literals")
     fingerprint = disclosure["ordered_header_sha256"]
