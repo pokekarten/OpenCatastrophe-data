@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
-
-import pytest
+import unittest
+from unittest import mock
 
 from scripts import run_eshm20_gsim_reference_runtime as subject
 
@@ -74,111 +74,112 @@ def _gate_result():
     }
 
 
-def test_request_is_bound_to_issue_and_exact_trusted_sha():
-    parsed = subject.validate_request(
-        _request(),
-        expected_issue=subject.SOURCE_ISSUE,
-        execution_sha=EXECUTION_SHA,
-    )
-    assert parsed["target_sha"] == EXECUTION_SHA
-
-
-@pytest.mark.parametrize(
-    "body, issue, sha",
-    [
-        (_request(extra="forbidden"), subject.SOURCE_ISSUE, EXECUTION_SHA),
-        (_request(issue=431), subject.SOURCE_ISSUE, EXECUTION_SHA),
-        (_request(target_sha="6" * 40), subject.SOURCE_ISSUE, EXECUTION_SHA),
-        (_request(), 431, EXECUTION_SHA),
-        (_request(), subject.SOURCE_ISSUE, "not-a-sha"),
-        ("prefix\n" + _request(), subject.SOURCE_ISSUE, EXECUTION_SHA),
-    ],
-)
-def test_request_fails_closed_on_scope_or_identity_drift(body, issue, sha):
-    with pytest.raises(subject.ReferenceRuntimeExecutionError):
-        subject.validate_request(body, expected_issue=issue, execution_sha=sha)
-
-
-def test_request_rejects_duplicate_json_keys():
-    body = (
-        subject.REQUEST_MARKER
-        + '\n{"schema_version":"'
-        + subject.REQUEST_SCHEMA_VERSION
-        + '","issue":432,"target_sha":"'
-        + EXECUTION_SHA
-        + '","requester":"a","requester":"b"}'
-    )
-    with pytest.raises(subject.ReferenceRuntimeExecutionError):
-        subject.validate_request(
-            body,
+class ReferenceRuntimeRequestTests(unittest.TestCase):
+    def test_request_is_bound_to_issue_and_exact_trusted_sha(self):
+        parsed = subject.validate_request(
+            _request(),
             expected_issue=subject.SOURCE_ISSUE,
             execution_sha=EXECUTION_SHA,
         )
+        self.assertEqual(parsed["target_sha"], EXECUTION_SHA)
+
+    def test_request_fails_closed_on_scope_or_identity_drift(self):
+        cases = [
+            (_request(extra="forbidden"), subject.SOURCE_ISSUE, EXECUTION_SHA),
+            (_request(issue=431), subject.SOURCE_ISSUE, EXECUTION_SHA),
+            (_request(target_sha="6" * 40), subject.SOURCE_ISSUE, EXECUTION_SHA),
+            (_request(), 431, EXECUTION_SHA),
+            (_request(), subject.SOURCE_ISSUE, "not-a-sha"),
+            ("prefix\n" + _request(), subject.SOURCE_ISSUE, EXECUTION_SHA),
+        ]
+        for body, issue, sha in cases:
+            with self.subTest(body=body, issue=issue, sha=sha):
+                with self.assertRaises(subject.ReferenceRuntimeExecutionError):
+                    subject.validate_request(
+                        body,
+                        expected_issue=issue,
+                        execution_sha=sha,
+                    )
+
+    def test_request_rejects_duplicate_json_keys(self):
+        body = (
+            subject.REQUEST_MARKER
+            + '\n{"schema_version":"'
+            + subject.REQUEST_SCHEMA_VERSION
+            + '","issue":432,"target_sha":"'
+            + EXECUTION_SHA
+            + '","requester":"a","requester":"b"}'
+        )
+        with self.assertRaises(subject.ReferenceRuntimeExecutionError):
+            subject.validate_request(
+                body,
+                expected_issue=subject.SOURCE_ISSUE,
+                execution_sha=EXECUTION_SHA,
+            )
 
 
-def test_bounded_result_promotes_only_same_process_recipe_runtime_compatibility():
-    result = subject._bounded_result(
-        _gate_result(),
-        execution_sha=EXECUTION_SHA,
-        image_digest=IMAGE_DIGEST,
-    )
-
-    assert result["status"] == "pass"
-    assert result["target_sha"] == EXECUTION_SHA
-    assert result["execution_sha"] == EXECUTION_SHA
-    assert result["same_process_runtime_observation_collected"] is True
-    assert (
-        result["executing_environment_matches_reconstructed_reference_recipe_fields"]
-        is True
-    )
-    assert result["gsim_request_reference_recipe_runtime_compatibility_verified"] is True
-    assert result["historical_environment_verified"] is False
-    assert result["numerical_hazard_agreement_verified"] is False
-    assert result["full_hazard_compatibility_verified"] is False
-    assert result["reference_run_verified"] is False
-    assert result["publication_authorized"] is False
-    assert result["model_use_authorized"] is False
-    assert "provider_secret" not in result
-
-
-@pytest.mark.parametrize(
-    "field",
-    [
-        "full_hazard_compatibility_verified",
-        "site_model_compatibility_verified",
-        "vulnerability_compatibility_verified",
-        "reference_run_verified",
-        "scientific_validity_verified",
-        "external_bytes_persisted",
-        "publication_authorized",
-        "model_use_authorized",
-    ],
-)
-def test_bounded_result_rejects_upstream_authority_widening(field):
-    upstream = _gate_result()
-    upstream[field] = True
-    with pytest.raises(subject.ReferenceRuntimeExecutionError):
-        subject._bounded_result(
-            upstream,
+class ReferenceRuntimeResultTests(unittest.TestCase):
+    def test_bounded_result_promotes_only_recipe_runtime_compatibility(self):
+        result = subject._bounded_result(
+            _gate_result(),
             execution_sha=EXECUTION_SHA,
             image_digest=IMAGE_DIGEST,
         )
 
+        self.assertEqual(result["status"], "pass")
+        self.assertEqual(result["target_sha"], EXECUTION_SHA)
+        self.assertEqual(result["execution_sha"], EXECUTION_SHA)
+        self.assertIs(result["same_process_runtime_observation_collected"], True)
+        self.assertIs(
+            result["executing_environment_matches_reconstructed_reference_recipe_fields"],
+            True,
+        )
+        self.assertIs(
+            result["gsim_request_reference_recipe_runtime_compatibility_verified"],
+            True,
+        )
+        self.assertIs(result["historical_environment_verified"], False)
+        self.assertIs(result["numerical_hazard_agreement_verified"], False)
+        self.assertIs(result["full_hazard_compatibility_verified"], False)
+        self.assertIs(result["reference_run_verified"], False)
+        self.assertIs(result["publication_authorized"], False)
+        self.assertIs(result["model_use_authorized"], False)
+        self.assertNotIn("provider_secret", result)
 
-def test_acquisition_detects_authority_rebinding_before_network(monkeypatch):
-    called = False
+    def test_bounded_result_rejects_upstream_authority_widening(self):
+        fields = [
+            "full_hazard_compatibility_verified",
+            "site_model_compatibility_verified",
+            "vulnerability_compatibility_verified",
+            "reference_run_verified",
+            "scientific_validity_verified",
+            "external_bytes_persisted",
+            "publication_authorized",
+            "model_use_authorized",
+        ]
+        for field in fields:
+            with self.subTest(field=field):
+                upstream = _gate_result()
+                upstream[field] = True
+                with self.assertRaises(subject.ReferenceRuntimeExecutionError):
+                    subject._bounded_result(
+                        upstream,
+                        execution_sha=EXECUTION_SHA,
+                        image_digest=IMAGE_DIGEST,
+                    )
 
-    def forbidden_network(*args, **kwargs):
-        nonlocal called
-        called = True
-        raise AssertionError("network must not be reached")
+    def test_acquisition_detects_authority_rebinding_before_network(self):
+        with (
+            mock.patch.object(subject.gmm, "EXPECTED_SHA256", "0" * 64),
+            mock.patch.object(subject, "_OPEN_FIXED") as opener,
+        ):
+            with self.assertRaisesRegex(
+                subject.ReferenceRuntimeExecutionError,
+                "authority drifted",
+            ):
+                subject._acquire_exact_gmm()
+            opener.assert_not_called()
 
-    monkeypatch.setattr(subject.gmm, "EXPECTED_SHA256", "0" * 64)
-    monkeypatch.setattr(subject, "_OPEN_FIXED", forbidden_network)
 
-    with pytest.raises(
-        subject.ReferenceRuntimeExecutionError,
-        match="authority drifted",
-    ):
-        subject._acquire_exact_gmm()
-    assert called is False
+if __name__ == "__main__":
+    unittest.main()
