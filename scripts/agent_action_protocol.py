@@ -21,6 +21,7 @@ EFEHR_KOSOVO_EXPOSURE_RECEIPT_ACTION = "efehr_kosovo_exposure_receipt"
 EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION = "efehr_kosovo_exposure_profile"
 EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION = "efehr_kosovo_taxonomy_identity"
 ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION = "esrm20_exposure_vulnerability_mapping_receipt"
+ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION = "esrm20_exposure_vulnerability_mapping_headers"
 EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION = "efehr_eshm20_root_dependency_profile"
 EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION = "efehr_eshm20_first_order_receipts"
 EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION = "efehr_eshm20_gsim_resource_profile"
@@ -39,6 +40,7 @@ NETWORK_ACQUISITION_ACTIONS = frozenset(
         EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,
         EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,
         ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION,
+        ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION,
         EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,
         EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION,
         EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION,
@@ -69,9 +71,9 @@ def semantic_request_id(request: dict[str, Any], execution_sha: str, repository:
     Each closed network acquisition action also requires its semantic target to
     equal the trusted execution commit. The action itself participates in the
     identity, keeping measurement, station-metadata, EFEHR README, ESHM20
-    tree-metadata, Kosovo exposure, ESHM20 root-config, GMM resource profiling
-    and ESRM20 Group1/Group2 event-hazard receipts distinct without introducing
-    a caller-controlled network target.
+    tree-metadata, Kosovo exposure, mapping receipt/header disclosure, ESHM20
+    root-config, GMM resource profiling and ESRM20 Group1/Group2 event-hazard
+    receipts distinct without introducing a caller-controlled network target.
     """
 
     if type(execution_sha) is not str or not GIT_SHA_RE.fullmatch(execution_sha):
