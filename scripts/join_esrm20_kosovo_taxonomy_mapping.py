@@ -16,7 +16,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import io
-from decimal import Decimal, InvalidOperation
+import math
 from typing import Any
 
 try:
@@ -30,7 +30,7 @@ SCHEMA_VERSION = "oc-esrm20-kosovo-taxonomy-mapping-join-v1"
 SOURCE_ISSUE = 283
 DECISION_ISSUE = 410
 EXPECTED_MAPPING_HEADER = ("taxonomy", "conversion", "weight")
-OPENQUAKE_WEIGHT_PRECISION = Decimal("1E-7")
+OPENQUAKE_WEIGHT_PRECISION = 1e-7
 MAX_TAXONOMY_UTF8_BYTES = 1024
 MAX_RISK_ID_UTF8_BYTES = 1024
 MAX_WEIGHT_CHARS = 128
@@ -91,7 +91,9 @@ def _is_bounded_literal(value: object, *, max_utf8_bytes: int) -> bool:
     return not any(ord(character) < 32 or ord(character) == 127 for character in value)
 
 
-def _weight(value: str) -> Decimal | None:
+def _weight(value: str) -> float | None:
+    """Parse exactly the numeric type OpenQuake 3.14 requests from pandas."""
+
     if (
         type(value) is not str
         or not value
@@ -100,10 +102,13 @@ def _weight(value: str) -> Decimal | None:
     ):
         return None
     try:
-        parsed = Decimal(value)
-    except InvalidOperation:
+        parsed = float(value)
+    except ValueError:
         return None
-    if not parsed.is_finite() or parsed <= 0:
+    # This consumer is deliberately stricter than the engine on zero: #410
+    # admits only positive finite mapping weights. Resolved therefore implies
+    # both the bounded project contract and the engine's numeric parser accept.
+    if not math.isfinite(parsed) or parsed <= 0:
         return None
     return parsed
 
@@ -146,9 +151,6 @@ def _join_exact_taxonomies(
 
     try:
         for row in reader:
-            # The frozen object is governed as a three-column CSV. A ragged row
-            # makes the object unsafe to consume because row boundaries would be
-            # ambiguous, even if the row is unrelated to Kosovo.
             if len(row) != 3:
                 raise KosovoMappingJoinError("verified mapping contains a ragged row")
             taxonomy, conversion, weight = row
@@ -208,7 +210,9 @@ def _join_exact_taxonomies(
         weights = [_weight(weight) for _, weight in rows]
         if any(weight is None for weight in weights):  # defensive; checked above
             raise KosovoMappingJoinError("weight validation became inconsistent")
-        weight_error = abs(sum(weights, Decimal(0)) - Decimal(1))
+        # Mirror OpenQuake 3.14 `_taxonomy_mapping`: pandas converts weights to
+        # float and compares abs(sum - 1) against pmf.PRECISION == 1e-7.
+        weight_error = abs(sum(weights) - 1.0)
         if weight_error > OPENQUAKE_WEIGHT_PRECISION:
             result.append(
                 {
@@ -297,7 +301,7 @@ def join_verified_kosovo_taxonomy_mapping(
         "taxonomy_matching": "exact_literal_equality_only",
         "normalization_applied": False,
         "wildcard_or_fallback_matching_applied": False,
-        "mapping_weight_rule": "positive_finite_decimal_sum_within_openquake_1e-7",
+        "mapping_weight_rule": "positive_finite_float_sum_within_openquake_1e-7",
         "vulnerability_file_selection_authorized": False,
         "raw_mapping_rows_returned": False,
         "external_bytes_persisted": False,
