@@ -78,8 +78,8 @@ class ExactKosovoMappingJoinTests(unittest.TestCase):
         self.assertEqual(record["status"], "ambiguous")
         self.assertEqual(record["reason_code"], "weights_outside_openquake_precision")
 
-    def test_nonfinite_nonpositive_or_whitespace_weight_is_ambiguous(self):
-        for value in ("NaN", "Infinity", "0", "-0.1", " 1"):
+    def test_nonfinite_nonpositive_whitespace_or_overlong_weight_is_ambiguous(self):
+        for value in ("NaN", "Infinity", "0", "-0.1", " 1", "1" * 129):
             with self.subTest(value=value):
                 [record] = _join(["A"], [f"A,RISK_A,{value}"])
                 self.assertEqual(record["status"], "ambiguous")
@@ -89,6 +89,36 @@ class ExactKosovoMappingJoinTests(unittest.TestCase):
         [record] = _join(["A"], ["A, RISK_A,1"])
         self.assertEqual(record["status"], "ambiguous")
         self.assertEqual(record["targets"], [])
+
+    def test_conversion_controls_or_overlong_values_are_not_emitted(self):
+        raw_control = b'taxonomy,conversion,weight\nA,"RISK\x01A",1\n'
+        [control] = subject._join_exact_taxonomies(
+            ["A"],
+            raw_control,
+            expected_byte_count=len(raw_control),
+            expected_sha256=hashlib.sha256(raw_control).hexdigest(),
+        )
+        self.assertEqual(control["status"], "ambiguous")
+        self.assertEqual(control["targets"], [])
+
+        overlong = "R" * (subject.MAX_RISK_ID_UTF8_BYTES + 1)
+        [long_value] = _join(["A"], [f"A,{overlong},1"])
+        self.assertEqual(long_value["status"], "ambiguous")
+        self.assertEqual(long_value["targets"], [])
+
+    def test_admitted_taxonomy_controls_or_overlong_values_fail_before_output(self):
+        for taxonomy in ("A\x01", "A" * (subject.MAX_TAXONOMY_UTF8_BYTES + 1)):
+            with self.subTest(taxonomy=taxonomy):
+                raw = _raw(["OTHER,RISK,1"])
+                with self.assertRaisesRegex(
+                    subject.KosovoMappingJoinError, "bounded literals"
+                ):
+                    subject._join_exact_taxonomies(
+                        [taxonomy],
+                        raw,
+                        expected_byte_count=len(raw),
+                        expected_sha256=hashlib.sha256(raw).hexdigest(),
+                    )
 
     def test_ragged_mapping_fails_closed_even_if_unrelated(self):
         raw = b"taxonomy,conversion,weight\nOTHER,RISK\n"
