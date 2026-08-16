@@ -196,6 +196,8 @@ jobs:
               raise SystemExit("runtime result schema drifted")
           if result.get("source_issue") != 493 or result.get("execution_sha") != os.environ["EXECUTION_SHA"]:
               raise SystemExit("runtime result identity drifted")
+          if result.get("source_profile_result_comment_id") != 5310194089 or result.get("source_receipt_result_comment_id") != 5310057117:
+              raise SystemExit("runtime provenance binding drifted")
           if result.get("gmm_identity") != {
               "project_id":269,
               "project_path":"efehr/esrm20",
@@ -212,7 +214,17 @@ jobs:
               "KothaEtAl2020ESHM20SlopeGeology","LanzanoLuzi2019shallow"
           ]:
               raise SystemExit("runtime requested token set drifted")
-          if result.get("reconstructed_reference_recipe_verified") is not True or result.get("gsim_alias_registry_constructor_compatible") is not True:
+          args = result.get("gsim_argument_evidence")
+          if not isinstance(args, dict) or args.get("source_argument_keys") != [
+              "a","b","c3_epsilon","epsilon","faba_taper_model","sigma_mu_epsilon","site_epsilon","theta_6_adjustment"
+          ]:
+              raise SystemExit("source-derived GSIM argument evidence drifted")
+          if args.get("external_resource_argument_keys") != [] or args.get("argument_values_returned") is not False:
+              raise SystemExit("GSIM argument evidence widened external/value authority")
+          runtime_keys = args.get("runtime_argument_keys_after_alias")
+          if not isinstance(runtime_keys, list) or not runtime_keys:
+              raise SystemExit("post-alias GSIM argument evidence is empty")
+          if result.get("executing_environment_matches_reconstructed_reference_recipe_fields") is not True or result.get("gsim_request_reference_recipe_runtime_compatibility_verified") is not True:
               raise SystemExit("reviewed runtime gate did not pass")
           if result.get("site_parameter_requirements_derived") is not True:
               raise SystemExit("site parameter requirements not derived")
@@ -220,9 +232,11 @@ jobs:
           if not isinstance(site, dict) or not isinstance(site.get("required_site_parameters"), list) or not site["required_site_parameters"]:
               raise SystemExit("site parameter evidence is invalid")
           for field in (
-              "historical_environment_identity_proven","numerical_hazard_agreement_verified",
-              "full_reference_run_verified","site_model_compatibility_verified",
-              "imt_component_unit_compatibility_verified","full_hazard_compatibility_verified",
+              "historical_environment_verified","reference_base_image_byte_identity_verified",
+              "wheel_byte_identity_verified","numerical_hazard_agreement_verified",
+              "full_hazard_compatibility_verified","site_model_compatibility_verified",
+              "imt_component_unit_compatibility_verified","vulnerability_compatibility_verified",
+              "reference_run_verified","scientific_validity_verified","external_bytes_persisted",
               "publication_authorized","model_use_authorized"
           ):
               if result.get(field) is not False:
@@ -267,20 +281,36 @@ jobs:
             .gmm_identity.byte_count == 34018 and
             .gmm_identity.sha256 == "f3efd16d56189c7804824d94b20ed75d6ceefc879144d8bd697c1f9b47cf17b4" and
             .branch_count == 80 and
-            (.requested_gsim_tokens | length) == 5 and
-            .source_profile_result_comment_id == 5310201828 and
+            .requested_gsim_tokens == [
+              "BCHydroESHM20SInter","BCHydroESHM20SSlab","ESHM20Craton",
+              "KothaEtAl2020ESHM20SlopeGeology","LanzanoLuzi2019shallow"
+            ] and
+            .source_profile_result_comment_id == 5310194089 and
             .source_receipt_result_comment_id == 5310057117 and
-            .reconstructed_reference_recipe_verified == true and
-            .gsim_alias_registry_constructor_compatible == true and
+            .gsim_argument_evidence.source_profile_result_comment_id == 5310194089 and
+            .gsim_argument_evidence.source_argument_keys == [
+              "a","b","c3_epsilon","epsilon","faba_taper_model","sigma_mu_epsilon","site_epsilon","theta_6_adjustment"
+            ] and
+            (.gsim_argument_evidence.runtime_argument_keys_after_alias | type) == "array" and
+            (.gsim_argument_evidence.runtime_argument_keys_after_alias | length) > 0 and
+            .gsim_argument_evidence.external_resource_argument_keys == [] and
+            .gsim_argument_evidence.argument_values_returned == false and
+            .executing_environment_matches_reconstructed_reference_recipe_fields == true and
+            .gsim_request_reference_recipe_runtime_compatibility_verified == true and
             .site_parameter_requirements_derived == true and
             (.site_parameter_requirements.required_site_parameters | type) == "array" and
             (.site_parameter_requirements.per_resolved_gsim_class | type) == "array" and
+            .historical_environment_verified == false and
+            .reference_base_image_byte_identity_verified == false and
+            .wheel_byte_identity_verified == false and
             .site_model_compatibility_verified == false and
             .imt_component_unit_compatibility_verified == false and
-            .historical_environment_identity_proven == false and
             .numerical_hazard_agreement_verified == false and
-            .full_reference_run_verified == false and
             .full_hazard_compatibility_verified == false and
+            .vulnerability_compatibility_verified == false and
+            .reference_run_verified == false and
+            .scientific_validity_verified == false and
+            .external_bytes_persisted == false and
             .publication_authorized == false and .model_use_authorized == false
           ' >/dev/null
           BODY="$RESULT_MARKER
