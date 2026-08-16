@@ -31,6 +31,9 @@ SOURCE_ISSUE = 283
 DECISION_ISSUE = 410
 EXPECTED_MAPPING_HEADER = ("taxonomy", "conversion", "weight")
 OPENQUAKE_WEIGHT_PRECISION = Decimal("1E-7")
+MAX_TAXONOMY_UTF8_BYTES = 1024
+MAX_RISK_ID_UTF8_BYTES = 1024
+MAX_WEIGHT_CHARS = 128
 
 # Bind the production path to the exact object already receipted/profiled.
 _MAPPING_BYTE_COUNT = 83_585
@@ -76,8 +79,25 @@ def _verify_mapping_bytes(
         raise KosovoMappingJoinError("verified mapping is not strict UTF-8") from exc
 
 
+def _is_bounded_literal(value: object, *, max_utf8_bytes: int) -> bool:
+    if type(value) is not str or not value:
+        return False
+    try:
+        encoded = value.encode("utf-8")
+    except UnicodeEncodeError:
+        return False
+    if len(encoded) > max_utf8_bytes:
+        return False
+    return not any(ord(character) < 32 or ord(character) == 127 for character in value)
+
+
 def _weight(value: str) -> Decimal | None:
-    if type(value) is not str or not value or value != value.strip():
+    if (
+        type(value) is not str
+        or not value
+        or len(value) > MAX_WEIGHT_CHARS
+        or value != value.strip()
+    ):
         return None
     try:
         parsed = Decimal(value)
@@ -97,8 +117,11 @@ def _join_exact_taxonomies(
 ) -> list[dict[str, Any]]:
     if type(taxonomies) is not list or not taxonomies:
         raise KosovoMappingJoinError("admitted taxonomy set must be a non-empty list")
-    if any(type(value) is not str or not value for value in taxonomies):
-        raise KosovoMappingJoinError("admitted taxonomy values must be non-empty strings")
+    if any(
+        not _is_bounded_literal(value, max_utf8_bytes=MAX_TAXONOMY_UTF8_BYTES)
+        for value in taxonomies
+    ):
+        raise KosovoMappingJoinError("admitted taxonomy values are not bounded literals")
     if taxonomies != sorted(taxonomies) or len(set(taxonomies)) != len(taxonomies):
         raise KosovoMappingJoinError("admitted taxonomy set must be sorted and unique")
 
@@ -131,7 +154,12 @@ def _join_exact_taxonomies(
             taxonomy, conversion, weight = row
             if taxonomy not in admitted:
                 continue
-            if not conversion or conversion != conversion.strip():
+            if (
+                not _is_bounded_literal(
+                    conversion, max_utf8_bytes=MAX_RISK_ID_UTF8_BYTES
+                )
+                or conversion != conversion.strip()
+            ):
                 structurally_ambiguous.add(taxonomy)
                 continue
             if _weight(weight) is None:
