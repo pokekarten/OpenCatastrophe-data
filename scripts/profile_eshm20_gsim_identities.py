@@ -1,13 +1,14 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Profile the GSIM identity surface of the exact receipted ESHM20 GMM tree.
+"""Profile unresolved GSIM request tokens from the exact receipted ESHM20 GMM tree.
 
 This module is intentionally narrower than OpenQuake execution. It verifies
 one already-receipted provider object before inspection, then extracts only the
-model token and argument-key names that OpenQuake 3.14 would pass to
-``valid.gsim``. It does not resolve aliases, load the OpenQuake registry,
-instantiate GSIM classes, retain argument values, or authorize model use.
+requested model token and argument-key names that the exact tree presents to
+the OpenQuake 3.14 parsing path. It does not resolve aliases, classify a token
+as an alias versus concrete GSIM, load the OpenQuake registry, instantiate GSIM
+classes, retain argument values, or authorize model use.
 """
 
 from __future__ import annotations
@@ -58,7 +59,7 @@ _SAFE_ARGUMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 class Eshm20GsimIdentityProfileError(ValueError):
-    """Raised when bounded GSIM identity profiling cannot close safely."""
+    """Raised when bounded GSIM request-token profiling cannot close safely."""
 
 
 def _local_name(tag: object) -> str:
@@ -122,18 +123,19 @@ def _argument_key(value: object) -> str:
     return value
 
 
-def _model_name(value: object) -> str:
+def _model_token(value: object) -> str:
     if type(value) is not str or not _SAFE_MODEL_RE.fullmatch(value):
-        raise Eshm20GsimIdentityProfileError("GSIM model token is unsupported")
+        raise Eshm20GsimIdentityProfileError("GSIM requested token is unsupported")
     return value
 
 
 def _structural_model_identity(model: ET.Element) -> tuple[str, tuple[str, ...]]:
-    """Extract only the requested model token and argument-key names.
+    """Extract only the unresolved requested token and argument-key names.
 
     OpenQuake 3.14 first applies ``valid.to_toml`` and then ``valid.gsim``.
     This helper intentionally stops before TOML value parsing, alias lookup,
-    registry lookup, path resolution or class instantiation.
+    registry lookup, path resolution or class instantiation. Therefore the
+    returned token is source-request identity, not a verified GSIM class name.
     """
 
     raw_text = model.text or ""
@@ -163,14 +165,14 @@ def _structural_model_identity(model: ET.Element) -> tuple[str, tuple[str, ...]]
     if first.startswith("["):
         if not first.endswith("]") or first.count("[") != 1 or first.count("]") != 1:
             raise Eshm20GsimIdentityProfileError("GSIM table header is malformed")
-        name = _model_name(first[1:-1].strip())
+        requested_token = _model_token(first[1:-1].strip())
         body = lines[1:]
     else:
         if len(lines) != 1 or "=" in first or first.startswith("#"):
             raise Eshm20GsimIdentityProfileError(
-                "bare GSIM form must contain exactly one model token"
+                "bare GSIM form must contain exactly one requested token"
             )
-        name = _model_name(first)
+        requested_token = _model_token(first)
         body = []
 
     for line in body:
@@ -192,7 +194,7 @@ def _structural_model_identity(model: ET.Element) -> tuple[str, tuple[str, ...]]
         if len(argument_keys) > MAX_ARGUMENT_KEYS:
             raise Eshm20GsimIdentityProfileError("GSIM argument-key count exceeds bounds")
 
-    return name, tuple(sorted(argument_keys))
+    return requested_token, tuple(sorted(argument_keys))
 
 
 def _profile_root(root: ET.Element) -> dict[str, Any]:
@@ -250,13 +252,13 @@ def _profile_root(root: ET.Element) -> dict[str, Any]:
                 raise Eshm20GsimIdentityProfileError(
                     "GMM branch must contain exactly one uncertaintyModel"
                 )
-            gsim_name, argument_keys = _structural_model_identity(models[0])
+            requested_token, argument_keys = _structural_model_identity(models[0])
             records.append(
                 {
                     "branch_set_id": branch_set_id,
                     "branch_id": branch_id,
                     "tectonic_region_type": tectonic_region_type,
-                    "gsim_name": gsim_name,
+                    "requested_gsim_token": requested_token,
                     "argument_keys": list(argument_keys),
                 }
             )
@@ -265,17 +267,19 @@ def _profile_root(root: ET.Element) -> dict[str, Any]:
         key=lambda record: (
             record["branch_set_id"],
             record["branch_id"],
-            record["gsim_name"],
+            record["requested_gsim_token"],
             tuple(record["argument_keys"]),
         )
     )
-    names = sorted({record["gsim_name"] for record in records})
+    requested_tokens = sorted(
+        {record["requested_gsim_token"] for record in records}
+    )
     keys = sorted({key for record in records for key in record["argument_keys"]})
     return {
         "branch_set_count": len(branch_sets),
         "branch_count": len(records),
         "branches": records,
-        "unique_gsim_names": names,
+        "unique_requested_gsim_tokens": requested_tokens,
         "unique_argument_keys": keys,
     }
 
@@ -287,7 +291,7 @@ def _profile_xml_text(xml_text: str) -> dict[str, Any]:
 
 
 def profile_verified_gsim_identities(payload: bytes) -> dict[str, Any]:
-    """Verify the frozen provider bytes, then return bounded GSIM identities."""
+    """Verify frozen bytes, then return bounded unresolved GSIM request tokens."""
 
     observed_sha256 = _verify_payload_identity(payload)
     try:
