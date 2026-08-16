@@ -36,7 +36,7 @@ class Eshm20SourceModelTrtProfileTests(unittest.TestCase):
         self.assertEqual(result["source_count"], 1)
         self.assertEqual(result["source_type_counts"], {"pointSource": 1})
         self.assertEqual(result["tectonic_region_type_counts"], {"Active Shallow Crust": 1})
-        self.assertEqual(result["trt_provenance_counts"], {"direct": 1})
+        self.assertEqual(result["trt_provenance_counts"], {"direct_source": 1})
         rendered = repr(result)
         for forbidden in ("SECRET-ID", "SECRET-NAME", "20.1", "42.2", "SECRET-RATES", "4.5"):
             self.assertNotIn(forbidden, rendered)
@@ -60,7 +60,7 @@ class Eshm20SourceModelTrtProfileTests(unittest.TestCase):
         self.assertEqual(result["tectonic_region_type_counts"], {"Subduction Interface": 2})
         self.assertEqual(
             result["trt_provenance_counts"],
-            {"source_group": 1, "source_group_confirmed": 1},
+            {"group_inherited": 1, "group_effective_direct_confirmed": 1},
         )
 
     def test_group_source_trt_conflict_fails_like_openquake_314_semantics(self) -> None:
