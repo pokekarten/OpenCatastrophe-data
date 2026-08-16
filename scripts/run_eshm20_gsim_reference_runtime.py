@@ -28,12 +28,14 @@ from typing import Any
 from scripts import acquire_eshm20_gsim_resource_profile as gmm
 from scripts import validate_eshm20_gsim_openquake_runtime as gate
 from scripts import validate_eshm20_openquake_runtime as runtime
+from scripts.prepare_agent_action_result import LedgerError, fetch_repository_comments
 
 SCHEMA_VERSION = "oc-eshm20-gsim-reference-runtime-execution-v1"
 REQUEST_SCHEMA_VERSION = "oc-eshm20-gsim-reference-runtime-request-v1"
 REQUEST_MARKER = "<!-- oc-eq1-eshm20-gsim-reference-runtime-request-v1 -->"
 RESULT_MARKER = "<!-- oc-eq1-eshm20-gsim-reference-runtime-result-v1 -->"
 SOURCE_ISSUE = 432
+TRUSTED_RESULT_LOGIN = "github-actions[bot]"
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
@@ -111,6 +113,109 @@ def validate_request(
     ):
         raise ReferenceRuntimeExecutionError("invalid requester identity")
     return request
+
+
+def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
+    """Validate one trusted-bot terminal result for exact-SHA deduplication."""
+
+    if type(body) is not str or RESULT_MARKER not in body:
+        return False
+    if body.count(RESULT_MARKER) != 1:
+        raise ReferenceRuntimeExecutionError("trusted runtime result marker is malformed")
+    before, after = body.split(RESULT_MARKER, 1)
+    if before.strip() or not after.strip():
+        raise ReferenceRuntimeExecutionError("trusted runtime result envelope is malformed")
+    try:
+        result = json.loads(
+            after.strip(),
+            object_pairs_hook=_pairs,
+            parse_constant=_reject_constant,
+        )
+    except ReferenceRuntimeExecutionError:
+        raise
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        raise ReferenceRuntimeExecutionError("trusted runtime result JSON is malformed") from exc
+    if type(result) is not dict:
+        raise ReferenceRuntimeExecutionError("trusted runtime result is not an object")
+    exact = (
+        ("schema_version", SCHEMA_VERSION),
+        ("source_issue", SOURCE_ISSUE),
+        ("dataset_id", gmm.DATASET_ID),
+        ("status", "pass"),
+        ("target_sha", execution_sha),
+        ("execution_sha", execution_sha),
+        ("same_process_runtime_observation_collected", True),
+        ("executing_environment_matches_reconstructed_reference_recipe_fields", True),
+        ("gsim_request_reference_recipe_runtime_compatibility_verified", True),
+        ("historical_environment_verified", False),
+        ("reference_base_image_byte_identity_verified", False),
+        ("wheel_byte_identity_verified", False),
+        ("numerical_hazard_agreement_verified", False),
+        ("imt_component_unit_compatibility_verified", False),
+        ("full_hazard_compatibility_verified", False),
+        ("site_model_compatibility_verified", False),
+        ("vulnerability_compatibility_verified", False),
+        ("reference_run_verified", False),
+        ("scientific_validity_verified", False),
+        ("external_bytes_persisted", False),
+        ("publication_authorized", False),
+        ("model_use_authorized", False),
+    )
+    for field, expected in exact:
+        observed = result.get(field)
+        if type(observed) is not type(expected) or observed != expected:
+            raise ReferenceRuntimeExecutionError(
+                f"trusted runtime result drifted at {field}"
+            )
+    image_digest = result.get("execution_container_image_digest")
+    if type(image_digest) is not str or not _DIGEST_RE.fullmatch(image_digest):
+        raise ReferenceRuntimeExecutionError("trusted runtime image digest is invalid")
+    branch_count = result.get("branch_count")
+    branches = result.get("branches")
+    if (
+        type(branch_count) is not int
+        or isinstance(branch_count, bool)
+        or branch_count <= 0
+        or type(branches) is not list
+        or len(branches) != branch_count
+        or any(
+            type(branch) is not dict or branch.get("constructor_accepted") is not True
+            for branch in branches
+        )
+    ):
+        raise ReferenceRuntimeExecutionError("trusted runtime branch evidence is invalid")
+    return True
+
+
+def has_terminal_runtime_result(
+    *,
+    repository: str,
+    token: str,
+    execution_sha: str,
+    opener: Any | None = None,
+    max_pages: int = 20,
+) -> bool:
+    """Fail closed unless the complete bounded Issue #432 ledger is known."""
+
+    if type(execution_sha) is not str or not _SHA_RE.fullmatch(execution_sha):
+        raise ReferenceRuntimeExecutionError("invalid execution SHA")
+    kwargs: dict[str, Any] = {"issue": SOURCE_ISSUE, "max_pages": max_pages}
+    if opener is not None:
+        kwargs["opener"] = opener
+    try:
+        comments = fetch_repository_comments(repository, token, **kwargs)
+    except LedgerError as exc:
+        raise ReferenceRuntimeExecutionError("runtime result ledger is incomplete") from exc
+    for comment in comments:
+        user = comment.get("user")
+        login = user.get("login") if type(user) is dict else None
+        if login != TRUSTED_RESULT_LOGIN:
+            continue
+        if _parse_trusted_terminal_result(
+            comment.get("body"), execution_sha=execution_sha
+        ):
+            return True
+    return False
 
 
 def _acquire_exact_gmm() -> bytes:
@@ -270,8 +375,6 @@ def _bounded_result(
     ):
         raise ReferenceRuntimeExecutionError("bounded branch evidence is incomplete")
 
-    # Whitelist reviewed, value-free upstream evidence; no arbitrary upstream
-    # field is copied into the durable result.
     return {
         "schema_version": SCHEMA_VERSION,
         "source_issue": SOURCE_ISSUE,
