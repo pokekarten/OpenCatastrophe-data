@@ -16,6 +16,7 @@ import csv
 import hashlib
 import io
 from collections.abc import Callable, Sequence
+from pathlib import Path
 from typing import Any
 
 try:
@@ -27,6 +28,10 @@ except ModuleNotFoundError:  # pragma: no cover - direct script import path
 _CANONICAL_SCHEMA_VERSION = "oc-esrm20-mapping-header-disclosure-v1"
 _CANONICAL_DECISION_ISSUE = 410
 _CANONICAL_DISCLOSURE_SCOPE = "exact_header_strings_only"
+_CANONICAL_PROFILER_SOURCE_COMMIT = "e172e5ad57d25fe43cb36810a6baa76e102a0187"
+_CANONICAL_PROFILER_PATH = "scripts/profile_efehr_esrm20_mapping_structure.py"
+_CANONICAL_PROFILER_FUNCTION = "profile_verified_mapping_bytes"
+_CANONICAL_PROFILER_GIT_BLOB_SHA1 = "5d5aa5c9c48880022235e727c9ec4d5e73df46de"
 
 # Review/back-compat aliases only. Production serialization uses the private
 # canonical values and alias drift fails before the structure profiler runs.
@@ -42,6 +47,17 @@ class MappingHeaderDisclosureError(RuntimeError):
     """Raised when bounded exact-header disclosure cannot be proven safely."""
 
 
+def _git_blob_sha1(path: Path) -> str:
+    try:
+        raw = path.read_bytes()
+    except OSError as exc:
+        raise MappingHeaderDisclosureError(
+            "reviewed mapping structure profiler source is unavailable"
+        ) from exc
+    header = f"blob {len(raw)}\0".encode("ascii")
+    return hashlib.sha1(header + raw, usedforsecurity=False).hexdigest()
+
+
 def _require_canonical_aliases() -> None:
     aliases = (
         (SCHEMA_VERSION, _CANONICAL_SCHEMA_VERSION, "schema version"),
@@ -53,6 +69,27 @@ def _require_canonical_aliases() -> None:
             raise MappingHeaderDisclosureError(
                 f"mapping header disclosure {label} drifted"
             )
+
+
+def _require_profiler_source_identity() -> None:
+    if mapping_structure.profile_verified_mapping_bytes is not _STRUCTURE_PROFILER:
+        raise MappingHeaderDisclosureError(
+            "mapping structure profiler identity drifted"
+        )
+    source_file = getattr(mapping_structure, "__file__", None)
+    if type(source_file) is not str or not source_file:
+        raise MappingHeaderDisclosureError(
+            "reviewed mapping structure profiler source is unavailable"
+        )
+    source_path = Path(source_file)
+    if source_path.name != Path(_CANONICAL_PROFILER_PATH).name:
+        raise MappingHeaderDisclosureError(
+            "mapping structure profiler source path drifted"
+        )
+    if _git_blob_sha1(source_path) != _CANONICAL_PROFILER_GIT_BLOB_SHA1:
+        raise MappingHeaderDisclosureError(
+            "mapping structure profiler source blob drifted"
+        )
 
 
 def _length_prefixed_sha256(values: Sequence[str]) -> str:
@@ -206,7 +243,7 @@ def _disclose_headers(
         raise MappingHeaderDisclosureError("mapping input must be bytes")
 
     # This call is deliberately first for byte/content work: production checks
-    # this helper's own canonical aliases before entering this private function.
+    # this helper's own canonical aliases and profiler source before entering it.
     try:
         structure = structure_profiler(raw)
     except Exception as exc:
@@ -254,8 +291,5 @@ def disclose_verified_mapping_headers(raw: bytes) -> dict[str, Any]:
     """Disclose only headers from the exact mapping identity already frozen by #340."""
 
     _require_canonical_aliases()
-    if mapping_structure.profile_verified_mapping_bytes is not _STRUCTURE_PROFILER:
-        raise MappingHeaderDisclosureError(
-            "mapping structure profiler identity drifted"
-        )
+    _require_profiler_source_identity()
     return _disclose_headers(raw, structure_profiler=_STRUCTURE_PROFILER)
