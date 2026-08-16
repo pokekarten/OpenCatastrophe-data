@@ -46,11 +46,24 @@ EXPECTED_REQUESTED_TOKENS = (
     "KothaEtAl2020ESHM20SlopeGeology",
     "LanzanoLuzi2019shallow",
 )
-CANONICAL_PROFILE_RESULT_COMMENT_ID = 5310201828
+# Trusted #481 PASS 5310194089 returned key names only, never argument values.
+EXPECTED_SOURCE_ARGUMENT_KEYS = (
+    "a",
+    "b",
+    "c3_epsilon",
+    "epsilon",
+    "faba_taper_model",
+    "sigma_mu_epsilon",
+    "site_epsilon",
+    "theta_6_adjustment",
+)
+CANONICAL_PROFILE_RESULT_COMMENT_ID = 5310194089
 CANONICAL_RECEIPT_RESULT_COMMENT_ID = 5310057117
 OPENQUAKE_COMMIT = "9f044c93d72846421a8faa90ebf0a6afacdf3c20"
 _SAFE_CLASS_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,127}$")
 _SAFE_PARAMETER_RE = re.compile(r"^[a-z][a-z0-9_]{0,127}$")
+_SAFE_ARGUMENT_RE = re.compile(r"^[a-z][a-z0-9_]{0,127}$")
+_EXTERNAL_RESOURCE_SUFFIXES = ("_file", "_table")
 
 _BASE_RUN_REFERENCE_RUNTIME = _runtime.run_reference_runtime
 
@@ -136,6 +149,63 @@ def assert_esrm20_binding() -> None:
             raise Esrm20GsimReferenceRuntimeError("ESRM20 runtime adapter identity drifted")
 
 
+def _argument_keys(value: object, *, field: str) -> list[str]:
+    if type(value) is not list or value != sorted(set(value)):
+        raise Esrm20GsimReferenceRuntimeError(f"{field} are not a canonical key list")
+    for key in value:
+        if type(key) is not str or _SAFE_ARGUMENT_RE.fullmatch(key) is None:
+            raise Esrm20GsimReferenceRuntimeError(f"{field} contain an invalid key")
+    return value
+
+
+def _gsim_argument_evidence(branches: object) -> dict[str, Any]:
+    """Validate source-derived GSIM argument names without returning values."""
+    if type(branches) is not list or len(branches) != EXPECTED_BRANCH_COUNT:
+        raise Esrm20GsimReferenceRuntimeError("verified runtime branch inventory is invalid")
+
+    source_keys: set[str] = set()
+    runtime_keys: set[str] = set()
+    for branch in branches:
+        if type(branch) is not dict:
+            raise Esrm20GsimReferenceRuntimeError("verified runtime branch is not an object")
+        source = _argument_keys(branch.get("argument_keys"), field="source GSIM argument keys")
+        runtime = _argument_keys(
+            branch.get("runtime_argument_keys_after_alias"),
+            field="post-alias GSIM argument keys",
+        )
+        source_keys.update(source)
+        runtime_keys.update(runtime)
+
+    source = sorted(source_keys)
+    runtime = sorted(runtime_keys)
+    if source != list(EXPECTED_SOURCE_ARGUMENT_KEYS):
+        raise Esrm20GsimReferenceRuntimeError(
+            "verified ESRM20 source GSIM argument-key set drifted"
+        )
+    external = sorted(
+        {
+            key
+            for key in (*source, *runtime)
+            if key.endswith(_EXTERNAL_RESOURCE_SUFFIXES)
+        }
+    )
+    if external:
+        raise Esrm20GsimReferenceRuntimeError(
+            "verified ESRM20 GSIM arguments require external resources"
+        )
+    if not runtime:
+        raise Esrm20GsimReferenceRuntimeError(
+            "verified ESRM20 post-alias argument evidence is unexpectedly empty"
+        )
+    return {
+        "source_argument_keys": source,
+        "runtime_argument_keys_after_alias": runtime,
+        "external_resource_argument_keys": [],
+        "argument_values_returned": False,
+        "source_profile_result_comment_id": CANONICAL_PROFILE_RESULT_COMMENT_ID,
+    }
+
+
 def _site_parameter_evidence(
     runtime_result: Mapping[str, Any], registry: Mapping[str, Any]
 ) -> dict[str, Any]:
@@ -154,12 +224,6 @@ def _site_parameter_evidence(
     requested = sorted({branch.get("requested_gsim_token") for branch in branches})
     if requested != list(EXPECTED_REQUESTED_TOKENS):
         raise Esrm20GsimReferenceRuntimeError("verified ESRM20 requested-token set drifted")
-    if any(branch.get("argument_keys") != [] for branch in branches):
-        raise Esrm20GsimReferenceRuntimeError("ESRM20 source unexpectedly requires GSIM arguments")
-    if any(branch.get("runtime_argument_keys_after_alias") != [] for branch in branches):
-        raise Esrm20GsimReferenceRuntimeError(
-            "ESRM20 alias expansion unexpectedly introduced GSIM arguments"
-        )
 
     rows: list[dict[str, Any]] = []
     union: set[str] = set()
@@ -215,6 +279,7 @@ def run_reference_runtime(*, execution_sha: str, image_digest: str) -> dict[str,
         if result.get("openquake_reference", {}).get("commit") != OPENQUAKE_COMMIT:
             raise Esrm20GsimReferenceRuntimeError("runtime result OpenQuake commit drifted")
 
+        argument_evidence = _gsim_argument_evidence(result.get("branches"))
         verified_runtime = _gate._load_verified_openquake_runtime()
         evidence = _site_parameter_evidence(result, verified_runtime.registry)
         result = dict(result)
@@ -223,6 +288,7 @@ def run_reference_runtime(*, execution_sha: str, image_digest: str) -> dict[str,
         result["source_profile_result_comment_id"] = CANONICAL_PROFILE_RESULT_COMMENT_ID
         result["source_receipt_result_comment_id"] = CANONICAL_RECEIPT_RESULT_COMMENT_ID
         result["requested_gsim_tokens"] = list(EXPECTED_REQUESTED_TOKENS)
+        result["gsim_argument_evidence"] = argument_evidence
         result["site_parameter_requirements"] = evidence
         result["site_parameter_requirements_derived"] = True
         result["site_model_compatibility_verified"] = False
