@@ -37,24 +37,39 @@ class ResolvedGsim:
 
 class FakeRuntime:
     def __init__(self) -> None:
-        self.aliases = frozenset({"AliasGsim"})
+        self.aliases = frozenset({"AliasGsim", "AliasResourceGsim"})
         self.registry = {
             "DirectGsim": DirectGsim,
             "ResolvedGsim": ResolvedGsim,
             "AliasGsim": ResolvedGsim,
+            "AliasResourceGsim": ResolvedGsim,
         }
         self.engine_source_checkout_verified = True
         self.engine_checkout_commit = gate.OPENQUAKE_COMMIT
         self.calls = 0
 
-    def instantiate(self, model: object) -> object:
-        self.calls += 1
+    @staticmethod
+    def _token(model: object) -> str:
         text = (getattr(model, "text", "") or "").strip()
         first = text.splitlines()[0].strip()
-        token = first[1:-1].strip() if first.startswith("[") else first
+        return first[1:-1].strip() if first.startswith("[") else first
+
+    def argument_keys_after_alias(self, model: object) -> list[str]:
+        text = (getattr(model, "text", "") or "").strip()
+        keys = list(getattr(model, "attrib", {}).keys())
+        for line in text.splitlines()[1:]:
+            if "=" in line:
+                keys.append(line.split("=", 1)[0].strip())
+        if self._token(model) == "AliasResourceGsim":
+            keys.append("coeffs_file")
+        return sorted(keys)
+
+    def instantiate(self, model: object) -> object:
+        self.calls += 1
+        token = self._token(model)
         if token == "DirectGsim":
             return DirectGsim()
-        if token == "AliasGsim":
+        if token in {"AliasGsim", "AliasResourceGsim"}:
             return ResolvedGsim()
         if token == "BrokenGsim":
             raise TypeError("argument-value-must-not-leak")
@@ -95,7 +110,11 @@ class Eshm20GsimOpenQuakeRuntimeTests(unittest.TestCase):
             result["reference_runtime_fingerprint"],
             {"reference_recipe_match": True},
         )
-        self.assertTrue(result["gsim_request_runtime_compatibility_verified"])
+        self.assertTrue(result["reference_runtime_observation_validated"])
+        self.assertFalse(result["executing_environment_bound_to_reference_recipe"])
+        self.assertFalse(result["reference_runtime_recipe_verified"])
+        self.assertTrue(result["exact_source_constructor_compatibility_verified"])
+        self.assertFalse(result["gsim_request_runtime_compatibility_verified"])
         self.assertFalse(result["full_hazard_compatibility_verified"])
         self.assertFalse(result["model_use_authorized"])
 
@@ -116,6 +135,7 @@ class Eshm20GsimOpenQuakeRuntimeTests(unittest.TestCase):
         self.assertFalse(branch["alias_expansion_applied"])
         self.assertTrue(branch["registry_alias_key_used"])
         self.assertEqual(branch["argument_keys"], ["foo"])
+        self.assertEqual(branch["runtime_argument_keys_after_alias"], ["foo"])
 
     def test_identity_change_without_alias_fails_closed(self) -> None:
         with self.assertRaisesRegex(
@@ -138,6 +158,15 @@ class Eshm20GsimOpenQuakeRuntimeTests(unittest.TestCase):
             "requires external resources",
         ):
             evaluate(xml_for("[DirectGsim]\ncoeffs_file = 'outside.csv'"), runtime)
+        self.assertEqual(runtime.calls, 0)
+
+    def test_alias_introduced_resource_key_fails_before_runtime_instantiation(self) -> None:
+        runtime = FakeRuntime()
+        with self.assertRaisesRegex(
+            gate.Eshm20GsimRuntimeCompatibilityError,
+            "requires external resources after alias expansion",
+        ):
+            evaluate(xml_for("AliasResourceGsim"), runtime)
         self.assertEqual(runtime.calls, 0)
 
     def test_unverified_or_wrong_source_checkout_fails_closed(self) -> None:
@@ -200,6 +229,9 @@ class Eshm20GsimOpenQuakeRuntimeTests(unittest.TestCase):
         self.assertEqual(
             result["reference_runtime_fingerprint"], validated_fingerprint
         )
+        self.assertTrue(result["reference_runtime_observation_validated"])
+        self.assertFalse(result["reference_runtime_recipe_verified"])
+        self.assertFalse(result["gsim_request_runtime_compatibility_verified"])
         self.assertNotIn("must-not-be-output", repr(result))
 
     def test_output_never_contains_argument_values(self) -> None:
