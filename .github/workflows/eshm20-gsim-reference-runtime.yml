@@ -76,44 +76,25 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Skip an already completed identical execution
+      - name: Prove complete issue-local dedup before external activity
         id: dedup
-        run: |
-          set -euo pipefail
-          gh api "repos/$GITHUB_REPOSITORY/issues/432/comments?per_page=100" > "$COMMENTS"
-          python - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          comments = json.loads(Path(os.environ["COMMENTS"]).read_text(encoding="utf-8"))
-          marker = os.environ["RESULT_MARKER"]
-          target = os.environ["EXECUTION_SHA"]
-          skip = False
-          for comment in comments:
-              body = comment.get("body")
-              if not isinstance(body, str) or marker not in body:
-                  continue
-              _, raw = body.split(marker, 1)
-              try:
-                  result = json.loads(raw.strip())
-              except (json.JSONDecodeError, TypeError):
-                  continue
-              if (
-                  result.get("status") == "pass"
-                  and result.get("execution_sha") == target
-                  and result.get("target_sha") == target
-              ):
-                  skip = True
-                  break
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
-              handle.write(f"skip={'true' if skip else 'false'}\n")
-          PY
         env:
           GH_TOKEN: ${{ github.token }}
           EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
-          RESULT_MARKER: "<!-- oc-eq1-eshm20-gsim-reference-runtime-result-v1 -->"
-          COMMENTS: ${{ runner.temp }}/eq1-runtime-comments.json
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import run_eshm20_gsim_reference_runtime as subject
+
+          skip = subject.has_terminal_runtime_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
 
       - name: Fetch exact OpenQuake v3.14.0 source
         if: steps.dedup.outputs.skip != 'true'
