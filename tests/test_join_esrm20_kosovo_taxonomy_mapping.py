@@ -140,7 +140,7 @@ class ExactKosovoMappingJoinTests(unittest.TestCase):
                 expected_sha256="0" * 64,
             )
 
-    def test_public_result_is_exhaustive_and_keeps_authority_ceiling_false(self):
+    def test_public_result_is_exhaustive_attributed_and_keeps_ceiling_false(self):
         mapping_raw = _raw(["A,RISK_A,1", "B,R1,0.25", "B,R2,0.75"])
         exposure_identity = {
             "dataset_id": "test.exposure",
@@ -172,6 +172,11 @@ class ExactKosovoMappingJoinTests(unittest.TestCase):
             result["mapping_weight_rule"],
             "positive_finite_float_sum_within_openquake_1e-7",
         )
+        self.assertEqual(result["rights"]["provider"], subject.RIGHTS_PROVIDER)
+        self.assertEqual(result["rights"]["license_id"], "CC-BY-4.0")
+        self.assertTrue(result["rights"]["attribution_required"])
+        self.assertEqual(result["rights"]["source_reviews"], list(subject.RIGHTS_SOURCE_REVIEWS))
+        self.assertTrue(result["bounded_derived_disclosure_authorized"])
         self.assertFalse(result["normalization_applied"])
         self.assertFalse(result["wildcard_or_fallback_matching_applied"])
         self.assertFalse(result["vulnerability_file_selection_authorized"])
