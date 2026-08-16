@@ -35,6 +35,18 @@ SUMMARY_PATHS = (
     "scenario_ruptures_output_summary.csv",
     "scenario_shakemaps_output_summary.csv",
 )
+DATASET_ATTRIBUTION = {
+    "dataset_title": "Earthquake Scenario Loss Testing Repository",
+    "dataset_version": "v1.0",
+    "license_identifier": "CC-BY-4.0",
+    "citation": (
+        "H. Crowley, J. Dabbeek, L. Danciu, P. Kalakonas, E. Riga, V. Silva, "
+        "E. Veliu, G. Weatherill (2021). Earthquake Scenario Loss Testing "
+        "Repository (v1.0) [Data set]. Zenodo. "
+        "https://doi.org/10.5281/zenodo.5728008"
+    ),
+    "doi": "10.5281/zenodo.5728008",
+}
 
 MAX_FILE_BYTES = 2 * 1024 * 1024
 MAX_ROWS = 20_000
@@ -302,6 +314,7 @@ def acquire_and_profile_summaries(
         "release_tag": RELEASE_TAG,
         "commit_sha": COMMIT_SHA,
         "summary_paths": list(SUMMARY_PATHS),
+        "dataset_attribution": dict(DATASET_ATTRIBUTION),
         "summaries": profiles,
         "identity_value_count": identity_value_count,
         "identity_set_sha256": _aggregate_identity_sha256(profiles),
