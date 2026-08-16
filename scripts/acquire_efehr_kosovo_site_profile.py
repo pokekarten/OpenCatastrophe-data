@@ -115,6 +115,35 @@ def _require_production_transport_identity() -> None:
         raise SiteProfileContractError("frozen Kosovo site-profile profiler identity drifted")
 
 
+def _validate_text(value: object, *, label: str, allow_none: bool = False) -> None:
+    if allow_none and value is None:
+        return
+    if type(value) is not str or not value or len(value.encode("utf-8")) > 256:
+        raise SiteProfileContractError(f"Kosovo site profile {label} is outside bounded policy")
+
+
+def _validate_count(value: object, *, label: str, lower: int = 0, upper: int = 10_000) -> int:
+    if type(value) is not int or isinstance(value, bool) or not (lower <= value <= upper):
+        raise SiteProfileContractError(f"Kosovo site profile {label} is outside bounded policy")
+    return value
+
+
+def _validate_qname(value: object, *, label: str) -> None:
+    if type(value) is not dict or set(value) != {"namespace", "local_name"}:
+        raise SiteProfileContractError(f"Kosovo site profile {label} fields drifted")
+    _validate_text(value.get("namespace"), label=f"{label}.namespace", allow_none=True)
+    _validate_text(value.get("local_name"), label=f"{label}.local_name")
+
+
+def _validate_sha256(value: object, *, label: str) -> None:
+    if (
+        type(value) is not str
+        or len(value) != 64
+        or any(character not in "0123456789abcdef" for character in value)
+    ):
+        raise SiteProfileContractError(f"Kosovo site profile {label} is not lowercase SHA-256")
+
+
 def _validate_profile_result(result: object) -> dict[str, Any]:
     expected_fields = {
         "schema_version", "source_issue", "source_science_issue", "receipt_issue",
@@ -182,23 +211,98 @@ def _validate_profile_result(result: object) -> dict[str, Any]:
         or type(parser.get("bom_present")) is not bool
     ):
         raise SiteProfileContractError("Kosovo site profile parser boundary drifted")
-    for field, lower, upper in (
-        ("element_count", 1, 10_000),
-        ("leaf_element_count", 0, 10_000),
-        ("max_depth", 1, 16),
-        ("non_whitespace_text_element_count", 0, 10_000),
-    ):
-        value = bounded.get(field)
-        if type(value) is not int or isinstance(value, bool) or not (lower <= value <= upper):
-            raise SiteProfileContractError(f"Kosovo site profile {field} is outside bounded policy")
-    if bounded["leaf_element_count"] > bounded["element_count"]:
+
+    element_count = _validate_count(
+        bounded.get("element_count"), label="element_count", lower=1, upper=10_000
+    )
+    leaf_count = _validate_count(
+        bounded.get("leaf_element_count"), label="leaf_element_count", upper=10_000
+    )
+    _validate_count(bounded.get("max_depth"), label="max_depth", lower=1, upper=16)
+    text_count = _validate_count(
+        bounded.get("non_whitespace_text_element_count"),
+        label="non_whitespace_text_element_count",
+        upper=10_000,
+    )
+    if leaf_count > element_count:
         raise SiteProfileContractError("Kosovo site profile leaf count exceeds element count")
-    if bounded["non_whitespace_text_element_count"] > bounded["element_count"]:
+    if text_count > element_count:
         raise SiteProfileContractError("Kosovo site profile text count exceeds element count")
-    for field, maximum in (("tag_counts", 10_000), ("namespace_counts", 1_024), ("attribute_profiles", 512)):
-        value = bounded.get(field)
-        if type(value) is not list or len(value) > maximum:
-            raise SiteProfileContractError(f"Kosovo site profile {field} is outside bounded policy")
+
+    _validate_qname(bounded.get("root"), label="root")
+
+    tag_counts = bounded.get("tag_counts")
+    if type(tag_counts) is not list or len(tag_counts) > 10_000:
+        raise SiteProfileContractError("Kosovo site profile tag_counts is outside bounded policy")
+    for index, row in enumerate(tag_counts):
+        label = f"tag_counts[{index}]"
+        if type(row) is not dict or set(row) != {"name", "count"}:
+            raise SiteProfileContractError(f"Kosovo site profile {label} fields drifted")
+        _validate_qname(row.get("name"), label=f"{label}.name")
+        _validate_count(row.get("count"), label=f"{label}.count", lower=1, upper=element_count)
+
+    namespace_counts = bounded.get("namespace_counts")
+    if type(namespace_counts) is not list or len(namespace_counts) > 1_024:
+        raise SiteProfileContractError(
+            "Kosovo site profile namespace_counts is outside bounded policy"
+        )
+    for index, row in enumerate(namespace_counts):
+        label = f"namespace_counts[{index}]"
+        if type(row) is not dict or set(row) != {"namespace", "element_count"}:
+            raise SiteProfileContractError(f"Kosovo site profile {label} fields drifted")
+        _validate_text(row.get("namespace"), label=f"{label}.namespace")
+        _validate_count(
+            row.get("element_count"),
+            label=f"{label}.element_count",
+            lower=1,
+            upper=element_count,
+        )
+
+    attribute_profiles = bounded.get("attribute_profiles")
+    if type(attribute_profiles) is not list or len(attribute_profiles) > 512:
+        raise SiteProfileContractError(
+            "Kosovo site profile attribute_profiles is outside bounded policy"
+        )
+    attribute_fields = {
+        "name",
+        "occurrence_count",
+        "empty_count",
+        "leading_or_trailing_whitespace_count",
+        "distinct_count",
+        "exact_value_set_sha256",
+        "finite_decimal_lexical_count",
+        "true_lexical_count",
+        "false_lexical_count",
+    }
+    for index, row in enumerate(attribute_profiles):
+        label = f"attribute_profiles[{index}]"
+        if type(row) is not dict or set(row) != attribute_fields:
+            raise SiteProfileContractError(f"Kosovo site profile {label} fields drifted")
+        _validate_qname(row.get("name"), label=f"{label}.name")
+        occurrences = _validate_count(
+            row.get("occurrence_count"),
+            label=f"{label}.occurrence_count",
+            lower=1,
+            upper=element_count,
+        )
+        for field in (
+            "empty_count",
+            "leading_or_trailing_whitespace_count",
+            "finite_decimal_lexical_count",
+            "true_lexical_count",
+            "false_lexical_count",
+        ):
+            _validate_count(row.get(field), label=f"{label}.{field}", upper=occurrences)
+        _validate_count(
+            row.get("distinct_count"),
+            label=f"{label}.distinct_count",
+            lower=1,
+            upper=occurrences,
+        )
+        _validate_sha256(
+            row.get("exact_value_set_sha256"),
+            label=f"{label}.exact_value_set_sha256",
+        )
     return result
 
 
