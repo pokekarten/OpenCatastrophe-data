@@ -16,12 +16,15 @@ NOW = "2026-08-16T23:30:00Z"
 
 
 class FakeResponse:
-    def __init__(self, url: str, payload: bytes):
+    def __init__(self, url: str, payload: bytes, *, include_length: bool = True):
         self.status = 200
         self._url = url
         self._payload = payload
         self._offset = 0
-        self.headers = {"Content-Length": str(len(payload)), "Content-Type": "application/xml"}
+        self.bytes_returned = 0
+        self.headers = {"Content-Type": "application/xml"}
+        if include_length:
+            self.headers["Content-Length"] = str(len(payload))
 
     def __enter__(self):
         return self
@@ -39,19 +42,28 @@ class FakeResponse:
             size = len(self._payload) - self._offset
         chunk = self._payload[self._offset : self._offset + size]
         self._offset += len(chunk)
+        self.bytes_returned += len(chunk)
         return chunk
 
 
 class SequenceOpener:
-    def __init__(self, payloads: list[bytes]):
+    def __init__(self, payloads: list[bytes], *, include_length: bool = True):
         self.payloads = list(payloads)
+        self.include_length = include_length
         self.urls: list[str] = []
+        self.responses: list[FakeResponse] = []
 
     def __call__(self, request, timeout: float):
         if not self.payloads:
             raise AssertionError("unexpected extra provider call")
         self.urls.append(request.full_url)
-        return FakeResponse(request.full_url, self.payloads.pop(0))
+        response = FakeResponse(
+            request.full_url,
+            self.payloads.pop(0),
+            include_length=self.include_length,
+        )
+        self.responses.append(response)
+        return response
 
 
 def request_body(sha: str = EXECUTION_SHA) -> str:
@@ -142,6 +154,19 @@ class SourceModelReceiptActionTests(unittest.TestCase):
         self.assertFalse(profile["runtime_compatibility_verified"])
         encoded = json.dumps(profile)
         self.assertNotIn("<nrml", encoded)
+
+    def test_aggregate_budget_bounds_actual_streamed_bytes_without_content_length(self) -> None:
+        opener = SequenceOpener([b"abc", b"defg"] + [b"x"] * 8, include_length=False)
+        with (
+            mock.patch.object(subject, "MAX_FILE_BYTES", 4),
+            mock.patch.object(subject, "MAX_TOTAL_BYTES", 5),
+            self.assertRaises(subject.SourceModelReceiptError),
+        ):
+            subject.acquire_receipts(opener=opener, monotonic=lambda: 0.0, now=lambda: NOW)
+        self.assertEqual(len(opener.responses), 2)
+        self.assertEqual(sum(response.bytes_returned for response in opener.responses), 5)
+        self.assertEqual(opener.responses[1].bytes_returned, 2)
+        self.assertEqual(len(opener.payloads), 8)
 
     def test_request_is_exact_head_and_has_no_provider_selector(self) -> None:
         parsed = subject.validate_request(request_body(), expected_issue=481, execution_sha=EXECUTION_SHA)
