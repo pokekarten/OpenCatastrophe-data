@@ -1,0 +1,230 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Kosovo Site Receipt
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-kosovo-site-receipt-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main site receipt request
+    if: >-
+      github.event.issue.number == 342 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-kosovo-site-receipt-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_SITE_REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/run_esrm20_kosovo_site_receipt_action.py \
+            --comment-body-env OC_SITE_REQUEST_BODY \
+            --expected-issue 342 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-site-receipt:
+    name: Execute bounded site receipt
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Skip an already completed identical execution
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-kosovo-site-receipt-result-v1 -->"
+          COMMENTS: ${{ runner.temp }}/site-comments.json
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/issues/342/comments?per_page=100" > "$COMMENTS"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          comments = json.loads(Path(os.environ["COMMENTS"]).read_text(encoding="utf-8"))
+          marker = os.environ["RESULT_MARKER"]
+          target = os.environ["EXECUTION_SHA"]
+          skip = False
+          for comment in comments:
+              user = comment.get("user")
+              if not isinstance(user, dict) or user.get("login") != "github-actions[bot]":
+                  continue
+              body = comment.get("body")
+              if not isinstance(body, str) or body.count(marker) != 1:
+                  continue
+              prefix, raw = body.split(marker, 1)
+              if prefix.strip():
+                  continue
+              try:
+                  result = json.loads(raw.strip())
+              except (json.JSONDecodeError, TypeError):
+                  continue
+              completed = result.get("status") == "pass" or (
+                  result.get("status") == "blocked"
+                  and result.get("failure_class") == "acquisition_failure"
+              )
+              if (
+                  completed
+                  and result.get("action") == "esrm20_kosovo_site_model_receipt"
+                  and result.get("source_issue") == 342
+                  and result.get("dataset_id") == "efehr.esrm20.risk-inputs.v1.0"
+                  and result.get("execution_sha") == target
+                  and result.get("target_sha") == target
+              ):
+                  skip = True
+                  break
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+
+      - name: Run exact frozen site receipt worker
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_SITE_REQUEST_BODY: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/site-result.json
+        run: |
+          set -euo pipefail
+          python scripts/run_esrm20_kosovo_site_receipt_action.py \
+            --comment-body-env OC_SITE_REQUEST_BODY \
+            --expected-issue 342 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          target = os.environ["EXECUTION_SHA"]
+          if result.get("status") not in {"pass", "blocked"}:
+              raise SystemExit("site receipt result has invalid status")
+          if (
+              result.get("execution_sha") != target
+              or result.get("target_sha") != target
+              or result.get("external_bytes_persisted") is not False
+              or result.get("publication_authorized") is not False
+              or result.get("model_use_authorized") is not False
+          ):
+              raise SystemExit("site receipt result failed authority fence")
+          if result.get("status") == "blocked" and (
+              result.get("failure_class") != "acquisition_failure"
+              or result.get("receipt") is not None
+          ):
+              raise SystemExit("blocked site receipt is not safely bounded")
+          PY
+
+      - name: Export bounded result to publisher
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        env:
+          RESULT_PATH: ${{ runner.temp }}/site-result.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-site-receipt:
+    name: Publish bounded site receipt evidence
+    needs: [validate-request, execute-site-receipt]
+    if: >-
+      needs.execute-site-receipt.result == 'success' &&
+      needs.execute-site-receipt.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence result and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-site-receipt.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-kosovo-site-receipt-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .action == "esrm20_kosovo_site_model_receipt" and
+            .source_issue == 342 and
+            .source_science_issue == 284 and
+            .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+            .target_sha == $sha and
+            .execution_sha == $sha and
+            (.status == "pass" or (.status == "blocked" and .failure_class == "acquisition_failure" and .receipt == null)) and
+            .site_xml_semantics_verified == false and
+            .crs_coordinate_semantics_verified == false and
+            .site_parameter_units_verified == false and
+            .missingness_semantics_verified == false and
+            .gsim_site_parameter_sufficiency_verified == false and
+            .site_adjusted_reference_authorized == false and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and
+            .model_use_authorized == false
+          ' >/dev/null
+
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/site-comment.json"
+          gh api \
+            --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/342/comments" \
+            --input "$RUNNER_TEMP/site-comment.json"
