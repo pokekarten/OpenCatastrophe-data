@@ -82,6 +82,30 @@ class ScenarioSummaryDedupTests(unittest.TestCase):
                 execution_sha=current_sha,
             )
 
+    def test_other_sha_malformed_terminal_result_still_fails_closed(self) -> None:
+        historical_sha = "1" * 40
+        current_sha = "2" * 40
+        result = {
+            **action._base_result(execution_sha=historical_sha),
+            "status": "pending",
+            "failure_class": None,
+            "profile": None,
+        }
+        body = action.RESULT_MARKER + "\n" + json.dumps(
+            result, sort_keys=True, separators=(",", ":")
+        )
+        comments = [self._trusted_comment(body)]
+
+        with mock.patch.object(action, "_FETCH_COMMENTS", return_value=comments), self.assertRaisesRegex(
+            action.ScenarioSummaryExecutionError,
+            "non-terminal status",
+        ):
+            action.has_terminal_result(
+                repository="pokekarten/OpenCatastrophe-data",
+                token="test-token",
+                execution_sha=current_sha,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
