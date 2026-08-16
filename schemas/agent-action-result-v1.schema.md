@@ -18,7 +18,7 @@ Change the canonical JSON Schema and run `python scripts/schema_reference.py --w
 
 Portable closed result receipt for the owner-authorized trusted-main Agent Action Dispatch control plane. scripts/validate_agent_action_result.py is authoritative for exact Python scalar types, UTC ordering, acquisition-receipt identity and cross-field checks.
 
-**Executable authority note:** request_validation records strict validation/dedup state. acquisition_receipt phase is shared by closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, efehr_kosovo_exposure_receipt for Issue 328, efehr_eshm20_root_config_receipt for Issue 335, the two ESRM20 event-hazard Group1/Group2 receipt actions for Issue 346, efehr_kosovo_exposure_profile for Issue 351, and efehr_eshm20_gsim_resource_profile for Issue 376. All require external_bytes_persisted=false. EFEHR/ESRM20 receipts prove only their bounded transport, repository-metadata, or exact selected-file byte identity; they do not establish scientific fitness, dependency closure, model-use eligibility, completeness outside the selected scope or publication authorization. efehr_eshm20_root_dependency_profile for Issue 353 persists only verified first-order dependency metadata; dependency inventory, transitive closure, model use and publication remain unauthorized. efehr_eshm20_first_order_receipts for Issue 361 persists only exact byte receipts for the three \#353-selected first-order candidates; dependency inventory, semantics, closure, model use and publication remain unauthorized. efehr_eshm20_gsim_resource_profile persists only bounded structural _file/_table resource-reference metadata from the exact \#361-receipted GMM logic-tree bytes; dependency receipts, dependency closure, GSIM runtime validity, model use and publication remain unauthorized. efehr_kosovo_taxonomy_identity for Issue 363 persists only the exact pre-publication identity of the 86-value Kosovo residential TAXONOMY set; literal taxonomy values, provider bytes, normalization, mapping interpretation, vulnerability selection, publication and model use remain unauthorized. esrm20_exposure_vulnerability_mapping_receipt for Issue 340 persists only the exact selected mapping-file byte receipt; mapping-row interpretation, taxonomy-to-vulnerability resolution, vulnerability selection, provider-byte publication and model use remain unauthorized. efehr_eshm20_source_model_child_receipts for Issue 414 persists only metadata receipts for the exact 51 canonical non-HDF5 source-model children proven by \#397; dependency inventory/expansion, transitive closure, provider-byte persistence, publication and model use remain unauthorized.
+**Executable authority note:** request_validation records strict validation/dedup state. acquisition_receipt phase is shared by closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, efehr_kosovo_exposure_receipt for Issue 328, efehr_eshm20_root_config_receipt for Issue 335, the two ESRM20 event-hazard Group1/Group2 receipt actions for Issue 346, efehr_kosovo_exposure_profile for Issue 351, and efehr_eshm20_gsim_resource_profile for Issue 376. All require external_bytes_persisted=false. EFEHR/ESRM20 receipts prove only their bounded transport, repository-metadata, or exact selected-file byte identity; they do not establish scientific fitness, dependency closure, model-use eligibility, completeness outside the selected scope or publication authorization. efehr_eshm20_root_dependency_profile for Issue 353 persists only verified first-order dependency metadata; dependency inventory, transitive closure, model use and publication remain unauthorized. efehr_eshm20_first_order_receipts for Issue 361 persists only exact byte receipts for the three \#353-selected first-order candidates; dependency inventory, semantics, closure, model use and publication remain unauthorized. efehr_eshm20_gsim_resource_profile persists only bounded structural _file/_table resource-reference metadata from the exact \#361-receipted GMM logic-tree bytes; dependency receipts, dependency closure, GSIM runtime validity, model use and publication remain unauthorized. efehr_kosovo_taxonomy_identity for Issue 363 persists only the exact pre-publication identity of the 86-value Kosovo residential TAXONOMY set; literal taxonomy values, provider bytes, normalization, mapping interpretation, vulnerability selection, publication and model use remain unauthorized. esrm20_exposure_vulnerability_mapping_receipt for Issue 340 persists only the exact selected mapping-file byte receipt; mapping-row interpretation, taxonomy-to-vulnerability resolution, vulnerability selection, provider-byte publication and model use remain unauthorized. efehr_eshm20_source_model_child_receipts for Issue 414 persists only the exact 51 frozen child byte receipts and bounded provenance; dependency expansion, transitive closure, model use and publication remain unauthorized.
 
 ## Contract structure
 
@@ -1368,37 +1368,33 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`object`; `additionalProperties`=`false`
 
-**Required here:** `schema_version`, `source_issue`, `dataset_id`, `provider_host`, `project_id`, `project_path`, `commit_sha`, `repository_path`, `requested_url`, `final_url`, `retrieved_at`, `byte_count`, `sha256`, `content_type`, `etag`, `external_bytes_persisted`, `publication_authorized`, `parent_result_comment_id`
+**Required here:** `repository_path`, `retrieved_at`, `byte_count`, `sha256`, `project_id`, `project_path`, `commit_sha`, `parent_result_comment_id`, `dependency_inventory_authorized`, `dependency_receipt_authorized`, `external_bytes_persisted`, `publication_authorized`, `model_use_authorized`
 
 ##### Properties
 
 ###### `byte_count` — **required**
 
-**Constraints:** type=`integer`; `minimum`=`1`; `maximum`=`67108864`
+**Constraints:** type=`integer`; `minimum`=`1`; `maximum`=`1048576`
 
 ###### `commit_sha` — **required**
 
 **Constraints:** `const`=`fbd334de68f85d72669f73fc5a314a113db67317`
 
-###### `content_type` — **required**
+###### `dependency_inventory_authorized` — **required**
 
-**Constraints:** type=`string | null`; `maxLength`=`512`
+**Constraints:** `const`=`false`
 
-###### `dataset_id` — **required**
+###### `dependency_receipt_authorized` — **required**
 
-**Constraints:** `const`=`efehr.eshm20`
-
-###### `etag` — **required**
-
-**Constraints:** type=`string | null`; `maxLength`=`512`
+**Constraints:** `const`=`false`
 
 ###### `external_bytes_persisted` — **required**
 
 **Constraints:** `const`=`false`
 
-###### `final_url` — **required**
+###### `model_use_authorized` — **required**
 
-**Constraints:** type=`string`; `pattern`=`^https://gitlab\.seismo\.ethz\.ch/api/v4/projects/197/repository/files/.+/raw\?ref=fbd334de68f85d72669f73fc5a314a113db67317$`; `minLength`=`1`; `maxLength`=`2048`
+**Constraints:** `const`=`false`
 
 ###### `parent_result_comment_id` — **required**
 
@@ -1412,37 +1408,21 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`efehr/eshm20`
 
-###### `provider_host` — **required**
-
-**Constraints:** `const`=`gitlab.seismo.ethz.ch`
-
 ###### `publication_authorized` — **required**
 
 **Constraints:** `const`=`false`
 
 ###### `repository_path` — **required**
 
-**Constraints:** `enum`=`["oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_hi_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_hi_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_hi_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_lo_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_lo_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_lo_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_mid_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_mid_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_mid_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_pareto_abgrs_cornermag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_pareto_abgrs_cornermag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_pareto_abgrs_cornermag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_twingr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_hi_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_hi_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_hi_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_lo_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_lo_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_lo_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_mid_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_mid_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_mid_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_pareto_abgrs_cornermag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_pareto_abgrs_cornermag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_pareto_abgrs_cornermag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRA_MA_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRA_ML_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRA_MU_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRL_MA_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRL_ML_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRL_MU_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRU_MA_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRU_ML_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRU_MU_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/interface_v12b/CaA_IF2222222_M40.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/interface_v12b/CyA_IF2222222_M40.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/interface_v12b/GiA_IF2222222_M40.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/interface_v12b/HeA_IF2222222_M40.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/ssm_v09/seis_ver12b_fMthr_asm_ver12e_winGT_fs017_agbrs_point.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_hi_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_hi_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_hi_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_lo_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_lo_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_lo_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_mid_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_mid_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_mid_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_pareto_abgrs_cornermag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_pareto_abgrs_cornermag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_pareto_abgrs_cornermag_upp.xml"]`
-
-###### `requested_url` — **required**
-
-**Constraints:** type=`string`; `pattern`=`^https://gitlab\.seismo\.ethz\.ch/api/v4/projects/197/repository/files/.+/raw\?ref=fbd334de68f85d72669f73fc5a314a113db67317$`; `minLength`=`1`; `maxLength`=`2048`
+**Constraints:** type=`string`; `minLength`=`1`; `maxLength`=`512`
 
 ###### `retrieved_at` — **required**
 
 **Constraints:** type=`string`; `pattern`=`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`
 
-###### `schema_version` — **required**
-
-**Constraints:** `const`=`oc-efehr-gitlab-artifact-receipt-v1`
-
 ###### `sha256` — **required**
 
 **Constraints:** type=`string`; `pattern`=`^[a-f0-9]{64}$`
-
-###### `source_issue` — **required**
-
-**Constraints:** `const`=`281`
 
 #### `efehrEshm20SourceModelChildReceiptSet`
 
@@ -1538,7 +1518,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### `receipts` — **required**
 
-**Constraints:** type=`array`; `minItems`=`51`; `maxItems`=`51`; `uniqueItems`=`true`
+**Constraints:** type=`array`; `minItems`=`51`; `maxItems`=`51`
 
 ###### Array items
 
@@ -2652,7 +2632,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### not
 
-**Required here:** `efehr_eshm20_source_model_dependencies`
+**Required here:** `efehr_eshm20_source_model_dependencies`, `efehr_eshm20_source_model_child_receipts`
 
 ###### Branch 15
 
@@ -4536,7 +4516,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### `evidence`
 
-**Required here:** `efehr_eshm20_source_model_dependencies`
+**Required here:** `efehr_eshm20_source_model_dependencies`, `efehr_eshm20_source_model_child_receipts`
 
 ###### `source_issue`
 

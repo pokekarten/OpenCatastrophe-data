@@ -71,13 +71,7 @@ class Eshm20SourceModelChildReceiptWorkerTests(unittest.TestCase):
 
     def test_public_worker_exposes_no_target_or_file_selector(self) -> None:
         signature = inspect.signature(worker.acquire_eshm20_source_model_child_receipts)
-        self.assertEqual(set(signature.parameters), {"opener", "now", "monotonic"})
-        self.assertTrue(
-            all(
-                parameter.kind is inspect.Parameter.KEYWORD_ONLY
-                for parameter in signature.parameters.values()
-            )
-        )
+        self.assertEqual(set(signature.parameters), set())
         self.assertIs(worker.CHILDREN, worker._CANONICAL_CHILDREN)
 
     def test_exact_51_path_set_is_sorted_unique_and_fingerprint_bound(self) -> None:
@@ -102,7 +96,7 @@ class Eshm20SourceModelChildReceiptWorkerTests(unittest.TestCase):
             counter += 1
             return f"2026-08-15T22:{counter // 60:02d}:{counter % 60:02d}Z"
 
-        result = worker.acquire_eshm20_source_model_child_receipts(
+        result = worker._acquire_eshm20_source_model_child_receipts(
             opener=self.opener(captured),
             now=now,
             monotonic=lambda: 100.0,
@@ -132,14 +126,21 @@ class Eshm20SourceModelChildReceiptWorkerTests(unittest.TestCase):
         self.assertFalse(result["model_use_authorized"])
 
         for item in result["receipts"]:
-            self.assertEqual(item["source_issue"], 281)
-            self.assertEqual(item["dataset_id"], "efehr.eshm20")
             self.assertEqual(item["project_id"], 197)
             self.assertEqual(item["project_path"], "efehr/eshm20")
             self.assertEqual(item["commit_sha"], worker.COMMIT_SHA)
             self.assertEqual(item["parent_result_comment_id"], 5304432768)
             self.assertFalse(item["external_bytes_persisted"])
+            self.assertFalse(item["dependency_inventory_authorized"])
+            self.assertFalse(item["dependency_receipt_authorized"])
+            self.assertFalse(item["external_bytes_persisted"])
             self.assertFalse(item["publication_authorized"])
+            self.assertFalse(item["model_use_authorized"])
+            self.assertEqual(set(item), worker._CHILD_RECEIPT_FIELDS)
+            self.assertNotIn("requested_url", item)
+            self.assertNotIn("final_url", item)
+            self.assertNotIn("content_type", item)
+            self.assertNotIn("etag", item)
             self.assertNotIn(PAYLOAD.decode().strip(), repr(item))
 
     def test_one_total_deadline_is_shared_across_51_requests(self) -> None:
@@ -151,7 +152,7 @@ class Eshm20SourceModelChildReceiptWorkerTests(unittest.TestCase):
             clock[0] += 0.01
             return current
 
-        worker.acquire_eshm20_source_model_child_receipts(
+        worker._acquire_eshm20_source_model_child_receipts(
             opener=self.opener(captured),
             now=lambda: "2026-08-15T22:00:00Z",
             monotonic=monotonic,
@@ -172,7 +173,7 @@ class Eshm20SourceModelChildReceiptWorkerTests(unittest.TestCase):
             return FakeResponse(PAYLOAD, request.full_url)
 
         with self.assertRaises(worker.Eshm20SourceModelChildReceiptError) as caught:
-            worker.acquire_eshm20_source_model_child_receipts(
+            worker._acquire_eshm20_source_model_child_receipts(
                 opener=opener,
                 now=lambda: "2026-08-15T22:00:00Z",
                 monotonic=lambda: 10.0,
@@ -195,7 +196,7 @@ class Eshm20SourceModelChildReceiptWorkerTests(unittest.TestCase):
             return FakeResponse(PAYLOAD, request.full_url)
 
         with self.assertRaises(worker.Eshm20SourceModelChildReceiptError):
-            worker.acquire_eshm20_source_model_child_receipts(
+            worker._acquire_eshm20_source_model_child_receipts(
                 opener=opener,
                 now=lambda: "2026-08-15T22:00:00Z",
                 monotonic=lambda: 10.0,
@@ -223,7 +224,11 @@ class Eshm20SourceModelChildReceiptWorkerTests(unittest.TestCase):
                 opener = mock.Mock()
                 with mock.patch.object(worker, "CHILDREN", mutated):
                     with self.assertRaises(worker.Eshm20SourceModelChildReceiptError):
-                        worker.acquire_eshm20_source_model_child_receipts(opener=opener)
+                        worker._acquire_eshm20_source_model_child_receipts(
+                            opener=opener,
+                            now=lambda: "2026-08-15T22:00:00Z",
+                            monotonic=lambda: 10.0,
+                        )
                 opener.assert_not_called()
 
     def test_direct_helper_rejects_constructed_equal_or_forged_spec_before_network(self) -> None:
@@ -252,24 +257,56 @@ class Eshm20SourceModelChildReceiptWorkerTests(unittest.TestCase):
                     )
                 opener.assert_not_called()
 
-    def test_worker_rejects_widened_nested_receipt_authority(self) -> None:
-        original = worker.receipt_from_stream
+    def test_worker_rejects_widened_or_open_ended_core_receipt(self) -> None:
+        original = worker._CANONICAL_RECEIPT_FROM_STREAM
 
         def widened(*args, **kwargs):
             receipt = original(*args, **kwargs)
-            receipt["publication_authorized"] = True
+            receipt["model_use_authorized"] = True
             return receipt
 
-        with mock.patch.object(worker, "receipt_from_stream", side_effect=widened):
-            with self.assertRaisesRegex(
-                worker.Eshm20SourceModelChildReceiptError,
-                "widened",
-            ):
-                worker.acquire_eshm20_source_model_child_receipts(
-                    opener=self.opener([]),
-                    now=lambda: "2026-08-15T22:00:00Z",
-                    monotonic=lambda: 10.0,
-                )
+        with self.assertRaisesRegex(
+            worker.Eshm20SourceModelChildReceiptError,
+            "fields drifted",
+        ):
+            worker._acquire_eshm20_source_model_child_receipts(
+                opener=self.opener([]),
+                now=lambda: "2026-08-15T22:00:00Z",
+                monotonic=lambda: 10.0,
+                receipt_builder=widened,
+            )
+
+    def test_public_authority_alias_drift_fails_before_network(self) -> None:
+        for field, value in (
+            ("COMMIT_SHA", "b" * 40),
+            ("PARENT_RESULT_COMMENT_ID", 1),
+        ):
+            opener = mock.Mock()
+            with self.subTest(field=field), mock.patch.object(worker, field, value):
+                with self.assertRaisesRegex(
+                    worker.Eshm20SourceModelChildReceiptError,
+                    "drifted",
+                ):
+                    worker._acquire_eshm20_source_model_child_receipts(
+                        opener=opener,
+                        now=lambda: "2026-08-15T22:00:00Z",
+                        monotonic=lambda: 10.0,
+                    )
+            opener.assert_not_called()
+
+    def test_public_production_transport_or_clock_drift_fails_before_network(self) -> None:
+        for field, replacement in (
+            ("_open_fixed", mock.Mock()),
+            ("utc_now", mock.Mock()),
+            ("validate_target", mock.Mock()),
+        ):
+            with self.subTest(field=field), mock.patch.object(worker, field, replacement):
+                with self.assertRaisesRegex(
+                    worker.Eshm20SourceModelChildReceiptError,
+                    "production .* drifted",
+                ):
+                    worker.acquire_eshm20_source_model_child_receipts()
+
 
 
 if __name__ == "__main__":

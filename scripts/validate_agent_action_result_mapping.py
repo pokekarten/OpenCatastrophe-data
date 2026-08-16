@@ -24,7 +24,6 @@ try:
     from scripts.efehr_gitlab_receipt import (
         PROJECTS,
         PROVIDER_HOST,
-        SCHEMA_VERSION as EFEHR_RECEIPT_SCHEMA_VERSION,
         raw_file_api_url,
         validate_target,
     )
@@ -41,7 +40,6 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     from efehr_gitlab_receipt import (
         PROJECTS,
         PROVIDER_HOST,
-        SCHEMA_VERSION as EFEHR_RECEIPT_SCHEMA_VERSION,
         raw_file_api_url,
         validate_target,
     )
@@ -72,25 +70,6 @@ _MAPPING_RECEIPT_FIELDS = {
     "final_url", "retrieved_at", "byte_count", "sha256", "content_type", "etag",
     "external_bytes_persisted", "publication_authorized",
 }
-
-_CHILD_RECEIPT_FIELD = "efehr_eshm20_source_model_child_receipts"
-_CHILD_EVIDENCE_FIELDS = _legacy.REQUEST_EVIDENCE_FIELDS | {_CHILD_RECEIPT_FIELD}
-_CHILD_SET_FIELDS = {
-    "schema_version", "operation_id", "control_issue", "source_issue", "dataset_id",
-    "provider_host", "project_id", "project_path", "commit_sha",
-    "parent_request_comment_id", "parent_result_comment_id", "parent_run_id",
-    "parent_execution_sha", "parent_semantic_request_id", "parent_source_tree_byte_count",
-    "parent_source_tree_sha256", "child_count", "child_paths_sha256", "retrieved_at",
-    "receipts", "dependency_inventory_authorized", "dependency_receipt_authorized",
-    "external_bytes_persisted", "publication_authorized", "model_use_authorized",
-}
-_CHILD_RECEIPT_FIELDS = {
-    "schema_version", "source_issue", "dataset_id", "provider_host", "project_id",
-    "project_path", "commit_sha", "repository_path", "requested_url", "final_url",
-    "retrieved_at", "byte_count", "sha256", "content_type", "etag",
-    "external_bytes_persisted", "publication_authorized", "parent_result_comment_id",
-}
-
 
 def _bounded_nullable_header(value: Any, field: str) -> None:
     if value is None:
@@ -147,32 +126,46 @@ def validate_esrm20_exposure_vulnerability_mapping_receipt(receipt: Any) -> dict
     return receipt
 
 
+
+_CHILD_RECEIPT_FIELD = "efehr_eshm20_source_model_child_receipts"
+_CHILD_EVIDENCE_FIELDS = _legacy.REQUEST_EVIDENCE_FIELDS | {_CHILD_RECEIPT_FIELD}
+_CHILD_SET_FIELDS = {
+    "schema_version", "operation_id", "control_issue", "source_issue", "dataset_id",
+    "provider_host", "project_id", "project_path", "commit_sha",
+    "parent_request_comment_id", "parent_result_comment_id", "parent_run_id",
+    "parent_execution_sha", "parent_semantic_request_id", "parent_source_tree_byte_count",
+    "parent_source_tree_sha256", "child_count", "child_paths_sha256", "retrieved_at",
+    "receipts", "dependency_inventory_authorized", "dependency_receipt_authorized",
+    "external_bytes_persisted", "publication_authorized", "model_use_authorized",
+}
+_CHILD_RECEIPT_FIELDS = set(_children._CHILD_RECEIPT_FIELDS)
+
+
 def validate_efehr_eshm20_source_model_child_receipts(receipt: Any) -> dict[str, Any]:
     prefix = _CHILD_RECEIPT_FIELD
+    # Recheck public aliases and the fixed path tuple before accepting any durable receipt.
+    _children._require_canonical_child_set()
     if type(receipt) is not dict or set(receipt) != _CHILD_SET_FIELDS:
-        missing = sorted(_CHILD_SET_FIELDS - set(receipt)) if type(receipt) is dict else sorted(_CHILD_SET_FIELDS)
-        unexpected = sorted(set(receipt) - _CHILD_SET_FIELDS) if type(receipt) is dict else []
-        raise ResultError(f"{prefix} fields mismatch; missing={missing}, unexpected={unexpected}")
-
+        raise ResultError(f"{prefix} fields drifted")
     exact_values = {
-        "schema_version": _children.SCHEMA_VERSION,
-        "operation_id": _children.OPERATION_ID,
-        "control_issue": _children.CONTROL_ISSUE,
-        "source_issue": _children.SOURCE_ISSUE,
-        "dataset_id": _children.DATASET_ID,
-        "provider_host": PROVIDER_HOST,
-        "project_id": _children.PROJECT_ID,
-        "project_path": _children.PROJECT_PATH,
-        "commit_sha": _children.COMMIT_SHA,
-        "parent_request_comment_id": _children.PARENT_REQUEST_COMMENT_ID,
-        "parent_result_comment_id": _children.PARENT_RESULT_COMMENT_ID,
-        "parent_run_id": _children.PARENT_RUN_ID,
-        "parent_execution_sha": _children.PARENT_EXECUTION_SHA,
-        "parent_semantic_request_id": _children.PARENT_SEMANTIC_REQUEST_ID,
-        "parent_source_tree_byte_count": _children.PARENT_SOURCE_TREE_BYTE_COUNT,
-        "parent_source_tree_sha256": _children.PARENT_SOURCE_TREE_SHA256,
-        "child_count": _children.EXPECTED_CHILD_COUNT,
-        "child_paths_sha256": _children.EXPECTED_PATHS_SHA256,
+        "schema_version": _children._CANONICAL_SCHEMA_VERSION,
+        "operation_id": _children._CANONICAL_OPERATION_ID,
+        "control_issue": _children._CANONICAL_CONTROL_ISSUE,
+        "source_issue": _children._CANONICAL_SOURCE_ISSUE,
+        "dataset_id": _children._CANONICAL_DATASET_ID,
+        "provider_host": _children._CANONICAL_PROVIDER_HOST,
+        "project_id": _children._CANONICAL_PROJECT_ID,
+        "project_path": _children._CANONICAL_PROJECT_PATH,
+        "commit_sha": _children._CANONICAL_COMMIT_SHA,
+        "parent_request_comment_id": _children._CANONICAL_PARENT_REQUEST_COMMENT_ID,
+        "parent_result_comment_id": _children._CANONICAL_PARENT_RESULT_COMMENT_ID,
+        "parent_run_id": _children._CANONICAL_PARENT_RUN_ID,
+        "parent_execution_sha": _children._CANONICAL_PARENT_EXECUTION_SHA,
+        "parent_semantic_request_id": _children._CANONICAL_PARENT_SEMANTIC_REQUEST_ID,
+        "parent_source_tree_byte_count": _children._CANONICAL_PARENT_SOURCE_TREE_BYTE_COUNT,
+        "parent_source_tree_sha256": _children._CANONICAL_PARENT_SOURCE_TREE_SHA256,
+        "child_count": _children._CANONICAL_EXPECTED_CHILD_COUNT,
+        "child_paths_sha256": _children._CANONICAL_EXPECTED_PATHS_SHA256,
         "dependency_inventory_authorized": False,
         "dependency_receipt_authorized": False,
         "external_bytes_persisted": False,
@@ -181,62 +174,45 @@ def validate_efehr_eshm20_source_model_child_receipts(receipt: Any) -> dict[str,
     }
     for field, expected in exact_values.items():
         if type(receipt[field]) is not type(expected) or receipt[field] != expected:
-            raise ResultError(f"{prefix}.{field} does not match the fixed 51-child contract")
+            raise ResultError(f"{prefix}.{field} does not match the frozen child-receipt contract")
 
-    final_retrieved = _legacy._utc_second(receipt["retrieved_at"], f"{prefix}.retrieved_at")
-    receipts = receipt["receipts"]
-    if type(receipts) is not list or len(receipts) != _children.EXPECTED_CHILD_COUNT:
-        raise ResultError(f"{prefix}.receipts must contain exactly {_children.EXPECTED_CHILD_COUNT} items")
-
+    outer_retrieved = _legacy._utc_second(receipt["retrieved_at"], f"{prefix}.retrieved_at")
+    children = receipt["receipts"]
+    if type(children) is not list or len(children) != _children._CANONICAL_EXPECTED_CHILD_COUNT:
+        raise ResultError(f"{prefix}.receipts must contain exactly 51 child receipts")
     expected_paths = tuple(spec.repository_path for spec in _children._CANONICAL_CHILDREN)
-    observed_paths: list[str] = []
-    last_retrieved = None
-    for index, item in enumerate(receipts):
+    prior_retrieved = None
+    for index, (item, expected_path) in enumerate(zip(children, expected_paths, strict=True)):
         label = f"{prefix}.receipts[{index}]"
         if type(item) is not dict or set(item) != _CHILD_RECEIPT_FIELDS:
             raise ResultError(f"{label} fields drifted")
-        expected_path = expected_paths[index]
-        target = validate_target(
-            source_issue=_children.SOURCE_ISSUE,
-            dataset_id=_children.DATASET_ID,
-            project_id=_children.PROJECT_ID,
-            commit_sha=_children.COMMIT_SHA,
-            repository_path=expected_path,
-        )
-        expected_url = raw_file_api_url(target)
-        child_exact = {
-            "schema_version": EFEHR_RECEIPT_SCHEMA_VERSION,
-            "source_issue": _children.SOURCE_ISSUE,
-            "dataset_id": _children.DATASET_ID,
-            "provider_host": PROVIDER_HOST,
-            "project_id": _children.PROJECT_ID,
-            "project_path": _children.PROJECT_PATH,
-            "commit_sha": _children.COMMIT_SHA,
+        exact_item = {
             "repository_path": expected_path,
-            "requested_url": expected_url,
-            "final_url": expected_url,
+            "project_id": _children._CANONICAL_PROJECT_ID,
+            "project_path": _children._CANONICAL_PROJECT_PATH,
+            "commit_sha": _children._CANONICAL_COMMIT_SHA,
+            "parent_result_comment_id": _children._CANONICAL_PARENT_RESULT_COMMENT_ID,
+            "dependency_inventory_authorized": False,
+            "dependency_receipt_authorized": False,
             "external_bytes_persisted": False,
             "publication_authorized": False,
-            "parent_result_comment_id": _children.PARENT_RESULT_COMMENT_ID,
+            "model_use_authorized": False,
         }
-        for field, expected in child_exact.items():
+        for field, expected in exact_item.items():
             if type(item[field]) is not type(expected) or item[field] != expected:
-                raise ResultError(f"{label}.{field} does not match the fixed child receipt contract")
-        observed_paths.append(item["repository_path"])
+                raise ResultError(f"{label}.{field} does not match the frozen child identity")
         byte_count = item["byte_count"]
-        if type(byte_count) is not int or not (1 <= byte_count <= _children.MAX_ARTIFACT_BYTES):
-            raise ResultError(f"{label}.byte_count is outside bounded policy")
+        if type(byte_count) is not int or not (1 <= byte_count <= _children._CANONICAL_MAX_ARTIFACT_BYTES):
+            raise ResultError(f"{label}.byte_count must be a bounded positive integer")
         sha256 = item["sha256"]
-        if type(sha256) is not str or not _legacy.DIGEST_RE.fullmatch(sha256):
+        if type(sha256) is not str or len(sha256) != 64 or any(c not in "0123456789abcdef" for c in sha256):
             raise ResultError(f"{label}.sha256 must be a lowercase SHA-256 digest")
-        _bounded_nullable_header(item["content_type"], f"{label}.content_type")
-        _bounded_nullable_header(item["etag"], f"{label}.etag")
-        last_retrieved = _legacy._utc_second(item["retrieved_at"], f"{label}.retrieved_at")
-
-    if tuple(observed_paths) != expected_paths or len(set(observed_paths)) != _children.EXPECTED_CHILD_COUNT:
-        raise ResultError(f"{prefix}.receipts paths are not the canonical unique 51-child order")
-    if last_retrieved is None or final_retrieved != last_retrieved:
-        raise ResultError(f"{prefix}.retrieved_at must equal the final child receipt timestamp")
+        retrieved = _legacy._utc_second(item["retrieved_at"], f"{label}.retrieved_at")
+        if prior_retrieved is not None and retrieved < prior_retrieved:
+            raise ResultError(f"{prefix}.receipts retrieval times must be nondecreasing")
+        prior_retrieved = retrieved
+    if prior_retrieved != outer_retrieved:
+        raise ResultError(f"{prefix}.retrieved_at must equal the final child retrieval time")
     return receipt
 
 
@@ -369,7 +345,7 @@ def _validate_child_result(result: dict[str, Any]) -> dict[str, Any]:
         raise ResultError("source-model child network result requires target_sha == execution_sha")
     if result["source_issue"] != EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_ISSUE:
         raise ResultError("source-model child result is outside frozen control issue 414")
-    if result["dataset_id"] != _children.DATASET_ID:
+    if result["dataset_id"] != _children._CANONICAL_DATASET_ID:
         raise ResultError("source-model child result is outside the frozen ESHM20 dataset")
     try:
         expected_semantic_id = _legacy.semantic_request_id_from_result(result)

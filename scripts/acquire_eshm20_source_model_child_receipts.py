@@ -57,29 +57,65 @@ except ModuleNotFoundError:  # pragma: no cover - direct script import path
         validate_target,
     )
 
-SCHEMA_VERSION = "oc-eshm20-source-model-child-receipt-set-v1"
-OPERATION_ID = "eshm20-source-model-child-receipts-v12e-region-main-v1"
-CONTROL_ISSUE = 414
-SOURCE_ISSUE = 281
-DATASET_ID = "efehr.eshm20"
-PROJECT_ID = 197
-PROJECT_PATH = "efehr/eshm20"
-COMMIT_SHA = "fbd334de68f85d72669f73fc5a314a113db67317"
-PARENT_REQUEST_COMMENT_ID = 5304431360
-PARENT_RESULT_COMMENT_ID = 5304432768
-PARENT_RUN_ID = 31910992436
-PARENT_EXECUTION_SHA = "dac7c9ae1c391006b8272f1342143d1ace678234"
-PARENT_SEMANTIC_REQUEST_ID = (
+# Production authority is private. Public names remain review/back-compat aliases;
+# any alias or imported primitive drift fails before provider I/O.
+_CANONICAL_SCHEMA_VERSION = "oc-eshm20-source-model-child-receipt-set-v1"
+_CANONICAL_OPERATION_ID = "eshm20-source-model-child-receipts-v12e-region-main-v1"
+_CANONICAL_CONTROL_ISSUE = 414
+_CANONICAL_SOURCE_ISSUE = 281
+_CANONICAL_DATASET_ID = "efehr.eshm20"
+_CANONICAL_PROVIDER_HOST = PROVIDER_HOST
+_CANONICAL_PROJECT_ID = 197
+_CANONICAL_PROJECT_PATH = "efehr/eshm20"
+_CANONICAL_COMMIT_SHA = "fbd334de68f85d72669f73fc5a314a113db67317"
+_CANONICAL_PARENT_REQUEST_COMMENT_ID = 5304431360
+_CANONICAL_PARENT_RESULT_COMMENT_ID = 5304432768
+_CANONICAL_PARENT_RUN_ID = 31910992436
+_CANONICAL_PARENT_EXECUTION_SHA = "dac7c9ae1c391006b8272f1342143d1ace678234"
+_CANONICAL_PARENT_SEMANTIC_REQUEST_ID = (
     "e96030c55952bf9b4b2c6911368c52b9353bd161860923203d115f550824c27e"
 )
-PARENT_SOURCE_TREE_BYTE_COUNT = 17_579
-PARENT_SOURCE_TREE_SHA256 = (
+_CANONICAL_PARENT_SOURCE_TREE_BYTE_COUNT = 17_579
+_CANONICAL_PARENT_SOURCE_TREE_SHA256 = (
     "97a37911f9eae73766f386686b112e5a4e111965da3e4e1543627c28d4201867"
 )
-EXPECTED_CHILD_COUNT = 51
-EXPECTED_PATHS_SHA256 = "2fcc885dc9fbbd8e9ee45b185dc9f2339af3654e9976ae5f07d4d097551944b7"
-MAX_ARTIFACT_BYTES = MAX_FILE_BYTES
-TOTAL_DEADLINE_SECONDS = 180.0
+_CANONICAL_EXPECTED_CHILD_COUNT = 51
+_CANONICAL_EXPECTED_PATHS_SHA256 = (
+    "2fcc885dc9fbbd8e9ee45b185dc9f2339af3654e9976ae5f07d4d097551944b7"
+)
+_CANONICAL_MAX_ARTIFACT_BYTES = MAX_FILE_BYTES
+_CANONICAL_TOTAL_DEADLINE_SECONDS = 180.0
+
+_CANONICAL_OPEN_FIXED = _open_fixed
+_CANONICAL_UTC_NOW = utc_now
+_CANONICAL_MONOTONIC = time.monotonic
+_CANONICAL_VALIDATE_TARGET = validate_target
+_CANONICAL_RAW_FILE_API_URL = raw_file_api_url
+_CANONICAL_REMAINING = _remaining
+_CANONICAL_VALIDATE_EXACT_RESPONSE = _validate_exact_response
+_CANONICAL_DECLARED_LENGTH = _declared_length
+_CANONICAL_RECEIPT_FROM_STREAM = receipt_from_stream
+_CANONICAL_DEADLINE_STREAM = _DeadlineStream
+
+SCHEMA_VERSION = _CANONICAL_SCHEMA_VERSION
+OPERATION_ID = _CANONICAL_OPERATION_ID
+CONTROL_ISSUE = _CANONICAL_CONTROL_ISSUE
+SOURCE_ISSUE = _CANONICAL_SOURCE_ISSUE
+DATASET_ID = _CANONICAL_DATASET_ID
+PROJECT_ID = _CANONICAL_PROJECT_ID
+PROJECT_PATH = _CANONICAL_PROJECT_PATH
+COMMIT_SHA = _CANONICAL_COMMIT_SHA
+PARENT_REQUEST_COMMENT_ID = _CANONICAL_PARENT_REQUEST_COMMENT_ID
+PARENT_RESULT_COMMENT_ID = _CANONICAL_PARENT_RESULT_COMMENT_ID
+PARENT_RUN_ID = _CANONICAL_PARENT_RUN_ID
+PARENT_EXECUTION_SHA = _CANONICAL_PARENT_EXECUTION_SHA
+PARENT_SEMANTIC_REQUEST_ID = _CANONICAL_PARENT_SEMANTIC_REQUEST_ID
+PARENT_SOURCE_TREE_BYTE_COUNT = _CANONICAL_PARENT_SOURCE_TREE_BYTE_COUNT
+PARENT_SOURCE_TREE_SHA256 = _CANONICAL_PARENT_SOURCE_TREE_SHA256
+EXPECTED_CHILD_COUNT = _CANONICAL_EXPECTED_CHILD_COUNT
+EXPECTED_PATHS_SHA256 = _CANONICAL_EXPECTED_PATHS_SHA256
+MAX_ARTIFACT_BYTES = _CANONICAL_MAX_ARTIFACT_BYTES
+TOTAL_DEADLINE_SECONDS = _CANONICAL_TOTAL_DEADLINE_SECONDS
 
 
 @dataclass(frozen=True)
@@ -174,12 +210,62 @@ def _require_authorized_spec(spec: object) -> ChildSpec:
     return spec
 
 
+def _require_production_identity() -> None:
+    identities = (
+        (_open_fixed, _CANONICAL_OPEN_FIXED, "transport"),
+        (utc_now, _CANONICAL_UTC_NOW, "UTC clock"),
+        (time.monotonic, _CANONICAL_MONOTONIC, "monotonic clock"),
+        (validate_target, _CANONICAL_VALIDATE_TARGET, "target validator"),
+        (raw_file_api_url, _CANONICAL_RAW_FILE_API_URL, "URL builder"),
+        (_remaining, _CANONICAL_REMAINING, "deadline helper"),
+        (_validate_exact_response, _CANONICAL_VALIDATE_EXACT_RESPONSE, "response validator"),
+        (_declared_length, _CANONICAL_DECLARED_LENGTH, "length validator"),
+        (receipt_from_stream, _CANONICAL_RECEIPT_FROM_STREAM, "receipt builder"),
+        (_DeadlineStream, _CANONICAL_DEADLINE_STREAM, "bounded stream"),
+    )
+    for observed, expected, label in identities:
+        if observed is not expected:
+            raise Eshm20SourceModelChildReceiptError(
+                f"frozen ESHM20 child-receipt production {label} drifted"
+            )
+
+
+def _require_canonical_authority() -> None:
+    aliases = (
+        (SCHEMA_VERSION, _CANONICAL_SCHEMA_VERSION, "schema version"),
+        (OPERATION_ID, _CANONICAL_OPERATION_ID, "operation id"),
+        (CONTROL_ISSUE, _CANONICAL_CONTROL_ISSUE, "control issue"),
+        (SOURCE_ISSUE, _CANONICAL_SOURCE_ISSUE, "source issue"),
+        (DATASET_ID, _CANONICAL_DATASET_ID, "dataset id"),
+        (PROJECT_ID, _CANONICAL_PROJECT_ID, "project id"),
+        (PROJECT_PATH, _CANONICAL_PROJECT_PATH, "project path"),
+        (COMMIT_SHA, _CANONICAL_COMMIT_SHA, "commit"),
+        (PARENT_REQUEST_COMMENT_ID, _CANONICAL_PARENT_REQUEST_COMMENT_ID, "parent request"),
+        (PARENT_RESULT_COMMENT_ID, _CANONICAL_PARENT_RESULT_COMMENT_ID, "parent result"),
+        (PARENT_RUN_ID, _CANONICAL_PARENT_RUN_ID, "parent run"),
+        (PARENT_EXECUTION_SHA, _CANONICAL_PARENT_EXECUTION_SHA, "parent execution"),
+        (PARENT_SEMANTIC_REQUEST_ID, _CANONICAL_PARENT_SEMANTIC_REQUEST_ID, "parent semantic id"),
+        (PARENT_SOURCE_TREE_BYTE_COUNT, _CANONICAL_PARENT_SOURCE_TREE_BYTE_COUNT, "parent byte count"),
+        (PARENT_SOURCE_TREE_SHA256, _CANONICAL_PARENT_SOURCE_TREE_SHA256, "parent SHA-256"),
+        (EXPECTED_CHILD_COUNT, _CANONICAL_EXPECTED_CHILD_COUNT, "child count"),
+        (EXPECTED_PATHS_SHA256, _CANONICAL_EXPECTED_PATHS_SHA256, "path fingerprint"),
+        (MAX_ARTIFACT_BYTES, _CANONICAL_MAX_ARTIFACT_BYTES, "maximum bytes"),
+        (TOTAL_DEADLINE_SECONDS, _CANONICAL_TOTAL_DEADLINE_SECONDS, "deadline"),
+    )
+    for observed, expected, label in aliases:
+        if type(observed) is not type(expected) or observed != expected:
+            raise Eshm20SourceModelChildReceiptError(
+                f"frozen ESHM20 child-receipt {label} drifted"
+            )
+
+
 def _require_canonical_child_set() -> tuple[ChildSpec, ...]:
+    _require_canonical_authority()
     if CHILDREN is not _CANONICAL_CHILDREN:
         raise Eshm20SourceModelChildReceiptError(
             "frozen ESHM20 source-model child set identity is invalid"
         )
-    if len(CHILDREN) != EXPECTED_CHILD_COUNT:
+    if len(CHILDREN) != _CANONICAL_EXPECTED_CHILD_COUNT:
         raise Eshm20SourceModelChildReceiptError(
             "frozen ESHM20 source-model child count is invalid"
         )
@@ -191,15 +277,130 @@ def _require_canonical_child_set() -> tuple[ChildSpec, ...]:
             "frozen ESHM20 source-model child set identity is invalid"
         )
     paths = tuple(spec.repository_path for spec in CHILDREN)
-    if paths != tuple(sorted(paths)) or len(set(paths)) != EXPECTED_CHILD_COUNT:
+    if paths != tuple(sorted(paths)) or len(set(paths)) != _CANONICAL_EXPECTED_CHILD_COUNT:
         raise Eshm20SourceModelChildReceiptError(
             "frozen ESHM20 source-model child ordering is invalid"
         )
-    if _paths_fingerprint(CHILDREN) != EXPECTED_PATHS_SHA256:
+    if _paths_fingerprint(CHILDREN) != _CANONICAL_EXPECTED_PATHS_SHA256:
         raise Eshm20SourceModelChildReceiptError(
             "frozen ESHM20 source-model child path fingerprint is invalid"
         )
     return _CANONICAL_CHILDREN
+
+
+def _is_lower_sha256(value: object) -> bool:
+    return (
+        type(value) is str
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
+_CORE_RECEIPT_FIELDS = {
+    "schema_version",
+    "source_issue",
+    "dataset_id",
+    "provider_host",
+    "project_id",
+    "project_path",
+    "commit_sha",
+    "repository_path",
+    "requested_url",
+    "final_url",
+    "retrieved_at",
+    "byte_count",
+    "sha256",
+    "content_type",
+    "etag",
+    "external_bytes_persisted",
+    "publication_authorized",
+}
+
+_CHILD_RECEIPT_FIELDS = {
+    "repository_path",
+    "retrieved_at",
+    "byte_count",
+    "sha256",
+    "project_id",
+    "project_path",
+    "commit_sha",
+    "parent_result_comment_id",
+    "dependency_inventory_authorized",
+    "dependency_receipt_authorized",
+    "external_bytes_persisted",
+    "publication_authorized",
+    "model_use_authorized",
+}
+
+
+def _project_core_receipt(
+    receipt: object,
+    *,
+    spec: ChildSpec,
+    file_url: str,
+) -> dict[str, Any]:
+    if type(receipt) is not dict or set(receipt) != _CORE_RECEIPT_FIELDS:
+        raise Eshm20SourceModelChildReceiptError(
+            "ESHM20 source-model child core receipt fields drifted"
+        )
+    exact = (
+        ("source_issue", _CANONICAL_SOURCE_ISSUE),
+        ("dataset_id", _CANONICAL_DATASET_ID),
+        ("provider_host", _CANONICAL_PROVIDER_HOST),
+        ("project_id", _CANONICAL_PROJECT_ID),
+        ("project_path", _CANONICAL_PROJECT_PATH),
+        ("commit_sha", _CANONICAL_COMMIT_SHA),
+        ("repository_path", spec.repository_path),
+        ("requested_url", file_url),
+        ("final_url", file_url),
+        ("external_bytes_persisted", False),
+        ("publication_authorized", False),
+    )
+    for field, expected in exact:
+        observed = receipt[field]
+        if type(observed) is not type(expected) or observed != expected:
+            raise Eshm20SourceModelChildReceiptError(
+                f"ESHM20 source-model child receipt identity drifted at {field}"
+            )
+    retrieved_at = receipt["retrieved_at"]
+    if type(retrieved_at) is not str or not retrieved_at:
+        raise Eshm20SourceModelChildReceiptError(
+            "ESHM20 source-model child retrieval time is invalid"
+        )
+    byte_count = receipt["byte_count"]
+    if (
+        type(byte_count) is not int
+        or isinstance(byte_count, bool)
+        or byte_count <= 0
+        or byte_count > _CANONICAL_MAX_ARTIFACT_BYTES
+    ):
+        raise Eshm20SourceModelChildReceiptError(
+            "ESHM20 source-model child byte count is invalid"
+        )
+    if not _is_lower_sha256(receipt["sha256"]):
+        raise Eshm20SourceModelChildReceiptError(
+            "ESHM20 source-model child SHA-256 is invalid"
+        )
+    for field, value in receipt.items():
+        if (field.endswith("_authorized") or field.endswith("_persisted")) and value is not False:
+            raise Eshm20SourceModelChildReceiptError(
+                f"ESHM20 source-model child receipt widened authority at {field}"
+            )
+    return {
+        "repository_path": spec.repository_path,
+        "retrieved_at": retrieved_at,
+        "byte_count": byte_count,
+        "sha256": receipt["sha256"],
+        "project_id": _CANONICAL_PROJECT_ID,
+        "project_path": _CANONICAL_PROJECT_PATH,
+        "commit_sha": _CANONICAL_COMMIT_SHA,
+        "parent_result_comment_id": _CANONICAL_PARENT_RESULT_COMMENT_ID,
+        "dependency_inventory_authorized": False,
+        "dependency_receipt_authorized": False,
+        "external_bytes_persisted": False,
+        "publication_authorized": False,
+        "model_use_authorized": False,
+    }
 
 
 def _receipt_one(
@@ -209,14 +410,15 @@ def _receipt_one(
     opener: Any,
     now: Any,
     monotonic: Any,
+    receipt_builder: Any = _CANONICAL_RECEIPT_FROM_STREAM,
 ) -> dict[str, Any]:
     spec = _require_authorized_spec(spec)
     try:
-        target = validate_target(
-            source_issue=SOURCE_ISSUE,
-            dataset_id=DATASET_ID,
-            project_id=PROJECT_ID,
-            commit_sha=COMMIT_SHA,
+        target = _CANONICAL_VALIDATE_TARGET(
+            source_issue=_CANONICAL_SOURCE_ISSUE,
+            dataset_id=_CANONICAL_DATASET_ID,
+            project_id=_CANONICAL_PROJECT_ID,
+            commit_sha=_CANONICAL_COMMIT_SHA,
             repository_path=spec.repository_path,
         )
     except EfehrReceiptError as exc:
@@ -224,7 +426,7 @@ def _receipt_one(
             "trusted ESHM20 source-model child target is invalid"
         ) from exc
 
-    file_url = raw_file_api_url(target)
+    file_url = _CANONICAL_RAW_FILE_API_URL(target)
     request = urllib.request.Request(
         file_url,
         headers={
@@ -234,13 +436,13 @@ def _receipt_one(
         method="GET",
     )
     try:
-        with opener(request, timeout=_remaining(deadline, monotonic)) as response:
-            _validate_exact_response(response, file_url)
-            _declared_length(response, MAX_ARTIFACT_BYTES)
+        with opener(request, timeout=_CANONICAL_REMAINING(deadline, monotonic)) as response:
+            _CANONICAL_VALIDATE_EXACT_RESPONSE(response, file_url)
+            _CANONICAL_DECLARED_LENGTH(response, _CANONICAL_MAX_ARTIFACT_BYTES)
             try:
-                receipt = receipt_from_stream(
+                receipt = receipt_builder(
                     target,
-                    _DeadlineStream(
+                    _CANONICAL_DEADLINE_STREAM(
                         response,
                         deadline=deadline,
                         monotonic=monotonic,
@@ -248,7 +450,7 @@ def _receipt_one(
                     final_url=file_url,
                     retrieved_at=now(),
                     headers=getattr(response, "headers", None),
-                    max_bytes=MAX_ARTIFACT_BYTES,
+                    max_bytes=_CANONICAL_MAX_ARTIFACT_BYTES,
                 )
             except EfehrReceiptError as exc:
                 raise Eshm20SourceModelChildReceiptError(
@@ -264,65 +466,51 @@ def _receipt_one(
         raise Eshm20SourceModelChildReceiptError(
             f"ESHM20 source-model child retrieval failed: {type(exc).__name__}"
         ) from exc
-
-    if (
-        receipt.get("external_bytes_persisted") is not False
-        or receipt.get("publication_authorized") is not False
-    ):
-        raise Eshm20SourceModelChildReceiptError(
-            "ESHM20 source-model child receipt widened its authority ceiling"
-        )
-    return {
-        **receipt,
-        "parent_result_comment_id": PARENT_RESULT_COMMENT_ID,
-    }
+    return _project_core_receipt(receipt, spec=spec, file_url=file_url)
 
 
-def acquire_eshm20_source_model_child_receipts(
+def _acquire_eshm20_source_model_child_receipts(
     *,
-    opener: Any | None = None,
-    now: Any = utc_now,
-    monotonic: Any = time.monotonic,
+    opener: Any,
+    now: Any,
+    monotonic: Any,
+    receipt_builder: Any = _CANONICAL_RECEIPT_FROM_STREAM,
 ) -> dict[str, Any]:
-    """Receipt only the exact 51-child set returned by trusted-main #397.
-
-    The operation is atomic from the caller's perspective: failure while
-    retrieving any member raises and returns no partial receipt object.
-    """
+    """Private injectable helper for deterministic offline falsification tests."""
 
     children = _require_canonical_child_set()
-    deadline = monotonic() + TOTAL_DEADLINE_SECONDS
-    open_response = opener or _open_fixed
+    deadline = monotonic() + _CANONICAL_TOTAL_DEADLINE_SECONDS
     receipts = tuple(
         _receipt_one(
             spec,
             deadline=deadline,
-            opener=open_response,
+            opener=opener,
             now=now,
             monotonic=monotonic,
+            receipt_builder=receipt_builder,
         )
         for spec in children
     )
     final_retrieved_at = receipts[-1]["retrieved_at"]
     return {
-        "schema_version": SCHEMA_VERSION,
-        "operation_id": OPERATION_ID,
-        "control_issue": CONTROL_ISSUE,
-        "source_issue": SOURCE_ISSUE,
-        "dataset_id": DATASET_ID,
-        "provider_host": PROVIDER_HOST,
-        "project_id": PROJECT_ID,
-        "project_path": PROJECT_PATH,
-        "commit_sha": COMMIT_SHA,
-        "parent_request_comment_id": PARENT_REQUEST_COMMENT_ID,
-        "parent_result_comment_id": PARENT_RESULT_COMMENT_ID,
-        "parent_run_id": PARENT_RUN_ID,
-        "parent_execution_sha": PARENT_EXECUTION_SHA,
-        "parent_semantic_request_id": PARENT_SEMANTIC_REQUEST_ID,
-        "parent_source_tree_byte_count": PARENT_SOURCE_TREE_BYTE_COUNT,
-        "parent_source_tree_sha256": PARENT_SOURCE_TREE_SHA256,
-        "child_count": EXPECTED_CHILD_COUNT,
-        "child_paths_sha256": EXPECTED_PATHS_SHA256,
+        "schema_version": _CANONICAL_SCHEMA_VERSION,
+        "operation_id": _CANONICAL_OPERATION_ID,
+        "control_issue": _CANONICAL_CONTROL_ISSUE,
+        "source_issue": _CANONICAL_SOURCE_ISSUE,
+        "dataset_id": _CANONICAL_DATASET_ID,
+        "provider_host": _CANONICAL_PROVIDER_HOST,
+        "project_id": _CANONICAL_PROJECT_ID,
+        "project_path": _CANONICAL_PROJECT_PATH,
+        "commit_sha": _CANONICAL_COMMIT_SHA,
+        "parent_request_comment_id": _CANONICAL_PARENT_REQUEST_COMMENT_ID,
+        "parent_result_comment_id": _CANONICAL_PARENT_RESULT_COMMENT_ID,
+        "parent_run_id": _CANONICAL_PARENT_RUN_ID,
+        "parent_execution_sha": _CANONICAL_PARENT_EXECUTION_SHA,
+        "parent_semantic_request_id": _CANONICAL_PARENT_SEMANTIC_REQUEST_ID,
+        "parent_source_tree_byte_count": _CANONICAL_PARENT_SOURCE_TREE_BYTE_COUNT,
+        "parent_source_tree_sha256": _CANONICAL_PARENT_SOURCE_TREE_SHA256,
+        "child_count": _CANONICAL_EXPECTED_CHILD_COUNT,
+        "child_paths_sha256": _CANONICAL_EXPECTED_PATHS_SHA256,
         "retrieved_at": final_retrieved_at,
         "receipts": list(receipts),
         "dependency_inventory_authorized": False,
@@ -331,3 +519,14 @@ def acquire_eshm20_source_model_child_receipts(
         "publication_authorized": False,
         "model_use_authorized": False,
     }
+
+
+def acquire_eshm20_source_model_child_receipts() -> dict[str, Any]:
+    """Receipt the frozen 51-child set with code-owned production authority."""
+
+    _require_production_identity()
+    return _acquire_eshm20_source_model_child_receipts(
+        opener=_CANONICAL_OPEN_FIXED,
+        now=_CANONICAL_UTC_NOW,
+        monotonic=_CANONICAL_MONOTONIC,
+    )
