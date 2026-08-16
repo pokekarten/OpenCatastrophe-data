@@ -38,11 +38,16 @@ class Eshm20GsimIdentityProfileTests(unittest.TestCase):
         result = profiler._profile_xml_text(xml_for(branch_set()))
         self.assertEqual(result["branch_set_count"], 1)
         self.assertEqual(result["branch_count"], 1)
-        self.assertEqual(result["unique_gsim_names"], ["ExampleGsim"])
+        self.assertEqual(
+            result["unique_requested_gsim_tokens"], ["ExampleGsim"]
+        )
         self.assertEqual(result["unique_argument_keys"], [])
         self.assertEqual(
             result["branches"][0]["tectonic_region_type"],
             "Active Shallow Crust",
+        )
+        self.assertEqual(
+            result["branches"][0]["requested_gsim_token"], "ExampleGsim"
         )
 
     def test_explicit_table_collects_keys_but_never_values(self) -> None:
@@ -51,7 +56,7 @@ class Eshm20GsimIdentityProfileTests(unittest.TestCase):
             xml_for(branch_set(model=model, model_attrs=' baz="node-attribute-value"'))
         )
         record = result["branches"][0]
-        self.assertEqual(record["gsim_name"], "AdjustedGsim")
+        self.assertEqual(record["requested_gsim_token"], "AdjustedGsim")
         self.assertEqual(record["argument_keys"], ["bar", "baz", "foo"])
         rendered = repr(result)
         self.assertNotIn("secret-value", rendered)
@@ -63,7 +68,19 @@ class Eshm20GsimIdentityProfileTests(unittest.TestCase):
         p1 = profiler._profile_xml_text(xml_for(first + second))
         p2 = profiler._profile_xml_text(xml_for(second + first))
         self.assertEqual(p1, p2)
-        self.assertEqual(p1["unique_gsim_names"], ["Alpha", "Zed"])
+        self.assertEqual(
+            p1["unique_requested_gsim_tokens"], ["Alpha", "Zed"]
+        )
+
+    def test_unresolved_token_is_not_serialized_as_verified_gsim_name(self) -> None:
+        token = "ExampleAliasToken"
+        result = profiler._profile_xml_text(xml_for(branch_set(model=token)))
+        self.assertEqual(
+            result["branches"][0]["requested_gsim_token"], token
+        )
+        self.assertEqual(result["unique_requested_gsim_tokens"], [token])
+        self.assertNotIn("gsim_name", result["branches"][0])
+        self.assertNotIn("unique_gsim_names", result)
 
     def test_duplicate_ids_non_gmpe_and_ambiguous_models_fail_closed(self) -> None:
         cases = (
