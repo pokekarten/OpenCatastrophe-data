@@ -128,6 +128,30 @@ class MappingHeaderDisclosureTests(unittest.TestCase):
         signature = inspect.signature(disclosure.disclose_verified_mapping_headers)
         self.assertEqual(tuple(signature.parameters), ("raw",))
 
+    def test_helper_identity_alias_drift_fails_before_structure_profiler(self) -> None:
+        for field, bad_value in (
+            ("DECISION_ISSUE", 999),
+            ("DISCLOSURE_SCOPE", "broader_scope"),
+            ("SCHEMA_VERSION", "other-schema"),
+        ):
+            with self.subTest(field=field):
+                profiler = mock.Mock(return_value={})
+                with (
+                    mock.patch.object(disclosure, field, bad_value),
+                    mock.patch.object(disclosure, "_STRUCTURE_PROFILER", profiler),
+                    mock.patch.object(
+                        disclosure.mapping_structure,
+                        "profile_verified_mapping_bytes",
+                        profiler,
+                    ),
+                    self.assertRaisesRegex(
+                        disclosure.MappingHeaderDisclosureError,
+                        "drifted",
+                    ),
+                ):
+                    disclosure.disclose_verified_mapping_headers(b"trusted-bytes")
+                profiler.assert_not_called()
+
     def test_header_fingerprint_drift_fails_closed(self) -> None:
         raw = b"alpha,beta\nx,y\n"
         result = structural_result(raw, header=["alpha", "beta"])
@@ -254,7 +278,9 @@ class MappingHeaderDisclosureTests(unittest.TestCase):
             ),
         )
 
+        self.assertEqual(result["schema_version"], "oc-esrm20-mapping-header-disclosure-v1")
         self.assertEqual(result["decision_issue"], 410)
+        self.assertEqual(result["disclosure_scope"], "exact_header_strings_only")
         self.assertEqual(result["source_issue"], 283)
         self.assertEqual(result["profile_issue"], 404)
         self.assertEqual(result["project_id"], 269)
