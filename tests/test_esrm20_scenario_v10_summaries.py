@@ -329,6 +329,30 @@ class ScenarioV10SummaryActionTests(unittest.TestCase):
                 ),
             )
 
+    def test_other_sha_malformed_terminal_result_still_fails_closed(self) -> None:
+        historical_sha = "c" * 40
+        malformed = {
+            **action._base_result(execution_sha=historical_sha),
+            "status": "pending",
+            "failure_class": None,
+            "profile": None,
+        }
+        body = action.RESULT_MARKER + "\n" + json.dumps(
+            malformed, sort_keys=True, separators=(",", ":")
+        )
+        with self.assertRaisesRegex(
+            action.ScenarioSummaryExecutionError,
+            "non-terminal status",
+        ):
+            self._with_ledger(
+                [body],
+                lambda: action.has_terminal_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="test",
+                    execution_sha=EXECUTION_SHA,
+                ),
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
