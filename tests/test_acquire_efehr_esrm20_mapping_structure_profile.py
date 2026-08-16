@@ -179,6 +179,65 @@ class Esrm20MappingStructureProfileAcquisitionTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             worker.acquire_esrm20_mapping_structure_profile(opener=lambda *_a, **_k: None)
 
+    def test_public_worker_uses_import_time_transport_and_clocks(self) -> None:
+        sentinel = {"ok": True}
+        with mock.patch.object(
+            worker,
+            "_acquire_esrm20_mapping_structure_profile",
+            return_value=sentinel,
+        ) as private:
+            self.assertIs(worker.acquire_esrm20_mapping_structure_profile(), sentinel)
+            private.assert_called_once_with(
+                opener=worker._CANONICAL_OPEN_FIXED,
+                now=worker._CANONICAL_UTC_NOW,
+                monotonic=worker._CANONICAL_MONOTONIC,
+            )
+
+    def test_public_worker_rejects_transport_rebinding_before_helper(self) -> None:
+        with (
+            mock.patch.object(worker, "_open_fixed", object()),
+            mock.patch.object(
+                worker,
+                "_acquire_esrm20_mapping_structure_profile",
+            ) as private,
+            self.assertRaisesRegex(
+                worker.Esrm20MappingProfileAcquisitionError,
+                "production transport drifted",
+            ),
+        ):
+            worker.acquire_esrm20_mapping_structure_profile()
+        private.assert_not_called()
+
+    def test_public_worker_rejects_utc_rebinding_before_helper(self) -> None:
+        with (
+            mock.patch.object(worker, "utc_now", object()),
+            mock.patch.object(
+                worker,
+                "_acquire_esrm20_mapping_structure_profile",
+            ) as private,
+            self.assertRaisesRegex(
+                worker.Esrm20MappingProfileAcquisitionError,
+                "production UTC clock drifted",
+            ),
+        ):
+            worker.acquire_esrm20_mapping_structure_profile()
+        private.assert_not_called()
+
+    def test_public_worker_rejects_monotonic_rebinding_before_helper(self) -> None:
+        with (
+            mock.patch.object(worker.time, "monotonic", object()),
+            mock.patch.object(
+                worker,
+                "_acquire_esrm20_mapping_structure_profile",
+            ) as private,
+            self.assertRaisesRegex(
+                worker.Esrm20MappingProfileAcquisitionError,
+                "production monotonic clock drifted",
+            ),
+        ):
+            worker.acquire_esrm20_mapping_structure_profile()
+        private.assert_not_called()
+
     def test_acquisition_uses_private_target_and_returns_value_free_profile(self) -> None:
         captured: list[str] = []
 

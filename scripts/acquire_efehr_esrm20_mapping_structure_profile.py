@@ -85,6 +85,13 @@ _CANONICAL_PROFILER_SCHEMA_VERSION = "oc-esrm20-mapping-structure-profile-v0"
 _CANONICAL_PROFILER_GIT_BLOB_SHA1 = "5d5aa5c9c48880022235e727c9ec4d5e73df46de"
 _CANONICAL_PROFILER = mapping_profile.profile_verified_mapping_bytes
 
+# Production transport/time authority is also bound at module initialization.
+# Later module-global rebinding must fail closed rather than becoming an
+# implicit caller-controlled provenance surface.
+_CANONICAL_OPEN_FIXED = _open_fixed
+_CANONICAL_UTC_NOW = utc_now
+_CANONICAL_MONOTONIC = time.monotonic
+
 # Review/back-compat aliases only. Production authority is private and alias
 # drift fails before provider work.
 SCHEMA_VERSION = _CANONICAL_SCHEMA_VERSION
@@ -121,6 +128,19 @@ def _git_blob_sha1(path: Path) -> str:
         ) from exc
     header = f"blob {len(raw)}\0".encode("ascii")
     return hashlib.sha1(header + raw, usedforsecurity=False).hexdigest()
+
+
+def _require_production_transport_identity() -> None:
+    identities = (
+        (_open_fixed, _CANONICAL_OPEN_FIXED, "transport"),
+        (utc_now, _CANONICAL_UTC_NOW, "UTC clock"),
+        (time.monotonic, _CANONICAL_MONOTONIC, "monotonic clock"),
+    )
+    for observed, expected, label in identities:
+        if observed is not expected:
+            raise Esrm20MappingProfileAcquisitionError(
+                f"frozen ESRM20 mapping production {label} drifted"
+            )
 
 
 def _require_canonical_aliases() -> None:
@@ -412,10 +432,11 @@ def _acquire_esrm20_mapping_structure_profile(
 
 
 def acquire_esrm20_mapping_structure_profile() -> dict[str, Any]:
-    """Fetch the frozen mapping using code-owned transport/time authority only."""
+    """Fetch the frozen mapping using immutable production authority only."""
 
+    _require_production_transport_identity()
     return _acquire_esrm20_mapping_structure_profile(
-        opener=_open_fixed,
-        now=utc_now,
-        monotonic=time.monotonic,
+        opener=_CANONICAL_OPEN_FIXED,
+        now=_CANONICAL_UTC_NOW,
+        monotonic=_CANONICAL_MONOTONIC,
     )
