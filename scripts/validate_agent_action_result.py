@@ -4,9 +4,9 @@
 """Fail-closed Agent Action result validation with bounded #397 source-model wiring.
 
 All pre-existing actions delegate to the reviewed mapping-aware validator layer.
-This layer handles the ESHM20 source-model dependency action and retains the
-already-reviewed Kosovo taxonomy identity handling without widening either
-closed result contract.
+This layer handles the ESHM20 source-model dependency action, the reviewed
+Kosovo taxonomy identity handling, and the bounded ESRM20 mapping-header
+extension without widening any closed result contract.
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ from typing import Any
 
 try:
     from scripts import validate_agent_action_result_mapping as _legacy
+    from scripts import validate_agent_action_result_mapping_headers as _mapping_headers
     from scripts import acquire_efehr_kosovo_taxonomy as _taxonomy
     from scripts import acquire_eshm20_source_model_dependencies as _source_model
     from scripts.validate_agent_action_request import (
@@ -26,9 +27,11 @@ try:
         EFEHR_KOSOVO_TAXONOMY_IDENTITY_ISSUE,
         EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ACTION,
         EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ISSUE,
+        ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION,
     )
 except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     import validate_agent_action_result_mapping as _legacy
+    import validate_agent_action_result_mapping_headers as _mapping_headers
     import acquire_efehr_kosovo_taxonomy as _taxonomy
     import acquire_eshm20_source_model_dependencies as _source_model
     from validate_agent_action_request import (
@@ -36,6 +39,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         EFEHR_KOSOVO_TAXONOMY_IDENTITY_ISSUE,
         EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ACTION,
         EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ISSUE,
+        ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION,
     )
 
 # Preserve the historical public validator surface for existing imports/tests.
@@ -46,9 +50,11 @@ for _name in dir(_legacy):
 _strict_json = _legacy._strict_json
 _utc_second = _legacy._utc_second
 _validate_request_evidence = _legacy._validate_request_evidence
+validate_esrm20_mapping_headers = _mapping_headers.validate_esrm20_mapping_headers
 ALLOWED_ACTIONS = _legacy.ALLOWED_ACTIONS | {
     EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,
     EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ACTION,
+    ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION,
 }
 
 
@@ -415,6 +421,8 @@ def validate_result(result: dict[str, Any]) -> dict[str, Any]:
         return _validate_source_model_result(result)
     if type(result) is dict and result.get("action") == EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION:
         return _validate_taxonomy_result(result)
+    if type(result) is dict and result.get("action") == ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION:
+        return _mapping_headers.validate_mapping_headers_result(result)
     return _legacy.validate_result(result)
 
 
