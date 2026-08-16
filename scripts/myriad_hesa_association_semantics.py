@@ -11,9 +11,12 @@ from typing import Iterable, Sequence
 
 REFERENCE_REPOSITORY = "judithclaassen/MYRIAD-HESA"
 REFERENCE_COMMIT = "dcd2969a8f7c336853bdfa40efd7aa00798ee04b"
+REFERENCE_SOURCE_BLOB_SHA1 = "0722b7e6a9ab34b35caa1de56ed4847c65da7aa2"
 INPUT_KIND = "fixture"
 SCIENTIFIC_ROLE = "benchmark"
 SEMANTIC_BOUNDARY = "association_not_causality"
+GROUPING_SEMANTICS = "pinned_hesa_makegroups_rows_in"
+MAX_SYNTHETIC_EVENTS = 64
 
 
 class AssociationSemanticError(ValueError):
@@ -70,6 +73,7 @@ class AssociationResult:
     input_kind: str = INPUT_KIND
     scientific_role: str = SCIENTIFIC_ROLE
     semantic_boundary: str = SEMANTIC_BOUNDARY
+    grouping_semantics: str = GROUPING_SEMANTICS
 
 
 @dataclass(frozen=True)
@@ -152,6 +156,10 @@ def _validate_events(events: Iterable[SyntheticEvent]) -> dict[str, _ValidatedEv
             start,
             end,
         )
+        if len(validated) > MAX_SYNTHETIC_EVENTS:
+            raise AssociationSemanticError(
+                f"synthetic benchmark supports at most {MAX_SYNTHETIC_EVENTS} events"
+            )
 
     if not validated:
         raise AssociationSemanticError("at least one event is required")
@@ -199,7 +207,9 @@ def _validate_pair_evidence(
         if not isinstance(item.spatial_overlap, bool):
             raise AssociationSemanticError("spatial_overlap must be boolean")
         if item.active_overlap is not None and not isinstance(item.active_overlap, bool):
-            raise AssociationSemanticError("active_overlap must be boolean when provided")
+            raise AssociationSemanticError(
+                "active_overlap must be boolean when provided"
+            )
         key = _pair_key(event_a, event_b)
         if key in validated:
             raise AssociationSemanticError(
@@ -248,38 +258,246 @@ def _temporal_overlap(
     return left.start <= right_end and right.start <= left_end
 
 
-def _connected_event_sets(
+def _rows_in(
+    node_ids: Sequence[int],
+    pairs: Sequence[Sequence[int]],
+) -> list[list[int]]:
+    """Translate pinned HESA rows_in(): keep pair rows wholly inside node_ids."""
+
+    selected = set(node_ids)
+    return [
+        [int(row[0]), int(row[1])]
+        for row in pairs
+        if row[0] in selected and row[1] in selected
+    ]
+
+
+def _append_reference_group(groups: list[list[int]], values: Sequence[int]) -> None:
+    group = sorted(int(value) for value in values)
+    if group not in groups:
+        groups.append(group)
+
+
+def _reference_makegroups(sub: Sequence[Sequence[int]], anchor: int) -> list[list[int]]:
+    """Dependency-free translation of pinned MYRIAD-HESA makegroups().
+
+    The slightly unusual ordinal-versus-node comparison in the inner loop is
+    intentionally preserved because this benchmark targets the exact pinned
+    implementation, including its demonstrated non-maximal n=5 subgroup.
+    """
+
+    groups: list[list[int]] = []
+    unique_nodes = sorted(
+        {
+            int(value)
+            for row in sub
+            for value in row
+            if int(value) > anchor
+        }
+    )
+    for pivot in unique_nodes:
+        row_indexes = [
+            index for index, row in enumerate(sub) if pivot in row
+        ]
+        neighbors = sorted(
+            {
+                int(value)
+                for index in row_indexes
+                for value in sub[index]
+                if int(value) != pivot
+            }
+        )
+        neighbor_rows = _rows_in(neighbors, sub)
+        if len(row_indexes) == 1:
+            _append_reference_group(
+                groups,
+                [*sub[row_indexes[0]], anchor],
+            )
+        elif len(neighbor_rows) == (len(neighbors) * (len(neighbors) - 1)) // 2:
+            _append_reference_group(groups, [*neighbors, anchor, pivot])
+        else:
+            rotating_neighbors = sorted(
+                {
+                    int(value)
+                    for index in row_indexes
+                    for value in sub[index]
+                    if int(value) != pivot
+                }
+            )
+            rows_among_neighbors = _rows_in(rotating_neighbors, sub)
+            first_pivot_rows = [
+                position
+                for position, row_index in enumerate(row_indexes)
+                if int(sub[row_index][0]) == pivot
+            ]
+            if not first_pivot_rows:
+                continue
+
+            for ordinal in range(first_pivot_rows[0], len(row_indexes)):
+                keep_group = True
+                if ordinal != 0:
+                    rotating_neighbors = (
+                        rotating_neighbors[1:] + rotating_neighbors[:1]
+                    )
+
+                candidate = sorted(
+                    {
+                        int(value)
+                        for value in sub[row_indexes[ordinal]]
+                        if int(value) != pivot
+                    }
+                )
+                if not candidate:
+                    continue
+                if candidate[0] < anchor:
+                    continue
+
+                connected_row_indexes = [
+                    index
+                    for index, row in enumerate(rows_among_neighbors)
+                    if candidate[0] in row
+                ]
+                if not connected_row_indexes:
+                    _append_reference_group(
+                        groups,
+                        [*candidate, anchor, pivot],
+                    )
+                    continue
+
+                connected = sorted(
+                    {
+                        int(value)
+                        for index in connected_row_indexes
+                        for value in rows_among_neighbors[index]
+                        if int(value) != candidate[0]
+                    }
+                )
+                connected_set = set(connected)
+                followers = [
+                    value
+                    for value in rotating_neighbors
+                    if value in connected_set
+                ]
+                for follower in followers:
+                    # Preserve pinned source semantics exactly: `ordinal`
+                    # corresponds to source variable `k`, while follower is
+                    # source variable `l`.
+                    if ordinal != follower:
+                        proposed = [*candidate, follower]
+                        proposed_rows = _rows_in(proposed, sub)
+                        if len(proposed_rows) == (
+                            len(proposed) * (len(proposed) - 1)
+                        ) // 2:
+                            if follower > anchor:
+                                candidate.append(follower)
+                            else:
+                                keep_group = False
+                                break
+                if keep_group:
+                    _append_reference_group(
+                        groups,
+                        [*candidate, anchor, pivot],
+                    )
+    return groups
+
+
+def _reference_group_indices(
+    pairs: Sequence[tuple[int, int]],
+) -> tuple[tuple[int, ...], ...]:
+    """Translate the pinned HESA outer pair-to-group loop."""
+
+    current_pairs = [
+        [int(left), int(right)]
+        for left, right in sorted(set(pairs))
+    ]
+    groups: list[list[int]] = []
+    source_anchors = sorted({row[0] for row in current_pairs})
+
+    for anchor in source_anchors:
+        row_indexes = [
+            index for index, row in enumerate(current_pairs) if anchor in row
+        ]
+        if not row_indexes:
+            continue
+        if len(row_indexes) == 1:
+            _append_reference_group(groups, current_pairs[row_indexes[0]])
+            del current_pairs[row_indexes[0]]
+            continue
+
+        opposite_nodes = []
+        for row_index in row_indexes:
+            left, right = current_pairs[row_index]
+            opposite_nodes.append(right if left == anchor else left)
+
+        sub = _rows_in(opposite_nodes, current_pairs)
+        if not sub:
+            for row_index in row_indexes:
+                _append_reference_group(groups, current_pairs[row_index])
+            for row_index in sorted(row_indexes, reverse=True):
+                del current_pairs[row_index]
+            continue
+
+        nodes_in_sub = {value for row in sub for value in row}
+        standalone_rows = [
+            row_index
+            for row_index, opposite in zip(row_indexes, opposite_nodes)
+            if opposite not in nodes_in_sub
+        ]
+        for row_index in standalone_rows:
+            _append_reference_group(groups, current_pairs[row_index])
+        for row_index in sorted(standalone_rows, reverse=True):
+            del current_pairs[row_index]
+
+        for group in _reference_makegroups(sub, anchor):
+            _append_reference_group(groups, group)
+
+    return tuple(sorted(set(tuple(group) for group in groups)))
+
+
+def _pinned_hesa_event_sets(
     event_ids: Sequence[str],
     edges: Sequence[AssociationEdge],
 ) -> tuple[tuple[tuple[str, ...], ...], tuple[str, ...]]:
-    adjacency: dict[str, set[str]] = {event_id: set() for event_id in event_ids}
-    for edge in edges:
-        adjacency[edge.event_a].add(edge.event_b)
-        adjacency[edge.event_b].add(edge.event_a)
+    """Return deterministic groups from the exact pinned HESA pair-to-group stage.
 
-    components: list[tuple[str, ...]] = []
-    unassociated: list[str] = []
-    visited: set[str] = set()
-    for event_id in sorted(event_ids):
-        if event_id in visited:
-            continue
-        if not adjacency[event_id]:
-            visited.add(event_id)
-            unassociated.append(event_id)
-            continue
+    Direct association edges are first mapped to the stable sorted event order
+    used by this synthetic benchmark. The grouping stage then follows the pinned
+    reference implementation rather than replacing it with graph connectivity
+    or mathematically maximal-clique enumeration.
+    """
 
-        stack = [event_id]
-        component: set[str] = set()
-        while stack:
-            current = stack.pop()
-            if current in component:
-                continue
-            component.add(current)
-            visited.add(current)
-            stack.extend(sorted(adjacency[current] - component, reverse=True))
-        components.append(tuple(sorted(component)))
+    ordered_ids = tuple(sorted(event_ids))
+    index_by_id = {
+        event_id: index for index, event_id in enumerate(ordered_ids)
+    }
+    edge_pairs = tuple(
+        sorted(
+            {
+                tuple(
+                    sorted(
+                        (
+                            index_by_id[edge.event_a],
+                            index_by_id[edge.event_b],
+                        )
+                    )
+                )
+                for edge in edges
+            }
+        )
+    )
 
-    return tuple(sorted(components)), tuple(sorted(unassociated))
+    associated_indexes = {index for pair in edge_pairs for index in pair}
+    unassociated = tuple(
+        event_id
+        for index, event_id in enumerate(ordered_ids)
+        if index not in associated_indexes
+    )
+    grouped_indexes = _reference_group_indices(edge_pairs)
+    groups = tuple(
+        tuple(ordered_ids[index] for index in group)
+        for group in grouped_indexes
+    )
+    return groups, unassociated
 
 
 def associate_events(
@@ -288,11 +506,12 @@ def associate_events(
     *,
     config: AssociationConfig = AssociationConfig(),
 ) -> AssociationResult:
-    """Return deterministic direct associations and connected event sets.
+    """Return deterministic direct associations and pinned HESA event groups.
 
-    Pair evidence is intentionally complete and synthetic: absence is never treated as
-    evidence of spatial disjointness. Event-set membership is graph connectivity under
-    this benchmark, not physical causality.
+    Pair evidence is intentionally complete and synthetic: absence is never
+    treated as evidence of spatial disjointness. Event groups follow the exact
+    pinned MYRIAD-HESA pair-to-group implementation and never imply physical
+    causality.
     """
 
     config = _validate_config(config)
@@ -329,7 +548,7 @@ def associate_events(
         )
 
     direct_edges = tuple(sorted(edges))
-    event_sets, unassociated = _connected_event_sets(
+    event_sets, unassociated = _pinned_hesa_event_sets(
         tuple(sorted(validated_events)),
         direct_edges,
     )
