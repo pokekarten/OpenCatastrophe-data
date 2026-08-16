@@ -89,6 +89,8 @@ class AgentActionResultSchemaBranchRegressionTests(unittest.TestCase):
         )
         self.assertNotIn("esrm20_event_hazard_group2_receipt", json.dumps(branch, sort_keys=True))
 
+    # #415 regression: adding the child-receipt branch must not rewrite #397's
+    # existing portable evidence requirement or collapse request-validation bans.
     def test_source_model_dependencies_binding_remains_isolated_from_child_receipts(self) -> None:
         schema = self._load_schema()
         branch = self._find_acquisition_branch(
