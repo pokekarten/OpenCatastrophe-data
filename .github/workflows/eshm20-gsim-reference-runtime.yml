@@ -64,7 +64,10 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
-      issues: write
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
     steps:
       - name: Checkout exact trusted execution commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -212,30 +215,63 @@ jobs:
           IMAGE_ID: ${{ steps.image.outputs.image_id }}
           RESULT_PATH: ${{ runner.temp }}/eq1-runtime-output/result.json
 
-      - name: Publish bounded runtime evidence
+      - name: Export bounded result to publisher
         if: steps.dedup.outputs.skip != 'true'
+        id: result
         run: |
           set -euo pipefail
-          python - <<'PY'
+          RESULT_JSON="$(python - <<'PY'
           import json
           import os
           from pathlib import Path
 
           result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
-          body = os.environ["RESULT_MARKER"] + "\n" + json.dumps(
-              result, sort_keys=True, separators=(",", ":")
-          )
-          Path(os.environ["PAYLOAD"]).write_text(
-              json.dumps({"body": body}, separators=(",", ":")),
-              encoding="utf-8",
-          )
+          print(json.dumps(result, sort_keys=True, separators=(",", ":")))
           PY
+          )"
+          test -n "$RESULT_JSON"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+        env:
+          RESULT_PATH: ${{ runner.temp }}/eq1-runtime-output/result.json
+
+  publish-runtime-evidence:
+    name: Publish bounded runtime evidence
+    needs: [validate-request, execute-reference-runtime]
+    if: >-
+      needs.execute-reference-runtime.result == 'success' &&
+      needs.execute-reference-runtime.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence output and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-reference-runtime.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-eshm20-gsim-reference-runtime-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .status == "pass" and
+            .execution_sha == $sha and
+            .target_sha == $sha and
+            .same_process_runtime_observation_collected == true and
+            .gsim_request_reference_recipe_runtime_compatibility_verified == true and
+            .historical_environment_verified == false and
+            .numerical_hazard_agreement_verified == false and
+            .full_hazard_compatibility_verified == false and
+            .reference_run_verified == false and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and
+            .model_use_authorized == false
+          ' >/dev/null
+
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/runtime-comment.json"
           gh api \
             --method POST \
             "repos/$GITHUB_REPOSITORY/issues/432/comments" \
-            --input "$PAYLOAD"
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RESULT_PATH: ${{ runner.temp }}/eq1-runtime-output/result.json
-          RESULT_MARKER: "<!-- oc-eq1-eshm20-gsim-reference-runtime-result-v1 -->"
-          PAYLOAD: ${{ runner.temp }}/eq1-runtime-comment.json
+            --input "$RUNNER_TEMP/runtime-comment.json"
