@@ -3,7 +3,9 @@
 
 from __future__ import annotations
 
+import json
 import unittest
+from unittest import mock
 
 from scripts import run_esrm20_hazard_logic_tree_profile_action as original
 from scripts import run_esrm20_hazard_logic_tree_profile_action_receipt_fix as subject
@@ -32,6 +34,95 @@ class HazardCanonicalReceiptBindingTests(unittest.TestCase):
         self.assertEqual(subject.ACTION, original.ACTION)
         self.assertEqual(subject.REQUEST_MARKER, original.REQUEST_MARKER)
         self.assertEqual(subject.RESULT_MARKER, original.RESULT_MARKER)
+
+    @staticmethod
+    def _blocked_result_body(sha: str) -> str:
+        result = original._base_result(execution_sha=sha)
+        result.update(
+            {
+                "status": "blocked",
+                "failure_class": "profile_failure",
+                "profile": None,
+            }
+        )
+        return subject.RESULT_MARKER + "\n" + json.dumps(
+            result, sort_keys=True, separators=(",", ":")
+        )
+
+    def test_old_valid_terminal_result_does_not_block_new_execution_sha(self) -> None:
+        old_sha = "1" * 40
+        current_sha = "2" * 40
+        comments = [
+            {
+                "user": {"login": original.TRUSTED_RESULT_LOGIN},
+                "body": self._blocked_result_body(old_sha),
+            }
+        ]
+        with mock.patch.object(
+            original, "fetch_repository_comments", return_value=comments
+        ):
+            self.assertFalse(
+                subject.has_terminal_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="test",
+                    execution_sha=current_sha,
+                )
+            )
+
+    def test_same_sha_terminal_result_still_deduplicates(self) -> None:
+        old_sha = "1" * 40
+        current_sha = "2" * 40
+        comments = [
+            {
+                "user": {"login": original.TRUSTED_RESULT_LOGIN},
+                "body": self._blocked_result_body(old_sha),
+            },
+            {
+                "user": {"login": original.TRUSTED_RESULT_LOGIN},
+                "body": self._blocked_result_body(current_sha),
+            },
+        ]
+        with mock.patch.object(
+            original, "fetch_repository_comments", return_value=comments
+        ):
+            self.assertTrue(
+                subject.has_terminal_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="test",
+                    execution_sha=current_sha,
+                )
+            )
+
+    def test_historical_trusted_result_with_mismatched_own_shas_fails_closed(self) -> None:
+        old_sha = "1" * 40
+        current_sha = "2" * 40
+        result = original._base_result(execution_sha=old_sha)
+        result.update(
+            {
+                "execution_sha": "3" * 40,
+                "status": "blocked",
+                "failure_class": "profile_failure",
+                "profile": None,
+            }
+        )
+        comments = [
+            {
+                "user": {"login": original.TRUSTED_RESULT_LOGIN},
+                "body": subject.RESULT_MARKER + "\n" + json.dumps(
+                    result, sort_keys=True, separators=(",", ":")
+                ),
+            }
+        ]
+        with mock.patch.object(
+            original, "fetch_repository_comments", return_value=comments
+        ), self.assertRaisesRegex(
+            original.HazardLogicTreeProfileActionError, "SHA binding"
+        ):
+            subject.has_terminal_result(
+                repository="pokekarten/OpenCatastrophe-data",
+                token="test",
+                execution_sha=current_sha,
+            )
 
 
 if __name__ == "__main__":
