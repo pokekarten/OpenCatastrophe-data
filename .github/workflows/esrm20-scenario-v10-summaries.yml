@@ -114,6 +114,13 @@ jobs:
                 "scenario_ruptures_output_summary.csv",
                 "scenario_shakemaps_output_summary.csv"
               ] and
+              .profile.dataset_attribution == {
+                "dataset_title": "Earthquake Scenario Loss Testing Repository",
+                "dataset_version": "v1.0",
+                "license_identifier": "CC-BY-4.0",
+                "citation": "H. Crowley, J. Dabbeek, L. Danciu, P. Kalakonas, E. Riga, V. Silva, E. Veliu, G. Weatherill (2021). Earthquake Scenario Loss Testing Repository (v1.0) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.5728008",
+                "doi": "10.5281/zenodo.5728008"
+              } and
               (.profile.summaries | length) == 2 and
               .profile.summaries[0].repository_path == "scenario_ruptures_output_summary.csv" and
               .profile.summaries[1].repository_path == "scenario_shakemaps_output_summary.csv" and
