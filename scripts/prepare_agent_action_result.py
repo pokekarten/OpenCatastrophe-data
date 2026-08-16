@@ -61,6 +61,10 @@ try:
         acquire_event_hazard_group2_receipt,
     )
     from scripts.acquire_efehr_esrm20_mapping_receipt import acquire_esrm20_mapping_receipt
+    from scripts.acquire_efehr_esrm20_mapping_headers import (
+        Esrm20MappingHeaderAcquisitionError,
+        acquire_esrm20_mapping_headers,
+    )
     from scripts.agent_action_protocol import (
         ProtocolError,
         RESULT_SCHEMA_VERSION,
@@ -77,6 +81,7 @@ try:
         EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,
         EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,
         ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION,
+        ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION,
         EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,
         EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION,
         EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION,
@@ -134,6 +139,10 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         acquire_event_hazard_group2_receipt,
     )
     from acquire_efehr_esrm20_mapping_receipt import acquire_esrm20_mapping_receipt
+    from acquire_efehr_esrm20_mapping_headers import (
+        Esrm20MappingHeaderAcquisitionError,
+        acquire_esrm20_mapping_headers,
+    )
     from agent_action_protocol import (
         ProtocolError,
         RESULT_SCHEMA_VERSION,
@@ -150,6 +159,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
         EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,
         EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,
         ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION,
+        ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION,
         EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,
         EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION,
         EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION,
@@ -181,6 +191,7 @@ NETWORK_ACTIONS = frozenset(
         EFEHR_KOSOVO_EXPOSURE_PROFILE_ACTION,
         EFEHR_KOSOVO_TAXONOMY_IDENTITY_ACTION,
         ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION,
+        ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION,
         EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION,
         EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION,
         EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION,
@@ -385,6 +396,8 @@ def _receipt_field(action: str) -> str:
         return "efehr_kosovo_taxonomy_identity"
     if action == ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION:
         return "esrm20_exposure_vulnerability_mapping_receipt"
+    if action == ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION:
+        return "esrm20_exposure_vulnerability_mapping_headers"
     if action == EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION:
         return "efehr_eshm20_root_dependency_profile"
     if action == EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION:
@@ -466,6 +479,7 @@ def prepare_completed_result(
     kosovo_profile_acquirer: Callable[[], dict[str, Any]] = acquire_and_profile_kosovo_exposure,
     kosovo_taxonomy_identity_acquirer: Callable[[], dict[str, Any]] = acquire_verified_kosovo_taxonomy_identity,
     esrm20_mapping_acquirer: Callable[[], dict[str, Any]] = acquire_esrm20_mapping_receipt,
+    esrm20_mapping_headers_acquirer: Callable[[], dict[str, Any]] = acquire_esrm20_mapping_headers,
     eshm20_root_config_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_root_config_receipt,
     eshm20_root_dependency_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_root_dependencies,
     eshm20_first_order_acquirer: Callable[[], dict[str, Any]] = acquire_eshm20_first_order_receipts,
@@ -507,6 +521,8 @@ def prepare_completed_result(
         selected_acquirer = kosovo_taxonomy_identity_acquirer
     elif request["action"] == ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION:
         selected_acquirer = esrm20_mapping_acquirer
+    elif request["action"] == ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION:
+        selected_acquirer = esrm20_mapping_headers_acquirer
     elif request["action"] == EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION:
         selected_acquirer = eshm20_root_dependency_acquirer
     elif request["action"] == EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION:
@@ -569,6 +585,9 @@ def prepare_completed_result(
                 raise Eshm20SourceModelChildReceiptError(
                     "ESHM20 source-model child receipt worker returned a non-object result"
                 )
+    except Esrm20MappingHeaderAcquisitionError:
+        print("acquisition blocked: ESRM20 mapping header acquisition failed closed", file=sys.stderr)
+        receipt = None
     except Eshm20SourceModelChildReceiptError:
         print(
             "acquisition blocked: ESHM20 source-model child receipt acquisition failed closed",
