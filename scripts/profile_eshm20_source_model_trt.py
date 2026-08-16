@@ -225,18 +225,18 @@ def _record_source(
     direct = node.attrib.get("tectonicRegion")
     if group_trt is None:
         effective = _safe_trt(direct, "source tectonicRegion")
-        provenance = "direct"
+        provenance = "direct_source"
     else:
         effective = group_trt
         if direct is None:
-            provenance = "source_group"
+            provenance = "group_inherited"
         else:
             direct_trt = _safe_trt(direct, "source tectonicRegion")
             if direct_trt != group_trt:
                 raise Eshm20SourceModelTrtProfileError(
                     "source tectonicRegion conflicts with sourceGroup tectonicRegion"
                 )
-            provenance = "source_group_confirmed"
+            provenance = "group_effective_direct_confirmed"
 
     type_counts[source_type] += 1
     trt_counts[effective] += 1
@@ -388,7 +388,7 @@ def aggregate_source_model_profiles(profiles: Iterable[dict[str, Any]]) -> dict[
                 raise Eshm20SourceModelTrtProfileError("aggregate TRT count is invalid")
             trt_counts[label] += count
         for label, count in child_provenance.items():
-            if label not in {"direct", "source_group", "source_group_confirmed"}:
+            if label not in {"direct_source", "group_inherited", "group_effective_direct_confirmed"}:
                 raise Eshm20SourceModelTrtProfileError("aggregate TRT provenance is invalid")
             if type(count) is not int or count < 0:
                 raise Eshm20SourceModelTrtProfileError("aggregate TRT provenance count is invalid")
