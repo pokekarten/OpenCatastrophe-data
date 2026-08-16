@@ -47,7 +47,7 @@ jobs:
         run: |
           set -euo pipefail
           EXECUTION_SHA="$(git rev-parse HEAD)"
-          python -m scripts.run_esrm20_hazard_logic_tree_profile_action \
+          python -m scripts.run_esrm20_hazard_logic_tree_profile_action_receipt_fix \
             --comment-body-env OC_HAZARD_PROFILE_REQUEST_BODY \
             --expected-issue 481 \
             --execution-sha "$EXECUTION_SHA" \
@@ -82,7 +82,7 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           import os
-          from scripts import run_esrm20_hazard_logic_tree_profile_action as subject
+          from scripts import run_esrm20_hazard_logic_tree_profile_action_receipt_fix as subject
           skip = subject.has_terminal_result(
               repository=os.environ["GITHUB_REPOSITORY"],
               token=os.environ["GH_TOKEN"],
@@ -99,7 +99,7 @@ jobs:
           RESULT_PATH: ${{ runner.temp }}/hazard-logic-tree-profile.json
         run: |
           set -euo pipefail
-          python -m scripts.run_esrm20_hazard_logic_tree_profile_action \
+          python -m scripts.run_esrm20_hazard_logic_tree_profile_action_receipt_fix \
             --comment-body-env OC_HAZARD_PROFILE_REQUEST_BODY \
             --expected-issue 481 \
             --execution-sha "$EXECUTION_SHA" \
@@ -107,7 +107,7 @@ jobs:
           python - <<'PY'
           import json, os
           from pathlib import Path
-          from scripts import run_esrm20_hazard_logic_tree_profile_action as subject
+          from scripts import run_esrm20_hazard_logic_tree_profile_action_receipt_fix as subject
           result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
           sha = os.environ["EXECUTION_SHA"]
           if result.get("target_sha") != sha or result.get("execution_sha") != sha:
@@ -174,12 +174,12 @@ jobs:
             (
               (.status == "pass" and
                .byte_identity_verified == true and .content_profile_verified == true and
-               .profile.receipt_issue == 476 and .profile.receipt_comment_id == 5310073582 and
+               .profile.receipt_issue == 476 and .profile.receipt_comment_id == 5310057117 and
                .profile.gsim_tree.byte_count == 34018 and
-               .profile.gsim_tree.sha256 == "f3efd16db967efd23f6b25837565344a6056282965ed0ecdfdbcb614513471b1" and
+               .profile.gsim_tree.sha256 == "f3efd16d56189c7804824d94b20ed75d6ceefc879144d8bd697c1f9b47cf17b4" and
                .profile.gsim_tree.argument_values_returned == false and
                .profile.source_tree.byte_count == 1964 and
-               .profile.source_tree.sha256 == "caebf9140922da7f7492d8b0e55c213c70a84d5b725ae37eae31d50e1da4ac3" and
+               .profile.source_tree.sha256 == "caebf9142da6b4d6d1e970c3c008627d34943da83c977fb1da4d15d1e34d8a12" and
                .profile.source_tree.explicit_repository_inventory_used == false and
                .profile.raw_xml_returned == false)
               or

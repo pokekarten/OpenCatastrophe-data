@@ -29,7 +29,7 @@ The reviewed provider repository is the separate public GitLab project `efehr/es
 
 A release tag is source-version evidence, not an immutable artifact identity by itself. Future exact-file acquisition must bind the full resolved commit SHA plus repository path and acquired byte hash. Current `main`, later tags or another ESRM20 component repository must not be silently substituted for v1.0.
 
-This distinction is especially important for the exposure-to-vulnerability mapping: the mapping may point into vulnerability models from the separately versioned `esrm20_vulnerability` repository, but that relationship does not make the mapping file itself a v1.1 vulnerability-dataset byte.
+This distinction is especially important for the exposure-to-vulnerability mapping: the mapping may point into vulnerability models from the separately versioned `esrm20_vulnerability` repository, but that relationship does not make the mapping file itself a byte from the separately versioned vulnerability dataset.
 
 ## Rights assessment
 
