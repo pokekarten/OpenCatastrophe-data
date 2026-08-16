@@ -103,7 +103,7 @@ class EfehrGitlabReceiptTests(unittest.TestCase):
         self.assertFalse(receipt["external_bytes_persisted"])
         self.assertFalse(receipt["publication_authorized"])
 
-    def test_mapping_has_distinct_risk_input_identity_and_vulnerability_stays_separate(self) -> None:
+    def test_mapping_uses_risk_input_identity_and_cannot_be_relabelled_as_historical_v11(self) -> None:
         mapping = self._mapping_target()
         self.assertEqual(mapping.project_path, "efehr/esrm20")
         self.assertEqual(mapping.dataset_id, "efehr.esrm20.risk-inputs.v1.0")
@@ -117,7 +117,8 @@ class EfehrGitlabReceiptTests(unittest.TestCase):
                 repository_path="Vulnerability/esrm20_exposure_vulnerability_mapping.csv",
             )
 
-        with self.assertRaisesRegex(EfehrReceiptError, "source-derived"):
+    def test_historical_v11_has_no_implicit_exact_file_execution_target(self) -> None:
+        with self.assertRaisesRegex(EfehrReceiptError, "exact source-derived file allow-list"):
             validate_target(
                 source_issue=283,
                 dataset_id="efehr.esrm20.vulnerability.v1.1",
