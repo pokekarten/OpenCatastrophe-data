@@ -51,12 +51,43 @@ LOCAL_PATH_PATTERNS = {
     "file URL": re.compile(rb"\bfile://(?:localhost/)?", re.IGNORECASE),
 }
 PRIVATE_ENDPOINT_PATTERNS = {
-    "localhost endpoint": re.compile(rb"https?://" + b"local" + b"host(?::[0-9]+)?(?:/|\b)", re.IGNORECASE),
-    "IPv4 loopback endpoint": re.compile(rb"https?://127(?:\.[0-9]{1,3}){3}(?::[0-9]+)?(?:/|\b)", re.IGNORECASE),
-    "RFC1918 10/8 endpoint": re.compile(rb"https?://10(?:\.[0-9]{1,3}){3}(?::[0-9]+)?(?:/|\b)", re.IGNORECASE),
-    "RFC1918 172.16/12 endpoint": re.compile(rb"https?://172\.(?:1[6-9]|2[0-9]|3[01])\.[0-9]{1,3}\.[0-9]{1,3}(?::[0-9]+)?(?:/|\b)", re.IGNORECASE),
-    "RFC1918 192.168/16 endpoint": re.compile(rb"https?://192\.168\.[0-9]{1,3}\.[0-9]{1,3}(?::[0-9]+)?(?:/|\b)", re.IGNORECASE),
-    "IPv6 loopback endpoint": re.compile(rb"https?://\[::1\](?::[0-9]+)?(?:/|\b)", re.IGNORECASE),
+    "localhost endpoint": re.compile(
+        rb"https?://" + b"local" + rb"host(?::[0-9]+)?(?=[/?#\s]|$)",
+        re.IGNORECASE,
+    ),
+    "IPv4 loopback endpoint": re.compile(
+        rb"https?://127(?:\.[0-9]{1,3}){3}(?::[0-9]+)?(?=[/?#\s]|$)",
+        re.IGNORECASE,
+    ),
+    "RFC1918 10/8 endpoint": re.compile(
+        rb"https?://10(?:\.[0-9]{1,3}){3}(?::[0-9]+)?(?=[/?#\s]|$)",
+        re.IGNORECASE,
+    ),
+    "RFC1918 172.16/12 endpoint": re.compile(
+        rb"https?://172\.(?:1[6-9]|2[0-9]|3[01])\.[0-9]{1,3}\.[0-9]{1,3}"
+        rb"(?::[0-9]+)?(?=[/?#\s]|$)",
+        re.IGNORECASE,
+    ),
+    "RFC1918 192.168/16 endpoint": re.compile(
+        rb"https?://192\.168\.[0-9]{1,3}\.[0-9]{1,3}(?::[0-9]+)?(?=[/?#\s]|$)",
+        re.IGNORECASE,
+    ),
+    "IPv4 link-local endpoint": re.compile(
+        rb"https?://169\.254\.[0-9]{1,3}\.[0-9]{1,3}(?::[0-9]+)?(?=[/?#\s]|$)",
+        re.IGNORECASE,
+    ),
+    "IPv6 loopback endpoint": re.compile(
+        rb"https?://\[::1\](?::[0-9]+)?(?=[/?#\s]|$)",
+        re.IGNORECASE,
+    ),
+    "IPv6 ULA endpoint": re.compile(
+        rb"https?://\[f[cd][0-9a-f:]*\](?::[0-9]+)?(?=[/?#\s]|$)",
+        re.IGNORECASE,
+    ),
+    "IPv6 link-local endpoint": re.compile(
+        rb"https?://\[fe[89ab][0-9a-f][0-9a-f:]*\](?::[0-9]+)?(?=[/?#\s]|$)",
+        re.IGNORECASE,
+    ),
 }
 SIGNED_URL_PATTERNS = {
     "AWS signed URL": re.compile(rb"[?&]X-Amz-Signature=[0-9A-Fa-f]{32,}", re.IGNORECASE),
