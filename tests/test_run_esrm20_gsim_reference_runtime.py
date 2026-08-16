@@ -49,12 +49,12 @@ def _branches() -> list[dict[str, object]]:
             {
                 "branch_set_id": f"bs-{index // 20}",
                 "branch_id": f"b-{index}",
-                "requested_gsim_token": token,
+                "requested_gsim": token,
                 "argument_keys": [key],
                 "alias_expansion_applied": token != resolved[token],
                 "resolved_gsim_class": resolved[token],
                 "runtime_argument_keys_after_alias": [key],
-                "constructor_accepted": True,
+                "constructor_succeeded": True,
             }
         )
     return rows
@@ -182,6 +182,15 @@ class Esrm20RuntimeAdapterTests(unittest.TestCase):
         self.assertEqual(len(evidence["per_resolved_gsim_class"]), 4)
         self.assertNotIn("coefficients", str(evidence).lower())
 
+    def test_site_requirement_rejects_nonproduction_requested_gsim_field(self) -> None:
+        result = _runtime_result()
+        for branch in result["branches"]:
+            branch["requested_gsim_token"] = branch.pop("requested_gsim")
+        with self.assertRaisesRegex(
+            subject.Esrm20GsimReferenceRuntimeError, "requested-token set drifted"
+        ):
+            subject._site_parameter_evidence(result, self._registry())
+
     def test_wrapper_preserves_runtime_ceilings_and_adds_argument_and_site_evidence(self) -> None:
         result = _runtime_result()
         with mock.patch.object(subject, "_BASE_RUN_REFERENCE_RUNTIME", return_value=result), mock.patch.object(
@@ -195,9 +204,7 @@ class Esrm20RuntimeAdapterTests(unittest.TestCase):
             )
         self.assertEqual(output["schema_version"], subject.SCHEMA_VERSION)
         self.assertEqual(output["source_issue"], 493)
-        self.assertEqual(
-            output["source_profile_result_comment_id"], 5310194089
-        )
+        self.assertEqual(output["source_profile_result_comment_id"], 5310194089)
         self.assertEqual(output["requested_gsim_tokens"], list(subject.EXPECTED_REQUESTED_TOKENS))
         self.assertEqual(
             output["gsim_argument_evidence"]["source_argument_keys"],
