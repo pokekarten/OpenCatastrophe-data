@@ -9,7 +9,10 @@ from scripts.myriad_hesa_association_semantics import (
     AssociationConfig,
     AssociationEdge,
     AssociationSemanticError,
+    GROUPING_SEMANTICS,
+    MAX_SYNTHETIC_EVENTS,
     PairEvidence,
+    REFERENCE_SOURCE_BLOB_SHA1,
     SyntheticEvent,
     associate_events,
 )
@@ -31,6 +34,13 @@ def event(
         end,
         dynamic=dynamic,
         peril_label=peril_label,
+    )
+
+
+def same_time_events(*names: str) -> tuple[SyntheticEvent, ...]:
+    return tuple(
+        event(name, "2020-01-01T00:00:00Z", "2020-01-04T00:00:00Z")
+        for name in names
     )
 
 
@@ -140,11 +150,7 @@ class MyriadHesaAssociationSemanticTests(unittest.TestCase):
         self.assertEqual(result.unassociated_event_ids, ("A", "B"))
 
     def test_transitive_chain_does_not_form_three_event_group(self) -> None:
-        events = (
-            event("A", "2020-01-01T00:00:00Z", "2020-01-04T00:00:00Z"),
-            event("B", "2020-01-01T00:00:00Z", "2020-01-04T00:00:00Z"),
-            event("C", "2020-01-01T00:00:00Z", "2020-01-04T00:00:00Z"),
-        )
+        events = same_time_events("A", "B", "C")
         result = associate_events(
             events,
             (
@@ -165,11 +171,7 @@ class MyriadHesaAssociationSemanticTests(unittest.TestCase):
         self.assertEqual(result.unassociated_event_ids, ())
 
     def test_pairwise_complete_triangle_forms_three_event_group(self) -> None:
-        events = (
-            event("A", "2020-01-01T00:00:00Z", "2020-01-04T00:00:00Z"),
-            event("B", "2020-01-01T00:00:00Z", "2020-01-04T00:00:00Z"),
-            event("C", "2020-01-01T00:00:00Z", "2020-01-04T00:00:00Z"),
-        )
+        events = same_time_events("A", "B", "C")
         result = associate_events(
             events,
             (
@@ -182,11 +184,8 @@ class MyriadHesaAssociationSemanticTests(unittest.TestCase):
         self.assertEqual(len(result.direct_edges), 3)
         self.assertEqual(result.unassociated_event_ids, ())
 
-    def test_overlapping_maximal_groups_remain_separate(self) -> None:
-        events = tuple(
-            event(name, "2020-01-01T00:00:00Z", "2020-01-04T00:00:00Z")
-            for name in ("A", "B", "C", "D")
-        )
+    def test_overlapping_reference_groups_remain_separate(self) -> None:
+        events = same_time_events("A", "B", "C", "D")
         result = associate_events(
             events,
             (
@@ -202,6 +201,33 @@ class MyriadHesaAssociationSemanticTests(unittest.TestCase):
             result.event_sets,
             (("A", "B", "C"), ("B", "C", "D")),
         )
+
+    def test_pinned_reference_n5_nonmaximal_group_is_preserved(self) -> None:
+        events = same_time_events("A", "B", "C", "D", "E")
+        result = associate_events(
+            events,
+            (
+                PairEvidence("A", "B", True),
+                PairEvidence("A", "C", True),
+                PairEvidence("A", "D", True),
+                PairEvidence("A", "E", True),
+                PairEvidence("B", "C", True),
+                PairEvidence("B", "D", True),
+                PairEvidence("B", "E", True),
+                PairEvidence("C", "D", False),
+                PairEvidence("C", "E", True),
+                PairEvidence("D", "E", False),
+            ),
+        )
+        self.assertEqual(
+            result.event_sets,
+            (
+                ("A", "B", "C", "E"),
+                ("A", "B", "D"),
+                ("A", "B", "E"),
+            ),
+        )
+        self.assertIn(("A", "B", "E"), result.event_sets)
 
     def test_input_and_evidence_order_are_deterministic(self) -> None:
         events = (
@@ -240,6 +266,21 @@ class MyriadHesaAssociationSemanticTests(unittest.TestCase):
         duplicate_events = (events[0], events[0])
         with self.assertRaisesRegex(AssociationSemanticError, "duplicate event_id"):
             associate_events(duplicate_events, ())
+
+    def test_resource_bound_fails_before_pair_evidence_expansion(self) -> None:
+        events = tuple(
+            event(
+                f"E{index:02d}",
+                "2020-01-01T00:00:00Z",
+                "2020-01-02T00:00:00Z",
+            )
+            for index in range(MAX_SYNTHETIC_EVENTS + 1)
+        )
+        with self.assertRaisesRegex(
+            AssociationSemanticError,
+            f"at most {MAX_SYNTHETIC_EVENTS} events",
+        ):
+            associate_events(events, ())
 
     def test_time_and_config_validation_fail_closed(self) -> None:
         with self.assertRaisesRegex(AssociationSemanticError, "explicitly UTC-aware"):
@@ -302,9 +343,11 @@ class MyriadHesaAssociationSemanticTests(unittest.TestCase):
         self.assertEqual(result.input_kind, "fixture")
         self.assertEqual(result.scientific_role, "benchmark")
         self.assertEqual(result.semantic_boundary, "association_not_causality")
+        self.assertEqual(result.grouping_semantics, "pinned_hesa_makegroups_rows_in")
+        self.assertEqual(GROUPING_SEMANTICS, "pinned_hesa_makegroups_rows_in")
         self.assertEqual(
-            result.grouping_semantics,
-            "pairwise_complete_maximal_groups",
+            REFERENCE_SOURCE_BLOB_SHA1,
+            "0722b7e6a9ab34b35caa1de56ed4847c65da7aa2",
         )
         self.assertEqual(result.reference_repository, "judithclaassen/MYRIAD-HESA")
         self.assertEqual(
