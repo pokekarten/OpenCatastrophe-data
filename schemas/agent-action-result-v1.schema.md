@@ -1368,7 +1368,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`object`; `additionalProperties`=`false`
 
-**Required here:** `repository_path`, `retrieved_at`, `byte_count`, `sha256`, `project_id`, `project_path`, `commit_sha`, `parent_result_comment_id`, `dependency_inventory_authorized`, `dependency_receipt_authorized`, `external_bytes_persisted`, `publication_authorized`, `model_use_authorized`
+**Required here:** `repository_path`, `retrieved_at`, `byte_count`, `sha256`, `project_id`, `project_path`, `commit_sha`, `parent_result_comment_id`, `external_bytes_persisted`, `publication_authorized`, `model_use_authorized`
 
 ##### Properties
 
@@ -1379,14 +1379,6 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### `commit_sha` — **required**
 
 **Constraints:** `const`=`fbd334de68f85d72669f73fc5a314a113db67317`
-
-###### `dependency_inventory_authorized` — **required**
-
-**Constraints:** `const`=`false`
-
-###### `dependency_receipt_authorized` — **required**
-
-**Constraints:** `const`=`false`
 
 ###### `external_bytes_persisted` — **required**
 
@@ -2632,9 +2624,15 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### not
 
-**Required here:** `efehr_eshm20_source_model_dependencies`, `efehr_eshm20_source_model_child_receipts`
+**Required here:** `efehr_eshm20_source_model_dependencies`
 
 ###### Branch 15
+
+###### not
+
+**Required here:** `efehr_eshm20_source_model_child_receipts`
+
+###### Branch 16
 
 ###### not
 
@@ -4516,7 +4514,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### `evidence`
 
-**Required here:** `efehr_eshm20_source_model_dependencies`, `efehr_eshm20_source_model_child_receipts`
+**Required here:** `efehr_eshm20_source_model_dependencies`
 
 ###### `source_issue`
 

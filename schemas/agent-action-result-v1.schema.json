@@ -841,7 +841,7 @@
     "efehrEshm20SourceModelChildReceipt": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["repository_path", "retrieved_at", "byte_count", "sha256", "project_id", "project_path", "commit_sha", "parent_result_comment_id", "dependency_inventory_authorized", "dependency_receipt_authorized", "external_bytes_persisted", "publication_authorized", "model_use_authorized"],
+      "required": ["repository_path", "retrieved_at", "byte_count", "sha256", "project_id", "project_path", "commit_sha", "parent_result_comment_id", "external_bytes_persisted", "publication_authorized", "model_use_authorized"],
       "properties": {
         "repository_path": {"type": "string", "minLength": 1, "maxLength": 512},
         "retrieved_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
@@ -851,8 +851,6 @@
         "project_path": {"const": "efehr/eshm20"},
         "commit_sha": {"const": "fbd334de68f85d72669f73fc5a314a113db67317"},
         "parent_result_comment_id": {"const": 5304432768},
-        "dependency_inventory_authorized": {"const": false},
-        "dependency_receipt_authorized": {"const": false},
         "external_bytes_persisted": {"const": false},
         "publication_authorized": {"const": false},
         "model_use_authorized": {"const": false}
@@ -1024,7 +1022,8 @@
           {"not": {"required": ["efehr_eshm20_first_order_receipts"]}},
           {"not": {"required": ["efehr_eshm20_gsim_resource_profile"]}},
           {"not": {"required": ["efehr_kosovo_taxonomy_identity"]}},
-          {"not": {"required": ["efehr_eshm20_source_model_dependencies", "efehr_eshm20_source_model_child_receipts"]}},
+          {"not": {"required": ["efehr_eshm20_source_model_dependencies"]}},
+          {"not": {"required": ["efehr_eshm20_source_model_child_receipts"]}},
           {"not": {"required": ["esrm20_exposure_vulnerability_mapping_receipt"]}}
         ]}
       }}
@@ -1448,7 +1447,7 @@
       "then": {"properties": {
         "source_issue": {"const": 397},
         "dataset_id": {"const": "efehr.eshm20"},
-        "evidence": {"required": ["efehr_eshm20_source_model_dependencies", "efehr_eshm20_source_model_child_receipts"]}
+        "evidence": {"required": ["efehr_eshm20_source_model_dependencies"]}
       }}
     },
     {

@@ -39,8 +39,6 @@ def receipt() -> dict[str, object]:
             "project_path": worker._CANONICAL_PROJECT_PATH,
             "commit_sha": worker._CANONICAL_COMMIT_SHA,
             "parent_result_comment_id": worker._CANONICAL_PARENT_RESULT_COMMENT_ID,
-            "dependency_inventory_authorized": False,
-            "dependency_receipt_authorized": False,
             "external_bytes_persisted": False,
             "publication_authorized": False,
             "model_use_authorized": False,
@@ -164,6 +162,8 @@ class SourceModelChildReceiptActionTests(unittest.TestCase):
         self.assertFalse(child["additionalProperties"])
         self.assertNotIn("requested_url", child["properties"])
         self.assertNotIn("final_url", child["properties"])
+        self.assertNotIn("dependency_inventory_authorized", child["properties"])
+        self.assertNotIn("dependency_receipt_authorized", child["properties"])
 
 
 if __name__ == "__main__":

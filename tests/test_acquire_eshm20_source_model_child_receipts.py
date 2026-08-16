@@ -131,8 +131,6 @@ class Eshm20SourceModelChildReceiptWorkerTests(unittest.TestCase):
             self.assertEqual(item["commit_sha"], worker.COMMIT_SHA)
             self.assertEqual(item["parent_result_comment_id"], 5304432768)
             self.assertFalse(item["external_bytes_persisted"])
-            self.assertFalse(item["dependency_inventory_authorized"])
-            self.assertFalse(item["dependency_receipt_authorized"])
             self.assertFalse(item["external_bytes_persisted"])
             self.assertFalse(item["publication_authorized"])
             self.assertFalse(item["model_use_authorized"])
