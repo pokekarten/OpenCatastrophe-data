@@ -43,6 +43,10 @@ TRUSTED_RESULT_LOGIN = "github-actions[bot]"
 TOTAL_DEADLINE_SECONDS = 45.0
 MAX_RESULT_UTF8_BYTES = 55_000
 MAX_LEDGER_PAGES = 20
+EXPECTED_TAXONOMY_COUNT = 86
+EXPECTED_TAXONOMY_VALUE_SET_SHA256 = (
+    "d5e6fe4e32489cdd2222b6b3facfd30937e2af61bbcf0ecead37ccf97202a945"
+)
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _REQUESTER_RE = re.compile(r"^[A-Za-z0-9_.:@/+ -]{1,96}$")
@@ -76,6 +80,8 @@ _VALIDATE_RESPONSE = transport._validate_exact_response
 _VALIDATE_TARGET = receipt.validate_target
 _RAW_FILE_API_URL = receipt.raw_file_api_url
 _JOIN = join_kernel.join_verified_kosovo_taxonomy_mapping
+_JOIN_WEIGHT = join_kernel._weight
+_JOIN_BOUNDED_LITERAL = join_kernel._is_bounded_literal
 _FETCH_COMMENTS = fetch_repository_comments
 _MONOTONIC = time.monotonic
 
@@ -146,6 +152,8 @@ def _require_authority() -> None:
         (receipt.validate_target, _VALIDATE_TARGET, "target validator"),
         (receipt.raw_file_api_url, _RAW_FILE_API_URL, "raw URL builder"),
         (join_kernel.join_verified_kosovo_taxonomy_mapping, _JOIN, "join kernel"),
+        (join_kernel._weight, _JOIN_WEIGHT, "join weight parser"),
+        (join_kernel._is_bounded_literal, _JOIN_BOUNDED_LITERAL, "join literal validator"),
         (fetch_repository_comments, _FETCH_COMMENTS, "ledger reader"),
         (time.monotonic, _MONOTONIC, "monotonic clock"),
     )
@@ -178,6 +186,171 @@ def _require_authority() -> None:
             raise KosovoMappingJoinExecutionError(f"trusted {label} drifted")
 
 
+def _validate_source_identity(
+    observed: object, expected: dict[str, Any], *, taxonomy: bool = False
+) -> None:
+    if type(observed) is not dict:
+        raise KosovoMappingJoinExecutionError("trusted join source identity is absent")
+    required_fields = (
+        "dataset_id",
+        "project_id",
+        "project_path",
+        "commit_sha",
+        "repository_path",
+        "byte_count",
+        "sha256",
+    )
+    for field in required_fields:
+        value = observed.get(field)
+        required = expected[field]
+        if type(value) is not type(required) or value != required:
+            raise KosovoMappingJoinExecutionError(
+                f"trusted join source identity drifted at {field}"
+            )
+    if taxonomy:
+        if observed.get("taxonomy_count") != EXPECTED_TAXONOMY_COUNT:
+            raise KosovoMappingJoinExecutionError("trusted taxonomy count drifted")
+        if observed.get("taxonomy_value_set_sha256") != EXPECTED_TAXONOMY_VALUE_SET_SHA256:
+            raise KosovoMappingJoinExecutionError("trusted taxonomy value-set identity drifted")
+    else:
+        if observed.get("headers") != list(join_kernel.EXPECTED_MAPPING_HEADER):
+            raise KosovoMappingJoinExecutionError("trusted mapping header identity drifted")
+
+
+def _validate_join_payload(join: object) -> None:
+    if type(join) is not dict:
+        raise KosovoMappingJoinExecutionError("trusted mapping-join payload is absent")
+    expected_scalars = (
+        ("schema_version", join_kernel.SCHEMA_VERSION),
+        ("source_issue", SOURCE_ISSUE),
+        ("semantic_decision_issue", 410),
+        ("taxonomy_matching", "exact_literal_equality_only"),
+        ("normalization_applied", False),
+        ("wildcard_or_fallback_matching_applied", False),
+        ("mapping_weight_rule", "positive_finite_float_sum_within_openquake_1e-7"),
+        ("bounded_derived_disclosure_authorized", True),
+        ("vulnerability_file_selection_authorized", False),
+        ("raw_mapping_rows_returned", False),
+        ("external_bytes_persisted", False),
+        ("publication_authorized", False),
+        ("model_use_authorized", False),
+    )
+    for field, required in expected_scalars:
+        value = join.get(field)
+        if type(value) is not type(required) or value != required:
+            raise KosovoMappingJoinExecutionError(
+                f"trusted mapping-join payload drifted at {field}"
+            )
+
+    _validate_source_identity(join.get("taxonomy_source"), _EXPOSURE, taxonomy=True)
+    _validate_source_identity(join.get("mapping_source"), _MAPPING, taxonomy=False)
+
+    rights = join.get("rights")
+    if type(rights) is not dict or set(rights) != {
+        "provider",
+        "license_id",
+        "attribution_required",
+        "source_reviews",
+        "transformation_notice",
+    }:
+        raise KosovoMappingJoinExecutionError("trusted mapping-join rights shape drifted")
+    rights_expected = (
+        ("provider", join_kernel.RIGHTS_PROVIDER),
+        ("license_id", join_kernel.RIGHTS_LICENSE_ID),
+        ("attribution_required", True),
+        ("source_reviews", list(join_kernel.RIGHTS_SOURCE_REVIEWS)),
+        ("transformation_notice", join_kernel.RIGHTS_TRANSFORMATION_NOTICE),
+    )
+    for field, required in rights_expected:
+        value = rights.get(field)
+        if type(value) is not type(required) or value != required:
+            raise KosovoMappingJoinExecutionError(
+                f"trusted mapping-join attribution drifted at {field}"
+            )
+
+    counts = join.get("classification_counts")
+    if (
+        type(counts) is not dict
+        or set(counts) != {"resolved", "unsupported", "ambiguous"}
+        or any(
+            type(value) is not int or isinstance(value, bool) or value < 0
+            for value in counts.values()
+        )
+        or sum(counts.values()) != EXPECTED_TAXONOMY_COUNT
+    ):
+        raise KosovoMappingJoinExecutionError("trusted mapping-join counts are invalid")
+
+    records = join.get("records")
+    if type(records) is not list or len(records) != EXPECTED_TAXONOMY_COUNT:
+        raise KosovoMappingJoinExecutionError("trusted mapping-join record set is invalid")
+    observed_counts = {status: 0 for status in ("resolved", "unsupported", "ambiguous")}
+    taxonomies: list[str] = []
+    ambiguous_reasons = {
+        "matched_row_not_canonical",
+        "duplicate_risk_id_semantics",
+        "weights_outside_openquake_precision",
+    }
+    for record in records:
+        if type(record) is not dict or set(record) != {
+            "taxonomy",
+            "status",
+            "reason_code",
+            "targets",
+        }:
+            raise KosovoMappingJoinExecutionError("trusted mapping-join record shape drifted")
+        taxonomy = record["taxonomy"]
+        if not _JOIN_BOUNDED_LITERAL(
+            taxonomy, max_utf8_bytes=join_kernel.MAX_TAXONOMY_UTF8_BYTES
+        ):
+            raise KosovoMappingJoinExecutionError("trusted taxonomy literal is unsafe")
+        taxonomies.append(taxonomy)
+        status = record["status"]
+        if status not in observed_counts:
+            raise KosovoMappingJoinExecutionError("trusted mapping status is unknown")
+        observed_counts[status] += 1
+        reason = record["reason_code"]
+        targets = record["targets"]
+        if type(targets) is not list:
+            raise KosovoMappingJoinExecutionError("trusted mapping targets are not a list")
+        if status == "resolved":
+            if reason != "exact_mapping_rows_valid" or not targets:
+                raise KosovoMappingJoinExecutionError("trusted resolved record is incomplete")
+            risk_ids: list[str] = []
+            weights: list[float] = []
+            for target in targets:
+                if type(target) is not dict or set(target) != {"risk_id", "weight"}:
+                    raise KosovoMappingJoinExecutionError("trusted mapping target shape drifted")
+                risk_id = target["risk_id"]
+                if (
+                    not _JOIN_BOUNDED_LITERAL(
+                        risk_id, max_utf8_bytes=join_kernel.MAX_RISK_ID_UTF8_BYTES
+                    )
+                    or risk_id != risk_id.strip()
+                ):
+                    raise KosovoMappingJoinExecutionError("trusted risk-id literal is unsafe")
+                weight_text = target["weight"]
+                weight = _JOIN_WEIGHT(weight_text)
+                if weight is None:
+                    raise KosovoMappingJoinExecutionError("trusted mapping weight is invalid")
+                risk_ids.append(risk_id)
+                weights.append(weight)
+            if risk_ids != sorted(risk_ids) or len(set(risk_ids)) != len(risk_ids):
+                raise KosovoMappingJoinExecutionError("trusted resolved risk IDs are not canonical")
+            if abs(sum(weights) - 1.0) > join_kernel.OPENQUAKE_WEIGHT_PRECISION:
+                raise KosovoMappingJoinExecutionError("trusted resolved weights fail OpenQuake precision")
+        elif status == "unsupported":
+            if reason != "no_exact_mapping_row" or targets:
+                raise KosovoMappingJoinExecutionError("trusted unsupported record drifted")
+        else:
+            if reason not in ambiguous_reasons or targets:
+                raise KosovoMappingJoinExecutionError("trusted ambiguous record drifted")
+
+    if taxonomies != sorted(taxonomies) or len(set(taxonomies)) != len(taxonomies):
+        raise KosovoMappingJoinExecutionError("trusted taxonomy record order is not canonical")
+    if observed_counts != counts:
+        raise KosovoMappingJoinExecutionError("trusted mapping-join counts disagree with records")
+
+
 def _parse_terminal_result(body: object, *, execution_sha: str) -> bool:
     if type(body) is not str or RESULT_MARKER not in body:
         return False
@@ -196,8 +369,18 @@ def _parse_terminal_result(body: object, *, execution_sha: str) -> bool:
         raise
     except (json.JSONDecodeError, TypeError, ValueError) as exc:
         raise KosovoMappingJoinExecutionError("trusted mapping-join result JSON is malformed") from exc
-    if type(result) is not dict:
-        raise KosovoMappingJoinExecutionError("trusted mapping-join result is not an object")
+    if type(result) is not dict or set(result) != {
+        "schema_version",
+        "source_issue",
+        "status",
+        "target_sha",
+        "execution_sha",
+        "join",
+        "external_bytes_persisted",
+        "publication_authorized",
+        "model_use_authorized",
+    }:
+        raise KosovoMappingJoinExecutionError("trusted mapping-join execution shape drifted")
     expected = (
         ("schema_version", SCHEMA_VERSION),
         ("source_issue", SOURCE_ISSUE),
@@ -214,43 +397,7 @@ def _parse_terminal_result(body: object, *, execution_sha: str) -> bool:
             raise KosovoMappingJoinExecutionError(
                 f"trusted mapping-join result drifted at {field}"
             )
-    join = result.get("join")
-    if type(join) is not dict:
-        raise KosovoMappingJoinExecutionError("trusted mapping-join payload is absent")
-    if join.get("schema_version") != join_kernel.SCHEMA_VERSION:
-        raise KosovoMappingJoinExecutionError("trusted mapping-join kernel schema drifted")
-    counts = join.get("classification_counts")
-    if (
-        type(counts) is not dict
-        or set(counts) != {"resolved", "unsupported", "ambiguous"}
-        or any(type(value) is not int or isinstance(value, bool) or value < 0 for value in counts.values())
-        or sum(counts.values()) != 86
-    ):
-        raise KosovoMappingJoinExecutionError("trusted mapping-join counts are invalid")
-    records = join.get("records")
-    if type(records) is not list or len(records) != 86:
-        raise KosovoMappingJoinExecutionError("trusted mapping-join record set is invalid")
-    if join.get("bounded_derived_disclosure_authorized") is not True:
-        raise KosovoMappingJoinExecutionError("trusted bounded disclosure authority is absent")
-    rights = join.get("rights")
-    if (
-        type(rights) is not dict
-        or rights.get("provider") != join_kernel.RIGHTS_PROVIDER
-        or rights.get("license_id") != join_kernel.RIGHTS_LICENSE_ID
-        or rights.get("attribution_required") is not True
-    ):
-        raise KosovoMappingJoinExecutionError("trusted mapping-join attribution drifted")
-    for field in (
-        "vulnerability_file_selection_authorized",
-        "raw_mapping_rows_returned",
-        "external_bytes_persisted",
-        "publication_authorized",
-        "model_use_authorized",
-    ):
-        if join.get(field) is not False:
-            raise KosovoMappingJoinExecutionError(
-                f"trusted mapping-join authority widened at {field}"
-            )
+    _validate_join_payload(result.get("join"))
     return True
 
 
@@ -353,6 +500,7 @@ def execute_join(
         exposure_raw = b""
         mapping_raw = b""
 
+    _validate_join_payload(join)
     result = {
         "schema_version": SCHEMA_VERSION,
         "source_issue": SOURCE_ISSUE,
@@ -367,7 +515,10 @@ def execute_join(
     encoded = json.dumps(result, sort_keys=True, separators=(",", ":")).encode("utf-8")
     if len(encoded) > MAX_RESULT_UTF8_BYTES:
         raise KosovoMappingJoinExecutionError("bounded mapping-join result exceeds publication limit")
-    _parse_terminal_result(RESULT_MARKER + "\n" + encoded.decode("utf-8"), execution_sha=execution_sha)
+    _parse_terminal_result(
+        RESULT_MARKER + "\n" + encoded.decode("utf-8"),
+        execution_sha=execution_sha,
+    )
     return result
 
 
