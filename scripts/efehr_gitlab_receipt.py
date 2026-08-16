@@ -71,6 +71,7 @@ EXACT_PATHS: dict[tuple[int, int], frozenset[str]] = {
     (283, 269): frozenset(
         {
             "Vulnerability/esrm20_exposure_vulnerability_mapping.csv",
+            "Vulnerability/vulnerability_total-repl-cost_ESRM20_VariousIM.xml",
         }
     ),
     (284, 269): frozenset(
@@ -151,7 +152,6 @@ def validate_target(
         if not any(lowered.endswith(suffix) for suffix in ESHM20_SUFFIXES):
             raise EfehrReceiptError("ESHM20 path has an unsupported file type")
     else:
-        # Vulnerability v1.1 file IDs must first be derived from the exact mapping bytes.
         raise EfehrReceiptError("target requires an exact source-derived file allow-list before acquisition")
 
     return ArtifactTarget(
