@@ -20,6 +20,7 @@ from typing import Any
 
 from scripts.acquire_efehr_gitlab_receipt import EfehrAcquisitionError
 from scripts.acquire_efehr_kosovo_site_receipt import acquire_kosovo_site_receipt
+from scripts.prepare_agent_action_result import LedgerError, fetch_repository_comments
 
 REQUEST_MARKER = "<!-- oc-eq1-esrm20-kosovo-site-receipt-request-v1 -->"
 RESULT_MARKER = "<!-- oc-eq1-esrm20-kosovo-site-receipt-result-v1 -->"
@@ -34,6 +35,7 @@ PROJECT_PATH = "efehr/esrm20"
 COMMIT_SHA = "05f83bbc9df81d02ee8ddb1801d9d781355ce783"
 REPOSITORY_PATH = "Vs30/Site_model_Kosovo.xml"
 WORKER_OPERATION_ID = "esrm20-kosovo-site-model-v1"
+TRUSTED_RESULT_LOGIN = "github-actions[bot]"
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -174,6 +176,99 @@ def _base_result(*, execution_sha: str) -> dict[str, Any]:
         "publication_authorized": False,
         "model_use_authorized": False,
     }
+
+
+def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
+    if type(body) is not str or RESULT_MARKER not in body:
+        return False
+    if body.count(RESULT_MARKER) != 1:
+        raise SiteReceiptActionError("trusted site result marker is malformed")
+    before, after = body.split(RESULT_MARKER, 1)
+    if before.strip() or not after.strip():
+        raise SiteReceiptActionError("trusted site result envelope is malformed")
+    try:
+        result = json.loads(
+            after.strip(),
+            object_pairs_hook=_pairs,
+            parse_constant=_reject_constant,
+        )
+    except SiteReceiptActionError:
+        raise
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        raise SiteReceiptActionError("trusted site result JSON is malformed") from exc
+    if type(result) is not dict:
+        raise SiteReceiptActionError("trusted site result is not an object")
+    exact = (
+        ("schema_version", RESULT_SCHEMA_VERSION),
+        ("action", ACTION),
+        ("source_issue", CONTROL_ISSUE),
+        ("source_science_issue", SOURCE_SCIENCE_ISSUE),
+        ("dataset_id", DATASET_ID),
+        ("target_sha", execution_sha),
+        ("execution_sha", execution_sha),
+        ("external_bytes_persisted", False),
+        ("publication_authorized", False),
+        ("model_use_authorized", False),
+    )
+    for field, expected in exact:
+        observed = result.get(field)
+        if type(observed) is not type(expected) or observed != expected:
+            raise SiteReceiptActionError(f"trusted site result drifted at {field}")
+    status = result.get("status")
+    if status == "pass":
+        receipt = result.get("receipt")
+        if type(receipt) is not dict:
+            raise SiteReceiptActionError("trusted PASS lacks bounded receipt")
+        byte_count = receipt.get("byte_count")
+        digest = receipt.get("sha256")
+        if (
+            type(byte_count) is not int
+            or isinstance(byte_count, bool)
+            or byte_count <= 0
+            or type(digest) is not str
+            or not _DIGEST_RE.fullmatch(digest)
+        ):
+            raise SiteReceiptActionError("trusted PASS receipt is invalid")
+        return True
+    if status == "blocked":
+        if result.get("failure_class") != "acquisition_failure" or result.get("receipt") is not None:
+            raise SiteReceiptActionError("trusted blocked result is not safely bounded")
+        return True
+    raise SiteReceiptActionError("trusted site result has non-terminal status")
+
+
+def has_terminal_site_result(
+    *,
+    repository: str,
+    token: str,
+    execution_sha: str,
+    opener: Any | None = None,
+    max_pages: int = 20,
+) -> bool:
+    """Fail closed unless the complete bounded Issue #342 ledger is known."""
+
+    if type(execution_sha) is not str or not _SHA_RE.fullmatch(execution_sha):
+        raise SiteReceiptActionError("invalid execution SHA")
+    kwargs: dict[str, Any] = {
+        "issue": CONTROL_ISSUE,
+        "max_pages": max_pages,
+    }
+    if opener is not None:
+        kwargs["opener"] = opener
+    try:
+        comments = fetch_repository_comments(repository, token, **kwargs)
+    except LedgerError as exc:
+        raise SiteReceiptActionError("site result ledger is incomplete") from exc
+    for comment in comments:
+        user = comment.get("user")
+        login = user.get("login") if type(user) is dict else None
+        if login != TRUSTED_RESULT_LOGIN:
+            continue
+        if _parse_trusted_terminal_result(
+            comment.get("body"), execution_sha=execution_sha
+        ):
+            return True
+    return False
 
 
 def run_site_receipt(*, execution_sha: str) -> dict[str, Any]:
