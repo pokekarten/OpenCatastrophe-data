@@ -152,6 +152,24 @@ class MappingHeaderDisclosureTests(unittest.TestCase):
                     disclosure.disclose_verified_mapping_headers(b"trusted-bytes")
                 profiler.assert_not_called()
 
+    def test_profiler_source_blob_drift_fails_before_structure_profiler(self) -> None:
+        profiler = mock.Mock(return_value={})
+        with (
+            mock.patch.object(disclosure, "_STRUCTURE_PROFILER", profiler),
+            mock.patch.object(
+                disclosure.mapping_structure,
+                "profile_verified_mapping_bytes",
+                profiler,
+            ),
+            mock.patch.object(disclosure, "_git_blob_sha1", return_value="0" * 40),
+            self.assertRaisesRegex(
+                disclosure.MappingHeaderDisclosureError,
+                "source blob drifted",
+            ),
+        ):
+            disclosure.disclose_verified_mapping_headers(b"trusted-bytes")
+        profiler.assert_not_called()
+
     def test_header_fingerprint_drift_fails_closed(self) -> None:
         raw = b"alpha,beta\nx,y\n"
         result = structural_result(raw, header=["alpha", "beta"])
