@@ -32,7 +32,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 #### `action` — **required**
 
-**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity","esrm20_exposure_vulnerability_mapping_receipt","efehr_eshm20_source_model_dependencies","efehr_eshm20_source_model_child_receipts"]`
+**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity","esrm20_exposure_vulnerability_mapping_receipt","esrm20_exposure_vulnerability_mapping_headers","efehr_eshm20_source_model_dependencies","efehr_eshm20_source_model_child_receipts"]`
 
 #### `dataset_id` — **required**
 
@@ -486,6 +486,38 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`object`; `additionalProperties`=`false`
 
+**Required here:** `request_validated`, `ledger_scan_complete`, `prior_result_reused`, `esrm20_exposure_vulnerability_mapping_headers`
+
+###### Properties
+
+###### `esrm20_exposure_vulnerability_mapping_headers` — **required**
+
+###### anyOf
+
+###### Branch 1
+
+**Constraints:** type=`null`
+
+###### Branch 2
+
+**Constraints:** `$ref`=`#/$defs/esrm20ExposureVulnerabilityMappingHeaders`
+
+###### `ledger_scan_complete` — **required**
+
+**Constraints:** `const`=`true`
+
+###### `prior_result_reused` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `request_validated` — **required**
+
+**Constraints:** `const`=`true`
+
+###### Branch 16
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
 **Required here:** `request_validated`, `ledger_scan_complete`, `prior_result_reused`, `efehr_kosovo_taxonomy_identity`
 
 ###### Properties
@@ -514,7 +546,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`true`
 
-###### Branch 16
+###### Branch 17
 
 **Constraints:** type=`object`; `additionalProperties`=`false`
 
@@ -546,7 +578,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`true`
 
-###### Branch 17
+###### Branch 18
 
 **Constraints:** type=`object`; `additionalProperties`=`false`
 
@@ -2436,6 +2468,250 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`281`
 
+#### `esrm20ExposureVulnerabilityMappingHeaders`
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `schema_version`, `operation_id`, `control_issue`, `source_issue`, `dataset_id`, `provider_host`, `project_id`, `project_path`, `commit_sha`, `repository_path`, `receipt_comment_id`, `receipt_run_id`, `receipt_execution_sha`, `header_source_commit`, `header_path`, `header_function`, `header_git_blob_sha1`, `retrieved_at`, `disclosure`, `raw_bytes_returned`, `external_bytes_persisted`, `derived_bytes_persisted`, `publication_authorized`, `mapping_interpretation_authorized`, `taxonomy_join_authorized`, `vulnerability_selection_authorized`, `model_use_authorized`
+
+##### Properties
+
+###### `commit_sha` — **required**
+
+**Constraints:** `const`=`05f83bbc9df81d02ee8ddb1801d9d781355ce783`
+
+###### `control_issue` — **required**
+
+**Constraints:** `const`=`410`
+
+###### `dataset_id` — **required**
+
+**Constraints:** `const`=`efehr.esrm20.risk-inputs.v1.0`
+
+###### `derived_bytes_persisted` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `disclosure` — **required**
+
+**Constraints:** `$ref`=`#/$defs/esrm20ExposureVulnerabilityMappingHeadersDisclosure`
+
+###### `external_bytes_persisted` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `header_function` — **required**
+
+**Constraints:** `const`=`disclose_verified_mapping_headers`
+
+###### `header_git_blob_sha1` — **required**
+
+**Constraints:** `const`=`cd0aa5cb573dbd8db431ef27b6a762c0a1d54c7c`
+
+###### `header_path` — **required**
+
+**Constraints:** `const`=`scripts/profile_efehr_esrm20_mapping_headers.py`
+
+###### `header_source_commit` — **required**
+
+**Constraints:** `const`=`e54b1f7a6220bafc67da540a57ed6fc7f6534e28`
+
+###### `mapping_interpretation_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `model_use_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `operation_id` — **required**
+
+**Constraints:** `const`=`esrm20-exposure-vulnerability-mapping-header-disclosure-v1`
+
+###### `project_id` — **required**
+
+**Constraints:** `const`=`269`
+
+###### `project_path` — **required**
+
+**Constraints:** `const`=`efehr/esrm20`
+
+###### `provider_host` — **required**
+
+**Constraints:** `const`=`gitlab.seismo.ethz.ch`
+
+###### `publication_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `raw_bytes_returned` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `receipt_comment_id` — **required**
+
+**Constraints:** `const`=`5303466667`
+
+###### `receipt_execution_sha` — **required**
+
+**Constraints:** `const`=`9b1bb7127138247cf613dbf444d139c189c9b13a`
+
+###### `receipt_run_id` — **required**
+
+**Constraints:** `const`=`31899242278`
+
+###### `repository_path` — **required**
+
+**Constraints:** `const`=`Vulnerability/esrm20_exposure_vulnerability_mapping.csv`
+
+###### `retrieved_at` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`
+
+###### `schema_version` — **required**
+
+**Constraints:** `const`=`oc-esrm20-mapping-header-acquisition-v1`
+
+###### `source_issue` — **required**
+
+**Constraints:** `const`=`283`
+
+###### `taxonomy_join_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `vulnerability_selection_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+#### `esrm20ExposureVulnerabilityMappingHeadersDisclosure`
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `schema_version`, `decision_issue`, `source_issue`, `profile_issue`, `dataset_id`, `project_id`, `project_path`, `commit_sha`, `repository_path`, `receipt_comment_id`, `receipt_run_id`, `receipt_execution_sha`, `byte_count`, `sha256`, `column_count`, `ordered_header_sha256`, `headers`, `disclosure_scope`, `header_strings_returned`, `cell_values_returned`, `raw_rows_returned`, `normalization_applied`, `mapping_interpretation_authorized`, `taxonomy_join_authorized`, `vulnerability_selection_authorized`, `external_bytes_persisted`, `derived_bytes_persisted`, `publication_authorized`, `model_use_authorized`
+
+##### Properties
+
+###### `byte_count` — **required**
+
+**Constraints:** `const`=`83585`
+
+###### `cell_values_returned` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `column_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`1`; `maximum`=`256`
+
+###### `commit_sha` — **required**
+
+**Constraints:** `const`=`05f83bbc9df81d02ee8ddb1801d9d781355ce783`
+
+###### `dataset_id` — **required**
+
+**Constraints:** `const`=`efehr.esrm20.risk-inputs.v1.0`
+
+###### `decision_issue` — **required**
+
+**Constraints:** `const`=`410`
+
+###### `derived_bytes_persisted` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `disclosure_scope` — **required**
+
+**Constraints:** `const`=`exact_header_strings_only`
+
+###### `external_bytes_persisted` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `header_strings_returned` — **required**
+
+**Constraints:** `const`=`true`
+
+###### `headers` — **required**
+
+**Constraints:** type=`array`; `minItems`=`1`; `maxItems`=`256`; `uniqueItems`=`true`
+
+###### Array items
+
+**Constraints:** type=`string`; `minLength`=`1`; `maxLength`=`512`
+
+###### `mapping_interpretation_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `model_use_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `normalization_applied` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `ordered_header_sha256` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^[a-f0-9]{64}$`
+
+###### `profile_issue` — **required**
+
+**Constraints:** `const`=`404`
+
+###### `project_id` — **required**
+
+**Constraints:** `const`=`269`
+
+###### `project_path` — **required**
+
+**Constraints:** `const`=`efehr/esrm20`
+
+###### `publication_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `raw_rows_returned` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `receipt_comment_id` — **required**
+
+**Constraints:** `const`=`5303466667`
+
+###### `receipt_execution_sha` — **required**
+
+**Constraints:** `const`=`9b1bb7127138247cf613dbf444d139c189c9b13a`
+
+###### `receipt_run_id` — **required**
+
+**Constraints:** `const`=`31899242278`
+
+###### `repository_path` — **required**
+
+**Constraints:** `const`=`Vulnerability/esrm20_exposure_vulnerability_mapping.csv`
+
+###### `schema_version` — **required**
+
+**Constraints:** `const`=`oc-esrm20-mapping-header-disclosure-v1`
+
+###### `sha256` — **required**
+
+**Constraints:** `const`=`94b9ee800e9435a346ca200ecf34d0d46c8d8b895cc56e3be85c323006b4ee4c`
+
+###### `source_issue` — **required**
+
+**Constraints:** `const`=`283`
+
+###### `taxonomy_join_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `vulnerability_selection_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
 #### `esrm20ExposureVulnerabilityMappingReceipt`
 
 **Constraints:** type=`object`; `additionalProperties`=`false`
@@ -2638,6 +2914,12 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Required here:** `esrm20_exposure_vulnerability_mapping_receipt`
 
+###### Branch 17
+
+###### not
+
+**Required here:** `esrm20_exposure_vulnerability_mapping_headers`
+
 #### Branch 2
 
 ##### if
@@ -2798,7 +3080,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### `action`
 
-**Constraints:** `enum`=`["acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity","esrm20_exposure_vulnerability_mapping_receipt","efehr_eshm20_source_model_dependencies","efehr_eshm20_source_model_child_receipts"]`
+**Constraints:** `enum`=`["acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity","esrm20_exposure_vulnerability_mapping_receipt","esrm20_exposure_vulnerability_mapping_headers","efehr_eshm20_source_model_dependencies","efehr_eshm20_source_model_child_receipts"]`
 
 ###### `duplicate_result_comment_id`
 
@@ -3206,6 +3488,42 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`object (implicit)`
 
+**Required here:** `phase`, `action`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`esrm20_exposure_vulnerability_mapping_headers`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `dataset_id`
+
+**Constraints:** `const`=`efehr.esrm20.risk-inputs.v1.0`
+
+###### `evidence`
+
+**Required here:** `esrm20_exposure_vulnerability_mapping_headers`
+
+###### `source_issue`
+
+**Constraints:** `const`=`410`
+
+#### Branch 18
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
 **Required here:** `phase`, `action`, `status`
 
 ###### Properties
@@ -3242,7 +3560,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 18
+#### Branch 19
 
 ##### if
 
@@ -3284,7 +3602,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 19
+#### Branch 20
 
 ##### if
 
@@ -3326,7 +3644,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 20
+#### Branch 21
 
 ##### if
 
@@ -3368,7 +3686,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 21
+#### Branch 22
 
 ##### if
 
@@ -3410,7 +3728,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 22
+#### Branch 23
 
 ##### if
 
@@ -3452,7 +3770,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 23
+#### Branch 24
 
 ##### if
 
@@ -3494,7 +3812,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 24
+#### Branch 25
 
 ##### if
 
@@ -3536,7 +3854,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 25
+#### Branch 26
 
 ##### if
 
@@ -3578,7 +3896,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 26
+#### Branch 27
 
 ##### if
 
@@ -3620,7 +3938,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 27
+#### Branch 28
 
 ##### if
 
@@ -3662,7 +3980,49 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 28
+#### Branch 29
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`, `status`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`esrm20_exposure_vulnerability_mapping_headers`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+###### `status` — **required**
+
+**Constraints:** `const`=`pass`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `evidence`
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `esrm20_exposure_vulnerability_mapping_headers`
+
+**Constraints:** `$ref`=`#/$defs/esrm20ExposureVulnerabilityMappingHeaders`
+
+###### `failure_class`
+
+**Constraints:** type=`null`
+
+#### Branch 30
 
 ##### if
 
@@ -3704,7 +4064,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 29
+#### Branch 31
 
 ##### if
 
@@ -3746,7 +4106,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 30
+#### Branch 32
 
 ##### if
 
@@ -3788,7 +4148,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 31
+#### Branch 33
 
 ##### if
 
@@ -3830,7 +4190,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 32
+#### Branch 34
 
 ##### if
 
@@ -3872,7 +4232,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 33
+#### Branch 35
 
 ##### if
 
@@ -3914,7 +4274,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 34
+#### Branch 36
 
 ##### if
 
@@ -3956,7 +4316,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 35
+#### Branch 37
 
 ##### if
 
@@ -3998,7 +4358,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 36
+#### Branch 38
 
 ##### if
 
@@ -4040,7 +4400,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 37
+#### Branch 39
 
 ##### if
 
@@ -4082,7 +4442,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 38
+#### Branch 40
 
 ##### if
 
@@ -4118,7 +4478,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`361`
 
-#### Branch 39
+#### Branch 41
 
 ##### if
 
@@ -4160,7 +4520,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 40
+#### Branch 42
 
 ##### if
 
@@ -4202,7 +4562,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 41
+#### Branch 43
 
 ##### if
 
@@ -4244,7 +4604,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 42
+#### Branch 44
 
 ##### if
 
@@ -4280,7 +4640,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`340`
 
-#### Branch 43
+#### Branch 45
 
 ##### if
 
@@ -4322,7 +4682,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 44
+#### Branch 46
 
 ##### if
 
@@ -4364,7 +4724,49 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 45
+#### Branch 47
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`, `status`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`esrm20_exposure_vulnerability_mapping_headers`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+###### `status` — **required**
+
+**Constraints:** `const`=`blocked`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `evidence`
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `esrm20_exposure_vulnerability_mapping_headers`
+
+**Constraints:** type=`null`
+
+###### `failure_class`
+
+**Constraints:** `const`=`acquisition_failed`
+
+#### Branch 48
 
 ##### if
 
@@ -4400,7 +4802,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`363`
 
-#### Branch 46
+#### Branch 49
 
 ##### if
 
@@ -4442,7 +4844,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 47
+#### Branch 50
 
 ##### if
 
@@ -4484,7 +4886,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 48
+#### Branch 51
 
 ##### if
 
@@ -4520,7 +4922,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`397`
 
-#### Branch 49
+#### Branch 52
 
 ##### if
 
@@ -4562,7 +4964,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 50
+#### Branch 53
 
 ##### if
 
@@ -4604,7 +5006,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`acquisition_failed`
 
-#### Branch 51
+#### Branch 54
 
 ##### if
 
@@ -4640,7 +5042,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** `const`=`414`
 
-#### Branch 52
+#### Branch 55
 
 ##### if
 
@@ -4682,7 +5084,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 **Constraints:** type=`null`
 
-#### Branch 53
+#### Branch 56
 
 ##### if
 
