@@ -79,9 +79,20 @@ _CANONICAL_HEADER_GIT_BLOB_SHA1 = "cd0aa5cb573dbd8db431ef27b6a762c0a1d54c7c"
 _CANONICAL_HEADER_SCHEMA_VERSION = "oc-esrm20-mapping-header-disclosure-v1"
 _CANONICAL_DISCLOSURE_SCOPE = "exact_header_strings_only"
 _CANONICAL_HEADER_DISCLOSER = header_profile.disclose_verified_mapping_headers
+
+# Production acquisition authority is frozen at import time. The public worker
+# verifies that the import aliases have not drifted, while the private helper
+# calls only these canonical identities so a later rebind cannot change target,
+# response validation, or which bytes are handed to the reviewed discloser.
 _CANONICAL_OPEN_FIXED = _open_fixed
 _CANONICAL_UTC_NOW = utc_now
 _CANONICAL_MONOTONIC = time.monotonic
+_CANONICAL_VALIDATE_TARGET = validate_target
+_CANONICAL_RAW_FILE_API_URL = raw_file_api_url
+_CANONICAL_REMAINING = _remaining
+_CANONICAL_VALIDATE_EXACT_RESPONSE = _validate_exact_response
+_CANONICAL_DECLARED_LENGTH = _declared_length
+_CANONICAL_READ_BOUNDED = _read_bounded
 
 SCHEMA_VERSION = _CANONICAL_SCHEMA_VERSION
 OPERATION_ID = _CANONICAL_OPERATION_ID
@@ -126,11 +137,21 @@ def _is_lower_sha256(value: object) -> bool:
     )
 
 
-def _require_production_transport_identity() -> None:
+def _require_production_acquisition_identity() -> None:
     identities = (
         (_open_fixed, _CANONICAL_OPEN_FIXED, "transport"),
         (utc_now, _CANONICAL_UTC_NOW, "UTC clock"),
         (time.monotonic, _CANONICAL_MONOTONIC, "monotonic clock"),
+        (validate_target, _CANONICAL_VALIDATE_TARGET, "target validator"),
+        (raw_file_api_url, _CANONICAL_RAW_FILE_API_URL, "URL builder"),
+        (_remaining, _CANONICAL_REMAINING, "deadline helper"),
+        (
+            _validate_exact_response,
+            _CANONICAL_VALIDATE_EXACT_RESPONSE,
+            "response validator",
+        ),
+        (_declared_length, _CANONICAL_DECLARED_LENGTH, "length validator"),
+        (_read_bounded, _CANONICAL_READ_BOUNDED, "response reader"),
     )
     for observed, expected, label in identities:
         if observed is not expected:
@@ -275,7 +296,7 @@ def _acquire_esrm20_mapping_headers(
     _require_canonical_authority()
     deadline = monotonic() + TOTAL_DEADLINE_SECONDS
     try:
-        target = validate_target(
+        target = _CANONICAL_VALIDATE_TARGET(
             source_issue=_CANONICAL_SOURCE_ISSUE,
             dataset_id=_CANONICAL_DATASET_ID,
             project_id=_CANONICAL_PROJECT_ID,
@@ -287,7 +308,7 @@ def _acquire_esrm20_mapping_headers(
             "trusted mapping header target is invalid"
         ) from exc
 
-    file_url = raw_file_api_url(target)
+    file_url = _CANONICAL_RAW_FILE_API_URL(target)
     request = urllib.request.Request(
         file_url,
         headers={
@@ -299,14 +320,20 @@ def _acquire_esrm20_mapping_headers(
 
     raw = b""
     try:
-        with opener(request, timeout=_remaining(deadline, monotonic)) as response:
-            _validate_exact_response(response, file_url)
-            declared = _declared_length(response, _CANONICAL_EXPECTED_BYTE_COUNT)
+        with opener(
+            request,
+            timeout=_CANONICAL_REMAINING(deadline, monotonic),
+        ) as response:
+            _CANONICAL_VALIDATE_EXACT_RESPONSE(response, file_url)
+            declared = _CANONICAL_DECLARED_LENGTH(
+                response,
+                _CANONICAL_EXPECTED_BYTE_COUNT,
+            )
             if declared is not None and declared != _CANONICAL_EXPECTED_BYTE_COUNT:
                 raise EfehrAcquisitionError(
                     "mapping Content-Length does not match trusted receipt"
                 )
-            raw = _read_bounded(
+            raw = _CANONICAL_READ_BOUNDED(
                 response,
                 deadline=deadline,
                 maximum=_CANONICAL_EXPECTED_BYTE_COUNT,
@@ -333,6 +360,8 @@ def _acquire_esrm20_mapping_headers(
             "trusted mapping header disclosure failed closed"
         ) from exc
     finally:
+        # ``bytes`` is immutable; this releases the local reference but does not
+        # claim secure in-memory zeroization of previously allocated objects.
         raw = b""
 
     return {
@@ -369,7 +398,7 @@ def _acquire_esrm20_mapping_headers(
 def acquire_esrm20_mapping_headers() -> dict[str, Any]:
     """Acquire exact mapping bytes transiently and return bounded headers only."""
 
-    _require_production_transport_identity()
+    _require_production_acquisition_identity()
     return _acquire_esrm20_mapping_headers(
         opener=_CANONICAL_OPEN_FIXED,
         now=_CANONICAL_UTC_NOW,
