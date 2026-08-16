@@ -372,6 +372,7 @@ class AgentActionProtocolTests(unittest.TestCase):
                 "efehr_eshm20_gsim_resource_profile",
                 "efehr_kosovo_taxonomy_identity",
                 "efehr_eshm20_source_model_dependencies",
+                "efehr_eshm20_source_model_child_receipts",
                 "efehr_kosovo_taxonomy_identity",
                 "efehr_eshm20_source_model_dependencies",
                 "efehr_eshm20_root_config_receipt",

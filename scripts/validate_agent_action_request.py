@@ -27,6 +27,7 @@ EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ACTION = "efehr_eshm20_root_dependency_prof
 EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION = "efehr_eshm20_first_order_receipts"
 EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION = "efehr_eshm20_gsim_resource_profile"
 EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ACTION = "efehr_eshm20_source_model_dependencies"
+EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_ACTION = "efehr_eshm20_source_model_child_receipts"
 EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION = "efehr_eshm20_root_config_receipt"
 ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION = "esrm20_event_hazard_group1_receipt"
 ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION = "esrm20_event_hazard_group2_receipt"
@@ -42,6 +43,7 @@ EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_ISSUE = 353
 EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ISSUE = 361
 EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ISSUE = 376
 EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ISSUE = 397
+EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_ISSUE = 414
 EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE = 335
 ESRM20_EVENT_HAZARD_RECEIPT_ISSUE = 346
 ACQUISITION_RECEIPT_DATASET_ID = "dwd.cdc.obsgermany-climate-10min-extreme-wind.v24.03"
@@ -56,6 +58,7 @@ EFEHR_ESHM20_ROOT_DEPENDENCY_PROFILE_DATASET_ID = EFEHR_ESHM20_TREE_METADATA_DAT
 EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_DATASET_ID = EFEHR_ESHM20_TREE_METADATA_DATASET_ID
 EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_DATASET_ID = EFEHR_ESHM20_TREE_METADATA_DATASET_ID
 EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_DATASET_ID = EFEHR_ESHM20_TREE_METADATA_DATASET_ID
+EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_DATASET_ID = EFEHR_ESHM20_TREE_METADATA_DATASET_ID
 EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_DATASET_ID = EFEHR_ESHM20_TREE_METADATA_DATASET_ID
 ESRM20_EVENT_HAZARD_RECEIPT_DATASET_ID = "efehr.esrm20.risk-inputs.v1.0"
 ALLOWED_ACTIONS = {
@@ -72,6 +75,7 @@ ALLOWED_ACTIONS = {
     EFEHR_ESHM20_FIRST_ORDER_RECEIPTS_ACTION,
     EFEHR_ESHM20_GSIM_RESOURCE_PROFILE_ACTION,
     EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ACTION,
+    EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_ACTION,
     EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION,
     ESRM20_EVENT_HAZARD_GROUP1_RECEIPT_ACTION,
     ESRM20_EVENT_HAZARD_GROUP2_RECEIPT_ACTION,
@@ -237,7 +241,16 @@ def validate_request(request: dict[str, Any], *, expected_issue: int | None = No
         if request["issue"] != EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_ISSUE:
             raise RequestError("efehr_eshm20_source_model_dependencies is restricted to issue 397")
         if request["dataset_id"] != EFEHR_ESHM20_SOURCE_MODEL_DEPENDENCIES_DATASET_ID:
-            raise RequestError("efehr_eshm20_source_model_dependencies is restricted to the frozen ESHM20 dataset")
+            raise RequestError(
+                "efehr_eshm20_source_model_dependencies is restricted to the frozen ESHM20 dataset"
+            )
+    elif request["action"] == EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_ACTION:
+        if request["issue"] != EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_ISSUE:
+            raise RequestError("efehr_eshm20_source_model_child_receipts is restricted to issue 414")
+        if request["dataset_id"] != EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_DATASET_ID:
+            raise RequestError(
+                "efehr_eshm20_source_model_child_receipts is restricted to the frozen ESHM20 dataset"
+            )
     elif request["action"] == EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ACTION:
         if request["issue"] != EFEHR_ESHM20_ROOT_CONFIG_RECEIPT_ISSUE:
             raise RequestError("efehr_eshm20_root_config_receipt is restricted to issue 335")

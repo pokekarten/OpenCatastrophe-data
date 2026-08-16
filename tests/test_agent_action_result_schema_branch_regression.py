@@ -89,6 +89,50 @@ class AgentActionResultSchemaBranchRegressionTests(unittest.TestCase):
         )
         self.assertNotIn("esrm20_event_hazard_group2_receipt", json.dumps(branch, sort_keys=True))
 
+    # #415 regression: adding the child-receipt branch must not rewrite #397's
+    # existing portable evidence requirement or collapse request-validation bans.
+    def test_source_model_dependencies_binding_remains_isolated_from_child_receipts(self) -> None:
+        schema = self._load_schema()
+        branch = self._find_acquisition_branch(
+            schema,
+            action="efehr_eshm20_source_model_dependencies",
+            status=None,
+        )
+        then_properties = branch["then"]["properties"]
+        self.assertEqual(then_properties["source_issue"], {"const": 397})
+        self.assertEqual(then_properties["dataset_id"], {"const": "efehr.eshm20"})
+        self.assertEqual(
+            then_properties["evidence"],
+            {"required": ["efehr_eshm20_source_model_dependencies"]},
+        )
+        self.assertNotIn(
+            "efehr_eshm20_source_model_child_receipts",
+            json.dumps(branch, sort_keys=True),
+        )
+
+    def test_request_validation_forbids_source_model_evidence_fields_independently(self) -> None:
+        schema = self._load_schema()
+        matches = []
+        for branch in schema["allOf"]:
+            condition = branch.get("if", {})
+            properties = condition.get("properties", {})
+            if properties == {"phase": {"const": "request_validation"}} and condition.get("required") == ["phase"]:
+                matches.append(branch)
+        self.assertEqual(len(matches), 1)
+        clauses = matches[0]["then"]["properties"]["evidence"]["allOf"]
+        forbidden = {
+            tuple(clause["not"]["required"])
+            for clause in clauses
+            if isinstance(clause, dict)
+            and isinstance(clause.get("not"), dict)
+            and isinstance(clause["not"].get("required"), list)
+        }
+        dependencies = ("efehr_eshm20_source_model_dependencies",)
+        children = ("efehr_eshm20_source_model_child_receipts",)
+        self.assertIn(dependencies, forbidden)
+        self.assertIn(children, forbidden)
+        self.assertNotIn(dependencies + children, forbidden)
+
 
 if __name__ == "__main__":
     unittest.main()
