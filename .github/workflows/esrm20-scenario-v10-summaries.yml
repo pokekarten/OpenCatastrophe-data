@@ -92,6 +92,7 @@ jobs:
           RESULT_MARKER: "<!-- oc-eq1-esrm20-scenario-v10-summaries-result-v1 -->"
         run: |
           set -euo pipefail
+          # Provider-derived headers/identity literals may only be published with this exact CC-BY-4.0 attribution record.
           printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
             .schema_version == "oc-esrm20-scenario-v10-summaries-result-v1" and
             .source_issue == 488 and
