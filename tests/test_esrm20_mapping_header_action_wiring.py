@@ -20,8 +20,8 @@ REPOSITORY = "pokekarten/OpenCatastrophe-data"
 EXECUTION_SHA = "c" * 40
 ACTION = "esrm20_exposure_vulnerability_mapping_headers"
 CONTROL_ISSUE = 410
-STARTED = "2026-08-16T12:00:00Z"
-FINISHED = "2026-08-16T12:00:02Z"
+STARTED = "2026-08-16T09:00:00Z"
+FINISHED = "2026-08-16T11:00:00Z"
 REQUEST = {
     "schema_version": "oc-action-request-v1",
     "action": ACTION,
@@ -92,7 +92,7 @@ RECEIPT = {
     "header_path": worker._CANONICAL_HEADER_PATH,
     "header_function": worker._CANONICAL_HEADER_FUNCTION,
     "header_git_blob_sha1": worker._CANONICAL_HEADER_GIT_BLOB_SHA1,
-    "retrieved_at": "2026-08-16T12:00:01Z",
+    "retrieved_at": "2026-08-16T10:00:01Z",
     "disclosure": DISCLOSURE,
     "raw_bytes_returned": False,
     "external_bytes_persisted": False,
