@@ -94,9 +94,7 @@ def receipt() -> dict[str, object]:
     }
 
 
-def bind_headers(value: dict[str, object], headers: list[str]) -> None:
-    disclosure = value["disclosure"]
-    assert isinstance(disclosure, dict)
+def bind_headers(disclosure: dict[str, object], headers: list[str]) -> None:
     disclosure["headers"] = headers
     disclosure["column_count"] = len(headers)
     disclosure["ordered_header_sha256"] = mapping_headers_validator._length_prefixed_sha256(headers)
