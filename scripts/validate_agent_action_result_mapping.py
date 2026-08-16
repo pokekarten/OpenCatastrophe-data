@@ -1,17 +1,18 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Fail-closed Agent Action result validation with bounded mapping/child extensions.
+"""Fail-closed Agent Action result validation with bounded mapping extensions.
 
 All pre-existing actions delegate byte-for-byte to the reviewed taxonomy-aware
-validator layer. This layer handles the frozen ESRM20 mapping byte receipt and
-the fixed ESHM20 source-model child receipt set. Neither action widens scientific,
-publication, dependency-closure, or model-use authority.
+validator layer. This layer handles the frozen ESRM20 mapping byte receipt, the
+bounded exact-header disclosure, and the fixed ESHM20 source-model child receipt
+set. None widens scientific, publication, dependency-closure, or model-use authority.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -19,6 +20,7 @@ from typing import Any
 
 try:
     from scripts import acquire_efehr_esrm20_mapping_receipt as _mapping
+    from scripts import acquire_efehr_esrm20_mapping_headers as _headers
     from scripts import acquire_eshm20_source_model_child_receipts as _children
     from scripts import validate_agent_action_result_taxonomy as _legacy
     from scripts.efehr_gitlab_receipt import (
@@ -30,11 +32,14 @@ try:
     from scripts.validate_agent_action_request import (
         ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION,
         ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ISSUE,
+        ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION,
+        ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ISSUE,
         EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_ACTION,
         EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_ISSUE,
     )
 except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     import acquire_efehr_esrm20_mapping_receipt as _mapping
+    import acquire_efehr_esrm20_mapping_headers as _headers
     import acquire_eshm20_source_model_child_receipts as _children
     import validate_agent_action_result_taxonomy as _legacy
     from efehr_gitlab_receipt import (
@@ -46,6 +51,8 @@ except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     from validate_agent_action_request import (
         ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION,
         ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ISSUE,
+        ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION,
+        ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ISSUE,
         EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_ACTION,
         EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_ISSUE,
     )
@@ -59,6 +66,7 @@ _utc_second = _legacy._utc_second
 _validate_request_evidence = _legacy._validate_request_evidence
 ALLOWED_ACTIONS = _legacy.ALLOWED_ACTIONS | {
     ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION,
+    ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION,
     EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_ACTION,
 }
 
@@ -70,6 +78,7 @@ _MAPPING_RECEIPT_FIELDS = {
     "final_url", "retrieved_at", "byte_count", "sha256", "content_type", "etag",
     "external_bytes_persisted", "publication_authorized",
 }
+
 
 def _bounded_nullable_header(value: Any, field: str) -> None:
     if value is None:
@@ -126,6 +135,134 @@ def validate_esrm20_exposure_vulnerability_mapping_receipt(receipt: Any) -> dict
     return receipt
 
 
+_HEADERS_FIELD = "esrm20_exposure_vulnerability_mapping_headers"
+_HEADERS_EVIDENCE_FIELDS = _legacy.REQUEST_EVIDENCE_FIELDS | {_HEADERS_FIELD}
+_HEADERS_RECEIPT_FIELDS = {
+    "schema_version", "operation_id", "control_issue", "source_issue", "dataset_id",
+    "provider_host", "project_id", "project_path", "commit_sha", "repository_path",
+    "receipt_comment_id", "receipt_run_id", "receipt_execution_sha", "header_source_commit",
+    "header_path", "header_function", "header_git_blob_sha1", "retrieved_at", "disclosure",
+    "raw_bytes_returned", "external_bytes_persisted", "derived_bytes_persisted",
+    "publication_authorized", "mapping_interpretation_authorized", "taxonomy_join_authorized",
+    "vulnerability_selection_authorized", "model_use_authorized",
+}
+_HEADERS_DISCLOSURE_FIELDS = {
+    "schema_version", "decision_issue", "source_issue", "profile_issue", "dataset_id",
+    "project_id", "project_path", "commit_sha", "repository_path", "receipt_comment_id",
+    "receipt_run_id", "receipt_execution_sha", "byte_count", "sha256", "column_count",
+    "ordered_header_sha256", "headers", "disclosure_scope", "header_strings_returned",
+    "cell_values_returned", "raw_rows_returned", "normalization_applied",
+    "mapping_interpretation_authorized", "taxonomy_join_authorized",
+    "vulnerability_selection_authorized", "external_bytes_persisted",
+    "derived_bytes_persisted", "publication_authorized", "model_use_authorized",
+}
+
+
+def _length_prefixed_sha256(values: list[str]) -> str:
+    digest = hashlib.sha256()
+    digest.update(len(values).to_bytes(8, "big"))
+    for value in values:
+        encoded = value.encode("utf-8")
+        digest.update(len(encoded).to_bytes(8, "big"))
+        digest.update(encoded)
+    return digest.hexdigest()
+
+
+def validate_esrm20_exposure_vulnerability_mapping_headers(receipt: Any) -> dict[str, Any]:
+    prefix = _HEADERS_FIELD
+    if type(receipt) is not dict or set(receipt) != _HEADERS_RECEIPT_FIELDS:
+        raise ResultError(f"{prefix} fields drifted")
+
+    exact_values = {
+        "schema_version": _headers._CANONICAL_SCHEMA_VERSION,
+        "operation_id": _headers._CANONICAL_OPERATION_ID,
+        "control_issue": _headers._CANONICAL_CONTROL_ISSUE,
+        "source_issue": _headers._CANONICAL_SOURCE_ISSUE,
+        "dataset_id": _headers._CANONICAL_DATASET_ID,
+        "provider_host": _headers._CANONICAL_PROVIDER_HOST,
+        "project_id": _headers._CANONICAL_PROJECT_ID,
+        "project_path": _headers._CANONICAL_PROJECT_PATH,
+        "commit_sha": _headers._CANONICAL_COMMIT_SHA,
+        "repository_path": _headers._CANONICAL_REPOSITORY_PATH,
+        "receipt_comment_id": _headers._CANONICAL_RECEIPT_COMMENT_ID,
+        "receipt_run_id": _headers._CANONICAL_RECEIPT_RUN_ID,
+        "receipt_execution_sha": _headers._CANONICAL_RECEIPT_EXECUTION_SHA,
+        "header_source_commit": _headers._CANONICAL_HEADER_SOURCE_COMMIT,
+        "header_path": _headers._CANONICAL_HEADER_PATH,
+        "header_function": _headers._CANONICAL_HEADER_FUNCTION,
+        "header_git_blob_sha1": _headers._CANONICAL_HEADER_GIT_BLOB_SHA1,
+        "raw_bytes_returned": False,
+        "external_bytes_persisted": False,
+        "derived_bytes_persisted": False,
+        "publication_authorized": False,
+        "mapping_interpretation_authorized": False,
+        "taxonomy_join_authorized": False,
+        "vulnerability_selection_authorized": False,
+        "model_use_authorized": False,
+    }
+    for field, expected in exact_values.items():
+        if type(receipt[field]) is not type(expected) or receipt[field] != expected:
+            raise ResultError(f"{prefix}.{field} does not match the frozen mapping-header contract")
+    _legacy._utc_second(receipt["retrieved_at"], f"{prefix}.retrieved_at")
+
+    disclosure = receipt["disclosure"]
+    if type(disclosure) is not dict or set(disclosure) != _HEADERS_DISCLOSURE_FIELDS:
+        raise ResultError(f"{prefix}.disclosure fields drifted")
+    disclosure_exact = {
+        "schema_version": _headers._CANONICAL_HEADER_SCHEMA_VERSION,
+        "decision_issue": _headers._CANONICAL_CONTROL_ISSUE,
+        "source_issue": _headers._CANONICAL_SOURCE_ISSUE,
+        "profile_issue": 404,
+        "dataset_id": _headers._CANONICAL_DATASET_ID,
+        "project_id": _headers._CANONICAL_PROJECT_ID,
+        "project_path": _headers._CANONICAL_PROJECT_PATH,
+        "commit_sha": _headers._CANONICAL_COMMIT_SHA,
+        "repository_path": _headers._CANONICAL_REPOSITORY_PATH,
+        "receipt_comment_id": _headers._CANONICAL_RECEIPT_COMMENT_ID,
+        "receipt_run_id": _headers._CANONICAL_RECEIPT_RUN_ID,
+        "receipt_execution_sha": _headers._CANONICAL_RECEIPT_EXECUTION_SHA,
+        "byte_count": _headers._CANONICAL_EXPECTED_BYTE_COUNT,
+        "sha256": _headers._CANONICAL_EXPECTED_SHA256,
+        "disclosure_scope": _headers._CANONICAL_DISCLOSURE_SCOPE,
+        "header_strings_returned": True,
+        "cell_values_returned": False,
+        "raw_rows_returned": False,
+        "normalization_applied": False,
+        "mapping_interpretation_authorized": False,
+        "taxonomy_join_authorized": False,
+        "vulnerability_selection_authorized": False,
+        "external_bytes_persisted": False,
+        "derived_bytes_persisted": False,
+        "publication_authorized": False,
+        "model_use_authorized": False,
+    }
+    for field, expected in disclosure_exact.items():
+        if type(disclosure[field]) is not type(expected) or disclosure[field] != expected:
+            raise ResultError(f"{prefix}.disclosure.{field} does not match the frozen disclosure contract")
+
+    count = disclosure["column_count"]
+    headers = disclosure["headers"]
+    fingerprint = disclosure["ordered_header_sha256"]
+    if type(count) is not int or isinstance(count, bool) or count <= 0 or count > 256:
+        raise ResultError(f"{prefix}.disclosure.column_count must be a bounded positive integer")
+    if type(headers) is not list or len(headers) != count:
+        raise ResultError(f"{prefix}.disclosure.headers must match column_count")
+    if any(
+        type(value) is not str
+        or not value
+        or len(value) > 512
+        or any(ord(character) < 32 or ord(character) == 127 for character in value)
+        for value in headers
+    ):
+        raise ResultError(f"{prefix}.disclosure.headers contains an invalid literal")
+    if len(set(headers)) != count:
+        raise ResultError(f"{prefix}.disclosure.headers must be unique and ordered")
+    if type(fingerprint) is not str or not _legacy.DIGEST_RE.fullmatch(fingerprint):
+        raise ResultError(f"{prefix}.disclosure.ordered_header_sha256 must be lowercase SHA-256")
+    if _length_prefixed_sha256(headers) != fingerprint:
+        raise ResultError(f"{prefix}.disclosure.ordered_header_sha256 does not bind the exact headers")
+    return receipt
+
 
 _CHILD_RECEIPT_FIELD = "efehr_eshm20_source_model_child_receipts"
 _CHILD_EVIDENCE_FIELDS = _legacy.REQUEST_EVIDENCE_FIELDS | {_CHILD_RECEIPT_FIELD}
@@ -143,7 +280,6 @@ _CHILD_RECEIPT_FIELDS = set(_children._CHILD_RECEIPT_FIELDS)
 
 def validate_efehr_eshm20_source_model_child_receipts(receipt: Any) -> dict[str, Any]:
     prefix = _CHILD_RECEIPT_FIELD
-    # Recheck public aliases and the fixed path tuple before accepting any durable receipt.
     _children._require_canonical_child_set()
     if type(receipt) is not dict or set(receipt) != _CHILD_SET_FIELDS:
         raise ResultError(f"{prefix} fields drifted")
@@ -322,6 +458,91 @@ def _validate_mapping_result(result: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def _validate_headers_result(result: dict[str, Any]) -> dict[str, Any]:
+    if type(result) is not dict or set(result) != _legacy.REQUIRED_FIELDS:
+        raise ResultError("mapping-header result fields drifted")
+    if result["schema_version"] != _legacy.RESULT_SCHEMA_VERSION:
+        raise ResultError("unsupported schema_version")
+    if type(result["semantic_request_id"]) is not str or not _legacy.DIGEST_RE.fullmatch(result["semantic_request_id"]):
+        raise ResultError("semantic_request_id must be a lowercase SHA-256 digest")
+    if type(result["repository"]) is not str or not _legacy.REPOSITORY_RE.fullmatch(result["repository"]):
+        raise ResultError("repository must be canonical owner/name")
+    if result["action"] != ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION:
+        raise ResultError("unsupported ESRM20 mapping-header action")
+    for field in ("source_issue", "source_comment_id", "run_id", "run_attempt"):
+        if type(result[field]) is not int or result[field] < 1:
+            raise ResultError(f"{field} must be a positive integer")
+    for field in ("target_sha", "execution_sha"):
+        if type(result[field]) is not str or not _legacy.GIT_SHA_RE.fullmatch(result[field]):
+            raise ResultError(f"{field} must be a lowercase 40-character Git commit SHA")
+    if result["target_sha"] != result["execution_sha"]:
+        raise ResultError("mapping-header network result requires target_sha == execution_sha")
+    if result["source_issue"] != ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ISSUE:
+        raise ResultError("mapping-header result is outside frozen control issue 410")
+    if result["dataset_id"] != _headers._CANONICAL_DATASET_ID:
+        raise ResultError("mapping-header result is outside the frozen ESRM20 risk-input dataset")
+    try:
+        expected_semantic_id = _legacy.semantic_request_id_from_result(result)
+    except _legacy.ProtocolError as exc:
+        raise ResultError(f"semantic request binding is invalid: {exc}") from exc
+    if result["semantic_request_id"] != expected_semantic_id:
+        raise ResultError("semantic_request_id does not match bound result fields")
+
+    started = _legacy._utc_second(result["started_at"], "started_at")
+    finished = _legacy._utc_second(result["finished_at"], "finished_at")
+    if finished < started:
+        raise ResultError("finished_at must not precede started_at")
+    phase, status = result["phase"], result["status"]
+    if type(phase) is not str or phase not in _legacy.ALLOWED_PHASES:
+        raise ResultError("unsupported result phase")
+    if type(status) is not str or status not in _legacy.ALLOWED_STATUSES:
+        raise ResultError("unsupported result status")
+    if result["external_bytes_persisted"] is not False:
+        raise ResultError("external_bytes_persisted must be exactly false")
+    duplicate_id, failure_class = result["duplicate_result_comment_id"], result["failure_class"]
+    if duplicate_id is not None and (type(duplicate_id) is not int or duplicate_id < 1):
+        raise ResultError("duplicate_result_comment_id must be null or positive integer")
+    if failure_class is not None and type(failure_class) is not str:
+        raise ResultError("failure_class must be null or text")
+
+    if phase == "request_validation":
+        evidence = _legacy._validate_request_evidence(result["evidence"])
+        if status == "pass":
+            if duplicate_id is not None or failure_class is not None or evidence["ledger_scan_complete"] is not True or evidence["prior_result_reused"] is not False:
+                raise ResultError("pass request-validation state is invalid")
+        elif status == "duplicate":
+            if duplicate_id is None or failure_class != "duplicate_request" or evidence["ledger_scan_complete"] is not True or evidence["prior_result_reused"] is not True:
+                raise ResultError("duplicate request-validation state is invalid")
+        else:
+            if duplicate_id is not None or failure_class != "ledger_incomplete" or evidence["ledger_scan_complete"] is not False or evidence["prior_result_reused"] is not False:
+                raise ResultError("blocked request-validation state is invalid")
+        return result
+
+    if phase != "acquisition_receipt":
+        raise ResultError("mapping-header network result requires acquisition_receipt phase")
+    evidence = result["evidence"]
+    if type(evidence) is not dict or set(evidence) != _HEADERS_EVIDENCE_FIELDS:
+        raise ResultError("mapping-header evidence fields drifted")
+    for field in _legacy.REQUEST_EVIDENCE_FIELDS:
+        if type(evidence[field]) is not bool:
+            raise ResultError(f"evidence.{field} must be boolean")
+    if evidence["request_validated"] is not True or evidence["ledger_scan_complete"] is not True or evidence["prior_result_reused"] is not False or duplicate_id is not None:
+        raise ResultError("mapping-header acquisition requires validated complete non-reused ledger state")
+    if status == "pass":
+        if failure_class is not None:
+            raise ResultError("successful mapping-header acquisition cannot carry failure_class")
+        receipt = validate_esrm20_exposure_vulnerability_mapping_headers(evidence[_HEADERS_FIELD])
+        retrieved = _legacy._utc_second(receipt["retrieved_at"], f"{_HEADERS_FIELD}.retrieved_at")
+        if retrieved < started or retrieved > finished:
+            raise ResultError(f"{_HEADERS_FIELD}.retrieved_at must fall within action start/finish bounds")
+    elif status == "blocked":
+        if failure_class != _legacy.ACQUISITION_FAILURE_CLASS or evidence[_HEADERS_FIELD] is not None:
+            raise ResultError("blocked mapping-header acquisition state is invalid")
+    else:
+        raise ResultError("duplicate mapping-header network result must remain request_validation")
+    return result
+
+
 def _validate_child_result(result: dict[str, Any]) -> dict[str, Any]:
     if type(result) is not dict or set(result) != _legacy.REQUIRED_FIELDS:
         raise ResultError("source-model child result fields drifted")
@@ -414,6 +635,8 @@ def _validate_child_result(result: dict[str, Any]) -> dict[str, Any]:
 def validate_result(result: dict[str, Any]) -> dict[str, Any]:
     if type(result) is dict and result.get("action") == ESRM20_EXPOSURE_VULNERABILITY_MAPPING_RECEIPT_ACTION:
         return _validate_mapping_result(result)
+    if type(result) is dict and result.get("action") == ESRM20_EXPOSURE_VULNERABILITY_MAPPING_HEADERS_ACTION:
+        return _validate_headers_result(result)
     if type(result) is dict and result.get("action") == EFEHR_ESHM20_SOURCE_MODEL_CHILD_RECEIPTS_ACTION:
         return _validate_child_result(result)
     return _legacy.validate_result(result)
