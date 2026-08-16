@@ -170,7 +170,7 @@ class ExactKosovoMappingJoinTests(unittest.TestCase):
         self.assertEqual(len(result["records"]), 2)
         self.assertEqual(
             result["mapping_weight_rule"],
-            "positive_finite_decimal_sum_within_openquake_1e-7",
+            "positive_finite_float_sum_within_openquake_1e-7",
         )
         self.assertFalse(result["normalization_applied"])
         self.assertFalse(result["wildcard_or_fallback_matching_applied"])
