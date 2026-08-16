@@ -91,6 +91,10 @@ class Eshm20GsimOpenQuakeRuntimeTests(unittest.TestCase):
         self.assertFalse(branch["alias_definition_present"])
         self.assertFalse(branch["alias_expansion_applied"])
         self.assertTrue(branch["constructor_accepted"])
+        self.assertEqual(
+            result["reference_runtime_fingerprint"],
+            {"reference_recipe_match": True},
+        )
         self.assertTrue(result["gsim_request_runtime_compatibility_verified"])
         self.assertFalse(result["full_hazard_compatibility_verified"])
         self.assertFalse(result["model_use_authorized"])
@@ -163,6 +167,40 @@ class Eshm20GsimOpenQuakeRuntimeTests(unittest.TestCase):
         ):
             gate.validate_verified_gsim_runtime(b"not-inspected", {})
         load_runtime.assert_not_called()
+
+    def test_public_path_binds_validated_fingerprint_not_raw_observation(self) -> None:
+        payload = xml_for()
+        digest = hashlib.sha256(payload).hexdigest()
+        raw_observation = {"unvalidated_secret": "must-not-be-output"}
+        validated_fingerprint = {
+            "reference_recipe_match": True,
+            "observation": {
+                "engine_version": gate.OPENQUAKE_VERSION,
+                "python_version": "3.8.17",
+            },
+        }
+        with (
+            patch.object(profiler, "EXPECTED_BYTE_COUNT", len(payload)),
+            patch.object(profiler, "EXPECTED_SHA256", digest),
+            patch.object(profiler, "EXPECTED_BRANCH_SET_COUNT", 1),
+            patch.object(profiler, "EXPECTED_BRANCH_COUNT", 1),
+            patch.object(
+                gate.runtime_fingerprint,
+                "validate_runtime_observation",
+                return_value=validated_fingerprint,
+            ),
+            patch.object(
+                gate,
+                "_load_verified_openquake_runtime",
+                return_value=FakeRuntime(),
+            ),
+        ):
+            result = gate.validate_verified_gsim_runtime(payload, raw_observation)
+
+        self.assertEqual(
+            result["reference_runtime_fingerprint"], validated_fingerprint
+        )
+        self.assertNotIn("must-not-be-output", repr(result))
 
     def test_output_never_contains_argument_values(self) -> None:
         result, _ = evaluate(
