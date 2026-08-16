@@ -1,0 +1,128 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Temporary PR 415 review-fix finalizer
+
+on:
+  pull_request:
+    types: [synchronize]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pr415-review-fix-finalizer
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    if: github.event.pull_request.number == 415 && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact repair head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+          persist-credentials: true
+      - name: Verify repair parent
+        env:
+          EXPECTED_PARENT: db988207f86c8efbbd414251043ae2860e9e29d6
+        run: test "$(git rev-parse HEAD^)" = "$EXPECTED_PARENT"
+      - name: Apply bounded Tier-2 review fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              target = Path(path)
+              text = target.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected exactly one replacement target, found {count}")
+              target.write_text(text.replace(old, new), encoding="utf-8")
+
+          worker = "scripts/acquire_eshm20_source_model_child_receipts.py"
+          replace_once(
+              worker,
+              '    "parent_result_comment_id",\n    "dependency_inventory_authorized",\n    "dependency_receipt_authorized",\n    "external_bytes_persisted",',
+              '    "parent_result_comment_id",\n    "external_bytes_persisted",',
+          )
+          replace_once(
+              worker,
+              '        "parent_result_comment_id": _CANONICAL_PARENT_RESULT_COMMENT_ID,\n        "dependency_inventory_authorized": False,\n        "dependency_receipt_authorized": False,\n        "external_bytes_persisted": False,',
+              '        "parent_result_comment_id": _CANONICAL_PARENT_RESULT_COMMENT_ID,\n        "external_bytes_persisted": False,',
+          )
+
+          validator = "scripts/validate_agent_action_result_mapping.py"
+          replace_once(
+              validator,
+              '            "parent_result_comment_id": _children._CANONICAL_PARENT_RESULT_COMMENT_ID,\n            "dependency_inventory_authorized": False,\n            "dependency_receipt_authorized": False,\n            "external_bytes_persisted": False,',
+              '            "parent_result_comment_id": _children._CANONICAL_PARENT_RESULT_COMMENT_ID,\n            "external_bytes_persisted": False,',
+          )
+
+          schema = "schemas/agent-action-result-v1.schema.json"
+          replace_once(
+              schema,
+              '          {"not": {"required": ["efehr_eshm20_source_model_dependencies", "efehr_eshm20_source_model_child_receipts"]}},',
+              '          {"not": {"required": ["efehr_eshm20_source_model_dependencies"]}},\n          {"not": {"required": ["efehr_eshm20_source_model_child_receipts"]}},',
+          )
+          replace_once(
+              schema,
+              '        "evidence": {"required": ["efehr_eshm20_source_model_dependencies", "efehr_eshm20_source_model_child_receipts"]}',
+              '        "evidence": {"required": ["efehr_eshm20_source_model_dependencies"]}',
+          )
+          replace_once(
+              schema,
+              '      "required": ["repository_path", "retrieved_at", "byte_count", "sha256", "project_id", "project_path", "commit_sha", "parent_result_comment_id", "dependency_inventory_authorized", "dependency_receipt_authorized", "external_bytes_persisted", "publication_authorized", "model_use_authorized"],',
+              '      "required": ["repository_path", "retrieved_at", "byte_count", "sha256", "project_id", "project_path", "commit_sha", "parent_result_comment_id", "external_bytes_persisted", "publication_authorized", "model_use_authorized"],',
+          )
+          replace_once(
+              schema,
+              '        "parent_result_comment_id": {"const": 5304432768},\n        "dependency_inventory_authorized": {"const": false},\n        "dependency_receipt_authorized": {"const": false},\n        "external_bytes_persisted": {"const": false},',
+              '        "parent_result_comment_id": {"const": 5304432768},\n        "external_bytes_persisted": {"const": false},',
+          )
+
+          worker_tests = "tests/test_acquire_eshm20_source_model_child_receipts.py"
+          replace_once(
+              worker_tests,
+              '            self.assertFalse(item["dependency_inventory_authorized"])\n            self.assertFalse(item["dependency_receipt_authorized"])\n',
+              '',
+          )
+
+          wiring_tests = "tests/test_efehr_eshm20_source_model_child_receipts_action_wiring.py"
+          replace_once(
+              wiring_tests,
+              '            "parent_result_comment_id": worker._CANONICAL_PARENT_RESULT_COMMENT_ID,\n            "dependency_inventory_authorized": False,\n            "dependency_receipt_authorized": False,\n            "external_bytes_persisted": False,',
+              '            "parent_result_comment_id": worker._CANONICAL_PARENT_RESULT_COMMENT_ID,\n            "external_bytes_persisted": False,',
+          )
+          replace_once(
+              wiring_tests,
+              '        self.assertNotIn("final_url", child["properties"])\n',
+              '        self.assertNotIn("final_url", child["properties"])\n        self.assertNotIn("dependency_inventory_authorized", child["properties"])\n        self.assertNotIn("dependency_receipt_authorized", child["properties"])\n',
+          )
+
+          branch_tests = "tests/test_agent_action_result_schema_branch_regression.py"
+          insertion = '''\n    def test_source_model_dependencies_binding_remains_isolated_from_child_receipts(self) -> None:\n        schema = self._load_schema()\n        branch = self._find_acquisition_branch(\n            schema,\n            action="efehr_eshm20_source_model_dependencies",\n            status=None,\n        )\n        then_properties = branch["then"]["properties"]\n        self.assertEqual(then_properties["source_issue"], {"const": 397})\n        self.assertEqual(then_properties["dataset_id"], {"const": "efehr.eshm20"})\n        self.assertEqual(\n            then_properties["evidence"],\n            {"required": ["efehr_eshm20_source_model_dependencies"]},\n        )\n        self.assertNotIn(\n            "efehr_eshm20_source_model_child_receipts",\n            json.dumps(branch, sort_keys=True),\n        )\n\n    def test_request_validation_forbids_source_model_evidence_fields_independently(self) -> None:\n        schema = self._load_schema()\n        matches = []\n        for branch in schema["allOf"]:\n            condition = branch.get("if", {})\n            properties = condition.get("properties", {})\n            if properties == {"phase": {"const": "request_validation"}} and condition.get("required") == ["phase"]:\n                matches.append(branch)\n        self.assertEqual(len(matches), 1)\n        clauses = matches[0]["then"]["properties"]["evidence"]["allOf"]\n        forbidden = {\n            tuple(clause["not"]["required"])\n            for clause in clauses\n            if isinstance(clause, dict)\n            and isinstance(clause.get("not"), dict)\n            and isinstance(clause["not"].get("required"), list)\n        }\n        dependencies = ("efehr_eshm20_source_model_dependencies",)\n        children = ("efehr_eshm20_source_model_child_receipts",)\n        self.assertIn(dependencies, forbidden)\n        self.assertIn(children, forbidden)\n        self.assertNotIn(dependencies + children, forbidden)\n'''
+          replace_once(
+              branch_tests,
+              '\n\nif __name__ == "__main__":\n',
+              insertion + '\n\nif __name__ == "__main__":\n',
+          )
+          PY
+          python scripts/schema_reference.py --write
+          git rm .github/workflows/agent-415-review-fix-finalizer.yml
+          git diff --check
+      - name: Verify full repository DoD
+        run: python scripts/check_all.py
+      - name: Commit exact verified repair
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          git add -A
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Fix #415 result contract isolation"
+          git push origin "HEAD:$HEAD_REF"
