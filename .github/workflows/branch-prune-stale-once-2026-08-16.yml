@@ -16,13 +16,13 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - name: Identify stale inactive branches
+      - name: Inventory branch ages
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           AUDIT_ISSUE: "438"
-          STALE_HOURS: "72"
+          STALE_HOURS: "0"
           DRY_RUN: "true"
         shell: bash
         run: |
@@ -58,21 +58,11 @@ jobs:
             fi
             printf '%s\t%s\t%s\t%sh\n' "$branch" "$sha" "$committed_at" "$age_hours" >> /tmp/candidates.tsv
           done < /tmp/branches.tsv
-
           count="$(wc -l < /tmp/candidates.tsv | tr -d ' ')"
-          echo "STALE_CANDIDATES=$count"
+          echo "INACTIVE_NO_PR_BRANCHES=$count"
           cat /tmp/candidates.tsv
-          {
-            echo "# Stale branch audit"
-            echo
-            echo "Policy: no open PR, unprotected, >= ${STALE_HOURS}h since head commit."
-            echo "Dry run: $DRY_RUN"
-            echo "Candidates: $count"
-            echo
-            cat /tmp/candidates.tsv
-          } >> "$GITHUB_STEP_SUMMARY"
-
+          { echo "# Inactive/no-PR branch age inventory"; echo; echo "Candidates: $count"; echo; cat /tmp/candidates.tsv; } >> "$GITHUB_STEP_SUMMARY"
           if [[ -s /tmp/candidates.tsv ]]; then
-            body="$(printf 'Dry-run candidates under the 72-hour inactive policy:\n\n```text\n'; cat /tmp/candidates.tsv; printf '\n```\n')"
+            body="$(printf 'Inactive branches with no open PR, including head SHA and age:\n\n```text\n'; cat /tmp/candidates.tsv; printf '\n```\n')"
             gh issue comment "$AUDIT_ISSUE" --repo "$REPO" --body "$body"
           fi
