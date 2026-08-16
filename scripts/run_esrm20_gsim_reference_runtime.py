@@ -84,6 +84,7 @@ _runtime.REQUEST_SCHEMA_VERSION = REQUEST_SCHEMA_VERSION
 _runtime.REQUEST_MARKER = REQUEST_MARKER
 _runtime.RESULT_MARKER = RESULT_MARKER
 _runtime.SOURCE_ISSUE = SOURCE_ISSUE
+_BASE_RUN_REFERENCE_RUNTIME = _runtime.run_reference_runtime
 
 
 class Esrm20GsimReferenceRuntimeError(RuntimeError):
@@ -168,7 +169,7 @@ def _site_parameter_evidence(
 def run_reference_runtime(*, execution_sha: str, image_digest: str) -> dict[str, Any]:
     """Run the reviewed runtime gate and append bounded site-requirement evidence."""
     assert_esrm20_binding()
-    result = _runtime.run_reference_runtime(
+    result = _BASE_RUN_REFERENCE_RUNTIME(
         execution_sha=execution_sha,
         image_digest=image_digest,
     )
@@ -205,14 +206,14 @@ def run_reference_runtime(*, execution_sha: str, image_digest: str) -> dict[str,
     return result
 
 
-# Re-export unchanged request and ledger semantics after the outer identities are patched.
 validate_request = _runtime.validate_request
 has_terminal_runtime_result = _runtime.has_terminal_runtime_result
 collect_runtime_observation = _runtime.collect_runtime_observation
 
 
 def main(argv: list[str] | None = None) -> int:
-    # Reuse the reviewed argument/request plumbing, but replace its execution callable.
+    # Reuse reviewed argument/request plumbing while routing only the execution
+    # callable through the ESRM20 source-identity/site-requirement wrapper.
     original = _runtime.run_reference_runtime
     try:
         _runtime.run_reference_runtime = run_reference_runtime
