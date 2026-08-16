@@ -1,0 +1,37 @@
+name: EQ1 regenerate schema projection
+
+on:
+  push:
+    branches:
+      - agent/422-mapping-header-action
+    paths:
+      - .github/workflows/eq1-regenerate-schema-projection.yml
+      - schemas/agent-action-result-v1.schema.json
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/422-mapping-header-action
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Regenerate canonical schema projections
+        run: python scripts/schema_reference.py --write
+      - name: Commit generated projection if changed
+        run: |
+          if git diff --quiet -- schemas; then
+            echo "Schema projections already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add schemas/*.schema.md
+          git commit -m "chore(schema): regenerate canonical markdown projections"
+          git push origin HEAD:agent/422-mapping-header-action
