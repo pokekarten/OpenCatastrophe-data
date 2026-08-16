@@ -2,6 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
+import os
+from pathlib import Path
+import subprocess
+import sys
 import unittest
 from unittest import mock
 
@@ -259,6 +263,33 @@ class ReferenceRuntimeResultTests(unittest.TestCase):
             ):
                 subject._acquire_exact_gmm()
             opener.assert_not_called()
+
+
+class ReferenceRuntimeCliEntryPointTests(unittest.TestCase):
+    def test_validate_only_cli_supports_direct_script_execution(self):
+        env = os.environ.copy()
+        env["OC_RUNTIME_REQUEST_BODY"] = _request()
+        repo_root = Path(__file__).resolve().parents[1]
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(repo_root / "scripts" / "run_eshm20_gsim_reference_runtime.py"),
+                "--comment-body-env",
+                "OC_RUNTIME_REQUEST_BODY",
+                "--expected-issue",
+                str(subject.SOURCE_ISSUE),
+                "--execution-sha",
+                EXECUTION_SHA,
+                "--validate-request-only",
+            ],
+            cwd=repo_root,
+            env=env,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
 
 
 if __name__ == "__main__":

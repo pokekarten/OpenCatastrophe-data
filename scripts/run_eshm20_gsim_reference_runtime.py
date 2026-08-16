@@ -19,11 +19,15 @@ import json
 import os
 import platform
 import re
+import sys
 import time
 import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
+
+if __package__ in (None, ""):  # pragma: no cover - direct script execution path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts import acquire_eshm20_gsim_resource_profile as gmm
 from scripts import validate_eshm20_gsim_openquake_runtime as gate

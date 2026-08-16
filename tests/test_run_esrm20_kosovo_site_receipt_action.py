@@ -2,6 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
+import os
+from pathlib import Path
+import subprocess
+import sys
 import unittest
 from unittest import mock
 
@@ -246,6 +250,33 @@ class ResultTests(unittest.TestCase):
         encoded = json.dumps(result, sort_keys=True)
         self.assertEqual(result["status"], "blocked")
         self.assertNotIn("secret provider payload", encoded)
+
+
+class CliEntryPointTests(unittest.TestCase):
+    def test_validate_only_cli_supports_direct_script_execution(self):
+        env = os.environ.copy()
+        env["OC_SITE_REQUEST_BODY"] = _request()
+        repo_root = Path(__file__).resolve().parents[1]
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(repo_root / "scripts" / "run_esrm20_kosovo_site_receipt_action.py"),
+                "--comment-body-env",
+                "OC_SITE_REQUEST_BODY",
+                "--expected-issue",
+                str(subject.CONTROL_ISSUE),
+                "--execution-sha",
+                EXECUTION_SHA,
+                "--validate-request-only",
+            ],
+            cwd=repo_root,
+            env=env,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
 
 
 if __name__ == "__main__":
