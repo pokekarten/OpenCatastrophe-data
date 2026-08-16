@@ -58,6 +58,8 @@ EXACT_PATHS: dict[tuple[int, int], frozenset[str]] = {
         {
             "Configuration_files/config_event_hazard_Group1.ini",
             "Configuration_files/config_event_hazard_Group2.ini",
+            "Hazard/gmpe_logic_tree_5br_slope_geology.xml",
+            "Hazard/source_model_logic_tree_eshm20_v12e_collapsed_risk_model.xml",
         }
     ),
     (282, 186): frozenset(
