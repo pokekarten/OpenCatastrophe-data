@@ -102,12 +102,40 @@ class RepositoryHygieneTests(unittest.TestCase):
             "RFC1918 10/8 endpoint": ("https://" + "10.1.2.3/private").encode("ascii"),
             "RFC1918 172.16/12 endpoint": ("https://" + "172.16.1.2/private").encode("ascii"),
             "RFC1918 192.168/16 endpoint": ("https://" + "192.168.1.2/private").encode("ascii"),
+            "IPv4 link-local endpoint": ("https://" + "169.254.1.2/private").encode("ascii"),
             "IPv6 loopback endpoint": ("https://" + "[::1]/private").encode("ascii"),
+            "IPv6 ULA endpoint": ("https://" + "[fd12:3456:789a::1]/private").encode("ascii"),
+            "IPv6 link-local endpoint": ("https://" + "[fe80::1]/private").encode("ascii"),
         }
         self.assertEqual(set(cases), set(hygiene.PRIVATE_ENDPOINT_PATTERNS))
         for label, content in cases.items():
             with self.subTest(label=label):
                 self.assertIn(f"possible {label}", hygiene.check_file(self._file(content), git_mode="100644"))
+
+    def test_private_endpoint_host_boundaries_are_enforced(self) -> None:
+        blocked = (
+            ("https://" + "local" + "host").encode("ascii"),
+            ("https://" + "local" + "host?probe=1").encode("ascii"),
+            ("https://" + "local" + "host#fragment").encode("ascii"),
+            ("https://" + "127.0.0.1").encode("ascii"),
+            ("https://" + "169.254.169.254?probe=1").encode("ascii"),
+            ("https://" + "[fd00::1]#fragment").encode("ascii"),
+            ("https://" + "[febf::1]:8443?probe=1").encode("ascii"),
+        )
+        for content in blocked:
+            with self.subTest(content=content):
+                self.assertTrue(
+                    any(problem.startswith("possible ") for problem in hygiene.check_file(
+                        self._file(content), git_mode="100644"
+                    ))
+                )
+
+        safe = self._file(("https://" + "local" + "host.example").encode("ascii"))
+        self.assertFalse(
+            any(problem.startswith("possible localhost endpoint") for problem in hygiene.check_file(
+                safe, git_mode="100644"
+            ))
+        )
 
     def test_every_signed_url_pattern_has_a_synthetic_detection_case(self) -> None:
         cases = {
