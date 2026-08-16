@@ -40,6 +40,8 @@ REQUEST_MARKER = "<!-- oc-eq1-eshm20-gsim-reference-runtime-request-v1 -->"
 RESULT_MARKER = "<!-- oc-eq1-eshm20-gsim-reference-runtime-result-v1 -->"
 SOURCE_ISSUE = 432
 TRUSTED_RESULT_LOGIN = "github-actions[bot]"
+_OPENQUAKE_CHECKOUT_ROOT = Path("/oq-engine")
+_OPENQUAKE_PACKAGE_ROOT = _OPENQUAKE_CHECKOUT_ROOT / "openquake"
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
@@ -283,13 +285,53 @@ def _acquire_exact_gmm() -> bytes:
     return payload
 
 
+def _pin_openquake_namespace(*, package_root: Path | None = None) -> None:
+    """Restrict OpenQuake submodule lookup to the mounted frozen source checkout."""
+
+    expected = (package_root or _OPENQUAKE_PACKAGE_ROOT).resolve()
+    if not expected.is_dir():
+        raise ReferenceRuntimeExecutionError(
+            "fixed OpenQuake package root is unavailable"
+        )
+    if any(name.startswith("openquake.") for name in sys.modules):
+        raise ReferenceRuntimeExecutionError(
+            "OpenQuake submodule loaded before source pin"
+        )
+    try:
+        import openquake
+    except Exception as exc:
+        raise ReferenceRuntimeExecutionError("OpenQuake namespace unavailable") from exc
+    if getattr(openquake, "__path__", None) is None:
+        raise ReferenceRuntimeExecutionError("OpenQuake namespace path unavailable")
+    openquake.__path__ = [str(expected)]
+    if [Path(path).resolve() for path in openquake.__path__] != [expected]:
+        raise ReferenceRuntimeExecutionError("OpenQuake namespace pin failed")
+
+
+def _require_fixed_openquake_source(source_file: str | Path) -> Path:
+    """Require one loaded OpenQuake source file to live under the fixed checkout."""
+
+    source_path = Path(source_file).resolve()
+    package_root = _OPENQUAKE_PACKAGE_ROOT.resolve()
+    try:
+        source_path.relative_to(package_root)
+    except ValueError as exc:
+        raise ReferenceRuntimeExecutionError(
+            "OpenQuake source resolved outside fixed checkout"
+        ) from exc
+    if not source_path.is_file():
+        raise ReferenceRuntimeExecutionError("OpenQuake source identity unavailable")
+    return source_path
+
+
 def _observed_openquake_commit() -> str:
     try:
         from openquake.hazardlib import valid
         source_file = inspect.getsourcefile(valid.gsim)
         if source_file is None:
             raise ReferenceRuntimeExecutionError("OpenQuake source identity unavailable")
-        root = gate._verify_exact_openquake_checkout(source_file)
+        source_path = _require_fixed_openquake_source(source_file)
+        root = gate._verify_exact_openquake_checkout(source_path)
         return gate._git_text(root, "rev-parse", "HEAD")
     except gate.Eshm20GsimRuntimeCompatibilityError as exc:
         raise ReferenceRuntimeExecutionError("OpenQuake exact-source gate failed") from exc
@@ -300,6 +342,7 @@ def collect_runtime_observation(image_digest: object) -> dict[str, Any]:
 
     if type(image_digest) is not str or not _DIGEST_RE.fullmatch(image_digest):
         raise ReferenceRuntimeExecutionError("invalid execution image digest")
+    _pin_openquake_namespace()
     try:
         from openquake import baselib
     except Exception as exc:
