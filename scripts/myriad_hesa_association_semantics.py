@@ -14,6 +14,7 @@ REFERENCE_COMMIT = "dcd2969a8f7c336853bdfa40efd7aa00798ee04b"
 INPUT_KIND = "fixture"
 SCIENTIFIC_ROLE = "benchmark"
 SEMANTIC_BOUNDARY = "association_not_causality"
+GROUPING_SEMANTICS = "pairwise_complete_maximal_groups"
 
 
 class AssociationSemanticError(ValueError):
@@ -70,6 +71,7 @@ class AssociationResult:
     input_kind: str = INPUT_KIND
     scientific_role: str = SCIENTIFIC_ROLE
     semantic_boundary: str = SEMANTIC_BOUNDARY
+    grouping_semantics: str = GROUPING_SEMANTICS
 
 
 @dataclass(frozen=True)
@@ -199,7 +201,9 @@ def _validate_pair_evidence(
         if not isinstance(item.spatial_overlap, bool):
             raise AssociationSemanticError("spatial_overlap must be boolean")
         if item.active_overlap is not None and not isinstance(item.active_overlap, bool):
-            raise AssociationSemanticError("active_overlap must be boolean when provided")
+            raise AssociationSemanticError(
+                "active_overlap must be boolean when provided"
+            )
         key = _pair_key(event_a, event_b)
         if key in validated:
             raise AssociationSemanticError(
@@ -248,38 +252,66 @@ def _temporal_overlap(
     return left.start <= right_end and right.start <= left_end
 
 
-def _connected_event_sets(
+def _pairwise_complete_event_sets(
     event_ids: Sequence[str],
     edges: Sequence[AssociationEdge],
 ) -> tuple[tuple[tuple[str, ...], ...], tuple[str, ...]]:
+    """Return deterministic maximal groups whose members are all directly linked.
+
+    The MYRIAD-HESA method allows hazard pairs to be combined into a larger
+    multi-hazard group only when every individual hazard overlaps every other
+    member. Graph connectivity alone is therefore insufficient: a chain A-B-C
+    without A-C is two maximal two-event groups, not one three-event group.
+    """
+
     adjacency: dict[str, set[str]] = {event_id: set() for event_id in event_ids}
     for edge in edges:
         adjacency[edge.event_a].add(edge.event_b)
         adjacency[edge.event_b].add(edge.event_a)
 
-    components: list[tuple[str, ...]] = []
-    unassociated: list[str] = []
-    visited: set[str] = set()
-    for event_id in sorted(event_ids):
-        if event_id in visited:
-            continue
-        if not adjacency[event_id]:
-            visited.add(event_id)
-            unassociated.append(event_id)
-            continue
+    unassociated = tuple(
+        event_id for event_id in sorted(event_ids) if not adjacency[event_id]
+    )
+    associated = {event_id for event_id in event_ids if adjacency[event_id]}
+    cliques: list[tuple[str, ...]] = []
 
-        stack = [event_id]
-        component: set[str] = set()
-        while stack:
-            current = stack.pop()
-            if current in component:
-                continue
-            component.add(current)
-            visited.add(current)
-            stack.extend(sorted(adjacency[current] - component, reverse=True))
-        components.append(tuple(sorted(component)))
+    def visit(
+        current: frozenset[str],
+        candidates: set[str],
+        excluded: set[str],
+    ) -> None:
+        if not candidates and not excluded:
+            if len(current) >= 2:
+                cliques.append(tuple(sorted(current)))
+            return
 
-    return tuple(sorted(components)), tuple(sorted(unassociated))
+        pool = candidates | excluded
+        pivot = (
+            max(
+                sorted(pool),
+                key=lambda node: len(candidates & adjacency[node]),
+            )
+            if pool
+            else None
+        )
+        expand = (
+            sorted(candidates - adjacency[pivot])
+            if pivot is not None
+            else sorted(candidates)
+        )
+        for node in expand:
+            visit(
+                current | frozenset({node}),
+                candidates & adjacency[node],
+                excluded & adjacency[node],
+            )
+            candidates.remove(node)
+            excluded.add(node)
+
+    if associated:
+        visit(frozenset(), set(associated), set())
+
+    return tuple(sorted(set(cliques))), unassociated
 
 
 def associate_events(
@@ -288,11 +320,12 @@ def associate_events(
     *,
     config: AssociationConfig = AssociationConfig(),
 ) -> AssociationResult:
-    """Return deterministic direct associations and connected event sets.
+    """Return deterministic direct associations and pairwise-complete event sets.
 
-    Pair evidence is intentionally complete and synthetic: absence is never treated as
-    evidence of spatial disjointness. Event-set membership is graph connectivity under
-    this benchmark, not physical causality.
+    Pair evidence is intentionally complete and synthetic: absence is never
+    treated as evidence of spatial disjointness. Larger event-set membership
+    requires direct association for every member pair; it is not graph
+    connectivity and never implies physical causality.
     """
 
     config = _validate_config(config)
@@ -329,7 +362,7 @@ def associate_events(
         )
 
     direct_edges = tuple(sorted(edges))
-    event_sets, unassociated = _connected_event_sets(
+    event_sets, unassociated = _pairwise_complete_event_sets(
         tuple(sorted(validated_events)),
         direct_edges,
     )
