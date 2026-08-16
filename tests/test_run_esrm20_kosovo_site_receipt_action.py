@@ -35,8 +35,8 @@ def _receipt(**updates):
         "project_path": subject.PROJECT_PATH,
         "commit_sha": subject.COMMIT_SHA,
         "repository_path": subject.REPOSITORY_PATH,
-        "requested_url": "https://gitlab.seismo.ethz.ch/api/v4/projects/269/repository/files/Vs30%2FSite_model_Kosovo.xml/raw?ref=" + subject.COMMIT_SHA,
-        "final_url": "https://gitlab.seismo.ethz.ch/api/v4/projects/269/repository/files/Vs30%2FSite_model_Kosovo.xml/raw?ref=" + subject.COMMIT_SHA,
+        "requested_url": "https://gitlab.seismo.ethz.ch/raw/site.xml",
+        "final_url": "https://gitlab.seismo.ethz.ch/raw/site.xml",
         "retrieved_at": "2026-08-16T14:00:00Z",
         "byte_count": 1234,
         "sha256": "8" * 64,
@@ -47,6 +47,39 @@ def _receipt(**updates):
     }
     payload.update(updates)
     return payload
+
+
+def _terminal_comment(*, status="pass"):
+    result = subject._base_result(execution_sha=EXECUTION_SHA)
+    if status == "pass":
+        result.update(
+            {
+                "status": "pass",
+                "failure_class": None,
+                "receipt": {
+                    "retrieved_at": "2026-08-16T14:00:00Z",
+                    "byte_count": 1234,
+                    "sha256": "8" * 64,
+                    "content_type": "application/xml",
+                    "etag": None,
+                },
+            }
+        )
+    else:
+        result.update(
+            {
+                "status": "blocked",
+                "failure_class": "acquisition_failure",
+                "receipt": None,
+            }
+        )
+    return {
+        "id": 2001,
+        "user": {"login": subject.TRUSTED_RESULT_LOGIN},
+        "body": subject.RESULT_MARKER
+        + "\n"
+        + json.dumps(result, sort_keys=True, separators=(",", ":")),
+    }
 
 
 class RequestTests(unittest.TestCase):
@@ -95,6 +128,73 @@ class RequestTests(unittest.TestCase):
                 expected_issue=subject.CONTROL_ISSUE,
                 execution_sha=EXECUTION_SHA,
             )
+
+
+class LedgerTests(unittest.TestCase):
+    def test_terminal_result_beyond_first_100_comments_is_detected(self):
+        comments = [
+            {"id": index + 1, "user": {"login": "someone"}, "body": "noise"}
+            for index in range(100)
+        ]
+        comments.append(_terminal_comment())
+        with mock.patch.object(
+            subject, "fetch_repository_comments", return_value=comments
+        ) as fetch:
+            self.assertTrue(
+                subject.has_terminal_site_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="token",
+                    execution_sha=EXECUTION_SHA,
+                )
+            )
+        fetch.assert_called_once_with(
+            "pokekarten/OpenCatastrophe-data",
+            "token",
+            issue=subject.CONTROL_ISSUE,
+            max_pages=20,
+        )
+
+    def test_blocked_acquisition_result_is_also_terminal(self):
+        with mock.patch.object(
+            subject,
+            "fetch_repository_comments",
+            return_value=[_terminal_comment(status="blocked")],
+        ):
+            self.assertTrue(
+                subject.has_terminal_site_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="token",
+                    execution_sha=EXECUTION_SHA,
+                )
+            )
+
+    def test_incomplete_or_over_bound_ledger_fails_closed(self):
+        with mock.patch.object(
+            subject,
+            "fetch_repository_comments",
+            side_effect=subject.LedgerError("scan bound exceeded"),
+        ):
+            with self.assertRaisesRegex(
+                subject.SiteReceiptActionError, "ledger is incomplete"
+            ):
+                subject.has_terminal_site_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="token",
+                    execution_sha=EXECUTION_SHA,
+                )
+
+    def test_malformed_trusted_terminal_result_fails_closed(self):
+        malformed = _terminal_comment()
+        malformed["body"] = subject.RESULT_MARKER + "\n{}"
+        with mock.patch.object(
+            subject, "fetch_repository_comments", return_value=[malformed]
+        ):
+            with self.assertRaises(subject.SiteReceiptActionError):
+                subject.has_terminal_site_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="token",
+                    execution_sha=EXECUTION_SHA,
+                )
 
 
 class ResultTests(unittest.TestCase):
