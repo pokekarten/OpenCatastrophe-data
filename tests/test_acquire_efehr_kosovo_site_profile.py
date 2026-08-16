@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import copy
 import unittest
 from unittest import mock
 
@@ -46,13 +47,30 @@ class KosovoSiteProfileAcquisitionTests(unittest.TestCase):
                     "bom_present": False,
                     "dtd_or_entity_allowed": False,
                 },
-                "root": {"namespace": None, "local_name": "root"},
-                "element_count": 1,
+                "root": {"namespace": "urn:test", "local_name": "root"},
+                "element_count": 2,
                 "leaf_element_count": 1,
-                "max_depth": 1,
-                "tag_counts": [{"name": {"namespace": None, "local_name": "root"}, "count": 1}],
-                "namespace_counts": [],
-                "attribute_profiles": [],
+                "max_depth": 2,
+                "tag_counts": [
+                    {
+                        "name": {"namespace": "urn:test", "local_name": "root"},
+                        "count": 2,
+                    }
+                ],
+                "namespace_counts": [{"namespace": "urn:test", "element_count": 2}],
+                "attribute_profiles": [
+                    {
+                        "name": {"namespace": None, "local_name": "vs30"},
+                        "occurrence_count": 2,
+                        "empty_count": 0,
+                        "leading_or_trailing_whitespace_count": 0,
+                        "distinct_count": 2,
+                        "exact_value_set_sha256": "0" * 64,
+                        "finite_decimal_lexical_count": 2,
+                        "true_lexical_count": 0,
+                        "false_lexical_count": 0,
+                    }
+                ],
                 "non_whitespace_text_element_count": 0,
                 "raw_xml_returned": False,
                 "raw_attribute_values_returned": False,
@@ -105,6 +123,43 @@ class KosovoSiteProfileAcquisitionTests(unittest.TestCase):
         result = self._bounded_profile()
         result["profile"]["model_use_authorized"] = True
         with self.assertRaisesRegex(subject.SiteProfileContractError, "model_use_authorized"):
+            subject._validate_profile_result(result)
+
+    def test_unknown_nested_fields_are_rejected_fail_closed(self):
+        mutations = (
+            ("root", lambda p: p["profile"]["root"].__setitem__("raw_values", [])),
+            ("tag_counts", lambda p: p["profile"]["tag_counts"][0].__setitem__("raw_values", [])),
+            (
+                "namespace_counts",
+                lambda p: p["profile"]["namespace_counts"][0].__setitem__("raw_values", []),
+            ),
+            (
+                "attribute_profiles",
+                lambda p: p["profile"]["attribute_profiles"][0].__setitem__("raw_values", []),
+            ),
+        )
+        for label, mutate in mutations:
+            with self.subTest(label=label):
+                result = copy.deepcopy(self._bounded_profile())
+                mutate(result)
+                with self.assertRaises(subject.SiteProfileContractError):
+                    subject._validate_profile_result(result)
+
+    def test_nested_counts_reject_bool_and_out_of_bounds_values(self):
+        result = self._bounded_profile()
+        result["profile"]["tag_counts"][0]["count"] = True
+        with self.assertRaisesRegex(subject.SiteProfileContractError, "tag_counts"):
+            subject._validate_profile_result(result)
+
+        result = self._bounded_profile()
+        result["profile"]["attribute_profiles"][0]["empty_count"] = 3
+        with self.assertRaisesRegex(subject.SiteProfileContractError, "empty_count"):
+            subject._validate_profile_result(result)
+
+    def test_attribute_fingerprint_requires_lowercase_sha256(self):
+        result = self._bounded_profile()
+        result["profile"]["attribute_profiles"][0]["exact_value_set_sha256"] = "A" * 64
+        with self.assertRaisesRegex(subject.SiteProfileContractError, "lowercase SHA-256"):
             subject._validate_profile_result(result)
 
     def test_merged_profiler_receipt_identity_is_frozen(self):
