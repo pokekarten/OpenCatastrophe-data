@@ -13,6 +13,7 @@ from pathlib import Path
 from scripts import acquire_efehr_esrm20_mapping_headers as worker
 from scripts import agent_action_protocol as protocol
 from scripts import prepare_agent_action_result as prepare
+from scripts import profile_efehr_esrm20_mapping_structure as structure
 from scripts import validate_agent_action_request as request_validator
 from scripts import validate_agent_action_result as result_validator
 from scripts import validate_agent_action_result_mapping_headers as mapping_headers_validator
@@ -93,6 +94,14 @@ def receipt() -> dict[str, object]:
     }
 
 
+def bind_headers(value: dict[str, object], headers: list[str]) -> None:
+    disclosure = value["disclosure"]
+    assert isinstance(disclosure, dict)
+    disclosure["headers"] = headers
+    disclosure["column_count"] = len(headers)
+    disclosure["ordered_header_sha256"] = mapping_headers_validator._length_prefixed_sha256(headers)
+
+
 class Esrm20MappingHeadersActionTests(unittest.TestCase):
     def test_request_is_closed_to_issue_dataset_and_no_selectors(self) -> None:
         self.assertEqual(request_validator.validate_request(dict(REQUEST)), REQUEST)
@@ -114,9 +123,13 @@ class Esrm20MappingHeadersActionTests(unittest.TestCase):
         mutations: list[dict[str, object]] = []
         widened = copy.deepcopy(base); widened["taxonomy_join_authorized"] = True; mutations.append(widened)
         bool_count = copy.deepcopy(base); bool_count["disclosure"]["column_count"] = True; mutations.append(bool_count)
-        duplicate = copy.deepcopy(base); duplicate["disclosure"]["headers"] = ["X", "X"]; duplicate["disclosure"]["ordered_header_sha256"] = mapping_headers_validator._length_prefixed_sha256(["X", "X"]); mutations.append(duplicate)
+        duplicate = copy.deepcopy(base); bind_headers(duplicate["disclosure"], ["X", "X"]); mutations.append(duplicate)
         changed = copy.deepcopy(base); changed["disclosure"]["headers"] = ["EXPOSURE", "OTHER"]; mutations.append(changed)
         extra = copy.deepcopy(base); extra["disclosure"]["mapping_rows"] = []; mutations.append(extra)
+        below_min = copy.deepcopy(base); bind_headers(below_min["disclosure"], ["ONLY_ONE"]); mutations.append(below_min)
+        above_max = copy.deepcopy(base); bind_headers(above_max["disclosure"], [f"H{i}" for i in range(structure.MAX_COLUMNS + 1)]); mutations.append(above_max)
+        oversized_field = copy.deepcopy(base); bind_headers(oversized_field["disclosure"], ["A" * (structure.MAX_HEADER_FIELD_BYTES + 1), "B"]); mutations.append(oversized_field)
+        multibyte_overflow = copy.deepcopy(base); bind_headers(multibyte_overflow["disclosure"], ["é" * (structure.MAX_HEADER_FIELD_BYTES // 2 + 1), "B"]); mutations.append(multibyte_overflow)
         for mutated in mutations:
             with self.subTest(mutated=mutated), self.assertRaises(result_validator.ResultError):
                 result_validator.validate_esrm20_mapping_headers(mutated)
