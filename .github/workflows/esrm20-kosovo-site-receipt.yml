@@ -76,53 +76,22 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Skip an already completed identical execution
+      - name: Prove complete issue-local dedup before provider access
         id: dedup
         env:
           GH_TOKEN: ${{ github.token }}
           EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
-          RESULT_MARKER: "<!-- oc-eq1-esrm20-kosovo-site-receipt-result-v1 -->"
-          COMMENTS: ${{ runner.temp }}/site-comments.json
         run: |
           set -euo pipefail
-          gh api "repos/$GITHUB_REPOSITORY/issues/342/comments?per_page=100" > "$COMMENTS"
           python - <<'PY'
-          import json
           import os
-          from pathlib import Path
+          from scripts import run_esrm20_kosovo_site_receipt_action as subject
 
-          comments = json.loads(Path(os.environ["COMMENTS"]).read_text(encoding="utf-8"))
-          marker = os.environ["RESULT_MARKER"]
-          target = os.environ["EXECUTION_SHA"]
-          skip = False
-          for comment in comments:
-              user = comment.get("user")
-              if not isinstance(user, dict) or user.get("login") != "github-actions[bot]":
-                  continue
-              body = comment.get("body")
-              if not isinstance(body, str) or body.count(marker) != 1:
-                  continue
-              prefix, raw = body.split(marker, 1)
-              if prefix.strip():
-                  continue
-              try:
-                  result = json.loads(raw.strip())
-              except (json.JSONDecodeError, TypeError):
-                  continue
-              completed = result.get("status") == "pass" or (
-                  result.get("status") == "blocked"
-                  and result.get("failure_class") == "acquisition_failure"
-              )
-              if (
-                  completed
-                  and result.get("action") == "esrm20_kosovo_site_model_receipt"
-                  and result.get("source_issue") == 342
-                  and result.get("dataset_id") == "efehr.esrm20.risk-inputs.v1.0"
-                  and result.get("execution_sha") == target
-                  and result.get("target_sha") == target
-              ):
-                  skip = True
-                  break
+          skip = subject.has_terminal_site_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
               handle.write(f"skip={'true' if skip else 'false'}\n")
           PY
