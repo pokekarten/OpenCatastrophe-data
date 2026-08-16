@@ -1,0 +1,133 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Kosovo Mapping Join
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-kosovo-mapping-join-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  execute-bounded-join:
+    name: Execute bounded trusted-main join
+    if: >-
+      github.event.issue.number == 283 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-kosovo-mapping-join-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.run.outputs.execution_sha }}
+      skip: ${{ steps.run.outputs.skip }}
+      result_json: ${{ steps.run.outputs.result_json }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Validate request, deduplicate, and execute bounded join
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OC_JOIN_REQUEST_BODY: ${{ github.event.comment.body }}
+          RESULT_PATH: ${{ runner.temp }}/esrm20-kosovo-mapping-join.json
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/run_esrm20_kosovo_mapping_join_action.py \
+            --comment-body-env OC_JOIN_REQUEST_BODY \
+            --expected-issue 283 \
+            --execution-sha "$EXECUTION_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --token-env GH_TOKEN \
+            --output "$RESULT_PATH"
+
+          STATUS="$(jq -r '.status' "$RESULT_PATH")"
+          test "$STATUS" = "pass" -o "$STATUS" = "duplicate"
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+          if test "$STATUS" = "duplicate"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "result_json=" >> "$GITHUB_OUTPUT"
+          else
+            RESULT_JSON="$(jq -cS . "$RESULT_PATH")"
+            test -n "$RESULT_JSON"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish-bounded-result:
+    name: Publish bounded derived join evidence
+    needs: [execute-bounded-join]
+    if: >-
+      needs.execute-bounded-join.result == 'success' &&
+      needs.execute-bounded-join.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.execute-bounded-join.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-bounded-join.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-kosovo-mapping-join-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-kosovo-mapping-join-execution-v1" and
+            .source_issue == 283 and
+            .status == "pass" and
+            .target_sha == $sha and
+            .execution_sha == $sha and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and
+            .model_use_authorized == false and
+            .join.schema_version == "oc-esrm20-kosovo-taxonomy-mapping-join-v1" and
+            .join.semantic_decision_issue == 410 and
+            .join.classification_counts.resolved >= 0 and
+            .join.classification_counts.unsupported >= 0 and
+            .join.classification_counts.ambiguous >= 0 and
+            ((.join.classification_counts.resolved + .join.classification_counts.unsupported + .join.classification_counts.ambiguous) == 86) and
+            (.join.records | length) == 86 and
+            .join.taxonomy_matching == "exact_literal_equality_only" and
+            .join.normalization_applied == false and
+            .join.wildcard_or_fallback_matching_applied == false and
+            .join.mapping_weight_rule == "positive_finite_float_sum_within_openquake_1e-7" and
+            .join.rights.provider == "European Facilities for Earthquake Hazard and Risk (EFEHR)" and
+            .join.rights.license_id == "CC-BY-4.0" and
+            .join.rights.attribution_required == true and
+            .join.bounded_derived_disclosure_authorized == true and
+            .join.vulnerability_file_selection_authorized == false and
+            .join.raw_mapping_rows_returned == false and
+            .join.external_bytes_persisted == false and
+            .join.publication_authorized == false and
+            .join.model_use_authorized == false
+          ' >/dev/null
+
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/mapping-join-comment.json"
+          gh api \
+            --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/283/comments" \
+            --input "$RUNNER_TEMP/mapping-join-comment.json"
