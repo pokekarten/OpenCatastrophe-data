@@ -18,9 +18,14 @@ import re
 from pathlib import Path
 from typing import Any
 
-from scripts.acquire_efehr_gitlab_receipt import EfehrAcquisitionError
-from scripts.acquire_efehr_kosovo_site_receipt import acquire_kosovo_site_receipt
-from scripts.prepare_agent_action_result import LedgerError, fetch_repository_comments
+try:
+    from scripts.acquire_efehr_gitlab_receipt import EfehrAcquisitionError
+    from scripts.acquire_efehr_kosovo_site_receipt import acquire_kosovo_site_receipt
+    from scripts.prepare_agent_action_result import LedgerError, fetch_repository_comments
+except ModuleNotFoundError:  # pragma: no cover - direct script execution path
+    from acquire_efehr_gitlab_receipt import EfehrAcquisitionError
+    from acquire_efehr_kosovo_site_receipt import acquire_kosovo_site_receipt
+    from prepare_agent_action_result import LedgerError, fetch_repository_comments
 
 REQUEST_MARKER = "<!-- oc-eq1-esrm20-kosovo-site-receipt-request-v1 -->"
 RESULT_MARKER = "<!-- oc-eq1-esrm20-kosovo-site-receipt-result-v1 -->"
