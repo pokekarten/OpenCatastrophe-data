@@ -187,6 +187,32 @@ class ScenarioV10SummaryActionTests(unittest.TestCase):
             monotonic=lambda: 0.0,
         )
 
+    def _blocked_result_body(
+        self, *, execution_sha: str, target_sha: str | None = None
+    ) -> str:
+        result = {
+            **action._base_result(execution_sha=execution_sha),
+            "status": "blocked",
+            "failure_class": "summary_acquisition_or_profile_failure",
+            "profile": None,
+        }
+        if target_sha is not None:
+            result["target_sha"] = target_sha
+        return action.RESULT_MARKER + "\n" + json.dumps(
+            result, sort_keys=True, separators=(",", ":")
+        )
+
+    def _with_ledger(self, bodies: list[str], callback):
+        original = action._FETCH_COMMENTS
+        action._FETCH_COMMENTS = lambda *args, **kwargs: [
+            {"user": {"login": action.TRUSTED_RESULT_LOGIN}, "body": body}
+            for body in bodies
+        ]
+        try:
+            return callback()
+        finally:
+            action._FETCH_COMMENTS = original
+
     def test_request_is_bound_to_issue_and_current_execution_sha(self) -> None:
         body = action.REQUEST_MARKER + "\n" + json.dumps(
             {
@@ -257,6 +283,51 @@ class ScenarioV10SummaryActionTests(unittest.TestCase):
             action.ScenarioSummaryExecutionError, "widened evidence"
         ):
             action.parse_terminal_result(bad, execution_sha=EXECUTION_SHA)
+
+    def test_other_valid_sha_is_ignored_for_current_head_dedup(self) -> None:
+        historical_sha = "c" * 40
+        body = self._blocked_result_body(execution_sha=historical_sha)
+        self.assertFalse(
+            self._with_ledger(
+                [body],
+                lambda: action.has_terminal_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="test",
+                    execution_sha=EXECUTION_SHA,
+                ),
+            )
+        )
+
+    def test_same_sha_terminal_result_deduplicates(self) -> None:
+        body = self._blocked_result_body(execution_sha=EXECUTION_SHA)
+        self.assertTrue(
+            self._with_ledger(
+                [body],
+                lambda: action.has_terminal_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="test",
+                    execution_sha=EXECUTION_SHA,
+                ),
+            )
+        )
+
+    def test_mismatched_own_target_and_execution_sha_fail_closed(self) -> None:
+        body = self._blocked_result_body(
+            execution_sha="c" * 40,
+            target_sha="d" * 40,
+        )
+        with self.assertRaisesRegex(
+            action.ScenarioSummaryExecutionError,
+            "target/execution SHA mismatch",
+        ):
+            self._with_ledger(
+                [body],
+                lambda: action.has_terminal_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="test",
+                    execution_sha=EXECUTION_SHA,
+                ),
+            )
 
 
 if __name__ == "__main__":
