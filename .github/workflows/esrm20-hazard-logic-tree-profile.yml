@@ -1,0 +1,198 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Hazard Logic-Tree Profile
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-hazard-logic-tree-profile-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main hazard profile request
+    if: >-
+      github.event.issue.number == 481 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-hazard-logic-tree-profile-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_HAZARD_PROFILE_REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.run_esrm20_hazard_logic_tree_profile_action \
+            --comment-body-env OC_HAZARD_PROFILE_REQUEST_BODY \
+            --expected-issue 481 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-profile:
+    name: Execute receipt-bound hazard logic-tree profile
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Prove issue-local dedup before provider access
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import run_esrm20_hazard_logic_tree_profile_action as subject
+          skip = subject.has_terminal_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+      - name: Run exact receipt-bound hazard profile
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_HAZARD_PROFILE_REQUEST_BODY: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/hazard-logic-tree-profile.json
+        run: |
+          set -euo pipefail
+          python -m scripts.run_esrm20_hazard_logic_tree_profile_action \
+            --comment-body-env OC_HAZARD_PROFILE_REQUEST_BODY \
+            --expected-issue 481 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from scripts import run_esrm20_hazard_logic_tree_profile_action as subject
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          sha = os.environ["EXECUTION_SHA"]
+          if result.get("target_sha") != sha or result.get("execution_sha") != sha:
+              raise SystemExit("result left exact execution SHA")
+          if result.get("status") == "pass":
+              if result.get("byte_identity_verified") is not True or result.get("content_profile_verified") is not True:
+                  raise SystemExit("PASS did not close byte/content gates")
+              subject._validate_profile(result.get("profile"))
+          elif result.get("status") == "blocked":
+              if result.get("failure_class") not in {"acquisition_failure", "profile_failure"} or result.get("profile") is not None:
+                  raise SystemExit("blocked result is not atomic")
+              if result.get("byte_identity_verified") is not False or result.get("content_profile_verified") is not False:
+                  raise SystemExit("blocked result widened evidence")
+          else:
+              raise SystemExit("result has non-terminal status")
+          for field in (
+              "transitive_dependency_byte_closure_verified", "runtime_compatibility_verified",
+              "external_bytes_persisted", "publication_authorized", "model_use_authorized",
+          ):
+              if result.get(field) is not False:
+                  raise SystemExit(f"result widened {field}")
+          PY
+      - name: Export bounded result
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        env:
+          RESULT_PATH: ${{ runner.temp }}/hazard-logic-tree-profile.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json, os
+          from pathlib import Path
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-profile:
+    name: Publish bounded hazard profile evidence
+    needs: [validate-request, execute-profile]
+    if: >-
+      needs.execute-profile.result == 'success' &&
+      needs.execute-profile.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence and publish without checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-profile.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-hazard-logic-tree-profile-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-hazard-logic-tree-profile-result-v1" and
+            .action == "esrm20_hazard_logic_tree_profile" and
+            .source_issue == 481 and .source_science_issue == 281 and
+            .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+            .target_sha == $sha and .execution_sha == $sha and
+            (
+              (.status == "pass" and
+               .byte_identity_verified == true and .content_profile_verified == true and
+               .profile.receipt_issue == 476 and .profile.receipt_comment_id == 5310073582 and
+               .profile.gsim_tree.byte_count == 34018 and
+               .profile.gsim_tree.sha256 == "f3efd16db967efd23f6b25837565344a6056282965ed0ecdfdbcb614513471b1" and
+               .profile.gsim_tree.argument_values_returned == false and
+               .profile.source_tree.byte_count == 1964 and
+               .profile.source_tree.sha256 == "caebf9140922da7f7492d8b0e55c213c70a84d5b725ae37eae31d50e1da4ac3" and
+               .profile.source_tree.explicit_repository_inventory_used == false and
+               .profile.raw_xml_returned == false)
+              or
+              (.status == "blocked" and
+               (.failure_class == "acquisition_failure" or .failure_class == "profile_failure") and
+               .profile == null and .byte_identity_verified == false and .content_profile_verified == false)
+            ) and
+            .transitive_dependency_byte_closure_verified == false and
+            .runtime_compatibility_verified == false and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and .model_use_authorized == false
+          ' >/dev/null
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/hazard-profile-comment.json"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/481/comments" --input "$RUNNER_TEMP/hazard-profile-comment.json"
