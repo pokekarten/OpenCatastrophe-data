@@ -152,10 +152,13 @@ def _stream_receipt(
     path: str,
     *,
     deadline: float,
+    max_bytes: int = MAX_FILE_BYTES,
     opener: Any = _OPEN_FIXED,
     monotonic: Any = _MONOTONIC,
     now: Any = _NOW,
 ) -> dict[str, Any]:
+    if type(max_bytes) is not int or isinstance(max_bytes, bool) or not (1 <= max_bytes <= MAX_FILE_BYTES):
+        raise SourceModelReceiptError("source-model effective byte budget is invalid")
     url = _raw_url(path)
     request = urllib.request.Request(
         url,
@@ -165,22 +168,32 @@ def _stream_receipt(
     try:
         with opener(request, timeout=_REMAINING(deadline, monotonic)) as response:
             _VALIDATE_RESPONSE(response, url)
-            declared = _DECLARED_LENGTH(response, MAX_FILE_BYTES)
+            declared = _DECLARED_LENGTH(response, max_bytes)
             retrieved_at = now()
             digest = hashlib.sha256()
             count = 0
             while True:
+                if declared is not None:
+                    byte_budget = declared - count
+                    if byte_budget == 0:
+                        break
+                else:
+                    byte_budget = max_bytes - count
+                    if byte_budget == 0:
+                        raise SourceModelReceiptError(
+                            "source-model byte budget exhausted before EOF could be verified"
+                        )
                 remaining = _REMAINING(deadline, monotonic)
                 _SET_RESPONSE_TIMEOUT(response, remaining)
-                chunk = response.read(CHUNK_SIZE)
+                chunk = response.read(min(CHUNK_SIZE, byte_budget))
                 _REMAINING(deadline, monotonic)
                 if chunk == b"":
                     break
                 if type(chunk) is not bytes:
                     raise SourceModelReceiptError("provider returned non-byte source-model content")
                 count += len(chunk)
-                if count > MAX_FILE_BYTES:
-                    raise SourceModelReceiptError("source-model file exceeds bounded byte policy")
+                if count > max_bytes:
+                    raise SourceModelReceiptError("source-model file exceeds effective byte budget")
                 digest.update(chunk)
     except (SourceModelReceiptError, transport.EfehrAcquisitionError):
         raise
@@ -222,7 +235,17 @@ def acquire_receipts(
     receipts: list[dict[str, Any]] = []
     total = 0
     for path in SOURCE_MODEL_PATHS:
-        receipt = _stream_receipt(path, deadline=deadline, opener=opener, monotonic=monotonic, now=now)
+        remaining_total = MAX_TOTAL_BYTES - total
+        if remaining_total <= 0:
+            raise SourceModelReceiptError("source-model receipt set exhausted total byte policy")
+        receipt = _stream_receipt(
+            path,
+            deadline=deadline,
+            max_bytes=min(MAX_FILE_BYTES, remaining_total),
+            opener=opener,
+            monotonic=monotonic,
+            now=now,
+        )
         total += receipt["byte_count"]
         if total > MAX_TOTAL_BYTES:
             raise SourceModelReceiptError("source-model receipt set exceeds total byte policy")
