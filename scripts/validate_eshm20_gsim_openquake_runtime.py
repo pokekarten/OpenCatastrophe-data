@@ -122,6 +122,20 @@ def _verify_exact_openquake_checkout(source_file: str | Path) -> Path:
     return root
 
 
+def _require_compatible_openquake_version(value: object) -> None:
+    """Require the frozen release or its exact commit-bound Git presentation."""
+
+    try:
+        runtime_fingerprint._normalize_engine_version(
+            value,
+            engine_commit=OPENQUAKE_COMMIT,
+        )
+    except runtime_fingerprint.ReferenceRuntimeError as exc:
+        raise Eshm20GsimRuntimeCompatibilityError(
+            "OpenQuake runtime version does not match the frozen v3.14.0 source"
+        ) from exc
+
+
 def _load_verified_openquake_runtime() -> _RuntimeAdapter:
     try:
         import toml
@@ -133,10 +147,7 @@ def _load_verified_openquake_runtime() -> _RuntimeAdapter:
             "OpenQuake runtime is unavailable"
         ) from exc
 
-    if getattr(baselib, "__version__", None) != OPENQUAKE_VERSION:
-        raise Eshm20GsimRuntimeCompatibilityError(
-            "OpenQuake runtime version is not 3.14.0"
-        )
+    _require_compatible_openquake_version(getattr(baselib, "__version__", None))
 
     source_file = inspect.getsourcefile(valid.gsim)
     if source_file is None:
