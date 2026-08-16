@@ -45,6 +45,14 @@ class ExactKosovoMappingJoinTests(unittest.TestCase):
             ],
         )
 
+    def test_openquake_weight_precision_is_applied(self):
+        [within] = _join(["A"], ["A,R1,0.5", "A,R2,0.50000005"])
+        self.assertEqual(within["status"], "resolved")
+
+        [outside] = _join(["A"], ["A,R1,0.5", "A,R2,0.5000002"])
+        self.assertEqual(outside["status"], "ambiguous")
+        self.assertEqual(outside["reason_code"], "weights_outside_openquake_precision")
+
     def test_zero_exact_rows_is_unsupported_without_case_or_whitespace_fallback(self):
         records = _join(["Exact"], ["exact,RISK_LOWER,1", " Exact,RISK_SPACE,1"])
         self.assertEqual(
@@ -65,10 +73,10 @@ class ExactKosovoMappingJoinTests(unittest.TestCase):
         self.assertEqual(record["reason_code"], "duplicate_risk_id_semantics")
         self.assertEqual(record["targets"], [])
 
-    def test_weights_must_sum_exactly_to_one(self):
+    def test_weights_outside_openquake_precision_are_ambiguous(self):
         [record] = _join(["A"], ["A,R1,0.4", "A,R2,0.5"])
         self.assertEqual(record["status"], "ambiguous")
-        self.assertEqual(record["reason_code"], "weights_do_not_sum_to_one")
+        self.assertEqual(record["reason_code"], "weights_outside_openquake_precision")
 
     def test_nonfinite_nonpositive_or_whitespace_weight_is_ambiguous(self):
         for value in ("NaN", "Infinity", "0", "-0.1", " 1"):
@@ -130,6 +138,10 @@ class ExactKosovoMappingJoinTests(unittest.TestCase):
 
         self.assertEqual(result["classification_counts"], {"resolved": 2, "unsupported": 0, "ambiguous": 0})
         self.assertEqual(len(result["records"]), 2)
+        self.assertEqual(
+            result["mapping_weight_rule"],
+            "positive_finite_decimal_sum_within_openquake_1e-7",
+        )
         self.assertFalse(result["normalization_applied"])
         self.assertFalse(result["wildcard_or_fallback_matching_applied"])
         self.assertFalse(result["vulnerability_file_selection_authorized"])
