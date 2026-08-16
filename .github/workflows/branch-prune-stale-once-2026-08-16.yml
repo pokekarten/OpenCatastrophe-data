@@ -1,4 +1,4 @@
-name: One-time stale branch audit
+name: One-time stale branch prune
 
 on:
   push:
@@ -13,25 +13,27 @@ permissions:
   issues: write
 
 jobs:
-  audit:
+  prune:
     runs-on: ubuntu-latest
     steps:
-      - name: Inventory branch ages
+      - name: Delete inactive no-PR branches
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           AUDIT_ISSUE: "438"
-          STALE_HOURS: "0"
-          DRY_RUN: "true"
+          STALE_HOURS: "12"
         shell: bash
         run: |
           set -euo pipefail
           owner="${REPO%%/*}"
           now_epoch="$(date -u +%s)"
           : > /tmp/candidates.tsv
+          : > /tmp/deleted.tsv
           : > /tmp/preserved.tsv
+
           gh api --paginate "/repos/$REPO/branches?per_page=100" --jq '.[] | [.name, .commit.sha, .protected] | @tsv' > /tmp/branches.tsv
+
           while IFS=$'\t' read -r branch sha protected; do
             if [[ "$branch" == "$DEFAULT_BRANCH" || "$protected" == "true" ]]; then
               printf '%s\t%s\n' "$branch" "default-or-protected" >> /tmp/preserved.tsv
@@ -49,20 +51,41 @@ jobs:
               printf '%s\t%s\n' "$branch" "recent-${age_hours}h" >> /tmp/preserved.tsv
               continue
             fi
+            printf '%s\t%s\t%s\t%sh\n' "$branch" "$sha" "$committed_at" "$age_hours" >> /tmp/candidates.tsv
+          done < /tmp/branches.tsv
+
+          candidate_count="$(wc -l < /tmp/candidates.tsv | tr -d ' ')"
+          if [[ -s /tmp/candidates.tsv ]]; then
+            body="$(printf 'Deletion manifest before mutation (policy: no open PR, unprotected, >=12h inactive):\n\n```text\n'; cat /tmp/candidates.tsv; printf '\n```\n')"
+            gh issue comment "$AUDIT_ISSUE" --repo "$REPO" --body "$body"
+          fi
+
+          while IFS=$'\t' read -r branch expected_sha committed_at age; do
+            [[ -z "$branch" ]] && continue
             branch_enc="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$branch")"
             current_sha="$(gh api "/repos/$REPO/branches/$branch_enc" --jq '.commit.sha' 2>/dev/null || true)"
             current_open_count="$(gh api -X GET "/repos/$REPO/pulls" -f state=open -f "head=$owner:$branch" -f per_page=100 --jq 'length')"
-            if [[ -z "$current_sha" || "$current_sha" != "$sha" || "$current_open_count" != "0" ]]; then
-              printf '%s\t%s\n' "$branch" "race-or-drift" >> /tmp/preserved.tsv
+            if [[ -z "$current_sha" || "$current_sha" != "$expected_sha" || "$current_open_count" != "0" ]]; then
+              printf '%s\t%s\n' "$branch" "race-or-drift-preserved" >> /tmp/preserved.tsv
               continue
             fi
-            printf '%s\t%s\t%s\t%sh\n' "$branch" "$sha" "$committed_at" "$age_hours" >> /tmp/candidates.tsv
-          done < /tmp/branches.tsv
-          count="$(wc -l < /tmp/candidates.tsv | tr -d ' ')"
-          echo "INACTIVE_NO_PR_BRANCHES=$count"
-          cat /tmp/candidates.tsv
-          { echo "# Inactive/no-PR branch age inventory"; echo; echo "Candidates: $count"; echo; cat /tmp/candidates.tsv; } >> "$GITHUB_STEP_SUMMARY"
-          if [[ -s /tmp/candidates.tsv ]]; then
-            body="$(printf 'Inactive branches with no open PR, including head SHA and age:\n\n```text\n'; cat /tmp/candidates.tsv; printf '\n```\n')"
-            gh issue comment "$AUDIT_ISSUE" --repo "$REPO" --body "$body"
-          fi
+            gh api --silent -X DELETE "/repos/$REPO/git/refs/heads/$branch"
+            printf '%s\t%s\n' "$branch" "$expected_sha" >> /tmp/deleted.tsv
+          done < /tmp/candidates.tsv
+
+          deleted_count="$(wc -l < /tmp/deleted.tsv | tr -d ' ')"
+          echo "CANDIDATES=$candidate_count"
+          echo "DELETED=$deleted_count"
+          cat /tmp/deleted.tsv
+
+          body="$(printf 'Cleanup result: %s candidate(s), %s deleted.\n\nDeleted branch heads:\n\n```text\n' "$candidate_count" "$deleted_count"; cat /tmp/deleted.tsv; printf '\n```\n')"
+          gh issue comment "$AUDIT_ISSUE" --repo "$REPO" --body "$body"
+
+          {
+            echo "# One-time stale branch prune"
+            echo
+            echo "Candidates: $candidate_count"
+            echo "Deleted: $deleted_count"
+            echo
+            cat /tmp/deleted.tsv
+          } >> "$GITHUB_STEP_SUMMARY"
