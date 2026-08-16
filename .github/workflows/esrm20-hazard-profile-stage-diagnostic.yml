@@ -1,0 +1,154 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Hazard Profile Stage Diagnostic
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-hazard-profile-stage-diagnostic-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main hazard diagnostic request
+    if: >-
+      github.event.issue.number == 481 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-hazard-profile-stage-diagnostic-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_HAZARD_DIAG_REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.run_esrm20_hazard_profile_stage_diagnostic \
+            --comment-body-env OC_HAZARD_DIAG_REQUEST_BODY \
+            --expected-issue 481 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-diagnostic:
+    name: Execute bounded hazard parser-stage diagnostic
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Run stage diagnostic
+        env:
+          OC_HAZARD_DIAG_REQUEST_BODY: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/hazard-stage-diagnostic.json
+        run: |
+          set -euo pipefail
+          python -m scripts.run_esrm20_hazard_profile_stage_diagnostic \
+            --comment-body-env OC_HAZARD_DIAG_REQUEST_BODY \
+            --expected-issue 481 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          if result.get("target_sha") != os.environ["EXECUTION_SHA"] or result.get("execution_sha") != os.environ["EXECUTION_SHA"]:
+              raise SystemExit("diagnostic left exact execution SHA")
+          if result.get("status") == "pass":
+              diag = result.get("diagnostic")
+              if not isinstance(diag, dict):
+                  raise SystemExit("diagnostic PASS lacks bounded result")
+              if type(diag.get("source_parser_pass")) is not bool or type(diag.get("gsim_parser_pass")) is not bool:
+                  raise SystemExit("diagnostic parser flags are invalid")
+              if diag.get("provider_content_returned") is not False or diag.get("parser_error_text_returned") is not False:
+                  raise SystemExit("diagnostic widened content")
+              if result.get("failure_class") not in {"source_parser_failure", "gsim_parser_failure", "both_parser_failure", "unexpected_composition_failure"}:
+                  raise SystemExit("diagnostic failure class drifted")
+          elif result.get("status") == "blocked":
+              if result.get("failure_class") not in {"acquisition_failure", "decode_failure"} or result.get("diagnostic") is not None:
+                  raise SystemExit("blocked diagnostic is not atomic")
+          else:
+              raise SystemExit("diagnostic has non-terminal status")
+          for field in ("provider_content_returned", "parser_error_text_returned", "external_bytes_persisted", "publication_authorized", "model_use_authorized"):
+              if result.get(field) is not False:
+                  raise SystemExit(f"diagnostic widened {field}")
+          PY
+      - name: Export bounded diagnostic
+        id: result
+        env:
+          RESULT_PATH: ${{ runner.temp }}/hazard-stage-diagnostic.json
+        run: |
+          RESULT_JSON="$(python - <<'PY'
+          import json, os
+          from pathlib import Path
+          result=json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-diagnostic:
+    name: Publish content-free parser-stage diagnostic
+    needs: [validate-request, execute-diagnostic]
+    if: needs.execute-diagnostic.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence and publish without checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-diagnostic.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-hazard-profile-stage-diagnostic-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-hazard-profile-stage-diagnostic-result-v1" and
+            .action == "esrm20_hazard_profile_stage_diagnostic" and
+            .source_issue == 481 and .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+            .target_sha == $sha and .execution_sha == $sha and
+            .gsim_byte_count == 34018 and .gsim_sha256 == "f3efd16db967efd23f6b25837565344a6056282965ed0ecdfdbcb614513471b1" and
+            .source_byte_count == 1964 and .source_sha256 == "caebf9140922da7f7492d8b0e55c213c70a84d5b725ae37eae31d50e1da4ac3" and
+            .provider_content_returned == false and .parser_error_text_returned == false and
+            .external_bytes_persisted == false and .publication_authorized == false and .model_use_authorized == false
+          ' >/dev/null
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/hazard-stage-diagnostic-comment.json"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/481/comments" --input "$RUNNER_TEMP/hazard-stage-diagnostic-comment.json"
