@@ -131,6 +131,7 @@ jobs:
           RUN apt-get update \
               && apt-get install -y --no-install-recommends git \
               && rm -rf /var/lib/apt/lists/*
+          COPY --chown=root:root oq-engine /oq-engine
           USER openquake
           EOF
 
@@ -162,7 +163,6 @@ jobs:
             -e GIT_CONFIG_VALUE_0=/oq-engine \
             -e OC_RUNTIME_REQUEST_BODY \
             -v "$GITHUB_WORKSPACE:/workspace:ro" \
-            -v "$RUNNER_TEMP/oq-engine:/oq-engine:ro" \
             -v "$OUTPUT_DIR:/output" \
             -w /workspace \
             "$IMAGE_ID" \
