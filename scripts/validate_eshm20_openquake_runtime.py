@@ -92,6 +92,9 @@ _OBSERVATION_FIELDS = {
 _PYTHON_VERSION_RE = re.compile(r"^3\.8(?:\.\d+)?$")
 _SHA256_DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 _CANONICAL_PACKAGE_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+_ENGINE_GIT_VERSION_RE = re.compile(
+    rf"^{re.escape(ENGINE_VERSION)}-git([0-9a-f]{{7,40}})$"
+)
 
 
 class ReferenceRuntimeError(ValueError):
@@ -101,6 +104,24 @@ class ReferenceRuntimeError(ValueError):
 def _exact(value: object, expected: object, field: str) -> None:
     if type(value) is not type(expected) or value != expected:
         raise ReferenceRuntimeError(f"{field} does not match the OpenQuake 3.14 reference recipe")
+
+
+def _normalize_engine_version(value: object, *, engine_commit: str) -> str:
+    """Normalize only the exact release or its commit-bound Git checkout form."""
+
+    if type(value) is not str:
+        raise ReferenceRuntimeError(
+            "engine_version does not match the OpenQuake 3.14 reference recipe"
+        )
+    if value == ENGINE_VERSION:
+        return ENGINE_VERSION
+
+    match = _ENGINE_GIT_VERSION_RE.fullmatch(value)
+    if match is None or not engine_commit.startswith(match.group(1)):
+        raise ReferenceRuntimeError(
+            "engine_version does not match the OpenQuake 3.14 reference recipe"
+        )
+    return ENGINE_VERSION
 
 
 def _normalize_package_name(name: str) -> str:
@@ -180,7 +201,9 @@ def validate_runtime_observation(observation: Any) -> dict[str, object]:
         raise ReferenceRuntimeError("runtime observation has missing or extra fields")
 
     _exact(observation["engine_commit"], ENGINE_COMMIT, "engine_commit")
-    _exact(observation["engine_version"], ENGINE_VERSION, "engine_version")
+    engine_version = _normalize_engine_version(
+        observation["engine_version"], engine_commit=ENGINE_COMMIT
+    )
 
     python_version = observation["python_version"]
     if type(python_version) is not str or not _PYTHON_VERSION_RE.fullmatch(python_version):
@@ -206,7 +229,7 @@ def validate_runtime_observation(observation: Any) -> dict[str, object]:
         "reference": reference_runtime_contract(),
         "observation": {
             "engine_commit": ENGINE_COMMIT,
-            "engine_version": ENGINE_VERSION,
+            "engine_version": engine_version,
             "python_version": python_version,
             "platform_system": EXPECTED_PLATFORM_SYSTEM,
             "platform_machine": EXPECTED_PLATFORM_MACHINE,
