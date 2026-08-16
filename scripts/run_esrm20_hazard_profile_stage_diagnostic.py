@@ -21,6 +21,7 @@ from typing import Any
 
 from scripts import profile_eshm20_gsim_identities as gsim_identity
 from scripts import run_esrm20_hazard_logic_tree_profile_action as subject
+from scripts import run_esrm20_hazard_logic_tree_profile_action_receipt_fix as canonical_receipts
 from scripts.acquire_efehr_gitlab_receipt import EfehrAcquisitionError, _open_fixed
 from scripts.openquake_source_model_logic_tree_dependencies import (
     OpenQuakeLogicTreeError,
@@ -34,6 +35,10 @@ RESULT_SCHEMA_VERSION = "oc-esrm20-hazard-profile-stage-diagnostic-result-v1"
 ACTION = "esrm20_hazard_profile_stage_diagnostic"
 CONTROL_ISSUE = 481
 DATASET_ID = subject.DATASET_ID
+GSIM_BYTE_COUNT = canonical_receipts.GSIM_BYTE_COUNT
+GSIM_SHA256 = canonical_receipts.GSIM_SHA256
+SOURCE_BYTE_COUNT = canonical_receipts.SOURCE_BYTE_COUNT
+SOURCE_SHA256 = canonical_receipts.SOURCE_SHA256
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _SAFE_REQUESTER_RE = re.compile(r"^[A-Za-z0-9_.:@/+ -]{1,96}$")
 _REQUEST_FIELDS = {"schema_version", "action", "issue", "target_sha", "dataset_id", "requester"}
@@ -133,10 +138,10 @@ def run_diagnostic(*, execution_sha: str) -> dict[str, Any]:
         "dataset_id": DATASET_ID,
         "target_sha": execution_sha,
         "execution_sha": execution_sha,
-        "gsim_byte_count": subject.GSIM_BYTE_COUNT,
-        "gsim_sha256": subject.GSIM_SHA256,
-        "source_byte_count": subject.SOURCE_BYTE_COUNT,
-        "source_sha256": subject.SOURCE_SHA256,
+        "gsim_byte_count": GSIM_BYTE_COUNT,
+        "gsim_sha256": GSIM_SHA256,
+        "source_byte_count": SOURCE_BYTE_COUNT,
+        "source_sha256": SOURCE_SHA256,
         "provider_content_returned": False,
         "parser_error_text_returned": False,
         "external_bytes_persisted": False,
@@ -148,15 +153,15 @@ def run_diagnostic(*, execution_sha: str) -> dict[str, Any]:
     try:
         gsim_raw = subject._acquire_exact_bytes(
             repository_path=subject.GSIM_PATH,
-            expected_byte_count=subject.GSIM_BYTE_COUNT,
-            expected_sha256=subject.GSIM_SHA256,
+            expected_byte_count=GSIM_BYTE_COUNT,
+            expected_sha256=GSIM_SHA256,
             opener=_CANONICAL_OPEN_FIXED,
             monotonic=_CANONICAL_MONOTONIC,
         )
         source_raw = subject._acquire_exact_bytes(
             repository_path=subject.SOURCE_PATH,
-            expected_byte_count=subject.SOURCE_BYTE_COUNT,
-            expected_sha256=subject.SOURCE_SHA256,
+            expected_byte_count=SOURCE_BYTE_COUNT,
+            expected_sha256=SOURCE_SHA256,
             opener=_CANONICAL_OPEN_FIXED,
             monotonic=_CANONICAL_MONOTONIC,
         )

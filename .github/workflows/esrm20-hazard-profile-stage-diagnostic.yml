@@ -143,8 +143,8 @@ jobs:
             .action == "esrm20_hazard_profile_stage_diagnostic" and
             .source_issue == 481 and .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
             .target_sha == $sha and .execution_sha == $sha and
-            .gsim_byte_count == 34018 and .gsim_sha256 == "f3efd16db967efd23f6b25837565344a6056282965ed0ecdfdbcb614513471b1" and
-            .source_byte_count == 1964 and .source_sha256 == "caebf9140922da7f7492d8b0e55c213c70a84d5b725ae37eae31d50e1da4ac3" and
+            .gsim_byte_count == 34018 and .gsim_sha256 == "f3efd16d56189c7804824d94b20ed75d6ceefc879144d8bd697c1f9b47cf17b4" and
+            .source_byte_count == 1964 and .source_sha256 == "caebf9142da6b4d6d1e970c3c008627d34943da83c977fb1da4d15d1e34d8a12" and
             .provider_content_returned == false and .parser_error_text_returned == false and
             .external_bytes_persisted == false and .publication_authorized == false and .model_use_authorized == false
           ' >/dev/null
