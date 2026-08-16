@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import copy
 import io
+import json
 import unittest
+from pathlib import Path
 from contextlib import redirect_stderr
 from unittest import mock
 
@@ -169,6 +171,22 @@ class SourceModelChildReceiptActionTests(unittest.TestCase):
                 mutated["receipts"][index][field] = value
                 with self.assertRaises(result_validator.ResultError):
                     result_validator.validate_efehr_eshm20_source_model_child_receipts(mutated)
+
+    def test_portable_schema_binds_exact_51_child_contract(self) -> None:
+        schema = json.loads(
+            Path("schemas/agent-action-result-v1.schema.json").read_text(encoding="utf-8")
+        )
+        self.assertIn(ACTION, schema["properties"]["action"]["enum"])
+        receipt_set_schema = schema["$defs"]["efehrEshm20SourceModelChildReceiptSet"]
+        receipts_schema = receipt_set_schema["properties"]["receipts"]
+        self.assertEqual(receipts_schema["minItems"], worker.EXPECTED_CHILD_COUNT)
+        self.assertEqual(receipts_schema["maxItems"], worker.EXPECTED_CHILD_COUNT)
+        self.assertTrue(receipts_schema["uniqueItems"])
+        child_schema = schema["$defs"]["efehrEshm20SourceModelChildReceipt"]
+        self.assertEqual(
+            child_schema["properties"]["repository_path"]["enum"],
+            [spec.repository_path for spec in worker._CANONICAL_CHILDREN],
+        )
 
     def test_dispatch_dedup_and_failure_are_fail_closed(self) -> None:
         calls: list[str] = []

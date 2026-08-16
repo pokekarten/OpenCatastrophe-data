@@ -188,7 +188,7 @@ def validate_efehr_eshm20_source_model_child_receipts(receipt: Any) -> dict[str,
     if type(receipts) is not list or len(receipts) != _children.EXPECTED_CHILD_COUNT:
         raise ResultError(f"{prefix}.receipts must contain exactly {_children.EXPECTED_CHILD_COUNT} items")
 
-    expected_paths = tuple(spec.repository_path for spec in _children.CHILDREN)
+    expected_paths = tuple(spec.repository_path for spec in _children._CANONICAL_CHILDREN)
     observed_paths: list[str] = []
     last_retrieved = None
     for index, item in enumerate(receipts):

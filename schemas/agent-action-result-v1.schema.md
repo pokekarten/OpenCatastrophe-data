@@ -18,7 +18,7 @@ Change the canonical JSON Schema and run `python scripts/schema_reference.py --w
 
 Portable closed result receipt for the owner-authorized trusted-main Agent Action Dispatch control plane. scripts/validate_agent_action_result.py is authoritative for exact Python scalar types, UTC ordering, acquisition-receipt identity and cross-field checks.
 
-**Executable authority note:** request_validation records strict validation/dedup state. acquisition_receipt phase is shared by closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, efehr_kosovo_exposure_receipt for Issue 328, efehr_eshm20_root_config_receipt for Issue 335, the two ESRM20 event-hazard Group1/Group2 receipt actions for Issue 346, efehr_kosovo_exposure_profile for Issue 351, and efehr_eshm20_gsim_resource_profile for Issue 376. All require external_bytes_persisted=false. EFEHR/ESRM20 receipts prove only their bounded transport, repository-metadata, or exact selected-file byte identity; they do not establish scientific fitness, dependency closure, model-use eligibility, completeness outside the selected scope or publication authorization. efehr_eshm20_root_dependency_profile for Issue 353 persists only verified first-order dependency metadata; dependency inventory, transitive closure, model use and publication remain unauthorized. efehr_eshm20_first_order_receipts for Issue 361 persists only exact byte receipts for the three \#353-selected first-order candidates; dependency inventory, semantics, closure, model use and publication remain unauthorized. efehr_eshm20_gsim_resource_profile persists only bounded structural _file/_table resource-reference metadata from the exact \#361-receipted GMM logic-tree bytes; dependency receipts, dependency closure, GSIM runtime validity, model use and publication remain unauthorized. efehr_kosovo_taxonomy_identity for Issue 363 persists only the exact pre-publication identity of the 86-value Kosovo residential TAXONOMY set; literal taxonomy values, provider bytes, normalization, mapping interpretation, vulnerability selection, publication and model use remain unauthorized. esrm20_exposure_vulnerability_mapping_receipt for Issue 340 persists only the exact selected mapping-file byte receipt; mapping-row interpretation, taxonomy-to-vulnerability resolution, vulnerability selection, provider-byte publication and model use remain unauthorized.
+**Executable authority note:** request_validation records strict validation/dedup state. acquisition_receipt phase is shared by closed network actions: measurement acquisition_receipt for Issue 162, dwd_metadata_receipt for Issue 211, efehr_readme_receipt for Issue 298, efehr_eshm20_tree_metadata for Issue 332, efehr_kosovo_exposure_receipt for Issue 328, efehr_eshm20_root_config_receipt for Issue 335, the two ESRM20 event-hazard Group1/Group2 receipt actions for Issue 346, efehr_kosovo_exposure_profile for Issue 351, and efehr_eshm20_gsim_resource_profile for Issue 376. All require external_bytes_persisted=false. EFEHR/ESRM20 receipts prove only their bounded transport, repository-metadata, or exact selected-file byte identity; they do not establish scientific fitness, dependency closure, model-use eligibility, completeness outside the selected scope or publication authorization. efehr_eshm20_root_dependency_profile for Issue 353 persists only verified first-order dependency metadata; dependency inventory, transitive closure, model use and publication remain unauthorized. efehr_eshm20_first_order_receipts for Issue 361 persists only exact byte receipts for the three \#353-selected first-order candidates; dependency inventory, semantics, closure, model use and publication remain unauthorized. efehr_eshm20_gsim_resource_profile persists only bounded structural _file/_table resource-reference metadata from the exact \#361-receipted GMM logic-tree bytes; dependency receipts, dependency closure, GSIM runtime validity, model use and publication remain unauthorized. efehr_kosovo_taxonomy_identity for Issue 363 persists only the exact pre-publication identity of the 86-value Kosovo residential TAXONOMY set; literal taxonomy values, provider bytes, normalization, mapping interpretation, vulnerability selection, publication and model use remain unauthorized. esrm20_exposure_vulnerability_mapping_receipt for Issue 340 persists only the exact selected mapping-file byte receipt; mapping-row interpretation, taxonomy-to-vulnerability resolution, vulnerability selection, provider-byte publication and model use remain unauthorized. efehr_eshm20_source_model_child_receipts for Issue 414 persists only metadata receipts for the exact 51 canonical non-HDF5 source-model children proven by \#397; dependency inventory/expansion, transitive closure, provider-byte persistence, publication and model use remain unauthorized.
 
 ## Contract structure
 
@@ -32,7 +32,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 #### `action` — **required**
 
-**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity","esrm20_exposure_vulnerability_mapping_receipt","efehr_eshm20_source_model_dependencies"]`
+**Constraints:** `enum`=`["sample_audit","acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity","esrm20_exposure_vulnerability_mapping_receipt","efehr_eshm20_source_model_dependencies","efehr_eshm20_source_model_child_receipts"]`
 
 #### `dataset_id` — **required**
 
@@ -533,6 +533,38 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### Branch 2
 
 **Constraints:** `$ref`=`#/$defs/efehrEshm20SourceModelDependencies`
+
+###### `ledger_scan_complete` — **required**
+
+**Constraints:** `const`=`true`
+
+###### `prior_result_reused` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `request_validated` — **required**
+
+**Constraints:** `const`=`true`
+
+###### Branch 17
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `request_validated`, `ledger_scan_complete`, `prior_result_reused`, `efehr_eshm20_source_model_child_receipts`
+
+###### Properties
+
+###### `efehr_eshm20_source_model_child_receipts` — **required**
+
+###### anyOf
+
+###### Branch 1
+
+**Constraints:** type=`null`
+
+###### Branch 2
+
+**Constraints:** `$ref`=`#/$defs/efehrEshm20SourceModelChildReceiptSet`
 
 ###### `ledger_scan_complete` — **required**
 
@@ -1327,6 +1359,198 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### `sha256` — **required**
 
 **Constraints:** `const`=`f1f4dabc48e1b8a478dbdb96b01c8f58cc68c98abd6f9004671c5fba9eb7e714`
+
+###### `source_issue` — **required**
+
+**Constraints:** `const`=`281`
+
+#### `efehrEshm20SourceModelChildReceipt`
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `schema_version`, `source_issue`, `dataset_id`, `provider_host`, `project_id`, `project_path`, `commit_sha`, `repository_path`, `requested_url`, `final_url`, `retrieved_at`, `byte_count`, `sha256`, `content_type`, `etag`, `external_bytes_persisted`, `publication_authorized`, `parent_result_comment_id`
+
+##### Properties
+
+###### `byte_count` — **required**
+
+**Constraints:** type=`integer`; `minimum`=`1`; `maximum`=`67108864`
+
+###### `commit_sha` — **required**
+
+**Constraints:** `const`=`fbd334de68f85d72669f73fc5a314a113db67317`
+
+###### `content_type` — **required**
+
+**Constraints:** type=`string | null`; `maxLength`=`512`
+
+###### `dataset_id` — **required**
+
+**Constraints:** `const`=`efehr.eshm20`
+
+###### `etag` — **required**
+
+**Constraints:** type=`string | null`; `maxLength`=`512`
+
+###### `external_bytes_persisted` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `final_url` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^https://gitlab\.seismo\.ethz\.ch/api/v4/projects/197/repository/files/.+/raw\?ref=fbd334de68f85d72669f73fc5a314a113db67317$`; `minLength`=`1`; `maxLength`=`2048`
+
+###### `parent_result_comment_id` — **required**
+
+**Constraints:** `const`=`5304432768`
+
+###### `project_id` — **required**
+
+**Constraints:** `const`=`197`
+
+###### `project_path` — **required**
+
+**Constraints:** `const`=`efehr/eshm20`
+
+###### `provider_host` — **required**
+
+**Constraints:** `const`=`gitlab.seismo.ethz.ch`
+
+###### `publication_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `repository_path` — **required**
+
+**Constraints:** `enum`=`["oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_hi_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_hi_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_hi_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_lo_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_lo_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_lo_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_mid_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_mid_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_mid_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_pareto_abgrs_cornermag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_pareto_abgrs_cornermag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_pareto_abgrs_cornermag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/asm_v12e/asm_ver12e_winGT_fs017_twingr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_hi_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_hi_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_hi_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_lo_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_lo_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_lo_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_mid_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_mid_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_mid_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_pareto_abgrs_cornermag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_pareto_abgrs_cornermag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_pareto_abgrs_cornermag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRA_MA_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRA_ML_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRA_MU_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRL_MA_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRL_ML_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRL_MU_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRU_MA_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRU_ML_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/fsm_v09/fs_ver09e_model_aGR_SRU_MU_fMthr.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/interface_v12b/CaA_IF2222222_M40.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/interface_v12b/CyA_IF2222222_M40.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/interface_v12b/GiA_IF2222222_M40.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/interface_v12b/HeA_IF2222222_M40.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/ssm_v09/seis_ver12b_fMthr_asm_ver12e_winGT_fs017_agbrs_point.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_hi_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_hi_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_hi_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_lo_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_lo_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_lo_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_mid_abgrs_maxmag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_mid_abgrs_maxmag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_mid_abgrs_maxmag_upp.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_pareto_abgrs_cornermag_low.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_pareto_abgrs_cornermag_mid.xml","oq_computational/oq_configuration_eshm20_v12e_region_main/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_pareto_abgrs_cornermag_upp.xml"]`
+
+###### `requested_url` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^https://gitlab\.seismo\.ethz\.ch/api/v4/projects/197/repository/files/.+/raw\?ref=fbd334de68f85d72669f73fc5a314a113db67317$`; `minLength`=`1`; `maxLength`=`2048`
+
+###### `retrieved_at` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`
+
+###### `schema_version` — **required**
+
+**Constraints:** `const`=`oc-efehr-gitlab-artifact-receipt-v1`
+
+###### `sha256` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^[a-f0-9]{64}$`
+
+###### `source_issue` — **required**
+
+**Constraints:** `const`=`281`
+
+#### `efehrEshm20SourceModelChildReceiptSet`
+
+**Constraints:** type=`object`; `additionalProperties`=`false`
+
+**Required here:** `schema_version`, `operation_id`, `control_issue`, `source_issue`, `dataset_id`, `provider_host`, `project_id`, `project_path`, `commit_sha`, `parent_request_comment_id`, `parent_result_comment_id`, `parent_run_id`, `parent_execution_sha`, `parent_semantic_request_id`, `parent_source_tree_byte_count`, `parent_source_tree_sha256`, `child_count`, `child_paths_sha256`, `retrieved_at`, `receipts`, `dependency_inventory_authorized`, `dependency_receipt_authorized`, `external_bytes_persisted`, `publication_authorized`, `model_use_authorized`
+
+##### Properties
+
+###### `child_count` — **required**
+
+**Constraints:** `const`=`51`
+
+###### `child_paths_sha256` — **required**
+
+**Constraints:** `const`=`2fcc885dc9fbbd8e9ee45b185dc9f2339af3654e9976ae5f07d4d097551944b7`
+
+###### `commit_sha` — **required**
+
+**Constraints:** `const`=`fbd334de68f85d72669f73fc5a314a113db67317`
+
+###### `control_issue` — **required**
+
+**Constraints:** `const`=`414`
+
+###### `dataset_id` — **required**
+
+**Constraints:** `const`=`efehr.eshm20`
+
+###### `dependency_inventory_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `dependency_receipt_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `external_bytes_persisted` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `model_use_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `operation_id` — **required**
+
+**Constraints:** `const`=`eshm20-source-model-child-receipts-v12e-region-main-v1`
+
+###### `parent_execution_sha` — **required**
+
+**Constraints:** `const`=`dac7c9ae1c391006b8272f1342143d1ace678234`
+
+###### `parent_request_comment_id` — **required**
+
+**Constraints:** `const`=`5304431360`
+
+###### `parent_result_comment_id` — **required**
+
+**Constraints:** `const`=`5304432768`
+
+###### `parent_run_id` — **required**
+
+**Constraints:** `const`=`31910992436`
+
+###### `parent_semantic_request_id` — **required**
+
+**Constraints:** `const`=`e96030c55952bf9b4b2c6911368c52b9353bd161860923203d115f550824c27e`
+
+###### `parent_source_tree_byte_count` — **required**
+
+**Constraints:** `const`=`17579`
+
+###### `parent_source_tree_sha256` — **required**
+
+**Constraints:** `const`=`97a37911f9eae73766f386686b112e5a4e111965da3e4e1543627c28d4201867`
+
+###### `project_id` — **required**
+
+**Constraints:** `const`=`197`
+
+###### `project_path` — **required**
+
+**Constraints:** `const`=`efehr/eshm20`
+
+###### `provider_host` — **required**
+
+**Constraints:** `const`=`gitlab.seismo.ethz.ch`
+
+###### `publication_authorized` — **required**
+
+**Constraints:** `const`=`false`
+
+###### `receipts` — **required**
+
+**Constraints:** type=`array`; `minItems`=`51`; `maxItems`=`51`; `uniqueItems`=`true`
+
+###### Array items
+
+**Constraints:** `$ref`=`#/$defs/efehrEshm20SourceModelChildReceipt`
+
+###### `retrieved_at` — **required**
+
+**Constraints:** type=`string`; `pattern`=`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`
+
+###### `schema_version` — **required**
+
+**Constraints:** `const`=`oc-eshm20-source-model-child-receipt-set-v1`
 
 ###### `source_issue` — **required**
 
@@ -2596,7 +2820,7 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 
 ###### `action`
 
-**Constraints:** `enum`=`["acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity","esrm20_exposure_vulnerability_mapping_receipt","efehr_eshm20_source_model_dependencies"]`
+**Constraints:** `enum`=`["acquisition_receipt","dwd_metadata_receipt","efehr_readme_receipt","efehr_eshm20_tree_metadata","efehr_eshm20_root_config_receipt","efehr_kosovo_exposure_receipt","esrm20_event_hazard_group1_receipt","esrm20_event_hazard_group2_receipt","efehr_kosovo_exposure_profile","efehr_eshm20_root_dependency_profile","efehr_eshm20_first_order_receipts","efehr_eshm20_gsim_resource_profile","efehr_kosovo_taxonomy_identity","esrm20_exposure_vulnerability_mapping_receipt","efehr_eshm20_source_model_dependencies","efehr_eshm20_source_model_child_receipts"]`
 
 ###### `duplicate_result_comment_id`
 
@@ -4395,6 +4619,126 @@ Portable closed result receipt for the owner-authorized trusted-main Agent Actio
 ###### Properties
 
 ###### `efehr_eshm20_source_model_dependencies`
+
+**Constraints:** type=`null`
+
+###### `failure_class`
+
+**Constraints:** `const`=`acquisition_failed`
+
+#### Branch 51
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_eshm20_source_model_child_receipts`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `dataset_id`
+
+**Constraints:** `const`=`efehr.eshm20`
+
+###### `evidence`
+
+**Required here:** `efehr_eshm20_source_model_child_receipts`
+
+###### `source_issue`
+
+**Constraints:** `const`=`414`
+
+#### Branch 52
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`, `status`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_eshm20_source_model_child_receipts`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+###### `status` — **required**
+
+**Constraints:** `const`=`pass`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `evidence`
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `efehr_eshm20_source_model_child_receipts`
+
+**Constraints:** `$ref`=`#/$defs/efehrEshm20SourceModelChildReceiptSet`
+
+###### `failure_class`
+
+**Constraints:** type=`null`
+
+#### Branch 53
+
+##### if
+
+**Constraints:** type=`object (implicit)`
+
+**Required here:** `phase`, `action`, `status`
+
+###### Properties
+
+###### `action` — **required**
+
+**Constraints:** `const`=`efehr_eshm20_source_model_child_receipts`
+
+###### `phase` — **required**
+
+**Constraints:** `const`=`acquisition_receipt`
+
+###### `status` — **required**
+
+**Constraints:** `const`=`blocked`
+
+##### then
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `evidence`
+
+**Constraints:** type=`object (implicit)`
+
+###### Properties
+
+###### `efehr_eshm20_source_model_child_receipts`
 
 **Constraints:** type=`null`
 
