@@ -4,16 +4,17 @@
 """Fail-closed ESHM20 GSIM request compatibility gate for OpenQuake 3.14.
 
 The earlier identity profiler deliberately preserves unresolved GSIM request
-terms. This module is the next, narrower runtime gate: after the exact GMM
-payload and reconstructed OpenQuake runtime fingerprint have both been
-validated, it resolves aliases through the exact OpenQuake v3.14.0 code path
-and requires every request to instantiate successfully.
+terms. This module is the next, narrower source/runtime gate: after the exact
+GMM payload and reconstructed OpenQuake reference-runtime observation have both
+been validated, it resolves aliases through the exact OpenQuake v3.14.0 source
+path and requires every bounded resource-free request to instantiate.
 
-A PASS proves only alias/registry/constructor compatibility of the exact GMM
-requests with a clean source checkout at the frozen OpenQuake commit plus the
-already-defined reference-runtime recipe. It does not prove hazard numerical
-agreement, IMT/site/vulnerability compatibility, scientific validity, or a
-reference run.
+A PASS proves exact-source alias/registry/constructor compatibility for the
+frozen OpenQuake commit. It deliberately does not claim that the Python process
+performing the constructor probes is the complete Python-3.8 reference runtime
+recipe represented by the separately validated observation. It also does not
+prove hazard numerical agreement, IMT/site/vulnerability compatibility,
+scientific validity, or a reference run.
 """
 
 from __future__ import annotations
@@ -40,7 +41,7 @@ _EXTERNAL_RESOURCE_SUFFIXES = ("_file", "_table")
 
 
 class Eshm20GsimRuntimeCompatibilityError(ValueError):
-    """Raised when exact GSIM runtime compatibility cannot be proven safely."""
+    """Raised when exact GSIM source compatibility cannot be proven safely."""
 
 
 class _RuntimeAdapter:
@@ -50,12 +51,14 @@ class _RuntimeAdapter:
         self,
         *,
         instantiate: Any,
+        argument_keys_after_alias: Any,
         aliases: set[str] | frozenset[str],
         registry: dict[str, type],
         engine_source_checkout_verified: bool,
         engine_checkout_commit: str,
     ) -> None:
         self.instantiate = instantiate
+        self.argument_keys_after_alias = argument_keys_after_alias
         self.aliases = frozenset(aliases)
         self.registry = registry
         self.engine_source_checkout_verified = engine_source_checkout_verified
@@ -121,6 +124,7 @@ def _verify_exact_openquake_checkout(source_file: str | Path) -> Path:
 
 def _load_verified_openquake_runtime() -> _RuntimeAdapter:
     try:
+        import toml
         from openquake import baselib
         from openquake.hazardlib import valid
         from openquake.hazardlib.gsim.base import gsim_aliases, registry
@@ -141,8 +145,47 @@ def _load_verified_openquake_runtime() -> _RuntimeAdapter:
         )
     _verify_exact_openquake_checkout(source_file)
 
+    def argument_keys_after_alias(model: object) -> list[str]:
+        """Return only top-level constructor keys after exact v3.14 to_toml.
+
+        OpenQuake v3.14 expands a bare alias inside ``valid.to_toml`` before
+        TOML parsing and before ``valid.gsim`` rewrites ``*_file``/``*_table``
+        values. Inspecting this exact post-alias key surface is therefore the
+        fail-closed place to reject hidden external-resource dependencies.
+        Values are never returned or serialized.
+        """
+
+        try:
+            expanded = valid.to_toml(model)
+            parsed = toml.loads(expanded)
+            if type(parsed) is not dict or len(parsed) != 1:
+                raise Eshm20GsimRuntimeCompatibilityError(
+                    "post-alias GSIM request is not one canonical TOML table"
+                )
+            [(_, raw_kwargs)] = parsed.items()
+            kwargs = valid._fix_toml(raw_kwargs)
+            if not hasattr(kwargs, "keys"):
+                raise Eshm20GsimRuntimeCompatibilityError(
+                    "post-alias GSIM constructor arguments are not an object"
+                )
+            keys: list[str] = []
+            for key in kwargs.keys():
+                if type(key) is not str or not key:
+                    raise Eshm20GsimRuntimeCompatibilityError(
+                        "post-alias GSIM constructor key is not canonical"
+                    )
+                keys.append(key)
+            return sorted(keys)
+        except Eshm20GsimRuntimeCompatibilityError:
+            raise
+        except Exception as exc:
+            raise Eshm20GsimRuntimeCompatibilityError(
+                "cannot preflight post-alias GSIM constructor keys"
+            ) from exc
+
     return _RuntimeAdapter(
         instantiate=lambda model: valid.gsim(model, basedir=""),
+        argument_keys_after_alias=argument_keys_after_alias,
         aliases=set(gsim_aliases),
         registry=registry,
         engine_source_checkout_verified=True,
@@ -204,7 +247,7 @@ def _evaluate_verified_payload(
         or fingerprint.get("reference_recipe_match") is not True
     ):
         raise Eshm20GsimRuntimeCompatibilityError(
-            "OpenQuake reference-runtime fingerprint is not verified"
+            "OpenQuake reference-runtime observation is not validated"
         )
     if runtime.engine_source_checkout_verified is not True:
         raise Eshm20GsimRuntimeCompatibilityError(
@@ -242,15 +285,38 @@ def _evaluate_verified_payload(
         requested_token = record["requested_gsim_token"]
         argument_keys = list(record["argument_keys"])
 
-        external_keys = sorted(
+        source_external_keys = sorted(
             key for key in argument_keys if key.endswith(_EXTERNAL_RESOURCE_SUFFIXES)
         )
-        if external_keys:
+        if source_external_keys:
             raise Eshm20GsimRuntimeCompatibilityError(
                 f"GSIM request {branch_set_id}/{branch_id} requires external resources"
             )
 
         model = models[(branch_set_id, branch_id)]
+        try:
+            runtime_argument_keys = list(runtime.argument_keys_after_alias(model))
+        except Eshm20GsimRuntimeCompatibilityError:
+            raise
+        except Exception as exc:
+            raise Eshm20GsimRuntimeCompatibilityError(
+                f"GSIM request {branch_set_id}/{branch_id} post-alias preflight failed"
+            ) from exc
+        if any(type(key) is not str or not key for key in runtime_argument_keys):
+            raise Eshm20GsimRuntimeCompatibilityError(
+                f"GSIM request {branch_set_id}/{branch_id} has a noncanonical post-alias key"
+            )
+        runtime_argument_keys = sorted(runtime_argument_keys)
+        runtime_external_keys = sorted(
+            key
+            for key in runtime_argument_keys
+            if key.endswith(_EXTERNAL_RESOURCE_SUFFIXES)
+        )
+        if runtime_external_keys:
+            raise Eshm20GsimRuntimeCompatibilityError(
+                f"GSIM request {branch_set_id}/{branch_id} requires external resources after alias expansion"
+            )
+
         try:
             instance = runtime.instantiate(model)
         except Exception:
@@ -301,6 +367,7 @@ def _evaluate_verified_payload(
                 "alias_expansion_applied": alias_expansion_applied,
                 "registry_alias_key_used": registry_alias_key_used,
                 "argument_keys": argument_keys,
+                "runtime_argument_keys_after_alias": runtime_argument_keys,
                 "constructor_accepted": True,
             }
         )
@@ -324,21 +391,23 @@ def _evaluate_verified_payload(
             "commit": OPENQUAKE_COMMIT,
             "version": OPENQUAKE_VERSION,
         },
-        # Bind the complete already-validated fingerprint evidence into this
-        # result. This is deliberately the validator's bounded public output,
-        # not the caller's raw input object, so a later receipt can reproduce
-        # exactly which Python/platform/package/container observation passed.
+        # The validated observation is useful contextual evidence, but it is not
+        # promoted into a claim about the Python process that executes the exact
+        # source constructor probes below.
         "reference_runtime_fingerprint": fingerprint,
         "branch_count": len(records),
         "branches": records,
         "unique_resolved_gsim_classes": sorted(resolved_classes),
         "alias_requested_tokens": sorted(alias_tokens),
         "engine_source_commit_verified": True,
-        "reference_runtime_recipe_verified": True,
+        "reference_runtime_observation_validated": True,
+        "executing_environment_bound_to_reference_recipe": False,
+        "reference_runtime_recipe_verified": False,
         "alias_resolution_verified": True,
         "registry_resolution_verified": True,
         "constructor_compatibility_verified": True,
-        "gsim_request_runtime_compatibility_verified": True,
+        "exact_source_constructor_compatibility_verified": True,
+        "gsim_request_runtime_compatibility_verified": False,
         "full_hazard_compatibility_verified": False,
         "site_model_compatibility_verified": False,
         "vulnerability_compatibility_verified": False,
@@ -354,11 +423,13 @@ def validate_verified_gsim_runtime(
     payload: bytes,
     runtime_observation: Any,
 ) -> dict[str, object]:
-    """Validate the exact GMM requests against the frozen OpenQuake runtime.
+    """Validate exact GMM requests against frozen OpenQuake 3.14 source.
 
     The public path never accepts caller-supplied registry or alias data. It
-    requires the existing reference-runtime fingerprint and imports OpenQuake
-    only from a clean git checkout at the exact v3.14.0 commit.
+    validates the existing reference-runtime observation as contextual evidence
+    and imports OpenQuake only from a clean git checkout at the exact v3.14.0
+    commit. The validated observation is deliberately not treated as proof that
+    this executing Python process matches the complete reference-runtime recipe.
     """
 
     try:
