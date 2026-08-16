@@ -35,6 +35,17 @@ MAX_TAXONOMY_UTF8_BYTES = 1024
 MAX_RISK_ID_UTF8_BYTES = 1024
 MAX_WEIGHT_CHARS = 128
 
+RIGHTS_PROVIDER = "European Facilities for Earthquake Hazard and Risk (EFEHR)"
+RIGHTS_LICENSE_ID = "CC-BY-4.0"
+RIGHTS_SOURCE_REVIEWS = (
+    "docs/source-reviews/efehr-esrm20-european-exposure-model-v1.0.md",
+    "docs/source-reviews/efehr-esrm20-risk-inputs-v1.0.md",
+)
+RIGHTS_TRANSFORMATION_NOTICE = (
+    "Derived exact-key Kosovo taxonomy to ESRM20 risk-id mapping join; "
+    "no taxonomy normalization and no provider rows or source bytes republished."
+)
+
 # Bind the production path to the exact object already receipted/profiled.
 _MAPPING_BYTE_COUNT = 83_585
 _MAPPING_SHA256 = "94b9ee800e9435a346ca200ecf34d0d46c8d8b895cc56e3be85c323006b4ee4c"
@@ -106,8 +117,7 @@ def _weight(value: str) -> float | None:
     except ValueError:
         return None
     # This consumer is deliberately stricter than the engine on zero: #410
-    # admits only positive finite mapping weights. Resolved therefore implies
-    # both the bounded project contract and the engine's numeric parser accept.
+    # admits only positive finite mapping weights.
     if not math.isfinite(parsed) or parsed <= 0:
         return None
     return parsed
@@ -296,12 +306,20 @@ def join_verified_kosovo_taxonomy_mapping(
             "sha256": _MAPPING_SHA256,
             "headers": list(EXPECTED_MAPPING_HEADER),
         },
+        "rights": {
+            "provider": RIGHTS_PROVIDER,
+            "license_id": RIGHTS_LICENSE_ID,
+            "attribution_required": True,
+            "source_reviews": list(RIGHTS_SOURCE_REVIEWS),
+            "transformation_notice": RIGHTS_TRANSFORMATION_NOTICE,
+        },
         "classification_counts": counts,
         "records": records,
         "taxonomy_matching": "exact_literal_equality_only",
         "normalization_applied": False,
         "wildcard_or_fallback_matching_applied": False,
         "mapping_weight_rule": "positive_finite_float_sum_within_openquake_1e-7",
+        "bounded_derived_disclosure_authorized": True,
         "vulnerability_file_selection_authorized": False,
         "raw_mapping_rows_returned": False,
         "external_bytes_persisted": False,
