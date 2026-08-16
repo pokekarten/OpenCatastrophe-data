@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
+import types
 import unittest
 from unittest import mock
 
@@ -263,6 +265,65 @@ class ReferenceRuntimeResultTests(unittest.TestCase):
             ):
                 subject._acquire_exact_gmm()
             opener.assert_not_called()
+
+
+class OpenQuakeNamespacePinTests(unittest.TestCase):
+    def test_pin_replaces_contaminated_namespace_with_fixed_checkout(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            package_root = Path(tmp) / "oq-engine" / "openquake"
+            package_root.mkdir(parents=True)
+            openquake = types.ModuleType("openquake")
+            openquake.__path__ = [
+                str(Path(tmp) / "installed" / "openquake"),
+                str(package_root),
+            ]
+            with mock.patch.dict(sys.modules, {"openquake": openquake}, clear=False):
+                subject._pin_openquake_namespace(package_root=package_root)
+            self.assertEqual(openquake.__path__, [str(package_root.resolve())])
+
+    def test_pin_fails_closed_if_openquake_submodule_loaded_first(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            package_root = Path(tmp) / "oq-engine" / "openquake"
+            package_root.mkdir(parents=True)
+            openquake = types.ModuleType("openquake")
+            openquake.__path__ = [str(package_root)]
+            hazardlib = types.ModuleType("openquake.hazardlib")
+            with mock.patch.dict(
+                sys.modules,
+                {"openquake": openquake, "openquake.hazardlib": hazardlib},
+                clear=False,
+            ):
+                with self.assertRaisesRegex(
+                    subject.ReferenceRuntimeExecutionError,
+                    "loaded before source pin",
+                ):
+                    subject._pin_openquake_namespace(package_root=package_root)
+
+    def test_foreign_openquake_source_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            checkout_package = Path(tmp) / "oq-engine" / "openquake"
+            checkout_package.mkdir(parents=True)
+            foreign = Path(tmp) / "installed" / "openquake" / "hazardlib" / "valid.py"
+            foreign.parent.mkdir(parents=True)
+            foreign.write_text("# foreign\n", encoding="utf-8")
+            with mock.patch.object(subject, "_OPENQUAKE_PACKAGE_ROOT", checkout_package):
+                with self.assertRaisesRegex(
+                    subject.ReferenceRuntimeExecutionError,
+                    "outside fixed checkout",
+                ):
+                    subject._require_fixed_openquake_source(foreign)
+
+    def test_source_under_fixed_checkout_is_accepted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            checkout_package = Path(tmp) / "oq-engine" / "openquake"
+            source_file = checkout_package / "hazardlib" / "valid.py"
+            source_file.parent.mkdir(parents=True)
+            source_file.write_text("# exact source\n", encoding="utf-8")
+            with mock.patch.object(subject, "_OPENQUAKE_PACKAGE_ROOT", checkout_package):
+                self.assertEqual(
+                    subject._require_fixed_openquake_source(source_file),
+                    source_file.resolve(),
+                )
 
 
 class ReferenceRuntimeCliEntryPointTests(unittest.TestCase):
