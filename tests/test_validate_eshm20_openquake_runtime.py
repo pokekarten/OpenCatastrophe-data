@@ -79,6 +79,40 @@ class Eshm20OpenQuakeRuntimeTests(unittest.TestCase):
         ):
             self.assertIs(reduced[field], False, field)
 
+    def test_exact_source_checkout_git_version_normalizes_to_release_version(self) -> None:
+        for prefix_length in (7, 12, 40):
+            with self.subTest(prefix_length=prefix_length):
+                observation = nominal_observation()
+                observation["engine_version"] = (
+                    runtime.ENGINE_VERSION
+                    + "-git"
+                    + runtime.ENGINE_COMMIT[:prefix_length]
+                )
+                reduced = runtime.validate_runtime_observation(observation)
+                self.assertEqual(
+                    reduced["observation"]["engine_version"], runtime.ENGINE_VERSION
+                )
+                self.assertEqual(
+                    reduced["observation"]["engine_commit"], runtime.ENGINE_COMMIT
+                )
+
+    def test_foreign_or_malformed_source_checkout_version_fails_closed(self) -> None:
+        rejected = (
+            runtime.ENGINE_VERSION + "-gitdeadbee",
+            runtime.ENGINE_VERSION + "-git",
+            runtime.ENGINE_VERSION + "-git" + runtime.ENGINE_COMMIT[:6],
+            runtime.ENGINE_VERSION + "-git" + runtime.ENGINE_COMMIT[:7].upper(),
+            runtime.ENGINE_VERSION + "-git" + runtime.ENGINE_COMMIT + "0",
+            runtime.ENGINE_VERSION + "+git" + runtime.ENGINE_COMMIT[:7],
+            True,
+        )
+        for value in rejected:
+            with self.subTest(value=value):
+                observation = nominal_observation()
+                observation["engine_version"] = value
+                with self.assertRaises(runtime.ReferenceRuntimeError):
+                    runtime.validate_runtime_observation(observation)
+
     def test_package_input_order_does_not_change_output(self) -> None:
         first = nominal_observation()
         second = nominal_observation()
