@@ -234,6 +234,34 @@ class Eshm20GsimOpenQuakeRuntimeTests(unittest.TestCase):
         self.assertFalse(result["gsim_request_runtime_compatibility_verified"])
         self.assertNotIn("must-not-be-output", repr(result))
 
+    def test_frozen_release_and_commit_bound_git_versions_are_accepted(self) -> None:
+        gate._require_compatible_openquake_version(gate.OPENQUAKE_VERSION)
+        for prefix_length in (7, 12, 40):
+            with self.subTest(prefix_length=prefix_length):
+                gate._require_compatible_openquake_version(
+                    gate.OPENQUAKE_VERSION
+                    + "-git"
+                    + gate.OPENQUAKE_COMMIT[:prefix_length]
+                )
+
+    def test_foreign_or_malformed_runtime_versions_fail_closed(self) -> None:
+        rejected = (
+            gate.OPENQUAKE_VERSION + "-gitdeadbee",
+            gate.OPENQUAKE_VERSION + "-git" + gate.OPENQUAKE_COMMIT[:6],
+            gate.OPENQUAKE_VERSION + "-git" + gate.OPENQUAKE_COMMIT[:7].upper(),
+            gate.OPENQUAKE_VERSION + "-git" + gate.OPENQUAKE_COMMIT + "0",
+            "3.14.1",
+            True,
+            None,
+        )
+        for value in rejected:
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(
+                    gate.Eshm20GsimRuntimeCompatibilityError,
+                    "does not match the frozen v3.14.0 source",
+                ):
+                    gate._require_compatible_openquake_version(value)
+
     def test_output_never_contains_argument_values(self) -> None:
         result, _ = evaluate(
             xml_for(
