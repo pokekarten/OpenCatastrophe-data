@@ -85,6 +85,8 @@ jobs:
           python - <<'PY'
           import json, os
           from pathlib import Path
+          from scripts import run_esrm20_hazard_profile_stage_diagnostic as subject
+
           result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
           if result.get("target_sha") != os.environ["EXECUTION_SHA"] or result.get("execution_sha") != os.environ["EXECUTION_SHA"]:
               raise SystemExit("diagnostic left exact execution SHA")
@@ -96,10 +98,10 @@ jobs:
                   raise SystemExit("diagnostic parser flags are invalid")
               if diag.get("provider_content_returned") is not False or diag.get("parser_error_text_returned") is not False:
                   raise SystemExit("diagnostic widened content")
-              if result.get("failure_class") not in {"source_parser_failure", "gsim_parser_failure", "both_parser_failure", "unexpected_composition_failure"}:
-                  raise SystemExit("diagnostic failure class drifted")
+              if result.get("failure_class") not in subject.PARSER_FAILURE_CLASSES:
+                  raise SystemExit("diagnostic parser failure class drifted")
           elif result.get("status") == "blocked":
-              if result.get("failure_class") not in {"acquisition_failure", "decode_failure"} or result.get("diagnostic") is not None:
+              if result.get("failure_class") not in subject.BLOCKED_FAILURE_CLASSES or result.get("diagnostic") is not None:
                   raise SystemExit("blocked diagnostic is not atomic")
           else:
               raise SystemExit("diagnostic has non-terminal status")
@@ -145,6 +147,23 @@ jobs:
             .target_sha == $sha and .execution_sha == $sha and
             .gsim_byte_count == 34018 and .gsim_sha256 == "f3efd16db967efd23f6b25837565344a6056282965ed0ecdfdbcb614513471b1" and
             .source_byte_count == 1964 and .source_sha256 == "caebf9140922da7f7492d8b0e55c213c70a84d5b725ae37eae31d50e1da4ac3" and
+            (
+              (.status == "pass" and .diagnostic != null and
+               (.failure_class == "source_parser_failure" or
+                .failure_class == "gsim_parser_failure" or
+                .failure_class == "both_parser_failure" or
+                .failure_class == "unexpected_composition_failure"))
+              or
+              (.status == "blocked" and .diagnostic == null and
+               (.failure_class == "gsim_acquisition_failure" or
+                .failure_class == "source_acquisition_failure" or
+                .failure_class == "gsim_receipt_verification_failure" or
+                .failure_class == "source_receipt_verification_failure" or
+                .failure_class == "gsim_runtime_failure" or
+                .failure_class == "source_runtime_failure" or
+                .failure_class == "gsim_decode_failure" or
+                .failure_class == "source_decode_failure"))
+            ) and
             .provider_content_returned == false and .parser_error_text_returned == false and
             .external_bytes_persisted == false and .publication_authorized == false and .model_use_authorized == false
           ' >/dev/null
