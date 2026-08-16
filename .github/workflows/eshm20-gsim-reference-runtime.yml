@@ -1,0 +1,258 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESHM20 GSIM Reference Runtime
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eshm20-gsim-reference-runtime-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main runtime request
+    if: >-
+      github.event.issue.number == 432 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-eshm20-gsim-reference-runtime-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up host validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_RUNTIME_REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/run_eshm20_gsim_reference_runtime.py \
+            --comment-body-env OC_RUNTIME_REQUEST_BODY \
+            --expected-issue 432 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-reference-runtime:
+    name: Execute bounded OpenQuake 3.14 runtime gate
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prove complete issue-local dedup before external activity
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import run_eshm20_gsim_reference_runtime as subject
+
+          skip = subject.has_terminal_runtime_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+
+      - name: Fetch exact OpenQuake v3.14.0 source
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OQ_COMMIT: 9f044c93d72846421a8faa90ebf0a6afacdf3c20
+        run: |
+          set -euo pipefail
+          OQ_ROOT="$RUNNER_TEMP/oq-engine"
+          git init "$OQ_ROOT"
+          git -C "$OQ_ROOT" remote add origin https://github.com/gem/oq-engine.git
+          git -C "$OQ_ROOT" fetch --depth=1 origin \
+            refs/tags/v3.14.0:refs/tags/v3.14.0
+          OBSERVED="$(git -C "$OQ_ROOT" rev-parse 'refs/tags/v3.14.0^{commit}')"
+          test "$OBSERVED" = "$OQ_COMMIT"
+          git -C "$OQ_ROOT" checkout --detach "$OBSERVED"
+          test -z "$(git -C "$OQ_ROOT" status --porcelain=v1)"
+
+      - name: Build observed execution container
+        if: steps.dedup.outputs.skip != 'true'
+        id: image
+        run: |
+          set -euo pipefail
+          BASE_IMAGE="openquake/engine:3.14.0"
+          docker pull "$BASE_IMAGE"
+          BASE_REPO_DIGEST="$(docker image inspect \
+            --format='{{index .RepoDigests 0}}' "$BASE_IMAGE")"
+          printf '%s\n' "$BASE_REPO_DIGEST" |
+            grep -Eq '^openquake/engine@sha256:[0-9a-f]{64}$'
+
+          DOCKERFILE="$RUNNER_TEMP/Dockerfile.oq314-runtime"
+          cat > "$DOCKERFILE" <<EOF
+          FROM $BASE_REPO_DIGEST
+          USER root
+          RUN apt-get update \
+              && apt-get install -y --no-install-recommends git \
+              && rm -rf /var/lib/apt/lists/*
+          USER openquake
+          EOF
+
+          docker build --pull=false \
+            --file "$DOCKERFILE" \
+            --tag oc-oq314-reference-runtime:local \
+            "$RUNNER_TEMP"
+          IMAGE_ID="$(docker image inspect \
+            --format='{{.Id}}' oc-oq314-reference-runtime:local)"
+          printf '%s\n' "$IMAGE_ID" | grep -Eq '^sha256:[0-9a-f]{64}$'
+          echo "image_id=$IMAGE_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Run same-process recipe and GSIM compatibility gate
+        if: steps.dedup.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          OUTPUT_DIR="$RUNNER_TEMP/eq1-runtime-output"
+          mkdir -p "$OUTPUT_DIR"
+          : > "$OUTPUT_DIR/result.json"
+          chmod 0666 "$OUTPUT_DIR/result.json"
+
+          docker run --rm \
+            --entrypoint /opt/openquake/bin/python \
+            -e PYTHONDONTWRITEBYTECODE=1 \
+            -e OPENBLAS_NUM_THREADS=1 \
+            -e PYTHONPATH=/oq-engine:/workspace \
+            -e GIT_CONFIG_COUNT=1 \
+            -e GIT_CONFIG_KEY_0=safe.directory \
+            -e GIT_CONFIG_VALUE_0=/oq-engine \
+            -e OC_RUNTIME_REQUEST_BODY \
+            -v "$GITHUB_WORKSPACE:/workspace:ro" \
+            -v "$RUNNER_TEMP/oq-engine:/oq-engine:ro" \
+            -v "$OUTPUT_DIR:/output" \
+            -w /workspace \
+            "$IMAGE_ID" \
+            scripts/run_eshm20_gsim_reference_runtime.py \
+            --comment-body-env OC_RUNTIME_REQUEST_BODY \
+            --expected-issue 432 \
+            --execution-sha "$EXECUTION_SHA" \
+            --image-digest "$IMAGE_ID" \
+            --output /output/result.json
+
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          target = os.environ["EXECUTION_SHA"]
+          if (
+              result.get("status") != "pass"
+              or result.get("execution_sha") != target
+              or result.get("target_sha") != target
+              or result.get("external_bytes_persisted") is not False
+              or result.get("publication_authorized") is not False
+              or result.get("model_use_authorized") is not False
+          ):
+              raise SystemExit("bounded runtime result failed the host fence")
+          PY
+        env:
+          OC_RUNTIME_REQUEST_BODY: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          IMAGE_ID: ${{ steps.image.outputs.image_id }}
+          RESULT_PATH: ${{ runner.temp }}/eq1-runtime-output/result.json
+
+      - name: Export bounded result to publisher
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+        env:
+          RESULT_PATH: ${{ runner.temp }}/eq1-runtime-output/result.json
+
+  publish-runtime-evidence:
+    name: Publish bounded runtime evidence
+    needs: [validate-request, execute-reference-runtime]
+    if: >-
+      needs.execute-reference-runtime.result == 'success' &&
+      needs.execute-reference-runtime.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence output and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-reference-runtime.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-eshm20-gsim-reference-runtime-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .status == "pass" and
+            .execution_sha == $sha and
+            .target_sha == $sha and
+            .same_process_runtime_observation_collected == true and
+            .gsim_request_reference_recipe_runtime_compatibility_verified == true and
+            .historical_environment_verified == false and
+            .numerical_hazard_agreement_verified == false and
+            .full_hazard_compatibility_verified == false and
+            .reference_run_verified == false and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and
+            .model_use_authorized == false
+          ' >/dev/null
+
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/runtime-comment.json"
+          gh api \
+            --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/432/comments" \
+            --input "$RUNNER_TEMP/runtime-comment.json"
