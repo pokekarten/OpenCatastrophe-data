@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: One-time redundant cleanup branch prune
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Delete exact closed redundant cleanup branches
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidates=(
+            '423:agent/remove-one-time-prune-workflow:4f0525d85a9dfb2463dee169b1b408669fff841a'
+            '424:maintenance/remove-one-time-stale-branch-prune:1a5a5c3f4efc3a875f4cbf10ecb1a0b1b94dcaf8'
+          )
+
+          for candidate in "${candidates[@]}"; do
+            IFS=: read -r pr branch expected_sha <<<"${candidate}"
+            state="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr}" --jq '.state')"
+            merged="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr}" --jq '.merged')"
+            head_ref="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr}" --jq '.head.ref')"
+            head_sha="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr}" --jq '.head.sha')"
+            if [[ "$state" != "closed" || "$merged" != "false" || "$head_ref" != "$branch" || "$head_sha" != "$expected_sha" ]]; then
+              echo "REFUSE: PR #${pr} identity/state changed" >&2
+              exit 1
+            fi
+            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch}"
+            echo "deleted redundant branch ${branch} from closed PR #${pr}"
+          done
