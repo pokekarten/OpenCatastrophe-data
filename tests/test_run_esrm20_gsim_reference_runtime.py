@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import unittest
+from enum import Enum
 from types import SimpleNamespace
 from unittest import mock
 
@@ -16,32 +17,39 @@ EXECUTION_SHA = "1" * 40
 IMAGE_DIGEST = "sha256:" + "a" * 64
 
 
-class KothaClass:
-    REQUIRES_SITES_PARAMETERS = frozenset({"vs30", "vs30measured", "slope", "geology"})
+class TestIMC(Enum):
+    GEOMETRIC_MEAN = "Average Horizontal"
+    RotD50 = "Average Horizontal (RotD50)"
 
 
-class HydroClass:
+class BCHydroESHM20SInter:
+    REQUIRES_SITES_PARAMETERS = frozenset({"vs30", "xvf"})
+    DEFINED_FOR_INTENSITY_MEASURE_COMPONENT = TestIMC.GEOMETRIC_MEAN
+
+
+class BCHydroESHM20SSlab:
+    REQUIRES_SITES_PARAMETERS = frozenset({"vs30", "xvf"})
+    DEFINED_FOR_INTENSITY_MEASURE_COMPONENT = TestIMC.GEOMETRIC_MEAN
+
+
+class ESHM20Craton:
     REQUIRES_SITES_PARAMETERS = frozenset({"vs30"})
+    DEFINED_FOR_INTENSITY_MEASURE_COMPONENT = TestIMC.RotD50
 
 
-class CratonClass:
+class KothaEtAl2020ESHM20SlopeGeology:
+    REQUIRES_SITES_PARAMETERS = frozenset({"geology", "region", "slope"})
+    DEFINED_FOR_INTENSITY_MEASURE_COMPONENT = TestIMC.RotD50
+
+
+class LanzanoLuzi2019shallow:
     REQUIRES_SITES_PARAMETERS = frozenset({"vs30"})
-
-
-class LanzanoClass:
-    REQUIRES_SITES_PARAMETERS = frozenset({"vs30"})
+    DEFINED_FOR_INTENSITY_MEASURE_COMPONENT = TestIMC.GEOMETRIC_MEAN
 
 
 def _branches() -> list[dict[str, object]]:
     tokens = list(subject.EXPECTED_REQUESTED_TOKENS)
     argument_keys = list(subject.EXPECTED_SOURCE_ARGUMENT_KEYS)
-    resolved = {
-        "BCHydroESHM20SInter": "HydroClass",
-        "BCHydroESHM20SSlab": "HydroClass",
-        "ESHM20Craton": "CratonClass",
-        "KothaEtAl2020ESHM20SlopeGeology": "KothaClass",
-        "LanzanoLuzi2019shallow": "LanzanoClass",
-    }
     rows: list[dict[str, object]] = []
     for index in range(subject.EXPECTED_BRANCH_COUNT):
         token = tokens[index % len(tokens)]
@@ -52,8 +60,10 @@ def _branches() -> list[dict[str, object]]:
                 "branch_id": f"b-{index}",
                 "requested_gsim_token": token,
                 "argument_keys": [key],
-                "alias_expansion_applied": token != resolved[token],
-                "resolved_gsim_class": resolved[token],
+                "alias_definition_present": False,
+                "alias_expansion_applied": False,
+                "registry_alias_key_used": False,
+                "resolved_gsim_class": token,
                 "runtime_argument_keys_after_alias": [key],
                 "constructor_accepted": True,
             }
@@ -106,10 +116,11 @@ def _runtime_result() -> dict[str, object]:
 class Esrm20RuntimeAdapterTests(unittest.TestCase):
     def _registry(self) -> dict[str, type]:
         return {
-            "KothaClass": KothaClass,
-            "HydroClass": HydroClass,
-            "CratonClass": CratonClass,
-            "LanzanoClass": LanzanoClass,
+            "BCHydroESHM20SInter": BCHydroESHM20SInter,
+            "BCHydroESHM20SSlab": BCHydroESHM20SSlab,
+            "ESHM20Craton": ESHM20Craton,
+            "KothaEtAl2020ESHM20SlopeGeology": KothaEtAl2020ESHM20SlopeGeology,
+            "LanzanoLuzi2019shallow": LanzanoLuzi2019shallow,
         }
 
     def test_binding_is_scoped_and_restores_existing_eshm20_constants(self) -> None:
@@ -155,10 +166,13 @@ class Esrm20RuntimeAdapterTests(unittest.TestCase):
         )
         self.assertEqual(restored, original)
 
-    def test_argument_evidence_preserves_canonical_nonempty_source_shape_without_values(self) -> None:
+    def test_argument_evidence_preserves_canonical_nonempty_source_shape_without_values(
+        self,
+    ) -> None:
         evidence = subject._gsim_argument_evidence(_branches())
         self.assertEqual(
-            evidence["source_argument_keys"], list(subject.EXPECTED_SOURCE_ARGUMENT_KEYS)
+            evidence["source_argument_keys"],
+            list(subject.EXPECTED_SOURCE_ARGUMENT_KEYS),
         )
         self.assertEqual(
             evidence["runtime_argument_keys_after_alias"],
@@ -172,7 +186,9 @@ class Esrm20RuntimeAdapterTests(unittest.TestCase):
         )
         self.assertNotIn("argument_values", evidence)
 
-    def test_argument_evidence_rejects_missing_canonical_key_or_external_resource(self) -> None:
+    def test_argument_evidence_rejects_missing_canonical_key_or_external_resource(
+        self,
+    ) -> None:
         rows = _branches()
         for row in rows:
             if row["argument_keys"] == ["a"]:
@@ -180,14 +196,16 @@ class Esrm20RuntimeAdapterTests(unittest.TestCase):
             if row["runtime_argument_keys_after_alias"] == ["a"]:
                 row["runtime_argument_keys_after_alias"] = []
         with self.assertRaisesRegex(
-            subject.Esrm20GsimReferenceRuntimeError, "argument-key set drifted"
+            subject.Esrm20GsimReferenceRuntimeError,
+            "argument-key set drifted",
         ):
             subject._gsim_argument_evidence(rows)
 
         rows = _branches()
         rows[0]["runtime_argument_keys_after_alias"] = ["coefficient_file"]
         with self.assertRaisesRegex(
-            subject.Esrm20GsimReferenceRuntimeError, "external resources"
+            subject.Esrm20GsimReferenceRuntimeError,
+            "external resources",
         ):
             subject._gsim_argument_evidence(rows)
 
@@ -196,9 +214,9 @@ class Esrm20RuntimeAdapterTests(unittest.TestCase):
         evidence = subject._site_parameter_evidence(result, self._registry())
         self.assertEqual(
             evidence["required_site_parameters"],
-            ["geology", "slope", "vs30", "vs30measured"],
+            ["geology", "region", "slope", "vs30", "xvf"],
         )
-        self.assertEqual(len(evidence["per_resolved_gsim_class"]), 4)
+        self.assertEqual(len(evidence["per_resolved_gsim_class"]), 5)
         self.assertNotIn("coefficients", str(evidence).lower())
 
     def test_site_requirement_rejects_nonproduction_requested_gsim_field(self) -> None:
@@ -206,13 +224,71 @@ class Esrm20RuntimeAdapterTests(unittest.TestCase):
         for branch in result["branches"]:
             branch["requested_gsim"] = branch.pop("requested_gsim_token")
         with self.assertRaisesRegex(
-            subject.Esrm20GsimReferenceRuntimeError, "requested-token set drifted"
+            subject.Esrm20GsimReferenceRuntimeError,
+            "requested-token set drifted",
         ):
             subject._site_parameter_evidence(result, self._registry())
 
-    def test_wrapper_preserves_runtime_ceilings_and_adds_argument_and_site_evidence(self) -> None:
+    def test_component_evidence_binds_direct_requests_to_frozen_component_names(
+        self,
+    ) -> None:
+        evidence = subject._component_evidence(_runtime_result(), self._registry())
+        self.assertEqual(
+            evidence["unique_components"],
+            ["GEOMETRIC_MEAN", "RotD50"],
+        )
+        self.assertTrue(evidence["mixed_component_basis"])
+        self.assertTrue(evidence["component_conversion_request_absent"])
+        self.assertFalse(evidence["component_conversion_activated"])
+        self.assertEqual(
+            evidence["reference_component_semantics"],
+            "provider_native_mixed_no_conversion",
+        )
+        self.assertEqual(
+            {
+                row["resolved_gsim_class"]: row["component"]
+                for row in evidence["per_resolved_gsim_class"]
+            },
+            subject.EXPECTED_COMPONENTS_BY_GSIM,
+        )
+
+    def test_component_evidence_rejects_conversion_alias_or_component_drift(self) -> None:
         result = _runtime_result()
-        with mock.patch.object(subject, "_BASE_RUN_REFERENCE_RUNTIME", return_value=result), mock.patch.object(
+        result["branches"][0]["runtime_argument_keys_after_alias"] = [
+            subject.COMPONENT_CONVERSION_ARGUMENT
+        ]
+        with self.assertRaisesRegex(
+            subject.Esrm20GsimReferenceRuntimeError,
+            "conversion is explicitly activated",
+        ):
+            subject._component_evidence(result, self._registry())
+
+        result = _runtime_result()
+        result["branches"][0]["alias_expansion_applied"] = True
+        with self.assertRaisesRegex(
+            subject.Esrm20GsimReferenceRuntimeError,
+            "alias or wrapper",
+        ):
+            subject._component_evidence(result, self._registry())
+
+        class DriftedCraton(ESHM20Craton):
+            DEFINED_FOR_INTENSITY_MEASURE_COMPONENT = TestIMC.GEOMETRIC_MEAN
+
+        registry = self._registry()
+        registry["ESHM20Craton"] = DriftedCraton
+        with self.assertRaisesRegex(
+            subject.Esrm20GsimReferenceRuntimeError,
+            "component declaration drifted",
+        ):
+            subject._component_evidence(_runtime_result(), registry)
+
+    def test_wrapper_preserves_runtime_ceilings_and_adds_bounded_evidence(self) -> None:
+        result = _runtime_result()
+        with mock.patch.object(
+            subject,
+            "_BASE_RUN_REFERENCE_RUNTIME",
+            return_value=result,
+        ), mock.patch.object(
             subject._gate,
             "_load_verified_openquake_runtime",
             return_value=SimpleNamespace(registry=self._registry()),
@@ -224,21 +300,42 @@ class Esrm20RuntimeAdapterTests(unittest.TestCase):
         self.assertEqual(output["schema_version"], subject.SCHEMA_VERSION)
         self.assertEqual(output["source_issue"], 493)
         self.assertEqual(output["source_profile_result_comment_id"], 5310194089)
-        self.assertEqual(output["requested_gsim_tokens"], list(subject.EXPECTED_REQUESTED_TOKENS))
+        self.assertEqual(
+            output["requested_gsim_tokens"],
+            list(subject.EXPECTED_REQUESTED_TOKENS),
+        )
         self.assertEqual(
             output["gsim_argument_evidence"]["source_argument_keys"],
             list(subject.EXPECTED_SOURCE_ARGUMENT_KEYS),
         )
-        self.assertFalse(output["gsim_argument_evidence"]["argument_values_returned"])
+        self.assertFalse(
+            output["gsim_argument_evidence"]["argument_values_returned"]
+        )
         self.assertTrue(output["site_parameter_requirements_derived"])
         self.assertEqual(
             output["site_parameter_requirements"]["required_site_parameters"],
-            ["geology", "slope", "vs30", "vs30measured"],
+            ["geology", "region", "slope", "vs30", "xvf"],
+        )
+        self.assertTrue(output["component_evidence_derived"])
+        self.assertEqual(
+            output["component_evidence"]["unique_components"],
+            ["GEOMETRIC_MEAN", "RotD50"],
+        )
+        self.assertFalse(
+            output["component_evidence"]["component_conversion_activated"]
+        )
+        self.assertEqual(
+            output["component_evidence"]["reference_component_semantics"],
+            subject.REFERENCE_COMPONENT_SEMANTICS,
         )
         self.assertTrue(
-            output["executing_environment_matches_reconstructed_reference_recipe_fields"]
+            output[
+                "executing_environment_matches_reconstructed_reference_recipe_fields"
+            ]
         )
-        self.assertTrue(output["gsim_request_reference_recipe_runtime_compatibility_verified"])
+        self.assertTrue(
+            output["gsim_request_reference_recipe_runtime_compatibility_verified"]
+        )
         self.assertFalse(output["historical_environment_verified"])
         self.assertFalse(output["reference_run_verified"])
         self.assertFalse(output["site_model_compatibility_verified"])
@@ -247,14 +344,18 @@ class Esrm20RuntimeAdapterTests(unittest.TestCase):
         self.assertFalse(output["full_hazard_compatibility_verified"])
         self.assertFalse(output["model_use_authorized"])
 
-    def test_request_validation_uses_esrm20_outer_identity_without_persisting_binding(self) -> None:
+    def test_request_validation_uses_esrm20_outer_identity_without_persisting_binding(
+        self,
+    ) -> None:
         body = subject.REQUEST_MARKER + "\n" + (
             '{"schema_version":"%s","issue":493,"target_sha":"%s","requester":"unit-test"}'
             % (subject.REQUEST_SCHEMA_VERSION, EXECUTION_SHA)
         )
         original_issue = base_runtime.SOURCE_ISSUE
         parsed = subject.validate_request(
-            body, expected_issue=493, execution_sha=EXECUTION_SHA
+            body,
+            expected_issue=493,
+            execution_sha=EXECUTION_SHA,
         )
         self.assertEqual(parsed["issue"], 493)
         self.assertEqual(parsed["target_sha"], EXECUTION_SHA)
