@@ -117,6 +117,14 @@ class ExposureValueSpatialProfileTests(unittest.TestCase):
         self.assertFalse(profile["sentinel_semantics_verified"])
         self.assertFalse(profile["row_business_key_verified"])
 
+    def test_synthetic_caller_receipt_cannot_assert_frozen_dataset_identity(self) -> None:
+        raw = _csv_bytes([_base_row()])
+        profile = _profile(raw)
+
+        self.assertNotIn("source_issue", profile)
+        self.assertNotIn("dataset_id", profile)
+        self.assertNotEqual(profile.get("dataset_id"), target.DATASET_ID)
+
     def test_receipt_identity_fails_before_invalid_utf8_decode(self) -> None:
         raw = b"\xff"
         with self.assertRaisesRegex(
