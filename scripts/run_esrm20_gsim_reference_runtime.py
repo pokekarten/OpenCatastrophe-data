@@ -58,7 +58,12 @@ EXPECTED_SOURCE_ARGUMENT_KEYS = (
     "theta_6_adjustment",
 )
 CANONICAL_PROFILE_RESULT_COMMENT_ID = 5310194089
+# Trusted #476 request/result pair and successful main-only workflow execution.
+CANONICAL_RECEIPT_REQUEST_COMMENT_ID = 5310055297
 CANONICAL_RECEIPT_RESULT_COMMENT_ID = 5310057117
+CANONICAL_RECEIPT_RUN_ID = 31977222858
+CANONICAL_RECEIPT_EXECUTION_SHA = "ea6d723d7b4dc333a21c0d1015981b75c530cc9a"
+CANONICAL_RECEIPT_RETRIEVED_AT = "2026-08-16T22:45:52Z"
 OPENQUAKE_COMMIT = "9f044c93d72846421a8faa90ebf0a6afacdf3c20"
 _SAFE_CLASS_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,127}$")
 _SAFE_PARAMETER_RE = re.compile(r"^[a-z][a-z0-9_]{0,127}$")
@@ -94,7 +99,27 @@ def _bindings() -> tuple[tuple[Any, str, Any], ...]:
         (_profiler, "EXPECTED_SHA256", EXPECTED_SHA256),
         (_profiler, "EXPECTED_BRANCH_SET_COUNT", EXPECTED_BRANCH_SET_COUNT),
         (_profiler, "EXPECTED_BRANCH_COUNT", EXPECTED_BRANCH_COUNT),
-        (_profiler, "RECEIPT_RESULT_COMMENT_ID", CANONICAL_RECEIPT_RESULT_COMMENT_ID),
+        (
+            _profiler,
+            "FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID",
+            CANONICAL_RECEIPT_REQUEST_COMMENT_ID,
+        ),
+        (
+            _profiler,
+            "FIRST_ORDER_RECEIPT_RESULT_COMMENT_ID",
+            CANONICAL_RECEIPT_RESULT_COMMENT_ID,
+        ),
+        (_profiler, "FIRST_ORDER_RECEIPT_RUN_ID", CANONICAL_RECEIPT_RUN_ID),
+        (
+            _profiler,
+            "FIRST_ORDER_RECEIPT_EXECUTION_SHA",
+            CANONICAL_RECEIPT_EXECUTION_SHA,
+        ),
+        (
+            _profiler,
+            "FIRST_ORDER_RECEIPT_RETRIEVED_AT",
+            CANONICAL_RECEIPT_RETRIEVED_AT,
+        ),
         (_gate, "SOURCE_ISSUE", SOURCE_ISSUE),
         (_gate, "HANDOFF_ISSUE", HANDOFF_ISSUE),
         (_gate, "DATASET_ID", DATASET_ID),
@@ -115,8 +140,14 @@ def _bindings() -> tuple[tuple[Any, str, Any], ...]:
 @contextlib.contextmanager
 def esrm20_binding() -> Iterator[None]:
     """Temporarily bind reviewed generic/ESHM20 modules to exact ESRM20 identity."""
+    bindings = _bindings()
+    missing = [name for module, name, _ in bindings if not hasattr(module, name)]
+    if missing:
+        raise Esrm20GsimReferenceRuntimeError(
+            "ESRM20 runtime adapter binding surface drifted: " + ", ".join(missing)
+        )
     original: list[tuple[Any, str, Any]] = []
-    for module, name, value in _bindings():
+    for module, name, value in bindings:
         original.append((module, name, getattr(module, name)))
         setattr(module, name, value)
     try:
@@ -137,6 +168,23 @@ def assert_esrm20_binding() -> None:
         (_gmm.EXPECTED_SHA256, EXPECTED_SHA256),
         (_profiler.EXPECTED_BRANCH_SET_COUNT, EXPECTED_BRANCH_SET_COUNT),
         (_profiler.EXPECTED_BRANCH_COUNT, EXPECTED_BRANCH_COUNT),
+        (
+            _profiler.FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID,
+            CANONICAL_RECEIPT_REQUEST_COMMENT_ID,
+        ),
+        (
+            _profiler.FIRST_ORDER_RECEIPT_RESULT_COMMENT_ID,
+            CANONICAL_RECEIPT_RESULT_COMMENT_ID,
+        ),
+        (_profiler.FIRST_ORDER_RECEIPT_RUN_ID, CANONICAL_RECEIPT_RUN_ID),
+        (
+            _profiler.FIRST_ORDER_RECEIPT_EXECUTION_SHA,
+            CANONICAL_RECEIPT_EXECUTION_SHA,
+        ),
+        (
+            _profiler.FIRST_ORDER_RECEIPT_RETRIEVED_AT,
+            CANONICAL_RECEIPT_RETRIEVED_AT,
+        ),
         (_runtime.SOURCE_ISSUE, SOURCE_ISSUE),
         (_runtime._PROJECT_ID, PROJECT_ID),
         (_runtime._EXPECTED_SHA256, EXPECTED_SHA256),
