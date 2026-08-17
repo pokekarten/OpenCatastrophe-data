@@ -18,6 +18,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import re
 import time
 import urllib.parse
@@ -74,11 +75,25 @@ def _strict_json(raw: bytes) -> Any:
             f"non-finite site-tool metadata JSON value: {token}"
         )
 
+    def reject_float_overflow(token: str) -> float:
+        try:
+            value = float(token)
+        except ValueError as exc:
+            raise SiteModelHistoryProfileError(
+                f"invalid site-tool metadata JSON float: {token}"
+            ) from exc
+        if not math.isfinite(value):
+            raise SiteModelHistoryProfileError(
+                f"non-finite site-tool metadata JSON value: {token}"
+            )
+        return value
+
     try:
         return json.loads(
             text,
             object_pairs_hook=reject_duplicates,
             parse_constant=reject_nonfinite,
+            parse_float=reject_float_overflow,
         )
     except SiteModelHistoryProfileError:
         raise
