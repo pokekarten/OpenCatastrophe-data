@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 
 from scripts import run_esrm20_kosovo_site_openquake_runtime as subject
@@ -84,6 +85,10 @@ class _FakeReadInput:
     def get_site_model(self, oqparam: object) -> _FakeSiteModel:
         assert self.seen_inputs is not None
         assert oqparam.inputs == self.seen_inputs
+        site_path = Path(oqparam.inputs["site_model"][0])
+        gmm_path = Path(oqparam.inputs["gsim_logic_tree"])
+        assert site_path.is_absolute() and site_path.is_file()
+        assert gmm_path.is_absolute() and gmm_path.is_file()
         return self.site_model
 
 
