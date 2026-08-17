@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from unittest import mock
 
 from scripts import acquire_eshm20_gsim_resource_profile as gmm
+from scripts import profile_eshm20_gsim_identities as profiler
 from scripts import run_eshm20_gsim_reference_runtime as base_runtime
 from scripts import run_esrm20_gsim_reference_runtime as subject
 
@@ -49,12 +50,12 @@ def _branches() -> list[dict[str, object]]:
             {
                 "branch_set_id": f"bs-{index // 20}",
                 "branch_id": f"b-{index}",
-                "requested_gsim": token,
+                "requested_gsim_token": token,
                 "argument_keys": [key],
                 "alias_expansion_applied": token != resolved[token],
                 "resolved_gsim_class": resolved[token],
                 "runtime_argument_keys_after_alias": [key],
-                "constructor_succeeded": True,
+                "constructor_accepted": True,
             }
         )
     return rows
@@ -117,6 +118,9 @@ class Esrm20RuntimeAdapterTests(unittest.TestCase):
             gmm.PROJECT_ID,
             gmm.COMMIT_SHA,
             gmm.REPOSITORY_PATH,
+            profiler.FIRST_ORDER_RECEIPT_RESULT_COMMENT_ID,
+            profiler.FIRST_ORDER_RECEIPT_RUN_ID,
+            profiler.FIRST_ORDER_RECEIPT_EXECUTION_SHA,
             base_runtime.SOURCE_ISSUE,
             base_runtime.REQUEST_MARKER,
         )
@@ -124,6 +128,18 @@ class Esrm20RuntimeAdapterTests(unittest.TestCase):
             subject.assert_esrm20_binding()
             self.assertEqual(gmm.DATASET_ID, subject.DATASET_ID)
             self.assertEqual(gmm.PROJECT_ID, subject.PROJECT_ID)
+            self.assertEqual(
+                profiler.FIRST_ORDER_RECEIPT_RESULT_COMMENT_ID,
+                subject.CANONICAL_RECEIPT_RESULT_COMMENT_ID,
+            )
+            self.assertEqual(
+                profiler.FIRST_ORDER_RECEIPT_RUN_ID,
+                subject.CANONICAL_RECEIPT_RUN_ID,
+            )
+            self.assertEqual(
+                profiler.FIRST_ORDER_RECEIPT_EXECUTION_SHA,
+                subject.CANONICAL_RECEIPT_EXECUTION_SHA,
+            )
             self.assertEqual(base_runtime.SOURCE_ISSUE, subject.SOURCE_ISSUE)
             self.assertEqual(base_runtime.REQUEST_MARKER, subject.REQUEST_MARKER)
         restored = (
@@ -131,6 +147,9 @@ class Esrm20RuntimeAdapterTests(unittest.TestCase):
             gmm.PROJECT_ID,
             gmm.COMMIT_SHA,
             gmm.REPOSITORY_PATH,
+            profiler.FIRST_ORDER_RECEIPT_RESULT_COMMENT_ID,
+            profiler.FIRST_ORDER_RECEIPT_RUN_ID,
+            profiler.FIRST_ORDER_RECEIPT_EXECUTION_SHA,
             base_runtime.SOURCE_ISSUE,
             base_runtime.REQUEST_MARKER,
         )
@@ -185,7 +204,7 @@ class Esrm20RuntimeAdapterTests(unittest.TestCase):
     def test_site_requirement_rejects_nonproduction_requested_gsim_field(self) -> None:
         result = _runtime_result()
         for branch in result["branches"]:
-            branch["requested_gsim_token"] = branch.pop("requested_gsim")
+            branch["requested_gsim"] = branch.pop("requested_gsim_token")
         with self.assertRaisesRegex(
             subject.Esrm20GsimReferenceRuntimeError, "requested-token set drifted"
         ):
