@@ -306,6 +306,15 @@ class WorkbookIdentityActionTests(unittest.TestCase):
         self.assertIn('"testing_scenarios.xlsx"', publish)
         self.assertIn('"Greece_07-9-1999"', publish)
         self.assertIn("event_location_inference_authorized == false", publish)
+        self.assertIn(
+            ".profile.target_event_id_exact_cell_count <= .profile.scanned_cell_count",
+            publish,
+        )
+        self.assertIn(
+            ".profile.name_literal_cell_counts.athens <= .profile.scanned_cell_count",
+            publish,
+        )
+        self.assertNotIn("all(.profile.name_literal_cell_counts[];", publish)
         self.assertNotIn("upload-artifact", workflow)
 
 
