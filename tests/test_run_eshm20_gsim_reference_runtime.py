@@ -29,6 +29,21 @@ def _request(**updates):
     return subject.REQUEST_MARKER + "\n" + json.dumps(payload, separators=(",", ":"))
 
 
+def _runtime_fingerprint():
+    return subject.runtime.validate_runtime_observation(
+        {
+            "engine_commit": subject.runtime.ENGINE_COMMIT,
+            "engine_version": subject.runtime.ENGINE_VERSION,
+            "python_version": "3.8.0",
+            "platform_system": subject.runtime.EXPECTED_PLATFORM_SYSTEM,
+            "platform_machine": subject.runtime.EXPECTED_PLATFORM_MACHINE,
+            "openblas_num_threads": subject.runtime.EXPECTED_OPENBLAS_NUM_THREADS,
+            "packages": dict(subject.runtime._REFERENCE_PACKAGES),
+            "container_image_digest": IMAGE_DIGEST,
+        }
+    )
+
+
 def _gate_result():
     return {
         "gmm_identity": {
@@ -45,10 +60,7 @@ def _gate_result():
             "commit": subject.runtime.ENGINE_COMMIT,
             "version": subject.runtime.ENGINE_VERSION,
         },
-        "reference_runtime_fingerprint": {
-            "reference_recipe_match": True,
-            "observation": {"container_image_digest": IMAGE_DIGEST},
-        },
+        "reference_runtime_fingerprint": _runtime_fingerprint(),
         "branch_count": 1,
         "branches": [
             {
@@ -91,6 +103,17 @@ def _terminal_comment(execution_sha: str = EXECUTION_SHA):
         + "\n"
         + json.dumps(result, sort_keys=True, separators=(",", ":")),
     }
+
+
+def _mutated_terminal_comment(execution_sha: str, mutate):
+    comment = _terminal_comment(execution_sha)
+    marker, raw = comment["body"].split("\n", 1)
+    result = json.loads(raw)
+    mutate(result)
+    comment["body"] = marker + "\n" + json.dumps(
+        result, sort_keys=True, separators=(",", ":")
+    )
+    return comment
 
 
 class ReferenceRuntimeRequestTests(unittest.TestCase):
@@ -191,6 +214,72 @@ class ReferenceRuntimeLedgerTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 subject.ReferenceRuntimeExecutionError,
                 "target/execution SHA mismatch",
+            ):
+                subject.has_terminal_runtime_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="token",
+                    execution_sha=EXECUTION_SHA,
+                )
+
+    def test_historical_nested_identity_drift_still_fails_closed(self):
+        historical_sha = "6" * 40
+        cases = (
+            (
+                "GMM identity",
+                lambda result: result["gmm_identity"].__setitem__(
+                    "commit_sha", "5" * 40
+                ),
+            ),
+            (
+                "OpenQuake reference",
+                lambda result: result["openquake_reference"].__setitem__(
+                    "commit", "5" * 40
+                ),
+            ),
+            (
+                "fingerprint",
+                lambda result: result["reference_runtime_fingerprint"]["reference"][
+                    "engine"
+                ].__setitem__("commit", "5" * 40),
+            ),
+            (
+                "fingerprint image digest",
+                lambda result: result["reference_runtime_fingerprint"]["observation"].__setitem__(
+                    "container_image_digest", "sha256:" + "9" * 64
+                ),
+            ),
+            (
+                "resolved-class summary",
+                lambda result: result.__setitem__(
+                    "unique_resolved_gsim_classes", ["Mutated"]
+                ),
+            ),
+        )
+        for label, mutate in cases:
+            with self.subTest(label=label):
+                malformed = _mutated_terminal_comment(historical_sha, mutate)
+                with mock.patch.object(
+                    subject, "fetch_repository_comments", return_value=[malformed]
+                ):
+                    with self.assertRaises(subject.ReferenceRuntimeExecutionError):
+                        subject.has_terminal_runtime_result(
+                            repository="pokekarten/OpenCatastrophe-data",
+                            token="token",
+                            execution_sha=EXECUTION_SHA,
+                        )
+
+    def test_historical_authority_widening_still_fails_closed(self):
+        historical_sha = "6" * 40
+        widened = _mutated_terminal_comment(
+            historical_sha,
+            lambda result: result.__setitem__("publication_authorized", True),
+        )
+        with mock.patch.object(
+            subject, "fetch_repository_comments", return_value=[widened]
+        ):
+            with self.assertRaisesRegex(
+                subject.ReferenceRuntimeExecutionError,
+                "publication_authorized",
             ):
                 subject.has_terminal_runtime_result(
                     repository="pokekarten/OpenCatastrophe-data",
