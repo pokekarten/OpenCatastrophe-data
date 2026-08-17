@@ -62,8 +62,6 @@ def _canonical_entry(raw: object) -> dict[str, str]:
         raise EbriskIniInventoryError("configuration tree object id is invalid")
     if any(character not in "0123456789abcdef" for character in object_id):
         raise EbriskIniInventoryError("configuration tree object id is invalid")
-    if type(name) is not str or not name:
-        raise EbriskIniInventoryError("configuration tree basename is invalid")
     if type(path) is not str or not path:
         raise EbriskIniInventoryError("configuration tree path is invalid")
     try:
@@ -88,6 +86,8 @@ def _canonical_entry(raw: object) -> dict[str, str]:
         raise EbriskIniInventoryError(
             "configuration tree path is not canonical relative POSIX"
         )
+    if type(name) is not str or not name:
+        raise EbriskIniInventoryError("configuration tree basename is invalid")
     if pure.name != name:
         raise EbriskIniInventoryError("configuration tree name/path identity drifted")
     if entry_type not in _ALLOWED_MODES_BY_TYPE:
