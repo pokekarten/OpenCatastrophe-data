@@ -12,20 +12,57 @@ class EventHazardImtProfileTests(unittest.TestCase):
     def test_extracts_canonical_names_from_event_based_list(self) -> None:
         option, names = subject.extract_openquake_imt_names(
             "[calculation]\n"
-            "intensity_measure_types = SA(1.0), PGA SA(0.3)\n"
+            "intensity_measure_types = SA(1.0), PGA, SA(0.3)\n"
         )
         self.assertEqual(option, "intensity_measure_types")
         self.assertEqual(names, ["PGA", "SA(0.3)", "SA(1.0)"])
+
+    def test_normalizes_sa_period_like_frozen_openquake(self) -> None:
+        option, names = subject.extract_openquake_imt_names(
+            "[calculation]\n"
+            "intensity_measure_types = PGA, SA(1.00), SA(0.30)\n"
+        )
+        self.assertEqual(option, "intensity_measure_types")
+        self.assertEqual(names, ["PGA", "SA(0.3)", "SA(1.0)"])
+
+    def test_rejects_duplicate_after_openquake_normalization(self) -> None:
+        with self.assertRaisesRegex(
+            subject.VerifiedEventHazardConfigError,
+            "duplicates after OpenQuake normalization",
+        ):
+            subject.extract_openquake_imt_names(
+                "[calculation]\nintensity_measure_types = SA(0.1), SA(0.10)\n"
+            )
+
+    def test_event_list_uses_openquake_comma_semantics(self) -> None:
+        with self.assertRaisesRegex(
+            subject.VerifiedEventHazardConfigError,
+            "outside the bounded EQ1 PGA/SA subset",
+        ):
+            subject.extract_openquake_imt_names(
+                "[calculation]\nintensity_measure_types = PGA SA(0.3)\n"
+            )
 
     def test_extracts_only_mapping_keys_without_evaluating_levels(self) -> None:
         option, names = subject.extract_openquake_imt_names(
             "[calculation]\n"
             "intensity_measure_types_and_levels = "
-            "{'SA(1.0)': logscale(0.01, 2, 20), "
-            "'PGA': [0.1, 0.2], 'SA(0.3)': custom_unknown_expression(1)}\n"
+            "{'SA(1.00)': logscale(0.01, 2, 20), "
+            "'PGA': [0.1, 0.2], 'SA(0.30)': custom_unknown_expression(1)}\n"
         )
         self.assertEqual(option, "intensity_measure_types_and_levels")
         self.assertEqual(names, ["PGA", "SA(0.3)", "SA(1.0)"])
+
+    def test_mapping_rejects_duplicate_after_normalization(self) -> None:
+        with self.assertRaisesRegex(
+            subject.VerifiedEventHazardConfigError,
+            "duplicates after OpenQuake normalization",
+        ):
+            subject.extract_openquake_imt_names(
+                "[calculation]\n"
+                "intensity_measure_types_and_levels = "
+                "{'SA(0.1)': [0.1], 'SA(0.10)': [0.2]}\n"
+            )
 
     def test_rejects_both_standard_imt_options(self) -> None:
         with self.assertRaisesRegex(
@@ -41,7 +78,7 @@ class EventHazardImtProfileTests(unittest.TestCase):
     def test_rejects_duplicate_imt_names(self) -> None:
         with self.assertRaisesRegex(
             subject.VerifiedEventHazardConfigError,
-            "contains duplicates",
+            "duplicates after OpenQuake normalization",
         ):
             subject.extract_openquake_imt_names(
                 "[calculation]\nintensity_measure_types = PGA, PGA\n"
@@ -56,14 +93,14 @@ class EventHazardImtProfileTests(unittest.TestCase):
                 "[calculation]\nintensity_measure_types_and_levels = ['PGA']\n"
             )
 
-    def test_rejects_unsafe_mapping_key(self) -> None:
+    def test_rejects_unsupported_mapping_key(self) -> None:
         with self.assertRaisesRegex(
             subject.VerifiedEventHazardConfigError,
-            "not safely bounded",
+            "outside the bounded EQ1 PGA/SA subset",
         ):
             subject.extract_openquake_imt_names(
                 "[calculation]\n"
-                "intensity_measure_types_and_levels = {'PGA\\nunsafe': [0.1]}\n"
+                "intensity_measure_types_and_levels = {'PGV': [0.1]}\n"
             )
 
     def test_verified_profile_fails_before_parsing_wrong_bytes(self) -> None:
