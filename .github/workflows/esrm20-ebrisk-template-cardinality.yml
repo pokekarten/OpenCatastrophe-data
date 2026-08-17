@@ -93,6 +93,19 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            (keys == [
+              "execution_sha",
+              "external_bytes_persisted",
+              "historical_group_assignment_authorized",
+              "model_use_authorized",
+              "provider_file_bytes_read",
+              "publication_authorized",
+              "schema_version",
+              "source_issue",
+              "status",
+              "target_sha",
+              "template_resolution"
+            ]) and
             .schema_version == "oc-esrm20-ebrisk-template-cardinality-result-v1" and
             .source_issue == 281 and
             .target_sha == $sha and .execution_sha == $sha and
@@ -103,6 +116,7 @@ jobs:
             .publication_authorized == false and
             .model_use_authorized == false and
             (.template_resolution | length) == 3 and
+            (.template_resolution | all(.[]; (keys == ["basename","state"]))) and
             ([.template_resolution[].basename] ==
               ["config_ebrisk_group1.ini","config_ebrisk_group2.ini","conif_ebrisk_group3.ini"]) and
             ([.template_resolution[].state] | all(
