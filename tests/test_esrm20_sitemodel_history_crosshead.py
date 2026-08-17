@@ -82,6 +82,20 @@ class SiteModelHistoryCrossHeadTests(unittest.TestCase):
         ):
             action.parse_terminal_result(_body(result), execution_sha=CURRENT_SHA)
 
+    def test_historical_equivalent_noncanonical_timestamp_fails_before_skip(self) -> None:
+        result = _terminal_result(HISTORICAL_SHA)
+        result["profile"]["candidate_commits"][0][
+            "committed_at_utc"
+        ] = "2021-12-10T01:00:00+01:00"
+        result["profile"]["history_identity_sha256"] = profile._history_sha256(
+            result["profile"]["candidate_commits"]
+        )
+        with self.assertRaisesRegex(
+            action.SiteModelHistoryExecutionError,
+            "timestamp is not canonical UTC",
+        ):
+            action.parse_terminal_result(_body(result), execution_sha=CURRENT_SHA)
+
     def test_historical_target_execution_mismatch_remains_fail_closed(self) -> None:
         result = _terminal_result(HISTORICAL_SHA)
         result["target_sha"] = "f" * 40
