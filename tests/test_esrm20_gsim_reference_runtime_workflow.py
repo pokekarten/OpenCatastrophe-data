@@ -45,6 +45,22 @@ class Esrm20RuntimeWorkflowContractTests(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertNotIn(fragment, esrm20)
 
+    def test_workflow_concurrency_isolates_non_request_issue_comments(self) -> None:
+        esrm20 = ESRM20_WORKFLOW.read_text(encoding="utf-8")
+        header, jobs = esrm20.split("\njobs:\n", 1)
+        self.assertTrue(jobs)
+        self.assertIn("concurrency:", header)
+        self.assertIn("github.event.issue.number == 493", header)
+        self.assertIn(
+            "github.event.comment.user.login == github.event.repository.owner.login",
+            header,
+        )
+        self.assertIn("github.event.comment.author_association == 'OWNER'", header)
+        self.assertIn("<!-- oc-eq1-esrm20-gsim-reference-runtime-request-v1 -->", header)
+        self.assertIn("'trusted-request'", header)
+        self.assertIn("format('noise-{0}', github.event.comment.id)", header)
+        self.assertIn("cancel-in-progress: false", header)
+
     def test_preserves_exact_openquake_commit_and_trusted_main_fences(self) -> None:
         esrm20 = ESRM20_WORKFLOW.read_text(encoding="utf-8")
         self.assertIn(
