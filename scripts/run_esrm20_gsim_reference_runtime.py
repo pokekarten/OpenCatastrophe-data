@@ -77,6 +77,18 @@ class Esrm20GsimReferenceRuntimeError(RuntimeError):
     """Raised when the narrow ESRM20 adapter or site-requirement evidence drifts."""
 
 
+def _validate_image_digest(value: object) -> str:
+    """Reuse the reviewed ESHM20 digest syntax without assuming a helper API."""
+    digest_re = getattr(_runtime, "_DIGEST_RE", None)
+    if digest_re is None or not callable(getattr(digest_re, "fullmatch", None)):
+        raise Esrm20GsimReferenceRuntimeError(
+            "reviewed runtime image-digest syntax surface drifted"
+        )
+    if type(value) is not str or digest_re.fullmatch(value) is None:
+        raise Esrm20GsimReferenceRuntimeError("runtime image digest is invalid")
+    return value
+
+
 def _bindings() -> tuple[tuple[Any, str, Any], ...]:
     return (
         (_gmm, "SOURCE_ISSUE", HANDOFF_ISSUE),
@@ -375,8 +387,8 @@ def main(argv: list[str] | None = None) -> int:
     digest = os.environ.get(args.runtime_image_digest_env)
     if type(digest) is not str:
         raise Esrm20GsimReferenceRuntimeError("runtime image digest environment value is absent")
-    # Preserve the reviewed digest syntax gate.
-    digest = _runtime._validate_image_digest(digest)
+    # Preserve the reviewed digest syntax gate without depending on a nonexistent helper.
+    digest = _validate_image_digest(digest)
     result = run_reference_runtime(execution_sha=args.execution_sha, image_digest=digest)
     Path(args.output).write_text(
         json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n",
