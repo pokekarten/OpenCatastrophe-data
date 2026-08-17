@@ -56,8 +56,10 @@ _WORD_PATTERNS = {
     name: re.compile(rf"(?<![a-z]){re.escape(name)}(?![a-z])", re.IGNORECASE)
     for name in NAME_LITERALS
 }
+_MAIN_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 _REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 _PKG_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
+_CONTENT_TYPES_NS = "http://schemas.openxmlformats.org/package/2006/content-types"
 _WORKSHEET_REL_TYPE = f"{_REL_NS}/worksheet"
 
 _TREE_ACQUIRE = tree.acquire_esrm20_scenario_tree_metadata
@@ -71,6 +73,10 @@ _NOW = transport.utc_now
 
 class ScenarioWorkbookIdentityError(RuntimeError):
     """Raised when the fixed workbook identity profile cannot be proven safely."""
+
+
+def _qname(namespace: str, local: str) -> str:
+    return f"{{{namespace}}}{local}"
 
 
 def _bounded_text(value: object, *, field: str) -> str:
@@ -218,7 +224,7 @@ def _canonical_zip_name(name: object) -> str:
 
 
 def _canonical_relationship_target(value: object) -> str:
-    if type(value) is not str or not value or "\\" in value:
+    if type(value) is not str or not value or "\\" in value or "%" in value:
         raise ScenarioWorkbookIdentityError("worksheet relationship target is invalid")
     if "?" in value or "#" in value:
         raise ScenarioWorkbookIdentityError("worksheet relationship target is invalid")
@@ -266,14 +272,10 @@ def _parse_xml(payload: bytes, *, label: str) -> ET.Element:
         raise ScenarioWorkbookIdentityError(f"{label} XML is malformed") from exc
 
 
-def _local(tag: str) -> str:
-    return tag.rsplit("}", 1)[-1]
-
-
 def _element_text(element: ET.Element) -> str:
     parts: list[str] = []
-    for node in element.iter():
-        if _local(node.tag) == "t" and node.text is not None:
+    for node in element.iter(_qname(_MAIN_NS, "t")):
+        if node.text is not None:
             parts.append(node.text)
     return _bounded_text("".join(parts), field="XLSX cell text")
 
@@ -283,10 +285,10 @@ def _shared_strings(archive: zipfile.ZipFile, infos: dict[str, zipfile.ZipInfo])
     if info is None:
         return []
     root = _parse_xml(_read_zip_member(archive, info), label="sharedStrings")
+    if root.tag != _qname(_MAIN_NS, "sst"):
+        raise ScenarioWorkbookIdentityError("sharedStrings namespace/root is invalid")
     strings: list[str] = []
-    for node in root.iter():
-        if _local(node.tag) != "si":
-            continue
+    for node in root.iter(_qname(_MAIN_NS, "si")):
         strings.append(_element_text(node))
         if len(strings) > MAX_SHARED_STRINGS:
             raise ScenarioWorkbookIdentityError("shared string count exceeds bounded policy")
@@ -306,11 +308,15 @@ def _referenced_worksheets(
     rels = _parse_xml(
         _read_zip_member(archive, infos[rels_name]), label="workbook relationships"
     )
+    if workbook.tag != _qname(_MAIN_NS, "workbook"):
+        raise ScenarioWorkbookIdentityError("workbook namespace/root is invalid")
+    if rels.tag != _qname(_PKG_REL_NS, "Relationships"):
+        raise ScenarioWorkbookIdentityError(
+            "workbook relationships namespace/root is invalid"
+        )
 
     relationship_map: dict[str, tuple[str, str, str | None]] = {}
-    for node in rels.iter():
-        if _local(node.tag) != "Relationship":
-            continue
+    for node in rels.iter(_qname(_PKG_REL_NS, "Relationship")):
         rel_id = node.attrib.get("Id")
         rel_type = node.attrib.get("Type")
         target = node.attrib.get("Target")
@@ -326,10 +332,8 @@ def _referenced_worksheets(
         relationship_map[rel_id] = (rel_type, target, target_mode)
 
     sheet_ids: list[str] = []
-    for node in workbook.iter():
-        if _local(node.tag) != "sheet":
-            continue
-        rel_id = node.attrib.get(f"{{{_REL_NS}}}id")
+    for node in workbook.iter(_qname(_MAIN_NS, "sheet")):
+        rel_id = node.attrib.get(_qname(_REL_NS, "id"))
         if type(rel_id) is not str or not rel_id or rel_id in sheet_ids:
             raise ScenarioWorkbookIdentityError("workbook sheet relationship id is invalid")
         sheet_ids.append(rel_id)
@@ -375,9 +379,13 @@ def _cell_text(cell: ET.Element, shared: list[str]) -> str:
     if cell_type not in allowed_types:
         raise ScenarioWorkbookIdentityError("XLSX cell type is outside closed set")
     if cell_type == "inlineStr":
-        inline = next((node for node in cell if _local(node.tag) == "is"), None)
+        inline = next(
+            (node for node in cell if node.tag == _qname(_MAIN_NS, "is")), None
+        )
         return "" if inline is None else _element_text(inline)
-    value_node = next((node for node in cell if _local(node.tag) == "v"), None)
+    value_node = next(
+        (node for node in cell if node.tag == _qname(_MAIN_NS, "v")), None
+    )
     raw = "" if value_node is None or value_node.text is None else value_node.text
     raw = _bounded_text(raw, field="XLSX cell value")
     if cell_type == "s":
@@ -426,10 +434,13 @@ def _scan_workbook(payload: bytes) -> dict[str, Any]:
             raise ScenarioWorkbookIdentityError(
                 f"XLSX required member missing: {content_types_name}"
             )
-        _parse_xml(
+        content_types = _parse_xml(
             _read_zip_member(archive, infos[content_types_name]),
             label=content_types_name,
         )
+        if content_types.tag != _qname(_CONTENT_TYPES_NS, "Types"):
+            raise ScenarioWorkbookIdentityError("content-types namespace/root is invalid")
+
         worksheet_names = _referenced_worksheets(archive, infos)
         if not (1 <= len(worksheet_names) <= MAX_WORKSHEETS):
             raise ScenarioWorkbookIdentityError("worksheet count is outside bounded policy")
@@ -448,10 +459,10 @@ def _scan_workbook(payload: bytes) -> dict[str, Any]:
                 _read_zip_member(archive, infos[worksheet_name]),
                 label="worksheet",
             )
+            if root.tag != _qname(_MAIN_NS, "worksheet"):
+                raise ScenarioWorkbookIdentityError("worksheet namespace/root is invalid")
             seen_refs: set[str] = set()
-            for row in root.iter():
-                if _local(row.tag) != "row":
-                    continue
+            for row in root.iter(_qname(_MAIN_NS, "row")):
                 row_count += 1
                 if row_count > MAX_ROWS:
                     raise ScenarioWorkbookIdentityError("worksheet row count exceeds bounded policy")
@@ -459,7 +470,7 @@ def _scan_workbook(payload: bytes) -> dict[str, Any]:
                 row_names: set[str] = set()
                 row_cell_count = 0
                 for cell in row:
-                    if _local(cell.tag) != "c":
+                    if cell.tag != _qname(_MAIN_NS, "c"):
                         continue
                     row_cell_count += 1
                     cell_count += 1
