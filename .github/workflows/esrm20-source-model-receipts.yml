@@ -1,0 +1,143 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Source-Model Byte Receipts
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-source-model-receipts-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  execute-receipts:
+    name: Execute exact trusted-main source-model receipts
+    if: >-
+      github.event.issue.number == 481 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-source-model-receipts-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.run.outputs.execution_sha }}
+      skip: ${{ steps.run.outputs.skip }}
+      result_json: ${{ steps.run.outputs.result_json }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Validate, deduplicate, and stream exact source-model receipts
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OC_SOURCE_MODEL_RECEIPT_REQUEST: ${{ github.event.comment.body }}
+          RESULT_PATH: ${{ runner.temp }}/esrm20-source-model-receipts.json
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.run_esrm20_source_model_receipts_action \
+            --comment-body-env OC_SOURCE_MODEL_RECEIPT_REQUEST \
+            --expected-issue 481 \
+            --execution-sha "$EXECUTION_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --token-env GH_TOKEN \
+            --output "$RESULT_PATH"
+          STATUS="$(jq -r '.status' "$RESULT_PATH")"
+          test "$STATUS" = "pass" -o "$STATUS" = "blocked" -o "$STATUS" = "duplicate"
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+          if test "$STATUS" = "duplicate"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "result_json=" >> "$GITHUB_OUTPUT"
+          else
+            RESULT_JSON="$(jq -cS . "$RESULT_PATH")"
+            test -n "$RESULT_JSON"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish-receipts:
+    name: Publish bounded source-model receipt evidence
+    needs: [execute-receipts]
+    if: >-
+      needs.execute-receipts.result == 'success' &&
+      needs.execute-receipts.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.execute-receipts.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-receipts.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-source-model-receipts-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-source-model-receipts-result-v1" and
+            .action == "esrm20_source_model_byte_receipts" and
+            .source_issue == 481 and .parent_science_issue == 281 and
+            .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+            .target_sha == $sha and .execution_sha == $sha and
+            (.status == "pass" or .status == "blocked") and
+            .external_bytes_persisted == false and
+            .transitive_dependency_byte_closure_verified == false and
+            .runtime_compatibility_verified == false and
+            .publication_authorized == false and .model_use_authorized == false and
+            (if .status == "pass" then
+              .failure_class == null and .profile != null and
+              .profile.schema_version == "oc-esrm20-source-model-receipts-profile-v1" and
+              .profile.source_profile_result_comment_id == 5310194089 and
+              .profile.project_id == 269 and .profile.project_path == "efehr/esrm20" and
+              .profile.commit_sha == "05f83bbc9df81d02ee8ddb1801d9d781355ce783" and
+              .profile.receipt_count == 10 and (.profile.receipts | length) == 10 and
+              .profile.source_model_paths == [
+                "Hazard/source_models/asm_v12e/asm_ver12e_winGT_fs017_combined.xml",
+                "Hazard/source_models/asm_v12e/asm_ver12e_winGT_fs017_twingr.xml",
+                "Hazard/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_combined.xml",
+                "Hazard/source_models/fsm_v09/fs_ver09e_model_aGR_fMthr_combined.xml",
+                "Hazard/source_models/interface_v12b/CaA_IF2222222_M40.xml",
+                "Hazard/source_models/interface_v12b/CyA_IF2222222_M40.xml",
+                "Hazard/source_models/interface_v12b/GiA_IF2222222_M40.xml",
+                "Hazard/source_models/interface_v12b/HeA_IF2222222_M40.xml",
+                "Hazard/source_models/ssm_v09/seis_ver12b_fMthr_asm_ver12e_winGT_fs017_agbrs_point.xml",
+                "Hazard/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_combined.xml"
+              ] and
+              [.profile.receipts[].repository_path] == .profile.source_model_paths and
+              .profile.provider_file_bytes_read == true and
+              .profile.raw_xml_returned == false and
+              .profile.source_model_content_profiled == false and
+              .profile.hdf5_companions_inferred == false and
+              .profile.external_bytes_persisted == false and
+              .profile.transitive_dependency_byte_closure_verified == false and
+              .profile.runtime_compatibility_verified == false and
+              .profile.publication_authorized == false and .profile.model_use_authorized == false
+            else
+              .failure_class == "source_model_receipt_failure" and .profile == null
+            end)
+          ' >/dev/null
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/source-model-receipt-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/481/comments" \
+            --input "$RUNNER_TEMP/source-model-receipt-comment.json"
