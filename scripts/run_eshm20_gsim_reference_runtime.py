@@ -114,6 +114,110 @@ _EXPECTED_RESOLVED_GSIM_CLASSES = sorted(
 _SAFE_BRANCH_ID_RE = re.compile(r"^[A-Za-z0-9_.:+/@-]{1,256}$")
 _SAFE_ARGUMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
+
+def _build_expected_branch_requests() -> dict[tuple[str, str], tuple[str, str, str, tuple[str, ...]]]:
+    """Return the exact frozen 80-request identity surface from the receipted GMM."""
+
+    expected: dict[tuple[str, str], tuple[str, str, str, tuple[str, ...]]] = {}
+
+    def add(
+        branch_set_id: str,
+        branch_id: str,
+        trt: str,
+        token: str,
+        request_form: str,
+        argument_keys: tuple[str, ...],
+    ) -> None:
+        key = (branch_set_id, branch_id)
+        if key in expected:
+            raise RuntimeError("duplicate frozen ESHM20 branch request")
+        expected[key] = (trt, token, request_form, argument_keys)
+
+    stress_levels = ("High", "Low", "Mid", "VHigh", "VLow")
+    attenuations = ("Central", "Fast", "Slow")
+    for branch_set_id, prefix, trt, token in (
+        ("BCHydroSubIF", "SUB_IF", "Subduction Interface", "BCHydroESHM20SInter"),
+        ("BCHydroSubIS", "SUB_IS", "Subduction Inslab", "BCHydroESHM20SSlab"),
+        ("BCHydroSubVrancea", "Vrancea", "Non-Subduction Deep", "BCHydroESHM20SSlab"),
+    ):
+        for stress in stress_levels:
+            for attenuation in attenuations:
+                keys = ["a", "b", "faba_taper_model"]
+                if stress != "Mid":
+                    keys.append("sigma_mu_epsilon")
+                if attenuation != "Central":
+                    keys.append("theta6_adjustment")
+                add(
+                    branch_set_id,
+                    f"{prefix}{stress}Stress{attenuation}Att",
+                    trt,
+                    token,
+                    "table",
+                    tuple(sorted(keys)),
+                )
+
+    for suffix, keys in (
+        ("Shal0SCentralAtt", ()),
+        ("Shal0SSlowAtt", ("c3_epsilon",)),
+        ("ShalP1SCentralAtt", ("sigma_mu_epsilon",)),
+        ("ShalP1SSlowAtt", ("c3_epsilon", "sigma_mu_epsilon")),
+    ):
+        add(
+            "CratonModel",
+            f"CRBackbone{suffix}",
+            "Craton",
+            "KothaEtAl2020ESHM20",
+            "bare" if not keys else "table",
+            tuple(sorted(keys)),
+        )
+
+    for stress in stress_levels:
+        for site in ("High", "Low", "Mid"):
+            keys = []
+            if stress != "Mid":
+                keys.append("epsilon")
+            if site != "Mid":
+                keys.append("site_epsilon")
+            add(
+                "CratonModel",
+                f"CRParam{stress}{site}Site",
+                "Craton",
+                "ESHM20Craton",
+                "table",
+                tuple(sorted(keys)),
+            )
+
+    for stress in stress_levels:
+        for attenuation in attenuations:
+            keys = []
+            if attenuation != "Central":
+                keys.append("c3_epsilon")
+            if stress != "Mid":
+                keys.append("sigma_mu_epsilon")
+            add(
+                "Shallow_Def",
+                f"Shallow_Default_{stress}Stress_{attenuation}Att",
+                "Shallow Default",
+                "KothaEtAl2020ESHM20",
+                "bare" if not keys else "table",
+                tuple(sorted(keys)),
+            )
+
+    add(
+        "Volcanic",
+        "b61",
+        "Volcanic",
+        "LanzanoLuzi2019shallow",
+        "bare",
+        (),
+    )
+    if len(expected) != _EXPECTED_BRANCH_COUNT:
+        raise RuntimeError("frozen ESHM20 request contract does not contain 80 branches")
+    return expected
+
+
+_EXPECTED_BRANCH_REQUESTS = _build_expected_branch_requests()
+
 # Import-time frozen acquisition authority. Production has no caller-selected
 # provider/project/ref/path/size/hash/parser/model surface.
 _PROJECT_ID = gmm.PROJECT_ID
@@ -354,19 +458,22 @@ def _validate_trusted_branch_contract(result: dict[str, Any]) -> None:
         branch_ids.add(branch_id)
         branch_sets.add(branch_set_id)
 
-        expected_trt, allowed_tokens = _EXPECTED_BRANCH_SET_CONTRACT[branch_set_id]
+        frozen = _EXPECTED_BRANCH_REQUESTS.get((branch_set_id, branch_id))
+        if frozen is None:
+            raise ReferenceRuntimeExecutionError("trusted runtime branch request identity drifted")
+        expected_trt, expected_token, expected_form, expected_arguments = frozen
         if type(tectonic_region_type) is not str or tectonic_region_type != expected_trt:
             raise ReferenceRuntimeExecutionError("trusted runtime tectonic-region evidence drifted")
         if (
             type(requested) is not str
             or type(resolved) is not str
-            or requested not in allowed_tokens
-            or resolved != requested
+            or requested != expected_token
+            or resolved != expected_token
         ):
             raise ReferenceRuntimeExecutionError("trusted runtime GSIM identity drifted")
         resolved_classes.add(resolved)
 
-        if request_form not in ("bare", "table"):
+        if request_form != expected_form:
             raise ReferenceRuntimeExecutionError("trusted runtime request form is invalid")
         for field in (
             "alias_definition_present",
@@ -389,17 +496,23 @@ def _validate_trusted_branch_contract(result: dict[str, Any]) -> None:
             branch["runtime_argument_keys_after_alias"],
             label="trusted runtime post-alias argument keys",
         )
+        if tuple(argument_keys) != expected_arguments:
+            raise ReferenceRuntimeExecutionError(
+                "trusted runtime source argument identity drifted"
+            )
         if runtime_argument_keys != argument_keys:
             raise ReferenceRuntimeExecutionError(
                 "trusted runtime direct-request argument evidence drifted"
             )
-        if request_form == "bare" and argument_keys:
-            raise ReferenceRuntimeExecutionError(
-                "trusted runtime bare request contains argument keys"
-            )
         if branch["alias_definition_present"]:
             alias_tokens.add(requested)
 
+    observed_request_order = [
+        (branch["branch_set_id"], branch["branch_id"]) for branch in branches
+    ]
+    expected_request_order = sorted(_EXPECTED_BRANCH_REQUESTS)
+    if observed_request_order != expected_request_order:
+        raise ReferenceRuntimeExecutionError("trusted runtime branch request order drifted")
     if branch_sets != set(_EXPECTED_BRANCH_SET_CONTRACT):
         raise ReferenceRuntimeExecutionError("trusted runtime branch-set inventory drifted")
     if sorted(resolved_classes) != _EXPECTED_RESOLVED_GSIM_CLASSES:
