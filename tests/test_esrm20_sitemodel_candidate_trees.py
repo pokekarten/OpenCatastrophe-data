@@ -196,6 +196,12 @@ class SiteModelCandidateTreeTests(unittest.TestCase):
             {**_entry("writer.py", "a" * 40), "raw_url": "forbidden"},
             {**_entry("writer.py", "a" * 40), "mode": "10064"},
             {**_entry("writer.py", "a" * 40), "id": "A" * 40},
+            {
+                **_entry("docs", "a" * 40, entry_type="tree"),
+                "mode": "100644",
+            },
+            {**_entry("writer.py", "a" * 40), "mode": "040000"},
+            {**_entry("writer.py", "a" * 40), "mode": "000000"},
         ]
         first_commit = profile.CANDIDATE_HISTORY[0]["commit_sha"]
         for bad_entry in bad_cases:
