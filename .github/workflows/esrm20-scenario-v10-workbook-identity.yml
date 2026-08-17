@@ -181,15 +181,27 @@ jobs:
               (.profile.scanned_row_count | type) == "number" and .profile.scanned_row_count >= 0 and .profile.scanned_row_count <= 100000 and
               (.profile.scanned_cell_count | type) == "number" and .profile.scanned_cell_count >= 0 and .profile.scanned_cell_count <= 500000 and
               (.profile.target_event_id_exact_cell_count | type) == "number" and .profile.target_event_id_exact_cell_count >= 0 and
+              .profile.target_event_id_exact_cell_count <= .profile.scanned_cell_count and
               (.profile.target_event_id_row_count | type) == "number" and .profile.target_event_id_row_count >= 0 and
               .profile.target_event_id_row_count <= .profile.target_event_id_exact_cell_count and
+              .profile.target_event_id_row_count <= .profile.scanned_row_count and
               (.profile.name_literal_cell_counts | keys) == ["athens", "thessaloniki"] and
               (.profile.name_literal_row_counts | keys) == ["athens", "thessaloniki"] and
               (.profile.target_same_row_name_literal_counts | keys) == ["athens", "thessaloniki"] and
-              all(.profile.name_literal_cell_counts[]; (type == "number") and . >= 0) and
-              all(.profile.name_literal_row_counts[]; (type == "number") and . >= 0) and
-              all(.profile.target_same_row_name_literal_counts[]; (type == "number") and . >= 0) and
-              (.profile.same_row_name_literal_binding == null or .profile.same_row_name_literal_binding == "athens" or .profile.same_row_name_literal_binding == "thessaloniki") and
+              all(.profile.name_literal_cell_counts[]; (type == "number") and . >= 0 and . <= .profile.scanned_cell_count) and
+              all(.profile.name_literal_row_counts[]; (type == "number") and . >= 0 and . <= .profile.scanned_row_count) and
+              .profile.name_literal_row_counts.athens <= .profile.name_literal_cell_counts.athens and
+              .profile.name_literal_row_counts.thessaloniki <= .profile.name_literal_cell_counts.thessaloniki and
+              all(.profile.target_same_row_name_literal_counts[]; (type == "number") and . >= 0 and . <= .profile.target_event_id_row_count) and
+              .profile.target_same_row_name_literal_counts.athens <= .profile.name_literal_row_counts.athens and
+              .profile.target_same_row_name_literal_counts.thessaloniki <= .profile.name_literal_row_counts.thessaloniki and
+              (if .profile.same_row_name_literal_binding == "athens" then
+                .profile.target_same_row_name_literal_counts.athens > 0 and .profile.target_same_row_name_literal_counts.thessaloniki == 0
+              elif .profile.same_row_name_literal_binding == "thessaloniki" then
+                .profile.target_same_row_name_literal_counts.thessaloniki > 0 and .profile.target_same_row_name_literal_counts.athens == 0
+              elif .profile.same_row_name_literal_binding == null then
+                .profile.target_same_row_name_literal_counts.athens == 0 and .profile.target_same_row_name_literal_counts.thessaloniki == 0
+              else false end) and
               .profile.raw_workbook_cells_returned == false and
               .profile.raw_workbook_rows_returned == false and
               .profile.provider_file_bytes_read == true and
