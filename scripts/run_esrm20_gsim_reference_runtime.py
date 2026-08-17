@@ -57,6 +57,16 @@ EXPECTED_SOURCE_ARGUMENT_KEYS = (
     "site_epsilon",
     "theta_6_adjustment",
 )
+EXPECTED_COMPONENTS_BY_GSIM = {
+    "BCHydroESHM20SInter": "GEOMETRIC_MEAN",
+    "BCHydroESHM20SSlab": "GEOMETRIC_MEAN",
+    "ESHM20Craton": "RotD50",
+    "KothaEtAl2020ESHM20SlopeGeology": "RotD50",
+    "LanzanoLuzi2019shallow": "GEOMETRIC_MEAN",
+}
+COMPONENT_CONVERSION_WRAPPER = "ModifiableGMPE"
+COMPONENT_CONVERSION_ARGUMENT = "horiz_comp_to_geom_mean"
+REFERENCE_COMPONENT_SEMANTICS = "provider_native_mixed_no_conversion"
 CANONICAL_PROFILE_RESULT_COMMENT_ID = 5310194089
 # Trusted #476 request/result pair and successful main-only workflow execution.
 CANONICAL_RECEIPT_REQUEST_COMMENT_ID = 5310055297
@@ -68,13 +78,14 @@ OPENQUAKE_COMMIT = "9f044c93d72846421a8faa90ebf0a6afacdf3c20"
 _SAFE_CLASS_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,127}$")
 _SAFE_PARAMETER_RE = re.compile(r"^[a-z][a-z0-9_]{0,127}$")
 _SAFE_ARGUMENT_RE = re.compile(r"^[a-z][a-z0-9_]{0,127}$")
+_SAFE_COMPONENT_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]{0,127}$")
 _EXTERNAL_RESOURCE_SUFFIXES = ("_file", "_table")
 
 _BASE_RUN_REFERENCE_RUNTIME = _runtime.run_reference_runtime
 
 
 class Esrm20GsimReferenceRuntimeError(RuntimeError):
-    """Raised when the narrow ESRM20 adapter or site-requirement evidence drifts."""
+    """Raised when the narrow ESRM20 adapter or bounded evidence drifts."""
 
 
 def _validate_image_digest(value: object) -> str:
@@ -275,7 +286,9 @@ def _site_parameter_evidence(
             raise Esrm20GsimReferenceRuntimeError("resolved GSIM class name is invalid")
         gsim_class = registry.get(class_name)
         if gsim_class is None:
-            raise Esrm20GsimReferenceRuntimeError("resolved GSIM class is absent from verified registry")
+            raise Esrm20GsimReferenceRuntimeError(
+                "resolved GSIM class is absent from verified registry"
+            )
         raw = getattr(gsim_class, "REQUIRES_SITES_PARAMETERS", None)
         if not isinstance(raw, (set, frozenset)):
             raise Esrm20GsimReferenceRuntimeError(
@@ -287,7 +300,9 @@ def _site_parameter_evidence(
             or _SAFE_PARAMETER_RE.fullmatch(parameter) is None
             for parameter in parameters
         ):
-            raise Esrm20GsimReferenceRuntimeError("resolved GSIM site parameter is invalid")
+            raise Esrm20GsimReferenceRuntimeError(
+                "resolved GSIM site parameter is invalid"
+            )
         union.update(parameters)
         rows.append({"resolved_gsim_class": class_name, "site_parameters": parameters})
 
@@ -298,8 +313,113 @@ def _site_parameter_evidence(
     }
 
 
+def _component_evidence(
+    runtime_result: Mapping[str, Any], registry: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Bind exact direct GSIM requests to their frozen OpenQuake component declarations."""
+    classes = runtime_result.get("unique_resolved_gsim_classes")
+    branches = runtime_result.get("branches")
+    expected_classes = sorted(EXPECTED_COMPONENTS_BY_GSIM)
+    if (
+        type(classes) is not list
+        or classes != expected_classes
+        or type(branches) is not list
+        or len(branches) != EXPECTED_BRANCH_COUNT
+    ):
+        raise Esrm20GsimReferenceRuntimeError(
+            "verified runtime component class inventory drifted"
+        )
+
+    for branch in branches:
+        if type(branch) is not dict:
+            raise Esrm20GsimReferenceRuntimeError(
+                "verified runtime component branch is invalid"
+            )
+        requested = branch.get("requested_gsim_token")
+        resolved = branch.get("resolved_gsim_class")
+        if (
+            type(requested) is not str
+            or requested not in EXPECTED_COMPONENTS_BY_GSIM
+            or resolved != requested
+            or requested == COMPONENT_CONVERSION_WRAPPER
+        ):
+            raise Esrm20GsimReferenceRuntimeError(
+                "verified ESRM20 request is not a direct canonical GSIM"
+            )
+        for field in (
+            "alias_definition_present",
+            "alias_expansion_applied",
+            "registry_alias_key_used",
+        ):
+            if branch.get(field) is not False:
+                raise Esrm20GsimReferenceRuntimeError(
+                    "verified ESRM20 component request uses an alias or wrapper"
+                )
+        for field, label in (
+            ("argument_keys", "source GSIM argument keys"),
+            ("runtime_argument_keys_after_alias", "post-alias GSIM argument keys"),
+        ):
+            keys = _argument_keys(branch.get(field), field=label)
+            if COMPONENT_CONVERSION_ARGUMENT in keys:
+                raise Esrm20GsimReferenceRuntimeError(
+                    "verified ESRM20 component conversion is explicitly activated"
+                )
+
+    rows: list[dict[str, str]] = []
+    components: set[str] = set()
+    for class_name in expected_classes:
+        gsim_class = registry.get(class_name)
+        if gsim_class is None:
+            raise Esrm20GsimReferenceRuntimeError(
+                "component GSIM class is absent from verified registry"
+            )
+        raw_component = getattr(
+            gsim_class, "DEFINED_FOR_INTENSITY_MEASURE_COMPONENT", None
+        )
+        component_name = getattr(raw_component, "name", None)
+        if (
+            type(component_name) is not str
+            or _SAFE_COMPONENT_RE.fullmatch(component_name) is None
+        ):
+            raise Esrm20GsimReferenceRuntimeError(
+                "verified GSIM component declaration is invalid"
+            )
+        expected_component = EXPECTED_COMPONENTS_BY_GSIM[class_name]
+        if component_name != expected_component:
+            raise Esrm20GsimReferenceRuntimeError(
+                "verified GSIM component declaration drifted"
+            )
+        components.add(component_name)
+        rows.append(
+            {
+                "resolved_gsim_class": class_name,
+                "component": component_name,
+            }
+        )
+
+    unique_components = sorted(components)
+    if unique_components != ["GEOMETRIC_MEAN", "RotD50"]:
+        raise Esrm20GsimReferenceRuntimeError(
+            "verified ESRM20 component basis no longer matches trusted evidence"
+        )
+    return {
+        "per_resolved_gsim_class": rows,
+        "unique_components": unique_components,
+        "mixed_component_basis": True,
+        "component_conversion_request_absent": True,
+        "component_conversion_activated": False,
+        "component_conversion_wrapper": COMPONENT_CONVERSION_WRAPPER,
+        "component_conversion_argument": COMPONENT_CONVERSION_ARGUMENT,
+        "reference_component_semantics": REFERENCE_COMPONENT_SEMANTICS,
+        "source": (
+            "OpenQuake-3.14-verified-class."
+            "DEFINED_FOR_INTENSITY_MEASURE_COMPONENT+exact-direct-request-identity"
+        ),
+    }
+
+
 def run_reference_runtime(*, execution_sha: str, image_digest: str) -> dict[str, Any]:
-    """Run the reviewed runtime gate and append bounded site-requirement evidence."""
+    """Run the reviewed runtime gate and append bounded site/component evidence."""
     with esrm20_binding():
         result = _BASE_RUN_REFERENCE_RUNTIME(
             execution_sha=execution_sha,
@@ -320,11 +440,14 @@ def run_reference_runtime(*, execution_sha: str, image_digest: str) -> dict[str,
         if result.get("branch_count") != EXPECTED_BRANCH_COUNT:
             raise Esrm20GsimReferenceRuntimeError("runtime result branch count drifted")
         if result.get("openquake_reference", {}).get("commit") != OPENQUAKE_COMMIT:
-            raise Esrm20GsimReferenceRuntimeError("runtime result OpenQuake commit drifted")
+            raise Esrm20GsimReferenceRuntimeError(
+                "runtime result OpenQuake commit drifted"
+            )
 
         argument_evidence = _gsim_argument_evidence(result.get("branches"))
         verified_runtime = _gate._load_verified_openquake_runtime()
-        evidence = _site_parameter_evidence(result, verified_runtime.registry)
+        site_evidence = _site_parameter_evidence(result, verified_runtime.registry)
+        component_evidence = _component_evidence(result, verified_runtime.registry)
         result = dict(result)
         result["schema_version"] = SCHEMA_VERSION
         result["source_issue"] = SOURCE_ISSUE
@@ -332,8 +455,10 @@ def run_reference_runtime(*, execution_sha: str, image_digest: str) -> dict[str,
         result["source_receipt_result_comment_id"] = CANONICAL_RECEIPT_RESULT_COMMENT_ID
         result["requested_gsim_tokens"] = list(EXPECTED_REQUESTED_TOKENS)
         result["gsim_argument_evidence"] = argument_evidence
-        result["site_parameter_requirements"] = evidence
+        result["site_parameter_requirements"] = site_evidence
         result["site_parameter_requirements_derived"] = True
+        result["component_evidence"] = component_evidence
+        result["component_evidence_derived"] = True
         result["site_model_compatibility_verified"] = False
         result["imt_component_unit_compatibility_verified"] = False
         result["numerical_hazard_agreement_verified"] = False
@@ -350,7 +475,12 @@ def validate_request(body: object, *, expected_issue: int, execution_sha: str) -
 
 
 def has_terminal_runtime_result(
-    *, repository: str, token: str, execution_sha: str, opener: Any | None = None, max_pages: int = 20
+    *,
+    repository: str,
+    token: str,
+    execution_sha: str,
+    opener: Any | None = None,
+    max_pages: int = 20,
 ) -> bool:
     with esrm20_binding():
         return _runtime.has_terminal_runtime_result(
@@ -386,7 +516,9 @@ def main(argv: list[str] | None = None) -> int:
         )
     digest = os.environ.get(args.runtime_image_digest_env)
     if type(digest) is not str:
-        raise Esrm20GsimReferenceRuntimeError("runtime image digest environment value is absent")
+        raise Esrm20GsimReferenceRuntimeError(
+            "runtime image digest environment value is absent"
+        )
     # Preserve the reviewed digest syntax gate without depending on a nonexistent helper.
     digest = _validate_image_digest(digest)
     result = run_reference_runtime(execution_sha=args.execution_sha, image_digest=digest)
