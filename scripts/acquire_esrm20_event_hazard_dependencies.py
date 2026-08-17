@@ -5,8 +5,8 @@
 
 The canonical trusted-main receipts already bind the exact Group1/Group2 byte
 identities. This worker re-materializes one fixed immutable root transiently,
-then delegates byte verification and dependency interpretation to the reviewed
-#354 bridge. Provider bytes are never returned or persisted by this module.
+then delegates byte verification and bounded interpretation to the reviewed
+bridge. Provider bytes are never returned by any public worker.
 """
 
 from __future__ import annotations
@@ -52,13 +52,17 @@ class EventHazardDependencyAcquisitionError(RuntimeError):
     """Raised when one fixed receipted root cannot be safely profiled."""
 
 
-def _acquire_and_extract(
+def _acquire_exact_root_payload(
     group: int,
     *,
     opener: Any | None,
     monotonic: Any,
-) -> dict[str, Any]:
-    """Retrieve one internally selected root and return verified dependencies."""
+) -> bytes:
+    """Retrieve one internally selected frozen root and return memory-only bytes.
+
+    This is an internal transport primitive. Public workers below immediately
+    pass the bytes into a verifier/profiler and never return provider bytes.
+    """
 
     try:
         spec = bridge._root_spec(group)
@@ -112,6 +116,18 @@ def _acquire_and_extract(
             f"ESRM20 event-hazard dependency retrieval failed: {type(exc).__name__}"
         ) from exc
 
+    return raw
+
+
+def _acquire_and_extract(
+    group: int,
+    *,
+    opener: Any | None,
+    monotonic: Any,
+) -> dict[str, Any]:
+    """Retrieve one internally selected root and return verified dependencies."""
+
+    raw = _acquire_exact_root_payload(group, opener=opener, monotonic=monotonic)
     try:
         result = bridge.extract_verified_event_hazard_dependencies(group, raw)
     except bridge.VerifiedEventHazardConfigError as exc:
@@ -130,6 +146,37 @@ def _acquire_and_extract(
     return result
 
 
+def _acquire_and_profile_imts(
+    group: int,
+    *,
+    opener: Any | None,
+    monotonic: Any,
+) -> dict[str, Any]:
+    """Retrieve one fixed root and return only its verified IMT names."""
+
+    raw = _acquire_exact_root_payload(group, opener=opener, monotonic=monotonic)
+    try:
+        result = bridge.extract_verified_event_hazard_imt_profile(group, raw)
+    except bridge.VerifiedEventHazardConfigError as exc:
+        raise EventHazardDependencyAcquisitionError(
+            "ESRM20 event-hazard IMT verification failed closed"
+        ) from exc
+    if (
+        result.get("levels_returned") is not False
+        or result.get("raw_config_returned") is not False
+        or result.get("component_semantics_verified") is not False
+        or result.get("unit_semantics_verified") is not False
+        or result.get("hazard_vulnerability_imt_compatibility_verified") is not False
+        or result.get("external_bytes_persisted") is not False
+        or result.get("publication_authorized") is not False
+        or result.get("model_use_authorized") is not False
+    ):
+        raise EventHazardDependencyAcquisitionError(
+            "verified ESRM20 IMT result widened its authority ceiling"
+        )
+    return result
+
+
 def acquire_event_hazard_group1_dependencies(
     *, opener: Any | None = None, monotonic: Any = time.monotonic
 ) -> dict[str, Any]:
@@ -144,3 +191,11 @@ def acquire_event_hazard_group2_dependencies(
     """Re-materialize and profile only the frozen Group2 root."""
 
     return _acquire_and_extract(2, opener=opener, monotonic=monotonic)
+
+
+def acquire_event_hazard_group1_imt_profile(
+    *, opener: Any | None = None, monotonic: Any = time.monotonic
+) -> dict[str, Any]:
+    """Re-materialize Group1 and return only its verified canonical IMT names."""
+
+    return _acquire_and_profile_imts(1, opener=opener, monotonic=monotonic)
