@@ -101,11 +101,6 @@ def _bindings() -> tuple[tuple[Any, str, Any], ...]:
         (_profiler, "EXPECTED_BRANCH_COUNT", EXPECTED_BRANCH_COUNT),
         (
             _profiler,
-            "FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID",
-            CANONICAL_RECEIPT_REQUEST_COMMENT_ID,
-        ),
-        (
-            _profiler,
             "FIRST_ORDER_RECEIPT_RESULT_COMMENT_ID",
             CANONICAL_RECEIPT_RESULT_COMMENT_ID,
         ),
@@ -114,11 +109,6 @@ def _bindings() -> tuple[tuple[Any, str, Any], ...]:
             _profiler,
             "FIRST_ORDER_RECEIPT_EXECUTION_SHA",
             CANONICAL_RECEIPT_EXECUTION_SHA,
-        ),
-        (
-            _profiler,
-            "FIRST_ORDER_RECEIPT_RETRIEVED_AT",
-            CANONICAL_RECEIPT_RETRIEVED_AT,
         ),
         (_gate, "SOURCE_ISSUE", SOURCE_ISSUE),
         (_gate, "HANDOFF_ISSUE", HANDOFF_ISSUE),
@@ -169,10 +159,6 @@ def assert_esrm20_binding() -> None:
         (_profiler.EXPECTED_BRANCH_SET_COUNT, EXPECTED_BRANCH_SET_COUNT),
         (_profiler.EXPECTED_BRANCH_COUNT, EXPECTED_BRANCH_COUNT),
         (
-            _profiler.FIRST_ORDER_RECEIPT_REQUEST_COMMENT_ID,
-            CANONICAL_RECEIPT_REQUEST_COMMENT_ID,
-        ),
-        (
             _profiler.FIRST_ORDER_RECEIPT_RESULT_COMMENT_ID,
             CANONICAL_RECEIPT_RESULT_COMMENT_ID,
         ),
@@ -180,10 +166,6 @@ def assert_esrm20_binding() -> None:
         (
             _profiler.FIRST_ORDER_RECEIPT_EXECUTION_SHA,
             CANONICAL_RECEIPT_EXECUTION_SHA,
-        ),
-        (
-            _profiler.FIRST_ORDER_RECEIPT_RETRIEVED_AT,
-            CANONICAL_RECEIPT_RETRIEVED_AT,
         ),
         (_runtime.SOURCE_ISSUE, SOURCE_ISSUE),
         (_runtime._PROJECT_ID, PROJECT_ID),
