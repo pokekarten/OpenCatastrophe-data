@@ -199,3 +199,11 @@ def acquire_event_hazard_group1_imt_profile(
     """Re-materialize Group1 and return only its verified canonical IMT names."""
 
     return _acquire_and_profile_imts(1, opener=opener, monotonic=monotonic)
+
+
+def acquire_event_hazard_group2_imt_profile(
+    *, opener: Any | None = None, monotonic: Any = time.monotonic
+) -> dict[str, Any]:
+    """Re-materialize Group2 and return only its verified canonical IMT names."""
+
+    return _acquire_and_profile_imts(2, opener=opener, monotonic=monotonic)
