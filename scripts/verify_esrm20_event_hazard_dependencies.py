@@ -10,6 +10,7 @@ import ast
 import configparser
 import hashlib
 import json
+import math
 import os
 import re
 import stat
@@ -31,9 +32,15 @@ DATASET_ID = "efehr.esrm20.risk-inputs.v1.0"
 PROJECT_ID = 269
 PROJECT_PATH = "efehr/esrm20"
 COMMIT_SHA = "05f83bbc9df81d02ee8ddb1801d9d781355ce783"
+OPENQUAKE_COMMIT = "9f044c93d72846421a8faa90ebf0a6afacdf3c20"
 PARSER_ID = "scripts.openquake_config_dependencies.extract_openquake_config_references"
 IMT_OPTIONS = ("intensity_measure_types", "intensity_measure_types_and_levels")
-_SAFE_IMT_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*(?:\([0-9eE+., -]{1,64}\))?$")
+# EQ1 vulnerability compatibility requires PGA and SA ordinates.  Keep this
+# bridge deliberately narrower than the complete OpenQuake IMT namespace.
+# Canonicalization below mirrors frozen OpenQuake 3.14 hazardlib.imt for this
+# exact subset: PGA is unchanged and SA(period) is normalized through float.
+_SAFE_SOURCE_IMT_RE = re.compile(r"^(?:PGA|SA\([^(),]{1,64}\))$")
+_SA_SOURCE_RE = re.compile(r"^SA\(([^(),]{1,64})\)$")
 
 
 @dataclass(frozen=True)
@@ -170,25 +177,61 @@ def _find_single_option(parser: configparser.RawConfigParser) -> tuple[str, str]
     return matches[0]
 
 
-def _validate_imt_names(names: list[str]) -> list[str]:
+def _canonicalize_openquake314_eq1_imt(name: object) -> tuple[str, float]:
+    """Mirror frozen OQ3.14 canonical identity for the EQ1 PGA/SA subset.
+
+    Frozen ``openquake.hazardlib.imt.imt2tup`` strips the token, keeps PGA,
+    parses an SA period through ``float`` and emits ``SA(%s)``.  Returning the
+    period alongside the string also lets the caller reproduce the ordering in
+    ``openquake.hazardlib.valid.intensity_measure_types``.
+    """
+
+    if (
+        type(name) is not str
+        or name != name.strip()
+        or len(name) > 96
+        or _SAFE_SOURCE_IMT_RE.fullmatch(name) is None
+    ):
+        raise VerifiedEventHazardConfigError(
+            "verified event-hazard IMT is outside the bounded EQ1 PGA/SA subset"
+        )
+    if name == "PGA":
+        return "PGA", 0.0
+    match = _SA_SOURCE_RE.fullmatch(name)
+    if match is None:
+        raise VerifiedEventHazardConfigError(
+            "verified event-hazard IMT is outside the bounded EQ1 PGA/SA subset"
+        )
+    try:
+        period = float(match.group(1))
+    except ValueError as exc:
+        raise VerifiedEventHazardConfigError("verified event-hazard SA period is invalid") from exc
+    if not math.isfinite(period):
+        raise VerifiedEventHazardConfigError("verified event-hazard SA period is non-finite")
+    # Python's str(float) is the exact formatting primitive used by OQ3.14's
+    # ``'SA(%s)' % period`` path for the encountered PGA/SA subset.
+    return f"SA({period})", period
+
+
+def _canonicalize_imt_names(names: list[str]) -> list[str]:
     if not names or len(names) > 256:
-        raise VerifiedEventHazardConfigError("verified event-hazard IMT inventory is empty or unbounded")
-    if len(names) != len(set(names)):
-        raise VerifiedEventHazardConfigError("verified event-hazard IMT inventory contains duplicates")
-    for name in names:
-        if (
-            type(name) is not str
-            or name != name.strip()
-            or len(name) > 96
-            or _SAFE_IMT_RE.fullmatch(name) is None
-        ):
-            raise VerifiedEventHazardConfigError("verified event-hazard IMT name is not safely bounded")
-    return sorted(names)
+        raise VerifiedEventHazardConfigError(
+            "verified event-hazard IMT inventory is empty or unbounded"
+        )
+    normalized = [_canonicalize_openquake314_eq1_imt(name) for name in names]
+    canonical = [name for name, _period in normalized]
+    if len(canonical) != len(set(canonical)):
+        raise VerifiedEventHazardConfigError(
+            "verified event-hazard IMT inventory contains duplicates after OpenQuake normalization"
+        )
+    return [name for name, _period in sorted(normalized, key=lambda item: (item[1], item[0]))]
 
 
 def _imt_names_from_list(raw: str) -> list[str]:
-    tokens = [token for token in re.split(r"[\s,]+", raw.strip()) if token]
-    return _validate_imt_names(tokens)
+    # Frozen OpenQuake 3.14 ``intensity_measure_types`` splits on commas, not
+    # arbitrary whitespace. Preserve that contract and fail closed on blanks.
+    tokens = [chunk.strip() for chunk in raw.split(",")]
+    return _canonicalize_imt_names(tokens)
 
 
 def _imt_names_from_mapping(raw: str) -> list[str]:
@@ -203,15 +246,16 @@ def _imt_names_from_mapping(raw: str) -> list[str]:
         if not isinstance(key, ast.Constant) or type(key.value) is not str:
             raise VerifiedEventHazardConfigError("verified IMT/level mapping has a non-string IMT key")
         names.append(key.value)
-    return _validate_imt_names(names)
+    return _canonicalize_imt_names(names)
 
 
 def extract_openquake_imt_names(config_text: str) -> tuple[str, list[str]]:
-    """Return only the standard OpenQuake IMT option name and canonical IMT keys.
+    """Return only the standard option and OQ3.14-canonical EQ1 IMT names.
 
     Mapping values (the intensity levels themselves) are deliberately never
-    evaluated or returned.  ``ast`` is used only to inspect literal dictionary
-    keys, so expressions such as ``logscale(...)`` remain opaque.
+    evaluated or returned. ``ast`` is used only to inspect literal dictionary
+    keys, so expressions such as ``logscale(...)`` remain opaque. Unsupported
+    IMT families fail closed rather than receiving locally invented semantics.
     """
 
     if type(config_text) is not str or not config_text:
