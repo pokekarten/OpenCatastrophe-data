@@ -387,6 +387,21 @@ class WorkbookIdentityProfileTests(unittest.TestCase):
         ):
             profile._scan_workbook(traversal)
 
+    def test_foreign_namespace_rows_and_cells_cannot_spoof_identity(self) -> None:
+        foreign_sheet = (
+            b'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+            b'xmlns:x="urn:foreign"><sheetData><x:row r="1">'
+            b'<x:c r="A1" t="inlineStr"><x:is><x:t>Greece_07-9-1999</x:t></x:is></x:c>'
+            b'<x:c r="B1" t="inlineStr"><x:is><x:t>Athens 1999</x:t></x:is></x:c>'
+            b"</x:row></sheetData></worksheet>"
+        )
+        payload = _xlsx(self._happy_rows(), sheet_xml_override=foreign_sheet)
+        result = profile._scan_workbook(payload)
+        self.assertEqual(result["scanned_row_count"], 0)
+        self.assertEqual(result["scanned_cell_count"], 0)
+        self.assertEqual(result["target_event_id_exact_cell_count"], 0)
+        self.assertIsNone(result["same_row_name_literal_binding"])
+
     def test_duplicate_cell_reference_and_invalid_shared_index_fail_closed(self) -> None:
         duplicate_cell_sheet = (
             b'<worksheet xmlns="http://schemas.openxmlformats.org/'
