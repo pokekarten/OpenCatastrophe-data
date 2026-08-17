@@ -1,0 +1,213 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Scenario v1.0 Workbook Identity
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-scenario-v10-workbook-identity-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  execute-workbook-identity:
+    name: Execute exact trusted-main workbook identity profile
+    if: >-
+      github.event.issue.number == 285 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-scenario-v10-workbook-identity-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.run.outputs.execution_sha }}
+      skip: ${{ steps.run.outputs.skip }}
+      result_json: ${{ steps.run.outputs.result_json }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Validate, deduplicate, and inspect fixed workbook
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OC_WORKBOOK_IDENTITY_REQUEST: ${{ github.event.comment.body }}
+          RESULT_PATH: ${{ runner.temp }}/esrm20-scenario-v10-workbook-identity.json
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/run_esrm20_scenario_v10_workbook_identity_action.py \
+            --comment-body-env OC_WORKBOOK_IDENTITY_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --token-env GH_TOKEN \
+            --output "$RESULT_PATH"
+          STATUS="$(jq -r '.status' "$RESULT_PATH")"
+          test "$STATUS" = "pass" -o "$STATUS" = "blocked" -o "$STATUS" = "duplicate"
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+          if test "$STATUS" = "duplicate"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "result_json=" >> "$GITHUB_OUTPUT"
+          else
+            RESULT_JSON="$(jq -cS . "$RESULT_PATH")"
+            test -n "$RESULT_JSON"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish-workbook-identity:
+    name: Publish redacted workbook identity evidence
+    needs: [execute-workbook-identity]
+    if: >-
+      needs.execute-workbook-identity.result == 'success' &&
+      needs.execute-workbook-identity.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.execute-workbook-identity.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-workbook-identity.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-scenario-v10-workbook-identity-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            keys == [
+              "event_location_inference_authorized",
+              "execution_sha",
+              "external_bytes_persisted",
+              "failure_class",
+              "holdout_status_established",
+              "independent_validation_established",
+              "model_use_authorized",
+              "profile",
+              "publication_authorized",
+              "scenario_selection_authorized",
+              "schema_version",
+              "source_issue",
+              "status",
+              "target_sha"
+            ] and
+            .schema_version == "oc-esrm20-scenario-v10-workbook-identity-result-v1" and
+            .source_issue == 285 and
+            .target_sha == $sha and .execution_sha == $sha and
+            (.status == "pass" or .status == "blocked") and
+            .external_bytes_persisted == false and
+            .event_location_inference_authorized == false and
+            .scenario_selection_authorized == false and
+            .independent_validation_established == false and
+            .holdout_status_established == false and
+            .publication_authorized == false and
+            .model_use_authorized == false and
+            (if .status == "pass" then
+              .failure_class == null and
+              (.profile | type) == "object" and
+              (.profile | keys) == [
+                "byte_count",
+                "commit_sha",
+                "event_location_inference_authorized",
+                "external_bytes_persisted",
+                "holdout_status_established",
+                "independent_validation_established",
+                "model_use_authorized",
+                "name_literal_cell_counts",
+                "name_literal_row_counts",
+                "project_id",
+                "project_path",
+                "provider_file_bytes_read",
+                "publication_authorized",
+                "raw_workbook_cells_returned",
+                "raw_workbook_rows_returned",
+                "release_tag",
+                "retrieved_at",
+                "rupture_or_shakemap_payload_bytes_read",
+                "same_row_name_literal_binding",
+                "scanned_cell_count",
+                "scanned_row_count",
+                "scenario_selection_authorized",
+                "schema_version",
+                "sha256",
+                "shared_string_count",
+                "source_issue",
+                "target_event_id",
+                "target_event_id_exact_cell_count",
+                "target_event_id_row_count",
+                "target_same_row_name_literal_counts",
+                "total_uncompressed_bytes",
+                "tree_identity_sha256",
+                "workbook_git_blob_sha1",
+                "workbook_path",
+                "worksheet_count",
+                "zip_member_count"
+              ] and
+              .profile.schema_version == "oc-esrm20-scenario-v10-workbook-identity-profile-v1" and
+              .profile.source_issue == 285 and
+              .profile.project_id == 273 and
+              .profile.project_path == "efehr/esrm20_scenario_tests" and
+              .profile.release_tag == "v1.0" and
+              .profile.commit_sha == "041f90d950d6ff84180b2faa11319a42c66c74cc" and
+              .profile.workbook_path == "testing_scenarios.xlsx" and
+              .profile.target_event_id == "Greece_07-9-1999" and
+              (.profile.tree_identity_sha256 | test("^[0-9a-f]{64}$")) and
+              (.profile.workbook_git_blob_sha1 | test("^[0-9a-f]{40}$")) and
+              (.profile.sha256 | test("^[0-9a-f]{64}$")) and
+              (.profile.retrieved_at | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")) and
+              (.profile.byte_count | type) == "number" and .profile.byte_count >= 1 and .profile.byte_count <= 8388608 and
+              (.profile.zip_member_count | type) == "number" and .profile.zip_member_count >= 1 and .profile.zip_member_count <= 256 and
+              (.profile.total_uncompressed_bytes | type) == "number" and .profile.total_uncompressed_bytes >= 0 and .profile.total_uncompressed_bytes <= 67108864 and
+              (.profile.worksheet_count | type) == "number" and .profile.worksheet_count >= 1 and .profile.worksheet_count <= 64 and
+              (.profile.shared_string_count | type) == "number" and .profile.shared_string_count >= 0 and .profile.shared_string_count <= 100000 and
+              (.profile.scanned_row_count | type) == "number" and .profile.scanned_row_count >= 0 and .profile.scanned_row_count <= 100000 and
+              (.profile.scanned_cell_count | type) == "number" and .profile.scanned_cell_count >= 0 and .profile.scanned_cell_count <= 500000 and
+              (.profile.target_event_id_exact_cell_count | type) == "number" and .profile.target_event_id_exact_cell_count >= 0 and
+              (.profile.target_event_id_row_count | type) == "number" and .profile.target_event_id_row_count >= 0 and
+              .profile.target_event_id_row_count <= .profile.target_event_id_exact_cell_count and
+              (.profile.name_literal_cell_counts | keys) == ["athens", "thessaloniki"] and
+              (.profile.name_literal_row_counts | keys) == ["athens", "thessaloniki"] and
+              (.profile.target_same_row_name_literal_counts | keys) == ["athens", "thessaloniki"] and
+              all(.profile.name_literal_cell_counts[]; (type == "number") and . >= 0) and
+              all(.profile.name_literal_row_counts[]; (type == "number") and . >= 0) and
+              all(.profile.target_same_row_name_literal_counts[]; (type == "number") and . >= 0) and
+              (.profile.same_row_name_literal_binding == null or .profile.same_row_name_literal_binding == "athens" or .profile.same_row_name_literal_binding == "thessaloniki") and
+              .profile.raw_workbook_cells_returned == false and
+              .profile.raw_workbook_rows_returned == false and
+              .profile.provider_file_bytes_read == true and
+              .profile.external_bytes_persisted == false and
+              .profile.rupture_or_shakemap_payload_bytes_read == false and
+              .profile.event_location_inference_authorized == false and
+              .profile.scenario_selection_authorized == false and
+              .profile.independent_validation_established == false and
+              .profile.holdout_status_established == false and
+              .profile.publication_authorized == false and
+              .profile.model_use_authorized == false
+            else
+              .failure_class == "workbook_identity_failure" and .profile == null
+            end)
+          ' >/dev/null
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/workbook-identity-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/285/comments" \
+            --input "$RUNNER_TEMP/workbook-identity-comment.json"
