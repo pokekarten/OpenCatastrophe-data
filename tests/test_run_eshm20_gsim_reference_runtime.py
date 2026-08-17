@@ -44,7 +44,40 @@ def _runtime_fingerprint():
     )
 
 
+def _branches():
+    contract = [
+        ("BCHydroSubIF", "Subduction Interface", "BCHydroESHM20SInter"),
+        ("BCHydroSubIS", "Subduction Inslab", "BCHydroESHM20SSlab"),
+        ("BCHydroSubVrancea", "Non-Subduction Deep", "BCHydroESHM20SSlab"),
+        ("CratonModel", "Craton", "KothaEtAl2020ESHM20"),
+        ("CratonModel", "Craton", "ESHM20Craton"),
+        ("Shallow_Def", "Shallow Default", "KothaEtAl2020ESHM20"),
+        ("Volcanic", "Volcanic", "LanzanoLuzi2019shallow"),
+    ]
+    rows = []
+    for index in range(subject._EXPECTED_BRANCH_COUNT):
+        branch_set_id, trt, token = contract[index % len(contract)]
+        rows.append(
+            {
+                "branch_set_id": branch_set_id,
+                "branch_id": f"b{index:03d}",
+                "tectonic_region_type": trt,
+                "requested_gsim_token": token,
+                "resolved_gsim_class": token,
+                "request_form": "bare",
+                "alias_definition_present": False,
+                "alias_expansion_applied": False,
+                "registry_alias_key_used": False,
+                "argument_keys": [],
+                "runtime_argument_keys_after_alias": [],
+                "constructor_accepted": True,
+            }
+        )
+    return rows
+
+
 def _gate_result():
+    branches = _branches()
     return {
         "gmm_identity": {
             "project_id": subject.gmm.PROJECT_ID,
@@ -61,17 +94,9 @@ def _gate_result():
             "version": subject.runtime.ENGINE_VERSION,
         },
         "reference_runtime_fingerprint": _runtime_fingerprint(),
-        "branch_count": 1,
-        "branches": [
-            {
-                "branch_set_id": "bs1",
-                "branch_id": "b1",
-                "requested_gsim_token": "Example",
-                "resolved_gsim_class": "Example",
-                "constructor_accepted": True,
-            }
-        ],
-        "unique_resolved_gsim_classes": ["Example"],
+        "branch_count": len(branches),
+        "branches": branches,
+        "unique_resolved_gsim_classes": subject._EXPECTED_RESOLVED_GSIM_CLASSES,
         "alias_requested_tokens": [],
         "engine_source_commit_verified": True,
         "reference_runtime_observation_validated": True,
@@ -252,6 +277,73 @@ class ReferenceRuntimeLedgerTests(unittest.TestCase):
                 "resolved-class summary",
                 lambda result: result.__setitem__(
                     "unique_resolved_gsim_classes", ["Mutated"]
+                ),
+            ),
+        )
+        for label, mutate in cases:
+            with self.subTest(label=label):
+                malformed = _mutated_terminal_comment(historical_sha, mutate)
+                with mock.patch.object(
+                    subject, "fetch_repository_comments", return_value=[malformed]
+                ):
+                    with self.assertRaises(subject.ReferenceRuntimeExecutionError):
+                        subject.has_terminal_runtime_result(
+                            repository="pokekarten/OpenCatastrophe-data",
+                            token="token",
+                            execution_sha=EXECUTION_SHA,
+                        )
+
+    def test_historical_closed_terminal_contract_drift_fails_closed(self):
+        historical_sha = "6" * 40
+
+        def truncate(result):
+            result["branches"] = result["branches"][:-1]
+            result["branch_count"] = len(result["branches"])
+
+        def rewrite_identity(result):
+            branch = result["branches"][0]
+            branch["requested_gsim_token"] = "ESHM20Craton"
+            branch["resolved_gsim_class"] = "ESHM20Craton"
+
+        cases = (
+            (
+                "unexpected top-level authority",
+                lambda result: result.__setitem__("insured_loss_authorized", True),
+            ),
+            ("truncated branch inventory", truncate),
+            ("rewritten request identity", rewrite_identity),
+            (
+                "request form",
+                lambda result: result["branches"][0].__setitem__(
+                    "request_form", "rewritten"
+                ),
+            ),
+            (
+                "alias flag",
+                lambda result: result["branches"][0].__setitem__(
+                    "alias_definition_present", True
+                ),
+            ),
+            (
+                "argument ordering",
+                lambda result: result["branches"][0].__setitem__(
+                    "argument_keys", ["z", "a"]
+                ),
+            ),
+            (
+                "post-alias arguments",
+                lambda result: result["branches"][0].__setitem__(
+                    "runtime_argument_keys_after_alias", ["different"]
+                ),
+            ),
+            (
+                "missing alias summary",
+                lambda result: result.pop("alias_requested_tokens"),
+            ),
+            (
+                "unexpected branch field",
+                lambda result: result["branches"][0].__setitem__(
+                    "new_authority", True
                 ),
             ),
         )
