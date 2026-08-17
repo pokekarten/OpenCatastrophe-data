@@ -320,6 +320,7 @@ def has_terminal_runtime_result(
     except LedgerError as exc:
         raise _error("ESRM20 runtime result ledger is incomplete") from exc
 
+    matching_terminal_found = False
     for comment in comments:
         user = comment.get("user")
         login = user.get("login") if type(user) is dict else None
@@ -329,5 +330,5 @@ def has_terminal_runtime_result(
         if own_sha is None:
             continue
         if own_sha == execution_sha:
-            return True
-    return False
+            matching_terminal_found = True
+    return matching_terminal_found
