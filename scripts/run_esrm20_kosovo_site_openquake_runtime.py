@@ -267,8 +267,8 @@ def _openquake_ingest(
         oqparam = SimpleNamespace(
             base_path=str(root),
             inputs={
-                "site_model": [site_path.name],
-                "gsim_logic_tree": gmm_path.name,
+                "site_model": [str(site_path)],
+                "gsim_logic_tree": str(gmm_path),
             },
             correl_model=None,
             number_of_logic_tree_samples=0,
