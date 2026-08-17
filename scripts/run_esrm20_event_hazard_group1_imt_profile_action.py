@@ -66,6 +66,7 @@ def _require_contract() -> None:
         (spec.sha256, "709168614dc4260a982fb4cc18956e1d4e236626efcc49bf1f1b9b4ff79969de", "SHA-256"),
         (spec.receipt_comment_id, 5301296088, "receipt comment"),
         (_bridge.IMT_PROFILE_SCHEMA_VERSION, "oc-esrm20-event-hazard-imt-profile-v1", "profile schema"),
+        (_bridge.OPENQUAKE_COMMIT, "9f044c93d72846421a8faa90ebf0a6afacdf3c20", "OpenQuake commit"),
     )
     for observed, expected, label in exact:
         if type(observed) is not type(expected) or observed != expected:
@@ -175,11 +176,14 @@ def _validate_profile(profile: object) -> dict[str, Any]:
     if option not in _bridge.IMT_OPTIONS:
         raise Group1ImtProfileActionError("Group1 IMT option is not canonical")
     names = profile.get("imt_names")
-    if type(names) is not list or names != sorted(set(names)) or not names:
+    if type(names) is not list or not names:
         raise Group1ImtProfileActionError("Group1 IMT names are not canonical")
-    for name in names:
-        if type(name) is not str or _bridge._SAFE_IMT_RE.fullmatch(name) is None:
-            raise Group1ImtProfileActionError("Group1 IMT name is invalid")
+    try:
+        canonical = _bridge._canonicalize_imt_names(names)
+    except _bridge.VerifiedEventHazardConfigError as exc:
+        raise Group1ImtProfileActionError("Group1 IMT name is invalid") from exc
+    if names != canonical:
+        raise Group1ImtProfileActionError("Group1 IMT names are not OpenQuake-canonical")
     if profile.get("imt_count") != len(names):
         raise Group1ImtProfileActionError("Group1 IMT count drifted")
     return profile
