@@ -56,7 +56,9 @@ def _valid_profile() -> dict:
     }
 
 
-def _result(*, execution_sha: str, status: str = "pass", evidence: dict | None = None) -> dict:
+def _result(
+    *, execution_sha: str, status: str = "pass", evidence: dict | None = None
+) -> dict:
     value = {
         **action._base_result(execution_sha=execution_sha),
         "status": status,
@@ -85,8 +87,12 @@ class WorkbookIdentityActionTests(unittest.TestCase):
             "target_sha": EXECUTION_SHA,
             "requester": "test-runner",
         }
-        body = action.REQUEST_MARKER + "\n" + json.dumps(request, separators=(",", ":"))
-        parsed = action.validate_request(body, expected_issue=285, execution_sha=EXECUTION_SHA)
+        body = action.REQUEST_MARKER + "\n" + json.dumps(
+            request, separators=(",", ":")
+        )
+        parsed = action.validate_request(
+            body, expected_issue=285, execution_sha=EXECUTION_SHA
+        )
         self.assertEqual(parsed, request)
 
         for injected in (
@@ -160,7 +166,7 @@ class WorkbookIdentityActionTests(unittest.TestCase):
         ):
             action.validate_profile(extra)
 
-    def test_profile_binding_counts_must_be_self_consistent_and_noncontradictory(self) -> None:
+    def test_profile_binding_counts_must_be_self_consistent_and_bounded(self) -> None:
         contradictory = _valid_profile()
         contradictory["target_same_row_name_literal_counts"]["thessaloniki"] = 1
         with self.assertRaisesRegex(
@@ -177,20 +183,50 @@ class WorkbookIdentityActionTests(unittest.TestCase):
         ):
             action.validate_profile(mismatched)
 
-        impossible = _valid_profile()
-        impossible["target_event_id_row_count"] = 2
+        impossible_target = _valid_profile()
+        impossible_target["target_event_id_row_count"] = 2
         with self.assertRaisesRegex(
             action.ScenarioWorkbookIdentityExecutionError,
             "target row/cell counts disagree",
         ):
-            action.validate_profile(impossible)
+            action.validate_profile(impossible_target)
+
+        inflated_target = _valid_profile()
+        inflated_target["target_event_id_exact_cell_count"] = 7
+        inflated_target["target_event_id_row_count"] = 1
+        with self.assertRaisesRegex(
+            action.ScenarioWorkbookIdentityExecutionError,
+            "target row/cell counts disagree",
+        ):
+            action.validate_profile(inflated_target)
+
+        inflated_name_cells = _valid_profile()
+        inflated_name_cells["name_literal_cell_counts"]["athens"] = 7
+        with self.assertRaisesRegex(
+            action.ScenarioWorkbookIdentityExecutionError,
+            "name cell counts exceed scanned evidence",
+        ):
+            action.validate_profile(inflated_name_cells)
+
+        inflated_name_rows = _valid_profile()
+        inflated_name_rows["name_literal_cell_counts"]["athens"] = 4
+        inflated_name_rows["name_literal_row_counts"]["athens"] = 4
+        with self.assertRaisesRegex(
+            action.ScenarioWorkbookIdentityExecutionError,
+            "name row/cell counts disagree",
+        ):
+            action.validate_profile(inflated_name_rows)
 
     def test_terminal_results_are_closed_and_blocked_result_carries_no_profile(self) -> None:
         passed = _result(execution_sha=EXECUTION_SHA, evidence=_valid_profile())
-        self.assertTrue(action.parse_terminal_result(_body(passed), execution_sha=EXECUTION_SHA))
+        self.assertTrue(
+            action.parse_terminal_result(_body(passed), execution_sha=EXECUTION_SHA)
+        )
 
         blocked = _result(execution_sha=EXECUTION_SHA, status="blocked")
-        self.assertTrue(action.parse_terminal_result(_body(blocked), execution_sha=EXECUTION_SHA))
+        self.assertTrue(
+            action.parse_terminal_result(_body(blocked), execution_sha=EXECUTION_SHA)
+        )
 
         widened = copy.deepcopy(blocked)
         widened["profile"] = _valid_profile()
@@ -200,12 +236,16 @@ class WorkbookIdentityActionTests(unittest.TestCase):
         ):
             action.parse_terminal_result(_body(widened), execution_sha=EXECUTION_SHA)
 
-        foreign_target = _result(execution_sha=FOREIGN_SHA, evidence=_valid_profile())
+        foreign_target = _result(
+            execution_sha=FOREIGN_SHA, evidence=_valid_profile()
+        )
         with self.assertRaisesRegex(
             action.ScenarioWorkbookIdentityExecutionError,
             "target_sha",
         ):
-            action.parse_terminal_result(_body(foreign_target), execution_sha=EXECUTION_SHA)
+            action.parse_terminal_result(
+                _body(foreign_target), execution_sha=EXECUTION_SHA
+            )
 
     def test_foreign_sha_terminal_is_validated_before_dedup_skip(self) -> None:
         original = action._FETCH_COMMENTS
