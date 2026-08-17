@@ -1,0 +1,252 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Kosovo Site OpenQuake 3.14 Runtime
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-kosovo-site-oq314-${{ github.repository }}-${{ github.event.issue.number == 291 && github.event.comment.user.login == github.event.repository.owner.login && github.event.comment.author_association == 'OWNER' && contains(github.event.comment.body, '<!-- oc-eq1-esrm20-kosovo-site-openquake-runtime-request-v1 -->') && 'trusted-request' || format('noise-{0}', github.event.comment.id) }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main Kosovo OpenQuake request
+    if: >-
+      github.event.issue.number == 291 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-kosovo-site-openquake-runtime-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_SITE_OQ_RUNTIME_REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.run_esrm20_kosovo_site_openquake_runtime \
+            --comment-body-env OC_SITE_OQ_RUNTIME_REQUEST_BODY \
+            --expected-issue 291 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-runtime:
+    name: Execute exact Kosovo site ingestion in OpenQuake 3.14
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prove complete issue-local dedup before external access
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import run_esrm20_kosovo_site_openquake_runtime as subject
+          skip = subject.has_terminal_runtime_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+
+      - name: Fetch verified OpenQuake v3.14.0 checkout
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OQ_COMMIT: 9f044c93d72846421a8faa90ebf0a6afacdf3c20
+        run: |
+          set -euo pipefail
+          OQ_ROOT="$RUNNER_TEMP/oq-engine"
+          git init "$OQ_ROOT"
+          git -C "$OQ_ROOT" remote add origin https://github.com/gem/oq-engine.git
+          git -C "$OQ_ROOT" fetch --depth=1 origin refs/tags/v3.14.0:refs/tags/v3.14.0
+          OBSERVED="$(git -C "$OQ_ROOT" rev-parse 'refs/tags/v3.14.0^{commit}')"
+          test "$OBSERVED" = "$OQ_COMMIT"
+          git -C "$OQ_ROOT" checkout --detach "$OBSERVED"
+          test -z "$(git -C "$OQ_ROOT" status --porcelain=v1)"
+
+      - name: Build observed OpenQuake 3.14 runtime image
+        if: steps.dedup.outputs.skip != 'true'
+        id: image
+        run: |
+          set -euo pipefail
+          BASE_IMAGE="openquake/engine:3.14.0"
+          docker pull "$BASE_IMAGE"
+          BASE_REPO_DIGEST="$(docker image inspect --format='{{index .RepoDigests 0}}' "$BASE_IMAGE")"
+          printf '%s\n' "$BASE_REPO_DIGEST" | grep -Eq '^openquake/engine@sha256:[0-9a-f]{64}$'
+          DOCKERFILE="$RUNNER_TEMP/Dockerfile.oq314-site-runtime"
+          cat > "$DOCKERFILE" <<EOF
+          FROM $BASE_REPO_DIGEST
+          USER root
+          RUN apt-get update \
+              && apt-get install -y --no-install-recommends git \
+              && rm -rf /var/lib/apt/lists/*
+          COPY --chown=root:root oq-engine /oq-engine
+          RUN git config --system --add safe.directory /oq-engine
+          USER openquake
+          EOF
+          docker build --pull=false \
+            --file "$DOCKERFILE" \
+            --tag oc-oq314-esrm20-site-runtime:local \
+            "$RUNNER_TEMP"
+          IMAGE_ID="$(docker image inspect --format='{{.Id}}' oc-oq314-esrm20-site-runtime:local)"
+          printf '%s\n' "$IMAGE_ID" | grep -Eq '^sha256:[0-9a-f]{64}$'
+          echo "image_id=$IMAGE_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Execute exact site-model runtime ingestion
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        env:
+          OC_SITE_OQ_RUNTIME_REQUEST_BODY: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RUNTIME_IMAGE_DIGEST: ${{ steps.image.outputs.image_id }}
+          RESULT_PATH: ${{ runner.temp }}/site-oq314-output/result.json
+        run: |
+          set -euo pipefail
+          OUTPUT_DIR="$RUNNER_TEMP/site-oq314-output"
+          mkdir -p "$OUTPUT_DIR"
+          : > "$OUTPUT_DIR/result.json"
+          chmod 0666 "$OUTPUT_DIR/result.json"
+          docker run --rm \
+            --entrypoint /opt/openquake/bin/python \
+            -e PYTHONDONTWRITEBYTECODE=1 \
+            -e OPENBLAS_NUM_THREADS=1 \
+            -e PYTHONPATH=/oq-engine:/workspace \
+            -e OC_SITE_OQ_RUNTIME_REQUEST_BODY \
+            -e RUNTIME_IMAGE_DIGEST \
+            -v "$GITHUB_WORKSPACE:/workspace:ro" \
+            -v "$OUTPUT_DIR:/output" \
+            -w /workspace \
+            "$RUNTIME_IMAGE_DIGEST" \
+            scripts/run_esrm20_kosovo_site_openquake_runtime.py \
+              --comment-body-env OC_SITE_OQ_RUNTIME_REQUEST_BODY \
+              --expected-issue 291 \
+              --execution-sha "$EXECUTION_SHA" \
+              --runtime-image-digest-env RUNTIME_IMAGE_DIGEST \
+              --output /output/result.json
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from scripts import run_esrm20_kosovo_site_openquake_runtime as subject
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          subject._validate_terminal_result(result, execution_sha=os.environ["EXECUTION_SHA"])
+          PY
+          RESULT_JSON="$(python - <<'PY'
+          import json, os
+          from pathlib import Path
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-runtime:
+    name: Publish bounded Kosovo OpenQuake ingestion evidence
+    needs: [validate-request, execute-runtime]
+    if: >-
+      needs.execute-runtime.result == 'success' &&
+      needs.execute-runtime.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence result and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-runtime.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-kosovo-site-openquake-runtime-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-kosovo-site-openquake-runtime-result-v1" and
+            .action == "esrm20_kosovo_site_openquake_runtime_ingestion" and
+            .source_issue == 291 and .source_science_issue == 284 and
+            .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+            .target_sha == $sha and .execution_sha == $sha and
+            .site_identity.project_id == 269 and
+            .site_identity.commit_sha == "05f83bbc9df81d02ee8ddb1801d9d781355ce783" and
+            .site_identity.repository_path == "Vs30/Site_model_Kosovo.xml" and
+            .site_identity.byte_count == 5891 and
+            .site_identity.sha256 == "746cf75d91507da8b55a9476c61bb5d884eed42c6268a36b1179f432e8850edd" and
+            .gmm_identity.project_id == 269 and
+            .gmm_identity.commit_sha == "05f83bbc9df81d02ee8ddb1801d9d781355ce783" and
+            .gmm_identity.repository_path == "Hazard/gmpe_logic_tree_5br_slope_geology.xml" and
+            .gmm_identity.byte_count == 34018 and
+            .gmm_identity.sha256 == "f3efd16d56189c7804824d94b20ed75d6ceefc879144d8bd697c1f9b47cf17b4" and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and .model_use_authorized == false and
+            (.status == "pass" or .status == "blocked") and
+            (if .status == "pass" then
+              .failure_class == null and .runtime != null and
+              .runtime.openquake_reference == {"tag":"v3.14.0","commit":"9f044c93d72846421a8faa90ebf0a6afacdf3c20"} and
+              .runtime.parser_path == "openquake.commonlib.readinput.get_site_model" and
+              .runtime.site_count == 37 and .runtime.runtime_value_accept_count == 37 and
+              .runtime.required_site_parameter_names == ["geology","region","slope","vs30","xvf"] and
+              .runtime.openquake_runtime_value_acceptance_verified == true and
+              .runtime.gsim_site_parameter_sufficiency_verified == true and
+              .runtime.raw_xml_returned == false and .runtime.raw_site_rows_returned == false and
+              .runtime.raw_attribute_values_returned == false and .runtime.coordinates_returned == false and
+              .runtime.site_parameter_units_verified == false and
+              .runtime.crs_coordinate_semantics_verified == false and
+              .runtime.missingness_semantics_verified == false and
+              .runtime.site_model_compatibility_verified == false and
+              .runtime.site_adjusted_reference_authorized == false and
+              .runtime.numerical_hazard_agreement_verified == false and
+              .runtime.publication_authorized == false and .runtime.model_use_authorized == false
+            else
+              (.failure_class == "site_acquisition_failure" or
+               .failure_class == "gmm_acquisition_failure" or
+               .failure_class == "runtime_ingestion_failure") and .runtime == null
+            end)
+          ' >/dev/null
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/site-oq314-comment.json"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/291/comments" \
+            --input "$RUNNER_TEMP/site-oq314-comment.json"
