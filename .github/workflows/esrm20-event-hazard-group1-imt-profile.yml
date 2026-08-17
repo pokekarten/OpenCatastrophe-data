@@ -1,0 +1,205 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Group1 IMT Name Profile
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-group1-imt-${{ github.repository }}-${{ github.event.issue.number == 281 && github.event.comment.user.login == github.event.repository.owner.login && github.event.comment.author_association == 'OWNER' && contains(github.event.comment.body, '<!-- oc-eq1-esrm20-group1-imt-profile-request-v1 -->') && 'trusted-request' || format('noise-{0}', github.event.comment.id) }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main Group1 IMT request
+    if: >-
+      github.event.issue.number == 281 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-group1-imt-profile-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_GROUP1_IMT_REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.run_esrm20_event_hazard_group1_imt_profile_action \
+            --comment-body-env OC_GROUP1_IMT_REQUEST_BODY \
+            --expected-issue 281 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-imt-profile:
+    name: Execute bounded Group1 IMT-name profile
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prove complete issue-local dedup before provider access
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import run_esrm20_event_hazard_group1_imt_profile_action as subject
+
+          skip = subject.has_terminal_imt_profile_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+
+      - name: Acquire exact Group1 root and derive bounded IMT names
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_GROUP1_IMT_REQUEST_BODY: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/group1-imt-result.json
+        run: |
+          set -euo pipefail
+          python -m scripts.run_esrm20_event_hazard_group1_imt_profile_action \
+            --comment-body-env OC_GROUP1_IMT_REQUEST_BODY \
+            --expected-issue 281 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from scripts import run_esrm20_event_hazard_group1_imt_profile_action as subject
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          subject._validate_terminal_result(result, execution_sha=os.environ["EXECUTION_SHA"])
+          PY
+
+      - name: Export bounded result to publisher
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        env:
+          RESULT_PATH: ${{ runner.temp }}/group1-imt-result.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-imt-profile:
+    name: Publish bounded Group1 IMT-name evidence
+    needs: [validate-request, execute-imt-profile]
+    if: >-
+      needs.execute-imt-profile.result == 'success' &&
+      needs.execute-imt-profile.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence result and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-imt-profile.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-group1-imt-profile-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-event-hazard-group1-imt-profile-result-v1" and
+            .action == "esrm20_event_hazard_group1_imt_profile" and
+            .source_issue == 281 and
+            .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+            .target_sha == $sha and .execution_sha == $sha and
+            (.status == "pass" or (.status == "blocked" and
+              .failure_class == "profile_failure" and .profile == null)) and
+            .external_bytes_persisted == false and
+            .component_semantics_verified == false and
+            .unit_semantics_verified == false and
+            .hazard_vulnerability_imt_compatibility_verified == false and
+            .numerical_hazard_agreement_verified == false and
+            .publication_authorized == false and .model_use_authorized == false and
+            (if .status == "pass" then
+              .failure_class == null and .profile != null and
+              .profile.schema_version == "oc-esrm20-event-hazard-imt-profile-v1" and
+              .profile.source_issue == 281 and .profile.control_issue == 346 and
+              .profile.dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+              .profile.project_id == 269 and .profile.project_path == "efehr/esrm20" and
+              .profile.commit_sha == "05f83bbc9df81d02ee8ddb1801d9d781355ce783" and
+              .profile.group == 1 and
+              .profile.operation_id == "esrm20-event-hazard-group1-config-v1" and
+              .profile.repository_path == "Configuration_files/config_event_hazard_Group1.ini" and
+              .profile.byte_count == 1766 and
+              .profile.sha256 == "709168614dc4260a982fb4cc18956e1d4e236626efcc49bf1f1b9b4ff79969de" and
+              .profile.receipt_comment_id == 5301296088 and
+              (.profile.imt_option == "intensity_measure_types" or
+               .profile.imt_option == "intensity_measure_types_and_levels") and
+              (.profile.imt_names | type) == "array" and .profile.imt_count == (.profile.imt_names | length) and
+              .profile.imt_count > 0 and .profile.imt_count <= 256 and
+              .profile.levels_returned == false and .profile.raw_config_returned == false and
+              .profile.component_semantics_verified == false and
+              .profile.unit_semantics_verified == false and
+              .profile.hazard_vulnerability_imt_compatibility_verified == false and
+              .profile.external_bytes_persisted == false and
+              .profile.publication_authorized == false and .profile.model_use_authorized == false
+            else true end)
+          ' >/dev/null
+
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/group1-imt-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/281/comments" \
+            --input "$RUNNER_TEMP/group1-imt-comment.json"
