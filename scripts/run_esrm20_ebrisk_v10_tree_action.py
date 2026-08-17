@@ -215,6 +215,38 @@ def _base_result(*, execution_sha: str) -> dict[str, Any]:
     }
 
 
+def _terminal_result_execution_sha(body: object) -> str | None:
+    """Return a terminal result's own SHA after fail-closed envelope checks."""
+    if type(body) is not str or RESULT_MARKER not in body:
+        return None
+    if body.count(RESULT_MARKER) != 1:
+        raise EbriskTreeExecutionError("ebrisk result marker is malformed")
+    before, after = body.split(RESULT_MARKER, 1)
+    if before.strip() or not after.strip():
+        raise EbriskTreeExecutionError("ebrisk result envelope is malformed")
+    try:
+        result = json.loads(after.strip(), object_pairs_hook=_pairs, parse_constant=_reject_constant)
+    except EbriskTreeExecutionError:
+        raise
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        raise EbriskTreeExecutionError("ebrisk result JSON is malformed") from exc
+    if type(result) is not dict or set(result) != _RESULT_FIELDS:
+        raise EbriskTreeExecutionError("ebrisk result fields drifted")
+    if result.get("schema_version") != RESULT_SCHEMA_VERSION:
+        raise EbriskTreeExecutionError("ebrisk result schema drifted")
+    if type(result.get("source_issue")) is not int or result["source_issue"] != SOURCE_ISSUE:
+        raise EbriskTreeExecutionError("ebrisk result source issue drifted")
+    target_sha = result.get("target_sha")
+    execution_sha = result.get("execution_sha")
+    if type(target_sha) is not str or _SHA_RE.fullmatch(target_sha) is None:
+        raise EbriskTreeExecutionError("ebrisk result target SHA is invalid")
+    if type(execution_sha) is not str or _SHA_RE.fullmatch(execution_sha) is None:
+        raise EbriskTreeExecutionError("ebrisk result execution SHA is invalid")
+    if target_sha != execution_sha:
+        raise EbriskTreeExecutionError("ebrisk result target/execution SHA mismatch")
+    return execution_sha
+
+
 def parse_terminal_result(body: object, *, execution_sha: str) -> bool:
     if type(body) is not str or RESULT_MARKER not in body:
         return False
@@ -252,6 +284,8 @@ def parse_terminal_result(body: object, *, execution_sha: str) -> bool:
 
 
 def has_terminal_result(*, repository: str, token: str, execution_sha: str) -> bool:
+    if type(execution_sha) is not str or _SHA_RE.fullmatch(execution_sha) is None:
+        raise EbriskTreeExecutionError("invalid execution SHA")
     try:
         comments = _FETCH_COMMENTS(repository, token, issue=SOURCE_ISSUE, max_pages=MAX_LEDGER_PAGES)
     except LedgerError as exc:
@@ -263,7 +297,14 @@ def has_terminal_result(*, repository: str, token: str, execution_sha: str) -> b
         login = user.get("login") if type(user) is dict else None
         if login != TRUSTED_RESULT_LOGIN:
             continue
-        if parse_terminal_result(comment.get("body"), execution_sha=execution_sha):
+        body = comment.get("body")
+        own_execution_sha = _terminal_result_execution_sha(body)
+        if own_execution_sha is None:
+            continue
+        terminal = parse_terminal_result(body, execution_sha=own_execution_sha)
+        if own_execution_sha != execution_sha:
+            continue
+        if terminal:
             return True
     return False
 
