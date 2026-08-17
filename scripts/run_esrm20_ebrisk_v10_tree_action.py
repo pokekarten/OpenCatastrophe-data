@@ -52,6 +52,11 @@ _PROFILE_FIELDS = {
     "publication_authorized",
     "model_use_authorized",
 }
+LEGACY_BLOCKED_FAILURE_CLASS = "metadata_acquisition_failure"
+_BLOCKED_FAILURE_CLASSES = frozenset(
+    {LEGACY_BLOCKED_FAILURE_CLASS, *profile.FAILURE_CLASSES}
+)
+
 _RESULT_FIELDS = {
     "schema_version",
     "source_issue",
@@ -280,7 +285,10 @@ def parse_terminal_result(body: object, *, execution_sha: str) -> bool:
         validate_profile(result["profile"])
         return True
     if result["status"] == "blocked":
-        if result["failure_class"] != "metadata_acquisition_failure" or result["profile"] is not None:
+        if (
+            result["failure_class"] not in _BLOCKED_FAILURE_CLASSES
+            or result["profile"] is not None
+        ):
             raise EbriskTreeExecutionError("ebrisk blocked result widened evidence")
         return True
     if result["status"] == "duplicate":
@@ -335,11 +343,15 @@ def execute_profile(*, repository: str, token: str, execution_sha: str) -> dict[
             "failure_class": None,
             "profile": tree_profile,
         }
-    except profile.EbriskTreeProfileError:
+    except profile.EbriskTreeProfileError as exc:
+        if exc.failure_class not in profile.FAILURE_CLASSES:
+            raise EbriskTreeExecutionError(
+                "ebrisk profiler failure is not safely classified"
+            ) from exc
         result = {
             **_base_result(execution_sha=execution_sha),
             "status": "blocked",
-            "failure_class": "metadata_acquisition_failure",
+            "failure_class": exc.failure_class,
             "profile": None,
         }
     encoded = json.dumps(result, sort_keys=True, separators=(",", ":")).encode("utf-8")
