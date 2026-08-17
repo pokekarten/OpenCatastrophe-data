@@ -137,6 +137,29 @@ class EbriskCrossHeadTerminalTests(unittest.TestCase):
                     execution_sha=CURRENT_SHA,
                 )
 
+    def test_historical_normalized_path_mutation_fails_before_skip(self) -> None:
+        changed = _valid_profile()
+        changed["ebrisk_templates"] = [
+            dict(item) for item in changed["ebrisk_templates"]
+        ]
+        changed["ebrisk_templates"][0]["path"] = (
+            "./Configuration_Files/config_ebrisk_group1.ini"
+        )
+        with mock.patch.object(
+            action,
+            "_FETCH_COMMENTS",
+            return_value=[_terminal_comment(HISTORICAL_SHA, profile_value=changed)],
+        ):
+            with self.assertRaisesRegex(
+                action.EbriskTreeExecutionError,
+                "not canonical relative POSIX",
+            ):
+                action.has_terminal_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="token",
+                    execution_sha=CURRENT_SHA,
+                )
+
 
 if __name__ == "__main__":
     unittest.main()
