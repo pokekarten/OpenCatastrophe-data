@@ -180,21 +180,17 @@ jobs:
               (.profile.shared_string_count | type) == "number" and .profile.shared_string_count >= 0 and .profile.shared_string_count <= 100000 and
               (.profile.scanned_row_count | type) == "number" and .profile.scanned_row_count >= 0 and .profile.scanned_row_count <= 100000 and
               (.profile.scanned_cell_count | type) == "number" and .profile.scanned_cell_count >= 0 and .profile.scanned_cell_count <= 500000 and
-              (.profile.target_event_id_exact_cell_count | type) == "number" and .profile.target_event_id_exact_cell_count >= 0 and
-              .profile.target_event_id_exact_cell_count <= .profile.scanned_cell_count and
-              (.profile.target_event_id_row_count | type) == "number" and .profile.target_event_id_row_count >= 0 and
-              .profile.target_event_id_row_count <= .profile.target_event_id_exact_cell_count and
-              .profile.target_event_id_row_count <= .profile.scanned_row_count and
+              (.profile.target_event_id_exact_cell_count | type) == "number" and .profile.target_event_id_exact_cell_count >= 0 and .profile.target_event_id_exact_cell_count <= .profile.scanned_cell_count and
+              (.profile.target_event_id_row_count | type) == "number" and .profile.target_event_id_row_count >= 0 and .profile.target_event_id_row_count <= .profile.target_event_id_exact_cell_count and .profile.target_event_id_row_count <= .profile.scanned_row_count and
               (.profile.name_literal_cell_counts | keys) == ["athens", "thessaloniki"] and
               (.profile.name_literal_row_counts | keys) == ["athens", "thessaloniki"] and
               (.profile.target_same_row_name_literal_counts | keys) == ["athens", "thessaloniki"] and
-              all(.profile.name_literal_cell_counts[]; (type == "number") and . >= 0 and . <= .profile.scanned_cell_count) and
-              all(.profile.name_literal_row_counts[]; (type == "number") and . >= 0 and . <= .profile.scanned_row_count) and
-              .profile.name_literal_row_counts.athens <= .profile.name_literal_cell_counts.athens and
-              .profile.name_literal_row_counts.thessaloniki <= .profile.name_literal_cell_counts.thessaloniki and
-              all(.profile.target_same_row_name_literal_counts[]; (type == "number") and . >= 0 and . <= .profile.target_event_id_row_count) and
-              .profile.target_same_row_name_literal_counts.athens <= .profile.name_literal_row_counts.athens and
-              .profile.target_same_row_name_literal_counts.thessaloniki <= .profile.name_literal_row_counts.thessaloniki and
+              (.profile.name_literal_cell_counts.athens | type) == "number" and .profile.name_literal_cell_counts.athens >= 0 and .profile.name_literal_cell_counts.athens <= .profile.scanned_cell_count and
+              (.profile.name_literal_cell_counts.thessaloniki | type) == "number" and .profile.name_literal_cell_counts.thessaloniki >= 0 and .profile.name_literal_cell_counts.thessaloniki <= .profile.scanned_cell_count and
+              (.profile.name_literal_row_counts.athens | type) == "number" and .profile.name_literal_row_counts.athens >= 0 and .profile.name_literal_row_counts.athens <= .profile.scanned_row_count and .profile.name_literal_row_counts.athens <= .profile.name_literal_cell_counts.athens and
+              (.profile.name_literal_row_counts.thessaloniki | type) == "number" and .profile.name_literal_row_counts.thessaloniki >= 0 and .profile.name_literal_row_counts.thessaloniki <= .profile.scanned_row_count and .profile.name_literal_row_counts.thessaloniki <= .profile.name_literal_cell_counts.thessaloniki and
+              (.profile.target_same_row_name_literal_counts.athens | type) == "number" and .profile.target_same_row_name_literal_counts.athens >= 0 and .profile.target_same_row_name_literal_counts.athens <= .profile.target_event_id_row_count and .profile.target_same_row_name_literal_counts.athens <= .profile.name_literal_row_counts.athens and
+              (.profile.target_same_row_name_literal_counts.thessaloniki | type) == "number" and .profile.target_same_row_name_literal_counts.thessaloniki >= 0 and .profile.target_same_row_name_literal_counts.thessaloniki <= .profile.target_event_id_row_count and .profile.target_same_row_name_literal_counts.thessaloniki <= .profile.name_literal_row_counts.thessaloniki and
               (if .profile.same_row_name_literal_binding == "athens" then
                 .profile.target_same_row_name_literal_counts.athens > 0 and .profile.target_same_row_name_literal_counts.thessaloniki == 0
               elif .profile.same_row_name_literal_binding == "thessaloniki" then
