@@ -179,7 +179,7 @@ def profile_verified_exposure_value_spatial(
     expected_byte_count: int,
     expected_sha256: str,
 ) -> dict[str, Any]:
-    """Verify the trusted receipt first, then emit aggregate-only diagnostics."""
+    """Verify a caller-bound receipt, then emit identity-neutral diagnostics."""
 
     try:
         structure = exposure.profile_verified_csv_bytes(
@@ -278,8 +278,6 @@ def profile_verified_exposure_value_spatial(
 
     return {
         "schema_version": SCHEMA_VERSION,
-        "source_issue": SOURCE_ISSUE,
-        "dataset_id": DATASET_ID,
         "record_count": record_count,
         "numeric_fields": {
             field: _numeric_summary(numeric_values[field]) for field in NUMERIC_FIELDS
