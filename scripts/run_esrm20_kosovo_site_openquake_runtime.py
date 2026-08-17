@@ -268,7 +268,7 @@ def _openquake_ingest(
             base_path=str(root),
             inputs={
                 "site_model": [str(site_path)],
-                "gsim_logic_tree": str(gmm_path),
+                "gsim_logic_tree": gmm_path.name,
             },
             correl_model=None,
             number_of_logic_tree_samples=0,
