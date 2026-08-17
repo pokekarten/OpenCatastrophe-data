@@ -229,7 +229,7 @@ def _acquire_verified_gmm_bytes() -> bytes:
     _require_contract()
     try:
         with _esrm_runtime.esrm20_binding():
-            raw = bytes(_base_runtime._acquire_gmm_bytes())
+            raw = bytes(_base_runtime._acquire_exact_gmm())
     except Exception as exc:
         raise SiteRuntimeAcquisitionError(
             f"trusted ESRM20 GMM acquisition failed: {type(exc).__name__}"
