@@ -73,22 +73,35 @@ class _FakeSiteModel:
 
 
 class _FakeReadInput:
-    def __init__(self, *, required: set[str] | None = None, site_model: _FakeSiteModel | None = None):
+    def __init__(
+        self,
+        *,
+        required: set[str] | None = None,
+        site_model: _FakeSiteModel | None = None,
+        expected_site_bytes: bytes | None = None,
+        expected_gmm_bytes: bytes | None = None,
+    ):
         self.required = required or set(subject.EXPECTED_REQUIRED_PARAMETERS)
         self.site_model = site_model or _FakeSiteModel()
+        self.expected_site_bytes = expected_site_bytes
+        self.expected_gmm_bytes = expected_gmm_bytes
         self.seen_inputs: dict[str, object] | None = None
 
     def get_gsim_lt(self, oqparam: object) -> object:
         self.seen_inputs = dict(oqparam.inputs)
+        gmm_path = Path(oqparam.base_path) / oqparam.inputs["gsim_logic_tree"]
+        assert gmm_path.is_file()
+        if self.expected_gmm_bytes is not None:
+            assert gmm_path.read_bytes() == self.expected_gmm_bytes
         return SimpleNamespace(req_site_params=set(self.required))
 
     def get_site_model(self, oqparam: object) -> _FakeSiteModel:
         assert self.seen_inputs is not None
         assert oqparam.inputs == self.seen_inputs
         site_path = Path(oqparam.inputs["site_model"][0])
-        gmm_path = Path(oqparam.inputs["gsim_logic_tree"])
         assert site_path.is_absolute() and site_path.is_file()
-        assert gmm_path.is_absolute() and gmm_path.is_file()
+        if self.expected_site_bytes is not None:
+            assert site_path.read_bytes() == self.expected_site_bytes
         return self.site_model
 
 
@@ -122,10 +135,15 @@ class SiteOpenQuakeRuntimeTests(unittest.TestCase):
             )
 
     def test_openquake_ingest_uses_real_api_shape_without_returning_values(self) -> None:
-        fake = _FakeReadInput()
+        site_bytes = b"<siteModel/>"
+        gmm_bytes = b"<logicTree/>"
+        fake = _FakeReadInput(
+            expected_site_bytes=site_bytes,
+            expected_gmm_bytes=gmm_bytes,
+        )
         result = subject._openquake_ingest(
-            site_bytes=b"<siteModel/>",
-            gmm_bytes=b"<logicTree/>",
+            site_bytes=site_bytes,
+            gmm_bytes=gmm_bytes,
             image_digest=IMAGE_DIGEST,
             readinput_module=fake,
         )
