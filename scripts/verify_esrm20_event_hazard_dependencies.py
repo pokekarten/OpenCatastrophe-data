@@ -1,14 +1,18 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Verify receipted ESRM20 event-hazard root bytes before dependency parsing."""
+"""Verify receipted ESRM20 event-hazard root bytes before bounded parsing."""
 
 from __future__ import annotations
 
 import argparse
+import ast
+import configparser
 import hashlib
 import json
+import math
 import os
+import re
 import stat
 import sys
 from dataclasses import dataclass
@@ -21,13 +25,22 @@ except ModuleNotFoundError:  # pragma: no cover
     from openquake_config_dependencies import OpenQuakeConfigError, extract_openquake_config_references
 
 SCHEMA_VERSION = "oc-esrm20-event-hazard-dependency-bridge-v1"
+IMT_PROFILE_SCHEMA_VERSION = "oc-esrm20-event-hazard-imt-profile-v1"
 SOURCE_ISSUE = 281
 CONTROL_ISSUE = 346
 DATASET_ID = "efehr.esrm20.risk-inputs.v1.0"
 PROJECT_ID = 269
 PROJECT_PATH = "efehr/esrm20"
 COMMIT_SHA = "05f83bbc9df81d02ee8ddb1801d9d781355ce783"
+OPENQUAKE_COMMIT = "9f044c93d72846421a8faa90ebf0a6afacdf3c20"
 PARSER_ID = "scripts.openquake_config_dependencies.extract_openquake_config_references"
+IMT_OPTIONS = ("intensity_measure_types", "intensity_measure_types_and_levels")
+# EQ1 vulnerability compatibility requires PGA and SA ordinates.  Keep this
+# bridge deliberately narrower than the complete OpenQuake IMT namespace.
+# Canonicalization below mirrors frozen OpenQuake 3.14 hazardlib.imt for this
+# exact subset: PGA is unchanged and SA(period) is normalized through float.
+_SAFE_SOURCE_IMT_RE = re.compile(r"^(?:PGA|SA\([^(),]{1,64}\))$")
+_SA_SOURCE_RE = re.compile(r"^SA\(([^(),]{1,64})\)$")
 
 
 @dataclass(frozen=True)
@@ -61,7 +74,7 @@ ROOT_SPECS = {
 
 
 class VerifiedEventHazardConfigError(ValueError):
-    """Raised when root bytes or derived dependencies violate frozen evidence."""
+    """Raised when root bytes or bounded derived metadata violate frozen evidence."""
 
 
 def _root_spec(group: int) -> RootSpec:
@@ -86,15 +99,19 @@ def _verify_payload_identity(payload: bytes, spec: RootSpec) -> str:
     return observed_sha256
 
 
+def _decode_verified_payload(payload: bytes) -> str:
+    try:
+        return payload.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        raise VerifiedEventHazardConfigError("verified event-hazard payload is not strict UTF-8") from exc
+
+
 def extract_verified_event_hazard_dependencies(group: int, payload: bytes) -> dict[str, Any]:
     """Verify one frozen root and return only deterministic first-order dependency metadata."""
 
     spec = _root_spec(group)
     observed_sha256 = _verify_payload_identity(payload, spec)
-    try:
-        config_text = payload.decode("utf-8", errors="strict")
-    except UnicodeDecodeError as exc:
-        raise VerifiedEventHazardConfigError("verified event-hazard payload is not strict UTF-8") from exc
+    config_text = _decode_verified_payload(payload)
     try:
         references = extract_openquake_config_references(config_text, config_path=spec.repository_path)
     except OpenQuakeConfigError as exc:
@@ -130,6 +147,158 @@ def extract_verified_event_hazard_dependencies(group: int, payload: bytes) -> di
         "dependency_inventory_authorized": False,
         "external_bytes_persisted": False,
         "publication_authorized": False,
+    }
+
+
+def _parse_ini(config_text: str) -> configparser.RawConfigParser:
+    parser = configparser.RawConfigParser(
+        interpolation=None,
+        strict=True,
+        empty_lines_in_values=False,
+    )
+    parser.optionxform = str.lower
+    try:
+        parser.read_string(config_text)
+    except configparser.Error as exc:
+        raise VerifiedEventHazardConfigError("verified event-hazard INI parse failed") from exc
+    return parser
+
+
+def _find_single_option(parser: configparser.RawConfigParser) -> tuple[str, str]:
+    matches: list[tuple[str, str]] = []
+    for section in parser.sections():
+        for option in IMT_OPTIONS:
+            if parser.has_option(section, option):
+                matches.append((option, parser.get(section, option, raw=True)))
+    if len(matches) != 1:
+        raise VerifiedEventHazardConfigError(
+            "verified event-hazard root must contain exactly one standard IMT option"
+        )
+    return matches[0]
+
+
+def _canonicalize_openquake314_eq1_imt(name: object) -> tuple[str, float]:
+    """Mirror frozen OQ3.14 canonical identity for the EQ1 PGA/SA subset.
+
+    Frozen ``openquake.hazardlib.imt.imt2tup`` strips the token, keeps PGA,
+    parses an SA period through ``float`` and emits ``SA(%s)``.  Returning the
+    period alongside the string also lets the caller reproduce the ordering in
+    ``openquake.hazardlib.valid.intensity_measure_types``.
+    """
+
+    if (
+        type(name) is not str
+        or name != name.strip()
+        or len(name) > 96
+        or _SAFE_SOURCE_IMT_RE.fullmatch(name) is None
+    ):
+        raise VerifiedEventHazardConfigError(
+            "verified event-hazard IMT is outside the bounded EQ1 PGA/SA subset"
+        )
+    if name == "PGA":
+        return "PGA", 0.0
+    match = _SA_SOURCE_RE.fullmatch(name)
+    if match is None:
+        raise VerifiedEventHazardConfigError(
+            "verified event-hazard IMT is outside the bounded EQ1 PGA/SA subset"
+        )
+    try:
+        period = float(match.group(1))
+    except ValueError as exc:
+        raise VerifiedEventHazardConfigError("verified event-hazard SA period is invalid") from exc
+    if not math.isfinite(period):
+        raise VerifiedEventHazardConfigError("verified event-hazard SA period is non-finite")
+    # Python's str(float) is the exact formatting primitive used by OQ3.14's
+    # ``'SA(%s)' % period`` path for the encountered PGA/SA subset.
+    return f"SA({period})", period
+
+
+def _canonicalize_imt_names(names: list[str]) -> list[str]:
+    if not names or len(names) > 256:
+        raise VerifiedEventHazardConfigError(
+            "verified event-hazard IMT inventory is empty or unbounded"
+        )
+    normalized = [_canonicalize_openquake314_eq1_imt(name) for name in names]
+    canonical = [name for name, _period in normalized]
+    if len(canonical) != len(set(canonical)):
+        raise VerifiedEventHazardConfigError(
+            "verified event-hazard IMT inventory contains duplicates after OpenQuake normalization"
+        )
+    return [name for name, _period in sorted(normalized, key=lambda item: (item[1], item[0]))]
+
+
+def _imt_names_from_list(raw: str) -> list[str]:
+    # Frozen OpenQuake 3.14 ``intensity_measure_types`` splits on commas, not
+    # arbitrary whitespace. Preserve that contract and fail closed on blanks.
+    tokens = [chunk.strip() for chunk in raw.split(",")]
+    return _canonicalize_imt_names(tokens)
+
+
+def _imt_names_from_mapping(raw: str) -> list[str]:
+    try:
+        expression = ast.parse(raw.strip(), mode="eval").body
+    except (SyntaxError, ValueError) as exc:
+        raise VerifiedEventHazardConfigError("verified IMT/level mapping is not valid syntax") from exc
+    if not isinstance(expression, ast.Dict):
+        raise VerifiedEventHazardConfigError("verified IMT/level option is not a mapping")
+    names: list[str] = []
+    for key in expression.keys:
+        if not isinstance(key, ast.Constant) or type(key.value) is not str:
+            raise VerifiedEventHazardConfigError("verified IMT/level mapping has a non-string IMT key")
+        names.append(key.value)
+    return _canonicalize_imt_names(names)
+
+
+def extract_openquake_imt_names(config_text: str) -> tuple[str, list[str]]:
+    """Return only the standard option and OQ3.14-canonical EQ1 IMT names.
+
+    Mapping values (the intensity levels themselves) are deliberately never
+    evaluated or returned. ``ast`` is used only to inspect literal dictionary
+    keys, so expressions such as ``logscale(...)`` remain opaque. Unsupported
+    IMT families fail closed rather than receiving locally invented semantics.
+    """
+
+    if type(config_text) is not str or not config_text:
+        raise VerifiedEventHazardConfigError("event-hazard config text is absent")
+    option, raw = _find_single_option(_parse_ini(config_text))
+    if option == "intensity_measure_types":
+        return option, _imt_names_from_list(raw)
+    if option == "intensity_measure_types_and_levels":
+        return option, _imt_names_from_mapping(raw)
+    raise VerifiedEventHazardConfigError("unsupported event-hazard IMT option")
+
+
+def extract_verified_event_hazard_imt_profile(group: int, payload: bytes) -> dict[str, Any]:
+    """Verify one frozen root and return only bounded IMT-name metadata."""
+
+    spec = _root_spec(group)
+    observed_sha256 = _verify_payload_identity(payload, spec)
+    option, imt_names = extract_openquake_imt_names(_decode_verified_payload(payload))
+    return {
+        "schema_version": IMT_PROFILE_SCHEMA_VERSION,
+        "source_issue": SOURCE_ISSUE,
+        "control_issue": CONTROL_ISSUE,
+        "dataset_id": DATASET_ID,
+        "project_id": PROJECT_ID,
+        "project_path": PROJECT_PATH,
+        "commit_sha": COMMIT_SHA,
+        "group": spec.group,
+        "operation_id": spec.operation_id,
+        "repository_path": spec.repository_path,
+        "byte_count": len(payload),
+        "sha256": observed_sha256,
+        "receipt_comment_id": spec.receipt_comment_id,
+        "imt_option": option,
+        "imt_names": imt_names,
+        "imt_count": len(imt_names),
+        "levels_returned": False,
+        "raw_config_returned": False,
+        "component_semantics_verified": False,
+        "unit_semantics_verified": False,
+        "hazard_vulnerability_imt_compatibility_verified": False,
+        "external_bytes_persisted": False,
+        "publication_authorized": False,
+        "model_use_authorized": False,
     }
 
 
