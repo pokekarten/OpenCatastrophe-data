@@ -236,7 +236,11 @@ def _validate_entry(raw: object) -> dict[str, str]:
     if type(mode) is not str or re.fullmatch(r"[0-7]{6}", mode) is None:
         raise EbriskTreeProfileError("ebrisk tree entry mode is invalid")
     pure = PurePosixPath(path)
-    if pure.is_absolute() or any(part in ("", ".", "..") for part in pure.parts):
+    if (
+        pure.is_absolute()
+        or str(pure) != path
+        or any(part in ("", ".", "..") for part in pure.parts)
+    ):
         raise EbriskTreeProfileError("ebrisk tree path is not canonical relative POSIX")
     if pure.name != name:
         raise EbriskTreeProfileError("ebrisk tree name/path identity drifted")
