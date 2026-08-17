@@ -7,6 +7,7 @@ import json
 import unittest
 from unittest import mock
 
+from scripts import run_esrm20_hazard_logic_tree_profile_action_receipt_fix as canonical_receipts
 from scripts import run_esrm20_hazard_profile_stage_diagnostic as subject
 
 EXECUTION_SHA = "1" * 40
@@ -73,19 +74,44 @@ class HazardProfileStageDiagnosticTests(unittest.TestCase):
         self.assertFalse(result["gsim_parser_pass"])
         self.assertNotIn("secret", json.dumps(result))
 
-    def test_run_diagnostic_publishes_only_stage_status(self) -> None:
+    def test_run_diagnostic_uses_canonical_receipts_and_publishes_only_stage_status(self) -> None:
         fake_bytes = b"<nrml/>"
-        with mock.patch.object(subject.subject, "_acquire_exact_bytes", return_value=fake_bytes), mock.patch.object(
-            subject, "diagnose_texts", return_value={
+        with mock.patch.object(
+            subject.subject, "_acquire_exact_bytes", return_value=fake_bytes
+        ) as acquire, mock.patch.object(
+            subject,
+            "diagnose_texts",
+            return_value={
                 "source_parser_pass": True,
                 "gsim_parser_pass": False,
                 "source_parser": "source-parser",
                 "gsim_parser": "gsim-parser",
                 "provider_content_returned": False,
                 "parser_error_text_returned": False,
-            }
+            },
         ):
             result = subject.run_diagnostic(execution_sha=EXECUTION_SHA)
+        self.assertEqual(
+            acquire.call_args_list,
+            [
+                mock.call(
+                    repository_path=subject.subject.GSIM_PATH,
+                    expected_byte_count=canonical_receipts.GSIM_BYTE_COUNT,
+                    expected_sha256=canonical_receipts.GSIM_SHA256,
+                    opener=subject._CANONICAL_OPEN_FIXED,
+                    monotonic=subject._CANONICAL_MONOTONIC,
+                ),
+                mock.call(
+                    repository_path=subject.subject.SOURCE_PATH,
+                    expected_byte_count=canonical_receipts.SOURCE_BYTE_COUNT,
+                    expected_sha256=canonical_receipts.SOURCE_SHA256,
+                    opener=subject._CANONICAL_OPEN_FIXED,
+                    monotonic=subject._CANONICAL_MONOTONIC,
+                ),
+            ],
+        )
+        self.assertEqual(result["gsim_sha256"], canonical_receipts.GSIM_SHA256)
+        self.assertEqual(result["source_sha256"], canonical_receipts.SOURCE_SHA256)
         self.assertEqual(result["status"], "pass")
         self.assertEqual(result["failure_class"], "gsim_parser_failure")
         self.assertFalse(result["diagnostic"]["provider_content_returned"])
