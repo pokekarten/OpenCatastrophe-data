@@ -45,11 +45,41 @@ def _blob_sha(payload: bytes) -> str:
     return hashlib.sha1(f"blob {len(payload)}\0".encode("ascii") + payload).hexdigest()
 
 
+def _sheet_xml(rows: list[list[str]], indexes: dict[str, int]) -> bytes:
+    sheet_rows: list[bytes] = []
+    for row_number, row in enumerate(rows, start=1):
+        cells: list[bytes] = []
+        for column_number, value in enumerate(row, start=1):
+            column = chr(ord("A") + column_number - 1)
+            index = indexes[value]
+            cells.append(
+                f'<c r="{column}{row_number}" t="s"><v>{index}</v></c>'.encode(
+                    "ascii"
+                )
+            )
+        sheet_rows.append(
+            f'<row r="{row_number}">'.encode("ascii")
+            + b"".join(cells)
+            + b"</row>"
+        )
+    return (
+        b'<?xml version="1.0" encoding="UTF-8"?>'
+        b'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        b"<sheetData>"
+        + b"".join(sheet_rows)
+        + b"</sheetData></worksheet>"
+    )
+
+
 def _xlsx(
     rows: list[list[str]],
     *,
     extra_members: list[tuple[str, bytes]] | None = None,
     shared_xml_override: bytes | None = None,
+    sheet_xml_override: bytes | None = None,
+    relationship_target: str = "worksheets/sheet1.xml",
+    relationship_target_mode: str | None = None,
+    relationships_override: bytes | None = None,
 ) -> bytes:
     values: list[str] = []
     indexes: dict[str, int] = {}
@@ -63,7 +93,9 @@ def _xlsx(
         b'<?xml version="1.0" encoding="UTF-8"?>'
         b'<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
         + b"".join(
-            b"<si><t>" + value.replace("&", "&amp;").replace("<", "&lt;").encode("utf-8") + b"</t></si>"
+            b"<si><t>"
+            + value.replace("&", "&amp;").replace("<", "&lt;").encode("utf-8")
+            + b"</t></si>"
             for value in values
         )
         + b"</sst>"
@@ -71,27 +103,7 @@ def _xlsx(
     if shared_xml_override is not None:
         shared = shared_xml_override
 
-    sheet_rows: list[bytes] = []
-    for row_number, row in enumerate(rows, start=1):
-        cells: list[bytes] = []
-        for column_number, value in enumerate(row, start=1):
-            column = chr(ord("A") + column_number - 1)
-            index = indexes[value]
-            cells.append(
-                f'<c r="{column}{row_number}" t="s"><v>{index}</v></c>'.encode("ascii")
-            )
-        sheet_rows.append(
-            f'<row r="{row_number}">'.encode("ascii")
-            + b"".join(cells)
-            + b"</row>"
-        )
-    sheet = (
-        b'<?xml version="1.0" encoding="UTF-8"?>'
-        b'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-        b"<sheetData>"
-        + b"".join(sheet_rows)
-        + b"</sheetData></worksheet>"
-    )
+    sheet = sheet_xml_override or _sheet_xml(rows, indexes)
     content_types = (
         b'<?xml version="1.0" encoding="UTF-8"?>'
         b'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
@@ -100,9 +112,26 @@ def _xlsx(
     )
     workbook = (
         b'<?xml version="1.0" encoding="UTF-8"?>'
-        b'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-        b"<sheets><sheet name=\"Sheet1\" sheetId=\"1\"/></sheets></workbook>"
+        b'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+        b'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        b'<sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>'
     )
+    mode = (
+        b""
+        if relationship_target_mode is None
+        else f' TargetMode="{relationship_target_mode}"'.encode("ascii")
+    )
+    relationships = (
+        b'<?xml version="1.0" encoding="UTF-8"?>'
+        b'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        b'<Relationship Id="rId1" '
+        b'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" '
+        + f'Target="{relationship_target}"'.encode("utf-8")
+        + mode
+        + b"/></Relationships>"
+    )
+    if relationships_override is not None:
+        relationships = relationships_override
 
     buffer = io.BytesIO()
     with warnings.catch_warnings():
@@ -110,6 +139,7 @@ def _xlsx(
         with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             archive.writestr("[Content_Types].xml", content_types)
             archive.writestr("xl/workbook.xml", workbook)
+            archive.writestr("xl/_rels/workbook.xml.rels", relationships)
             archive.writestr("xl/sharedStrings.xml", shared)
             archive.writestr("xl/worksheets/sheet1.xml", sheet)
             for name, content in extra_members or []:
@@ -177,7 +207,9 @@ class WorkbookIdentityProfileTests(unittest.TestCase):
         self.assertEqual(result["target_event_id_row_count"], 1)
         self.assertEqual(result["same_row_name_literal_binding"], "athens")
         self.assertEqual(result["target_same_row_name_literal_counts"]["athens"], 1)
-        self.assertEqual(result["target_same_row_name_literal_counts"]["thessaloniki"], 0)
+        self.assertEqual(
+            result["target_same_row_name_literal_counts"]["thessaloniki"], 0
+        )
         self.assertFalse(result["raw_workbook_cells_returned"])
         self.assertFalse(result["raw_workbook_rows_returned"])
         self.assertTrue(result["provider_file_bytes_read"])
@@ -246,25 +278,51 @@ class WorkbookIdentityProfileTests(unittest.TestCase):
                 monotonic=lambda: 0.0,
             )
 
-    def test_workbook_tree_entry_must_be_unique_canonical_regular_blob(self) -> None:
+    def test_every_tree_entry_requires_canonical_path_object_and_type_mode_pair(self) -> None:
         payload = _xlsx(self._happy_rows())
+
         duplicate = _tree_receipt(payload)
         duplicate["entries"].append(dict(duplicate["entries"][1]))
         duplicate["tree_entry_count"] += 1
-        with self.assertRaises(profile.ScenarioWorkbookIdentityError):
+        with self.assertRaisesRegex(
+            profile.ScenarioWorkbookIdentityError, "paths are duplicated"
+        ):
             profile._workbook_blob_from_tree(duplicate)
 
-        tree_entry = _tree_receipt(payload)
-        tree_entry["entries"][1]["type"] = "tree"
-        tree_entry["entries"][1]["mode"] = "040000"
+        wrong_mode = _tree_receipt(payload)
+        wrong_mode["entries"][0]["mode"] = "040000"
+        with self.assertRaisesRegex(
+            profile.ScenarioWorkbookIdentityError, "type/mode pair is invalid"
+        ):
+            profile._workbook_blob_from_tree(wrong_mode)
+
+        bad_object = _tree_receipt(payload)
+        bad_object["entries"][0]["id"] = "not-a-git-object"
+        with self.assertRaisesRegex(
+            profile.ScenarioWorkbookIdentityError, "object id is invalid"
+        ):
+            profile._workbook_blob_from_tree(bad_object)
+
+        bad_path = _tree_receipt(payload)
+        bad_path["entries"][0]["path"] = "dir\\README.md"
+        with self.assertRaisesRegex(
+            profile.ScenarioWorkbookIdentityError, "path is invalid"
+        ):
+            profile._workbook_blob_from_tree(bad_path)
+
+        workbook_tree = _tree_receipt(payload)
+        workbook_tree["entries"][1]["type"] = "tree"
+        workbook_tree["entries"][1]["mode"] = "040000"
         with self.assertRaisesRegex(
             profile.ScenarioWorkbookIdentityError,
             "canonical regular blob",
         ):
-            profile._workbook_blob_from_tree(tree_entry)
+            profile._workbook_blob_from_tree(workbook_tree)
 
     def test_zip_traversal_duplicate_and_xml_entity_fail_closed(self) -> None:
-        traversal = _xlsx(self._happy_rows(), extra_members=[("../escape.xml", b"<x/>")])
+        traversal = _xlsx(
+            self._happy_rows(), extra_members=[("../escape.xml", b"<x/>")]
+        )
         with self.assertRaisesRegex(
             profile.ScenarioWorkbookIdentityError,
             "member path is noncanonical",
@@ -283,7 +341,10 @@ class WorkbookIdentityProfileTests(unittest.TestCase):
 
         entity = _xlsx(
             self._happy_rows(),
-            shared_xml_override=b'<!DOCTYPE x [<!ENTITY y "boom">]><sst><si><t>&y;</t></si></sst>',
+            shared_xml_override=(
+                b'<!DOCTYPE x [<!ENTITY y "boom">]>'
+                b"<sst><si><t>&y;</t></si></sst>"
+            ),
         )
         with self.assertRaisesRegex(
             profile.ScenarioWorkbookIdentityError,
@@ -291,15 +352,51 @@ class WorkbookIdentityProfileTests(unittest.TestCase):
         ):
             profile._scan_workbook(entity)
 
-    def test_duplicate_cell_reference_and_invalid_shared_index_fail_closed(self) -> None:
-        duplicate_cell_sheet = (
-            b'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            b'<sheetData><row r="1"><c r="A1" t="str"><v>x</v></c>'
-            b'<c r="A1" t="str"><v>y</v></c></row></sheetData></worksheet>'
+    def test_only_workbook_referenced_internal_worksheets_can_supply_identity(self) -> None:
+        orphan = (
+            b'<worksheet xmlns="http://schemas.openxmlformats.org/'
+            b'spreadsheetml/2006/main"><sheetData/></worksheet>'
         )
         payload = _xlsx(
             self._happy_rows(),
-            extra_members=[("xl/worksheets/sheet2.xml", duplicate_cell_sheet)],
+            extra_members=[("xl/worksheets/orphan.xml", orphan)],
+        )
+        with self.assertRaisesRegex(
+            profile.ScenarioWorkbookIdentityError,
+            "orphan or unreferenced worksheets",
+        ):
+            profile._scan_workbook(payload)
+
+        external = _xlsx(
+            self._happy_rows(),
+            relationship_target="https://example.invalid/sheet.xml",
+            relationship_target_mode="External",
+        )
+        with self.assertRaisesRegex(
+            profile.ScenarioWorkbookIdentityError,
+            "external worksheet relationships are forbidden",
+        ):
+            profile._scan_workbook(external)
+
+        traversal = _xlsx(
+            self._happy_rows(), relationship_target="../worksheets/sheet1.xml"
+        )
+        with self.assertRaisesRegex(
+            profile.ScenarioWorkbookIdentityError,
+            "relationship target is noncanonical",
+        ):
+            profile._scan_workbook(traversal)
+
+    def test_duplicate_cell_reference_and_invalid_shared_index_fail_closed(self) -> None:
+        duplicate_cell_sheet = (
+            b'<worksheet xmlns="http://schemas.openxmlformats.org/'
+            b'spreadsheetml/2006/main"><sheetData><row r="1">'
+            b'<c r="A1" t="str"><v>x</v></c>'
+            b'<c r="A1" t="str"><v>y</v></c>'
+            b"</row></sheetData></worksheet>"
+        )
+        payload = _xlsx(
+            self._happy_rows(), sheet_xml_override=duplicate_cell_sheet
         )
         with self.assertRaisesRegex(
             profile.ScenarioWorkbookIdentityError,
@@ -308,14 +405,12 @@ class WorkbookIdentityProfileTests(unittest.TestCase):
             profile._scan_workbook(payload)
 
         bad_index_sheet = (
-            b'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            b'<sheetData><row r="1"><c r="A1" t="s"><v>999999</v></c>'
-            b'</row></sheetData></worksheet>'
+            b'<worksheet xmlns="http://schemas.openxmlformats.org/'
+            b'spreadsheetml/2006/main"><sheetData><row r="1">'
+            b'<c r="A1" t="s"><v>999999</v></c>'
+            b"</row></sheetData></worksheet>"
         )
-        payload = _xlsx(
-            self._happy_rows(),
-            extra_members=[("xl/worksheets/sheet2.xml", bad_index_sheet)],
-        )
+        payload = _xlsx(self._happy_rows(), sheet_xml_override=bad_index_sheet)
         with self.assertRaisesRegex(
             profile.ScenarioWorkbookIdentityError,
             "shared-string cell index is out of range",
@@ -324,7 +419,10 @@ class WorkbookIdentityProfileTests(unittest.TestCase):
 
     def test_fixed_url_contains_only_immutable_project_path_and_commit(self) -> None:
         url = profile._raw_url()
-        self.assertIn("/api/v4/projects/273/repository/files/testing_scenarios.xlsx/raw", url)
+        self.assertIn(
+            "/api/v4/projects/273/repository/files/testing_scenarios.xlsx/raw",
+            url,
+        )
         self.assertIn(profile.COMMIT_SHA, url)
         self.assertNotIn("v1.1", url)
 
