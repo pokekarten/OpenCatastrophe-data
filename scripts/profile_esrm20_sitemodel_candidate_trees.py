@@ -221,6 +221,11 @@ def _validate_entry(raw: object) -> dict[str, str]:
         raise SiteModelCandidateTreeError("candidate tree entry type is unsupported")
     if type(mode) is not str or re.fullmatch(r"[0-7]{6}", mode) is None:
         raise SiteModelCandidateTreeError("candidate tree entry mode is invalid")
+    valid_modes = {"tree": {"040000"}, "blob": {"100644", "100755", "120000"}}
+    if mode not in valid_modes[entry_type]:
+        raise SiteModelCandidateTreeError(
+            "candidate tree entry type/mode pair is not canonical Git metadata"
+        )
     pure = PurePosixPath(path)
     if (
         pure.is_absolute()
