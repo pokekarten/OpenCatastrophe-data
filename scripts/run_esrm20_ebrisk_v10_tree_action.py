@@ -10,7 +10,7 @@ import json
 import os
 import re
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 if __package__ in (None, ""):  # pragma: no cover
@@ -186,7 +186,14 @@ def validate_profile(value: object) -> dict[str, Any]:
         if basename not in profile.TEMPLATE_BASENAMES:
             raise EbriskTreeExecutionError("ebrisk template basename drifted")
         path = _bounded_text(item["path"], field="ebrisk template path")
-        if path.rsplit("/", 1)[-1] != basename:
+        pure = PurePosixPath(path)
+        if (
+            pure.is_absolute()
+            or str(pure) != path
+            or any(part in ("", ".", "..") for part in pure.parts)
+        ):
+            raise EbriskTreeExecutionError("ebrisk template path is not canonical relative POSIX")
+        if pure.name != basename:
             raise EbriskTreeExecutionError("ebrisk template path/basename identity drifted")
         if item["type"] != "blob":
             raise EbriskTreeExecutionError("ebrisk template is not a blob")
