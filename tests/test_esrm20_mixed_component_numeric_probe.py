@@ -5,12 +5,17 @@ from __future__ import annotations
 
 import json
 import math
+from pathlib import Path
 
 import pytest
 
 from scripts import run_esrm20_mixed_component_numeric_probe as subject
 
 SHA = "a" * 40
+WORKFLOW_PATH = (
+    Path(__file__).resolve().parents[1]
+    / ".github/workflows/esrm20-mixed-component-numeric-probe.yml"
+)
 
 
 def _request(**overrides: object) -> str:
@@ -84,3 +89,17 @@ def test_non_finite_numeric_output_fails_closed() -> None:
         with pytest.raises(subject.MixedComponentNumericProbeError):
             subject._finite(value, field="test")
     assert subject._finite(0.0, field="test") == 0.0
+
+
+def test_workflow_keeps_trusted_trigger_and_publication_guards() -> None:
+    workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+    required_fragments = (
+        "github.event.issue.number == 287",
+        "github.event.comment.user.login == github.event.repository.owner.login",
+        "github.event.comment.author_association == 'OWNER'",
+        "oc-eq1-esrm20-mixed-component-numeric-probe-request-v1",
+        '.gmm_identity.repository_path == "Hazard/gmpe_logic_tree_5br_slope_geology.xml"',
+        '.synthetic_context == {"mag":4.5,"rhypo_km":20,"rrup_km":20,"vs30":760}',
+    )
+    for fragment in required_fragments:
+        assert workflow.count(fragment) == 1, fragment
