@@ -252,7 +252,7 @@ def _site_parameter_evidence(
     ):
         raise Esrm20GsimReferenceRuntimeError("verified runtime class inventory is invalid")
 
-    requested = sorted({branch.get("requested_gsim") for branch in branches})
+    requested = sorted({branch.get("requested_gsim_token") for branch in branches})
     if requested != list(EXPECTED_REQUESTED_TOKENS):
         raise Esrm20GsimReferenceRuntimeError("verified ESRM20 requested-token set drifted")
 
