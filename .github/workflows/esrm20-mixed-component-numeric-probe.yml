@@ -1,0 +1,188 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Mixed-Component Numeric Probe
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-mixed-component-numeric-probe-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  execute-and-publish:
+    name: Execute two provider-native components in frozen OQ 3.14
+    if: >-
+      github.event.issue.number == 287 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-mixed-component-numeric-probe-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Bind request to current trusted main
+        id: fence
+        env:
+          OC_MIXED_COMPONENT_REQUEST: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/run_esrm20_mixed_component_numeric_probe.py \
+            --comment-body-env OC_MIXED_COMPONENT_REQUEST \
+            --expected-issue 287 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch exact OpenQuake 3.14 source
+        env:
+          OQ_COMMIT: 9f044c93d72846421a8faa90ebf0a6afacdf3c20
+        run: |
+          set -euo pipefail
+          OQ_ROOT="$RUNNER_TEMP/oq-engine"
+          git init "$OQ_ROOT"
+          git -C "$OQ_ROOT" remote add origin https://github.com/gem/oq-engine.git
+          git -C "$OQ_ROOT" fetch --depth=1 origin refs/tags/v3.14.0:refs/tags/v3.14.0
+          OBSERVED="$(git -C "$OQ_ROOT" rev-parse 'refs/tags/v3.14.0^{commit}')"
+          test "$OBSERVED" = "$OQ_COMMIT"
+          git -C "$OQ_ROOT" checkout --detach "$OBSERVED"
+          test -z "$(git -C "$OQ_ROOT" status --porcelain=v1)"
+
+      - name: Build reconstructed OpenQuake 3.14 runtime
+        id: image
+        run: |
+          set -euo pipefail
+          BASE_IMAGE="openquake/engine:3.14.0"
+          docker pull "$BASE_IMAGE"
+          BASE_REPO_DIGEST="$(docker image inspect --format='{{index .RepoDigests 0}}' "$BASE_IMAGE")"
+          printf '%s\n' "$BASE_REPO_DIGEST" | grep -Eq '^openquake/engine@sha256:[0-9a-f]{64}$'
+          DOCKERFILE="$RUNNER_TEMP/Dockerfile.oq314-mixed-component"
+          cat > "$DOCKERFILE" <<EOF
+          FROM $BASE_REPO_DIGEST
+          USER root
+          RUN apt-get update \
+              && apt-get install -y --no-install-recommends git \
+              && rm -rf /var/lib/apt/lists/*
+          COPY --chown=root:root oq-engine /oq-engine
+          RUN git config --system --add safe.directory /oq-engine
+          USER openquake
+          EOF
+          docker build --pull=false \
+            --file "$DOCKERFILE" \
+            --tag oc-oq314-mixed-component:local \
+            "$RUNNER_TEMP"
+          IMAGE_ID="$(docker image inspect --format='{{.Id}}' oc-oq314-mixed-component:local)"
+          printf '%s\n' "$IMAGE_ID" | grep -Eq '^sha256:[0-9a-f]{64}$'
+          echo "image_id=$IMAGE_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Execute exact two-branch numerical probe
+        env:
+          OC_MIXED_COMPONENT_REQUEST: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ steps.fence.outputs.execution_sha }}
+          RUNTIME_IMAGE_DIGEST: ${{ steps.image.outputs.image_id }}
+          RESULT_PATH: ${{ runner.temp }}/mixed-component-output/result.json
+        run: |
+          set -euo pipefail
+          OUTPUT_DIR="$RUNNER_TEMP/mixed-component-output"
+          mkdir -p "$OUTPUT_DIR"
+          : > "$OUTPUT_DIR/result.json"
+          chmod 0666 "$OUTPUT_DIR/result.json"
+          docker run --rm \
+            --entrypoint /opt/openquake/bin/python \
+            -e PYTHONDONTWRITEBYTECODE=1 \
+            -e OPENBLAS_NUM_THREADS=1 \
+            -e PYTHONPATH=/oq-engine:/workspace \
+            -e OC_MIXED_COMPONENT_REQUEST \
+            -e RUNTIME_IMAGE_DIGEST \
+            -v "$GITHUB_WORKSPACE:/workspace:ro" \
+            -v "$OUTPUT_DIR:/output" \
+            -w /workspace \
+            "$RUNTIME_IMAGE_DIGEST" \
+            scripts/run_esrm20_mixed_component_numeric_probe.py \
+              --comment-body-env OC_MIXED_COMPONENT_REQUEST \
+              --expected-issue 287 \
+              --execution-sha "$EXECUTION_SHA" \
+              --runtime-image-digest-env RUNTIME_IMAGE_DIGEST \
+              --output /output/result.json
+
+          jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-mixed-component-numeric-probe-result-v1" and
+            .source_issue == 287 and .status == "pass" and
+            .target_sha == $sha and .execution_sha == $sha and
+            .openquake_reference.commit == "9f044c93d72846421a8faa90ebf0a6afacdf3c20" and
+            .gmm_identity.commit_sha == "05f83bbc9df81d02ee8ddb1801d9d781355ce783" and
+            .gmm_identity.repository_path == "Hazard/gmpe_logic_tree_5br_slope_geology.xml" and
+            .gmm_identity.sha256 == "f3efd16d56189c7804824d94b20ed75d6ceefc879144d8bd697c1f9b47cf17b4" and
+            .synthetic_mechanics_probe == true and
+            .synthetic_context == {"mag":4.5,"rhypo_km":20,"rrup_km":20,"vs30":760} and
+            (.probes | length) == 2 and
+            .probes[0].branch_set_id == "CratonModel" and
+            .probes[0].branch_id == "CRParamMidMidSite" and
+            .probes[0].resolved_gsim_class == "ESHM20Craton" and
+            .probes[0].native_component == "RotD50" and
+            .probes[0].argument_keys == [] and
+            .probes[0].runtime_argument_keys_after_alias == [] and
+            .probes[0].finite_numeric_output == true and
+            .probes[0].pga_g > 0 and
+            .probes[1].branch_set_id == "Volcanic" and
+            .probes[1].branch_id == "b61" and
+            .probes[1].resolved_gsim_class == "LanzanoLuzi2019shallow" and
+            .probes[1].native_component == "GEOMETRIC_MEAN" and
+            .probes[1].argument_keys == [] and
+            .probes[1].runtime_argument_keys_after_alias == [] and
+            .probes[1].finite_numeric_output == true and
+            .probes[1].pga_g > 0 and
+            .native_components == ["GEOMETRIC_MEAN","RotD50"] and
+            .mixed_native_component_numeric_execution_verified == true and
+            .component_conversion_request_absent == true and
+            .component_conversion_activated == false and
+            .component_conversion_wrapper == "ModifiableGMPE" and
+            .component_conversion_argument == "horiz_comp_to_geom_mean" and
+            .reference_component_semantics == "provider_native_mixed_no_conversion" and
+            .historical_environment_verified == false and
+            .numerical_hazard_agreement_verified == false and
+            .imt_component_unit_compatibility_verified == false and
+            .full_hazard_compatibility_verified == false and
+            .site_model_compatibility_verified == false and
+            .vulnerability_compatibility_verified == false and
+            .reference_run_verified == false and
+            .scientific_validity_verified == false and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and
+            .model_use_authorized == false
+          ' "$RESULT_PATH" >/dev/null
+
+      - name: Publish bounded numerical mechanics evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT_PATH: ${{ runner.temp }}/mixed-component-output/result.json
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-mixed-component-numeric-probe-result-v1 -->"
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(jq -cS . "$RESULT_PATH")"
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/mixed-component-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/287/comments" \
+            --input "$RUNNER_TEMP/mixed-component-comment.json"
