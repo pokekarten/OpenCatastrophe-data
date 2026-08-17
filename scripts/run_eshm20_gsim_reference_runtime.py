@@ -121,6 +121,53 @@ def validate_request(
     return request
 
 
+def _trusted_terminal_result_execution_sha(body: object) -> str | None:
+    """Return a trusted result envelope's own SHA after fail-closed identity checks."""
+
+    if type(body) is not str or RESULT_MARKER not in body:
+        return None
+    if body.count(RESULT_MARKER) != 1:
+        raise ReferenceRuntimeExecutionError("trusted runtime result marker is malformed")
+    before, after = body.split(RESULT_MARKER, 1)
+    if before.strip() or not after.strip():
+        raise ReferenceRuntimeExecutionError("trusted runtime result envelope is malformed")
+    try:
+        result = json.loads(
+            after.strip(),
+            object_pairs_hook=_pairs,
+            parse_constant=_reject_constant,
+        )
+    except ReferenceRuntimeExecutionError:
+        raise
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        raise ReferenceRuntimeExecutionError("trusted runtime result JSON is malformed") from exc
+    if type(result) is not dict:
+        raise ReferenceRuntimeExecutionError("trusted runtime result is not an object")
+    exact = (
+        ("schema_version", SCHEMA_VERSION),
+        ("source_issue", SOURCE_ISSUE),
+        ("dataset_id", gmm.DATASET_ID),
+        ("status", "pass"),
+    )
+    for field, expected in exact:
+        observed = result.get(field)
+        if type(observed) is not type(expected) or observed != expected:
+            raise ReferenceRuntimeExecutionError(
+                f"trusted runtime result drifted at {field}"
+            )
+    target_sha = result.get("target_sha")
+    execution_sha = result.get("execution_sha")
+    if type(target_sha) is not str or _SHA_RE.fullmatch(target_sha) is None:
+        raise ReferenceRuntimeExecutionError("trusted runtime result target SHA is invalid")
+    if type(execution_sha) is not str or _SHA_RE.fullmatch(execution_sha) is None:
+        raise ReferenceRuntimeExecutionError("trusted runtime result execution SHA is invalid")
+    if target_sha != execution_sha:
+        raise ReferenceRuntimeExecutionError(
+            "trusted runtime result target/execution SHA mismatch"
+        )
+    return execution_sha
+
+
 def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
     """Validate one trusted-bot terminal result for exact-SHA deduplication."""
 
@@ -217,9 +264,16 @@ def has_terminal_runtime_result(
         login = user.get("login") if type(user) is dict else None
         if login != TRUSTED_RESULT_LOGIN:
             continue
-        if _parse_trusted_terminal_result(
-            comment.get("body"), execution_sha=execution_sha
-        ):
+        body = comment.get("body")
+        own_execution_sha = _trusted_terminal_result_execution_sha(body)
+        if own_execution_sha is None:
+            continue
+        terminal = _parse_trusted_terminal_result(
+            body, execution_sha=own_execution_sha
+        )
+        if own_execution_sha != execution_sha:
+            continue
+        if terminal:
             return True
     return False
 
