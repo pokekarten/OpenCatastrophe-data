@@ -503,8 +503,20 @@ def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
         raise
     except (json.JSONDecodeError, TypeError, ValueError) as exc:
         raise SiteDomainActionError("trusted site-domain result JSON is malformed") from exc
-    _validate_terminal_result(result, execution_sha=execution_sha)
-    return True
+    if type(result) is not dict:
+        raise SiteDomainActionError("trusted site-domain result is not an object")
+    candidate_target = result.get("target_sha")
+    candidate_execution = result.get("execution_sha")
+    if (
+        type(candidate_target) is not str
+        or _SHA_RE.fullmatch(candidate_target) is None
+        or type(candidate_execution) is not str
+        or _SHA_RE.fullmatch(candidate_execution) is None
+        or candidate_target != candidate_execution
+    ):
+        raise SiteDomainActionError("trusted site-domain historical SHA identity is inconsistent")
+    _validate_terminal_result(result, execution_sha=candidate_execution)
+    return candidate_execution == execution_sha
 
 
 def has_terminal_site_domain_result(
