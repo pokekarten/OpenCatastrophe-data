@@ -4,10 +4,10 @@
 """Bounded identity-only profile of ESRM20 v1.0 ``testing_scenarios.xlsx``.
 
 The workbook is read only from the immutable project-273 v1.0 commit after its
-Git blob identity is re-derived from the already hardened repository-tree
-collector. XLSX bytes are transient. Durable output contains receipts and
-redacted occurrence/binding counts only; it never returns workbook cells/rows,
-selects a scenario, or promotes a city inference to model authority.
+Git blob identity is re-derived from the hardened repository-tree collector.
+XLSX bytes are transient. Durable output contains receipts and redacted
+occurrence/binding counts only; it never returns workbook cells/rows, selects a
+scenario, or promotes a city inference to model authority.
 """
 
 from __future__ import annotations
@@ -46,13 +46,19 @@ MAX_WORKSHEETS = 64
 MAX_ROWS = 100_000
 MAX_CELLS = 500_000
 MAX_CELL_UTF8_BYTES = 8 * 1024
+MAX_TREE_PATH_UTF8_BYTES = 2048
 TOTAL_DEADLINE_SECONDS = 90.0
 _ALLOWED_COMPRESSION = {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED}
+_ALLOWED_BLOB_MODES = {"100644", "100755", "120000"}
 _CELL_REF_RE = re.compile(r"^[A-Z]{1,4}[1-9][0-9]{0,6}$")
+_SHA1_RE = re.compile(r"^[0-9a-f]{40}$")
 _WORD_PATTERNS = {
     name: re.compile(rf"(?<![a-z]){re.escape(name)}(?![a-z])", re.IGNORECASE)
     for name in NAME_LITERALS
 }
+_REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+_PKG_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
+_WORKSHEET_REL_TYPE = f"{_REL_NS}/worksheet"
 
 _TREE_ACQUIRE = tree.acquire_esrm20_scenario_tree_metadata
 _OPEN_FIXED = transport._open_fixed
@@ -83,7 +89,47 @@ def _bounded_text(value: object, *, field: str) -> str:
     return value
 
 
-def _tree_identity(entries: list[dict[str, Any]]) -> str:
+def _canonical_tree_path(value: object) -> str:
+    if type(value) is not str or not value or "\\" in value:
+        raise ScenarioWorkbookIdentityError("scenario tree path is invalid")
+    try:
+        encoded = value.encode("utf-8")
+    except UnicodeEncodeError as exc:
+        raise ScenarioWorkbookIdentityError("scenario tree path is not UTF-8 encodable") from exc
+    if len(encoded) > MAX_TREE_PATH_UTF8_BYTES:
+        raise ScenarioWorkbookIdentityError("scenario tree path exceeds bounded policy")
+    if any(ord(ch) < 32 or ord(ch) == 127 for ch in value):
+        raise ScenarioWorkbookIdentityError("scenario tree path contains control characters")
+    pure = PurePosixPath(value)
+    if pure.is_absolute() or str(pure) != value or any(
+        part in ("", ".", "..") for part in pure.parts
+    ):
+        raise ScenarioWorkbookIdentityError("scenario tree path is noncanonical")
+    return value
+
+
+def _validate_tree_entry(raw: object) -> dict[str, str]:
+    if type(raw) is not dict or set(raw) != {"path", "type", "id", "mode"}:
+        raise ScenarioWorkbookIdentityError("scenario tree entry shape drifted")
+    path = _canonical_tree_path(raw["path"])
+    entry_type = raw["type"]
+    object_id = raw["id"]
+    mode = raw["mode"]
+    if type(entry_type) is not str or entry_type not in {"blob", "tree"}:
+        raise ScenarioWorkbookIdentityError("scenario tree entry type is invalid")
+    if type(object_id) is not str or _SHA1_RE.fullmatch(object_id) is None:
+        raise ScenarioWorkbookIdentityError("scenario tree object id is invalid")
+    if type(mode) is not str:
+        raise ScenarioWorkbookIdentityError("scenario tree mode is invalid")
+    if entry_type == "tree":
+        if mode != "040000":
+            raise ScenarioWorkbookIdentityError("scenario tree type/mode pair is invalid")
+    elif mode not in _ALLOWED_BLOB_MODES:
+        raise ScenarioWorkbookIdentityError("scenario tree type/mode pair is invalid")
+    return {"path": path, "type": entry_type, "id": object_id, "mode": mode}
+
+
+def _tree_identity(entries: list[dict[str, str]]) -> str:
     canonical = "".join(
         f"{item['type']}\t{item['mode']}\t{item['id']}\t{item['path']}\n"
         for item in sorted(
@@ -113,43 +159,33 @@ def _workbook_blob_from_tree(receipt: object) -> tuple[str, str]:
         if type(observed) is not type(expected) or observed != expected:
             raise ScenarioWorkbookIdentityError(f"scenario tree receipt drifted at {field}")
 
-    entries = receipt.get("entries")
+    raw_entries = receipt.get("entries")
     count = receipt.get("tree_entry_count")
     if (
-        type(entries) is not list
-        or not entries
+        type(raw_entries) is not list
+        or not raw_entries
         or type(count) is not int
         or isinstance(count, bool)
-        or count != len(entries)
+        or count != len(raw_entries)
     ):
         raise ScenarioWorkbookIdentityError("scenario tree inventory is incomplete")
 
-    matches: list[dict[str, Any]] = []
+    entries: list[dict[str, str]] = []
     seen_paths: set[str] = set()
-    for raw in entries:
-        if type(raw) is not dict or set(raw) != {"path", "type", "id", "mode"}:
-            raise ScenarioWorkbookIdentityError("scenario tree entry shape drifted")
-        path = raw["path"]
-        if type(path) is not str or not path or path in seen_paths:
-            raise ScenarioWorkbookIdentityError("scenario tree paths are invalid or duplicated")
-        pure = PurePosixPath(path)
-        if pure.is_absolute() or str(pure) != path or any(
-            part in ("", ".", "..") for part in pure.parts
-        ):
-            raise ScenarioWorkbookIdentityError("scenario tree path is noncanonical")
-        seen_paths.add(path)
-        if path == WORKBOOK_PATH:
-            matches.append(raw)
+    for raw in raw_entries:
+        entry = _validate_tree_entry(raw)
+        if entry["path"] in seen_paths:
+            raise ScenarioWorkbookIdentityError("scenario tree paths are duplicated")
+        seen_paths.add(entry["path"])
+        entries.append(entry)
 
+    matches = [item for item in entries if item["path"] == WORKBOOK_PATH]
     if len(matches) != 1:
         raise ScenarioWorkbookIdentityError("fixed workbook is not unique in immutable tree")
     match = matches[0]
     if match["type"] != "blob" or match["mode"] != "100644":
         raise ScenarioWorkbookIdentityError("fixed workbook is not a canonical regular blob")
-    object_id = match["id"]
-    if type(object_id) is not str or re.fullmatch(r"[0-9a-f]{40}", object_id) is None:
-        raise ScenarioWorkbookIdentityError("fixed workbook Git object id is invalid")
-    return object_id, _tree_identity(entries)
+    return match["id"], _tree_identity(entries)
 
 
 def _raw_url() -> str:
@@ -169,10 +205,7 @@ def _git_blob_sha1(payload: bytes) -> str:
 def _canonical_zip_name(name: object) -> str:
     if type(name) is not str or not name or "\\" in name:
         raise ScenarioWorkbookIdentityError("XLSX member name is invalid")
-    if name.endswith("/"):
-        candidate = name[:-1]
-    else:
-        candidate = name
+    candidate = name[:-1] if name.endswith("/") else name
     pure = PurePosixPath(candidate)
     if (
         not candidate
@@ -182,6 +215,27 @@ def _canonical_zip_name(name: object) -> str:
     ):
         raise ScenarioWorkbookIdentityError("XLSX member path is noncanonical")
     return name
+
+
+def _canonical_relationship_target(value: object) -> str:
+    if type(value) is not str or not value or "\\" in value:
+        raise ScenarioWorkbookIdentityError("worksheet relationship target is invalid")
+    if "?" in value or "#" in value:
+        raise ScenarioWorkbookIdentityError("worksheet relationship target is invalid")
+    pure = PurePosixPath(value)
+    if pure.is_absolute() or str(pure) != value or any(
+        part in ("", ".", "..") for part in pure.parts
+    ):
+        raise ScenarioWorkbookIdentityError("worksheet relationship target is noncanonical")
+    resolved = f"xl/{value}"
+    resolved_pure = PurePosixPath(resolved)
+    if (
+        str(resolved_pure) != resolved
+        or not resolved.startswith("xl/worksheets/")
+        or not resolved.endswith(".xml")
+    ):
+        raise ScenarioWorkbookIdentityError("worksheet relationship target escapes worksheet root")
+    return resolved
 
 
 def _read_zip_member(archive: zipfile.ZipFile, info: zipfile.ZipInfo) -> bytes:
@@ -199,7 +253,8 @@ def _read_zip_member(archive: zipfile.ZipFile, info: zipfile.ZipInfo) -> bytes:
         raise ScenarioWorkbookIdentityError("XLSX member read failed closed") from exc
     if len(data) != info.file_size:
         raise ScenarioWorkbookIdentityError("XLSX member size disagrees with ZIP metadata")
-    if b"<!DOCTYPE" in data.upper() or b"<!ENTITY" in data.upper():
+    upper = data.upper()
+    if b"<!DOCTYPE" in upper or b"<!ENTITY" in upper:
         raise ScenarioWorkbookIdentityError("DTD/entity declarations are forbidden in XLSX XML")
     return data
 
@@ -236,6 +291,82 @@ def _shared_strings(archive: zipfile.ZipFile, infos: dict[str, zipfile.ZipInfo])
         if len(strings) > MAX_SHARED_STRINGS:
             raise ScenarioWorkbookIdentityError("shared string count exceeds bounded policy")
     return strings
+
+
+def _referenced_worksheets(
+    archive: zipfile.ZipFile, infos: dict[str, zipfile.ZipInfo]
+) -> list[str]:
+    workbook_name = "xl/workbook.xml"
+    rels_name = "xl/_rels/workbook.xml.rels"
+    if workbook_name not in infos or rels_name not in infos:
+        raise ScenarioWorkbookIdentityError("workbook relationship metadata is incomplete")
+    workbook = _parse_xml(
+        _read_zip_member(archive, infos[workbook_name]), label="workbook"
+    )
+    rels = _parse_xml(
+        _read_zip_member(archive, infos[rels_name]), label="workbook relationships"
+    )
+
+    relationship_map: dict[str, tuple[str, str, str | None]] = {}
+    for node in rels.iter():
+        if _local(node.tag) != "Relationship":
+            continue
+        rel_id = node.attrib.get("Id")
+        rel_type = node.attrib.get("Type")
+        target = node.attrib.get("Target")
+        target_mode = node.attrib.get("TargetMode")
+        if (
+            type(rel_id) is not str
+            or not rel_id
+            or rel_id in relationship_map
+            or type(rel_type) is not str
+            or type(target) is not str
+        ):
+            raise ScenarioWorkbookIdentityError("workbook relationship metadata is invalid")
+        relationship_map[rel_id] = (rel_type, target, target_mode)
+
+    sheet_ids: list[str] = []
+    for node in workbook.iter():
+        if _local(node.tag) != "sheet":
+            continue
+        rel_id = node.attrib.get(f"{{{_REL_NS}}}id")
+        if type(rel_id) is not str or not rel_id or rel_id in sheet_ids:
+            raise ScenarioWorkbookIdentityError("workbook sheet relationship id is invalid")
+        sheet_ids.append(rel_id)
+        if len(sheet_ids) > MAX_WORKSHEETS:
+            raise ScenarioWorkbookIdentityError("worksheet count exceeds bounded policy")
+    if not sheet_ids:
+        raise ScenarioWorkbookIdentityError("workbook contains no referenced worksheets")
+
+    worksheet_names: list[str] = []
+    seen_targets: set[str] = set()
+    for rel_id in sheet_ids:
+        relationship = relationship_map.get(rel_id)
+        if relationship is None:
+            raise ScenarioWorkbookIdentityError("workbook sheet relationship is unresolved")
+        rel_type, target, target_mode = relationship
+        if target_mode not in (None, "Internal"):
+            raise ScenarioWorkbookIdentityError("external worksheet relationships are forbidden")
+        if rel_type != _WORKSHEET_REL_TYPE:
+            raise ScenarioWorkbookIdentityError("workbook sheet relationship type is invalid")
+        resolved = _canonical_relationship_target(target)
+        if resolved in seen_targets:
+            raise ScenarioWorkbookIdentityError("workbook worksheet targets are duplicated")
+        if resolved not in infos or infos[resolved].is_dir():
+            raise ScenarioWorkbookIdentityError("referenced worksheet member is missing")
+        seen_targets.add(resolved)
+        worksheet_names.append(resolved)
+
+    archive_worksheets = {
+        name
+        for name, info in infos.items()
+        if name.startswith("xl/worksheets/")
+        and name.endswith(".xml")
+        and not info.is_dir()
+    }
+    if archive_worksheets != set(worksheet_names):
+        raise ScenarioWorkbookIdentityError("XLSX contains orphan or unreferenced worksheets")
+    return worksheet_names
 
 
 def _cell_text(cell: ET.Element, shared: list[str]) -> str:
@@ -278,29 +409,28 @@ def _scan_workbook(payload: bytes) -> dict[str, Any]:
             if name in infos:
                 raise ScenarioWorkbookIdentityError("XLSX contains duplicate member names")
             infos[name] = info
-            if not info.is_dir():
-                if info.flag_bits & 0x1:
-                    raise ScenarioWorkbookIdentityError("encrypted XLSX members are forbidden")
-                if info.compress_type not in _ALLOWED_COMPRESSION:
-                    raise ScenarioWorkbookIdentityError("XLSX compression method is outside policy")
-                if not (0 <= info.file_size <= MAX_MEMBER_BYTES):
-                    raise ScenarioWorkbookIdentityError("XLSX member size exceeds bounded policy")
-                total_uncompressed += info.file_size
-                if total_uncompressed > MAX_TOTAL_UNCOMPRESSED_BYTES:
-                    raise ScenarioWorkbookIdentityError("XLSX uncompressed size exceeds bounded policy")
+            if info.is_dir():
+                continue
+            if info.flag_bits & 0x1:
+                raise ScenarioWorkbookIdentityError("encrypted XLSX members are forbidden")
+            if info.compress_type not in _ALLOWED_COMPRESSION:
+                raise ScenarioWorkbookIdentityError("XLSX compression method is outside policy")
+            if not (0 <= info.file_size <= MAX_MEMBER_BYTES):
+                raise ScenarioWorkbookIdentityError("XLSX member size exceeds bounded policy")
+            total_uncompressed += info.file_size
+            if total_uncompressed > MAX_TOTAL_UNCOMPRESSED_BYTES:
+                raise ScenarioWorkbookIdentityError("XLSX uncompressed size exceeds bounded policy")
 
-        for required in ("[Content_Types].xml", "xl/workbook.xml"):
-            if required not in infos:
-                raise ScenarioWorkbookIdentityError(f"XLSX required member missing: {required}")
-            _parse_xml(_read_zip_member(archive, infos[required]), label=required)
-
-        worksheet_names = sorted(
-            name
-            for name, info in infos.items()
-            if name.startswith("xl/worksheets/")
-            and name.endswith(".xml")
-            and not info.is_dir()
+        content_types_name = "[Content_Types].xml"
+        if content_types_name not in infos:
+            raise ScenarioWorkbookIdentityError(
+                f"XLSX required member missing: {content_types_name}"
+            )
+        _parse_xml(
+            _read_zip_member(archive, infos[content_types_name]),
+            label=content_types_name,
         )
+        worksheet_names = _referenced_worksheets(archive, infos)
         if not (1 <= len(worksheet_names) <= MAX_WORKSHEETS):
             raise ScenarioWorkbookIdentityError("worksheet count is outside bounded policy")
         shared = _shared_strings(archive, infos)
