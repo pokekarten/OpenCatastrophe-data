@@ -168,6 +168,125 @@ def _trusted_terminal_result_execution_sha(body: object) -> str | None:
     return execution_sha
 
 
+def _validate_exact_mapping(
+    value: object, *, expected: dict[str, Any], label: str
+) -> None:
+    if type(value) is not dict or set(value) != set(expected):
+        raise ReferenceRuntimeExecutionError(f"{label} fields drifted")
+    for field, expected_value in expected.items():
+        observed = value[field]
+        if type(observed) is not type(expected_value) or observed != expected_value:
+            raise ReferenceRuntimeExecutionError(f"{label} drifted at {field}")
+
+
+def _validate_trusted_runtime_fingerprint(
+    value: object, *, image_digest: str
+) -> None:
+    """Re-run the reviewed recipe validator over serialized fingerprint evidence."""
+
+    if type(value) is not dict:
+        raise ReferenceRuntimeExecutionError("trusted runtime fingerprint is not an object")
+    observation = value.get("observation")
+    if type(observation) is not dict:
+        raise ReferenceRuntimeExecutionError("trusted runtime fingerprint observation is invalid")
+    packages = observation.get("packages")
+    if type(packages) is not list:
+        raise ReferenceRuntimeExecutionError("trusted runtime fingerprint package evidence is invalid")
+    package_map: dict[str, str] = {}
+    for package in packages:
+        if type(package) is not dict or set(package) != {"name", "version"}:
+            raise ReferenceRuntimeExecutionError(
+                "trusted runtime fingerprint package evidence is invalid"
+            )
+        name = package.get("name")
+        version = package.get("version")
+        if type(name) is not str or type(version) is not str or name in package_map:
+            raise ReferenceRuntimeExecutionError(
+                "trusted runtime fingerprint package evidence is invalid"
+            )
+        package_map[name] = version
+
+    raw_observation = {
+        "engine_commit": observation.get("engine_commit"),
+        "engine_version": observation.get("engine_version"),
+        "python_version": observation.get("python_version"),
+        "platform_system": observation.get("platform_system"),
+        "platform_machine": observation.get("platform_machine"),
+        "openblas_num_threads": observation.get("openblas_num_threads"),
+        "packages": package_map,
+        "container_image_digest": observation.get("container_image_digest"),
+    }
+    try:
+        canonical = runtime.validate_runtime_observation(raw_observation)
+    except runtime.ReferenceRuntimeError as exc:
+        raise ReferenceRuntimeExecutionError(
+            "trusted runtime fingerprint does not match the reference recipe"
+        ) from exc
+    if canonical != value:
+        raise ReferenceRuntimeExecutionError(
+            "trusted runtime fingerprint shape or reference identity drifted"
+        )
+    if canonical["observation"]["container_image_digest"] != image_digest:
+        raise ReferenceRuntimeExecutionError(
+            "trusted runtime fingerprint image digest is unbound"
+        )
+
+
+def _validate_trusted_branch_summaries(result: dict[str, Any]) -> None:
+    """Require branch/class summaries to agree with the serialized branch evidence."""
+
+    branch_count = result.get("branch_count")
+    branches = result.get("branches")
+    if (
+        type(branch_count) is not int
+        or isinstance(branch_count, bool)
+        or branch_count <= 0
+        or type(branches) is not list
+        or len(branches) != branch_count
+    ):
+        raise ReferenceRuntimeExecutionError("trusted runtime branch evidence is invalid")
+
+    resolved_classes: list[str] = []
+    requested_tokens: set[str] = set()
+    branch_ids: set[tuple[str, str]] = set()
+    for branch in branches:
+        if type(branch) is not dict or branch.get("constructor_accepted") is not True:
+            raise ReferenceRuntimeExecutionError("trusted runtime branch evidence is invalid")
+        branch_set_id = branch.get("branch_set_id")
+        branch_id = branch.get("branch_id")
+        requested = branch.get("requested_gsim_token")
+        resolved = branch.get("resolved_gsim_class")
+        if any(
+            type(value) is not str or not value or value != value.strip()
+            for value in (branch_set_id, branch_id, requested, resolved)
+        ):
+            raise ReferenceRuntimeExecutionError("trusted runtime branch identity is invalid")
+        identity = (branch_set_id, branch_id)
+        if identity in branch_ids:
+            raise ReferenceRuntimeExecutionError("trusted runtime branch identity is duplicated")
+        branch_ids.add(identity)
+        requested_tokens.add(requested)
+        resolved_classes.append(resolved)
+
+    unique_classes = result.get("unique_resolved_gsim_classes")
+    if (
+        type(unique_classes) is not list
+        or any(type(value) is not str for value in unique_classes)
+        or unique_classes != sorted(set(resolved_classes))
+    ):
+        raise ReferenceRuntimeExecutionError(
+            "trusted runtime resolved-class summary is invalid"
+        )
+    alias_tokens = result.get("alias_requested_tokens")
+    if (
+        type(alias_tokens) is not list
+        or any(type(value) is not str for value in alias_tokens)
+        or alias_tokens != sorted(set(alias_tokens))
+        or any(value not in requested_tokens for value in alias_tokens)
+    ):
+        raise ReferenceRuntimeExecutionError("trusted runtime alias summary is invalid")
+
+
 def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
     """Validate one trusted-bot terminal result for exact-SHA deduplication."""
 
@@ -223,20 +342,33 @@ def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
     image_digest = result.get("execution_container_image_digest")
     if type(image_digest) is not str or not _DIGEST_RE.fullmatch(image_digest):
         raise ReferenceRuntimeExecutionError("trusted runtime image digest is invalid")
-    branch_count = result.get("branch_count")
-    branches = result.get("branches")
-    if (
-        type(branch_count) is not int
-        or isinstance(branch_count, bool)
-        or branch_count <= 0
-        or type(branches) is not list
-        or len(branches) != branch_count
-        or any(
-            type(branch) is not dict or branch.get("constructor_accepted") is not True
-            for branch in branches
-        )
-    ):
-        raise ReferenceRuntimeExecutionError("trusted runtime branch evidence is invalid")
+
+    _validate_exact_mapping(
+        result.get("gmm_identity"),
+        expected={
+            "project_id": gmm.PROJECT_ID,
+            "project_path": gmm.PROJECT_PATH,
+            "commit_sha": gmm.COMMIT_SHA,
+            "repository_path": gmm.REPOSITORY_PATH,
+            "byte_count": gmm.EXPECTED_BYTE_COUNT,
+            "sha256": gmm.EXPECTED_SHA256,
+        },
+        label="trusted runtime GMM identity",
+    )
+    _validate_exact_mapping(
+        result.get("openquake_reference"),
+        expected={
+            "repository": gate.OPENQUAKE_REPOSITORY,
+            "tag": gate.OPENQUAKE_TAG,
+            "commit": gate.OPENQUAKE_COMMIT,
+            "version": gate.OPENQUAKE_VERSION,
+        },
+        label="trusted runtime OpenQuake reference",
+    )
+    _validate_trusted_runtime_fingerprint(
+        result.get("reference_runtime_fingerprint"), image_digest=image_digest
+    )
+    _validate_trusted_branch_summaries(result)
     return True
 
 
