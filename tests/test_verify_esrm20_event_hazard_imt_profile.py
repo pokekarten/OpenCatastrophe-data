@@ -11,19 +11,18 @@ from scripts import verify_esrm20_event_hazard_dependencies as subject
 class EventHazardImtProfileTests(unittest.TestCase):
     def test_extracts_canonical_names_from_event_based_list(self) -> None:
         option, names = subject.extract_openquake_imt_names(
-            """[calculation]\n"
+            "[calculation]\n"
             "intensity_measure_types = SA(1.0), PGA SA(0.3)\n"
-            """
         )
         self.assertEqual(option, "intensity_measure_types")
         self.assertEqual(names, ["PGA", "SA(0.3)", "SA(1.0)"])
 
     def test_extracts_only_mapping_keys_without_evaluating_levels(self) -> None:
         option, names = subject.extract_openquake_imt_names(
-            """[calculation]\n"
-            "intensity_measure_types_and_levels = {'SA(1.0)': logscale(0.01, 2, 20), "
+            "[calculation]\n"
+            "intensity_measure_types_and_levels = "
+            "{'SA(1.0)': logscale(0.01, 2, 20), "
             "'PGA': [0.1, 0.2], 'SA(0.3)': custom_unknown_expression(1)}\n"
-            """
         )
         self.assertEqual(option, "intensity_measure_types_and_levels")
         self.assertEqual(names, ["PGA", "SA(0.3)", "SA(1.0)"])
@@ -34,10 +33,9 @@ class EventHazardImtProfileTests(unittest.TestCase):
             "exactly one standard IMT option",
         ):
             subject.extract_openquake_imt_names(
-                """[calculation]\n"
+                "[calculation]\n"
                 "intensity_measure_types = PGA\n"
                 "intensity_measure_types_and_levels = {'PGA': [0.1]}\n"
-                """
             )
 
     def test_rejects_duplicate_imt_names(self) -> None:
@@ -65,7 +63,7 @@ class EventHazardImtProfileTests(unittest.TestCase):
         ):
             subject.extract_openquake_imt_names(
                 "[calculation]\n"
-                "intensity_measure_types_and_levels = {'PGA\nunsafe': [0.1]}\n"
+                "intensity_measure_types_and_levels = {'PGA\\nunsafe': [0.1]}\n"
             )
 
     def test_verified_profile_fails_before_parsing_wrong_bytes(self) -> None:
