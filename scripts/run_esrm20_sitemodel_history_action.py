@@ -228,12 +228,9 @@ def _base_result(*, execution_sha: str) -> dict[str, Any]:
 
 
 def parse_terminal_result(body: object, *, execution_sha: str) -> bool:
-    """Return whether *body* is a terminal trusted result for this exact head.
-
-    Valid results for a different execution SHA are deliberately ignored rather
-    than treated as ledger corruption. This keeps cross-head deduplication
-    exact-head scoped while still failing closed on malformed result envelopes.
-    """
+    """Validate a trusted terminal result fully, then scope dedup to one SHA."""
+    if type(execution_sha) is not str or _SHA_RE.fullmatch(execution_sha) is None:
+        raise SiteModelHistoryExecutionError("invalid execution SHA")
     if type(body) is not str or RESULT_MARKER not in body:
         return False
     if body.count(RESULT_MARKER) != 1:
@@ -261,10 +258,9 @@ def parse_terminal_result(body: object, *, execution_sha: str) -> bool:
         or target != observed_execution
     ):
         raise SiteModelHistoryExecutionError("site-tool history result SHA binding is invalid")
-    if target != execution_sha:
-        return False
 
-    for field, expected in _base_result(execution_sha=execution_sha).items():
+    own_execution_sha = target
+    for field, expected in _base_result(execution_sha=own_execution_sha).items():
         observed = result.get(field)
         if type(observed) is not type(expected) or observed != expected:
             raise SiteModelHistoryExecutionError(f"site-tool history result drifted at {field}")
@@ -272,16 +268,15 @@ def parse_terminal_result(body: object, *, execution_sha: str) -> bool:
         if result["failure_class"] is not None:
             raise SiteModelHistoryExecutionError("site-tool history PASS carries failure class")
         validate_profile(result["profile"])
-        return True
-    if result["status"] == "blocked":
+    elif result["status"] == "blocked":
         if result["failure_class"] != "metadata_acquisition_failure" or result["profile"] is not None:
             raise SiteModelHistoryExecutionError("site-tool history blocked result widened evidence")
-        return True
-    if result["status"] == "duplicate":
+    elif result["status"] == "duplicate":
         if result["failure_class"] is not None or result["profile"] is not None:
             raise SiteModelHistoryExecutionError("site-tool history duplicate result carries evidence")
-        return True
-    raise SiteModelHistoryExecutionError("site-tool history result has non-terminal status")
+    else:
+        raise SiteModelHistoryExecutionError("site-tool history result has non-terminal status")
+    return own_execution_sha == execution_sha
 
 
 def has_terminal_result(*, repository: str, token: str, execution_sha: str) -> bool:
