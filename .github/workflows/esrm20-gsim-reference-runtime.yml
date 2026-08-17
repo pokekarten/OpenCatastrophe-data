@@ -82,7 +82,7 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           import os
-          from scripts import run_esrm20_gsim_reference_runtime as subject
+          from scripts import check_esrm20_gsim_runtime_dedup as subject
           skip = subject.has_terminal_runtime_result(
               repository=os.environ["GITHUB_REPOSITORY"],
               token=os.environ["GH_TOKEN"],
