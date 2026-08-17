@@ -47,6 +47,176 @@ _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 _REQUESTER_RE = re.compile(r"^[A-Za-z0-9_.:@/+ -]{1,96}$")
 _REQUEST_FIELDS = {"schema_version", "issue", "target_sha", "requester"}
+_TERMINAL_RESULT_FIELDS = {
+    "schema_version",
+    "source_issue",
+    "dataset_id",
+    "status",
+    "target_sha",
+    "execution_sha",
+    "execution_container_image_digest",
+    "gmm_identity",
+    "openquake_reference",
+    "reference_runtime_fingerprint",
+    "branch_count",
+    "branches",
+    "unique_resolved_gsim_classes",
+    "alias_requested_tokens",
+    "same_process_runtime_observation_collected",
+    "executing_environment_matches_reconstructed_reference_recipe_fields",
+    "gsim_request_reference_recipe_runtime_compatibility_verified",
+    "historical_environment_verified",
+    "reference_base_image_byte_identity_verified",
+    "wheel_byte_identity_verified",
+    "numerical_hazard_agreement_verified",
+    "imt_component_unit_compatibility_verified",
+    "full_hazard_compatibility_verified",
+    "site_model_compatibility_verified",
+    "vulnerability_compatibility_verified",
+    "reference_run_verified",
+    "scientific_validity_verified",
+    "external_bytes_persisted",
+    "publication_authorized",
+    "model_use_authorized",
+}
+_BRANCH_FIELDS = {
+    "branch_set_id",
+    "branch_id",
+    "tectonic_region_type",
+    "requested_gsim_token",
+    "resolved_gsim_class",
+    "request_form",
+    "alias_definition_present",
+    "alias_expansion_applied",
+    "registry_alias_key_used",
+    "argument_keys",
+    "runtime_argument_keys_after_alias",
+    "constructor_accepted",
+}
+_EXPECTED_BRANCH_COUNT = 80
+_EXPECTED_BRANCH_SET_CONTRACT = {
+    "BCHydroSubIF": ("Subduction Interface", frozenset({"BCHydroESHM20SInter"})),
+    "BCHydroSubIS": ("Subduction Inslab", frozenset({"BCHydroESHM20SSlab"})),
+    "BCHydroSubVrancea": ("Non-Subduction Deep", frozenset({"BCHydroESHM20SSlab"})),
+    "CratonModel": ("Craton", frozenset({"ESHM20Craton", "KothaEtAl2020ESHM20"})),
+    "Shallow_Def": ("Shallow Default", frozenset({"KothaEtAl2020ESHM20"})),
+    "Volcanic": ("Volcanic", frozenset({"LanzanoLuzi2019shallow"})),
+}
+_EXPECTED_RESOLVED_GSIM_CLASSES = sorted(
+    {
+        "BCHydroESHM20SInter",
+        "BCHydroESHM20SSlab",
+        "ESHM20Craton",
+        "KothaEtAl2020ESHM20",
+        "LanzanoLuzi2019shallow",
+    }
+)
+_SAFE_BRANCH_ID_RE = re.compile(r"^[A-Za-z0-9_.:+/@-]{1,256}$")
+_SAFE_ARGUMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _build_expected_branch_requests() -> dict[tuple[str, str], tuple[str, str, str, tuple[str, ...]]]:
+    """Return the exact frozen 80-request identity surface from the receipted GMM."""
+
+    expected: dict[tuple[str, str], tuple[str, str, str, tuple[str, ...]]] = {}
+
+    def add(
+        branch_set_id: str,
+        branch_id: str,
+        trt: str,
+        token: str,
+        request_form: str,
+        argument_keys: tuple[str, ...],
+    ) -> None:
+        key = (branch_set_id, branch_id)
+        if key in expected:
+            raise RuntimeError("duplicate frozen ESHM20 branch request")
+        expected[key] = (trt, token, request_form, argument_keys)
+
+    stress_levels = ("High", "Low", "Mid", "VHigh", "VLow")
+    attenuations = ("Central", "Fast", "Slow")
+    for branch_set_id, prefix, trt, token in (
+        ("BCHydroSubIF", "SUB_IF", "Subduction Interface", "BCHydroESHM20SInter"),
+        ("BCHydroSubIS", "SUB_IS", "Subduction Inslab", "BCHydroESHM20SSlab"),
+        ("BCHydroSubVrancea", "Vrancea", "Non-Subduction Deep", "BCHydroESHM20SSlab"),
+    ):
+        for stress in stress_levels:
+            for attenuation in attenuations:
+                keys = ["a", "b", "faba_taper_model"]
+                if stress != "Mid":
+                    keys.append("sigma_mu_epsilon")
+                if attenuation != "Central":
+                    keys.append("theta6_adjustment")
+                add(
+                    branch_set_id,
+                    f"{prefix}{stress}Stress{attenuation}Att",
+                    trt,
+                    token,
+                    "table",
+                    tuple(sorted(keys)),
+                )
+
+    for suffix, keys in (
+        ("Shal0SCentralAtt", ()),
+        ("Shal0SSlowAtt", ("c3_epsilon",)),
+        ("ShalP1SCentralAtt", ("sigma_mu_epsilon",)),
+        ("ShalP1SSlowAtt", ("c3_epsilon", "sigma_mu_epsilon")),
+    ):
+        add(
+            "CratonModel",
+            f"CRBackbone{suffix}",
+            "Craton",
+            "KothaEtAl2020ESHM20",
+            "bare" if not keys else "table",
+            tuple(sorted(keys)),
+        )
+
+    for stress in stress_levels:
+        for site in ("High", "Low", "Mid"):
+            keys = []
+            if stress != "Mid":
+                keys.append("epsilon")
+            if site != "Mid":
+                keys.append("site_epsilon")
+            add(
+                "CratonModel",
+                f"CRParam{stress}{site}Site",
+                "Craton",
+                "ESHM20Craton",
+                "table",
+                tuple(sorted(keys)),
+            )
+
+    for stress in stress_levels:
+        for attenuation in attenuations:
+            keys = []
+            if attenuation != "Central":
+                keys.append("c3_epsilon")
+            if stress != "Mid":
+                keys.append("sigma_mu_epsilon")
+            add(
+                "Shallow_Def",
+                f"Shallow_Default_{stress}Stress_{attenuation}Att",
+                "Shallow Default",
+                "KothaEtAl2020ESHM20",
+                "bare" if not keys else "table",
+                tuple(sorted(keys)),
+            )
+
+    add(
+        "Volcanic",
+        "b61",
+        "Volcanic",
+        "LanzanoLuzi2019shallow",
+        "bare",
+        (),
+    )
+    if len(expected) != _EXPECTED_BRANCH_COUNT:
+        raise RuntimeError("frozen ESHM20 request contract does not contain 80 branches")
+    return expected
+
+
+_EXPECTED_BRANCH_REQUESTS = _build_expected_branch_requests()
 
 # Import-time frozen acquisition authority. Production has no caller-selected
 # provider/project/ref/path/size/hash/parser/model surface.
@@ -121,6 +291,243 @@ def validate_request(
     return request
 
 
+def _trusted_terminal_result_execution_sha(body: object) -> str | None:
+    """Return a trusted terminal's own SHA after fail-closed envelope checks."""
+
+    if type(body) is not str or RESULT_MARKER not in body:
+        return None
+    if body.count(RESULT_MARKER) != 1:
+        raise ReferenceRuntimeExecutionError("trusted runtime result marker is malformed")
+    before, after = body.split(RESULT_MARKER, 1)
+    if before.strip() or not after.strip():
+        raise ReferenceRuntimeExecutionError("trusted runtime result envelope is malformed")
+    try:
+        result = json.loads(
+            after.strip(),
+            object_pairs_hook=_pairs,
+            parse_constant=_reject_constant,
+        )
+    except ReferenceRuntimeExecutionError:
+        raise
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        raise ReferenceRuntimeExecutionError("trusted runtime result JSON is malformed") from exc
+    if type(result) is not dict:
+        raise ReferenceRuntimeExecutionError("trusted runtime result is not an object")
+    exact = (
+        ("schema_version", SCHEMA_VERSION),
+        ("source_issue", SOURCE_ISSUE),
+        ("dataset_id", gmm.DATASET_ID),
+        ("status", "pass"),
+    )
+    for field, expected in exact:
+        observed = result.get(field)
+        if type(observed) is not type(expected) or observed != expected:
+            raise ReferenceRuntimeExecutionError(
+                f"trusted runtime result drifted at {field}"
+            )
+    target_sha = result.get("target_sha")
+    execution_sha = result.get("execution_sha")
+    if type(target_sha) is not str or _SHA_RE.fullmatch(target_sha) is None:
+        raise ReferenceRuntimeExecutionError("trusted runtime result target SHA is invalid")
+    if type(execution_sha) is not str or _SHA_RE.fullmatch(execution_sha) is None:
+        raise ReferenceRuntimeExecutionError("trusted runtime result execution SHA is invalid")
+    if target_sha != execution_sha:
+        raise ReferenceRuntimeExecutionError(
+            "trusted runtime result target/execution SHA mismatch"
+        )
+    return execution_sha
+
+
+def _validate_exact_mapping(
+    value: object, *, expected: dict[str, Any], label: str
+) -> None:
+    if type(value) is not dict or set(value) != set(expected):
+        raise ReferenceRuntimeExecutionError(f"{label} fields drifted")
+    for field, expected_value in expected.items():
+        observed = value[field]
+        if type(observed) is not type(expected_value) or observed != expected_value:
+            raise ReferenceRuntimeExecutionError(f"{label} drifted at {field}")
+
+
+def _validate_trusted_runtime_fingerprint(
+    value: object, *, image_digest: str
+) -> None:
+    """Re-run the reviewed reference-recipe validator over serialized evidence."""
+
+    if type(value) is not dict:
+        raise ReferenceRuntimeExecutionError("trusted runtime fingerprint is not an object")
+    observation = value.get("observation")
+    if type(observation) is not dict:
+        raise ReferenceRuntimeExecutionError("trusted runtime fingerprint observation is invalid")
+    packages = observation.get("packages")
+    if type(packages) is not list:
+        raise ReferenceRuntimeExecutionError("trusted runtime fingerprint package evidence is invalid")
+    package_map: dict[str, str] = {}
+    for package in packages:
+        if type(package) is not dict or set(package) != {"name", "version"}:
+            raise ReferenceRuntimeExecutionError(
+                "trusted runtime fingerprint package evidence is invalid"
+            )
+        name = package.get("name")
+        version = package.get("version")
+        if type(name) is not str or type(version) is not str or name in package_map:
+            raise ReferenceRuntimeExecutionError(
+                "trusted runtime fingerprint package evidence is invalid"
+            )
+        package_map[name] = version
+
+    raw_observation = {
+        "engine_commit": observation.get("engine_commit"),
+        "engine_version": observation.get("engine_version"),
+        "python_version": observation.get("python_version"),
+        "platform_system": observation.get("platform_system"),
+        "platform_machine": observation.get("platform_machine"),
+        "openblas_num_threads": observation.get("openblas_num_threads"),
+        "packages": package_map,
+        "container_image_digest": observation.get("container_image_digest"),
+    }
+    try:
+        canonical = runtime.validate_runtime_observation(raw_observation)
+    except runtime.ReferenceRuntimeError as exc:
+        raise ReferenceRuntimeExecutionError(
+            "trusted runtime fingerprint does not match the reference recipe"
+        ) from exc
+    if canonical != value:
+        raise ReferenceRuntimeExecutionError(
+            "trusted runtime fingerprint shape or reference identity drifted"
+        )
+    if canonical["observation"]["container_image_digest"] != image_digest:
+        raise ReferenceRuntimeExecutionError(
+            "trusted runtime fingerprint image digest is unbound"
+        )
+
+
+def _validated_argument_keys(value: object, *, label: str) -> list[str]:
+    if type(value) is not list:
+        raise ReferenceRuntimeExecutionError(f"{label} is not an array")
+    if any(type(key) is not str or _SAFE_ARGUMENT_RE.fullmatch(key) is None for key in value):
+        raise ReferenceRuntimeExecutionError(f"{label} contains an invalid key")
+    if value != sorted(set(value)):
+        raise ReferenceRuntimeExecutionError(f"{label} is not canonical")
+    return value
+
+
+def _validate_trusted_branch_contract(result: dict[str, Any]) -> None:
+    """Bind serialized branch evidence to the frozen 80-request source contract."""
+
+    if (
+        gate.profiler.EXPECTED_BRANCH_COUNT != _EXPECTED_BRANCH_COUNT
+        or gate.profiler.EXPECTED_BRANCH_SET_COUNT != len(_EXPECTED_BRANCH_SET_CONTRACT)
+    ):
+        raise ReferenceRuntimeExecutionError("trusted runtime source branch authority drifted")
+
+    branch_count = result.get("branch_count")
+    branches = result.get("branches")
+    if (
+        type(branch_count) is not int
+        or isinstance(branch_count, bool)
+        or branch_count != _EXPECTED_BRANCH_COUNT
+        or type(branches) is not list
+        or len(branches) != _EXPECTED_BRANCH_COUNT
+    ):
+        raise ReferenceRuntimeExecutionError("trusted runtime branch evidence is invalid")
+
+    branch_ids: set[str] = set()
+    branch_sets: set[str] = set()
+    resolved_classes: set[str] = set()
+    alias_tokens: set[str] = set()
+
+    for branch in branches:
+        if type(branch) is not dict or set(branch) != _BRANCH_FIELDS:
+            raise ReferenceRuntimeExecutionError("trusted runtime branch fields drifted")
+        branch_set_id = branch["branch_set_id"]
+        branch_id = branch["branch_id"]
+        tectonic_region_type = branch["tectonic_region_type"]
+        requested = branch["requested_gsim_token"]
+        resolved = branch["resolved_gsim_class"]
+        request_form = branch["request_form"]
+
+        if (
+            type(branch_set_id) is not str
+            or branch_set_id not in _EXPECTED_BRANCH_SET_CONTRACT
+            or type(branch_id) is not str
+            or _SAFE_BRANCH_ID_RE.fullmatch(branch_id) is None
+            or branch_id in branch_ids
+        ):
+            raise ReferenceRuntimeExecutionError("trusted runtime branch identity is invalid")
+        branch_ids.add(branch_id)
+        branch_sets.add(branch_set_id)
+
+        frozen = _EXPECTED_BRANCH_REQUESTS.get((branch_set_id, branch_id))
+        if frozen is None:
+            raise ReferenceRuntimeExecutionError("trusted runtime branch request identity drifted")
+        expected_trt, expected_token, expected_form, expected_arguments = frozen
+        if type(tectonic_region_type) is not str or tectonic_region_type != expected_trt:
+            raise ReferenceRuntimeExecutionError("trusted runtime tectonic-region evidence drifted")
+        if (
+            type(requested) is not str
+            or type(resolved) is not str
+            or requested != expected_token
+            or resolved != expected_token
+        ):
+            raise ReferenceRuntimeExecutionError("trusted runtime GSIM identity drifted")
+        resolved_classes.add(resolved)
+
+        if request_form != expected_form:
+            raise ReferenceRuntimeExecutionError("trusted runtime request form is invalid")
+        for field in (
+            "alias_definition_present",
+            "alias_expansion_applied",
+            "registry_alias_key_used",
+        ):
+            if branch[field] is not False:
+                raise ReferenceRuntimeExecutionError(
+                    "trusted runtime alias evidence drifted"
+                )
+        if branch["constructor_accepted"] is not True:
+            raise ReferenceRuntimeExecutionError(
+                "trusted runtime constructor evidence drifted"
+            )
+
+        argument_keys = _validated_argument_keys(
+            branch["argument_keys"], label="trusted runtime source argument keys"
+        )
+        runtime_argument_keys = _validated_argument_keys(
+            branch["runtime_argument_keys_after_alias"],
+            label="trusted runtime post-alias argument keys",
+        )
+        if tuple(argument_keys) != expected_arguments:
+            raise ReferenceRuntimeExecutionError(
+                "trusted runtime source argument identity drifted"
+            )
+        if runtime_argument_keys != argument_keys:
+            raise ReferenceRuntimeExecutionError(
+                "trusted runtime direct-request argument evidence drifted"
+            )
+        if branch["alias_definition_present"]:
+            alias_tokens.add(requested)
+
+    observed_request_order = [
+        (branch["branch_set_id"], branch["branch_id"]) for branch in branches
+    ]
+    expected_request_order = sorted(_EXPECTED_BRANCH_REQUESTS)
+    if observed_request_order != expected_request_order:
+        raise ReferenceRuntimeExecutionError("trusted runtime branch request order drifted")
+    if branch_sets != set(_EXPECTED_BRANCH_SET_CONTRACT):
+        raise ReferenceRuntimeExecutionError("trusted runtime branch-set inventory drifted")
+    if sorted(resolved_classes) != _EXPECTED_RESOLVED_GSIM_CLASSES:
+        raise ReferenceRuntimeExecutionError("trusted runtime resolved-class inventory drifted")
+
+    unique_classes = result.get("unique_resolved_gsim_classes")
+    if unique_classes != _EXPECTED_RESOLVED_GSIM_CLASSES:
+        raise ReferenceRuntimeExecutionError(
+            "trusted runtime resolved-class summary is invalid"
+        )
+    alias_requested_tokens = result.get("alias_requested_tokens")
+    if alias_requested_tokens != sorted(alias_tokens) or alias_requested_tokens != []:
+        raise ReferenceRuntimeExecutionError("trusted runtime alias summary is invalid")
+
+
 def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
     """Validate one trusted-bot terminal result for exact-SHA deduplication."""
 
@@ -143,6 +550,9 @@ def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
         raise ReferenceRuntimeExecutionError("trusted runtime result JSON is malformed") from exc
     if type(result) is not dict:
         raise ReferenceRuntimeExecutionError("trusted runtime result is not an object")
+    if set(result) != _TERMINAL_RESULT_FIELDS:
+        raise ReferenceRuntimeExecutionError("trusted runtime result fields drifted")
+
     exact = (
         ("schema_version", SCHEMA_VERSION),
         ("source_issue", SOURCE_ISSUE),
@@ -176,20 +586,33 @@ def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
     image_digest = result.get("execution_container_image_digest")
     if type(image_digest) is not str or not _DIGEST_RE.fullmatch(image_digest):
         raise ReferenceRuntimeExecutionError("trusted runtime image digest is invalid")
-    branch_count = result.get("branch_count")
-    branches = result.get("branches")
-    if (
-        type(branch_count) is not int
-        or isinstance(branch_count, bool)
-        or branch_count <= 0
-        or type(branches) is not list
-        or len(branches) != branch_count
-        or any(
-            type(branch) is not dict or branch.get("constructor_accepted") is not True
-            for branch in branches
-        )
-    ):
-        raise ReferenceRuntimeExecutionError("trusted runtime branch evidence is invalid")
+
+    _validate_exact_mapping(
+        result.get("gmm_identity"),
+        expected={
+            "project_id": gmm.PROJECT_ID,
+            "project_path": gmm.PROJECT_PATH,
+            "commit_sha": gmm.COMMIT_SHA,
+            "repository_path": gmm.REPOSITORY_PATH,
+            "byte_count": gmm.EXPECTED_BYTE_COUNT,
+            "sha256": gmm.EXPECTED_SHA256,
+        },
+        label="trusted runtime GMM identity",
+    )
+    _validate_exact_mapping(
+        result.get("openquake_reference"),
+        expected={
+            "repository": gate.OPENQUAKE_REPOSITORY,
+            "tag": gate.OPENQUAKE_TAG,
+            "commit": gate.OPENQUAKE_COMMIT,
+            "version": gate.OPENQUAKE_VERSION,
+        },
+        label="trusted runtime OpenQuake reference",
+    )
+    _validate_trusted_runtime_fingerprint(
+        result.get("reference_runtime_fingerprint"), image_digest=image_digest
+    )
+    _validate_trusted_branch_contract(result)
     return True
 
 
@@ -217,9 +640,16 @@ def has_terminal_runtime_result(
         login = user.get("login") if type(user) is dict else None
         if login != TRUSTED_RESULT_LOGIN:
             continue
-        if _parse_trusted_terminal_result(
-            comment.get("body"), execution_sha=execution_sha
-        ):
+        body = comment.get("body")
+        own_execution_sha = _trusted_terminal_result_execution_sha(body)
+        if own_execution_sha is None:
+            continue
+        terminal = _parse_trusted_terminal_result(
+            body, execution_sha=own_execution_sha
+        )
+        if own_execution_sha != execution_sha:
+            continue
+        if terminal:
             return True
     return False
 
