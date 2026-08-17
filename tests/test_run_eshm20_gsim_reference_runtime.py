@@ -45,31 +45,24 @@ def _runtime_fingerprint():
 
 
 def _branches():
-    contract = [
-        ("BCHydroSubIF", "Subduction Interface", "BCHydroESHM20SInter"),
-        ("BCHydroSubIS", "Subduction Inslab", "BCHydroESHM20SSlab"),
-        ("BCHydroSubVrancea", "Non-Subduction Deep", "BCHydroESHM20SSlab"),
-        ("CratonModel", "Craton", "KothaEtAl2020ESHM20"),
-        ("CratonModel", "Craton", "ESHM20Craton"),
-        ("Shallow_Def", "Shallow Default", "KothaEtAl2020ESHM20"),
-        ("Volcanic", "Volcanic", "LanzanoLuzi2019shallow"),
-    ]
     rows = []
-    for index in range(subject._EXPECTED_BRANCH_COUNT):
-        branch_set_id, trt, token = contract[index % len(contract)]
+    for index, ((branch_set_id, branch_id), frozen) in enumerate(
+        sorted(subject._EXPECTED_BRANCH_REQUESTS.items())
+    ):
+        trt, token, request_form, argument_keys = frozen
         rows.append(
             {
                 "branch_set_id": branch_set_id,
-                "branch_id": f"b{index:03d}",
+                "branch_id": branch_id,
                 "tectonic_region_type": trt,
                 "requested_gsim_token": token,
                 "resolved_gsim_class": token,
-                "request_form": "bare",
+                "request_form": request_form,
                 "alias_definition_present": False,
                 "alias_expansion_applied": False,
                 "registry_alias_key_used": False,
-                "argument_keys": [],
-                "runtime_argument_keys_after_alias": [],
+                "argument_keys": list(argument_keys),
+                "runtime_argument_keys_after_alias": list(argument_keys),
                 "constructor_accepted": True,
             }
         )
@@ -312,6 +305,18 @@ class ReferenceRuntimeLedgerTests(unittest.TestCase):
             ),
             ("truncated branch inventory", truncate),
             ("rewritten request identity", rewrite_identity),
+            (
+                "valid-looking foreign branch id",
+                lambda result: result["branches"][0].__setitem__(
+                    "branch_id", "synthetic-valid-id"
+                ),
+            ),
+            (
+                "reordered exact branches",
+                lambda result: result["branches"].__setitem__(
+                    slice(0, 2), list(reversed(result["branches"][:2]))
+                ),
+            ),
             (
                 "request form",
                 lambda result: result["branches"][0].__setitem__(
