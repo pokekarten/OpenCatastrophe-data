@@ -91,103 +91,84 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
               handle.write(f"skip={'true' if skip else 'false'}\n")
           PY
-      - name: Resolve public OpenQuake v3.14.0 tag and require frozen commit
+      - name: Fetch verified OpenQuake v3.14.0 checkout
         if: steps.dedup.outputs.skip != 'true'
         env:
-          OQ_TAG_API: https://api.github.com/repos/gem/oq-engine/git/ref/tags/v3.14.0
-          OQ_COMMIT_API: https://api.github.com/repos/gem/oq-engine/commits/9f044c93d72846421a8faa90ebf0a6afacdf3c20
-          EXPECTED_COMMIT: 9f044c93d72846421a8faa90ebf0a6afacdf3c20
+          OQ_COMMIT: 9f044c93d72846421a8faa90ebf0a6afacdf3c20
         run: |
           set -euo pipefail
-          TAG_JSON="$(curl --fail --silent --show-error --location --max-time 30 --proto '=https' --tlsv1.2 "$OQ_TAG_API")"
-          COMMIT_JSON="$(curl --fail --silent --show-error --location --max-time 30 --proto '=https' --tlsv1.2 "$OQ_COMMIT_API")"
-          export TAG_JSON COMMIT_JSON EXPECTED_COMMIT
-          python - <<'PY'
-          import json, os, re
-          expected = os.environ["EXPECTED_COMMIT"]
-          tag = json.loads(os.environ["TAG_JSON"])
-          commit = json.loads(os.environ["COMMIT_JSON"])
-          if not re.fullmatch(r"[0-9a-f]{40}", expected):
-              raise SystemExit("invalid frozen commit")
-          obj = tag.get("object")
-          if not isinstance(obj, dict) or obj.get("type") != "commit" or obj.get("sha") != expected:
-              raise SystemExit("OpenQuake v3.14.0 tag no longer resolves to frozen commit")
-          if commit.get("sha") != expected:
-              raise SystemExit("OpenQuake frozen commit metadata mismatch")
-          PY
-      - name: Fetch frozen OpenQuake source archive
+          OQ_ROOT="$RUNNER_TEMP/oq-engine"
+          git init "$OQ_ROOT"
+          git -C "$OQ_ROOT" remote add origin https://github.com/gem/oq-engine.git
+          git -C "$OQ_ROOT" fetch --depth=1 origin \
+            refs/tags/v3.14.0:refs/tags/v3.14.0
+          OBSERVED="$(git -C "$OQ_ROOT" rev-parse 'refs/tags/v3.14.0^{commit}')"
+          test "$OBSERVED" = "$OQ_COMMIT"
+          git -C "$OQ_ROOT" checkout --detach "$OBSERVED"
+          test -z "$(git -C "$OQ_ROOT" status --porcelain=v1)"
+      - name: Build observed OpenQuake 3.14 runtime image
         if: steps.dedup.outputs.skip != 'true'
-        env:
-          OQ_ARCHIVE_URL: https://api.github.com/repos/gem/oq-engine/tarball/9f044c93d72846421a8faa90ebf0a6afacdf3c20
-          OQ_ARCHIVE: ${{ runner.temp }}/oq-engine-9f044c93.tar.gz
-          OQ_SOURCE: ${{ runner.temp }}/oq-engine-source
+        id: image
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --location --max-time 120 --proto '=https' --tlsv1.2 "$OQ_ARCHIVE_URL" -o "$OQ_ARCHIVE"
-          test -s "$OQ_ARCHIVE"
-          mkdir -p "$OQ_SOURCE"
-          tar -xzf "$OQ_ARCHIVE" -C "$OQ_SOURCE" --strip-components=1
-          test -f "$OQ_SOURCE/setup.py"
-          test -f "$OQ_SOURCE/requirements-py38-linux64.txt"
-          test -f "$OQ_SOURCE/docker/Dockerfile.engine"
-      - name: Reconstruct frozen OpenQuake Git identity
-        if: steps.dedup.outputs.skip != 'true'
-        env:
-          OQ_SOURCE: ${{ runner.temp }}/oq-engine-source
-          EXPECTED_COMMIT: 9f044c93d72846421a8faa90ebf0a6afacdf3c20
-        run: |
-          set -euo pipefail
-          cd "$OQ_SOURCE"
-          git init --quiet
-          git config user.name OpenCatastrophe-EQ1
-          git config user.email public-ci@users.noreply.github.com
-          git add -A
-          TREE="$(git write-tree)"
-          COMMIT="$(printf 'OpenQuake v3.14.0 reconstructed source\n' | git commit-tree "$TREE")"
-          git update-ref refs/heads/receipt "$COMMIT"
-          git reset --hard --quiet receipt
-          git update-ref refs/heads/receipt "$EXPECTED_COMMIT" "$COMMIT"
-          printf '%s\n' "$EXPECTED_COMMIT" > .git/refs/heads/receipt
-          printf 'ref: refs/heads/receipt\n' > .git/HEAD
-      - name: Build reconstructed OpenQuake 3.14 runtime image
-        if: steps.dedup.outputs.skip != 'true'
-        env:
-          OQ_SOURCE: ${{ runner.temp }}/oq-engine-source
-        run: |
-          set -euo pipefail
-          cp scripts/eshm20_openquake314_runtime.Dockerfile "$OQ_SOURCE/OpenCatastrophe.Dockerfile"
-          docker build \
-            --file "$OQ_SOURCE/OpenCatastrophe.Dockerfile" \
-            --tag opencatastrophe-oq314-esrm20:trusted \
-            "$OQ_SOURCE"
+          BASE_IMAGE="openquake/engine:3.14.0"
+          docker pull "$BASE_IMAGE"
+          BASE_REPO_DIGEST="$(docker image inspect \
+            --format='{{index .RepoDigests 0}}' "$BASE_IMAGE")"
+          printf '%s\n' "$BASE_REPO_DIGEST" |
+            grep -Eq '^openquake/engine@sha256:[0-9a-f]{64}$'
+
+          DOCKERFILE="$RUNNER_TEMP/Dockerfile.oq314-runtime"
+          cat > "$DOCKERFILE" <<EOF
+          FROM $BASE_REPO_DIGEST
+          USER root
+          RUN apt-get update \
+              && apt-get install -y --no-install-recommends git \
+              && rm -rf /var/lib/apt/lists/*
+          COPY --chown=root:root oq-engine /oq-engine
+          RUN git config --system --add safe.directory /oq-engine
+          USER openquake
+          EOF
+
+          docker build --pull=false \
+            --file "$DOCKERFILE" \
+            --tag oc-oq314-esrm20-reference-runtime:local \
+            "$RUNNER_TEMP"
+          IMAGE_ID="$(docker image inspect \
+            --format='{{.Id}}' oc-oq314-esrm20-reference-runtime:local)"
+          printf '%s\n' "$IMAGE_ID" | grep -Eq '^sha256:[0-9a-f]{64}$'
+          echo "image_id=$IMAGE_ID" >> "$GITHUB_OUTPUT"
       - name: Execute exact ESRM20 GSIM runtime gate
         if: steps.dedup.outputs.skip != 'true'
         id: result
         env:
           OC_ESRM20_RUNTIME_REQUEST_BODY: ${{ github.event.comment.body }}
           EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
-          RESULT_PATH: ${{ runner.temp }}/esrm20-gsim-runtime-result.json
+          RUNTIME_IMAGE_DIGEST: ${{ steps.image.outputs.image_id }}
+          RESULT_PATH: ${{ runner.temp }}/esrm20-runtime-output/result.json
         run: |
           set -euo pipefail
-          IMAGE_DIGEST="$(docker image inspect --format '{{index .RepoDigests 0}}' opencatastrophe-oq314-esrm20:trusted 2>/dev/null || true)"
-          if [ -z "$IMAGE_DIGEST" ] || [ "$IMAGE_DIGEST" = '<no value>' ]; then
-            IMAGE_ID="$(docker image inspect --format '{{.Id}}' opencatastrophe-oq314-esrm20:trusted)"
-            IMAGE_DIGEST="${IMAGE_ID#sha256:}"
-            IMAGE_DIGEST="sha256:$IMAGE_DIGEST"
-          fi
+          OUTPUT_DIR="$RUNNER_TEMP/esrm20-runtime-output"
+          mkdir -p "$OUTPUT_DIR"
+          : > "$OUTPUT_DIR/result.json"
+          chmod 0666 "$OUTPUT_DIR/result.json"
           docker run --rm \
-            -e OC_ESRM20_RUNTIME_REQUEST_BODY="$OC_ESRM20_RUNTIME_REQUEST_BODY" \
-            -e EXECUTION_SHA="$EXECUTION_SHA" \
-            -e RUNTIME_IMAGE_DIGEST="$IMAGE_DIGEST" \
+            --entrypoint /opt/openquake/bin/python \
+            -e PYTHONDONTWRITEBYTECODE=1 \
+            -e OPENBLAS_NUM_THREADS=1 \
+            -e PYTHONPATH=/oq-engine:/workspace \
+            -e OC_ESRM20_RUNTIME_REQUEST_BODY \
+            -e RUNTIME_IMAGE_DIGEST \
             -v "$GITHUB_WORKSPACE:/workspace:ro" \
-            -v "$RUNNER_TEMP:/out" \
-            opencatastrophe-oq314-esrm20:trusted \
-            python -m scripts.run_esrm20_gsim_reference_runtime \
+            -v "$OUTPUT_DIR:/output" \
+            -w /workspace \
+            "$RUNTIME_IMAGE_DIGEST" \
+            scripts/run_esrm20_gsim_reference_runtime.py \
               --comment-body-env OC_ESRM20_RUNTIME_REQUEST_BODY \
               --expected-issue 493 \
               --execution-sha "$EXECUTION_SHA" \
               --runtime-image-digest-env RUNTIME_IMAGE_DIGEST \
-              --output /out/esrm20-gsim-runtime-result.json
+              --output /output/result.json
           python - <<'PY'
           import json, os
           from pathlib import Path
