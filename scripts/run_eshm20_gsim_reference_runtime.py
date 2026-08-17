@@ -47,6 +47,72 @@ _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 _REQUESTER_RE = re.compile(r"^[A-Za-z0-9_.:@/+ -]{1,96}$")
 _REQUEST_FIELDS = {"schema_version", "issue", "target_sha", "requester"}
+_TERMINAL_RESULT_FIELDS = {
+    "schema_version",
+    "source_issue",
+    "dataset_id",
+    "status",
+    "target_sha",
+    "execution_sha",
+    "execution_container_image_digest",
+    "gmm_identity",
+    "openquake_reference",
+    "reference_runtime_fingerprint",
+    "branch_count",
+    "branches",
+    "unique_resolved_gsim_classes",
+    "alias_requested_tokens",
+    "same_process_runtime_observation_collected",
+    "executing_environment_matches_reconstructed_reference_recipe_fields",
+    "gsim_request_reference_recipe_runtime_compatibility_verified",
+    "historical_environment_verified",
+    "reference_base_image_byte_identity_verified",
+    "wheel_byte_identity_verified",
+    "numerical_hazard_agreement_verified",
+    "imt_component_unit_compatibility_verified",
+    "full_hazard_compatibility_verified",
+    "site_model_compatibility_verified",
+    "vulnerability_compatibility_verified",
+    "reference_run_verified",
+    "scientific_validity_verified",
+    "external_bytes_persisted",
+    "publication_authorized",
+    "model_use_authorized",
+}
+_BRANCH_FIELDS = {
+    "branch_set_id",
+    "branch_id",
+    "tectonic_region_type",
+    "requested_gsim_token",
+    "resolved_gsim_class",
+    "request_form",
+    "alias_definition_present",
+    "alias_expansion_applied",
+    "registry_alias_key_used",
+    "argument_keys",
+    "runtime_argument_keys_after_alias",
+    "constructor_accepted",
+}
+_EXPECTED_BRANCH_COUNT = 80
+_EXPECTED_BRANCH_SET_CONTRACT = {
+    "BCHydroSubIF": ("Subduction Interface", frozenset({"BCHydroESHM20SInter"})),
+    "BCHydroSubIS": ("Subduction Inslab", frozenset({"BCHydroESHM20SSlab"})),
+    "BCHydroSubVrancea": ("Non-Subduction Deep", frozenset({"BCHydroESHM20SSlab"})),
+    "CratonModel": ("Craton", frozenset({"ESHM20Craton", "KothaEtAl2020ESHM20"})),
+    "Shallow_Def": ("Shallow Default", frozenset({"KothaEtAl2020ESHM20"})),
+    "Volcanic": ("Volcanic", frozenset({"LanzanoLuzi2019shallow"})),
+}
+_EXPECTED_RESOLVED_GSIM_CLASSES = sorted(
+    {
+        "BCHydroESHM20SInter",
+        "BCHydroESHM20SSlab",
+        "ESHM20Craton",
+        "KothaEtAl2020ESHM20",
+        "LanzanoLuzi2019shallow",
+    }
+)
+_SAFE_BRANCH_ID_RE = re.compile(r"^[A-Za-z0-9_.:+/@-]{1,256}$")
+_SAFE_ARGUMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 # Import-time frozen acquisition authority. Production has no caller-selected
 # provider/project/ref/path/size/hash/parser/model surface.
@@ -122,7 +188,7 @@ def validate_request(
 
 
 def _trusted_terminal_result_execution_sha(body: object) -> str | None:
-    """Return a trusted result envelope's own SHA after fail-closed identity checks."""
+    """Return a trusted terminal's own SHA after fail-closed envelope checks."""
 
     if type(body) is not str or RESULT_MARKER not in body:
         return None
@@ -182,7 +248,7 @@ def _validate_exact_mapping(
 def _validate_trusted_runtime_fingerprint(
     value: object, *, image_digest: str
 ) -> None:
-    """Re-run the reviewed recipe validator over serialized fingerprint evidence."""
+    """Re-run the reviewed reference-recipe validator over serialized evidence."""
 
     if type(value) is not dict:
         raise ReferenceRuntimeExecutionError("trusted runtime fingerprint is not an object")
@@ -232,58 +298,120 @@ def _validate_trusted_runtime_fingerprint(
         )
 
 
-def _validate_trusted_branch_summaries(result: dict[str, Any]) -> None:
-    """Require branch/class summaries to agree with the serialized branch evidence."""
+def _validated_argument_keys(value: object, *, label: str) -> list[str]:
+    if type(value) is not list:
+        raise ReferenceRuntimeExecutionError(f"{label} is not an array")
+    if any(type(key) is not str or _SAFE_ARGUMENT_RE.fullmatch(key) is None for key in value):
+        raise ReferenceRuntimeExecutionError(f"{label} contains an invalid key")
+    if value != sorted(set(value)):
+        raise ReferenceRuntimeExecutionError(f"{label} is not canonical")
+    return value
+
+
+def _validate_trusted_branch_contract(result: dict[str, Any]) -> None:
+    """Bind serialized branch evidence to the frozen 80-request source contract."""
+
+    if (
+        gate.profiler.EXPECTED_BRANCH_COUNT != _EXPECTED_BRANCH_COUNT
+        or gate.profiler.EXPECTED_BRANCH_SET_COUNT != len(_EXPECTED_BRANCH_SET_CONTRACT)
+    ):
+        raise ReferenceRuntimeExecutionError("trusted runtime source branch authority drifted")
 
     branch_count = result.get("branch_count")
     branches = result.get("branches")
     if (
         type(branch_count) is not int
         or isinstance(branch_count, bool)
-        or branch_count <= 0
+        or branch_count != _EXPECTED_BRANCH_COUNT
         or type(branches) is not list
-        or len(branches) != branch_count
+        or len(branches) != _EXPECTED_BRANCH_COUNT
     ):
         raise ReferenceRuntimeExecutionError("trusted runtime branch evidence is invalid")
 
-    resolved_classes: list[str] = []
-    requested_tokens: set[str] = set()
-    branch_ids: set[tuple[str, str]] = set()
+    branch_ids: set[str] = set()
+    branch_sets: set[str] = set()
+    resolved_classes: set[str] = set()
+    alias_tokens: set[str] = set()
+
     for branch in branches:
-        if type(branch) is not dict or branch.get("constructor_accepted") is not True:
-            raise ReferenceRuntimeExecutionError("trusted runtime branch evidence is invalid")
-        branch_set_id = branch.get("branch_set_id")
-        branch_id = branch.get("branch_id")
-        requested = branch.get("requested_gsim_token")
-        resolved = branch.get("resolved_gsim_class")
-        if any(
-            type(value) is not str or not value or value != value.strip()
-            for value in (branch_set_id, branch_id, requested, resolved)
+        if type(branch) is not dict or set(branch) != _BRANCH_FIELDS:
+            raise ReferenceRuntimeExecutionError("trusted runtime branch fields drifted")
+        branch_set_id = branch["branch_set_id"]
+        branch_id = branch["branch_id"]
+        tectonic_region_type = branch["tectonic_region_type"]
+        requested = branch["requested_gsim_token"]
+        resolved = branch["resolved_gsim_class"]
+        request_form = branch["request_form"]
+
+        if (
+            type(branch_set_id) is not str
+            or branch_set_id not in _EXPECTED_BRANCH_SET_CONTRACT
+            or type(branch_id) is not str
+            or _SAFE_BRANCH_ID_RE.fullmatch(branch_id) is None
+            or branch_id in branch_ids
         ):
             raise ReferenceRuntimeExecutionError("trusted runtime branch identity is invalid")
-        identity = (branch_set_id, branch_id)
-        if identity in branch_ids:
-            raise ReferenceRuntimeExecutionError("trusted runtime branch identity is duplicated")
-        branch_ids.add(identity)
-        requested_tokens.add(requested)
-        resolved_classes.append(resolved)
+        branch_ids.add(branch_id)
+        branch_sets.add(branch_set_id)
+
+        expected_trt, allowed_tokens = _EXPECTED_BRANCH_SET_CONTRACT[branch_set_id]
+        if type(tectonic_region_type) is not str or tectonic_region_type != expected_trt:
+            raise ReferenceRuntimeExecutionError("trusted runtime tectonic-region evidence drifted")
+        if (
+            type(requested) is not str
+            or type(resolved) is not str
+            or requested not in allowed_tokens
+            or resolved != requested
+        ):
+            raise ReferenceRuntimeExecutionError("trusted runtime GSIM identity drifted")
+        resolved_classes.add(resolved)
+
+        if request_form not in ("bare", "table"):
+            raise ReferenceRuntimeExecutionError("trusted runtime request form is invalid")
+        for field in (
+            "alias_definition_present",
+            "alias_expansion_applied",
+            "registry_alias_key_used",
+        ):
+            if branch[field] is not False:
+                raise ReferenceRuntimeExecutionError(
+                    "trusted runtime alias evidence drifted"
+                )
+        if branch["constructor_accepted"] is not True:
+            raise ReferenceRuntimeExecutionError(
+                "trusted runtime constructor evidence drifted"
+            )
+
+        argument_keys = _validated_argument_keys(
+            branch["argument_keys"], label="trusted runtime source argument keys"
+        )
+        runtime_argument_keys = _validated_argument_keys(
+            branch["runtime_argument_keys_after_alias"],
+            label="trusted runtime post-alias argument keys",
+        )
+        if runtime_argument_keys != argument_keys:
+            raise ReferenceRuntimeExecutionError(
+                "trusted runtime direct-request argument evidence drifted"
+            )
+        if request_form == "bare" and argument_keys:
+            raise ReferenceRuntimeExecutionError(
+                "trusted runtime bare request contains argument keys"
+            )
+        if branch["alias_definition_present"]:
+            alias_tokens.add(requested)
+
+    if branch_sets != set(_EXPECTED_BRANCH_SET_CONTRACT):
+        raise ReferenceRuntimeExecutionError("trusted runtime branch-set inventory drifted")
+    if sorted(resolved_classes) != _EXPECTED_RESOLVED_GSIM_CLASSES:
+        raise ReferenceRuntimeExecutionError("trusted runtime resolved-class inventory drifted")
 
     unique_classes = result.get("unique_resolved_gsim_classes")
-    if (
-        type(unique_classes) is not list
-        or any(type(value) is not str for value in unique_classes)
-        or unique_classes != sorted(set(resolved_classes))
-    ):
+    if unique_classes != _EXPECTED_RESOLVED_GSIM_CLASSES:
         raise ReferenceRuntimeExecutionError(
             "trusted runtime resolved-class summary is invalid"
         )
-    alias_tokens = result.get("alias_requested_tokens")
-    if (
-        type(alias_tokens) is not list
-        or any(type(value) is not str for value in alias_tokens)
-        or alias_tokens != sorted(set(alias_tokens))
-        or any(value not in requested_tokens for value in alias_tokens)
-    ):
+    alias_requested_tokens = result.get("alias_requested_tokens")
+    if alias_requested_tokens != sorted(alias_tokens) or alias_requested_tokens != []:
         raise ReferenceRuntimeExecutionError("trusted runtime alias summary is invalid")
 
 
@@ -309,6 +437,9 @@ def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
         raise ReferenceRuntimeExecutionError("trusted runtime result JSON is malformed") from exc
     if type(result) is not dict:
         raise ReferenceRuntimeExecutionError("trusted runtime result is not an object")
+    if set(result) != _TERMINAL_RESULT_FIELDS:
+        raise ReferenceRuntimeExecutionError("trusted runtime result fields drifted")
+
     exact = (
         ("schema_version", SCHEMA_VERSION),
         ("source_issue", SOURCE_ISSUE),
@@ -368,7 +499,7 @@ def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
     _validate_trusted_runtime_fingerprint(
         result.get("reference_runtime_fingerprint"), image_digest=image_digest
     )
-    _validate_trusted_branch_summaries(result)
+    _validate_trusted_branch_contract(result)
     return True
 
 
