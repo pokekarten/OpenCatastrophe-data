@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import os
 import re
@@ -137,6 +137,13 @@ def _parse_utc(value: object) -> datetime:
         raise SiteModelHistoryExecutionError("site-tool candidate timestamp is invalid") from exc
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         raise SiteModelHistoryExecutionError("site-tool candidate timestamp is timezone-naive")
+    canonical = parsed.astimezone(timezone.utc).isoformat(timespec="seconds").replace(
+        "+00:00", "Z"
+    )
+    if value != canonical:
+        raise SiteModelHistoryExecutionError(
+            "site-tool candidate timestamp is not canonical UTC"
+        )
     return parsed
 
 
