@@ -80,9 +80,9 @@ def _gate_result():
     }
 
 
-def _terminal_comment():
+def _terminal_comment(execution_sha: str = EXECUTION_SHA):
     result = subject._bounded_result(
-        _gate_result(), execution_sha=EXECUTION_SHA, image_digest=IMAGE_DIGEST
+        _gate_result(), execution_sha=execution_sha, image_digest=IMAGE_DIGEST
     )
     return {
         "id": 2001,
@@ -160,6 +160,43 @@ class ReferenceRuntimeLedgerTests(unittest.TestCase):
             issue=subject.SOURCE_ISSUE,
             max_pages=20,
         )
+
+    def test_historical_valid_terminal_result_does_not_block_new_sha(self):
+        historical_sha = "6" * 40
+        with mock.patch.object(
+            subject,
+            "fetch_repository_comments",
+            return_value=[_terminal_comment(historical_sha)],
+        ):
+            self.assertFalse(
+                subject.has_terminal_runtime_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="token",
+                    execution_sha=EXECUTION_SHA,
+                )
+            )
+
+    def test_historical_target_execution_mismatch_still_fails_closed(self):
+        historical_sha = "6" * 40
+        malformed = _terminal_comment(historical_sha)
+        marker, raw = malformed["body"].split("\n", 1)
+        result = json.loads(raw)
+        result["target_sha"] = "5" * 40
+        malformed["body"] = marker + "\n" + json.dumps(
+            result, sort_keys=True, separators=(",", ":")
+        )
+        with mock.patch.object(
+            subject, "fetch_repository_comments", return_value=[malformed]
+        ):
+            with self.assertRaisesRegex(
+                subject.ReferenceRuntimeExecutionError,
+                "target/execution SHA mismatch",
+            ):
+                subject.has_terminal_runtime_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="token",
+                    execution_sha=EXECUTION_SHA,
+                )
 
     def test_incomplete_or_over_bound_ledger_fails_closed(self):
         with mock.patch.object(
