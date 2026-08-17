@@ -176,6 +176,7 @@ class SiteModelHistoryProfileTests(unittest.TestCase):
             b"{}",
             b'[{"id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","id":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}]',
             b"[NaN]",
+            b'[{"id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","parent_ids":[],"committed_date":"2021-12-10T00:00:00Z","ignored":1e400}]',
         )
         for payload in raw_cases:
             with self.subTest(payload=payload):
