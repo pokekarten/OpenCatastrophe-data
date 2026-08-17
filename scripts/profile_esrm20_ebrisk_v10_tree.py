@@ -19,6 +19,7 @@ from __future__ import annotations
 from collections import Counter
 import hashlib
 import json
+import math
 import re
 import time
 import urllib.parse
@@ -57,8 +58,25 @@ _SHA1_RE = re.compile(r"^[0-9a-f]{40}$")
 _ALLOWED_ENTRY_FIELDS = {"id", "name", "type", "path", "mode"}
 
 
+FAILURE_CLASSES = frozenset(
+    {
+        "tag_metadata_acquisition_failure",
+        "tag_metadata_validation_failure",
+        "tree_metadata_acquisition_failure",
+        "tree_metadata_validation_failure",
+        "template_resolution_failure",
+    }
+)
+
+
 class EbriskTreeProfileError(RuntimeError):
     """Raised when fixed ebrisk repository-tree metadata cannot be proven safely."""
+
+    def __init__(self, message: str, *, failure_class: str | None = None) -> None:
+        super().__init__(message)
+        if failure_class is not None and failure_class not in FAILURE_CLASSES:
+            raise ValueError("invalid ebrisk failure class")
+        self.failure_class = failure_class
 
 
 def _strict_json(raw: bytes) -> Any:
@@ -78,11 +96,25 @@ def _strict_json(raw: bytes) -> Any:
     def reject_nonfinite(token: str) -> Any:
         raise EbriskTreeProfileError(f"non-finite ebrisk metadata JSON value: {token}")
 
+    def reject_float_overflow(token: str) -> float:
+        try:
+            value = float(token)
+        except ValueError as exc:
+            raise EbriskTreeProfileError(
+                f"invalid ebrisk metadata JSON float: {token}"
+            ) from exc
+        if not math.isfinite(value):
+            raise EbriskTreeProfileError(
+                f"non-finite ebrisk metadata JSON value: {token}"
+            )
+        return value
+
     try:
         return json.loads(
             text,
             object_pairs_hook=reject_duplicates,
             parse_constant=reject_nonfinite,
+            parse_float=reject_float_overflow,
         )
     except EbriskTreeProfileError:
         raise
@@ -145,22 +177,34 @@ def _resolve_tag_commit(*, opener: Any, deadline: float, monotonic: Any) -> str:
                 monotonic=monotonic,
             )
     except (OSError, TimeoutError, transport.EfehrAcquisitionError) as exc:
-        raise EbriskTreeProfileError("ebrisk v1.0 tag acquisition failed closed") from exc
+        raise EbriskTreeProfileError(
+            "ebrisk v1.0 tag acquisition failed closed",
+            failure_class="tag_metadata_acquisition_failure",
+        ) from exc
 
-    value = _strict_json(raw)
-    if type(value) is not dict:
-        raise EbriskTreeProfileError("ebrisk tag response is not an object")
-    if value.get("name") != RELEASE_TAG:
-        raise EbriskTreeProfileError("ebrisk tag identity drifted")
-    commit = value.get("commit")
-    if type(commit) is not dict:
-        raise EbriskTreeProfileError("ebrisk tag commit object is absent")
-    commit_sha = commit.get("id")
-    if type(commit_sha) is not str or _SHA1_RE.fullmatch(commit_sha) is None:
-        raise EbriskTreeProfileError("ebrisk tag commit SHA is invalid")
-    if commit_sha != EXPECTED_COMMIT_SHA:
-        raise EbriskTreeProfileError("ebrisk v1.0 tag no longer resolves to frozen commit")
-    return commit_sha
+    try:
+        value = _strict_json(raw)
+        if type(value) is not dict:
+            raise EbriskTreeProfileError("ebrisk tag response is not an object")
+        if value.get("name") != RELEASE_TAG:
+            raise EbriskTreeProfileError("ebrisk tag identity drifted")
+        commit = value.get("commit")
+        if type(commit) is not dict:
+            raise EbriskTreeProfileError("ebrisk tag commit object is absent")
+        commit_sha = commit.get("id")
+        if type(commit_sha) is not str or _SHA1_RE.fullmatch(commit_sha) is None:
+            raise EbriskTreeProfileError("ebrisk tag commit SHA is invalid")
+        if commit_sha != EXPECTED_COMMIT_SHA:
+            raise EbriskTreeProfileError(
+                "ebrisk v1.0 tag no longer resolves to frozen commit"
+            )
+        return commit_sha
+    except EbriskTreeProfileError as exc:
+        if exc.failure_class is not None:
+            raise
+        raise EbriskTreeProfileError(
+            str(exc), failure_class="tag_metadata_validation_failure"
+        ) from exc
 
 
 def _optional_bounded_header_int(
@@ -337,21 +381,38 @@ def profile_v10_tree(*, opener: Any | None = None, monotonic: Any | None = None)
                     if len(entries) > MAX_ENTRIES:
                         raise EbriskTreeProfileError("ebrisk tree exceeds entry policy")
                 next_page = _pagination_next(response.headers, expected_page=page)
-        except EbriskTreeProfileError:
-            raise
+        except EbriskTreeProfileError as exc:
+            if exc.failure_class is not None:
+                raise
+            raise EbriskTreeProfileError(
+                str(exc), failure_class="tree_metadata_validation_failure"
+            ) from exc
         except (OSError, TimeoutError, transport.EfehrAcquisitionError) as exc:
-            raise EbriskTreeProfileError("ebrisk tree metadata acquisition failed closed") from exc
+            raise EbriskTreeProfileError(
+                "ebrisk tree metadata acquisition failed closed",
+                failure_class="tree_metadata_acquisition_failure",
+            ) from exc
         pages_read += 1
         if next_page is None:
             break
         page = next_page
 
     if not entries or pages_read < 1:
-        raise EbriskTreeProfileError("ebrisk tree inventory is empty")
+        raise EbriskTreeProfileError(
+            "ebrisk tree inventory is empty",
+            failure_class="tree_metadata_validation_failure",
+        )
     blob_count = sum(entry["type"] == "blob" for entry in entries)
     tree_count = sum(entry["type"] == "tree" for entry in entries)
     top_level_counts = Counter(entry["path"].split("/", 1)[0] for entry in entries)
-    exact_templates = _exact_template_paths(entries)
+    try:
+        exact_templates = _exact_template_paths(entries)
+    except EbriskTreeProfileError as exc:
+        if exc.failure_class is not None:
+            raise
+        raise EbriskTreeProfileError(
+            str(exc), failure_class="template_resolution_failure"
+        ) from exc
 
     return {
         "schema_version": SCHEMA_VERSION,
