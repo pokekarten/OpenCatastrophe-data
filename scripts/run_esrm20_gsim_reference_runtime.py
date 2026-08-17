@@ -122,7 +122,7 @@ def _bindings() -> tuple[tuple[Any, str, Any], ...]:
         (_runtime, "_PROJECT_PATH", PROJECT_PATH),
         (_runtime, "_COMMIT_SHA", COMMIT_SHA),
         (_runtime, "_REPOSITORY_PATH", REPOSITORY_PATH),
-        (_runtime, "_EXPECTED_BYTE_COUNT", EXPECTED_BYTE_COUNT),
+        (_runtime, "_EXPECTED_BYTES", EXPECTED_BYTE_COUNT),
         (_runtime, "_EXPECTED_SHA256", EXPECTED_SHA256),
     )
 
@@ -169,6 +169,7 @@ def assert_esrm20_binding() -> None:
         ),
         (_runtime.SOURCE_ISSUE, SOURCE_ISSUE),
         (_runtime._PROJECT_ID, PROJECT_ID),
+        (_runtime._EXPECTED_BYTES, EXPECTED_BYTE_COUNT),
         (_runtime._EXPECTED_SHA256, EXPECTED_SHA256),
         (_runtime.REQUEST_MARKER, REQUEST_MARKER),
         (_runtime.RESULT_MARKER, RESULT_MARKER),
