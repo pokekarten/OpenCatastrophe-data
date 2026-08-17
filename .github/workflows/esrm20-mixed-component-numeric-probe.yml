@@ -45,7 +45,7 @@ jobs:
         run: |
           set -euo pipefail
           EXECUTION_SHA="$(git rev-parse HEAD)"
-          python scripts/run_esrm20_mixed_component_numeric_probe.py \
+          python -m scripts.run_esrm20_mixed_component_numeric_probe \
             --comment-body-env OC_MIXED_COMPONENT_REQUEST \
             --expected-issue 287 \
             --execution-sha "$EXECUTION_SHA" \
