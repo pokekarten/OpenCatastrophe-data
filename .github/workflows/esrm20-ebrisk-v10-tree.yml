@@ -120,8 +120,7 @@ jobs:
               .profile.publication_authorized == false and
               .profile.model_use_authorized == false
             else
-              (.failure_class == "metadata_acquisition_failure" or
-               .failure_class == "tag_metadata_acquisition_failure" or
+              (.failure_class == "tag_metadata_acquisition_failure" or
                .failure_class == "tag_metadata_validation_failure" or
                .failure_class == "tree_metadata_acquisition_failure" or
                .failure_class == "tree_metadata_validation_failure" or
