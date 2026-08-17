@@ -29,7 +29,48 @@ def _request(**updates):
     return subject.REQUEST_MARKER + "\n" + json.dumps(payload, separators=(",", ":"))
 
 
+def _runtime_fingerprint():
+    return subject.runtime.validate_runtime_observation(
+        {
+            "engine_commit": subject.runtime.ENGINE_COMMIT,
+            "engine_version": subject.runtime.ENGINE_VERSION,
+            "python_version": "3.8.0",
+            "platform_system": subject.runtime.EXPECTED_PLATFORM_SYSTEM,
+            "platform_machine": subject.runtime.EXPECTED_PLATFORM_MACHINE,
+            "openblas_num_threads": subject.runtime.EXPECTED_OPENBLAS_NUM_THREADS,
+            "packages": dict(subject.runtime._REFERENCE_PACKAGES),
+            "container_image_digest": IMAGE_DIGEST,
+        }
+    )
+
+
+def _branches():
+    rows = []
+    for index, ((branch_set_id, branch_id), frozen) in enumerate(
+        sorted(subject._EXPECTED_BRANCH_REQUESTS.items())
+    ):
+        trt, token, request_form, argument_keys = frozen
+        rows.append(
+            {
+                "branch_set_id": branch_set_id,
+                "branch_id": branch_id,
+                "tectonic_region_type": trt,
+                "requested_gsim_token": token,
+                "resolved_gsim_class": token,
+                "request_form": request_form,
+                "alias_definition_present": False,
+                "alias_expansion_applied": False,
+                "registry_alias_key_used": False,
+                "argument_keys": list(argument_keys),
+                "runtime_argument_keys_after_alias": list(argument_keys),
+                "constructor_accepted": True,
+            }
+        )
+    return rows
+
+
 def _gate_result():
+    branches = _branches()
     return {
         "gmm_identity": {
             "project_id": subject.gmm.PROJECT_ID,
@@ -45,21 +86,10 @@ def _gate_result():
             "commit": subject.runtime.ENGINE_COMMIT,
             "version": subject.runtime.ENGINE_VERSION,
         },
-        "reference_runtime_fingerprint": {
-            "reference_recipe_match": True,
-            "observation": {"container_image_digest": IMAGE_DIGEST},
-        },
-        "branch_count": 1,
-        "branches": [
-            {
-                "branch_set_id": "bs1",
-                "branch_id": "b1",
-                "requested_gsim_token": "Example",
-                "resolved_gsim_class": "Example",
-                "constructor_accepted": True,
-            }
-        ],
-        "unique_resolved_gsim_classes": ["Example"],
+        "reference_runtime_fingerprint": _runtime_fingerprint(),
+        "branch_count": len(branches),
+        "branches": branches,
+        "unique_resolved_gsim_classes": subject._EXPECTED_RESOLVED_GSIM_CLASSES,
         "alias_requested_tokens": [],
         "engine_source_commit_verified": True,
         "reference_runtime_observation_validated": True,
@@ -80,9 +110,9 @@ def _gate_result():
     }
 
 
-def _terminal_comment():
+def _terminal_comment(execution_sha: str = EXECUTION_SHA):
     result = subject._bounded_result(
-        _gate_result(), execution_sha=EXECUTION_SHA, image_digest=IMAGE_DIGEST
+        _gate_result(), execution_sha=execution_sha, image_digest=IMAGE_DIGEST
     )
     return {
         "id": 2001,
@@ -91,6 +121,17 @@ def _terminal_comment():
         + "\n"
         + json.dumps(result, sort_keys=True, separators=(",", ":")),
     }
+
+
+def _mutated_terminal_comment(execution_sha: str, mutate):
+    comment = _terminal_comment(execution_sha)
+    marker, raw = comment["body"].split("\n", 1)
+    result = json.loads(raw)
+    mutate(result)
+    comment["body"] = marker + "\n" + json.dumps(
+        result, sort_keys=True, separators=(",", ":")
+    )
+    return comment
 
 
 class ReferenceRuntimeRequestTests(unittest.TestCase):
@@ -160,6 +201,188 @@ class ReferenceRuntimeLedgerTests(unittest.TestCase):
             issue=subject.SOURCE_ISSUE,
             max_pages=20,
         )
+
+    def test_historical_valid_terminal_result_does_not_block_new_sha(self):
+        historical_sha = "6" * 40
+        with mock.patch.object(
+            subject,
+            "fetch_repository_comments",
+            return_value=[_terminal_comment(historical_sha)],
+        ):
+            self.assertFalse(
+                subject.has_terminal_runtime_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="token",
+                    execution_sha=EXECUTION_SHA,
+                )
+            )
+
+    def test_historical_target_execution_mismatch_still_fails_closed(self):
+        historical_sha = "6" * 40
+        malformed = _terminal_comment(historical_sha)
+        marker, raw = malformed["body"].split("\n", 1)
+        result = json.loads(raw)
+        result["target_sha"] = "5" * 40
+        malformed["body"] = marker + "\n" + json.dumps(
+            result, sort_keys=True, separators=(",", ":")
+        )
+        with mock.patch.object(
+            subject, "fetch_repository_comments", return_value=[malformed]
+        ):
+            with self.assertRaisesRegex(
+                subject.ReferenceRuntimeExecutionError,
+                "target/execution SHA mismatch",
+            ):
+                subject.has_terminal_runtime_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="token",
+                    execution_sha=EXECUTION_SHA,
+                )
+
+    def test_historical_nested_identity_drift_still_fails_closed(self):
+        historical_sha = "6" * 40
+        cases = (
+            (
+                "GMM identity",
+                lambda result: result["gmm_identity"].__setitem__(
+                    "commit_sha", "5" * 40
+                ),
+            ),
+            (
+                "OpenQuake reference",
+                lambda result: result["openquake_reference"].__setitem__(
+                    "commit", "5" * 40
+                ),
+            ),
+            (
+                "fingerprint",
+                lambda result: result["reference_runtime_fingerprint"]["reference"][
+                    "engine"
+                ].__setitem__("commit", "5" * 40),
+            ),
+            (
+                "fingerprint image digest",
+                lambda result: result["reference_runtime_fingerprint"]["observation"].__setitem__(
+                    "container_image_digest", "sha256:" + "9" * 64
+                ),
+            ),
+            (
+                "resolved-class summary",
+                lambda result: result.__setitem__(
+                    "unique_resolved_gsim_classes", ["Mutated"]
+                ),
+            ),
+        )
+        for label, mutate in cases:
+            with self.subTest(label=label):
+                malformed = _mutated_terminal_comment(historical_sha, mutate)
+                with mock.patch.object(
+                    subject, "fetch_repository_comments", return_value=[malformed]
+                ):
+                    with self.assertRaises(subject.ReferenceRuntimeExecutionError):
+                        subject.has_terminal_runtime_result(
+                            repository="pokekarten/OpenCatastrophe-data",
+                            token="token",
+                            execution_sha=EXECUTION_SHA,
+                        )
+
+    def test_historical_closed_terminal_contract_drift_fails_closed(self):
+        historical_sha = "6" * 40
+
+        def truncate(result):
+            result["branches"] = result["branches"][:-1]
+            result["branch_count"] = len(result["branches"])
+
+        def rewrite_identity(result):
+            branch = result["branches"][0]
+            branch["requested_gsim_token"] = "ESHM20Craton"
+            branch["resolved_gsim_class"] = "ESHM20Craton"
+
+        cases = (
+            (
+                "unexpected top-level authority",
+                lambda result: result.__setitem__("insured_loss_authorized", True),
+            ),
+            ("truncated branch inventory", truncate),
+            ("rewritten request identity", rewrite_identity),
+            (
+                "valid-looking foreign branch id",
+                lambda result: result["branches"][0].__setitem__(
+                    "branch_id", "synthetic-valid-id"
+                ),
+            ),
+            (
+                "reordered exact branches",
+                lambda result: result["branches"].__setitem__(
+                    slice(0, 2), list(reversed(result["branches"][:2]))
+                ),
+            ),
+            (
+                "request form",
+                lambda result: result["branches"][0].__setitem__(
+                    "request_form", "rewritten"
+                ),
+            ),
+            (
+                "alias flag",
+                lambda result: result["branches"][0].__setitem__(
+                    "alias_definition_present", True
+                ),
+            ),
+            (
+                "argument ordering",
+                lambda result: result["branches"][0].__setitem__(
+                    "argument_keys", ["z", "a"]
+                ),
+            ),
+            (
+                "post-alias arguments",
+                lambda result: result["branches"][0].__setitem__(
+                    "runtime_argument_keys_after_alias", ["different"]
+                ),
+            ),
+            (
+                "missing alias summary",
+                lambda result: result.pop("alias_requested_tokens"),
+            ),
+            (
+                "unexpected branch field",
+                lambda result: result["branches"][0].__setitem__(
+                    "new_authority", True
+                ),
+            ),
+        )
+        for label, mutate in cases:
+            with self.subTest(label=label):
+                malformed = _mutated_terminal_comment(historical_sha, mutate)
+                with mock.patch.object(
+                    subject, "fetch_repository_comments", return_value=[malformed]
+                ):
+                    with self.assertRaises(subject.ReferenceRuntimeExecutionError):
+                        subject.has_terminal_runtime_result(
+                            repository="pokekarten/OpenCatastrophe-data",
+                            token="token",
+                            execution_sha=EXECUTION_SHA,
+                        )
+
+    def test_historical_authority_widening_still_fails_closed(self):
+        historical_sha = "6" * 40
+        widened = _mutated_terminal_comment(
+            historical_sha,
+            lambda result: result.__setitem__("publication_authorized", True),
+        )
+        with mock.patch.object(
+            subject, "fetch_repository_comments", return_value=[widened]
+        ):
+            with self.assertRaisesRegex(
+                subject.ReferenceRuntimeExecutionError,
+                "publication_authorized",
+            ):
+                subject.has_terminal_runtime_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="token",
+                    execution_sha=EXECUTION_SHA,
+                )
 
     def test_incomplete_or_over_bound_ledger_fails_closed(self):
         with mock.patch.object(
