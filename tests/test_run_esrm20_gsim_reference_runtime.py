@@ -3,7 +3,9 @@
 
 from __future__ import annotations
 
+import tempfile
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
@@ -246,6 +248,47 @@ class Esrm20RuntimeAdapterTests(unittest.TestCase):
         self.assertFalse(output["numerical_hazard_agreement_verified"])
         self.assertFalse(output["full_hazard_compatibility_verified"])
         self.assertFalse(output["model_use_authorized"])
+
+    def test_main_passes_digest_to_reused_runtime_without_private_helper(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            output_path = Path(tempdir) / "result.json"
+            with mock.patch.dict(
+                subject.os.environ,
+                {"COMMENT_BODY": "ignored", "RUNTIME_DIGEST": IMAGE_DIGEST},
+                clear=False,
+            ), mock.patch.object(subject, "validate_request", return_value={}), mock.patch.object(
+                subject,
+                "run_reference_runtime",
+                return_value={"status": "pass"},
+            ) as runtime:
+                exit_code = subject.main(
+                    [
+                        "--comment-body-env",
+                        "COMMENT_BODY",
+                        "--expected-issue",
+                        "493",
+                        "--execution-sha",
+                        EXECUTION_SHA,
+                        "--runtime-image-digest-env",
+                        "RUNTIME_DIGEST",
+                        "--output",
+                        str(output_path),
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            runtime.assert_called_once_with(
+                execution_sha=EXECUTION_SHA,
+                image_digest=IMAGE_DIGEST,
+            )
+            self.assertEqual(output_path.read_text(encoding="utf-8"), '{"status":"pass"}\n')
+
+    def test_reused_base_runtime_rejects_invalid_digest_before_openquake_observation(self) -> None:
+        with self.assertRaisesRegex(
+            base_runtime.ReferenceRuntimeExecutionError,
+            "invalid execution image digest",
+        ):
+            base_runtime.collect_runtime_observation("sha256:not-a-digest")
 
     def test_request_validation_uses_esrm20_outer_identity_without_persisting_binding(self) -> None:
         body = subject.REQUEST_MARKER + "\n" + (

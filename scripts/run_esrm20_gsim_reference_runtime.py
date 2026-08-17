@@ -375,8 +375,7 @@ def main(argv: list[str] | None = None) -> int:
     digest = os.environ.get(args.runtime_image_digest_env)
     if type(digest) is not str:
         raise Esrm20GsimReferenceRuntimeError("runtime image digest environment value is absent")
-    # Preserve the reviewed digest syntax gate.
-    digest = _runtime._validate_image_digest(digest)
+    # The reused base runtime validates the digest before observing OpenQuake.
     result = run_reference_runtime(execution_sha=args.execution_sha, image_digest=digest)
     Path(args.output).write_text(
         json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n",
