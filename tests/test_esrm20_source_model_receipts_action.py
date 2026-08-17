@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import json
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from scripts import run_esrm20_source_model_receipts_action as subject
@@ -224,6 +225,27 @@ class SourceModelReceiptActionTests(unittest.TestCase):
         body = subject.RESULT_MARKER + "\n" + json.dumps(result, sort_keys=True, separators=(",", ":"))
         with self.assertRaises(subject.SourceModelReceiptError):
             subject.parse_terminal_result(body, execution_sha=EXECUTION_SHA)
+
+    def test_workflow_concurrency_isolates_non_request_issue_comments(self) -> None:
+        workflow = (
+            Path(__file__).resolve().parents[1]
+            / ".github"
+            / "workflows"
+            / "esrm20-source-model-receipts.yml"
+        ).read_text(encoding="utf-8")
+        header, jobs = workflow.split("\njobs:\n", 1)
+        self.assertTrue(jobs)
+        self.assertIn("concurrency:", header)
+        self.assertIn("github.event.issue.number == 481", header)
+        self.assertIn(
+            "github.event.comment.user.login == github.event.repository.owner.login",
+            header,
+        )
+        self.assertIn("github.event.comment.author_association == 'OWNER'", header)
+        self.assertIn(subject.REQUEST_MARKER, header)
+        self.assertIn("'trusted-request'", header)
+        self.assertIn("format('noise-{0}', github.event.comment.id)", header)
+        self.assertIn("cancel-in-progress: false", header)
 
 
 if __name__ == "__main__":
