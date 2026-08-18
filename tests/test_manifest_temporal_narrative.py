@@ -25,6 +25,7 @@ _REVIEW_TIME_ANCHOR = re.compile(
     r"\b(?:at (?:the|this) (?:manifest |source )?review time|as of (?:the|this) review|during (?:the|this) review|by (?:the|this) review|for (?:the|this) review|review-time)\b",
     re.IGNORECASE,
 )
+_SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?])(?:\s+|$)|\n+")
 
 
 def _strings(value: object, path: str = "") -> list[tuple[str, str]]:
@@ -42,7 +43,38 @@ def _strings(value: object, path: str = "") -> list[tuple[str, str]]:
     return [(path, value)] if isinstance(value, str) else []
 
 
+def _unanchored_negated_acquisition(text: str) -> list[str]:
+    """Return negated acquisition sentences that lack their own review-time anchor."""
+
+    failures: list[str] = []
+    for sentence in _SENTENCE_BOUNDARY.split(text):
+        sentence = sentence.strip()
+        if not sentence:
+            continue
+        if _NEGATED_ACQUISITION.search(sentence) and not _REVIEW_TIME_ANCHOR.search(sentence):
+            failures.append(sentence)
+    return failures
+
+
 class ManifestTemporalNarrativeTests(unittest.TestCase):
+    def test_review_time_anchor_must_scope_the_same_sentence(self) -> None:
+        """An unrelated historical sentence must not sanitize a live acquisition claim."""
+
+        stale_examples = (
+            "At the manifest review time, metadata was checked. No bytes have been acquired.",
+            "No bytes have been acquired. At the manifest review time, metadata was checked.",
+        )
+        for text in stale_examples:
+            with self.subTest(text=text):
+                self.assertEqual(_unanchored_negated_acquisition(text), ["No bytes have been acquired."])
+
+        self.assertEqual(
+            _unanchored_negated_acquisition(
+                "At the manifest review time, no exact provider bytes had been acquired."
+            ),
+            [],
+        )
+
     def test_durable_admission_narrative_time_qualifies_negated_acquisition_state(self) -> None:
         """Current publication state must not be conflated with historical byte acquisition state."""
 
@@ -55,8 +87,8 @@ class ManifestTemporalNarrativeTests(unittest.TestCase):
                 "redistribution": manifest.get("redistribution", {}),
                 "review": manifest.get("review", {}),
             }):
-                if _NEGATED_ACQUISITION.search(text) and not _REVIEW_TIME_ANCHOR.search(text):
-                    failures.append(f"{manifest_path.name}:{path}: {text}")
+                for statement in _unanchored_negated_acquisition(text):
+                    failures.append(f"{manifest_path.name}:{path}: {statement}")
 
         self.assertEqual(
             failures,
@@ -69,8 +101,8 @@ class ManifestTemporalNarrativeTests(unittest.TestCase):
         failures: list[str] = []
         for review_path in sorted((ROOT / "docs" / "source-reviews").glob("*.md")):
             for line_number, line in enumerate(review_path.read_text(encoding="utf-8").splitlines(), 1):
-                if _NEGATED_ACQUISITION.search(line) and not _REVIEW_TIME_ANCHOR.search(line):
-                    failures.append(f"{review_path.name}:{line_number}: {line}")
+                for statement in _unanchored_negated_acquisition(line):
+                    failures.append(f"{review_path.name}:{line_number}: {statement}")
         self.assertEqual(
             failures,
             [],
