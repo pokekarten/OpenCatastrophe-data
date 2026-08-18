@@ -51,6 +51,8 @@ TOTAL_DEADLINE_SECONDS = 90.0
 _ALLOWED_COMPRESSION = {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED}
 _ALLOWED_BLOB_MODES = {"100644", "100755", "120000"}
 _CELL_REF_RE = re.compile(r"^[A-Z]{1,4}[1-9][0-9]{0,6}$")
+_ROW_INDEX_RE = re.compile(r"^[1-9][0-9]{0,6}$")
+_CELL_ROW_RE = re.compile(r"[1-9][0-9]{0,6}$")
 _SHA1_RE = re.compile(r"^[0-9a-f]{40}$")
 _WORD_PATTERNS = {
     name: re.compile(rf"(?<![a-z]){re.escape(name)}(?![a-z])", re.IGNORECASE)
@@ -472,6 +474,18 @@ def _scan_workbook(payload: bytes) -> dict[str, Any]:
                 row_count += 1
                 if row_count > MAX_ROWS:
                     raise ScenarioWorkbookIdentityError("worksheet row count exceeds bounded policy")
+                raw_row_coordinate = row.attrib.get("r")
+                declared_row_coordinate: int | None = None
+                if raw_row_coordinate is not None:
+                    if (
+                        type(raw_row_coordinate) is not str
+                        or _ROW_INDEX_RE.fullmatch(raw_row_coordinate) is None
+                    ):
+                        raise ScenarioWorkbookIdentityError(
+                            "worksheet row coordinate is invalid"
+                        )
+                    declared_row_coordinate = int(raw_row_coordinate)
+                observed_row_coordinate: int | None = None
                 row_has_target = False
                 row_names: set[str] = set()
                 row_cell_count = 0
@@ -485,6 +499,25 @@ def _scan_workbook(payload: bytes) -> dict[str, Any]:
                     ref = cell.attrib.get("r")
                     if type(ref) is not str or _CELL_REF_RE.fullmatch(ref) is None:
                         raise ScenarioWorkbookIdentityError("worksheet cell reference is invalid")
+                    cell_row_match = _CELL_ROW_RE.search(ref)
+                    if cell_row_match is None:
+                        raise ScenarioWorkbookIdentityError(
+                            "worksheet cell row coordinate is invalid"
+                        )
+                    cell_row_coordinate = int(cell_row_match.group(0))
+                    if observed_row_coordinate is None:
+                        observed_row_coordinate = cell_row_coordinate
+                    elif cell_row_coordinate != observed_row_coordinate:
+                        raise ScenarioWorkbookIdentityError(
+                            "worksheet row contains mixed cell row coordinates"
+                        )
+                    if (
+                        declared_row_coordinate is not None
+                        and cell_row_coordinate != declared_row_coordinate
+                    ):
+                        raise ScenarioWorkbookIdentityError(
+                            "worksheet row coordinate disagrees with cell reference"
+                        )
                     scoped_ref = f"{worksheet_name}:{ref}"
                     if scoped_ref in seen_refs:
                         raise ScenarioWorkbookIdentityError("worksheet contains duplicate cell reference")
