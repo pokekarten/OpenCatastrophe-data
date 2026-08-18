@@ -267,6 +267,34 @@ class SiteModelCandidateTreeTests(unittest.TestCase):
             profile._OPEN_FIXED = original_open_fixed
         self.assertEqual(calls, 0)
 
+    def test_production_guard_rebinding_with_evidence_mutation_fails_before_provider_io(
+        self,
+    ) -> None:
+        original_guard = profile._require_production_authority
+        original_tree_identity = profile._tree_identity_sha256
+        original_open_fixed = profile._OPEN_FIXED
+        calls = 0
+
+        def forbidden_opener(request, timeout):
+            nonlocal calls
+            calls += 1
+            raise AssertionError("provider I/O must not be reached")
+
+        try:
+            profile._require_production_authority = lambda: None
+            profile._tree_identity_sha256 = lambda entries: "0" * 64
+            profile._OPEN_FIXED = forbidden_opener
+            with self.assertRaisesRegex(
+                profile.SiteModelCandidateTreeError,
+                "production authority guard drifted",
+            ):
+                profile.profile_candidate_trees()
+        finally:
+            profile._require_production_authority = original_guard
+            profile._tree_identity_sha256 = original_tree_identity
+            profile._OPEN_FIXED = original_open_fixed
+        self.assertEqual(calls, 0)
+
     def test_noncanonical_or_widened_tree_entry_fails_closed(self) -> None:
         bad_cases = [
             _entry("../writer.py", "a" * 40),
