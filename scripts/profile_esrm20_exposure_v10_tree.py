@@ -434,10 +434,24 @@ def _profile_v10_tree_for_test(*, opener: Any, monotonic: Any) -> dict[str, Any]
     }
 
 
+_TAG_URL = _tag_url
+_TREE_URL = _tree_url
+_STRICT_JSON_ARRAY_FN = _strict_json_array
+_BOUNDED_TEXT = _bounded_text
+_CANONICAL_ENTRY = _canonical_entry
+_PAGINATION_NEXT = _pagination_next
 _RESOLVE_TAG_COMMIT = _resolve_tag_commit
 _INVENTORY_TREE = _inventory_tree
+_TREE_IDENTITY_SHA256 = _tree_identity_sha256
 _KOSOVO_CANDIDATES = _kosovo_named_xml_candidates
 _PROFILE_FOR_TEST = _profile_v10_tree_for_test
+_JSON_LOADS = json.loads
+_MATH_ISFINITE = math.isfinite
+_URL_QUOTE = urllib.parse.quote
+_URLENCODE = urllib.parse.urlencode
+_PURE_POSIX_PATH = PurePosixPath
+_SHA256 = hashlib.sha256
+_GIT_SHA_RE_AUTHORITY = _GIT_SHA_RE
 
 
 def _require_production_authority() -> None:
@@ -451,11 +465,35 @@ def _require_production_authority() -> None:
         (EXPECTED_COMMIT_SHA, "05f83bbc9df81d02ee8ddb1801d9d781355ce783"),
         (SUBTREE_PATH, "Exposure_30arcsec"),
         (PROVIDER_KOSOVO_TOKEN, "Kosovo"),
+        (TREE_PER_PAGE, 100),
+        (MAX_TREE_PAGES, 30),
+        (MAX_TREE_ENTRIES, 3_000),
+        (MAX_TAG_BYTES, 131_072),
+        (MAX_TREE_PAGE_BYTES, 1_048_576),
+        (MAX_TOTAL_METADATA_BYTES, 12_582_912),
+        (MAX_PATH_UTF8_BYTES, 2_048),
+        (MAX_KOSOVO_XML_CANDIDATES, 16),
+        (TOTAL_DEADLINE_SECONDS, 180.0),
         (PROVIDER_ROOT, _PROVIDER_ROOT),
     )
     for observed, expected in exact:
         if type(observed) is not type(expected) or observed != expected:
             raise ExposureTreeProfileError("trusted exposure-tree target authority drifted")
+
+    expected_entry_fields = {"id", "name", "type", "path", "mode"}
+    expected_modes_by_type = {
+        "blob": frozenset({"100644", "100755"}),
+        "tree": frozenset({"040000"}),
+    }
+    if (
+        _GIT_SHA_RE is not _GIT_SHA_RE_AUTHORITY
+        or type(_ALLOWED_ENTRY_FIELDS) is not set
+        or _ALLOWED_ENTRY_FIELDS != expected_entry_fields
+        or type(_ALLOWED_MODES_BY_TYPE) is not dict
+        or _ALLOWED_MODES_BY_TYPE != expected_modes_by_type
+    ):
+        raise ExposureTreeProfileError("trusted exposure-tree policy authority drifted")
+
     authority = (
         (transport._open_fixed, _OPEN_FIXED),
         (transport._read_bounded, _READ_BOUNDED),
@@ -465,8 +503,21 @@ def _require_production_authority() -> None:
         (transport._strict_json_object, _STRICT_JSON_OBJECT),
         (time.monotonic, _MONOTONIC),
         (urllib.request.Request, _REQUEST),
+        (json.loads, _JSON_LOADS),
+        (math.isfinite, _MATH_ISFINITE),
+        (urllib.parse.quote, _URL_QUOTE),
+        (urllib.parse.urlencode, _URLENCODE),
+        (PurePosixPath, _PURE_POSIX_PATH),
+        (hashlib.sha256, _SHA256),
+        (_tag_url, _TAG_URL),
+        (_tree_url, _TREE_URL),
+        (_strict_json_array, _STRICT_JSON_ARRAY_FN),
+        (_bounded_text, _BOUNDED_TEXT),
+        (_canonical_entry, _CANONICAL_ENTRY),
+        (_pagination_next, _PAGINATION_NEXT),
         (_resolve_tag_commit, _RESOLVE_TAG_COMMIT),
         (_inventory_tree, _INVENTORY_TREE),
+        (_tree_identity_sha256, _TREE_IDENTITY_SHA256),
         (_kosovo_named_xml_candidates, _KOSOVO_CANDIDATES),
         (_profile_v10_tree_for_test, _PROFILE_FOR_TEST),
     )
