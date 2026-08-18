@@ -259,8 +259,14 @@ def _read_zip_member(archive: zipfile.ZipFile, info: zipfile.ZipInfo) -> bytes:
         raise ScenarioWorkbookIdentityError("XLSX member read failed closed") from exc
     if len(data) != info.file_size:
         raise ScenarioWorkbookIdentityError("XLSX member size disagrees with ZIP metadata")
-    upper = data.upper()
-    if b"<!DOCTYPE" in upper or b"<!ENTITY" in upper:
+    if b"\x00" in data:
+        raise ScenarioWorkbookIdentityError("XLSX XML encoding is outside policy")
+    try:
+        decoded = data.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ScenarioWorkbookIdentityError("XLSX XML encoding is outside policy") from exc
+    upper = decoded.upper()
+    if "<!DOCTYPE" in upper or "<!ENTITY" in upper:
         raise ScenarioWorkbookIdentityError("DTD/entity declarations are forbidden in XLSX XML")
     return data
 
