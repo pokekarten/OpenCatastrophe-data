@@ -408,9 +408,12 @@ _CANONICAL_POLICY = (
     TOTAL_DEADLINE_SECONDS,
 )
 _SHA256 = hashlib.sha256
+_JSON_LOADS = json.loads
+_MATH_ISFINITE = math.isfinite
 _URLENCODE = urllib.parse.urlencode
 _REQUEST = urllib.request.Request
 _RE_FULLMATCH = re.fullmatch
+_PURE_POSIX_PATH = PurePosixPath
 _STRICT_JSON = _strict_json
 _BOUNDED_TEXT = _bounded_text
 _HISTORY_IDENTITY = _history_identity_sha256
@@ -478,9 +481,12 @@ def _require_production_authority() -> None:
         )
     if (
         hashlib.sha256 is not _SHA256
+        or json.loads is not _JSON_LOADS
+        or math.isfinite is not _MATH_ISFINITE
         or urllib.parse.urlencode is not _URLENCODE
         or urllib.request.Request is not _REQUEST
         or re.fullmatch is not _RE_FULLMATCH
+        or PurePosixPath is not _PURE_POSIX_PATH
     ):
         raise SiteModelCandidateTreeError(
             "candidate-tree primitive production authority drifted"
