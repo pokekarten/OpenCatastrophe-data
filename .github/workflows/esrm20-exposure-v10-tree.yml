@@ -53,7 +53,7 @@ jobs:
         run: |
           set -euo pipefail
           EXECUTION_SHA="$(git rev-parse HEAD)"
-          python scripts/run_esrm20_exposure_v10_tree_action.py \
+          python -m scripts.run_esrm20_exposure_v10_tree_action \
             --comment-body-env OC_EXPOSURE_TREE_REQUEST \
             --expected-issue 282 \
             --execution-sha "$EXECUTION_SHA" \
