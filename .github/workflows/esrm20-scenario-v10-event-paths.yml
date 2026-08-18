@@ -1,0 +1,223 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Scenario v1.0 Event Path Relation
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-scenario-v10-event-paths-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  execute-event-paths:
+    name: Execute exact trusted-main event-path profile
+    if: >-
+      github.event.issue.number == 285 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-scenario-v10-event-paths-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.run.outputs.execution_sha }}
+      skip: ${{ steps.run.outputs.skip }}
+      result_json: ${{ steps.run.outputs.result_json }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Validate, deduplicate, and resolve fixed event paths
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OC_EVENT_PATH_REQUEST: ${{ github.event.comment.body }}
+          RESULT_PATH: ${{ runner.temp }}/esrm20-scenario-v10-event-paths.json
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/run_esrm20_scenario_v10_event_paths_action.py \
+            --comment-body-env OC_EVENT_PATH_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --token-env GH_TOKEN \
+            --output "$RESULT_PATH"
+          STATUS="$(jq -r '.status' "$RESULT_PATH")"
+          test "$STATUS" = "pass" -o "$STATUS" = "blocked" -o "$STATUS" = "duplicate"
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+          if test "$STATUS" = "duplicate"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "result_json=" >> "$GITHUB_OUTPUT"
+          else
+            RESULT_JSON="$(jq -cS . "$RESULT_PATH")"
+            test -n "$RESULT_JSON"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish-event-paths:
+    name: Publish bounded event-path evidence
+    needs: [execute-event-paths]
+    if: >-
+      needs.execute-event-paths.result == 'success' &&
+      needs.execute-event-paths.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.execute-event-paths.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-event-paths.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-scenario-v10-event-paths-result-v1 -->"
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import PurePosixPath
+
+          data = json.loads(os.environ["RESULT_JSON"])
+          if data.get("status") == "pass":
+              profile = data.get("profile")
+              if type(profile) is not dict:
+                  raise SystemExit("event-path publish profile is not an object")
+              matches = profile.get("matches")
+              if type(matches) is not list:
+                  raise SystemExit("event-path publish matches are not an array")
+              for item in matches:
+                  if type(item) is not dict:
+                      raise SystemExit("event-path publish match is not an object")
+                  path = item.get("path")
+                  if type(path) is not str or not path:
+                      raise SystemExit("event-path publish path is not text")
+                  try:
+                      encoded = path.encode("utf-8")
+                  except UnicodeEncodeError as exc:
+                      raise SystemExit("event-path publish path is not UTF-8") from exc
+                  if len(encoded) > 2048:
+                      raise SystemExit("event-path publish path exceeds policy")
+                  if any(ord(ch) < 32 or ord(ch) == 127 for ch in path):
+                      raise SystemExit("event-path publish path contains control characters")
+                  if "\\" in path:
+                      raise SystemExit("event-path publish path is not canonical POSIX")
+                  parts = path.split("/")
+                  pure = PurePosixPath(path)
+                  if (
+                      pure.is_absolute()
+                      or any(part in ("", ".", "..") for part in parts)
+                      or str(pure) != path
+                  ):
+                      raise SystemExit("event-path publish path is not canonical relative POSIX")
+          PY
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            keys == [
+              "event_location_inference_authorized",
+              "execution_sha",
+              "external_bytes_persisted",
+              "failure_class",
+              "model_use_authorized",
+              "profile",
+              "provider_file_bytes_read",
+              "publication_authorized",
+              "scenario_selection_authorized",
+              "schema_version",
+              "source_issue",
+              "status",
+              "target_sha"
+            ] and
+            .schema_version == "oc-esrm20-scenario-v10-event-paths-result-v1" and
+            .source_issue == 285 and
+            .target_sha == $sha and .execution_sha == $sha and
+            (.status == "pass" or .status == "blocked") and
+            .provider_file_bytes_read == false and
+            .external_bytes_persisted == false and
+            .event_location_inference_authorized == false and
+            .scenario_selection_authorized == false and
+            .publication_authorized == false and
+            .model_use_authorized == false and
+            (if .status == "pass" then
+              .failure_class == null and
+              (.profile | type) == "object" and
+              (.profile | keys) == [
+                "commit_sha",
+                "event_location_inference_authorized",
+                "external_bytes_persisted",
+                "matched_blob_count",
+                "matches",
+                "model_use_authorized",
+                "project_id",
+                "project_path",
+                "provider_file_bytes_read",
+                "publication_authorized",
+                "relation_sha256",
+                "release_tag",
+                "root_blob_counts",
+                "scenario_selection_authorized",
+                "schema_version",
+                "source_issue",
+                "target_event_id",
+                "tree_entry_count",
+                "tree_identity_sha256"
+              ] and
+              .profile.schema_version == "oc-esrm20-scenario-v10-event-paths-profile-v1" and
+              .profile.source_issue == 285 and
+              .profile.project_id == 273 and
+              .profile.project_path == "efehr/esrm20_scenario_tests" and
+              .profile.release_tag == "v1.0" and
+              .profile.commit_sha == "041f90d950d6ff84180b2faa11319a42c66c74cc" and
+              .profile.target_event_id == "Greece_07-9-1999" and
+              (.profile.tree_entry_count | type) == "number" and .profile.tree_entry_count >= 1 and
+              (.profile.tree_identity_sha256 | test("^[0-9a-f]{64}$")) and
+              (.profile.matched_blob_count | type) == "number" and
+              .profile.matched_blob_count >= 2 and .profile.matched_blob_count <= 128 and
+              (.profile.matches | type) == "array" and
+              (.profile.matches | length) == .profile.matched_blob_count and
+              (.profile.root_blob_counts | keys) == ["ruptures", "shakemaps"] and
+              .profile.root_blob_counts.ruptures >= 1 and
+              .profile.root_blob_counts.shakemaps >= 1 and
+              (.profile.root_blob_counts.ruptures + .profile.root_blob_counts.shakemaps) == .profile.matched_blob_count and
+              all(.profile.matches[];
+                (keys == ["object_sha1", "path", "root"]) and
+                (.root == "ruptures" or .root == "shakemaps") and
+                (.object_sha1 | test("^[0-9a-f]{40}$")) and
+                (.path | contains("Greece_07-9-1999")) and
+                (if .root == "ruptures" then (.path | startswith("ruptures/")) else (.path | startswith("shakemaps/")) end)
+              ) and
+              (.profile.relation_sha256 | test("^[0-9a-f]{64}$")) and
+              .profile.provider_file_bytes_read == false and
+              .profile.external_bytes_persisted == false and
+              .profile.event_location_inference_authorized == false and
+              .profile.scenario_selection_authorized == false and
+              .profile.publication_authorized == false and
+              .profile.model_use_authorized == false
+            else
+              .failure_class == "event_path_resolution_failure" and .profile == null
+            end)
+          ' >/dev/null
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/event-path-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/285/comments" \
+            --input "$RUNNER_TEMP/event-path-comment.json"
