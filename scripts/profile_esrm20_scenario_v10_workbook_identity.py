@@ -50,7 +50,8 @@ MAX_TREE_PATH_UTF8_BYTES = 2048
 TOTAL_DEADLINE_SECONDS = 90.0
 _ALLOWED_COMPRESSION = {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED}
 _ALLOWED_BLOB_MODES = {"100644", "100755", "120000"}
-_CELL_REF_RE = re.compile(r"^[A-Z]{1,4}[1-9][0-9]{0,6}$")
+_CELL_REF_RE = re.compile(r"^[A-Z]{1,4}([1-9][0-9]{0,6})$")
+_ROW_REF_RE = re.compile(r"^[1-9][0-9]{0,6}$")
 _SHA1_RE = re.compile(r"^[0-9a-f]{40}$")
 _WORD_PATTERNS = {
     name: re.compile(rf"(?<![a-z]){re.escape(name)}(?![a-z])", re.IGNORECASE)
@@ -472,6 +473,19 @@ def _scan_workbook(payload: bytes) -> dict[str, Any]:
                 row_count += 1
                 if row_count > MAX_ROWS:
                     raise ScenarioWorkbookIdentityError("worksheet row count exceeds bounded policy")
+                declared_row_ref = row.attrib.get("r")
+                if declared_row_ref is not None:
+                    if (
+                        type(declared_row_ref) is not str
+                        or _ROW_REF_RE.fullmatch(declared_row_ref) is None
+                    ):
+                        raise ScenarioWorkbookIdentityError(
+                            "worksheet row reference is invalid"
+                        )
+                    declared_row = int(declared_row_ref)
+                else:
+                    declared_row = None
+                observed_row: int | None = None
                 row_has_target = False
                 row_names: set[str] = set()
                 row_cell_count = 0
@@ -483,8 +497,20 @@ def _scan_workbook(payload: bytes) -> dict[str, Any]:
                     if row_cell_count > 1024 or cell_count > MAX_CELLS:
                         raise ScenarioWorkbookIdentityError("worksheet cell count exceeds bounded policy")
                     ref = cell.attrib.get("r")
-                    if type(ref) is not str or _CELL_REF_RE.fullmatch(ref) is None:
+                    match = _CELL_REF_RE.fullmatch(ref) if type(ref) is str else None
+                    if match is None:
                         raise ScenarioWorkbookIdentityError("worksheet cell reference is invalid")
+                    cell_row = int(match.group(1))
+                    if observed_row is None:
+                        observed_row = cell_row
+                    elif cell_row != observed_row:
+                        raise ScenarioWorkbookIdentityError(
+                            "worksheet row contains mixed cell row coordinates"
+                        )
+                    if declared_row is not None and cell_row != declared_row:
+                        raise ScenarioWorkbookIdentityError(
+                            "worksheet row reference disagrees with cell reference"
+                        )
                     scoped_ref = f"{worksheet_name}:{ref}"
                     if scoped_ref in seen_refs:
                         raise ScenarioWorkbookIdentityError("worksheet contains duplicate cell reference")
