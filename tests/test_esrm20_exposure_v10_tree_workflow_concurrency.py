@@ -13,6 +13,12 @@ class ExposureTreeWorkflowConcurrencyTests(unittest.TestCase):
     def test_trusted_requests_serialize_but_comment_noise_is_isolated(self) -> None:
         text = WORKFLOW.read_text(encoding="utf-8")
         concurrency = text.split("concurrency:", 1)[1].split("jobs:", 1)[0]
+        self.assertIn("github.event.issue.number == 282", concurrency)
+        self.assertIn(
+            "github.event.comment.user.login == github.event.repository.owner.login",
+            concurrency,
+        )
+        self.assertIn("github.event.comment.author_association == 'OWNER'", concurrency)
         self.assertIn(REQUEST_MARKER, concurrency)
         self.assertIn(
             "&& 'trusted-request' || format('noise-{0}', github.event.comment.id)",
@@ -30,6 +36,10 @@ class ExposureTreeWorkflowConcurrencyTests(unittest.TestCase):
             "publish-exposure-tree:", 1
         )[0]
         self.assertIn("github.event.issue.number == 282", execute)
+        self.assertIn(
+            "github.event.comment.user.login == github.event.repository.owner.login",
+            execute,
+        )
         self.assertIn("github.event.comment.author_association == 'OWNER'", execute)
         self.assertIn(REQUEST_MARKER, execute)
 
