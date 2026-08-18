@@ -168,7 +168,7 @@ The exact literal join resolves the Kosovo-residential taxonomy set:
 
 ### B4. Vulnerability selection
 
-Final ESRM20 vulnerability lineage:
+Provider-native mapping-derived selection lineage:
 
 - project: `efehr/esrm20_vulnerability` / project 188;
 - immutable v2.1 commit:
@@ -179,16 +179,31 @@ Final ESRM20 vulnerability lineage:
 - canonical selected receipt-set SHA-256:
   `395b4cf044ab0f263fee88becd0ad9b957c9f7e92f8ecc3b22e023c591b2e951`.
 
-The final ESRM20 vulnerability NRML contains all 47 canonical Risk IDs. The selected
-functions are vulnerability functions, not fragility functions. Their bounded semantics
-are:
+These 47 provider-native files establish the mapping-derived v2.1 selection/provenance
+layer. They are not the executable final NRML object.
+
+Executable final ESRM20 vulnerability NRML identity:
+
+- dataset: `efehr.esrm20.risk-inputs.v1.0`;
+- project: `efehr/esrm20` / project 269;
+- immutable ESRM20 v1.0 commit:
+  `05f83bbc9df81d02ee8ddb1801d9d781355ce783`;
+- path: `Vulnerability/vulnerability_total-repl-cost_ESRM20_VariousIM.xml`;
+- byte count: `908623`;
+- SHA-256: `22f699ef9b649f388f850551066847ff02f36c72606dc9c615f05d454f1f918e`.
+
+The trusted-main final-NRML profile under #478 verifies this exact byte identity and
+contains all 47 canonical Risk IDs. The selected functions are vulnerability functions,
+not fragility functions. Their bounded semantics are:
 
 - asset category: buildings;
 - loss category: structural;
 - response: structural loss ratio on a total-replacement-cost basis;
 - conditional uncertainty family: Beta (`BT`), represented by mean loss ratio and CoV;
 - required IMTs: `PGA`, `SA(0.3)`, `SA(0.6)`, `SA(1.0)`;
-- intensity unit: `g`.
+- intensity-unit interpretation: `g` under the frozen OpenQuake 3.14 runtime convention
+  for these exact PGA/SA IMT tokens; the final NRML XML does not itself declare the
+  intensity unit.
 
 These semantics do not turn the result into insured loss, TIV, policy loss,
 Gross/Ceded/Net loss or capital. Intended ESRM20 use is established; independent
@@ -277,16 +292,18 @@ ESRM20 production environment and not numerical hazard validation.
 | Exposure taxonomy extraction | **PASS** | B — 86 exact literal values; no normalization |
 | Taxonomy → mapping join | **PASS** | B — 86/86 resolved; 0 unsupported; 0 ambiguous |
 | Mapping → vulnerability selection | **PASS** | B — exactly 47 canonical Risk IDs |
-| Vulnerability byte selection | **PASS** | B — 47/47 selected files receipted |
+| Vulnerability provider-native byte selection | **PASS** | B — project-188 v2.1 47/47 selected files receipted |
+| Final vulnerability NRML byte identity | **PASS** | B — exact project-269 commit/path/908623 bytes/SHA-256 |
+| Final vulnerability NRML Risk-ID coverage | **PASS** | B — exact #478 profile contains all 47 canonical Risk IDs |
 | Vulnerability IMT-name contract | **PASS** | B — `PGA`, `SA(0.3)`, `SA(0.6)`, `SA(1.0)` |
-| Vulnerability intensity unit | **PASS** | B — `g` |
+| Vulnerability intensity-unit interpretation | **PASS** | B — frozen OQ3.14 maps the exact PGA/SA IMT tokens to `g`; XML has no unit declaration |
 | ESRM20 Kosovo site byte identity | **PASS** | B — exact project/commit/path/bytes/SHA-256 |
 | ESRM20 Kosovo site OQ parser acceptance | **PASS** | B — 37 records; required five site parameters accepted |
 | ESRM20 event-hazard root identities | **PASS** | B — Group1 and Group2 exact receipts |
 | ESRM20 GMM-tree byte identity | **PASS** | B — exact project/commit/path/bytes/SHA-256 |
 | ESRM20 reconstructed OQ3.14 GSIM resolution | **PASS** | B — five direct classes; no alias/conversion activation |
 | ESRM20 hazard ↔ vulnerability IMT names | **PASS** | B — same four canonical IMT names on bounded lane |
-| ESRM20 hazard output unit ↔ vulnerability unit | **PASS** | B — bounded OQ3.14 PGA/SA reference output is in `g` |
+| ESRM20 hazard output unit ↔ vulnerability unit | **PASS** | B — bounded OQ3.14 PGA/SA reference output and vulnerability IMT interpretation are in `g` |
 | Horizontal-component interoperability | **BLOCKED** | B — mixed `RotD50` + `GEOMETRIC_MEAN`; no source authority for conversion |
 | ESRM20 site CRS / coordinate semantics | **BLOCKED** | B — current site evidence intentionally leaves this false |
 | ESRM20 site missingness / unit semantics | **BLOCKED** | B — runtime acceptance does not prove all semantics |
@@ -351,9 +368,12 @@ A consumer reproducing v0.1 should:
    the fixed 51-child source-model set; never substitute the Mode-B site model;
 7. for Mode B, require the exact 86-taxonomy projection, exact literal mapping join and
    resulting canonical 47 Risk IDs before vulnerability selection;
-8. preserve the compatibility matrix; in particular, do not invent a horizontal
+8. for Mode B vulnerability, keep the project-188 v2.1 47-file selection/provenance
+   layer distinct from the project-269 executable final NRML, and verify the final NRML
+   project/ref/path/byte count/SHA-256 before profiling or execution;
+9. preserve the compatibility matrix; in particular, do not invent a horizontal
    component conversion or a historical/default Kosovo `ebrisk` group;
-9. when a model run is scientifically authorized, bind actual execution with
+10. when a model run is scientifically authorized, bind actual execution with
    `run-evidence-v2` rather than treating this document as execution evidence.
 
 ## v0.1 definition of done
@@ -368,7 +388,9 @@ following remain true on the integrated repository state:
 - [x] Mode B Kosovo residential exposure has immutable public byte identity;
 - [x] Mode B exposure taxonomy extraction is exact and deterministic;
 - [x] the taxonomy maps fail-closed to exactly 47 vulnerability Risk IDs;
-- [x] all 47 selected vulnerability inputs have provider-grounded byte identities;
+- [x] all 47 selected provider-native vulnerability inputs have grounded byte identities;
+- [x] the executable final vulnerability NRML has immutable public byte identity and
+  exact 47/47 canonical Risk-ID coverage;
 - [x] the Mode-B Kosovo site, event-hazard roots and GMM tree have immutable identities;
 - [x] the reconstructed reference-runtime no-conversion behavior is explicit;
 - [x] Mode-A and Mode-B site/hazard authorities are not collapsed;
