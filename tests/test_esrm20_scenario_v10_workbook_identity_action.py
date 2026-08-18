@@ -67,14 +67,30 @@ def _result(
     }
     if status == "blocked":
         value["failure_class"] = "workbook_identity_failure"
+        value["failure_stage"] = "unknown"
         value["profile"] = None
     if status == "duplicate":
         value["profile"] = None
     return value
 
 
+def _legacy_result(
+    *, execution_sha: str, status: str = "pass", evidence: dict | None = None
+) -> dict:
+    value = _result(execution_sha=execution_sha, status=status, evidence=evidence)
+    value["schema_version"] = action.LEGACY_RESULT_SCHEMA_VERSION
+    value.pop("failure_stage")
+    return value
+
+
 def _body(value: dict) -> str:
     return action.RESULT_MARKER + "\n" + json.dumps(
+        value, sort_keys=True, separators=(",", ":")
+    )
+
+
+def _legacy_body(value: dict) -> str:
+    return action.LEGACY_RESULT_MARKER + "\n" + json.dumps(
         value, sort_keys=True, separators=(",", ":")
     )
 
@@ -228,6 +244,26 @@ class WorkbookIdentityActionTests(unittest.TestCase):
             action.parse_terminal_result(_body(blocked), execution_sha=EXECUTION_SHA)
         )
 
+        invalid_stage = copy.deepcopy(blocked)
+        invalid_stage["failure_stage"] = "provider-row-secret"
+        with self.assertRaisesRegex(
+            action.ScenarioWorkbookIdentityExecutionError,
+            "failure stage is invalid",
+        ):
+            action.parse_terminal_result(
+                _body(invalid_stage), execution_sha=EXECUTION_SHA
+            )
+
+        pass_with_stage = copy.deepcopy(passed)
+        pass_with_stage["failure_stage"] = "tree_identity"
+        with self.assertRaisesRegex(
+            action.ScenarioWorkbookIdentityExecutionError,
+            "PASS result carries failure stage",
+        ):
+            action.parse_terminal_result(
+                _body(pass_with_stage), execution_sha=EXECUTION_SHA
+            )
+
         widened = copy.deepcopy(blocked)
         widened["profile"] = _valid_profile()
         with self.assertRaisesRegex(
@@ -235,6 +271,15 @@ class WorkbookIdentityActionTests(unittest.TestCase):
             "blocked result widened workbook evidence",
         ):
             action.parse_terminal_result(_body(widened), execution_sha=EXECUTION_SHA)
+
+        legacy_blocked = _legacy_result(
+            execution_sha=EXECUTION_SHA, status="blocked"
+        )
+        self.assertTrue(
+            action.parse_terminal_result(
+                _legacy_body(legacy_blocked), execution_sha=EXECUTION_SHA
+            )
+        )
 
         foreign_target = _result(
             execution_sha=FOREIGN_SHA, evidence=_valid_profile()
@@ -246,6 +291,29 @@ class WorkbookIdentityActionTests(unittest.TestCase):
             action.parse_terminal_result(
                 _body(foreign_target), execution_sha=EXECUTION_SHA
             )
+
+    def test_legacy_v1_terminal_result_still_deduplicates_without_provider_rerun(self) -> None:
+        original = action._FETCH_COMMENTS
+        legacy = _legacy_result(
+            execution_sha=EXECUTION_SHA,
+            status="blocked",
+        )
+        action._FETCH_COMMENTS = lambda *args, **kwargs: [
+            {
+                "user": {"login": action.TRUSTED_RESULT_LOGIN},
+                "body": _legacy_body(legacy),
+            }
+        ]
+        try:
+            self.assertTrue(
+                action.has_terminal_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="token",
+                    execution_sha=EXECUTION_SHA,
+                )
+            )
+        finally:
+            action._FETCH_COMMENTS = original
 
     def test_foreign_sha_terminal_is_validated_before_dedup_skip(self) -> None:
         original = action._FETCH_COMMENTS
@@ -303,6 +371,12 @@ class WorkbookIdentityActionTests(unittest.TestCase):
         publish = workflow.split("publish-workbook-identity:", 1)[1]
         self.assertNotIn("actions/checkout", publish)
         self.assertIn('keys == [', publish)
+        self.assertIn('"failure_stage"', publish)
+        self.assertIn(
+            'oc-esrm20-scenario-v10-workbook-identity-result-v2', publish
+        )
+        self.assertIn('.failure_stage == "tree_identity"', publish)
+        self.assertIn('.failure_stage == "unknown"', publish)
         self.assertIn('"testing_scenarios.xlsx"', publish)
         self.assertIn('"Greece_07-9-1999"', publish)
         self.assertIn("event_location_inference_authorized == false", publish)
