@@ -567,10 +567,17 @@ def _profile_candidate_trees_for_test(
     }
 
 
+_PROFILE_FOR_TEST = _profile_candidate_trees_for_test
+
+
 def profile_candidate_trees() -> dict[str, Any]:
     """Return bounded changed-blob metadata using only canonical production authority."""
+    if _profile_candidate_trees_for_test is not _PROFILE_FOR_TEST:
+        raise SiteModelCandidateTreeError(
+            "candidate-tree execution production authority drifted"
+        )
     _require_production_authority()
-    return _profile_candidate_trees_for_test(
+    return _PROFILE_FOR_TEST(
         opener=_OPEN_FIXED,
         monotonic=_MONOTONIC,
     )
