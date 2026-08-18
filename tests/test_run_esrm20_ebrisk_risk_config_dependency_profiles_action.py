@@ -67,7 +67,9 @@ class EbriskDependencyProfilesActionTests(unittest.TestCase):
             request_body(), expected_issue=281, execution_sha=SHA
         )
         self.assertEqual(parsed["action"], action.ACTION)
-        with self.assertRaisesRegex(action.EbriskDependencyProfilesActionError, "fields drifted"):
+        with self.assertRaisesRegex(
+            action.EbriskDependencyProfilesActionError, "fields drifted"
+        ):
             action.validate_request(
                 request_body(candidate="group1"), expected_issue=281, execution_sha=SHA
             )
@@ -85,7 +87,10 @@ class EbriskDependencyProfilesActionTests(unittest.TestCase):
             "profiles": profiles,
         }
         validated = action.validate_terminal_result(result, execution_sha=SHA)
-        self.assertEqual([p["candidate_key"] for p in validated["profiles"]], ["group1", "group2", "iceland"])
+        self.assertEqual(
+            [p["candidate_key"] for p in validated["profiles"]],
+            ["group1", "group2", "iceland"],
+        )
         self.assertFalse(validated["historical_group_assignment_verified"])
         self.assertFalse(validated["dependency_inventory_authorized"])
         self.assertFalse(validated["runtime_compatibility_verified"])
@@ -115,13 +120,17 @@ class EbriskDependencyProfilesActionTests(unittest.TestCase):
             "profiles": None,
             "historical_group_assignment": "Group1",
         }
-        with self.assertRaisesRegex(action.EbriskDependencyProfilesActionError, "fields drifted"):
+        with self.assertRaisesRegex(
+            action.EbriskDependencyProfilesActionError, "fields drifted"
+        ):
             action.validate_terminal_result(result, execution_sha=SHA)
 
     def test_late_acquisition_failure_is_atomic(self) -> None:
-        first = lambda: profile_for(bridge.CONFIG_SPECS[0])
-        second = mock.Mock(side_effect=action.worker.EbriskDependencyAcquisitionError("boom"))
-        third = lambda: profile_for(bridge.CONFIG_SPECS[2])
+        first = mock.Mock(return_value=profile_for(bridge.CONFIG_SPECS[0]))
+        second = mock.Mock(
+            side_effect=action.worker.EbriskDependencyAcquisitionError("boom")
+        )
+        third = mock.Mock(return_value=profile_for(bridge.CONFIG_SPECS[2]))
         fake_comments = lambda *args, **kwargs: []
         with (
             mock.patch.object(action, "_FETCH_COMMENTS", fake_comments),
@@ -137,7 +146,9 @@ class EbriskDependencyProfilesActionTests(unittest.TestCase):
         self.assertEqual(result["status"], "blocked")
         self.assertEqual(result["failure_class"], "profile_failure")
         self.assertIsNone(result["profiles"])
-        self.assertFalse(third.__dict__ if hasattr(third, "__dict__") else False)
+        first.assert_called_once_with()
+        second.assert_called_once_with()
+        third.assert_not_called()
 
     def test_trusted_bot_result_is_deduplicated_by_exact_sha(self) -> None:
         result = {
