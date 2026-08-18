@@ -38,23 +38,56 @@ class EbriskDependencyAcquisitionError(RuntimeError):
     """Raised when an exact receipted EBRISK candidate cannot be safely profiled."""
 
 
+_CANONICAL_OPEN_FIXED = _open_fixed
+_CANONICAL_MONOTONIC = time.monotonic
+_CANONICAL_READ_BOUNDED = _read_bounded
+_CANONICAL_REMAINING = _remaining
+_CANONICAL_VALIDATE_EXACT_RESPONSE = _validate_exact_response
+_CANONICAL_VALIDATE_TARGET = validate_target
+_CANONICAL_RAW_FILE_API_URL = raw_file_api_url
+_CANONICAL_REQUEST = urllib.request.Request
+_CANONICAL_TOTAL_DEADLINE_SECONDS = TOTAL_DEADLINE_SECONDS
+_CANONICAL_CONFIG_SPEC = bridge.config_spec
+_CANONICAL_EXTRACT_VERIFIED = bridge.extract_verified_ebrisk_dependencies
+_CANONICAL_CONFIG_SPECS = bridge.CONFIG_SPECS
+_CANONICAL_BRIDGE_FIXED_AUTHORITY = (
+    bridge.SCHEMA_VERSION,
+    bridge.SOURCE_ISSUE,
+    bridge.DATASET_ID,
+    bridge.PROJECT_ID,
+    bridge.PROJECT_PATH,
+    bridge.COMMIT_SHA,
+    bridge.RECEIPT_COMMENT_ID,
+    bridge.PARSER_ID,
+    tuple(
+        (spec.key, spec.operation_id, spec.repository_path, spec.byte_count, spec.sha256)
+        for spec in bridge.CONFIG_SPECS
+    ),
+)
+
+
 def _acquire_exact_payload(
-    key: str, *, opener: Any | None, monotonic: Any
+    key: str, *, opener: Any, monotonic: Any
 ) -> bytes:
+    """Private injectable byte acquisition helper for deterministic offline tests."""
+
     try:
-        spec = bridge.config_spec(key)
-        target = validate_target(
-            source_issue=bridge.SOURCE_ISSUE,
-            dataset_id=bridge.DATASET_ID,
-            project_id=bridge.PROJECT_ID,
-            commit_sha=bridge.COMMIT_SHA,
+        spec = _CANONICAL_CONFIG_SPEC(key)
+        target = _CANONICAL_VALIDATE_TARGET(
+            source_issue=_CANONICAL_BRIDGE_FIXED_AUTHORITY[1],
+            dataset_id=_CANONICAL_BRIDGE_FIXED_AUTHORITY[2],
+            project_id=_CANONICAL_BRIDGE_FIXED_AUTHORITY[3],
+            commit_sha=_CANONICAL_BRIDGE_FIXED_AUTHORITY[5],
             repository_path=spec.repository_path,
         )
     except (bridge.VerifiedEbriskConfigError, EfehrReceiptError) as exc:
         raise EbriskDependencyAcquisitionError("trusted EBRISK target is invalid") from exc
 
-    file_url = raw_file_api_url(target)
-    request = urllib.request.Request(
+    if target.project_path != _CANONICAL_BRIDGE_FIXED_AUTHORITY[4]:
+        raise EbriskDependencyAcquisitionError("trusted EBRISK project path drifted")
+
+    file_url = _CANONICAL_RAW_FILE_API_URL(target)
+    request = _CANONICAL_REQUEST(
         file_url,
         headers={
             "Accept": "text/plain,text/x-ini;q=0.9,application/octet-stream;q=0.8",
@@ -62,12 +95,11 @@ def _acquire_exact_payload(
         },
         method="GET",
     )
-    deadline = monotonic() + TOTAL_DEADLINE_SECONDS
-    open_response = opener or _open_fixed
+    deadline = monotonic() + _CANONICAL_TOTAL_DEADLINE_SECONDS
     try:
-        with open_response(request, timeout=_remaining(deadline, monotonic)) as response:
-            _validate_exact_response(response, file_url)
-            return _read_bounded(
+        with opener(request, timeout=_CANONICAL_REMAINING(deadline, monotonic)) as response:
+            _CANONICAL_VALIDATE_EXACT_RESPONSE(response, file_url)
+            return _CANONICAL_READ_BOUNDED(
                 response,
                 deadline=deadline,
                 maximum=spec.byte_count,
@@ -84,11 +116,13 @@ def _acquire_exact_payload(
 
 
 def _acquire_and_extract(
-    key: str, *, opener: Any | None, monotonic: Any
+    key: str, *, opener: Any, monotonic: Any
 ) -> dict[str, Any]:
-    raw = _acquire_exact_payload(key, opener=opener, monotonic=monotonic)
+    """Private injectable acquisition/verification helper for tests."""
+
+    raw = _CANONICAL_ACQUIRE_EXACT_PAYLOAD(key, opener=opener, monotonic=monotonic)
     try:
-        result = bridge.extract_verified_ebrisk_dependencies(key, raw)
+        result = _CANONICAL_EXTRACT_VERIFIED(key, raw)
     except bridge.VerifiedEbriskConfigError as exc:
         raise EbriskDependencyAcquisitionError(
             "EBRISK dependency verification failed closed"
@@ -109,19 +143,77 @@ def _acquire_and_extract(
     return result
 
 
-def acquire_group1_dependencies(
-    *, opener: Any | None = None, monotonic: Any = time.monotonic
-) -> dict[str, Any]:
-    return _acquire_and_extract("group1", opener=opener, monotonic=monotonic)
+_CANONICAL_ACQUIRE_EXACT_PAYLOAD = _acquire_exact_payload
+_CANONICAL_ACQUIRE_AND_EXTRACT = _acquire_and_extract
 
 
-def acquire_group2_dependencies(
-    *, opener: Any | None = None, monotonic: Any = time.monotonic
-) -> dict[str, Any]:
-    return _acquire_and_extract("group2", opener=opener, monotonic=monotonic)
+def _require_production_identity() -> None:
+    """Fail before provider I/O if any mutable production authority was rebound."""
+
+    identity_checks = (
+        (_open_fixed, _CANONICAL_OPEN_FIXED, "transport"),
+        (time.monotonic, _CANONICAL_MONOTONIC, "monotonic clock"),
+        (_read_bounded, _CANONICAL_READ_BOUNDED, "bounded reader"),
+        (_remaining, _CANONICAL_REMAINING, "deadline helper"),
+        (_validate_exact_response, _CANONICAL_VALIDATE_EXACT_RESPONSE, "response validator"),
+        (validate_target, _CANONICAL_VALIDATE_TARGET, "target validator"),
+        (raw_file_api_url, _CANONICAL_RAW_FILE_API_URL, "URL builder"),
+        (urllib.request.Request, _CANONICAL_REQUEST, "request constructor"),
+        (bridge.config_spec, _CANONICAL_CONFIG_SPEC, "config selector"),
+        (bridge.extract_verified_ebrisk_dependencies, _CANONICAL_EXTRACT_VERIFIED, "verified parser"),
+        (_acquire_exact_payload, _CANONICAL_ACQUIRE_EXACT_PAYLOAD, "private byte helper"),
+        (_acquire_and_extract, _CANONICAL_ACQUIRE_AND_EXTRACT, "private verifier helper"),
+    )
+    for observed, expected, label in identity_checks:
+        if observed is not expected:
+            raise EbriskDependencyAcquisitionError(
+                f"frozen EBRISK dependency {label} drifted"
+            )
+
+    if bridge.CONFIG_SPECS is not _CANONICAL_CONFIG_SPECS:
+        raise EbriskDependencyAcquisitionError("frozen EBRISK dependency config specs drifted")
+    observed_bridge = (
+        bridge.SCHEMA_VERSION,
+        bridge.SOURCE_ISSUE,
+        bridge.DATASET_ID,
+        bridge.PROJECT_ID,
+        bridge.PROJECT_PATH,
+        bridge.COMMIT_SHA,
+        bridge.RECEIPT_COMMENT_ID,
+        bridge.PARSER_ID,
+        tuple(
+            (spec.key, spec.operation_id, spec.repository_path, spec.byte_count, spec.sha256)
+            for spec in bridge.CONFIG_SPECS
+        ),
+    )
+    if observed_bridge != _CANONICAL_BRIDGE_FIXED_AUTHORITY:
+        raise EbriskDependencyAcquisitionError("frozen EBRISK dependency bridge authority drifted")
+    if TOTAL_DEADLINE_SECONDS != _CANONICAL_TOTAL_DEADLINE_SECONDS:
+        raise EbriskDependencyAcquisitionError("frozen EBRISK dependency deadline drifted")
 
 
-def acquire_iceland_dependencies(
-    *, opener: Any | None = None, monotonic: Any = time.monotonic
-) -> dict[str, Any]:
-    return _acquire_and_extract("iceland", opener=opener, monotonic=monotonic)
+def acquire_group1_dependencies() -> dict[str, Any]:
+    """Profile the fixed receipted Group1 config under code-owned production authority."""
+
+    _require_production_identity()
+    return _CANONICAL_ACQUIRE_AND_EXTRACT(
+        "group1", opener=_CANONICAL_OPEN_FIXED, monotonic=_CANONICAL_MONOTONIC
+    )
+
+
+def acquire_group2_dependencies() -> dict[str, Any]:
+    """Profile the fixed receipted Group2 config under code-owned production authority."""
+
+    _require_production_identity()
+    return _CANONICAL_ACQUIRE_AND_EXTRACT(
+        "group2", opener=_CANONICAL_OPEN_FIXED, monotonic=_CANONICAL_MONOTONIC
+    )
+
+
+def acquire_iceland_dependencies() -> dict[str, Any]:
+    """Profile the fixed receipted Iceland config under code-owned production authority."""
+
+    _require_production_identity()
+    return _CANONICAL_ACQUIRE_AND_EXTRACT(
+        "iceland", opener=_CANONICAL_OPEN_FIXED, monotonic=_CANONICAL_MONOTONIC
+    )
