@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import re
 import unittest
 from pathlib import Path
 
@@ -62,6 +63,15 @@ class ExposureTreeWorkflowContractTests(unittest.TestCase):
             "model_use_authorized == false",
         ):
             self.assertIn(literal, publish)
+
+    def test_every_jq_exact_key_list_is_lexically_canonical(self) -> None:
+        publish = self.text.split("publish-exposure-tree:", 1)[1]
+        matches = re.findall(r"keys == \[(.*?)\]", publish)
+        self.assertGreaterEqual(len(matches), 3)
+        for raw in matches:
+            fields = re.findall(r'"([a-z0-9_]+)"', raw)
+            self.assertGreater(len(fields), 0)
+            self.assertEqual(fields, sorted(fields))
 
     def test_publisher_checks_path_order_uniqueness_and_blocked_shape(self) -> None:
         publish = self.text.split("publish-exposure-tree:", 1)[1]
