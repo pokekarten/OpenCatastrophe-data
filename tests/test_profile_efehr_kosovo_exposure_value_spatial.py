@@ -8,6 +8,7 @@ import hashlib
 import io
 import json
 import unittest
+from decimal import localcontext
 
 from scripts import profile_efehr_kosovo_exposure_value_spatial as target
 
@@ -116,6 +117,33 @@ class ExposureValueSpatialProfileTests(unittest.TestCase):
         self.assertFalse(profile["valuation_vintage_verified"])
         self.assertFalse(profile["sentinel_semantics_verified"])
         self.assertFalse(profile["row_business_key_verified"])
+
+    def test_high_precision_diagnostics_are_independent_of_ambient_decimal_context(self) -> None:
+        exact_total = "123456789012345678901234567890123456789"
+        row = _base_row()
+        row["TOTAL_REPL_COST_EUR"] = exact_total
+        row["COST_STRUCTURAL_EUR"] = "123456789012345678901234567890123456700"
+        row["COST_NONSTRUCTURAL_EUR"] = "80"
+        row["COST_CONTENTS_EUR"] = "8"
+        raw = _csv_bytes([row])
+
+        with localcontext() as context:
+            context.prec = 7
+            profile = _profile(raw)
+
+        total_summary = profile["numeric_fields"]["TOTAL_REPL_COST_EUR"]
+        self.assertEqual(total_summary["minimum"], exact_total)
+        self.assertEqual(total_summary["maximum"], exact_total)
+        self.assertEqual(
+            profile["replacement_cost_component_diagnostic"][
+                "maximum_absolute_residual_eur"
+            ],
+            "1",
+        )
+        self.assertEqual(
+            profile["replacement_cost_component_diagnostic"]["nonzero_residual_count"],
+            1,
+        )
 
     def test_synthetic_caller_receipt_cannot_assert_frozen_dataset_identity(self) -> None:
         raw = _csv_bytes([_base_row()])
