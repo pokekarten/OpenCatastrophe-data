@@ -377,12 +377,136 @@ def _changed_blob_identity_sha256(changed: list[dict[str, Any]]) -> str:
     return hashlib.sha256("".join(canonical_parts).encode("utf-8")).hexdigest()
 
 
-def profile_candidate_trees(
-    *,
-    opener: Any | None = None,
-    monotonic: Any | None = None,
-) -> dict[str, Any]:
-    """Return bounded changed-blob metadata across the three trusted candidates."""
+# Canonical production authority is captured only after every evidence-defining
+# helper exists. The public production entry point validates this complete
+# closure before any provider I/O. Synthetic seams remain private for tests.
+_CANONICAL_CANDIDATE_HISTORY_OBJECT = CANDIDATE_HISTORY
+_CANONICAL_CANDIDATE_HISTORY = tuple(
+    (
+        item["commit_sha"],
+        item["committed_at_utc"],
+        tuple(item["parent_shas"]),
+    )
+    for item in CANDIDATE_HISTORY
+)
+_CANONICAL_ALLOWED_ENTRY_FIELDS_OBJECT = _ALLOWED_ENTRY_FIELDS
+_CANONICAL_ALLOWED_ENTRY_FIELDS = frozenset(_ALLOWED_ENTRY_FIELDS)
+_CANONICAL_SHA1_RE = _SHA1_RE
+_CANONICAL_PROVIDER_ROOT = PROVIDER_ROOT
+_CANONICAL_POLICY = (
+    SCHEMA_VERSION,
+    SOURCE_ISSUE,
+    PROJECT_ID,
+    PROJECT_PATH,
+    HISTORY_IDENTITY_SHA256,
+    PER_PAGE,
+    MAX_PAGES_PER_COMMIT,
+    MAX_PAGE_BYTES,
+    MAX_ENTRIES_PER_COMMIT,
+    MAX_CHANGED_BLOBS,
+    MAX_PATH_UTF8_BYTES,
+    TOTAL_DEADLINE_SECONDS,
+)
+_SHA256 = hashlib.sha256
+_JSON_LOADS = json.loads
+_MATH_ISFINITE = math.isfinite
+_URLENCODE = urllib.parse.urlencode
+_REQUEST = urllib.request.Request
+_RE_FULLMATCH = re.fullmatch
+_PURE_POSIX_PATH = PurePosixPath
+_STRICT_JSON = _strict_json
+_BOUNDED_TEXT = _bounded_text
+_HISTORY_IDENTITY = _history_identity_sha256
+_TREE_URL = _tree_url
+_PAGINATION_NEXT = _pagination_next
+_VALIDATE_ENTRY = _validate_entry
+_TREE_IDENTITY = _tree_identity_sha256
+_READ_TREE = _read_tree
+_BLOB_STATE = _blob_state
+_CHANGED_BLOBS = _changed_blobs
+_CHANGED_BLOB_IDENTITY = _changed_blob_identity_sha256
+
+
+def _candidate_history_rows() -> tuple[tuple[str, str, tuple[str, ...]], ...]:
+    try:
+        return tuple(
+            (
+                item["commit_sha"],
+                item["committed_at_utc"],
+                tuple(item["parent_shas"]),
+            )
+            for item in CANDIDATE_HISTORY
+        )
+    except (KeyError, TypeError) as exc:
+        raise SiteModelCandidateTreeError(
+            "candidate-tree history production authority drifted"
+        ) from exc
+
+
+def _require_production_authority() -> None:
+    current_policy = (
+        SCHEMA_VERSION,
+        SOURCE_ISSUE,
+        PROJECT_ID,
+        PROJECT_PATH,
+        HISTORY_IDENTITY_SHA256,
+        PER_PAGE,
+        MAX_PAGES_PER_COMMIT,
+        MAX_PAGE_BYTES,
+        MAX_ENTRIES_PER_COMMIT,
+        MAX_CHANGED_BLOBS,
+        MAX_PATH_UTF8_BYTES,
+        TOTAL_DEADLINE_SECONDS,
+    )
+    if current_policy != _CANONICAL_POLICY or PROVIDER_ROOT != _CANONICAL_PROVIDER_ROOT:
+        raise SiteModelCandidateTreeError(
+            "candidate-tree fixed production policy drifted"
+        )
+    if (
+        CANDIDATE_HISTORY is not _CANONICAL_CANDIDATE_HISTORY_OBJECT
+        or _candidate_history_rows() != _CANONICAL_CANDIDATE_HISTORY
+    ):
+        raise SiteModelCandidateTreeError(
+            "candidate-tree history production authority drifted"
+        )
+    if (
+        _ALLOWED_ENTRY_FIELDS is not _CANONICAL_ALLOWED_ENTRY_FIELDS_OBJECT
+        or frozenset(_ALLOWED_ENTRY_FIELDS) != _CANONICAL_ALLOWED_ENTRY_FIELDS
+        or _SHA1_RE is not _CANONICAL_SHA1_RE
+        or _SHA1_RE.pattern != r"^[0-9a-f]{40}$"
+        or _SHA1_RE.flags != re.UNICODE
+    ):
+        raise SiteModelCandidateTreeError(
+            "candidate-tree entry policy production authority drifted"
+        )
+    if (
+        hashlib.sha256 is not _SHA256
+        or json.loads is not _JSON_LOADS
+        or math.isfinite is not _MATH_ISFINITE
+        or urllib.parse.urlencode is not _URLENCODE
+        or urllib.request.Request is not _REQUEST
+        or re.fullmatch is not _RE_FULLMATCH
+        or PurePosixPath is not _PURE_POSIX_PATH
+    ):
+        raise SiteModelCandidateTreeError(
+            "candidate-tree primitive production authority drifted"
+        )
+    if (
+        _strict_json is not _STRICT_JSON
+        or _bounded_text is not _BOUNDED_TEXT
+        or _history_identity_sha256 is not _HISTORY_IDENTITY
+        or _tree_url is not _TREE_URL
+        or _pagination_next is not _PAGINATION_NEXT
+        or _validate_entry is not _VALIDATE_ENTRY
+        or _tree_identity_sha256 is not _TREE_IDENTITY
+        or _read_tree is not _READ_TREE
+        or _blob_state is not _BLOB_STATE
+        or _changed_blobs is not _CHANGED_BLOBS
+        or _changed_blob_identity_sha256 is not _CHANGED_BLOB_IDENTITY
+    ):
+        raise SiteModelCandidateTreeError(
+            "candidate-tree evidence production authority drifted"
+        )
     if (
         transport._open_fixed is not _OPEN_FIXED
         or transport._read_bounded is not _READ_BOUNDED
@@ -393,16 +517,21 @@ def profile_candidate_trees(
         raise SiteModelCandidateTreeError(
             "trusted EFEHR candidate-tree transport authority drifted"
         )
-    if PROJECT_ID != 278 or PROJECT_PATH != "efehr/esrm20_sitemodel":
-        raise SiteModelCandidateTreeError("fixed candidate-tree authority drifted")
     if _history_identity_sha256() != HISTORY_IDENTITY_SHA256:
         raise SiteModelCandidateTreeError(
             "trusted site-tool history candidate identity drifted"
         )
 
-    clock = monotonic or _MONOTONIC
-    open_response = opener or _OPEN_FIXED
-    deadline = clock() + TOTAL_DEADLINE_SECONDS
+
+_REQUIRE_PRODUCTION_AUTHORITY = _require_production_authority
+
+
+def _profile_candidate_trees_for_test(
+    *,
+    opener: Any,
+    monotonic: Any,
+) -> dict[str, Any]:
+    deadline = monotonic() + TOTAL_DEADLINE_SECONDS
     trees: list[tuple[str, list[dict[str, str]]]] = []
     profiles: list[dict[str, Any]] = []
 
@@ -410,9 +539,9 @@ def profile_candidate_trees(
         commit_sha = history_item["commit_sha"]
         entries, pages_read = _read_tree(
             commit_sha,
-            opener=open_response,
+            opener=opener,
             deadline=deadline,
-            monotonic=clock,
+            monotonic=monotonic,
         )
         trees.append((commit_sha, entries))
         profiles.append(
@@ -445,3 +574,23 @@ def profile_candidate_trees(
         "publication_authorized": False,
         "model_use_authorized": False,
     }
+
+
+_PROFILE_FOR_TEST = _profile_candidate_trees_for_test
+
+
+def profile_candidate_trees() -> dict[str, Any]:
+    """Return bounded changed-blob metadata using only canonical production authority."""
+    if _profile_candidate_trees_for_test is not _PROFILE_FOR_TEST:
+        raise SiteModelCandidateTreeError(
+            "candidate-tree execution production authority drifted"
+        )
+    if _require_production_authority is not _REQUIRE_PRODUCTION_AUTHORITY:
+        raise SiteModelCandidateTreeError(
+            "candidate-tree production authority guard drifted"
+        )
+    _REQUIRE_PRODUCTION_AUTHORITY()
+    return _PROFILE_FOR_TEST(
+        opener=_OPEN_FIXED,
+        monotonic=_MONOTONIC,
+    )
