@@ -13,6 +13,11 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "manifests/efehr.esrm20.european-exposure-model.v1.0.json"
 
 EXPECTED_SOURCE_SHA256 = "4d562ad4925c527d518834b8dcd39a083cfd3b87b622031a84958ae7b4d8c5ea"
+EXPECTED_SOURCE_BYTES = 316789
+EXPECTED_SOURCE_STORAGE = (
+    "external://source/efehr.esrm20.european-exposure-model.v1.0/"
+    "kosovo-residential/raw/4d562ad4925c527d518834b8dcd39a083cfd3b87b622031a84958ae7b4d8c5ea"
+)
 EXPECTED_TAXONOMY_SHA256 = "d5e6fe4e32489cdd2222b6b3facfd30937e2af61bbcf0ecead37ccf97202a945"
 EXPECTED_EXECUTION_SHA = "f2fcfa1d94f1a44f738353ef0bae8d467351a2eb"
 EXPECTED_REPRESENTATION = "oc-taxonomy-u64be-utf8-sorted-v1"
@@ -28,7 +33,14 @@ class Esrm20KosovoTaxonomyDerivedAdmissionTests(unittest.TestCase):
         manifest = self.load_manifest()
 
         self.assertEqual(manifest["review"]["status"], "approved_derived")
-        self.assertIsNone(manifest["raw_artifact"])
+        self.assertEqual(
+            manifest["raw_artifact"],
+            {
+                "byte_size": EXPECTED_SOURCE_BYTES,
+                "sha256": EXPECTED_SOURCE_SHA256,
+                "storage_reference": EXPECTED_SOURCE_STORAGE,
+            },
+        )
         self.assertEqual(
             manifest["derived_artifact"],
             {
@@ -49,12 +61,17 @@ class Esrm20KosovoTaxonomyDerivedAdmissionTests(unittest.TestCase):
 
         validate_manifest.assert_public_asset_allowed(manifest, "derived")
 
-    def test_raw_source_publication_remains_blocked(self) -> None:
+    def test_raw_source_identity_is_recorded_but_publication_remains_blocked(self) -> None:
         manifest = self.load_manifest()
 
+        self.assertEqual(manifest["raw_artifact"]["sha256"], EXPECTED_SOURCE_SHA256)
+        self.assertEqual(manifest["raw_artifact"]["byte_size"], EXPECTED_SOURCE_BYTES)
+        self.assertEqual(
+            manifest["raw_artifact"]["storage_reference"], EXPECTED_SOURCE_STORAGE
+        )
         with self.assertRaisesRegex(
             validate_manifest.ManifestError,
-            "asset kind exceeds repository review scope|raw publication requires raw_artifact identity",
+            "asset kind exceeds repository review scope",
         ):
             validate_manifest.assert_public_asset_allowed(manifest, "raw")
 
@@ -85,6 +102,7 @@ class Esrm20KosovoTaxonomyDerivedAdmissionTests(unittest.TestCase):
         self.assertIn("mapping outcomes", review_notes)
         self.assertIn("vulnerability selections", review_notes)
         self.assertIn("model inputs", review_notes)
+        self.assertIn("reproducibility/run-evidence binding only", review_notes)
 
 
 if __name__ == "__main__":

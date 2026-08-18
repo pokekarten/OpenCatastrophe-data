@@ -34,7 +34,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Intended use:** Open European building-stock exposure reference for catastrophe-risk research, exposure-contract testing and hazard/vulnerability linkage. The approved derived scope is limited to the exact Kosovo-residential source TAXONOMY set identity; this is not an insured portfolio, policy file, claims dataset or direct statement of total insured value.
 
-**Raw artifact:** `null`
+## Raw artifact
+
+**Byte size:** `316789`
+
+**Sha256:** 4d562ad4925c527d518834b8dcd39a083cfd3b87b622031a84958ae7b4d8c5ea
+
+**Storage reference:** external://source/efehr.esrm20.european-exposure-model.v1.0/kosovo-residential/raw/4d562ad4925c527d518834b8dcd39a083cfd3b87b622031a84958ae7b4d8c5ea
 
 ## Derived artifact
 
@@ -143,4 +149,4 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Reviewer:** OpenCatastrophe source audit
 
-**Notes:** Asset-specific approval is limited to the exact canonical taxonomy-set byte stream produced from the frozen Kosovo-residential exposure source: 2666 bytes, SHA-256 d5e6fe4e32489cdd2222b6b3facfd30937e2af61bbcf0ecead37ccf97202a945, representation oc-taxonomy-u64be-utf8-sorted-v1, literal source field TAXONOMY, count 86, no normalization. Canonical byte construction is bound to f2fcfa1d94f1a44f738353ef0bae8d467351a2eb:scripts/acquire_efehr_kosovo_taxonomy.py::_canonical_artifact_identity; scripts/extract_efehr_kosovo_taxonomy.py at the same execution SHA remains the upstream verified extraction dependency. Trusted identity evidence is GitHub Action result comment 5303346187 on Issue \#363, executed from f2fcfa1d94f1a44f738353ef0bae8d467351a2eb. Current EFEHR CC BY 4.0 data-access and download guidance was rechecked on 2026-08-15. This approval does not admit the 316789-byte raw Kosovo CSV, alternate serializations of the taxonomy values, mapping outcomes, vulnerability selections, model inputs, insured-loss semantics or any broader ESRM20 artifact.
+**Notes:** Asset-specific approval is limited to the exact canonical taxonomy-set byte stream produced from the frozen Kosovo-residential exposure source: 2666 bytes, SHA-256 d5e6fe4e32489cdd2222b6b3facfd30937e2af61bbcf0ecead37ccf97202a945, representation oc-taxonomy-u64be-utf8-sorted-v1, literal source field TAXONOMY, count 86, no normalization. Canonical byte construction is bound to f2fcfa1d94f1a44f738353ef0bae8d467351a2eb:scripts/acquire_efehr_kosovo_taxonomy.py::_canonical_artifact_identity; scripts/extract_efehr_kosovo_taxonomy.py at the same execution SHA remains the upstream verified extraction dependency. Trusted identity evidence is GitHub Action result comment 5303346187 on Issue \#363, executed from f2fcfa1d94f1a44f738353ef0bae8d467351a2eb. Current EFEHR CC BY 4.0 data-access and download guidance was rechecked on 2026-08-15. This approval does not admit the 316789-byte raw Kosovo CSV, alternate serializations of the taxonomy values, mapping outcomes, vulnerability selections, model inputs, insured-loss semantics or any broader ESRM20 artifact. The raw_artifact field records the exact trusted Kosovo-residential source-byte identity for reproducibility/run-evidence binding only; review.status remains approved_derived and does not authorize raw publication, model-input admission or model use.
