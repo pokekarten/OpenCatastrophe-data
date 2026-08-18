@@ -3,11 +3,11 @@
 
 """Profile only immutable ESRM20 v1.0 ``Exposure_30arcsec`` tree metadata.
 
-This module is deliberately closed to EFEHR GitLab project 269, release v1.0,
-the already frozen commit, and one fixed repository subtree.  It never requests
-repository file contents or archives.  Provider paths containing the exact
-source spelling ``Kosovo`` and ending in ``.xml`` are reported only as named
-metadata candidates; no candidate is selected for execution or scientific use.
+This operation is closed to EFEHR GitLab project 269, release v1.0, the frozen
+immutable commit, and one fixed repository subtree. It never requests repository
+file contents or archives. Paths containing the provider spelling ``Kosovo``
+and ending in ``.xml`` are reported only as metadata candidates; no candidate is
+selected for execution, publication, or scientific use.
 """
 
 from __future__ import annotations
@@ -193,8 +193,7 @@ def _canonical_entry(raw: object) -> dict[str, str]:
         raise ExposureTreeProfileError("exposure tree path is not canonical relative POSIX")
     if pure.name != name:
         raise ExposureTreeProfileError("exposure tree path/name identity drifted")
-    prefix = SUBTREE_PATH + "/"
-    if not path.startswith(prefix):
+    if not path.startswith(SUBTREE_PATH + "/"):
         raise ExposureTreeProfileError("exposure tree entry escaped fixed subtree")
     return {
         "id": object_id,
@@ -205,10 +204,13 @@ def _canonical_entry(raw: object) -> dict[str, str]:
     }
 
 
-def _pagination_next(headers: object, *, page: int) -> int | None:
-    raw_page = _HEADER_VALUE(headers, "X-Page")
-    raw_per_page = _HEADER_VALUE(headers, "X-Per-Page")
-    raw_next = _HEADER_VALUE(headers, "X-Next-Page")
+def _pagination_next(response: object, *, page: int) -> int | None:
+    try:
+        raw_page = _HEADER_VALUE(response, "X-Page")
+        raw_per_page = _HEADER_VALUE(response, "X-Per-Page")
+        raw_next = _HEADER_VALUE(response, "X-Next-Page")
+    except transport.EfehrAcquisitionError as exc:
+        raise ExposureTreeProfileError("exposure tree pagination header is invalid") from exc
     if raw_page != str(page) or raw_per_page != str(TREE_PER_PAGE):
         raise ExposureTreeProfileError("exposure tree pagination identity drifted")
     if raw_next == "":
@@ -240,7 +242,13 @@ def _resolve_tag_commit(*, opener: Any, monotonic: Any, deadline: float) -> tupl
                 maximum=MAX_TAG_BYTES,
                 monotonic=monotonic,
             )
-    except (OSError, urllib.error.URLError, urllib.error.HTTPError, TimeoutError, transport.EfehrAcquisitionError) as exc:
+    except (
+        OSError,
+        urllib.error.URLError,
+        urllib.error.HTTPError,
+        TimeoutError,
+        transport.EfehrAcquisitionError,
+    ) as exc:
         raise ExposureTreeProfileError(
             "exposure v1.0 tag acquisition failed closed",
             failure_class="tag_metadata_acquisition_failure",
@@ -309,8 +317,16 @@ def _inventory_tree(
                         monotonic=monotonic,
                     )
                     values = _strict_json_array(raw)
-                    next_page = _pagination_next(response.headers, page=page)
-            except (OSError, urllib.error.URLError, urllib.error.HTTPError, TimeoutError, transport.EfehrAcquisitionError) as exc:
+                    next_page = _pagination_next(response, page=page)
+            except ExposureTreeProfileError:
+                raise
+            except (
+                OSError,
+                urllib.error.URLError,
+                urllib.error.HTTPError,
+                TimeoutError,
+                transport.EfehrAcquisitionError,
+            ) as exc:
                 raise ExposureTreeProfileError(
                     "exposure subtree acquisition failed closed",
                     failure_class="tree_metadata_acquisition_failure",
