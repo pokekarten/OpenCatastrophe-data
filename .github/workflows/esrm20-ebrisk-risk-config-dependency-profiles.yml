@@ -53,7 +53,7 @@ jobs:
         run: |
           set -euo pipefail
           EXECUTION_SHA="$(git rev-parse HEAD)"
-          python scripts/run_esrm20_ebrisk_risk_config_dependency_profiles_action.py \
+          python -m scripts.run_esrm20_ebrisk_risk_config_dependency_profiles_action \
             --comment-body-env OC_EBRISK_DEP_REQUEST \
             --expected-issue 281 \
             --execution-sha "$EXECUTION_SHA" \
