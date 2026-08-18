@@ -1,0 +1,158 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Exposure v1.0 Tree Inventory
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-exposure-v10-tree-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  execute-exposure-tree:
+    name: Execute exact trusted-main exposure tree inventory
+    if: >-
+      github.event.issue.number == 282 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-exposure-v10-tree-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.run.outputs.execution_sha }}
+      skip: ${{ steps.run.outputs.skip }}
+      result_json: ${{ steps.run.outputs.result_json }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Validate request and inventory fixed exposure subtree
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OC_EXPOSURE_TREE_REQUEST: ${{ github.event.comment.body }}
+          RESULT_PATH: ${{ runner.temp }}/esrm20-exposure-v10-tree.json
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/run_esrm20_exposure_v10_tree_action.py \
+            --comment-body-env OC_EXPOSURE_TREE_REQUEST \
+            --expected-issue 282 \
+            --execution-sha "$EXECUTION_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --token-env GH_TOKEN \
+            --output "$RESULT_PATH"
+          STATUS="$(jq -r '.status' "$RESULT_PATH")"
+          test "$STATUS" = "pass" -o "$STATUS" = "blocked" -o "$STATUS" = "duplicate"
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+          if test "$STATUS" = "duplicate"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "result_json=" >> "$GITHUB_OUTPUT"
+          else
+            RESULT_JSON="$(jq -cS . "$RESULT_PATH")"
+            test -n "$RESULT_JSON"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish-exposure-tree:
+    name: Publish bounded exposure tree metadata
+    needs: [execute-exposure-tree]
+    if: >-
+      needs.execute-exposure-tree.result == 'success' &&
+      needs.execute-exposure-tree.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Independently re-fence and publish without checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.execute-exposure-tree.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-exposure-tree.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-exposure-v10-tree-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            def bounded_text:
+              type == "string" and length > 0 and . == (gsub("^[[:space:]]+|[[:space:]]+$"; "")) and
+              utf8bytelength <= 2048 and (test("[[:cntrl:]]") | not);
+            def safe_path:
+              bounded_text and startswith("Exposure_30arcsec/") and
+              (contains("\\") | not) and
+              (split("/") | all(. != "" and . != "." and . != ".."));
+            def candidate:
+              keys == ["mode","object_sha1","path","type"] and
+              .type == "blob" and (.mode == "100644" or .mode == "100755") and
+              (.object_sha1 | type == "string" and test("^[0-9a-f]{40}$")) and
+              (.path | safe_path) and
+              (.path | split("/")[-1] | contains("Kosovo") and endswith(".xml"));
+            keys == ["exact_kosovo_exposure_selected","execution_sha","external_bytes_persisted","failure_class","model_use_authorized","profile","provider_file_bytes_read","publication_authorized","schema_version","source_issue","status","target_sha","value_structural_wiring_verified"] and
+            .schema_version == "oc-esrm20-exposure-v10-tree-result-v1" and
+            .source_issue == 282 and .target_sha == $sha and .execution_sha == $sha and
+            (.status == "pass" or .status == "blocked") and
+            .provider_file_bytes_read == false and
+            .external_bytes_persisted == false and
+            .exact_kosovo_exposure_selected == false and
+            .value_structural_wiring_verified == false and
+            .publication_authorized == false and
+            .model_use_authorized == false and
+            (if .status == "pass" then
+              .failure_class == null and .profile != null and
+              (.profile | keys == ["blob_count","commit_sha","dataset_id","entry_count","exact_kosovo_exposure_selected","external_bytes_persisted","kosovo_named_xml_candidates","model_use_authorized","pages_read","project_id","project_path","provider_file_bytes_read","publication_authorized","release_tag","schema_version","source_issue","subtree_path","tree_count","tree_identity_sha256","value_structural_wiring_verified"]) and
+              .profile.schema_version == "oc-esrm20-exposure-v10-tree-profile-v1" and
+              .profile.source_issue == 282 and
+              .profile.dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+              .profile.project_id == 269 and .profile.project_path == "efehr/esrm20" and
+              .profile.release_tag == "v1.0" and
+              .profile.commit_sha == "05f83bbc9df81d02ee8ddb1801d9d781355ce783" and
+              .profile.subtree_path == "Exposure_30arcsec" and
+              (.profile.pages_read | type == "number" and . == floor and . >= 1 and . <= 30) and
+              (.profile.entry_count | type == "number" and . == floor and . >= 1 and . <= 3000) and
+              (.profile.blob_count | type == "number" and . == floor and . >= 0) and
+              (.profile.tree_count | type == "number" and . == floor and . >= 0) and
+              .profile.entry_count == (.profile.blob_count + .profile.tree_count) and
+              (.profile.tree_identity_sha256 | type == "string" and test("^[0-9a-f]{64}$")) and
+              (.profile.kosovo_named_xml_candidates | type == "array" and length >= 1 and length <= 16 and all(candidate)) and
+              ([.profile.kosovo_named_xml_candidates[].path] == ([.profile.kosovo_named_xml_candidates[].path] | sort)) and
+              (([.profile.kosovo_named_xml_candidates[].path] | unique | length) == (.profile.kosovo_named_xml_candidates | length)) and
+              .profile.provider_file_bytes_read == false and
+              .profile.external_bytes_persisted == false and
+              .profile.exact_kosovo_exposure_selected == false and
+              .profile.value_structural_wiring_verified == false and
+              .profile.publication_authorized == false and
+              .profile.model_use_authorized == false
+            else
+              (.failure_class == "tag_metadata_acquisition_failure" or
+               .failure_class == "tag_metadata_validation_failure" or
+               .failure_class == "tree_metadata_acquisition_failure" or
+               .failure_class == "tree_metadata_validation_failure" or
+               .failure_class == "candidate_resolution_failure") and
+              .profile == null
+            end)
+          ' >/dev/null
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/exposure-tree-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/282/comments" \
+            --input "$RUNNER_TEMP/exposure-tree-comment.json"
