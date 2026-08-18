@@ -11,6 +11,7 @@ from unittest import mock
 from scripts import profile_esrm20_exposure_v10_tree as profile
 
 COMMIT = profile.EXPECTED_COMMIT_SHA
+ANNOTATED_TAG_OBJECT = "f" * 40
 
 
 class FakeHeaders(dict):
@@ -75,7 +76,7 @@ class ExposureV10TreeProfileTests(unittest.TestCase):
                     _json_bytes(
                         {
                             "name": "v1.0",
-                            "target": COMMIT,
+                            "target": ANNOTATED_TAG_OBJECT,
                             "commit": {"id": COMMIT},
                         }
                     ),
@@ -190,6 +191,27 @@ class ExposureV10TreeProfileTests(unittest.TestCase):
 
         with self.assertRaisesRegex(profile.ExposureTreeProfileError, "not contiguous"):
             profile._profile_v10_tree_for_test(opener=opener, monotonic=lambda: 0.0)
+
+    def test_invalid_tag_target_object_fails_before_tree_request(self) -> None:
+        calls = 0
+
+        def opener(request, timeout):
+            nonlocal calls
+            calls += 1
+            return FakeResponse(
+                _json_bytes(
+                    {
+                        "name": "v1.0",
+                        "target": "not-a-git-object",
+                        "commit": {"id": COMMIT},
+                    }
+                ),
+                request.full_url,
+            )
+
+        with self.assertRaisesRegex(profile.ExposureTreeProfileError, "target object id"):
+            profile._profile_v10_tree_for_test(opener=opener, monotonic=lambda: 0.0)
+        self.assertEqual(calls, 1)
 
     def test_repointed_tag_fails_before_tree_request(self) -> None:
         calls = 0
