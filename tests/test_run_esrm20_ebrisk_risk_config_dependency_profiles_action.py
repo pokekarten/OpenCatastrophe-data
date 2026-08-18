@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 import unittest
 from unittest import mock
 
@@ -13,6 +14,7 @@ from scripts import verify_esrm20_ebrisk_risk_config_dependencies as bridge
 
 SHA = "a" * 40
 NOW = "2026-08-18T12:40:00Z"
+WORKFLOW_PATH = Path(".github/workflows/esrm20-ebrisk-risk-config-dependency-profiles.yml")
 
 
 def request_body(**extra: object) -> str:
@@ -172,6 +174,29 @@ class EbriskDependencyProfilesActionTests(unittest.TestCase):
                     execution_sha=SHA,
                 )
             )
+
+    def test_privileged_publisher_rejects_wider_dynamic_profile_shapes(self) -> None:
+        workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+        publisher = workflow.split("publish-dependency-profiles:", 1)[1]
+        required_fences = (
+            "test \"$(printf '%s' \"$RESULT_JSON\" | wc -c)\" -le 96000",
+            "def bounded_text:",
+            "utf8bytelength >= 1 and utf8bytelength <= 2048",
+            "explode | all(. >= 32 and . != 127)",
+            "def safe_resolved_path:",
+            'contains("\\\\") | not',
+            '(.profiled_at | type) == "string"',
+            'all(.dependencies[];',
+            '(.section | bounded_text)',
+            '(.option | bounded_text)',
+            '(.raw_path | bounded_text)',
+            '(.resolved_path | safe_resolved_path)',
+            'sort_by([.resolved_path,.section,.option,.raw_path])',
+            '[.dependencies[] | [.section,.option,.resolved_path]] | unique | length',
+        )
+        for fence in required_fences:
+            with self.subTest(fence=fence):
+                self.assertIn(fence, publisher)
 
 
 if __name__ == "__main__":
