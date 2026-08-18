@@ -517,6 +517,9 @@ def _require_production_authority() -> None:
         )
 
 
+_REQUIRE_PRODUCTION_AUTHORITY = _require_production_authority
+
+
 def _profile_candidate_trees_for_test(
     *,
     opener: Any,
@@ -576,7 +579,11 @@ def profile_candidate_trees() -> dict[str, Any]:
         raise SiteModelCandidateTreeError(
             "candidate-tree execution production authority drifted"
         )
-    _require_production_authority()
+    if _require_production_authority is not _REQUIRE_PRODUCTION_AUTHORITY:
+        raise SiteModelCandidateTreeError(
+            "candidate-tree production authority guard drifted"
+        )
+    _REQUIRE_PRODUCTION_AUTHORITY()
     return _PROFILE_FOR_TEST(
         opener=_OPEN_FIXED,
         monotonic=_MONOTONIC,
