@@ -352,6 +352,38 @@ class WorkbookIdentityProfileTests(unittest.TestCase):
         ):
             profile._scan_workbook(entity)
 
+    def test_utf16_entity_documents_fail_closed_before_xml_interpretation(self) -> None:
+        utf16_shared = (
+            '<?xml version="1.0" encoding="UTF-16"?>'
+            '<!DOCTYPE sst [<!ENTITY ev "Greece_07-9-1999">'
+            '<!ENTITY city "Athens 1999">]>'
+            '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            '<si><t>&ev;</t></si><si><t>&city;</t></si></sst>'
+        ).encode("utf-16")
+        payload = _xlsx(self._happy_rows(), shared_xml_override=utf16_shared)
+        with self.assertRaisesRegex(
+            profile.ScenarioWorkbookIdentityError,
+            "XML encoding is outside policy",
+        ):
+            profile._scan_workbook(payload)
+
+        utf16_sheet = (
+            '<?xml version="1.0" encoding="UTF-16"?>'
+            '<!DOCTYPE worksheet [<!ENTITY ev "Greece_07-9-1999">'
+            '<!ENTITY city "Athens 1999">]>'
+            '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            '<sheetData><row r="1">'
+            '<c r="A1" t="inlineStr"><is><t>&ev;</t></is></c>'
+            '<c r="B1" t="inlineStr"><is><t>&city;</t></is></c>'
+            '</row></sheetData></worksheet>'
+        ).encode("utf-16")
+        payload = _xlsx(self._happy_rows(), sheet_xml_override=utf16_sheet)
+        with self.assertRaisesRegex(
+            profile.ScenarioWorkbookIdentityError,
+            "XML encoding is outside policy",
+        ):
+            profile._scan_workbook(payload)
+
     def test_only_workbook_referenced_internal_worksheets_can_supply_identity(self) -> None:
         orphan = (
             b'<worksheet xmlns="http://schemas.openxmlformats.org/'
