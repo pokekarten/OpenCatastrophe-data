@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import unittest
 
@@ -114,9 +115,41 @@ class SiteModelCandidateTreeTests(unittest.TestCase):
 
         return opener, entries_by_commit, calls
 
+    def _assert_public_mutation_fails_before_provider(
+        self,
+        *,
+        name: str,
+        replacement,
+        message: str,
+    ) -> None:
+        original = getattr(profile, name)
+        original_open_fixed = profile._OPEN_FIXED
+        calls = 0
+
+        def forbidden_opener(request, timeout):
+            nonlocal calls
+            calls += 1
+            raise AssertionError("provider I/O must not be reached")
+
+        try:
+            setattr(profile, name, replacement)
+            # If the intended inner-authority check regresses, the later transport
+            # check still prevents an external call, but the specific error below
+            # will no longer match. This keeps the regression offline and exact.
+            profile._OPEN_FIXED = forbidden_opener
+            with self.assertRaisesRegex(profile.SiteModelCandidateTreeError, message):
+                profile.profile_candidate_trees()
+        finally:
+            setattr(profile, name, original)
+            profile._OPEN_FIXED = original_open_fixed
+        self.assertEqual(calls, 0)
+
+    def test_public_production_entry_point_is_zero_argument(self) -> None:
+        self.assertEqual(len(inspect.signature(profile.profile_candidate_trees).parameters), 0)
+
     def test_profile_is_fixed_to_three_candidates_and_returns_changed_blobs_only(self) -> None:
         opener, entries_by_commit, calls = self._happy_opener()
-        result = profile.profile_candidate_trees(
+        result = profile._profile_candidate_trees_for_test(
             opener=opener,
             monotonic=lambda: 0.0,
         )
@@ -169,6 +202,7 @@ class SiteModelCandidateTreeTests(unittest.TestCase):
 
     def test_history_receipt_drift_fails_before_network(self) -> None:
         original = profile.HISTORY_IDENTITY_SHA256
+        original_open_fixed = profile._OPEN_FIXED
         calls = 0
 
         def opener(request, timeout):
@@ -178,17 +212,37 @@ class SiteModelCandidateTreeTests(unittest.TestCase):
 
         try:
             profile.HISTORY_IDENTITY_SHA256 = "0" * 64
+            profile._OPEN_FIXED = opener
             with self.assertRaisesRegex(
                 profile.SiteModelCandidateTreeError,
-                "history candidate identity drifted",
+                "fixed production policy drifted",
             ):
-                profile.profile_candidate_trees(
-                    opener=opener,
-                    monotonic=lambda: 0.0,
-                )
+                profile.profile_candidate_trees()
         finally:
             profile.HISTORY_IDENTITY_SHA256 = original
+            profile._OPEN_FIXED = original_open_fixed
         self.assertEqual(calls, 0)
+
+    def test_tree_identity_helper_rebinding_fails_before_provider_io(self) -> None:
+        self._assert_public_mutation_fails_before_provider(
+            name="_tree_identity_sha256",
+            replacement=lambda entries: "0" * 64,
+            message="evidence production authority drifted",
+        )
+
+    def test_entry_validator_rebinding_fails_before_provider_io(self) -> None:
+        self._assert_public_mutation_fails_before_provider(
+            name="_validate_entry",
+            replacement=lambda raw: raw,
+            message="evidence production authority drifted",
+        )
+
+    def test_entry_field_policy_rebinding_fails_before_provider_io(self) -> None:
+        self._assert_public_mutation_fails_before_provider(
+            name="_ALLOWED_ENTRY_FIELDS",
+            replacement={"id", "name", "type", "path", "mode", "raw_url"},
+            message="entry policy production authority drifted",
+        )
 
     def test_noncanonical_or_widened_tree_entry_fails_closed(self) -> None:
         bad_cases = [
@@ -219,7 +273,7 @@ class SiteModelCandidateTreeTests(unittest.TestCase):
                     )
 
                 with self.assertRaises(profile.SiteModelCandidateTreeError):
-                    profile.profile_candidate_trees(
+                    profile._profile_candidate_trees_for_test(
                         opener=opener,
                         monotonic=lambda: 0.0,
                     )
@@ -244,7 +298,7 @@ class SiteModelCandidateTreeTests(unittest.TestCase):
             profile.SiteModelCandidateTreeError,
             "duplicate path",
         ):
-            profile.profile_candidate_trees(
+            profile._profile_candidate_trees_for_test(
                 opener=opener,
                 monotonic=lambda: 0.0,
             )
@@ -268,7 +322,7 @@ class SiteModelCandidateTreeTests(unittest.TestCase):
             profile.SiteModelCandidateTreeError,
             "not contiguous",
         ):
-            profile.profile_candidate_trees(
+            profile._profile_candidate_trees_for_test(
                 opener=opener,
                 monotonic=lambda: 0.0,
             )
