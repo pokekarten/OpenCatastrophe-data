@@ -129,7 +129,6 @@ class ExposureTreeActionTests(unittest.TestCase):
             "profile": _profile(),
         }
         self.assertTrue(action.parse_terminal_result(_body(passed), execution_sha=EXECUTION_SHA))
-
         blocked = {
             **action._base_result(execution_sha=EXECUTION_SHA),
             "status": "blocked",
@@ -140,7 +139,6 @@ class ExposureTreeActionTests(unittest.TestCase):
         blocked["profile"] = _profile()
         with self.assertRaisesRegex(action.ExposureTreeExecutionError, "widened evidence"):
             action.parse_terminal_result(_body(blocked), execution_sha=EXECUTION_SHA)
-
         duplicate = {
             **action._base_result(execution_sha=EXECUTION_SHA),
             "status": "duplicate",
@@ -161,7 +159,6 @@ class ExposureTreeActionTests(unittest.TestCase):
         )
         self.assertEqual(result["status"], "pass")
         self.assertEqual(result["profile"], _profile())
-
         duplicate = action._execute_for_test(
             repository="pokekarten/OpenCatastrophe-data",
             token="x",
@@ -176,6 +173,17 @@ class ExposureTreeActionTests(unittest.TestCase):
         with mock.patch.object(profile, "profile_v10_tree", lambda: _profile()):
             with self.assertRaisesRegex(
                 action.ExposureTreeExecutionError, "profile authority drifted"
+            ):
+                action.execute_profile(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="x",
+                    execution_sha=EXECUTION_SHA,
+                )
+
+    def test_production_action_rejects_rebound_inner_validator(self) -> None:
+        with mock.patch.object(action, "validate_profile", lambda value: value):
+            with self.assertRaisesRegex(
+                action.ExposureTreeExecutionError, "action authority drifted"
             ):
                 action.execute_profile(
                     repository="pokekarten/OpenCatastrophe-data",
