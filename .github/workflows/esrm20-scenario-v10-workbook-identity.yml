@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: esrm20-scenario-v10-workbook-identity-${{ github.repository }}
+  group: esrm20-scenario-v10-workbook-identity-${{ github.repository }}-${{ github.event.issue.number == 285 && github.event.comment.user.login == github.event.repository.owner.login && github.event.comment.author_association == 'OWNER' && contains(github.event.comment.body, '<!-- oc-eq1-esrm20-scenario-v10-workbook-identity-request-v1 -->') && 'trusted-request' || format('noise-{0}', github.event.comment.id) }}
   cancel-in-progress: false
 
 jobs:
