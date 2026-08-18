@@ -101,7 +101,7 @@ def validate_request(
         raise ExposureTreeExecutionError("exposure-tree request envelope is not canonical")
     try:
         request = json.loads(
-            after.strip(), object_pairs_hook=_pairs, parse_constant=_reject_constant
+            after.strip(), object_pairs_hook=_PAIRS, parse_constant=_REJECT_CONSTANT
         )
     except ExposureTreeExecutionError:
         raise
@@ -148,7 +148,7 @@ def _validate_candidate(value: object) -> dict[str, str]:
     object_sha1 = value["object_sha1"]
     if type(object_sha1) is not str or _SHA_RE.fullmatch(object_sha1) is None:
         raise ExposureTreeExecutionError("exposure candidate object SHA is invalid")
-    path = _bounded_text(value["path"], field="exposure candidate path")
+    path = _BOUNDED_TEXT(value["path"], field="exposure candidate path")
     pure = PurePosixPath(path)
     if (
         pure.is_absolute()
@@ -210,7 +210,7 @@ def validate_profile(value: object) -> dict[str, Any]:
         or not (1 <= len(candidates) <= profile.MAX_KOSOVO_XML_CANDIDATES)
     ):
         raise ExposureTreeExecutionError("exposure candidate cardinality is invalid")
-    canonical = [_validate_candidate(item) for item in candidates]
+    canonical = [_VALIDATE_CANDIDATE(item) for item in candidates]
     if canonical != sorted(canonical, key=lambda item: (item["path"], item["object_sha1"])):
         raise ExposureTreeExecutionError("exposure candidates are not canonical")
     if len({item["path"] for item in canonical}) != len(canonical):
@@ -245,7 +245,7 @@ def _parse_result(body: object) -> dict[str, Any] | None:
         raise ExposureTreeExecutionError("exposure-tree result exceeds policy")
     try:
         result = json.loads(
-            after.strip(), object_pairs_hook=_pairs, parse_constant=_reject_constant
+            after.strip(), object_pairs_hook=_PAIRS, parse_constant=_REJECT_CONSTANT
         )
     except ExposureTreeExecutionError:
         raise
@@ -257,20 +257,23 @@ def _parse_result(body: object) -> dict[str, Any] | None:
 
 
 def parse_terminal_result(body: object, *, execution_sha: str) -> bool:
-    result = _parse_result(body)
+    result = _PARSE_RESULT(body)
     if result is None:
         return False
-    for field, expected in _base_result(execution_sha=execution_sha).items():
+    for field, expected in _BASE_RESULT(execution_sha=execution_sha).items():
         observed = result.get(field)
         if type(observed) is not type(expected) or observed != expected:
             raise ExposureTreeExecutionError(f"exposure-tree result drifted at {field}")
     if result["status"] == "pass":
         if result["failure_class"] is not None:
             raise ExposureTreeExecutionError("PASS carries a failure class")
-        validate_profile(result["profile"])
+        _VALIDATE_PROFILE(result["profile"])
         return True
     if result["status"] == "blocked":
-        if result["failure_class"] not in profile.FAILURE_CLASSES or result["profile"] is not None:
+        if (
+            result["failure_class"] not in profile.FAILURE_CLASSES
+            or result["profile"] is not None
+        ):
             raise ExposureTreeExecutionError("blocked result widened evidence")
         return True
     if result["status"] == "duplicate":
@@ -281,7 +284,7 @@ def parse_terminal_result(body: object, *, execution_sha: str) -> bool:
 
 
 def _terminal_result_execution_sha(body: object) -> str | None:
-    result = _parse_result(body)
+    result = _PARSE_RESULT(body)
     if result is None:
         return None
     target_sha = result.get("target_sha")
@@ -294,8 +297,20 @@ def _terminal_result_execution_sha(body: object) -> str | None:
         or target_sha != execution_sha
     ):
         raise ExposureTreeExecutionError("result SHA identity is invalid")
-    parse_terminal_result(body, execution_sha=execution_sha)
+    _PARSE_TERMINAL_RESULT(body, execution_sha=execution_sha)
     return execution_sha
+
+
+_PAIRS = _pairs
+_REJECT_CONSTANT = _reject_constant
+_VALIDATE_REQUEST = validate_request
+_BOUNDED_TEXT = _bounded_text
+_VALIDATE_CANDIDATE = _validate_candidate
+_VALIDATE_PROFILE = validate_profile
+_BASE_RESULT = _base_result
+_PARSE_RESULT = _parse_result
+_PARSE_TERMINAL_RESULT = parse_terminal_result
+_TERMINAL_RESULT_EXECUTION_SHA = _terminal_result_execution_sha
 
 
 def has_terminal_result(*, repository: str, token: str, execution_sha: str) -> bool:
@@ -314,7 +329,7 @@ def has_terminal_result(*, repository: str, token: str, execution_sha: str) -> b
         login = user.get("login") if type(user) is dict else None
         if login != TRUSTED_RESULT_LOGIN:
             continue
-        own_sha = _terminal_result_execution_sha(comment.get("body"))
+        own_sha = _TERMINAL_RESULT_EXECUTION_SHA(comment.get("body"))
         if own_sha == execution_sha:
             return True
     return False
@@ -330,33 +345,33 @@ def _execute_for_test(
 ) -> dict[str, Any]:
     if terminal_fn(repository=repository, token=token, execution_sha=execution_sha):
         return {
-            **_base_result(execution_sha=execution_sha),
+            **_BASE_RESULT(execution_sha=execution_sha),
             "status": "duplicate",
             "failure_class": None,
             "profile": None,
         }
     try:
         value = profile_fn()
-        validate_profile(value)
+        _VALIDATE_PROFILE(value)
     except profile.ExposureTreeProfileError as exc:
         if exc.failure_class not in profile.FAILURE_CLASSES:
             raise ExposureTreeExecutionError("profile failed without bounded class") from exc
         return {
-            **_base_result(execution_sha=execution_sha),
+            **_BASE_RESULT(execution_sha=execution_sha),
             "status": "blocked",
             "failure_class": exc.failure_class,
             "profile": None,
         }
     return {
-        **_base_result(execution_sha=execution_sha),
+        **_BASE_RESULT(execution_sha=execution_sha),
         "status": "pass",
         "failure_class": None,
         "profile": value,
     }
 
 
-_EXECUTE_FOR_TEST = _execute_for_test
 _HAS_TERMINAL_RESULT = has_terminal_result
+_EXECUTE_FOR_TEST = _execute_for_test
 
 
 def _require_production_authority() -> None:
@@ -364,7 +379,21 @@ def _require_production_authority() -> None:
         raise ExposureTreeExecutionError("trusted exposure profile authority drifted")
     if fetch_repository_comments is not _FETCH_COMMENTS:
         raise ExposureTreeExecutionError("trusted exposure ledger authority drifted")
-    if _execute_for_test is not _EXECUTE_FOR_TEST or has_terminal_result is not _HAS_TERMINAL_RESULT:
+    functions = (
+        (_pairs, _PAIRS),
+        (_reject_constant, _REJECT_CONSTANT),
+        (validate_request, _VALIDATE_REQUEST),
+        (_bounded_text, _BOUNDED_TEXT),
+        (_validate_candidate, _VALIDATE_CANDIDATE),
+        (validate_profile, _VALIDATE_PROFILE),
+        (_base_result, _BASE_RESULT),
+        (_parse_result, _PARSE_RESULT),
+        (parse_terminal_result, _PARSE_TERMINAL_RESULT),
+        (_terminal_result_execution_sha, _TERMINAL_RESULT_EXECUTION_SHA),
+        (has_terminal_result, _HAS_TERMINAL_RESULT),
+        (_execute_for_test, _EXECUTE_FOR_TEST),
+    )
+    if any(observed is not expected for observed, expected in functions):
         raise ExposureTreeExecutionError("trusted exposure action authority drifted")
 
 
@@ -389,7 +418,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", required=True)
     args = parser.parse_args(argv)
 
-    validate_request(
+    _require_production_authority()
+    _VALIDATE_REQUEST(
         os.environ.get(args.comment_body_env),
         expected_issue=args.expected_issue,
         execution_sha=args.execution_sha,
