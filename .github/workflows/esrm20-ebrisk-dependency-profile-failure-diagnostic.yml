@@ -1,0 +1,109 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 EBRISK Dependency Profile Failure Diagnostic
+
+on:
+  workflow_run:
+    workflows: ["ESRM20 EBRISK Risk Config Dependency Profiles"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  publish-failure-diagnostic:
+    name: Publish closed workflow failure diagnostic
+    if: >-
+      github.event.workflow_run.event == 'issue_comment' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.conclusion != 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Publish checkoutless closed diagnostic
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          DIAGNOSTIC_MARKER: "<!-- oc-eq1-esrm20-ebrisk-risk-config-dependency-profiles-workflow-failure-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$HEAD_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          printf '%s' "$RUN_ID" | grep -Eq '^[1-9][0-9]*$'
+          printf '%s' "$RUN_ATTEMPT" | grep -Eq '^[1-9][0-9]*$'
+          case "$RUN_CONCLUSION" in
+            failure|cancelled|timed_out|action_required|stale|startup_failure) ;;
+            *) echo "unexpected workflow conclusion" >&2; exit 1 ;;
+          esac
+          case "$RUN_URL" in
+            https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/*) ;;
+            *) echo "unexpected workflow run URL" >&2; exit 1 ;;
+          esac
+          DIAGNOSTIC_JSON="$(jq -ncS \
+            --argjson run_id "$RUN_ID" \
+            --argjson run_attempt "$RUN_ATTEMPT" \
+            --arg conclusion "$RUN_CONCLUSION" \
+            --arg head_sha "$HEAD_SHA" \
+            --arg run_url "$RUN_URL" \
+            '{
+              schema_version:"oc-esrm20-ebrisk-risk-config-dependency-profiles-workflow-failure-v1",
+              source_issue:281,
+              workflow_name:"ESRM20 EBRISK Risk Config Dependency Profiles",
+              workflow_run_id:$run_id,
+              workflow_run_attempt:$run_attempt,
+              workflow_conclusion:$conclusion,
+              workflow_head_sha:$head_sha,
+              workflow_run_url:$run_url,
+              provider_outcome_known:false,
+              dependency_evidence_returned:false,
+              external_bytes_persisted:false,
+              publication_authorized:false,
+              model_use_authorized:false
+            }')"
+          printf '%s' "$DIAGNOSTIC_JSON" | jq -e '
+            keys == [
+              "dependency_evidence_returned",
+              "external_bytes_persisted",
+              "model_use_authorized",
+              "provider_outcome_known",
+              "publication_authorized",
+              "schema_version",
+              "source_issue",
+              "workflow_conclusion",
+              "workflow_head_sha",
+              "workflow_name",
+              "workflow_run_attempt",
+              "workflow_run_id",
+              "workflow_run_url"
+            ] and
+            .schema_version == "oc-esrm20-ebrisk-risk-config-dependency-profiles-workflow-failure-v1" and
+            .source_issue == 281 and
+            .workflow_name == "ESRM20 EBRISK Risk Config Dependency Profiles" and
+            (.workflow_run_id | type) == "number" and .workflow_run_id > 0 and
+            (.workflow_run_attempt | type) == "number" and .workflow_run_attempt > 0 and
+            (.workflow_conclusion == "failure" or
+             .workflow_conclusion == "cancelled" or
+             .workflow_conclusion == "timed_out" or
+             .workflow_conclusion == "action_required" or
+             .workflow_conclusion == "stale" or
+             .workflow_conclusion == "startup_failure") and
+            (.workflow_head_sha | test("^[0-9a-f]{40}$")) and
+            (.workflow_run_url | startswith("https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/")) and
+            .provider_outcome_known == false and
+            .dependency_evidence_returned == false and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and
+            .model_use_authorized == false
+          ' >/dev/null
+          BODY="$DIAGNOSTIC_MARKER
+          $DIAGNOSTIC_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/ebrisk-dependency-workflow-failure-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/281/comments" \
+            --input "$RUNNER_TEMP/ebrisk-dependency-workflow-failure-comment.json"
