@@ -244,6 +244,29 @@ class SiteModelCandidateTreeTests(unittest.TestCase):
             message="entry policy production authority drifted",
         )
 
+    def test_private_execution_helper_rebinding_fails_before_provider_io(self) -> None:
+        original = profile._profile_candidate_trees_for_test
+        original_open_fixed = profile._OPEN_FIXED
+        calls = 0
+
+        def forbidden_opener(request, timeout):
+            nonlocal calls
+            calls += 1
+            raise AssertionError("provider I/O must not be reached")
+
+        try:
+            profile._profile_candidate_trees_for_test = lambda **kwargs: {}
+            profile._OPEN_FIXED = forbidden_opener
+            with self.assertRaisesRegex(
+                profile.SiteModelCandidateTreeError,
+                "execution production authority drifted",
+            ):
+                profile.profile_candidate_trees()
+        finally:
+            profile._profile_candidate_trees_for_test = original
+            profile._OPEN_FIXED = original_open_fixed
+        self.assertEqual(calls, 0)
+
     def test_noncanonical_or_widened_tree_entry_fails_closed(self) -> None:
         bad_cases = [
             _entry("../writer.py", "a" * 40),
