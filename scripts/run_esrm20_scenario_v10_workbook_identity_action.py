@@ -87,6 +87,18 @@ _RESULT_FIELDS = {
     "publication_authorized",
     "model_use_authorized",
 }
+_FAILURE_STAGES = frozenset(
+    {
+        "tree_identity",
+        "provider_transport",
+        "git_blob_identity",
+        "xlsx_package",
+        "workbook_relationships",
+        "shared_strings",
+        "worksheet_scan",
+        "unknown",
+    }
+)
 
 _PROFILE = profile.acquire_and_profile_workbook_identity
 _FETCH_COMMENTS = fetch_repository_comments
@@ -94,6 +106,93 @@ _FETCH_COMMENTS = fetch_repository_comments
 
 class ScenarioWorkbookIdentityExecutionError(RuntimeError):
     """Fail-closed error for the dedicated workbook identity action."""
+
+
+def _failure_traceback_functions(error: BaseException) -> frozenset[str]:
+    names: set[str] = set()
+    traceback = error.__traceback__
+    while traceback is not None:
+        names.add(traceback.tb_frame.f_code.co_name)
+        traceback = traceback.tb_next
+    return frozenset(names)
+
+
+def _closed_failure_stage(error: profile.ScenarioWorkbookIdentityError) -> str:
+    """Map a profiler failure to a code-owned closed stage without exposing details."""
+    message = str(error)
+    functions = _failure_traceback_functions(error)
+
+    if functions & {"_canonical_tree_path", "_validate_tree_entry", "_workbook_blob_from_tree"}:
+        return "tree_identity"
+    if "_referenced_worksheets" in functions:
+        return "workbook_relationships"
+    if "_shared_strings" in functions:
+        return "shared_strings"
+    if "_cell_text" in functions:
+        return "worksheet_scan"
+
+    if message.startswith(("immutable scenario tree acquisition failed", "scenario tree ", "fixed workbook ")):
+        return "tree_identity"
+    if message in {
+        "workbook acquisition failed closed",
+        "workbook retrieval timestamp is invalid",
+    }:
+        return "provider_transport"
+    if message == "workbook bytes do not match immutable tree Git blob":
+        return "git_blob_identity"
+    if message.startswith(
+        (
+            "worksheet relationship target ",
+            "workbook relationship ",
+            "workbook relationships ",
+            "workbook sheet ",
+            "workbook worksheet ",
+            "workbook contains no referenced worksheets",
+            "workbook namespace/root ",
+            "external worksheet relationships ",
+            "referenced worksheet member ",
+            "XLSX contains orphan or unreferenced worksheets",
+        )
+    ):
+        return "workbook_relationships"
+    if message.startswith(("sharedStrings ", "shared string count ")):
+        return "shared_strings"
+    if message.startswith(
+        (
+            "worksheet ",
+            "XLSX cell ",
+            "shared-string cell ",
+            "target event identifier ",
+        )
+    ):
+        return "worksheet_scan"
+    if "_scan_workbook" in functions or message.startswith(
+        (
+            "workbook byte size ",
+            "workbook is not a valid ZIP package",
+            "XLSX ",
+            "content-types ",
+            "[Content_Types].xml ",
+            "DTD/entity declarations ",
+        )
+    ):
+        return "xlsx_package"
+    return "unknown"
+
+
+def _blocked_result_for_failure(
+    error: profile.ScenarioWorkbookIdentityError, *, execution_sha: str
+) -> dict[str, Any]:
+    stage = _closed_failure_stage(error)
+    if stage not in _FAILURE_STAGES:  # pragma: no cover - defensive closed-set fence
+        stage = "unknown"
+    print(f"WORKBOOK_IDENTITY_FAILURE_STAGE={stage}", file=sys.stderr, flush=True)
+    return {
+        **_base_result(execution_sha=execution_sha),
+        "status": "blocked",
+        "failure_class": "workbook_identity_failure",
+        "profile": None,
+    }
 
 
 def _pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -449,13 +548,8 @@ def execute_profile(*, repository: str, token: str, execution_sha: str) -> dict[
             "failure_class": None,
             "profile": evidence,
         }
-    except profile.ScenarioWorkbookIdentityError:
-        result = {
-            **_base_result(execution_sha=execution_sha),
-            "status": "blocked",
-            "failure_class": "workbook_identity_failure",
-            "profile": None,
-        }
+    except profile.ScenarioWorkbookIdentityError as exc:
+        result = _blocked_result_for_failure(exc, execution_sha=execution_sha)
     encoded = json.dumps(result, sort_keys=True, separators=(",", ":")).encode(
         "utf-8"
     )
