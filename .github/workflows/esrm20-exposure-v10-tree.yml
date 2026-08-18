@@ -106,7 +106,7 @@ jobs:
               (.object_sha1 | type == "string" and test("^[0-9a-f]{40}$")) and
               (.path | safe_path) and
               (.path | split("/")[-1] | contains("Kosovo") and endswith(".xml"));
-            keys == ["execution_sha","external_bytes_persisted","exact_kosovo_exposure_selected","failure_class","model_use_authorized","profile","provider_file_bytes_read","publication_authorized","schema_version","source_issue","status","target_sha","value_structural_wiring_verified"] and
+            keys == ["exact_kosovo_exposure_selected","execution_sha","external_bytes_persisted","failure_class","model_use_authorized","profile","provider_file_bytes_read","publication_authorized","schema_version","source_issue","status","target_sha","value_structural_wiring_verified"] and
             .schema_version == "oc-esrm20-exposure-v10-tree-result-v1" and
             .source_issue == 282 and .target_sha == $sha and .execution_sha == $sha and
             (.status == "pass" or .status == "blocked") and
