@@ -263,8 +263,8 @@ def _resolve_tag_commit(*, opener: Any, monotonic: Any, deadline: float) -> tupl
         if type(commit_sha) is not str or _GIT_SHA_RE.fullmatch(commit_sha) is None:
             raise ExposureTreeProfileError("exposure release tag lacks immutable commit")
         target = value.get("target")
-        if type(target) is not str or target != commit_sha:
-            raise ExposureTreeProfileError("exposure tag target/commit identity drifted")
+        if type(target) is not str or _GIT_SHA_RE.fullmatch(target) is None:
+            raise ExposureTreeProfileError("exposure tag target object id is invalid")
         if commit_sha != EXPECTED_COMMIT_SHA:
             raise ExposureTreeProfileError("exposure v1.0 tag moved from frozen commit")
         return commit_sha, len(raw)
