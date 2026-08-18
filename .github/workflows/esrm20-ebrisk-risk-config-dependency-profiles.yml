@@ -93,6 +93,7 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            keys == ["action","dataset_id","dependency_inventory_authorized","execution_sha","external_bytes_persisted","failure_class","historical_group_assignment_verified","model_use_authorized","profiles","publication_authorized","raw_config_returned","runtime_compatibility_verified","schema_version","source_issue","status","target_sha"] and
             .schema_version == "oc-esrm20-ebrisk-risk-config-dependency-profiles-result-v1" and
             .action == "esrm20_ebrisk_risk_config_dependency_profiles" and
             .source_issue == 281 and
@@ -109,15 +110,39 @@ jobs:
             (if .status == "pass" then
               .failure_class == null and
               (.profiles | type) == "array" and (.profiles | length) == 3 and
-              ([.profiles[].candidate_key] == ["group1","group2","iceland"]) and
               all(.profiles[];
+                keys == ["byte_count","candidate_key","commit_sha","dataset_id","dependencies","dependency_inventory_authorized","external_bytes_persisted","historical_group_assignment_verified","model_use_authorized","operation_id","parser","profiled_at","project_id","project_path","publication_authorized","raw_config_returned","receipt_comment_id","repository_path","runtime_compatibility_verified","schema_version","sha256","source_issue"] and
+                .schema_version == "oc-esrm20-ebrisk-risk-config-dependency-profile-v1" and
+                .source_issue == 281 and
+                .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+                .project_id == 269 and .project_path == "efehr/esrm20" and
+                .commit_sha == "05f83bbc9df81d02ee8ddb1801d9d781355ce783" and
+                .receipt_comment_id == 5328119673 and
+                .parser == "scripts.openquake_config_dependencies.extract_openquake_config_references" and
+                (.dependencies | type) == "array" and (.dependencies | length) <= 128 and
+                all(.dependencies[]; keys == ["option","raw_path","resolved_path","section"]) and
                 .raw_config_returned == false and
                 .historical_group_assignment_verified == false and
                 .dependency_inventory_authorized == false and
                 .runtime_compatibility_verified == false and
                 .external_bytes_persisted == false and
                 .publication_authorized == false and
-                .model_use_authorized == false)
+                .model_use_authorized == false) and
+              .profiles[0].candidate_key == "group1" and
+              .profiles[0].operation_id == "esrm20-ebrisk-group1-config-candidate-v1" and
+              .profiles[0].repository_path == "Configuration_files/config_ebrisk_Group1.ini" and
+              .profiles[0].byte_count == 3052 and
+              .profiles[0].sha256 == "be5f787954ca7e4060e4362d12efcf7cba5e50740930f3de7d7a521ebc580146" and
+              .profiles[1].candidate_key == "group2" and
+              .profiles[1].operation_id == "esrm20-ebrisk-group2-config-candidate-v1" and
+              .profiles[1].repository_path == "Configuration_files/config_ebrisk_Group2.ini" and
+              .profiles[1].byte_count == 2832 and
+              .profiles[1].sha256 == "80cf566003cdb5e12dde820d5cba3db8ea5a6ba2db31e7089f3453f921852625" and
+              .profiles[2].candidate_key == "iceland" and
+              .profiles[2].operation_id == "esrm20-ebrisk-iceland-config-candidate-v1" and
+              .profiles[2].repository_path == "Configuration_files/config_ebrisk_Iceland.ini" and
+              .profiles[2].byte_count == 1345 and
+              .profiles[2].sha256 == "7d1f23170462a4f1b6b514518d4d35564a0ec2255072f6df38e5a5c6518b849c"
             else
               .failure_class == "profile_failure" and .profiles == null
             end)
