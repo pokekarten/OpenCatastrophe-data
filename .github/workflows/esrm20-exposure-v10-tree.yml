@@ -95,10 +95,10 @@ jobs:
           printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
             def bounded_text:
               type == "string" and length > 0 and . == (gsub("^[[:space:]]+|[[:space:]]+$"; "")) and
-              utf8bytelength <= 2048 and (test("[\\u0000-\\u001F\\u007F]") | not);
+              utf8bytelength <= 2048 and (test("[[:cntrl:]]") | not);
             def safe_path:
               bounded_text and startswith("Exposure_30arcsec/") and
-              (contains("\\\\") | not) and
+              (contains("\\") | not) and
               (split("/") | all(. != "" and . != "." and . != ".."));
             def candidate:
               keys == ["mode","object_sha1","path","type"] and
