@@ -31,7 +31,14 @@ class ExposureTreeWorkflowContractTests(unittest.TestCase):
 
     def test_execution_has_no_caller_selected_provider_surface(self) -> None:
         execute = self.text.split("publish-exposure-tree:", 1)[0]
-        self.assertIn("scripts/run_esrm20_exposure_v10_tree_action.py", execute)
+        self.assertIn(
+            "python -m scripts.run_esrm20_exposure_v10_tree_action",
+            execute,
+        )
+        self.assertNotIn(
+            "python scripts/run_esrm20_exposure_v10_tree_action.py",
+            execute,
+        )
         for forbidden in (
             "--url",
             "--project",
