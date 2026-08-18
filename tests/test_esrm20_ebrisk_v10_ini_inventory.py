@@ -148,6 +148,15 @@ class EbriskIniInventoryTests(unittest.TestCase):
         finally:
             target.MAX_INI_BLOBS = original
 
+    def test_source_tree_inventory_bound_matches_upstream_and_precedes_parsing(self) -> None:
+        self.assertEqual(target.MAX_TREE_ENTRIES, tree_profile.MAX_ENTRIES)
+        oversized = [object()] * (target.MAX_TREE_ENTRIES + 1)
+        with self.assertRaisesRegex(
+            target.EbriskIniInventoryError,
+            "source-tree inventory exceeds policy",
+        ):
+            target.summarize_ini_inventory(oversized)
+
     def test_fixed_wrapper_rejects_provider_authority_drift_before_network(self) -> None:
         original_project_id = tree_profile.PROJECT_ID
         try:
