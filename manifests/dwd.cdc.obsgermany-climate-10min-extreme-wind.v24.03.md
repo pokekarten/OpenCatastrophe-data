@@ -133,4 +133,4 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Reviewer:** OpenCatastrophe source audit
 
-**Notes:** Metadata-only engineering approval based on the authoritative DWD dataset description, CDC source-specific terms of use, and current DWD legal/Open Data pages. No DWD source ZIP has been committed, acquired into an OpenCatastrophe artifact identity, or approved for repository publication. Raw/derived publication remains blocked pending exact artifact identity and explicit narrower asset review.
+**Notes:** Metadata-only engineering approval based on the authoritative DWD dataset description, CDC source-specific terms of use, and current DWD legal/Open Data pages. At the manifest review time, no DWD source ZIP had been committed, acquired into an OpenCatastrophe artifact identity, or approved for repository publication. Raw/derived publication remained blocked pending exact artifact identity and explicit narrower asset review. Later external acquisition receipts, if any, do not retroactively change this review-time statement or authorize Git publication.

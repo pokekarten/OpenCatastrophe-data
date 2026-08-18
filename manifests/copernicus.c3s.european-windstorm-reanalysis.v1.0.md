@@ -68,7 +68,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Scope:** raw
 
-**Conditions:** Source rights support redistribution under CC BY 4.0 subject to attribution and applicable CDS conditions. OpenCatastrophe currently approves metadata only; no raw C3S artifact has been selected, acquired, hashed or approved for Git publication.
+**Conditions:** Source rights support redistribution under CC BY 4.0 subject to attribution and applicable CDS conditions. This manifest records repository review status approved_metadata_only. At the manifest review time, no raw C3S artifact had been selected, acquired, hashed or approved for Git publication.
 
 ## Privacy
 

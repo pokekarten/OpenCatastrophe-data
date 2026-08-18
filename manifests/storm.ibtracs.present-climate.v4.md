@@ -68,7 +68,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Scope:** raw
 
-**Conditions:** Source rights can support raw sharing under the recorded CC0-1.0 release. OpenCatastrophe currently approves metadata only; no exact v4 file has been selected, acquired, hashed or approved for Git publication.
+**Conditions:** Source rights can support raw sharing under the recorded CC0-1.0 release. This manifest records repository review status approved_metadata_only. At the manifest review time, no exact v4 file had been selected, acquired, hashed or approved for Git publication.
 
 ## Privacy
 

@@ -28,7 +28,7 @@ EIOPA lists the following resources with publication date 5 December 2023:
 - `Historical loss data - catastrophe data hub.xlsx`;
 - Technical Description EIOPA-BoS-22/505, dated 27 November 2023.
 
-No workbook bytes were acquired. A publication date or resource-page identity does not replace byte size plus SHA-256 for a future raw admission.
+At this source review time, no workbook bytes had been acquired. A publication date or resource-page identity does not replace byte size plus SHA-256 for a future raw admission; later external receipts do not retroactively alter this review-time statement or authorize Git publication.
 
 ## Rights: metadata cleared; workbook redistribution blocked
 

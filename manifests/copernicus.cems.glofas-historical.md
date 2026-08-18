@@ -68,7 +68,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Scope:** raw
 
-**Conditions:** Source rights can support redistribution of the covered GloFAS product under the CEMS-FLOODS licence and its required notices. OpenCatastrophe currently approves metadata only; no exact EWDS request or returned artifact has been selected, acquired, hashed or approved for Git publication.
+**Conditions:** Source rights can support redistribution of the covered GloFAS product under the CEMS-FLOODS licence and its required notices. This manifest records repository review status approved_metadata_only. At the manifest review time, no exact EWDS request or returned artifact had been selected, acquired, hashed or approved for Git publication.
 
 ## Privacy
 

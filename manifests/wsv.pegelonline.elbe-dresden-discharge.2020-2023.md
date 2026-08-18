@@ -68,7 +68,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Scope:** raw
 
-**Conditions:** The reviewed PEGELONLINE webservice data are reusable under DL-DE-Zero-2.0. OpenCatastrophe currently approves metadata only; no exact generated long-term download file has been acquired, hashed or approved for Git publication.
+**Conditions:** The reviewed PEGELONLINE webservice data are reusable under DL-DE-Zero-2.0. This manifest records repository review status approved_metadata_only. At the manifest review time, no exact generated long-term download file had been acquired, hashed or approved for Git publication.
 
 ## Privacy
 

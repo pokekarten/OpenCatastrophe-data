@@ -42,7 +42,7 @@ Engineering interpretation for this metadata review:
 - sharing/adaptation: allowed subject to attribution, licence reference and indication of changes;
 - repository review scope: metadata only.
 
-No provider file has been acquired or approved for Git publication by this review.
+At this source review time, no provider file had been acquired or approved for Git publication by this review. Later external receipts do not retroactively alter that review-time statement or authorize Git publication.
 
 ## Scientific semantics
 

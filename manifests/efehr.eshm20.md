@@ -68,7 +68,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Scope:** raw
 
-**Conditions:** Source rights can support redistribution under CC BY 4.0 subject to its conditions. OpenCatastrophe currently approves metadata only; no exact ESHM20 raw or derived artifact has been selected, acquired, hashed, or approved for Git publication.
+**Conditions:** Source rights can support redistribution under CC BY 4.0 subject to its conditions. This manifest records repository review status approved_metadata_only. At the manifest review time, no exact ESHM20 raw or derived artifact had been selected, acquired, hashed or approved for Git publication.
 
 ## Privacy
 

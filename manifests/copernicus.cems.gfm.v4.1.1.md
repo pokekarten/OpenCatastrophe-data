@@ -68,7 +68,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Scope:** raw
 
-**Conditions:** The reviewed CEMS terms support redistribution of covered GFM information subject to required source/modification notices and restricted/third-party caveats. OpenCatastrophe currently approves metadata only; no exact GFM scene, API response or product asset has been selected, acquired, hashed or approved for Git publication.
+**Conditions:** The reviewed CEMS terms support redistribution of covered GFM information subject to required source/modification notices and restricted/third-party caveats. This manifest records repository review status approved_metadata_only. At the manifest review time, no exact GFM scene, API response or product asset had been selected, acquired, hashed or approved for Git publication.
 
 ## Privacy
 
