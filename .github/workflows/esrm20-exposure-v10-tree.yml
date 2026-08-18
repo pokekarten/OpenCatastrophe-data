@@ -145,6 +145,7 @@ jobs:
               (.failure_class == "tag_metadata_acquisition_failure" or
                .failure_class == "tag_metadata_validation_failure" or
                .failure_class == "tree_metadata_acquisition_failure" or
+               .failure_class == "tree_metadata_not_found" or
                .failure_class == "tree_metadata_validation_failure" or
                .failure_class == "candidate_resolution_failure") and
               .profile == null
