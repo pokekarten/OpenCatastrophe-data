@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import unittest
 
 from scripts import profile_esrm20_scenario_v10_workbook_identity as profile
@@ -83,7 +84,9 @@ class WorkbookFailureStageTests(unittest.TestCase):
         self.assertEqual(set(result), action._RESULT_FIELDS)
         self.assertEqual(result["status"], "blocked")
         self.assertEqual(result["failure_class"], "workbook_identity_failure")
+        self.assertEqual(result["failure_stage"], "unknown")
         self.assertIsNone(result["profile"])
+        self.assertNotIn(secret, json.dumps(result, sort_keys=True))
         self.assertFalse(result["external_bytes_persisted"])
         self.assertFalse(result["event_location_inference_authorized"])
         self.assertFalse(result["scenario_selection_authorized"])
@@ -93,7 +96,7 @@ class WorkbookFailureStageTests(unittest.TestCase):
         self.assertFalse(result["model_use_authorized"])
         self.assertTrue(
             action.parse_terminal_result(
-                action.RESULT_MARKER + "\n" + __import__("json").dumps(
+                action.RESULT_MARKER + "\n" + json.dumps(
                     result, sort_keys=True, separators=(",", ":")
                 ),
                 execution_sha=EXECUTION_SHA,

@@ -20,9 +20,11 @@ from scripts import profile_esrm20_scenario_v10_workbook_identity as profile
 from scripts.prepare_agent_action_result import LedgerError, fetch_repository_comments
 
 REQUEST_MARKER = "<!-- oc-eq1-esrm20-scenario-v10-workbook-identity-request-v1 -->"
-RESULT_MARKER = "<!-- oc-eq1-esrm20-scenario-v10-workbook-identity-result-v1 -->"
+LEGACY_RESULT_MARKER = "<!-- oc-eq1-esrm20-scenario-v10-workbook-identity-result-v1 -->"
+RESULT_MARKER = "<!-- oc-eq1-esrm20-scenario-v10-workbook-identity-result-v2 -->"
 REQUEST_SCHEMA_VERSION = "oc-esrm20-scenario-v10-workbook-identity-request-v1"
-RESULT_SCHEMA_VERSION = "oc-esrm20-scenario-v10-workbook-identity-result-v1"
+LEGACY_RESULT_SCHEMA_VERSION = "oc-esrm20-scenario-v10-workbook-identity-result-v1"
+RESULT_SCHEMA_VERSION = "oc-esrm20-scenario-v10-workbook-identity-result-v2"
 SOURCE_ISSUE = 285
 TRUSTED_RESULT_LOGIN = "github-actions[bot]"
 MAX_LEDGER_PAGES = 20
@@ -71,7 +73,7 @@ _PROFILE_FIELDS = {
     "publication_authorized",
     "model_use_authorized",
 }
-_RESULT_FIELDS = {
+_LEGACY_RESULT_FIELDS = {
     "schema_version",
     "source_issue",
     "target_sha",
@@ -87,6 +89,7 @@ _RESULT_FIELDS = {
     "publication_authorized",
     "model_use_authorized",
 }
+_RESULT_FIELDS = _LEGACY_RESULT_FIELDS | {"failure_stage"}
 _FAILURE_STAGES = frozenset(
     {
         "tree_identity",
@@ -191,6 +194,7 @@ def _blocked_result_for_failure(
         **_base_result(execution_sha=execution_sha),
         "status": "blocked",
         "failure_class": "workbook_identity_failure",
+        "failure_stage": stage,
         "profile": None,
     }
 
@@ -416,6 +420,7 @@ def _base_result(*, execution_sha: str) -> dict[str, Any]:
         "source_issue": SOURCE_ISSUE,
         "target_sha": execution_sha,
         "execution_sha": execution_sha,
+        "failure_stage": None,
         "external_bytes_persisted": False,
         "event_location_inference_authorized": False,
         "scenario_selection_authorized": False,
@@ -426,14 +431,33 @@ def _base_result(*, execution_sha: str) -> dict[str, Any]:
     }
 
 
+def _legacy_base_result(*, execution_sha: str) -> dict[str, Any]:
+    value = _base_result(execution_sha=execution_sha)
+    value["schema_version"] = LEGACY_RESULT_SCHEMA_VERSION
+    value.pop("failure_stage")
+    return value
+
+
 def _load_result(body: object) -> dict[str, Any] | None:
-    if type(body) is not str or RESULT_MARKER not in body:
+    if type(body) is not str:
         return None
-    if body.count(RESULT_MARKER) != 1:
+    markers = (
+        (RESULT_MARKER, RESULT_SCHEMA_VERSION, _RESULT_FIELDS),
+        (LEGACY_RESULT_MARKER, LEGACY_RESULT_SCHEMA_VERSION, _LEGACY_RESULT_FIELDS),
+    )
+    present = [item for item in markers if item[0] in body]
+    if not present:
+        return None
+    if len(present) != 1:
         raise ScenarioWorkbookIdentityExecutionError(
             "workbook identity result marker is malformed"
         )
-    before, after = body.split(RESULT_MARKER, 1)
+    marker, expected_schema, expected_fields = present[0]
+    if body.count(marker) != 1:
+        raise ScenarioWorkbookIdentityExecutionError(
+            "workbook identity result marker is malformed"
+        )
+    before, after = body.split(marker, 1)
     if before.strip() or not after.strip():
         raise ScenarioWorkbookIdentityExecutionError(
             "workbook identity result envelope is malformed"
@@ -448,9 +472,13 @@ def _load_result(body: object) -> dict[str, Any] | None:
         raise ScenarioWorkbookIdentityExecutionError(
             "workbook identity result JSON is malformed"
         ) from exc
-    if type(value) is not dict or set(value) != _RESULT_FIELDS:
+    if type(value) is not dict or set(value) != expected_fields:
         raise ScenarioWorkbookIdentityExecutionError(
             "workbook identity result fields drifted"
+        )
+    if value.get("schema_version") != expected_schema:
+        raise ScenarioWorkbookIdentityExecutionError(
+            "workbook identity result schema drifted"
         )
     return value
 
@@ -459,7 +487,13 @@ def parse_terminal_result(body: object, *, execution_sha: str) -> bool:
     value = _load_result(body)
     if value is None:
         return False
-    for field, expected in _base_result(execution_sha=execution_sha).items():
+    if value["schema_version"] == RESULT_SCHEMA_VERSION:
+        expected_base = _base_result(execution_sha=execution_sha)
+    else:
+        expected_base = _legacy_base_result(execution_sha=execution_sha)
+    for field, expected in expected_base.items():
+        if field == "failure_stage":
+            continue
         observed = value[field]
         if type(observed) is not type(expected) or observed != expected:
             raise ScenarioWorkbookIdentityExecutionError(
@@ -468,6 +502,8 @@ def parse_terminal_result(body: object, *, execution_sha: str) -> bool:
     if value["status"] == "pass":
         if value["failure_class"] is not None:
             raise ScenarioWorkbookIdentityExecutionError("PASS result carries failure class")
+        if "failure_stage" in value and value["failure_stage"] is not None:
+            raise ScenarioWorkbookIdentityExecutionError("PASS result carries failure stage")
         validate_profile(value["profile"])
         return True
     if value["status"] == "blocked":
@@ -478,11 +514,21 @@ def parse_terminal_result(body: object, *, execution_sha: str) -> bool:
             raise ScenarioWorkbookIdentityExecutionError(
                 "blocked result widened workbook evidence"
             )
+        if "failure_stage" in value:
+            stage = value["failure_stage"]
+            if type(stage) is not str or stage not in _FAILURE_STAGES:
+                raise ScenarioWorkbookIdentityExecutionError(
+                    "blocked result failure stage is invalid"
+                )
         return True
     if value["status"] == "duplicate":
         if value["failure_class"] is not None or value["profile"] is not None:
             raise ScenarioWorkbookIdentityExecutionError(
                 "duplicate result carries evidence"
+            )
+        if "failure_stage" in value and value["failure_stage"] is not None:
+            raise ScenarioWorkbookIdentityExecutionError(
+                "duplicate result carries failure stage"
             )
         return True
     raise ScenarioWorkbookIdentityExecutionError(

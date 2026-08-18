@@ -89,7 +89,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EXECUTION_SHA: ${{ needs.execute-workbook-identity.outputs.execution_sha }}
           RESULT_JSON: ${{ needs.execute-workbook-identity.outputs.result_json }}
-          RESULT_MARKER: "<!-- oc-eq1-esrm20-scenario-v10-workbook-identity-result-v1 -->"
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-scenario-v10-workbook-identity-result-v2 -->"
         run: |
           set -euo pipefail
           printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
@@ -98,6 +98,7 @@ jobs:
               "execution_sha",
               "external_bytes_persisted",
               "failure_class",
+              "failure_stage",
               "holdout_status_established",
               "independent_validation_established",
               "model_use_authorized",
@@ -109,7 +110,7 @@ jobs:
               "status",
               "target_sha"
             ] and
-            .schema_version == "oc-esrm20-scenario-v10-workbook-identity-result-v1" and
+            .schema_version == "oc-esrm20-scenario-v10-workbook-identity-result-v2" and
             .source_issue == 285 and
             .target_sha == $sha and .execution_sha == $sha and
             (.status == "pass" or .status == "blocked") and
@@ -122,6 +123,7 @@ jobs:
             .model_use_authorized == false and
             (if .status == "pass" then
               .failure_class == null and
+              .failure_stage == null and
               (.profile | type) == "object" and
               (.profile | keys) == [
                 "byte_count",
@@ -210,7 +212,18 @@ jobs:
               .profile.publication_authorized == false and
               .profile.model_use_authorized == false
             else
-              .failure_class == "workbook_identity_failure" and .profile == null
+              .failure_class == "workbook_identity_failure" and
+              .profile == null and
+              (
+                .failure_stage == "tree_identity" or
+                .failure_stage == "provider_transport" or
+                .failure_stage == "git_blob_identity" or
+                .failure_stage == "xlsx_package" or
+                .failure_stage == "workbook_relationships" or
+                .failure_stage == "shared_strings" or
+                .failure_stage == "worksheet_scan" or
+                .failure_stage == "unknown"
+              )
             end)
           ' >/dev/null
           BODY="$RESULT_MARKER
