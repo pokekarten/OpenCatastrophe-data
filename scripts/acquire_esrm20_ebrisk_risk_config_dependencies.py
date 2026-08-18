@@ -49,7 +49,26 @@ _CANONICAL_REQUEST = urllib.request.Request
 _CANONICAL_TOTAL_DEADLINE_SECONDS = TOTAL_DEADLINE_SECONDS
 _CANONICAL_CONFIG_SPEC = bridge.config_spec
 _CANONICAL_EXTRACT_VERIFIED = bridge.extract_verified_ebrisk_dependencies
+_CANONICAL_VERIFY_PAYLOAD_IDENTITY = bridge._verify_payload_identity
+_CANONICAL_DECODE_VERIFIED_PAYLOAD = bridge._decode_verified_payload
+_CANONICAL_EXTRACT_DEPENDENCIES_FROM_VERIFIED_TEXT = bridge.extract_dependencies_from_verified_text
+_CANONICAL_EXTRACT_OPENQUAKE_CONFIG_REFERENCES = bridge.extract_openquake_config_references
+_CANONICAL_SHA256 = bridge.hashlib.sha256
 _CANONICAL_CONFIG_SPECS = bridge.CONFIG_SPECS
+_CANONICAL_SPEC_BY_KEY = bridge._SPEC_BY_KEY
+_CANONICAL_SPEC_BY_KEY_ROWS = tuple(
+    sorted(
+        (
+            key,
+            spec.key,
+            spec.operation_id,
+            spec.repository_path,
+            spec.byte_count,
+            spec.sha256,
+        )
+        for key, spec in bridge._SPEC_BY_KEY.items()
+    )
+)
 _CANONICAL_BRIDGE_FIXED_AUTHORITY = (
     bridge.SCHEMA_VERSION,
     bridge.SOURCE_ISSUE,
@@ -161,6 +180,19 @@ def _require_production_identity() -> None:
         (urllib.request.Request, _CANONICAL_REQUEST, "request constructor"),
         (bridge.config_spec, _CANONICAL_CONFIG_SPEC, "config selector"),
         (bridge.extract_verified_ebrisk_dependencies, _CANONICAL_EXTRACT_VERIFIED, "verified parser"),
+        (bridge._verify_payload_identity, _CANONICAL_VERIFY_PAYLOAD_IDENTITY, "payload verifier"),
+        (bridge._decode_verified_payload, _CANONICAL_DECODE_VERIFIED_PAYLOAD, "verified decoder"),
+        (
+            bridge.extract_dependencies_from_verified_text,
+            _CANONICAL_EXTRACT_DEPENDENCIES_FROM_VERIFIED_TEXT,
+            "dependency parser bridge",
+        ),
+        (
+            bridge.extract_openquake_config_references,
+            _CANONICAL_EXTRACT_OPENQUAKE_CONFIG_REFERENCES,
+            "OpenQuake dependency parser",
+        ),
+        (bridge.hashlib.sha256, _CANONICAL_SHA256, "SHA-256 authority"),
         (_acquire_exact_payload, _CANONICAL_ACQUIRE_EXACT_PAYLOAD, "private byte helper"),
         (_acquire_and_extract, _CANONICAL_ACQUIRE_AND_EXTRACT, "private verifier helper"),
     )
@@ -172,6 +204,23 @@ def _require_production_identity() -> None:
 
     if bridge.CONFIG_SPECS is not _CANONICAL_CONFIG_SPECS:
         raise EbriskDependencyAcquisitionError("frozen EBRISK dependency config specs drifted")
+    if bridge._SPEC_BY_KEY is not _CANONICAL_SPEC_BY_KEY:
+        raise EbriskDependencyAcquisitionError("frozen EBRISK dependency spec map drifted")
+    observed_spec_rows = tuple(
+        sorted(
+            (
+                key,
+                spec.key,
+                spec.operation_id,
+                spec.repository_path,
+                spec.byte_count,
+                spec.sha256,
+            )
+            for key, spec in bridge._SPEC_BY_KEY.items()
+        )
+    )
+    if observed_spec_rows != _CANONICAL_SPEC_BY_KEY_ROWS:
+        raise EbriskDependencyAcquisitionError("frozen EBRISK dependency spec-map values drifted")
     observed_bridge = (
         bridge.SCHEMA_VERSION,
         bridge.SOURCE_ISSUE,
