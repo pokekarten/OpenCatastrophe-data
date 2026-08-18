@@ -144,6 +144,35 @@ class SiteModelCandidateTreeTests(unittest.TestCase):
             profile._OPEN_FIXED = original_open_fixed
         self.assertEqual(calls, 0)
 
+    def _assert_public_primitive_mutation_fails_before_provider(
+        self,
+        *,
+        owner,
+        name: str,
+        replacement,
+    ) -> None:
+        original = getattr(owner, name)
+        original_open_fixed = profile._OPEN_FIXED
+        calls = 0
+
+        def forbidden_opener(request, timeout):
+            nonlocal calls
+            calls += 1
+            raise AssertionError("provider I/O must not be reached")
+
+        try:
+            setattr(owner, name, replacement)
+            profile._OPEN_FIXED = forbidden_opener
+            with self.assertRaisesRegex(
+                profile.SiteModelCandidateTreeError,
+                "primitive production authority drifted",
+            ):
+                profile.profile_candidate_trees()
+        finally:
+            setattr(owner, name, original)
+            profile._OPEN_FIXED = original_open_fixed
+        self.assertEqual(calls, 0)
+
     def test_public_production_entry_point_is_zero_argument(self) -> None:
         self.assertEqual(len(inspect.signature(profile.profile_candidate_trees).parameters), 0)
 
@@ -242,6 +271,27 @@ class SiteModelCandidateTreeTests(unittest.TestCase):
             name="_ALLOWED_ENTRY_FIELDS",
             replacement={"id", "name", "type", "path", "mode", "raw_url"},
             message="entry policy production authority drifted",
+        )
+
+    def test_json_loads_rebinding_fails_before_provider_io(self) -> None:
+        self._assert_public_primitive_mutation_fails_before_provider(
+            owner=profile.json,
+            name="loads",
+            replacement=lambda *args, **kwargs: [],
+        )
+
+    def test_math_isfinite_rebinding_fails_before_provider_io(self) -> None:
+        self._assert_public_primitive_mutation_fails_before_provider(
+            owner=profile.math,
+            name="isfinite",
+            replacement=lambda value: True,
+        )
+
+    def test_pure_posix_path_rebinding_fails_before_provider_io(self) -> None:
+        self._assert_public_primitive_mutation_fails_before_provider(
+            owner=profile,
+            name="PurePosixPath",
+            replacement=lambda path: path,
         )
 
     def test_private_execution_helper_rebinding_fails_before_provider_io(self) -> None:
