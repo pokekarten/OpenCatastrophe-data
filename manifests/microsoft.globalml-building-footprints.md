@@ -68,7 +68,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Scope:** raw
 
-**Conditions:** Source rights can support sharing under CDLA-Permissive-2.0 when its conditions are met, including making the agreement text available with shared data. OpenCatastrophe currently approves metadata only; no exact distribution snapshot or raw/derived asset has been selected, acquired, hashed or approved for Git publication.
+**Conditions:** Source rights can support sharing under CDLA-Permissive-2.0 when its conditions are met, including making the agreement text available with shared data. This manifest records repository review status approved_metadata_only. At the manifest review time, no exact distribution snapshot or raw/derived asset had been selected, acquired, hashed or approved for Git publication.
 
 ## Privacy
 

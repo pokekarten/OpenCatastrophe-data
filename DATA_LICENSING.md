@@ -77,6 +77,12 @@ Before approving an external asset for Git publication, record:
 
 If bespoke terms apply, use a descriptive licence name/reference and do not invent an SPDX identifier. If authoritative terms conflict, record `conflicting` and block publication until resolved.
 
+## Temporal semantics of manifest and source-review narrative
+
+Manifest and source-review prose is evidence captured at a specific review time, not a live acquisition dashboard. The structured repository admission/publication fields remain the authority for what this repository currently admits or publishes. Statements such as “no bytes were acquired”, “no artifact was selected”, or “not yet hashed” describe the state **at the manifest/source review time** and must be written with an explicit review-time qualifier when they appear in durable narrative fields.
+
+A later trusted external receipt may prove that exact provider bytes were acquired outside Git while the manifest still correctly has `raw_artifact: null`, `approved_metadata_only`, or another narrower repository-publication state. Such a receipt does not retroactively make an older review-time statement false, and it does not by itself admit or publish the bytes. Do not silently rewrite historical review prose to look contemporaneous; refresh the review timestamp/evidence when intentionally updating the review itself.
+
 ## Terms can change
 
 Rights review is time-specific. A manifest records when terms were reviewed; publication/release procedures re-check material terms close to release. A previously approved product may require re-review after a provider changes its licence, access channel, API terms, product release, or redistribution conditions.

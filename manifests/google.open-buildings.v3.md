@@ -68,7 +68,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Scope:** raw
 
-**Conditions:** Source rights can support sharing under the selected CC BY 4.0 path. OpenCatastrophe currently approves metadata only; no exact v3 S2 tile or companion artifact has been selected, acquired, hashed or approved for Git publication.
+**Conditions:** Source rights can support sharing under the selected CC BY 4.0 path. This manifest records repository review status approved_metadata_only. At the manifest review time, no exact v3 S2 tile or companion artifact had been selected, acquired, hashed or approved for Git publication.
 
 ## Privacy
 

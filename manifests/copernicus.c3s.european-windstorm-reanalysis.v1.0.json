@@ -28,7 +28,7 @@
   "redistribution": {
     "status": "allowed",
     "scope": "raw",
-    "conditions": "Source rights support redistribution under CC BY 4.0 subject to attribution and applicable CDS conditions. OpenCatastrophe currently approves metadata only; no raw C3S artifact has been selected, acquired, hashed or approved for Git publication."
+    "conditions": "Source rights support redistribution under CC BY 4.0 subject to attribution and applicable CDS conditions. This manifest records repository review status approved_metadata_only. At the manifest review time, no raw C3S artifact had been selected, acquired, hashed or approved for Git publication."
   },
   "privacy": {
     "personal_data_status": "none",

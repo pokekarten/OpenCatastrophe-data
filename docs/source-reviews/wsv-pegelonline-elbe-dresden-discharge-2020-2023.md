@@ -61,7 +61,7 @@ Engineering interpretation:
 - redistribution/adaptation: allowed;
 - attribution: not a licence condition, though provider/station provenance remains scientifically required by OpenCatastrophe;
 - repository scope: metadata only;
-- no generated long-term discharge download file has been acquired or approved for Git publication.
+- at this source review time, no generated long-term discharge download file had been acquired or approved for Git publication; later external receipts do not retroactively alter that review-time statement or authorize Git publication.
 
 ## Predeclared GloFAS comparison contract
 

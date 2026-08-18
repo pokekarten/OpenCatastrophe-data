@@ -28,7 +28,7 @@
   "redistribution": {
     "status": "allowed",
     "scope": "raw",
-    "conditions": "Source rights can support redistribution under CC BY 4.0 subject to its conditions. OpenCatastrophe currently approves metadata only; no exact ESRM20 risk-input artifact has been selected, acquired, hashed or approved for Git publication."
+    "conditions": "Source rights can support redistribution under CC BY 4.0 subject to its conditions. This manifest records repository review status approved_metadata_only. At the manifest review time, no exact ESRM20 risk-input artifact had been selected, acquired, hashed or approved for Git publication."
   },
   "privacy": {
     "personal_data_status": "none",

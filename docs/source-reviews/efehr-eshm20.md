@@ -46,7 +46,7 @@ Engineering interpretation for this metadata review:
 - attribution: use the source/model citation supplied by EFEHR and meet CC BY 4.0 attribution/change-indication requirements;
 - repository review scope: metadata only.
 
-OpenCatastrophe deliberately keeps the repository review narrower than the source-rights ceiling. No raw ESHM20 artifact has yet been selected, acquired, hashed, or approved for Git publication.
+OpenCatastrophe deliberately keeps the repository review narrower than the source-rights ceiling. At this source review time, no raw ESHM20 artifact had been selected, acquired, hashed, or approved for Git publication. Later external receipts do not retroactively alter that review-time statement or authorize Git publication.
 
 ## Scientific semantics
 
