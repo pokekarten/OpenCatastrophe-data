@@ -56,14 +56,43 @@ _RESULT_FIELDS = {
     "model_use_authorized"
 }
 
-_FETCH_COMMENTS = fetch_repository_comments
 _ACQUIRERS = (
     worker.acquire_group1_dependencies,
     worker.acquire_group2_dependencies,
     worker.acquire_iceland_dependencies,
 )
-_NORMALIZE_REFERENCE = oqdeps.normalize_repository_reference
-_UTC_NOW = utc_now
+_CANONICAL_ACQUIRERS = _ACQUIRERS
+_CANONICAL_WORKER_REQUIRE_PRODUCTION_IDENTITY = worker._require_production_identity
+_CANONICAL_FETCH_COMMENTS = fetch_repository_comments
+_CANONICAL_NORMALIZE_REFERENCE = oqdeps.normalize_repository_reference
+_CANONICAL_UTC_NOW = utc_now
+_CANONICAL_CONFIG_SPECS = bridge.CONFIG_SPECS
+_CANONICAL_FIXED_AUTHORITY = (
+    REQUEST_MARKER,
+    RESULT_MARKER,
+    REQUEST_SCHEMA_VERSION,
+    RESULT_SCHEMA_VERSION,
+    ACTION,
+    CONTROL_ISSUE,
+    DATASET_ID,
+    TRUSTED_RESULT_LOGIN,
+    MAX_LEDGER_PAGES,
+    MAX_DEPENDENCIES,
+    MAX_TEXT_UTF8_BYTES,
+    MAX_RESULT_UTF8_BYTES,
+    bridge.SCHEMA_VERSION,
+    bridge.SOURCE_ISSUE,
+    bridge.DATASET_ID,
+    bridge.PROJECT_ID,
+    bridge.PROJECT_PATH,
+    bridge.COMMIT_SHA,
+    bridge.RECEIPT_COMMENT_ID,
+    bridge.PARSER_ID,
+    tuple(
+        (spec.key, spec.operation_id, spec.repository_path, spec.byte_count, spec.sha256)
+        for spec in bridge.CONFIG_SPECS
+    ),
+)
 
 
 class EbriskDependencyProfilesActionError(RuntimeError):
@@ -104,16 +133,54 @@ def _bounded_text(value: object, *, field: str) -> str:
 
 
 def _require_production_authority() -> None:
+    if _ACQUIRERS is not _CANONICAL_ACQUIRERS:
+        raise EbriskDependencyProfilesActionError("trusted EBRISK acquirer tuple drifted")
     if (
-        worker.acquire_group1_dependencies is not _ACQUIRERS[0]
-        or worker.acquire_group2_dependencies is not _ACQUIRERS[1]
-        or worker.acquire_iceland_dependencies is not _ACQUIRERS[2]
-        or oqdeps.normalize_repository_reference is not _NORMALIZE_REFERENCE
-        or fetch_repository_comments is not _FETCH_COMMENTS
+        worker.acquire_group1_dependencies is not _CANONICAL_ACQUIRERS[0]
+        or worker.acquire_group2_dependencies is not _CANONICAL_ACQUIRERS[1]
+        or worker.acquire_iceland_dependencies is not _CANONICAL_ACQUIRERS[2]
+        or worker._require_production_identity is not _CANONICAL_WORKER_REQUIRE_PRODUCTION_IDENTITY
+        or oqdeps.normalize_repository_reference is not _CANONICAL_NORMALIZE_REFERENCE
+        or fetch_repository_comments is not _CANONICAL_FETCH_COMMENTS
+        or utc_now is not _CANONICAL_UTC_NOW
     ):
         raise EbriskDependencyProfilesActionError("trusted EBRISK dependency authority drifted")
-    if tuple(spec.key for spec in bridge.CONFIG_SPECS) != ("group1", "group2", "iceland"):
-        raise EbriskDependencyProfilesActionError("frozen EBRISK candidate ordering drifted")
+    if bridge.CONFIG_SPECS is not _CANONICAL_CONFIG_SPECS:
+        raise EbriskDependencyProfilesActionError("frozen EBRISK candidate specs drifted")
+    observed = (
+        REQUEST_MARKER,
+        RESULT_MARKER,
+        REQUEST_SCHEMA_VERSION,
+        RESULT_SCHEMA_VERSION,
+        ACTION,
+        CONTROL_ISSUE,
+        DATASET_ID,
+        TRUSTED_RESULT_LOGIN,
+        MAX_LEDGER_PAGES,
+        MAX_DEPENDENCIES,
+        MAX_TEXT_UTF8_BYTES,
+        MAX_RESULT_UTF8_BYTES,
+        bridge.SCHEMA_VERSION,
+        bridge.SOURCE_ISSUE,
+        bridge.DATASET_ID,
+        bridge.PROJECT_ID,
+        bridge.PROJECT_PATH,
+        bridge.COMMIT_SHA,
+        bridge.RECEIPT_COMMENT_ID,
+        bridge.PARSER_ID,
+        tuple(
+            (spec.key, spec.operation_id, spec.repository_path, spec.byte_count, spec.sha256)
+            for spec in bridge.CONFIG_SPECS
+        ),
+    )
+    if observed != _CANONICAL_FIXED_AUTHORITY:
+        raise EbriskDependencyProfilesActionError("frozen EBRISK dependency fixed authority drifted")
+    try:
+        _CANONICAL_WORKER_REQUIRE_PRODUCTION_IDENTITY()
+    except worker.EbriskDependencyAcquisitionError as exc:
+        raise EbriskDependencyProfilesActionError(
+            "trusted EBRISK inner production authority drifted"
+        ) from exc
 
 
 def validate_request(body: object, *, expected_issue: int, execution_sha: str) -> dict[str, Any]:
@@ -157,7 +224,7 @@ def _validate_dependency(value: object, *, config_path: str) -> dict[str, str]:
         for field in ("section", "option", "raw_path", "resolved_path")
     }
     try:
-        expected = _NORMALIZE_REFERENCE(config_path, row["raw_path"])
+        expected = _CANONICAL_NORMALIZE_REFERENCE(config_path, row["raw_path"])
     except oqdeps.OpenQuakeConfigError as exc:
         raise EbriskDependencyProfilesActionError("dependency path fails reviewed normalization") from exc
     if row["resolved_path"] != expected:
@@ -170,13 +237,18 @@ def validate_profile(value: object, *, spec: bridge.ConfigSpec) -> dict[str, Any
     if type(value) is not dict or set(value) != _PROFILE_FIELDS:
         raise EbriskDependencyProfilesActionError("dependency profile fields drifted")
     exact = (
-        ("schema_version", bridge.SCHEMA_VERSION), ("source_issue", bridge.SOURCE_ISSUE),
-        ("dataset_id", DATASET_ID), ("project_id", bridge.PROJECT_ID),
-        ("project_path", bridge.PROJECT_PATH), ("commit_sha", bridge.COMMIT_SHA),
+        ("schema_version", _CANONICAL_FIXED_AUTHORITY[12]),
+        ("source_issue", _CANONICAL_FIXED_AUTHORITY[13]),
+        ("dataset_id", DATASET_ID),
+        ("project_id", _CANONICAL_FIXED_AUTHORITY[15]),
+        ("project_path", _CANONICAL_FIXED_AUTHORITY[16]),
+        ("commit_sha", _CANONICAL_FIXED_AUTHORITY[17]),
         ("candidate_key", spec.key), ("operation_id", spec.operation_id),
         ("repository_path", spec.repository_path), ("byte_count", spec.byte_count),
-        ("sha256", spec.sha256), ("receipt_comment_id", bridge.RECEIPT_COMMENT_ID),
-        ("parser", bridge.PARSER_ID), ("raw_config_returned", False),
+        ("sha256", spec.sha256),
+        ("receipt_comment_id", _CANONICAL_FIXED_AUTHORITY[18]),
+        ("parser", _CANONICAL_FIXED_AUTHORITY[19]),
+        ("raw_config_returned", False),
         ("historical_group_assignment_verified", False), ("dependency_inventory_authorized", False),
         ("runtime_compatibility_verified", False), ("external_bytes_persisted", False),
         ("publication_authorized", False), ("model_use_authorized", False),
@@ -230,9 +302,9 @@ def validate_terminal_result(result: object, *, execution_sha: str) -> dict[str,
         if result.get("failure_class") is not None:
             raise EbriskDependencyProfilesActionError("PASS result carries failure_class")
         profiles = result.get("profiles")
-        if type(profiles) is not list or len(profiles) != len(bridge.CONFIG_SPECS):
+        if type(profiles) is not list or len(profiles) != len(_CANONICAL_CONFIG_SPECS):
             raise EbriskDependencyProfilesActionError("PASS result must carry exactly three profiles")
-        for profile, spec in zip(profiles, bridge.CONFIG_SPECS, strict=True):
+        for profile, spec in zip(profiles, _CANONICAL_CONFIG_SPECS, strict=True):
             validate_profile(profile, spec=spec)
         return result
     if status == "blocked":
@@ -270,10 +342,11 @@ def _parse_terminal_body(body: object) -> tuple[str, dict[str, Any]] | None:
     return execution_sha, result
 
 
-def has_terminal_result(*, repository: str, token: str, execution_sha: str) -> bool:
-    _require_production_authority()
+def _has_terminal_result(
+    *, repository: str, token: str, execution_sha: str, fetch_comments: Callable[..., list[dict[str, Any]]]
+) -> bool:
     try:
-        comments = _FETCH_COMMENTS(repository, token, issue=CONTROL_ISSUE, max_pages=MAX_LEDGER_PAGES)
+        comments = fetch_comments(repository, token, issue=CONTROL_ISSUE, max_pages=MAX_LEDGER_PAGES)
     except LedgerError as exc:
         raise EbriskDependencyProfilesActionError("result ledger is incomplete") from exc
     for comment in comments:
@@ -288,20 +361,34 @@ def has_terminal_result(*, repository: str, token: str, execution_sha: str) -> b
     return False
 
 
-def execute_profiles(
-    *, repository: str, token: str, execution_sha: str,
-    acquirers: tuple[Callable[[], dict[str, Any]], ...] | None = None,
-    now: Callable[[], str] = _UTC_NOW,
-) -> dict[str, Any]:
+def has_terminal_result(*, repository: str, token: str, execution_sha: str) -> bool:
     _require_production_authority()
-    if has_terminal_result(repository=repository, token=token, execution_sha=execution_sha):
+    return _has_terminal_result(
+        repository=repository,
+        token=token,
+        execution_sha=execution_sha,
+        fetch_comments=_CANONICAL_FETCH_COMMENTS,
+    )
+
+
+def _execute_profiles(
+    *, repository: str, token: str, execution_sha: str,
+    acquirers: tuple[Callable[[], dict[str, Any]], ...],
+    now: Callable[[], str],
+    fetch_comments: Callable[..., list[dict[str, Any]]],
+) -> dict[str, Any]:
+    if _has_terminal_result(
+        repository=repository,
+        token=token,
+        execution_sha=execution_sha,
+        fetch_comments=fetch_comments,
+    ):
         return {**_base_result(execution_sha=execution_sha), "status": "duplicate", "failure_class": None, "profiles": None}
-    selected = acquirers or _ACQUIRERS
-    if type(selected) is not tuple or len(selected) != len(bridge.CONFIG_SPECS):
+    if type(acquirers) is not tuple or len(acquirers) != len(_CANONICAL_CONFIG_SPECS):
         raise EbriskDependencyProfilesActionError("exactly three EBRISK acquirers are required")
     profiles: list[dict[str, Any]] = []
     try:
-        for acquirer, spec in zip(selected, bridge.CONFIG_SPECS, strict=True):
+        for acquirer, spec in zip(acquirers, _CANONICAL_CONFIG_SPECS, strict=True):
             profile = dict(acquirer())
             profile["profiled_at"] = now()
             validate_profile(profile, spec=spec)
@@ -313,6 +400,20 @@ def execute_profiles(
     if len(encoded) > MAX_RESULT_UTF8_BYTES:
         raise EbriskDependencyProfilesActionError("dependency result exceeds publication limit")
     return validate_terminal_result(result, execution_sha=execution_sha)
+
+
+def execute_profiles(*, repository: str, token: str, execution_sha: str) -> dict[str, Any]:
+    """Execute only the code-owned canonical workers and clocks on trusted main."""
+
+    _require_production_authority()
+    return _execute_profiles(
+        repository=repository,
+        token=token,
+        execution_sha=execution_sha,
+        acquirers=_CANONICAL_ACQUIRERS,
+        now=_CANONICAL_UTC_NOW,
+        fetch_comments=_CANONICAL_FETCH_COMMENTS,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
