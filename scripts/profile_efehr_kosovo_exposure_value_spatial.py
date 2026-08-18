@@ -17,7 +17,7 @@ import io
 import time
 import urllib.error
 import urllib.request
-from decimal import Decimal, InvalidOperation
+from decimal import Context, Decimal, Inexact, InvalidOperation, Rounded, localcontext
 from typing import Any
 
 try:
@@ -106,6 +106,18 @@ _ROW_DIGEST_DOMAIN = b"OpenCatastrophe/EQ1/KosovoExposureRow/v1\x00"
 MAX_NUMERIC_UTF8_BYTES = 128
 MAX_DECIMAL_ADJUSTED_EXPONENT = 100
 
+# Accepted values have at most 128 coefficient digits and adjusted exponents in
+# [-100, 100]. Aligning four such operands requires fewer than 330 significant
+# digits, so this fixed context keeps the residual exact with explicit headroom.
+DECIMAL_ARITHMETIC_PRECISION = 512
+_EXACT_DECIMAL_CONTEXT = Context(
+    prec=DECIMAL_ARITHMETIC_PRECISION,
+    Emin=-999_999,
+    Emax=999_999,
+)
+_EXACT_DECIMAL_CONTEXT.traps[Inexact] = True
+_EXACT_DECIMAL_CONTEXT.traps[Rounded] = True
+
 
 class ExposureValueSpatialProfileError(RuntimeError):
     """Raised when receipt-bound value/spatial profiling fails closed."""
@@ -116,8 +128,10 @@ def _canonical_decimal(value: Decimal) -> str:
         raise ExposureValueSpatialProfileError("numeric summary contains non-finite Decimal")
     if value == 0:
         return "0"
-    normalized = value.normalize()
-    text = format(normalized, "f")
+    # Decimal.normalize() applies the ambient Context and can silently round
+    # accepted high-precision values. Fixed-point formatting without a precision
+    # specifier preserves the exact Decimal coefficient/exponent instead.
+    text = format(value, "f")
     if "." in text:
         text = text.rstrip("0").rstrip(".")
     return text
@@ -139,6 +153,23 @@ def _parse_decimal(value: str, *, field: str) -> Decimal:
     if number != 0 and abs(number.adjusted()) > MAX_DECIMAL_ADJUSTED_EXPONENT:
         raise ExposureValueSpatialProfileError(f"{field} numeric exponent exceeds bounded policy")
     return number
+
+
+def _replacement_cost_residual(parsed: dict[str, Decimal]) -> Decimal:
+    """Return the exact replacement-cost component residual independent of ambient context."""
+
+    try:
+        with localcontext(_EXACT_DECIMAL_CONTEXT) as context:
+            component_sum = context.add(
+                parsed["COST_STRUCTURAL_EUR"],
+                parsed["COST_NONSTRUCTURAL_EUR"],
+            )
+            component_sum = context.add(component_sum, parsed["COST_CONTENTS_EUR"])
+            return context.subtract(parsed["TOTAL_REPL_COST_EUR"], component_sum)
+    except (Inexact, Rounded) as exc:
+        raise ExposureValueSpatialProfileError(
+            "replacement-cost residual exceeds exact decimal working bound"
+        ) from exc
 
 
 def _row_identity(row: list[str]) -> bytes:
@@ -251,11 +282,7 @@ def profile_verified_exposure_value_spatial(
                 parsed[field] = number
                 numeric_values[field].append(number)
 
-            residual = parsed["TOTAL_REPL_COST_EUR"] - (
-                parsed["COST_STRUCTURAL_EUR"]
-                + parsed["COST_NONSTRUCTURAL_EUR"]
-                + parsed["COST_CONTENTS_EUR"]
-            )
+            residual = _replacement_cost_residual(parsed)
             if residual != 0:
                 component_nonzero_residual_count += 1
                 component_max_abs_residual = max(component_max_abs_residual, abs(residual))
