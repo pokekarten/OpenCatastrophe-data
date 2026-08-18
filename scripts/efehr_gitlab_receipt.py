@@ -56,6 +56,9 @@ PROJECTS: dict[int, dict[str, Any]] = {
 EXACT_PATHS: dict[tuple[int, int], frozenset[str]] = {
     (281, 269): frozenset(
         {
+            "Configuration_files/config_ebrisk_Group1.ini",
+            "Configuration_files/config_ebrisk_Group2.ini",
+            "Configuration_files/config_ebrisk_Iceland.ini",
             "Configuration_files/config_event_hazard_Group1.ini",
             "Configuration_files/config_event_hazard_Group2.ini",
             "Hazard/gmpe_logic_tree_5br_slope_geology.xml",
