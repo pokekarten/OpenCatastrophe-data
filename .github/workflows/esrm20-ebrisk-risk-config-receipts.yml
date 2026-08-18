@@ -1,0 +1,246 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 EBRISK Risk-Config Receipts
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-ebrisk-risk-config-receipts-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main EBRISK receipt request
+    if: >-
+      github.event.issue.number == 281 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-ebrisk-risk-config-receipts-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_EBRISK_RECEIPT_REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/run_esrm20_ebrisk_risk_config_receipts_action.py \
+            --comment-body-env OC_EBRISK_RECEIPT_REQUEST_BODY \
+            --expected-issue 281 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-receipts:
+    name: Execute three bounded EBRISK receipts
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prove complete issue-local dedup before provider access
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import run_esrm20_ebrisk_risk_config_receipts_action as subject
+
+          skip = subject.has_terminal_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+
+      - name: Run exact fixed EBRISK receipt workers
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_EBRISK_RECEIPT_REQUEST_BODY: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/ebrisk-risk-config-receipts.json
+        run: |
+          set -euo pipefail
+          python scripts/run_esrm20_ebrisk_risk_config_receipts_action.py \
+            --comment-body-env OC_EBRISK_RECEIPT_REQUEST_BODY \
+            --expected-issue 281 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from scripts import run_esrm20_ebrisk_risk_config_receipts_action as subject
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          sha = os.environ["EXECUTION_SHA"]
+          body = subject.RESULT_MARKER + "\n" + json.dumps(
+              result, sort_keys=True, separators=(",", ":")
+          )
+          if not subject._parse_trusted_terminal_result(body, execution_sha=sha):
+              raise SystemExit("generated result did not validate for execution SHA")
+          PY
+
+      - name: Export bounded result to publisher
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        env:
+          RESULT_PATH: ${{ runner.temp }}/ebrisk-risk-config-receipts.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-receipts:
+    name: Publish bounded EBRISK receipt evidence
+    needs: [validate-request, execute-receipts]
+    if: >-
+      needs.execute-receipts.result == 'success' &&
+      needs.execute-receipts.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence result and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-receipts.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-ebrisk-risk-config-receipts-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            keys == [
+              "action",
+              "config_content_interpreted",
+              "dataset_id",
+              "dependency_closure_verified",
+              "execution_sha",
+              "external_bytes_persisted",
+              "failure_class",
+              "historical_group_assignment_verified",
+              "model_use_authorized",
+              "provider_identity",
+              "publication_authorized",
+              "receipts",
+              "runtime_compatibility_verified",
+              "schema_version",
+              "source_issue",
+              "source_science_issue",
+              "status",
+              "target_sha"
+            ] and
+            .schema_version == "oc-esrm20-ebrisk-risk-config-receipts-result-v1" and
+            .action == "esrm20_ebrisk_risk_config_receipts" and
+            .source_issue == 281 and
+            .source_science_issue == 281 and
+            .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+            .target_sha == $sha and
+            .execution_sha == $sha and
+            .provider_identity.project_id == 269 and
+            .provider_identity.project_path == "efehr/esrm20" and
+            .provider_identity.commit_sha == "05f83bbc9df81d02ee8ddb1801d9d781355ce783" and
+            .historical_group_assignment_verified == false and
+            .config_content_interpreted == false and
+            .dependency_closure_verified == false and
+            .runtime_compatibility_verified == false and
+            .model_use_authorized == false and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and
+            (if .status == "pass" then
+              .failure_class == null and
+              (.receipts | type) == "array" and
+              (.receipts | length) == 3 and
+              ([.receipts[] | keys == [
+                "byte_count",
+                "content_type",
+                "etag",
+                "operation_id",
+                "repository_path",
+                "retrieved_at",
+                "sha256"
+              ]] | all) and
+              .receipts[0].repository_path == "Configuration_files/config_ebrisk_Group1.ini" and
+              .receipts[0].operation_id == "esrm20-ebrisk-group1-config-candidate-v1" and
+              .receipts[1].repository_path == "Configuration_files/config_ebrisk_Group2.ini" and
+              .receipts[1].operation_id == "esrm20-ebrisk-group2-config-candidate-v1" and
+              .receipts[2].repository_path == "Configuration_files/config_ebrisk_Iceland.ini" and
+              .receipts[2].operation_id == "esrm20-ebrisk-iceland-config-candidate-v1" and
+              ([.receipts[] |
+                (.retrieved_at | type) == "string" and
+                ((.retrieved_at | length) >= 1 and (.retrieved_at | length) <= 64) and
+                (.byte_count | type) == "number" and
+                ((.byte_count | floor) == .byte_count) and
+                .byte_count >= 1 and .byte_count <= 1048576 and
+                (.sha256 | type) == "string" and
+                (.sha256 | test("^[0-9a-f]{64}$")) and
+                (.content_type == null or ((.content_type | type) == "string" and (.content_type | length) <= 256)) and
+                (.etag == null or ((.etag | type) == "string" and (.etag | length) <= 512))
+              ] | all)
+            elif .status == "blocked" then
+              .failure_class == "acquisition_failure" and .receipts == null
+            else
+              false
+            end)
+          ' >/dev/null
+
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/ebrisk-receipts-comment.json"
+          gh api \
+            --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/281/comments" \
+            --input "$RUNNER_TEMP/ebrisk-receipts-comment.json"
