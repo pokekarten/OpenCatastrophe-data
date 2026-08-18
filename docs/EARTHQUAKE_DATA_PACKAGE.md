@@ -5,46 +5,120 @@ SPDX-License-Identifier: Apache-2.0
 
 # EQ1 Earthquake Data Package v0.1
 
-This document is the first durable public handoff for the bounded EQ1 earthquake data package tracked by issue #287.
+This document is the durable public handoff for the bounded EQ1 earthquake data package
+tracked by issue #287.
 
-It is assembled against OpenCatastrophe-data `main` commit
-`bd3417740a61d8f03427b72391bb7bc2ecb14bc3`.
+The initial assembly fence was OpenCatastrophe-data `main` commit
+`bd3417740a61d8f03427b72391bb7bc2ecb14bc3`; the PR that carries this document must be
+validated against its current merge base before integration.
 
 ## Status
 
-**Data-identity handoff: complete for the selected EQ1 Kosovo-residential component set.**
+**v0.1 component-data package: assembled.**
 
-**End-to-end ESRM20 loss reproduction: not yet authorized.**
+**Faithful end-to-end ESRM20 loss reproduction: not authorized by v0.1.**
 
-The distinction is intentional. This package fixes the exact public source identities,
-byte receipts, deterministic exposure-to-vulnerability selection, site input, hazard
-roots and reconstructed reference-runtime evidence needed by a consumer. It does not
-turn unresolved scientific compatibility, historical-runtime or validation questions
-into implicit assumptions.
+The package fixes public source identities, byte receipts, deterministic selection
+contracts and scientific boundaries needed by a consumer. It does not turn unresolved
+runtime, site, component, valuation or validation questions into assumptions.
 
-External provider bytes are not copied into this repository. The package is a
-receipt-bound handoff: consumers materialize source bytes outside Git, verify the exact
-byte count and SHA-256 before decoding, and use the repository's reviewed source-specific
-workers and validators.
+External provider bytes are not copied into this repository. Consumers materialize
+source bytes outside Git, verify exact byte counts and SHA-256 values before decoding,
+and use reviewed source-specific workers and validators.
 
-## Scope lock
+## Two execution modes must remain separate
 
-The v0.1 bounded reference slice is:
+EQ1 contains two related but scientifically distinct earthquake lanes. They are both
+useful package components, but they are **not interchangeable**.
 
-- peril: earthquake;
-- risk-model lineage: ESRM20 v1.0 plus the final ESRM20 vulnerability database v2.1;
-- exposure slice: Kosovo residential exposure;
-- public-data role: reproducible component/reference research and interoperability;
-- excluded claims: production fitness, regulatory fitness, insured loss, pricing,
-  capital, benchmark reproduction, publication authority and model-use authority.
+### Mode A — ESHM20 hazard-reference reproduction
 
-The package does not require the historical Athens/Thessaloniki scenario lane. Those
-scenario/observational assets remain useful validation work, but they are not required
-to identify the selected Kosovo-residential input chain.
+This is the exact ESHM20 hazard-reference configuration in provider project 197. Its
+root, first-order dependencies and selected source-model children are byte-grounded.
+It is the strongest current hazard-data reference lane.
 
-## Locked component identities
+Mode A must use the site artifact selected by its own ESHM20 root configuration. The
+project-269 Kosovo site XML from Mode B must not be substituted merely because both are
+site models.
 
-### 1. Exposure
+### Mode B — ESRM20 Kosovo-residential risk-input / full-risk candidate lane
+
+This is the ESRM20 risk-side chain in provider projects 186, 188 and 269: Kosovo
+residential exposure, exact taxonomy mapping, final v2.1 vulnerability selection,
+Kosovo site XML, ESRM20 event-hazard roots and the ESRM20 GMM tree.
+
+Mode B has enough exact identity evidence to lock the selected risk-data components,
+but it does **not** yet have a source-authorized unique historical/default Kosovo
+`ebrisk` execution root. Therefore Mode B is not called a faithful full-risk run in
+v0.1.
+
+Never use evidence from one mode to silently satisfy a semantic or runtime gate in the
+other.
+
+## Mode A — exact ESHM20 hazard-reference data
+
+### A1. Calculation root
+
+Provider identity:
+
+- project: `efehr/eshm20` / project 197;
+- immutable commit: `fbd334de68f85d72669f73fc5a314a113db67317`;
+- path:
+  `oq_computational/oq_configuration_eshm20_v12e_region_main/config_eshm20_v12e_main_region.ini`;
+- byte count: `2719`;
+- SHA-256: `f1f4dabc48e1b8a478dbdb96b01c8f58cc68c98abd6f9004671c5fba9eb7e714`.
+
+The exact root bytes deterministically select exactly three first-order dependencies.
+
+### A2. First-order dependencies
+
+All three objects are from project 197 at the same immutable commit.
+
+| Role | Path | Bytes | SHA-256 |
+| --- | --- | ---: | --- |
+| site model | `oq_computational/oq_configuration_eshm20_v12e_region_main/eshm20_site_model_v06d.csv` | 3873324 | `d4d95f3e482a0361a90d1b0796545eaf075d0e212d66d025f975973497b29529` |
+| GMM logic tree | `oq_computational/oq_configuration_eshm20_v12e_region_main/gmpe_complete_logic_tree_5br.xml` | 33760 | `e2c53f11174b8cd4de1f65af4dafc5af2e7a6848563e8a4c0ada44a54f22ff62` |
+| source-model logic tree | `oq_computational/oq_configuration_eshm20_v12e_region_main/source_model_logic_tree_eshm20_model_v12e.xml` | 17579 | `97a37911f9eae73766f386686b112e5a4e111965da3e4e1543627c28d4201867` |
+
+The frozen selected-prefix inventory contains no `.hdf5` and no ZIP entries inside the
+selected ESHM20 configuration prefix. That is an inventory statement, not authority to
+invent absent dependencies.
+
+### A3. Source-model children
+
+The exact source-model logic-tree bytes resolve to exactly `51` canonical non-HDF5
+source-model child paths.
+
+- canonical child count: `51`;
+- canonical ordered path-set SHA-256:
+  `2fcc885dc9fbbd8e9ee45b185dc9f2339af3654e9976ae5f07d4d097551944b7`;
+- project: `efehr/eshm20` / 197;
+- immutable commit: `fbd334de68f85d72669f73fc5a314a113db67317`;
+- trusted-main terminal receipt run: `31940875325`;
+- terminal result comment: `5306897047`;
+- result: exact byte-count + SHA-256 receipts for all `51/51` selected paths;
+- persistence: no provider bytes persisted by the receipt path.
+
+The fixed reviewed worker
+`scripts/acquire_eshm20_source_model_child_receipts.py` is the repository-side canonical
+selection contract for those 51 paths. The individual provider-byte receipts remain in
+the terminal trusted-main evidence; this package does not duplicate provider payloads.
+
+These receipts close selected child-byte identity. They do not automatically authorize
+transitive source-internal dependency expansion, source-physics interpretation,
+publication or model use.
+
+### A4. Mode-A site boundary
+
+Mode A's site authority is the exact project-197
+`eshm20_site_model_v06d.csv` object above. Its byte identity is closed.
+
+Column/unit/CRS/coordinate/interpolation semantics and faithful runtime site-response
+claims remain separate science gates. The Mode-B Kosovo XML is not a substitute.
+
+## Mode B — exact ESRM20 Kosovo-residential risk-side data
+
+### B1. Exposure
 
 Provider identity:
 
@@ -55,12 +129,11 @@ Provider identity:
 - byte count: `316789`;
 - SHA-256: `4d562ad4925c527d518834b8dcd39a083cfd3b87b622031a84958ae7b4d8c5ea`.
 
-The receipt-bound value/spatial profiler is integrated on `main` by PR #518. Its
-aggregate evidence does not publish raw rows, place/region labels or provider payload
-values, and it does not promote valuation-vintage, CRS, publication or model-use
-authority.
+The receipt-bound value/spatial profiler is integrated on `main` by PR #518. Aggregate
+profiling does not publish raw rows, place/region labels or provider payload values, and
+it does not promote valuation vintage, CRS, publication or model-use authority.
 
-### 2. Exposure taxonomy projection
+### B2. Exposure taxonomy projection
 
 The exact receipted exposure contains:
 
@@ -73,7 +146,7 @@ The exact receipted exposure contains:
 No taxonomy normalization, aliasing or fuzzy matching is allowed in the EQ1 selection
 path.
 
-### 3. Exposure-to-vulnerability mapping
+### B3. Exposure-to-vulnerability mapping
 
 Provider identity:
 
@@ -84,17 +157,16 @@ Provider identity:
 - byte count: `83585`;
 - SHA-256: `94b9ee800e9435a346ca200ecf34d0d46c8d8b895cc56e3be85c323006b4ee4c`.
 
-Trusted EQ1 joining resolves all `86/86` Kosovo-residential source taxonomies by exact
-literal matching:
+The exact literal join resolves the Kosovo-residential taxonomy set:
 
-- resolved: `86`;
+- resolved: `86/86`;
 - unsupported: `0`;
 - ambiguous: `0`;
 - unique resulting Risk IDs: `47`;
 - canonical Risk-ID-set SHA-256:
   `1ea96cb5a62b864c20ffa056e0f7937d006ab6f6d57b2f4286c22112ca311102`.
 
-### 4. Vulnerability selection
+### B4. Vulnerability selection
 
 Final ESRM20 vulnerability lineage:
 
@@ -107,9 +179,9 @@ Final ESRM20 vulnerability lineage:
 - canonical selected receipt-set SHA-256:
   `395b4cf044ab0f263fee88becd0ad9b957c9f7e92f8ecc3b22e023c591b2e951`.
 
-The final ESRM20 vulnerability NRML also contains all 47 canonical Risk IDs. The
-selected functions are vulnerability functions, not fragility functions. Their bounded
-semantics are:
+The final ESRM20 vulnerability NRML contains all 47 canonical Risk IDs. The selected
+functions are vulnerability functions, not fragility functions. Their bounded semantics
+are:
 
 - asset category: buildings;
 - loss category: structural;
@@ -118,11 +190,11 @@ semantics are:
 - required IMTs: `PGA`, `SA(0.3)`, `SA(0.6)`, `SA(1.0)`;
 - intensity unit: `g`.
 
-These semantics do not convert the result into insured loss, TIV, policy loss,
+These semantics do not turn the result into insured loss, TIV, policy loss,
 Gross/Ceded/Net loss or capital. Intended ESRM20 use is established; independent
 Kosovo-specific empirical predictive validity is not.
 
-### 5. Kosovo site model
+### B5. Kosovo site model
 
 Provider identity:
 
@@ -134,21 +206,15 @@ Provider identity:
 - SHA-256: `746cf75d91507da8b55a9476c61bb5d884eed42c6268a36b1179f432e8850edd`.
 
 The reconstructed OpenQuake 3.14 ingestion path accepts 37 site records and exposes the
-required parameter names:
+required parameter names `geology`, `region`, `slope`, `vs30` and `xvf`.
 
-- `geology`;
-- `region`;
-- `slope`;
-- `vs30`;
-- `xvf`.
-
-Runtime value acceptance and GSIM parameter sufficiency have been demonstrated for the
+Runtime value acceptance and GSIM parameter sufficiency are demonstrated for the
 bounded reconstructed reference path. CRS/coordinate semantics, missingness semantics,
-site-parameter units and full site-model compatibility remain separately gated.
+site-parameter units and faithful site-model compatibility remain separately gated.
 
-### 6. ESRM20 event-hazard roots
+### B6. ESRM20 event-hazard roots
 
-Both roots are from project 269 / `efehr/esrm20` at the immutable v1.0 commit
+Both roots are from project 269 / `efehr/esrm20` at immutable ESRM20-v1.0 commit
 `05f83bbc9df81d02ee8ddb1801d9d781355ce783`.
 
 Group 1:
@@ -163,11 +229,10 @@ Group 2:
 - byte count: `1673`;
 - SHA-256: `eb74edd2168bad20c23d4b0e1a99f5ed97ef28606a9ebfef6b8c8191d35dd34c`.
 
-These are exact-byte-grounded **event-hazard / risk-hazard roots** used to produce
-stochastic catalogues and ground-motion fields. They are not sufficient full
-risk-execution roots.
+These are exact-byte-grounded **event-hazard roots** used for stochastic catalogues and
+ground-motion fields. They are not sufficient full-risk `ebrisk` execution roots.
 
-### 7. ESRM20 GMM logic tree
+### B7. ESRM20 GMM logic tree
 
 Provider identity:
 
@@ -177,11 +242,11 @@ Provider identity:
 - byte count: `34018`;
 - SHA-256: `f3efd16d56189c7804824d94b20ed75d6ceefc879144d8bd697c1f9b47cf17b4`.
 
-The exact five resolved GSIM classes are grounded against a reconstructed frozen
-OpenQuake reference environment. Their native horizontal-component declarations are
-mixed: the path contains both `RotD50` and `GEOMETRIC_MEAN` semantics.
+The exact five resolved GSIM classes are grounded against the frozen reconstructed
+reference runtime. Their native horizontal-component declarations are mixed: the path
+contains both `RotD50` and `GEOMETRIC_MEAN` semantics.
 
-### 8. Reconstructed OpenQuake reference runtime
+### B8. Reconstructed OpenQuake reference runtime
 
 Reference runtime identity:
 
@@ -190,42 +255,49 @@ Reference runtime identity:
 - commit: `9f044c93d72846421a8faa90ebf0a6afacdf3c20`.
 
 The current EQ1 reference lane establishes `provider_native_mixed_no_conversion` for
-the selected GSIM set. It rejects an implicit `ModifiableGMPE` /
+the selected ESRM20 GSIM set. It rejects an implicit `ModifiableGMPE` /
 `horiz_comp_to_geom_mean` conversion and has produced finite native-component numeric
-probes. This is reconstructed-reference evidence, not proof of an original historical
-production environment and not numerical hazard validation.
+probes.
+
+This is reconstructed-reference evidence. It is not proof of the original historical
+ESRM20 production environment and not numerical hazard validation.
 
 ## Compatibility matrix
 
-| Interface / gate | v0.1 status | Evidence boundary |
+| Interface / gate | v0.1 status | Mode / evidence boundary |
 | --- | --- | --- |
-| Exposure byte identity | **PASS** | exact project/commit/path/bytes/SHA-256 |
-| Exposure taxonomy extraction | **PASS** | 86 exact literal values; no normalization |
-| Taxonomy → mapping join | **PASS** | 86/86 resolved; 0 unsupported; 0 ambiguous |
-| Mapping → vulnerability selection | **PASS** | exactly 47 canonical Risk IDs |
-| Vulnerability byte selection | **PASS** | 47/47 selected files receipted |
-| Vulnerability IMT-name contract | **PASS** | `PGA`, `SA(0.3)`, `SA(0.6)`, `SA(1.0)` |
-| Vulnerability intensity unit | **PASS** | `g` |
-| Site byte identity | **PASS** | exact project/commit/path/bytes/SHA-256 |
-| Site OpenQuake parser acceptance | **PASS** | 37 records; required five site parameters accepted |
-| Event-hazard root byte identity | **PASS** | Group1 and Group2 exact receipts |
-| GMM logic-tree byte identity | **PASS** | exact project/commit/path/bytes/SHA-256 |
-| Reconstructed OQ3.14 GSIM resolution | **PASS** | five direct classes; no alias/conversion activation |
-| Hazard ↔ vulnerability IMT names | **PASS** | same four canonical IMT names on the bounded lane |
-| Hazard output unit ↔ vulnerability unit | **PASS** | bounded OQ3.14 PGA/SA reference output is in `g` |
-| Horizontal-component interoperability | **BLOCKED** | mixed `RotD50` + `GEOMETRIC_MEAN`; no source authority for conversion |
-| Site CRS / coordinate semantics | **BLOCKED** | current site evidence intentionally leaves this false |
-| Site missingness semantics | **BLOCKED** | current site evidence intentionally leaves this false |
-| Site-parameter unit closure | **BLOCKED** | runtime acceptance does not itself prove all semantic units |
-| Exposure valuation vintage / exact value-basis compatibility | **BLOCKED** | aggregate value evidence exists; valuation authority remains separate |
-| Vulnerability Kosovo empirical applicability | **BLOCKED** | intended ESRM20 European use is not independent Kosovo validation |
-| Historical/default Kosovo `ebrisk` root | **BLOCKED** | provider v1.0 does not uniquely bind Kosovo to one default risk group |
-| Historical ESRM20 risk runtime | **BLOCKED** | reconstructed OQ3.14 reference is not historical-risk-runtime proof |
-| Numerical hazard agreement | **BLOCKED** | mechanics/runtime evidence only |
-| End-to-end ground-up loss input readiness | **BLOCKED** | component/site/value-basis gates above remain open |
-| Faithful ESRM20 benchmark reproduction | **BLOCKED** | full risk configuration/runtime plus science gates remain open |
-| Independent validation / holdout | **BLOCKED** | no such claim is made by this package |
-| Publication / production / model use | **BLOCKED** | explicitly outside v0.1 authority |
+| ESHM20 root byte identity | **PASS** | A — exact project/commit/path/bytes/SHA-256 |
+| ESHM20 first-order dependency bytes | **PASS** | A — exact 3/3 receipts |
+| ESHM20 source child selection | **PASS** | A — exactly 51 canonical paths |
+| ESHM20 source child byte identity | **PASS** | A — exact 51/51 terminal trusted-main receipts |
+| ESHM20 site byte identity | **PASS** | A — exact selected project-197 site CSV |
+| ESHM20 site semantic/runtime closure | **BLOCKED** | A — CRS/units/interpolation/runtime semantics not fully authorized |
+| ESHM20 numerical hazard agreement | **BLOCKED** | A — byte/reference mechanics do not equal numerical validation |
+| ESRM20 exposure byte identity | **PASS** | B — exact project/commit/path/bytes/SHA-256 |
+| Exposure taxonomy extraction | **PASS** | B — 86 exact literal values; no normalization |
+| Taxonomy → mapping join | **PASS** | B — 86/86 resolved; 0 unsupported; 0 ambiguous |
+| Mapping → vulnerability selection | **PASS** | B — exactly 47 canonical Risk IDs |
+| Vulnerability byte selection | **PASS** | B — 47/47 selected files receipted |
+| Vulnerability IMT-name contract | **PASS** | B — `PGA`, `SA(0.3)`, `SA(0.6)`, `SA(1.0)` |
+| Vulnerability intensity unit | **PASS** | B — `g` |
+| ESRM20 Kosovo site byte identity | **PASS** | B — exact project/commit/path/bytes/SHA-256 |
+| ESRM20 Kosovo site OQ parser acceptance | **PASS** | B — 37 records; required five site parameters accepted |
+| ESRM20 event-hazard root identities | **PASS** | B — Group1 and Group2 exact receipts |
+| ESRM20 GMM-tree byte identity | **PASS** | B — exact project/commit/path/bytes/SHA-256 |
+| ESRM20 reconstructed OQ3.14 GSIM resolution | **PASS** | B — five direct classes; no alias/conversion activation |
+| ESRM20 hazard ↔ vulnerability IMT names | **PASS** | B — same four canonical IMT names on bounded lane |
+| ESRM20 hazard output unit ↔ vulnerability unit | **PASS** | B — bounded OQ3.14 PGA/SA reference output is in `g` |
+| Horizontal-component interoperability | **BLOCKED** | B — mixed `RotD50` + `GEOMETRIC_MEAN`; no source authority for conversion |
+| ESRM20 site CRS / coordinate semantics | **BLOCKED** | B — current site evidence intentionally leaves this false |
+| ESRM20 site missingness / unit semantics | **BLOCKED** | B — runtime acceptance does not prove all semantics |
+| Exposure valuation vintage / value-basis compatibility | **BLOCKED** | B — aggregate value evidence exists; valuation authority is separate |
+| Vulnerability Kosovo empirical applicability | **BLOCKED** | B — intended ESRM20 use is not independent Kosovo validation |
+| Historical/default Kosovo `ebrisk` root | **BLOCKED** | B — provider v1.0 does not uniquely bind Kosovo to one default risk group |
+| Historical ESRM20 risk runtime | **BLOCKED** | B — reconstructed OQ3.14 is not historical-risk-runtime proof |
+| End-to-end ground-up loss readiness | **BLOCKED** | B — component/site/value-basis/configuration gates remain open |
+| Faithful ESRM20 benchmark reproduction | **BLOCKED** | B — full-risk configuration/runtime + science gates remain open |
+| Independent validation / holdout | **BLOCKED** | A/B — no such claim is made by v0.1 |
+| Publication / production / model use | **BLOCKED** | A/B — explicitly outside v0.1 authority |
 
 A `BLOCKED` row does not invalidate a preceding byte-identity `PASS`. It prevents that
 identity evidence from being silently promoted into a stronger scientific or model-use
@@ -233,103 +305,111 @@ claim.
 
 ## Risk-configuration boundary
 
-The immutable ESRM20 v1.0 provider evidence distinguishes the event-hazard configuration
-family above from three separate `ebrisk` configurations used for full risk
+The immutable ESRM20 v1.0 provider evidence distinguishes the Mode-B event-hazard
+configuration family from separate `ebrisk` configurations used for full risk
 calculations.
 
-For country-specific calculations, provider guidance permits constructing a run by
-modifying one of those configurations so that only the selected country site/exposure
-files are called. That does **not** establish a unique historical/default `ebrisk` group
-for Kosovo. Therefore this package does not guess a group from geography, numbering or
-the two-group event-hazard partition.
+Provider guidance permits constructing country-specific calculations by modifying an
+`ebrisk` configuration so that only selected country site/exposure files are called.
+That does **not** establish a unique historical/default `ebrisk` group for Kosovo.
+Therefore v0.1 does not guess a group from geography, numbering or the two-group
+event-hazard partition.
 
-A deliberately Kosovo-only reconstructed `ebrisk` configuration can be useful later,
-but it must be labelled as a reconstructed experiment configuration rather than as the
-historical bytes of the published full-Europe ESRM20 run.
+A Kosovo-only reconstructed `ebrisk` configuration can be useful later, but it must be
+labelled as a reconstructed experiment configuration rather than historical published
+ESRM20 execution bytes.
 
-## Admission and `model-input-v1`
+## Admission and repository contracts
 
-This package does not create a second bundle schema and does not weaken the existing
-admission contract.
+This package does not create a second bundle schema and does not weaken existing
+admission rules.
 
-`model-input-v1` binds one exact artifact that is already admitted by an accepted
-manifest. It should be emitted only where the relevant manifest's artifact identity and
-admission scope actually permit that binding.
+`model-input-v1` binds one exact artifact already admitted by an accepted manifest. It
+should be emitted only where the relevant manifest artifact identity and admission
+scope permit that binding.
 
-Some EQ1 source families are still represented by metadata-only admission records or by
-public trusted receipts rather than an admitted multi-file artifact. This package keeps
-those components receipt-bound instead of fabricating a manifest artifact merely to
-make a descriptor pass.
+Several EQ1 source families are represented by trusted public receipts or metadata-only
+admission records rather than one admitted multi-file artifact. v0.1 keeps those
+components receipt-bound instead of fabricating a manifest artifact merely to make a
+descriptor pass.
 
-When a future scientific/model run materially uses these inputs, `run-evidence-v2`
-should record the exact materially used artifacts, roles, hashes and evidence references
-that were actually authorized at execution time.
+When a scientific/model run materially uses these inputs, `run-evidence-v2` should bind
+the exact materially used artifacts, roles, hashes and evidence references actually
+authorized at execution time.
 
 ## Consumer procedure
 
-A consumer reproducing this v0.1 handoff should:
+A consumer reproducing v0.1 should:
 
 1. check out the exact OpenCatastrophe-data revision containing this package;
-2. read the source-specific manifest/review plus the canonical issue evidence before
-   acquiring external bytes;
-3. materialize each required external source outside Git through the reviewed bounded
+2. choose **Mode A or Mode B explicitly** before materializing data;
+3. read source-specific manifest/review and canonical issue evidence before acquisition;
+4. materialize each required external source outside Git through the reviewed bounded
    acquisition path;
-4. verify provider project/ref/path, byte count and SHA-256 **before decoding**;
-5. run the exact taxonomy extraction and literal mapping join; reject normalization,
-   unsupported or ambiguous taxonomies;
-6. require the resulting canonical 47 Risk IDs before selecting vulnerability inputs;
-7. independently verify the site, event-hazard and GMM identities above;
-8. preserve the compatibility matrix: do not feed mixed-component hazard output into
-   vulnerability under an invented conversion;
-9. when the remaining gates are closed, bind the actual run with `run-evidence-v2`
-   rather than treating this document as execution evidence.
+5. verify provider project/ref/path, byte count and SHA-256 **before decoding**;
+6. for Mode A, require the exact ESHM20 root, exactly three first-order dependencies and
+   the fixed 51-child source-model set; never substitute the Mode-B site model;
+7. for Mode B, require the exact 86-taxonomy projection, exact literal mapping join and
+   resulting canonical 47 Risk IDs before vulnerability selection;
+8. preserve the compatibility matrix; in particular, do not invent a horizontal
+   component conversion or a historical/default Kosovo `ebrisk` group;
+9. when a model run is scientifically authorized, bind actual execution with
+   `run-evidence-v2` rather than treating this document as execution evidence.
 
 ## v0.1 definition of done
 
-The earthquake **data package** is considered assembled at v0.1 when all of the
+The earthquake **component-data package** is assembled at v0.1 when all of the
 following remain true on the integrated repository state:
 
-- [x] the selected exposure source has immutable public byte identity;
-- [x] exposure taxonomy extraction is exact and deterministic;
-- [x] exposure taxonomy maps fail-closed to 47 exact vulnerability Risk IDs;
+- [x] Mode A ESHM20 calculation root has immutable public byte identity;
+- [x] Mode A exactly-three first-order dependencies have immutable public byte identities;
+- [x] Mode A source-model tree selects exactly 51 canonical child paths;
+- [x] all 51 Mode A selected source-model children have terminal exact byte receipts;
+- [x] Mode B Kosovo residential exposure has immutable public byte identity;
+- [x] Mode B exposure taxonomy extraction is exact and deterministic;
+- [x] the taxonomy maps fail-closed to exactly 47 vulnerability Risk IDs;
 - [x] all 47 selected vulnerability inputs have provider-grounded byte identities;
-- [x] the Kosovo site input has immutable public byte identity;
-- [x] the bounded event-hazard roots and GMM logic tree have immutable public byte identities;
-- [x] the reconstructed reference runtime and its no-conversion component behavior are explicit;
+- [x] the Mode-B Kosovo site, event-hazard roots and GMM tree have immutable identities;
+- [x] the reconstructed reference-runtime no-conversion behavior is explicit;
+- [x] Mode-A and Mode-B site/hazard authorities are not collapsed;
 - [x] no third-party provider bytes are committed by the package;
 - [x] unresolved scientific/model-use gates are explicit rather than converted to assumptions;
-- [x] the package reuses existing admission and run-evidence contracts instead of adding a competing schema.
+- [x] existing admission and run-evidence contracts are reused rather than replaced.
 
 This definition of done is deliberately narrower than **consumer-ready loss model** or
 **faithful ESRM20 benchmark reproduction**.
 
-## Next gates toward v0.2 / loss-run readiness
+## Next gates toward loss-run readiness
 
-The shortest remaining sequence is:
+The shortest remaining Mode-B sequence is:
 
-1. close or deliberately label the horizontal-component treatment at the exact
-   hazard→vulnerability consumer boundary;
-2. close Kosovo site CRS/coordinate, missingness and unit semantics needed by that run;
-3. close exposure value-basis/valuation compatibility with the replacement-cost
+1. close or explicitly label horizontal-component treatment at the exact
+   hazard→vulnerability boundary;
+2. close Kosovo site CRS/coordinate, missingness and unit semantics needed by the run;
+3. close exposure valuation/value-basis compatibility with replacement-cost
    vulnerability response;
-4. select a source-authorized full-risk configuration or explicitly construct and label
+4. select a source-authorized full-risk configuration or construct and explicitly label
    a Kosovo-only reconstructed experiment configuration;
-5. execute one bounded end-to-end run and bind every materially used artifact and
-   result with `run-evidence-v2`;
-6. only then consider numerical agreement, benchmark-reproduction, validation,
-   publication or production/model-use claims.
+5. execute one bounded end-to-end run and bind every materially used artifact/result
+   with `run-evidence-v2`;
+6. only then consider numerical agreement, benchmark reproduction, independent
+   validation, publication or production/model-use claims.
+
+Mode A can advance independently through its own site-semantics and numerical-reference
+validation gates without being treated as a substitute for Mode B.
 
 ## Canonical evidence pointers
 
 The public issue trail remains the source-specific evidence authority:
 
-- #287 — first public earthquake consumer bundle / integration;
-- #281 — hazard configuration, source/GMM and runtime evidence;
+- #287 — first public earthquake consumer bundle / integration contract;
+- #281 — ESHM20 hazard reference plus ESRM20 hazard/GMM research boundaries;
+- #335 / #353 / #361 / #397 / #414 — Mode-A root/dependency/source-child closure;
 - #282 — Kosovo residential exposure;
 - #283 — taxonomy mapping and vulnerability semantics;
-- #291 / #284 — Kosovo site identity and site-response semantics;
+- #291 / #284 — Mode-B Kosovo site identity and site-response semantics;
 - #449 / #461 / #478 — exact v2.1 vulnerability selection, receipts and function coverage;
-- #481 / #493 / #508 / #519 — GMM byte identity, reconstructed runtime and mixed-component behavior.
+- #481 / #493 / #508 / #519 — ESRM20 GMM identity, reconstructed runtime and mixed-component behavior.
 
 Repository contracts remain authoritative for admission and run evidence:
 
@@ -341,5 +421,5 @@ Repository contracts remain authoritative for admission and run evidence:
 
 Provider/source licensing remains source-specific. Repository-authored metadata and
 this document use the repository's Apache-2.0 license; that does not relicense external
-ESRM20/EFEHR source bytes. Consumers must preserve the attribution and scope recorded in
-the corresponding accepted source evidence.
+ESHM20/ESRM20/EFEHR source bytes. Consumers must preserve attribution and scope recorded
+in corresponding accepted source evidence.
