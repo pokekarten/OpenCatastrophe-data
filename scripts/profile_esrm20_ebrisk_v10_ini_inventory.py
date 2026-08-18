@@ -28,6 +28,7 @@ RELEASE_TAG = "v1.0"
 EXPECTED_COMMIT_SHA = "05f83bbc9df81d02ee8ddb1801d9d781355ce783"
 CONFIGURATION_ROOT = "Configuration_files"
 INI_SUFFIX = ".ini"
+MAX_TREE_ENTRIES = tree_profile.MAX_ENTRIES
 MAX_INI_BLOBS = 512
 MAX_PATH_UTF8_BYTES = 2048
 
@@ -126,6 +127,8 @@ def summarize_ini_inventory(entries: object) -> dict[str, Any]:
     """Summarize validated tree-like metadata without provider identity labels."""
     if type(entries) is not list or not entries:
         raise EbriskIniInventoryError("configuration tree inventory is empty")
+    if len(entries) > MAX_TREE_ENTRIES:
+        raise EbriskIniInventoryError("configuration source-tree inventory exceeds policy")
 
     canonical: list[dict[str, str]] = []
     seen_paths: set[str] = set()
