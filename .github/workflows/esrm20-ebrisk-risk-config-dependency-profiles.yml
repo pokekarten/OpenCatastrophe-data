@@ -96,14 +96,58 @@ jobs:
           printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
             def bounded_text:
               type == "string" and
-              utf8bytelength >= 1 and utf8bytelength <= 2048 and
-              . == (gsub("^\\s+|\\s+$"; "")) and
-              (explode | all(. >= 32 and . != 127));
-            def safe_resolved_path:
+              utf8bytelength > 0 and utf8bytelength <= 2048 and
+              (test("[[:cntrl:]]") | not) and
+              . == gsub("^[[:space:]]+|[[:space:]]+$"; "");
+            def canonical_utc:
+              . as $value |
+              type == "string" and
+              test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$") and
+              ((try (fromdateiso8601 | todateiso8601) catch "") == $value);
+            def safe_raw_path:
               bounded_text and
               (startswith("/") | not) and
               (contains("\\") | not) and
-              ([split("/")[] | select(. == "" or . == "." or . == "..")] | length) == 0;
+              (contains(":") | not) and
+              (contains("?") | not) and
+              (contains("#") | not) and
+              (contains("%") | not) and
+              (contains("${") | not) and
+              . != "." and . != ".." and
+              (endswith("/") | not) and
+              (contains(",") | not);
+            def normalize_parts:
+              reduce .[] as $part
+                ({ok: true, parts: []};
+                  if (.ok | not) then .
+                  elif $part == "" or $part == "." then .
+                  elif $part == ".." then
+                    if (.parts | length) == 0
+                    then {ok: false, parts: []}
+                    else .parts |= .[0:-1]
+                    end
+                  else .parts += [$part]
+                  end);
+            def normalize_ref($config; $raw):
+              (($config | split("/") | .[0:-1]) + ($raw | split("/")) | normalize_parts) as $norm |
+              if $norm.ok and ($norm.parts | length) > 0
+              then ($norm.parts | join("/"))
+              else null
+              end;
+            def dependency_row_valid($config):
+              keys == ["option","raw_path","resolved_path","section"] and
+              (.section | bounded_text) and
+              (.option | bounded_text) and
+              (.raw_path | safe_raw_path) and
+              (.resolved_path | bounded_text) and
+              .resolved_path == normalize_ref($config; .raw_path);
+            def dependency_set_valid:
+              .repository_path as $config |
+              (.dependencies | type) == "array" and
+              (.dependencies | length) <= 128 and
+              all(.dependencies[]; dependency_row_valid($config)) and
+              (.dependencies == (.dependencies | sort_by([.resolved_path,.section,.option,.raw_path]))) and
+              ((.dependencies | map([.section,.option,.resolved_path]) | unique | length) == (.dependencies | length));
             keys == ["action","dataset_id","dependency_inventory_authorized","execution_sha","external_bytes_persisted","failure_class","historical_group_assignment_verified","model_use_authorized","profiles","publication_authorized","raw_config_returned","runtime_compatibility_verified","schema_version","source_issue","status","target_sha"] and
             .schema_version == "oc-esrm20-ebrisk-risk-config-dependency-profiles-result-v1" and
             .action == "esrm20_ebrisk_risk_config_dependency_profiles" and
@@ -122,6 +166,7 @@ jobs:
               .failure_class == null and
               (.profiles | type) == "array" and (.profiles | length) == 3 and
               all(.profiles[];
+                . as $profile |
                 keys == ["byte_count","candidate_key","commit_sha","dataset_id","dependencies","dependency_inventory_authorized","external_bytes_persisted","historical_group_assignment_verified","model_use_authorized","operation_id","parser","profiled_at","project_id","project_path","publication_authorized","raw_config_returned","receipt_comment_id","repository_path","runtime_compatibility_verified","schema_version","sha256","source_issue"] and
                 .schema_version == "oc-esrm20-ebrisk-risk-config-dependency-profile-v1" and
                 .source_issue == 281 and
@@ -130,17 +175,8 @@ jobs:
                 .commit_sha == "05f83bbc9df81d02ee8ddb1801d9d781355ce783" and
                 .receipt_comment_id == 5328119673 and
                 .parser == "scripts.openquake_config_dependencies.extract_openquake_config_references" and
-                (.profiled_at | type) == "string" and
-                (.profiled_at | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")) and
-                (.dependencies | type) == "array" and (.dependencies | length) <= 128 and
-                all(.dependencies[];
-                  keys == ["option","raw_path","resolved_path","section"] and
-                  (.section | bounded_text) and
-                  (.option | bounded_text) and
-                  (.raw_path | bounded_text) and
-                  (.resolved_path | safe_resolved_path)) and
-                (.dependencies == (.dependencies | sort_by([.resolved_path,.section,.option,.raw_path]))) and
-                (([.dependencies[] | [.section,.option,.resolved_path]] | unique | length) == (.dependencies | length)) and
+                (.profiled_at | canonical_utc) and
+                ($profile | dependency_set_valid) and
                 .raw_config_returned == false and
                 .historical_group_assignment_verified == false and
                 .dependency_inventory_authorized == false and
