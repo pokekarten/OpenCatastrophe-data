@@ -64,6 +64,20 @@ class SourceModelContentProfileTests(unittest.TestCase):
                     subject.profile_source_model(PATH, payload)
         parser.assert_not_called()
 
+    def test_rejects_bomless_utf16_before_xml_parser(self) -> None:
+        xml = '<?xml version="1.0"?><!DOCTYPE nrml [<!ENTITY x "y">]><nrml>&x;</nrml>'
+        for encoding in ("utf-16-le", "utf-16-be"):
+            with self.subTest(encoding=encoding):
+                payload = xml.encode(encoding)
+                receipt = (len(payload), hashlib.sha256(payload).hexdigest())
+                with patch.dict(subject.RECEIPTS, {PATH: receipt}, clear=True):
+                    with patch.object(
+                        subject.ET, "fromstring", side_effect=AssertionError("parser must not run")
+                    ) as parser:
+                        with self.assertRaisesRegex(subject.SourceModelContentProfileError, "NUL"):
+                            subject.profile_source_model(PATH, payload)
+                    parser.assert_not_called()
+
     def test_rejects_non_utf8_xml_declaration_before_parser(self) -> None:
         payload = b'<?xml version="1.0" encoding="ISO-8859-1"?><nrml/>'
         receipt = (len(payload), hashlib.sha256(payload).hexdigest())
