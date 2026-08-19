@@ -98,6 +98,56 @@ class Eshm20GsimIdentityProfileTests(unittest.TestCase):
             ):
                 profiler._profile_xml_text(xml_text)
 
+    def test_logic_tree_container_and_branch_structure_fail_closed(self) -> None:
+        direct = branch_set()
+        cases = (
+            f"<notNrml><logicTree>{direct}</logicTree></notNrml>",
+            f"<nrml><wrapper><logicTree>{direct}</logicTree></wrapper></nrml>",
+            f"<nrml><logicTree><wrapper>{direct}</wrapper></logicTree></nrml>",
+            xml_for(direct.replace(
+                '<logicTreeBranch branchID="b1">',
+                '<unexpected/><logicTreeBranch branchID="b1">',
+            )),
+            xml_for(direct.replace(
+                "<uncertaintyModel>ExampleGsim</uncertaintyModel>",
+                "<unexpected/><uncertaintyModel>ExampleGsim</uncertaintyModel>",
+            )),
+            xml_for(direct.replace(
+                "<uncertaintyModel>ExampleGsim</uncertaintyModel>",
+                "<uncertaintyModel>ExampleGsim<unexpected/></uncertaintyModel>",
+            )),
+            xml_for(direct.replace(
+                "<uncertaintyWeight>1.0</uncertaintyWeight>",
+                "",
+            )),
+        )
+        for xml_text in cases:
+            with self.subTest(xml=xml_text), self.assertRaises(
+                profiler.Eshm20GsimIdentityProfileError
+            ):
+                profiler._profile_xml_text(xml_text)
+
+    def test_legacy_branching_level_with_one_branch_set_is_supported(self) -> None:
+        xml_text = (
+            "<nrml><logicTree>"
+            '<logicTreeBranchingLevel branchingLevelID="bl1">'
+            f"{branch_set()}"
+            "</logicTreeBranchingLevel>"
+            "</logicTree></nrml>"
+        )
+        result = profiler._profile_xml_text(xml_text)
+        self.assertEqual(result["branch_set_count"], 1)
+        self.assertEqual(result["branch_count"], 1)
+
+        with self.assertRaises(profiler.Eshm20GsimIdentityProfileError):
+            profiler._profile_xml_text(
+                "<nrml><logicTree>"
+                '<logicTreeBranchingLevel branchingLevelID="bl1">'
+                f"{branch_set()}{branch_set(set_id='bs2', branch_id='b2')}"
+                "</logicTreeBranchingLevel>"
+                "</logicTree></nrml>"
+            )
+
     def test_xml_security_boundaries_fail_closed(self) -> None:
         cases = (
             "<!DOCTYPE nrml><nrml />",
