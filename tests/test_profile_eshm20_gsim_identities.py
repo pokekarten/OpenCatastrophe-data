@@ -113,6 +113,10 @@ class Eshm20GsimIdentityProfileTests(unittest.TestCase):
                 "<unexpected/><uncertaintyModel>ExampleGsim</uncertaintyModel>",
             )),
             xml_for(direct.replace(
+                "<uncertaintyModel>ExampleGsim</uncertaintyModel>",
+                "<uncertaintyModel>ExampleGsim<unexpected/></uncertaintyModel>",
+            )),
+            xml_for(direct.replace(
                 "<uncertaintyWeight>1.0</uncertaintyWeight>",
                 "",
             )),
