@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 import sys
@@ -167,6 +168,8 @@ def _positive_int(value: object, *, field: str, maximum: int) -> int:
 def _decimal(value: object, *, field: str) -> str:
     if type(value) is not str or _DECIMAL_RE.fullmatch(value) is None:
         raise KosovoSpatialInteropExecutionError(f"{field} is not canonical decimal text")
+    if not math.isfinite(float(value)):
+        raise KosovoSpatialInteropExecutionError(f"{field} is not finite")
     return value
 
 
