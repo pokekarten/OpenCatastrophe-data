@@ -22,7 +22,7 @@ def _profile() -> dict:
         "project_path": "efehr/esrm20",
         "release_tag": "v1.0",
         "commit_sha": profile.EXPECTED_COMMIT_SHA,
-        "subtree_path": "Exposure_30arcsec",
+        "subtree_path": "Exposure",
         "pages_read": 2,
         "entry_count": 4,
         "blob_count": 3,
@@ -32,7 +32,7 @@ def _profile() -> dict:
             {
                 "mode": "100644",
                 "object_sha1": "d" * 40,
-                "path": "Exposure_30arcsec/Exposure_Model_Kosovo.xml",
+                "path": "Exposure/OQ_Exposure_Input_Kosovo.xml",
                 "type": "blob",
             }
         ],
@@ -99,11 +99,11 @@ class ExposureTreeActionTests(unittest.TestCase):
     def test_candidate_paths_fail_closed_on_traversal_case_or_duplicates(self) -> None:
         valid = _profile()
         bad_paths = (
-            "Exposure_30arcsec/../Kosovo.xml",
-            "Exposure_30arcsec/KOSOVO.xml",
-            "/Exposure_30arcsec/Kosovo.xml",
-            "Exposure_30arcsec\\Kosovo.xml",
-            "Exposure_30arcsec/Kosovo.csv",
+            "Exposure/../Kosovo.xml",
+            "Exposure/KOSOVO.xml",
+            "/Exposure/Kosovo.xml",
+            "Exposure\\Kosovo.xml",
+            "Exposure/Kosovo.csv",
         )
         for path in bad_paths:
             with self.subTest(path=path):
