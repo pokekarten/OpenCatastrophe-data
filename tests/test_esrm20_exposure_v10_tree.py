@@ -101,15 +101,15 @@ class ExposureV10TreeProfileTests(unittest.TestCase):
         pages = [
             [
                 _entry(
-                    "Exposure_30arcsec/Exposure_Model_Andorra.xml",
+                    "Exposure/OQ_Exposure_Input_Andorra.xml",
                     "blob",
                     "1" * 40,
                 ),
-                _entry("Exposure_30arcsec/nested", "tree", "2" * 40),
+                _entry("Exposure/nested", "tree", "2" * 40),
             ],
             [
                 _entry(
-                    "Exposure_30arcsec/Exposure_Model_Kosovo.xml",
+                    "Exposure/OQ_Exposure_Input_Kosovo.xml",
                     "blob",
                     "3" * 40,
                 )
@@ -120,12 +120,12 @@ class ExposureV10TreeProfileTests(unittest.TestCase):
             opener=opener, monotonic=lambda: 0.0
         )
         self.assertEqual(len(calls), 3)
-        self.assertTrue(all("path=Exposure_30arcsec" in url for url in calls[1:]))
+        self.assertTrue(all("path=Exposure" in url for url in calls[1:]))
         self.assertTrue(all("recursive=true" in url for url in calls[1:]))
         self.assertNotIn("/repository/files/", "\n".join(calls))
         self.assertEqual(result["project_id"], 269)
         self.assertEqual(result["commit_sha"], COMMIT)
-        self.assertEqual(result["subtree_path"], "Exposure_30arcsec")
+        self.assertEqual(result["subtree_path"], "Exposure")
         self.assertEqual(result["pages_read"], 2)
         self.assertEqual(result["entry_count"], 3)
         self.assertEqual(
@@ -134,7 +134,7 @@ class ExposureV10TreeProfileTests(unittest.TestCase):
                 {
                     "mode": "100644",
                     "object_sha1": "3" * 40,
-                    "path": "Exposure_30arcsec/Exposure_Model_Kosovo.xml",
+                    "path": "Exposure/OQ_Exposure_Input_Kosovo.xml",
                     "type": "blob",
                 }
             ],
@@ -162,7 +162,7 @@ class ExposureV10TreeProfileTests(unittest.TestCase):
     def test_pagination_header_is_read_from_response_and_gap_fails_closed(self) -> None:
         entries = [
             _entry(
-                "Exposure_30arcsec/Exposure_Model_Kosovo.xml",
+                "Exposure/OQ_Exposure_Input_Kosovo.xml",
                 "blob",
                 "3" * 40,
             )
@@ -236,20 +236,14 @@ class ExposureV10TreeProfileTests(unittest.TestCase):
 
     def test_path_mode_duplicate_and_candidate_cardinality_fail_closed(self) -> None:
         cases = {
-            "escape": [
-                _entry("Exposure_30arcsec/../Kosovo.xml", "blob", "4" * 40)
-            ],
+            "escape": [_entry("Exposure/../Kosovo.xml", "blob", "4" * 40)],
             "mode": [
-                _entry(
-                    "Exposure_30arcsec/Kosovo.xml", "blob", "4" * 40, mode="120000"
-                )
+                _entry("Exposure/Kosovo.xml", "blob", "4" * 40, mode="120000")
             ],
-            "no-kosovo": [
-                _entry("Exposure_30arcsec/Andorra.xml", "blob", "4" * 40)
-            ],
+            "no-kosovo": [_entry("Exposure/Andorra.xml", "blob", "4" * 40)],
             "duplicate": [
-                _entry("Exposure_30arcsec/Kosovo.xml", "blob", "4" * 40),
-                _entry("Exposure_30arcsec/Kosovo.xml", "blob", "5" * 40),
+                _entry("Exposure/Kosovo.xml", "blob", "4" * 40),
+                _entry("Exposure/Kosovo.xml", "blob", "5" * 40),
             ],
         }
         for label, entries in cases.items():
