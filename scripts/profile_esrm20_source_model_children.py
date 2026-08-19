@@ -24,7 +24,8 @@ RECEIPT_RESULT_COMMENT_ID = 5312851239
 RECEIPT_SET_SHA256 = "621d16b35166cb66c86079106f1a7fd717ff07ef155184c5eed5a028292e4eb8"
 MAX_XML_BYTES = 128 * 1024 * 1024
 MAX_ELEMENTS = 2_000_000
-_DTD_RE = re.compile(br"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
+_DTD_RE = re.compile(r"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
+_ENCODING_RE = re.compile(r"<\?xml\s+[^>]*encoding\s*=\s*['\"]([^'\"]+)['\"]", re.IGNORECASE)
 
 # Immutable byte identities from trusted-main #481 receipt PASS 5312851239.
 RECEIPTS = {
@@ -49,6 +50,22 @@ def _local_name(tag: str) -> str:
     return tag.rsplit("}", 1)[-1] if "}" in tag else tag
 
 
+def _decode_xml_utf8(payload: bytes) -> str:
+    try:
+        text = payload.decode("utf-8-sig", errors="strict")
+    except UnicodeDecodeError as exc:
+        raise SourceModelContentProfileError("source-model XML must be UTF-8") from exc
+    declaration = _ENCODING_RE.search(text[:512])
+    if declaration is not None and declaration.group(1).casefold().replace("_", "-") not in {
+        "utf-8",
+        "utf8",
+    }:
+        raise SourceModelContentProfileError("source-model XML declares a non-UTF-8 encoding")
+    if _DTD_RE.search(text) is not None:
+        raise SourceModelContentProfileError("DTD/entity declarations are not accepted")
+    return text
+
+
 def profile_source_model(path: str, payload: bytes) -> dict[str, Any]:
     if path not in RECEIPTS:
         raise SourceModelContentProfileError("source-model path is outside exact receipt set")
@@ -59,10 +76,9 @@ def profile_source_model(path: str, payload: bytes) -> dict[str, Any]:
         raise SourceModelContentProfileError("source-model byte count disagrees with receipt")
     if hashlib.sha256(payload).hexdigest() != expected_sha256:
         raise SourceModelContentProfileError("source-model SHA-256 disagrees with receipt")
-    if _DTD_RE.search(payload) is not None:
-        raise SourceModelContentProfileError("DTD/entity declarations are not accepted")
+    text = _decode_xml_utf8(payload)
     try:
-        root = ET.fromstring(payload)
+        root = ET.fromstring(text)
     except ET.ParseError as exc:
         raise SourceModelContentProfileError("source-model XML is not well formed") from exc
     counts: Counter[str] = Counter()
