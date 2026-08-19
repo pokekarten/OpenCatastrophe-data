@@ -78,6 +78,17 @@ class SourceModelContentProfileTests(unittest.TestCase):
                             subject.profile_source_model(PATH, payload)
                     parser.assert_not_called()
 
+    def test_rejects_long_non_utf8_xml_declaration_before_parser(self) -> None:
+        payload = (
+            '<?xml version="1.0"' + (" " * 600) + 'encoding="ISO-8859-1"?><nrml/>'
+        ).encode("utf-8")
+        receipt = (len(payload), hashlib.sha256(payload).hexdigest())
+        with patch.dict(subject.RECEIPTS, {PATH: receipt}, clear=True):
+            with patch.object(subject.ET, "fromstring", side_effect=AssertionError("parser must not run")) as parser:
+                with self.assertRaisesRegex(subject.SourceModelContentProfileError, "declares a non-UTF-8"):
+                    subject.profile_source_model(PATH, payload)
+        parser.assert_not_called()
+
     def test_rejects_non_utf8_xml_declaration_before_parser(self) -> None:
         payload = b'<?xml version="1.0" encoding="ISO-8859-1"?><nrml/>'
         receipt = (len(payload), hashlib.sha256(payload).hexdigest())

@@ -57,7 +57,7 @@ def _decode_xml_utf8(payload: bytes) -> str:
         raise SourceModelContentProfileError("source-model XML must be UTF-8") from exc
     if "\x00" in text:
         raise SourceModelContentProfileError("source-model XML contains NUL characters")
-    declaration = _ENCODING_RE.search(text[:512])
+    declaration = _ENCODING_RE.match(text)
     if declaration is not None and declaration.group(1).casefold().replace("_", "-") not in {
         "utf-8",
         "utf8",
