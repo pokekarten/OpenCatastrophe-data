@@ -106,6 +106,13 @@ class Group1ImtProfileActionTests(unittest.TestCase):
         ):
             subject._validate_profile(widened)
 
+    def test_profile_rejects_boolean_imt_count(self) -> None:
+        malformed = _profile()
+        malformed["imt_names"] = ["PGA"]
+        malformed["imt_count"] = True
+        with self.assertRaisesRegex(subject.Group1ImtProfileActionError, "IMT count drifted"):
+            subject._validate_profile(malformed)
+
     def test_terminal_parser_accepts_only_exact_execution_result(self) -> None:
         result = subject._run_profile(execution_sha=EXECUTION_SHA, acquirer=_profile)
         body = subject.RESULT_MARKER + "\n" + json.dumps(result, separators=(",", ":"))
