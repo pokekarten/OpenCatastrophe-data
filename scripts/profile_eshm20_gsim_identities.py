@@ -138,6 +138,11 @@ def _structural_model_identity(model: ET.Element) -> tuple[str, tuple[str, ...]]
     returned token is source-request identity, not a verified GSIM class name.
     """
 
+    if list(model):
+        raise Eshm20GsimIdentityProfileError(
+            "GSIM uncertaintyModel must contain text only"
+        )
+
     raw_text = model.text or ""
     if len(raw_text) > MAX_MODEL_TEXT_CHARS:
         raise Eshm20GsimIdentityProfileError("GSIM model text exceeds bounds")
