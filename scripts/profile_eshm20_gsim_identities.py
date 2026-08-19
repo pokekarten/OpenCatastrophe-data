@@ -197,14 +197,52 @@ def _structural_model_identity(model: ET.Element) -> tuple[str, tuple[str, ...]]
     return requested_token, tuple(sorted(argument_keys))
 
 
-def _profile_root(root: ET.Element) -> dict[str, Any]:
-    branch_sets = [
-        node for node in root.iter() if _local_name(node.tag) == "logicTreeBranchSet"
-    ]
+def _logic_tree_branch_sets(root: ET.Element) -> tuple[ET.Element, ...]:
+    """Return branch sets only from OpenQuake-3.14 accepted tree positions."""
+
+    if _local_name(root.tag) != "nrml":
+        raise Eshm20GsimIdentityProfileError("GMM XML root must be nrml")
+
+    root_children = list(root)
+    if (
+        len(root_children) != 1
+        or _local_name(root_children[0].tag) != "logicTree"
+    ):
+        raise Eshm20GsimIdentityProfileError(
+            "nrml must contain exactly one direct logicTree"
+        )
+
+    branch_sets: list[ET.Element] = []
+    for child in list(root_children[0]):
+        local = _local_name(child.tag)
+        if local == "logicTreeBranchSet":
+            branch_sets.append(child)
+            continue
+        if local == "logicTreeBranchingLevel":
+            nested = list(child)
+            if (
+                len(nested) != 1
+                or _local_name(nested[0].tag) != "logicTreeBranchSet"
+            ):
+                raise Eshm20GsimIdentityProfileError(
+                    "logicTreeBranchingLevel must contain exactly one direct "
+                    "logicTreeBranchSet"
+                )
+            branch_sets.append(nested[0])
+            continue
+        raise Eshm20GsimIdentityProfileError(
+            f"unsupported direct logicTree child: {local}"
+        )
+
     if not branch_sets or len(branch_sets) > MAX_BRANCH_SETS:
         raise Eshm20GsimIdentityProfileError(
             "GMM branch-set count is invalid or exceeds bounds"
         )
+    return tuple(branch_sets)
+
+
+def _profile_root(root: ET.Element) -> dict[str, Any]:
+    branch_sets = _logic_tree_branch_sets(root)
 
     branch_set_ids: set[str] = set()
     branch_ids: set[str] = set()
@@ -229,10 +267,15 @@ def _profile_root(root: ET.Element) -> dict[str, Any]:
             else None
         )
 
+        branch_set_children = list(branch_set)
         branches = [
-            child for child in list(branch_set)
+            child for child in branch_set_children
             if _local_name(child.tag) == "logicTreeBranch"
         ]
+        if len(branches) != len(branch_set_children):
+            raise Eshm20GsimIdentityProfileError(
+                "GMM branch set contains an unsupported direct child"
+            )
         if not branches:
             raise Eshm20GsimIdentityProfileError("GMM branch set has no branches")
 
@@ -244,14 +287,31 @@ def _profile_root(root: ET.Element) -> dict[str, Any]:
             if len(branch_ids) > MAX_BRANCHES:
                 raise Eshm20GsimIdentityProfileError("GMM branch count exceeds bounds")
 
+            branch_children = list(branch)
+            allowed_children = {"uncertaintyModel", "uncertaintyWeight"}
+            if any(
+                _local_name(child.tag) not in allowed_children
+                for child in branch_children
+            ):
+                raise Eshm20GsimIdentityProfileError(
+                    "GMM branch contains an unsupported direct child"
+                )
             models = [
-                child for child in list(branch)
+                child for child in branch_children
                 if _local_name(child.tag) == "uncertaintyModel"
             ]
             if len(models) != 1:
                 raise Eshm20GsimIdentityProfileError(
                     "GMM branch must contain exactly one uncertaintyModel"
                 )
+            if not any(
+                _local_name(child.tag) == "uncertaintyWeight"
+                for child in branch_children
+            ):
+                raise Eshm20GsimIdentityProfileError(
+                    "GMM branch must contain at least one uncertaintyWeight"
+                )
+
             requested_token, argument_keys = _structural_model_identity(models[0])
             records.append(
                 {
