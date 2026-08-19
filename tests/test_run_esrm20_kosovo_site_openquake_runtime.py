@@ -42,7 +42,8 @@ def runtime_payload() -> dict[str, object]:
         "coordinates_returned": False,
         "openquake_runtime_value_acceptance_verified": True,
         "gsim_site_parameter_sufficiency_verified": True,
-        "site_parameter_units_verified": True,
+        "consumer_site_parameter_semantics_verified": True,
+        "site_parameter_units_verified": False,
         "crs_coordinate_semantics_verified": False,
         "missingness_semantics_verified": False,
         "site_model_compatibility_verified": False,
@@ -163,7 +164,8 @@ class SiteOpenQuakeRuntimeTests(unittest.TestCase):
         )
         self.assertTrue(result["openquake_runtime_value_acceptance_verified"])
         self.assertTrue(result["gsim_site_parameter_sufficiency_verified"])
-        self.assertTrue(result["site_parameter_units_verified"])
+        self.assertTrue(result["consumer_site_parameter_semantics_verified"])
+        self.assertFalse(result["site_parameter_units_verified"])
         self.assertFalse(result["raw_xml_returned"])
         self.assertFalse(result["coordinates_returned"])
 
@@ -193,7 +195,7 @@ class SiteOpenQuakeRuntimeTests(unittest.TestCase):
                 readinput_module=fake,
             )
 
-    def test_terminal_payload_requires_exact_unit_semantics(self) -> None:
+    def test_terminal_payload_separates_consumer_semantics_from_provider_units(self) -> None:
         payload = runtime_payload()
         self.assertIs(subject._validate_runtime_payload(payload), payload)
 
@@ -210,13 +212,21 @@ class SiteOpenQuakeRuntimeTests(unittest.TestCase):
         ):
             subject._validate_runtime_payload(mutated)
 
-        unverified = dict(payload)
-        unverified["site_parameter_units_verified"] = False
+        unverified_consumer = dict(payload)
+        unverified_consumer["consumer_site_parameter_semantics_verified"] = False
         with self.assertRaisesRegex(
             subject.SiteOpenQuakeRuntimeError,
-            "did not establish site_parameter_units_verified",
+            "did not establish consumer_site_parameter_semantics_verified",
         ):
-            subject._validate_runtime_payload(unverified)
+            subject._validate_runtime_payload(unverified_consumer)
+
+        promoted_provider_units = dict(payload)
+        promoted_provider_units["site_parameter_units_verified"] = True
+        with self.assertRaisesRegex(
+            subject.SiteOpenQuakeRuntimeError,
+            "authority widened at site_parameter_units_verified",
+        ):
+            subject._validate_runtime_payload(promoted_provider_units)
 
     def test_terminal_payload_preserves_scientific_ceilings(self) -> None:
         payload = runtime_payload()
