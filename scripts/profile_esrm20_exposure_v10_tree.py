@@ -67,6 +67,7 @@ FAILURE_CLASSES = frozenset(
         "tag_metadata_acquisition_failure",
         "tag_metadata_validation_failure",
         "tree_metadata_acquisition_failure",
+        "tree_metadata_not_found",
         "tree_metadata_validation_failure",
         "candidate_resolution_failure",
     }
@@ -320,10 +321,19 @@ def _inventory_tree(
                     next_page = _pagination_next(response, page=page)
             except ExposureTreeProfileError:
                 raise
+            except urllib.error.HTTPError as exc:
+                failure_class = (
+                    "tree_metadata_not_found"
+                    if exc.code == 404
+                    else "tree_metadata_acquisition_failure"
+                )
+                raise ExposureTreeProfileError(
+                    "exposure subtree acquisition failed closed",
+                    failure_class=failure_class,
+                ) from exc
             except (
                 OSError,
                 urllib.error.URLError,
-                urllib.error.HTTPError,
                 TimeoutError,
                 transport.EfehrAcquisitionError,
             ) as exc:
