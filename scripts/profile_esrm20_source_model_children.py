@@ -12,6 +12,7 @@ syntax, runtime compatibility, publication authority, or model-use fitness.
 from __future__ import annotations
 
 import hashlib
+import re
 import xml.etree.ElementTree as ET
 from collections import Counter
 from typing import Any
@@ -23,6 +24,7 @@ RECEIPT_RESULT_COMMENT_ID = 5312851239
 RECEIPT_SET_SHA256 = "621d16b35166cb66c86079106f1a7fd717ff07ef155184c5eed5a028292e4eb8"
 MAX_XML_BYTES = 128 * 1024 * 1024
 MAX_ELEMENTS = 2_000_000
+_DTD_RE = re.compile(br"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
 
 # Immutable byte identities from trusted-main #481 receipt PASS 5312851239.
 RECEIPTS = {
@@ -57,8 +59,7 @@ def profile_source_model(path: str, payload: bytes) -> dict[str, Any]:
         raise SourceModelContentProfileError("source-model byte count disagrees with receipt")
     if hashlib.sha256(payload).hexdigest() != expected_sha256:
         raise SourceModelContentProfileError("source-model SHA-256 disagrees with receipt")
-    upper = payload[:4096].upper()
-    if b"<!DOCTYPE" in upper or b"<!ENTITY" in upper:
+    if _DTD_RE.search(payload) is not None:
         raise SourceModelContentProfileError("DTD/entity declarations are not accepted")
     try:
         root = ET.fromstring(payload)
