@@ -237,9 +237,10 @@ jobs:
               } and
               .runtime.openquake_runtime_value_acceptance_verified == true and
               .runtime.gsim_site_parameter_sufficiency_verified == true and
+              .runtime.consumer_site_parameter_semantics_verified == true and
               .runtime.raw_xml_returned == false and .runtime.raw_site_rows_returned == false and
               .runtime.raw_attribute_values_returned == false and .runtime.coordinates_returned == false and
-              .runtime.site_parameter_units_verified == true and
+              .runtime.site_parameter_units_verified == false and
               .runtime.crs_coordinate_semantics_verified == false and
               .runtime.missingness_semantics_verified == false and
               .runtime.site_model_compatibility_verified == false and
