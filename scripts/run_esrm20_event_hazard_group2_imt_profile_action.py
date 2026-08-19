@@ -184,7 +184,8 @@ def _validate_profile(profile: object) -> dict[str, Any]:
         raise Group2ImtProfileActionError("Group2 IMT name is invalid") from exc
     if names != canonical:
         raise Group2ImtProfileActionError("Group2 IMT names are not OpenQuake-canonical")
-    if profile.get("imt_count") != len(names):
+    imt_count = profile.get("imt_count")
+    if type(imt_count) is not int or imt_count != len(names):
         raise Group2ImtProfileActionError("Group2 IMT count drifted")
     return profile
 
