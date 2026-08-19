@@ -1,0 +1,190 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Source-Model Child Profiles
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-source-model-child-profiles-${{ github.repository }}-${{ github.event.issue.number == 281 && github.event.comment.user.login == github.event.repository.owner.login && github.event.comment.author_association == 'OWNER' && contains(github.event.comment.body, '<!-- oc-eq1-esrm20-source-model-child-profiles-request-v1 -->') && 'trusted-request' || format('noise-{0}', github.event.comment.id) }}
+  cancel-in-progress: false
+
+jobs:
+  execute-profiles:
+    name: Execute exact trusted-main source-model child profiles
+    if: >-
+      github.event.issue.number == 281 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-source-model-child-profiles-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.run.outputs.execution_sha }}
+      skip: ${{ steps.run.outputs.skip }}
+      result_json: ${{ steps.run.outputs.result_json }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Validate, deduplicate, verify, and profile exact source-model children
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OC_SOURCE_MODEL_CHILD_PROFILE_REQUEST: ${{ github.event.comment.body }}
+          RESULT_PATH: ${{ runner.temp }}/esrm20-source-model-child-profiles.json
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.run_esrm20_source_model_child_profiles_action \
+            --comment-body-env OC_SOURCE_MODEL_CHILD_PROFILE_REQUEST \
+            --expected-issue 281 \
+            --execution-sha "$EXECUTION_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --token-env GH_TOKEN \
+            --output "$RESULT_PATH"
+          STATUS="$(jq -r '.status' "$RESULT_PATH")"
+          test "$STATUS" = "pass" -o "$STATUS" = "blocked" -o "$STATUS" = "duplicate"
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+          if test "$STATUS" = "duplicate"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "result_json=" >> "$GITHUB_OUTPUT"
+          else
+            RESULT_JSON="$(jq -cS . "$RESULT_PATH")"
+            test -n "$RESULT_JSON"
+            test "$(printf '%s\n%s' '<!-- oc-eq1-esrm20-source-model-child-profiles-result-v1 -->' "$RESULT_JSON" | wc -c)" -le 64000
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish-profiles:
+    name: Publish bounded source-model child profile evidence
+    needs: [execute-profiles]
+    if: >-
+      needs.execute-profiles.result == 'success' &&
+      needs.execute-profiles.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.execute-profiles.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-profiles.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-source-model-child-profiles-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            . as $result |
+            [
+              {"repository_path":"Hazard/source_models/asm_v12e/asm_ver12e_winGT_fs017_combined.xml","byte_count":589089,"sha256":"32dfcefff8acbedabf4fa6d87ce8694ff2dd7b662f5d75c5ea06a2156a6b2aef"},
+              {"repository_path":"Hazard/source_models/asm_v12e/asm_ver12e_winGT_fs017_twingr.xml","byte_count":5258,"sha256":"a68c60d8d9c1b7eb43031707b55e327060ce875280d7ba719c038cba1f5c5e21"},
+              {"repository_path":"Hazard/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_combined.xml","byte_count":21717,"sha256":"9eba3d104a2f62926c3a06415abfc30f2992fe8c00c7207c5c947b45f18b2015"},
+              {"repository_path":"Hazard/source_models/fsm_v09/fs_ver09e_model_aGR_fMthr_combined.xml","byte_count":1266236,"sha256":"1500111cc0d9f698a3e3cb25f97cebd76f897f6926a736c3ea1e37239741650c"},
+              {"repository_path":"Hazard/source_models/interface_v12b/CaA_IF2222222_M40.xml","byte_count":10493,"sha256":"85412e58d54bbfa54b5c2843696fcd801d2e99fed80b1030ab38580d0cfd5900"},
+              {"repository_path":"Hazard/source_models/interface_v12b/CyA_IF2222222_M40.xml","byte_count":13217,"sha256":"16c89632509d5879179c2c5ca3fa9103420804eebe758b057e8af9f7b518e540"},
+              {"repository_path":"Hazard/source_models/interface_v12b/GiA_IF2222222_M40.xml","byte_count":11621,"sha256":"99266f057d2e271648ed974cc3d1eea14c2e6d4606525f2b6d5972be085e610d"},
+              {"repository_path":"Hazard/source_models/interface_v12b/HeA_IF2222222_M40.xml","byte_count":39917,"sha256":"b776f45385e30e492c921de4db4712e51654864cc3f1360e0157e2a562f4368d"},
+              {"repository_path":"Hazard/source_models/ssm_v09/seis_ver12b_fMthr_asm_ver12e_winGT_fs017_agbrs_point.xml","byte_count":21820451,"sha256":"78818fcf6da94ae11b0104663334f79def9a1953cb127312c9c52bffb02fbe93"},
+              {"repository_path":"Hazard/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_combined.xml","byte_count":3486,"sha256":"6d4ceabef24b94b3ca48733879043d977d2e97455e5ae26d2c6b4f3a5a746c50"}
+            ] as $receipts |
+            ($result.profile_set // null) as $ps |
+            (keys | sort) == ["action","consumer_issue","dataset_id","execution_sha","external_bytes_persisted","failure_class","model_use_authorized","profile_set","publication_authorized","receipt_issue","runtime_compatibility_verified","schema_version","source_issue","status","target_sha","transitive_dependency_byte_closure_verified"] and
+            .schema_version == "oc-esrm20-source-model-child-profiles-result-v1" and
+            .action == "esrm20_source_model_child_content_profiles" and
+            .source_issue == 281 and .consumer_issue == 287 and .receipt_issue == 481 and
+            .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+            .target_sha == $sha and .execution_sha == $sha and
+            (.status == "pass" or .status == "blocked") and
+            .external_bytes_persisted == false and
+            .transitive_dependency_byte_closure_verified == false and
+            .runtime_compatibility_verified == false and
+            .publication_authorized == false and .model_use_authorized == false and
+            (if .status == "pass" then
+              .failure_class == null and $ps != null and
+              ($ps | keys | sort) == ["commit_sha","consumer_issue","dataset_id","external_bytes_persisted","external_reference_scan_performed","model_use_authorized","profile_count","profiles","project_id","project_path","provider_file_bytes_read","publication_authorized","raw_xml_returned","receipt_issue","receipt_result_comment_id","receipt_set_sha256","runtime_compatibility_verified","schema_version","source_issue","source_model_content_profiled","source_model_paths","total_byte_count","transitive_dependency_byte_closure_verified"] and
+              $ps.schema_version == "oc-esrm20-source-model-child-profiles-v1" and
+              $ps.source_issue == 281 and $ps.consumer_issue == 287 and
+              $ps.receipt_issue == 481 and
+              $ps.receipt_result_comment_id == 5312851239 and
+              $ps.dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+              $ps.project_id == 269 and $ps.project_path == "efehr/esrm20" and
+              $ps.commit_sha == "05f83bbc9df81d02ee8ddb1801d9d781355ce783" and
+              $ps.receipt_set_sha256 == "621d16b35166cb66c86079106f1a7fd717ff07ef155184c5eed5a028292e4eb8" and
+              $ps.source_model_paths == [$receipts[].repository_path] and
+              $ps.profile_count == 10 and
+              $ps.total_byte_count == 23781485 and
+              ($ps.profiles | type) == "array" and
+              ($ps.profiles | length) == 10 and
+              all(range(0; 10);
+                . as $i |
+                ($ps.profiles[$i] |
+                  (keys | sort) == ["byte_count","byte_identity_verified","element_count","element_type_counts","external_bytes_persisted","external_reference_scan_performed","model_use_authorized","publication_authorized","repository_path","root_element","runtime_compatibility_verified","sha256","source_model_content_profiled","transitive_dependency_byte_closure_verified"] and
+                  .repository_path == $receipts[$i].repository_path and
+                  .byte_count == $receipts[$i].byte_count and
+                  .sha256 == $receipts[$i].sha256 and
+                  (.root_element | type) == "string" and
+                  (.root_element | utf8bytelength) >= 1 and
+                  (.root_element | utf8bytelength) <= 256 and
+                  (.element_count | type) == "number" and
+                  .element_count == (.element_count | floor) and
+                  .element_count >= 1 and .element_count <= 2000000 and
+                  (.element_type_counts | type) == "object" and
+                  (.element_type_counts | length) >= 1 and
+                  (.element_type_counts | length) <= 512 and
+                  all(.element_type_counts | to_entries[];
+                    (.key | utf8bytelength) >= 1 and
+                    (.key | utf8bytelength) <= 256 and
+                    (.value | type) == "number" and
+                    .value == (.value | floor) and .value >= 1
+                  ) and
+                  ([.element_type_counts[]] | add) == .element_count and
+                  .byte_identity_verified == true and
+                  .source_model_content_profiled == true and
+                  .external_reference_scan_performed == false and
+                  .transitive_dependency_byte_closure_verified == false and
+                  .runtime_compatibility_verified == false and
+                  .external_bytes_persisted == false and
+                  .publication_authorized == false and
+                  .model_use_authorized == false
+                )
+              ) and
+              $ps.provider_file_bytes_read == true and
+              $ps.raw_xml_returned == false and
+              $ps.source_model_content_profiled == true and
+              $ps.external_reference_scan_performed == false and
+              $ps.external_bytes_persisted == false and
+              $ps.transitive_dependency_byte_closure_verified == false and
+              $ps.runtime_compatibility_verified == false and
+              $ps.publication_authorized == false and
+              $ps.model_use_authorized == false
+            else
+              .failure_class == "source_model_profile_failure" and .profile_set == null
+            end)
+          ' >/dev/null
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          test "$(printf '%s' "$BODY" | wc -c)" -le 64000
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/source-model-child-profile-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/281/comments" \
+            --input "$RUNNER_TEMP/source-model-child-profile-comment.json"
