@@ -317,7 +317,8 @@ def _openquake_ingest(
         "coordinates_returned": False,
         "openquake_runtime_value_acceptance_verified": True,
         "gsim_site_parameter_sufficiency_verified": True,
-        "site_parameter_units_verified": True,
+        "consumer_site_parameter_semantics_verified": True,
+        "site_parameter_units_verified": False,
         "crs_coordinate_semantics_verified": False,
         "missingness_semantics_verified": False,
         "site_model_compatibility_verified": False,
@@ -384,6 +385,7 @@ def _validate_runtime_payload(payload: object) -> dict[str, Any]:
         "coordinates_returned",
         "openquake_runtime_value_acceptance_verified",
         "gsim_site_parameter_sufficiency_verified",
+        "consumer_site_parameter_semantics_verified",
         "site_parameter_units_verified",
         "crs_coordinate_semantics_verified",
         "missingness_semantics_verified",
@@ -414,6 +416,7 @@ def _validate_runtime_payload(payload: object) -> dict[str, Any]:
         "raw_site_rows_returned",
         "raw_attribute_values_returned",
         "coordinates_returned",
+        "site_parameter_units_verified",
         "crs_coordinate_semantics_verified",
         "missingness_semantics_verified",
         "site_model_compatibility_verified",
@@ -427,7 +430,7 @@ def _validate_runtime_payload(payload: object) -> dict[str, Any]:
     for field in (
         "openquake_runtime_value_acceptance_verified",
         "gsim_site_parameter_sufficiency_verified",
-        "site_parameter_units_verified",
+        "consumer_site_parameter_semantics_verified",
     ):
         if payload.get(field) is not True:
             raise SiteOpenQuakeRuntimeError(f"site-runtime did not establish {field}")
