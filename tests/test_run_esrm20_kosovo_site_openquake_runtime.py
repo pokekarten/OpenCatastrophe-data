@@ -34,6 +34,7 @@ def runtime_payload() -> dict[str, object]:
         "parser_path": "openquake.commonlib.readinput.get_site_model",
         "site_count": subject.EXPECTED_SITE_COUNT,
         "required_site_parameter_names": list(subject.EXPECTED_REQUIRED_PARAMETERS),
+        "required_site_parameter_semantics": subject.EXPECTED_REQUIRED_PARAMETER_SEMANTICS,
         "runtime_value_accept_count": subject.EXPECTED_SITE_COUNT,
         "raw_xml_returned": False,
         "raw_site_rows_returned": False,
@@ -41,6 +42,7 @@ def runtime_payload() -> dict[str, object]:
         "coordinates_returned": False,
         "openquake_runtime_value_acceptance_verified": True,
         "gsim_site_parameter_sufficiency_verified": True,
+        "consumer_site_parameter_semantics_verified": True,
         "site_parameter_units_verified": False,
         "crs_coordinate_semantics_verified": False,
         "missingness_semantics_verified": False,
@@ -53,7 +55,11 @@ def runtime_payload() -> dict[str, object]:
 
 
 class _FakeSiteModel:
-    def __init__(self, count: int = subject.EXPECTED_SITE_COUNT, names: tuple[str, ...] | None = None):
+    def __init__(
+        self,
+        count: int = subject.EXPECTED_SITE_COUNT,
+        names: tuple[str, ...] | None = None,
+    ):
         self._count = count
         self.dtype = SimpleNamespace(
             names=names
@@ -148,15 +154,27 @@ class SiteOpenQuakeRuntimeTests(unittest.TestCase):
             readinput_module=fake,
         )
         self.assertEqual(result["site_count"], subject.EXPECTED_SITE_COUNT)
-        self.assertEqual(result["required_site_parameter_names"], list(subject.EXPECTED_REQUIRED_PARAMETERS))
+        self.assertEqual(
+            result["required_site_parameter_names"],
+            list(subject.EXPECTED_REQUIRED_PARAMETERS),
+        )
+        self.assertEqual(
+            result["required_site_parameter_semantics"],
+            subject.EXPECTED_REQUIRED_PARAMETER_SEMANTICS,
+        )
         self.assertTrue(result["openquake_runtime_value_acceptance_verified"])
         self.assertTrue(result["gsim_site_parameter_sufficiency_verified"])
+        self.assertTrue(result["consumer_site_parameter_semantics_verified"])
+        self.assertFalse(result["site_parameter_units_verified"])
         self.assertFalse(result["raw_xml_returned"])
         self.assertFalse(result["coordinates_returned"])
 
     def test_openquake_ingest_rejects_required_parameter_drift(self) -> None:
         fake = _FakeReadInput(required={"vs30"})
-        with self.assertRaisesRegex(subject.SiteRuntimeIngestionError, "required-site parameter set drifted"):
+        with self.assertRaisesRegex(
+            subject.SiteRuntimeIngestionError,
+            "required-site parameter set drifted",
+        ):
             subject._openquake_ingest(
                 site_bytes=b"x",
                 gmm_bytes=b"y",
@@ -166,13 +184,49 @@ class SiteOpenQuakeRuntimeTests(unittest.TestCase):
 
     def test_openquake_ingest_rejects_missing_parsed_field(self) -> None:
         fake = _FakeReadInput(site_model=_FakeSiteModel(names=("lon", "lat", "vs30")))
-        with self.assertRaisesRegex(subject.SiteRuntimeIngestionError, "parsed fields are insufficient"):
+        with self.assertRaisesRegex(
+            subject.SiteRuntimeIngestionError,
+            "parsed fields are insufficient",
+        ):
             subject._openquake_ingest(
                 site_bytes=b"x",
                 gmm_bytes=b"y",
                 image_digest=IMAGE_DIGEST,
                 readinput_module=fake,
             )
+
+    def test_terminal_payload_separates_consumer_semantics_from_provider_units(self) -> None:
+        payload = runtime_payload()
+        self.assertIs(subject._validate_runtime_payload(payload), payload)
+
+        mutated = dict(payload)
+        semantics = {
+            key: dict(value)
+            for key, value in subject.EXPECTED_REQUIRED_PARAMETER_SEMANTICS.items()
+        }
+        semantics["xvf"]["unit"] = "m"
+        mutated["required_site_parameter_semantics"] = semantics
+        with self.assertRaisesRegex(
+            subject.SiteOpenQuakeRuntimeError,
+            "required parameter semantics drifted",
+        ):
+            subject._validate_runtime_payload(mutated)
+
+        unverified_consumer = dict(payload)
+        unverified_consumer["consumer_site_parameter_semantics_verified"] = False
+        with self.assertRaisesRegex(
+            subject.SiteOpenQuakeRuntimeError,
+            "did not establish consumer_site_parameter_semantics_verified",
+        ):
+            subject._validate_runtime_payload(unverified_consumer)
+
+        promoted_provider_units = dict(payload)
+        promoted_provider_units["site_parameter_units_verified"] = True
+        with self.assertRaisesRegex(
+            subject.SiteOpenQuakeRuntimeError,
+            "authority widened at site_parameter_units_verified",
+        ):
+            subject._validate_runtime_payload(promoted_provider_units)
 
     def test_terminal_payload_preserves_scientific_ceilings(self) -> None:
         payload = runtime_payload()
@@ -191,6 +245,15 @@ class SiteOpenQuakeRuntimeTests(unittest.TestCase):
             with self.subTest(field=field):
                 with self.assertRaises(subject.SiteOpenQuakeRuntimeError):
                     subject._validate_runtime_payload(mutated)
+
+    def test_v1_historical_result_marker_is_not_reinterpreted(self) -> None:
+        old_marker = "<!-- oc-eq1-esrm20-kosovo-site-openquake-runtime-result-v1 -->"
+        self.assertFalse(
+            subject._parse_trusted_terminal_result(
+                old_marker + "\n{}",
+                execution_sha=EXECUTION_SHA,
+            )
+        )
 
     def test_run_runtime_pass_is_bounded(self) -> None:
         result = subject._run_runtime(
@@ -237,9 +300,17 @@ class SiteOpenQuakeRuntimeTests(unittest.TestCase):
     def test_historical_terminal_result_only_dedups_same_execution_sha(self) -> None:
         result = subject._base_result(execution_sha=EXECUTION_SHA)
         result.update({"status": "pass", "failure_class": None, "runtime": runtime_payload()})
-        body = subject.RESULT_MARKER + "\n" + json.dumps(result, sort_keys=True, separators=(",", ":"))
-        self.assertTrue(subject._parse_trusted_terminal_result(body, execution_sha=EXECUTION_SHA))
-        self.assertFalse(subject._parse_trusted_terminal_result(body, execution_sha=OTHER_SHA))
+        body = subject.RESULT_MARKER + "\n" + json.dumps(
+            result,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        self.assertTrue(
+            subject._parse_trusted_terminal_result(body, execution_sha=EXECUTION_SHA)
+        )
+        self.assertFalse(
+            subject._parse_trusted_terminal_result(body, execution_sha=OTHER_SHA)
+        )
 
 
 if __name__ == "__main__":

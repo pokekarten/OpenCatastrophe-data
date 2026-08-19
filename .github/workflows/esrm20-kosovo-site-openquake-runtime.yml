@@ -200,11 +200,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
           RESULT_JSON: ${{ needs.execute-runtime.outputs.result_json }}
-          RESULT_MARKER: "<!-- oc-eq1-esrm20-kosovo-site-openquake-runtime-result-v1 -->"
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-kosovo-site-openquake-runtime-result-v2 -->"
         run: |
           set -euo pipefail
           printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
-            .schema_version == "oc-esrm20-kosovo-site-openquake-runtime-result-v1" and
+            .schema_version == "oc-esrm20-kosovo-site-openquake-runtime-result-v2" and
             .action == "esrm20_kosovo_site_openquake_runtime_ingestion" and
             .source_issue == 291 and .source_science_issue == 284 and
             .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
@@ -228,8 +228,16 @@ jobs:
               .runtime.parser_path == "openquake.commonlib.readinput.get_site_model" and
               .runtime.site_count == 37 and .runtime.runtime_value_accept_count == 37 and
               .runtime.required_site_parameter_names == ["geology","region","slope","vs30","xvf"] and
+              .runtime.required_site_parameter_semantics == {
+                "geology":{"kind":"categorical","unit":null},
+                "region":{"kind":"integer_selector","unit":null},
+                "slope":{"kind":"ratio","unit":"m/m"},
+                "vs30":{"kind":"velocity","unit":"m/s"},
+                "xvf":{"kind":"signed_distance_to_volcanic_front","unit":"km","sign_convention":"negative_forearc_positive_backarc"}
+              } and
               .runtime.openquake_runtime_value_acceptance_verified == true and
               .runtime.gsim_site_parameter_sufficiency_verified == true and
+              .runtime.consumer_site_parameter_semantics_verified == true and
               .runtime.raw_xml_returned == false and .runtime.raw_site_rows_returned == false and
               .runtime.raw_attribute_values_returned == false and .runtime.coordinates_returned == false and
               .runtime.site_parameter_units_verified == false and

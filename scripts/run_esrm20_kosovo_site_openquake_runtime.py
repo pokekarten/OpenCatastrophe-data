@@ -7,8 +7,9 @@ This gate is intentionally narrower than a hazard calculation. It reacquires the
 already-receipted Kosovo site model and exact ESRM20 GSIM logic tree, verifies
 both byte identities before interpretation, then asks the frozen OpenQuake 3.14
 implementation to parse the real NRML site model with ``readinput.get_site_model``.
-Only counts and required field names leave the runtime. Raw provider bytes,
-coordinates and attribute values never leave the transient process.
+Only counts, required field names, and source-frozen unit/type semantics leave the
+runtime. Raw provider bytes, coordinates and attribute values never leave the
+transient process.
 """
 
 from __future__ import annotations
@@ -32,9 +33,9 @@ from scripts import run_eshm20_gsim_reference_runtime as _base_runtime
 from scripts.prepare_agent_action_result import LedgerError, fetch_repository_comments
 
 REQUEST_MARKER = "<!-- oc-eq1-esrm20-kosovo-site-openquake-runtime-request-v1 -->"
-RESULT_MARKER = "<!-- oc-eq1-esrm20-kosovo-site-openquake-runtime-result-v1 -->"
+RESULT_MARKER = "<!-- oc-eq1-esrm20-kosovo-site-openquake-runtime-result-v2 -->"
 REQUEST_SCHEMA_VERSION = "oc-esrm20-kosovo-site-openquake-runtime-request-v1"
-RESULT_SCHEMA_VERSION = "oc-esrm20-kosovo-site-openquake-runtime-result-v1"
+RESULT_SCHEMA_VERSION = "oc-esrm20-kosovo-site-openquake-runtime-result-v2"
 ACTION = "esrm20_kosovo_site_openquake_runtime_ingestion"
 CONTROL_ISSUE = 291
 SOURCE_SCIENCE_ISSUE = 284
@@ -43,6 +44,17 @@ OPENQUAKE_TAG = "v3.14.0"
 OPENQUAKE_COMMIT = "9f044c93d72846421a8faa90ebf0a6afacdf3c20"
 EXPECTED_SITE_COUNT = 37
 EXPECTED_REQUIRED_PARAMETERS = ("geology", "region", "slope", "vs30", "xvf")
+EXPECTED_REQUIRED_PARAMETER_SEMANTICS = {
+    "geology": {"kind": "categorical", "unit": None},
+    "region": {"kind": "integer_selector", "unit": None},
+    "slope": {"kind": "ratio", "unit": "m/m"},
+    "vs30": {"kind": "velocity", "unit": "m/s"},
+    "xvf": {
+        "kind": "signed_distance_to_volcanic_front",
+        "unit": "km",
+        "sign_convention": "negative_forearc_positive_backarc",
+    },
+}
 
 SITE_PROJECT_ID = 269
 SITE_PROJECT_PATH = "efehr/esrm20"
@@ -297,6 +309,7 @@ def _openquake_ingest(
         "parser_path": "openquake.commonlib.readinput.get_site_model",
         "site_count": EXPECTED_SITE_COUNT,
         "required_site_parameter_names": list(EXPECTED_REQUIRED_PARAMETERS),
+        "required_site_parameter_semantics": EXPECTED_REQUIRED_PARAMETER_SEMANTICS,
         "runtime_value_accept_count": EXPECTED_SITE_COUNT,
         "raw_xml_returned": False,
         "raw_site_rows_returned": False,
@@ -304,6 +317,7 @@ def _openquake_ingest(
         "coordinates_returned": False,
         "openquake_runtime_value_acceptance_verified": True,
         "gsim_site_parameter_sufficiency_verified": True,
+        "consumer_site_parameter_semantics_verified": True,
         "site_parameter_units_verified": False,
         "crs_coordinate_semantics_verified": False,
         "missingness_semantics_verified": False,
@@ -358,14 +372,28 @@ def _base_result(*, execution_sha: str) -> dict[str, Any]:
 
 def _validate_runtime_payload(payload: object) -> dict[str, Any]:
     fields = {
-        "openquake_reference", "runtime_image_digest", "parser_path", "site_count",
-        "required_site_parameter_names", "runtime_value_accept_count", "raw_xml_returned",
-        "raw_site_rows_returned", "raw_attribute_values_returned", "coordinates_returned",
-        "openquake_runtime_value_acceptance_verified", "gsim_site_parameter_sufficiency_verified",
-        "site_parameter_units_verified", "crs_coordinate_semantics_verified",
-        "missingness_semantics_verified", "site_model_compatibility_verified",
-        "site_adjusted_reference_authorized", "numerical_hazard_agreement_verified",
-        "publication_authorized", "model_use_authorized",
+        "openquake_reference",
+        "runtime_image_digest",
+        "parser_path",
+        "site_count",
+        "required_site_parameter_names",
+        "required_site_parameter_semantics",
+        "runtime_value_accept_count",
+        "raw_xml_returned",
+        "raw_site_rows_returned",
+        "raw_attribute_values_returned",
+        "coordinates_returned",
+        "openquake_runtime_value_acceptance_verified",
+        "gsim_site_parameter_sufficiency_verified",
+        "consumer_site_parameter_semantics_verified",
+        "site_parameter_units_verified",
+        "crs_coordinate_semantics_verified",
+        "missingness_semantics_verified",
+        "site_model_compatibility_verified",
+        "site_adjusted_reference_authorized",
+        "numerical_hazard_agreement_verified",
+        "publication_authorized",
+        "model_use_authorized",
     }
     if type(payload) is not dict or set(payload) != fields:
         raise SiteOpenQuakeRuntimeError("site-runtime payload fields drifted")
@@ -374,20 +402,36 @@ def _validate_runtime_payload(payload: object) -> dict[str, Any]:
     _esrm_runtime._validate_image_digest(payload.get("runtime_image_digest"))
     if payload.get("parser_path") != "openquake.commonlib.readinput.get_site_model":
         raise SiteOpenQuakeRuntimeError("site-runtime parser path drifted")
-    if payload.get("site_count") != EXPECTED_SITE_COUNT or payload.get("runtime_value_accept_count") != EXPECTED_SITE_COUNT:
+    if (
+        payload.get("site_count") != EXPECTED_SITE_COUNT
+        or payload.get("runtime_value_accept_count") != EXPECTED_SITE_COUNT
+    ):
         raise SiteOpenQuakeRuntimeError("site-runtime accepted site count drifted")
     if payload.get("required_site_parameter_names") != list(EXPECTED_REQUIRED_PARAMETERS):
         raise SiteOpenQuakeRuntimeError("site-runtime required parameter names drifted")
+    if payload.get("required_site_parameter_semantics") != EXPECTED_REQUIRED_PARAMETER_SEMANTICS:
+        raise SiteOpenQuakeRuntimeError("site-runtime required parameter semantics drifted")
     for field in (
-        "raw_xml_returned", "raw_site_rows_returned", "raw_attribute_values_returned",
-        "coordinates_returned", "site_parameter_units_verified", "crs_coordinate_semantics_verified",
-        "missingness_semantics_verified", "site_model_compatibility_verified",
-        "site_adjusted_reference_authorized", "numerical_hazard_agreement_verified",
-        "publication_authorized", "model_use_authorized",
+        "raw_xml_returned",
+        "raw_site_rows_returned",
+        "raw_attribute_values_returned",
+        "coordinates_returned",
+        "site_parameter_units_verified",
+        "crs_coordinate_semantics_verified",
+        "missingness_semantics_verified",
+        "site_model_compatibility_verified",
+        "site_adjusted_reference_authorized",
+        "numerical_hazard_agreement_verified",
+        "publication_authorized",
+        "model_use_authorized",
     ):
         if payload.get(field) is not False:
             raise SiteOpenQuakeRuntimeError(f"site-runtime authority widened at {field}")
-    for field in ("openquake_runtime_value_acceptance_verified", "gsim_site_parameter_sufficiency_verified"):
+    for field in (
+        "openquake_runtime_value_acceptance_verified",
+        "gsim_site_parameter_sufficiency_verified",
+        "consumer_site_parameter_semantics_verified",
+    ):
         if payload.get(field) is not True:
             raise SiteOpenQuakeRuntimeError(f"site-runtime did not establish {field}")
     return payload
@@ -409,7 +453,15 @@ def _validate_terminal_result(result: object, *, execution_sha: str) -> dict[str
         _validate_runtime_payload(result.get("runtime"))
         return result
     if status == "blocked":
-        if result.get("failure_class") not in {"site_acquisition_failure", "gmm_acquisition_failure", "runtime_ingestion_failure"} or result.get("runtime") is not None:
+        if (
+            result.get("failure_class")
+            not in {
+                "site_acquisition_failure",
+                "gmm_acquisition_failure",
+                "runtime_ingestion_failure",
+            }
+            or result.get("runtime") is not None
+        ):
             raise SiteOpenQuakeRuntimeError("blocked site-runtime result is not safely bounded")
         return result
     raise SiteOpenQuakeRuntimeError("trusted site-runtime result has non-terminal status")
@@ -433,13 +485,28 @@ def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
         raise SiteOpenQuakeRuntimeError("trusted site-runtime result is not an object")
     target = result.get("target_sha")
     observed = result.get("execution_sha")
-    if type(target) is not str or _SHA_RE.fullmatch(target) is None or type(observed) is not str or _SHA_RE.fullmatch(observed) is None or target != observed:
-        raise SiteOpenQuakeRuntimeError("trusted site-runtime historical SHA identity is inconsistent")
+    if (
+        type(target) is not str
+        or _SHA_RE.fullmatch(target) is None
+        or type(observed) is not str
+        or _SHA_RE.fullmatch(observed) is None
+        or target != observed
+    ):
+        raise SiteOpenQuakeRuntimeError(
+            "trusted site-runtime historical SHA identity is inconsistent"
+        )
     _validate_terminal_result(result, execution_sha=observed)
     return observed == execution_sha
 
 
-def has_terminal_runtime_result(*, repository: str, token: str, execution_sha: str, opener: Any | None = None, max_pages: int = 20) -> bool:
+def has_terminal_runtime_result(
+    *,
+    repository: str,
+    token: str,
+    execution_sha: str,
+    opener: Any | None = None,
+    max_pages: int = 20,
+) -> bool:
     if type(execution_sha) is not str or _SHA_RE.fullmatch(execution_sha) is None:
         raise SiteOpenQuakeRuntimeError("invalid execution SHA")
     kwargs: dict[str, Any] = {"issue": CONTROL_ISSUE, "max_pages": max_pages}
@@ -473,19 +540,35 @@ def _run_runtime(
     try:
         site_bytes = site_acquirer()
     except SiteRuntimeAcquisitionError:
-        result.update({"status": "blocked", "failure_class": "site_acquisition_failure", "runtime": None})
+        result.update(
+            {"status": "blocked", "failure_class": "site_acquisition_failure", "runtime": None}
+        )
         return _validate_terminal_result(result, execution_sha=execution_sha)
     try:
         gmm_bytes = gmm_acquirer()
     except SiteRuntimeAcquisitionError:
-        result.update({"status": "blocked", "failure_class": "gmm_acquisition_failure", "runtime": None})
+        result.update(
+            {"status": "blocked", "failure_class": "gmm_acquisition_failure", "runtime": None}
+        )
         return _validate_terminal_result(result, execution_sha=execution_sha)
     try:
-        payload = runtime_ingester(site_bytes=site_bytes, gmm_bytes=gmm_bytes, image_digest=image_digest)
+        payload = runtime_ingester(
+            site_bytes=site_bytes,
+            gmm_bytes=gmm_bytes,
+            image_digest=image_digest,
+        )
     except SiteRuntimeIngestionError:
-        result.update({"status": "blocked", "failure_class": "runtime_ingestion_failure", "runtime": None})
+        result.update(
+            {"status": "blocked", "failure_class": "runtime_ingestion_failure", "runtime": None}
+        )
         return _validate_terminal_result(result, execution_sha=execution_sha)
-    result.update({"status": "pass", "failure_class": None, "runtime": _validate_runtime_payload(payload)})
+    result.update(
+        {
+            "status": "pass",
+            "failure_class": None,
+            "runtime": _validate_runtime_payload(payload),
+        }
+    )
     return _validate_terminal_result(result, execution_sha=execution_sha)
 
 
