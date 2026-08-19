@@ -134,6 +134,21 @@ class KosovoSpatialInteropActionTests(unittest.TestCase):
         value = _valid_profile()
         self.assertEqual(action.validate_profile(value), value)
 
+    def test_profile_rejects_decimal_distance_that_overflows_to_nonfinite(self) -> None:
+        for field in ("minimum", "maximum"):
+            with self.subTest(field=field):
+                malformed = _valid_profile()
+                malformed["profile"] = dict(malformed["profile"])
+                malformed["profile"]["nearest_site_distance_km"] = dict(
+                    malformed["profile"]["nearest_site_distance_km"]
+                )
+                malformed["profile"]["nearest_site_distance_km"][field] = "9" * 400
+                with self.assertRaisesRegex(
+                    action.KosovoSpatialInteropExecutionError,
+                    rf"{field} nearest-site distance is not finite",
+                ):
+                    action.validate_profile(malformed)
+
     def test_profile_rejects_identity_or_authority_widening(self) -> None:
         widened = _valid_profile()
         widened["source_crs_datum_epsg_verified"] = True
