@@ -56,6 +56,15 @@ gmpe_table = \"table.hdf5\"</uncertaintyModel>
 </nrml>"""
 
 
+def durable_profile() -> dict[str, object]:
+    profile = subject._derive_profile(
+        gsim_xml_text=gsim_xml(), source_xml_text=source_xml()
+    )
+    profile["gsim_tree"]["branch_set_count"] = subject.GSIM_BRANCH_SET_COUNT
+    profile["gsim_tree"]["branch_count"] = subject.GSIM_BRANCH_COUNT
+    return profile
+
+
 class HazardLogicTreeProfileActionTests(unittest.TestCase):
     def test_request_is_exact_main_bound_and_has_no_provider_selector(self) -> None:
         parsed = subject.validate_request(
@@ -96,12 +105,9 @@ class HazardLogicTreeProfileActionTests(unittest.TestCase):
         self.assertFalse(profile["raw_xml_returned"])
         rendered = json.dumps(profile, sort_keys=True)
         self.assertNotIn("table.hdf5", rendered)
-        subject._validate_profile(profile)
 
     def test_source_hdf5_companion_cannot_appear_without_explicit_inventory(self) -> None:
-        profile = subject._derive_profile(
-            gsim_xml_text=gsim_xml(), source_xml_text=source_xml()
-        )
+        profile = durable_profile()
         mutated = copy.deepcopy(profile)
         mutated["source_tree"]["dependencies"].append(
             {
@@ -115,9 +121,7 @@ class HazardLogicTreeProfileActionTests(unittest.TestCase):
             subject._validate_profile(mutated)
 
     def test_durable_gsim_profile_rejects_argument_values_and_unknown_keys(self) -> None:
-        profile = subject._derive_profile(
-            gsim_xml_text=gsim_xml(), source_xml_text=source_xml()
-        )
+        profile = durable_profile()
         mutated = copy.deepcopy(profile)
         mutated["gsim_tree"]["argument_values"] = {"gmpe_table": "secret.hdf5"}
         with self.assertRaisesRegex(subject.HazardLogicTreeProfileActionError, "fields drifted"):
@@ -128,10 +132,30 @@ class HazardLogicTreeProfileActionTests(unittest.TestCase):
         with self.assertRaisesRegex(subject.HazardLogicTreeProfileActionError, "durable sets"):
             subject._validate_profile(mutated)
 
+    def test_durable_gsim_profile_rejects_invalid_counts(self) -> None:
+        profile = durable_profile()
+        for field, values in (
+            (
+                "branch_set_count",
+                (True, 0, 5, 7, subject.gsim_identity.MAX_BRANCH_SETS + 1, "6"),
+            ),
+            (
+                "branch_count",
+                (True, 0, 79, 81, subject.gsim_identity.MAX_BRANCHES + 1, "80"),
+            ),
+        ):
+            for value in values:
+                with self.subTest(field=field, value=value):
+                    mutated = copy.deepcopy(profile)
+                    mutated["gsim_tree"][field] = value
+                    with self.assertRaisesRegex(
+                        subject.HazardLogicTreeProfileActionError,
+                        "durable counts",
+                    ):
+                        subject._validate_profile(mutated)
+
     def test_run_profile_closes_only_byte_and_content_gates(self) -> None:
-        profile = subject._derive_profile(
-            gsim_xml_text=gsim_xml(), source_xml_text=source_xml()
-        )
+        profile = durable_profile()
         with mock.patch.object(subject, "acquire_and_profile", return_value=profile):
             result = subject.run_profile(execution_sha=EXECUTION_SHA)
         self.assertEqual(result["status"], "pass")
@@ -156,9 +180,7 @@ class HazardLogicTreeProfileActionTests(unittest.TestCase):
         self.assertNotIn("provider detail", json.dumps(result))
 
     def test_trusted_pass_rejects_authority_widening(self) -> None:
-        profile = subject._derive_profile(
-            gsim_xml_text=gsim_xml(), source_xml_text=source_xml()
-        )
+        profile = durable_profile()
         with mock.patch.object(subject, "acquire_and_profile", return_value=profile):
             result = subject.run_profile(execution_sha=EXECUTION_SHA)
         body = subject.RESULT_MARKER + "\n" + json.dumps(

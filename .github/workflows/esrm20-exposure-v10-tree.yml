@@ -97,7 +97,7 @@ jobs:
               type == "string" and length > 0 and . == (gsub("^[[:space:]]+|[[:space:]]+$"; "")) and
               utf8bytelength <= 2048 and (test("[[:cntrl:]]") | not);
             def safe_path:
-              bounded_text and startswith("Exposure_30arcsec/") and
+              bounded_text and startswith("Exposure/") and
               (contains("\\") | not) and
               (split("/") | all(. != "" and . != "." and . != ".."));
             def candidate:
@@ -125,7 +125,7 @@ jobs:
               .profile.project_id == 269 and .profile.project_path == "efehr/esrm20" and
               .profile.release_tag == "v1.0" and
               .profile.commit_sha == "05f83bbc9df81d02ee8ddb1801d9d781355ce783" and
-              .profile.subtree_path == "Exposure_30arcsec" and
+              .profile.subtree_path == "Exposure" and
               (.profile.pages_read | type == "number" and . == floor and . >= 1 and . <= 30) and
               (.profile.entry_count | type == "number" and . == floor and . >= 1 and . <= 3000) and
               (.profile.blob_count | type == "number" and . == floor and . >= 0) and

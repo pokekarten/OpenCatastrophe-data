@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Profile only immutable ESRM20 v1.0 ``Exposure_30arcsec`` tree metadata.
+"""Profile only immutable ESRM20 v1.0 ``Exposure`` tree metadata.
 
 This operation is closed to EFEHR GitLab project 269, release v1.0, the frozen
 immutable commit, and one fixed repository subtree. It never requests repository
@@ -33,7 +33,7 @@ PROJECT_ID = 269
 PROJECT_PATH = "efehr/esrm20"
 RELEASE_TAG = "v1.0"
 EXPECTED_COMMIT_SHA = "05f83bbc9df81d02ee8ddb1801d9d781355ce783"
-SUBTREE_PATH = "Exposure_30arcsec"
+SUBTREE_PATH = "Exposure"
 PROVIDER_KOSOVO_TOKEN = "Kosovo"
 TREE_PER_PAGE = 100
 MAX_TREE_PAGES = 30
@@ -473,7 +473,7 @@ def _require_production_authority() -> None:
         (PROJECT_PATH, "efehr/esrm20"),
         (RELEASE_TAG, "v1.0"),
         (EXPECTED_COMMIT_SHA, "05f83bbc9df81d02ee8ddb1801d9d781355ce783"),
-        (SUBTREE_PATH, "Exposure_30arcsec"),
+        (SUBTREE_PATH, "Exposure"),
         (PROVIDER_KOSOVO_TOKEN, "Kosovo"),
         (TREE_PER_PAGE, 100),
         (MAX_TREE_PAGES, 30),

@@ -73,6 +73,8 @@ COMMIT_SHA = "05f83bbc9df81d02ee8ddb1801d9d781355ce783"
 GSIM_PATH = "Hazard/gmpe_logic_tree_5br_slope_geology.xml"
 GSIM_BYTE_COUNT = 34_018
 GSIM_SHA256 = "f3efd16db967efd23f6b25837565344a6056282965ed0ecdfdbcb614513471b1"
+GSIM_BRANCH_SET_COUNT = 6
+GSIM_BRANCH_COUNT = 80
 SOURCE_PATH = "Hazard/source_model_logic_tree_eshm20_v12e_collapsed_risk_model.xml"
 SOURCE_BYTE_COUNT = 1_964
 SOURCE_SHA256 = "caebf9140922da7f7492d8b0e55c213c70a84d5b725ae37eae31d50e1da4ac3"
@@ -375,6 +377,17 @@ def _validate_profile(profile: object) -> dict[str, Any]:
         or gsim.get("argument_values_returned") is not False
     ):
         raise HazardLogicTreeProfileActionError("GSIM durable identity/ceiling drifted")
+    branch_set_count = gsim.get("branch_set_count")
+    branch_count = gsim.get("branch_count")
+    if (
+        type(branch_set_count) is not int
+        or isinstance(branch_set_count, bool)
+        or branch_set_count != GSIM_BRANCH_SET_COUNT
+        or type(branch_count) is not int
+        or isinstance(branch_count, bool)
+        or branch_count != GSIM_BRANCH_COUNT
+    ):
+        raise HazardLogicTreeProfileActionError("GSIM durable counts are invalid")
     tokens = gsim.get("unique_requested_gsim_tokens")
     keys = gsim.get("unique_argument_keys")
     external = gsim.get("external_resource_argument_keys")
