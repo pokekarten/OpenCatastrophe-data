@@ -22,6 +22,7 @@ from scripts.acquire_efehr_esrm20_scenario_tree_metadata import (
 )
 
 COMMIT = "a" * 40
+ANNOTATED_TAG_OBJECT = "c" * 40
 
 
 class FakeResponse:
@@ -94,7 +95,7 @@ def tree_response(items, *, page=1, next_page=""):
 class Esrm20ScenarioTreeMetadataTests(unittest.TestCase):
     def test_fixed_target_happy_path_is_metadata_only(self):
         responses = [
-            tag_response(),
+            tag_response(target=ANNOTATED_TAG_OBJECT),
             tree_response(
                 [
                     tree_item("README.md"),
@@ -167,7 +168,7 @@ class Esrm20ScenarioTreeMetadataTests(unittest.TestCase):
     def test_tree_request_is_bound_to_resolved_commit_not_mutable_tag(self):
         requested = []
         responses = [
-            tag_response(),
+            tag_response(target=ANNOTATED_TAG_OBJECT),
             tree_response([tree_item("README.md")]),
         ]
 
@@ -186,7 +187,7 @@ class Esrm20ScenarioTreeMetadataTests(unittest.TestCase):
         self.assertIn(f"ref={COMMIT}", requested[1])
         self.assertNotIn("ref=v1.0", requested[1])
 
-    def test_wrong_tag_or_target_identity_fails_closed(self):
+    def test_wrong_tag_identity_fails_closed(self):
         with self.assertRaisesRegex(EfehrAcquisitionError, "trusted v1.0"):
             acquire_esrm20_scenario_tree_metadata(
                 opener=lambda request, timeout: tag_response(name="v1.1"),
@@ -194,12 +195,23 @@ class Esrm20ScenarioTreeMetadataTests(unittest.TestCase):
                 monotonic=lambda: 0.0,
             )
 
-        with self.assertRaisesRegex(EfehrAcquisitionError, "target/commit"):
+    def test_malformed_tag_target_object_fails_before_tree_request(self):
+        calls = 0
+
+        def opener(request, timeout):
+            nonlocal calls
+            calls += 1
+            if calls != 1:
+                raise AssertionError("tree request must not occur after invalid tag target")
+            return tag_response(target="not-a-git-object")
+
+        with self.assertRaisesRegex(EfehrAcquisitionError, "target object id"):
             acquire_esrm20_scenario_tree_metadata(
-                opener=lambda request, timeout: tag_response(target="c" * 40),
+                opener=opener,
                 now=lambda: "2026-08-15T17:35:00Z",
                 monotonic=lambda: 0.0,
             )
+        self.assertEqual(calls, 1)
 
     def test_short_or_uppercase_commit_fails_closed_before_tree_request(self):
         for commit in ("a" * 39, "A" * 40):

@@ -218,9 +218,9 @@ def _resolve_v1_tag(
             "EFEHR scenario tag response lacks a full lowercase commit SHA"
         )
     target = payload.get("target")
-    if type(target) is not str or target != commit_sha:
+    if type(target) is not str or not _GIT_SHA_RE.fullmatch(target):
         raise EfehrAcquisitionError(
-            "EFEHR scenario tag target/commit identity drifted"
+            "EFEHR scenario tag target object id is invalid"
         )
     return commit_sha, len(raw)
 
