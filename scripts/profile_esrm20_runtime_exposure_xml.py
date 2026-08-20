@@ -156,7 +156,9 @@ def profile_xml_bytes(payload: bytes) -> dict[str, Any]:
     if root_local_name != "nrml":
         raise XmlSemanticProfileError("runtime exposure NRML root local name drifted")
     if root_namespace != NRML_NAMESPACE:
-        raise XmlSemanticProfileError("runtime exposure NRML root namespace drifted")
+        if root_namespace == "http://openquake.org/xmlns/nrml/0.4":
+            raise XmlSemanticProfileError("runtime exposure NRML root namespace is legacy 0.4")
+        raise XmlSemanticProfileError("runtime exposure NRML root namespace is unrecognized")
     if root.attrib:
         raise XmlSemanticProfileError("runtime exposure NRML root attributes present")
 
