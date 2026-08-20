@@ -58,6 +58,10 @@ _CANONICAL_EXPECTED_SHA256 = (
 )
 _CANONICAL_MAX_PROFILE_BYTES = 4096
 _CANONICAL_NRML_NAMESPACE = "http://openquake.org/xmlns/nrml/0.5"
+_CANONICAL_NRML_NAMESPACE_LEGACY_04 = "http://openquake.org/xmlns/nrml/0.4"
+_CANONICAL_ACCEPTED_NRML_NAMESPACES = frozenset(
+    {_CANONICAL_NRML_NAMESPACE_LEGACY_04, _CANONICAL_NRML_NAMESPACE}
+)
 
 SOURCE_ISSUE = _CANONICAL_SOURCE_ISSUE
 DATASET_ID = _CANONICAL_DATASET_ID
@@ -69,6 +73,8 @@ EXPECTED_BYTE_COUNT = _CANONICAL_EXPECTED_BYTE_COUNT
 EXPECTED_SHA256 = _CANONICAL_EXPECTED_SHA256
 MAX_PROFILE_BYTES = _CANONICAL_MAX_PROFILE_BYTES
 NRML_NAMESPACE = _CANONICAL_NRML_NAMESPACE
+NRML_NAMESPACE_LEGACY_04 = _CANONICAL_NRML_NAMESPACE_LEGACY_04
+ACCEPTED_NRML_NAMESPACES = _CANONICAL_ACCEPTED_NRML_NAMESPACES
 
 _CANONICAL_OPEN_FIXED = _open_fixed
 _CANONICAL_UTC_NOW = utc_now
@@ -99,6 +105,16 @@ def _require_canonical_identity() -> None:
         (EXPECTED_SHA256, _CANONICAL_EXPECTED_SHA256, "SHA-256"),
         (MAX_PROFILE_BYTES, _CANONICAL_MAX_PROFILE_BYTES, "maximum byte count"),
         (NRML_NAMESPACE, _CANONICAL_NRML_NAMESPACE, "NRML namespace"),
+        (
+            NRML_NAMESPACE_LEGACY_04,
+            _CANONICAL_NRML_NAMESPACE_LEGACY_04,
+            "legacy NRML namespace",
+        ),
+        (
+            ACCEPTED_NRML_NAMESPACES,
+            _CANONICAL_ACCEPTED_NRML_NAMESPACES,
+            "accepted NRML namespaces",
+        ),
     )
     for observed, expected, label in identities:
         if type(observed) is not type(expected) or observed != expected:
@@ -111,8 +127,8 @@ def _require_canonical_identity() -> None:
         raise RuntimeExposureXmlProfileError("runtime exposure production clock drifted")
 
 
-def _tag(local: str) -> str:
-    return f"{{{NRML_NAMESPACE}}}{local}"
+def _tag(local: str, *, namespace: str) -> str:
+    return f"{{{namespace}}}{local}"
 
 
 def _only_text(element: ET.Element, *, label: str) -> str:
@@ -163,11 +179,7 @@ def profile_xml_bytes(payload: bytes) -> dict[str, Any]:
         root_namespace, root_local_name = "", root_tag
     if root_local_name != "nrml":
         raise XmlSemanticProfileError("runtime exposure NRML root local name drifted")
-    if root_namespace != NRML_NAMESPACE:
-        if root_namespace == "http://openquake.org/xmlns/nrml/0.4":
-            raise XmlSemanticProfileError(
-                "runtime exposure NRML root namespace is legacy 0.4"
-            )
+    if root_namespace not in ACCEPTED_NRML_NAMESPACES:
         raise XmlSemanticProfileError(
             "runtime exposure NRML root namespace is unrecognized"
         )
@@ -175,7 +187,9 @@ def profile_xml_bytes(payload: bytes) -> dict[str, Any]:
         raise XmlSemanticProfileError("runtime exposure NRML root attributes present")
 
     models = list(root)
-    if len(models) != 1 or models[0].tag != _tag("exposureModel"):
+    if len(models) != 1 or models[0].tag != _tag(
+        "exposureModel", namespace=root_namespace
+    ):
         raise XmlSemanticProfileError("expected exactly one exposureModel")
     model = models[0]
     allowed_model_attrs = {"id", "category", "taxonomySource"}
@@ -191,8 +205,9 @@ def profile_xml_bytes(payload: bytes) -> dict[str, Any]:
         "exposureFields",
     }
     child_by_local: dict[str, ET.Element] = {}
+    expected_prefix = "{" + root_namespace + "}"
     for child in model:
-        if not child.tag.startswith("{" + NRML_NAMESPACE + "}"):
+        if not child.tag.startswith(expected_prefix):
             raise XmlSemanticProfileError("foreign exposureModel child namespace")
         local = child.tag.split("}", 1)[1]
         if local not in allowed_children or local in child_by_local:
@@ -217,7 +232,7 @@ def profile_xml_bytes(payload: bytes) -> dict[str, Any]:
             raise XmlSemanticProfileError("conversions envelope drifted")
         seen_conv: set[str] = set()
         for conv_child in conversions:
-            if not conv_child.tag.startswith("{" + NRML_NAMESPACE + "}"):
+            if not conv_child.tag.startswith(expected_prefix):
                 raise XmlSemanticProfileError("foreign conversions namespace")
             local = conv_child.tag.split("}", 1)[1]
             if local in seen_conv or local not in {"costTypes", "area"}:
@@ -239,7 +254,8 @@ def profile_xml_bytes(payload: bytes) -> dict[str, Any]:
                     raise XmlSemanticProfileError("costTypes envelope drifted")
                 for entry in conv_child:
                     if (
-                        entry.tag != _tag("costType")
+                        entry.tag
+                        != _tag("costType", namespace=root_namespace)
                         or list(entry)
                         or (entry.text or "").strip()
                     ):
@@ -274,7 +290,7 @@ def profile_xml_bytes(payload: bytes) -> dict[str, Any]:
             raise XmlSemanticProfileError("exposureFields envelope drifted")
         for field in fields:
             if (
-                field.tag != _tag("field")
+                field.tag != _tag("field", namespace=root_namespace)
                 or list(field)
                 or (field.text or "").strip()
             ):
@@ -295,7 +311,7 @@ def profile_xml_bytes(payload: bytes) -> dict[str, Any]:
             )
 
     return {
-        "nrml_namespace": NRML_NAMESPACE,
+        "nrml_namespace": root_namespace,
         "exposure_model": {
             "id": model.attrib["id"],
             "category": model.attrib.get("category"),
