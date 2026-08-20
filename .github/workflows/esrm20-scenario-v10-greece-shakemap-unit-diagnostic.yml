@@ -1,0 +1,279 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Scenario v1.0 Greece ShakeMap Unit Diagnostic
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-scenario-v10-greece-shakemap-unit-diagnostic-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main unit diagnostic request
+    if: >-
+      github.event.issue.number == 285 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-scenario-v10-greece-shakemap-unit-diagnostic-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Bind request to trusted main and fixed receipts
+        id: fence
+        env:
+          OC_GREECE_SHAKEMAP_UNIT_DIAGNOSTIC_REQUEST: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/run_esrm20_scenario_v10_greece_shakemap_unit_diagnostic_action.py \
+            --comment-body-env OC_GREECE_SHAKEMAP_UNIT_DIAGNOSTIC_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-diagnostic:
+    name: Classify fixed ShakeMap field-unit boundary
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.export.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up execution Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Prove issue-local dedup before provider access
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import run_esrm20_scenario_v10_greece_shakemap_unit_diagnostic_action as subject
+
+          skip = subject.has_terminal_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+
+      - name: Run fixed field-unit diagnostic in memory
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_GREECE_SHAKEMAP_UNIT_DIAGNOSTIC_REQUEST: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/greece-shakemap-unit-diagnostic-result.json
+        run: |
+          set -euo pipefail
+          python scripts/run_esrm20_scenario_v10_greece_shakemap_unit_diagnostic_action.py \
+            --comment-body-env OC_GREECE_SHAKEMAP_UNIT_DIAGNOSTIC_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from scripts import run_esrm20_scenario_v10_greece_shakemap_unit_diagnostic_action as subject
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          if subject._validate_terminal_result(result) != os.environ["EXECUTION_SHA"]:
+              raise SystemExit("unit diagnostic execution identity drifted")
+          PY
+
+      - name: Export bounded result
+        if: steps.dedup.outputs.skip != 'true'
+        id: export
+        env:
+          RESULT_PATH: ${{ runner.temp }}/greece-shakemap-unit-diagnostic-result.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(value, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          test "$(printf '%s' "$RESULT_JSON" | wc -c)" -le 6900
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-diagnostic:
+    name: Publish bounded field-unit diagnostic
+    needs: [validate-request, execute-diagnostic]
+    if: >-
+      needs.execute-diagnostic.result == 'success' &&
+      needs.execute-diagnostic.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence closed result and publish without checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-diagnostic.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-scenario-v10-greece-shakemap-unit-diagnostic-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            keys == [
+              "action",
+              "byte_identity_verified",
+              "dataset_id",
+              "event_location_inference_authorized",
+              "execution_sha",
+              "external_bytes_persisted",
+              "failure_code",
+              "failure_stage",
+              "holdout_status_established",
+              "independent_validation_established",
+              "model_use_authorized",
+              "output_payload_bytes_read",
+              "profile_failure_reproduced",
+              "provider_file_bytes_read",
+              "provider_file_content_profiled",
+              "provider_unit_metadata_classified",
+              "publication_authorized",
+              "scenario_selection_authorized",
+              "schema_version",
+              "shakemap_identity",
+              "source_issue",
+              "status",
+              "target_sha",
+              "unit_diagnostic"
+            ] and
+            .schema_version == "oc-esrm20-scenario-v10-greece-shakemap-unit-diagnostic-result-v1" and
+            .action == "esrm20_scenario_v10_greece_shakemap_unit_diagnostic" and
+            .source_issue == 285 and
+            .dataset_id == "efehr.esrm20.scenario-tests.v1.0" and
+            .target_sha == $sha and .execution_sha == $sha and
+            (.shakemap_identity | keys) == ["commit_sha","event_id","grid","project_id","project_path","release_tag","uncertainty"] and
+            .shakemap_identity.project_id == 273 and
+            .shakemap_identity.project_path == "efehr/esrm20_scenario_tests" and
+            .shakemap_identity.release_tag == "v1.0" and
+            .shakemap_identity.commit_sha == "041f90d950d6ff84180b2faa11319a42c66c74cc" and
+            .shakemap_identity.event_id == "Greece_07-9-1999" and
+            (.shakemap_identity.grid | keys) == ["git_blob_sha1","receipt_byte_count","receipt_sha256","repository_path","role"] and
+            .shakemap_identity.grid.role == "usgs_shakemap_grid" and
+            .shakemap_identity.grid.repository_path == "shakemaps/shakemaps_USGS/Greece_07-9-1999/grid.xml" and
+            .shakemap_identity.grid.git_blob_sha1 == "21e323dec41b8efb012b2595145fded5fb35fd3a" and
+            .shakemap_identity.grid.receipt_byte_count == 5290966 and
+            .shakemap_identity.grid.receipt_sha256 == "3c2fe7a2a7182fac999442ce3d88ddfd99004b7f999462ef2327f2eebc1ccd9f" and
+            (.shakemap_identity.uncertainty | keys) == ["git_blob_sha1","receipt_byte_count","receipt_sha256","repository_path","role"] and
+            .shakemap_identity.uncertainty.role == "usgs_shakemap_uncertainty" and
+            .shakemap_identity.uncertainty.repository_path == "shakemaps/shakemaps_USGS/Greece_07-9-1999/uncertainty.xml" and
+            .shakemap_identity.uncertainty.git_blob_sha1 == "30d5635260a83cd0ac91ee559d0109ff126a7b57" and
+            .shakemap_identity.uncertainty.receipt_byte_count == 5340320 and
+            .shakemap_identity.uncertainty.receipt_sha256 == "eb08df5ff78f265fb45bf31dbd3dddf4f01bf10632382d4156a2bdf016e46417" and
+            .status == "blocked" and
+            (.provider_file_bytes_read | type) == "boolean" and
+            (.byte_identity_verified | type) == "boolean" and
+            (.profile_failure_reproduced | type) == "boolean" and
+            (.provider_unit_metadata_classified | type) == "boolean" and
+            .provider_file_content_profiled == false and
+            .output_payload_bytes_read == false and
+            .external_bytes_persisted == false and
+            .event_location_inference_authorized == false and
+            .scenario_selection_authorized == false and
+            .independent_validation_established == false and
+            .holdout_status_established == false and
+            .publication_authorized == false and
+            .model_use_authorized == false and
+            (if .failure_stage == "acquisition" then
+              .failure_code == "acquisition_failed" and
+              .byte_identity_verified == false and
+              .profile_failure_reproduced == false and
+              .provider_unit_metadata_classified == false and
+              .unit_diagnostic == null
+            elif .failure_stage == "byte_identity" then
+              .failure_code == "byte_identity_mismatch" and
+              .provider_file_bytes_read == true and
+              .byte_identity_verified == false and
+              .profile_failure_reproduced == false and
+              .provider_unit_metadata_classified == false and
+              .unit_diagnostic == null
+            elif .failure_stage == "profile" then
+              .provider_file_bytes_read == true and
+              .byte_identity_verified == true and
+              (.failure_code as $code | [
+                "precondition_profile_failure_drift",
+                "precondition_not_reproduced",
+                "classifier_inconsistent",
+                "unsupported_grid_field_units"
+              ] | index($code) != null) and
+              (if .failure_code == "unsupported_grid_field_units" then
+                .profile_failure_reproduced == true and
+                .provider_unit_metadata_classified == true and
+                (.unit_diagnostic | keys) == ["field_name","member","unit_relation"] and
+                (.unit_diagnostic.member == "grid" or .unit_diagnostic.member == "uncertainty") and
+                (.unit_diagnostic.field_name as $field | [
+                  "LAT","LON","MMI","PGA","PGV","PSA03","PSA10","PSA30","STDPGA","STDPGV","STDMMI","STDPSA03","STDPSA10","STDPSA30","SVEL","URAT"
+                ] | index($field) != null) and
+                (.unit_diagnostic.unit_relation as $relation | [
+                  "documented_global_unit_wrong_for_field","blank_unexpected","unrecognized_unit_token"
+                ] | index($relation) != null)
+              elif .failure_code == "classifier_inconsistent" then
+                .profile_failure_reproduced == true and
+                .provider_unit_metadata_classified == false and
+                .unit_diagnostic == null
+              else
+                .profile_failure_reproduced == false and
+                .provider_unit_metadata_classified == false and
+                .unit_diagnostic == null
+              end)
+            else false end)
+          ' >/dev/null
+
+          BODY="$(printf '%s\n%s' "$RESULT_MARKER" "$RESULT_JSON")"
+          test "$(printf '%s' "$BODY" | wc -c)" -le 7000
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/result-comment.json"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/285/comments" \
+            --input "$RUNNER_TEMP/result-comment.json" >/dev/null
