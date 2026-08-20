@@ -1,0 +1,182 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Scenario v1.0 Event Input Receipts
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-scenario-v10-event-input-receipts-${{ github.repository }}-${{ github.event.issue.number == 285 && github.event.comment.user.login == github.event.repository.owner.login && github.event.comment.author_association == 'OWNER' && contains(github.event.comment.body, '<!-- oc-eq1-esrm20-scenario-v10-event-input-receipts-request-v1 -->') && 'trusted-request' || format('noise-{0}', github.event.comment.id) }}
+  cancel-in-progress: false
+
+jobs:
+  execute-event-input-receipts:
+    name: Receipt exact trusted-main Greece event inputs
+    if: >-
+      github.event.issue.number == 285 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-scenario-v10-event-input-receipts-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.run.outputs.execution_sha }}
+      skip: ${{ steps.run.outputs.skip }}
+      result_json: ${{ steps.run.outputs.result_json }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Validate, deduplicate, and receipt fixed inputs
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OC_EVENT_INPUT_RECEIPT_REQUEST: ${{ github.event.comment.body }}
+          RESULT_PATH: ${{ runner.temp }}/esrm20-scenario-v10-event-input-receipts.json
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/acquire_efehr_esrm20_scenario_v10_event_input_receipts.py \
+            --comment-body-env OC_EVENT_INPUT_RECEIPT_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --token-env GH_TOKEN \
+            --output "$RESULT_PATH"
+          STATUS="$(jq -r '.status' "$RESULT_PATH")"
+          test "$STATUS" = "pass" -o "$STATUS" = "blocked" -o "$STATUS" = "duplicate"
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+          if test "$STATUS" = "duplicate"; then
+            test "$(jq -r 'keys == [\"duplicate_result_comment_id\",\"status\"] and .status == \"duplicate\" and (.duplicate_result_comment_id | type) == \"number\" and .duplicate_result_comment_id >= 1' "$RESULT_PATH")" = "true"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "result_json=" >> "$GITHUB_OUTPUT"
+          else
+            RESULT_JSON="$(jq -cS . "$RESULT_PATH")"
+            test -n "$RESULT_JSON"
+            test "$(printf '%s' "$RESULT_JSON" | wc -c)" -le 24000
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish-event-input-receipts:
+    name: Publish bounded byte-receipt evidence
+    needs: [execute-event-input-receipts]
+    if: >-
+      needs.execute-event-input-receipts.result == 'success' &&
+      needs.execute-event-input-receipts.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.execute-event-input-receipts.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-event-input-receipts.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-scenario-v10-event-input-receipts-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            keys == [
+              "commit_sha",
+              "dataset_id",
+              "event_id",
+              "event_location_inference_authorized",
+              "execution_sha",
+              "external_bytes_persisted",
+              "failure_class",
+              "holdout_status_established",
+              "independent_validation_established",
+              "model_use_authorized",
+              "output_payload_bytes_read",
+              "project_id",
+              "project_path",
+              "provider_file_bytes_read",
+              "provider_file_content_profiled",
+              "provider_host",
+              "publication_authorized",
+              "receipts",
+              "release_tag",
+              "scenario_selection_authorized",
+              "schema_version",
+              "source_issue",
+              "status",
+              "target_sha"
+            ] and
+            .schema_version == "oc-esrm20-scenario-v10-event-input-receipts-result-v1" and
+            .source_issue == 285 and
+            .target_sha == $sha and .execution_sha == $sha and
+            .dataset_id == "efehr.esrm20.scenario-tests.v1.0" and
+            .provider_host == "gitlab.seismo.ethz.ch" and
+            .project_id == 273 and
+            .project_path == "efehr/esrm20_scenario_tests" and
+            .release_tag == "v1.0" and
+            .commit_sha == "041f90d950d6ff84180b2faa11319a42c66c74cc" and
+            .event_id == "Greece_07-9-1999" and
+            .provider_file_content_profiled == false and
+            .output_payload_bytes_read == false and
+            .external_bytes_persisted == false and
+            .event_location_inference_authorized == false and
+            .scenario_selection_authorized == false and
+            .independent_validation_established == false and
+            .holdout_status_established == false and
+            .publication_authorized == false and
+            .model_use_authorized == false and
+            (if .status == "pass" then
+              .failure_class == null and
+              .provider_file_bytes_read == true and
+              (.receipts | type) == "array" and (.receipts | length) == 3 and
+              ([.receipts[].role] == ["rupture_definition","usgs_shakemap_grid","usgs_shakemap_uncertainty"]) and
+              ([.receipts[].repository_path] == [
+                "ruptures/source_models/rupture_Greece_07-9-1999.xml",
+                "shakemaps/shakemaps_USGS/Greece_07-9-1999/grid.xml",
+                "shakemaps/shakemaps_USGS/Greece_07-9-1999/uncertainty.xml"
+              ]) and
+              ([.receipts[].git_blob_sha1] == [
+                "fa3bfd7aedfb63869c5808785b0ca712b6e45859",
+                "21e323dec41b8efb012b2595145fded5fb35fd3a",
+                "30d5635260a83cd0ac91ee559d0109ff126a7b57"
+              ]) and
+              all(.receipts[];
+                (keys == ["byte_count","content_type","etag","external_bytes_persisted","git_blob_sha1","provider_file_bytes_read","publication_authorized","repository_path","retrieved_at","role","sha256"]) and
+                (.retrieved_at | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")) and
+                (.byte_count | type) == "number" and .byte_count >= 1 and .byte_count <= 67108864 and
+                (.sha256 | type) == "string" and (.sha256 | test("^[0-9a-f]{64}$")) and
+                ((.content_type == null) or ((.content_type | type) == "string" and (.content_type | utf8bytelength) <= 1024)) and
+                ((.etag == null) or ((.etag | type) == "string" and (.etag | utf8bytelength) <= 1024)) and
+                .provider_file_bytes_read == true and
+                .external_bytes_persisted == false and
+                .publication_authorized == false
+              ) and
+              ([.receipts[].byte_count] | add) <= 134217728
+            elif .status == "blocked" then
+              .failure_class == "event_input_receipt_failure" and
+              .receipts == null and
+              .provider_file_bytes_read == null
+            else false end)
+          ' >/dev/null
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          test "$(printf '%s' "$BODY" | wc -c)" -le 24100
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/event-input-receipt-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/285/comments" \
+            --input "$RUNNER_TEMP/event-input-receipt-comment.json"
