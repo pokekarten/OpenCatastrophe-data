@@ -49,9 +49,9 @@ except ModuleNotFoundError:  # pragma: no cover
     )
 
 REQUEST_MARKER = "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-request-v1 -->"
-RESULT_MARKER = "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v1 -->"
+RESULT_MARKER = "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v2 -->"
 REQUEST_SCHEMA_VERSION = "oc-esrm20-runtime-exposure-xml-profile-request-v1"
-RESULT_SCHEMA_VERSION = "oc-esrm20-runtime-exposure-xml-profile-result-v1"
+RESULT_SCHEMA_VERSION = "oc-esrm20-runtime-exposure-xml-profile-result-v2"
 ACTION = "esrm20_runtime_exposure_xml_profile"
 TRUSTED_RESULT_LOGIN = "github-actions[bot]"
 MAX_LEDGER_PAGES = 20
