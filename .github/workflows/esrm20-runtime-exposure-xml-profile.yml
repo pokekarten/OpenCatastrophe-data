@@ -147,7 +147,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
           RESULT_JSON: ${{ needs.execute-profile.outputs.result_json }}
-          RESULT_MARKER: "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v4 -->"
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v5 -->"
         run: |
           set -euo pipefail
           printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
@@ -157,7 +157,7 @@ jobs:
               "publication_authorized","receipt","runtime_exposure_identity","schema_version",
               "source_issue","status","target_sha","value_structural_wiring_verified","xml_content_interpreted"
             ] and
-            .schema_version == "oc-esrm20-runtime-exposure-xml-profile-result-v4" and
+            .schema_version == "oc-esrm20-runtime-exposure-xml-profile-result-v5" and
             .action == "esrm20_runtime_exposure_xml_profile" and
             .source_issue == 282 and
             .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
@@ -184,7 +184,7 @@ jobs:
               (.receipt.retrieved_at | type) == "string" and (.receipt.retrieved_at | length) > 0 and
               (.profile | type) == "object" and
               (.profile | keys) == ["area","asset_references","cost_types","exposure_fields","exposure_model","nrml_namespace","occupancy_periods","structural_cost_type_declared","structural_value_inputs","tag_names"] and
-              .profile.nrml_namespace == "http://openquake.org/xmlns/nrml/0.5" and
+              (.profile.nrml_namespace == "http://openquake.org/xmlns/nrml/0.4" or .profile.nrml_namespace == "http://openquake.org/xmlns/nrml/0.5") and
               (.profile.asset_references | type) == "array" and (.profile.asset_references | length) > 0
             elif .status == "blocked" then
               (.failure_class == "acquisition_failure" or .failure_class == "byte_identity_mismatch" or .failure_class == "xml_profile_failure" or .failure_class == "profile_failure") and
@@ -195,7 +195,6 @@ jobs:
                   "dtd_or_entity_forbidden",
                   "malformed_xml",
                   "nrml_root_local_name_drifted",
-                  "nrml_root_namespace_legacy_04",
                   "nrml_root_namespace_unrecognized",
                   "nrml_root_attributes_present",
                   "exposure_model_cardinality_drifted",

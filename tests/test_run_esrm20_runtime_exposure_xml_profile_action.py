@@ -26,7 +26,7 @@ def request_body(**updates):
     return subject.REQUEST_MARKER + "\n" + json.dumps(value, separators=(",", ":"))
 
 
-def evidence():
+def evidence(namespace="http://openquake.org/xmlns/nrml/0.5"):
     return {
         "receipt": {
             "retrieved_at": "2026-08-19T22:00:00Z",
@@ -36,7 +36,7 @@ def evidence():
             "etag": None,
         },
         "profile": {
-            "nrml_namespace": "http://openquake.org/xmlns/nrml/0.5",
+            "nrml_namespace": namespace,
             "exposure_model": {
                 "id": "k",
                 "category": "buildings",
@@ -73,29 +73,36 @@ class ActionTests(unittest.TestCase):
                     request_body(**updates), expected_issue=282, execution_sha=SHA
                 )
 
-    def test_pass_preserves_authority_ceilings(self):
-        with mock.patch.object(
-            subject, "profile_runtime_exposure_xml", return_value=evidence()
-        ):
-            result = subject.run_profile(execution_sha=SHA)
-        self.assertEqual(result["status"], "pass")
-        self.assertIsNone(result["failure_code"])
-        self.assertTrue(result["xml_content_interpreted"])
-        self.assertFalse(result["exact_kosovo_exposure_selected"])
-        self.assertFalse(result["value_structural_wiring_verified"])
-        self.assertFalse(result["publication_authorized"])
-        self.assertFalse(result["model_use_authorized"])
-        self.assertEqual(subject._validate_terminal_result(result), SHA)
+    def test_pass_preserves_authority_ceilings_for_exact_supported_namespaces(self):
+        for namespace in sorted(subject.ACCEPTED_NRML_NAMESPACES):
+            with (
+                self.subTest(namespace=namespace),
+                mock.patch.object(
+                    subject,
+                    "profile_runtime_exposure_xml",
+                    return_value=evidence(namespace),
+                ),
+            ):
+                result = subject.run_profile(execution_sha=SHA)
+            self.assertEqual(result["status"], "pass")
+            self.assertIsNone(result["failure_code"])
+            self.assertEqual(result["profile"]["nrml_namespace"], namespace)
+            self.assertTrue(result["xml_content_interpreted"])
+            self.assertFalse(result["exact_kosovo_exposure_selected"])
+            self.assertFalse(result["value_structural_wiring_verified"])
+            self.assertFalse(result["publication_authorized"])
+            self.assertFalse(result["model_use_authorized"])
+            self.assertEqual(subject._validate_terminal_result(result), SHA)
 
     def test_failures_are_bounded(self):
         failures = [
             (subject.ByteIdentityMismatch("x"), "byte_identity_mismatch", None),
             (
                 subject.XmlSemanticProfileError(
-                    "runtime exposure NRML root namespace is legacy 0.4"
+                    "runtime exposure NRML root namespace is unrecognized"
                 ),
                 "xml_profile_failure",
-                "nrml_root_namespace_legacy_04",
+                "nrml_root_namespace_unrecognized",
             ),
             (subject.EfehrAcquisitionError("x"), "acquisition_failure", None),
             (subject.RuntimeExposureXmlProfileError("x"), "profile_failure", None),
@@ -118,10 +125,6 @@ class ActionTests(unittest.TestCase):
             (
                 "runtime exposure NRML root local name drifted",
                 "nrml_root_local_name_drifted",
-            ),
-            (
-                "runtime exposure NRML root namespace is legacy 0.4",
-                "nrml_root_namespace_legacy_04",
             ),
             (
                 "runtime exposure NRML root namespace is unrecognized",
@@ -169,34 +172,40 @@ class ActionTests(unittest.TestCase):
         ):
             subject._validate_terminal_result(result)
 
-    def test_result_v4_rejects_retired_v3_namespace_code(self):
-        result = subject._base_result(SHA)
-        result["failure_class"] = "xml_profile_failure"
-        result["failure_code"] = "nrml_root_namespace_drifted"
-        with self.assertRaisesRegex(
-            subject.RuntimeExposureXmlProfileActionError, "invalid XML failure code"
+    def test_result_v5_rejects_retired_namespace_codes(self):
+        for code in (
+            "nrml_root_namespace_drifted",
+            "nrml_root_namespace_legacy_04",
         ):
-            subject._validate_terminal_result(result)
+            with self.subTest(code=code):
+                result = subject._base_result(SHA)
+                result["failure_class"] = "xml_profile_failure"
+                result["failure_code"] = code
+                with self.assertRaisesRegex(
+                    subject.RuntimeExposureXmlProfileActionError,
+                    "invalid XML failure code",
+                ):
+                    subject._validate_terminal_result(result)
 
     def test_non_xml_failure_rejects_diagnostic_code(self):
         result = subject._base_result(SHA)
         result["failure_class"] = "acquisition_failure"
-        result["failure_code"] = "nrml_root_namespace_legacy_04"
+        result["failure_code"] = "nrml_root_namespace_unrecognized"
         with self.assertRaisesRegex(
             subject.RuntimeExposureXmlProfileActionError, "non-XML failure"
         ):
             subject._validate_terminal_result(result)
 
-    def test_legacy_result_v1_v2_and_v3_terminals_are_ignored_by_v4_dedup(self):
-        for version in (1, 2, 3):
+    def test_legacy_result_v1_v2_v3_and_v4_terminals_are_ignored_by_v5_dedup(self):
+        for version in (1, 2, 3, 4):
             with self.subTest(version=version):
                 legacy = (
                     "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-"
                     f'v{version} -->\n{{"legacy":true}}'
                 )
                 self.assertIsNone(subject.parse_terminal_result(legacy))
-        self.assertTrue(subject.RESULT_MARKER.endswith("result-v4 -->"))
-        self.assertTrue(subject.RESULT_SCHEMA_VERSION.endswith("result-v4"))
+        self.assertTrue(subject.RESULT_MARKER.endswith("result-v5 -->"))
+        self.assertTrue(subject.RESULT_SCHEMA_VERSION.endswith("result-v5"))
 
     def test_duplicate_json_keys_fail_closed(self):
         body = (
