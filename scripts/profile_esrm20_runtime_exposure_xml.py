@@ -29,7 +29,11 @@ try:
         _validate_exact_response,
         utc_now,
     )
-    from scripts.efehr_gitlab_receipt import EfehrReceiptError, raw_file_api_url, validate_target
+    from scripts.efehr_gitlab_receipt import (
+        EfehrReceiptError,
+        raw_file_api_url,
+        validate_target,
+    )
 except ModuleNotFoundError:  # pragma: no cover
     from acquire_efehr_gitlab_receipt import (
         EfehrAcquisitionError,
@@ -49,7 +53,9 @@ _CANONICAL_PROJECT_PATH = "efehr/esrm20"
 _CANONICAL_COMMIT_SHA = "05f83bbc9df81d02ee8ddb1801d9d781355ce783"
 _CANONICAL_REPOSITORY_PATH = "Exposure/OQ_Exposure_Input_Kosovo.xml"
 _CANONICAL_EXPECTED_BYTE_COUNT = 664
-_CANONICAL_EXPECTED_SHA256 = "61be4c534e6bdd1577d15dd289b2c604fde41f00f8f636901634daf2f41bcceb"
+_CANONICAL_EXPECTED_SHA256 = (
+    "61be4c534e6bdd1577d15dd289b2c604fde41f00f8f636901634daf2f41bcceb"
+)
 _CANONICAL_MAX_PROFILE_BYTES = 4096
 _CANONICAL_NRML_NAMESPACE = "http://openquake.org/xmlns/nrml/0.5"
 
@@ -98,7 +104,9 @@ def _require_canonical_identity() -> None:
         if type(observed) is not type(expected) or observed != expected:
             raise RuntimeExposureXmlProfileError(f"runtime exposure {label} drifted")
     if _open_fixed is not _CANONICAL_OPEN_FIXED or utc_now is not _CANONICAL_UTC_NOW:
-        raise RuntimeExposureXmlProfileError("runtime exposure production transport drifted")
+        raise RuntimeExposureXmlProfileError(
+            "runtime exposure production transport drifted"
+        )
     if time.monotonic is not _CANONICAL_MONOTONIC:
         raise RuntimeExposureXmlProfileError("runtime exposure production clock drifted")
 
@@ -157,8 +165,12 @@ def profile_xml_bytes(payload: bytes) -> dict[str, Any]:
         raise XmlSemanticProfileError("runtime exposure NRML root local name drifted")
     if root_namespace != NRML_NAMESPACE:
         if root_namespace == "http://openquake.org/xmlns/nrml/0.4":
-            raise XmlSemanticProfileError("runtime exposure NRML root namespace is legacy 0.4")
-        raise XmlSemanticProfileError("runtime exposure NRML root namespace is unrecognized")
+            raise XmlSemanticProfileError(
+                "runtime exposure NRML root namespace is legacy 0.4"
+            )
+        raise XmlSemanticProfileError(
+            "runtime exposure NRML root namespace is unrecognized"
+        )
     if root.attrib:
         raise XmlSemanticProfileError("runtime exposure NRML root attributes present")
 
@@ -171,7 +183,12 @@ def profile_xml_bytes(payload: bytes) -> dict[str, Any]:
         raise XmlSemanticProfileError("exposureModel attributes drifted")
 
     allowed_children = {
-        "description", "conversions", "occupancyPeriods", "tagNames", "assets", "exposureFields"
+        "description",
+        "conversions",
+        "occupancyPeriods",
+        "tagNames",
+        "assets",
+        "exposureFields",
     }
     child_by_local: dict[str, ET.Element] = {}
     for child in model:
@@ -207,18 +224,34 @@ def profile_xml_bytes(payload: bytes) -> dict[str, Any]:
                 raise XmlSemanticProfileError("unknown or duplicate conversions child")
             seen_conv.add(local)
             if local == "area":
-                if list(conv_child) or (conv_child.text or "").strip() or set(conv_child.attrib) != {"type", "unit"}:
+                if (
+                    list(conv_child)
+                    or (conv_child.text or "").strip()
+                    or set(conv_child.attrib) != {"type", "unit"}
+                ):
                     raise XmlSemanticProfileError("area declaration drifted")
-                area = {"type": conv_child.attrib["type"], "unit": conv_child.attrib["unit"]}
+                area = {
+                    "type": conv_child.attrib["type"],
+                    "unit": conv_child.attrib["unit"],
+                }
             else:
                 if conv_child.attrib or (conv_child.text or "").strip():
                     raise XmlSemanticProfileError("costTypes envelope drifted")
                 for entry in conv_child:
-                    if entry.tag != _tag("costType") or list(entry) or (entry.text or "").strip():
+                    if (
+                        entry.tag != _tag("costType")
+                        or list(entry)
+                        or (entry.text or "").strip()
+                    ):
                         raise XmlSemanticProfileError("costType declaration drifted")
                     if set(entry.attrib) != {"name", "type", "unit"}:
                         raise XmlSemanticProfileError("costType attributes drifted")
-                    cost_types.append({key: entry.attrib[key] for key in ("name", "type", "unit")})
+                    cost_types.append(
+                        {
+                            key: entry.attrib[key]
+                            for key in ("name", "type", "unit")
+                        }
+                    )
         names = [item["name"] for item in cost_types]
         if len(names) != len(set(names)):
             raise XmlSemanticProfileError("duplicate costType name")
@@ -240,12 +273,26 @@ def profile_xml_bytes(payload: bytes) -> dict[str, Any]:
         if fields.attrib or (fields.text or "").strip():
             raise XmlSemanticProfileError("exposureFields envelope drifted")
         for field in fields:
-            if field.tag != _tag("field") or list(field) or (field.text or "").strip():
+            if (
+                field.tag != _tag("field")
+                or list(field)
+                or (field.text or "").strip()
+            ):
                 raise XmlSemanticProfileError("exposure field declaration drifted")
             keys = set(field.attrib)
-            if not {"oq", "input"} <= keys or not keys <= {"oq", "input", "type"}:
+            if not {"oq", "input"} <= keys or not keys <= {
+                "oq",
+                "input",
+                "type",
+            }:
                 raise XmlSemanticProfileError("exposure field attributes drifted")
-            exposure_fields.append({key: field.attrib[key] for key in ("oq", "type", "input") if key in field.attrib})
+            exposure_fields.append(
+                {
+                    key: field.attrib[key]
+                    for key in ("oq", "type", "input")
+                    if key in field.attrib
+                }
+            )
 
     return {
         "nrml_namespace": NRML_NAMESPACE,
@@ -261,15 +308,20 @@ def profile_xml_bytes(payload: bytes) -> dict[str, Any]:
         "occupancy_periods": occupancy_periods,
         "tag_names": tag_names,
         "exposure_fields": exposure_fields,
-        "structural_cost_type_declared": any(item["name"] == "structural" for item in cost_types),
+        "structural_cost_type_declared": any(
+            item["name"] == "structural" for item in cost_types
+        ),
         "structural_value_inputs": [
-            item["input"] for item in exposure_fields
+            item["input"]
+            for item in exposure_fields
             if item.get("oq") == "value" and item.get("type") == "structural"
         ],
     }
 
 
-def _fetch_exact_payload(*, opener: Any, now: Any, monotonic: Any) -> tuple[bytes, dict[str, Any]]:
+def _fetch_exact_payload(
+    *, opener: Any, now: Any, monotonic: Any
+) -> tuple[bytes, dict[str, Any]]:
     try:
         target = validate_target(
             source_issue=SOURCE_ISSUE,
@@ -284,7 +336,10 @@ def _fetch_exact_payload(*, opener: Any, now: Any, monotonic: Any) -> tuple[byte
     deadline = monotonic() + TOTAL_DEADLINE_SECONDS
     request = urllib.request.Request(
         url,
-        headers={"Accept": "application/xml,text/xml,text/plain;q=0.9", "User-Agent": "OpenCatastrophe-EFEHR-xml-profile-v1"},
+        headers={
+            "Accept": "application/xml,text/xml,text/plain;q=0.9",
+            "User-Agent": "OpenCatastrophe-EFEHR-xml-profile-v1",
+        },
         method="GET",
     )
     try:
@@ -301,7 +356,9 @@ def _fetch_exact_payload(*, opener: Any, now: Any, monotonic: Any) -> tuple[byte
                     raise EfehrAcquisitionError("provider returned non-bytes payload")
                 total += len(chunk)
                 if total > MAX_PROFILE_BYTES:
-                    raise EfehrAcquisitionError("runtime exposure XML exceeds profile bound")
+                    raise EfehrAcquisitionError(
+                        "runtime exposure XML exceeds profile bound"
+                    )
                 chunks.append(chunk)
             payload = b"".join(chunks)
             headers = getattr(response, "headers", {})
@@ -309,17 +366,32 @@ def _fetch_exact_payload(*, opener: Any, now: Any, monotonic: Any) -> tuple[byte
                 "retrieved_at": now(),
                 "byte_count": len(payload),
                 "sha256": hashlib.sha256(payload).hexdigest(),
-                "content_type": headers.get("Content-Type") if hasattr(headers, "get") else None,
+                "content_type": headers.get("Content-Type")
+                if hasattr(headers, "get")
+                else None,
                 "etag": headers.get("ETag") if hasattr(headers, "get") else None,
             }
-    except (EfehrAcquisitionError, OSError, urllib.error.URLError, urllib.error.HTTPError, TimeoutError):
+    except (
+        EfehrAcquisitionError,
+        OSError,
+        urllib.error.URLError,
+        urllib.error.HTTPError,
+        TimeoutError,
+    ):
         raise
     return payload, receipt
 
 
-def _profile_runtime_exposure_xml(*, opener: Any, now: Any, monotonic: Any) -> dict[str, Any]:
-    payload, receipt = _fetch_exact_payload(opener=opener, now=now, monotonic=monotonic)
-    if receipt["byte_count"] != EXPECTED_BYTE_COUNT or receipt["sha256"] != EXPECTED_SHA256:
+def _profile_runtime_exposure_xml(
+    *, opener: Any, now: Any, monotonic: Any
+) -> dict[str, Any]:
+    payload, receipt = _fetch_exact_payload(
+        opener=opener, now=now, monotonic=monotonic
+    )
+    if (
+        receipt["byte_count"] != EXPECTED_BYTE_COUNT
+        or receipt["sha256"] != EXPECTED_SHA256
+    ):
         raise ByteIdentityMismatch("runtime exposure bytes do not match trusted receipt")
     profile = profile_xml_bytes(payload)
     return {
