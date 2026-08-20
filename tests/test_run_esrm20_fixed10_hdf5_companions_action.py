@@ -51,6 +51,18 @@ def _valid_profile() -> dict:
     }
 
 
+def _terminal_body(execution_sha: str) -> str:
+    result = {
+        **action._base_result(execution_sha=execution_sha),
+        "status": "blocked",
+        "failure_class": action.BLOCKED_FAILURE_CLASS,
+        "profile": None,
+    }
+    return action.RESULT_MARKER + "\n" + json.dumps(
+        result, sort_keys=True, separators=(",", ":")
+    )
+
+
 class Fixed10Hdf5CompanionActionTests(unittest.TestCase):
     def test_request_is_exact_issue_and_trusted_main_sha_bound(self) -> None:
         body = action.REQUEST_MARKER + "\n" + json.dumps(
@@ -175,6 +187,56 @@ class Fixed10Hdf5CompanionActionTests(unittest.TestCase):
             action.Hdf5CompanionExecutionError, "widened evidence"
         ):
             action.parse_terminal_result(widened_body, execution_sha=EXECUTION_SHA)
+
+    def test_matching_terminal_does_not_short_circuit_later_trusted_validation(self) -> None:
+        comments = [
+            {
+                "user": {"login": action.TRUSTED_RESULT_LOGIN},
+                "body": _terminal_body(EXECUTION_SHA),
+            },
+            {
+                "user": {"login": action.TRUSTED_RESULT_LOGIN},
+                "body": action.RESULT_MARKER + "\n{}",
+            },
+        ]
+        original_fetch = action._FETCH_COMMENTS
+        try:
+            action._FETCH_COMMENTS = lambda *args, **kwargs: comments
+            with self.assertRaisesRegex(
+                action.Hdf5CompanionExecutionError, "result fields drifted"
+            ):
+                action.has_terminal_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="test-token",
+                    execution_sha=EXECUTION_SHA,
+                )
+        finally:
+            action._FETCH_COMMENTS = original_fetch
+
+    def test_matching_terminal_returns_after_all_trusted_terminals_validate(self) -> None:
+        other_sha = "c" * 40
+        comments = [
+            {
+                "user": {"login": action.TRUSTED_RESULT_LOGIN},
+                "body": _terminal_body(EXECUTION_SHA),
+            },
+            {
+                "user": {"login": action.TRUSTED_RESULT_LOGIN},
+                "body": _terminal_body(other_sha),
+            },
+        ]
+        original_fetch = action._FETCH_COMMENTS
+        try:
+            action._FETCH_COMMENTS = lambda *args, **kwargs: comments
+            self.assertTrue(
+                action.has_terminal_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="test-token",
+                    execution_sha=EXECUTION_SHA,
+                )
+            )
+        finally:
+            action._FETCH_COMMENTS = original_fetch
 
     def test_workflow_runs_provider_code_only_from_trusted_default_branch(self) -> None:
         workflow = Path(
