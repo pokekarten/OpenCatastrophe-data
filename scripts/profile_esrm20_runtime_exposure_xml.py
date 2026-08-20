@@ -145,8 +145,21 @@ def profile_xml_bytes(payload: bytes) -> dict[str, Any]:
         root = ET.fromstring(payload)
     except ET.ParseError as exc:
         raise XmlSemanticProfileError("runtime exposure XML is malformed") from exc
-    if root.tag != _tag("nrml") or root.attrib:
-        raise XmlSemanticProfileError("runtime exposure NRML root drifted")
+
+    root_tag = root.tag
+    if type(root_tag) is not str:
+        raise XmlSemanticProfileError("runtime exposure NRML root local name drifted")
+    if root_tag.startswith("{") and "}" in root_tag:
+        root_namespace, root_local_name = root_tag[1:].split("}", 1)
+    else:
+        root_namespace, root_local_name = "", root_tag
+    if root_local_name != "nrml":
+        raise XmlSemanticProfileError("runtime exposure NRML root local name drifted")
+    if root_namespace != NRML_NAMESPACE:
+        raise XmlSemanticProfileError("runtime exposure NRML root namespace drifted")
+    if root.attrib:
+        raise XmlSemanticProfileError("runtime exposure NRML root attributes present")
+
     models = list(root)
     if len(models) != 1 or models[0].tag != _tag("exposureModel"):
         raise XmlSemanticProfileError("expected exactly one exposureModel")

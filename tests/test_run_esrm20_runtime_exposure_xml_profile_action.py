@@ -62,9 +62,9 @@ class ActionTests(unittest.TestCase):
         failures = [
             (subject.ByteIdentityMismatch("x"), "byte_identity_mismatch", None),
             (
-                subject.XmlSemanticProfileError("runtime exposure NRML root drifted"),
+                subject.XmlSemanticProfileError("runtime exposure NRML root namespace drifted"),
                 "xml_profile_failure",
-                "nrml_root_drifted",
+                "nrml_root_namespace_drifted",
             ),
             (subject.EfehrAcquisitionError("x"), "acquisition_failure", None),
             (subject.RuntimeExposureXmlProfileError("x"), "profile_failure", None),
@@ -76,6 +76,23 @@ class ActionTests(unittest.TestCase):
                 self.assertEqual(result["failure_class"], failure_class)
                 self.assertEqual(result["failure_code"], failure_code)
                 self.assertFalse(result["xml_content_interpreted"])
+
+    def test_root_first_divergence_codes_are_closed_and_static(self):
+        cases = [
+            ("runtime exposure NRML root local name drifted", "nrml_root_local_name_drifted"),
+            ("runtime exposure NRML root namespace drifted", "nrml_root_namespace_drifted"),
+            ("runtime exposure NRML root attributes present", "nrml_root_attributes_present"),
+        ]
+        for message, code in cases:
+            with self.subTest(code=code), mock.patch.object(
+                subject,
+                "profile_runtime_exposure_xml",
+                side_effect=subject.XmlSemanticProfileError(message),
+            ):
+                result = subject.run_profile(execution_sha=SHA)
+            self.assertEqual(result["failure_class"], "xml_profile_failure")
+            self.assertEqual(result["failure_code"], code)
+            self.assertEqual(subject._validate_terminal_result(result), SHA)
 
     def test_unknown_xml_error_cannot_leak_exception_text(self):
         secret = "provider-value-that-must-never-be-published"
@@ -96,18 +113,27 @@ class ActionTests(unittest.TestCase):
         with self.assertRaisesRegex(subject.RuntimeExposureXmlProfileActionError, "invalid XML failure code"):
             subject._validate_terminal_result(result)
 
+    def test_result_v3_rejects_retired_v2_root_code(self):
+        result = subject._base_result(SHA)
+        result["failure_class"] = "xml_profile_failure"
+        result["failure_code"] = "nrml_root_drifted"
+        with self.assertRaisesRegex(subject.RuntimeExposureXmlProfileActionError, "invalid XML failure code"):
+            subject._validate_terminal_result(result)
+
     def test_non_xml_failure_rejects_diagnostic_code(self):
         result = subject._base_result(SHA)
         result["failure_class"] = "acquisition_failure"
-        result["failure_code"] = "nrml_root_drifted"
+        result["failure_code"] = "nrml_root_namespace_drifted"
         with self.assertRaisesRegex(subject.RuntimeExposureXmlProfileActionError, "non-XML failure"):
             subject._validate_terminal_result(result)
 
-    def test_legacy_result_v1_terminal_is_ignored_by_v2_dedup(self):
-        legacy = '<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v1 -->\n{"legacy":true}'
-        self.assertIsNone(subject.parse_terminal_result(legacy))
-        self.assertTrue(subject.RESULT_MARKER.endswith("result-v2 -->"))
-        self.assertTrue(subject.RESULT_SCHEMA_VERSION.endswith("result-v2"))
+    def test_legacy_result_v1_and_v2_terminals_are_ignored_by_v3_dedup(self):
+        for version in (1, 2):
+            with self.subTest(version=version):
+                legacy = f'<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v{version} -->\n{{"legacy":true}}'
+                self.assertIsNone(subject.parse_terminal_result(legacy))
+        self.assertTrue(subject.RESULT_MARKER.endswith("result-v3 -->"))
+        self.assertTrue(subject.RESULT_SCHEMA_VERSION.endswith("result-v3"))
 
     def test_duplicate_json_keys_fail_closed(self):
         body = subject.REQUEST_MARKER + '\n{"schema_version":"x","schema_version":"y"}'

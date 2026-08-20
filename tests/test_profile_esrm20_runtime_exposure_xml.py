@@ -44,6 +44,27 @@ class ProfileTests(unittest.TestCase):
         self.assertTrue(result["structural_cost_type_declared"])
         self.assertEqual(result["structural_value_inputs"], ["STRUCTURAL"])
 
+    def test_nrml_root_first_divergence_is_bounded_and_ordered(self):
+        cases = [
+            (
+                f'<notnrml xmlns="{NS}" secret="provider-value"/>'.encode(),
+                "runtime exposure NRML root local name drifted",
+            ),
+            (
+                b'<nrml xmlns="urn:provider-secret" secret="provider-value"/>',
+                "runtime exposure NRML root namespace drifted",
+            ),
+            (
+                f'<nrml xmlns="{NS}" secret="provider-value"/>'.encode(),
+                "runtime exposure NRML root attributes present",
+            ),
+        ]
+        for payload, expected in cases:
+            with self.subTest(expected=expected), self.assertRaisesRegex(
+                subject.XmlSemanticProfileError, f"^{expected}$"
+            ):
+                subject.profile_xml_bytes(payload)
+
     def test_parser_rejects_dtd_foreign_namespace_unknown_children_and_unsafe_assets(self):
         cases = [
             b'<!DOCTYPE x [<!ENTITY x "boom">]><x/>',
@@ -81,7 +102,6 @@ class ProfileTests(unittest.TestCase):
                 now=lambda: "2026-08-19T22:00:00Z",
                 monotonic=lambda: 0.0,
             )
-
 
     def test_public_entry_rejects_live_alias_drift_before_provider_access(self):
         with (
