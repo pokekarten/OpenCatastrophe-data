@@ -74,6 +74,7 @@ EXACT_PATHS: dict[tuple[int, int], frozenset[str]] = {
     (282, 269): frozenset(
         {
             "Exposure/OQ_Exposure_Input_Kosovo.xml",
+            "Exposure/OQ_Exposure_Input_Kosovo_Res.csv",
         }
     ),
     (283, 269): frozenset(
