@@ -17,6 +17,7 @@ try:
     from scripts.acquire_efehr_gitlab_receipt import EfehrAcquisitionError
     from scripts.prepare_agent_action_result import LedgerError, fetch_repository_comments
     from scripts.profile_esrm20_runtime_exposure_xml import (
+        ACCEPTED_NRML_NAMESPACES,
         COMMIT_SHA,
         DATASET_ID,
         EXPECTED_BYTE_COUNT,
@@ -34,6 +35,7 @@ except ModuleNotFoundError:  # pragma: no cover
     from acquire_efehr_gitlab_receipt import EfehrAcquisitionError
     from prepare_agent_action_result import LedgerError, fetch_repository_comments
     from profile_esrm20_runtime_exposure_xml import (
+        ACCEPTED_NRML_NAMESPACES,
         COMMIT_SHA,
         DATASET_ID,
         EXPECTED_BYTE_COUNT,
@@ -49,9 +51,9 @@ except ModuleNotFoundError:  # pragma: no cover
     )
 
 REQUEST_MARKER = "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-request-v1 -->"
-RESULT_MARKER = "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v4 -->"
+RESULT_MARKER = "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v5 -->"
 REQUEST_SCHEMA_VERSION = "oc-esrm20-runtime-exposure-xml-profile-request-v1"
-RESULT_SCHEMA_VERSION = "oc-esrm20-runtime-exposure-xml-profile-result-v4"
+RESULT_SCHEMA_VERSION = "oc-esrm20-runtime-exposure-xml-profile-result-v5"
 ACTION = "esrm20_runtime_exposure_xml_profile"
 TRUSTED_RESULT_LOGIN = "github-actions[bot]"
 MAX_LEDGER_PAGES = 20
@@ -111,9 +113,6 @@ _XML_FAILURE_CODE_BY_MESSAGE = {
     "DTD/entity declarations are forbidden": "dtd_or_entity_forbidden",
     "runtime exposure XML is malformed": "malformed_xml",
     "runtime exposure NRML root local name drifted": "nrml_root_local_name_drifted",
-    "runtime exposure NRML root namespace is legacy 0.4": (
-        "nrml_root_namespace_legacy_04"
-    ),
     "runtime exposure NRML root namespace is unrecognized": (
         "nrml_root_namespace_unrecognized"
     ),
@@ -277,7 +276,8 @@ def _base_result(execution_sha: str) -> dict[str, Any]:
 def _validate_profile(profile: object) -> dict[str, Any]:
     if type(profile) is not dict or set(profile) != _PROFILE_FIELDS:
         raise RuntimeExposureXmlProfileActionError("profile fields drifted")
-    if profile.get("nrml_namespace") != "http://openquake.org/xmlns/nrml/0.5":
+    namespace = profile.get("nrml_namespace")
+    if type(namespace) is not str or namespace not in ACCEPTED_NRML_NAMESPACES:
         raise RuntimeExposureXmlProfileActionError("NRML namespace drifted")
     model = profile.get("exposure_model")
     if type(model) is not dict or set(model) != {
