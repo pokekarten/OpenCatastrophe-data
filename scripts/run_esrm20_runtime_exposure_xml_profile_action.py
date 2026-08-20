@@ -49,9 +49,9 @@ except ModuleNotFoundError:  # pragma: no cover
     )
 
 REQUEST_MARKER = "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-request-v1 -->"
-RESULT_MARKER = "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v1 -->"
+RESULT_MARKER = "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v2 -->"
 REQUEST_SCHEMA_VERSION = "oc-esrm20-runtime-exposure-xml-profile-request-v1"
-RESULT_SCHEMA_VERSION = "oc-esrm20-runtime-exposure-xml-profile-result-v1"
+RESULT_SCHEMA_VERSION = "oc-esrm20-runtime-exposure-xml-profile-result-v2"
 ACTION = "esrm20_runtime_exposure_xml_profile"
 TRUSTED_RESULT_LOGIN = "github-actions[bot]"
 MAX_LEDGER_PAGES = 20
@@ -65,7 +65,7 @@ _REQUEST_FIELDS = {
 }
 _RESULT_FIELDS = {
     "schema_version", "action", "source_issue", "dataset_id", "target_sha", "execution_sha",
-    "runtime_exposure_identity", "status", "failure_class", "receipt", "profile",
+    "runtime_exposure_identity", "status", "failure_class", "failure_code", "receipt", "profile",
     "xml_content_interpreted", "exact_kosovo_exposure_selected", "value_structural_wiring_verified",
     "external_bytes_persisted", "publication_authorized", "model_use_authorized"
 }
@@ -73,6 +73,44 @@ _PROFILE_FIELDS = {
     "nrml_namespace", "exposure_model", "asset_references", "cost_types", "area",
     "occupancy_periods", "tag_names", "exposure_fields", "structural_cost_type_declared",
     "structural_value_inputs"
+}
+
+# Public diagnostic codes are intentionally derived only from static parser-owned
+# messages. Provider bytes, text, attributes and values are never copied into the
+# terminal result. Unknown/new parser messages collapse to one bounded code.
+_XML_FAILURE_CODE_BY_MESSAGE = {
+    "runtime exposure payload is empty or not bytes": "empty_or_nonbytes_payload",
+    "runtime exposure payload exceeds profile bound": "payload_exceeds_profile_bound",
+    "DTD/entity declarations are forbidden": "dtd_or_entity_forbidden",
+    "runtime exposure XML is malformed": "malformed_xml",
+    "runtime exposure NRML root drifted": "nrml_root_drifted",
+    "expected exactly one exposureModel": "exposure_model_cardinality_drifted",
+    "exposureModel attributes drifted": "exposure_model_attributes_drifted",
+    "foreign exposureModel child namespace": "exposure_model_child_namespace_drifted",
+    "unknown or duplicate exposureModel child": "exposure_model_child_set_drifted",
+    "required exposure metadata is missing": "required_exposure_metadata_missing",
+    "description unexpectedly contains child elements": "description_shape_drifted",
+    "description is empty": "description_empty",
+    "unsafe asset reference": "unsafe_asset_reference",
+    "runtime exposure asset is not CSV": "asset_reference_not_csv",
+    "assets declaration drifted": "assets_declaration_drifted",
+    "asset references are empty or duplicated": "asset_reference_set_drifted",
+    "conversions envelope drifted": "conversions_envelope_drifted",
+    "foreign conversions namespace": "conversions_child_namespace_drifted",
+    "unknown or duplicate conversions child": "conversions_child_set_drifted",
+    "area declaration drifted": "area_declaration_drifted",
+    "costTypes envelope drifted": "cost_types_envelope_drifted",
+    "costType declaration drifted": "cost_type_declaration_drifted",
+    "costType attributes drifted": "cost_type_attributes_drifted",
+    "duplicate costType name": "duplicate_cost_type_name",
+    "occupancyPeriods declaration drifted": "occupancy_periods_declaration_drifted",
+    "tagNames declaration drifted": "tag_names_declaration_drifted",
+    "exposureFields envelope drifted": "exposure_fields_envelope_drifted",
+    "exposure field declaration drifted": "exposure_field_declaration_drifted",
+    "exposure field attributes drifted": "exposure_field_attributes_drifted",
+}
+_XML_FAILURE_CODES = frozenset(_XML_FAILURE_CODE_BY_MESSAGE.values()) | {
+    "unclassified_xml_profile_failure"
 }
 
 
@@ -116,6 +154,12 @@ def _utf8_size(value: str) -> int:
         raise RuntimeExposureXmlProfileActionError("text is not UTF-8 encodable") from exc
 
 
+def _xml_failure_code(exc: XmlSemanticProfileError) -> str:
+    return _XML_FAILURE_CODE_BY_MESSAGE.get(
+        str(exc), "unclassified_xml_profile_failure"
+    )
+
+
 def validate_request(body: object, *, expected_issue: int, execution_sha: str) -> dict[str, Any]:
     if type(expected_issue) is not int or expected_issue != SOURCE_ISSUE:
         raise RuntimeExposureXmlProfileActionError("wrong issue")
@@ -156,7 +200,7 @@ def _base_result(execution_sha: str) -> dict[str, Any]:
         "schema_version": RESULT_SCHEMA_VERSION, "action": ACTION, "source_issue": SOURCE_ISSUE,
         "dataset_id": DATASET_ID, "target_sha": execution_sha, "execution_sha": execution_sha,
         "runtime_exposure_identity": _identity(), "status": "blocked", "failure_class": "profile_failure",
-        "receipt": None, "profile": None, "xml_content_interpreted": False,
+        "failure_code": None, "receipt": None, "profile": None, "xml_content_interpreted": False,
         "exact_kosovo_exposure_selected": False, "value_structural_wiring_verified": False,
         "external_bytes_persisted": False, "publication_authorized": False, "model_use_authorized": False,
     }
@@ -206,7 +250,11 @@ def _validate_terminal_result(result: object) -> str:
             raise RuntimeExposureXmlProfileActionError(f"result {field} drifted")
     status = result.get("status")
     if status == "pass":
-        if result.get("failure_class") is not None or result.get("xml_content_interpreted") is not True:
+        if (
+            result.get("failure_class") is not None
+            or result.get("failure_code") is not None
+            or result.get("xml_content_interpreted") is not True
+        ):
             raise RuntimeExposureXmlProfileActionError("invalid PASS state")
         receipt = result.get("receipt")
         if type(receipt) is not dict or set(receipt) != {"retrieved_at", "byte_count", "sha256", "content_type", "etag"}:
@@ -217,8 +265,15 @@ def _validate_terminal_result(result: object) -> str:
             raise RuntimeExposureXmlProfileActionError("PASS retrieval time invalid")
         _validate_profile(result.get("profile"))
     elif status == "blocked":
-        if result.get("failure_class") not in {"acquisition_failure", "byte_identity_mismatch", "xml_profile_failure", "profile_failure"}:
+        failure_class = result.get("failure_class")
+        if failure_class not in {"acquisition_failure", "byte_identity_mismatch", "xml_profile_failure", "profile_failure"}:
             raise RuntimeExposureXmlProfileActionError("invalid blocked failure class")
+        failure_code = result.get("failure_code")
+        if failure_class == "xml_profile_failure":
+            if type(failure_code) is not str or failure_code not in _XML_FAILURE_CODES:
+                raise RuntimeExposureXmlProfileActionError("invalid XML failure code")
+        elif failure_code is not None:
+            raise RuntimeExposureXmlProfileActionError("non-XML failure carries diagnostic code")
         if result.get("receipt") is not None or result.get("profile") is not None or result.get("xml_content_interpreted") is not False:
             raise RuntimeExposureXmlProfileActionError("blocked result widened evidence")
     else:
@@ -265,16 +320,18 @@ def run_profile(*, execution_sha: str) -> dict[str, Any]:
         evidence = profile_runtime_exposure_xml()
     except ByteIdentityMismatch:
         result["failure_class"] = "byte_identity_mismatch"
-    except XmlSemanticProfileError:
+    except XmlSemanticProfileError as exc:
         result["failure_class"] = "xml_profile_failure"
+        result["failure_code"] = _xml_failure_code(exc)
     except EfehrAcquisitionError:
         result["failure_class"] = "acquisition_failure"
     except RuntimeExposureXmlProfileError:
         result["failure_class"] = "profile_failure"
     else:
         result.update({
-            "status": "pass", "failure_class": None, "receipt": evidence["receipt"],
-            "profile": evidence["profile"], "xml_content_interpreted": True,
+            "status": "pass", "failure_class": None, "failure_code": None,
+            "receipt": evidence["receipt"], "profile": evidence["profile"],
+            "xml_content_interpreted": True,
         })
     _validate_terminal_result(result)
     return result

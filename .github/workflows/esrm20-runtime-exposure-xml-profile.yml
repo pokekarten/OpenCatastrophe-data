@@ -147,17 +147,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
           RESULT_JSON: ${{ needs.execute-profile.outputs.result_json }}
-          RESULT_MARKER: "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v1 -->"
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v2 -->"
         run: |
           set -euo pipefail
           printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
             keys == [
               "action","dataset_id","exact_kosovo_exposure_selected","execution_sha",
-              "external_bytes_persisted","failure_class","model_use_authorized","profile",
+              "external_bytes_persisted","failure_class","failure_code","model_use_authorized","profile",
               "publication_authorized","receipt","runtime_exposure_identity","schema_version",
               "source_issue","status","target_sha","value_structural_wiring_verified","xml_content_interpreted"
             ] and
-            .schema_version == "oc-esrm20-runtime-exposure-xml-profile-result-v1" and
+            .schema_version == "oc-esrm20-runtime-exposure-xml-profile-result-v2" and
             .action == "esrm20_runtime_exposure_xml_profile" and
             .source_issue == 282 and
             .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
@@ -176,7 +176,7 @@ jobs:
             .publication_authorized == false and
             .model_use_authorized == false and
             (if .status == "pass" then
-              .failure_class == null and .xml_content_interpreted == true and
+              .failure_class == null and .failure_code == null and .xml_content_interpreted == true and
               (.receipt | type) == "object" and
               (.receipt | keys) == ["byte_count","content_type","etag","retrieved_at","sha256"] and
               .receipt.byte_count == 664 and
@@ -188,6 +188,40 @@ jobs:
               (.profile.asset_references | type) == "array" and (.profile.asset_references | length) > 0
             elif .status == "blocked" then
               (.failure_class == "acquisition_failure" or .failure_class == "byte_identity_mismatch" or .failure_class == "xml_profile_failure" or .failure_class == "profile_failure") and
+              (if .failure_class == "xml_profile_failure" then
+                (.failure_code as $code | [
+                  "empty_or_nonbytes_payload",
+                  "payload_exceeds_profile_bound",
+                  "dtd_or_entity_forbidden",
+                  "malformed_xml",
+                  "nrml_root_drifted",
+                  "exposure_model_cardinality_drifted",
+                  "exposure_model_attributes_drifted",
+                  "exposure_model_child_namespace_drifted",
+                  "exposure_model_child_set_drifted",
+                  "required_exposure_metadata_missing",
+                  "description_shape_drifted",
+                  "description_empty",
+                  "unsafe_asset_reference",
+                  "asset_reference_not_csv",
+                  "assets_declaration_drifted",
+                  "asset_reference_set_drifted",
+                  "conversions_envelope_drifted",
+                  "conversions_child_namespace_drifted",
+                  "conversions_child_set_drifted",
+                  "area_declaration_drifted",
+                  "cost_types_envelope_drifted",
+                  "cost_type_declaration_drifted",
+                  "cost_type_attributes_drifted",
+                  "duplicate_cost_type_name",
+                  "occupancy_periods_declaration_drifted",
+                  "tag_names_declaration_drifted",
+                  "exposure_fields_envelope_drifted",
+                  "exposure_field_declaration_drifted",
+                  "exposure_field_attributes_drifted",
+                  "unclassified_xml_profile_failure"
+                ] | index($code) != null)
+              else .failure_code == null end) and
               .receipt == null and .profile == null and .xml_content_interpreted == false
             else false end)
           ' >/dev/null

@@ -50,6 +50,7 @@ class ActionTests(unittest.TestCase):
         with mock.patch.object(subject, "profile_runtime_exposure_xml", return_value=evidence()):
             result = subject.run_profile(execution_sha=SHA)
         self.assertEqual(result["status"], "pass")
+        self.assertIsNone(result["failure_code"])
         self.assertTrue(result["xml_content_interpreted"])
         self.assertFalse(result["exact_kosovo_exposure_selected"])
         self.assertFalse(result["value_structural_wiring_verified"])
@@ -59,16 +60,54 @@ class ActionTests(unittest.TestCase):
 
     def test_failures_are_bounded(self):
         failures = [
-            (subject.ByteIdentityMismatch("x"), "byte_identity_mismatch"),
-            (subject.XmlSemanticProfileError("x"), "xml_profile_failure"),
-            (subject.EfehrAcquisitionError("x"), "acquisition_failure"),
+            (subject.ByteIdentityMismatch("x"), "byte_identity_mismatch", None),
+            (
+                subject.XmlSemanticProfileError("runtime exposure NRML root drifted"),
+                "xml_profile_failure",
+                "nrml_root_drifted",
+            ),
+            (subject.EfehrAcquisitionError("x"), "acquisition_failure", None),
+            (subject.RuntimeExposureXmlProfileError("x"), "profile_failure", None),
         ]
-        for exc, failure_class in failures:
+        for exc, failure_class, failure_code in failures:
             with self.subTest(failure_class=failure_class), mock.patch.object(subject, "profile_runtime_exposure_xml", side_effect=exc):
                 result = subject.run_profile(execution_sha=SHA)
                 self.assertEqual(result["status"], "blocked")
                 self.assertEqual(result["failure_class"], failure_class)
+                self.assertEqual(result["failure_code"], failure_code)
                 self.assertFalse(result["xml_content_interpreted"])
+
+    def test_unknown_xml_error_cannot_leak_exception_text(self):
+        secret = "provider-value-that-must-never-be-published"
+        with mock.patch.object(
+            subject,
+            "profile_runtime_exposure_xml",
+            side_effect=subject.XmlSemanticProfileError(secret),
+        ):
+            result = subject.run_profile(execution_sha=SHA)
+        self.assertEqual(result["failure_class"], "xml_profile_failure")
+        self.assertEqual(result["failure_code"], "unclassified_xml_profile_failure")
+        self.assertNotIn(secret, json.dumps(result, sort_keys=True))
+
+    def test_terminal_rejects_arbitrary_xml_failure_code(self):
+        result = subject._base_result(SHA)
+        result["failure_class"] = "xml_profile_failure"
+        result["failure_code"] = "provider-derived-secret"
+        with self.assertRaisesRegex(subject.RuntimeExposureXmlProfileActionError, "invalid XML failure code"):
+            subject._validate_terminal_result(result)
+
+    def test_non_xml_failure_rejects_diagnostic_code(self):
+        result = subject._base_result(SHA)
+        result["failure_class"] = "acquisition_failure"
+        result["failure_code"] = "nrml_root_drifted"
+        with self.assertRaisesRegex(subject.RuntimeExposureXmlProfileActionError, "non-XML failure"):
+            subject._validate_terminal_result(result)
+
+    def test_legacy_result_v1_terminal_is_ignored_by_v2_dedup(self):
+        legacy = '<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v1 -->\n{"legacy":true}'
+        self.assertIsNone(subject.parse_terminal_result(legacy))
+        self.assertTrue(subject.RESULT_MARKER.endswith("result-v2 -->"))
+        self.assertTrue(subject.RESULT_SCHEMA_VERSION.endswith("result-v2"))
 
     def test_duplicate_json_keys_fail_closed(self):
         body = subject.REQUEST_MARKER + '\n{"schema_version":"x","schema_version":"y"}'
