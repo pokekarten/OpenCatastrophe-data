@@ -147,7 +147,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
           RESULT_JSON: ${{ needs.execute-profile.outputs.result_json }}
-          RESULT_MARKER: "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v3 -->"
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v4 -->"
         run: |
           set -euo pipefail
           printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
@@ -157,7 +157,7 @@ jobs:
               "publication_authorized","receipt","runtime_exposure_identity","schema_version",
               "source_issue","status","target_sha","value_structural_wiring_verified","xml_content_interpreted"
             ] and
-            .schema_version == "oc-esrm20-runtime-exposure-xml-profile-result-v3" and
+            .schema_version == "oc-esrm20-runtime-exposure-xml-profile-result-v4" and
             .action == "esrm20_runtime_exposure_xml_profile" and
             .source_issue == 282 and
             .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
@@ -195,7 +195,8 @@ jobs:
                   "dtd_or_entity_forbidden",
                   "malformed_xml",
                   "nrml_root_local_name_drifted",
-                  "nrml_root_namespace_drifted",
+                  "nrml_root_namespace_legacy_04",
+                  "nrml_root_namespace_unrecognized",
                   "nrml_root_attributes_present",
                   "exposure_model_cardinality_drifted",
                   "exposure_model_attributes_drifted",
