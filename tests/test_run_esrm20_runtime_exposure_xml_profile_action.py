@@ -103,6 +103,12 @@ class ActionTests(unittest.TestCase):
         with self.assertRaisesRegex(subject.RuntimeExposureXmlProfileActionError, "non-XML failure"):
             subject._validate_terminal_result(result)
 
+    def test_legacy_result_v1_terminal_is_ignored_by_v2_dedup(self):
+        legacy = '<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v1 -->\n{"legacy":true}'
+        self.assertIsNone(subject.parse_terminal_result(legacy))
+        self.assertTrue(subject.RESULT_MARKER.endswith("result-v2 -->"))
+        self.assertTrue(subject.RESULT_SCHEMA_VERSION.endswith("result-v2"))
+
     def test_duplicate_json_keys_fail_closed(self):
         body = subject.REQUEST_MARKER + '\n{"schema_version":"x","schema_version":"y"}'
         with self.assertRaisesRegex(subject.RuntimeExposureXmlProfileActionError, "duplicate JSON key"):
