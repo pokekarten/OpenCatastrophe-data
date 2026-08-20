@@ -51,8 +51,12 @@ class ProfileTests(unittest.TestCase):
                 "runtime exposure NRML root local name drifted",
             ),
             (
+                b'<nrml xmlns="http://openquake.org/xmlns/nrml/0.4" secret="provider-value"/>',
+                "runtime exposure NRML root namespace is legacy 0.4",
+            ),
+            (
                 b'<nrml xmlns="urn:provider-secret" secret="provider-value"/>',
-                "runtime exposure NRML root namespace drifted",
+                "runtime exposure NRML root namespace is unrecognized",
             ),
             (
                 f'<nrml xmlns="{NS}" secret="provider-value"/>'.encode(),
