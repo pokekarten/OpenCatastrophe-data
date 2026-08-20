@@ -1,0 +1,222 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Site-Tool Fixed Source Semantics
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-sitemodel-source-semantics-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  execute-sitemodel-source-semantics:
+    name: Execute fixed trusted-main project-278 source semantic probe
+    if: >-
+      github.event.issue.number == 291 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-sitemodel-source-semantics-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.run.outputs.execution_sha }}
+      skip: ${{ steps.run.outputs.skip }}
+      result_json: ${{ steps.run.outputs.result_json }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Validate, deduplicate, and profile fixed project-278 source facts
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OC_SITEMODEL_SOURCE_SEMANTICS_REQUEST: ${{ github.event.comment.body }}
+          RESULT_PATH: ${{ runner.temp }}/esrm20-sitemodel-source-semantics.json
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/run_esrm20_sitemodel_source_semantics_action.py \
+            --comment-body-env OC_SITEMODEL_SOURCE_SEMANTICS_REQUEST \
+            --expected-issue 291 \
+            --execution-sha "$EXECUTION_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --token-env GH_TOKEN \
+            --output "$RESULT_PATH"
+          STATUS="$(jq -r '.status' "$RESULT_PATH")"
+          test "$STATUS" = "pass" -o "$STATUS" = "blocked" -o "$STATUS" = "duplicate"
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+          if test "$STATUS" = "duplicate"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "result_json=" >> "$GITHUB_OUTPUT"
+          else
+            RESULT_JSON="$(jq -cS . "$RESULT_PATH")"
+            test -n "$RESULT_JSON"
+            test "$(printf '%s\n%s' '<!-- oc-eq1-esrm20-sitemodel-source-semantics-result-v1 -->' "$RESULT_JSON" | wc -c)" -le 60000
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish-sitemodel-source-semantics:
+    name: Publish bounded project-278 source semantic facts
+    needs: [execute-sitemodel-source-semantics]
+    if: >-
+      needs.execute-sitemodel-source-semantics.result == 'success' &&
+      needs.execute-sitemodel-source-semantics.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.execute-sitemodel-source-semantics.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-sitemodel-source-semantics.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-sitemodel-source-semantics-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            def sha1: type == "string" and test("^[0-9a-f]{40}$");
+            def sha256: type == "string" and test("^[0-9a-f]{64}$");
+            def bounded_text($n):
+              type == "string" and (utf8bytelength >= 1) and (utf8bytelength <= $n);
+            def probe_ok:
+              (keys | sort) == ["count","line_numbers","line_numbers_complete","token"] and
+              (.token | bounded_text(32)) and
+              (.count | type == "number") and .count >= 0 and .count <= 1048576 and
+              (.line_numbers | type == "array") and (.line_numbers | length) <= 32 and
+              all(.line_numbers[]; (type == "number") and . >= 1 and . <= 1048576) and
+              (.line_numbers == (.line_numbers | sort | unique)) and
+              (.line_numbers_complete | type == "boolean");
+            def literals_ok:
+              (keys | sort) == [
+                "epsg_3035_literal","epsg_4326_literal","nan_literal",
+                "negative_9999_literal","negative_999_literal","nodata_literal",
+                "unknown_literal","wgs84_literal"
+              ] and
+              all(.[]; type == "boolean");
+            def file_ok($path; $blob; $kind):
+              (keys | sort) == [
+                "byte_count","expected_git_blob_sha1","import_roots","kind",
+                "line_count","literal_flags","observed_git_blob_sha1","probes",
+                "python_ast_parsed","repository_path","sha256","utf8_decoded"
+              ] and
+              .repository_path == $path and
+              .expected_git_blob_sha1 == $blob and .observed_git_blob_sha1 == $blob and
+              (.expected_git_blob_sha1 | sha1) and (.observed_git_blob_sha1 | sha1) and
+              (.byte_count | type == "number") and .byte_count >= 1 and .byte_count <= 1048576 and
+              (.sha256 | sha256) and
+              (.line_count | type == "number") and .line_count >= 1 and .line_count <= 1048576 and
+              .kind == $kind and .utf8_decoded == true and
+              .python_ast_parsed == ($kind == "python") and
+              (.import_roots | type == "array") and (.import_roots | length) <= 64 and
+              (.import_roots == (.import_roots | sort | unique)) and
+              all(.import_roots[]; type == "string" and test("^[A-Za-z_][A-Za-z0-9_]{0,63}$")) and
+              (if $kind == "text" then (.import_roots | length) == 0 else true end) and
+              (.probes | type == "array") and (.probes | length) == 18 and
+              (.probes | map(.token)) == [
+                "epsg","crs","wgs84","projection","reproject","longitude","latitude",
+                "nodata","no_data","missing","unknown","nan","none","vs30","xvf",
+                "geology","region","slope"
+              ] and
+              all(.probes[]; probe_ok) and
+              (.literal_flags | literals_ok);
+            (keys | sort) == [
+              "crs_coordinate_semantics_verified","exact_kosovo_generator_commit_verified",
+              "execution_sha","external_bytes_persisted","failure_class",
+              "missingness_semantics_verified","model_use_authorized","profile",
+              "provider_source_bytes_read","publication_authorized","raw_source_returned",
+              "schema_version","science_parent","site_model_compatibility_verified",
+              "source_issue","source_semantics_profiled","status","target_sha"
+            ] and
+            .schema_version == "oc-esrm20-sitemodel-source-semantics-result-v1" and
+            .source_issue == 291 and .science_parent == 284 and
+            .target_sha == $sha and .execution_sha == $sha and
+            (.status == "pass" or .status == "blocked") and
+            .raw_source_returned == false and
+            .external_bytes_persisted == false and
+            .exact_kosovo_generator_commit_verified == false and
+            .crs_coordinate_semantics_verified == false and
+            .missingness_semantics_verified == false and
+            .site_model_compatibility_verified == false and
+            .publication_authorized == false and
+            .model_use_authorized == false and
+            (if .status == "pass" then
+              .failure_class == null and
+              .provider_source_bytes_read == true and
+              .source_semantics_profiled == true and
+              .profile != null and
+              (.profile | keys | sort) == [
+                "crs_coordinate_semantics_verified","exact_kosovo_generator_commit_verified",
+                "external_bytes_persisted","file_count","files","missingness_semantics_verified",
+                "model_use_authorized","project_id","project_path",
+                "provider_source_bytes_read","publication_authorized","raw_source_returned",
+                "schema_version","science_parent","site_model_compatibility_verified",
+                "source_issue","source_paths","source_ref","source_semantics_profiled",
+                "total_byte_count"
+              ] and
+              (.profile.files | type == "array") and (.profile.files | length) == 3 and
+              (.profile.files[0] | file_ok("README.md"; "5077a169d3fd540c53e027c4f1943e07bfce213d"; "text")) and
+              (.profile.files[1] | file_ok("exposure2site/exposure_to_site_tools.py"; "e00104344b608ba528a46d84f61269f8000b385a"; "python")) and
+              (.profile.files[2] | file_ok("exposure2site/node_handler.py"; "14ee7c80d8b69a89fc669a6fc265e3e40c0358a7"; "python")) and
+              ((.profile.files | map(.byte_count) | add) == .profile.total_byte_count)
+            else
+              (.failure_class == "source_acquisition_or_profile_failure" or
+               .failure_class == "result_publication_limit") and
+              .provider_source_bytes_read == false and
+              .source_semantics_profiled == false and
+              .profile == null
+            end)
+          ' >/dev/null
+          if test "$(printf '%s' "$RESULT_JSON" | jq -r '.status')" = "pass"; then
+            printf '%s' "$RESULT_JSON" | jq -e '
+              .profile.schema_version == "oc-esrm20-sitemodel-source-semantics-profile-v1" and
+              .profile.source_issue == 291 and .profile.science_parent == 284 and
+              .profile.project_id == 278 and .profile.project_path == "efehr/esrm20_sitemodel" and
+              .profile.source_ref == "038c91d2bf5a07f6b54ff51639aad874d6837ea9" and
+              .profile.source_paths == [
+                "README.md",
+                "exposure2site/exposure_to_site_tools.py",
+                "exposure2site/node_handler.py"
+              ] and
+              .profile.file_count == 3 and
+              (.profile.total_byte_count | type == "number") and
+              .profile.total_byte_count >= 1 and .profile.total_byte_count <= 2500000 and
+              .profile.provider_source_bytes_read == true and
+              .profile.raw_source_returned == false and
+              .profile.source_semantics_profiled == true and
+              .profile.external_bytes_persisted == false and
+              .profile.exact_kosovo_generator_commit_verified == false and
+              .profile.crs_coordinate_semantics_verified == false and
+              .profile.missingness_semantics_verified == false and
+              .profile.site_model_compatibility_verified == false and
+              .profile.publication_authorized == false and
+              .profile.model_use_authorized == false and
+              (.profile.files | length) == 3
+            ' >/dev/null
+          fi
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          test "$(printf '%s' "$BODY" | wc -c)" -le 60000
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/sitemodel-source-semantics-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/291/comments" \
+            --input "$RUNNER_TEMP/sitemodel-source-semantics-comment.json"
