@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: esrm20-scenario-v10-greece-shakemap-profile-${{ github.repository }}
+  cancel-in-progress: false
+
 jobs:
   validate-request:
     if: >-
@@ -18,6 +22,11 @@ jobs:
       github.event.comment.author_association == 'OWNER' &&
       contains(github.event.comment.body, '<!-- oc-eq1-esrm20-scenario-v10-greece-shakemap-profile-request-v1 -->')
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
     steps:
       - name: Checkout trusted default branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -25,7 +34,12 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 1
           persist-credentials: false
-      - name: Validate request only
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Bind request to trusted main and fixed receipts
+        id: fence
         env:
           OC_GREECE_SHAKEMAP_PROFILE_REQUEST: ${{ github.event.comment.body }}
         run: |
@@ -36,3 +50,135 @@ jobs:
             --expected-issue 285 \
             --execution-sha "$EXECUTION_SHA" \
             --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-profile:
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.export.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Prove issue-local dedup before provider access
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import run_esrm20_scenario_v10_greece_shakemap_profile_action as subject
+          skip = subject.has_terminal_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+      - name: Fetch and profile fixed ShakeMap pair in memory
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_GREECE_SHAKEMAP_PROFILE_REQUEST: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/greece-shakemap-profile-result.json
+        run: |
+          set -euo pipefail
+          python scripts/run_esrm20_scenario_v10_greece_shakemap_profile_action.py \
+            --comment-body-env OC_GREECE_SHAKEMAP_PROFILE_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from scripts import run_esrm20_scenario_v10_greece_shakemap_profile_action as subject
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          if subject._validate_terminal_result(result) != os.environ["EXECUTION_SHA"]:
+              raise SystemExit("execution identity drifted")
+          PY
+      - name: Export bounded result
+        if: steps.dedup.outputs.skip != 'true'
+        id: export
+        env:
+          RESULT_PATH: ${{ runner.temp }}/greece-shakemap-profile-result.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python -c 'import json,os,pathlib; p=pathlib.Path(os.environ["RESULT_PATH"]); print(json.dumps(json.loads(p.read_text()),sort_keys=True,separators=(",",":")))')"
+          test -n "$RESULT_JSON"
+          test "$(printf '%s' "$RESULT_JSON" | wc -c)" -le 23900
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-profile:
+    needs: [validate-request, execute-profile]
+    if: >-
+      needs.execute-profile.result == 'success' &&
+      needs.execute-profile.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence and publish without checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-profile.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-scenario-v10-greece-shakemap-profile-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-scenario-v10-greece-shakemap-profile-result-v1" and
+            .action == "esrm20_scenario_v10_greece_shakemap_profile" and
+            .source_issue == 285 and
+            .dataset_id == "efehr.esrm20.scenario-tests.v1.0" and
+            .target_sha == $sha and .execution_sha == $sha and
+            .shakemap_identity.commit_sha == "041f90d950d6ff84180b2faa11319a42c66c74cc" and
+            .shakemap_identity.event_id == "Greece_07-9-1999" and
+            .shakemap_identity.grid.receipt_sha256 == "3c2fe7a2a7182fac999442ce3d88ddfd99004b7f999462ef2327f2eebc1ccd9f" and
+            .shakemap_identity.uncertainty.receipt_sha256 == "eb08df5ff78f265fb45bf31dbd3dddf4f01bf10632382d4156a2bdf016e46417" and
+            .output_payload_bytes_read == false and .external_bytes_persisted == false and
+            .event_location_inference_authorized == false and .scenario_selection_authorized == false and
+            .independent_validation_established == false and .holdout_status_established == false and
+            .publication_authorized == false and .model_use_authorized == false and
+            (if .status == "pass" then
+               .failure_class == null and .failure_code == null and
+               .provider_file_bytes_read == true and .provider_file_content_profiled == true and
+               .receipts.grid.sha256 == "3c2fe7a2a7182fac999442ce3d88ddfd99004b7f999462ef2327f2eebc1ccd9f" and
+               .receipts.uncertainty.sha256 == "eb08df5ff78f265fb45bf31dbd3dddf4f01bf10632382d4156a2bdf016e46417" and
+               .profile.schema_version == "oc-esrm20-scenario-v10-greece-shakemap-profile-v1" and
+               .profile.coordinate_grids_equal == true and
+               .profile.provider_file_content_profiled == true and
+               .profile.event_location_inference_authorized == false and
+               .profile.scenario_selection_authorized == false and
+               .profile.independent_validation_established == false and
+               .profile.holdout_status_established == false and
+               .profile.publication_authorized == false and .profile.model_use_authorized == false
+             elif .status == "blocked" then
+               (.failure_class == "acquisition_failure" or .failure_class == "byte_identity_mismatch" or .failure_class == "profile_failure") and
+               .receipts == null and .profile == null and .provider_file_content_profiled == false and
+               (.provider_file_bytes_read | type) == "boolean" and
+               (if .failure_class == "profile_failure" then .failure_code == "shakemap_pair_profile_rejected" else .failure_code == null end)
+             else false end)
+          ' >/dev/null
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          test "$(printf '%s' "$BODY" | wc -c)" -le 24000
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/result-comment.json"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/285/comments" --input "$RUNNER_TEMP/result-comment.json"
