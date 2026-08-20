@@ -336,6 +336,7 @@ def has_terminal_result(*, repository: str, token: str, execution_sha: str) -> b
         )
     except LedgerError as exc:
         raise Hdf5CompanionExecutionError("HDF5 companion result ledger is incomplete") from exc
+    matching_terminal_found = False
     for comment in comments:
         if type(comment) is not dict:
             raise Hdf5CompanionExecutionError("HDF5 companion ledger contains non-object")
@@ -349,8 +350,8 @@ def has_terminal_result(*, repository: str, token: str, execution_sha: str) -> b
             continue
         terminal = parse_terminal_result(body, execution_sha=own_execution_sha)
         if own_execution_sha == execution_sha and terminal:
-            return True
-    return False
+            matching_terminal_found = True
+    return matching_terminal_found
 
 
 def execute_profile(*, repository: str, token: str, execution_sha: str) -> dict[str, Any]:
