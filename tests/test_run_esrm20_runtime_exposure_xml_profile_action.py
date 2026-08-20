@@ -28,26 +28,55 @@ def request_body(**updates):
 
 def evidence():
     return {
-        "receipt": {"retrieved_at": "2026-08-19T22:00:00Z", "byte_count": 664, "sha256": subject.EXPECTED_SHA256, "content_type": "text/plain; charset=utf-8", "etag": None},
+        "receipt": {
+            "retrieved_at": "2026-08-19T22:00:00Z",
+            "byte_count": 664,
+            "sha256": subject.EXPECTED_SHA256,
+            "content_type": "text/plain; charset=utf-8",
+            "etag": None,
+        },
         "profile": {
             "nrml_namespace": "http://openquake.org/xmlns/nrml/0.5",
-            "exposure_model": {"id": "k", "category": "buildings", "taxonomy_source": "GEM", "description": "x"},
-            "asset_references": ["Exposure_Kosovo.csv"], "cost_types": [], "area": None,
-            "occupancy_periods": [], "tag_names": [], "exposure_fields": [],
-            "structural_cost_type_declared": False, "structural_value_inputs": [],
+            "exposure_model": {
+                "id": "k",
+                "category": "buildings",
+                "taxonomy_source": "GEM",
+                "description": "x",
+            },
+            "asset_references": ["Exposure_Kosovo.csv"],
+            "cost_types": [],
+            "area": None,
+            "occupancy_periods": [],
+            "tag_names": [],
+            "exposure_fields": [],
+            "structural_cost_type_declared": False,
+            "structural_value_inputs": [],
         },
     }
 
 
 class ActionTests(unittest.TestCase):
     def test_request_is_exact_head_and_receipt_bound(self):
-        self.assertEqual(subject.validate_request(request_body(), expected_issue=282, execution_sha=SHA)["requester"], "CHAT-TEST")
-        for updates in ({"target_sha": "b" * 40}, {"receipt_sha256": "0" * 64}, {"issue": 999}):
+        self.assertEqual(
+            subject.validate_request(
+                request_body(), expected_issue=282, execution_sha=SHA
+            )["requester"],
+            "CHAT-TEST",
+        )
+        for updates in (
+            {"target_sha": "b" * 40},
+            {"receipt_sha256": "0" * 64},
+            {"issue": 999},
+        ):
             with self.assertRaises(subject.RuntimeExposureXmlProfileActionError):
-                subject.validate_request(request_body(**updates), expected_issue=282, execution_sha=SHA)
+                subject.validate_request(
+                    request_body(**updates), expected_issue=282, execution_sha=SHA
+                )
 
     def test_pass_preserves_authority_ceilings(self):
-        with mock.patch.object(subject, "profile_runtime_exposure_xml", return_value=evidence()):
+        with mock.patch.object(
+            subject, "profile_runtime_exposure_xml", return_value=evidence()
+        ):
             result = subject.run_profile(execution_sha=SHA)
         self.assertEqual(result["status"], "pass")
         self.assertIsNone(result["failure_code"])
@@ -62,15 +91,22 @@ class ActionTests(unittest.TestCase):
         failures = [
             (subject.ByteIdentityMismatch("x"), "byte_identity_mismatch", None),
             (
-                subject.XmlSemanticProfileError("runtime exposure NRML root namespace drifted"),
+                subject.XmlSemanticProfileError(
+                    "runtime exposure NRML root namespace is legacy 0.4"
+                ),
                 "xml_profile_failure",
-                "nrml_root_namespace_drifted",
+                "nrml_root_namespace_legacy_04",
             ),
             (subject.EfehrAcquisitionError("x"), "acquisition_failure", None),
             (subject.RuntimeExposureXmlProfileError("x"), "profile_failure", None),
         ]
         for exc, failure_class, failure_code in failures:
-            with self.subTest(failure_class=failure_class), mock.patch.object(subject, "profile_runtime_exposure_xml", side_effect=exc):
+            with (
+                self.subTest(failure_class=failure_class),
+                mock.patch.object(
+                    subject, "profile_runtime_exposure_xml", side_effect=exc
+                ),
+            ):
                 result = subject.run_profile(execution_sha=SHA)
                 self.assertEqual(result["status"], "blocked")
                 self.assertEqual(result["failure_class"], failure_class)
@@ -79,15 +115,31 @@ class ActionTests(unittest.TestCase):
 
     def test_root_first_divergence_codes_are_closed_and_static(self):
         cases = [
-            ("runtime exposure NRML root local name drifted", "nrml_root_local_name_drifted"),
-            ("runtime exposure NRML root namespace drifted", "nrml_root_namespace_drifted"),
-            ("runtime exposure NRML root attributes present", "nrml_root_attributes_present"),
+            (
+                "runtime exposure NRML root local name drifted",
+                "nrml_root_local_name_drifted",
+            ),
+            (
+                "runtime exposure NRML root namespace is legacy 0.4",
+                "nrml_root_namespace_legacy_04",
+            ),
+            (
+                "runtime exposure NRML root namespace is unrecognized",
+                "nrml_root_namespace_unrecognized",
+            ),
+            (
+                "runtime exposure NRML root attributes present",
+                "nrml_root_attributes_present",
+            ),
         ]
         for message, code in cases:
-            with self.subTest(code=code), mock.patch.object(
-                subject,
-                "profile_runtime_exposure_xml",
-                side_effect=subject.XmlSemanticProfileError(message),
+            with (
+                self.subTest(code=code),
+                mock.patch.object(
+                    subject,
+                    "profile_runtime_exposure_xml",
+                    side_effect=subject.XmlSemanticProfileError(message),
+                ),
             ):
                 result = subject.run_profile(execution_sha=SHA)
             self.assertEqual(result["failure_class"], "xml_profile_failure")
@@ -103,41 +155,57 @@ class ActionTests(unittest.TestCase):
         ):
             result = subject.run_profile(execution_sha=SHA)
         self.assertEqual(result["failure_class"], "xml_profile_failure")
-        self.assertEqual(result["failure_code"], "unclassified_xml_profile_failure")
+        self.assertEqual(
+            result["failure_code"], "unclassified_xml_profile_failure"
+        )
         self.assertNotIn(secret, json.dumps(result, sort_keys=True))
 
     def test_terminal_rejects_arbitrary_xml_failure_code(self):
         result = subject._base_result(SHA)
         result["failure_class"] = "xml_profile_failure"
         result["failure_code"] = "provider-derived-secret"
-        with self.assertRaisesRegex(subject.RuntimeExposureXmlProfileActionError, "invalid XML failure code"):
+        with self.assertRaisesRegex(
+            subject.RuntimeExposureXmlProfileActionError, "invalid XML failure code"
+        ):
             subject._validate_terminal_result(result)
 
-    def test_result_v3_rejects_retired_v2_root_code(self):
+    def test_result_v4_rejects_retired_v3_namespace_code(self):
         result = subject._base_result(SHA)
         result["failure_class"] = "xml_profile_failure"
-        result["failure_code"] = "nrml_root_drifted"
-        with self.assertRaisesRegex(subject.RuntimeExposureXmlProfileActionError, "invalid XML failure code"):
+        result["failure_code"] = "nrml_root_namespace_drifted"
+        with self.assertRaisesRegex(
+            subject.RuntimeExposureXmlProfileActionError, "invalid XML failure code"
+        ):
             subject._validate_terminal_result(result)
 
     def test_non_xml_failure_rejects_diagnostic_code(self):
         result = subject._base_result(SHA)
         result["failure_class"] = "acquisition_failure"
-        result["failure_code"] = "nrml_root_namespace_drifted"
-        with self.assertRaisesRegex(subject.RuntimeExposureXmlProfileActionError, "non-XML failure"):
+        result["failure_code"] = "nrml_root_namespace_legacy_04"
+        with self.assertRaisesRegex(
+            subject.RuntimeExposureXmlProfileActionError, "non-XML failure"
+        ):
             subject._validate_terminal_result(result)
 
-    def test_legacy_result_v1_and_v2_terminals_are_ignored_by_v3_dedup(self):
-        for version in (1, 2):
+    def test_legacy_result_v1_v2_and_v3_terminals_are_ignored_by_v4_dedup(self):
+        for version in (1, 2, 3):
             with self.subTest(version=version):
-                legacy = f'<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v{version} -->\n{{"legacy":true}}'
+                legacy = (
+                    "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-"
+                    f'v{version} -->\n{{"legacy":true}}'
+                )
                 self.assertIsNone(subject.parse_terminal_result(legacy))
-        self.assertTrue(subject.RESULT_MARKER.endswith("result-v3 -->"))
-        self.assertTrue(subject.RESULT_SCHEMA_VERSION.endswith("result-v3"))
+        self.assertTrue(subject.RESULT_MARKER.endswith("result-v4 -->"))
+        self.assertTrue(subject.RESULT_SCHEMA_VERSION.endswith("result-v4"))
 
     def test_duplicate_json_keys_fail_closed(self):
-        body = subject.REQUEST_MARKER + '\n{"schema_version":"x","schema_version":"y"}'
-        with self.assertRaisesRegex(subject.RuntimeExposureXmlProfileActionError, "duplicate JSON key"):
+        body = (
+            subject.REQUEST_MARKER
+            + '\n{"schema_version":"x","schema_version":"y"}'
+        )
+        with self.assertRaisesRegex(
+            subject.RuntimeExposureXmlProfileActionError, "duplicate JSON key"
+        ):
             subject.validate_request(body, expected_issue=282, execution_sha=SHA)
 
 
