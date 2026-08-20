@@ -195,29 +195,25 @@ jobs:
             .source_issue == 285 and
             .dataset_id == "efehr.esrm20.scenario-tests.v1.0" and
             .target_sha == $sha and .execution_sha == $sha and
+            (.shakemap_identity | keys) == ["commit_sha","event_id","grid","project_id","project_path","release_tag","uncertainty"] and
             .shakemap_identity.project_id == 273 and
             .shakemap_identity.project_path == "efehr/esrm20_scenario_tests" and
             .shakemap_identity.release_tag == "v1.0" and
             .shakemap_identity.commit_sha == "041f90d950d6ff84180b2faa11319a42c66c74cc" and
             .shakemap_identity.event_id == "Greece_07-9-1999" and
+            (.shakemap_identity.grid | keys) == ["git_blob_sha1","receipt_byte_count","receipt_sha256","repository_path","role"] and
+            .shakemap_identity.grid.role == "usgs_shakemap_grid" and
             .shakemap_identity.grid.repository_path == "shakemaps/shakemaps_USGS/Greece_07-9-1999/grid.xml" and
             .shakemap_identity.grid.git_blob_sha1 == "21e323dec41b8efb012b2595145fded5fb35fd3a" and
             .shakemap_identity.grid.receipt_byte_count == 5290966 and
             .shakemap_identity.grid.receipt_sha256 == "3c2fe7a2a7182fac999442ce3d88ddfd99004b7f999462ef2327f2eebc1ccd9f" and
+            (.shakemap_identity.uncertainty | keys) == ["git_blob_sha1","receipt_byte_count","receipt_sha256","repository_path","role"] and
+            .shakemap_identity.uncertainty.role == "usgs_shakemap_uncertainty" and
             .shakemap_identity.uncertainty.repository_path == "shakemaps/shakemaps_USGS/Greece_07-9-1999/uncertainty.xml" and
             .shakemap_identity.uncertainty.git_blob_sha1 == "30d5635260a83cd0ac91ee559d0109ff126a7b57" and
             .shakemap_identity.uncertainty.receipt_byte_count == 5340320 and
             .shakemap_identity.uncertainty.receipt_sha256 == "eb08df5ff78f265fb45bf31dbd3dddf4f01bf10632382d4156a2bdf016e46417" and
             .status == "blocked" and
-            (.failure_stage == "acquisition" or .failure_stage == "byte_identity" or .failure_stage == "profile") and
-            (.failure_code | [
-              "acquisition_failed",
-              "byte_identity_mismatch",
-              "precondition_profile_failure_drift",
-              "precondition_not_reproduced",
-              "classifier_inconsistent",
-              "unsupported_grid_field_units"
-            ] | index(.) != null) and
             (.provider_file_bytes_read | type) == "boolean" and
             (.byte_identity_verified | type) == "boolean" and
             (.profile_failure_reproduced | type) == "boolean" and
@@ -231,23 +227,49 @@ jobs:
             .holdout_status_established == false and
             .publication_authorized == false and
             .model_use_authorized == false and
-            (if .failure_code == "unsupported_grid_field_units" then
-              .failure_stage == "profile" and
+            (if .failure_stage == "acquisition" then
+              .failure_code == "acquisition_failed" and
+              .byte_identity_verified == false and
+              .profile_failure_reproduced == false and
+              .provider_unit_metadata_classified == false and
+              .unit_diagnostic == null
+            elif .failure_stage == "byte_identity" then
+              .failure_code == "byte_identity_mismatch" and
+              .provider_file_bytes_read == true and
+              .byte_identity_verified == false and
+              .profile_failure_reproduced == false and
+              .provider_unit_metadata_classified == false and
+              .unit_diagnostic == null
+            elif .failure_stage == "profile" then
               .provider_file_bytes_read == true and
               .byte_identity_verified == true and
-              .profile_failure_reproduced == true and
-              .provider_unit_metadata_classified == true and
-              (.unit_diagnostic | keys) == ["field_name", "member", "unit_relation"] and
-              (.unit_diagnostic.member == "grid" or .unit_diagnostic.member == "uncertainty") and
-              (.unit_diagnostic.field_name | [
-                "LAT","LON","MMI","PGA","PGV","PSA03","PSA10","PSA30","STDPGA","STDPGV","STDMMI","STDPSA03","STDPSA10","STDPSA30","SVEL","URAT"
-              ] | index(.) != null) and
-              (.unit_diagnostic.unit_relation | [
-                "documented_global_unit_wrong_for_field","blank_unexpected","unrecognized_unit_token"
-              ] | index(.) != null)
-            else
-              .unit_diagnostic == null and .provider_unit_metadata_classified == false
-            end)
+              (.failure_code as $code | [
+                "precondition_profile_failure_drift",
+                "precondition_not_reproduced",
+                "classifier_inconsistent",
+                "unsupported_grid_field_units"
+              ] | index($code) != null) and
+              (if .failure_code == "unsupported_grid_field_units" then
+                .profile_failure_reproduced == true and
+                .provider_unit_metadata_classified == true and
+                (.unit_diagnostic | keys) == ["field_name","member","unit_relation"] and
+                (.unit_diagnostic.member == "grid" or .unit_diagnostic.member == "uncertainty") and
+                (.unit_diagnostic.field_name as $field | [
+                  "LAT","LON","MMI","PGA","PGV","PSA03","PSA10","PSA30","STDPGA","STDPGV","STDMMI","STDPSA03","STDPSA10","STDPSA30","SVEL","URAT"
+                ] | index($field) != null) and
+                (.unit_diagnostic.unit_relation as $relation | [
+                  "documented_global_unit_wrong_for_field","blank_unexpected","unrecognized_unit_token"
+                ] | index($relation) != null)
+              elif .failure_code == "classifier_inconsistent" then
+                .profile_failure_reproduced == true and
+                .provider_unit_metadata_classified == false and
+                .unit_diagnostic == null
+              else
+                .profile_failure_reproduced == false and
+                .provider_unit_metadata_classified == false and
+                .unit_diagnostic == null
+              end)
+            else false end)
           ' >/dev/null
 
           BODY="$(printf '%s\n%s' "$RESULT_MARKER" "$RESULT_JSON")"
