@@ -49,9 +49,9 @@ except ModuleNotFoundError:  # pragma: no cover
     )
 
 REQUEST_MARKER = "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-request-v1 -->"
-RESULT_MARKER = "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v3 -->"
+RESULT_MARKER = "<!-- oc-eq1-esrm20-runtime-exposure-xml-profile-result-v4 -->"
 REQUEST_SCHEMA_VERSION = "oc-esrm20-runtime-exposure-xml-profile-request-v1"
-RESULT_SCHEMA_VERSION = "oc-esrm20-runtime-exposure-xml-profile-result-v3"
+RESULT_SCHEMA_VERSION = "oc-esrm20-runtime-exposure-xml-profile-result-v4"
 ACTION = "esrm20_runtime_exposure_xml_profile"
 TRUSTED_RESULT_LOGIN = "github-actions[bot]"
 MAX_LEDGER_PAGES = 20
@@ -84,7 +84,8 @@ _XML_FAILURE_CODE_BY_MESSAGE = {
     "DTD/entity declarations are forbidden": "dtd_or_entity_forbidden",
     "runtime exposure XML is malformed": "malformed_xml",
     "runtime exposure NRML root local name drifted": "nrml_root_local_name_drifted",
-    "runtime exposure NRML root namespace drifted": "nrml_root_namespace_drifted",
+    "runtime exposure NRML root namespace is legacy 0.4": "nrml_root_namespace_legacy_04",
+    "runtime exposure NRML root namespace is unrecognized": "nrml_root_namespace_unrecognized",
     "runtime exposure NRML root attributes present": "nrml_root_attributes_present",
     "expected exactly one exposureModel": "exposure_model_cardinality_drifted",
     "exposureModel attributes drifted": "exposure_model_attributes_drifted",
