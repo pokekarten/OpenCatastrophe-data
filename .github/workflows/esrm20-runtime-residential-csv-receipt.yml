@@ -52,7 +52,7 @@ jobs:
           RESULT_PATH: ${{ runner.temp }}/runtime-residential-csv-result.json
         run: |
           set -euo pipefail
-          EXECUTION_SHA="$(git rev-parse HEAD)"
+          export EXECUTION_SHA="$(git rev-parse HEAD)"
 
           python scripts/run_esrm20_runtime_residential_csv_receipt_action.py \
             --comment-body-env OC_RUNTIME_RESIDENTIAL_CSV_REQUEST \
