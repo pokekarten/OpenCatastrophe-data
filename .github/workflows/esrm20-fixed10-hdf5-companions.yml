@@ -1,0 +1,170 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Fixed10 HDF5 Companion Metadata
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-fixed10-hdf5-companions-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  execute-hdf5-companions:
+    name: Execute exact trusted-main HDF5 companion metadata reconciliation
+    if: >-
+      github.event.issue.number == 281 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-fixed10-hdf5-companions-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.run.outputs.execution_sha }}
+      skip: ${{ steps.run.outputs.skip }}
+      result_json: ${{ steps.run.outputs.result_json }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Validate, deduplicate, and reconcile fixed source-model companion metadata
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OC_FIXED10_HDF5_REQUEST: ${{ github.event.comment.body }}
+          RESULT_PATH: ${{ runner.temp }}/esrm20-fixed10-hdf5-companions.json
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/run_esrm20_fixed10_hdf5_companions_action.py \
+            --comment-body-env OC_FIXED10_HDF5_REQUEST \
+            --expected-issue 281 \
+            --execution-sha "$EXECUTION_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --token-env GH_TOKEN \
+            --output "$RESULT_PATH"
+          STATUS="$(jq -r '.status' "$RESULT_PATH")"
+          test "$STATUS" = "pass" -o "$STATUS" = "blocked" -o "$STATUS" = "duplicate"
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+          if test "$STATUS" = "duplicate"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "result_json=" >> "$GITHUB_OUTPUT"
+          else
+            RESULT_JSON="$(jq -cS . "$RESULT_PATH")"
+            test -n "$RESULT_JSON"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish-hdf5-companions:
+    name: Publish bounded fixed10 HDF5 companion metadata
+    needs: [execute-hdf5-companions]
+    if: >-
+      needs.execute-hdf5-companions.result == 'success' &&
+      needs.execute-hdf5-companions.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.execute-hdf5-companions.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-hdf5-companions.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-fixed10-hdf5-companions-result-v1 -->"
+          EXPECTED_SOURCES: >-
+            ["Hazard/source_models/asm_v12e/asm_ver12e_winGT_fs017_combined.xml",
+            "Hazard/source_models/asm_v12e/asm_ver12e_winGT_fs017_twingr.xml",
+            "Hazard/source_models/deep_v12e/asm_deep_ver12e_winGT_fs017_combined.xml",
+            "Hazard/source_models/fsm_v09/fs_ver09e_model_aGR_fMthr_combined.xml",
+            "Hazard/source_models/interface_v12b/CaA_IF2222222_M40.xml",
+            "Hazard/source_models/interface_v12b/CyA_IF2222222_M40.xml",
+            "Hazard/source_models/interface_v12b/GiA_IF2222222_M40.xml",
+            "Hazard/source_models/interface_v12b/HeA_IF2222222_M40.xml",
+            "Hazard/source_models/ssm_v09/seis_ver12b_fMthr_asm_ver12e_winGT_fs017_agbrs_point.xml",
+            "Hazard/source_models/volcanic_v12e/asm_volcanic_ver12e_winGT_fs017_combined.xml"]
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e \
+            --arg sha "$EXECUTION_SHA" \
+            --argjson sources "$EXPECTED_SOURCES" '
+            .schema_version == "oc-esrm20-fixed10-hdf5-companions-result-v1" and
+            .source_issue == 281 and
+            .target_sha == $sha and .execution_sha == $sha and
+            (.status == "pass" or .status == "blocked") and
+            .provider_file_bytes_read == false and
+            .hdf5_byte_identity_verified == false and
+            .transitive_dependency_byte_closure_verified == false and
+            .runtime_compatibility_verified == false and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and
+            .model_use_authorized == false and
+            (if .status == "pass" then
+              .failure_class == null and .profile != null and
+              .profile.schema_version == "oc-esrm20-fixed10-hdf5-companion-profile-v1" and
+              .profile.source_issue == 281 and
+              .profile.project_id == 269 and
+              .profile.project_path == "efehr/esrm20" and
+              .profile.release_tag == "v1.0" and
+              .profile.commit_sha == "05f83bbc9df81d02ee8ddb1801d9d781355ce783" and
+              (.profile.source_tree_entry_count | type == "number") and
+              (.profile.source_tree_entry_count >= 1 and .profile.source_tree_entry_count <= 20000) and
+              (.profile.source_tree_identity_sha256 | test("^[0-9a-f]{64}$")) and
+              .profile.source_xml_count == 10 and
+              .profile.candidate_hdf5_count == 10 and
+              (.profile.present_hdf5_count | type == "number") and
+              (.profile.absent_hdf5_count | type == "number") and
+              .profile.present_hdf5_count >= 0 and
+              .profile.absent_hdf5_count >= 0 and
+              .profile.present_hdf5_count + .profile.absent_hdf5_count == 10 and
+              (.profile.companion_inventory_sha256 | test("^[0-9a-f]{64}$")) and
+              (.profile.companions | type == "array") and
+              (.profile.companions | length) == 10 and
+              ([.profile.companions[].source_xml_path] == $sources) and
+              ([.profile.companions[].candidate_hdf5_path] ==
+                ($sources | map(sub("\\.xml$"; ".hdf5")))) and
+              ([.profile.companions[] |
+                (.present | type == "boolean") and
+                (if .present then
+                  (.mode == "100644" or .mode == "100755") and
+                  (.object_sha1 | test("^[0-9a-f]{40}$"))
+                else
+                  .mode == null and .object_sha1 == null
+                end)] | all) and
+              ([.profile.companions[] | select(.present)] | length) ==
+                .profile.present_hdf5_count and
+              .profile.provider_file_bytes_read == false and
+              .profile.hdf5_byte_identity_verified == false and
+              .profile.transitive_dependency_byte_closure_verified == false and
+              .profile.runtime_compatibility_verified == false and
+              .profile.external_bytes_persisted == false and
+              .profile.publication_authorized == false and
+              .profile.model_use_authorized == false
+            else
+              .failure_class == "hdf5_companion_profile_failure" and .profile == null
+            end)
+          ' >/dev/null
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/hdf5-companion-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/281/comments" \
+            --input "$RUNNER_TEMP/hdf5-companion-comment.json"
