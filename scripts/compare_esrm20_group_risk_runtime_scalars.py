@@ -60,9 +60,7 @@ def _require_exact_false(value: object, field: str) -> None:
 
 
 def _validate_presence_consistency(
-    runtime_scalars: dict[str, Any],
-    *,
-    candidate_key: str,
+    runtime_scalars: dict[str, Any], *, candidate_key: str
 ) -> None:
     for value_field, present_field in _FIELD_SPECS:
         present = runtime_scalars[present_field]
@@ -93,9 +91,18 @@ def _validate_presence_consistency(
             )
 
 
+def _expected_openquake_reference(runtime_module: Any) -> dict[str, str]:
+    return {
+        "repository": runtime_module.OPENQUAKE_REPOSITORY,
+        "tag": runtime_module.OPENQUAKE_TAG,
+        "commit_sha": runtime_module.OPENQUAKE_COMMIT,
+    }
+
+
 def _validate_profile(
     profile: dict[str, Any],
     *,
+    runtime_module: Any,
     candidate_key: str,
     expected_repository_path: str,
     expected_byte_count: int,
@@ -103,14 +110,27 @@ def _validate_profile(
 ) -> dict[str, Any]:
     if type(profile) is not dict:
         raise RiskRuntimeScalarComparisonError(f"{candidate_key} profile must be an object")
-    if profile.get("candidate_key") != candidate_key:
-        raise RiskRuntimeScalarComparisonError(f"{candidate_key} candidate identity drift")
-    if profile.get("repository_path") != expected_repository_path:
-        raise RiskRuntimeScalarComparisonError(f"{candidate_key} repository path drift")
-    if profile.get("byte_count") != expected_byte_count:
-        raise RiskRuntimeScalarComparisonError(f"{candidate_key} byte-count drift")
-    if profile.get("sha256") != expected_sha256:
-        raise RiskRuntimeScalarComparisonError(f"{candidate_key} SHA-256 drift")
+
+    expected = {
+        "schema_version": runtime_module.SCHEMA_VERSION,
+        "control_issue": runtime_module.CONTROL_ISSUE,
+        "source_issue": runtime_module.SOURCE_ISSUE,
+        "dataset_id": runtime_module.DATASET_ID,
+        "project_id": runtime_module.PROJECT_ID,
+        "project_path": runtime_module.PROJECT_PATH,
+        "commit_sha": runtime_module.COMMIT_SHA,
+        "candidate_key": candidate_key,
+        "repository_path": expected_repository_path,
+        "byte_count": expected_byte_count,
+        "sha256": expected_sha256,
+        "receipt_comment_id": runtime_module.risk_config.RECEIPT_COMMENT_ID,
+        "openquake_reference": _expected_openquake_reference(runtime_module),
+    }
+    for field, expected_value in expected.items():
+        if profile.get(field) != expected_value:
+            raise RiskRuntimeScalarComparisonError(
+                f"{candidate_key}.{field} drifted from frozen projector authority"
+            )
 
     for field in _REQUIRED_FALSE_CEILINGS:
         _require_exact_false(profile.get(field), f"{candidate_key}.{field}")
@@ -138,7 +158,6 @@ def _validate_profile(
                 f"{candidate_key}.runtime_scalars.{present_field} must be boolean"
             )
     _validate_presence_consistency(runtime_scalars, candidate_key=candidate_key)
-
     return runtime_scalars
 
 
@@ -159,8 +178,7 @@ def _relation(
 
 
 def compare_group_risk_runtime_scalars(
-    group1_payload: bytes,
-    group2_payload: bytes,
+    group1_payload: bytes, group2_payload: bytes
 ) -> dict[str, Any]:
     """Verify both exact config byte objects and compare only bounded scalars."""
 
@@ -169,6 +187,7 @@ def compare_group_risk_runtime_scalars(
 
     group1_scalars = _validate_profile(
         group1_profile,
+        runtime_module=group1_runtime,
         candidate_key=group1_runtime.GROUP1_KEY,
         expected_repository_path=group1_runtime.GROUP1_SPEC.repository_path,
         expected_byte_count=group1_runtime.GROUP1_SPEC.byte_count,
@@ -176,24 +195,12 @@ def compare_group_risk_runtime_scalars(
     )
     group2_scalars = _validate_profile(
         group2_profile,
+        runtime_module=group2_runtime,
         candidate_key=group2_runtime.GROUP2_KEY,
         expected_repository_path=group2_runtime.GROUP2_SPEC.repository_path,
         expected_byte_count=group2_runtime.GROUP2_SPEC.byte_count,
         expected_sha256=group2_runtime.GROUP2_SPEC.sha256,
     )
-
-    if group1_profile.get("dataset_id") != group2_profile.get("dataset_id"):
-        raise RiskRuntimeScalarComparisonError("dataset identity differs across groups")
-    if group1_profile.get("project_id") != group2_profile.get("project_id"):
-        raise RiskRuntimeScalarComparisonError("provider project identity differs across groups")
-    if group1_profile.get("project_path") != group2_profile.get("project_path"):
-        raise RiskRuntimeScalarComparisonError("provider project path differs across groups")
-    if group1_profile.get("commit_sha") != group2_profile.get("commit_sha"):
-        raise RiskRuntimeScalarComparisonError("provider commit identity differs across groups")
-    if group1_profile.get("openquake_reference") != group2_profile.get(
-        "openquake_reference"
-    ):
-        raise RiskRuntimeScalarComparisonError("OpenQuake reference differs across groups")
 
     comparisons = []
     for value_field, present_field in _FIELD_SPECS:
