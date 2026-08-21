@@ -1,0 +1,243 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Kosovo Source Runtime Compare
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-kosovo-source-runtime-compare-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main source/runtime comparison request
+    if: >-
+      github.event.issue.number == 282 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-kosovo-source-runtime-compare-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Bind request to trusted main and both frozen receipts
+        id: fence
+        env:
+          OC_KOSOVO_SOURCE_RUNTIME_COMPARE_REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.run_esrm20_kosovo_source_runtime_compare_action \
+            --comment-body-env OC_KOSOVO_SOURCE_RUNTIME_COMPARE_REQUEST_BODY \
+            --expected-issue 282 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-compare:
+    name: Execute fixed exact-byte source/runtime comparison
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Prove complete issue-local dedup before provider access
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import run_esrm20_kosovo_source_runtime_compare_action as subject
+
+          skip = subject.has_terminal_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+      - name: Compare only the two frozen receipted Kosovo exposure objects
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_KOSOVO_SOURCE_RUNTIME_COMPARE_REQUEST_BODY: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/kosovo-source-runtime-compare-result.json
+        run: |
+          set -euo pipefail
+          python -m scripts.run_esrm20_kosovo_source_runtime_compare_action \
+            --comment-body-env OC_KOSOVO_SOURCE_RUNTIME_COMPARE_REQUEST_BODY \
+            --expected-issue 282 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from scripts import run_esrm20_kosovo_source_runtime_compare_action as subject
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          if subject._validate_terminal_result(result) != os.environ["EXECUTION_SHA"]:
+              raise SystemExit("source/runtime comparison execution identity drifted")
+          PY
+      - name: Export bounded result to publisher
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        env:
+          RESULT_PATH: ${{ runner.temp }}/kosovo-source-runtime-compare-result.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(value, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-result:
+    name: Publish bounded source/runtime comparison evidence
+    needs: [validate-request, execute-compare]
+    if: >-
+      needs.execute-compare.result == 'success' &&
+      needs.execute-compare.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence aggregate result and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-compare.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-kosovo-source-runtime-compare-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-kosovo-source-runtime-compare-result-v1" and
+            .action == "esrm20_kosovo_source_runtime_compare" and
+            .source_issue == 282 and
+            .target_sha == $sha and .execution_sha == $sha and
+            .source_dataset_id == "efehr.esrm20.european-exposure-model.v1.0" and
+            .runtime_dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+            .project186_equivalence_verified == false and
+            .value_structural_wiring_verified == false and
+            .source_crs_datum_epsg_verified == false and
+            .insured_value_semantics_verified == false and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and
+            .model_use_authorized == false and
+            (if .status == "pass" then
+              .failure_class == null and
+              .exact_decimal_comparison_completed == true and
+              (.comparison | type) == "object" and
+              .comparison.schema_version == "oc-esrm20-kosovo-source-runtime-decimal-comparison-v0" and
+              .comparison.record_count == 1093 and
+              .comparison.canonical_receipt_pair_verified == true and
+              .comparison.source_identity == {
+                "canonical_receipt_verified":true,
+                "project_id":186,
+                "project_path":"efehr/esrm20_exposure",
+                "commit_sha":"900433ada80fbb424c0976c34d72eeef97bab1af",
+                "repository_path":"_exposure_models/Exposure_Model_Kosovo_Res.csv",
+                "byte_count":316789,
+                "sha256":"4d562ad4925c527d518834b8dcd39a083cfd3b87b622031a84958ae7b4d8c5ea"
+              } and
+              .comparison.runtime_identity == {
+                "canonical_receipt_verified":true,
+                "project_id":269,
+                "project_path":"efehr/esrm20",
+                "commit_sha":"05f83bbc9df81d02ee8ddb1801d9d781355ce783",
+                "repository_path":"Exposure/OQ_Exposure_Input_Kosovo_Res.csv",
+                "byte_count":160627,
+                "sha256":"12a20d393c8d677d304263aed96eb05f81098104fd7e3fb0d119aafc336aa00f"
+              } and
+              .comparison.comparison_key.source_fields ==
+                ["LONGITUDE","LATITUDE","TAXONOMY","OCCUPANCY","NAME_2","ID_2","ID_1","NAME_1"] and
+              .comparison.comparison_key.runtime_fields ==
+                ["lon","lat","taxonomy","occupancy","name_2","id_2","id_1","name_1"] and
+              .comparison.comparison_key.provider_business_key_authorized == false and
+              .comparison.comparison_key.source_unique_count == 1093 and
+              .comparison.comparison_key.runtime_unique_count == 1093 and
+              .comparison.comparison_key.exact_key_set_equal == true and
+              (.comparison.comparison_key.key_set_sha256 | test("^[0-9a-f]{64}$")) and
+              (.comparison.numeric_comparisons | type) == "array" and
+              (.comparison.numeric_comparisons | length) == 5 and
+              [.comparison.numeric_comparisons[] | [.source_field,.runtime_field]] == [
+                ["BUILDINGS","number"],
+                ["TOTAL_REPL_COST_EUR","structural"],
+                ["OCCUPANTS_PER_ASSET_DAY","day"],
+                ["OCCUPANTS_PER_ASSET_NIGHT","night"],
+                ["OCCUPANTS_PER_ASSET_TRANSIT","transit"]
+              ] and
+              all(.comparison.numeric_comparisons[];
+                .record_count == 1093 and
+                (.exact_decimal_equal_count | type) == "number" and
+                (.non_equal_count | type) == "number" and
+                .exact_decimal_equal_count >= 0 and
+                .non_equal_count >= 0 and
+                (.exact_decimal_equal_count + .non_equal_count) == 1093 and
+                .all_exact_decimal_equal == (.exact_decimal_equal_count == 1093) and
+                (.maximum_absolute_difference | type) == "string" and
+                (.relation_sha256 | test("^[0-9a-f]{64}$"))
+              ) and
+              .comparison.project186_equivalence_verified == false and
+              .comparison.value_structural_wiring_verified == false and
+              .comparison.source_crs_datum_epsg_verified == false and
+              .comparison.insured_value_semantics_verified == false and
+              .comparison.external_bytes_persisted == false and
+              .comparison.raw_rows_returned == false and
+              .comparison.publication_authorized == false and
+              .comparison.model_use_authorized == false
+            elif .status == "blocked" then
+              .failure_class == "comparison_failure" and
+              .comparison == null and
+              .exact_decimal_comparison_completed == false
+            else false end)
+          ' >/dev/null
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          test "$(printf '%s' "$BODY" | wc -c)" -le 30000
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/kosovo-source-runtime-compare-comment.json"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/282/comments" \
+            --input "$RUNNER_TEMP/kosovo-source-runtime-compare-comment.json"
