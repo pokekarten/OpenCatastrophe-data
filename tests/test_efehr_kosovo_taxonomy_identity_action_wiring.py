@@ -7,6 +7,8 @@ import json
 import unittest
 
 from scripts import acquire_efehr_kosovo_taxonomy as taxonomy
+from scripts import validate_agent_action_result as result_validator
+from scripts import validate_agent_action_result_taxonomy as taxonomy_result_validator
 from scripts.agent_action_protocol import ProtocolError
 from scripts.prepare_agent_action_result import (
     build_acquisition_result,
@@ -75,6 +77,14 @@ def result_with(value: dict | None) -> dict:
 
 
 class KosovoTaxonomyIdentityActionTests(unittest.TestCase):
+    def test_top_level_reuses_canonical_taxonomy_validator(self) -> None:
+        self.assertIs(
+            result_validator.validate_efehr_kosovo_taxonomy_identity,
+            taxonomy_result_validator.validate_efehr_kosovo_taxonomy_identity,
+        )
+        value = result_with(receipt())
+        self.assertEqual(result_validator.validate_result(value), taxonomy_result_validator.validate_result(value))
+
     def test_request_is_closed_to_issue_and_dataset(self) -> None:
         self.assertEqual(validate_request(dict(REQUEST), expected_issue=363), REQUEST)
         for mutation in (
