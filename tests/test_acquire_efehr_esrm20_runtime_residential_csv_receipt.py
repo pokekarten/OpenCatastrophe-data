@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import inspect
 import unittest
 from unittest import mock
@@ -145,6 +146,21 @@ class RuntimeResidentialCsvReceiptTests(unittest.TestCase):
         ):
             worker.acquire_runtime_residential_csv_receipt()
         private.assert_not_called()
+
+    def test_http_stream_failure_is_bounded_as_acquisition_error(self) -> None:
+        payload = b"partial"
+        url = expected_url()
+
+        class IncompleteResponse(FakeResponse):
+            def read(self, size: int = -1) -> bytes:
+                raise http.client.IncompleteRead(payload, 10)
+
+        with self.assertRaisesRegex(EfehrAcquisitionError, "IncompleteRead"):
+            worker._acquire_runtime_residential_csv_receipt(
+                opener=lambda request, timeout: IncompleteResponse(payload, url),
+                now=lambda: RETRIEVED_AT,
+                monotonic=lambda: 0.0,
+            )
 
     def test_response_identity_and_status_fail_closed(self) -> None:
         payload = b"a,b\n1,2\n"

@@ -10,6 +10,7 @@ identity only; content/value/taxonomy semantics and model use remain separate.
 
 from __future__ import annotations
 
+import http.client
 import time
 import urllib.error
 import urllib.request
@@ -179,7 +180,13 @@ def _acquire_runtime_residential_csv_receipt(
                 raise EfehrAcquisitionError("EFEHR artifact receipt failed") from exc
     except EfehrAcquisitionError:
         raise
-    except (OSError, urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:
+    except (
+        OSError,
+        http.client.HTTPException,
+        urllib.error.URLError,
+        urllib.error.HTTPError,
+        TimeoutError,
+    ) as exc:
         raise EfehrAcquisitionError(
             f"EFEHR artifact retrieval failed: {type(exc).__name__}"
         ) from exc
