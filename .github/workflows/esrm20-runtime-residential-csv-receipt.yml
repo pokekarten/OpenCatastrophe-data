@@ -60,24 +60,48 @@ jobs:
             --execution-sha "$EXECUTION_SHA" \
             --validate-request-only
 
-          SKIP="$(python - <<'PY'
+          DEDUP_STATUS="$(python - <<'PY'
+          import json
           import os
+          from pathlib import Path
           from scripts import run_esrm20_runtime_residential_csv_receipt_action as subject
 
-          print("true" if subject.has_terminal_result(
-              repository=os.environ["GITHUB_REPOSITORY"],
-              token=os.environ["GH_TOKEN"],
-              execution_sha=os.environ["EXECUTION_SHA"],
-          ) else "false")
+          try:
+              duplicate = subject.has_terminal_result(
+                  repository=os.environ["GITHUB_REPOSITORY"],
+                  token=os.environ["GH_TOKEN"],
+                  execution_sha=os.environ["EXECUTION_SHA"],
+              )
+          except subject.RuntimeResidentialCsvReceiptActionError as exc:
+              if str(exc) != "runtime residential ledger is incomplete":
+                  raise
+              result = subject.ledger_incomplete_result(
+                  execution_sha=os.environ["EXECUTION_SHA"]
+              )
+              Path(os.environ["RESULT_PATH"]).write_text(
+                  json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n",
+                  encoding="utf-8",
+              )
+              print("ledger_incomplete")
+          else:
+              print("duplicate" if duplicate else "clear")
           PY
           )"
 
           echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
-          if test "$SKIP" = "true"; then
+          if test "$DEDUP_STATUS" = "duplicate"; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "result_json=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          if test "$DEDUP_STATUS" = "ledger_incomplete"; then
+            RESULT_JSON="$(jq -cS . "$RESULT_PATH")"
+            test -n "$RESULT_JSON"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          test "$DEDUP_STATUS" = "clear"
 
           python scripts/run_esrm20_runtime_residential_csv_receipt_action.py \
             --comment-body-env OC_RUNTIME_RESIDENTIAL_CSV_REQUEST \
@@ -174,7 +198,8 @@ jobs:
               (.receipt.content_type == null or (.receipt.content_type | type) == "string") and
               (.receipt.etag == null or (.receipt.etag | type) == "string")
             elif .status == "blocked" then
-              .failure_class == "acquisition_failure" and .receipt == null
+              (.failure_class == "acquisition_failure" or .failure_class == "ledger_incomplete") and
+              .receipt == null
             else false end)
           ' >/dev/null
 
