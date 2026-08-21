@@ -5,11 +5,13 @@ from __future__ import annotations
 
 import json
 import unittest
+from unittest.mock import patch
 
 from scripts import acquire_eshm20_site_model_profile as worker
 from scripts import run_eshm20_site_model_profile_action as subject
 
 SHA = "a" * 40
+OTHER_SHA = "c" * 40
 
 
 def request(**updates: object) -> str:
@@ -83,6 +85,11 @@ def profile() -> dict[str, object]:
         "publication_authorized": False,
         "model_use_authorized": False,
     }
+
+
+def terminal_body(execution_sha: str) -> str:
+    terminal = subject._run_site_profile(execution_sha=execution_sha, acquirer=profile)
+    return subject.RESULT_MARKER + "\n" + json.dumps(terminal, sort_keys=True, separators=(",", ":"))
 
 
 class Eshm20SiteModelProfileActionTests(unittest.TestCase):
@@ -178,12 +185,32 @@ class Eshm20SiteModelProfileActionTests(unittest.TestCase):
                 subject._validate_worker_profile(value)
 
     def test_terminal_result_parser_is_closed_and_deterministic(self):
-        terminal = subject._run_site_profile(execution_sha=SHA, acquirer=profile)
-        body = subject.RESULT_MARKER + "\n" + json.dumps(terminal, sort_keys=True, separators=(",", ":"))
+        body = terminal_body(SHA)
         self.assertTrue(subject._parse_trusted_terminal_result(body, execution_sha=SHA))
+        self.assertFalse(subject._parse_trusted_terminal_result(body, execution_sha=OTHER_SHA))
         self.assertFalse(subject._parse_trusted_terminal_result("ordinary comment", execution_sha=SHA))
         with self.assertRaises(subject.SiteModelProfileActionError):
             subject._parse_trusted_terminal_result(body + "\n" + subject.RESULT_MARKER, execution_sha=SHA)
+
+    def test_dedup_skips_valid_prior_sha_result_and_finds_current_sha(self):
+        prior = {"user": {"login": subject.TRUSTED_RESULT_LOGIN}, "body": terminal_body(OTHER_SHA)}
+        current = {"user": {"login": subject.TRUSTED_RESULT_LOGIN}, "body": terminal_body(SHA)}
+        with patch.object(subject, "fetch_repository_comments", return_value=[prior]):
+            self.assertFalse(
+                subject.has_terminal_site_profile_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="test-token",
+                    execution_sha=SHA,
+                )
+            )
+        with patch.object(subject, "fetch_repository_comments", return_value=[prior, current]):
+            self.assertTrue(
+                subject.has_terminal_site_profile_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="test-token",
+                    execution_sha=SHA,
+                )
+            )
 
 
 if __name__ == "__main__":
