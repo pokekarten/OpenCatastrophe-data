@@ -10,9 +10,14 @@ on:
 permissions:
   contents: read
 
+# Only owner-authored, request-shaped comments share the serialized runtime lane.
+# Unrelated comments get a unique group and therefore cannot occupy or replace
+# a pending trusted runtime request. The workflow-level lock spans validation,
+# dedup, provider execution, and terminal publication.
 concurrency:
-  group: esrm20-greece-rupture-openquake3121-runtime-${{ github.repository }}
+  group: esrm20-greece-rupture-openquake3121-runtime-${{ github.event.issue.number == 285 && github.event.comment.user.login == github.event.repository.owner.login && github.event.comment.author_association == 'OWNER' && contains(github.event.comment.body, '<!-- oc-eq1-esrm20-scenario-v10-greece-rupture-openquake3121-runtime-request-v1 -->') && 'authorized-v1' || github.event.comment.id }}
   cancel-in-progress: false
+  queue: max
 
 jobs:
   validate-request:
