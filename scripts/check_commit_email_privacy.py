@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Fail closed when newly introduced Git commits expose personal mail metadata."""
+"""Fail closed when newly introduced Git commits expose blocked personal email addresses."""
 
 from __future__ import annotations
 
@@ -12,6 +12,13 @@ import sys
 
 _SHA_RE = re.compile(r"^[0-9a-fA-F]{40,64}$")
 _PERSONAL_EMAIL_RE = re.compile(r"@(gmail|googlemail)\.com$", re.IGNORECASE)
+_PERSONAL_EMAIL_IN_TEXT_RE = re.compile(
+    r"(?<![A-Za-z0-9._%+-])"
+    r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+"
+    r"@(gmail|googlemail)\.com"
+    r"(?![A-Za-z0-9.-])",
+    re.IGNORECASE,
+)
 
 
 def _git(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -45,8 +52,16 @@ def _metadata(commit: str) -> tuple[str, str, str]:
     return parts[0], parts[1].strip(), parts[2].strip()
 
 
+def _message(commit: str) -> str:
+    return _git("show", "-s", "--format=%B", commit).stdout
+
+
 def _is_personal_email(email: str) -> bool:
     return bool(_PERSONAL_EMAIL_RE.search(email.strip()))
+
+
+def _message_contains_personal_email(message: str) -> bool:
+    return bool(_PERSONAL_EMAIL_IN_TEXT_RE.search(message))
 
 
 def check_range(base: str, head: str) -> int:
@@ -62,6 +77,8 @@ def check_range(base: str, head: str) -> int:
             violations.append((commit_sha, "author"))
         if _is_personal_email(committer_email):
             violations.append((commit_sha, "committer"))
+        if _message_contains_personal_email(_message(commit)):
+            violations.append((commit_sha, "message"))
 
     if not violations:
         print(
@@ -71,14 +88,15 @@ def check_range(base: str, head: str) -> int:
         return 0
 
     for commit_sha, field in violations:
-        print(
-            f"VIOLATION: {commit_sha} {field}.email uses a blocked personal mail domain",
-            file=sys.stderr,
-        )
+        if field == "message":
+            detail = "commit.message contains a blocked personal mail domain"
+        else:
+            detail = f"{field}.email uses a blocked personal mail domain"
+        print(f"VIOLATION: {commit_sha} {detail}", file=sys.stderr)
 
     print(
-        "BLOCKED: newly introduced commit metadata contains a blocked personal mail domain; "
-        "use the repository-approved GitHub noreply address",
+        "BLOCKED: newly introduced commits contain a blocked personal mail domain; "
+        "remove it or use the repository-approved GitHub noreply address",
         file=sys.stderr,
     )
     return 1
