@@ -151,6 +151,7 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            (. | keys) == (["action","canonical_receipt_pair_verified","comparison","comparison_executed","execution_sha","external_bytes_persisted","failure_class","insured_value_semantics_verified","model_use_authorized","project186_equivalence_verified","publication_authorized","raw_rows_returned","runtime_receipt_identity","schema_version","source_crs_datum_epsg_verified","source_issue","source_receipt_identity","status","target_sha","value_structural_wiring_verified"] | sort) and
             .schema_version == "oc-esrm20-kosovo-source-runtime-compare-result-v1" and
             .action == "esrm20_kosovo_source_runtime_compare" and
             .source_issue == 282 and
@@ -188,6 +189,7 @@ jobs:
               .comparison_executed == true and
               .canonical_receipt_pair_verified == true and
               (.comparison | type) == "object" and
+              (.comparison | keys) == (["canonical_receipt_pair_verified","comparison_key","external_bytes_persisted","insured_value_semantics_verified","model_use_authorized","numeric_comparisons","project186_equivalence_verified","publication_authorized","raw_rows_returned","record_count","runtime_identity","schema_version","source_crs_datum_epsg_verified","source_identity","value_structural_wiring_verified"] | sort) and
               .comparison.schema_version == "oc-esrm20-kosovo-source-runtime-decimal-comparison-v0" and
               .comparison.record_count == 1093 and
               .comparison.canonical_receipt_pair_verified == true and
@@ -209,6 +211,9 @@ jobs:
                 "repository_path":"Exposure/OQ_Exposure_Input_Kosovo_Res.csv",
                 "sha256":"12a20d393c8d677d304263aed96eb05f81098104fd7e3fb0d119aafc336aa00f"
               } and
+              (.comparison.comparison_key | keys) == (["exact_key_set_equal","key_set_sha256","provider_business_key_authorized","runtime_fields","runtime_unique_count","source_fields","source_unique_count"] | sort) and
+              .comparison.comparison_key.source_fields == ["LONGITUDE","LATITUDE","TAXONOMY","OCCUPANCY","NAME_2","ID_2","ID_1","NAME_1"] and
+              .comparison.comparison_key.runtime_fields == ["lon","lat","taxonomy","occupancy","name_2","id_2","id_1","name_1"] and
               .comparison.comparison_key.provider_business_key_authorized == false and
               .comparison.comparison_key.source_unique_count == 1093 and
               .comparison.comparison_key.runtime_unique_count == 1093 and
@@ -216,13 +221,27 @@ jobs:
               (.comparison.comparison_key.key_set_sha256 | test("^[0-9a-f]{64}$")) and
               (.comparison.numeric_comparisons | type) == "array" and
               (.comparison.numeric_comparisons | length) == 5 and
+              (.comparison.numeric_comparisons | map([.source_field,.runtime_field])) == [
+                ["BUILDINGS","number"],
+                ["TOTAL_REPL_COST_EUR","structural"],
+                ["OCCUPANTS_PER_ASSET_DAY","day"],
+                ["OCCUPANTS_PER_ASSET_NIGHT","night"],
+                ["OCCUPANTS_PER_ASSET_TRANSIT","transit"]
+              ] and
               all(.comparison.numeric_comparisons[];
+                (. | keys) == (["all_exact_decimal_equal","exact_decimal_equal_count","maximum_absolute_difference","non_equal_count","record_count","relation_sha256","runtime_field","source_field"] | sort) and
                 .record_count == 1093 and
                 (.exact_decimal_equal_count | type) == "number" and
+                (.exact_decimal_equal_count | floor) == .exact_decimal_equal_count and
+                .exact_decimal_equal_count >= 0 and
                 (.non_equal_count | type) == "number" and
+                (.non_equal_count | floor) == .non_equal_count and
+                .non_equal_count >= 0 and
                 (.exact_decimal_equal_count + .non_equal_count) == 1093 and
                 (.all_exact_decimal_equal | type) == "boolean" and
+                (.all_exact_decimal_equal == (.non_equal_count == 0)) and
                 (.maximum_absolute_difference | type) == "string" and
+                ((.maximum_absolute_difference == "0") == .all_exact_decimal_equal) and
                 (.relation_sha256 | test("^[0-9a-f]{64}$"))
               ) and
               .comparison.project186_equivalence_verified == false and
