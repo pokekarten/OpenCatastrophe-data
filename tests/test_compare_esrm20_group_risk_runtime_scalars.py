@@ -211,7 +211,10 @@ class GroupRiskRuntimeScalarComparisonTests(unittest.TestCase):
             ("project_id", 999),
             ("project_path", "wrong/project"),
             ("commit_sha", "f" * 40),
-            ("openquake_reference", {"repository": "wrong", "tag": "v0", "commit_sha": "f" * 40}),
+            (
+                "openquake_reference",
+                {"repository": "wrong", "tag": "v0", "commit_sha": "f" * 40},
+            ),
         )
         for candidate in ("group1", "group2"):
             for field, value in mutations:
@@ -240,9 +243,48 @@ class GroupRiskRuntimeScalarComparisonTests(unittest.TestCase):
                 group1[field] = value
                 group2[field] = value
                 with self.assertRaisesRegex(
-                    subject.RiskRuntimeScalarComparisonError, "drifted from frozen projector authority"
+                    subject.RiskRuntimeScalarComparisonError,
+                    "drifted from frozen projector authority",
                 ):
                     _compare(group1, group2)
+
+    def test_rejects_one_sided_projector_lineage_update(self) -> None:
+        for profile_field, module_field, divergent_value in (
+            ("dataset_id", "DATASET_ID", "divergent-dataset"),
+            ("project_id", "PROJECT_ID", 999),
+            ("project_path", "PROJECT_PATH", "divergent/project"),
+            ("commit_sha", "COMMIT_SHA", "f" * 40),
+        ):
+            with self.subTest(field=profile_field):
+                group1 = _profile("group1")
+                group2 = _profile("group2")
+                group2[profile_field] = divergent_value
+
+                with mock.patch.object(
+                    subject.group2_runtime, module_field, divergent_value
+                ):
+                    with self.assertRaisesRegex(
+                        subject.RiskRuntimeScalarComparisonError,
+                        f"group source lineage diverged at {profile_field}",
+                    ):
+                        _compare(group1, group2)
+
+    def test_rejects_one_sided_openquake_reference_update(self) -> None:
+        group1 = _profile("group1")
+        group2 = _profile("group2")
+        divergent_openquake_commit = "e" * 40
+        openquake_reference = group2["openquake_reference"]
+        self.assertIsInstance(openquake_reference, dict)
+        openquake_reference["commit_sha"] = divergent_openquake_commit
+
+        with mock.patch.object(
+            subject.group2_runtime, "OPENQUAKE_COMMIT", divergent_openquake_commit
+        ):
+            with self.assertRaisesRegex(
+                subject.RiskRuntimeScalarComparisonError,
+                "group source lineage diverged at openquake_reference",
+            ):
+                _compare(group1, group2)
 
     def test_group1_failure_stops_before_group2_projection(self) -> None:
         with (

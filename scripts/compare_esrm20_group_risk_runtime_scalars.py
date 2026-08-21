@@ -48,6 +48,13 @@ _REQUIRED_FALSE_CEILINGS = (
     "publication_authorized",
     "model_use_authorized",
 )
+_SHARED_SOURCE_LINEAGE_FIELDS = (
+    "dataset_id",
+    "project_id",
+    "project_path",
+    "commit_sha",
+    "openquake_reference",
+)
 
 
 class RiskRuntimeScalarComparisonError(ValueError):
@@ -161,6 +168,18 @@ def _validate_profile(
     return runtime_scalars
 
 
+def _validate_shared_source_lineage(
+    group1_profile: dict[str, Any], group2_profile: dict[str, Any]
+) -> None:
+    """Reject comparisons whose two individually valid projectors changed lineage."""
+
+    for field in _SHARED_SOURCE_LINEAGE_FIELDS:
+        if group1_profile[field] != group2_profile[field]:
+            raise RiskRuntimeScalarComparisonError(
+                f"group source lineage diverged at {field}"
+            )
+
+
 def _relation(
     *,
     group1_present: bool,
@@ -201,6 +220,7 @@ def compare_group_risk_runtime_scalars(
         expected_byte_count=group2_runtime.GROUP2_SPEC.byte_count,
         expected_sha256=group2_runtime.GROUP2_SPEC.sha256,
     )
+    _validate_shared_source_lineage(group1_profile, group2_profile)
 
     comparisons = []
     for value_field, present_field in _FIELD_SPECS:
