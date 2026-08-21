@@ -11,6 +11,7 @@ from scripts import run_esrm20_kosovo_site_profile_action as subject
 
 
 SHA = "a" * 40
+OTHER_SHA = "c" * 40
 
 
 def _request(**overrides):
@@ -88,6 +89,11 @@ def _payload():
     }
 
 
+def _terminal_body(execution_sha: str) -> str:
+    result = subject._run_site_profile(execution_sha=execution_sha, acquirer=_payload)
+    return subject.RESULT_MARKER + "\n" + json.dumps(result, separators=(",", ":"))
+
+
 class KosovoSiteProfileActionTests(unittest.TestCase):
     def test_request_is_exactly_bound_to_issue_dataset_and_execution_sha(self):
         result = subject.validate_request(_request(), expected_issue=459, execution_sha=SHA)
@@ -132,8 +138,7 @@ class KosovoSiteProfileActionTests(unittest.TestCase):
             subject._validate_profile_payload(payload)
 
     def test_dedup_trusts_only_actions_bot_and_exact_execution(self):
-        result = subject._run_site_profile(execution_sha=SHA, acquirer=_payload)
-        body = subject.RESULT_MARKER + "\n" + json.dumps(result, separators=(",", ":"))
+        body = _terminal_body(SHA)
         comments = [
             {"id": 1, "user": {"login": "pokekarten"}, "body": body},
             {"id": 2, "user": {"login": "github-actions[bot]"}, "body": body},
@@ -146,6 +151,55 @@ class KosovoSiteProfileActionTests(unittest.TestCase):
                     execution_sha=SHA,
                 )
             )
+
+    def test_dedup_skips_valid_prior_sha_and_still_finds_current_sha(self):
+        prior = {
+            "id": 1,
+            "user": {"login": subject.TRUSTED_RESULT_LOGIN},
+            "body": _terminal_body(OTHER_SHA),
+        }
+        current = {
+            "id": 2,
+            "user": {"login": subject.TRUSTED_RESULT_LOGIN},
+            "body": _terminal_body(SHA),
+        }
+        with mock.patch.object(subject, "fetch_repository_comments", return_value=[prior]):
+            self.assertFalse(
+                subject.has_terminal_site_profile_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="x",
+                    execution_sha=SHA,
+                )
+            )
+        with mock.patch.object(
+            subject, "fetch_repository_comments", return_value=[prior, current]
+        ):
+            self.assertTrue(
+                subject.has_terminal_site_profile_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="x",
+                    execution_sha=SHA,
+                )
+            )
+
+    def test_prior_sha_result_with_mismatched_target_sha_fails_closed(self):
+        result = subject._run_site_profile(execution_sha=OTHER_SHA, acquirer=_payload)
+        result["target_sha"] = SHA
+        body = subject.RESULT_MARKER + "\n" + json.dumps(result, separators=(",", ":"))
+        comments = [
+            {
+                "id": 2,
+                "user": {"login": subject.TRUSTED_RESULT_LOGIN},
+                "body": body,
+            }
+        ]
+        with mock.patch.object(subject, "fetch_repository_comments", return_value=comments):
+            with self.assertRaises(subject.SiteProfileActionError):
+                subject.has_terminal_site_profile_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="x",
+                    execution_sha=SHA,
+                )
 
     def test_trusted_malformed_terminal_result_fails_closed(self):
         comments = [
