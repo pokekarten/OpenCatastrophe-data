@@ -25,7 +25,11 @@ class GreeceRuptureOpenQuake3121RuntimeWorkflowTests(unittest.TestCase):
             workflow,
         )
         self.assertIn("github.event.comment.author_association == 'OWNER'", workflow)
-        self.assertIn("ref: ${{ github.event.repository.default_branch }}", workflow)
+        self.assertIn("ref: ${{ github.sha }}", workflow)
+        self.assertNotIn(
+            "ref: ${{ github.event.repository.default_branch }}",
+            workflow,
+        )
         self.assertNotIn("pull_request_target:", workflow)
         self.assertNotIn("workflow_dispatch:", workflow)
 
