@@ -129,7 +129,23 @@ class KosovoResidentialOQ313RunTests(unittest.TestCase):
         self.assertEqual(env["PYTHONPATH"], subject.OPENQUAKE_SOURCE_OVERLAY)
         self.assertEqual(document["execution"]["command"], list(subject.COMMAND))
         self.assertIs(document["execution"]["preprocess_openblas_injected"], True)
+        self.assertIs(document["execution"]["distribution_state_receipted"], True)
         self.assertEqual(document["resolved_runtime"]["concurrent_tasks"], 0)
+        self.assertEqual(
+            document["loss_semantics"],
+            {
+                "loss_stage": "thresholded_ground_up",
+                "loss_type": "structural",
+                "minimum_asset_loss_structural": 2000,
+                "quantity": "thresholded_ground_up_structural_replacement_cost_loss",
+                "threshold_is_deductible": False,
+                "threshold_predicate": (
+                    "asset_event_loss > minimum_asset_loss_structural"
+                ),
+                "threshold_source": "exact_group1_provider_config",
+                "unit": "EUR",
+            },
+        )
         self.assertEqual(document["status"], "pass")
         self.assertEqual(receipt["byte_count"], len(payload))
         self.assertEqual(receipt["sha256"], hashlib.sha256(payload).hexdigest())
@@ -204,6 +220,18 @@ class KosovoResidentialOQ313RunTests(unittest.TestCase):
             "^source minimum_asset_loss structural threshold drifted$",
         ):
             subject._validate_source_runtime_declarations(bad_threshold)
+
+    def test_structural_threshold_can_coexist_with_other_loss_type_entries(self) -> None:
+        config = derived_config().replace(
+            b"{'structural': 2000}",
+            b"{'structural': 2000, 'occupants': 0}",
+        )
+        projected = subject._validate_source_runtime_declarations(config)
+        self.assertEqual(projected["minimum_asset_loss_structural"], 2000)
+        self.assertEqual(
+            projected["minimum_asset_loss_provenance"],
+            "source_declared",
+        )
 
     def test_concurrent_tasks_zero_is_valid_but_negative_and_bool_are_rejected(self) -> None:
         self.assertEqual(
