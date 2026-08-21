@@ -142,6 +142,12 @@ class ExactKosovoMappingJoinTests(unittest.TestCase):
 
     def test_paired_mapping_authority_drift_fails_before_taxonomy_extraction(self):
         cases = (
+            (
+                "_MAPPING_DATASET_ID",
+                "DATASET_ID",
+                "efehr.esrm20.other",
+                "dataset id",
+            ),
             ("_MAPPING_PROJECT_ID", "PROJECT_ID", 270, "project id"),
             ("_MAPPING_PROJECT_PATH", "PROJECT_PATH", "efehr/other", "project path"),
             ("_MAPPING_COMMIT_SHA", "COMMIT_SHA", "0" * 40, "commit"),
