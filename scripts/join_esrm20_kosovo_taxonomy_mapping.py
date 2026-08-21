@@ -47,12 +47,23 @@ RIGHTS_TRANSFORMATION_NOTICE = (
 )
 
 # Bind the production path to the exact object already receipted/profiled.
-_MAPPING_BYTE_COUNT = 83_585
-_MAPPING_SHA256 = "94b9ee800e9435a346ca200ecf34d0d46c8d8b895cc56e3be85c323006b4ee4c"
-_MAPPING_PROJECT_ID = 269
-_MAPPING_PROJECT_PATH = "efehr/esrm20"
-_MAPPING_COMMIT_SHA = "05f83bbc9df81d02ee8ddb1801d9d781355ce783"
-_MAPPING_REPOSITORY_PATH = "Vulnerability/esrm20_exposure_vulnerability_mapping.csv"
+# Keep separate import-time canonical values so paired mutation of the local
+# aliases and the upstream profile module cannot silently move the authority.
+_FROZEN_MAPPING_DATASET_ID = "efehr.esrm20.risk-inputs.v1.0"
+_FROZEN_MAPPING_BYTE_COUNT = 83_585
+_FROZEN_MAPPING_SHA256 = "94b9ee800e9435a346ca200ecf34d0d46c8d8b895cc56e3be85c323006b4ee4c"
+_FROZEN_MAPPING_PROJECT_ID = 269
+_FROZEN_MAPPING_PROJECT_PATH = "efehr/esrm20"
+_FROZEN_MAPPING_COMMIT_SHA = "05f83bbc9df81d02ee8ddb1801d9d781355ce783"
+_FROZEN_MAPPING_REPOSITORY_PATH = "Vulnerability/esrm20_exposure_vulnerability_mapping.csv"
+
+_MAPPING_DATASET_ID = _FROZEN_MAPPING_DATASET_ID
+_MAPPING_BYTE_COUNT = _FROZEN_MAPPING_BYTE_COUNT
+_MAPPING_SHA256 = _FROZEN_MAPPING_SHA256
+_MAPPING_PROJECT_ID = _FROZEN_MAPPING_PROJECT_ID
+_MAPPING_PROJECT_PATH = _FROZEN_MAPPING_PROJECT_PATH
+_MAPPING_COMMIT_SHA = _FROZEN_MAPPING_COMMIT_SHA
+_MAPPING_REPOSITORY_PATH = _FROZEN_MAPPING_REPOSITORY_PATH
 
 
 class KosovoMappingJoinError(ValueError):
@@ -61,15 +72,53 @@ class KosovoMappingJoinError(ValueError):
 
 def _require_frozen_mapping_authority() -> None:
     expected = (
-        (mapping_source.PROJECT_ID, _MAPPING_PROJECT_ID, "project id"),
-        (mapping_source.PROJECT_PATH, _MAPPING_PROJECT_PATH, "project path"),
-        (mapping_source.COMMIT_SHA, _MAPPING_COMMIT_SHA, "commit"),
-        (mapping_source.REPOSITORY_PATH, _MAPPING_REPOSITORY_PATH, "path"),
-        (mapping_source.EXPECTED_BYTE_COUNT, _MAPPING_BYTE_COUNT, "byte count"),
-        (mapping_source.EXPECTED_SHA256, _MAPPING_SHA256, "SHA-256"),
+        (
+            _MAPPING_DATASET_ID,
+            mapping_source.DATASET_ID,
+            _FROZEN_MAPPING_DATASET_ID,
+            "dataset id",
+        ),
+        (
+            _MAPPING_PROJECT_ID,
+            mapping_source.PROJECT_ID,
+            _FROZEN_MAPPING_PROJECT_ID,
+            "project id",
+        ),
+        (
+            _MAPPING_PROJECT_PATH,
+            mapping_source.PROJECT_PATH,
+            _FROZEN_MAPPING_PROJECT_PATH,
+            "project path",
+        ),
+        (
+            _MAPPING_COMMIT_SHA,
+            mapping_source.COMMIT_SHA,
+            _FROZEN_MAPPING_COMMIT_SHA,
+            "commit",
+        ),
+        (
+            _MAPPING_REPOSITORY_PATH,
+            mapping_source.REPOSITORY_PATH,
+            _FROZEN_MAPPING_REPOSITORY_PATH,
+            "path",
+        ),
+        (
+            _MAPPING_BYTE_COUNT,
+            mapping_source.EXPECTED_BYTE_COUNT,
+            _FROZEN_MAPPING_BYTE_COUNT,
+            "byte count",
+        ),
+        (
+            _MAPPING_SHA256,
+            mapping_source.EXPECTED_SHA256,
+            _FROZEN_MAPPING_SHA256,
+            "SHA-256",
+        ),
     )
-    for observed, required, label in expected:
-        if type(observed) is not type(required) or observed != required:
+    for local, upstream, required, label in expected:
+        if type(local) is not type(required) or local != required:
+            raise KosovoMappingJoinError(f"frozen mapping {label} authority drifted")
+        if type(upstream) is not type(required) or upstream != required:
             raise KosovoMappingJoinError(f"frozen mapping {label} authority drifted")
 
 
@@ -297,7 +346,7 @@ def join_verified_kosovo_taxonomy_mapping(
             "taxonomy_value_set_sha256": taxonomy["taxonomy_value_set_sha256"],
         },
         "mapping_source": {
-            "dataset_id": mapping_source.DATASET_ID,
+            "dataset_id": _MAPPING_DATASET_ID,
             "project_id": _MAPPING_PROJECT_ID,
             "project_path": _MAPPING_PROJECT_PATH,
             "commit_sha": _MAPPING_COMMIT_SHA,
