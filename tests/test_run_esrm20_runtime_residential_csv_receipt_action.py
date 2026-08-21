@@ -9,6 +9,7 @@ from unittest import mock
 
 from scripts import run_esrm20_runtime_residential_csv_receipt_action as subject
 from scripts.acquire_efehr_gitlab_receipt import EfehrAcquisitionError
+from scripts.prepare_agent_action_result import LedgerError
 
 SHA = "a" * 40
 OLD_SHA = "b" * 40
@@ -125,6 +126,39 @@ class RuntimeResidentialCsvReceiptActionTests(unittest.TestCase):
         self.assertEqual(result["failure_class"], "acquisition_failure")
         self.assertIsNone(result["receipt"])
         self.assertNotIn("private transport detail", json.dumps(result))
+
+    def test_ledger_incomplete_is_bounded_preprovider_terminal(self) -> None:
+        result = subject.ledger_incomplete_result(execution_sha=SHA)
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["failure_class"], "ledger_incomplete")
+        self.assertIsNone(result["receipt"])
+        self.assertEqual(subject.parse_terminal_result(terminal_body(result)), SHA)
+        for field in (
+            "content_interpreted",
+            "taxonomy_semantics_verified",
+            "crs_semantics_verified",
+            "value_semantics_verified",
+            "external_bytes_persisted",
+            "publication_authorized",
+            "model_use_authorized",
+        ):
+            self.assertIs(result[field], False)
+
+    def test_ledger_read_failure_still_fails_closed_before_provider(self) -> None:
+        with mock.patch.object(
+            subject,
+            "fetch_repository_comments",
+            side_effect=LedgerError("private ledger detail"),
+        ):
+            with self.assertRaisesRegex(
+                subject.RuntimeResidentialCsvReceiptActionError,
+                "ledger is incomplete",
+            ):
+                subject.has_terminal_result(
+                    repository="pokekarten/OpenCatastrophe-data",
+                    token="x",
+                    execution_sha=SHA,
+                )
 
     def test_worker_identity_and_authority_drift_fail_closed(self) -> None:
         for forged in (
