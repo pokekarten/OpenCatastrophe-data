@@ -151,6 +151,21 @@ class KosovoResidentialOQ313RunTests(unittest.TestCase):
         self.assertEqual(receipt["sha256"], hashlib.sha256(payload).hexdigest())
         self.assertTrue(payload.endswith(b"\n"))
 
+    def test_native_child_output_is_suppressed_at_subprocess_boundary(self) -> None:
+        completed = subject.subprocess.CompletedProcess(list(subject.COMMAND), 0)
+        env = {"PATH": "/fixed"}
+        with mock.patch.object(subject.subprocess, "run", return_value=completed) as run:
+            returncode = subject._execute_native(subject.COMMAND, env)
+
+        self.assertEqual(returncode, 0)
+        run.assert_called_once_with(
+            list(subject.COMMAND),
+            env=env,
+            check=False,
+            stdout=subject.subprocess.DEVNULL,
+            stderr=subject.subprocess.DEVNULL,
+        )
+
     def test_runtime_identity_must_pin_exact_oq313_source_before_execution(self) -> None:
         identity = runtime_identity()
         identity["commit_sha"] = "0" * 40
