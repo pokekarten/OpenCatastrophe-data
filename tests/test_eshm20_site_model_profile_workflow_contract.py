@@ -42,7 +42,7 @@ class Eshm20SiteModelProfileWorkflowContractTests(unittest.TestCase):
     def test_publisher_is_checkout_free_and_authority_ceiling_is_explicit(self):
         publish = self.text.split("publish-site-profile:", 1)[1]
         self.assertNotIn("actions/checkout", publish)
-        self.assertIn('"repos/$GITHUB_REPOSITORY/issues/281/comments"', publish)
+        self.assertEqual(publish.count('"repos/$GITHUB_REPOSITORY/issues/281/comments"'), 2)
         self.assertIn(".schema_interpretation_authorized == false", publish)
         self.assertIn(".crs_authorized == false", publish)
         self.assertIn(".site_response_authorized == false", publish)
@@ -50,12 +50,49 @@ class Eshm20SiteModelProfileWorkflowContractTests(unittest.TestCase):
         self.assertIn(".publication_authorized == false", publish)
         self.assertIn(".model_use_authorized == false", publish)
 
+    def test_derived_publication_notice_is_fixed_bounded_and_precedes_result(self):
+        publish = self.text.split("publish-site-profile:", 1)[1]
+        self.assertIn(
+            'PUBLICATION_NOTICE_MARKER: "<!-- oc-eq1-eshm20-site-model-profile-publication-notice-v1 -->"',
+            publish,
+        )
+        self.assertIn(
+            'ESHM20_ATTRIBUTION: "European Seismic Hazard Model 2020 (ESHM20), EFEHR"',
+            publish,
+        )
+        self.assertIn('ESHM20_LICENSE_ID: "CC-BY-4.0"', publish)
+        self.assertIn(
+            'ESHM20_LICENSE_URL: "https://creativecommons.org/licenses/by/4.0/"',
+            publish,
+        )
+        self.assertIn(
+            'ESHM20_CITATION: "Danciu et al. (2021), EFEHR Technical Report 001 v1.0.0"',
+            publish,
+        )
+        self.assertIn('ESHM20_CITATION_URL: "https://doi.org/10.12686/a15"', publish)
+        self.assertIn(
+            'DERIVED_PUBLICATION_SCOPE: "bounded-derived-structural-profile-metadata-only"',
+            publish,
+        )
+        self.assertIn("Derived evidence publication authorized: true", publish)
+        self.assertIn("Execution SHA: $EXECUTION_SHA", publish)
+        self.assertIn(
+            "Provider/raw publication authority: false; model-use authority: false.",
+            publish,
+        )
+        self.assertLess(
+            publish.index("eshm20-site-profile-publication-notice.json"),
+            publish.index("eshm20-site-profile-comment.json"),
+        )
+
     def test_workflow_calls_only_fixed_source_specific_action(self):
         self.assertIn("python scripts/run_eshm20_site_model_profile_action.py", self.text)
         self.assertNotIn("curl ", self.text)
         self.assertNotIn("wget ", self.text)
         self.assertNotIn("http://", self.text)
-        self.assertNotIn("https://", self.text)
+        self.assertEqual(self.text.count("https://creativecommons.org/licenses/by/4.0/"), 2)
+        self.assertEqual(self.text.count("https://doi.org/10.12686/a15"), 2)
+        self.assertEqual(self.text.count("https://"), 4)
 
 
 if __name__ == "__main__":
