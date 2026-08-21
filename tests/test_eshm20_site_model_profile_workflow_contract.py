@@ -71,15 +71,18 @@ class Eshm20SiteModelProfileWorkflowContractTests(unittest.TestCase):
         )
         self.assertIn('ESHM20_CITATION_URL: "https://doi.org/10.12686/a15"', publish)
         self.assertIn(
-            'DERIVED_PUBLICATION_SCOPE: "bounded-derived-structural-profile-metadata-only"',
+            'DERIVED_PUBLICATION_SCOPE: "bounded-derived-site-profile-action-evidence-only"',
             publish,
         )
         self.assertIn(
-            'DERIVED_CHANGE_NOTICE: "Derived structural-profile metadata computed from the exact receipt-bound ESHM20 site CSV; provider bytes and rows are not reproduced."',
+            'DERIVED_CHANGE_NOTICE: "Bounded action evidence for an attempted structural profile of the fixed receipt-bound ESHM20 site CSV; provider bytes and rows are not reproduced."',
             publish,
         )
-        self.assertIn("Derived evidence publication authorized: true", publish)
-        self.assertIn("Derived publication scope: $DERIVED_PUBLICATION_SCOPE", publish)
+        self.assertIn("Bounded derived action evidence publication authorized: true", publish)
+        self.assertIn(
+            "Derived action-evidence publication scope: $DERIVED_PUBLICATION_SCOPE",
+            publish,
+        )
         self.assertIn("Change notice: $DERIVED_CHANGE_NOTICE", publish)
         self.assertIn("Execution SHA: $EXECUTION_SHA", publish)
         self.assertIn(
@@ -90,6 +93,17 @@ class Eshm20SiteModelProfileWorkflowContractTests(unittest.TestCase):
             publish.index("eshm20-site-profile-publication-notice.json"),
             publish.index("eshm20-site-profile-comment.json"),
         )
+
+    def test_blocked_result_publication_notice_is_status_neutral(self):
+        publish = self.text.split("publish-site-profile:", 1)[1]
+        self.assertIn(
+            '.status == "blocked" and .failure_class == "site_profile_failure" and .profile == null',
+            publish,
+        )
+        self.assertIn("bounded-derived-site-profile-action-evidence-only", publish)
+        self.assertIn("for an attempted structural profile", publish)
+        self.assertNotIn("bounded-derived-structural-profile-metadata-only", publish)
+        self.assertNotIn("Derived structural-profile metadata computed", publish)
 
     def test_workflow_calls_only_fixed_source_specific_action(self):
         self.assertIn("python scripts/run_eshm20_site_model_profile_action.py", self.text)
