@@ -35,6 +35,7 @@ def commit_file(
     *,
     author_email: str = "dev@users.noreply.github.com",
     committer_email: str = "dev@users.noreply.github.com",
+    message: str | None = None,
 ) -> str:
     target = repo / path
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -49,7 +50,7 @@ def commit_file(
             "GIT_COMMITTER_EMAIL": committer_email,
         }
     )
-    run_git(repo, "commit", "-m", f"add {path}", env=env)
+    run_git(repo, "commit", "-m", message or f"add {path}", env=env)
     return run_git(repo, "rev-parse", "HEAD")
 
 
@@ -80,7 +81,7 @@ class CommitEmailPrivacyTests(unittest.TestCase):
         self.assertIn("PASS", result.stdout)
 
     def test_gmail_author_is_blocked_without_reprinting_address(self) -> None:
-        blocked = "person@gmail.com"
+        blocked = "synthetic-author@gmail.com"
         head = commit_file(self.repo, "author.txt", "bad\n", author_email=blocked)
         result = self.check(head)
         self.assertEqual(result.returncode, 1)
@@ -88,7 +89,7 @@ class CommitEmailPrivacyTests(unittest.TestCase):
         self.assertNotIn(blocked, result.stderr)
 
     def test_googlemail_committer_is_blocked_without_reprinting_address(self) -> None:
-        blocked = "person@googlemail.com"
+        blocked = "synthetic-committer@googlemail.com"
         head = commit_file(self.repo, "committer.txt", "bad\n", committer_email=blocked)
         result = self.check(head)
         self.assertEqual(result.returncode, 1)
@@ -96,8 +97,47 @@ class CommitEmailPrivacyTests(unittest.TestCase):
         self.assertNotIn(blocked, result.stderr)
 
     def test_domain_match_is_case_insensitive(self) -> None:
-        head = commit_file(self.repo, "mixed.txt", "bad\n", author_email="person@GMAIL.COM")
+        head = commit_file(
+            self.repo,
+            "mixed.txt",
+            "bad\n",
+            author_email="synthetic-mixed@GMAIL.COM",
+        )
         self.assertEqual(self.check(head).returncode, 1)
+
+    def test_blocked_domain_in_commit_trailer_is_blocked_without_reprinting_address(self) -> None:
+        blocked = "synthetic-contributor@gmail.com"
+        head = commit_file(
+            self.repo,
+            "trailer.txt",
+            "bad\n",
+            message=f"add trailer\n\nCo-authored-by: Synthetic Contributor <{blocked}>",
+        )
+        result = self.check(head)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("commit.message contains a blocked personal mail domain", result.stderr)
+        self.assertNotIn(blocked, result.stderr)
+
+    def test_blocked_domain_in_commit_body_is_case_insensitive(self) -> None:
+        head = commit_file(
+            self.repo,
+            "body.txt",
+            "bad\n",
+            message="document synthetic contact SYNTHETIC.USER@GOOGLEMAIL.COM",
+        )
+        self.assertEqual(self.check(head).returncode, 1)
+
+    def test_domain_prefix_or_suffix_does_not_false_positive(self) -> None:
+        head = commit_file(
+            self.repo,
+            "lookalike.txt",
+            "ok\n",
+            message=(
+                "document lookalikes synthetic@gmail.com.example "
+                "and synthetic@notgmail.com"
+            ),
+        )
+        self.assertEqual(self.check(head).returncode, 0)
 
     def test_malformed_base_fails_closed(self) -> None:
         head = commit_file(self.repo, "head.txt", "ok\n")
@@ -107,7 +147,12 @@ class CommitEmailPrivacyTests(unittest.TestCase):
 
     def test_all_new_commits_are_checked(self) -> None:
         commit_file(self.repo, "first.txt", "ok\n")
-        head = commit_file(self.repo, "second.txt", "bad\n", author_email="person@gmail.com")
+        head = commit_file(
+            self.repo,
+            "second.txt",
+            "bad\n",
+            author_email="synthetic-second@gmail.com",
+        )
         self.assertEqual(self.check(head).returncode, 1)
 
     def test_workflow_uses_base_trusted_pull_request_target_boundary(self) -> None:
