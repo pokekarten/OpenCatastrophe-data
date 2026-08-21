@@ -128,7 +128,7 @@ class ProjectOQ313RiskByEventReceiptTests(unittest.TestCase):
             (0, True, 1, "structural_loss_id"),
             (0, 256, 1, "structural_loss_id"),
             (0, 0, True, "concurrent_tasks"),
-            (0, 0, 0, "concurrent_tasks"),
+            (0, 0, -1, "concurrent_tasks"),
         )
         for agg_id, loss_id, tasks, message in cases:
             with self.subTest(message=message, value=(agg_id, loss_id, tasks)):
@@ -162,6 +162,16 @@ class ProjectOQ313RiskByEventReceiptTests(unittest.TestCase):
                         structural_loss_id=0,
                         concurrent_tasks=1,
                     )
+
+    def test_zero_concurrent_tasks_is_preserved(self) -> None:
+        payload, _identity = subject.project_oq313_risk_by_event_receipt(
+            [row()],
+            portfolio_agg_id=0,
+            structural_loss_id=0,
+            concurrent_tasks=0,
+        )
+
+        self.assertEqual(json.loads(payload)["runtime"], {"concurrent_tasks": 0})
 
     def test_binary32_hex_is_strict_finite_and_non_negative(self) -> None:
         invalid_values = (

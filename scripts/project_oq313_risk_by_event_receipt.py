@@ -39,9 +39,9 @@ def _require_uint(value: object, *, label: str, maximum: int) -> int:
     return value
 
 
-def _require_positive_int(value: object, *, label: str) -> int:
-    if type(value) is not int or value <= 0:
-        raise OQ313RiskByEventReceiptError(f"{label} must be a positive integer")
+def _require_nonnegative_int(value: object, *, label: str) -> int:
+    if type(value) is not int or value < 0:
+        raise OQ313RiskByEventReceiptError(f"{label} must be a non-negative integer")
     return value
 
 
@@ -119,7 +119,7 @@ def project_oq313_risk_by_event_receipt(
     loss_id = _require_uint(
         structural_loss_id, label="structural_loss_id", maximum=(1 << 8) - 1
     )
-    tasks = _require_positive_int(concurrent_tasks, label="concurrent_tasks")
+    tasks = _require_nonnegative_int(concurrent_tasks, label="concurrent_tasks")
 
     if not isinstance(rows, Sequence) or isinstance(rows, (str, bytes, bytearray)):
         raise OQ313RiskByEventReceiptError("rows must be a sequence of mappings")
