@@ -1,0 +1,201 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Runtime Residential CSV Profile
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-runtime-residential-csv-profile-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main runtime residential CSV profile request
+    if: >-
+      github.event.issue.number == 282 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-runtime-residential-csv-profile-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Bind request to trusted main and receipted bytes
+        id: fence
+        env:
+          OC_RUNTIME_RESIDENTIAL_CSV_PROFILE_REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.run_esrm20_runtime_residential_csv_profile_action \
+            --comment-body-env OC_RUNTIME_RESIDENTIAL_CSV_PROFILE_REQUEST_BODY \
+            --expected-issue 282 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-profile:
+    name: Execute bounded exact-byte CSV profile
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Prove complete issue-local dedup before provider access
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import run_esrm20_runtime_residential_csv_profile_action as subject
+          skip = subject.has_terminal_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+      - name: Profile only the fixed receipted runtime residential CSV
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_RUNTIME_RESIDENTIAL_CSV_PROFILE_REQUEST_BODY: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/runtime-residential-csv-profile-result.json
+        run: |
+          set -euo pipefail
+          python -m scripts.run_esrm20_runtime_residential_csv_profile_action \
+            --comment-body-env OC_RUNTIME_RESIDENTIAL_CSV_PROFILE_REQUEST_BODY \
+            --expected-issue 282 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from scripts import run_esrm20_runtime_residential_csv_profile_action as subject
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          if subject._validate_terminal_result(result) != os.environ["EXECUTION_SHA"]:
+              raise SystemExit("runtime residential CSV profile execution identity drifted")
+          PY
+      - name: Export bounded result to publisher
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        env:
+          RESULT_PATH: ${{ runner.temp }}/runtime-residential-csv-profile-result.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          value = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(value, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-profile:
+    name: Publish bounded runtime residential CSV evidence
+    needs: [validate-request, execute-profile]
+    if: >-
+      needs.execute-profile.result == 'success' &&
+      needs.execute-profile.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence result and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-profile.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-runtime-residential-csv-profile-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-runtime-residential-csv-profile-result-v1" and
+            .action == "esrm20_runtime_residential_csv_profile" and
+            .source_issue == 282 and
+            .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+            .target_sha == $sha and .execution_sha == $sha and
+            .runtime_residential_identity == {
+              "commit_sha":"05f83bbc9df81d02ee8ddb1801d9d781355ce783",
+              "project_id":269,
+              "project_path":"efehr/esrm20",
+              "receipt_byte_count":160627,
+              "receipt_comment_id":5369154884,
+              "receipt_sha256":"12a20d393c8d677d304263aed96eb05f81098104fd7e3fb0d119aafc336aa00f",
+              "repository_path":"Exposure/OQ_Exposure_Input_Kosovo_Res.csv"
+            } and
+            .taxonomy_semantics_verified == false and
+            .crs_semantics_verified == false and
+            .value_semantics_verified == false and
+            .project186_equivalence_verified == false and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and
+            .model_use_authorized == false and
+            (if .status == "pass" then
+              .failure_class == null and .csv_content_profiled == true and
+              (.receipt | type) == "object" and
+              .receipt.byte_count == 160627 and
+              .receipt.sha256 == "12a20d393c8d677d304263aed96eb05f81098104fd7e3fb0d119aafc336aa00f" and
+              (.profile | type) == "object" and
+              .profile.raw_rows_returned == false and
+              .profile.external_bytes_persisted == false and
+              .profile.publication_authorized == false and
+              (.profile.record_count | type) == "number" and .profile.record_count > 0 and
+              (.profile.header | type) == "array" and (.profile.header | length) > 0 and
+              (.profile.columns | type) == "array" and
+              (.profile.columns | length) == (.profile.header | length)
+            elif .status == "blocked" then
+              (.failure_class == "acquisition_failure" or
+               .failure_class == "byte_identity_mismatch" or
+               .failure_class == "csv_profile_failure" or
+               .failure_class == "profile_failure") and
+              .receipt == null and .profile == null and .csv_content_profiled == false
+            else false end)
+          ' >/dev/null
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          test "$(printf '%s' "$BODY" | wc -c)" -le 30000
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/runtime-residential-csv-profile-comment.json"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/282/comments" \
+            --input "$RUNNER_TEMP/runtime-residential-csv-profile-comment.json"
