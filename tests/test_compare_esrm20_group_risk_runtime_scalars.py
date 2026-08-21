@@ -250,6 +250,45 @@ class GroupRiskRuntimeScalarComparisonTests(unittest.TestCase):
             ):
                 subject.compare_group_risk_runtime_scalars(b"a", b"b")
 
+    def test_rejects_presence_value_contradiction(self) -> None:
+        group1_profile = _profile(
+            "group1", calculation_mode="ebrisk", calculation_mode_present=False
+        )
+        group2_profile = _profile("group2")
+        with (
+            mock.patch.object(
+                subject.group1_runtime,
+                "project_group1_risk_runtime_scalars",
+                return_value=group1_profile,
+            ),
+            mock.patch.object(
+                subject.group2_runtime,
+                "project_group2_risk_runtime_scalars",
+                return_value=group2_profile,
+            ),
+        ):
+            with self.assertRaisesRegex(
+                subject.RiskRuntimeScalarComparisonError,
+                "calculation_mode must be null when absent",
+            ):
+                subject.compare_group_risk_runtime_scalars(b"a", b"b")
+
+    def test_group1_failure_stops_before_group2_projection(self) -> None:
+        with (
+            mock.patch.object(
+                subject.group1_runtime,
+                "project_group1_risk_runtime_scalars",
+                side_effect=ValueError("wrong Group1 bytes"),
+            ),
+            mock.patch.object(
+                subject.group2_runtime,
+                "project_group2_risk_runtime_scalars",
+            ) as project2,
+        ):
+            with self.assertRaisesRegex(ValueError, "wrong Group1 bytes"):
+                subject.compare_group_risk_runtime_scalars(b"wrong", b"group2")
+        project2.assert_not_called()
+
     def test_does_not_mutate_projector_evidence(self) -> None:
         group1_profile = _profile("group1")
         group2_profile = _profile("group2")
