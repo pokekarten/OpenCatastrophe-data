@@ -249,6 +249,50 @@ class KosovoResidentialEbriskConfigTests(unittest.TestCase):
             subject.build_kosovo_residential_ebrisk_config(b"x")
         verify.assert_not_called()
 
+    def test_upstream_selected_byte_identity_drift_fails_before_identity(self) -> None:
+        self.assertEqual(
+            subject.exposure_wrapper.OUTPUT_LOGICAL_PATH,
+            subject.EXPOSURE_RESOLVED_PATH,
+        )
+        drifts: tuple[tuple[str, object, str], ...] = (
+            (
+                "PROJECT_PATH",
+                "efehr/wrong",
+                "residential wrapper project path authority drifted",
+            ),
+            (
+                "SELECTED_REPOSITORY_PATH",
+                "Exposure/wrong.csv",
+                "residential wrapper selected path authority drifted",
+            ),
+            (
+                "SELECTED_BYTE_COUNT",
+                160628,
+                "residential wrapper selected byte count authority drifted",
+            ),
+            (
+                "SELECTED_SHA256",
+                "0" * 64,
+                "residential wrapper selected SHA-256 authority drifted",
+            ),
+        )
+        for attribute, replacement, message in drifts:
+            with self.subTest(attribute=attribute):
+                with (
+                    mock.patch.object(
+                        subject.exposure_wrapper,
+                        attribute,
+                        replacement,
+                    ),
+                    mock.patch.object(subject, "_verify_group1_identity") as verify,
+                    self.assertRaisesRegex(
+                        subject.KosovoResidentialEbriskConfigError,
+                        f"^{message}$",
+                    ),
+                ):
+                    subject.build_kosovo_residential_ebrisk_config(b"x")
+                verify.assert_not_called()
+
     def test_public_entry_verifies_identity_before_decode_and_derivation(self) -> None:
         source = b"x"
         with (
