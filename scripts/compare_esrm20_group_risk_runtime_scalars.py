@@ -59,6 +59,40 @@ def _require_exact_false(value: object, field: str) -> None:
         raise RiskRuntimeScalarComparisonError(f"{field} must remain exactly false")
 
 
+def _validate_presence_consistency(
+    runtime_scalars: dict[str, Any],
+    *,
+    candidate_key: str,
+) -> None:
+    for value_field, present_field in _FIELD_SPECS:
+        present = runtime_scalars[present_field]
+        value = runtime_scalars[value_field]
+        field_name = f"{candidate_key}.runtime_scalars.{value_field}"
+        if value_field == "configured_seed_settings":
+            if type(value) is not list:
+                raise RiskRuntimeScalarComparisonError(f"{field_name} must be a list")
+            if present is not bool(value):
+                raise RiskRuntimeScalarComparisonError(
+                    f"{field_name} presence flag contradicts its value"
+                )
+            continue
+        if not present:
+            if value is not None:
+                raise RiskRuntimeScalarComparisonError(
+                    f"{field_name} must be null when absent"
+                )
+            continue
+        if value_field == "ignore_master_seed":
+            if type(value) is not bool:
+                raise RiskRuntimeScalarComparisonError(
+                    f"{field_name} must be boolean when present"
+                )
+        elif type(value) is not str or not value:
+            raise RiskRuntimeScalarComparisonError(
+                f"{field_name} must be non-empty text when present"
+            )
+
+
 def _validate_profile(
     profile: dict[str, Any],
     *,
@@ -103,6 +137,7 @@ def _validate_profile(
             raise RiskRuntimeScalarComparisonError(
                 f"{candidate_key}.runtime_scalars.{present_field} must be boolean"
             )
+    _validate_presence_consistency(runtime_scalars, candidate_key=candidate_key)
 
     return runtime_scalars
 
