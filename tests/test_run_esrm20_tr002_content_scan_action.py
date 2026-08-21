@@ -15,6 +15,7 @@ from scripts.efehr_gitlab_receipt import raw_file_api_url, validate_target
 from scripts import run_esrm20_tr002_content_scan_action as subject
 
 EXECUTION_SHA = "1" * 40
+OTHER_EXECUTION_SHA = "2" * 40
 RETRIEVED_AT = "2026-08-21T21:50:00Z"
 
 
@@ -78,6 +79,11 @@ def synthetic_scan() -> dict[str, object]:
         "sha256": subject.EXPECTED_SHA256,
     }
     return scan
+
+
+def terminal_body(execution_sha: str) -> str:
+    result = subject.run_scan(execution_sha=execution_sha, scanner=synthetic_scan)
+    return subject.RESULT_MARKER + "\n" + json.dumps(result, sort_keys=True, separators=(",", ":"))
 
 
 class Tr002ContentScanActionTests(unittest.TestCase):
@@ -216,6 +222,43 @@ class Tr002ContentScanActionTests(unittest.TestCase):
         body = subject.RESULT_MARKER + "\n" + json.dumps(tampered, sort_keys=True, separators=(",", ":"))
         with self.assertRaises(subject.Tr002ContentScanError):
             subject._parse_terminal_result(body, execution_sha=EXECUTION_SHA)
+
+    def test_terminal_dedup_skips_valid_prior_sha_and_finds_current_sha(self) -> None:
+        prior = {
+            "id": 1,
+            "user": {"login": subject.TRUSTED_RESULT_LOGIN},
+            "body": terminal_body(OTHER_EXECUTION_SHA),
+        }
+        current = {
+            "id": 2,
+            "user": {"login": subject.TRUSTED_RESULT_LOGIN},
+            "body": terminal_body(EXECUTION_SHA),
+        }
+        with mock.patch.object(subject, "fetch_repository_comments", return_value=[prior]):
+            self.assertFalse(
+                subject.has_terminal_result(
+                    repository="pokekarten/OpenCatastrophe-data", token="token", execution_sha=EXECUTION_SHA
+                )
+            )
+        with mock.patch.object(subject, "fetch_repository_comments", return_value=[prior, current]):
+            self.assertTrue(
+                subject.has_terminal_result(
+                    repository="pokekarten/OpenCatastrophe-data", token="token", execution_sha=EXECUTION_SHA
+                )
+            )
+
+    def test_prior_sha_result_with_mismatched_target_sha_fails_closed(self) -> None:
+        result = subject.run_scan(execution_sha=OTHER_EXECUTION_SHA, scanner=synthetic_scan)
+        result["target_sha"] = EXECUTION_SHA
+        body = subject.RESULT_MARKER + "\n" + json.dumps(result, sort_keys=True, separators=(",", ":"))
+        comments = [{"id": 1, "user": {"login": subject.TRUSTED_RESULT_LOGIN}, "body": body}]
+        with (
+            mock.patch.object(subject, "fetch_repository_comments", return_value=comments),
+            self.assertRaisesRegex(subject.Tr002ContentScanError, "target_sha"),
+        ):
+            subject.has_terminal_result(
+                repository="pokekarten/OpenCatastrophe-data", token="token", execution_sha=EXECUTION_SHA
+            )
 
     def test_workflow_serializes_dedup_provider_and_publication_in_one_job(self) -> None:
         workflow = Path(".github/workflows/esrm20-tr002-content-scan.yml").read_text(encoding="utf-8")
