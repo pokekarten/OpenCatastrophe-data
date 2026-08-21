@@ -217,6 +217,49 @@ class Tr002ContentScanActionTests(unittest.TestCase):
         with self.assertRaises(subject.Tr002ContentScanError):
             subject._parse_terminal_result(body, execution_sha=EXECUTION_SHA)
 
+    def test_terminal_dedup_validates_prior_receipts_under_their_own_sha(self) -> None:
+        prior_sha = "2" * 40
+        prior = subject.run_scan(execution_sha=prior_sha, scanner=synthetic_scan)
+        current = subject.run_scan(execution_sha=EXECUTION_SHA, scanner=synthetic_scan)
+
+        def comment_for(result: dict[str, object]) -> dict[str, object]:
+            body = subject.RESULT_MARKER + "\n" + json.dumps(
+                result, sort_keys=True, separators=(",", ":")
+            )
+            return {"user": {"login": subject.TRUSTED_RESULT_LOGIN}, "body": body}
+
+        with mock.patch.object(subject, "fetch_repository_comments", return_value=[comment_for(prior)]):
+            self.assertFalse(
+                subject.has_terminal_result(
+                    repository="owner/repo", token="token", execution_sha=EXECUTION_SHA
+                )
+            )
+
+        with mock.patch.object(
+            subject,
+            "fetch_repository_comments",
+            return_value=[comment_for(prior), comment_for(current)],
+        ):
+            self.assertTrue(
+                subject.has_terminal_result(
+                    repository="owner/repo", token="token", execution_sha=EXECUTION_SHA
+                )
+            )
+
+        mismatched_prior = json.loads(json.dumps(prior))
+        mismatched_prior["target_sha"] = EXECUTION_SHA
+        with (
+            mock.patch.object(
+                subject,
+                "fetch_repository_comments",
+                return_value=[comment_for(mismatched_prior)],
+            ),
+            self.assertRaisesRegex(subject.Tr002ContentScanError, "target_sha"),
+        ):
+            subject.has_terminal_result(
+                repository="owner/repo", token="token", execution_sha=EXECUTION_SHA
+            )
+
     def test_workflow_serializes_dedup_provider_and_publication_in_one_job(self) -> None:
         workflow = Path(".github/workflows/esrm20-tr002-content-scan.yml").read_text(encoding="utf-8")
         pre_jobs, jobs = workflow.split("\njobs:\n", 1)
