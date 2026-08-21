@@ -155,6 +155,14 @@ jobs:
           EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
           RESULT_JSON: ${{ needs.execute-site-profile.outputs.result_json }}
           RESULT_MARKER: "<!-- oc-eq1-eshm20-site-model-profile-result-v1 -->"
+          PUBLICATION_NOTICE_MARKER: "<!-- oc-eq1-eshm20-site-model-profile-publication-notice-v1 -->"
+          ESHM20_ATTRIBUTION: "European Seismic Hazard Model 2020 (ESHM20), EFEHR"
+          ESHM20_LICENSE_ID: "CC-BY-4.0"
+          ESHM20_LICENSE_URL: "https://creativecommons.org/licenses/by/4.0/"
+          ESHM20_CITATION: "Danciu et al. (2021), EFEHR Technical Report 001 v1.0.0"
+          ESHM20_CITATION_URL: "https://doi.org/10.12686/a15"
+          DERIVED_PUBLICATION_SCOPE: "bounded-derived-structural-profile-metadata-only"
+          DERIVED_CHANGE_NOTICE: "Derived structural-profile metadata computed from the exact receipt-bound ESHM20 site CSV; provider bytes and rows are not reproduced."
         run: |
           set -euo pipefail
           printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
@@ -174,6 +182,29 @@ jobs:
             .publication_authorized == false and
             .model_use_authorized == false
           ' >/dev/null
+
+          test "$ESHM20_ATTRIBUTION" = "European Seismic Hazard Model 2020 (ESHM20), EFEHR"
+          test "$ESHM20_LICENSE_ID" = "CC-BY-4.0"
+          test "$ESHM20_LICENSE_URL" = "https://creativecommons.org/licenses/by/4.0/"
+          test "$ESHM20_CITATION" = "Danciu et al. (2021), EFEHR Technical Report 001 v1.0.0"
+          test "$ESHM20_CITATION_URL" = "https://doi.org/10.12686/a15"
+          test "$DERIVED_PUBLICATION_SCOPE" = "bounded-derived-structural-profile-metadata-only"
+          test "$DERIVED_CHANGE_NOTICE" = "Derived structural-profile metadata computed from the exact receipt-bound ESHM20 site CSV; provider bytes and rows are not reproduced."
+
+          NOTICE="$PUBLICATION_NOTICE_MARKER
+          Attribution: $ESHM20_ATTRIBUTION
+          License: $ESHM20_LICENSE_ID — $ESHM20_LICENSE_URL
+          Citation: $ESHM20_CITATION — $ESHM20_CITATION_URL
+          Derived evidence publication authorized: true
+          Derived publication scope: $DERIVED_PUBLICATION_SCOPE
+          Change notice: $DERIVED_CHANGE_NOTICE
+          Execution SHA: $EXECUTION_SHA
+          Provider/raw publication authority: false; model-use authority: false."
+          jq -n --arg body "$NOTICE" '{body:$body}' > "$RUNNER_TEMP/eshm20-site-profile-publication-notice.json"
+          gh api \
+            --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/281/comments" \
+            --input "$RUNNER_TEMP/eshm20-site-profile-publication-notice.json"
 
           BODY="$RESULT_MARKER
           $RESULT_JSON"
