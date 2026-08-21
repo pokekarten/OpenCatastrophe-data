@@ -140,8 +140,40 @@ class ExactKosovoMappingJoinTests(unittest.TestCase):
                 expected_sha256="0" * 64,
             )
 
+    def test_paired_mapping_authority_drift_fails_before_taxonomy_extraction(self):
+        cases = (
+            ("_MAPPING_PROJECT_ID", "PROJECT_ID", 270, "project id"),
+            ("_MAPPING_PROJECT_PATH", "PROJECT_PATH", "efehr/other", "project path"),
+            ("_MAPPING_COMMIT_SHA", "COMMIT_SHA", "0" * 40, "commit"),
+            (
+                "_MAPPING_REPOSITORY_PATH",
+                "REPOSITORY_PATH",
+                "Vulnerability/other.csv",
+                "path",
+            ),
+            ("_MAPPING_BYTE_COUNT", "EXPECTED_BYTE_COUNT", 1, "byte count"),
+            ("_MAPPING_SHA256", "EXPECTED_SHA256", "0" * 64, "SHA-256"),
+        )
+        for local_name, upstream_name, drifted, label in cases:
+            with self.subTest(label=label):
+                with (
+                    patch.object(subject, local_name, drifted),
+                    patch.object(subject.mapping_source, upstream_name, drifted),
+                    patch.object(
+                        subject.taxonomy_source, "extract_verified_kosovo_taxonomy"
+                    ) as extract_taxonomy,
+                ):
+                    with self.assertRaisesRegex(
+                        subject.KosovoMappingJoinError,
+                        f"frozen mapping {label} authority drifted",
+                    ):
+                        subject.join_verified_kosovo_taxonomy_mapping(
+                            b"synthetic exposure", b"synthetic mapping"
+                        )
+                    extract_taxonomy.assert_not_called()
+
     def test_public_result_is_exhaustive_attributed_and_keeps_ceiling_false(self):
-        mapping_raw = _raw(["A,RISK_A,1", "B,R1,0.25", "B,R2,0.75"])
+        mapping_raw = b"synthetic mapping"
         exposure_identity = {
             "dataset_id": "test.exposure",
             "project_id": 186,
@@ -155,18 +187,48 @@ class ExactKosovoMappingJoinTests(unittest.TestCase):
             "taxonomies": ["A", "B"],
             "normalization_applied": False,
         }
-        digest = hashlib.sha256(mapping_raw).hexdigest()
+        records = [
+            {
+                "taxonomy": "A",
+                "status": "resolved",
+                "reason_code": "exact_mapping_rows_valid",
+                "targets": [{"risk_id": "RISK_A", "weight": "1"}],
+            },
+            {
+                "taxonomy": "B",
+                "status": "resolved",
+                "reason_code": "exact_mapping_rows_valid",
+                "targets": [
+                    {"risk_id": "R1", "weight": "0.25"},
+                    {"risk_id": "R2", "weight": "0.75"},
+                ],
+            },
+        ]
         with (
-            patch.object(subject.taxonomy_source, "extract_verified_kosovo_taxonomy", return_value=exposure_identity),
+            patch.object(
+                subject.taxonomy_source,
+                "extract_verified_kosovo_taxonomy",
+                return_value=exposure_identity,
+            ),
             patch.object(subject.taxonomy_source, "EXPECTED_DISTINCT_COUNT", 2),
-            patch.object(subject, "_MAPPING_BYTE_COUNT", len(mapping_raw)),
-            patch.object(subject, "_MAPPING_SHA256", digest),
-            patch.object(subject.mapping_source, "EXPECTED_BYTE_COUNT", len(mapping_raw)),
-            patch.object(subject.mapping_source, "EXPECTED_SHA256", digest),
+            patch.object(
+                subject, "_join_exact_taxonomies", return_value=records
+            ) as join_exact,
         ):
-            result = subject.join_verified_kosovo_taxonomy_mapping(b"synthetic", mapping_raw)
+            result = subject.join_verified_kosovo_taxonomy_mapping(
+                b"synthetic exposure", mapping_raw
+            )
 
-        self.assertEqual(result["classification_counts"], {"resolved": 2, "unsupported": 0, "ambiguous": 0})
+        join_exact.assert_called_once_with(
+            ["A", "B"],
+            mapping_raw,
+            expected_byte_count=subject._MAPPING_BYTE_COUNT,
+            expected_sha256=subject._MAPPING_SHA256,
+        )
+        self.assertEqual(
+            result["classification_counts"],
+            {"resolved": 2, "unsupported": 0, "ambiguous": 0},
+        )
         self.assertEqual(len(result["records"]), 2)
         self.assertEqual(
             result["mapping_weight_rule"],
@@ -175,7 +237,9 @@ class ExactKosovoMappingJoinTests(unittest.TestCase):
         self.assertEqual(result["rights"]["provider"], subject.RIGHTS_PROVIDER)
         self.assertEqual(result["rights"]["license_id"], "CC-BY-4.0")
         self.assertTrue(result["rights"]["attribution_required"])
-        self.assertEqual(result["rights"]["source_reviews"], list(subject.RIGHTS_SOURCE_REVIEWS))
+        self.assertEqual(
+            result["rights"]["source_reviews"], list(subject.RIGHTS_SOURCE_REVIEWS)
+        )
         self.assertTrue(result["bounded_derived_disclosure_authorized"])
         self.assertFalse(result["normalization_applied"])
         self.assertFalse(result["wildcard_or_fallback_matching_applied"])
