@@ -128,6 +128,44 @@ class KosovoSourceRuntimeDecimalComparatorTests(unittest.TestCase):
         self.assertFalse(result["publication_authorized"])
         self.assertFalse(result["model_use_authorized"])
 
+    def test_synthetic_receipts_cannot_claim_canonical_provider_identity(self) -> None:
+        source_rows = [_source_row(0)]
+        runtime_rows = [_runtime_row(source_rows[0], 0)]
+
+        result = _compare(source_rows, runtime_rows)
+
+        self.assertFalse(result["canonical_receipt_pair_verified"])
+        for identity in (result["source_identity"], result["runtime_identity"]):
+            self.assertFalse(identity["canonical_receipt_verified"])
+            self.assertNotIn("project_id", identity)
+            self.assertNotIn("project_path", identity)
+            self.assertNotIn("commit_sha", identity)
+            self.assertNotIn("repository_path", identity)
+            self.assertEqual(len(identity["sha256"]), 64)
+            self.assertGreater(identity["byte_count"], 0)
+
+    def test_fixed_wrapper_requires_canonical_receipt_pair(self) -> None:
+        with (
+            patch.object(
+                target,
+                "_fetch_fixed_payload",
+                side_effect=[b"synthetic-source", b"synthetic-runtime"],
+            ),
+            patch.object(
+                target,
+                "compare_verified_exposure_bytes",
+                return_value={"canonical_receipt_pair_verified": False},
+            ),
+        ):
+            with self.assertRaisesRegex(
+                target.ExposureRuntimeComparisonError,
+                "did not prove the canonical receipt pair",
+            ):
+                target.acquire_and_compare_kosovo_exposure_runtime(
+                    opener=object(),
+                    monotonic=lambda: 0.0,
+                )
+
     def test_numeric_mismatch_is_measured_without_semantic_promotion(self) -> None:
         source_rows = [_source_row(index) for index in range(2)]
         runtime_rows = [
