@@ -161,14 +161,18 @@ class SourceRuntimeCompareActionTests(unittest.TestCase):
         self.assertIs(result["canonical_receipt_pair_verified"], False)
 
     def test_comparison_rejects_receipt_or_authority_drift(self):
-        for mutate in ("source_sha", "raw_rows", "count"):
+        for mutate in ("source_sha", "raw_rows", "count", "max_state", "noncanonical_decimal"):
             evidence = good_comparison()
             if mutate == "source_sha":
                 evidence["source_identity"]["sha256"] = "0" * 64
             elif mutate == "raw_rows":
                 evidence["raw_rows_returned"] = True
-            else:
+            elif mutate == "count":
                 evidence["numeric_comparisons"][0]["non_equal_count"] = 1
+            elif mutate == "max_state":
+                evidence["numeric_comparisons"][0]["maximum_absolute_difference"] = "0.1"
+            else:
+                evidence["numeric_comparisons"][0]["maximum_absolute_difference"] = "0.00"
             with self.subTest(mutate=mutate):
                 with self.assertRaises(subject.SourceRuntimeCompareActionError):
                     subject._validate_comparison(evidence)
@@ -240,6 +244,10 @@ class SourceRuntimeCompareActionTests(unittest.TestCase):
         self.assertIn(subject.runtime_profile.EXPECTED_SHA256, text)
         publisher = text.split("publish-comparison:", 1)[1]
         self.assertNotIn("actions/checkout", publisher)
+        self.assertIn("(. | keys) ==", publisher)
+        self.assertIn("(.comparison | keys) ==", publisher)
+        self.assertIn("(.comparison.comparison_key | keys) ==", publisher)
+        self.assertIn("map([.source_field,.runtime_field])", publisher)
         for field in (
             "project186_equivalence_verified",
             "value_structural_wiring_verified",
