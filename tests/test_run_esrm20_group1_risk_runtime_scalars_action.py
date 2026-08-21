@@ -142,6 +142,26 @@ class Group1RuntimeScalarsActionTests(unittest.TestCase):
         with self.assertRaises(subject.Group1RuntimeScalarsActionError):
             subject.validate_evidence(evidence)
 
+    def test_minimum_asset_loss_terminal_contract_is_canonical_decimal(self):
+        for invalid in ("abc", "-1", "NaN", "1.0"):
+            with self.subTest(invalid=invalid):
+                evidence = sample_evidence()
+                evidence["runtime_scalars"]["minimum_asset_loss_structural"] = invalid
+                with self.assertRaises(subject.Group1RuntimeScalarsActionError):
+                    subject.validate_evidence(evidence)
+
+                result = subject._base_result(execution_sha=SHA)
+                result.update(
+                    {"status": "pass", "failure_class": None, "evidence": evidence}
+                )
+                body = subject.RESULT_MARKER + "\n" + json.dumps(result, sort_keys=True)
+                with self.assertRaises(subject.Group1RuntimeScalarsActionError):
+                    subject.parse_terminal_result(body)
+
+        evidence = sample_evidence()
+        evidence["runtime_scalars"]["minimum_asset_loss_structural"] = "12.5"
+        subject.validate_evidence(evidence)
+
     def test_evidence_preserves_missing_as_absent(self):
         evidence = sample_evidence()
         scalars = evidence["runtime_scalars"]
