@@ -85,9 +85,9 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           import os
-          from scripts import run_eshm20_site_model_profile_action as subject
+          from scripts import validate_eshm20_site_profile_public_result as public_result
 
-          skip = subject.has_terminal_site_profile_result(
+          skip = public_result.has_terminal_site_profile_result(
               repository=os.environ["GITHUB_REPOSITORY"],
               token=os.environ["GH_TOKEN"],
               execution_sha=os.environ["EXECUTION_SHA"],
@@ -183,6 +183,27 @@ jobs:
             .model_use_authorized == false
           ' >/dev/null
 
+          # The active result above has already passed the exact Python contract.
+          # Remove deterministic per-column value-set fingerprints only at the
+          # public boundary: low-entropy domains can otherwise be inverted by
+          # offline dictionary enumeration even though raw rows are absent.
+          PUBLIC_RESULT_JSON="$(printf '%s' "$RESULT_JSON" | jq -c '
+            if .status == "pass" then
+              .profile.profile.columns |= map(del(.exact_value_set_sha256))
+            else
+              .
+            end
+          ')"
+          test -n "$PUBLIC_RESULT_JSON"
+          printf '%s' "$PUBLIC_RESULT_JSON" | jq -e '
+            if .status == "pass" then
+              (.profile.profile.columns | length) > 0 and
+              all(.profile.profile.columns[]; has("exact_value_set_sha256") | not)
+            else
+              .profile == null
+            end
+          ' >/dev/null
+
           test "$ESHM20_ATTRIBUTION" = "European Seismic Hazard Model 2020 (ESHM20), EFEHR"
           test "$ESHM20_LICENSE_ID" = "CC-BY-4.0"
           test "$ESHM20_LICENSE_URL" = "https://creativecommons.org/licenses/by/4.0/"
@@ -207,7 +228,7 @@ jobs:
             --input "$RUNNER_TEMP/eshm20-site-profile-publication-notice.json"
 
           BODY="$RESULT_MARKER
-          $RESULT_JSON"
+          $PUBLIC_RESULT_JSON"
           jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/eshm20-site-profile-comment.json"
           gh api \
             --method POST \
