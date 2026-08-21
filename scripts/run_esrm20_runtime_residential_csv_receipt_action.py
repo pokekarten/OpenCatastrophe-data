@@ -241,6 +241,20 @@ def _base_result(*, execution_sha: str) -> dict[str, Any]:
     }
 
 
+def ledger_incomplete_result(*, execution_sha: str) -> dict[str, Any]:
+    """Return a bounded pre-provider terminal when the dedup ledger is incomplete."""
+    result = _base_result(execution_sha=execution_sha)
+    result.update(
+        {
+            "status": "blocked",
+            "failure_class": "ledger_incomplete",
+            "receipt": None,
+        }
+    )
+    _validate_terminal_result(result)
+    return result
+
+
 def _validate_terminal_result(result: object) -> str:
     if type(result) is not dict or set(result) != _RESULT_FIELDS:
         raise RuntimeResidentialCsvReceiptActionError(
@@ -299,7 +313,7 @@ def _validate_terminal_result(result: object) -> str:
         return execution_sha
     if status == "blocked":
         if (
-            result.get("failure_class") != "acquisition_failure"
+            result.get("failure_class") not in {"acquisition_failure", "ledger_incomplete"}
             or result.get("receipt") is not None
         ):
             raise RuntimeResidentialCsvReceiptActionError(
