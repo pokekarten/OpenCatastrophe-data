@@ -97,6 +97,14 @@ jobs:
               handle.write(f"skip={'true' if skip else 'false'}\n")
           PY
 
+      - name: Provision bounded PDF text extractor
+        if: steps.dedup.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes poppler-utils
+          pdftotext -v
+
       - name: Run exact fixed TR002 content scan
         if: steps.dedup.outputs.skip != 'true'
         env:
