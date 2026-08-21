@@ -44,7 +44,7 @@ def column(name: str, digest_character: str) -> dict[str, object]:
 
 def good_profile() -> dict[str, object]:
     return {
-        "schema_version": "oc-esrm20-exposure-content-profile-v0",
+        "schema_version": subject.PROFILE_SCHEMA_VERSION,
         "parser": {
             "encoding": "utf-8",
             "bom_present": False,
@@ -83,6 +83,12 @@ class RuntimeResidentialCsvProfileActionTests(unittest.TestCase):
         )
         with self.assertRaises(subject.RuntimeResidentialCsvProfileActionError):
             subject.validate_request(body, expected_issue=282, execution_sha=SHA)
+
+    def test_profile_schema_version_drift_is_rejected(self):
+        profile = good_profile()
+        profile["schema_version"] = "oc-esrm20-exposure-content-profile-v999"
+        with self.assertRaises(subject.RuntimeResidentialCsvProfileActionError):
+            subject._validate_profile(profile)
 
     def test_pass_profiles_structure_but_keeps_scientific_authority_false(self):
         evidence = {
