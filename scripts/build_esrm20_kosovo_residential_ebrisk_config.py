@@ -35,6 +35,13 @@ _CANONICAL_GROUP1_SHA256 = (
 _CANONICAL_PROJECT_ID = 269
 _CANONICAL_PROJECT_PATH = "efehr/esrm20"
 _CANONICAL_COMMIT_SHA = "05f83bbc9df81d02ee8ddb1801d9d781355ce783"
+_CANONICAL_UPSTREAM_SELECTED_REPOSITORY_PATH = (
+    "Exposure/OQ_Exposure_Input_Kosovo_Res.csv"
+)
+_CANONICAL_UPSTREAM_SELECTED_BYTE_COUNT = 160627
+_CANONICAL_UPSTREAM_SELECTED_SHA256 = (
+    "12a20d393c8d677d304263aed96eb05f81098104fd7e3fb0d119aafc336aa00f"
+)
 _CANONICAL_OUTPUT_LOGICAL_PATH = (
     "Configuration_files/config_ebrisk_Kosovo_Residential_Reconstructed.ini"
 )
@@ -199,6 +206,26 @@ def _require_canonical_authority() -> None:
             "residential wrapper control issue",
         ),
         (exposure_wrapper.PROJECT_ID, _CANONICAL_PROJECT_ID, "residential wrapper project"),
+        (
+            exposure_wrapper.PROJECT_PATH,
+            _CANONICAL_PROJECT_PATH,
+            "residential wrapper project path",
+        ),
+        (
+            exposure_wrapper.SELECTED_REPOSITORY_PATH,
+            _CANONICAL_UPSTREAM_SELECTED_REPOSITORY_PATH,
+            "residential wrapper selected path",
+        ),
+        (
+            exposure_wrapper.SELECTED_BYTE_COUNT,
+            _CANONICAL_UPSTREAM_SELECTED_BYTE_COUNT,
+            "residential wrapper selected byte count",
+        ),
+        (
+            exposure_wrapper.SELECTED_SHA256,
+            _CANONICAL_UPSTREAM_SELECTED_SHA256,
+            "residential wrapper selected SHA-256",
+        ),
         (
             exposure_wrapper.COMMIT_SHA,
             _CANONICAL_COMMIT_SHA,
