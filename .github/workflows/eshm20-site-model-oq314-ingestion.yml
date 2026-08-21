@@ -1,0 +1,301 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESHM20 OQ3.14 Site Ingestion Gate
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eshm20-oq314-site-ingestion-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main OQ3.14 site-ingestion request
+    if: >-
+      github.event.issue.number == 281 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-eshm20-site-model-oq314-ingestion-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_ESHM20_OQ314_SITE_REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/run_eshm20_site_model_oq314_ingestion_action.py \
+            --comment-body-env OC_ESHM20_OQ314_SITE_REQUEST_BODY \
+            --expected-issue 281 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-ingestion-gate:
+    name: Execute exact OpenQuake 3.14 site parser gate
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prove complete issue-local dedup before external activity
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import run_eshm20_site_model_oq314_ingestion_action as subject
+
+          skip = subject.has_terminal_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+
+      - name: Fetch exact OpenQuake v3.14.0 source
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OQ_COMMIT: 9f044c93d72846421a8faa90ebf0a6afacdf3c20
+        run: |
+          set -euo pipefail
+          OQ_ROOT="$RUNNER_TEMP/oq-engine"
+          git init "$OQ_ROOT"
+          git -C "$OQ_ROOT" remote add origin https://github.com/gem/oq-engine.git
+          git -C "$OQ_ROOT" fetch --depth=1 origin \
+            refs/tags/v3.14.0:refs/tags/v3.14.0
+          OBSERVED="$(git -C "$OQ_ROOT" rev-parse 'refs/tags/v3.14.0^{commit}')"
+          test "$OBSERVED" = "$OQ_COMMIT"
+          git -C "$OQ_ROOT" checkout --detach "$OBSERVED"
+          test -z "$(git -C "$OQ_ROOT" status --porcelain=v1)"
+
+      - name: Build observed execution container
+        if: steps.dedup.outputs.skip != 'true'
+        id: image
+        run: |
+          set -euo pipefail
+          BASE_IMAGE="openquake/engine:3.14.0"
+          docker pull "$BASE_IMAGE"
+          BASE_REPO_DIGEST="$(docker image inspect \
+            --format='{{index .RepoDigests 0}}' "$BASE_IMAGE")"
+          printf '%s\n' "$BASE_REPO_DIGEST" |
+            grep -Eq '^openquake/engine@sha256:[0-9a-f]{64}$'
+
+          DOCKERFILE="$RUNNER_TEMP/Dockerfile.oq314-site-ingestion"
+          cat > "$DOCKERFILE" <<EOF
+          FROM $BASE_REPO_DIGEST
+          USER root
+          RUN apt-get update \
+              && apt-get install -y --no-install-recommends git \
+              && rm -rf /var/lib/apt/lists/*
+          COPY --chown=root:root oq-engine /oq-engine
+          RUN git config --system --add safe.directory /oq-engine
+          USER openquake
+          EOF
+
+          docker build --pull=false \
+            --file "$DOCKERFILE" \
+            --tag oc-oq314-site-ingestion:local \
+            "$RUNNER_TEMP"
+          IMAGE_ID="$(docker image inspect \
+            --format='{{.Id}}' oc-oq314-site-ingestion:local)"
+          printf '%s\n' "$IMAGE_ID" | grep -Eq '^sha256:[0-9a-f]{64}$'
+          echo "base_repo_digest=$BASE_REPO_DIGEST" >> "$GITHUB_OUTPUT"
+          echo "image_id=$IMAGE_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Run fixed receipt-bound site ingestion gate
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_ESHM20_OQ314_SITE_REQUEST_BODY: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          IMAGE_ID: ${{ steps.image.outputs.image_id }}
+          BASE_REPO_DIGEST: ${{ steps.image.outputs.base_repo_digest }}
+          RESULT_PATH: ${{ runner.temp }}/oq314-site-ingestion-result.json
+        run: |
+          set -euo pipefail
+          OUTPUT_DIR="$RUNNER_TEMP/eq1-oq314-site-output"
+          mkdir -p "$OUTPUT_DIR"
+          : > "$OUTPUT_DIR/result.json"
+          chmod 0666 "$OUTPUT_DIR/result.json"
+
+          docker run --rm \
+            --entrypoint /opt/openquake/bin/python \
+            -e PYTHONDONTWRITEBYTECODE=1 \
+            -e OPENBLAS_NUM_THREADS=1 \
+            -e PYTHONPATH=/oq-engine:/workspace \
+            -e OC_ESHM20_OQ314_SITE_REQUEST_BODY \
+            -v "$GITHUB_WORKSPACE:/workspace:ro" \
+            -v "$OUTPUT_DIR:/output" \
+            -w /workspace \
+            "$IMAGE_ID" \
+            scripts/run_eshm20_site_model_oq314_ingestion_action.py \
+            --comment-body-env OC_ESHM20_OQ314_SITE_REQUEST_BODY \
+            --expected-issue 281 \
+            --execution-sha "$EXECUTION_SHA" \
+            --runtime-image-id "$IMAGE_ID" \
+            --base-image-repo-digest "$BASE_REPO_DIGEST" \
+            --output /output/result.json
+
+          cp "$OUTPUT_DIR/result.json" "$RESULT_PATH"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from scripts import run_eshm20_site_model_oq314_ingestion_action as subject
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          subject._validate_terminal_result(
+              result, execution_sha=os.environ["EXECUTION_SHA"]
+          )
+          if result.get("status") != "pass":
+              raise SystemExit("exact OQ3.14 site ingestion gate blocked")
+          PY
+
+      - name: Export bounded result to publisher
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        env:
+          RESULT_PATH: ${{ runner.temp }}/oq314-site-ingestion-result.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-ingestion-evidence:
+    name: Publish bounded OQ3.14 site-ingestion evidence
+    needs: [validate-request, execute-ingestion-gate]
+    if: >-
+      needs.execute-ingestion-gate.result == 'success' &&
+      needs.execute-ingestion-gate.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence bounded result and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-ingestion-gate.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-eshm20-site-model-oq314-ingestion-result-v1 -->"
+          PUBLICATION_NOTICE_MARKER: "<!-- oc-eq1-eshm20-site-model-oq314-ingestion-publication-notice-v1 -->"
+          ESHM20_ATTRIBUTION: "European Seismic Hazard Model 2020 (ESHM20), EFEHR"
+          ESHM20_LICENSE_ID: "CC-BY-4.0"
+          ESHM20_LICENSE_URL: "https://creativecommons.org/licenses/by/4.0/"
+          ESHM20_CITATION: "Danciu et al. (2021), EFEHR Technical Report 001 v1.0.0"
+          ESHM20_CITATION_URL: "https://doi.org/10.12686/a15"
+          DERIVED_PUBLICATION_SCOPE: "bounded-derived-oq314-site-ingestion-action-evidence-only"
+          DERIVED_CHANGE_NOTICE: "Bounded action evidence for an attempted exact OpenQuake 3.14 site dtype/value-domain ingestion of the fixed receipt-bound ESHM20 site CSV; provider bytes and rows are not reproduced."
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-eshm20-site-model-oq314-ingestion-result-v1" and
+            .action == "eshm20_site_model_oq314_ingestion" and
+            .source_issue == 281 and
+            .dataset_id == "efehr.eshm20" and
+            .target_sha == $sha and
+            .execution_sha == $sha and
+            .status == "pass" and
+            .failure_class == null and
+            .gate.oq314_site_dtype_parse_verified == true and
+            .gate.lon_lat_finite_and_in_bounds == true and
+            .gate.duplicate_coordinate_count_after_rounding == 0 and
+            .gate.region_supported_domain_verified == true and
+            .gate.vs30_positive_finite_verified == true and
+            .gate.vs30measured_bool_parse_verified == true and
+            .gate.xvf_finite_verified == true and
+            .historical_environment_verified == false and
+            .full_site_compatibility_verified == false and
+            .crs_authorized == false and
+            .coordinate_semantics_authorized == false and
+            .site_response_authorized == false and
+            .numerical_hazard_agreement_verified == false and
+            .reference_run_verified == false and
+            .independent_validation_verified == false and
+            .external_bytes_persisted == false and
+            .raw_rows_returned == false and
+            .publication_authorized == false and
+            .model_use_authorized == false
+          ' >/dev/null
+
+          test "$ESHM20_ATTRIBUTION" = "European Seismic Hazard Model 2020 (ESHM20), EFEHR"
+          test "$ESHM20_LICENSE_ID" = "CC-BY-4.0"
+          test "$ESHM20_LICENSE_URL" = "https://creativecommons.org/licenses/by/4.0/"
+          test "$ESHM20_CITATION" = "Danciu et al. (2021), EFEHR Technical Report 001 v1.0.0"
+          test "$ESHM20_CITATION_URL" = "https://doi.org/10.12686/a15"
+          test "$DERIVED_PUBLICATION_SCOPE" = "bounded-derived-oq314-site-ingestion-action-evidence-only"
+
+          NOTICE="$PUBLICATION_NOTICE_MARKER
+          Attribution: $ESHM20_ATTRIBUTION
+          License: $ESHM20_LICENSE_ID — $ESHM20_LICENSE_URL
+          Citation: $ESHM20_CITATION — $ESHM20_CITATION_URL
+          Bounded derived action evidence publication authorized: true
+          Derived action-evidence publication scope: $DERIVED_PUBLICATION_SCOPE
+          Change notice: $DERIVED_CHANGE_NOTICE
+          Execution SHA: $EXECUTION_SHA
+          Provider/raw publication authority: false; model-use authority: false."
+          jq -n --arg body "$NOTICE" '{body:$body}' > "$RUNNER_TEMP/oq314-site-notice.json"
+          gh api \
+            --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/281/comments" \
+            --input "$RUNNER_TEMP/oq314-site-notice.json"
+
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/oq314-site-result.json"
+          gh api \
+            --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/281/comments" \
+            --input "$RUNNER_TEMP/oq314-site-result.json"
