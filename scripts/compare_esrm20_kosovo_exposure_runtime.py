@@ -12,8 +12,10 @@ Decimals across that bridge?
 
 No caller can select a provider target.  The result contains only aggregate
 counts, field names and SHA-256 fingerprints; provider rows and raw field values
-are never returned.  A successful comparison does not authorize CRS promotion,
-insured-value semantics, publication, model use, or full file equivalence.
+are never returned.  Canonical provider locator metadata is emitted only when
+the compared bytes match the frozen receipt identities.  A successful
+comparison does not authorize CRS promotion, insured-value semantics,
+publication, model use, or full file equivalence.
 """
 
 from __future__ import annotations
@@ -235,6 +237,33 @@ def _relation_fingerprint(
     return digest.hexdigest()
 
 
+def _comparison_identity(
+    *,
+    canonical: bool,
+    project_id: int,
+    project_path: str,
+    commit_sha: str,
+    repository_path: str,
+    byte_count: int,
+    sha256: str,
+) -> dict[str, Any]:
+    identity: dict[str, Any] = {
+        "canonical_receipt_verified": canonical,
+        "byte_count": byte_count,
+        "sha256": sha256,
+    }
+    if canonical:
+        identity.update(
+            {
+                "project_id": project_id,
+                "project_path": project_path,
+                "commit_sha": commit_sha,
+                "repository_path": repository_path,
+            }
+        )
+    return identity
+
+
 def compare_verified_exposure_bytes(
     source_raw: bytes,
     runtime_raw: bytes,
@@ -259,6 +288,18 @@ def compare_verified_exposure_bytes(
         expected_sha256=runtime_expected_sha256,
         expected_header=RUNTIME_HEADER,
         label="runtime exposure",
+    )
+
+    source_receipt_is_canonical = (
+        source_expected_byte_count == source_profile.EXPECTED_BYTE_COUNT
+        and source_expected_sha256 == source_profile.EXPECTED_SHA256
+    )
+    runtime_receipt_is_canonical = (
+        runtime_expected_byte_count == runtime_profile.EXPECTED_BYTE_COUNT
+        and runtime_expected_sha256 == runtime_profile.EXPECTED_SHA256
+    )
+    canonical_receipt_pair_verified = (
+        source_receipt_is_canonical and runtime_receipt_is_canonical
     )
 
     source_key_fields = tuple(source for source, _runtime in KEY_FIELD_PAIRS)
@@ -317,22 +358,25 @@ def compare_verified_exposure_bytes(
     return {
         "schema_version": SCHEMA_VERSION,
         "record_count": EXPECTED_RECORD_COUNT,
-        "source_identity": {
-            "project_id": source_profile.PROJECT_ID,
-            "project_path": source_profile.PROJECT_PATH,
-            "commit_sha": source_profile.COMMIT_SHA,
-            "repository_path": source_profile.REPOSITORY_PATH,
-            "byte_count": source_expected_byte_count,
-            "sha256": source_expected_sha256,
-        },
-        "runtime_identity": {
-            "project_id": runtime_profile.PROJECT_ID,
-            "project_path": runtime_profile.PROJECT_PATH,
-            "commit_sha": runtime_profile.COMMIT_SHA,
-            "repository_path": runtime_profile.REPOSITORY_PATH,
-            "byte_count": runtime_expected_byte_count,
-            "sha256": runtime_expected_sha256,
-        },
+        "canonical_receipt_pair_verified": canonical_receipt_pair_verified,
+        "source_identity": _comparison_identity(
+            canonical=source_receipt_is_canonical,
+            project_id=source_profile.PROJECT_ID,
+            project_path=source_profile.PROJECT_PATH,
+            commit_sha=source_profile.COMMIT_SHA,
+            repository_path=source_profile.REPOSITORY_PATH,
+            byte_count=source_expected_byte_count,
+            sha256=source_expected_sha256,
+        ),
+        "runtime_identity": _comparison_identity(
+            canonical=runtime_receipt_is_canonical,
+            project_id=runtime_profile.PROJECT_ID,
+            project_path=runtime_profile.PROJECT_PATH,
+            commit_sha=runtime_profile.COMMIT_SHA,
+            repository_path=runtime_profile.REPOSITORY_PATH,
+            byte_count=runtime_expected_byte_count,
+            sha256=runtime_expected_sha256,
+        ),
         "comparison_key": {
             "source_fields": list(source_key_fields),
             "runtime_fields": list(runtime_key_fields),
@@ -435,4 +479,9 @@ def acquire_and_compare_kosovo_exposure_runtime(
         opener=opener,
         monotonic=monotonic,
     )
-    return compare_verified_exposure_bytes(source_raw, runtime_raw)
+    result = compare_verified_exposure_bytes(source_raw, runtime_raw)
+    if result.get("canonical_receipt_pair_verified") is not True:
+        raise ExposureRuntimeComparisonError(
+            "fixed comparison did not prove the canonical receipt pair"
+        )
+    return result
