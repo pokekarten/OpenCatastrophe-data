@@ -49,6 +49,7 @@ RIGHTS_TRANSFORMATION_NOTICE = (
 # Bind the production path to the exact object already receipted/profiled.
 # Keep separate import-time canonical values so paired mutation of the local
 # aliases and the upstream profile module cannot silently move the authority.
+_FROZEN_MAPPING_DATASET_ID = "efehr.esrm20.risk-inputs.v1.0"
 _FROZEN_MAPPING_BYTE_COUNT = 83_585
 _FROZEN_MAPPING_SHA256 = "94b9ee800e9435a346ca200ecf34d0d46c8d8b895cc56e3be85c323006b4ee4c"
 _FROZEN_MAPPING_PROJECT_ID = 269
@@ -56,6 +57,7 @@ _FROZEN_MAPPING_PROJECT_PATH = "efehr/esrm20"
 _FROZEN_MAPPING_COMMIT_SHA = "05f83bbc9df81d02ee8ddb1801d9d781355ce783"
 _FROZEN_MAPPING_REPOSITORY_PATH = "Vulnerability/esrm20_exposure_vulnerability_mapping.csv"
 
+_MAPPING_DATASET_ID = _FROZEN_MAPPING_DATASET_ID
 _MAPPING_BYTE_COUNT = _FROZEN_MAPPING_BYTE_COUNT
 _MAPPING_SHA256 = _FROZEN_MAPPING_SHA256
 _MAPPING_PROJECT_ID = _FROZEN_MAPPING_PROJECT_ID
@@ -70,6 +72,12 @@ class KosovoMappingJoinError(ValueError):
 
 def _require_frozen_mapping_authority() -> None:
     expected = (
+        (
+            _MAPPING_DATASET_ID,
+            mapping_source.DATASET_ID,
+            _FROZEN_MAPPING_DATASET_ID,
+            "dataset id",
+        ),
         (
             _MAPPING_PROJECT_ID,
             mapping_source.PROJECT_ID,
@@ -338,7 +346,7 @@ def join_verified_kosovo_taxonomy_mapping(
             "taxonomy_value_set_sha256": taxonomy["taxonomy_value_set_sha256"],
         },
         "mapping_source": {
-            "dataset_id": mapping_source.DATASET_ID,
+            "dataset_id": _MAPPING_DATASET_ID,
             "project_id": _MAPPING_PROJECT_ID,
             "project_path": _MAPPING_PROJECT_PATH,
             "commit_sha": _MAPPING_COMMIT_SHA,
