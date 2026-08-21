@@ -414,6 +414,8 @@ def _execute_native(command: Sequence[str], env: Mapping[str, str]) -> int:
         list(command),
         env=dict(env),
         check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
     return completed.returncode
 
