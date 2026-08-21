@@ -54,6 +54,7 @@ REQUEST_MARKER = "<!-- oc-eq1-esrm20-runtime-residential-csv-profile-request-v1 
 RESULT_MARKER = "<!-- oc-eq1-esrm20-runtime-residential-csv-profile-result-v1 -->"
 REQUEST_SCHEMA_VERSION = "oc-esrm20-runtime-residential-csv-profile-request-v1"
 RESULT_SCHEMA_VERSION = "oc-esrm20-runtime-residential-csv-profile-result-v1"
+PROFILE_SCHEMA_VERSION = "oc-esrm20-exposure-content-profile-v0"
 ACTION = "esrm20_runtime_residential_csv_profile"
 TRUSTED_RESULT_LOGIN = "github-actions[bot]"
 MAX_LEDGER_PAGES = 20
@@ -228,6 +229,8 @@ def _validate_profile(profile: object) -> dict[str, Any]:
         "publication_authorized",
     }:
         raise RuntimeResidentialCsvProfileActionError("profile fields drifted")
+    if profile.get("schema_version") != PROFILE_SCHEMA_VERSION:
+        raise RuntimeResidentialCsvProfileActionError("profile schema version drifted")
     parser = profile.get("parser")
     if type(parser) is not dict or set(parser) != {
         "encoding",
