@@ -344,3 +344,90 @@ jobs:
             "repos/${GITHUB_REPOSITORY}/issues/285/comments" \
             -f body="$BODY" \
             >/dev/null
+
+  publish-workflow-diagnostic:
+    name: Publish bounded workflow failure diagnostic
+    needs: [validate-request, execute-native-runtime, publish-native-runtime]
+    if: >-
+      always() &&
+      (
+        needs.validate-request.result == 'failure' ||
+        needs.validate-request.result == 'cancelled' ||
+        needs.execute-native-runtime.result == 'failure' ||
+        needs.execute-native-runtime.result == 'cancelled' ||
+        needs.publish-native-runtime.result == 'failure' ||
+        needs.publish-native-runtime.result == 'cancelled'
+      )
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Publish execution-only diagnostic without checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_COMMENT_ID: ${{ github.event.comment.id }}
+          EVENT_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          VALIDATE_RESULT: ${{ needs.validate-request.result }}
+          EXECUTE_RESULT: ${{ needs.execute-native-runtime.result }}
+          PUBLISH_RESULT: ${{ needs.publish-native-runtime.result }}
+          DIAGNOSTIC_MARKER: "<!-- oc-eq1-esrm20-scenario-v10-greece-rupture-openquake3121-runtime-workflow-diagnostic-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$EVENT_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          printf '%s\n' "$SOURCE_COMMENT_ID" | grep -Eq '^[1-9][0-9]*$'
+          printf '%s\n' "$RUN_ID" | grep -Eq '^[1-9][0-9]*$'
+          printf '%s\n' "$RUN_ATTEMPT" | grep -Eq '^[1-9][0-9]*$'
+
+          DIAGNOSTIC_JSON="$(jq -cn \
+            --arg event_sha "$EVENT_SHA" \
+            --argjson source_comment_id "$SOURCE_COMMENT_ID" \
+            --argjson workflow_run_id "$RUN_ID" \
+            --argjson workflow_run_attempt "$RUN_ATTEMPT" \
+            --arg validate_request_result "$VALIDATE_RESULT" \
+            --arg execute_native_runtime_result "$EXECUTE_RESULT" \
+            --arg publish_native_runtime_result "$PUBLISH_RESULT" \
+            '{
+              schema_version:"oc-esrm20-scenario-v10-greece-rupture-openquake3121-runtime-workflow-diagnostic-v1",
+              source_issue:285,
+              source_comment_id:$source_comment_id,
+              event_sha:$event_sha,
+              workflow_run_id:$workflow_run_id,
+              workflow_run_attempt:$workflow_run_attempt,
+              validate_request_result:$validate_request_result,
+              execute_native_runtime_result:$execute_native_runtime_result,
+              publish_native_runtime_result:$publish_native_runtime_result,
+              canonical_runtime_status:"unknown",
+              provider_execution_status:"unknown",
+              scientific_status:"unknown",
+              request_reissue_authorized:false,
+              publication_authorized:false,
+              model_use_authorized:false
+            }')"
+          printf '%s' "$DIAGNOSTIC_JSON" | jq -e '
+            .schema_version == "oc-esrm20-scenario-v10-greece-rupture-openquake3121-runtime-workflow-diagnostic-v1" and
+            .source_issue == 285 and
+            (.source_comment_id | type == "number" and . > 0) and
+            (.event_sha | test("^[0-9a-f]{40}$")) and
+            (.workflow_run_id | type == "number" and . > 0) and
+            (.workflow_run_attempt | type == "number" and . > 0) and
+            (.validate_request_result | IN("success", "failure", "cancelled", "skipped")) and
+            (.execute_native_runtime_result | IN("success", "failure", "cancelled", "skipped")) and
+            (.publish_native_runtime_result | IN("success", "failure", "cancelled", "skipped")) and
+            .canonical_runtime_status == "unknown" and
+            .provider_execution_status == "unknown" and
+            .scientific_status == "unknown" and
+            .request_reissue_authorized == false and
+            .publication_authorized == false and
+            .model_use_authorized == false
+          ' >/dev/null
+          test "$(printf '%s' "$DIAGNOSTIC_JSON" | wc -c)" -le 1800
+
+          BODY="$(printf '%s\n%s' "$DIAGNOSTIC_MARKER" "$DIAGNOSTIC_JSON")"
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/285/comments" \
+            -f body="$BODY" \
+            >/dev/null
