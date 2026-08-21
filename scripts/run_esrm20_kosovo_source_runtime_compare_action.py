@@ -96,16 +96,6 @@ _IDENTITY_FIELDS = {
     "commit_sha",
     "repository_path",
 }
-_RECEIPT_IDENTITY_FIELDS = {
-    "project_id",
-    "project_path",
-    "commit_sha",
-    "repository_path",
-    "receipt_comment_id",
-    "receipt_execution_sha",
-    "receipt_byte_count",
-    "receipt_sha256",
-}
 _KEY_FIELDS = {
     "source_fields",
     "runtime_fields",
@@ -262,7 +252,7 @@ def _base_result(execution_sha: str) -> dict[str, Any]:
     }
 
 
-def _validate_decimal_text(value: object, *, label: str) -> None:
+def _validate_decimal_text(value: object, *, label: str) -> Decimal:
     if type(value) is not str or not value:
         raise SourceRuntimeCompareActionError(f"invalid {label}")
     try:
@@ -271,6 +261,9 @@ def _validate_decimal_text(value: object, *, label: str) -> None:
         raise SourceRuntimeCompareActionError(f"invalid {label}") from exc
     if not parsed.is_finite() or parsed < 0:
         raise SourceRuntimeCompareActionError(f"invalid {label}")
+    if comparison.source_value._canonical_decimal(parsed) != value:
+        raise SourceRuntimeCompareActionError(f"non-canonical {label}")
+    return parsed
 
 
 def _validate_comparison(result: object) -> dict[str, Any]:
@@ -334,10 +327,14 @@ def _validate_comparison(result: object) -> dict[str, Any]:
         all_equal = item.get("all_exact_decimal_equal")
         if type(all_equal) is not bool or all_equal is not (non_equal_count == 0):
             raise SourceRuntimeCompareActionError("numeric equality flag drifted")
-        _validate_decimal_text(
+        maximum_difference = _validate_decimal_text(
             item.get("maximum_absolute_difference"),
             label="maximum absolute difference",
         )
+        if (maximum_difference == 0) is not all_equal:
+            raise SourceRuntimeCompareActionError(
+                "numeric maximum difference/equality state drifted"
+            )
         digest = item.get("relation_sha256")
         if type(digest) is not str or _SHA256_RE.fullmatch(digest) is None:
             raise SourceRuntimeCompareActionError("invalid relation digest")
