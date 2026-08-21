@@ -178,6 +178,33 @@ class ExactKosovoMappingJoinTests(unittest.TestCase):
                         )
                     extract_taxonomy.assert_not_called()
 
+    def test_upstream_mapping_authority_drift_fails_before_taxonomy_extraction(self):
+        cases = (
+            ("DATASET_ID", "efehr.esrm20.other", "dataset id"),
+            ("PROJECT_ID", 270, "project id"),
+            ("PROJECT_PATH", "efehr/other", "project path"),
+            ("COMMIT_SHA", "0" * 40, "commit"),
+            ("REPOSITORY_PATH", "Vulnerability/other.csv", "path"),
+            ("EXPECTED_BYTE_COUNT", 1, "byte count"),
+            ("EXPECTED_SHA256", "0" * 64, "SHA-256"),
+        )
+        for upstream_name, drifted, label in cases:
+            with self.subTest(label=label):
+                with (
+                    patch.object(subject.mapping_source, upstream_name, drifted),
+                    patch.object(
+                        subject.taxonomy_source, "extract_verified_kosovo_taxonomy"
+                    ) as extract_taxonomy,
+                ):
+                    with self.assertRaisesRegex(
+                        subject.KosovoMappingJoinError,
+                        f"frozen mapping {label} authority drifted",
+                    ):
+                        subject.join_verified_kosovo_taxonomy_mapping(
+                            b"synthetic exposure", b"synthetic mapping"
+                        )
+                    extract_taxonomy.assert_not_called()
+
     def test_public_result_is_exhaustive_attributed_and_keeps_ceiling_false(self):
         mapping_raw = b"synthetic mapping"
         exposure_identity = {
