@@ -10,9 +10,14 @@ on:
 permissions:
   contents: read
 
+# Only owner-authored, request-shaped comments share the serialized provider lane.
+# Unrelated comments get a unique group and therefore cannot occupy or replace
+# a pending trusted comparison request. The workflow-level lock spans validation,
+# dedup, provider execution, and terminal publication.
 concurrency:
-  group: esrm20-kosovo-source-runtime-compare-${{ github.repository }}
+  group: esrm20-kosovo-source-runtime-compare-${{ github.event.issue.number == 282 && github.event.comment.user.login == github.event.repository.owner.login && github.event.comment.author_association == 'OWNER' && contains(github.event.comment.body, '<!-- oc-eq1-esrm20-kosovo-source-runtime-compare-request-v1 -->') && 'authorized-v1' || github.event.comment.id }}
   cancel-in-progress: false
+  queue: max
 
 jobs:
   validate-request:
@@ -30,10 +35,10 @@ jobs:
     outputs:
       execution_sha: ${{ steps.fence.outputs.execution_sha }}
     steps:
-      - name: Checkout trusted default branch
+      - name: Checkout event-associated trusted commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.repository.default_branch }}
+          ref: ${{ github.sha }}
           fetch-depth: 1
           persist-credentials: false
       - name: Set up validation Python
