@@ -231,7 +231,8 @@ class SourceRuntimeCompareActionTests(unittest.TestCase):
             text,
         )
         self.assertIn("github.event.comment.author_association == 'OWNER'", text)
-        self.assertIn("ref: ${{ github.event.repository.default_branch }}", text)
+        self.assertIn("ref: ${{ github.sha }}", text)
+        self.assertNotIn("ref: ${{ github.event.repository.default_branch }}", text)
         self.assertIn("Checkout exact trusted execution commit", text)
         self.assertNotIn("workflow_dispatch", text)
         self.assertNotIn("inputs:", text)
@@ -259,6 +260,34 @@ class SourceRuntimeCompareActionTests(unittest.TestCase):
             "model_use_authorized",
         ):
             self.assertIn(f".{field} == false", publisher)
+
+    def test_workflow_serializes_only_authorized_requests(self):
+        text = Path(
+            ".github/workflows/esrm20-kosovo-source-runtime-compare.yml"
+        ).read_text(encoding="utf-8")
+        pre_jobs = text.split("\njobs:\n", 1)[0]
+        self.assertIn("\nconcurrency:\n", pre_jobs)
+        self.assertIn(
+            "group: esrm20-kosovo-source-runtime-compare-${{ ",
+            pre_jobs,
+        )
+        self.assertIn("github.event.issue.number == 282", pre_jobs)
+        self.assertIn(
+            "github.event.comment.user.login == github.event.repository.owner.login",
+            pre_jobs,
+        )
+        self.assertIn("github.event.comment.author_association == 'OWNER'", pre_jobs)
+        self.assertIn(
+            "<!-- oc-eq1-esrm20-kosovo-source-runtime-compare-request-v1 -->",
+            pre_jobs,
+        )
+        self.assertIn("&& 'authorized-v1' || github.event.comment.id }}", pre_jobs)
+        self.assertIn("cancel-in-progress: false", pre_jobs)
+        self.assertIn("queue: max", pre_jobs)
+        self.assertNotIn(
+            "group: esrm20-kosovo-source-runtime-compare-${{ github.repository }}",
+            pre_jobs,
+        )
 
     def test_workflow_deduplicates_before_provider_comparison(self):
         text = Path(
