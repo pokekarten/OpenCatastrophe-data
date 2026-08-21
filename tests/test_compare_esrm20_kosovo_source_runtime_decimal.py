@@ -10,7 +10,7 @@ import json
 import unittest
 from unittest.mock import patch
 
-from scripts import compare_esrm20_kosovo_source_runtime_decimal as target
+from scripts import compare_esrm20_kosovo_exposure_runtime as target
 
 
 def _source_row(index: int, *, total: str | None = None) -> dict[str, str]:
@@ -42,7 +42,12 @@ def _source_row(index: int, *, total: str | None = None) -> dict[str, str]:
     }
 
 
-def _runtime_row(source: dict[str, str], index: int, *, structural: str | None = None) -> dict[str, str]:
+def _runtime_row(
+    source: dict[str, str],
+    index: int,
+    *,
+    structural: str | None = None,
+) -> dict[str, str]:
     return {
         "id": f"asset-{index}",
         "lon": source["LONGITUDE"],
@@ -70,7 +75,10 @@ def _csv_bytes(header: tuple[str, ...], rows: list[dict[str, str]]) -> bytes:
     return stream.getvalue().encode("utf-8")
 
 
-def _compare(source_rows: list[dict[str, str]], runtime_rows: list[dict[str, str]]) -> dict:
+def _compare(
+    source_rows: list[dict[str, str]],
+    runtime_rows: list[dict[str, str]],
+) -> dict:
     source_raw = _csv_bytes(target.SOURCE_HEADER, source_rows)
     runtime_raw = _csv_bytes(target.RUNTIME_HEADER, runtime_rows)
     with patch.object(target, "EXPECTED_RECORD_COUNT", len(source_rows)):
@@ -85,17 +93,24 @@ def _compare(source_rows: list[dict[str, str]], runtime_rows: list[dict[str, str
 
 
 class KosovoSourceRuntimeDecimalComparatorTests(unittest.TestCase):
-    def test_exact_decimal_equality_survives_lexical_format_changes_without_raw_output(self) -> None:
+    def test_decimal_equality_survives_lexical_format_without_raw_output(self) -> None:
         source_rows = [_source_row(index) for index in range(3)]
-        runtime_rows = [_runtime_row(source_rows[index], index) for index in range(3)]
+        runtime_rows = [
+            _runtime_row(source_rows[index], index) for index in range(3)
+        ]
 
         result = _compare(source_rows, runtime_rows)
 
         self.assertEqual(result["record_count"], 3)
         self.assertTrue(result["comparison_key"]["exact_key_set_equal"])
         self.assertEqual(result["comparison_key"]["source_unique_count"], 3)
-        self.assertFalse(result["comparison_key"]["provider_business_key_authorized"])
-        self.assertEqual(len(result["numeric_comparisons"]), len(target.NUMERIC_FIELD_PAIRS))
+        self.assertFalse(
+            result["comparison_key"]["provider_business_key_authorized"]
+        )
+        self.assertEqual(
+            len(result["numeric_comparisons"]),
+            len(target.NUMERIC_FIELD_PAIRS),
+        )
         for comparison in result["numeric_comparisons"]:
             self.assertTrue(comparison["all_exact_decimal_equal"])
             self.assertEqual(comparison["non_equal_count"], 0)
@@ -113,9 +128,11 @@ class KosovoSourceRuntimeDecimalComparatorTests(unittest.TestCase):
         self.assertFalse(result["publication_authorized"])
         self.assertFalse(result["model_use_authorized"])
 
-    def test_numeric_mismatch_is_measured_not_promoted_to_semantic_conclusion(self) -> None:
+    def test_numeric_mismatch_is_measured_without_semantic_promotion(self) -> None:
         source_rows = [_source_row(index) for index in range(2)]
-        runtime_rows = [_runtime_row(source_rows[index], index) for index in range(2)]
+        runtime_rows = [
+            _runtime_row(source_rows[index], index) for index in range(2)
+        ]
         runtime_rows[1]["structural"] = "100.5"
 
         result = _compare(source_rows, runtime_rows)
@@ -140,9 +157,15 @@ class KosovoSourceRuntimeDecimalComparatorTests(unittest.TestCase):
         runtime_second = _runtime_row(runtime_second_source, 1)
 
         source_raw = _csv_bytes(target.SOURCE_HEADER, [first, duplicate])
-        runtime_raw = _csv_bytes(target.RUNTIME_HEADER, [runtime_first, runtime_second])
+        runtime_raw = _csv_bytes(
+            target.RUNTIME_HEADER,
+            [runtime_first, runtime_second],
+        )
         with patch.object(target, "EXPECTED_RECORD_COUNT", 2):
-            with self.assertRaisesRegex(target.ExposureRuntimeComparisonError, "source comparison key is not unique"):
+            with self.assertRaisesRegex(
+                target.ExposureRuntimeComparisonError,
+                "source comparison key is not unique",
+            ):
                 target.compare_verified_exposure_bytes(
                     source_raw,
                     runtime_raw,
@@ -154,13 +177,18 @@ class KosovoSourceRuntimeDecimalComparatorTests(unittest.TestCase):
 
     def test_key_set_mismatch_fails_closed(self) -> None:
         source_rows = [_source_row(index) for index in range(2)]
-        runtime_rows = [_runtime_row(source_rows[index], index) for index in range(2)]
+        runtime_rows = [
+            _runtime_row(source_rows[index], index) for index in range(2)
+        ]
         runtime_rows[1]["taxonomy"] = "DIFFERENT-TAXONOMY"
 
         source_raw = _csv_bytes(target.SOURCE_HEADER, source_rows)
         runtime_raw = _csv_bytes(target.RUNTIME_HEADER, runtime_rows)
         with patch.object(target, "EXPECTED_RECORD_COUNT", 2):
-            with self.assertRaisesRegex(target.ExposureRuntimeComparisonError, "comparison key sets differ"):
+            with self.assertRaisesRegex(
+                target.ExposureRuntimeComparisonError,
+                "comparison key sets differ",
+            ):
                 target.compare_verified_exposure_bytes(
                     source_raw,
                     runtime_raw,
@@ -177,7 +205,10 @@ class KosovoSourceRuntimeDecimalComparatorTests(unittest.TestCase):
         runtime_raw = _csv_bytes(target.RUNTIME_HEADER, [runtime])
 
         with patch.object(target, "EXPECTED_RECORD_COUNT", 1):
-            with self.assertRaisesRegex(target.ExposureRuntimeComparisonError, "source exposure receipt/structure gate failed"):
+            with self.assertRaisesRegex(
+                target.ExposureRuntimeComparisonError,
+                "source exposure receipt/structure gate failed",
+            ):
                 target.compare_verified_exposure_bytes(
                     source_raw,
                     runtime_raw,
