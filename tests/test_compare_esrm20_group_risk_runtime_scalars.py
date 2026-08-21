@@ -248,7 +248,7 @@ class GroupRiskRuntimeScalarComparisonTests(unittest.TestCase):
                 ):
                     _compare(group1, group2)
 
-    def test_rejects_one_sided_projector_lineage_update_even_if_profile_matches_module(self) -> None:
+    def test_rejects_one_sided_projector_lineage_update(self) -> None:
         group1 = _profile("group1")
         group2 = _profile("group2")
         divergent_commit = "f" * 40
