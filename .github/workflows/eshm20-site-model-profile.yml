@@ -161,8 +161,8 @@ jobs:
           ESHM20_LICENSE_URL: "https://creativecommons.org/licenses/by/4.0/"
           ESHM20_CITATION: "Danciu et al. (2021), EFEHR Technical Report 001 v1.0.0"
           ESHM20_CITATION_URL: "https://doi.org/10.12686/a15"
-          DERIVED_PUBLICATION_SCOPE: "bounded-derived-structural-profile-metadata-only"
-          DERIVED_CHANGE_NOTICE: "Derived structural-profile metadata computed from the exact receipt-bound ESHM20 site CSV; provider bytes and rows are not reproduced."
+          DERIVED_PUBLICATION_SCOPE: "bounded-derived-site-profile-action-evidence-only"
+          DERIVED_CHANGE_NOTICE: "Bounded action evidence for an attempted structural profile of the fixed receipt-bound ESHM20 site CSV; provider bytes and rows are not reproduced."
         run: |
           set -euo pipefail
           printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
@@ -188,15 +188,15 @@ jobs:
           test "$ESHM20_LICENSE_URL" = "https://creativecommons.org/licenses/by/4.0/"
           test "$ESHM20_CITATION" = "Danciu et al. (2021), EFEHR Technical Report 001 v1.0.0"
           test "$ESHM20_CITATION_URL" = "https://doi.org/10.12686/a15"
-          test "$DERIVED_PUBLICATION_SCOPE" = "bounded-derived-structural-profile-metadata-only"
-          test "$DERIVED_CHANGE_NOTICE" = "Derived structural-profile metadata computed from the exact receipt-bound ESHM20 site CSV; provider bytes and rows are not reproduced."
+          test "$DERIVED_PUBLICATION_SCOPE" = "bounded-derived-site-profile-action-evidence-only"
+          test "$DERIVED_CHANGE_NOTICE" = "Bounded action evidence for an attempted structural profile of the fixed receipt-bound ESHM20 site CSV; provider bytes and rows are not reproduced."
 
           NOTICE="$PUBLICATION_NOTICE_MARKER
           Attribution: $ESHM20_ATTRIBUTION
           License: $ESHM20_LICENSE_ID — $ESHM20_LICENSE_URL
           Citation: $ESHM20_CITATION — $ESHM20_CITATION_URL
-          Derived evidence publication authorized: true
-          Derived publication scope: $DERIVED_PUBLICATION_SCOPE
+          Bounded derived action evidence publication authorized: true
+          Derived action-evidence publication scope: $DERIVED_PUBLICATION_SCOPE
           Change notice: $DERIVED_CHANGE_NOTICE
           Execution SHA: $EXECUTION_SHA
           Provider/raw publication authority: false; model-use authority: false."
