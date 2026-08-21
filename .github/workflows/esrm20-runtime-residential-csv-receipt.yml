@@ -54,7 +54,7 @@ jobs:
           set -euo pipefail
           export EXECUTION_SHA="$(git rev-parse HEAD)"
 
-          python scripts/run_esrm20_runtime_residential_csv_receipt_action.py \
+          python -m scripts.run_esrm20_runtime_residential_csv_receipt_action \
             --comment-body-env OC_RUNTIME_RESIDENTIAL_CSV_REQUEST \
             --expected-issue 282 \
             --execution-sha "$EXECUTION_SHA" \
@@ -103,7 +103,7 @@ jobs:
           fi
           test "$DEDUP_STATUS" = "clear"
 
-          python scripts/run_esrm20_runtime_residential_csv_receipt_action.py \
+          python -m scripts.run_esrm20_runtime_residential_csv_receipt_action \
             --comment-body-env OC_RUNTIME_RESIDENTIAL_CSV_REQUEST \
             --expected-issue 282 \
             --execution-sha "$EXECUTION_SHA" \
