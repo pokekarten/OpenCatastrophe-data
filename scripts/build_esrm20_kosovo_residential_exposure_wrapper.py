@@ -12,6 +12,7 @@ fail-closed evidence record. It does not read the selected CSV or persist bytes.
 from __future__ import annotations
 
 import hashlib
+import re
 import xml.etree.ElementTree as ET
 from copy import deepcopy
 from typing import Any
@@ -196,7 +197,17 @@ def _derive_from_verified_source(source_wrapper: bytes) -> tuple[bytes, dict[str
     assets[0].text = SELECTED_ASSET
 
     serialized = ET.tostring(root, encoding="unicode", short_empty_elements=True)
-    canonical = ET.canonicalize(serialized, with_comments=False, strip_text=True)
+    canonical = ET.canonicalize(
+        serialized,
+        with_comments=False,
+        strip_text=True,
+        rewrite_prefixes=True,
+    )
+    # ElementTree emits an unusable empty-URI prefix declaration for
+    # unqualified attributes when prefixes are rewritten (including on
+    # Python 3.14). The bounded source profile permits no foreign namespace,
+    # so these declarations are serializer artifacts and safe to omit.
+    canonical = re.sub(r' xmlns:n[0-9]+=""', "", canonical)
     output = canonical.encode("utf-8")
 
     expected_output_profile = deepcopy(expected_source_profile)
@@ -234,7 +245,9 @@ def _derive_from_verified_source(source_wrapper: bytes) -> tuple[bytes, dict[str
             "operation": "replace_assets_reference",
             "source_asset_references": list(SOURCE_ASSETS),
             "derived_asset_references": [SELECTED_ASSET],
-            "xml_serialization": "xml.etree.ElementTree.canonicalize-c14n2",
+            "xml_serialization": (
+                "xml.etree.ElementTree.c14n2-rewrite-prefixes-valid-xml"
+            ),
         },
         "experiment_label": EXPERIMENT_LABEL,
         "scope": SCOPE,

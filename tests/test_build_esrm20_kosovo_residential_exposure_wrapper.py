@@ -99,6 +99,22 @@ class KosovoResidentialWrapperTests(unittest.TestCase):
                 synthetic_source(assets=(subject.SELECTED_ASSET,))
             )
 
+    def test_output_identity_ignores_process_global_namespace_registration(
+        self,
+    ) -> None:
+        source = synthetic_source()
+        namespace = "http://openquake.org/xmlns/nrml/0.4"
+        with mock.patch.dict(subject.ET._namespace_map, clear=True):
+            unregistered = subject._derive_from_verified_source(source)
+            subject.ET.register_namespace("", namespace)
+            default_namespace = subject._derive_from_verified_source(source)
+            subject.ET.register_namespace("nrml", namespace)
+            named_namespace = subject._derive_from_verified_source(source)
+
+        self.assertEqual(unregistered, default_namespace)
+        self.assertEqual(unregistered, named_namespace)
+        self.assertNotIn(b'xmlns:n1=""', unregistered[0])
+
     def test_malformed_or_dtd_source_error_is_sanitized(self) -> None:
         for payload in (b"<broken", b'<!DOCTYPE x [<!ENTITY x "boom">]><x/>'):
             with (
