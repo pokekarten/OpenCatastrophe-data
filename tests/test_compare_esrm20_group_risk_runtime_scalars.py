@@ -249,17 +249,25 @@ class GroupRiskRuntimeScalarComparisonTests(unittest.TestCase):
                     _compare(group1, group2)
 
     def test_rejects_one_sided_projector_lineage_update(self) -> None:
-        group1 = _profile("group1")
-        group2 = _profile("group2")
-        divergent_commit = "f" * 40
-        group2["commit_sha"] = divergent_commit
+        for profile_field, module_field, divergent_value in (
+            ("dataset_id", "DATASET_ID", "divergent-dataset"),
+            ("project_id", "PROJECT_ID", 999),
+            ("project_path", "PROJECT_PATH", "divergent/project"),
+            ("commit_sha", "COMMIT_SHA", "f" * 40),
+        ):
+            with self.subTest(field=profile_field):
+                group1 = _profile("group1")
+                group2 = _profile("group2")
+                group2[profile_field] = divergent_value
 
-        with mock.patch.object(subject.group2_runtime, "COMMIT_SHA", divergent_commit):
-            with self.assertRaisesRegex(
-                subject.RiskRuntimeScalarComparisonError,
-                "group source lineage diverged at commit_sha",
-            ):
-                _compare(group1, group2)
+                with mock.patch.object(
+                    subject.group2_runtime, module_field, divergent_value
+                ):
+                    with self.assertRaisesRegex(
+                        subject.RiskRuntimeScalarComparisonError,
+                        f"group source lineage diverged at {profile_field}",
+                    ):
+                        _compare(group1, group2)
 
     def test_rejects_one_sided_openquake_reference_update(self) -> None:
         group1 = _profile("group1")
