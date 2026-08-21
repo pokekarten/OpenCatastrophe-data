@@ -1,0 +1,341 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Greece Rupture OpenQuake 3.12.1 Runtime
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-greece-rupture-openquake3121-runtime-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main native rupture request
+    if: >-
+      github.event.issue.number == 285 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-scenario-v10-greece-rupture-openquake3121-runtime-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up host validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Bind request to trusted main and fixed rupture receipt
+        id: fence
+        env:
+          OC_GREECE_RUPTURE_OQ3121_REQUEST: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/run_esrm20_scenario_v10_greece_rupture_openquake3121_runtime_action.py \
+            --comment-body-env OC_GREECE_RUPTURE_OQ3121_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-native-runtime:
+    name: Execute exact OpenQuake 3.12.1 rupture gate
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up host Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Prove complete issue-local dedup before external activity
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import run_esrm20_scenario_v10_greece_rupture_openquake3121_runtime_action as subject
+
+          skip = subject.has_terminal_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+
+      - name: Fetch exact OpenQuake v3.12.1 source
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OQ_COMMIT: 0bb8441aa202cd6ec075bf2044dd4aaeb26919b9
+        run: |
+          set -euo pipefail
+          OQ_ROOT="$RUNNER_TEMP/oq-engine"
+          git init "$OQ_ROOT"
+          git -C "$OQ_ROOT" remote add origin https://github.com/gem/oq-engine.git
+          git -C "$OQ_ROOT" fetch --depth=1 origin \
+            refs/tags/v3.12.1:refs/tags/v3.12.1
+          OBSERVED="$(git -C "$OQ_ROOT" rev-parse 'refs/tags/v3.12.1^{commit}')"
+          test "$OBSERVED" = "$OQ_COMMIT"
+          git -C "$OQ_ROOT" checkout --detach "$OBSERVED"
+          test -z "$(git -C "$OQ_ROOT" status --porcelain=v1)"
+
+      - name: Build observed OpenQuake 3.12.1 execution container
+        if: steps.dedup.outputs.skip != 'true'
+        id: image
+        run: |
+          set -euo pipefail
+          BASE_IMAGE="openquake/engine:3.12.1"
+          docker pull "$BASE_IMAGE"
+          BASE_REPO_DIGEST="$(docker image inspect \
+            --format='{{index .RepoDigests 0}}' "$BASE_IMAGE")"
+          printf '%s\n' "$BASE_REPO_DIGEST" |
+            grep -Eq '^openquake/engine@sha256:[0-9a-f]{64}$'
+
+          DOCKERFILE="$RUNNER_TEMP/Dockerfile.oq3121-rupture-runtime"
+          cat > "$DOCKERFILE" <<EOF
+          FROM $BASE_REPO_DIGEST
+          USER root
+          RUN apt-get update \
+              && apt-get install -y --no-install-recommends git \
+              && rm -rf /var/lib/apt/lists/*
+          COPY --chown=root:root oq-engine /oq-engine
+          RUN git config --system --add safe.directory /oq-engine
+          USER openquake
+          EOF
+
+          docker build --pull=false \
+            --file "$DOCKERFILE" \
+            --tag oc-oq3121-rupture-runtime:local \
+            "$RUNNER_TEMP"
+          IMAGE_ID="$(docker image inspect \
+            --format='{{.Id}}' oc-oq3121-rupture-runtime:local)"
+          printf '%s\n' "$IMAGE_ID" | grep -Eq '^sha256:[0-9a-f]{64}$'
+          echo "image_id=$IMAGE_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Run exact-byte native rupture acceptance gate
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_GREECE_RUPTURE_OQ3121_REQUEST: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          IMAGE_ID: ${{ steps.image.outputs.image_id }}
+          RESULT_PATH: ${{ runner.temp }}/greece-rupture-oq3121-result/result.json
+        run: |
+          set -euo pipefail
+          OUTPUT_DIR="$RUNNER_TEMP/greece-rupture-oq3121-result"
+          mkdir -p "$OUTPUT_DIR"
+          : > "$OUTPUT_DIR/result.json"
+          chmod 0666 "$OUTPUT_DIR/result.json"
+
+          docker run --rm \
+            --entrypoint /opt/openquake/bin/python \
+            -e PYTHONDONTWRITEBYTECODE=1 \
+            -e OPENBLAS_NUM_THREADS=1 \
+            -e PYTHONPATH=/oq-engine:/workspace \
+            -e OC_GREECE_RUPTURE_OQ3121_REQUEST \
+            -v "$GITHUB_WORKSPACE:/workspace:ro" \
+            -v "$OUTPUT_DIR:/output" \
+            -w /workspace \
+            "$IMAGE_ID" \
+            scripts/run_esrm20_scenario_v10_greece_rupture_openquake3121_runtime_action.py \
+            --comment-body-env OC_GREECE_RUPTURE_OQ3121_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --image-digest "$IMAGE_ID" \
+            --output /output/result.json
+
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from scripts import run_esrm20_scenario_v10_greece_rupture_openquake3121_runtime_action as subject
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          if subject._validate_terminal_result(result) != os.environ["EXECUTION_SHA"]:
+              raise SystemExit("native rupture runtime execution identity drifted")
+          PY
+
+      - name: Export bounded result to publisher
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        env:
+          RESULT_PATH: ${{ runner.temp }}/greece-rupture-oq3121-result/result.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(value, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          test "$(printf '%s' "$RESULT_JSON" | wc -c)" -le 6900
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-native-runtime:
+    name: Publish bounded native rupture evidence
+    needs: [validate-request, execute-native-runtime]
+    if: >-
+      needs.execute-native-runtime.result == 'success' &&
+      needs.execute-native-runtime.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence closed result and publish without checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-native-runtime.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-scenario-v10-greece-rupture-openquake3121-runtime-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-scenario-v10-greece-rupture-openquake3121-runtime-result-v1" and
+            .action == "esrm20_scenario_v10_greece_rupture_openquake3121_runtime" and
+            .source_issue == 285 and
+            .dataset_id == "efehr.esrm20.scenario-tests.v1.0" and
+            .target_sha == $sha and .execution_sha == $sha and
+            (.execution_container_image_digest | test("^sha256:[0-9a-f]{64}$")) and
+            .openquake_reference == {
+              "commit":"0bb8441aa202cd6ec075bf2044dd4aaeb26919b9",
+              "parser_path":"openquake.commonlib.readinput.get_rupture",
+              "repository":"gem/oq-engine",
+              "tag":"v3.12.1"
+            } and
+            .rupture_identity == {
+              "commit_sha":"041f90d950d6ff84180b2faa11319a42c66c74cc",
+              "event_id":"Greece_07-9-1999",
+              "git_blob_sha1":"fa3bfd7aedfb63869c5808785b0ca712b6e45859",
+              "project_id":273,
+              "project_path":"efehr/esrm20_scenario_tests",
+              "receipt_byte_count":666,
+              "receipt_sha256":"bb2715a8ca2233dd27a77dbccf789ab023b742048805ce53df6dd2532a1b073b",
+              "release_tag":"v1.0",
+              "repository_path":"ruptures/source_models/rupture_Greece_07-9-1999.xml",
+              "role":"rupture_definition"
+            } and
+            .output_payload_bytes_read == false and
+            .external_bytes_persisted == false and
+            .historical_environment_verified == false and
+            .event_location_inference_authorized == false and
+            .scenario_selection_authorized == false and
+            .site_model_compatibility_verified == false and
+            .gsim_compatibility_verified == false and
+            .numerical_hazard_agreement_verified == false and
+            .vulnerability_compatibility_verified == false and
+            .reference_run_verified == false and
+            .scientific_validity_verified == false and
+            .independent_validation_established == false and
+            .holdout_status_established == false and
+            .publication_authorized == false and
+            .model_use_authorized == false and
+            (
+              if .status == "pass" then
+                .failure_stage == null and .failure_code == null and
+                .runtime_source_commit_verified == true and
+                .provider_file_bytes_read == true and
+                .byte_identity_verified == true and
+                .trusted_shape_precondition_verified == true and
+                .native_conversion_attempted == true and
+                .legacy_nrml_04_native_acceptance_verified == true and
+                .single_plane_native_conversion_verified == true and
+                .readinput_postconditions_verified == true and
+                .rupture_class == "BaseRupture" and
+                .surface_class == "PlanarSurface"
+              elif .status == "blocked" then
+                .legacy_nrml_04_native_acceptance_verified == false and
+                .single_plane_native_conversion_verified == false and
+                .readinput_postconditions_verified == false and
+                .rupture_class == null and .surface_class == null and
+                (
+                  (.failure_stage == "runtime_identity" and
+                   .failure_code == "runtime_identity_rejected" and
+                   .runtime_source_commit_verified == false and
+                   .provider_file_bytes_read == false and
+                   .byte_identity_verified == false and
+                   .trusted_shape_precondition_verified == false and
+                   .native_conversion_attempted == false)
+                  or
+                  (.failure_stage == "acquisition" and
+                   .failure_code == "acquisition_failed" and
+                   .runtime_source_commit_verified == true and
+                   .provider_file_bytes_read == false and
+                   .byte_identity_verified == false and
+                   .trusted_shape_precondition_verified == false and
+                   .native_conversion_attempted == false)
+                  or
+                  (.failure_stage == "byte_identity" and
+                   .failure_code == "byte_identity_mismatch" and
+                   .runtime_source_commit_verified == true and
+                   .provider_file_bytes_read == true and
+                   .byte_identity_verified == false and
+                   .trusted_shape_precondition_verified == false and
+                   .native_conversion_attempted == false)
+                  or
+                  (.failure_stage == "shape_precondition" and
+                   .failure_code == "shape_precondition_rejected" and
+                   .runtime_source_commit_verified == true and
+                   .provider_file_bytes_read == true and
+                   .byte_identity_verified == true and
+                   .trusted_shape_precondition_verified == false and
+                   .native_conversion_attempted == false)
+                  or
+                  (.failure_stage == "native_conversion" and
+                   .failure_code == "native_conversion_rejected" and
+                   .runtime_source_commit_verified == true and
+                   .provider_file_bytes_read == true and
+                   .byte_identity_verified == true and
+                   .trusted_shape_precondition_verified == true and
+                   .native_conversion_attempted == true)
+                )
+              else false end
+            )
+          ' >/dev/null
+
+          BODY="$(printf '%s\n%s' "$RESULT_MARKER" "$RESULT_JSON")"
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/285/comments" \
+            -f body="$BODY" \
+            >/dev/null
