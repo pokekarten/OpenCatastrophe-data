@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import argparse
+from decimal import Decimal, InvalidOperation
 import json
 import math
 import os
@@ -270,6 +271,24 @@ def _validate_runtime_scalars(value: object) -> dict[str, Any]:
     if value["minimum_asset_loss_structural_present"]:
         if type(minimum) is not str or not minimum or len(minimum.encode("utf-8")) > 128:
             raise Group1RuntimeScalarsActionError("minimum_asset_loss_structural is invalid")
+        try:
+            parsed_minimum = Decimal(minimum)
+        except (InvalidOperation, ValueError) as exc:
+            raise Group1RuntimeScalarsActionError(
+                "minimum_asset_loss_structural is not decimal"
+            ) from exc
+        if not parsed_minimum.is_finite() or parsed_minimum < 0:
+            raise Group1RuntimeScalarsActionError(
+                "minimum_asset_loss_structural must be finite and non-negative"
+            )
+        canonical_minimum = format(parsed_minimum, "f")
+        if "." in canonical_minimum:
+            canonical_minimum = canonical_minimum.rstrip("0").rstrip(".")
+        canonical_minimum = canonical_minimum or "0"
+        if minimum != canonical_minimum:
+            raise Group1RuntimeScalarsActionError(
+                "minimum_asset_loss_structural is not canonical decimal text"
+            )
     elif minimum is not None:
         raise Group1RuntimeScalarsActionError("absent minimum asset loss carries a value")
     return value
