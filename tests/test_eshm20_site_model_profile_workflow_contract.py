@@ -74,7 +74,13 @@ class Eshm20SiteModelProfileWorkflowContractTests(unittest.TestCase):
             'DERIVED_PUBLICATION_SCOPE: "bounded-derived-structural-profile-metadata-only"',
             publish,
         )
+        self.assertIn(
+            'DERIVED_CHANGE_NOTICE: "Derived structural-profile metadata computed from the exact receipt-bound ESHM20 site CSV; provider bytes and rows are not reproduced."',
+            publish,
+        )
         self.assertIn("Derived evidence publication authorized: true", publish)
+        self.assertIn("Derived publication scope: $DERIVED_PUBLICATION_SCOPE", publish)
+        self.assertIn("Change notice: $DERIVED_CHANGE_NOTICE", publish)
         self.assertIn("Execution SHA: $EXECUTION_SHA", publish)
         self.assertIn(
             "Provider/raw publication authority: false; model-use authority: false.",
