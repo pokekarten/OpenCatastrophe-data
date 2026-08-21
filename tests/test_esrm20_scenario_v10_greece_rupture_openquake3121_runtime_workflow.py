@@ -90,7 +90,9 @@ class GreeceRuptureOpenQuake3121RuntimeWorkflowTests(unittest.TestCase):
 
     def test_publisher_is_checkout_free_and_rejects_authority_promotion(self):
         workflow = self.workflow
-        publisher = workflow.split("publish-native-runtime:", 1)[1]
+        publisher = workflow.split("publish-native-runtime:", 1)[1].split(
+            "\n  publish-workflow-diagnostic:\n", 1
+        )[0]
         self.assertNotIn("actions/checkout@", publisher)
         self.assertIn(".historical_environment_verified == false", publisher)
         self.assertIn(".site_model_compatibility_verified == false", publisher)
@@ -101,6 +103,43 @@ class GreeceRuptureOpenQuake3121RuntimeWorkflowTests(unittest.TestCase):
         self.assertIn(".independent_validation_established == false", publisher)
         self.assertIn(".publication_authorized == false", publisher)
         self.assertIn(".model_use_authorized == false", publisher)
+
+    def test_workflow_failures_publish_bounded_run_diagnostic(self):
+        diagnostic = self.workflow.split(
+            "\n  publish-workflow-diagnostic:\n", 1
+        )[1]
+        self.assertIn(
+            "needs: [validate-request, execute-native-runtime, publish-native-runtime]",
+            diagnostic,
+        )
+        self.assertIn("always()", diagnostic)
+        for job in (
+            "validate-request",
+            "execute-native-runtime",
+            "publish-native-runtime",
+        ):
+            self.assertIn(f"needs.{job}.result == 'failure'", diagnostic)
+            self.assertIn(f"needs.{job}.result == 'cancelled'", diagnostic)
+            self.assertNotIn(f"needs.{job}.result == 'skipped'", diagnostic)
+
+        self.assertIn("SOURCE_COMMENT_ID: ${{ github.event.comment.id }}", diagnostic)
+        self.assertIn("EVENT_SHA: ${{ github.sha }}", diagnostic)
+        self.assertIn("RUN_ID: ${{ github.run_id }}", diagnostic)
+        self.assertIn("RUN_ATTEMPT: ${{ github.run_attempt }}", diagnostic)
+        self.assertIn(
+            "oc-eq1-esrm20-scenario-v10-greece-rupture-openquake3121-runtime-workflow-diagnostic-v1",
+            diagnostic,
+        )
+        self.assertIn('canonical_runtime_status:"unknown"', diagnostic)
+        self.assertIn('provider_execution_status:"unknown"', diagnostic)
+        self.assertIn('scientific_status:"unknown"', diagnostic)
+        self.assertIn("request_reissue_authorized:false", diagnostic)
+        self.assertIn("publication_authorized:false", diagnostic)
+        self.assertIn("model_use_authorized:false", diagnostic)
+        self.assertIn('"repos/${GITHUB_REPOSITORY}/issues/285/comments"', diagnostic)
+        self.assertNotIn("actions/checkout@", diagnostic)
+        self.assertNotIn("docker ", diagnostic)
+        self.assertNotIn("git fetch", diagnostic)
 
     def test_no_arbitrary_provider_or_runtime_selector_is_exposed(self):
         workflow = self.workflow
