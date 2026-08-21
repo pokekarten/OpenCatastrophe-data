@@ -297,6 +297,8 @@ def _validate_terminal_result(result: object, *, execution_sha: str) -> dict[str
 def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
     if type(body) is not str or RESULT_MARKER not in body:
         return False
+    if type(execution_sha) is not str or not _SHA_RE.fullmatch(execution_sha):
+        raise SiteModelProfileActionError("invalid execution SHA")
     if body.count(RESULT_MARKER) != 1:
         raise SiteModelProfileActionError("trusted site-profile result marker is malformed")
     before, after = body.split(RESULT_MARKER, 1)
@@ -308,8 +310,13 @@ def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
         raise
     except (json.JSONDecodeError, TypeError, ValueError) as exc:
         raise SiteModelProfileActionError("trusted site-profile result JSON is malformed") from exc
-    _validate_terminal_result(result, execution_sha=execution_sha)
-    return True
+    if type(result) is not dict:
+        raise SiteModelProfileActionError("trusted site-profile result fields drifted")
+    result_execution_sha = result.get("execution_sha")
+    if type(result_execution_sha) is not str or not _SHA_RE.fullmatch(result_execution_sha):
+        raise SiteModelProfileActionError("trusted site-profile result execution SHA is invalid")
+    _validate_terminal_result(result, execution_sha=result_execution_sha)
+    return result_execution_sha == execution_sha
 
 
 def has_terminal_site_profile_result(
