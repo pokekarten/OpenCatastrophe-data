@@ -51,6 +51,11 @@ CONFIG_LOGICAL_PATH = (
 )
 MINIMUM_ASSET_LOSS_STRUCTURAL = 2000
 RANDOM_SEED = 113
+LOSS_TYPE = "structural"
+UNIT = "EUR"
+QUANTITY = "thresholded_ground_up_structural_replacement_cost_loss"
+THRESHOLD_PREDICATE = "asset_event_loss > minimum_asset_loss_structural"
+LOSS_STAGE = "thresholded_ground_up"
 
 COMMAND = ("oq", "engine", "--run", CONFIG_LOGICAL_PATH)
 
@@ -118,6 +123,9 @@ def _require_authority() -> None:
             MINIMUM_ASSET_LOSS_STRUCTURAL,
             "risk receipt threshold",
         ),
+        (risk_receipt.LOSS_TYPE, LOSS_TYPE, "risk receipt loss type"),
+        (risk_receipt.UNIT, UNIT, "risk receipt unit"),
+        (risk_receipt.QUANTITY, QUANTITY, "risk receipt quantity"),
     )
     for observed, expected, label in exact:
         if type(observed) is not type(expected) or observed != expected:
@@ -237,20 +245,23 @@ def _parse_derived_ini(payload: bytes) -> configparser.ConfigParser:
     return parser
 
 
+def _alias_identity(option: str) -> str:
+    return option.casefold().replace("_", "").replace("-", "")
+
+
 def _explicit_values(parser: configparser.ConfigParser, option: str) -> list[str]:
     values: list[str] = []
     if option in parser.defaults():
         raise KosovoResidentialOQ313RunError(
             f"runtime option {option} must not be inherited from DEFAULT"
         )
+    target_identity = _alias_identity(option)
     for section in parser.sections():
         explicit = parser._sections.get(section, {})  # noqa: SLF001
         for key, value in explicit.items():
             if key == "__name__":
                 continue
-            if key.casefold().replace("_", "").replace("-", "") == (
-                option.casefold().replace("_", "").replace("-", "")
-            ) and key != option:
+            if _alias_identity(key) == target_identity and key != option:
                 raise KosovoResidentialOQ313RunError(
                     f"runtime option {option} alias/case drifted"
                 )
@@ -310,7 +321,7 @@ def _validate_source_runtime_declarations(payload: bytes) -> dict[str, Any]:
         ) from exc
     if (
         type(minimum) is not dict
-        or set(minimum) != {"structural"}
+        or "structural" not in minimum
         or type(minimum["structural"]) is not int
         or minimum["structural"] != MINIMUM_ASSET_LOSS_STRUCTURAL
     ):
@@ -472,6 +483,16 @@ def _run_derived_config(
             "sha256": evidence["output"]["sha256"],
             "staged_byte_identity_verified": True,
         },
+        "loss_semantics": {
+            "loss_stage": LOSS_STAGE,
+            "loss_type": LOSS_TYPE,
+            "quantity": QUANTITY,
+            "unit": UNIT,
+            "minimum_asset_loss_structural": MINIMUM_ASSET_LOSS_STRUCTURAL,
+            "threshold_predicate": THRESHOLD_PREDICATE,
+            "threshold_source": "exact_group1_provider_config",
+            "threshold_is_deductible": False,
+        },
         "source_runtime": source_runtime,
         "resolved_runtime": {
             "calculation_mode": runtime["calculation_mode"],
@@ -503,6 +524,7 @@ def _run_derived_config(
             "runtime_source_commit_verified": identity["source_commit_verified"],
             "preprocess_openblas_injected": True,
             "source_overlay_injected": True,
+            "distribution_state_receipted": True,
             "numerical_execution_attempted": True,
         },
         "status": status,
