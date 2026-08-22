@@ -121,7 +121,7 @@ class Oq:
             "job_ini": "fixed/job.ini",
             "structural_vulnerability": "fixed/v.xml",
         }
-        self.concurrent_tasks = 0
+        self.concurrent_tasks = 2
 
 
 def rows():
@@ -152,7 +152,7 @@ class SelectionTests(unittest.TestCase):
             doc["selection"],
             {"portfolio_agg_id": 2, "structural_loss_id": 1},
         )
-        self.assertEqual(doc["runtime"], {"concurrent_tasks": 0})
+        self.assertEqual(doc["runtime"], {"concurrent_tasks": 2})
         self.assertEqual([row["event_id"] for row in doc["rows"]], [1, 9])
         self.assertEqual([row["rup_id"] for row in doc["rows"]], [101, 109])
         self.assertEqual(doc["rows"][0]["loss_f32_be_hex"], "40500000")
@@ -345,11 +345,22 @@ class SelectionTests(unittest.TestCase):
         ):
             select_oq313_risk_by_event_receipt(store, Oq())
 
-    def test_invalid_concurrency_fails_closed(self):
+    def test_zero_concurrency_is_preserved(self):
         oq = Oq()
-        oq.concurrent_tasks = -1
-        with self.assertRaisesRegex(OQ313DatastoreSelectionError, "outside"):
-            select_oq313_risk_by_event_receipt(Store(rows(), events()), oq)
+        oq.concurrent_tasks = 0
+        payload, _ = select_oq313_risk_by_event_receipt(Store(rows(), events()), oq)
+        self.assertEqual(json.loads(payload)["runtime"], {"concurrent_tasks": 0})
+
+    def test_invalid_concurrency_fails_closed(self):
+        for value in (-1, True):
+            with self.subTest(value=value):
+                oq = Oq()
+                oq.concurrent_tasks = value
+                with self.assertRaisesRegex(
+                    OQ313DatastoreSelectionError,
+                    "outside|must be an integer",
+                ):
+                    select_oq313_risk_by_event_receipt(Store(rows(), events()), oq)
 
 
 if __name__ == "__main__":
