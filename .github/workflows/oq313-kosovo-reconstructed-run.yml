@@ -252,6 +252,7 @@ jobs:
           STAGE_ROOT="$RUNNER_TEMP/esrm20-stage"
           docker run --rm -i --entrypoint python \
             -e BOOTSTRAP_DIGEST -e EXEC_IMAGE_ID \
+            -e OQ_DISTRIBUTE=no -e OPENBLAS_NUM_THREADS=1 \
             -v "$STAGE_ROOT:/stage" \
             "$EXEC_IMAGE" - <<'PY'
           import json
@@ -264,6 +265,8 @@ jobs:
           import scipy
           import shapely
           import zmq
+          from openquake.baselib import __version__ as openquake_version
+          from openquake.commonlib import readinput
 
           observed = {
               "h5py": h5py.__version__,
@@ -285,10 +288,43 @@ jobs:
           }
           if observed != expected or sys.version_info[:2] != (3, 8):
               raise SystemExit("OQ3.13 runtime dependency receipt drifted")
+          if openquake_version != "3.13.0-git16dd69ecea":
+              raise SystemExit("OQ3.13 exact-source version receipt drifted")
+          if os.environ.get("OQ_DISTRIBUTE") != "no":
+              raise SystemExit("OQ3.13 distribution preflight drifted")
+
+          config_path = (
+              "/stage/Configuration_files/"
+              "config_ebrisk_Kosovo_Residential_Reconstructed.ini"
+          )
+          params = readinput.get_params(config_path)
+          if "ses_seed" in params:
+              raise SystemExit("source ses_seed must remain absent")
+          oqparam = readinput.get_oqparam(params)
+          observed_oqparam = {
+              "calculation_mode": oqparam.calculation_mode,
+              "random_seed": oqparam.random_seed,
+              "ignore_master_seed": oqparam.ignore_master_seed,
+              "ses_seed": oqparam.ses_seed,
+              "minimum_asset_loss_structural": oqparam.minimum_asset_loss["structural"],
+          }
+          expected_oqparam = {
+              "calculation_mode": "ebrisk",
+              "random_seed": 113,
+              "ignore_master_seed": True,
+              "ses_seed": 42,
+              "minimum_asset_loss_structural": 2000,
+          }
+          if observed_oqparam != expected_oqparam:
+              raise SystemExit("OQ3.13 resolved runtime parameters drifted")
+          concurrent_tasks = oqparam.concurrent_tasks
+          if type(concurrent_tasks) is not int or concurrent_tasks < 0:
+              raise SystemExit("OQ3.13 concurrent_tasks resolution drifted")
+
           identity = {
               "repository": "gem/oq-engine",
               "commit_sha": "16dd69ecea0c6dcaf49c22ca12edc9da3f024889",
-              "openquake_version": "3.13.0-git16dd69ecea",
+              "openquake_version": openquake_version,
               "python_major_minor": "3.8",
               "dependency_versions": observed,
               "source_commit_verified": True,
@@ -298,16 +334,18 @@ jobs:
           with open("/stage/runtime-identity.json", "w", encoding="utf-8") as handle:
               json.dump(identity, handle, sort_keys=True, separators=(",", ":"))
           resolved = {
-              "calculation_mode": "ebrisk",
-              "random_seed": 113,
+              "calculation_mode": observed_oqparam["calculation_mode"],
+              "random_seed": observed_oqparam["random_seed"],
               "random_seed_provenance": "source_declared",
-              "ignore_master_seed": True,
+              "ignore_master_seed": observed_oqparam["ignore_master_seed"],
               "ignore_master_seed_provenance": "source_declared",
-              "ses_seed": 42,
+              "ses_seed": observed_oqparam["ses_seed"],
               "ses_seed_provenance": "openquake_default_resolved_from_source_absence",
-              "minimum_asset_loss_structural": 2000,
+              "minimum_asset_loss_structural": int(
+                  observed_oqparam["minimum_asset_loss_structural"]
+              ),
               "minimum_asset_loss_provenance": "source_declared",
-              "concurrent_tasks": 0,
+              "concurrent_tasks": concurrent_tasks,
           }
           with open("/stage/resolved-runtime.json", "w", encoding="utf-8") as handle:
               json.dump(resolved, handle, sort_keys=True, separators=(",", ":"))
