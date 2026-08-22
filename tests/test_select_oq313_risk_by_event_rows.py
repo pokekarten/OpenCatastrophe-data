@@ -45,21 +45,60 @@ class Group:
         self.attrs = attrs
 
 
+class StructuredDtype:
+    def __init__(self, fields, dtypes):
+        self.names = tuple(fields)
+        self.fields = {
+            name: (dtypes[name], index)
+            for index, name in enumerate(self.names)
+        }
+
+
+class EventArray(list):
+    def __init__(self, rows, *, fields=None, dtypes=None):
+        super().__init__(rows)
+        fields = fields or ("id", "rup_id", "rlz_id")
+        dtypes = dtypes or {
+            "id": "uint32",
+            "rup_id": "uint32",
+            "rlz_id": "uint16",
+        }
+        self.dtype = StructuredDtype(fields, dtypes)
+
+
 class Events:
-    def __init__(self, rows):
+    def __init__(self, rows, *, fields=None, dtypes=None):
         self.rows = list(rows)
+        self.fields = fields
+        self.dtypes = dtypes
 
     def __getitem__(self, key):
         if isinstance(key, slice):
-            return list(self.rows)
+            return EventArray(
+                self.rows[key],
+                fields=self.fields,
+                dtypes=self.dtypes,
+            )
         return self.rows[key]
 
 
 class Store:
-    def __init__(self, rows, events, attrs=None, frame=None):
+    def __init__(
+        self,
+        rows,
+        events,
+        attrs=None,
+        frame=None,
+        event_fields=None,
+        event_dtypes=None,
+    ):
         self.group = Group(attrs or {"K": 2, "L": 2})
         self.frame = frame or Frame(rows)
-        self.events = Events(events)
+        self.events = Events(
+            events,
+            fields=event_fields,
+            dtypes=event_dtypes,
+        )
 
     def __getitem__(self, key):
         if key == "risk_by_event":
@@ -127,6 +166,64 @@ class SelectionTests(unittest.TestCase):
             Store(list(reversed(rows())), list(reversed(events()))), Oq()
         )
         self.assertEqual(a, b)
+
+    def test_events_native_uint32_ids_are_required(self):
+        for name in ("id", "rup_id"):
+            with self.subTest(name=name):
+                dtypes = {"id": "uint32", "rup_id": "uint32", "rlz_id": "uint16"}
+                dtypes[name] = "uint64"
+                with self.assertRaisesRegex(
+                    OQ313DatastoreSelectionError,
+                    rf"events {name} dtype must be uint32",
+                ):
+                    select_oq313_risk_by_event_receipt(
+                        Store(rows(), events(), event_dtypes=dtypes), Oq()
+                    )
+
+    def test_events_native_uint16_rlz_id_is_required(self):
+        with self.assertRaisesRegex(
+            OQ313DatastoreSelectionError,
+            "events rlz_id dtype must be uint16",
+        ):
+            select_oq313_risk_by_event_receipt(
+                Store(
+                    rows(),
+                    events(),
+                    event_dtypes={
+                        "id": "uint32",
+                        "rup_id": "uint32",
+                        "rlz_id": "uint32",
+                    },
+                ),
+                Oq(),
+            )
+
+    def test_events_native_field_order_and_shape_are_required(self):
+        for fields in (
+            ("rup_id", "id", "rlz_id"),
+            ("id", "rup_id", "rlz_id", "extra"),
+            ("id", "rup_id"),
+        ):
+            with self.subTest(fields=fields):
+                dtypes = {
+                    "id": "uint32",
+                    "rup_id": "uint32",
+                    "rlz_id": "uint16",
+                    "extra": "uint8",
+                }
+                with self.assertRaisesRegex(
+                    OQ313DatastoreSelectionError,
+                    "events fields must be exactly",
+                ):
+                    select_oq313_risk_by_event_receipt(
+                        Store(
+                            rows(),
+                            events(),
+                            event_fields=fields,
+                            event_dtypes=dtypes,
+                        ),
+                        Oq(),
+                    )
 
     def test_missing_k_fails_closed(self):
         with self.assertRaisesRegex(OQ313DatastoreSelectionError, "contain K and L"):
