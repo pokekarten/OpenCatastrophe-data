@@ -45,6 +45,7 @@ OPENQUAKE_COMMIT_SHA = "16dd69ecea0c6dcaf49c22ca12edc9da3f024889"
 OPENQUAKE_SOURCE_OVERLAY = "/oq-engine"
 PYTHON_MAJOR_MINOR = "3.8"
 OPENBLAS_NUM_THREADS = "1"
+OQ_DISTRIBUTE = "no"
 
 CONFIG_LOGICAL_PATH = (
     "Configuration_files/config_ebrisk_Kosovo_Residential_Reconstructed.ini"
@@ -457,6 +458,7 @@ def _run_derived_config(
 
     env = os.environ.copy()
     env["OPENBLAS_NUM_THREADS"] = OPENBLAS_NUM_THREADS
+    env["OQ_DISTRIBUTE"] = OQ_DISTRIBUTE
     env["PYTHONPATH"] = OPENQUAKE_SOURCE_OVERLAY
 
     returncode = _execute_native(COMMAND, env)
@@ -519,6 +521,7 @@ def _run_derived_config(
             "command": list(COMMAND),
             "exit_code": returncode,
             "openblas_num_threads": OPENBLAS_NUM_THREADS,
+            "oq_distribute": OQ_DISTRIBUTE,
             "pythonpath": OPENQUAKE_SOURCE_OVERLAY,
             "bootstrap_image_digest": identity["bootstrap_image_digest"],
             "execution_image_id": identity["execution_image_id"],
@@ -526,6 +529,7 @@ def _run_derived_config(
             "dependency_versions": dict(identity["dependency_versions"]),
             "runtime_source_commit_verified": identity["source_commit_verified"],
             "preprocess_openblas_injected": True,
+            "preprocess_oq_distribute_injected": True,
             "source_overlay_injected": True,
             "distribution_state_receipted": True,
             "numerical_execution_attempted": True,
