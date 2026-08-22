@@ -9,7 +9,7 @@ on:
     types: [completed]
 
 permissions:
-  contents: read
+  actions: read
 
 jobs:
   publish-failure-diagnostic:
@@ -21,8 +21,96 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
+      actions: read
       issues: write
     steps:
+      - name: Bind failed run to a successfully validated canonical request
+        id: bind
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$HEAD_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          printf '%s' "$RUN_ID" | grep -Eq '^[1-9][0-9]*$'
+          printf '%s' "$RUN_ATTEMPT" | grep -Eq '^[1-9][0-9]*$'
+          case "$RUN_CONCLUSION" in
+            failure|cancelled|timed_out|action_required|neutral|skipped|stale|startup_failure) ;;
+            *) echo "unexpected workflow conclusion" >&2; exit 1 ;;
+          esac
+          case "$RUN_URL" in
+            https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/*) ;;
+            *) echo "unexpected workflow run URL" >&2; exit 1 ;;
+          esac
+
+          gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/jobs?filter=latest&per_page=100" \
+            > "$RUNNER_TEMP/oq313-source-run-jobs.json"
+
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          pages = json.loads(
+              Path(
+                  os.environ["RUNNER_TEMP"],
+                  "oq313-source-run-jobs.json",
+              ).read_text(encoding="utf-8")
+          )
+          if not isinstance(pages, list) or not pages:
+              raise SystemExit("source workflow job inventory is unavailable")
+          jobs = []
+          for page in pages:
+              if not isinstance(page, dict) or not isinstance(page.get("jobs"), list):
+                  raise SystemExit("source workflow job inventory drifted")
+              jobs.extend(page["jobs"])
+
+          validate = [
+              job
+              for job in jobs
+              if job.get("name") == "Validate trusted-main Kosovo OQ3.13 request"
+          ]
+          if len(validate) != 1 or validate[0].get("conclusion") != "success":
+              raise SystemExit("canonical request validation was not proven successful")
+
+          execute = [
+              job
+              for job in jobs
+              if job.get("name") == "Stage exact inputs and execute fixed OQ3.13 adapter"
+          ]
+          if len(execute) != 1:
+              raise SystemExit("source execution job identity is ambiguous")
+          execution_conclusion = execute[0].get("conclusion")
+          allowed = {
+              "failure",
+              "cancelled",
+              "timed_out",
+              "action_required",
+              "neutral",
+              "skipped",
+              "stale",
+              "startup_failure",
+          }
+          if execution_conclusion not in allowed:
+              raise SystemExit("source execution job conclusion is not diagnostic")
+
+          for label, job in (("validation", validate[0]), ("execution", execute[0])):
+              job_id = job.get("id")
+              if type(job_id) is not int or job_id <= 0:
+                  raise SystemExit(f"{label} job id is invalid")
+
+          output = Path(os.environ["GITHUB_OUTPUT"])
+          with output.open("a", encoding="utf-8") as handle:
+              handle.write(f"validation_job_id={validate[0]['id']}\n")
+              handle.write(f"execution_job_id={execute[0]['id']}\n")
+              handle.write(f"execution_job_conclusion={execution_conclusion}\n")
+          PY
+
       - name: Publish checkoutless closed diagnostic
         env:
           GH_TOKEN: ${{ github.token }}
@@ -31,26 +119,23 @@ jobs:
           RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           RUN_URL: ${{ github.event.workflow_run.html_url }}
+          VALIDATION_JOB_ID: ${{ steps.bind.outputs.validation_job_id }}
+          EXECUTION_JOB_ID: ${{ steps.bind.outputs.execution_job_id }}
+          EXECUTION_JOB_CONCLUSION: ${{ steps.bind.outputs.execution_job_conclusion }}
           DIAGNOSTIC_MARKER: "<!-- oc-eq1-esrm20-kosovo-oq313-workflow-failure-v1 -->"
         run: |
           set -euo pipefail
-          printf '%s' "$HEAD_SHA" | grep -Eq '^[0-9a-f]{40}$'
-          printf '%s' "$RUN_ID" | grep -Eq '^[1-9][0-9]*$'
-          printf '%s' "$RUN_ATTEMPT" | grep -Eq '^[1-9][0-9]*$'
-          case "$RUN_CONCLUSION" in
-            failure|cancelled|timed_out|action_required|stale|startup_failure) ;;
-            *) echo "unexpected workflow conclusion" >&2; exit 1 ;;
-          esac
-          case "$RUN_URL" in
-            https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/*) ;;
-            *) echo "unexpected workflow run URL" >&2; exit 1 ;;
-          esac
+          printf '%s' "$VALIDATION_JOB_ID" | grep -Eq '^[1-9][0-9]*$'
+          printf '%s' "$EXECUTION_JOB_ID" | grep -Eq '^[1-9][0-9]*$'
           DIAGNOSTIC_JSON="$(jq -ncS \
             --argjson run_id "$RUN_ID" \
             --argjson run_attempt "$RUN_ATTEMPT" \
             --arg conclusion "$RUN_CONCLUSION" \
             --arg head_sha "$HEAD_SHA" \
             --arg run_url "$RUN_URL" \
+            --argjson validation_job_id "$VALIDATION_JOB_ID" \
+            --argjson execution_job_id "$EXECUTION_JOB_ID" \
+            --arg execution_job_conclusion "$EXECUTION_JOB_CONCLUSION" \
             '{
               schema_version:"oc-eq1-esrm20-kosovo-oq313-workflow-failure-v1",
               source_issue:609,
@@ -60,6 +145,12 @@ jobs:
               workflow_conclusion:$conclusion,
               workflow_head_sha:$head_sha,
               workflow_run_url:$run_url,
+              request_provenance_bound:true,
+              request_validation_job_id:$validation_job_id,
+              request_validation_conclusion:"success",
+              execution_job_id:$execution_job_id,
+              execution_job_conclusion:$execution_job_conclusion,
+              execution_sha_known:false,
               provider_outcome_known:false,
               openquake_outcome_known:false,
               numerical_evidence_returned:false,
@@ -71,6 +162,9 @@ jobs:
             }')"
           printf '%s' "$DIAGNOSTIC_JSON" | jq -e '
             keys == [
+              "execution_job_conclusion",
+              "execution_job_id",
+              "execution_sha_known",
               "external_provider_bytes_persisted",
               "historical_reproduction_verified",
               "model_use_authorized",
@@ -78,6 +172,9 @@ jobs:
               "openquake_outcome_known",
               "provider_outcome_known",
               "publication_authorized",
+              "request_provenance_bound",
+              "request_validation_conclusion",
+              "request_validation_job_id",
               "schema_version",
               "scientific_validity_verified",
               "source_issue",
@@ -93,14 +190,30 @@ jobs:
             .workflow_name == "ESRM20 Kosovo Reconstructed OpenQuake 3.13 Run" and
             (.workflow_run_id | type) == "number" and .workflow_run_id > 0 and
             (.workflow_run_attempt | type) == "number" and .workflow_run_attempt > 0 and
+            (.request_validation_job_id | type) == "number" and
+            .request_validation_job_id > 0 and
+            (.execution_job_id | type) == "number" and .execution_job_id > 0 and
+            .request_provenance_bound == true and
+            .request_validation_conclusion == "success" and
             (.workflow_conclusion == "failure" or
              .workflow_conclusion == "cancelled" or
              .workflow_conclusion == "timed_out" or
              .workflow_conclusion == "action_required" or
+             .workflow_conclusion == "neutral" or
+             .workflow_conclusion == "skipped" or
              .workflow_conclusion == "stale" or
              .workflow_conclusion == "startup_failure") and
+            (.execution_job_conclusion == "failure" or
+             .execution_job_conclusion == "cancelled" or
+             .execution_job_conclusion == "timed_out" or
+             .execution_job_conclusion == "action_required" or
+             .execution_job_conclusion == "neutral" or
+             .execution_job_conclusion == "skipped" or
+             .execution_job_conclusion == "stale" or
+             .execution_job_conclusion == "startup_failure") and
             (.workflow_head_sha | test("^[0-9a-f]{40}$")) and
             (.workflow_run_url | startswith("https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/")) and
+            .execution_sha_known == false and
             .provider_outcome_known == false and
             .openquake_outcome_known == false and
             .numerical_evidence_returned == false and
