@@ -109,7 +109,7 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
         self.assertIn('"publication_authorized": False', text)
         self.assertIn('"model_use_authorized": False', text)
 
-    def test_runtime_probe_pins_declared_dependency_receipt(self) -> None:
+    def test_runtime_probe_resolves_engine_parameters_through_exact_oqparam(self) -> None:
         text = self.text
         for name, version in {
             "h5py": "3.1.0",
@@ -122,9 +122,32 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
         }.items():
             self.assertIn(f'"{name}": "{version}"', text)
         self.assertIn('sys.version_info[:2] != (3, 8)', text)
-        self.assertIn('"ses_seed": 42', text)
-        self.assertIn('"concurrent_tasks": 0', text)
         self.assertIn("docker run --rm -i --entrypoint python", text)
+        self.assertIn("-e OQ_DISTRIBUTE=no -e OPENBLAS_NUM_THREADS=1", text)
+        self.assertIn(
+            "from openquake.baselib import __version__ as openquake_version",
+            text,
+        )
+        self.assertIn("from openquake.commonlib import readinput", text)
+        self.assertIn(
+            'if openquake_version != "3.13.0-git16dd69ecea":',
+            text,
+        )
+        self.assertIn("params = readinput.get_params(config_path)", text)
+        self.assertIn('if "ses_seed" in params:', text)
+        self.assertIn("oqparam = readinput.get_oqparam(params)", text)
+        self.assertIn('"openquake_version": openquake_version', text)
+        self.assertIn('"ses_seed": observed_oqparam["ses_seed"]', text)
+        self.assertIn('"concurrent_tasks": concurrent_tasks', text)
+        self.assertNotIn('"concurrent_tasks": 0', text)
+        self.assertIn(
+            "type(concurrent_tasks) is not int or concurrent_tasks < 0",
+            text,
+        )
+        self.assertLess(
+            text.index("-e OQ_DISTRIBUTE=no"),
+            text.index("from openquake.baselib import __version__ as openquake_version"),
+        )
 
 
 if __name__ == "__main__":
