@@ -62,7 +62,10 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
             "OQ_COMMIT: 16dd69ecea0c6dcaf49c22ca12edc9da3f024889",
             text,
         )
-        self.assertIn("refs/tags/v3.13.0:refs/tags/v3.13.0", text)
+        self.assertIn("fetch --no-tags --depth=1 origin", text)
+        self.assertIn('rev-parse \'FETCH_HEAD^{commit}\'', text)
+        self.assertIn('rev-parse \'HEAD^{commit}\'', text)
+        self.assertNotIn("refs/tags/v3.13.0", text)
         self.assertNotIn("github.event.inputs", text)
         self.assertNotIn("repository_path:", text)
 
