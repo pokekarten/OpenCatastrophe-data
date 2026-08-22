@@ -113,7 +113,14 @@ class KosovoResidentialOQ313RunTests(unittest.TestCase):
         with (
             mock.patch.object(subject, "_read_staged_config", return_value=config),
             mock.patch.object(subject, "_execute_native", side_effect=execute),
-            mock.patch.dict(os.environ, {"OPENBLAS_NUM_THREADS": "99"}, clear=False),
+            mock.patch.dict(
+                os.environ,
+                {
+                    "OPENBLAS_NUM_THREADS": "99",
+                    "OQ_DISTRIBUTE": "processpool",
+                },
+                clear=False,
+            ),
         ):
             payload, receipt = subject._run_derived_config(
                 config,
@@ -126,9 +133,16 @@ class KosovoResidentialOQ313RunTests(unittest.TestCase):
         self.assertEqual(tuple(seen["command"]), subject.COMMAND)
         env = seen["env"]
         self.assertEqual(env["OPENBLAS_NUM_THREADS"], "1")
+        self.assertEqual(env["OQ_DISTRIBUTE"], subject.OQ_DISTRIBUTE)
+        self.assertEqual(env["OQ_DISTRIBUTE"], "no")
         self.assertEqual(env["PYTHONPATH"], subject.OPENQUAKE_SOURCE_OVERLAY)
         self.assertEqual(document["execution"]["command"], list(subject.COMMAND))
+        self.assertEqual(document["execution"]["oq_distribute"], "no")
         self.assertIs(document["execution"]["preprocess_openblas_injected"], True)
+        self.assertIs(
+            document["execution"]["preprocess_oq_distribute_injected"],
+            True,
+        )
         self.assertIs(document["execution"]["distribution_state_receipted"], True)
         self.assertEqual(document["resolved_runtime"]["concurrent_tasks"], 0)
         self.assertEqual(
