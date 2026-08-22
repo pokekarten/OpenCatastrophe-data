@@ -204,11 +204,12 @@ jobs:
           OQ_ROOT="$RUNNER_TEMP/oq-engine"
           git init "$OQ_ROOT"
           git -C "$OQ_ROOT" remote add origin https://github.com/gem/oq-engine.git
-          git -C "$OQ_ROOT" fetch --depth=1 origin \
-            refs/tags/v3.13.0:refs/tags/v3.13.0
-          OBSERVED="$(git -C "$OQ_ROOT" rev-parse 'refs/tags/v3.13.0^{commit}')"
+          git -C "$OQ_ROOT" fetch --no-tags --depth=1 origin \
+            "$OQ_COMMIT"
+          OBSERVED="$(git -C "$OQ_ROOT" rev-parse 'FETCH_HEAD^{commit}')"
           test "$OBSERVED" = "$OQ_COMMIT"
           git -C "$OQ_ROOT" checkout --detach "$OBSERVED"
+          test "$(git -C "$OQ_ROOT" rev-parse 'HEAD^{commit}')" = "$OQ_COMMIT"
           test -z "$(git -C "$OQ_ROOT" status --porcelain=v1)"
 
       - name: Build and receipt exact-source OQ3.13 execution image
