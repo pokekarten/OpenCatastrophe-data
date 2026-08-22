@@ -241,7 +241,7 @@ jobs:
           echo "execution_image=$EXEC_IMAGE" >> "$GITHUB_OUTPUT"
           echo "execution_image_id=$EXEC_IMAGE_ID" >> "$GITHUB_OUTPUT"
 
-      - name: Probe pinned runtime and write closed runtime receipts
+      - name: Probe pinned runtime and write OqParam-observed runtime receipts
         if: steps.dedup.outputs.skip != 'true'
         env:
           EXEC_IMAGE: ${{ steps.runtime.outputs.execution_image }}
@@ -252,9 +252,11 @@ jobs:
           STAGE_ROOT="$RUNNER_TEMP/esrm20-stage"
           docker run --rm -i --entrypoint python \
             -e BOOTSTRAP_DIGEST -e EXEC_IMAGE_ID \
+            -e OQ_DISTRIBUTE=no \
             -v "$STAGE_ROOT:/stage" \
             "$EXEC_IMAGE" - <<'PY'
           import json
+          import multiprocessing
           import os
           import sys
           import h5py
@@ -264,6 +266,10 @@ jobs:
           import scipy
           import shapely
           import zmq
+
+          if os.environ.get("OQ_DISTRIBUTE") != "no":
+              raise SystemExit("OQ3.13 runtime distribution fence drifted")
+          from openquake.commonlib import readinput
 
           observed = {
               "h5py": h5py.__version__,
@@ -297,18 +303,63 @@ jobs:
           }
           with open("/stage/runtime-identity.json", "w", encoding="utf-8") as handle:
               json.dump(identity, handle, sort_keys=True, separators=(",", ":"))
+
+          config_path = (
+              "/stage/Configuration_files/"
+              "config_ebrisk_Kosovo_Residential_Reconstructed.ini"
+          )
+          params = readinput.get_params(config_path)
+          for source_declared in (
+              "calculation_mode",
+              "random_seed",
+              "ignore_master_seed",
+              "minimum_asset_loss",
+          ):
+              if source_declared not in params:
+                  raise SystemExit(
+                      f"OQ3.13 staged config lost source declaration: {source_declared}"
+                  )
+          if "ses_seed" in params:
+              raise SystemExit("OQ3.13 staged config unexpectedly declares ses_seed")
+
+          oqparam = readinput.get_oqparam(params)
+          minimum_asset_loss = oqparam.minimum_asset_loss
+          if not isinstance(minimum_asset_loss, dict):
+              raise SystemExit("OQ3.13 minimum_asset_loss did not resolve to a mapping")
           resolved = {
+              "calculation_mode": oqparam.calculation_mode,
+              "random_seed": oqparam.random_seed,
+              "random_seed_provenance": "source_declared",
+              "ignore_master_seed": oqparam.ignore_master_seed,
+              "ignore_master_seed_provenance": "source_declared",
+              "ses_seed": oqparam.ses_seed,
+              "ses_seed_provenance": "openquake_default_resolved_from_source_absence",
+              "minimum_asset_loss_structural": minimum_asset_loss.get("structural"),
+              "minimum_asset_loss_provenance": "source_declared",
+              "concurrent_tasks": oqparam.concurrent_tasks,
+          }
+          exact_resolved = {
               "calculation_mode": "ebrisk",
               "random_seed": 113,
-              "random_seed_provenance": "source_declared",
               "ignore_master_seed": True,
-              "ignore_master_seed_provenance": "source_declared",
               "ses_seed": 42,
-              "ses_seed_provenance": "openquake_default_resolved_from_source_absence",
               "minimum_asset_loss_structural": 2000,
-              "minimum_asset_loss_provenance": "source_declared",
-              "concurrent_tasks": 0,
           }
+          for field, expected_value in exact_resolved.items():
+              observed_value = resolved[field]
+              if (
+                  type(observed_value) is not type(expected_value)
+                  or observed_value != expected_value
+              ):
+                  raise SystemExit(f"OQ3.13 OqParam resolution drifted at {field}")
+          concurrent_tasks = resolved["concurrent_tasks"]
+          if type(concurrent_tasks) is not int or concurrent_tasks <= 0:
+              raise SystemExit("OQ3.13 concurrent_tasks did not resolve to a positive integer")
+          if (
+              "concurrent_tasks" not in params
+              and concurrent_tasks != multiprocessing.cpu_count() * 2
+          ):
+              raise SystemExit("OQ3.13 concurrent_tasks default resolution drifted")
           with open("/stage/resolved-runtime.json", "w", encoding="utf-8") as handle:
               json.dump(resolved, handle, sort_keys=True, separators=(",", ":"))
           PY
