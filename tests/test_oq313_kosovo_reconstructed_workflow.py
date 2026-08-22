@@ -109,7 +109,7 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
         self.assertIn('"publication_authorized": False', text)
         self.assertIn('"model_use_authorized": False', text)
 
-    def test_runtime_probe_pins_declared_dependency_receipt(self) -> None:
+    def test_runtime_probe_pins_dependencies_observes_oqparam_and_binds_source(self) -> None:
         text = self.text
         for name, version in {
             "h5py": "3.1.0",
@@ -122,9 +122,64 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
         }.items():
             self.assertIn(f'"{name}": "{version}"', text)
         self.assertIn('sys.version_info[:2] != (3, 8)', text)
-        self.assertIn('"ses_seed": 42', text)
-        self.assertIn('"concurrent_tasks": 0', text)
+        self.assertIn("-e OQ_DISTRIBUTE=no -e OPENBLAS_NUM_THREADS=1", text)
+        self.assertIn("-e PYTHONPATH=/oq-engine", text)
+        self.assertIn('os.environ.get("PYTHONPATH") != "/oq-engine"', text)
+        self.assertIn("import openquake.baselib as openquake_baselib", text)
+        self.assertIn("from openquake.commonlib import readinput", text)
+        self.assertIn('source_root = Path("/oq-engine").resolve()', text)
+        self.assertIn(
+            'package_root = (source_root / "openquake").resolve()',
+            text,
+        )
+        self.assertIn('getattr(module, "__file__", None)', text)
+        self.assertIn("Path(module_file).resolve().relative_to(package_root)", text)
+        self.assertIn("openquake_version = openquake_baselib.__version__", text)
+        self.assertIn(
+            'if openquake_version != "3.13.0-git16dd69ecea":',
+            text,
+        )
+        self.assertIn('"openquake_version": openquake_version', text)
+        self.assertNotIn(
+            '"openquake_version": "3.13.0-git16dd69ecea"',
+            text,
+        )
+        self.assertIn("params = readinput.get_params(config_path)", text)
+        self.assertIn("oqparam = readinput.get_oqparam(params)", text)
+        self.assertIn('if "ses_seed" in params:', text)
+        self.assertIn('"ses_seed": oqparam.ses_seed', text)
+        self.assertIn('"concurrent_tasks": oqparam.concurrent_tasks', text)
+        self.assertNotIn('"concurrent_tasks": 0', text)
+        self.assertIn("multiprocessing.cpu_count() * 2", text)
         self.assertIn("docker run --rm -i --entrypoint python", text)
+        self.assertLess(
+            text.index("-e PYTHONPATH=/oq-engine"),
+            text.index("import openquake.baselib as openquake_baselib"),
+        )
+
+    def test_runtime_probe_rejects_namespace_contamination_before_submodule_imports(self) -> None:
+        text = self.text
+        preload_guard = 'if any(name.startswith("openquake.") for name in sys.modules):'
+        top_level_import = "import openquake\n"
+        pin = "openquake.__path__ = [str(package_root)]"
+        submodule_import = "import openquake.baselib as openquake_baselib"
+
+        self.assertIn(preload_guard, text)
+        self.assertIn(
+            'raise SystemExit("OQ3.13 OpenQuake submodule loaded before source pin")',
+            text,
+        )
+        self.assertIn(top_level_import, text)
+        self.assertIn("if not package_root.is_dir():", text)
+        self.assertIn('namespace_path = getattr(openquake, "__path__", None)', text)
+        self.assertIn(pin, text)
+        self.assertIn(
+            "[Path(path).resolve() for path in openquake.__path__] != [package_root]",
+            text,
+        )
+        self.assertLess(text.index(preload_guard), text.index(top_level_import))
+        self.assertLess(text.index(top_level_import), text.index(pin))
+        self.assertLess(text.index(pin), text.index(submodule_import))
 
 
 if __name__ == "__main__":
