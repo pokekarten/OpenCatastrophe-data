@@ -229,8 +229,13 @@ jobs:
           cat > "$BUILD_ROOT/Dockerfile" <<'EOF'
           FROM openquake/engine:3.13.0
           USER root
+          RUN apt-get update \
+              && apt-get install -y --no-install-recommends git \
+              && rm -rf /var/lib/apt/lists/*
           COPY oq-engine /oq-engine
-          RUN python -m pip install --no-deps -e /oq-engine
+          RUN git -C /oq-engine config core.abbrev 10 \
+              && test "$(git -C /oq-engine rev-parse --short HEAD)" = "16dd69ecea" \
+              && python -m pip install --no-deps -e /oq-engine
           EOF
           EXEC_IMAGE="oc-eq1-oq313:${EXECUTION_SHA}"
           docker build --pull=false -t "$EXEC_IMAGE" "$BUILD_ROOT"
