@@ -1,0 +1,375 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Kosovo Reconstructed OpenQuake 3.13 Run
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: >-
+    oq313-kosovo-reconstructed-${{ github.repository }}-${{
+      github.event.issue.number == 609 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-kosovo-oq313-run-request-v1 -->') &&
+      'trusted-request' || format('noise-{0}', github.event.comment.id)
+    }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main Kosovo OQ3.13 request
+    if: >-
+      github.event.issue.number == 609 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-kosovo-oq313-run-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_OQ313_REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/run_esrm20_kosovo_residential_ebrisk_openquake313_action.py \
+            --comment-body-env OC_OQ313_REQUEST_BODY \
+            --expected-issue 609 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-and-publish:
+    name: Stage exact inputs and execute fixed OQ3.13 adapter
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      issues: write
+    env:
+      EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+      OC_OQ313_REQUEST_BODY: ${{ github.event.comment.body }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Deduplicate trusted terminal result before external access
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/issues/609/comments?per_page=100" \
+            > "$RUNNER_TEMP/oq313-comments.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          marker = "<!-- oc-eq1-esrm20-kosovo-oq313-run-result-v1 -->"
+          execution_sha = os.environ["EXECUTION_SHA"]
+          pages = json.loads(Path(os.environ["RUNNER_TEMP"], "oq313-comments.json").read_text())
+          comments = [item for page in pages for item in page]
+          found = False
+          for comment in comments:
+              body = comment.get("body")
+              if not isinstance(body, str) or marker not in body:
+                  continue
+              if comment.get("user", {}).get("login") != "github-actions[bot]":
+                  continue
+              if body.count(marker) != 1:
+                  raise SystemExit("trusted terminal marker is not canonical")
+              before, after = body.split(marker, 1)
+              if before.strip() or not after.strip():
+                  raise SystemExit("trusted terminal envelope is not canonical")
+              result = json.loads(after.strip())
+              exact = {
+                  "schema_version": "oc-esrm20-kosovo-oq313-run-result-v1",
+                  "action": "esrm20_kosovo_residential_oq313_run",
+                  "source_issue": 609,
+                  "parent_consumer_issue": 287,
+                  "dataset_id": "efehr.esrm20.risk-inputs.v1.0",
+              }
+              if any(result.get(k) != v for k, v in exact.items()):
+                  raise SystemExit("trusted terminal authority drifted")
+              if result.get("execution_sha") == execution_sha:
+                  if result.get("status") not in {"pass", "blocked"}:
+                      raise SystemExit("trusted terminal status drifted")
+                  found = True
+          out = Path(os.environ["GITHUB_OUTPUT"])
+          out.write_text(f"skip={'true' if found else 'false'}\n", encoding="utf-8")
+          PY
+
+      - name: Fetch exact ESRM20 v1.0 provider snapshot
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          ESRM20_COMMIT: 05f83bbc9df81d02ee8ddb1801d9d781355ce783
+        run: |
+          set -euo pipefail
+          PROVIDER_ROOT="$RUNNER_TEMP/esrm20-provider"
+          git init "$PROVIDER_ROOT"
+          git -C "$PROVIDER_ROOT" remote add origin \
+            https://gitlab.seismo.ethz.ch/efehr/esrm20.git
+          git -C "$PROVIDER_ROOT" fetch --depth=1 origin \
+            refs/tags/v1.0:refs/tags/v1.0
+          OBSERVED="$(git -C "$PROVIDER_ROOT" rev-parse 'refs/tags/v1.0^{commit}')"
+          test "$OBSERVED" = "$ESRM20_COMMIT"
+          git -C "$PROVIDER_ROOT" checkout --detach "$OBSERVED"
+          test -z "$(git -C "$PROVIDER_ROOT" status --porcelain=v1)"
+
+      - name: Stage exact provider snapshot and deterministic Kosovo-only wrappers
+        if: steps.dedup.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          export PROVIDER_ROOT="$RUNNER_TEMP/esrm20-provider"
+          export STAGE_ROOT="$RUNNER_TEMP/esrm20-stage"
+          mkdir -p "$STAGE_ROOT"
+          rsync -a --delete --exclude='.git/' "$PROVIDER_ROOT/" "$STAGE_ROOT/"
+          PYTHONPATH="$GITHUB_WORKSPACE" python - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+          from scripts import build_esrm20_kosovo_residential_ebrisk_config as cfg
+          from scripts import build_esrm20_kosovo_residential_exposure_wrapper as wrapper
+
+          stage = Path(os.environ["STAGE_ROOT"])
+          source_wrapper = stage / wrapper.SOURCE_REPOSITORY_PATH
+          selected_csv = stage / wrapper.SELECTED_REPOSITORY_PATH
+          group1 = stage / cfg.GROUP1_PATH
+
+          checks = (
+              (source_wrapper, wrapper.SOURCE_BYTE_COUNT, wrapper.SOURCE_SHA256),
+              (selected_csv, wrapper.SELECTED_BYTE_COUNT, wrapper.SELECTED_SHA256),
+              (group1, cfg.GROUP1_BYTE_COUNT, cfg.GROUP1_SHA256),
+          )
+          for path, expected_size, expected_digest in checks:
+              payload = path.read_bytes()
+              if len(payload) != expected_size:
+                  raise SystemExit(f"provider byte-count drift: {path}")
+              if hashlib.sha256(payload).hexdigest() != expected_digest:
+                  raise SystemExit(f"provider SHA-256 drift: {path}")
+
+          derived_wrapper, _ = wrapper.build_kosovo_residential_exposure_wrapper(
+              source_wrapper.read_bytes()
+          )
+          wrapper_path = stage / wrapper.OUTPUT_LOGICAL_PATH
+          wrapper_path.parent.mkdir(parents=True, exist_ok=True)
+          wrapper_path.write_bytes(derived_wrapper)
+
+          derived_config, _ = cfg.build_kosovo_residential_ebrisk_config(
+              group1.read_bytes()
+          )
+          config_path = stage / cfg.OUTPUT_LOGICAL_PATH
+          config_path.parent.mkdir(parents=True, exist_ok=True)
+          config_path.write_bytes(derived_config)
+          PY
+
+      - name: Fetch exact OpenQuake 3.13 source
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OQ_COMMIT: 16dd69ecea0c6dcaf49c22ca12edc9da3f024889
+        run: |
+          set -euo pipefail
+          OQ_ROOT="$RUNNER_TEMP/oq-engine"
+          git init "$OQ_ROOT"
+          git -C "$OQ_ROOT" remote add origin https://github.com/gem/oq-engine.git
+          git -C "$OQ_ROOT" fetch --depth=1 origin \
+            refs/tags/v3.13.0:refs/tags/v3.13.0
+          OBSERVED="$(git -C "$OQ_ROOT" rev-parse 'refs/tags/v3.13.0^{commit}')"
+          test "$OBSERVED" = "$OQ_COMMIT"
+          git -C "$OQ_ROOT" checkout --detach "$OBSERVED"
+          test -z "$(git -C "$OQ_ROOT" status --porcelain=v1)"
+
+      - name: Build and receipt exact-source OQ3.13 execution image
+        if: steps.dedup.outputs.skip != 'true'
+        id: runtime
+        run: |
+          set -euo pipefail
+          BASE_IMAGE="openquake/engine:3.13.0"
+          docker pull "$BASE_IMAGE"
+          BASE_REPO_DIGEST="$(docker image inspect \
+            --format='{{index .RepoDigests 0}}' "$BASE_IMAGE")"
+          BOOTSTRAP_DIGEST="${BASE_REPO_DIGEST##*@}"
+          printf '%s\n' "$BOOTSTRAP_DIGEST" | grep -Eq '^sha256:[0-9a-f]{64}$'
+
+          BUILD_ROOT="$RUNNER_TEMP/oq313-build"
+          mkdir -p "$BUILD_ROOT"
+          cp -a "$RUNNER_TEMP/oq-engine" "$BUILD_ROOT/oq-engine"
+          cat > "$BUILD_ROOT/Dockerfile" <<'EOF'
+          FROM openquake/engine:3.13.0
+          USER root
+          COPY oq-engine /oq-engine
+          RUN python -m pip install --no-deps -e /oq-engine
+          EOF
+          EXEC_IMAGE="oc-eq1-oq313:${EXECUTION_SHA}"
+          docker build --pull=false -t "$EXEC_IMAGE" "$BUILD_ROOT"
+          EXEC_IMAGE_ID="$(docker image inspect --format='{{.Id}}' "$EXEC_IMAGE")"
+          printf '%s\n' "$EXEC_IMAGE_ID" | grep -Eq '^sha256:[0-9a-f]{64}$'
+
+          echo "bootstrap_digest=$BOOTSTRAP_DIGEST" >> "$GITHUB_OUTPUT"
+          echo "execution_image=$EXEC_IMAGE" >> "$GITHUB_OUTPUT"
+          echo "execution_image_id=$EXEC_IMAGE_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Probe pinned runtime and write closed runtime receipts
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          EXEC_IMAGE: ${{ steps.runtime.outputs.execution_image }}
+          BOOTSTRAP_DIGEST: ${{ steps.runtime.outputs.bootstrap_digest }}
+          EXEC_IMAGE_ID: ${{ steps.runtime.outputs.execution_image_id }}
+        run: |
+          set -euo pipefail
+          STAGE_ROOT="$RUNNER_TEMP/esrm20-stage"
+          docker run --rm --entrypoint python \
+            -e BOOTSTRAP_DIGEST -e EXEC_IMAGE_ID \
+            -v "$STAGE_ROOT:/stage" \
+            "$EXEC_IMAGE" - <<'PY'
+          import json
+          import os
+          import sys
+          import h5py
+          import numpy
+          import pandas
+          import psutil
+          import scipy
+          import shapely
+          import zmq
+
+          observed = {
+              "h5py": h5py.__version__,
+              "numpy": numpy.__version__,
+              "pandas": pandas.__version__,
+              "psutil": psutil.__version__,
+              "pyzmq": zmq.__version__,
+              "scipy": scipy.__version__,
+              "shapely": shapely.__version__,
+          }
+          expected = {
+              "h5py": "3.1.0",
+              "numpy": "1.20.0",
+              "pandas": "1.1.5",
+              "psutil": "5.6.7",
+              "pyzmq": "19.0.0",
+              "scipy": "1.4.1",
+              "shapely": "1.7.1",
+          }
+          if observed != expected or sys.version_info[:2] != (3, 8):
+              raise SystemExit("OQ3.13 runtime dependency receipt drifted")
+          identity = {
+              "repository": "gem/oq-engine",
+              "commit_sha": "16dd69ecea0c6dcaf49c22ca12edc9da3f024889",
+              "openquake_version": "3.13.0-git16dd69ecea",
+              "python_major_minor": "3.8",
+              "dependency_versions": observed,
+              "source_commit_verified": True,
+              "bootstrap_image_digest": os.environ["BOOTSTRAP_DIGEST"],
+              "execution_image_id": os.environ["EXEC_IMAGE_ID"],
+          }
+          with open("/stage/runtime-identity.json", "w", encoding="utf-8") as handle:
+              json.dump(identity, handle, sort_keys=True, separators=(",", ":"))
+          resolved = {
+              "calculation_mode": "ebrisk",
+              "random_seed": 113,
+              "random_seed_provenance": "source_declared",
+              "ignore_master_seed": True,
+              "ignore_master_seed_provenance": "source_declared",
+              "ses_seed": 42,
+              "ses_seed_provenance": "openquake_default_resolved_from_source_absence",
+              "minimum_asset_loss_structural": 2000,
+              "minimum_asset_loss_provenance": "source_declared",
+              "concurrent_tasks": 0,
+          }
+          with open("/stage/resolved-runtime.json", "w", encoding="utf-8") as handle:
+              json.dump(resolved, handle, sort_keys=True, separators=(",", ":"))
+          PY
+
+      - name: Execute closed OQ3.13 envelope inside receipted image
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          EXEC_IMAGE: ${{ steps.runtime.outputs.execution_image }}
+        run: |
+          set -euo pipefail
+          STAGE_ROOT="$RUNNER_TEMP/esrm20-stage"
+          docker run --rm --user 0:0 --entrypoint python \
+            -e OC_OQ313_REQUEST_BODY \
+            -e PYTHONPATH=/repo \
+            -v "$GITHUB_WORKSPACE:/repo:ro" \
+            -v "$STAGE_ROOT:/stage" \
+            -w /stage \
+            "$EXEC_IMAGE" \
+            /repo/scripts/run_esrm20_kosovo_residential_ebrisk_openquake313_action.py \
+            --comment-body-env OC_OQ313_REQUEST_BODY \
+            --expected-issue 609 \
+            --execution-sha "$EXECUTION_SHA" \
+            --source-group1-config /stage/Configuration_files/config_ebrisk_Group1.ini \
+            --runtime-identity /stage/runtime-identity.json \
+            --resolved-runtime /stage/resolved-runtime.json \
+            --output /stage/oq313-terminal.json
+
+      - name: Re-fence bounded result and publish terminal evidence
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RESULT_PATH="$RUNNER_TEMP/esrm20-stage/oq313-terminal.json"
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["RUNNER_TEMP"], "esrm20-stage", "oq313-terminal.json").read_text())
+          exact = {
+              "schema_version": "oc-esrm20-kosovo-oq313-run-result-v1",
+              "action": "esrm20_kosovo_residential_oq313_run",
+              "source_issue": 609,
+              "parent_consumer_issue": 287,
+              "dataset_id": "efehr.esrm20.risk-inputs.v1.0",
+              "execution_sha": os.environ["EXECUTION_SHA"],
+              "external_provider_bytes_persisted": False,
+              "historical_reproduction_verified": False,
+              "scientific_validity_verified": False,
+              "publication_authorized": False,
+              "model_use_authorized": False,
+          }
+          for field, expected in exact.items():
+              if type(result.get(field)) is not type(expected) or result.get(field) != expected:
+                  raise SystemExit(f"terminal result drifted at {field}")
+          if result.get("status") not in {"pass", "blocked"}:
+              raise SystemExit("terminal result status drifted")
+          print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          MARKER='<!-- oc-eq1-esrm20-kosovo-oq313-run-result-v1 -->'
+          BODY="$MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/oq313-terminal-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/609/comments" \
+            --input "$RUNNER_TEMP/oq313-terminal-comment.json"
