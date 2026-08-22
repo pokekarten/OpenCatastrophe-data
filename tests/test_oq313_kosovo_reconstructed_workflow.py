@@ -51,6 +51,19 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
             text.index("Fetch exact ESRM20 v1.0 provider snapshot"),
         )
 
+    def test_action_is_always_invoked_as_repository_package_module(self) -> None:
+        text = self.text
+        module = "-m scripts.run_esrm20_kosovo_residential_ebrisk_openquake313_action"
+        self.assertEqual(text.count(module), 2)
+        self.assertNotIn(
+            "python scripts/run_esrm20_kosovo_residential_ebrisk_openquake313_action.py",
+            text,
+        )
+        self.assertNotIn(
+            "/repo/scripts/run_esrm20_kosovo_residential_ebrisk_openquake313_action.py",
+            text,
+        )
+
     def test_provider_and_runtime_refs_are_immutable_and_not_request_selectable(self) -> None:
         text = self.text
         self.assertIn(
@@ -96,7 +109,7 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
     def test_exact_oq313_envelope_is_invoked_and_raw_results_are_not_uploaded(self) -> None:
         text = self.text
         self.assertIn(
-            "/repo/scripts/run_esrm20_kosovo_residential_ebrisk_openquake313_action.py",
+            "-m scripts.run_esrm20_kosovo_residential_ebrisk_openquake313_action",
             text,
         )
         self.assertIn("--expected-issue 609", text)
