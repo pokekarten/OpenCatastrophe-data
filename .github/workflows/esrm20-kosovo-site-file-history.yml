@@ -1,0 +1,112 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Kosovo Site File History
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: >-
+    esrm20-kosovo-site-file-history-${{ github.repository }}-${{
+      github.event.issue.number == 291 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-kosovo-site-file-history-request-v1 -->') &&
+      'trusted-request' || format('noise-{0}', github.event.comment.id)
+    }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main Kosovo site-file history request
+    if: >-
+      github.event.issue.number == 291 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-kosovo-site-file-history-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_SITE_HISTORY_REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/run_esrm20_kosovo_site_file_history_action.py \
+            --comment-body-env OC_SITE_HISTORY_REQUEST_BODY \
+            --expected-issue 291 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-and-publish:
+    name: Read bounded path history and publish metadata receipt
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    env:
+      EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+      OC_SITE_HISTORY_REQUEST_BODY: ${{ github.event.comment.body }}
+    steps:
+      - name: Checkout current trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Re-fence execution checkout to validated main SHA
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXECUTION_SHA"
+
+      - name: Execute fixed metadata-only Kosovo site-file history profile
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python scripts/run_esrm20_kosovo_site_file_history_action.py \
+            --comment-body-env OC_SITE_HISTORY_REQUEST_BODY \
+            --expected-issue 291 \
+            --execution-sha "$EXECUTION_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --token-env GH_TOKEN \
+            --output "$RUNNER_TEMP/kosovo-site-file-history-result.json"
+
+      - name: Publish bounded terminal metadata evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(cat "$RUNNER_TEMP/kosovo-site-file-history-result.json")"
+          test -n "$RESULT_JSON"
+          MARKER='<!-- oc-eq1-esrm20-kosovo-site-file-history-result-v1 -->'
+          BODY="$MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' \
+            > "$RUNNER_TEMP/kosovo-site-file-history-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/291/comments" \
+            --input "$RUNNER_TEMP/kosovo-site-file-history-comment.json"
