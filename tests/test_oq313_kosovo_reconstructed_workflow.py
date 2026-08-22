@@ -128,8 +128,12 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
         self.assertIn("import openquake.baselib as openquake_baselib", text)
         self.assertIn("from openquake.commonlib import readinput", text)
         self.assertIn('source_root = Path("/oq-engine").resolve()', text)
+        self.assertIn(
+            'package_root = (source_root / "openquake").resolve()',
+            text,
+        )
         self.assertIn('getattr(module, "__file__", None)', text)
-        self.assertIn("Path(module_file).resolve().relative_to(source_root)", text)
+        self.assertIn("Path(module_file).resolve().relative_to(package_root)", text)
         self.assertIn("openquake_version = openquake_baselib.__version__", text)
         self.assertIn(
             'if openquake_version != "3.13.0-git16dd69ecea":',
@@ -152,6 +156,30 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
             text.index("-e PYTHONPATH=/oq-engine"),
             text.index("import openquake.baselib as openquake_baselib"),
         )
+
+    def test_runtime_probe_rejects_namespace_contamination_before_submodule_imports(self) -> None:
+        text = self.text
+        preload_guard = 'if any(name.startswith("openquake.") for name in sys.modules):'
+        top_level_import = "import openquake\n"
+        pin = "openquake.__path__ = [str(package_root)]"
+        submodule_import = "import openquake.baselib as openquake_baselib"
+
+        self.assertIn(preload_guard, text)
+        self.assertIn(
+            'raise SystemExit("OQ3.13 OpenQuake submodule loaded before source pin")',
+            text,
+        )
+        self.assertIn(top_level_import, text)
+        self.assertIn("if not package_root.is_dir():", text)
+        self.assertIn('namespace_path = getattr(openquake, "__path__", None)', text)
+        self.assertIn(pin, text)
+        self.assertIn(
+            "[Path(path).resolve() for path in openquake.__path__] != [package_root]",
+            text,
+        )
+        self.assertLess(text.index(preload_guard), text.index(top_level_import))
+        self.assertLess(text.index(top_level_import), text.index(pin))
+        self.assertLess(text.index(pin), text.index(submodule_import))
 
 
 if __name__ == "__main__":
