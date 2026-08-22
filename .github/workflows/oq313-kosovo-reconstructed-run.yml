@@ -71,12 +71,17 @@ jobs:
       EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
       OC_OQ313_REQUEST_BODY: ${{ github.event.comment.body }}
     steps:
-      - name: Checkout exact trusted execution commit
+      - name: Checkout current trusted default branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 1
           persist-credentials: false
+
+      - name: Re-fence privileged checkout to validated main SHA
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXECUTION_SHA"
 
       - name: Deduplicate trusted terminal result before external access
         id: dedup
