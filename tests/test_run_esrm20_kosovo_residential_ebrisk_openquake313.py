@@ -69,7 +69,7 @@ def resolved_runtime(*, concurrent_tasks: int = 0) -> dict[str, object]:
         "random_seed_provenance": "source_declared",
         "ignore_master_seed": True,
         "ignore_master_seed_provenance": "source_declared",
-        "ses_seed": 7,
+        "ses_seed": subject.OPENQUAKE_DEFAULT_SES_SEED,
         "ses_seed_provenance": "openquake_default_resolved_from_source_absence",
         "minimum_asset_loss_structural": subject.MINIMUM_ASSET_LOSS_STRUCTURAL,
         "minimum_asset_loss_provenance": "source_declared",
@@ -208,9 +208,30 @@ class KosovoResidentialOQ313RunTests(unittest.TestCase):
         ):
             subject._validate_resolved_runtime(runtime)
 
+        runtime = resolved_runtime()
+        runtime["ses_seed"] = subject.OPENQUAKE_DEFAULT_SES_SEED + 1
+        execute = mock.Mock()
+        config = derived_config()
+        with (
+            mock.patch.object(subject, "_read_staged_config") as read,
+            mock.patch.object(subject, "_execute_native", execute),
+            self.assertRaisesRegex(
+                subject.KosovoResidentialOQ313RunError,
+                "^resolved runtime ses_seed must equal the pinned OpenQuake 3.13 default$",
+            ),
+        ):
+            subject._run_derived_config(
+                config,
+                config_evidence(config),
+                runtime_identity=runtime_identity(),
+                resolved_runtime=runtime,
+            )
+        read.assert_not_called()
+        execute.assert_not_called()
+
         config = derived_config().replace(
             b"random_seed = 113\n",
-            b"random_seed = 113\nses_seed = 7\n",
+            b"random_seed = 113\nses_seed = 42\n",
         )
         with self.assertRaisesRegex(
             subject.KosovoResidentialOQ313RunError,

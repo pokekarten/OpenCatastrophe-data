@@ -51,6 +51,7 @@ CONFIG_LOGICAL_PATH = (
 )
 MINIMUM_ASSET_LOSS_STRUCTURAL = 2000
 RANDOM_SEED = 113
+OPENQUAKE_DEFAULT_SES_SEED = 42
 LOSS_TYPE = "structural"
 UNIT = "EUR"
 QUANTITY = "thresholded_ground_up_structural_replacement_cost_loss"
@@ -211,9 +212,9 @@ def _validate_resolved_runtime(value: object) -> dict[str, Any]:
             )
 
     ses_seed = runtime["ses_seed"]
-    if type(ses_seed) is not int or ses_seed < 0:
+    if type(ses_seed) is not int or ses_seed != OPENQUAKE_DEFAULT_SES_SEED:
         raise KosovoResidentialOQ313RunError(
-            "resolved runtime ses_seed must be a non-negative integer"
+            "resolved runtime ses_seed must equal the pinned OpenQuake 3.13 default"
         )
     concurrent_tasks = runtime["concurrent_tasks"]
     if type(concurrent_tasks) is not int or concurrent_tasks < 0:
