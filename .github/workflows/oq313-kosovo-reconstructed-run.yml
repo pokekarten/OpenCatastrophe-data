@@ -252,13 +252,15 @@ jobs:
           STAGE_ROOT="$RUNNER_TEMP/esrm20-stage"
           docker run --rm -i --entrypoint python \
             -e BOOTSTRAP_DIGEST -e EXEC_IMAGE_ID \
-            -e OQ_DISTRIBUTE=no \
+            -e OQ_DISTRIBUTE=no -e OPENBLAS_NUM_THREADS=1 \
+            -e PYTHONPATH=/oq-engine \
             -v "$STAGE_ROOT:/stage" \
             "$EXEC_IMAGE" - <<'PY'
           import json
           import multiprocessing
           import os
           import sys
+          from pathlib import Path
           import h5py
           import numpy
           import pandas
@@ -269,7 +271,30 @@ jobs:
 
           if os.environ.get("OQ_DISTRIBUTE") != "no":
               raise SystemExit("OQ3.13 runtime distribution fence drifted")
+          if os.environ.get("OPENBLAS_NUM_THREADS") != "1":
+              raise SystemExit("OQ3.13 OpenBLAS preflight drifted")
+          if os.environ.get("PYTHONPATH") != "/oq-engine":
+              raise SystemExit("OQ3.13 source overlay preflight drifted")
+          import openquake.baselib as openquake_baselib
           from openquake.commonlib import readinput
+
+          source_root = Path("/oq-engine").resolve()
+          for label, module in (
+              ("openquake.baselib", openquake_baselib),
+              ("openquake.commonlib.readinput", readinput),
+          ):
+              module_file = getattr(module, "__file__", None)
+              if not isinstance(module_file, str):
+                  raise SystemExit(f"OQ3.13 {label} has no source file")
+              try:
+                  Path(module_file).resolve().relative_to(source_root)
+              except ValueError as exc:
+                  raise SystemExit(
+                      f"OQ3.13 {label} is not loaded from frozen source"
+                  ) from exc
+          openquake_version = openquake_baselib.__version__
+          if openquake_version != "3.13.0-git16dd69ecea":
+              raise SystemExit("OQ3.13 exact-source version receipt drifted")
 
           observed = {
               "h5py": h5py.__version__,
@@ -294,7 +319,7 @@ jobs:
           identity = {
               "repository": "gem/oq-engine",
               "commit_sha": "16dd69ecea0c6dcaf49c22ca12edc9da3f024889",
-              "openquake_version": "3.13.0-git16dd69ecea",
+              "openquake_version": openquake_version,
               "python_major_minor": "3.8",
               "dependency_versions": observed,
               "source_commit_verified": True,
