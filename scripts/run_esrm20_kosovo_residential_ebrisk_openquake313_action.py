@@ -13,6 +13,7 @@ semantics.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -222,6 +223,8 @@ def _canonical_result(
     digest = adapter_receipt.get("sha256")
     if type(digest) is not str or _DIGEST_RE.fullmatch(digest) is None:
         raise KosovoResidentialOQ313ActionError("adapter receipt digest is invalid")
+    if digest != hashlib.sha256(adapter_payload).hexdigest():
+        raise KosovoResidentialOQ313ActionError("adapter receipt digest drifted")
 
     return {
         "schema_version": RESULT_SCHEMA_VERSION,
