@@ -34,10 +34,18 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
 
     def test_execution_is_bound_to_trusted_default_branch_sha(self) -> None:
         text = self.text
-        self.assertIn("ref: ${{ github.event.repository.default_branch }}", text)
+        self.assertGreaterEqual(
+            text.count("ref: ${{ github.event.repository.default_branch }}"),
+            2,
+        )
         self.assertIn('EXECUTION_SHA="$(git rev-parse HEAD)"', text)
         self.assertIn("--execution-sha \"$EXECUTION_SHA\"", text)
-        self.assertIn("ref: ${{ needs.validate-request.outputs.execution_sha }}", text)
+        self.assertNotIn("ref: ${{ needs.validate-request.outputs.execution_sha }}", text)
+        self.assertIn('test "$(git rev-parse HEAD)" = "$EXECUTION_SHA"', text)
+        self.assertLess(
+            text.index("Re-fence privileged checkout to validated main SHA"),
+            text.index("Deduplicate trusted terminal result before external access"),
+        )
         self.assertLess(
             text.index("Deduplicate trusted terminal result before external access"),
             text.index("Fetch exact ESRM20 v1.0 provider snapshot"),
@@ -100,6 +108,7 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
         self.assertIn('sys.version_info[:2] != (3, 8)', text)
         self.assertIn('"ses_seed": 42', text)
         self.assertIn('"concurrent_tasks": 0', text)
+        self.assertIn("docker run --rm -i --entrypoint python", text)
 
 
 if __name__ == "__main__":
