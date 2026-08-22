@@ -5,9 +5,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import unittest
 from typing import Any
-
-import pytest
+from unittest import mock
 
 from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313 as runner
 from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313_action as subject
@@ -34,7 +35,7 @@ def _request(**updates: Any) -> str:
 
 def _adapter_document(*, status: str = "pass") -> dict[str, Any]:
     blocked = status == "blocked"
-    document: dict[str, Any] = {
+    return {
         "schema_version": runner.SCHEMA_VERSION,
         "issues": {
             "control": runner.CONTROL_ISSUE,
@@ -79,7 +80,20 @@ def _adapter_document(*, status: str = "pass") -> dict[str, Any]:
         "publication_authorized": False,
         "model_use_authorized": False,
     }
-    return document
+
+
+def _payload(document: dict[str, Any]) -> bytes:
+    return (
+        json.dumps(document, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        + b"\n"
+    )
+
+
+def _receipt(payload: bytes) -> dict[str, Any]:
+    return {
+        "byte_count": len(payload),
+        "sha256": hashlib.sha256(payload).hexdigest(),
+    }
 
 
 def _fake_execute(
@@ -88,205 +102,193 @@ def _fake_execute(
     runtime_identity: object,
     resolved_runtime: object,
 ) -> tuple[bytes, dict[str, Any]]:
-    assert source_group1_config == b"source"
-    assert runtime_identity == {"runtime": "fixed"}
-    assert resolved_runtime == {"resolved": "fixed"}
-    payload = (
-        json.dumps(
-            _adapter_document(),
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
-        + b"\n"
-    )
-    return payload, {
-        "byte_count": len(payload),
-        "sha256": hashlib.sha256(payload).hexdigest(),
-    }
+    if source_group1_config != b"source":
+        raise AssertionError("unexpected source config")
+    if runtime_identity != {"runtime": "fixed"}:
+        raise AssertionError("unexpected runtime identity")
+    if resolved_runtime != {"resolved": "fixed"}:
+        raise AssertionError("unexpected resolved runtime")
+    payload = _payload(_adapter_document())
+    return payload, _receipt(payload)
 
 
-def test_validate_request_accepts_exact_closed_envelope() -> None:
-    request = subject.validate_request(
-        _request(),
-        expected_issue=subject.CONTROL_ISSUE,
-        execution_sha=EXECUTION_SHA,
-    )
-    assert request["target_sha"] == EXECUTION_SHA
-    assert set(request) == subject._REQUEST_FIELDS  # noqa: SLF001
-
-
-@pytest.mark.parametrize(
-    ("updates", "message"),
-    [
-        ({"target_sha": "b" * 40}, "target_sha"),
-        ({"issue": 287}, "issue"),
-        ({"action": "other"}, "action"),
-        ({"dataset_id": "other"}, "dataset_id"),
-        ({"requester": " bad"}, "requester"),
-    ],
-)
-def test_validate_request_rejects_authority_drift(
-    updates: dict[str, Any],
-    message: str,
-) -> None:
-    with pytest.raises(subject.KosovoResidentialOQ313ActionError, match=message):
-        subject.validate_request(
-            _request(**updates),
+class KosovoResidentialOQ313ActionTests(unittest.TestCase):
+    def test_validate_request_accepts_exact_closed_envelope(self) -> None:
+        request = subject.validate_request(
+            _request(),
             expected_issue=subject.CONTROL_ISSUE,
             execution_sha=EXECUTION_SHA,
         )
+        self.assertEqual(request["target_sha"], EXECUTION_SHA)
+        self.assertEqual(set(request), subject._REQUEST_FIELDS)
 
-
-def test_validate_request_rejects_caller_selected_target_fields() -> None:
-    payload = json.loads(_request().split(subject.REQUEST_MARKER, 1)[1])
-    payload["provider_path"] = "arbitrary"
-    body = subject.REQUEST_MARKER + "\n" + json.dumps(payload)
-    with pytest.raises(subject.KosovoResidentialOQ313ActionError, match="fields drifted"):
-        subject.validate_request(
-            body,
-            expected_issue=subject.CONTROL_ISSUE,
-            execution_sha=EXECUTION_SHA,
+    def test_validate_request_rejects_authority_drift(self) -> None:
+        cases = (
+            ({"target_sha": "b" * 40}, "target_sha"),
+            ({"issue": 287}, "issue"),
+            ({"action": "other"}, "action"),
+            ({"dataset_id": "other"}, "dataset_id"),
+            ({"requester": " bad"}, "requester"),
         )
+        for updates, message in cases:
+            with self.subTest(updates=updates):
+                with self.assertRaisesRegex(
+                    subject.KosovoResidentialOQ313ActionError,
+                    message,
+                ):
+                    subject.validate_request(
+                        _request(**updates),
+                        expected_issue=subject.CONTROL_ISSUE,
+                        execution_sha=EXECUTION_SHA,
+                    )
 
-
-def test_validate_request_rejects_duplicate_json_keys() -> None:
-    body = (
-        subject.REQUEST_MARKER
-        + "\n"
-        + '{"schema_version":"'
-        + subject.REQUEST_SCHEMA_VERSION
-        + '","action":"'
-        + subject.ACTION
-        + '","issue":609,"target_sha":"'
-        + EXECUTION_SHA
-        + '","dataset_id":"'
-        + subject.DATASET_ID
-        + '","requester":"one","requester":"two"}'
-    )
-    with pytest.raises(subject.KosovoResidentialOQ313ActionError, match="duplicate"):
-        subject.validate_request(
-            body,
-            expected_issue=subject.CONTROL_ISSUE,
-            execution_sha=EXECUTION_SHA,
-        )
-
-
-def test_run_action_wraps_exact_adapter_result_without_promoting_authority() -> None:
-    result = subject.run_action(
-        execution_sha=EXECUTION_SHA,
-        source_group1_config=b"source",
-        runtime_identity={"runtime": "fixed"},
-        resolved_runtime={"resolved": "fixed"},
-        execute=_fake_execute,
-    )
-    assert result["schema_version"] == subject.RESULT_SCHEMA_VERSION
-    assert result["execution_sha"] == EXECUTION_SHA
-    assert result["status"] == "pass"
-    assert result["adapter_result"]["status"] == "pass"
-    assert result["external_provider_bytes_persisted"] is False
-    assert result["historical_reproduction_verified"] is False
-    assert result["scientific_validity_verified"] is False
-    assert result["publication_authorized"] is False
-    assert result["model_use_authorized"] is False
-
-
-def test_run_action_accepts_bounded_native_failure_as_terminal_blocked() -> None:
-    def execute(*args: Any, **kwargs: Any) -> tuple[bytes, dict[str, Any]]:
-        del args, kwargs
-        payload = (
-            json.dumps(
-                _adapter_document(status="blocked"),
-                sort_keys=True,
-                separators=(",", ":"),
-            ).encode("utf-8")
-            + b"\n"
-        )
-        return payload, {
-            "byte_count": len(payload),
-            "sha256": hashlib.sha256(payload).hexdigest(),
-        }
-
-    result = subject.run_action(
-        execution_sha=EXECUTION_SHA,
-        source_group1_config=b"source",
-        runtime_identity={},
-        resolved_runtime={},
-        execute=execute,
-    )
-    assert result["status"] == "blocked"
-    assert result["adapter_result"]["failure_stage"] == "openquake_run"
-
-
-def test_run_action_rejects_adapter_authority_promotion() -> None:
-    def execute(*args: Any, **kwargs: Any) -> tuple[bytes, dict[str, Any]]:
-        del args, kwargs
-        document = _adapter_document()
-        document["model_use_authorized"] = True
-        payload = (
-            json.dumps(document, sort_keys=True, separators=(",", ":")).encode(
-                "utf-8"
+    def test_validate_request_rejects_caller_selected_target_fields(self) -> None:
+        payload = json.loads(_request().split(subject.REQUEST_MARKER, 1)[1])
+        payload["provider_path"] = "arbitrary"
+        body = subject.REQUEST_MARKER + "\n" + json.dumps(payload)
+        with self.assertRaisesRegex(
+            subject.KosovoResidentialOQ313ActionError,
+            "fields drifted",
+        ):
+            subject.validate_request(
+                body,
+                expected_issue=subject.CONTROL_ISSUE,
+                execution_sha=EXECUTION_SHA,
             )
-            + b"\n"
-        )
-        return payload, {
-            "byte_count": len(payload),
-            "sha256": hashlib.sha256(payload).hexdigest(),
-        }
 
-    with pytest.raises(
-        subject.KosovoResidentialOQ313ActionError,
-        match="model_use_authorized",
-    ):
-        subject.run_action(
+    def test_validate_request_rejects_duplicate_json_keys(self) -> None:
+        body = (
+            subject.REQUEST_MARKER
+            + "\n"
+            + '{"schema_version":"'
+            + subject.REQUEST_SCHEMA_VERSION
+            + '","action":"'
+            + subject.ACTION
+            + '","issue":609,"target_sha":"'
+            + EXECUTION_SHA
+            + '","dataset_id":"'
+            + subject.DATASET_ID
+            + '","requester":"one","requester":"two"}'
+        )
+        with self.assertRaisesRegex(
+            subject.KosovoResidentialOQ313ActionError,
+            "duplicate",
+        ):
+            subject.validate_request(
+                body,
+                expected_issue=subject.CONTROL_ISSUE,
+                execution_sha=EXECUTION_SHA,
+            )
+
+    def test_run_action_wraps_exact_adapter_result_without_authority(self) -> None:
+        result = subject.run_action(
+            execution_sha=EXECUTION_SHA,
+            source_group1_config=b"source",
+            runtime_identity={"runtime": "fixed"},
+            resolved_runtime={"resolved": "fixed"},
+            execute=_fake_execute,
+        )
+        self.assertEqual(result["schema_version"], subject.RESULT_SCHEMA_VERSION)
+        self.assertEqual(result["execution_sha"], EXECUTION_SHA)
+        self.assertEqual(result["status"], "pass")
+        self.assertEqual(result["adapter_result"]["status"], "pass")
+        self.assertIs(result["external_provider_bytes_persisted"], False)
+        self.assertIs(result["historical_reproduction_verified"], False)
+        self.assertIs(result["scientific_validity_verified"], False)
+        self.assertIs(result["publication_authorized"], False)
+        self.assertIs(result["model_use_authorized"], False)
+
+    def test_run_action_accepts_bounded_native_failure_as_blocked(self) -> None:
+        def execute(*args: Any, **kwargs: Any) -> tuple[bytes, dict[str, Any]]:
+            del args, kwargs
+            payload = _payload(_adapter_document(status="blocked"))
+            return payload, _receipt(payload)
+
+        result = subject.run_action(
             execution_sha=EXECUTION_SHA,
             source_group1_config=b"source",
             runtime_identity={},
             resolved_runtime={},
             execute=execute,
         )
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["adapter_result"]["failure_stage"], "openquake_run")
+
+    def test_run_action_rejects_adapter_authority_promotion(self) -> None:
+        def execute(*args: Any, **kwargs: Any) -> tuple[bytes, dict[str, Any]]:
+            del args, kwargs
+            document = _adapter_document()
+            document["model_use_authorized"] = True
+            payload = _payload(document)
+            return payload, _receipt(payload)
+
+        with self.assertRaisesRegex(
+            subject.KosovoResidentialOQ313ActionError,
+            "model_use_authorized",
+        ):
+            subject.run_action(
+                execution_sha=EXECUTION_SHA,
+                source_group1_config=b"source",
+                runtime_identity={},
+                resolved_runtime={},
+                execute=execute,
+            )
+
+    def test_run_action_rejects_receipt_size_drift(self) -> None:
+        def execute(*args: Any, **kwargs: Any) -> tuple[bytes, dict[str, Any]]:
+            del args, kwargs
+            payload = _payload(_adapter_document())
+            receipt = _receipt(payload)
+            receipt["byte_count"] = len(payload) + 1
+            return payload, receipt
+
+        with self.assertRaisesRegex(
+            subject.KosovoResidentialOQ313ActionError,
+            "byte count",
+        ):
+            subject.run_action(
+                execution_sha=EXECUTION_SHA,
+                source_group1_config=b"source",
+                runtime_identity={},
+                resolved_runtime={},
+                execute=execute,
+            )
+
+    def test_run_action_rejects_receipt_digest_drift(self) -> None:
+        def execute(*args: Any, **kwargs: Any) -> tuple[bytes, dict[str, Any]]:
+            del args, kwargs
+            payload = _payload(_adapter_document())
+            receipt = _receipt(payload)
+            receipt["sha256"] = "0" * 64
+            return payload, receipt
+
+        with self.assertRaisesRegex(
+            subject.KosovoResidentialOQ313ActionError,
+            "digest drifted",
+        ):
+            subject.run_action(
+                execution_sha=EXECUTION_SHA,
+                source_group1_config=b"source",
+                runtime_identity={},
+                resolved_runtime={},
+                execute=execute,
+            )
+
+    def test_validate_only_does_not_require_staged_execution_inputs(self) -> None:
+        with mock.patch.dict(os.environ, {"REQUEST_BODY": _request()}, clear=False):
+            result = subject.main(
+                [
+                    "--comment-body-env",
+                    "REQUEST_BODY",
+                    "--expected-issue",
+                    "609",
+                    "--execution-sha",
+                    EXECUTION_SHA,
+                    "--validate-request-only",
+                ]
+            )
+        self.assertEqual(result, 0)
 
 
-def test_run_action_rejects_receipt_size_drift() -> None:
-    def execute(*args: Any, **kwargs: Any) -> tuple[bytes, dict[str, Any]]:
-        del args, kwargs
-        payload = (
-            json.dumps(
-                _adapter_document(),
-                sort_keys=True,
-                separators=(",", ":"),
-            ).encode("utf-8")
-            + b"\n"
-        )
-        return payload, {
-            "byte_count": len(payload) + 1,
-            "sha256": hashlib.sha256(payload).hexdigest(),
-        }
-
-    with pytest.raises(subject.KosovoResidentialOQ313ActionError, match="byte count"):
-        subject.run_action(
-            execution_sha=EXECUTION_SHA,
-            source_group1_config=b"source",
-            runtime_identity={},
-            resolved_runtime={},
-            execute=execute,
-        )
-
-
-def test_validate_only_does_not_require_staged_execution_inputs(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setenv("REQUEST_BODY", _request())
-    assert (
-        subject.main(
-            [
-                "--comment-body-env",
-                "REQUEST_BODY",
-                "--expected-issue",
-                "609",
-                "--execution-sha",
-                EXECUTION_SHA,
-                "--validate-request-only",
-            ]
-        )
-        == 0
-    )
+if __name__ == "__main__":
+    unittest.main()
