@@ -109,7 +109,7 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
         self.assertIn('"publication_authorized": False', text)
         self.assertIn('"model_use_authorized": False', text)
 
-    def test_runtime_probe_pins_declared_dependency_receipt(self) -> None:
+    def test_runtime_probe_pins_dependencies_and_observes_oqparam(self) -> None:
         text = self.text
         for name, version in {
             "h5py": "3.1.0",
@@ -122,8 +122,15 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
         }.items():
             self.assertIn(f'"{name}": "{version}"', text)
         self.assertIn('sys.version_info[:2] != (3, 8)', text)
-        self.assertIn('"ses_seed": 42', text)
-        self.assertIn('"concurrent_tasks": 0', text)
+        self.assertIn("-e OQ_DISTRIBUTE=no", text)
+        self.assertIn("from openquake.commonlib import readinput", text)
+        self.assertIn("params = readinput.get_params(config_path)", text)
+        self.assertIn("oqparam = readinput.get_oqparam(params)", text)
+        self.assertIn('if "ses_seed" in params:', text)
+        self.assertIn('"ses_seed": oqparam.ses_seed', text)
+        self.assertIn('"concurrent_tasks": oqparam.concurrent_tasks', text)
+        self.assertNotIn('"concurrent_tasks": 0', text)
+        self.assertIn("multiprocessing.cpu_count() * 2", text)
         self.assertIn("docker run --rm -i --entrypoint python", text)
 
 
