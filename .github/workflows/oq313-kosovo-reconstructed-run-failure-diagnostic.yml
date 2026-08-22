@@ -24,7 +24,7 @@ jobs:
       actions: read
       issues: write
     steps:
-      - name: Bind failed run to a successfully validated canonical request
+      - name: Bind failed run to bounded request-validation evidence
         id: bind
         env:
           GH_TOKEN: ${{ github.token }}
@@ -75,8 +75,25 @@ jobs:
               for job in jobs
               if job.get("name") == "Validate trusted-main Kosovo OQ3.13 request"
           ]
-          if len(validate) != 1 or validate[0].get("conclusion") != "success":
-              raise SystemExit("canonical request validation was not proven successful")
+          if len(validate) != 1:
+              raise SystemExit("source validation job identity is ambiguous")
+          validation_conclusion = validate[0].get("conclusion")
+          validation_allowed = {
+              "success",
+              "failure",
+              "cancelled",
+              "timed_out",
+              "action_required",
+              "neutral",
+              "skipped",
+              "stale",
+              "startup_failure",
+          }
+          if validation_conclusion not in validation_allowed:
+              raise SystemExit("source validation job conclusion is not diagnostic")
+          if validation_conclusion == "skipped":
+              raise SystemExit("source validation job was skipped; request provenance absent")
+          request_provenance_bound = validation_conclusion == "success"
 
           execute = [
               job
@@ -107,6 +124,11 @@ jobs:
           output = Path(os.environ["GITHUB_OUTPUT"])
           with output.open("a", encoding="utf-8") as handle:
               handle.write(f"validation_job_id={validate[0]['id']}\n")
+              handle.write(f"validation_conclusion={validation_conclusion}\n")
+              handle.write(
+                  "request_provenance_bound="
+                  f"{'true' if request_provenance_bound else 'false'}\n"
+              )
               handle.write(f"execution_job_id={execute[0]['id']}\n")
               handle.write(f"execution_job_conclusion={execution_conclusion}\n")
           PY
@@ -120,6 +142,8 @@ jobs:
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           RUN_URL: ${{ github.event.workflow_run.html_url }}
           VALIDATION_JOB_ID: ${{ steps.bind.outputs.validation_job_id }}
+          VALIDATION_CONCLUSION: ${{ steps.bind.outputs.validation_conclusion }}
+          REQUEST_PROVENANCE_BOUND: ${{ steps.bind.outputs.request_provenance_bound }}
           EXECUTION_JOB_ID: ${{ steps.bind.outputs.execution_job_id }}
           EXECUTION_JOB_CONCLUSION: ${{ steps.bind.outputs.execution_job_conclusion }}
           DIAGNOSTIC_MARKER: "<!-- oc-eq1-esrm20-kosovo-oq313-workflow-failure-v1 -->"
@@ -127,6 +151,7 @@ jobs:
           set -euo pipefail
           printf '%s' "$VALIDATION_JOB_ID" | grep -Eq '^[1-9][0-9]*$'
           printf '%s' "$EXECUTION_JOB_ID" | grep -Eq '^[1-9][0-9]*$'
+          case "$REQUEST_PROVENANCE_BOUND" in true|false) ;; *) exit 1 ;; esac
           DIAGNOSTIC_JSON="$(jq -ncS \
             --argjson run_id "$RUN_ID" \
             --argjson run_attempt "$RUN_ATTEMPT" \
@@ -134,6 +159,8 @@ jobs:
             --arg head_sha "$HEAD_SHA" \
             --arg run_url "$RUN_URL" \
             --argjson validation_job_id "$VALIDATION_JOB_ID" \
+            --arg validation_conclusion "$VALIDATION_CONCLUSION" \
+            --argjson request_provenance_bound "$REQUEST_PROVENANCE_BOUND" \
             --argjson execution_job_id "$EXECUTION_JOB_ID" \
             --arg execution_job_conclusion "$EXECUTION_JOB_CONCLUSION" \
             '{
@@ -145,9 +172,9 @@ jobs:
               workflow_conclusion:$conclusion,
               workflow_head_sha:$head_sha,
               workflow_run_url:$run_url,
-              request_provenance_bound:true,
+              request_provenance_bound:$request_provenance_bound,
               request_validation_job_id:$validation_job_id,
-              request_validation_conclusion:"success",
+              request_validation_conclusion:$validation_conclusion,
               execution_job_id:$execution_job_id,
               execution_job_conclusion:$execution_job_conclusion,
               execution_sha_known:false,
@@ -193,8 +220,17 @@ jobs:
             (.request_validation_job_id | type) == "number" and
             .request_validation_job_id > 0 and
             (.execution_job_id | type) == "number" and .execution_job_id > 0 and
-            .request_provenance_bound == true and
-            .request_validation_conclusion == "success" and
+            (.request_provenance_bound | type) == "boolean" and
+            ((.request_provenance_bound == true and
+              .request_validation_conclusion == "success") or
+             (.request_provenance_bound == false and
+              (.request_validation_conclusion == "failure" or
+               .request_validation_conclusion == "cancelled" or
+               .request_validation_conclusion == "timed_out" or
+               .request_validation_conclusion == "action_required" or
+               .request_validation_conclusion == "neutral" or
+               .request_validation_conclusion == "stale" or
+               .request_validation_conclusion == "startup_failure"))) and
             (.workflow_conclusion == "failure" or
              .workflow_conclusion == "cancelled" or
              .workflow_conclusion == "timed_out" or
