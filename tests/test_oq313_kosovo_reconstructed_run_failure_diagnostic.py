@@ -52,7 +52,7 @@ class OQ313KosovoFailureDiagnosticWorkflowTests(unittest.TestCase):
         )
         self.assertIn("unexpected workflow conclusion", text)
 
-    def test_source_run_must_prove_canonical_request_validation(self) -> None:
+    def test_validation_failure_is_terminalized_without_false_provenance(self) -> None:
         text = self.text
         self.assertIn("actions: read", text)
         self.assertIn(
@@ -63,20 +63,38 @@ class OQ313KosovoFailureDiagnosticWorkflowTests(unittest.TestCase):
             'job.get("name") == "Validate trusted-main Kosovo OQ3.13 request"',
             text,
         )
+        self.assertNotIn('validate[0].get("conclusion") != "success"', text)
+        self.assertIn('validation_conclusion == "success"', text)
         self.assertIn(
-            'validate[0].get("conclusion") != "success"',
+            'validation_conclusion == "skipped"',
+            text,
+        )
+        self.assertIn(
+            'raise SystemExit("source validation job was skipped; request provenance absent")',
             text,
         )
         self.assertIn(
             'job.get("name") == "Stage exact inputs and execute fixed OQ3.13 adapter"',
             text,
         )
-        self.assertIn(
-            'raise SystemExit("canonical request validation was not proven successful")',
+        self.assertIn("request_provenance_bound:$request_provenance_bound", text)
+        self.assertIn("request_validation_conclusion:$validation_conclusion", text)
+        self.assertIn(".request_provenance_bound == false", text)
+        self.assertIn('.request_validation_conclusion == "failure"', text)
+        self.assertNotIn('request_validation_conclusion:"success"', text)
+
+    def test_skipped_validation_noise_cannot_publish_a_diagnostic(self) -> None:
+        text = self.text
+        skipped_guard = (
+            'if validation_conclusion == "skipped":\n'
+            '              raise SystemExit("source validation job was skipped; request provenance absent")'
+        )
+        self.assertIn(skipped_guard, text)
+        self.assertNotIn(
+            '.request_provenance_bound == false and\n'
+            '              .request_validation_conclusion == "skipped"',
             text,
         )
-        self.assertIn("request_provenance_bound:true", text)
-        self.assertIn('request_validation_conclusion:"success"', text)
 
     def test_diagnostic_is_checkoutless_and_cannot_execute_provider_or_model(self) -> None:
         text = self.text
@@ -109,6 +127,11 @@ class OQ313KosovoFailureDiagnosticWorkflowTests(unittest.TestCase):
             text,
         )
         self.assertIn("--argjson validation_job_id \"$VALIDATION_JOB_ID\"", text)
+        self.assertIn("--arg validation_conclusion \"$VALIDATION_CONCLUSION\"", text)
+        self.assertIn(
+            "--argjson request_provenance_bound \"$REQUEST_PROVENANCE_BOUND\"",
+            text,
+        )
         self.assertIn("--argjson execution_job_id \"$EXECUTION_JOB_ID\"", text)
 
     def test_failure_comment_is_closed_evidence_only(self) -> None:
