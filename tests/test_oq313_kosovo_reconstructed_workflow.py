@@ -81,7 +81,7 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
         self.assertIn("cfg.GROUP1_BYTE_COUNT", text)
         self.assertIn("cfg.GROUP1_SHA256", text)
         self.assertIn("build_kosovo_residential_exposure_wrapper", text)
-        self.assertIn("build_esrm20_kosovo_residential_ebrisk_config", text)
+        self.assertIn("build_kosovo_residential_ebrisk_config", text)
 
     def test_exact_oq313_envelope_is_invoked_and_raw_results_are_not_uploaded(self) -> None:
         text = self.text
