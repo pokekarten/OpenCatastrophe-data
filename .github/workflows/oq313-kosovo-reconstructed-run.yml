@@ -51,7 +51,7 @@ jobs:
         run: |
           set -euo pipefail
           EXECUTION_SHA="$(git rev-parse HEAD)"
-          python scripts/run_esrm20_kosovo_residential_ebrisk_openquake313_action.py \
+          python -m scripts.run_esrm20_kosovo_residential_ebrisk_openquake313_action \
             --comment-body-env OC_OQ313_REQUEST_BODY \
             --expected-issue 609 \
             --execution-sha "$EXECUTION_SHA" \
@@ -418,7 +418,7 @@ jobs:
             -v "$STAGE_ROOT:/stage" \
             -w /stage \
             "$EXEC_IMAGE" \
-            /repo/scripts/run_esrm20_kosovo_residential_ebrisk_openquake313_action.py \
+            -m scripts.run_esrm20_kosovo_residential_ebrisk_openquake313_action \
             --comment-body-env OC_OQ313_REQUEST_BODY \
             --expected-issue 609 \
             --execution-sha "$EXECUTION_SHA" \
