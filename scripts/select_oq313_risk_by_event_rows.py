@@ -32,6 +32,12 @@ _EXPECTED_DTYPES = {
     "variance": "float32",
     "loss": "float32",
 }
+_EXPECTED_EVENT_FIELDS = ("id", "rup_id", "rlz_id")
+_EXPECTED_EVENT_DTYPES = {
+    "id": "uint32",
+    "rup_id": "uint32",
+    "rlz_id": "uint16",
+}
 
 
 class OQ313DatastoreSelectionError(ValueError):
@@ -127,11 +133,36 @@ def _frame_records(frame: object) -> list[object]:
     return records
 
 
+def _assert_events_native_dtype(raw: object) -> None:
+    dtype = getattr(raw, "dtype", None)
+    names = getattr(dtype, "names", None)
+    if names is None or tuple(names) != _EXPECTED_EVENT_FIELDS:
+        raise OQ313DatastoreSelectionError(
+            f"events fields must be exactly {_EXPECTED_EVENT_FIELDS}"
+        )
+    fields = getattr(dtype, "fields", None)
+    if not isinstance(fields, Mapping):
+        raise OQ313DatastoreSelectionError("cannot inspect events structured dtype")
+    for name, expected_dtype in _EXPECTED_EVENT_DTYPES.items():
+        try:
+            field_spec = fields[name]
+            field_dtype = field_spec[0]
+        except (KeyError, TypeError, IndexError) as exc:
+            raise OQ313DatastoreSelectionError(
+                f"cannot inspect events dtype for {name}"
+            ) from exc
+        if str(field_dtype) != expected_dtype:
+            raise OQ313DatastoreSelectionError(
+                f"events {name} dtype must be {expected_dtype}"
+            )
+
+
 def _event_to_rupture(dstore: object) -> dict[int, int]:
     try:
         raw = dstore[EVENTS_DATASET][:]
     except (KeyError, TypeError, AttributeError) as exc:
         raise OQ313DatastoreSelectionError("cannot read events dataset") from exc
+    _assert_events_native_dtype(raw)
     links: dict[int, int] = {}
     for index, record in enumerate(raw):
         try:
