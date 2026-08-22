@@ -62,7 +62,13 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
             "OQ_COMMIT: 16dd69ecea0c6dcaf49c22ca12edc9da3f024889",
             text,
         )
-        self.assertIn("refs/tags/v3.13.0:refs/tags/v3.13.0", text)
+        self.assertIn(
+            'git -C "$OQ_ROOT" fetch --depth=1 --no-tags origin "$OQ_COMMIT"',
+            text,
+        )
+        self.assertIn("rev-parse 'FETCH_HEAD^{commit}'", text)
+        self.assertIn('test "$OBSERVED" = "$OQ_COMMIT"', text)
+        self.assertNotIn("refs/tags/v3.13.0", text)
         self.assertNotIn("github.event.inputs", text)
         self.assertNotIn("repository_path:", text)
 
@@ -75,7 +81,7 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
         self.assertIn("cfg.GROUP1_BYTE_COUNT", text)
         self.assertIn("cfg.GROUP1_SHA256", text)
         self.assertIn("build_kosovo_residential_exposure_wrapper", text)
-        self.assertIn("build_kosovo_residential_ebrisk_config", text)
+        self.assertIn("build_esrm20_kosovo_residential_ebrisk_config", text)
 
     def test_exact_oq313_envelope_is_invoked_and_raw_results_are_not_uploaded(self) -> None:
         text = self.text
