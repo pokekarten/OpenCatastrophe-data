@@ -77,7 +77,7 @@ class OQ313KosovoFailureDiagnosticWorkflowTests(unittest.TestCase):
             'job.get("name") == "Stage exact inputs and execute fixed OQ3.13 adapter"',
             text,
         )
-        self.assertIn("request_provenance_bound=$request_provenance_bound", text)
+        self.assertIn("request_provenance_bound:$request_provenance_bound", text)
         self.assertIn("request_validation_conclusion:$validation_conclusion", text)
         self.assertIn(".request_provenance_bound == false", text)
         self.assertIn('.request_validation_conclusion == "failure"', text)
