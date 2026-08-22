@@ -56,6 +56,20 @@ def request_body(*, sha: str = EXECUTION_SHA, extra: dict[str, object] | None = 
     return subject.REQUEST_MARKER + "\n" + json.dumps(payload, sort_keys=True, separators=(",", ":"))
 
 
+def add_source(scan: dict[str, object]) -> dict[str, object]:
+    scan["source"] = {
+        "dataset_id": subject.DATASET_ID,
+        "project_id": subject.PROJECT_ID,
+        "project_path": subject.PROJECT_PATH,
+        "commit_sha": subject.COMMIT_SHA,
+        "repository_path": subject.REPOSITORY_PATH,
+        "retrieved_at": RETRIEVED_AT,
+        "byte_count": subject.EXPECTED_BYTE_COUNT,
+        "sha256": subject.EXPECTED_SHA256,
+    }
+    return scan
+
+
 def synthetic_scan() -> dict[str, object]:
     pages = [
         "Geometric mean horizontal component. RotD50 is mentioned here.",
@@ -68,17 +82,29 @@ def synthetic_scan() -> dict[str, object]:
         extracted_text_sha256=hashlib.sha256(raw).hexdigest(),
         extractor_identity="pdftotext version 25.06.0",
     )
-    scan["source"] = {
-        "dataset_id": subject.DATASET_ID,
-        "project_id": subject.PROJECT_ID,
-        "project_path": subject.PROJECT_PATH,
-        "commit_sha": subject.COMMIT_SHA,
-        "repository_path": subject.REPOSITORY_PATH,
-        "retrieved_at": RETRIEVED_AT,
-        "byte_count": subject.EXPECTED_BYTE_COUNT,
-        "sha256": subject.EXPECTED_SHA256,
-    }
-    return scan
+    return add_source(scan)
+
+
+def fixed_context_pages() -> list[str]:
+    pages = ["synthetic page"] * 84
+    pages[52] = "Vulnerability ground motion intensity measure uses a horizontal component. Geometric mean RotD50."
+    pages[78] = "Average spectral acceleration before horizontal direction and response."
+    pages[79] = "Fragility and loss context around horizontal orientation."
+    pages[80] = "Hazard discussion near horizontal component direction."
+    return pages
+
+
+def synthetic_context_scan() -> dict[str, object]:
+    pages = fixed_context_pages()
+    raw = "\f".join(pages).encode("utf-8")
+    scan = subject.summarize_pages(
+        pages,
+        extracted_text_bytes=len(raw),
+        extracted_text_sha256=hashlib.sha256(raw).hexdigest(),
+        extractor_identity="pdftotext version 25.06.0",
+        include_context_classification=True,
+    )
+    return add_source(scan)
 
 
 def terminal_body(execution_sha: str) -> str:
@@ -115,9 +141,61 @@ class Tr002ContentScanActionTests(unittest.TestCase):
         self.assertEqual(scan["terms"]["rotd"], {"count": 1, "pages": [2]})
         self.assertFalse(scan["page_text_returned"])
         self.assertFalse(scan["snippets_returned"])
+        self.assertNotIn("horizontal_context_classification", scan)
         serialized = json.dumps(scan)
         self.assertNotIn("Geometric mean horizontal", serialized)
         self.assertNotIn("horizontal only", serialized)
+        subject._validate_scan(scan)
+
+    def test_fixed_context_classification_is_non_text_and_exact_page_bounded(self) -> None:
+        scan = synthetic_context_scan()
+        context = scan["horizontal_context_classification"]
+        self.assertEqual(context["pages"], list(subject.CONTEXT_PAGES))
+        self.assertFalse(context["raw_context_returned"])
+        self.assertEqual([record["page"] for record in context["records"]], list(subject.CONTEXT_PAGES))
+        self.assertEqual(scan["terms"]["horizontal"], {"count": 4, "pages": [53, 79, 80, 81]})
+        self.assertEqual(context["records"][0]["nearby_terms"]["vulnerability"], 1)
+        self.assertEqual(context["records"][0]["nearby_terms"]["component"], 1)
+        self.assertEqual(context["records"][1]["nearby_terms"]["spectral_acceleration"], 1)
+        serialized = json.dumps(context)
+        for raw_text in (
+            "Vulnerability ground motion intensity measure",
+            "Average spectral acceleration before horizontal",
+            "Fragility and loss context around horizontal",
+            "Hazard discussion near horizontal",
+        ):
+            self.assertNotIn(raw_text, serialized)
+        subject._validate_scan(scan)
+
+    def test_fixed_context_classification_fails_closed_on_localization_drift(self) -> None:
+        pages = fixed_context_pages()
+        pages[0] = "unexpected horizontal occurrence"
+        raw = "\f".join(pages).encode("utf-8")
+        with self.assertRaisesRegex(subject.Tr002ContentScanExtractionError, "localization drifted"):
+            subject.summarize_pages(
+                pages,
+                extracted_text_bytes=len(raw),
+                extracted_text_sha256=hashlib.sha256(raw).hexdigest(),
+                extractor_identity="pdftotext version 25.06.0",
+                include_context_classification=True,
+            )
+
+    def test_context_validation_rejects_unknown_output_and_vocabulary(self) -> None:
+        scan = synthetic_context_scan()
+        tampered = json.loads(json.dumps(scan))
+        tampered["horizontal_context_classification"]["records"][0]["snippet"] = "forbidden raw text"
+        with self.assertRaisesRegex(subject.Tr002ContentScanError, "record shape"):
+            subject._validate_scan(tampered)
+
+        tampered = json.loads(json.dumps(scan))
+        tampered["horizontal_context_classification"]["records"][0]["nearby_terms"]["attacker_term"] = 1
+        with self.assertRaisesRegex(subject.Tr002ContentScanError, "nearby-term set"):
+            subject._validate_scan(tampered)
+
+        tampered = json.loads(json.dumps(scan))
+        tampered["unexpected_top_level"] = "forbidden"
+        with self.assertRaisesRegex(subject.Tr002ContentScanError, "fields drifted"):
+            subject._validate_scan(tampered)
 
     def test_exact_receipt_identity_is_reproved_before_extraction(self) -> None:
         payload = b"%PDF-1.7\nsynthetic exact bytes\n%%EOF\n"
@@ -136,7 +214,7 @@ class Tr002ContentScanActionTests(unittest.TestCase):
             calls.append(request.full_url)
             return FakeResponse(payload, expected_url)
 
-        extracted = b"horizontal\fgeometric mean RotD50\f"
+        extracted = ("\f".join(fixed_context_pages()) + "\f").encode("utf-8")
 
         def runner(args, **kwargs):
             if args == [subject.PDFTOTEXT, "-v"]:
@@ -154,10 +232,12 @@ class Tr002ContentScanActionTests(unittest.TestCase):
         self.assertEqual(calls, [expected_url])
         self.assertEqual(scan["source"]["byte_count"], len(payload))
         self.assertEqual(scan["source"]["sha256"], hashlib.sha256(payload).hexdigest())
-        self.assertEqual(scan["terms"]["horizontal"], {"count": 1, "pages": [1]})
-        self.assertEqual(scan["terms"]["geometric_mean"], {"count": 1, "pages": [2]})
-        self.assertEqual(scan["terms"]["rotd50"], {"count": 1, "pages": [2]})
+        self.assertEqual(scan["terms"]["horizontal"], {"count": 4, "pages": [53, 79, 80, 81]})
+        self.assertEqual(scan["terms"]["geometric_mean"], {"count": 1, "pages": [53]})
+        self.assertEqual(scan["terms"]["rotd50"], {"count": 1, "pages": [53]})
         self.assertEqual(scan["extracted_text_sha256"], hashlib.sha256(extracted).hexdigest())
+        self.assertEqual(scan["horizontal_context_classification"]["pages"], [53, 79, 80, 81])
+        self.assertFalse(scan["horizontal_context_classification"]["raw_context_returned"])
 
     def test_wrong_pdf_hash_fails_before_extractor_invocation(self) -> None:
         payload = b"%PDF-1.7\nwrong bytes\n%%EOF\n"
@@ -184,7 +264,7 @@ class Tr002ContentScanActionTests(unittest.TestCase):
         runner.assert_not_called()
 
     def test_pass_keeps_science_and_model_authority_false(self) -> None:
-        result = subject.run_scan(execution_sha=EXECUTION_SHA, scanner=synthetic_scan)
+        result = subject.run_scan(execution_sha=EXECUTION_SHA, scanner=synthetic_context_scan)
         self.assertEqual(result["status"], "pass")
         self.assertTrue(result["byte_identity_verified"])
         self.assertTrue(result["text_location_scan_verified"])
@@ -207,7 +287,7 @@ class Tr002ContentScanActionTests(unittest.TestCase):
         self.assertNotIn("secret", json.dumps(result))
 
     def test_terminal_parser_rejects_authority_widening_and_scan_tamper(self) -> None:
-        result = subject.run_scan(execution_sha=EXECUTION_SHA, scanner=synthetic_scan)
+        result = subject.run_scan(execution_sha=EXECUTION_SHA, scanner=synthetic_context_scan)
         body = subject.RESULT_MARKER + "\n" + json.dumps(result, sort_keys=True, separators=(",", ":"))
         self.assertTrue(subject._parse_terminal_result(body, execution_sha=EXECUTION_SHA))
 

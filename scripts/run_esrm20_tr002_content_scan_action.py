@@ -5,10 +5,11 @@
 
 This is a bounded evidence-location worker, not a scientific interpretation worker.
 It reacquires one fixed provider object, re-proves its trusted byte identity, extracts
-text transiently with ``pdftotext``, and returns only extractor identity, text/page
-fingerprints, and counts/page numbers for four predeclared terms. Provider bytes,
-page text, snippets, scientific applicability and model-use authority remain out of
-scope.
+text transiently with ``pdftotext``, and returns extractor identity, text/page
+fingerprints, counts/page numbers for four predeclared terms, and a tightly bounded
+non-text classification of the four already-localized ``horizontal`` occurrences.
+Provider bytes, page text, snippets, scientific applicability and model-use authority
+remain out of scope.
 """
 
 from __future__ import annotations
@@ -58,6 +59,7 @@ RESULT_MARKER = "<!-- oc-eq1-esrm20-tr002-content-scan-result-v1 -->"
 REQUEST_SCHEMA_VERSION = "oc-esrm20-tr002-content-scan-request-v1"
 RESULT_SCHEMA_VERSION = "oc-esrm20-tr002-content-scan-result-v1"
 SCAN_SCHEMA_VERSION = "oc-esrm20-tr002-content-scan-v1"
+CONTEXT_CLASSIFICATION_SCHEMA_VERSION = "oc-esrm20-tr002-horizontal-context-classification-v1"
 ACTION = "esrm20_tr002_exact_content_scan"
 CONTROL_ISSUE = 596
 SOURCE_SCIENCE_ISSUE = 281
@@ -72,6 +74,9 @@ EXPECTED_SHA256 = "b4b533e673a542ee796cc6e80db4d7a4232ead9220afd2d1a4fa5a3fa4bed
 MAX_PDF_BYTES = EXPECTED_BYTE_COUNT
 MAX_TEXT_BYTES = 16 * 1024 * 1024
 MAX_PAGES = 512
+CONTEXT_PAGES = (53, 79, 80, 81)
+CONTEXT_RADIUS_CHARS = 320
+MAX_CONTEXT_WINDOW_UTF8_BYTES = (2 * CONTEXT_RADIUS_CHARS + 64) * 4
 PDFTOTEXT = "pdftotext"
 TRUSTED_RESULT_LOGIN = "github-actions[bot]"
 
@@ -84,6 +89,25 @@ _TERM_PATTERNS: dict[str, re.Pattern[str]] = {
     "horizontal": re.compile(r"(?<![A-Za-z0-9])horizontal(?![A-Za-z0-9])", re.IGNORECASE),
     "rotd": re.compile(r"(?<![A-Za-z0-9])RotD(?![A-Za-z0-9])", re.IGNORECASE),
     "rotd50": re.compile(r"(?<![A-Za-z0-9])RotD50(?![A-Za-z0-9])", re.IGNORECASE),
+}
+_CONTEXT_PATTERNS: dict[str, re.Pattern[str]] = {
+    "average": re.compile(r"(?<![A-Za-z0-9])averag(?:e|ed|ing)(?![A-Za-z0-9])", re.IGNORECASE),
+    "component": re.compile(r"(?<![A-Za-z0-9])components?(?![A-Za-z0-9])", re.IGNORECASE),
+    "direction": re.compile(r"(?<![A-Za-z0-9])directions?(?![A-Za-z0-9])", re.IGNORECASE),
+    "fragility": re.compile(r"(?<![A-Za-z0-9])fragilit(?:y|ies)(?![A-Za-z0-9])", re.IGNORECASE),
+    "geometric_mean": _TERM_PATTERNS["geometric_mean"],
+    "ground_motion": re.compile(r"(?<![A-Za-z0-9])ground[\s-]+motions?(?![A-Za-z0-9])", re.IGNORECASE),
+    "hazard": re.compile(r"(?<![A-Za-z0-9])hazards?(?![A-Za-z0-9])", re.IGNORECASE),
+    "intensity_measure": re.compile(r"(?<![A-Za-z0-9])intensity[\s-]+measures?(?![A-Za-z0-9])", re.IGNORECASE),
+    "loss": re.compile(r"(?<![A-Za-z0-9])loss(?:es)?(?![A-Za-z0-9])", re.IGNORECASE),
+    "orientation": re.compile(r"(?<![A-Za-z0-9])orientations?(?![A-Za-z0-9])", re.IGNORECASE),
+    "response": re.compile(r"(?<![A-Za-z0-9])responses?(?![A-Za-z0-9])", re.IGNORECASE),
+    "rotd": _TERM_PATTERNS["rotd"],
+    "rotd50": _TERM_PATTERNS["rotd50"],
+    "spectral_acceleration": re.compile(
+        r"(?<![A-Za-z0-9])spectral[\s-]+accelerations?(?![A-Za-z0-9])", re.IGNORECASE
+    ),
+    "vulnerability": re.compile(r"(?<![A-Za-z0-9])vulnerabilit(?:y|ies)(?![A-Za-z0-9])", re.IGNORECASE),
 }
 
 _CANONICAL_OPEN_FIXED = _open_fixed
@@ -210,12 +234,68 @@ def _extract_pages(
     return pages, len(raw), hashlib.sha256(raw).hexdigest(), identity
 
 
+def _classify_fixed_horizontal_context(pages: list[str]) -> dict[str, Any]:
+    if len(pages) < max(CONTEXT_PAGES):
+        raise Tr002ContentScanExtractionError("TR002 fixed context pages are unavailable")
+
+    horizontal_pages: list[int] = []
+    horizontal_count = 0
+    records: list[dict[str, Any]] = []
+    for page_number, page in enumerate(pages, start=1):
+        hits = list(_TERM_PATTERNS["horizontal"].finditer(page))
+        if hits:
+            horizontal_pages.append(page_number)
+            horizontal_count += len(hits)
+        if page_number not in CONTEXT_PAGES:
+            continue
+        if len(hits) != 1:
+            raise Tr002ContentScanExtractionError("TR002 fixed horizontal occurrence surface drifted")
+        hit = hits[0]
+        start = max(0, hit.start() - CONTEXT_RADIUS_CHARS)
+        end = min(len(page), hit.end() + CONTEXT_RADIUS_CHARS)
+        window = page[start:end]
+        window_bytes = window.encode("utf-8")
+        if not window_bytes or len(window_bytes) > MAX_CONTEXT_WINDOW_UTF8_BYTES:
+            raise Tr002ContentScanExtractionError("TR002 context window size is outside bounds")
+        nearby_terms: dict[str, int] = {}
+        for label, pattern in _CONTEXT_PATTERNS.items():
+            count = len(list(pattern.finditer(window)))
+            if count:
+                nearby_terms[label] = count
+        line_number = page.count("\n", 0, hit.start()) + 1
+        prior_newline = page.rfind("\n", 0, hit.start())
+        column_number = hit.start() - (prior_newline if prior_newline >= 0 else -1)
+        records.append(
+            {
+                "page": page_number,
+                "occurrence": 1,
+                "line": line_number,
+                "column": column_number,
+                "window_utf8_bytes": len(window_bytes),
+                "window_sha256": hashlib.sha256(window_bytes).hexdigest(),
+                "nearby_terms": nearby_terms,
+            }
+        )
+
+    if horizontal_count != len(CONTEXT_PAGES) or horizontal_pages != list(CONTEXT_PAGES):
+        raise Tr002ContentScanExtractionError("TR002 horizontal localization drifted from trusted scan")
+    return {
+        "schema_version": CONTEXT_CLASSIFICATION_SCHEMA_VERSION,
+        "pages": list(CONTEXT_PAGES),
+        "window_radius_chars": CONTEXT_RADIUS_CHARS,
+        "vocabulary": sorted(_CONTEXT_PATTERNS),
+        "records": records,
+        "raw_context_returned": False,
+    }
+
+
 def summarize_pages(
     pages: object,
     *,
     extracted_text_bytes: int,
     extracted_text_sha256: str,
     extractor_identity: str,
+    include_context_classification: bool = False,
 ) -> dict[str, Any]:
     if type(pages) is not list or not pages or len(pages) > MAX_PAGES:
         raise Tr002ContentScanExtractionError("extracted pages are outside bounds")
@@ -227,6 +307,8 @@ def summarize_pages(
         raise Tr002ContentScanExtractionError("extracted text digest is invalid")
     if type(extractor_identity) is not str or not extractor_identity.startswith("pdftotext version "):
         raise Tr002ContentScanExtractionError("extractor identity is invalid")
+    if type(include_context_classification) is not bool:
+        raise Tr002ContentScanExtractionError("context-classification selector is invalid")
 
     terms: dict[str, dict[str, Any]] = {}
     for label, pattern in _TERM_PATTERNS.items():
@@ -239,7 +321,7 @@ def summarize_pages(
                 count += len(hits)
         terms[label] = {"count": count, "pages": hit_pages}
 
-    return {
+    result: dict[str, Any] = {
         "schema_version": SCAN_SCHEMA_VERSION,
         "extractor_identity": extractor_identity,
         "page_count": len(pages),
@@ -249,6 +331,9 @@ def summarize_pages(
         "page_text_returned": False,
         "snippets_returned": False,
     }
+    if include_context_classification:
+        result["horizontal_context_classification"] = _classify_fixed_horizontal_context(pages)
+    return result
 
 
 def _scan_exact_pdf(*, opener: Callable[..., Any], monotonic: Callable[[], float], runner: Callable[..., Any]) -> dict[str, Any]:
@@ -312,6 +397,7 @@ def _scan_exact_pdf(*, opener: Callable[..., Any], monotonic: Callable[[], float
                 extracted_text_bytes=text_bytes,
                 extracted_text_sha256=text_digest,
                 extractor_identity=extractor_identity,
+                include_context_classification=True,
             )
             scan["source"] = {
                 "dataset_id": DATASET_ID,
@@ -342,9 +428,60 @@ def scan_exact_tr002() -> dict[str, Any]:
     )
 
 
+def _validate_context_classification(value: object, *, page_count: int) -> None:
+    if type(value) is not dict or set(value) != {
+        "schema_version", "pages", "window_radius_chars", "vocabulary", "records", "raw_context_returned"
+    }:
+        raise Tr002ContentScanError("context classification shape drifted")
+    if value.get("schema_version") != CONTEXT_CLASSIFICATION_SCHEMA_VERSION:
+        raise Tr002ContentScanError("context classification schema drifted")
+    if value.get("pages") != list(CONTEXT_PAGES):
+        raise Tr002ContentScanError("context classification pages drifted")
+    if value.get("window_radius_chars") != CONTEXT_RADIUS_CHARS:
+        raise Tr002ContentScanError("context classification radius drifted")
+    if value.get("vocabulary") != sorted(_CONTEXT_PATTERNS):
+        raise Tr002ContentScanError("context classification vocabulary drifted")
+    if value.get("raw_context_returned") is not False:
+        raise Tr002ContentScanError("context classification leaked raw context")
+    if page_count < max(CONTEXT_PAGES):
+        raise Tr002ContentScanError("context classification page count is insufficient")
+
+    records = value.get("records")
+    if type(records) is not list or len(records) != len(CONTEXT_PAGES):
+        raise Tr002ContentScanError("context classification record count drifted")
+    for expected_page, record in zip(CONTEXT_PAGES, records, strict=True):
+        if type(record) is not dict or set(record) != {
+            "page", "occurrence", "line", "column", "window_utf8_bytes", "window_sha256", "nearby_terms"
+        }:
+            raise Tr002ContentScanError("context classification record shape drifted")
+        if record.get("page") != expected_page or record.get("occurrence") != 1:
+            raise Tr002ContentScanError("context classification occurrence drifted")
+        for field in ("line", "column", "window_utf8_bytes"):
+            observed = record.get(field)
+            if type(observed) is not int or isinstance(observed, bool) or observed < 1:
+                raise Tr002ContentScanError(f"context classification {field} is invalid")
+        if record["window_utf8_bytes"] > MAX_CONTEXT_WINDOW_UTF8_BYTES:
+            raise Tr002ContentScanError("context classification window exceeds bound")
+        digest = record.get("window_sha256")
+        if type(digest) is not str or _DIGEST_RE.fullmatch(digest) is None:
+            raise Tr002ContentScanError("context classification digest is invalid")
+        nearby_terms = record.get("nearby_terms")
+        if type(nearby_terms) is not dict or not set(nearby_terms).issubset(_CONTEXT_PATTERNS):
+            raise Tr002ContentScanError("context classification nearby-term set drifted")
+        for count in nearby_terms.values():
+            if type(count) is not int or isinstance(count, bool) or count < 1:
+                raise Tr002ContentScanError("context classification nearby-term count is invalid")
+
+
 def _validate_scan(scan: object) -> dict[str, Any]:
     if type(scan) is not dict:
         raise Tr002ContentScanError("scan payload is absent")
+    expected_keys = {
+        "schema_version", "extractor_identity", "page_count", "extracted_text_bytes",
+        "extracted_text_sha256", "terms", "page_text_returned", "snippets_returned", "source",
+    }
+    if set(scan) not in (expected_keys, expected_keys | {"horizontal_context_classification"}):
+        raise Tr002ContentScanError("scan payload fields drifted")
     for field, expected in (
         ("schema_version", SCAN_SCHEMA_VERSION),
         ("page_text_returned", False),
@@ -384,12 +521,18 @@ def _validate_scan(scan: object) -> dict[str, Any]:
         if count < len(hit_pages):
             raise Tr002ContentScanError("scan term count cannot be smaller than hit-page count")
 
+    context = scan.get("horizontal_context_classification")
+    if context is not None:
+        if terms["horizontal"] != {"count": len(CONTEXT_PAGES), "pages": list(CONTEXT_PAGES)}:
+            raise Tr002ContentScanError("context classification disagrees with horizontal term scan")
+        _validate_context_classification(context, page_count=page_count)
+
     source = scan.get("source")
-    expected_keys = {
+    source_keys = {
         "dataset_id", "project_id", "project_path", "commit_sha", "repository_path",
         "retrieved_at", "byte_count", "sha256",
     }
-    if type(source) is not dict or set(source) != expected_keys:
+    if type(source) is not dict or set(source) != source_keys:
         raise Tr002ContentScanError("scan source shape drifted")
     for field, expected in (
         ("dataset_id", DATASET_ID),
