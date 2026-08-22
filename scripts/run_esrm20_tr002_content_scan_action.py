@@ -463,6 +463,8 @@ def run_scan(*, execution_sha: str, scanner: Callable[[], dict[str, Any]] = scan
 def _parse_terminal_result(body: object, *, execution_sha: str) -> bool:
     if type(body) is not str or RESULT_MARKER not in body:
         return False
+    if type(execution_sha) is not str or _SHA_RE.fullmatch(execution_sha) is None:
+        raise Tr002ContentScanError("invalid execution SHA")
     if body.count(RESULT_MARKER) != 1:
         raise Tr002ContentScanError("trusted result marker is malformed")
     before, after = body.split(RESULT_MARKER, 1)
@@ -476,7 +478,10 @@ def _parse_terminal_result(body: object, *, execution_sha: str) -> bool:
         raise Tr002ContentScanError("trusted result JSON is malformed") from exc
     if type(result) is not dict:
         raise Tr002ContentScanError("trusted result is not an object")
-    for field, expected in _base_result(execution_sha=execution_sha).items():
+    result_execution_sha = result.get("execution_sha")
+    if type(result_execution_sha) is not str or _SHA_RE.fullmatch(result_execution_sha) is None:
+        raise Tr002ContentScanError("trusted result execution SHA is invalid")
+    for field, expected in _base_result(execution_sha=result_execution_sha).items():
         observed = result.get(field)
         if type(observed) is not type(expected) or observed != expected:
             raise Tr002ContentScanError(f"trusted result drifted at {field}")
@@ -487,7 +492,7 @@ def _parse_terminal_result(body: object, *, execution_sha: str) -> bool:
         if result.get("byte_identity_verified") is not True or result.get("text_location_scan_verified") is not True:
             raise Tr002ContentScanError("trusted PASS lacks verified scan gates")
         _validate_scan(result.get("scan"))
-        return True
+        return result_execution_sha == execution_sha
     if status == "blocked":
         failure = result.get("failure_class")
         if failure == "acquisition_failure":
@@ -500,7 +505,7 @@ def _parse_terminal_result(body: object, *, execution_sha: str) -> bool:
             raise Tr002ContentScanError("trusted blocked result has invalid verification gates")
         if result.get("scan") is not None:
             raise Tr002ContentScanError("trusted blocked result leaked scan evidence")
-        return True
+        return result_execution_sha == execution_sha
     raise Tr002ContentScanError("trusted result has non-terminal status")
 
 
