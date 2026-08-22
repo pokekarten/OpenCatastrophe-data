@@ -245,7 +245,7 @@ jobs:
         run: |
           set -euo pipefail
           STAGE_ROOT="$RUNNER_TEMP/esrm20-stage"
-          docker run --rm --entrypoint python \
+          docker run --rm -i --entrypoint python \
             -e BOOTSTRAP_DIGEST -e EXEC_IMAGE_ID \
             -v "$STAGE_ROOT:/stage" \
             "$EXEC_IMAGE" - <<'PY'
@@ -337,7 +337,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          RESULT_PATH="$RUNNER_TEMP/esrm20-stage/oq313-terminal.json"
           RESULT_JSON="$(python - <<'PY'
           import json
           import os
