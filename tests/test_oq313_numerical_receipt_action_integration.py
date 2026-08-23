@@ -157,6 +157,8 @@ class OQ313NumericalReceiptActionIntegrationTests(unittest.TestCase):
         self.assertFalse(observed["datadir"].exists())
         self.assertEqual(result["status"], "pass")
         self.assertIs(result["numerical_receipt_emitted"], True)
+        self.assertIsNone(result["numerical_receipt_failure_stage"])
+        self.assertIsNone(result["numerical_receipt_failure_code"])
         self.assertIs(result["oq_datastore_persisted"], False)
         self.assertEqual(
             result["numerical_receipt"]["schema_version"],
@@ -173,7 +175,7 @@ class OQ313NumericalReceiptActionIntegrationTests(unittest.TestCase):
         self.assertIs(result["publication_authorized"], False)
         self.assertIs(result["model_use_authorized"], False)
 
-    def test_pass_rejects_multiple_calculation_datastores(self) -> None:
+    def test_pass_terminalizes_multiple_calculation_datastores(self) -> None:
         def execute(*args: Any, **kwargs: Any) -> tuple[bytes, dict[str, Any]]:
             del args, kwargs
             datadir = Path(os.environ[subject.OQ_DATADIR_ENV])
@@ -181,18 +183,25 @@ class OQ313NumericalReceiptActionIntegrationTests(unittest.TestCase):
             (datadir / "calc_2.hdf5").write_bytes(b"two")
             return _adapter_payload()
 
-        with self.assertRaisesRegex(
-            subject.KosovoResidentialOQ313ActionError,
-            "exactly one",
-        ):
-            subject.run_action_with_numerical_receipt(
-                execution_sha=EXECUTION_SHA,
-                source_group1_config=b"source",
-                runtime_identity={},
-                resolved_runtime={},
-                execute=execute,
-                project_datastore=lambda path: _numerical_payload(),
-            )
+        result = subject.run_action_with_numerical_receipt(
+            execution_sha=EXECUTION_SHA,
+            source_group1_config=b"source",
+            runtime_identity={},
+            resolved_runtime={},
+            execute=execute,
+            project_datastore=lambda path: _numerical_payload(),
+        )
+        self.assertEqual(result["status"], "blocked")
+        self.assertIs(result["numerical_receipt_emitted"], False)
+        self.assertEqual(
+            result["numerical_receipt_failure_stage"],
+            "risk_by_event_receipt",
+        )
+        self.assertEqual(
+            result["numerical_receipt_failure_code"],
+            "calculation_datastore_cardinality_invalid",
+        )
+        self.assertEqual(result["adapter_result"]["status"], "pass")
 
     def test_blocked_does_not_project_partial_datastore(self) -> None:
         observed: dict[str, Path] = {}
@@ -220,7 +229,7 @@ class OQ313NumericalReceiptActionIntegrationTests(unittest.TestCase):
         self.assertIs(result["oq_datastore_persisted"], False)
         self.assertFalse(observed["datadir"].exists())
 
-    def test_pass_rejects_numerical_receipt_digest_drift(self) -> None:
+    def test_pass_terminalizes_numerical_receipt_digest_drift(self) -> None:
         def execute(*args: Any, **kwargs: Any) -> tuple[bytes, dict[str, Any]]:
             del args, kwargs
             datadir = Path(os.environ[subject.OQ_DATADIR_ENV])
@@ -233,18 +242,54 @@ class OQ313NumericalReceiptActionIntegrationTests(unittest.TestCase):
             identity["sha256"] = "0" * 64
             return payload, identity
 
-        with self.assertRaisesRegex(
-            subject.KosovoResidentialOQ313ActionError,
-            "digest drifted",
-        ):
-            subject.run_action_with_numerical_receipt(
-                execution_sha=EXECUTION_SHA,
-                source_group1_config=b"source",
-                runtime_identity={},
-                resolved_runtime={},
-                execute=execute,
-                project_datastore=project_datastore,
+        result = subject.run_action_with_numerical_receipt(
+            execution_sha=EXECUTION_SHA,
+            source_group1_config=b"source",
+            runtime_identity={},
+            resolved_runtime={},
+            execute=execute,
+            project_datastore=project_datastore,
+        )
+        self.assertEqual(result["status"], "blocked")
+        self.assertIs(result["numerical_receipt_emitted"], False)
+        self.assertEqual(
+            result["numerical_receipt_failure_stage"],
+            "risk_by_event_receipt",
+        )
+        self.assertEqual(
+            result["numerical_receipt_failure_code"],
+            "numerical_receipt_validation_failed",
+        )
+        self.assertEqual(result["adapter_result"]["status"], "pass")
+
+    def test_pass_terminalizes_projector_failure_without_exposing_details(self) -> None:
+        def execute(*args: Any, **kwargs: Any) -> tuple[bytes, dict[str, Any]]:
+            del args, kwargs
+            datadir = Path(os.environ[subject.OQ_DATADIR_ENV])
+            (datadir / "calc_1.hdf5").write_bytes(b"fixture")
+            return _adapter_payload()
+
+        def project_datastore(path: Path) -> tuple[bytes, dict[str, Any]]:
+            self.assertEqual(path.name, "calc_1.hdf5")
+            raise subject.KosovoResidentialOQ313ActionError(
+                "sensitive source-native detail must not escape"
             )
+
+        result = subject.run_action_with_numerical_receipt(
+            execution_sha=EXECUTION_SHA,
+            source_group1_config=b"source",
+            runtime_identity={},
+            resolved_runtime={},
+            execute=execute,
+            project_datastore=project_datastore,
+        )
+        serialized = json.dumps(result, sort_keys=True)
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(
+            result["numerical_receipt_failure_code"],
+            "risk_by_event_selection_failed",
+        )
+        self.assertNotIn("sensitive source-native detail", serialized)
 
 
 if __name__ == "__main__":
