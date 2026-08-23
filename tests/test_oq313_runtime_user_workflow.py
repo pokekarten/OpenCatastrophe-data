@@ -67,6 +67,28 @@ class OQ313RuntimeUserWorkflowTests(unittest.TestCase):
         self.assertIn("--runtime-identity /receipts/runtime-identity.json", text)
         self.assertIn("--resolved-runtime /receipts/resolved-runtime.json", text)
 
+    def test_probe_export_dir_has_isolated_runtime_owned_write_mount(self) -> None:
+        text = self.text
+        probe = "Probe pinned runtime and write OqParam-observed runtime receipts"
+        numerical = "Execute closed OQ3.13 envelope inside receipted image"
+        export_root = 'EXPORT_ROOT="$RUNNER_TEMP/oq313-export"'
+        export_chown = (
+            'sudo chown "$OPENQUAKE_UID:$OPENQUAKE_GID" "$EXPORT_ROOT"'
+        )
+        export_chmod = 'sudo chmod 700 "$EXPORT_ROOT"'
+        stage_ro = '-v "$STAGE_ROOT:/stage:ro"'
+        export_rw = '-v "$EXPORT_ROOT:/stage/Risk"'
+
+        probe_text = text[text.index(probe) : text.index(numerical)]
+        self.assertIn(export_root, probe_text)
+        self.assertIn(export_chown, probe_text)
+        self.assertIn(export_chmod, probe_text)
+        self.assertIn(stage_ro, probe_text)
+        self.assertIn(export_rw, probe_text)
+        self.assertLess(probe_text.index(stage_ro), probe_text.index(export_rw))
+        self.assertLess(probe_text.index(export_chown), probe_text.index(export_chmod))
+        self.assertNotIn('chmod a+rwx "$STAGE_ROOT"', probe_text)
+
     def test_numerical_execution_keeps_explicit_root_override(self) -> None:
         text = self.text
         probe = "Probe pinned runtime and write OqParam-observed runtime receipts"
