@@ -39,7 +39,7 @@ def prepare_action_result(
         blocked = {
             **worker._base_result(execution_sha=execution_sha),
             "status": "blocked",
-            "failure_class": "athens_sibling_receipt_failure",
+            "failure_class": "ledger_incomplete",
             "receipts": None,
             "provider_file_bytes_read": None,
         }
