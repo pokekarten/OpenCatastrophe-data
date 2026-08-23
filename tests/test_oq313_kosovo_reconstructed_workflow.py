@@ -44,10 +44,10 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
         self.assertIn('test "$(git rev-parse HEAD)" = "$EXECUTION_SHA"', text)
         self.assertLess(
             text.index("Re-fence privileged checkout to validated main SHA"),
-            text.index("Deduplicate trusted terminal result before external access"),
+            text.index("Select earliest canonical trusted request and deduplicate terminal"),
         )
         self.assertLess(
-            text.index("Deduplicate trusted terminal result before external access"),
+            text.index("Select earliest canonical trusted request and deduplicate terminal"),
             text.index("Fetch exact ESRM20 v1.0 provider snapshot"),
         )
 
