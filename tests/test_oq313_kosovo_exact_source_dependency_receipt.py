@@ -16,14 +16,15 @@ class OQ313KosovoExactSourceDependencyReceiptTests(unittest.TestCase):
     def test_frozen_source_requirements_are_installed_before_editable_source(self) -> None:
         text = self.text
         requirements_install = (
-            "python -m pip install --disable-pip-version-check --no-warn-script-location \\\n"
-            "                   -r /oq-engine/requirements-py38-linux64.txt"
+            "python -m pip install --disable-pip-version-check --no-warn-script-location"
         )
+        requirements_path = "-r /oq-engine/requirements-py38-linux64.txt"
         editable_install = "python -m pip install --no-deps -e /oq-engine"
 
-        self.assertIn(requirements_install, text)
-        self.assertIn(editable_install, text)
-        self.assertLess(text.index(requirements_install), text.index(editable_install))
+        for needle in (requirements_install, requirements_path, editable_install):
+            self.assertIn(needle, text)
+        self.assertLess(text.index(requirements_install), text.index(requirements_path))
+        self.assertLess(text.index(requirements_path), text.index(editable_install))
 
     def test_runtime_receipt_keeps_frozen_source_recipe_versions(self) -> None:
         text = self.text
