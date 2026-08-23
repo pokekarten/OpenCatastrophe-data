@@ -32,11 +32,13 @@ _EXPECTED_DTYPES = {
     "variance": "float32",
     "loss": "float32",
 }
-_EXPECTED_EVENT_FIELDS = ("id", "rup_id", "rlz_id")
+_EXPECTED_EVENT_FIELDS = ("id", "rup_id", "rlz_id", "year", "ses_id")
 _EXPECTED_EVENT_DTYPES = {
     "id": "uint32",
     "rup_id": "uint32",
     "rlz_id": "uint16",
+    "year": "uint32",
+    "ses_id": "uint32",
 }
 
 
