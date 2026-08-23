@@ -266,7 +266,7 @@ jobs:
           printf '%s\n' "$OPENQUAKE_UID" | grep -Eq '^[0-9]+$'
           printf '%s\n' "$OPENQUAKE_GID" | grep -Eq '^[0-9]+$'
           sudo chown "$OPENQUAKE_UID:$OPENQUAKE_GID" "$RECEIPT_ROOT"
-          chmod 700 "$RECEIPT_ROOT"
+          sudo chmod 700 "$RECEIPT_ROOT"
           docker run --rm -i --entrypoint python \
             -e BOOTSTRAP_DIGEST -e EXEC_IMAGE_ID \
             -e OQ_DISTRIBUTE=no -e OPENBLAS_NUM_THREADS=1 \
