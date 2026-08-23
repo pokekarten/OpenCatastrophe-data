@@ -25,7 +25,6 @@ import json
 import os
 import re
 import subprocess
-import tempfile
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -424,16 +423,18 @@ def _read_staged_config() -> bytes:
         ) from exc
 
 
-def _stderr_diagnostic(stderr_capture: Any) -> dict[str, object]:
-    stderr_capture.flush()
-    stderr_capture.seek(0, os.SEEK_END)
-    byte_count = stderr_capture.tell()
-    stderr_capture.seek(0)
+def _stderr_diagnostic(stderr_stream: Any) -> dict[str, object]:
+    byte_count = 0
     digest = hashlib.sha256()
     while True:
-        chunk = stderr_capture.read(NATIVE_STDERR_HASH_CHUNK_BYTES)
+        chunk = stderr_stream.read(NATIVE_STDERR_HASH_CHUNK_BYTES)
         if not chunk:
             break
+        if type(chunk) is not bytes:
+            raise KosovoResidentialOQ313RunError(
+                "OpenQuake stderr stream returned non-byte content"
+            )
+        byte_count += len(chunk)
         digest.update(chunk)
     return {
         "byte_count": byte_count,
@@ -443,22 +444,27 @@ def _stderr_diagnostic(stderr_capture: Any) -> dict[str, object]:
 
 
 def _execute_native(command: Sequence[str], env: Mapping[str, str]) -> int:
-    with tempfile.TemporaryFile(mode="w+b") as stderr_capture:
-        completed = subprocess.run(
-            list(command),
-            env=dict(env),
-            check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=stderr_capture,
-        )
-        returncode = completed.returncode
-        if type(returncode) is not int:
+    with subprocess.Popen(
+        list(command),
+        env=dict(env),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+    ) as process:
+        stderr_stream = process.stderr
+        if stderr_stream is None:
             raise KosovoResidentialOQ313RunError(
-                "OpenQuake subprocess returned a non-integer exit code"
+                "OpenQuake subprocess stderr pipe is unavailable"
             )
-        if returncode == 0:
-            return returncode
-        return _NativeExitCode(returncode, _stderr_diagnostic(stderr_capture))
+        diagnostic = _stderr_diagnostic(stderr_stream)
+        returncode = process.wait()
+
+    if type(returncode) is not int:
+        raise KosovoResidentialOQ313RunError(
+            "OpenQuake subprocess returned a non-integer exit code"
+        )
+    if returncode == 0:
+        return returncode
+    return _NativeExitCode(returncode, diagnostic)
 
 
 def _canonical_payload(document: dict[str, Any]) -> tuple[bytes, dict[str, Any]]:
