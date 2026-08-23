@@ -42,7 +42,7 @@ def _adapter_payload(*, status: str = "pass") -> tuple[bytes, dict[str, Any]]:
         },
         "loss_semantics": {},
         "source_runtime": {},
-        "resolved_runtime": {},
+        "resolved_runtime": {"concurrent_tasks": 0},
         "execution": {
             "command": list(runner.COMMAND),
             "exit_code": 9 if blocked else 0,
@@ -76,22 +76,8 @@ def _adapter_payload(*, status: str = "pass") -> tuple[bytes, dict[str, Any]]:
 
 
 def _numerical_payload() -> tuple[bytes, dict[str, Any]]:
-    document = {
-        "schema_version": numerical_contract.SCHEMA_VERSION,
-        "experiment_label": numerical_contract.EXPERIMENT_LABEL,
-        "insurance_scope": "none",
-        "openquake": {
-            "version": runner.OPENQUAKE_VERSION,
-            "commit_sha": runner.OPENQUAKE_COMMIT_SHA,
-        },
-        "quantity": {
-            "loss_type": numerical_contract.LOSS_TYPE,
-            "minimum_asset_loss_structural": numerical_contract.MINIMUM_ASSET_LOSS_STRUCTURAL,
-            "name": numerical_contract.QUANTITY,
-            "threshold_predicate": "asset_event_loss > minimum_asset_loss_structural",
-            "unit": numerical_contract.UNIT,
-        },
-        "rows": [
+    return numerical_contract.project_oq313_risk_by_event_receipt(
+        [
             {
                 "event_id": 1,
                 "rup_id": 2,
@@ -99,18 +85,10 @@ def _numerical_payload() -> tuple[bytes, dict[str, Any]]:
                 "variance_f32_be_hex": "00000000",
             }
         ],
-        "runtime": {"concurrent_tasks": 0},
-        "selection": {"portfolio_agg_id": 3, "structural_loss_id": 0},
-        "source_dataset": numerical_contract.SOURCE_DATASET,
-    }
-    payload = (
-        json.dumps(document, sort_keys=True, separators=(",", ":")).encode("utf-8")
-        + b"\n"
+        portfolio_agg_id=3,
+        structural_loss_id=0,
+        concurrent_tasks=0,
     )
-    return payload, {
-        "byte_count": len(payload),
-        "sha256": hashlib.sha256(payload).hexdigest(),
-    }
 
 
 class OQ313NumericalReceiptActionIntegrationTests(unittest.TestCase):
