@@ -316,7 +316,12 @@ def _project_exact_datastore(path: Path) -> tuple[bytes, dict[str, Any]]:
         ) from exc
     finally:
         if dstore is not None:
-            dstore.close()
+            try:
+                dstore.close()
+            except (OSError, RuntimeError, ValueError) as exc:
+                raise KosovoResidentialOQ313ActionError(
+                    "cannot close completed OpenQuake datastore"
+                ) from exc
 
 
 def _adapter_concurrent_tasks(result: object) -> int:
@@ -515,11 +520,17 @@ def run_action_with_numerical_receipt(
             result["numerical_receipt_emitted"] = False
             return result
 
-        calc_paths = sorted(
-            path
-            for path in datadir.iterdir()
-            if _CALC_DATASTORE_RE.fullmatch(path.name) is not None
-        )
+        try:
+            calc_paths = sorted(
+                path
+                for path in datadir.iterdir()
+                if _CALC_DATASTORE_RE.fullmatch(path.name) is not None
+            )
+        except OSError:
+            return _block_numerical_receipt(
+                result,
+                code="calculation_datastore_discovery_failed",
+            )
         if len(calc_paths) != 1:
             return _block_numerical_receipt(
                 result,
