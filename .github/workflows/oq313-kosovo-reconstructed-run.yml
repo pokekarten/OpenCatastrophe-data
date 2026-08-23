@@ -442,11 +442,13 @@ jobs:
           set -euo pipefail
           STAGE_ROOT="$RUNNER_TEMP/esrm20-stage"
           RECEIPT_ROOT="$RUNNER_TEMP/oq313-runtime-receipts"
+          RUNTIME_EXPORT_ROOT="$RUNNER_TEMP/oq313-runtime-export"
           docker run --rm --user 0:0 --entrypoint python \
             -e OC_OQ313_REQUEST_BODY \
             -e PYTHONPATH=/repo \
             -v "$GITHUB_WORKSPACE:/repo:ro" \
-            -v "$STAGE_ROOT:/stage" \
+            -v "$STAGE_ROOT:/stage:ro" \
+            -v "$RUNTIME_EXPORT_ROOT:/stage/Risk" \
             -v "$RECEIPT_ROOT:/receipts:ro" \
             -w /stage \
             "$EXEC_IMAGE" \
