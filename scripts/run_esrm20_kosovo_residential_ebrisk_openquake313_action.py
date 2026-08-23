@@ -43,6 +43,7 @@ CONTROL_ISSUE = 609
 PARENT_CONSUMER_ISSUE = 287
 DATASET_ID = "efehr.esrm20.risk-inputs.v1.0"
 OQ_DATADIR_ENV = "OQ_DATADIR"
+MAX_PUBLIC_NUMERICAL_RECEIPT_BYTES = 32_768
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -537,6 +538,11 @@ def run_action_with_numerical_receipt(
             return _block_numerical_receipt(
                 result,
                 code="risk_by_event_selection_failed",
+            )
+        if len(numerical_payload) > MAX_PUBLIC_NUMERICAL_RECEIPT_BYTES:
+            return _block_numerical_receipt(
+                result,
+                code="numerical_receipt_publication_budget_exceeded",
             )
         try:
             numerical_document, numerical_identity = _validate_numerical_receipt(
