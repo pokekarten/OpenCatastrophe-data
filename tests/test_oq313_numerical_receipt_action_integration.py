@@ -88,6 +88,7 @@ def _numerical_payload() -> tuple[bytes, dict[str, Any]]:
             "loss_type": numerical_contract.LOSS_TYPE,
             "minimum_asset_loss_structural": numerical_contract.MINIMUM_ASSET_LOSS_STRUCTURAL,
             "name": numerical_contract.QUANTITY,
+            "threshold_predicate": "asset_event_loss > minimum_asset_loss_structural",
             "unit": numerical_contract.UNIT,
         },
         "rows": [
