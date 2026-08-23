@@ -155,6 +155,7 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(doc["runtime"], {"concurrent_tasks": 2})
         self.assertEqual([row["event_id"] for row in doc["rows"]], [1, 9])
         self.assertEqual([row["rup_id"] for row in doc["rows"]], [101, 109])
+        self.assertEqual([row["rlz_id"] for row in doc["rows"]], [0, 1])
         self.assertEqual(doc["rows"][0]["loss_f32_be_hex"], "40500000")
         self.assertEqual(doc["rows"][1]["variance_f32_be_hex"], "80000000")
         self.assertEqual(receipt["byte_count"], len(payload))
@@ -197,6 +198,17 @@ class SelectionTests(unittest.TestCase):
                 ),
                 Oq(),
             )
+
+    def test_events_rlz_id_value_is_strict_uint16(self):
+        for value in (True, -1, 1 << 16):
+            evs = events()
+            evs[0] = dict(evs[0], rlz_id=value)
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(
+                    OQ313DatastoreSelectionError,
+                    "events\\[0\\]\\.rlz_id",
+                ):
+                    select_oq313_risk_by_event_receipt(Store(rows(), evs), Oq())
 
     def test_events_native_field_order_and_shape_are_required(self):
         for fields in (
