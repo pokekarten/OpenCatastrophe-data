@@ -165,21 +165,41 @@ class KosovoResidentialOQ313RunTests(unittest.TestCase):
         self.assertEqual(receipt["sha256"], hashlib.sha256(payload).hexdigest())
         self.assertTrue(payload.endswith(b"\n"))
 
-    def test_native_child_stdout_is_suppressed_and_stderr_is_ephemeral(self) -> None:
-        completed = subject.subprocess.CompletedProcess(list(subject.COMMAND), 0)
+    def test_native_child_stdout_is_suppressed_and_stderr_is_streamed(self) -> None:
+        class EmptyStderr:
+            def read(self, size: int = -1) -> bytes:
+                self.last_size = size
+                return b""
+
+        class Process:
+            def __init__(self) -> None:
+                self.stderr = EmptyStderr()
+
+            def __enter__(self) -> Process:
+                return self
+
+            def __exit__(self, *args: object) -> None:
+                return None
+
+            def wait(self) -> int:
+                return 0
+
+        process = Process()
         env = {"PATH": "/fixed"}
-        with mock.patch.object(subject.subprocess, "run", return_value=completed) as run:
+        with mock.patch.object(subject.subprocess, "Popen", return_value=process) as popen:
             returncode = subject._execute_native(subject.COMMAND, env)
 
         self.assertEqual(returncode, 0)
-        run.assert_called_once()
-        args, kwargs = run.call_args
+        popen.assert_called_once()
+        args, kwargs = popen.call_args
         self.assertEqual(args[0], list(subject.COMMAND))
         self.assertEqual(kwargs["env"], env)
-        self.assertIs(kwargs["check"], False)
         self.assertIs(kwargs["stdout"], subject.subprocess.DEVNULL)
-        self.assertIsNot(kwargs["stderr"], subject.subprocess.DEVNULL)
-        self.assertTrue(hasattr(kwargs["stderr"], "write"))
+        self.assertIs(kwargs["stderr"], subject.subprocess.PIPE)
+        self.assertEqual(
+            process.stderr.last_size,
+            subject.NATIVE_STDERR_HASH_CHUNK_BYTES,
+        )
 
     def test_runtime_identity_must_pin_exact_oq313_source_before_execution(self) -> None:
         identity = runtime_identity()
