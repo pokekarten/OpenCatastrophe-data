@@ -372,6 +372,18 @@ def _validate_numerical_receipt(
     return document, dict(receipt)
 
 
+def _block_numerical_receipt(
+    result: dict[str, Any],
+    *,
+    code: str,
+) -> dict[str, Any]:
+    result["status"] = "blocked"
+    result["numerical_receipt_emitted"] = False
+    result["numerical_receipt_failure_stage"] = "risk_by_event_receipt"
+    result["numerical_receipt_failure_code"] = code
+    return result
+
+
 def run_action_with_numerical_receipt(
     *,
     execution_sha: str,
@@ -416,21 +428,37 @@ def run_action_with_numerical_receipt(
             if _CALC_DATASTORE_RE.fullmatch(path.name) is not None
         )
         if len(calc_paths) != 1:
-            raise KosovoResidentialOQ313ActionError(
-                "PASS must create exactly one isolated OpenQuake calculation datastore"
+            return _block_numerical_receipt(
+                result,
+                code="calculation_datastore_cardinality_invalid",
             )
         calc_path = calc_paths[0]
         if calc_path.is_symlink() or not calc_path.is_file():
-            raise KosovoResidentialOQ313ActionError(
-                "OpenQuake calculation datastore must be one regular file"
+            return _block_numerical_receipt(
+                result,
+                code="calculation_datastore_path_invalid",
             )
 
-        numerical_payload, numerical_identity = project_datastore(calc_path)
-        numerical_document, numerical_identity = _validate_numerical_receipt(
-            numerical_payload,
-            numerical_identity,
-        )
+        try:
+            numerical_payload, numerical_identity = project_datastore(calc_path)
+        except KosovoResidentialOQ313ActionError:
+            return _block_numerical_receipt(
+                result,
+                code="risk_by_event_selection_failed",
+            )
+        try:
+            numerical_document, numerical_identity = _validate_numerical_receipt(
+                numerical_payload,
+                numerical_identity,
+            )
+        except KosovoResidentialOQ313ActionError:
+            return _block_numerical_receipt(
+                result,
+                code="numerical_receipt_validation_failed",
+            )
         result["numerical_receipt_emitted"] = True
+        result["numerical_receipt_failure_stage"] = None
+        result["numerical_receipt_failure_code"] = None
         result["numerical_receipt_identity"] = numerical_identity
         result["numerical_receipt"] = numerical_document
         return result
