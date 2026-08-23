@@ -85,6 +85,7 @@ class OQ313NumericalReceiptPublicationBudgetTests(unittest.TestCase):
             {
                 "event_id": index + 1,
                 "rup_id": index + 1,
+                "rlz_id": index % 2,
                 "loss_f32_be_hex": "3f800000",
                 "variance_f32_be_hex": "00000000",
             }

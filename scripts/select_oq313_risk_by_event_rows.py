@@ -32,11 +32,13 @@ _EXPECTED_DTYPES = {
     "variance": "float32",
     "loss": "float32",
 }
-_EXPECTED_EVENT_FIELDS = ("id", "rup_id", "rlz_id")
+_EXPECTED_EVENT_FIELDS = ("id", "rup_id", "rlz_id", "year", "ses_id")
 _EXPECTED_EVENT_DTYPES = {
     "id": "uint32",
     "rup_id": "uint32",
     "rlz_id": "uint16",
+    "year": "uint32",
+    "ses_id": "uint32",
 }
 
 
@@ -157,13 +159,13 @@ def _assert_events_native_dtype(raw: object) -> None:
             )
 
 
-def _event_to_rupture(dstore: object) -> dict[int, int]:
+def _event_to_rupture(dstore: object) -> dict[int, tuple[int, int]]:
     try:
         raw = dstore[EVENTS_DATASET][:]
     except (KeyError, TypeError, AttributeError) as exc:
         raise OQ313DatastoreSelectionError("cannot read events dataset") from exc
     _assert_events_native_dtype(raw)
-    links: dict[int, int] = {}
+    links: dict[int, tuple[int, int]] = {}
     for index, record in enumerate(raw):
         try:
             event_id = _uint(
@@ -176,7 +178,7 @@ def _event_to_rupture(dstore: object) -> dict[int, int]:
                 label=f"events[{index}].rup_id",
                 maximum=(1 << 32) - 1,
             )
-            _uint(
+            rlz_id = _uint(
                 record["rlz_id"],
                 label=f"events[{index}].rlz_id",
                 maximum=(1 << 16) - 1,
@@ -185,7 +187,7 @@ def _event_to_rupture(dstore: object) -> dict[int, int]:
             raise OQ313DatastoreSelectionError("events row shape drifted") from exc
         if event_id in links:
             raise OQ313DatastoreSelectionError("events ids must be unique")
-        links[event_id] = rup_id
+        links[event_id] = (rup_id, rlz_id)
     if not links:
         raise OQ313DatastoreSelectionError("events dataset must not be empty")
     return links
@@ -261,6 +263,7 @@ def select_oq313_risk_by_event_receipt(
         seen_events.add(event_id)
         if event_id not in event_links:
             raise OQ313DatastoreSelectionError("selected event has no events linkage")
+        rup_id, rlz_id = event_links[event_id]
         try:
             loss = record["loss"]
             variance = record["variance"]
@@ -269,7 +272,8 @@ def select_oq313_risk_by_event_receipt(
         selected.append(
             {
                 "event_id": event_id,
-                "rup_id": event_links[event_id],
+                "rup_id": rup_id,
+                "rlz_id": rlz_id,
                 "loss_f32_be_hex": _f32_hex(
                     loss,
                     label=f"risk_by_event[{index}].loss",

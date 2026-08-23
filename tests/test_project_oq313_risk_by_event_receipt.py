@@ -12,12 +12,14 @@ from scripts import project_oq313_risk_by_event_receipt as subject
 def row(
     event_id: object = 2,
     rup_id: object = 20,
+    rlz_id: object = 0,
     loss_hex: object = "461c4000",
     variance_hex: object = "80000000",
 ) -> dict[str, object]:
     return {
         "event_id": event_id,
         "rup_id": rup_id,
+        "rlz_id": rlz_id,
         "loss_f32_be_hex": loss_hex,
         "variance_f32_be_hex": variance_hex,
     }
@@ -26,8 +28,8 @@ def row(
 class ProjectOQ313RiskByEventReceiptTests(unittest.TestCase):
     def test_projection_is_deterministic_and_preserves_binary32_identity(self) -> None:
         rows = [
-            row(event_id=2, rup_id=22, loss_hex="461c4000", variance_hex="80000000"),
-            row(event_id=1, rup_id=11, loss_hex="45fa0000", variance_hex="00000000"),
+            row(event_id=2, rup_id=22, rlz_id=1, loss_hex="461c4000", variance_hex="80000000"),
+            row(event_id=1, rup_id=11, rlz_id=0, loss_hex="45fa0000", variance_hex="00000000"),
         ]
         payload_a, identity_a = subject.project_oq313_risk_by_event_receipt(
             rows,
@@ -74,8 +76,26 @@ class ProjectOQ313RiskByEventReceiptTests(unittest.TestCase):
         )
         self.assertEqual(document["runtime"], {"concurrent_tasks": 4})
         self.assertEqual([item["event_id"] for item in document["rows"]], [1, 2])
+        self.assertEqual([item["rlz_id"] for item in document["rows"]], [0, 1])
         self.assertEqual(document["rows"][1]["loss_f32_be_hex"], "461c4000")
         self.assertEqual(document["rows"][1]["variance_f32_be_hex"], "80000000")
+
+    def test_realization_id_changes_canonical_identity(self) -> None:
+        payload_a, identity_a = subject.project_oq313_risk_by_event_receipt(
+            [row(rlz_id=0)],
+            portfolio_agg_id=0,
+            structural_loss_id=0,
+            concurrent_tasks=1,
+        )
+        payload_b, identity_b = subject.project_oq313_risk_by_event_receipt(
+            [row(rlz_id=1)],
+            portfolio_agg_id=0,
+            structural_loss_id=0,
+            concurrent_tasks=1,
+        )
+        self.assertNotEqual(payload_a, payload_b)
+        self.assertNotEqual(identity_a, identity_b)
+        self.assertEqual(json.loads(payload_b)["rows"][0]["rlz_id"], 1)
 
     def test_empty_or_non_sequence_rows_fail_closed(self) -> None:
         for rows in ([], (), "not rows", b"not rows", bytearray(b"not rows")):
@@ -98,17 +118,19 @@ class ProjectOQ313RiskByEventReceiptTests(unittest.TestCase):
                 structural_loss_id=0,
                 concurrent_tasks=1,
             )
-        extra = row()
-        extra["ins_loss"] = "461c4000"
-        with self.assertRaisesRegex(
-            subject.OQ313RiskByEventReceiptError, "^row 0 fields must be exactly "
+        for candidate in (
+            {**row(), "ins_loss": "461c4000"},
+            {key: value for key, value in row().items() if key != "rlz_id"},
         ):
-            subject.project_oq313_risk_by_event_receipt(
-                [extra],
-                portfolio_agg_id=0,
-                structural_loss_id=0,
-                concurrent_tasks=1,
-            )
+            with self.assertRaisesRegex(
+                subject.OQ313RiskByEventReceiptError, "^row 0 fields must be exactly "
+            ):
+                subject.project_oq313_risk_by_event_receipt(
+                    [candidate],
+                    portfolio_agg_id=0,
+                    structural_loss_id=0,
+                    concurrent_tasks=1,
+                )
 
     def test_duplicate_events_fail_closed(self) -> None:
         with self.assertRaisesRegex(
@@ -149,6 +171,9 @@ class ProjectOQ313RiskByEventReceiptTests(unittest.TestCase):
             ("rup_id", True),
             ("rup_id", -1),
             ("rup_id", 1 << 32),
+            ("rlz_id", True),
+            ("rlz_id", -1),
+            ("rlz_id", 1 << 16),
         ):
             candidate = row()
             candidate[field] = value

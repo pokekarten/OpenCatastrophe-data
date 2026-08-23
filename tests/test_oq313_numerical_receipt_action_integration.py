@@ -81,6 +81,7 @@ def _numerical_payload() -> tuple[bytes, dict[str, Any]]:
             {
                 "event_id": 1,
                 "rup_id": 2,
+                "rlz_id": 0,
                 "loss_f32_be_hex": "3f800000",
                 "variance_f32_be_hex": "00000000",
             }
@@ -143,6 +144,7 @@ class OQ313NumericalReceiptActionIntegrationTests(unittest.TestCase):
             result["numerical_receipt"]["schema_version"],
             numerical_contract.SCHEMA_VERSION,
         )
+        self.assertEqual(result["numerical_receipt"]["rows"][0]["rlz_id"], 0)
         payload, identity = _numerical_payload()
         self.assertEqual(result["numerical_receipt_identity"], identity)
         self.assertEqual(

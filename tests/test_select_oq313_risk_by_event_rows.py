@@ -57,11 +57,13 @@ class StructuredDtype:
 class EventArray(list):
     def __init__(self, rows, *, fields=None, dtypes=None):
         super().__init__(rows)
-        fields = fields or ("id", "rup_id", "rlz_id")
+        fields = fields or ("id", "rup_id", "rlz_id", "year", "ses_id")
         dtypes = dtypes or {
             "id": "uint32",
             "rup_id": "uint32",
             "rlz_id": "uint16",
+            "year": "uint32",
+            "ses_id": "uint32",
         }
         self.dtype = StructuredDtype(fields, dtypes)
 
@@ -135,10 +137,10 @@ def rows():
 
 def events():
     return [
-        {"id": 1, "rup_id": 101, "rlz_id": 0},
-        {"id": 3, "rup_id": 103, "rlz_id": 0},
-        {"id": 4, "rup_id": 104, "rlz_id": 0},
-        {"id": 9, "rup_id": 109, "rlz_id": 1},
+        {"id": 1, "rup_id": 101, "rlz_id": 0, "year": 0, "ses_id": 1},
+        {"id": 3, "rup_id": 103, "rlz_id": 0, "year": 0, "ses_id": 1},
+        {"id": 4, "rup_id": 104, "rlz_id": 0, "year": 0, "ses_id": 1},
+        {"id": 9, "rup_id": 109, "rlz_id": 1, "year": 0, "ses_id": 1},
     ]
 
 
@@ -155,6 +157,7 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(doc["runtime"], {"concurrent_tasks": 2})
         self.assertEqual([row["event_id"] for row in doc["rows"]], [1, 9])
         self.assertEqual([row["rup_id"] for row in doc["rows"]], [101, 109])
+        self.assertEqual([row["rlz_id"] for row in doc["rows"]], [0, 1])
         self.assertEqual(doc["rows"][0]["loss_f32_be_hex"], "40500000")
         self.assertEqual(doc["rows"][1]["variance_f32_be_hex"], "80000000")
         self.assertEqual(receipt["byte_count"], len(payload))
@@ -170,7 +173,13 @@ class SelectionTests(unittest.TestCase):
     def test_events_native_uint32_ids_are_required(self):
         for name in ("id", "rup_id"):
             with self.subTest(name=name):
-                dtypes = {"id": "uint32", "rup_id": "uint32", "rlz_id": "uint16"}
+                dtypes = {
+                    "id": "uint32",
+                    "rup_id": "uint32",
+                    "rlz_id": "uint16",
+                    "year": "uint32",
+                    "ses_id": "uint32",
+                }
                 dtypes[name] = "uint64"
                 with self.assertRaisesRegex(
                     OQ313DatastoreSelectionError,
@@ -193,22 +202,56 @@ class SelectionTests(unittest.TestCase):
                         "id": "uint32",
                         "rup_id": "uint32",
                         "rlz_id": "uint32",
+                        "year": "uint32",
+                        "ses_id": "uint32",
                     },
                 ),
                 Oq(),
             )
 
+    def test_events_native_year_and_ses_id_are_uint32(self):
+        for name in ("year", "ses_id"):
+            with self.subTest(name=name):
+                dtypes = {
+                    "id": "uint32",
+                    "rup_id": "uint32",
+                    "rlz_id": "uint16",
+                    "year": "uint32",
+                    "ses_id": "uint32",
+                }
+                dtypes[name] = "uint64"
+                with self.assertRaisesRegex(
+                    OQ313DatastoreSelectionError,
+                    rf"events {name} dtype must be uint32",
+                ):
+                    select_oq313_risk_by_event_receipt(
+                        Store(rows(), events(), event_dtypes=dtypes), Oq()
+                    )
+
+    def test_events_rlz_id_value_is_strict_uint16(self):
+        for value in (True, -1, 1 << 16):
+            evs = events()
+            evs[0] = dict(evs[0], rlz_id=value)
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(
+                    OQ313DatastoreSelectionError,
+                    "events\\[0\\]\\.rlz_id",
+                ):
+                    select_oq313_risk_by_event_receipt(Store(rows(), evs), Oq())
+
     def test_events_native_field_order_and_shape_are_required(self):
         for fields in (
-            ("rup_id", "id", "rlz_id"),
-            ("id", "rup_id", "rlz_id", "extra"),
-            ("id", "rup_id"),
+            ("rup_id", "id", "rlz_id", "year", "ses_id"),
+            ("id", "rup_id", "rlz_id", "year", "ses_id", "extra"),
+            ("id", "rup_id", "rlz_id", "year"),
         ):
             with self.subTest(fields=fields):
                 dtypes = {
                     "id": "uint32",
                     "rup_id": "uint32",
                     "rlz_id": "uint16",
+                    "year": "uint32",
+                    "ses_id": "uint32",
                     "extra": "uint8",
                 }
                 with self.assertRaisesRegex(
@@ -275,7 +318,9 @@ class SelectionTests(unittest.TestCase):
             select_oq313_risk_by_event_receipt(Store(rows(), evs), Oq())
 
     def test_duplicate_event_link_fails_closed(self):
-        evs = events() + [{"id": 9, "rup_id": 999, "rlz_id": 1}]
+        evs = events() + [
+            {"id": 9, "rup_id": 999, "rlz_id": 1, "year": 0, "ses_id": 1}
+        ]
         with self.assertRaisesRegex(
             OQ313DatastoreSelectionError, "events ids must be unique"
         ):
