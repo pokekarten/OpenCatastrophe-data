@@ -239,6 +239,7 @@ jobs:
                    -r /oq-engine/requirements-py38-linux64.txt \
               && python -m pip install --no-deps -e /oq-engine \
               && chown -R openquake:openquake /oq-engine
+          USER openquake
           EOF
           EXEC_IMAGE="oc-eq1-oq313:${EXECUTION_SHA}"
           docker build --pull=false -t "$EXEC_IMAGE" "$BUILD_ROOT"
@@ -258,6 +259,7 @@ jobs:
         run: |
           set -euo pipefail
           STAGE_ROOT="$RUNNER_TEMP/esrm20-stage"
+          chmod a+rwx "$STAGE_ROOT"
           docker run --rm -i --entrypoint python \
             -e BOOTSTRAP_DIGEST -e EXEC_IMAGE_ID \
             -e OQ_DISTRIBUTE=no -e OPENBLAS_NUM_THREADS=1 \
@@ -317,6 +319,9 @@ jobs:
                       f"OQ3.13 {label} is not loaded from frozen source"
                   ) from exc
           baselib_file = Path(openquake_baselib.__file__).resolve()
+          runtime_user = pwd.getpwuid(os.geteuid()).pw_name
+          if runtime_user != "openquake":
+              raise SystemExit("OQ3.13 runtime user drifted")
           source_owner = pwd.getpwuid(baselib_file.stat().st_uid).pw_name
           if source_owner != "openquake":
               raise SystemExit("OQ3.13 frozen source owner drifted")
