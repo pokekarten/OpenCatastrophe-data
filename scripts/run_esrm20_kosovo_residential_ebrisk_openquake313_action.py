@@ -302,15 +302,18 @@ def _project_exact_datastore(path: Path) -> tuple[bytes, dict[str, Any]]:
         ) from exc
 
     dstore = None
+    primary_error_active = False
     try:
         dstore = oq_datastore.read(str(path), mode="r")
         oq = dstore["oqparam"]
         return datastore_selector.select_oq313_risk_by_event_receipt(dstore, oq)
     except datastore_selector.OQ313DatastoreSelectionError as exc:
+        primary_error_active = True
         raise KosovoResidentialOQ313ActionError(
             "completed OpenQuake datastore failed numerical receipt selection"
         ) from exc
     except (KeyError, OSError, TypeError, ValueError) as exc:
+        primary_error_active = True
         raise KosovoResidentialOQ313ActionError(
             "cannot consume completed OpenQuake datastore"
         ) from exc
@@ -319,9 +322,10 @@ def _project_exact_datastore(path: Path) -> tuple[bytes, dict[str, Any]]:
             try:
                 dstore.close()
             except (OSError, RuntimeError, ValueError) as exc:
-                raise KosovoResidentialOQ313ActionError(
-                    "cannot close completed OpenQuake datastore"
-                ) from exc
+                if not primary_error_active:
+                    raise KosovoResidentialOQ313ActionError(
+                        "cannot close completed OpenQuake datastore"
+                    ) from exc
 
 
 def _adapter_concurrent_tasks(result: object) -> int:
