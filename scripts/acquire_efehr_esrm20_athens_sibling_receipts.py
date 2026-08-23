@@ -390,7 +390,7 @@ def _validate_header_value(value: object, *, field: str) -> str | None:
     if type(value) is not str or len(value.encode("utf-8")) > 1024:
         raise AthensSiblingReceiptError(f"{field} is outside the bounded policy")
     if any(ord(character) < 32 or ord(character) == 127 for character in value):
-        raise AthensSiblingReceiptError(&"{field} contains control characters")
+        raise AthensSiblingReceiptError(f"{field} contains control characters")
     return value
 
 
