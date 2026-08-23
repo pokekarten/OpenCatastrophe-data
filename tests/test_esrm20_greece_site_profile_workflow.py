@@ -90,8 +90,8 @@ class GreeceSiteProfileWorkflowTests(unittest.TestCase):
         text = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}", text)
         self.assertIn(
-            'gh api "repos/$GITHUB_REPOSITORY/commits/$DEFAULT_BRANCH" --jq \' .sha\'',
-            text.replace("--jq '.sha'", "--jq ' .sha'"),
+            "gh api \"repos/$GITHUB_REPOSITORY/commits/$DEFAULT_BRANCH\" --jq '.sha'",
+            text,
         )
         self.assertIn('test "$LATEST_SHA" = "$EXECUTION_SHA"', text)
         for required in (
