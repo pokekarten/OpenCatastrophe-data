@@ -19,14 +19,12 @@ class OQ313RuntimeUserWorkflowTests(unittest.TestCase):
         text = self.text
         ownership = "chown -R openquake:openquake /oq-engine"
         runtime_user = "USER openquake"
-        stage_write = 'chmod a+rwx "$STAGE_ROOT"'
         effective_user = "runtime_user = pwd.getpwuid(os.geteuid()).pw_name"
         user_guard = 'if runtime_user != "openquake":'
         version_receipt = "openquake_version = openquake_baselib.__version__"
 
         self.assertIn(ownership, text)
         self.assertIn(runtime_user, text)
-        self.assertIn(stage_write, text)
         self.assertIn(effective_user, text)
         self.assertIn(user_guard, text)
         self.assertIn(
@@ -34,10 +32,34 @@ class OQ313RuntimeUserWorkflowTests(unittest.TestCase):
             text,
         )
         self.assertLess(text.index(ownership), text.index(runtime_user))
-        self.assertLess(text.index(runtime_user), text.index(stage_write))
-        self.assertLess(text.index(stage_write), text.index(effective_user))
+        self.assertLess(text.index(runtime_user), text.index(effective_user))
         self.assertLess(text.index(effective_user), text.index(user_guard))
         self.assertLess(text.index(user_guard), text.index(version_receipt))
+
+    def test_probe_receipts_are_isolated_from_read_only_staged_inputs(self) -> None:
+        text = self.text
+        receipt_root = 'RECEIPT_ROOT="$RUNNER_TEMP/oq313-runtime-receipts"'
+        stage_ro = '-v "$STAGE_ROOT:/stage:ro"'
+        receipt_rw = '-v "$RECEIPT_ROOT:/receipts"'
+        receipt_ro = '-v "$RECEIPT_ROOT:/receipts:ro"'
+
+        self.assertNotIn('chmod a+rwx "$STAGE_ROOT"', text)
+        self.assertIn(receipt_root, text)
+        self.assertIn('sudo chown "$OPENQUAKE_UID:$OPENQUAKE_GID" "$RECEIPT_ROOT"', text)
+        self.assertIn('chmod 700 "$RECEIPT_ROOT"', text)
+        self.assertIn(stage_ro, text)
+        self.assertIn(receipt_rw, text)
+        self.assertIn(
+            'with open("/receipts/runtime-identity.json", "w", encoding="utf-8")',
+            text,
+        )
+        self.assertIn(
+            'with open("/receipts/resolved-runtime.json", "w", encoding="utf-8")',
+            text,
+        )
+        self.assertIn(receipt_ro, text)
+        self.assertIn("--runtime-identity /receipts/runtime-identity.json", text)
+        self.assertIn("--resolved-runtime /receipts/resolved-runtime.json", text)
 
     def test_numerical_execution_keeps_explicit_root_override(self) -> None:
         text = self.text
