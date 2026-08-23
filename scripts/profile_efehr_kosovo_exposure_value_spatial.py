@@ -285,7 +285,10 @@ def profile_verified_exposure_value_spatial(
             residual = _replacement_cost_residual(parsed)
             if residual != 0:
                 component_nonzero_residual_count += 1
-                component_max_abs_residual = max(component_max_abs_residual, abs(residual))
+                component_max_abs_residual = max(
+                    component_max_abs_residual,
+                    residual.copy_abs(),
+                )
     except csv.Error as exc:
         raise ExposureValueSpatialProfileError("verified exposure CSV re-read failed") from exc
 
