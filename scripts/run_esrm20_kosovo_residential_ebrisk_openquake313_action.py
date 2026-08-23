@@ -3,11 +3,15 @@
 
 """Closed request/result envelope for the fixed Kosovo OQ3.13 ebrisk runner.
 
-This module does not acquire provider inputs or construct a runtime. A future
-trusted-main workflow must stage the already-authorized exact Group1 config and
-runtime receipts, then invoke this envelope. The request cannot select provider
-identity, input paths, runtime identity, command, thresholds, or scientific
-semantics.
+This module does not acquire provider inputs or construct a runtime. A trusted-main
+workflow must stage the already-authorized exact Group1 config and runtime receipts,
+then invoke this envelope. The request cannot select provider identity, input paths,
+runtime identity, command, thresholds, or scientific semantics.
+
+On a successful native run, the action additionally isolates the OpenQuake datastore
+inside a fresh temporary ``OQ_DATADIR`` and projects the one completed calculation
+through the already-reviewed datastore selector and numerical receipt projector.
+The datastore itself remains ephemeral; only the deterministic receipt is surfaced.
 """
 
 from __future__ import annotations
@@ -17,13 +21,18 @@ import hashlib
 import json
 import os
 import re
+import tempfile
 from pathlib import Path
 from typing import Any, Callable
 
 try:
     from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313 as runner
+    from scripts import select_oq313_risk_by_event_rows as datastore_selector
+    from scripts import project_oq313_risk_by_event_receipt as numerical_contract
 except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     import run_esrm20_kosovo_residential_ebrisk_openquake313 as runner
+    import select_oq313_risk_by_event_rows as datastore_selector
+    import project_oq313_risk_by_event_receipt as numerical_contract
 
 REQUEST_MARKER = "<!-- oc-eq1-esrm20-kosovo-oq313-run-request-v1 -->"
 RESULT_MARKER = "<!-- oc-eq1-esrm20-kosovo-oq313-run-result-v1 -->"
@@ -33,10 +42,12 @@ ACTION = "esrm20_kosovo_residential_oq313_run"
 CONTROL_ISSUE = 609
 PARENT_CONSUMER_ISSUE = 287
 DATASET_ID = "efehr.esrm20.risk-inputs.v1.0"
+OQ_DATADIR_ENV = "OQ_DATADIR"
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
 _REQUESTER_RE = re.compile(r"^[A-Za-z0-9_.:@/+ -]{1,96}$")
+_CALC_DATASTORE_RE = re.compile(r"^calc_[0-9]+\.hdf5$")
 _REQUEST_FIELDS = {
     "schema_version",
     "action",
@@ -266,6 +277,165 @@ def run_action(
     )
 
 
+def _project_exact_datastore(path: Path) -> tuple[bytes, dict[str, Any]]:
+    if path.is_symlink() or not path.is_file():
+        raise KosovoResidentialOQ313ActionError(
+            "OpenQuake calculation datastore must be one regular file"
+        )
+    try:
+        from openquake.commonlib import datastore as oq_datastore
+    except ImportError as exc:  # pragma: no cover - only available in runtime image
+        raise KosovoResidentialOQ313ActionError(
+            "OpenQuake datastore runtime is unavailable"
+        ) from exc
+
+    dstore = None
+    try:
+        dstore = oq_datastore.read(str(path), mode="r")
+        oq = dstore["oqparam"]
+        return datastore_selector.select_oq313_risk_by_event_receipt(dstore, oq)
+    except datastore_selector.OQ313DatastoreSelectionError as exc:
+        raise KosovoResidentialOQ313ActionError(
+            "completed OpenQuake datastore failed numerical receipt selection"
+        ) from exc
+    except (KeyError, OSError, TypeError, ValueError) as exc:
+        raise KosovoResidentialOQ313ActionError(
+            "cannot consume completed OpenQuake datastore"
+        ) from exc
+    finally:
+        if dstore is not None:
+            dstore.close()
+
+
+def _validate_numerical_receipt(
+    payload: object,
+    receipt: object,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    if type(payload) is not bytes or not payload:
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt payload must be non-empty bytes"
+        )
+    if type(receipt) is not dict or set(receipt) != {"byte_count", "sha256"}:
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt identity fields drifted"
+        )
+    byte_count = receipt.get("byte_count")
+    digest = receipt.get("sha256")
+    if type(byte_count) is not int or byte_count != len(payload):
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt byte count drifted"
+        )
+    if type(digest) is not str or _DIGEST_RE.fullmatch(digest) is None:
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt digest is invalid"
+        )
+    if digest != hashlib.sha256(payload).hexdigest():
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt digest drifted"
+        )
+    try:
+        text = payload.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt payload is not UTF-8"
+        ) from exc
+    document = _load_json_text(text, label="numerical receipt")
+    if type(document) is not dict:
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt must be an object"
+        )
+    exact = (
+        ("schema_version", numerical_contract.SCHEMA_VERSION),
+        ("experiment_label", numerical_contract.EXPERIMENT_LABEL),
+        ("source_dataset", numerical_contract.SOURCE_DATASET),
+        ("insurance_scope", "none"),
+    )
+    for field, expected in exact:
+        observed = document.get(field)
+        if type(observed) is not type(expected) or observed != expected:
+            raise KosovoResidentialOQ313ActionError(
+                f"numerical receipt {field} drifted"
+            )
+    openquake = document.get("openquake")
+    if type(openquake) is not dict:
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt OpenQuake identity is missing"
+        )
+    if openquake.get("version") != runner.OPENQUAKE_VERSION:
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt OpenQuake version drifted"
+        )
+    if openquake.get("commit_sha") != runner.OPENQUAKE_COMMIT_SHA:
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt OpenQuake commit drifted"
+        )
+    return document, dict(receipt)
+
+
+def run_action_with_numerical_receipt(
+    *,
+    execution_sha: str,
+    source_group1_config: bytes,
+    runtime_identity: object,
+    resolved_runtime: object,
+    execute: Callable[..., tuple[bytes, dict[str, Any]]] = runner.run_kosovo_residential_ebrisk_openquake313,
+    project_datastore: Callable[[Path], tuple[bytes, dict[str, Any]]] = _project_exact_datastore,
+) -> dict[str, Any]:
+    """Run the closed action and consume exactly one ephemeral completed datastore."""
+
+    previous_datadir = os.environ.get(OQ_DATADIR_ENV)
+    with tempfile.TemporaryDirectory(prefix="oc-oq313-") as temporary_datadir:
+        datadir = Path(temporary_datadir)
+        if any(datadir.iterdir()):
+            raise KosovoResidentialOQ313ActionError(
+                "isolated OpenQuake datadir must start empty"
+            )
+        os.environ[OQ_DATADIR_ENV] = str(datadir)
+        try:
+            result = run_action(
+                execution_sha=execution_sha,
+                source_group1_config=source_group1_config,
+                runtime_identity=runtime_identity,
+                resolved_runtime=resolved_runtime,
+                execute=execute,
+            )
+        finally:
+            if previous_datadir is None:
+                os.environ.pop(OQ_DATADIR_ENV, None)
+            else:
+                os.environ[OQ_DATADIR_ENV] = previous_datadir
+
+        result["oq_datastore_persisted"] = False
+        if result["status"] != "pass":
+            result["numerical_receipt_emitted"] = False
+            return result
+
+        calc_paths = sorted(
+            path
+            for path in datadir.iterdir()
+            if _CALC_DATASTORE_RE.fullmatch(path.name) is not None
+        )
+        if len(calc_paths) != 1:
+            raise KosovoResidentialOQ313ActionError(
+                "PASS must create exactly one isolated OpenQuake calculation datastore"
+            )
+        calc_path = calc_paths[0]
+        if calc_path.is_symlink() or not calc_path.is_file():
+            raise KosovoResidentialOQ313ActionError(
+                "OpenQuake calculation datastore must be one regular file"
+            )
+
+        numerical_payload, numerical_identity = project_datastore(calc_path)
+        numerical_document, numerical_identity = _validate_numerical_receipt(
+            numerical_payload,
+            numerical_identity,
+        )
+        result["numerical_receipt_emitted"] = True
+        result["numerical_receipt_identity"] = numerical_identity
+        result["numerical_receipt"] = numerical_document
+        return result
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--comment-body-env", required=True)
@@ -298,7 +468,7 @@ def main(argv: list[str] | None = None) -> int:
             "execution requires all fixed staging arguments"
         )
 
-    result = run_action(
+    result = run_action_with_numerical_receipt(
         execution_sha=args.execution_sha,
         source_group1_config=_read_bytes(
             args.source_group1_config,
