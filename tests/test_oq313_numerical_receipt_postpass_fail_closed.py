@@ -6,7 +6,6 @@ from __future__ import annotations
 import json
 import os
 import sys
-import tempfile
 import types
 import unittest
 from pathlib import Path
@@ -69,8 +68,12 @@ class OQ313NumericalReceiptPostPassFailClosedTests(unittest.TestCase):
             def close(self) -> None:
                 raise RuntimeError("sensitive hdf5 close detail")
 
+        def read_datastore(path: str, mode: str = "r") -> FakeDatastore:
+            del path, mode
+            return FakeDatastore()
+
         oq_datastore = types.ModuleType("openquake.commonlib.datastore")
-        oq_datastore.read = lambda path, mode="r": FakeDatastore()  # type: ignore[attr-defined]
+        oq_datastore.read = read_datastore  # type: ignore[attr-defined]
         commonlib = types.ModuleType("openquake.commonlib")
         commonlib.datastore = oq_datastore  # type: ignore[attr-defined]
         openquake = types.ModuleType("openquake")
