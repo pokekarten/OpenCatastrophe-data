@@ -6,6 +6,8 @@ from __future__ import annotations
 import hashlib
 import json
 import unittest
+from collections.abc import Callable
+from typing import Any
 
 from scripts import project_oq313_risk_by_event_receipt as numerical_contract
 from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313_action as subject
@@ -27,12 +29,19 @@ def _valid_payload() -> tuple[bytes, dict[str, object]]:
     )
 
 
-def _mutate(payload: bytes, mutation) -> tuple[bytes, dict[str, object]]:
+def _mutate(
+    payload: bytes,
+    mutation: Callable[[dict[str, Any]], None],
+) -> tuple[bytes, dict[str, object]]:
     document = json.loads(payload)
     mutation(document)
     mutated = (
-        json.dumps(document, ensure_ascii=True, separators=(",", ":"), sort_keys=True)
-        .encode("utf-8")
+        json.dumps(
+            document,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
         + b"\n"
     )
     return mutated, {
@@ -54,7 +63,10 @@ class OQ313NumericalReceiptSchemaGateTests(unittest.TestCase):
 
     def test_extra_top_level_field_fails_closed(self) -> None:
         payload, _ = _valid_payload()
-        mutated, identity = _mutate(payload, lambda doc: doc.__setitem__("raw", "forbidden"))
+        mutated, identity = _mutate(
+            payload,
+            lambda doc: doc.__setitem__("raw", "forbidden"),
+        )
         with self.assertRaisesRegex(
             subject.KosovoResidentialOQ313ActionError,
             "top-level fields drifted",
@@ -97,12 +109,13 @@ class OQ313NumericalReceiptSchemaGateTests(unittest.TestCase):
                 expected_concurrent_tasks=2,
             )
 
-    def test_threshold_name_drift_fails_closed(self) -> None:
+    def test_threshold_predicate_drift_fails_closed(self) -> None:
         payload, _ = _valid_payload()
         mutated, identity = _mutate(
             payload,
             lambda doc: doc["quantity"].__setitem__(
-                "threshold_predicate", "asset_event_loss >= minimum_asset_loss_structural"
+                "threshold_predicate",
+                "asset_event_loss >= minimum_asset_loss_structural",
             ),
         )
         with self.assertRaisesRegex(
