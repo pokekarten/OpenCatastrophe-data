@@ -11,16 +11,63 @@ from unittest import mock
 from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313 as subject
 
 
+class _ChunkedStderr:
+    def __init__(self, chunks: list[bytes]) -> None:
+        self._chunks = iter(chunks)
+        self.read_sizes: list[int] = []
+
+    def read(self, size: int = -1) -> bytes:
+        self.read_sizes.append(size)
+        if size != subject.NATIVE_STDERR_HASH_CHUNK_BYTES:
+            raise AssertionError(f"unexpected stderr read size: {size}")
+        return next(self._chunks, b"")
+
+
+class _RepeatedChunkStderr:
+    def __init__(self, chunk: bytes, count: int, tail: bytes = b"") -> None:
+        self.chunk = chunk
+        self.remaining = count
+        self.tail = tail
+        self.tail_sent = False
+        self.read_sizes: list[int] = []
+
+    def read(self, size: int = -1) -> bytes:
+        self.read_sizes.append(size)
+        if size != subject.NATIVE_STDERR_HASH_CHUNK_BYTES:
+            raise AssertionError(f"unexpected stderr read size: {size}")
+        if self.remaining:
+            self.remaining -= 1
+            return self.chunk
+        if not self.tail_sent and self.tail:
+            self.tail_sent = True
+            return self.tail
+        return b""
+
+
+class _FakeProcess:
+    def __init__(self, stderr: object, returncode: int) -> None:
+        self.stderr = stderr
+        self.returncode = returncode
+        self.wait_calls = 0
+
+    def __enter__(self) -> _FakeProcess:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        return None
+
+    def wait(self) -> int:
+        self.wait_calls += 1
+        return self.returncode
+
+
 class OQ313NativeFailureDiagnosticsTests(unittest.TestCase):
-    def test_nonzero_exit_hashes_ephemeral_stderr_without_exposing_content(self) -> None:
+    def test_nonzero_exit_hashes_streamed_stderr_without_exposing_content(self) -> None:
         secret = b"Traceback: /provider/private/path secret-value\n"
+        stderr = _ChunkedStderr([secret])
+        process = _FakeProcess(stderr, 7)
 
-        def fake_run(args: object, **kwargs: object) -> subject.subprocess.CompletedProcess:
-            stderr = kwargs["stderr"]
-            stderr.write(secret)
-            return subject.subprocess.CompletedProcess(args, 7)
-
-        with mock.patch.object(subject.subprocess, "run", side_effect=fake_run) as run:
+        with mock.patch.object(subject.subprocess, "Popen", return_value=process) as popen:
             returncode = subject._execute_native(subject.COMMAND, {"PATH": "/fixed"})
 
         self.assertEqual(returncode, 7)
@@ -35,34 +82,52 @@ class OQ313NativeFailureDiagnosticsTests(unittest.TestCase):
         )
         self.assertNotIn("secret-value", json.dumps(diagnostic))
         self.assertNotIn("/provider/private/path", json.dumps(diagnostic))
-        _, kwargs = run.call_args
+        self.assertEqual(
+            stderr.read_sizes,
+            [subject.NATIVE_STDERR_HASH_CHUNK_BYTES] * 2,
+        )
+        self.assertEqual(process.wait_calls, 1)
+        popen.assert_called_once()
+        args, kwargs = popen.call_args
+        self.assertEqual(args[0], list(subject.COMMAND))
+        self.assertEqual(kwargs["env"], {"PATH": "/fixed"})
         self.assertIs(kwargs["stdout"], subject.subprocess.DEVNULL)
-        self.assertIsNot(kwargs["stderr"], subject.subprocess.DEVNULL)
+        self.assertIs(kwargs["stderr"], subject.subprocess.PIPE)
 
-    def test_non_utf8_and_large_stderr_remain_content_opaque(self) -> None:
-        stderr_payload = (b"\xff\xfe\x00" * 400_000) + b"tail"
+    def test_non_utf8_many_chunk_stderr_remains_content_opaque_and_bounded(self) -> None:
+        chunk = b"\xff\xfe\x00"
+        count = 4096
+        tail = b"tail"
+        stderr = _RepeatedChunkStderr(chunk, count, tail)
+        process = _FakeProcess(stderr, 23)
+        expected = chunk * count + tail
 
-        def fake_run(args: object, **kwargs: object) -> subject.subprocess.CompletedProcess:
-            kwargs["stderr"].write(stderr_payload)
-            return subject.subprocess.CompletedProcess(args, 23)
-
-        with mock.patch.object(subject.subprocess, "run", side_effect=fake_run):
+        with mock.patch.object(subject.subprocess, "Popen", return_value=process):
             returncode = subject._execute_native(subject.COMMAND, {})
 
         diagnostic = getattr(returncode, "diagnostic")
-        self.assertEqual(diagnostic["byte_count"], len(stderr_payload))
-        self.assertEqual(diagnostic["sha256"], hashlib.sha256(stderr_payload).hexdigest())
+        self.assertEqual(diagnostic["byte_count"], len(expected))
+        self.assertEqual(diagnostic["sha256"], hashlib.sha256(expected).hexdigest())
         self.assertIs(diagnostic["content_exposed"], False)
         self.assertEqual(set(diagnostic), {"byte_count", "sha256", "content_exposed"})
+        self.assertEqual(len(stderr.read_sizes), count + 2)
+        self.assertTrue(stderr.read_sizes)
+        self.assertTrue(
+            all(size == subject.NATIVE_STDERR_HASH_CHUNK_BYTES for size in stderr.read_sizes)
+        )
+        self.assertNotIn(-1, stderr.read_sizes)
+        self.assertEqual(process.wait_calls, 1)
 
     def test_success_keeps_existing_result_shape_without_failure_diagnostic(self) -> None:
-        completed = subject.subprocess.CompletedProcess(list(subject.COMMAND), 0)
-        with mock.patch.object(subject.subprocess, "run", return_value=completed):
+        stderr = _ChunkedStderr([b"non-published warning"])
+        process = _FakeProcess(stderr, 0)
+        with mock.patch.object(subject.subprocess, "Popen", return_value=process):
             returncode = subject._execute_native(subject.COMMAND, {})
 
         self.assertEqual(type(returncode), int)
         self.assertEqual(returncode, 0)
         self.assertFalse(hasattr(returncode, "diagnostic"))
+        self.assertEqual(process.wait_calls, 1)
 
     def test_blocked_adapter_publishes_only_bounded_diagnostic_fields(self) -> None:
         config = b"""[general]\ncalculation_mode = ebrisk\nignore_master_seed = true\nminimum_asset_loss = {'structural': 2000}\nrandom_seed = 113\n\n[exposure]\nexposure_file = ../Exposure/OQ_Exposure_Input_Kosovo_Residential_Reconstructed.xml\n\n[site_params]\nsite_model_file = ../Vs30/Site_model_Kosovo.xml\n"""
