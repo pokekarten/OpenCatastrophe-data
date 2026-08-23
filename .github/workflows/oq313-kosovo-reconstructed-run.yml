@@ -237,7 +237,8 @@ jobs:
               && test "$(git -C /oq-engine rev-parse --short HEAD)" = "16dd69ecea" \
               && python -m pip install --disable-pip-version-check --no-warn-script-location \
                    -r /oq-engine/requirements-py38-linux64.txt \
-              && python -m pip install --no-deps -e /oq-engine
+              && python -m pip install --no-deps -e /oq-engine \
+              && chown -R openquake:openquake /oq-engine
           EOF
           EXEC_IMAGE="oc-eq1-oq313:${EXECUTION_SHA}"
           docker build --pull=false -t "$EXEC_IMAGE" "$BUILD_ROOT"
@@ -266,6 +267,7 @@ jobs:
           import json
           import multiprocessing
           import os
+          import pwd
           import sys
           from pathlib import Path
 
@@ -314,6 +316,12 @@ jobs:
                   raise SystemExit(
                       f"OQ3.13 {label} is not loaded from frozen source"
                   ) from exc
+          baselib_file = Path(openquake_baselib.__file__).resolve()
+          source_owner = pwd.getpwuid(baselib_file.stat().st_uid).pw_name
+          if source_owner != "openquake":
+              raise SystemExit("OQ3.13 frozen source owner drifted")
+          if openquake_baselib.config.multi_user is not False:
+              raise SystemExit("OQ3.13 single-user runtime mode drifted")
           openquake_version = openquake_baselib.__version__
           if openquake_version != "3.13.0-git16dd69ecea":
               raise SystemExit("OQ3.13 exact-source version receipt drifted")

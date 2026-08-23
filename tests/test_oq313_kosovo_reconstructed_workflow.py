@@ -170,6 +170,33 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
             text.index("import openquake.baselib as openquake_baselib"),
         )
 
+    def test_exact_source_ownership_forces_single_user_mode_before_execution(self) -> None:
+        text = self.text
+        editable_install = "python -m pip install --no-deps -e /oq-engine"
+        ownership = "chown -R openquake:openquake /oq-engine"
+        owner_probe = 'if source_owner != "openquake":'
+        single_user_probe = "if openquake_baselib.config.multi_user is not False:"
+
+        self.assertIn(ownership, text)
+        self.assertEqual(text.count(ownership), 1)
+        self.assertIn("import pwd", text)
+        self.assertIn(
+            "source_owner = pwd.getpwuid(baselib_file.stat().st_uid).pw_name",
+            text,
+        )
+        self.assertIn(owner_probe, text)
+        self.assertIn(single_user_probe, text)
+        self.assertLess(text.index(editable_install), text.index(ownership))
+        self.assertLess(
+            text.index(ownership),
+            text.index("Probe pinned runtime and write OqParam-observed runtime receipts"),
+        )
+        self.assertLess(text.index(owner_probe), text.index(single_user_probe))
+        self.assertLess(
+            text.index(single_user_probe),
+            text.index("openquake_version = openquake_baselib.__version__"),
+        )
+
     def test_runtime_probe_rejects_namespace_contamination_before_submodule_imports(self) -> None:
         text = self.text
         preload_guard = 'if any(name.startswith("openquake.") for name in sys.modules):'
