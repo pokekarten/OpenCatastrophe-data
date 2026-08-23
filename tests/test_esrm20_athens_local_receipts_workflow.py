@@ -34,6 +34,14 @@ class AthensLocalWorkflowTests(unittest.TestCase):
         self.assertIn("Checkout trusted default branch", self.text)
         self.assertIn("ref: ${{ github.event.repository.default_branch }}", self.text)
         self.assertIn("persist-credentials: false", self.text)
+        self.assertIn(
+            "python -m scripts.run_efehr_esrm20_athens_local_receipts_action",
+            self.text,
+        )
+        self.assertNotIn(
+            "python scripts/run_efehr_esrm20_athens_local_receipts_action.py",
+            self.text,
+        )
         self.assertIn("--expected-issue 658", self.text)
 
     def test_publisher_has_no_checkout_and_refences_execution_sha(self):
