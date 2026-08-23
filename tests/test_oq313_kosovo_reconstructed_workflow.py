@@ -221,6 +221,17 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
         self.assertLess(text.index(top_level_import), text.index(pin))
         self.assertLess(text.index(pin), text.index(submodule_import))
 
+    def test_execute_job_uses_explicit_bounded_budget_above_observed_limit(self) -> None:
+        text = self.text
+        _, execute_section = text.split("  execute-and-publish:", 1)
+        execute_header, _ = execute_section.split("    steps:", 1)
+
+        self.assertIn("    timeout-minutes: 90", execute_header)
+        self.assertNotIn("    timeout-minutes: 45", execute_header)
+        self.assertEqual(execute_header.count("timeout-minutes:"), 1)
+        self.assertIn("    timeout-minutes: 5", text)
+        self.assertEqual(text.count("timeout-minutes:"), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
