@@ -165,20 +165,21 @@ class KosovoResidentialOQ313RunTests(unittest.TestCase):
         self.assertEqual(receipt["sha256"], hashlib.sha256(payload).hexdigest())
         self.assertTrue(payload.endswith(b"\n"))
 
-    def test_native_child_output_is_suppressed_at_subprocess_boundary(self) -> None:
+    def test_native_child_stdout_is_suppressed_and_stderr_is_ephemeral(self) -> None:
         completed = subject.subprocess.CompletedProcess(list(subject.COMMAND), 0)
         env = {"PATH": "/fixed"}
         with mock.patch.object(subject.subprocess, "run", return_value=completed) as run:
             returncode = subject._execute_native(subject.COMMAND, env)
 
         self.assertEqual(returncode, 0)
-        run.assert_called_once_with(
-            list(subject.COMMAND),
-            env=env,
-            check=False,
-            stdout=subject.subprocess.DEVNULL,
-            stderr=subject.subprocess.DEVNULL,
-        )
+        run.assert_called_once()
+        args, kwargs = run.call_args
+        self.assertEqual(args[0], list(subject.COMMAND))
+        self.assertEqual(kwargs["env"], env)
+        self.assertIs(kwargs["check"], False)
+        self.assertIs(kwargs["stdout"], subject.subprocess.DEVNULL)
+        self.assertIsNot(kwargs["stderr"], subject.subprocess.DEVNULL)
+        self.assertTrue(hasattr(kwargs["stderr"], "write"))
 
     def test_runtime_identity_must_pin_exact_oq313_source_before_execution(self) -> None:
         identity = runtime_identity()
@@ -327,6 +328,7 @@ class KosovoResidentialOQ313RunTests(unittest.TestCase):
         self.assertEqual(document["failure_stage"], "openquake_run")
         self.assertEqual(document["failure_code"], "openquake_run_failed")
         self.assertEqual(document["execution"]["exit_code"], 17)
+        self.assertNotIn("native_failure_diagnostic", document)
         for field in (
             "historical_environment_verified",
             "reference_base_image_byte_identity_verified",
