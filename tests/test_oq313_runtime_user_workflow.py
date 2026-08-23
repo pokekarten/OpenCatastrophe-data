@@ -39,10 +39,8 @@ class OQ313RuntimeUserWorkflowTests(unittest.TestCase):
     def test_probe_receipts_are_isolated_from_read_only_staged_inputs(self) -> None:
         text = self.text
         receipt_root = 'RECEIPT_ROOT="$RUNNER_TEMP/oq313-runtime-receipts"'
-        receipt_chown = (
-            'sudo chown "$OPENQUAKE_UID:$OPENQUAKE_GID" "$RECEIPT_ROOT"'
-        )
-        receipt_chmod = 'sudo chmod 700 "$RECEIPT_ROOT"'
+        receipt_chown = 'sudo chown "$OPENQUAKE_UID:$OPENQUAKE_GID" \\'
+        receipt_chmod = 'sudo chmod 700 "$RECEIPT_ROOT" "$RUNTIME_EXPORT_ROOT"'
         stage_ro = '-v "$STAGE_ROOT:/stage:ro"'
         receipt_rw = '-v "$RECEIPT_ROOT:/receipts"'
         receipt_ro = '-v "$RECEIPT_ROOT:/receipts:ro"'
@@ -50,6 +48,7 @@ class OQ313RuntimeUserWorkflowTests(unittest.TestCase):
         self.assertNotIn('chmod a+rwx "$STAGE_ROOT"', text)
         self.assertIn(receipt_root, text)
         self.assertIn(receipt_chown, text)
+        self.assertIn('"$RECEIPT_ROOT" "$RUNTIME_EXPORT_ROOT"', text)
         self.assertIn(receipt_chmod, text)
         self.assertNotIn('\n          chmod 700 "$RECEIPT_ROOT"', text)
         self.assertLess(text.index(receipt_chown), text.index(receipt_chmod))
