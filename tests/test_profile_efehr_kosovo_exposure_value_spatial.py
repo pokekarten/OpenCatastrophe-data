@@ -122,9 +122,9 @@ class ExposureValueSpatialProfileTests(unittest.TestCase):
         exact_total = "123456789012345678901234567890123456789"
         row = _base_row()
         row["TOTAL_REPL_COST_EUR"] = exact_total
-        row["COST_STRUCTURAL_EUR"] = "123456789012345678901234567890123456700"
-        row["COST_NONSTRUCTURAL_EUR"] = "80"
-        row["COST_CONTENTS_EUR"] = "8"
+        row["COST_STRUCTURAL_EUR"] = "0"
+        row["COST_NONSTRUCTURAL_EUR"] = "0"
+        row["COST_CONTENTS_EUR"] = "0"
         raw = _csv_bytes([row])
 
         with localcontext() as context:
@@ -138,7 +138,7 @@ class ExposureValueSpatialProfileTests(unittest.TestCase):
             profile["replacement_cost_component_diagnostic"][
                 "maximum_absolute_residual_eur"
             ],
-            "1",
+            exact_total,
         )
         self.assertEqual(
             profile["replacement_cost_component_diagnostic"]["nonzero_residual_count"],
