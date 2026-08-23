@@ -25,6 +25,7 @@ import json
 import os
 import re
 import subprocess
+import tempfile
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -60,6 +61,7 @@ THRESHOLD_PREDICATE = "asset_event_loss > minimum_asset_loss_structural"
 LOSS_STAGE = "thresholded_ground_up"
 
 COMMAND = ("oq", "engine", "--run", CONFIG_LOGICAL_PATH)
+NATIVE_STDERR_HASH_CHUNK_BYTES = 64 * 1024
 
 EXPECTED_DEPENDENCY_VERSIONS = {
     "h5py": "3.1.0",
@@ -102,6 +104,17 @@ _IMAGE_DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 class KosovoResidentialOQ313RunError(RuntimeError):
     """The fixed OQ3.13 execution contract was not satisfied."""
+
+
+class _NativeExitCode(int):
+    """Integer exit code carrying bounded non-content failure evidence."""
+
+    diagnostic: dict[str, object]
+
+    def __new__(cls, value: int, diagnostic: dict[str, object]) -> _NativeExitCode:
+        instance = int.__new__(cls, value)
+        instance.diagnostic = diagnostic
+        return instance
 
 
 def _require_authority() -> None:
@@ -411,15 +424,41 @@ def _read_staged_config() -> bytes:
         ) from exc
 
 
+def _stderr_diagnostic(stderr_capture: Any) -> dict[str, object]:
+    stderr_capture.flush()
+    stderr_capture.seek(0, os.SEEK_END)
+    byte_count = stderr_capture.tell()
+    stderr_capture.seek(0)
+    digest = hashlib.sha256()
+    while True:
+        chunk = stderr_capture.read(NATIVE_STDERR_HASH_CHUNK_BYTES)
+        if not chunk:
+            break
+        digest.update(chunk)
+    return {
+        "byte_count": byte_count,
+        "sha256": digest.hexdigest(),
+        "content_exposed": False,
+    }
+
+
 def _execute_native(command: Sequence[str], env: Mapping[str, str]) -> int:
-    completed = subprocess.run(
-        list(command),
-        env=dict(env),
-        check=False,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    return completed.returncode
+    with tempfile.TemporaryFile(mode="w+b") as stderr_capture:
+        completed = subprocess.run(
+            list(command),
+            env=dict(env),
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=stderr_capture,
+        )
+        returncode = completed.returncode
+        if type(returncode) is not int:
+            raise KosovoResidentialOQ313RunError(
+                "OpenQuake subprocess returned a non-integer exit code"
+            )
+        if returncode == 0:
+            return returncode
+        return _NativeExitCode(returncode, _stderr_diagnostic(stderr_capture))
 
 
 def _canonical_payload(document: dict[str, Any]) -> tuple[bytes, dict[str, Any]]:
@@ -462,12 +501,14 @@ def _run_derived_config(
     env["PYTHONPATH"] = OPENQUAKE_SOURCE_OVERLAY
 
     returncode = _execute_native(COMMAND, env)
-    if type(returncode) is not int:
+    if not isinstance(returncode, int) or isinstance(returncode, bool):
         raise KosovoResidentialOQ313RunError(
             "OpenQuake runner returned a non-integer exit code"
         )
+    native_failure_diagnostic = getattr(returncode, "diagnostic", None)
+    exit_code = int(returncode)
 
-    status = "pass" if returncode == 0 else "blocked"
+    status = "pass" if exit_code == 0 else "blocked"
     document = {
         "schema_version": SCHEMA_VERSION,
         "issues": {
@@ -519,7 +560,7 @@ def _run_derived_config(
         },
         "execution": {
             "command": list(COMMAND),
-            "exit_code": returncode,
+            "exit_code": exit_code,
             "openblas_num_threads": OPENBLAS_NUM_THREADS,
             "oq_distribute": OQ_DISTRIBUTE,
             "pythonpath": OPENQUAKE_SOURCE_OVERLAY,
@@ -551,6 +592,31 @@ def _run_derived_config(
         "publication_authorized": False,
         "model_use_authorized": False,
     }
+    if status == "blocked" and native_failure_diagnostic is not None:
+        if type(native_failure_diagnostic) is not dict or set(native_failure_diagnostic) != {
+            "byte_count",
+            "sha256",
+            "content_exposed",
+        }:
+            raise KosovoResidentialOQ313RunError(
+                "native failure diagnostic fields drifted"
+            )
+        byte_count = native_failure_diagnostic["byte_count"]
+        digest = native_failure_diagnostic["sha256"]
+        exposed = native_failure_diagnostic["content_exposed"]
+        if type(byte_count) is not int or byte_count < 0:
+            raise KosovoResidentialOQ313RunError(
+                "native failure diagnostic byte count drifted"
+            )
+        if type(digest) is not str or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+            raise KosovoResidentialOQ313RunError(
+                "native failure diagnostic digest drifted"
+            )
+        if exposed is not False:
+            raise KosovoResidentialOQ313RunError(
+                "native failure diagnostic content boundary drifted"
+            )
+        document["native_failure_diagnostic"] = dict(native_failure_diagnostic)
     return _canonical_payload(document)
 
 
