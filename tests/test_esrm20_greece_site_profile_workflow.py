@@ -35,13 +35,39 @@ class GreeceSiteProfileWorkflowTests(unittest.TestCase):
         )
         self.assertIn("persist-credentials: false", text)
 
-    def test_dedup_occurs_before_fixed_provider_worker(self):
+    def test_earliest_canonical_request_and_terminal_dedup_precede_provider(self):
         text = WORKFLOW.read_text(encoding="utf-8")
-        dedup = text.index("Prove complete issue-local dedup before provider access")
+        guard = text.index(
+            "Select earliest canonical trusted request and deduplicate terminal"
+        )
         execute = text.index("Run exact frozen Greece site-profile worker")
-        self.assertLess(dedup, execute)
-        self.assertIn("has_terminal_greece_site_profile_result", text)
+        self.assertLess(guard, execute)
+        self.assertIn(
+            "CURRENT_REQUEST_COMMENT_ID: ${{ github.event.comment.id }}",
+            text,
+        )
+        self.assertIn(
+            "REPOSITORY_OWNER: ${{ github.event.repository.owner.login }}",
+            text,
+        )
+        self.assertIn('comment.get("author_association") != "OWNER"', text)
+        self.assertIn("subject.validate_request(", text)
+        self.assertIn("winner_comment_id = min(canonical_requests)[1]", text)
+        self.assertIn("current_comment_id != winner_comment_id", text)
+        self.assertIn(
+            "duplicate trusted request is not earliest canonical OWNER request",
+            text,
+        )
+        self.assertIn("subject._parse_trusted_terminal_result(", text)
         self.assertIn("if: steps.dedup.outputs.skip != 'true'", text)
+
+    def test_concurrency_serializes_only_canonical_trusted_requests(self):
+        text = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn(
+            "'trusted-request' || format('noise-{0}', github.event.comment.id)",
+            text,
+        )
+        self.assertIn("cancel-in-progress: false", text)
 
     def test_action_runs_as_repository_package_module(self):
         text = WORKFLOW.read_text(encoding="utf-8")
