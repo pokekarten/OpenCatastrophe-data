@@ -259,12 +259,20 @@ jobs:
         run: |
           set -euo pipefail
           STAGE_ROOT="$RUNNER_TEMP/esrm20-stage"
-          chmod a+rwx "$STAGE_ROOT"
+          RECEIPT_ROOT="$RUNNER_TEMP/oq313-runtime-receipts"
+          mkdir -p "$RECEIPT_ROOT"
+          OPENQUAKE_UID="$(docker run --rm --entrypoint id "$EXEC_IMAGE" -u)"
+          OPENQUAKE_GID="$(docker run --rm --entrypoint id "$EXEC_IMAGE" -g)"
+          printf '%s\n' "$OPENQUAKE_UID" | grep -Eq '^[0-9]+$'
+          printf '%s\n' "$OPENQUAKE_GID" | grep -Eq '^[0-9]+$'
+          sudo chown "$OPENQUAKE_UID:$OPENQUAKE_GID" "$RECEIPT_ROOT"
+          chmod 700 "$RECEIPT_ROOT"
           docker run --rm -i --entrypoint python \
             -e BOOTSTRAP_DIGEST -e EXEC_IMAGE_ID \
             -e OQ_DISTRIBUTE=no -e OPENBLAS_NUM_THREADS=1 \
             -e PYTHONPATH=/oq-engine \
-            -v "$STAGE_ROOT:/stage" \
+            -v "$STAGE_ROOT:/stage:ro" \
+            -v "$RECEIPT_ROOT:/receipts" \
             "$EXEC_IMAGE" - <<'PY'
           import json
           import multiprocessing
@@ -361,7 +369,7 @@ jobs:
               "bootstrap_image_digest": os.environ["BOOTSTRAP_DIGEST"],
               "execution_image_id": os.environ["EXEC_IMAGE_ID"],
           }
-          with open("/stage/runtime-identity.json", "w", encoding="utf-8") as handle:
+          with open("/receipts/runtime-identity.json", "w", encoding="utf-8") as handle:
               json.dump(identity, handle, sort_keys=True, separators=(",", ":"))
 
           config_path = (
@@ -420,7 +428,7 @@ jobs:
               and concurrent_tasks != multiprocessing.cpu_count() * 2
           ):
               raise SystemExit("OQ3.13 concurrent_tasks default resolution drifted")
-          with open("/stage/resolved-runtime.json", "w", encoding="utf-8") as handle:
+          with open("/receipts/resolved-runtime.json", "w", encoding="utf-8") as handle:
               json.dump(resolved, handle, sort_keys=True, separators=(",", ":"))
           PY
 
@@ -431,11 +439,13 @@ jobs:
         run: |
           set -euo pipefail
           STAGE_ROOT="$RUNNER_TEMP/esrm20-stage"
+          RECEIPT_ROOT="$RUNNER_TEMP/oq313-runtime-receipts"
           docker run --rm --user 0:0 --entrypoint python \
             -e OC_OQ313_REQUEST_BODY \
             -e PYTHONPATH=/repo \
             -v "$GITHUB_WORKSPACE:/repo:ro" \
             -v "$STAGE_ROOT:/stage" \
+            -v "$RECEIPT_ROOT:/receipts:ro" \
             -w /stage \
             "$EXEC_IMAGE" \
             -m scripts.run_esrm20_kosovo_residential_ebrisk_openquake313_action \
@@ -443,8 +453,8 @@ jobs:
             --expected-issue 609 \
             --execution-sha "$EXECUTION_SHA" \
             --source-group1-config /stage/Configuration_files/config_ebrisk_Group1.ini \
-            --runtime-identity /stage/runtime-identity.json \
-            --resolved-runtime /stage/resolved-runtime.json \
+            --runtime-identity /receipts/runtime-identity.json \
+            --resolved-runtime /receipts/resolved-runtime.json \
             --output /stage/oq313-terminal.json
 
       - name: Re-fence bounded result and publish terminal evidence
