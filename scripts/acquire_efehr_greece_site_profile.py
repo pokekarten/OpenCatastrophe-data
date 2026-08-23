@@ -46,6 +46,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct script import path
 _CANONICAL_OPEN_FIXED = _open_fixed
 _CANONICAL_MONOTONIC = time.monotonic
 _CANONICAL_PROFILER = profile.profile_verified_greece_site_model
+_CANONICAL_PROVIDER_ROOT = "https://gitlab.seismo.ethz.ch"
 _CANONICAL_SOURCE_ISSUE = 285
 _CANONICAL_SOURCE_SCIENCE_ISSUE = 284
 _CANONICAL_RECEIPT_ISSUE = 285
@@ -81,6 +82,7 @@ class GreeceSiteProfileContractError(GreeceSiteProfileError):
 
 def _require_profile_contract() -> None:
     exact = (
+        (PROVIDER_ROOT, _CANONICAL_PROVIDER_ROOT, "provider root"),
         (profile.SOURCE_ISSUE, _CANONICAL_SOURCE_ISSUE, "source issue"),
         (profile.SOURCE_SCIENCE_ISSUE, _CANONICAL_SOURCE_SCIENCE_ISSUE, "science issue"),
         (profile.RECEIPT_ISSUE, _CANONICAL_RECEIPT_ISSUE, "receipt issue"),
