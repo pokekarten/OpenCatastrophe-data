@@ -27,6 +27,7 @@ class OQ313RuntimeProbeExportMountTests(unittest.TestCase):
         )
         cls.probe = text[probe_start:numerical_start]
         cls.numerical = text[numerical_start:publish_start]
+        cls.publish = text[publish_start:]
 
     def test_probe_keeps_stage_read_only_and_overlays_only_export_dir(self) -> None:
         probe = self.probe
@@ -83,6 +84,27 @@ class OQ313RuntimeProbeExportMountTests(unittest.TestCase):
         self.assertLess(numerical.index(stage_ro), numerical.index(export_rw))
         self.assertLess(numerical.index(export_rw), numerical.index(receipts_ro))
         self.assertNotIn('-v "$STAGE_ROOT:/stage" \\', numerical)
+
+    def test_terminal_result_has_separate_writable_mount_and_publish_path(self) -> None:
+        numerical = self.numerical
+        terminal_root = 'TERMINAL_ROOT="$RUNNER_TEMP/oq313-terminal-output"'
+        terminal_rw = '-v "$TERMINAL_ROOT:/result" \\'
+        output_arg = '--output /result/oq313-terminal.json'
+
+        self.assertIn(terminal_root, numerical)
+        self.assertIn('mkdir -p "$TERMINAL_ROOT"', numerical)
+        self.assertIn(terminal_rw, numerical)
+        self.assertIn(output_arg, numerical)
+        self.assertNotIn('--output /stage/oq313-terminal.json', numerical)
+        self.assertNotIn('--output /stage/Risk/oq313-terminal.json', numerical)
+        self.assertIn(
+            'Path(os.environ["RUNNER_TEMP"], "oq313-terminal-output", "oq313-terminal.json")',
+            self.publish,
+        )
+        self.assertNotIn(
+            'Path(os.environ["RUNNER_TEMP"], "esrm20-stage", "oq313-terminal.json")',
+            self.publish,
+        )
 
 
 if __name__ == "__main__":
