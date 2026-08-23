@@ -19,6 +19,7 @@ def _valid_payload() -> tuple[bytes, dict[str, object]]:
             {
                 "event_id": 7,
                 "rup_id": 11,
+                "rlz_id": 2,
                 "loss_f32_be_hex": "3f800000",
                 "variance_f32_be_hex": "00000000",
             }
@@ -59,6 +60,7 @@ class OQ313NumericalReceiptSchemaGateTests(unittest.TestCase):
             expected_concurrent_tasks=2,
         )
         self.assertEqual(document["quantity"]["unit"], "EUR")
+        self.assertEqual(document["rows"][0]["rlz_id"], 2)
         self.assertEqual(observed_identity, identity)
 
     def test_extra_top_level_field_fails_closed(self) -> None:
