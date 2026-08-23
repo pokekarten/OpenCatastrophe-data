@@ -76,12 +76,19 @@ jobs:
       skip: ${{ steps.dedup.outputs.skip }}
       result_json: ${{ steps.result.outputs.result_json }}
     steps:
-      - name: Checkout exact trusted execution commit
+      - name: Checkout current trusted default branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 1
           persist-credentials: false
+
+      - name: Re-fence privileged checkout to validated main SHA
+        env:
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXECUTION_SHA"
 
       - name: Select earliest canonical trusted request and deduplicate terminal
         id: dedup
@@ -216,16 +223,23 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
+      contents: read
       issues: write
     steps:
       - name: Re-fence Greece result and publish without repository checkout
         env:
           GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
           RESULT_JSON: ${{ needs.execute-site-profile.outputs.result_json }}
           RESULT_MARKER: "<!-- oc-eq1-esrm20-greece-site-profile-result-v1 -->"
         run: |
           set -euo pipefail
+          LATEST_SHA="$(
+            gh api "repos/$GITHUB_REPOSITORY/commits/$DEFAULT_BRANCH" --jq '.sha'
+          )"
+          test "$LATEST_SHA" = "$EXECUTION_SHA"
+
           printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
             .schema_version == "oc-esrm20-greece-site-profile-result-v1" and
             .action == "esrm20_greece_site_model_structure_profile" and
