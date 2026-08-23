@@ -1,0 +1,162 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Athens Sibling Receipts
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-athens-sibling-receipts-${{ github.repository }}-${{ github.event.issue.number == 285 && github.event.comment.user.login == github.event.repository.owner.login && github.event.comment.author_association == 'OWNER' && contains(github.event.comment.body, '<!-- oc-eq1-esrm20-athens-sibling-receipts-request-v1 -->') && 'trusted-request' || format('noise-{0}', github.event.comment.id) }}
+  cancel-in-progress: false
+
+jobs:
+  execute-athens-sibling-receipts:
+    name: Receipt exact trusted-main Athens sibling inputs
+    if: >-
+      github.event.issue.number == 285 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-athens-sibling-receipts-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.run.outputs.execution_sha }}
+      skip: ${{ steps.run.outputs.skip }}
+      result_json: ${{ steps.run.outputs.result_json }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Validate, deduplicate, and receipt fixed siblings
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OC_ATHENS_SIBLING_RECEIPT_REQUEST: ${{ github.event.comment.body }}
+          RESULT_PATH: ${{ runner.temp }}/esrm20-athens-sibling-receipts.json
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python scripts/run_efehr_esrm20_athens_sibling_receipts_action.py \
+            --comment-body-env OC_ATHENS_SIBLING_RECEIPT_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --token-env GH_TOKEN \
+            --output "$RESULT_PATH"
+          STATUS="$(jq -r '.status' "$RESULT_PATH")"
+          test "$STATUS" = "pass" -o "$STATUS" = "blocked" -o "$STATUS" = "duplicate"
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+          if test "$STATUS" = "duplicate"; then
+            test "$(jq -r 'keys == ["duplicate_result_comment_id","status"] and .status == "duplicate" and (.duplicate_result_comment_id | type) == "number" and .duplicate_result_comment_id >= 1' "$RESULT_PATH")" = "true"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "result_json=" >> "$GITHUB_OUTPUT"
+          else
+            RESULT_JSON="$(jq -cS . "$RESULT_PATH")"
+            test -n "$RESULT_JSON"
+            test "$(printf '%s' "$RESULT_JSON" | wc -c)" -le 24000
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish-athens-sibling-receipts:
+    name: Publish bounded Athens sibling byte receipts
+    needs: [execute-athens-sibling-receipts]
+    if: >-
+      needs.execute-athens-sibling-receipts.result == 'success' &&
+      needs.execute-athens-sibling-receipts.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.execute-athens-sibling-receipts.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-athens-sibling-receipts.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-athens-sibling-receipts-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            def receipt($role; $path):
+              keys == [
+                "byte_count","content_type","etag","external_bytes_persisted",
+                "provider_file_bytes_read","publication_authorized","repository_path",
+                "retrieved_at","role","sha256"
+              ] and
+              .role == $role and .repository_path == $path and
+              (.retrieved_at | type == "string" and length >= 1) and
+              (.byte_count | type == "number" and . == floor and . >= 1 and . <= 67108864) and
+              (.sha256 | type == "string" and test("^[0-9a-f]{64}$")) and
+              (.content_type == null or (.content_type | type == "string")) and
+              (.etag == null or (.etag | type == "string")) and
+              .provider_file_bytes_read == true and
+              .external_bytes_persisted == false and
+              .publication_authorized == false;
+            keys == [
+              "benchmark_agreement_inspected","commit_sha","consumer_event_id",
+              "content_semantics_verified","dataset_id","execution_sha","external_bytes_persisted",
+              "failure_class","holdout_status_established","independent_validation_established",
+              "model_use_authorized","project_id","project_path","provider_file_bytes_read",
+              "provider_file_content_profiled","provider_host","publication_authorized",
+              "receipts","release_tag","schema_version","source_issue","status","target_sha"
+            ] and
+            .schema_version == "oc-esrm20-athens-sibling-receipts-result-v1" and
+            .source_issue == 285 and .target_sha == $sha and .execution_sha == $sha and
+            .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+            .provider_host == "gitlab.seismo.ethz.ch" and
+            .project_id == 269 and .project_path == "efehr/esrm20" and
+            .release_tag == "v1.0" and
+            .commit_sha == "05f83bbc9df81d02ee8ddb1801d9d781355ce783" and
+            .consumer_event_id == "Greece_07-9-1999" and
+            .provider_file_content_profiled == false and
+            .content_semantics_verified == false and
+            .benchmark_agreement_inspected == false and
+            .independent_validation_established == false and
+            .holdout_status_established == false and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and
+            .model_use_authorized == false and
+            (if .status == "pass" then
+              .failure_class == null and .provider_file_bytes_read == true and
+              (.receipts | type == "array" and length == 3) and
+              (.receipts[0] | receipt("exposure"; "Exposure/OQ_Exposure_Input_Greece.xml")) and
+              (.receipts[1] | receipt("site_model"; "Vs30/Site_model_Greece.xml")) and
+              (.receipts[2] | receipt(
+                "exposure_vulnerability_mapping";
+                "Vulnerability/esrm20_exposure_vulnerability_mapping.csv"
+              ))
+            elif .status == "blocked" then
+              (
+                .failure_class == "athens_sibling_receipt_failure" or
+                .failure_class == "ledger_incomplete"
+              ) and
+              .receipts == null and .provider_file_bytes_read == null
+            else false end)
+          ' >/dev/null
+
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          test "$(printf '%s' "$BODY" | wc -c)" -le 24000
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/athens-sibling-comment.json"
+          gh api \
+            --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/285/comments" \
+            --input "$RUNNER_TEMP/athens-sibling-comment.json"
