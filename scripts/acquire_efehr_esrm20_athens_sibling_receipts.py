@@ -534,7 +534,10 @@ def validate_result(value: object) -> dict[str, Any]:
         acquisition["schema_version"] = _CANONICAL_SCHEMA_VERSION
         validate_acquisition(acquisition)
     elif value["status"] == "blocked":
-        if value["failure_class"] != "athens_sibling_receipt_failure":
+        if value["failure_class"] not in {
+            "athens_sibling_receipt_failure",
+            "ledger_incomplete",
+        }:
             raise AthensSiblingReceiptError("blocked result failure class drifted")
         if (
             value["receipts"] is not None
