@@ -1,0 +1,308 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Greece Site Structure Profile
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: >-
+    esrm20-greece-site-profile-${{ github.repository }}-${{
+      github.event.issue.number == 661 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-greece-site-profile-request-v1 -->') &&
+      'trusted-request' || format('noise-{0}', github.event.comment.id)
+    }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main Greece site-profile request
+    if: >-
+      github.event.issue.number == 661 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-greece-site-profile-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_GREECE_SITE_PROFILE_REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.run_esrm20_greece_site_profile_action \
+            --comment-body-env OC_GREECE_SITE_PROFILE_REQUEST_BODY \
+            --expected-issue 661 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-site-profile:
+    name: Execute bounded Greece site structure profile
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout current trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Re-fence privileged checkout to validated main SHA
+        env:
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXECUTION_SHA"
+
+      - name: Select earliest canonical trusted request and deduplicate terminal
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          CURRENT_REQUEST_COMMENT_ID: ${{ github.event.comment.id }}
+          REPOSITORY_OWNER: ${{ github.event.repository.owner.login }}
+        run: |
+          set -euo pipefail
+          gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/issues/661/comments?per_page=100" \
+            > "$RUNNER_TEMP/greece-site-profile-comments.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from scripts import run_esrm20_greece_site_profile_action as subject
+
+          execution_sha = os.environ["EXECUTION_SHA"]
+          current_comment_id = int(os.environ["CURRENT_REQUEST_COMMENT_ID"])
+          owner = os.environ["REPOSITORY_OWNER"]
+          pages = json.loads(
+              Path(
+                  os.environ["RUNNER_TEMP"],
+                  "greece-site-profile-comments.json",
+              ).read_text(encoding="utf-8")
+          )
+          comments = [item for page in pages for item in page]
+
+          canonical_requests = []
+          for comment in comments:
+              body = comment.get("body")
+              if not isinstance(body, str) or subject.REQUEST_MARKER not in body:
+                  continue
+              if comment.get("user", {}).get("login") != owner:
+                  continue
+              if comment.get("author_association") != "OWNER":
+                  continue
+              try:
+                  subject.validate_request(
+                      body,
+                      expected_issue=661,
+                      execution_sha=execution_sha,
+                  )
+              except subject.GreeceSiteProfileActionError:
+                  continue
+              comment_id = comment.get("id")
+              created_at = comment.get("created_at")
+              if type(comment_id) is not int or not isinstance(created_at, str):
+                  raise SystemExit(
+                      "canonical Greece site-profile request identity is incomplete"
+                  )
+              canonical_requests.append((created_at, comment_id))
+
+          if not canonical_requests:
+              raise SystemExit(
+                  "canonical Greece site-profile request is absent from issue history"
+              )
+          winner_comment_id = min(canonical_requests)[1]
+          if current_comment_id != winner_comment_id:
+              raise SystemExit(
+                  "duplicate trusted request is not earliest canonical OWNER request"
+              )
+
+          found = False
+          for comment in comments:
+              body = comment.get("body")
+              if not isinstance(body, str) or subject.RESULT_MARKER not in body:
+                  continue
+              if comment.get("user", {}).get("login") != subject.TRUSTED_RESULT_LOGIN:
+                  continue
+              if subject._parse_trusted_terminal_result(
+                  body,
+                  execution_sha=execution_sha,
+              ):
+                  found = True
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if found else 'false'}\n")
+          PY
+
+      - name: Run exact frozen Greece site-profile worker
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_GREECE_SITE_PROFILE_REQUEST_BODY: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/greece-site-profile-result.json
+        run: |
+          set -euo pipefail
+          python -m scripts.run_esrm20_greece_site_profile_action \
+            --comment-body-env OC_GREECE_SITE_PROFILE_REQUEST_BODY \
+            --expected-issue 661 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from scripts import run_esrm20_greece_site_profile_action as subject
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          subject._validate_terminal_result(result, execution_sha=os.environ["EXECUTION_SHA"])
+          PY
+
+      - name: Export bounded result to publisher
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        env:
+          RESULT_PATH: ${{ runner.temp }}/greece-site-profile-result.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-site-profile:
+    name: Publish bounded Greece site structure evidence
+    needs: [validate-request, execute-site-profile]
+    if: >-
+      needs.execute-site-profile.result == 'success' &&
+      needs.execute-site-profile.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Re-fence Greece result and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-site-profile.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-greece-site-profile-result-v1 -->"
+        run: |
+          set -euo pipefail
+          LATEST_SHA="$(
+            gh api "repos/$GITHUB_REPOSITORY/commits/$DEFAULT_BRANCH" --jq '.sha'
+          )"
+          test "$LATEST_SHA" = "$EXECUTION_SHA"
+
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-greece-site-profile-result-v1" and
+            .action == "esrm20_greece_site_model_structure_profile" and
+            .source_issue == 661 and
+            .content_issue == 285 and
+            .source_science_issue == 284 and
+            .receipt_issue == 285 and
+            .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+            .target_sha == $sha and
+            .execution_sha == $sha and
+            .site_identity.project_id == 269 and
+            .site_identity.project_path == "efehr/esrm20" and
+            .site_identity.release == "v1.0" and
+            .site_identity.commit_sha == "05f83bbc9df81d02ee8ddb1801d9d781355ce783" and
+            .site_identity.consumer_event == "Greece_07-9-1999" and
+            .site_identity.repository_path == "Vs30/Site_model_Greece.xml" and
+            .site_identity.receipt_comment_id == 5388640521 and
+            .site_identity.receipt_execution_sha == "9bf3fee5d80431dfa873ee5ae03e07891e6f154a" and
+            .site_identity.receipt_retrieved_at == "2026-08-23T21:47:08Z" and
+            .site_identity.byte_count == 235015 and
+            .site_identity.sha256 == "613938c3f9e63fb94490ba4514ef7faf4bf3141b86c33fdd5eb7f21f8c175f85" and
+            (
+              (
+                .status == "pass" and
+                .failure_class == null and
+                .profile.schema_version == "oc-esrm20-greece-site-content-profile-v0" and
+                .profile.source_issue == 285 and
+                .profile.receipt_issue == 285 and
+                .profile.consumer_event == "Greece_07-9-1999" and
+                .profile.repository_path == "Vs30/Site_model_Greece.xml" and
+                .profile.byte_count == 235015 and
+                .profile.sha256 == "613938c3f9e63fb94490ba4514ef7faf4bf3141b86c33fdd5eb7f21f8c175f85" and
+                .profile.profile.raw_xml_returned == false and
+                .profile.profile.raw_attribute_values_returned == false and
+                .profile.profile.crs_coordinate_semantics_verified == false and
+                .profile.profile.site_parameter_units_verified == false and
+                .profile.profile.missingness_semantics_verified == false and
+                .profile.profile.gsim_site_parameter_sufficiency_verified == false and
+                .profile.profile.site_adjusted_reference_authorized == false and
+                .profile.external_bytes_persisted == false and
+                .profile.publication_authorized == false and
+                .profile.model_use_authorized == false
+              ) or
+              (
+                .status == "blocked" and
+                (.failure_class == "acquisition_failure" or .failure_class == "profile_failure") and
+                .profile == null
+              )
+            ) and
+            .crs_coordinate_semantics_verified == false and
+            .site_parameter_units_verified == false and
+            .missingness_semantics_verified == false and
+            .gsim_site_parameter_sufficiency_verified == false and
+            .site_adjusted_reference_authorized == false and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and
+            .model_use_authorized == false
+          ' >/dev/null
+
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/greece-site-profile-comment.json"
+          gh api \
+            --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/661/comments" \
+            --input "$RUNNER_TEMP/greece-site-profile-comment.json"
