@@ -11,7 +11,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: esrm20-greece-site-profile-${{ github.repository }}
+  group: >-
+    esrm20-greece-site-profile-${{ github.repository }}-${{
+      github.event.issue.number == 661 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-greece-site-profile-request-v1 -->') &&
+      'trusted-request' || format('noise-{0}', github.event.comment.id)
+    }}
   cancel-in-progress: false
 
 jobs:
@@ -76,24 +83,86 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Prove complete issue-local dedup before provider access
+      - name: Select earliest canonical trusted request and deduplicate terminal
         id: dedup
         env:
           GH_TOKEN: ${{ github.token }}
           EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          CURRENT_REQUEST_COMMENT_ID: ${{ github.event.comment.id }}
+          REPOSITORY_OWNER: ${{ github.event.repository.owner.login }}
         run: |
           set -euo pipefail
+          gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/issues/661/comments?per_page=100" \
+            > "$RUNNER_TEMP/greece-site-profile-comments.json"
           python - <<'PY'
+          import json
           import os
+          from pathlib import Path
+
           from scripts import run_esrm20_greece_site_profile_action as subject
 
-          skip = subject.has_terminal_greece_site_profile_result(
-              repository=os.environ["GITHUB_REPOSITORY"],
-              token=os.environ["GH_TOKEN"],
-              execution_sha=os.environ["EXECUTION_SHA"],
+          execution_sha = os.environ["EXECUTION_SHA"]
+          current_comment_id = int(os.environ["CURRENT_REQUEST_COMMENT_ID"])
+          owner = os.environ["REPOSITORY_OWNER"]
+          pages = json.loads(
+              Path(
+                  os.environ["RUNNER_TEMP"],
+                  "greece-site-profile-comments.json",
+              ).read_text(encoding="utf-8")
           )
+          comments = [item for page in pages for item in page]
+
+          canonical_requests = []
+          for comment in comments:
+              body = comment.get("body")
+              if not isinstance(body, str) or subject.REQUEST_MARKER not in body:
+                  continue
+              if comment.get("user", {}).get("login") != owner:
+                  continue
+              if comment.get("author_association") != "OWNER":
+                  continue
+              try:
+                  subject.validate_request(
+                      body,
+                      expected_issue=661,
+                      execution_sha=execution_sha,
+                  )
+              except subject.GreeceSiteProfileActionError:
+                  continue
+              comment_id = comment.get("id")
+              created_at = comment.get("created_at")
+              if type(comment_id) is not int or not isinstance(created_at, str):
+                  raise SystemExit(
+                      "canonical Greece site-profile request identity is incomplete"
+                  )
+              canonical_requests.append((created_at, comment_id))
+
+          if not canonical_requests:
+              raise SystemExit(
+                  "canonical Greece site-profile request is absent from issue history"
+              )
+          winner_comment_id = min(canonical_requests)[1]
+          if current_comment_id != winner_comment_id:
+              raise SystemExit(
+                  "duplicate trusted request is not earliest canonical OWNER request"
+              )
+
+          found = False
+          for comment in comments:
+              body = comment.get("body")
+              if not isinstance(body, str) or subject.RESULT_MARKER not in body:
+                  continue
+              if comment.get("user", {}).get("login") != subject.TRUSTED_RESULT_LOGIN:
+                  continue
+              if subject._parse_trusted_terminal_result(
+                  body,
+                  execution_sha=execution_sha,
+              ):
+                  found = True
+
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
-              handle.write(f"skip={'true' if skip else 'false'}\n")
+              handle.write(f"skip={'true' if found else 'false'}\n")
           PY
 
       - name: Run exact frozen Greece site-profile worker
