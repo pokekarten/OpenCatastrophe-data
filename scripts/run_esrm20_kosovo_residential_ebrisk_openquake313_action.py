@@ -56,6 +56,17 @@ _REQUEST_FIELDS = {
     "dataset_id",
     "requester",
 }
+_NUMERICAL_RECEIPT_FIELDS = {
+    "experiment_label",
+    "insurance_scope",
+    "openquake",
+    "quantity",
+    "rows",
+    "runtime",
+    "schema_version",
+    "selection",
+    "source_dataset",
+}
 
 _AUTHORITY_FALSE_FIELDS = (
     "historical_environment_verified",
@@ -307,9 +318,28 @@ def _project_exact_datastore(path: Path) -> tuple[bytes, dict[str, Any]]:
             dstore.close()
 
 
+def _adapter_concurrent_tasks(result: object) -> int:
+    if type(result) is not dict:
+        raise KosovoResidentialOQ313ActionError("canonical result must be an object")
+    adapter = result.get("adapter_result")
+    if type(adapter) is not dict:
+        raise KosovoResidentialOQ313ActionError("adapter result is missing")
+    resolved = adapter.get("resolved_runtime")
+    if type(resolved) is not dict:
+        raise KosovoResidentialOQ313ActionError("adapter resolved runtime is missing")
+    tasks = resolved.get("concurrent_tasks")
+    if type(tasks) is not int or tasks < 0:
+        raise KosovoResidentialOQ313ActionError(
+            "adapter resolved runtime concurrent_tasks drifted"
+        )
+    return tasks
+
+
 def _validate_numerical_receipt(
     payload: object,
     receipt: object,
+    *,
+    expected_concurrent_tasks: int,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     if type(payload) is not bytes or not payload:
         raise KosovoResidentialOQ313ActionError(
@@ -340,10 +370,11 @@ def _validate_numerical_receipt(
             "numerical receipt payload is not UTF-8"
         ) from exc
     document = _load_json_text(text, label="numerical receipt")
-    if type(document) is not dict:
+    if type(document) is not dict or set(document) != _NUMERICAL_RECEIPT_FIELDS:
         raise KosovoResidentialOQ313ActionError(
-            "numerical receipt must be an object"
+            "numerical receipt top-level fields drifted"
         )
+
     exact = (
         ("schema_version", numerical_contract.SCHEMA_VERSION),
         ("experiment_label", numerical_contract.EXPERIMENT_LABEL),
@@ -356,18 +387,79 @@ def _validate_numerical_receipt(
             raise KosovoResidentialOQ313ActionError(
                 f"numerical receipt {field} drifted"
             )
+
     openquake = document.get("openquake")
-    if type(openquake) is not dict:
+    quantity = document.get("quantity")
+    runtime = document.get("runtime")
+    selection = document.get("selection")
+    rows = document.get("rows")
+    if type(openquake) is not dict or set(openquake) != {"commit_sha", "version"}:
         raise KosovoResidentialOQ313ActionError(
-            "numerical receipt OpenQuake identity is missing"
+            "numerical receipt OpenQuake fields drifted"
         )
-    if openquake.get("version") != runner.OPENQUAKE_VERSION:
+    if type(quantity) is not dict or set(quantity) != {
+        "loss_type",
+        "minimum_asset_loss_structural",
+        "name",
+        "threshold_predicate",
+        "unit",
+    }:
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt quantity fields drifted"
+        )
+    if type(runtime) is not dict or set(runtime) != {"concurrent_tasks"}:
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt runtime fields drifted"
+        )
+    if type(selection) is not dict or set(selection) != {
+        "portfolio_agg_id",
+        "structural_loss_id",
+    }:
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt selection fields drifted"
+        )
+    if type(rows) is not list or not rows:
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt rows must be a non-empty list"
+        )
+
+    if openquake["version"] != runner.OPENQUAKE_VERSION:
         raise KosovoResidentialOQ313ActionError(
             "numerical receipt OpenQuake version drifted"
         )
-    if openquake.get("commit_sha") != runner.OPENQUAKE_COMMIT_SHA:
+    if openquake["commit_sha"] != runner.OPENQUAKE_COMMIT_SHA:
         raise KosovoResidentialOQ313ActionError(
             "numerical receipt OpenQuake commit drifted"
+        )
+    if runtime["concurrent_tasks"] != expected_concurrent_tasks:
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt concurrent_tasks drifted from adapter runtime"
+        )
+
+    try:
+        regenerated_payload, regenerated_identity = (
+            numerical_contract.project_oq313_risk_by_event_receipt(
+                rows,
+                portfolio_agg_id=selection["portfolio_agg_id"],
+                structural_loss_id=selection["structural_loss_id"],
+                concurrent_tasks=runtime["concurrent_tasks"],
+                loss_type=quantity["loss_type"],
+                unit=quantity["unit"],
+                minimum_asset_loss_structural=quantity[
+                    "minimum_asset_loss_structural"
+                ],
+                experiment_label=document["experiment_label"],
+                policy_present=False,
+                insured_loss_present=False,
+            )
+        )
+    except numerical_contract.OQ313RiskByEventReceiptError as exc:
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt violates the reviewed projector contract"
+        ) from exc
+    if regenerated_payload != payload or regenerated_identity != receipt:
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt canonical projector contract drifted"
         )
     return document, dict(receipt)
 
@@ -450,6 +542,7 @@ def run_action_with_numerical_receipt(
             numerical_document, numerical_identity = _validate_numerical_receipt(
                 numerical_payload,
                 numerical_identity,
+                expected_concurrent_tasks=_adapter_concurrent_tasks(result),
             )
         except KosovoResidentialOQ313ActionError:
             return _block_numerical_receipt(
