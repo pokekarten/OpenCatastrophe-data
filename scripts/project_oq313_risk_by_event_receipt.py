@@ -13,7 +13,7 @@ import struct
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-SCHEMA_VERSION = "oc-oq313-risk-by-event-receipt-v1"
+SCHEMA_VERSION = "oc-oq313-risk-by-event-receipt-v2"
 OPENQUAKE_VERSION = "3.13.0"
 OPENQUAKE_COMMIT_SHA = "16dd69ecea0c6dcaf49c22ca12edc9da3f024889"
 SOURCE_DATASET = "risk_by_event"
@@ -23,7 +23,9 @@ QUANTITY = "thresholded_ground_up_structural_replacement_cost_loss"
 UNIT = "EUR"
 MINIMUM_ASSET_LOSS_STRUCTURAL = 2000
 _THRESHOLD_PREDICATE = "asset_event_loss > minimum_asset_loss_structural"
-_ROW_FIELDS = frozenset({"event_id", "rup_id", "loss_f32_be_hex", "variance_f32_be_hex"})
+_ROW_FIELDS = frozenset(
+    {"event_id", "rup_id", "rlz_id", "loss_f32_be_hex", "variance_f32_be_hex"}
+)
 _F32_HEX = re.compile(r"[0-9a-f]{8}")
 
 
@@ -145,6 +147,9 @@ def project_oq313_risk_by_event_receipt(
         rup_id = _require_uint(
             row["rup_id"], label=f"row {index} rup_id", maximum=(1 << 32) - 1
         )
+        rlz_id = _require_uint(
+            row["rlz_id"], label=f"row {index} rlz_id", maximum=(1 << 16) - 1
+        )
         loss_hex = _require_f32_hex(
             row["loss_f32_be_hex"], label=f"row {index} loss_f32_be_hex"
         )
@@ -155,6 +160,7 @@ def project_oq313_risk_by_event_receipt(
             {
                 "event_id": event_id,
                 "rup_id": rup_id,
+                "rlz_id": rlz_id,
                 "loss_f32_be_hex": loss_hex,
                 "variance_f32_be_hex": variance_hex,
             }
