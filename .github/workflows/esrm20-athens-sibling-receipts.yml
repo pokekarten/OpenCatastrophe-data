@@ -144,7 +144,10 @@ jobs:
                 "Vulnerability/esrm20_exposure_vulnerability_mapping.csv"
               ))
             elif .status == "blocked" then
-              .failure_class == "athens_sibling_receipt_failure" and
+              (
+                .failure_class == "athens_sibling_receipt_failure" or
+                .failure_class == "ledger_incomplete"
+              ) and
               .receipts == null and .provider_file_bytes_read == null
             else false end)
           ' >/dev/null
