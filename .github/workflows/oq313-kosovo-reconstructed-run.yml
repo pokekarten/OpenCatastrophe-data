@@ -83,10 +83,12 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$EXECUTION_SHA"
 
-      - name: Deduplicate trusted terminal result before external access
+      - name: Select earliest canonical trusted request and deduplicate terminal
         id: dedup
         env:
           GH_TOKEN: ${{ github.token }}
+          CURRENT_REQUEST_COMMENT_ID: ${{ github.event.comment.id }}
+          REPOSITORY_OWNER: ${{ github.event.repository.owner.login }}
         run: |
           set -euo pipefail
           gh api --paginate --slurp \
@@ -97,20 +99,57 @@ jobs:
           import os
           from pathlib import Path
 
-          marker = "<!-- oc-eq1-esrm20-kosovo-oq313-run-result-v1 -->"
+          from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313_action as request_contract
+
+          request_marker = request_contract.REQUEST_MARKER
+          result_marker = "<!-- oc-eq1-esrm20-kosovo-oq313-run-result-v1 -->"
           execution_sha = os.environ["EXECUTION_SHA"]
+          current_comment_id = int(os.environ["CURRENT_REQUEST_COMMENT_ID"])
+          owner = os.environ["REPOSITORY_OWNER"]
           pages = json.loads(Path(os.environ["RUNNER_TEMP"], "oq313-comments.json").read_text())
           comments = [item for page in pages for item in page]
+
+          canonical_requests = []
+          for comment in comments:
+              body = comment.get("body")
+              if not isinstance(body, str) or request_marker not in body:
+                  continue
+              if comment.get("user", {}).get("login") != owner:
+                  continue
+              if comment.get("author_association") != "OWNER":
+                  continue
+              try:
+                  request_contract.validate_request(
+                      body,
+                      expected_issue=609,
+                      execution_sha=execution_sha,
+                  )
+              except request_contract.KosovoResidentialOQ313ActionError:
+                  continue
+              comment_id = comment.get("id")
+              created_at = comment.get("created_at")
+              if type(comment_id) is not int or not isinstance(created_at, str):
+                  raise SystemExit("canonical trusted request identity is incomplete")
+              canonical_requests.append((created_at, comment_id))
+
+          if not canonical_requests:
+              raise SystemExit("canonical trusted request is absent from issue history")
+          winner_comment_id = min(canonical_requests)[1]
+          if current_comment_id != winner_comment_id:
+              raise SystemExit(
+                  "duplicate trusted request is not earliest canonical OWNER request"
+              )
+
           found = False
           for comment in comments:
               body = comment.get("body")
-              if not isinstance(body, str) or marker not in body:
+              if not isinstance(body, str) or result_marker not in body:
                   continue
               if comment.get("user", {}).get("login") != "github-actions[bot]":
                   continue
-              if body.count(marker) != 1:
+              if body.count(result_marker) != 1:
                   raise SystemExit("trusted terminal marker is not canonical")
-              before, after = body.split(marker, 1)
+              before, after = body.split(result_marker, 1)
               if before.strip() or not after.strip():
                   raise SystemExit("trusted terminal envelope is not canonical")
               result = json.loads(after.strip())
