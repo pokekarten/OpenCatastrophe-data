@@ -24,23 +24,33 @@ class GreeceSiteProfileWorkflowTests(unittest.TestCase):
         self.assertNotIn("pull_request:", text)
         self.assertNotIn("workflow_dispatch:", text)
 
-    def test_execution_is_fenced_to_checked_out_default_branch_sha(self):
+    def test_execution_is_refenced_to_current_default_branch(self):
         text = WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("ref: ${{ github.event.repository.default_branch }}", text)
+        self.assertGreaterEqual(
+            text.count("ref: ${{ github.event.repository.default_branch }}"),
+            2,
+        )
         self.assertIn('EXECUTION_SHA="$(git rev-parse HEAD)"', text)
         self.assertIn('--execution-sha "$EXECUTION_SHA"', text)
-        self.assertIn(
+        self.assertNotIn(
             "ref: ${{ needs.validate-request.outputs.execution_sha }}",
             text,
         )
+        self.assertIn(
+            "Re-fence privileged checkout to validated main SHA",
+            text,
+        )
+        self.assertIn('test "$(git rev-parse HEAD)" = "$EXECUTION_SHA"', text)
         self.assertIn("persist-credentials: false", text)
 
     def test_earliest_canonical_request_and_terminal_dedup_precede_provider(self):
         text = WORKFLOW.read_text(encoding="utf-8")
+        refence = text.index("Re-fence privileged checkout to validated main SHA")
         guard = text.index(
             "Select earliest canonical trusted request and deduplicate terminal"
         )
         execute = text.index("Run exact frozen Greece site-profile worker")
+        self.assertLess(refence, guard)
         self.assertLess(guard, execute)
         self.assertIn(
             "CURRENT_REQUEST_COMMENT_ID: ${{ github.event.comment.id }}",
@@ -76,8 +86,14 @@ class GreeceSiteProfileWorkflowTests(unittest.TestCase):
         self.assertEqual(text.count(module), 2)
         self.assertNotIn(direct, text)
 
-    def test_publisher_rechecks_exact_receipt_identity_and_authority_ceiling(self):
+    def test_publisher_refences_current_main_and_exact_receipt_authority(self):
         text = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}", text)
+        self.assertIn(
+            'gh api "repos/$GITHUB_REPOSITORY/commits/$DEFAULT_BRANCH" --jq \' .sha\'',
+            text.replace("--jq '.sha'", "--jq ' .sha'"),
+        )
+        self.assertIn('test "$LATEST_SHA" = "$EXECUTION_SHA"', text)
         for required in (
             ".source_issue == 661",
             ".content_issue == 285",
@@ -96,6 +112,13 @@ class GreeceSiteProfileWorkflowTests(unittest.TestCase):
         ):
             with self.subTest(required=required):
                 self.assertIn(required, text)
+
+    def test_publisher_has_no_repository_checkout(self):
+        text = WORKFLOW.read_text(encoding="utf-8")
+        publisher = text.split("  publish-site-profile:", 1)[1]
+        self.assertNotIn("actions/checkout", publisher)
+        self.assertIn("contents: read", publisher)
+        self.assertIn("issues: write", publisher)
 
     def test_no_caller_selectable_provider_or_path_input_exists(self):
         text = WORKFLOW.read_text(encoding="utf-8")
