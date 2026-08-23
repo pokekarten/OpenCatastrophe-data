@@ -53,7 +53,7 @@ jobs:
         run: |
           set -euo pipefail
           EXECUTION_SHA="$(git rev-parse HEAD)"
-          python scripts/run_efehr_esrm20_athens_sibling_receipts_action.py \
+          python -m scripts.run_efehr_esrm20_athens_sibling_receipts_action \
             --comment-body-env OC_ATHENS_SIBLING_RECEIPT_REQUEST \
             --expected-issue 285 \
             --execution-sha "$EXECUTION_SHA" \
