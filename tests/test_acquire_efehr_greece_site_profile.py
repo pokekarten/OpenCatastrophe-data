@@ -188,6 +188,14 @@ class GreeceSiteProfileAcquisitionTests(unittest.TestCase):
         ):
             subject._validate_profile_result(result)
 
+    def test_provider_root_is_frozen(self):
+        with mock.patch.object(subject, "PROVIDER_ROOT", "https://example.invalid"):
+            with self.assertRaisesRegex(
+                subject.GreeceSiteProfileContractError,
+                "provider root",
+            ):
+                subject._require_profile_contract()
+
     def test_merged_profiler_receipt_identity_is_frozen(self):
         with mock.patch.object(subject.profile, "EXPECTED_BYTE_COUNT", 235_016):
             with self.assertRaisesRegex(
