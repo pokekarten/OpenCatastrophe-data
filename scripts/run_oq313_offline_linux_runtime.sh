@@ -25,6 +25,8 @@ LOADER="$ROOTFS/lib/x86_64-linux-gnu/ld-2.31.so"
 PYTHON="$ROOTFS/usr/local/bin/python3.8"
 LIBS="$ROOTFS/usr/local/lib:$ROOTFS/lib/x86_64-linux-gnu:$ROOTFS/usr/lib/x86_64-linux-gnu"
 SITE="$ROOTFS/opt/openquake/lib/python3.8/site-packages"
+OQ_SOURCE="$ROOTFS/oq-engine"
+OC_SOURCE="$ROOTFS/opencatastrophe-data"
 
 for required in \
   "$LOADER" \
@@ -32,8 +34,8 @@ for required in \
   "$SITE" \
   "$ROOTFS/usr/bin/git" \
   "$ROOTFS/opt/openquake/bin/oq" \
-  "$ROOTFS/oq-engine/openquake" \
-  "$ROOTFS/opencatastrophe-data/scripts"; do
+  "$OQ_SOURCE/openquake" \
+  "$OC_SOURCE/scripts"; do
   test -e "$required" || {
     echo "missing offline runtime path: $required" >&2
     exit 2
@@ -55,7 +57,7 @@ exec /usr/bin/env \
   HOME="$HOME_DIR" \
   PATH="$BIN_DIR:/usr/bin:/bin" \
   PYTHONHOME="$ROOTFS/usr/local" \
-  PYTHONPATH="/oq-engine:$SITE" \
+  PYTHONPATH="$OQ_SOURCE:$SITE" \
   OQ_DISTRIBUTE=no \
   OPENBLAS_NUM_THREADS=1 \
   "$LOADER" --library-path "$LIBS" \
@@ -66,55 +68,26 @@ chmod +x "$BIN_DIR/git" "$BIN_DIR/oq"
 HOME="$HOME_DIR" "$BIN_DIR/git" config --global --unset-all safe.directory \
   >/dev/null 2>&1 || true
 HOME="$HOME_DIR" "$BIN_DIR/git" config --global --add safe.directory \
-  "$ROOTFS/oq-engine"
+  "$OQ_SOURCE"
 
 observed_commit="$(
-  HOME="$HOME_DIR" "$BIN_DIR/git" -C "$ROOTFS/oq-engine" rev-parse HEAD
+  HOME="$HOME_DIR" "$BIN_DIR/git" -C "$OQ_SOURCE" rev-parse HEAD
 )"
 if [[ "$observed_commit" != "$EXPECTED_OQ_COMMIT" ]]; then
   echo "offline OpenQuake source commit drifted: $observed_commit" >&2
   exit 2
 fi
 
-alias_created=false
-if [[ -L /oq-engine ]]; then
-  current_target="$(readlink -f /oq-engine)"
-  expected_target="$(readlink -f "$ROOTFS/oq-engine")"
-  if [[ "$current_target" != "$expected_target" ]]; then
-    echo "/oq-engine points at a different runtime" >&2
-    exit 2
-  fi
-elif [[ -e /oq-engine ]]; then
-  echo "/oq-engine already exists and is not this offline runtime" >&2
-  exit 2
-else
-  if ln -s "$ROOTFS/oq-engine" /oq-engine 2>/dev/null; then
-    alias_created=true
-  else
-    echo "cannot create /oq-engine source alias; bounded offline execution requires root permission on this host" >&2
-    exit 2
-  fi
-fi
-
-cleanup() {
-  if [[ "$alias_created" == true ]]; then
-    rm -f /oq-engine
-  fi
-}
-trap cleanup EXIT INT TERM
-
-HOME="$HOME_DIR" "$BIN_DIR/git" config --global --add safe.directory /oq-engine
-
 set +e
 /usr/bin/env \
   HOME="$HOME_DIR" \
   PATH="$BIN_DIR:/usr/bin:/bin" \
   PYTHONHOME="$ROOTFS/usr/local" \
-  PYTHONPATH="$ROOTFS/opencatastrophe-data:/oq-engine:$SITE" \
+  PYTHONPATH="$OC_SOURCE:$OQ_SOURCE:$SITE" \
+  OC_OQ313_ROOTFS="$ROOTFS" \
   OQ_DISTRIBUTE=no \
   OPENBLAS_NUM_THREADS=1 \
   "$LOADER" --library-path "$LIBS" "$PYTHON" "$@"
 status=$?
 set -e
 exit "$status"
-
