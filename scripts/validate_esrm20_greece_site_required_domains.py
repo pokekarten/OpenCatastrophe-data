@@ -232,7 +232,6 @@ def profile_required_site_domains(
                 geology["recognized_calibrated_label_count"] += 1
             else:
                 geology["fixed_effects_fallback_label_count"] += 1
-                geology["consumer_domain_reject_count"] += 1
         else:
             geology["consumer_domain_reject_count"] += 1
 
@@ -274,7 +273,7 @@ def profile_required_site_domains(
             },
             "geology": {
                 **geology,
-                "static_contract": "recognized_kotha_geology_label",
+                "static_contract": "recognized_kotha_geology_label_or_fixed_effects_fallback",
                 "distinct_value_set_sha256": geology_hash,
                 "matches_expected_exact_value_set": (
                     geology_hash == EXPECTED_GEOLOGY_VALUE_SET_SHA256
