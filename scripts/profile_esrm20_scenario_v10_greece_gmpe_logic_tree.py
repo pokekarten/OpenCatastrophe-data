@@ -80,6 +80,11 @@ def _profile_verified(data: bytes, *, expected_byte_count: int, expected_sha256:
     element_count = 0
     max_depth = 0
     stack: list[tuple[ET.Element, int]] = [(root, 1)]
+    expected_direct_children = {
+        "logicTree": "logicTreeBranchingLevel",
+        "logicTreeBranchingLevel": "logicTreeBranchSet",
+        "logicTreeBranchSet": "logicTreeBranch",
+    }
     while stack:
         element, depth = stack.pop()
         element_count += 1
@@ -92,9 +97,20 @@ def _profile_verified(data: bytes, *, expected_byte_count: int, expected_sha256:
         if ns != EXPECTED_NRML_NAMESPACE:
             raise GmpeLogicTreeProfileError("foreign_xml_namespace")
         counts[name] += 1
+        children = list(element)
+        if name in expected_direct_children:
+            expected_child = expected_direct_children[name]
+            if not children:
+                raise GmpeLogicTreeProfileError(f"missing_direct_child:{name}:{expected_child}")
+            for child in children:
+                child_ns, child_name = _split_tag(child.tag)
+                if child_ns != EXPECTED_NRML_NAMESPACE:
+                    raise GmpeLogicTreeProfileError("foreign_xml_namespace")
+                if child_name != expected_child:
+                    raise GmpeLogicTreeProfileError(f"unexpected_direct_child:{name}:{child_name}")
         if name == "logicTreeBranch":
             direct_child_names: Counter[str] = Counter()
-            for child in list(element):
+            for child in children:
                 child_ns, child_name = _split_tag(child.tag)
                 if child_ns != EXPECTED_NRML_NAMESPACE:
                     raise GmpeLogicTreeProfileError("foreign_xml_namespace")
@@ -115,7 +131,7 @@ def _profile_verified(data: bytes, *, expected_byte_count: int, expected_sha256:
                 raise GmpeLogicTreeProfileError("element_text_too_large")
             text_element_count += 1
             text_value_fingerprints.add(hashlib.sha256(raw).hexdigest())
-        stack.extend((child, depth + 1) for child in reversed(list(element)))
+        stack.extend((child, depth + 1) for child in reversed(children))
 
     required = {
         "logicTree": 1,
