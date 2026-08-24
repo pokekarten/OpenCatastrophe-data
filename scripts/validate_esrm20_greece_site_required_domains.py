@@ -227,14 +227,12 @@ def profile_required_site_domains(
 
         geology_value = attributes["geology"]
         geology_values.add(geology_value)
-        if geology_value != "" and geology_value == geology_value.strip():
+        if geology_value != "":
             geology["nonempty_count"] += 1
-            if geology_value in RECOGNIZED_GEOLOGY_LABELS:
-                geology["recognized_calibrated_label_count"] += 1
-            else:
-                geology["fixed_effects_fallback_label_count"] += 1
+        if geology_value in RECOGNIZED_GEOLOGY_LABELS:
+            geology["recognized_calibrated_label_count"] += 1
         else:
-            geology["consumer_domain_reject_count"] += 1
+            geology["fixed_effects_fallback_label_count"] += 1
 
     region_hash = _value_set_sha256(region_values)
     geology_hash = _value_set_sha256(geology_values)
