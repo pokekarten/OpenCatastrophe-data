@@ -1,0 +1,290 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Athens GMPE Profile Diagnostic
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-athens-gmpe-profile-diagnostic-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main Athens GMPE diagnostic request
+    if: >-
+      github.event.issue.number == 285 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-athens-gmpe-profile-diagnostic-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Bind request to trusted main and fixed GMPE identity
+        id: fence
+        env:
+          OC_ATHENS_GMPE_DIAGNOSTIC_REQUEST: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.run_esrm20_athens_gmpe_profile_diagnostic_action \
+            --comment-body-env OC_ATHENS_GMPE_DIAGNOSTIC_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-diagnostic:
+    name: Classify only the fixed Athens GMPE profiler boundary
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up execution Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Prove complete issue-local dedup before provider access
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import run_esrm20_athens_gmpe_profile_diagnostic_action as subject
+
+          skip = subject.has_terminal_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+
+      - name: Run fixed diagnostic in memory
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_ATHENS_GMPE_DIAGNOSTIC_REQUEST: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/athens-gmpe-profile-diagnostic-result.json
+        run: |
+          set -euo pipefail
+          python -m scripts.run_esrm20_athens_gmpe_profile_diagnostic_action \
+            --comment-body-env OC_ATHENS_GMPE_DIAGNOSTIC_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from scripts import run_esrm20_athens_gmpe_profile_diagnostic_action as subject
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          if subject._validate_terminal_result(result) != os.environ["EXECUTION_SHA"]:
+              raise SystemExit("Athens GMPE diagnostic execution identity drifted")
+          PY
+
+      - name: Export bounded result to publisher
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        env:
+          RESULT_PATH: ${{ runner.temp }}/athens-gmpe-profile-diagnostic-result.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(value, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          test "$(printf '%s' "$RESULT_JSON" | wc -c)" -le 5900
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-diagnostic:
+    name: Publish bounded Athens GMPE profiler diagnostic
+    needs: [validate-request, execute-diagnostic]
+    if: >-
+      needs.execute-diagnostic.result == 'success' &&
+      needs.execute-diagnostic.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence closed result and publish without checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-diagnostic.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-athens-gmpe-profile-diagnostic-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            keys == [
+              "action",
+              "byte_identity_verified",
+              "content_issue",
+              "dataset_id",
+              "execution_sha",
+              "external_bytes_persisted",
+              "failure_code",
+              "failure_stage",
+              "gmpe_applicability_verified",
+              "gmpe_identity",
+              "gmpe_semantics_verified",
+              "independent_validation_established",
+              "model_use_authorized",
+              "numerical_equivalence_verified",
+              "parent_consumer_issue",
+              "provider_file_bytes_read",
+              "provider_file_content_profiled",
+              "publication_authorized",
+              "scenario_selection_authorized",
+              "schema_version",
+              "source_issue",
+              "status",
+              "target_sha"
+            ] and
+            .schema_version == "oc-esrm20-athens-gmpe-profile-diagnostic-result-v1" and
+            .action == "esrm20_athens_gmpe_logic_tree_structure_profile_diagnostic" and
+            .source_issue == 285 and
+            .parent_consumer_issue == 287 and
+            .content_issue == 285 and
+            .dataset_id == "efehr.esrm20.scenario-tests.v1.0" and
+            .target_sha == $sha and .execution_sha == $sha and
+            .gmpe_identity == {
+              "byte_count":6490,
+              "commit_sha":"041f90d950d6ff84180b2faa11319a42c66c74cc",
+              "event_id":"Greece_07-9-1999",
+              "git_blob_sha1":"7f6ac690bf0f0538dabc4ef957db5b48e9fd35d3",
+              "project_id":273,
+              "project_path":"efehr/esrm20_scenario_tests",
+              "receipt_comment_id":5389061280,
+              "receipt_execution_sha":"991477641495363252764ad55e626fdfe23781d8",
+              "receipt_issue":658,
+              "receipt_retrieved_at":"2026-08-23T23:24:08Z",
+              "release_tag":"v1.0",
+              "repository_path":"ruptures/ground-motion-models/gmpe_logic_tree_5br_shallow_default.xml",
+              "sha256":"3c6ff83efcac45cf75125e035060e84b910c45a9e531306d822b4566383d5b78"
+            } and
+            .external_bytes_persisted == false and
+            .gmpe_semantics_verified == false and
+            .gmpe_applicability_verified == false and
+            .numerical_equivalence_verified == false and
+            .scenario_selection_authorized == false and
+            .independent_validation_established == false and
+            .publication_authorized == false and
+            .model_use_authorized == false and
+            (
+              if .status == "pass" then
+                .failure_stage == null and
+                .failure_code == null and
+                .provider_file_bytes_read == true and
+                .provider_file_content_profiled == true and
+                .byte_identity_verified == true
+              elif .status == "blocked" then
+                .provider_file_content_profiled == false and
+                (
+                  (.failure_stage == "acquisition" and
+                   .failure_code == "acquisition_failed" and
+                   .provider_file_bytes_read == null and
+                   .byte_identity_verified == false)
+                  or
+                  (.failure_stage == "byte_identity" and
+                   .provider_file_bytes_read == true and
+                   .byte_identity_verified == false and
+                   (.failure_code == "profiler_byte_count_mismatch" or
+                    .failure_code == "profiler_sha256_mismatch"))
+                  or
+                  (.failure_stage == "profile" and
+                   .provider_file_bytes_read == true and
+                   (
+                     (.failure_code == "unclassified_profile_rejection" and
+                      .byte_identity_verified == false)
+                     or
+                     (.byte_identity_verified == true and
+                      (.failure_code as $code | [
+                        "attribute_value_too_large",
+                        "branch_direct_child_cardinality_mismatch",
+                        "branch_model_cardinality_mismatch",
+                        "branch_weight_cardinality_mismatch",
+                        "dtd_or_entity_forbidden",
+                        "element_text_too_large",
+                        "foreign_xml_namespace",
+                        "invalid_utf8_xml",
+                        "invalid_xml",
+                        "malformed_expanded_xml_name",
+                        "missing_direct_child",
+                        "missing_required_element",
+                        "namespaced_attribute_forbidden",
+                        "non_text_xml_tag",
+                        "non_utf8_xml_encoding",
+                        "non_whitespace_container_text_forbidden",
+                        "non_whitespace_tail_text_forbidden",
+                        "nul_character_forbidden",
+                        "unexpected_direct_child",
+                        "unexpected_leaf_child",
+                        "unexpected_logic_tree_root",
+                        "unexpected_nrml_root",
+                        "unsafe_xml_local_name",
+                        "xml_depth_limit_exceeded",
+                        "xml_element_limit_exceeded"
+                      ] | index($code) != null))
+                   ))
+                )
+              else
+                false
+              end
+            )
+          ' >/dev/null
+
+          BODY="$(printf '%s\n%s' "$RESULT_MARKER" "$RESULT_JSON")"
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/285/comments" \
+            -f body="$BODY" \
+            >/dev/null
