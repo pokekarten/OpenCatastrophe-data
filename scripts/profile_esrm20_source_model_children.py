@@ -5,8 +5,9 @@
 
 This module is intentionally transport-free. A trusted-main executor may supply bytes only
 for the ten immutable objects below. Each object is byte-verified before XML parsing.
-The result exposes bounded structural metadata only; it does not infer nested dependency
-syntax, runtime compatibility, publication authority, or model-use fitness.
+The existing structural profile remains stable; the bounded tectonic-region helper exposes
+only effective ``tectonicRegion`` counts and declaration provenance. Neither path infers
+runtime compatibility, publication authority, or model-use fitness.
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ RECEIPT_RESULT_COMMENT_ID = 5312851239
 RECEIPT_SET_SHA256 = "621d16b35166cb66c86079106f1a7fd717ff07ef155184c5eed5a028292e4eb8"
 MAX_XML_BYTES = 128 * 1024 * 1024
 MAX_ELEMENTS = 2_000_000
+MAX_TECTONIC_REGION_UTF8_BYTES = 256
 _DTD_RE = re.compile(r"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
 _ENCODING_RE = re.compile(r"<\?xml\s+[^>]*encoding\s*=\s*['\"]([^'\"]+)['\"]", re.IGNORECASE)
 
@@ -68,7 +70,7 @@ def _decode_xml_utf8(payload: bytes) -> str:
     return text
 
 
-def profile_source_model(path: str, payload: bytes) -> dict[str, Any]:
+def _verified_root(path: str, payload: bytes) -> tuple[int, str, ET.Element]:
     if path not in RECEIPTS:
         raise SourceModelContentProfileError("source-model path is outside exact receipt set")
     if type(payload) is not bytes:
@@ -83,6 +85,112 @@ def profile_source_model(path: str, payload: bytes) -> dict[str, Any]:
         root = ET.fromstring(text)
     except ET.ParseError as exc:
         raise SourceModelContentProfileError("source-model XML is not well formed") from exc
+    return expected_count, expected_sha256, root
+
+
+def _is_source_node(element: ET.Element) -> bool:
+    if type(element.tag) is not str:
+        raise SourceModelContentProfileError("source-model XML contains unsupported node type")
+    name = _local_name(element.tag)
+    return name.endswith("Source") and name != "sourceModel"
+
+
+def _validated_tectonic_region(value: str | None, *, owner: str) -> str:
+    if value is None:
+        raise SourceModelContentProfileError(f"{owner} tectonicRegion is missing")
+    if not value or value != value.strip():
+        raise SourceModelContentProfileError(
+            f"{owner} tectonicRegion must be non-empty and trimmed"
+        )
+    if any(ord(character) < 0x20 or ord(character) == 0x7F for character in value):
+        raise SourceModelContentProfileError(f"{owner} tectonicRegion contains control characters")
+    if len(value.encode("utf-8")) > MAX_TECTONIC_REGION_UTF8_BYTES:
+        raise SourceModelContentProfileError(f"{owner} tectonicRegion exceeds byte bound")
+    return value
+
+
+def _assert_no_nested_sources(source: ET.Element) -> None:
+    for descendant in source.iter():
+        if descendant is source:
+            continue
+        if type(descendant.tag) is not str:
+            raise SourceModelContentProfileError("source-model XML contains unsupported node type")
+        name = _local_name(descendant.tag)
+        if name == "sourceGroup" or _is_source_node(descendant):
+            raise SourceModelContentProfileError("source-model contains unsupported source nesting")
+
+
+def _tectonic_region_profile(root: ET.Element) -> tuple[int, dict[str, int], dict[str, int]]:
+    source_models = [
+        element
+        for element in root.iter()
+        if type(element.tag) is str and _local_name(element.tag) == "sourceModel"
+    ]
+    if len(source_models) != 1:
+        raise SourceModelContentProfileError("source-model XML must contain exactly one sourceModel")
+
+    effective: Counter[str] = Counter()
+    provenance: Counter[str] = Counter()
+    source_count = 0
+
+    def record(source: ET.Element, group_trt: str | None) -> None:
+        nonlocal source_count
+        _assert_no_nested_sources(source)
+        direct_raw = source.attrib.get("tectonicRegion")
+        if group_trt is None:
+            trt = _validated_tectonic_region(direct_raw, owner="source")
+            provenance["direct"] += 1
+        elif direct_raw is None:
+            trt = group_trt
+            provenance["source_group"] += 1
+        else:
+            direct_trt = _validated_tectonic_region(direct_raw, owner="source")
+            if direct_trt != group_trt:
+                raise SourceModelContentProfileError(
+                    "source tectonicRegion conflicts with sourceGroup tectonicRegion"
+                )
+            trt = direct_trt
+            provenance["direct_and_source_group"] += 1
+        effective[trt] += 1
+        source_count += 1
+
+    source_model = source_models[0]
+    for child in source_model:
+        if type(child.tag) is not str:
+            raise SourceModelContentProfileError("source-model XML contains unsupported node type")
+        name = _local_name(child.tag)
+        if name == "sourceGroup":
+            group_trt = _validated_tectonic_region(
+                child.attrib.get("tectonicRegion"), owner="sourceGroup"
+            )
+            group_source_count = 0
+            for source in child:
+                if not _is_source_node(source):
+                    raise SourceModelContentProfileError(
+                        "sourceGroup contains unsupported non-source child"
+                    )
+                record(source, group_trt)
+                group_source_count += 1
+            if group_source_count == 0:
+                raise SourceModelContentProfileError("sourceGroup contains no source nodes")
+        elif _is_source_node(child):
+            record(child, None)
+        else:
+            raise SourceModelContentProfileError("sourceModel contains unsupported child nesting")
+
+    if source_count == 0:
+        raise SourceModelContentProfileError("sourceModel contains no source nodes")
+    provenance_counts = {
+        key: provenance[key]
+        for key in ("direct", "source_group", "direct_and_source_group")
+    }
+    if sum(effective.values()) != source_count or sum(provenance_counts.values()) != source_count:
+        raise SourceModelContentProfileError("tectonic-region source counts do not reconcile")
+    return source_count, dict(sorted(effective.items())), provenance_counts
+
+
+def profile_source_model(path: str, payload: bytes) -> dict[str, Any]:
+    expected_count, expected_sha256, root = _verified_root(path, payload)
     counts: Counter[str] = Counter()
     element_count = 0
     for element in root.iter():
@@ -102,6 +210,28 @@ def profile_source_model(path: str, payload: bytes) -> dict[str, Any]:
         "byte_identity_verified": True,
         "source_model_content_profiled": True,
         "external_reference_scan_performed": False,
+        "transitive_dependency_byte_closure_verified": False,
+        "runtime_compatibility_verified": False,
+        "external_bytes_persisted": False,
+        "publication_authorized": False,
+        "model_use_authorized": False,
+    }
+
+
+def profile_source_model_tectonic_regions(path: str, payload: bytes) -> dict[str, Any]:
+    """Return bounded effective TRT counts for one exact receipted source-model child."""
+
+    expected_count, expected_sha256, root = _verified_root(path, payload)
+    source_count, effective_counts, provenance_counts = _tectonic_region_profile(root)
+    return {
+        "repository_path": path,
+        "byte_count": expected_count,
+        "sha256": expected_sha256,
+        "source_count": source_count,
+        "effective_tectonic_region_counts": effective_counts,
+        "tectonic_region_provenance_counts": provenance_counts,
+        "byte_identity_verified": True,
+        "source_model_tectonic_region_profiled": True,
         "transitive_dependency_byte_closure_verified": False,
         "runtime_compatibility_verified": False,
         "external_bytes_persisted": False,
