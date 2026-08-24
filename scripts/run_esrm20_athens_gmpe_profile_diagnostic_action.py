@@ -76,6 +76,9 @@ _PROFILE_ERROR_CODE_BY_MESSAGE = {
     "xml_element_limit_exceeded": "xml_element_limit_exceeded",
     "xml_depth_limit_exceeded": "xml_depth_limit_exceeded",
     "foreign_xml_namespace": "foreign_xml_namespace",
+    "unexpected_direct_child:logicTree:logicTreeBranchSet": (
+        "logic_tree_branch_set_direct_child"
+    ),
     "branch_direct_child_cardinality_mismatch": "branch_direct_child_cardinality_mismatch",
     "namespaced_attribute_forbidden": "namespaced_attribute_forbidden",
     "attribute_value_too_large": "attribute_value_too_large",
