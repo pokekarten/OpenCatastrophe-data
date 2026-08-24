@@ -9,7 +9,13 @@ Reviewed inventory for direct software dependencies, workflow actions and distri
 
 ## Runtime/build dependencies
 
-None beyond Python and Git for repository-authored runtime/acquisition-independent tooling. Validation-only and acquisition-only dependencies are isolated below and are not model/runtime dependencies.
+None beyond Python and Git for repository-authored runtime/acquisition-independent tooling. Validation-only, acquisition-only and bounded CI build dependencies are isolated below and are not model/runtime dependencies of the repository itself.
+
+### Bounded OpenQuake 3.13 offline-runtime build
+
+`.github/workflows/oq313-offline-linux-bundle.yml` uses an immutable `openquake/engine@sha256:dcfb88b3f9feb96eddee648690253492ba252619703ff48477affdbbb3c1151c` bootstrap image and overlays the exact OpenQuake source commit `16dd69ecea0c6dcaf49c22ca12edc9da3f024889`. The exact upstream `gem/oq-engine` source at that commit carries the GNU Affero General Public License version 3 (`LICENSE`). The workflow independently verifies the observed bootstrap repository digest against its expected digest before building; the evidence admitting that bootstrap identity remains part of the separate reproducibility review rather than a licence claim.
+
+The built Linux root filesystem also contains OS, Python, native and Python-package dependencies with their own licences and notice/source obligations. Those aggregate redistribution obligations have **not** been affirmatively inventoried here. The workflow therefore keeps `rootfs.tar.zst` in runner-temporary storage, exercises it in-job, records bounded hashes/metadata in the workflow summary, and does not upload or otherwise distribute the rootfs. `rootfs_distributed=false` and `rootfs_redistribution_authorized=false` remain explicit receipt fields. A future change may distribute the rootfs only after the complete aggregate licence/notice/source obligations are reviewed and recorded in the same change. Building/probing the rootfs ephemerally in CI is not treated as redistribution authorization.
 
 ## Validation-only YAML dependency
 
@@ -43,7 +49,7 @@ The top-level REUSE version is exact but its Python transitive environment is no
 - `actions/setup-python` `5fda3b95a4ea91299a34e894583c3862153e4b97` (`v7.0.0`, MIT; re-verified 2026-08-09);
 - `actions/dependency-review-action` `a1d282b36b6f3519aa1f3fc636f609c47dddb294` (`v5.0.0`, MIT; reviewed 2026-08-10), used only on pull requests to reject newly introduced high/critical known-vulnerability dependencies before the stable `Required` gate can pass.
 
-Re-review upstream licence/release identity before changing a pin.
+The OQ3.13 offline-runtime workflow uses only the already-inventoried immutable `actions/checkout` pin; it does not use an artifact-upload action. Re-review upstream licence/release identity before changing an action pin.
 
 ## Vendored source/binaries
 
