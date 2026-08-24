@@ -80,10 +80,15 @@ def _profile_verified(data: bytes, *, expected_byte_count: int, expected_sha256:
     element_count = 0
     max_depth = 0
     stack: list[tuple[ET.Element, int]] = [(root, 1)]
+
+    # OpenQuake Engine v3.13.0's gsim_lt.bsnodes accepts both the modern
+    # direct logicTreeBranchSet form and legacy logicTreeBranchingLevel
+    # wrappers. Keep that exact bounded dual shape here rather than forcing
+    # only the legacy wrapper.
     expected_direct_children = {
-        "logicTree": "logicTreeBranchingLevel",
-        "logicTreeBranchingLevel": "logicTreeBranchSet",
-        "logicTreeBranchSet": "logicTreeBranch",
+        "logicTree": ("logicTreeBranchingLevel", "logicTreeBranchSet"),
+        "logicTreeBranchingLevel": ("logicTreeBranchSet",),
+        "logicTreeBranchSet": ("logicTreeBranch",),
     }
     while stack:
         element, depth = stack.pop()
@@ -99,15 +104,19 @@ def _profile_verified(data: bytes, *, expected_byte_count: int, expected_sha256:
         counts[name] += 1
         children = list(element)
         if name in expected_direct_children:
-            expected_child = expected_direct_children[name]
+            expected_children = expected_direct_children[name]
             if not children:
-                raise GmpeLogicTreeProfileError(f"missing_direct_child:{name}:{expected_child}")
+                raise GmpeLogicTreeProfileError(
+                    f"missing_direct_child:{name}:{expected_children[0]}"
+                )
             for child in children:
                 child_ns, child_name = _split_tag(child.tag)
                 if child_ns != EXPECTED_NRML_NAMESPACE:
                     raise GmpeLogicTreeProfileError("foreign_xml_namespace")
-                if child_name != expected_child:
-                    raise GmpeLogicTreeProfileError(f"unexpected_direct_child:{name}:{child_name}")
+                if child_name not in expected_children:
+                    raise GmpeLogicTreeProfileError(
+                        f"unexpected_direct_child:{name}:{child_name}"
+                    )
         if name == "logicTreeBranch":
             direct_child_names: Counter[str] = Counter()
             for child in children:
@@ -142,7 +151,6 @@ def _profile_verified(data: bytes, *, expected_byte_count: int, expected_sha256:
 
     required = {
         "logicTree": 1,
-        "logicTreeBranchingLevel": 1,
         "logicTreeBranchSet": 1,
         "logicTreeBranch": 1,
         "uncertaintyModel": 1,
