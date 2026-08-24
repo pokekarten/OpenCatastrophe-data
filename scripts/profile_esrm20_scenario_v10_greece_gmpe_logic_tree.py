@@ -133,6 +133,9 @@ def _profile_verified(data: bytes, *, expected_byte_count: int, expected_sha256:
                 raise GmpeLogicTreeProfileError("element_text_too_large")
             text_element_count += 1
             text_value_fingerprints.add(hashlib.sha256(raw).hexdigest())
+        tail = element.tail or ""
+        if tail.strip():
+            raise GmpeLogicTreeProfileError("non_whitespace_tail_text_forbidden")
         stack.extend((child, depth + 1) for child in reversed(children))
 
     required = {
