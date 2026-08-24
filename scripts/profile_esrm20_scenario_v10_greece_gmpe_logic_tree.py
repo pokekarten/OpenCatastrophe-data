@@ -92,6 +92,15 @@ def _profile_verified(data: bytes, *, expected_byte_count: int, expected_sha256:
         if ns != EXPECTED_NRML_NAMESPACE:
             raise GmpeLogicTreeProfileError("foreign_xml_namespace")
         counts[name] += 1
+        if name == "logicTreeBranch":
+            direct_child_names: Counter[str] = Counter()
+            for child in list(element):
+                child_ns, child_name = _split_tag(child.tag)
+                if child_ns != EXPECTED_NRML_NAMESPACE:
+                    raise GmpeLogicTreeProfileError("foreign_xml_namespace")
+                direct_child_names[child_name] += 1
+            if direct_child_names != Counter({"uncertaintyModel": 1, "uncertaintyWeight": 1}):
+                raise GmpeLogicTreeProfileError("branch_direct_child_cardinality_mismatch")
         for raw_name, value in element.attrib.items():
             attr_ns, attr_name = _split_tag(raw_name)
             if attr_ns:
