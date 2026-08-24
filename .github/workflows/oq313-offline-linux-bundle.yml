@@ -8,6 +8,7 @@ on:
     paths:
       - .github/workflows/oq313-offline-linux-bundle.yml
       - docs/OQ313_OFFLINE_LINUX_BUNDLE.md
+      - scripts/run_oq313_offline_linux_runtime.sh
   workflow_dispatch:
 
 permissions:
@@ -25,12 +26,19 @@ jobs:
     env:
       OQ_COMMIT: 16dd69ecea0c6dcaf49c22ca12edc9da3f024889
       BASE_IMAGE: openquake/engine:3.13.0
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
-      - name: Checkout candidate source
+      - name: Checkout exact candidate source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
           persist-credentials: false
+
+      - name: Verify candidate source fence
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
 
       - name: Fetch exact OpenQuake 3.13 source
         run: |
@@ -79,7 +87,7 @@ jobs:
           WORKDIR /opencatastrophe-data
           EOF
 
-          EXEC_IMAGE="oc-eq1-oq313-offline:${GITHUB_SHA}"
+          EXEC_IMAGE="oc-eq1-oq313-offline:${SOURCE_SHA}"
           docker build --pull=false -t "$EXEC_IMAGE" "$BUILD_ROOT"
           EXEC_IMAGE_ID="$(docker image inspect --format='{{.Id}}' "$EXEC_IMAGE")"
           printf '%s\n' "$EXEC_IMAGE_ID" | grep -Eq '^sha256:[0-9a-f]{64}$'
@@ -88,7 +96,7 @@ jobs:
           echo "execution_image=$EXEC_IMAGE" >> "$GITHUB_OUTPUT"
           echo "execution_image_id=$EXEC_IMAGE_ID" >> "$GITHUB_OUTPUT"
 
-      - name: Probe exact runtime identity
+      - name: Probe exact runtime identity inside image
         env:
           EXEC_IMAGE: ${{ steps.runtime.outputs.execution_image }}
         run: |
@@ -140,7 +148,7 @@ jobs:
           }, sort_keys=True))
           PY
 
-      - name: Export compressed Linux rootfs and receipts
+      - name: Export compressed portable Linux runtime and receipts
         id: bundle
         env:
           EXEC_IMAGE: ${{ steps.runtime.outputs.execution_image }}
@@ -157,6 +165,9 @@ jobs:
           docker rm "$CID" >/dev/null
           trap - EXIT
 
+          cp scripts/run_oq313_offline_linux_runtime.sh "$OUT/offline-python.sh"
+          chmod +x "$OUT/offline-python.sh"
+
           python - <<'PY'
           import json
           import os
@@ -166,7 +177,8 @@ jobs:
           manifest = {
               "schema_version": "oc-oq313-offline-linux-runtime-v1",
               "repository": os.environ["GITHUB_REPOSITORY"],
-              "repository_sha": os.environ["GITHUB_SHA"],
+              "repository_sha": os.environ["SOURCE_SHA"],
+              "workflow_event_sha": os.environ["GITHUB_SHA"],
               "platform": "linux/amd64",
               "base_image": os.environ["BASE_IMAGE"],
               "bootstrap_image_digest": os.environ["BOOTSTRAP_DIGEST"],
@@ -174,6 +186,7 @@ jobs:
               "oq_engine_commit": os.environ["OQ_COMMIT"],
               "openquake_version": "3.13.0-git16dd69ecea",
               "python_major_minor": "3.8",
+              "portable_host_proc": True,
               "provider_bytes_included": False,
               "model_execution_performed": False,
               "historical_reproduction_verified": False,
@@ -191,43 +204,92 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
           BUNDLE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-          ROOTFS="${1:-$BUNDLE_DIR/rootfs}"
-          if [[ ! -d "$ROOTFS" ]]; then
-            mkdir -p "$ROOTFS"
-            zstd -dc "$BUNDLE_DIR/rootfs.tar.zst" | tar -x -C "$ROOTFS"
-          fi
-          chroot "$ROOTFS" /usr/bin/env \
-            OQ_DISTRIBUTE=no \
-            OPENBLAS_NUM_THREADS=1 \
-            PYTHONPATH=/oq-engine \
-            python -c 'import sys, openquake.baselib as b; print(sys.version); print(b.__version__)'
+          "$BUNDLE_DIR/offline-python.sh" - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          import openquake
+          openquake.__path__ = [str(Path("/oq-engine/openquake").resolve())]
+          import openquake.baselib as baselib
+          import h5py
+          import numpy
+          import pandas
+          import psutil
+          import scipy
+          import shapely
+          import zmq
+
+          expected = {
+              "h5py": "3.1.0",
+              "numpy": "1.20.0",
+              "pandas": "1.1.5",
+              "psutil": "5.6.7",
+              "pyzmq": "19.0.0",
+              "scipy": "1.4.1",
+              "shapely": "1.7.1",
+          }
+          observed = {
+              "h5py": h5py.__version__,
+              "numpy": numpy.__version__,
+              "pandas": pandas.__version__,
+              "psutil": psutil.__version__,
+              "pyzmq": zmq.__version__,
+              "scipy": scipy.__version__,
+              "shapely": shapely.__version__,
+          }
+          if sys.version_info[:2] != (3, 8):
+              raise SystemExit(f"Python drifted: {sys.version_info[:2]}")
+          if baselib.__version__ != "3.13.0-git16dd69ecea":
+              raise SystemExit(f"OpenQuake drifted: {baselib.__version__}")
+          if observed != expected:
+              raise SystemExit(f"dependency drifted: {observed!r}")
+          print(json.dumps({
+              "python": sys.version.split()[0],
+              "openquake": baselib.__version__,
+              "baselib_file": str(Path(baselib.__file__).resolve()),
+              "dependency_versions": observed,
+              "cpu_count": psutil.cpu_count(),
+          }, sort_keys=True))
+          PY
           EOF
           chmod +x "$OUT/offline-probe.sh"
 
           cat > "$OUT/README.txt" <<'EOF'
-          OpenCatastrophe OQ3.13 offline Linux runtime bundle.
+          OpenCatastrophe OQ3.13 offline portable Linux runtime bundle.
 
           This bundle contains a Linux/amd64 OpenQuake 3.13 runtime plus the
-          OpenCatastrophe-data source revision recorded in manifest.json.
+          exact OpenCatastrophe-data source revision recorded in manifest.json.
           It intentionally contains NO EFEHR/ESRM20 provider bytes.
 
-          On a Linux host with root/chroot and zstd:
+          On Linux x86-64 with zstd, tar, and permission to create the temporary
+          /oq-engine source alias:
+            sha256sum -c SHA256SUMS
             ./offline-probe.sh
 
-          For model execution, mount or copy separately receipted provider input
-          bytes into the extracted rootfs and use the repository's bounded runner.
+          Run an OpenCatastrophe Python entry point through the portable runtime:
+            ./offline-python.sh -m <module> <arguments>
+
+          The wrapper uses the rootfs dynamic loader directly instead of chroot,
+          so psutil/OpenQuake can see the host /proc even in sandboxes where bind
+          mounts are prohibited. The /oq-engine alias is removed after each run.
+
+          For a full model execution, supply separately receipted provider input
+          bytes outside this bundle and use the repository's bounded runner.
           Do not treat this runtime bundle as scientific validation or model-use
-          authority. Verify SHA256SUMS before use.
+          authority.
           EOF
 
-          (cd "$OUT" && sha256sum rootfs.tar.zst manifest.json offline-probe.sh README.txt > SHA256SUMS)
+          (cd "$OUT" && sha256sum \
+            rootfs.tar.zst manifest.json offline-python.sh offline-probe.sh README.txt \
+            > SHA256SUMS)
           du -h "$OUT/rootfs.tar.zst"
 
       - name: Upload offline runtime bundle
         id: upload
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: oq313-offline-linux-runtime-${{ github.sha }}
+          name: oq313-offline-linux-runtime-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/oq313-offline-bundle/
           if-no-files-found: error
           compression-level: 0
@@ -242,6 +304,6 @@ jobs:
           set -euo pipefail
           test -n "$ARTIFACT_ID"
           test -n "$ARTIFACT_DIGEST"
-          printf 'artifact_id=%s\nartifact_digest=%s\nartifact_url=%s\n' \
-            "$ARTIFACT_ID" "$ARTIFACT_DIGEST" "$ARTIFACT_URL"
+          printf 'source_sha=%s\nartifact_id=%s\nartifact_digest=%s\nartifact_url=%s\n' \
+            "$SOURCE_SHA" "$ARTIFACT_ID" "$ARTIFACT_DIGEST" "$ARTIFACT_URL"
 
