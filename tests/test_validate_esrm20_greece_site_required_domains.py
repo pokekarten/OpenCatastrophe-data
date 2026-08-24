@@ -140,7 +140,7 @@ class GreeceSiteRequiredDomainTests(unittest.TestCase):
         self.assertEqual(region["calibrated_region_count"], 0)
         self.assertEqual(region["consumer_domain_reject_count"], 1)
 
-    def test_unrecognized_geology_is_visible_as_fixed_effects_fallback(self) -> None:
+    def test_unrecognized_geology_is_accepted_via_fixed_effects_fallback(self) -> None:
         raw = _xml(
             [
                 {
@@ -155,7 +155,27 @@ class GreeceSiteRequiredDomainTests(unittest.TestCase):
 
         self.assertEqual(geology["recognized_calibrated_label_count"], 0)
         self.assertEqual(geology["fixed_effects_fallback_label_count"], 1)
+        self.assertEqual(geology["consumer_domain_reject_count"], 0)
+        self.assertEqual(result["required_consumer_domain_reject_total"], 0)
+        self.assertFalse(result["required_static_compatibility_complete"])
+
+    def test_empty_geology_is_rejected_not_fallback(self) -> None:
+        raw = _xml(
+            [
+                {
+                    "region": "1",
+                    "slope": "0.1",
+                    "geology": "",
+                }
+            ]
+        )
+        result = _profile(raw, expected_site_count=1)
+        geology = result["parameter_domains"]["geology"]
+
+        self.assertEqual(geology["recognized_calibrated_label_count"], 0)
+        self.assertEqual(geology["fixed_effects_fallback_label_count"], 0)
         self.assertEqual(geology["consumer_domain_reject_count"], 1)
+        self.assertEqual(result["required_consumer_domain_reject_total"], 1)
 
     def test_missing_or_namespaced_required_parameter_fails_closed(self) -> None:
         missing = _xml([{"region": "1", "slope": "0.1"}])
