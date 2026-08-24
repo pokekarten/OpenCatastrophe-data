@@ -6,6 +6,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import subprocess
+import sys
 import unittest
 from pathlib import Path
 from typing import Any
@@ -142,6 +144,33 @@ class EQ1OQ313TerminalValidatorTests(unittest.TestCase):
             summary["numerical_receipt_identity"],
             result["numerical_receipt_identity"],
         )
+
+    def test_direct_script_cli_accepts_canonical_stdin(self) -> None:
+        script = (
+            Path(__file__).resolve().parents[1]
+            / "scripts"
+            / "validate_eq1_oq313_run_result.py"
+        )
+        process = subprocess.run(
+            [
+                sys.executable,
+                str(script),
+                "--expected-execution-sha",
+                EXECUTION_SHA,
+            ],
+            input=_body(_result()),
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=10,
+        )
+        self.assertEqual(process.returncode, 0, process.stderr)
+        summary = json.loads(process.stdout)
+        self.assertEqual(summary["validation_scope"], "terminal_body_contract_only")
+        self.assertIs(summary["body_contract_validated"], True)
+        self.assertIs(summary["trusted_origin_required"], True)
+        self.assertIs(summary["github_comment_origin_authenticated"], False)
+        self.assertIs(summary["adapter_provenance_independently_verified"], False)
 
     def test_summary_keeps_origin_and_authority_ceiling_explicit(self) -> None:
         summary = subject.validate_terminal_body(
