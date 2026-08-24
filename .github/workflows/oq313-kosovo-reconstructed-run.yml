@@ -63,7 +63,7 @@ jobs:
     needs: [validate-request]
     if: needs.validate-request.result == 'success'
     runs-on: ubuntu-24.04
-    timeout-minutes: 180
+    timeout-minutes: 355
     permissions:
       contents: read
       issues: write
