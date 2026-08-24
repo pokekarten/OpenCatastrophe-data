@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import unittest
 
 from scripts import profile_efehr_kosovo_exposure as profile
@@ -178,6 +179,14 @@ class ProfileVerifiedCsvBytesTests(unittest.TestCase):
                 expected_sha256=sha256,
             )
 
+    def test_acquisition_incomplete_read_fails_closed(self) -> None:
+        def opener(request, timeout):
+            self.assertGreater(timeout, 0)
+            self.assertIn(profile.COMMIT_SHA, request.full_url)
+            raise http.client.IncompleteRead(b"partial", 10)
+
+        with self.assertRaisesRegex(profile.ExposureProfileError, "IncompleteRead"):
+            profile.acquire_and_profile_kosovo_exposure(opener=opener)
 
     def test_acquisition_uses_only_fixed_target_and_profiles_after_identity_match(self) -> None:
         raw = b"a,b\n1,2\n"
