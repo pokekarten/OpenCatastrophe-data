@@ -9,9 +9,9 @@ This action composes two already-established primitives:
 
 Only the ten immutable #481 receipt identities are eligible. Provider bytes are
 held in memory only long enough to verify and profile one object, then discarded.
-The published result contains bounded structural counts and exact byte identities;
-it does not establish dependency closure, runtime compatibility, publication
-rights, or model-use authority.
+The published result contains bounded structural counts, effective tectonic-region
+counts and exact byte identities; it does not establish source/GSIM compatibility,
+dependency closure, runtime compatibility, publication rights, or model-use authority.
 """
 
 from __future__ import annotations
@@ -33,10 +33,10 @@ from scripts import profile_esrm20_source_model_children as content_profile
 from scripts.prepare_agent_action_result import LedgerError, fetch_repository_comments
 
 REQUEST_MARKER = "<!-- oc-eq1-esrm20-source-model-child-profiles-request-v1 -->"
-RESULT_MARKER = "<!-- oc-eq1-esrm20-source-model-child-profiles-result-v1 -->"
+RESULT_MARKER = "<!-- oc-eq1-esrm20-source-model-child-profiles-result-v2 -->"
 REQUEST_SCHEMA_VERSION = "oc-esrm20-source-model-child-profiles-request-v1"
-RESULT_SCHEMA_VERSION = "oc-esrm20-source-model-child-profiles-result-v1"
-PROFILE_SET_SCHEMA_VERSION = "oc-esrm20-source-model-child-profiles-v1"
+RESULT_SCHEMA_VERSION = "oc-esrm20-source-model-child-profiles-result-v2"
+PROFILE_SET_SCHEMA_VERSION = "oc-esrm20-source-model-child-profiles-v2"
 ACTION = "esrm20_source_model_child_content_profiles"
 SOURCE_ISSUE = 281
 CONSUMER_ISSUE = 287
@@ -56,6 +56,22 @@ MAX_TOTAL_BYTES = 64 * 1024 * 1024
 TOTAL_DEADLINE_SECONDS = 300.0
 MAX_LEDGER_PAGES = 20
 MAX_RESULT_UTF8_BYTES = 64_000
+EXPECTED_SOURCE_TYPES = frozenset(
+    {
+        "areaSource",
+        "pointSource",
+        "multiPointSource",
+        "simpleFaultSource",
+        "kiteFaultSource",
+        "complexFaultSource",
+        "characteristicFaultSource",
+        "nonParametricSeismicSource",
+        "multiFaultSource",
+    }
+)
+EXPECTED_TRT_PROVENANCE_TYPES = frozenset(
+    {"direct_source", "group_inherited", "group_effective_direct_confirmed"}
+)
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -68,6 +84,8 @@ _PROFILE_FIELDS = {
     "root_element",
     "element_count",
     "element_type_counts",
+    "tectonic_region_type_counts",
+    "trt_provenance_counts",
     "byte_identity_verified",
     "source_model_content_profiled",
     "external_reference_scan_performed",
@@ -171,6 +189,12 @@ def _assert_fixed_contract() -> None:
             RECEIPT_RESULT_COMMENT_ID,
         ),
         ("receipt_set_sha256", content_profile.RECEIPT_SET_SHA256, RECEIPT_SET_SHA256),
+        ("supported_source_types", content_profile.SUPPORTED_SOURCE_TYPES, EXPECTED_SOURCE_TYPES),
+        (
+            "trt_provenance_types",
+            content_profile.TRT_PROVENANCE_TYPES,
+            EXPECTED_TRT_PROVENANCE_TYPES,
+        ),
     )
     for field, observed, expected in exact:
         if type(observed) is not type(expected) or observed != expected:
@@ -223,7 +247,7 @@ def _fetch_verified_profile(
         url,
         headers={
             "Accept": "application/xml",
-            "User-Agent": "OpenCatastrophe-ESRM20-source-child-profiles-v1",
+            "User-Agent": "OpenCatastrophe-ESRM20-source-child-profiles-v2",
         },
         method="GET",
     )
@@ -366,6 +390,37 @@ def validate_request(body: object, *, expected_issue: int, execution_sha: str) -
     return request
 
 
+def _validate_positive_count_map(
+    value: object,
+    *,
+    label: str,
+    maximum_items: int,
+    allowed_keys: frozenset[str] | None = None,
+) -> tuple[dict[str, int], int]:
+    if type(value) is not dict or not value or len(value) > maximum_items:
+        raise SourceModelChildProfileActionError(f"source-model {label} counts are invalid")
+    total = 0
+    for name, count in value.items():
+        if type(name) is not str or not name or len(name) > content_profile.MAX_TRT_CHARS:
+            raise SourceModelChildProfileActionError(f"source-model {label} label is invalid")
+        if (
+            name != name.strip()
+            or not name.isprintable()
+            or any(ord(char) == 127 for char in name)
+        ):
+            raise SourceModelChildProfileActionError(
+                f"source-model {label} label is not canonical"
+            )
+        if allowed_keys is not None and name not in allowed_keys:
+            raise SourceModelChildProfileActionError(
+                f"source-model {label} label is unsupported"
+            )
+        if type(count) is not int or isinstance(count, bool) or count < 1:
+            raise SourceModelChildProfileActionError(f"source-model {label} count is invalid")
+        total += count
+    return value, total
+
+
 def validate_child_profile(
     value: object,
     *,
@@ -395,7 +450,7 @@ def validate_child_profile(
                 f"source-model child profile drifted at {field}"
             )
     root = value["root_element"]
-    if type(root) is not str or not root or len(root.encode("utf-8")) > 256:
+    if type(root) is not str or root != "nrml":
         raise SourceModelChildProfileActionError("source-model root element is invalid")
     element_count = value["element_count"]
     if (
@@ -408,14 +463,32 @@ def validate_child_profile(
     if type(counts) is not dict or not counts or len(counts) > 512:
         raise SourceModelChildProfileActionError("source-model element-type counts are invalid")
     counted = 0
+    source_count = 0
     for name, count in counts.items():
         if type(name) is not str or not name or len(name.encode("utf-8")) > 256:
             raise SourceModelChildProfileActionError("source-model element type is invalid")
         if type(count) is not int or isinstance(count, bool) or count < 1:
             raise SourceModelChildProfileActionError("source-model element-type count is invalid")
         counted += count
+        if name in EXPECTED_SOURCE_TYPES:
+            source_count += count
     if counted != element_count:
         raise SourceModelChildProfileActionError("source-model element counts do not reconcile")
+    if not (1 <= source_count <= content_profile.MAX_SOURCES_PER_FILE):
+        raise SourceModelChildProfileActionError("source-model source count is invalid")
+    _, trt_total = _validate_positive_count_map(
+        value["tectonic_region_type_counts"],
+        label="tectonic-region",
+        maximum_items=content_profile.MAX_UNIQUE_TRTS_PER_FILE,
+    )
+    _, provenance_total = _validate_positive_count_map(
+        value["trt_provenance_counts"],
+        label="TRT provenance",
+        maximum_items=len(EXPECTED_TRT_PROVENANCE_TYPES),
+        allowed_keys=EXPECTED_TRT_PROVENANCE_TYPES,
+    )
+    if trt_total != source_count or provenance_total != source_count:
+        raise SourceModelChildProfileActionError("source-model TRT counts do not reconcile")
     return value
 
 

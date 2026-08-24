@@ -85,8 +85,10 @@ def child_profile(path: str, byte_count: int, sha256: str) -> dict:
         "byte_count": byte_count,
         "sha256": sha256,
         "root_element": "nrml",
-        "element_count": 2,
-        "element_type_counts": {"nrml": 1, "sourceModel": 1},
+        "element_count": 3,
+        "element_type_counts": {"nrml": 1, "sourceModel": 1, "pointSource": 1},
+        "tectonic_region_type_counts": {"Active Shallow Crust": 1},
+        "trt_provenance_counts": {"direct_source": 1},
         "byte_identity_verified": True,
         "source_model_content_profiled": True,
         "external_reference_scan_performed": False,
@@ -417,7 +419,7 @@ class SourceModelChildProfileActionTests(unittest.TestCase):
         self.assertNotIn("github.event.pull_request", workflow)
         self.assertIn("persist-credentials: false", jobs)
         self.assertIn(
-            "printf '%s\\n%s' '<!-- oc-eq1-esrm20-source-model-child-profiles-result-v1 -->' \"$RESULT_JSON\" | wc -c",
+            "printf '%s\\n%s' '<!-- oc-eq1-esrm20-source-model-child-profiles-result-v2 -->' \"$RESULT_JSON\" | wc -c",
             jobs,
         )
         self.assertIn("test \"$(printf '%s' \"$BODY\" | wc -c)\" -le 64000", jobs)

@@ -24,6 +24,29 @@ RECEIPT_RESULT_COMMENT_ID = 5312851239
 RECEIPT_SET_SHA256 = "621d16b35166cb66c86079106f1a7fd717ff07ef155184c5eed5a028292e4eb8"
 MAX_XML_BYTES = 128 * 1024 * 1024
 MAX_ELEMENTS = 2_000_000
+MAX_SOURCES_PER_FILE = 250_000
+MAX_TRT_CHARS = 256
+MAX_UNIQUE_TRTS_PER_FILE = 64
+NRML_04_NAMESPACE = "http://openquake.org/xmlns/nrml/0.4"
+NRML_05_NAMESPACE = "http://openquake.org/xmlns/nrml/0.5"
+SUPPORTED_NRML_NAMESPACES = frozenset({NRML_04_NAMESPACE, NRML_05_NAMESPACE})
+SUPPORTED_GML_NAMESPACES = frozenset({"http://www.opengis.net/gml"})
+SUPPORTED_SOURCE_TYPES = frozenset(
+    {
+        "areaSource",
+        "pointSource",
+        "multiPointSource",
+        "simpleFaultSource",
+        "kiteFaultSource",
+        "complexFaultSource",
+        "characteristicFaultSource",
+        "nonParametricSeismicSource",
+        "multiFaultSource",
+    }
+)
+TRT_PROVENANCE_TYPES = frozenset(
+    {"direct_source", "group_inherited", "group_effective_direct_confirmed"}
+)
 _DTD_RE = re.compile(r"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
 _ENCODING_RE = re.compile(r"<\?xml\s+[^>]*encoding\s*=\s*['\"]([^'\"]+)['\"]", re.IGNORECASE)
 
@@ -46,8 +69,31 @@ class SourceModelContentProfileError(RuntimeError):
     """Fail-closed error for exact source-model content profiling."""
 
 
-def _local_name(tag: str) -> str:
-    return tag.rsplit("}", 1)[-1] if "}" in tag else tag
+def _split_explicit_tag(tag: object) -> tuple[str, str]:
+    if type(tag) is not str or not tag.startswith("{") or "}" not in tag:
+        raise SourceModelContentProfileError(
+            "source-model XML must use explicit supported namespaces"
+        )
+    namespace, local = tag[1:].split("}", 1)
+    if not namespace or not local:
+        raise SourceModelContentProfileError("source-model XML contains an invalid tag")
+    return namespace, local
+
+
+def _split_tag(tag: object) -> tuple[str, str]:
+    namespace, local = _split_explicit_tag(tag)
+    if namespace not in SUPPORTED_NRML_NAMESPACES:
+        raise SourceModelContentProfileError("source-model XML uses an unsupported NRML tag")
+    return namespace, local
+
+
+def _local_name_in_namespace(tag: object, namespace: str) -> str:
+    observed_namespace, local = _split_tag(tag)
+    if observed_namespace != namespace:
+        raise SourceModelContentProfileError(
+            "source-model structural element namespace does not match root NRML namespace"
+        )
+    return local
 
 
 def _decode_xml_utf8(payload: bytes) -> str:
@@ -68,6 +114,133 @@ def _decode_xml_utf8(payload: bytes) -> str:
     return text
 
 
+def _safe_trt(value: object, field: str) -> str:
+    if type(value) is not str or not value or value != value.strip():
+        raise SourceModelContentProfileError(f"{field} is missing or not canonical")
+    if len(value) > MAX_TRT_CHARS:
+        raise SourceModelContentProfileError(f"{field} exceeds bounds")
+    if not value.isprintable() or any(ord(char) == 127 for char in value):
+        raise SourceModelContentProfileError(f"{field} contains controls")
+    return value
+
+
+def _record_source(
+    node: ET.Element,
+    *,
+    namespace: str,
+    group_trt: str | None,
+    trt_counts: Counter[str],
+    provenance_counts: Counter[str],
+) -> None:
+    source_type = _local_name_in_namespace(node.tag, namespace)
+    if source_type not in SUPPORTED_SOURCE_TYPES:
+        raise SourceModelContentProfileError(
+            f"unsupported source-model child element: {source_type}"
+        )
+    for descendant in list(node.iter())[1:]:
+        descendant_namespace, descendant_local = _split_explicit_tag(descendant.tag)
+        if descendant_namespace == namespace:
+            if (
+                descendant_local == "sourceGroup"
+                or descendant_local in SUPPORTED_SOURCE_TYPES
+                or descendant_local.endswith("Source")
+            ):
+                raise SourceModelContentProfileError(
+                    "nested source/sourceGroup structure is unsupported"
+                )
+        elif descendant_namespace not in SUPPORTED_GML_NAMESPACES:
+            raise SourceModelContentProfileError(
+                "source-model descendant uses an unsupported namespace"
+            )
+
+    direct = node.attrib.get("tectonicRegion")
+    if group_trt is None:
+        effective = _safe_trt(direct, "source tectonicRegion")
+        provenance = "direct_source"
+    else:
+        effective = group_trt
+        if direct is None:
+            provenance = "group_inherited"
+        else:
+            direct_trt = _safe_trt(direct, "source tectonicRegion")
+            if direct_trt != group_trt:
+                raise SourceModelContentProfileError(
+                    "source tectonicRegion conflicts with sourceGroup tectonicRegion"
+                )
+            provenance = "group_effective_direct_confirmed"
+
+    trt_counts[effective] += 1
+    provenance_counts[provenance] += 1
+    source_count = sum(trt_counts.values())
+    if source_count > MAX_SOURCES_PER_FILE:
+        raise SourceModelContentProfileError("source count exceeds bounds")
+    if len(trt_counts) > MAX_UNIQUE_TRTS_PER_FILE:
+        raise SourceModelContentProfileError("tectonic-region count exceeds bounds")
+
+
+def _profile_trt_structure(root: ET.Element) -> tuple[dict[str, int], dict[str, int]]:
+    namespace, root_local = _split_tag(root.tag)
+    if root_local != "nrml":
+        raise SourceModelContentProfileError("source-model root must be nrml")
+    children = list(root)
+    if (
+        len(children) != 1
+        or _local_name_in_namespace(children[0].tag, namespace) != "sourceModel"
+    ):
+        raise SourceModelContentProfileError("nrml must contain exactly one sourceModel")
+    source_model = children[0]
+    direct_children = list(source_model)
+    if not direct_children:
+        raise SourceModelContentProfileError("sourceModel contains no sources")
+
+    trt_counts: Counter[str] = Counter()
+    provenance_counts: Counter[str] = Counter()
+    child_tags = [
+        _local_name_in_namespace(child.tag, namespace) for child in direct_children
+    ]
+    group_flags = [tag == "sourceGroup" for tag in child_tags]
+
+    if namespace == NRML_04_NAMESPACE:
+        if any(group_flags):
+            raise SourceModelContentProfileError(
+                "NRML 0.4 sourceModel must contain direct source children"
+            )
+        for source_node in direct_children:
+            _record_source(
+                source_node,
+                namespace=namespace,
+                group_trt=None,
+                trt_counts=trt_counts,
+                provenance_counts=provenance_counts,
+            )
+    elif namespace == NRML_05_NAMESPACE:
+        if not all(group_flags):
+            raise SourceModelContentProfileError(
+                "NRML 0.5 sourceModel must contain sourceGroup children"
+            )
+        for group in direct_children:
+            group_trt = _safe_trt(
+                group.attrib.get("tectonicRegion"), "sourceGroup tectonicRegion"
+            )
+            group_children = list(group)
+            if not group_children:
+                raise SourceModelContentProfileError("sourceGroup contains no sources")
+            for source_node in group_children:
+                _record_source(
+                    source_node,
+                    namespace=namespace,
+                    group_trt=group_trt,
+                    trt_counts=trt_counts,
+                    provenance_counts=provenance_counts,
+                )
+    else:  # pragma: no cover - _split_tag already rejects this state.
+        raise SourceModelContentProfileError("source-model XML uses an unsupported NRML tag")
+
+    if not trt_counts or sum(trt_counts.values()) != sum(provenance_counts.values()):
+        raise SourceModelContentProfileError("source TRT counts do not reconcile")
+    return dict(sorted(trt_counts.items())), dict(sorted(provenance_counts.items()))
+
+
 def profile_source_model(path: str, payload: bytes) -> dict[str, Any]:
     if path not in RECEIPTS:
         raise SourceModelContentProfileError("source-model path is outside exact receipt set")
@@ -83,6 +256,7 @@ def profile_source_model(path: str, payload: bytes) -> dict[str, Any]:
         root = ET.fromstring(text)
     except ET.ParseError as exc:
         raise SourceModelContentProfileError("source-model XML is not well formed") from exc
+    root_namespace, _ = _split_tag(root.tag)
     counts: Counter[str] = Counter()
     element_count = 0
     for element in root.iter():
@@ -91,14 +265,22 @@ def profile_source_model(path: str, payload: bytes) -> dict[str, Any]:
             raise SourceModelContentProfileError("source-model XML exceeds element bound")
         if type(element.tag) is not str:
             raise SourceModelContentProfileError("source-model XML contains unsupported node type")
-        counts[_local_name(element.tag)] += 1
+        element_namespace, local = _split_explicit_tag(element.tag)
+        if element_namespace != root_namespace and element_namespace not in SUPPORTED_GML_NAMESPACES:
+            raise SourceModelContentProfileError(
+                "source-model XML contains an unsupported descendant namespace"
+            )
+        counts[local] += 1
+    trt_counts, provenance_counts = _profile_trt_structure(root)
     return {
         "repository_path": path,
         "byte_count": expected_count,
         "sha256": expected_sha256,
-        "root_element": _local_name(root.tag),
+        "root_element": _split_tag(root.tag)[1],
         "element_count": element_count,
         "element_type_counts": dict(sorted(counts.items())),
+        "tectonic_region_type_counts": trt_counts,
+        "trt_provenance_counts": provenance_counts,
         "byte_identity_verified": True,
         "source_model_content_profiled": True,
         "external_reference_scan_performed": False,
