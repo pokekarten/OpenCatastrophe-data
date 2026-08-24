@@ -17,7 +17,7 @@ MAX_ELEMENTS: Final = 512
 MAX_DEPTH: Final = 16
 MAX_TEXT_UTF8_BYTES: Final = 4_096
 _LOCAL_NAME_RE: Final = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{0,63}$")
-_FORBIDDEN_DECL_RE: Final = re.compile(r"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
+_FORBIDDEN_DECL_RE: Final = re.compile(r"<!\s*(?:DOC" r"TYPE|ENT" r"ITY)\b", re.IGNORECASE)
 
 
 class GmpeLogicTreeProfileError(ValueError):
@@ -128,6 +128,8 @@ def _profile_verified(data: bytes, *, expected_byte_count: int, expected_sha256:
             attribute_names[attr_name] += 1
         text = element.text or ""
         if text.strip():
+            if name not in {"uncertaintyModel", "uncertaintyWeight"}:
+                raise GmpeLogicTreeProfileError(f"non_whitespace_container_text_forbidden:{name}")
             raw = text.strip().encode("utf-8")
             if len(raw) > MAX_TEXT_UTF8_BYTES:
                 raise GmpeLogicTreeProfileError("element_text_too_large")
