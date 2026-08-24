@@ -118,7 +118,7 @@ class GreeceSiteRequiredDomainTests(unittest.TestCase):
         self.assertEqual(slope["consumer_domain_reject_count"], 1)
         self.assertEqual(result["required_consumer_domain_reject_total"], 1)
 
-    def test_region_default_is_distinguished_from_rejection(self) -> None:
+    def test_valid_uint32_regions_outside_calibrated_set_use_default_coefficients(self) -> None:
         raw = _xml(
             [
                 {
@@ -131,14 +131,56 @@ class GreeceSiteRequiredDomainTests(unittest.TestCase):
                     "slope": "0.1",
                     "geology": "CENOZOIC",
                 },
+                {
+                    "region": "4294967295",
+                    "slope": "0.1",
+                    "geology": "CENOZOIC",
+                },
             ]
         )
-        result = _profile(raw, expected_site_count=2)
+        result = _profile(raw, expected_site_count=3)
         region = result["parameter_domains"]["region"]
 
-        self.assertEqual(region["runtime_default_region_count"], 1)
+        self.assertEqual(region["runtime_default_region_count"], 3)
         self.assertEqual(region["calibrated_region_count"], 0)
-        self.assertEqual(region["consumer_domain_reject_count"], 1)
+        self.assertEqual(region["consumer_domain_reject_count"], 0)
+        self.assertEqual(result["required_consumer_domain_reject_total"], 0)
+        self.assertEqual(region["runtime_dtype"], "uint32")
+        self.assertEqual(region["explicit_default_code"], 0)
+        self.assertEqual(
+            region["static_contract"],
+            "uint32_integral_calibrated_1_to_5_else_default_coefficients",
+        )
+
+    def test_region_rejects_non_uint32_or_nonintegral_values(self) -> None:
+        raw = _xml(
+            [
+                {
+                    "region": "-1",
+                    "slope": "0.1",
+                    "geology": "CENOZOIC",
+                },
+                {
+                    "region": "4294967296",
+                    "slope": "0.1",
+                    "geology": "CENOZOIC",
+                },
+                {
+                    "region": "1.5",
+                    "slope": "0.1",
+                    "geology": "CENOZOIC",
+                },
+            ]
+        )
+        result = _profile(raw, expected_site_count=3)
+        region = result["parameter_domains"]["region"]
+
+        self.assertEqual(region["finite_decimal_count"], 3)
+        self.assertEqual(region["integral_numeric_count"], 2)
+        self.assertEqual(region["runtime_default_region_count"], 0)
+        self.assertEqual(region["calibrated_region_count"], 0)
+        self.assertEqual(region["consumer_domain_reject_count"], 3)
+        self.assertEqual(result["required_consumer_domain_reject_total"], 3)
 
     def test_unrecognized_geology_is_accepted_via_fixed_effects_fallback(self) -> None:
         raw = _xml(
@@ -250,6 +292,7 @@ class GreeceSiteRequiredDomainTests(unittest.TestCase):
             "KothaEtAl2020ESHM20SlopeGeology",
         )
         self.assertEqual(subject.EXPECTED_SITE_COUNT, 1491)
+        self.assertEqual(subject.REGION_UINT32_MAX, 4294967295)
         self.assertEqual(
             subject.EXPECTED_REGION_VALUE_SET_SHA256,
             "2100f74540b48d50e35963625f64f84081c74ca7512bc605dc7da10ddc0bffef",
