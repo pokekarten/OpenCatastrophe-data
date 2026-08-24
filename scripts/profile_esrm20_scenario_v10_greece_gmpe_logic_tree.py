@@ -83,8 +83,8 @@ def _profile_verified(data: bytes, *, expected_byte_count: int, expected_sha256:
 
     # OpenQuake Engine v3.13.0's gsim_lt.bsnodes accepts both the modern
     # direct logicTreeBranchSet form and legacy logicTreeBranchingLevel
-    # wrappers. Keep that exact bounded dual shape here rather than forcing
-    # only the legacy wrapper.
+    # wrappers. A legacy wrapper may contain only one BranchSet; direct and
+    # legacy nodes may still coexist as siblings under logicTree.
     expected_direct_children = {
         "logicTree": ("logicTreeBranchingLevel", "logicTreeBranchSet"),
         "logicTreeBranchingLevel": ("logicTreeBranchSet",),
@@ -108,6 +108,10 @@ def _profile_verified(data: bytes, *, expected_byte_count: int, expected_sha256:
             if not children:
                 raise GmpeLogicTreeProfileError(
                     f"missing_direct_child:{name}:{expected_children[0]}"
+                )
+            if name == "logicTreeBranchingLevel" and len(children) > 1:
+                raise GmpeLogicTreeProfileError(
+                    "branching_level_branch_set_cardinality_mismatch"
                 )
             for child in children:
                 child_ns, child_name = _split_tag(child.tag)
