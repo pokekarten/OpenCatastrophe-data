@@ -93,6 +93,7 @@ jobs:
       - name: Select earliest canonical trusted request and deduplicate terminal
         id: dedup
         env:
+          GH_TOKEN: ${{ github.token }}
           EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
           CURRENT_REQUEST_COMMENT_ID: ${{ github.event.comment.id }}
           REPOSITORY_OWNER: ${{ github.event.repository.owner.login }}
@@ -241,8 +242,6 @@ jobs:
           test "$LATEST_SHA" = "$EXECUTION_SHA"
 
           printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
-            def false_ceiling:
-              . == false;
             def bounded_strings:
               type == "array" and length <= 128 and
               all(.[]; type == "string" and length >= 1 and length <= 4096);
