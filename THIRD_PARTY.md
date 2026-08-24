@@ -9,7 +9,13 @@ Reviewed inventory for direct software dependencies, workflow actions and distri
 
 ## Runtime/build dependencies
 
-None beyond Python and Git for repository-authored runtime/acquisition-independent tooling. Validation-only and acquisition-only dependencies are isolated below and are not model/runtime dependencies.
+None beyond Python and Git for repository-authored runtime/acquisition-independent tooling. Validation-only, acquisition-only and bounded CI build dependencies are isolated below and are not model/runtime dependencies of the repository itself.
+
+### Bounded OpenQuake 3.13 offline-runtime build
+
+`.github/workflows/oq313-offline-linux-bundle.yml` uses `openquake/engine:3.13.0` only as a bootstrap image and overlays the exact OpenQuake source commit `16dd69ecea0c6dcaf49c22ca12edc9da3f024889`. The exact upstream `gem/oq-engine` source at that commit carries the GNU Affero General Public License version 3 (`LICENSE`). The workflow records the observed bootstrap repository digest and execution image ID, but the bootstrap tag is not yet admitted as an immutable expected digest; this is a separate reproducibility gate and must not be described as a historical-environment proof.
+
+The built Linux root filesystem also contains OS, Python, native and Python-package dependencies with their own licences and notice/source obligations. Those aggregate redistribution obligations have **not** been affirmatively inventoried here. Therefore the workflow must not publish or upload `rootfs.tar.zst`; it may upload only repository-authored helper text/scripts plus bounded receipt/hash material. A future change may distribute the rootfs only after the complete aggregate licence/notice/source obligations are reviewed and recorded in the same change. Building/probing the rootfs ephemerally in CI is not treated as redistribution authorization.
 
 ## Validation-only YAML dependency
 
@@ -42,6 +48,10 @@ The top-level REUSE version is exact but its Python transitive environment is no
 - `actions/checkout` `3d3c42e5aac5ba805825da76410c181273ba90b1` (`v7.0.1`, MIT; re-verified 2026-08-09), with `persist-credentials: false`;
 - `actions/setup-python` `5fda3b95a4ea91299a34e894583c3862153e4b97` (`v7.0.0`, MIT; re-verified 2026-08-09);
 - `actions/dependency-review-action` `a1d282b36b6f3519aa1f3fc636f609c47dddb294` (`v5.0.0`, MIT; reviewed 2026-08-10), used only on pull requests to reject newly introduced high/critical known-vulnerability dependencies before the stable `Required` gate can pass.
+
+`.github/workflows/oq313-offline-linux-bundle.yml` additionally uses:
+
+- `actions/upload-artifact` `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` (`v7.0.1`, MIT; exact commit verified 2026-08-24). The action receives only the bounded non-rootfs receipt files selected by the workflow. It does not receive repository write permission or project secrets.
 
 Re-review upstream licence/release identity before changing a pin.
 
