@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import http.client
 import json
+from pathlib import Path
 import unittest
 
 from scripts import acquire_efehr_esrm20_athens_gmpe_profile as worker
@@ -12,6 +13,7 @@ from scripts import run_esrm20_athens_gmpe_profile_action as action
 
 
 SHA = "a" * 40
+WORKFLOW = Path(".github/workflows/esrm20-athens-gmpe-profile-diagnostic.yml")
 
 
 class _Headers:
@@ -232,6 +234,26 @@ class ActionTests(unittest.TestCase):
         payload["gmpe_semantics_verified"] = True
         with self.assertRaises(worker.AthensGmpeProfileContractError):
             worker._validate_profile_payload(payload)
+
+    def test_diagnostic_publisher_refences_live_default_branch_before_post(self):
+        text = WORKFLOW.read_text(encoding="utf-8")
+        publisher = text.split("  publish-diagnostic:", 1)[1]
+        self.assertIn("contents: read", publisher)
+        self.assertIn("issues: write", publisher)
+        self.assertIn(
+            "DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}",
+            publisher,
+        )
+        self.assertIn(
+            "gh api \"repos/$GITHUB_REPOSITORY/commits/$DEFAULT_BRANCH\" --jq '.sha'",
+            publisher,
+        )
+        self.assertIn('test "$LATEST_SHA" = "$EXECUTION_SHA"', publisher)
+        self.assertLess(
+            publisher.index('test "$LATEST_SHA" = "$EXECUTION_SHA"'),
+            publisher.index('"repos/${GITHUB_REPOSITORY}/issues/285/comments"'),
+        )
+        self.assertNotIn("actions/checkout", publisher)
 
 
 if __name__ == "__main__":
