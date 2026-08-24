@@ -48,7 +48,7 @@ jobs:
         run: |
           set -euo pipefail
           EXECUTION_SHA="$(git rev-parse HEAD)"
-          python scripts/run_esrm20_athens_gmpe_profile_diagnostic_action.py \
+          python -m scripts.run_esrm20_athens_gmpe_profile_diagnostic_action \
             --comment-body-env OC_ATHENS_GMPE_DIAGNOSTIC_REQUEST \
             --expected-issue 285 \
             --execution-sha "$EXECUTION_SHA" \
@@ -108,7 +108,7 @@ jobs:
           RESULT_PATH: ${{ runner.temp }}/athens-gmpe-profile-diagnostic-result.json
         run: |
           set -euo pipefail
-          python scripts/run_esrm20_athens_gmpe_profile_diagnostic_action.py \
+          python -m scripts.run_esrm20_athens_gmpe_profile_diagnostic_action \
             --comment-body-env OC_ATHENS_GMPE_DIAGNOSTIC_REQUEST \
             --expected-issue 285 \
             --execution-sha "$EXECUTION_SHA" \
