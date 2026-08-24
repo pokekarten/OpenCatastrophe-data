@@ -243,14 +243,15 @@ def has_terminal_result(*, repository: str, token: str, execution_sha: str, open
         comments = fetch_repository_comments(repository, token, **kwargs)
     except LedgerError as exc:
         raise AthensGmpeProfileActionError("Athens GMPE result ledger is incomplete") from exc
+    match_seen = False
     for comment in comments:
         if type(comment) is not dict:
             raise AthensGmpeProfileActionError("Athens GMPE ledger contains non-object comment")
         user = comment.get("user")
         login = user.get("login") if type(user) is dict else None
-        if login == TRUSTED_RESULT_LOGIN and _parse_terminal(comment.get("body"), execution_sha=execution_sha):
-            return True
-    return False
+        if login == TRUSTED_RESULT_LOGIN:
+            match_seen = _parse_terminal(comment.get("body"), execution_sha=execution_sha) or match_seen
+    return match_seen
 
 
 def _run(*, execution_sha: str, acquirer: Callable[[], dict[str, Any]]) -> dict[str, Any]:
