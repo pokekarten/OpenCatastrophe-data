@@ -295,6 +295,14 @@ class AthensGmpeProfileDiagnosticTests(unittest.TestCase):
         self.assertIn(diagnostic.REQUEST_MARKER, workflow)
         self.assertIn(diagnostic.RESULT_MARKER, workflow)
         self.assertIn("issues: write", workflow)
+        module_entrypoint = (
+            "python -m scripts.run_esrm20_athens_gmpe_profile_diagnostic_action"
+        )
+        direct_entrypoint = (
+            "python scripts/run_esrm20_athens_gmpe_profile_diagnostic_action.py"
+        )
+        self.assertEqual(workflow.count(module_entrypoint), 2)
+        self.assertNotIn(direct_entrypoint, workflow)
         self.assertNotIn("pull_request_target:", workflow)
 
 
