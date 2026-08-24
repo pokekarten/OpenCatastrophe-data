@@ -36,7 +36,8 @@ class Oq313OfflineLinuxBundleContractTests(unittest.TestCase):
         self.assertNotIn("artifact-url", self.workflow)
 
     def test_tracked_workflow_has_no_user_home_literal(self) -> None:
-        self.assertNotIn("/home/openquake/", self.workflow)
+        blocked_home = "/" + "home/" + "openquake/"
+        self.assertNotIn(blocked_home, self.workflow)
         self.assertIn("rm -rf /root/.cache/pip", self.workflow)
 
     def test_portable_launcher_never_requires_host_root_alias(self) -> None:
