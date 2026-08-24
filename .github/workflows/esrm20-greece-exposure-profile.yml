@@ -1,0 +1,165 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Greece Exposure Wrapper Profile
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-greece-exposure-profile-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  execute-profile:
+    name: Execute bounded trusted-main Greece exposure profile
+    if: >-
+      github.event.issue.number == 285 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-greece-exposure-profile-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.run.outputs.result_json }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_GREECE_EXPOSURE_REQUEST: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.run_efehr_greece_exposure_profile_action \
+            --comment-body-env OC_GREECE_EXPOSURE_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Deduplicate trusted terminal before provider I/O
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ steps.fence.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from scripts.run_efehr_greece_exposure_profile_action import has_terminal_result
+
+          found = has_terminal_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          Path(os.environ["GITHUB_OUTPUT"]).write_text(
+              f"skip={'true' if found else 'false'}\n", encoding="utf-8"
+          )
+          PY
+
+      - name: Acquire exact wrapper bytes and emit bounded declarations
+        if: steps.dedup.outputs.skip != 'true'
+        id: run
+        env:
+          OC_GREECE_EXPOSURE_REQUEST: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ steps.fence.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/greece-exposure-profile.json
+        run: |
+          set -euo pipefail
+          python -m scripts.run_efehr_greece_exposure_profile_action \
+            --comment-body-env OC_GREECE_EXPOSURE_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+          RESULT_JSON="$(jq -cS . "$RESULT_PATH")"
+          test -n "$RESULT_JSON"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-profile:
+    name: Publish bounded Greece exposure declaration evidence
+    needs: [execute-profile]
+    if: >-
+      needs.execute-profile.result == 'success' &&
+      needs.execute-profile.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Re-fence result and publish without checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.execute-profile.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-profile.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-greece-exposure-profile-result-v1 -->"
+        run: |
+          set -euo pipefail
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-greece-exposure-profile-result-v1" and
+            .action == "esrm20_greece_exposure_wrapper_profile" and
+            .source_issue == 285 and
+            .parent_consumer_issue == 287 and
+            .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+            .target_sha == $sha and
+            .execution_sha == $sha and
+            (.status == "pass" or .status == "blocked") and
+            .exposure_identity.project_id == 269 and
+            .exposure_identity.commit_sha == "05f83bbc9df81d02ee8ddb1801d9d781355ce783" and
+            .exposure_identity.repository_path == "Exposure/OQ_Exposure_Input_Greece.xml" and
+            .exposure_identity.byte_count == 697 and
+            .exposure_identity.sha256 == "f66dd2623a29a1ec6066e4daf9e1c40df14acca24d1643c545d8fac5c38a2556" and
+            .external_bytes_persisted == false and
+            .referenced_dependency_bytes_receipted == false and
+            .referenced_dependency_content_profiled == false and
+            .crs_semantics_verified == false and
+            .taxonomy_semantics_verified == false and
+            .replacement_cost_semantics_verified == false and
+            .benchmark_agreement_inspected == false and
+            .independent_validation_established == false and
+            .holdout_status_established == false and
+            .publication_authorized == false and
+            .model_use_authorized == false and
+            (if .status == "pass" then
+               .failure_class == null and
+               .provider_file_bytes_read == true and
+               .source_declarations_profiled == true and
+               (.evidence | type) == "object" and
+               .evidence.external_bytes_persisted == false and
+               .evidence.publication_authorized == false and
+               .evidence.model_use_authorized == false and
+               .evidence.content_profile.source_declarations_profiled == true and
+               .evidence.content_profile.raw_xml_returned == false and
+               .evidence.content_profile.referenced_dependency_bytes_receipted == false and
+               .evidence.content_profile.referenced_dependency_content_profiled == false and
+               (.evidence.content_profile.profile.asset_references | type) == "array" and
+               (.evidence.content_profile.profile.asset_references | length) <= 128
+             else
+               (.failure_class == "acquisition_failure" or .failure_class == "profile_failure") and
+               .source_declarations_profiled == false and
+               .evidence == null
+             end)
+          ' >/dev/null
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/greece-exposure-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/285/comments" \
+            --input "$RUNNER_TEMP/greece-exposure-comment.json"
