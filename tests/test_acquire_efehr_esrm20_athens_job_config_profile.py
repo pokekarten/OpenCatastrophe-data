@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import json
 import unittest
 from unittest import mock
@@ -289,6 +290,38 @@ class ResultTests(unittest.TestCase):
         self.assertFalse(result["provider_file_content_profiled"])
         self.assertIsNone(result["evidence"])
         self.assertNotIn("provider detail", json.dumps(result))
+
+    def test_incomplete_http_read_is_bounded_acquisition_failure(self) -> None:
+        response = mock.MagicMock()
+        response_context = mock.MagicMock()
+        response_context.__enter__.return_value = response
+        opener = mock.Mock(return_value=response_context)
+
+        with (
+            mock.patch.object(job, "_require_contract", return_value=None),
+            mock.patch.object(job, "_validate_exact_response", return_value=None),
+            mock.patch.object(
+                job,
+                "_read_bounded",
+                side_effect=http.client.IncompleteRead(b"provider detail", 7),
+            ),
+        ):
+            result = job._run(
+                execution_sha=SHA,
+                acquirer=lambda: job._acquire_and_profile_for_test(
+                    opener=opener,
+                    monotonic=lambda: 0.0,
+                ),
+            )
+
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["failure_class"], "acquisition_failure")
+        self.assertIsNone(result["provider_file_bytes_read"])
+        self.assertFalse(result["provider_file_content_profiled"])
+        self.assertIsNone(result["evidence"])
+        encoded = json.dumps(result)
+        self.assertNotIn("provider detail", encoded)
+        self.assertNotIn("IncompleteRead", encoded)
 
     def test_profile_failure_is_static_after_verified_read(self) -> None:
         def fail() -> dict[str, object]:
