@@ -9,12 +9,14 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/oq313-offline-linux-bundle.yml"
+LAUNCHER = ROOT / "scripts/run_oq313_offline_linux_runtime.sh"
 EXPECTED_DIGEST = "sha256:dcfb88b3f9feb96eddee648690253492ba252619703ff48477affdbbb3c1151c"
 
 
 class Oq313OfflineLinuxBundleContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.workflow = WORKFLOW.read_text(encoding="utf-8")
+        self.launcher = LAUNCHER.read_text(encoding="utf-8")
 
     def test_bootstrap_image_is_immutable_and_fail_closed(self) -> None:
         self.assertIn(f"BASE_IMAGE: openquake/engine@{EXPECTED_DIGEST}", self.workflow)
@@ -36,6 +38,14 @@ class Oq313OfflineLinuxBundleContractTests(unittest.TestCase):
     def test_tracked_workflow_has_no_user_home_literal(self) -> None:
         self.assertNotIn("/home/openquake/", self.workflow)
         self.assertIn("rm -rf /root/.cache/pip", self.workflow)
+
+    def test_portable_launcher_never_requires_host_root_alias(self) -> None:
+        self.assertIn('OQ_SOURCE="$ROOTFS/oq-engine"', self.launcher)
+        self.assertIn('PYTHONPATH="$OC_SOURCE:$OQ_SOURCE:$SITE"', self.launcher)
+        self.assertNotIn("ln -s", self.launcher)
+        self.assertNotIn("safe.directory /oq-engine", self.launcher)
+        self.assertNotIn("requires root permission", self.launcher)
+        self.assertNotIn('Path("/oq-engine/openquake")', self.workflow)
 
 
 if __name__ == "__main__":
