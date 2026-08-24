@@ -254,18 +254,21 @@ jobs:
         id: runtime
         run: |
           set -euo pipefail
-          BASE_IMAGE="openquake/engine:3.13.0"
+          BASE_IMAGE="openquake/engine@sha256:dcfb88b3f9feb96eddee648690253492ba252619703ff48477affdbbb3c1151c"
+          EXPECTED_BOOTSTRAP_DIGEST="sha256:dcfb88b3f9feb96eddee648690253492ba252619703ff48477affdbbb3c1151c"
           docker pull "$BASE_IMAGE"
           BASE_REPO_DIGEST="$(docker image inspect \
             --format='{{index .RepoDigests 0}}' "$BASE_IMAGE")"
           BOOTSTRAP_DIGEST="${BASE_REPO_DIGEST##*@}"
           printf '%s\n' "$BOOTSTRAP_DIGEST" | grep -Eq '^sha256:[0-9a-f]{64}$'
+          test "$BOOTSTRAP_DIGEST" = "$EXPECTED_BOOTSTRAP_DIGEST"
 
           BUILD_ROOT="$RUNNER_TEMP/oq313-build"
           mkdir -p "$BUILD_ROOT"
           cp -a "$RUNNER_TEMP/oq-engine" "$BUILD_ROOT/oq-engine"
           cat > "$BUILD_ROOT/Dockerfile" <<'EOF'
-          FROM openquake/engine:3.13.0
+          ARG BASE_IMAGE
+          FROM ${BASE_IMAGE}
           USER root
           RUN apt-get update \
               && apt-get install -y --no-install-recommends git \
@@ -280,7 +283,8 @@ jobs:
           USER openquake
           EOF
           EXEC_IMAGE="oc-eq1-oq313:${EXECUTION_SHA}"
-          docker build --pull=false -t "$EXEC_IMAGE" "$BUILD_ROOT"
+          docker build --pull=false --build-arg BASE_IMAGE="$BASE_IMAGE" \
+            -t "$EXEC_IMAGE" "$BUILD_ROOT"
           EXEC_IMAGE_ID="$(docker image inspect --format='{{.Id}}' "$EXEC_IMAGE")"
           printf '%s\n' "$EXEC_IMAGE_ID" | grep -Eq '^sha256:[0-9a-f]{64}$'
 
