@@ -14,6 +14,10 @@ XML = b'<nrml xmlns="http://openquake.org/xmlns/nrml/0.5"><sourceModel><pointSou
 RECEIPT = (len(XML), hashlib.sha256(XML).hexdigest())
 
 
+def _receipt(payload: bytes) -> tuple[int, str]:
+    return len(payload), hashlib.sha256(payload).hexdigest()
+
+
 class SourceModelContentProfileTests(unittest.TestCase):
     def test_profiles_only_after_exact_byte_identity(self) -> None:
         with patch.dict(subject.RECEIPTS, {PATH: RECEIPT}, clear=True):
@@ -28,6 +32,84 @@ class SourceModelContentProfileTests(unittest.TestCase):
         self.assertFalse(profile["external_bytes_persisted"])
         self.assertFalse(profile["publication_authorized"])
         self.assertFalse(profile["model_use_authorized"])
+
+    def test_profiles_direct_effective_tectonic_regions_without_source_identity(self) -> None:
+        payload = (
+            b'<nrml xmlns="http://openquake.org/xmlns/nrml/0.5"><sourceModel>'
+            b'<pointSource id="p1" tectonicRegion="Active Shallow Crust"/>'
+            b'<areaSource id="a1" tectonicRegion="Active Shallow Crust"/>'
+            b'<complexFaultSource id="f1" tectonicRegion="Subduction Interface"/>'
+            b'</sourceModel></nrml>'
+        )
+        with patch.dict(subject.RECEIPTS, {PATH: _receipt(payload)}, clear=True):
+            profile = subject.profile_source_model_tectonic_regions(PATH, payload)
+        self.assertEqual(profile["source_count"], 3)
+        self.assertEqual(
+            profile["effective_tectonic_region_counts"],
+            {"Active Shallow Crust": 2, "Subduction Interface": 1},
+        )
+        self.assertEqual(
+            profile["tectonic_region_provenance_counts"],
+            {"direct": 3, "source_group": 0, "direct_and_source_group": 0},
+        )
+        self.assertNotIn("p1", str(profile))
+        self.assertFalse(profile["runtime_compatibility_verified"])
+        self.assertFalse(profile["model_use_authorized"])
+
+    def test_profiles_source_group_inheritance_and_matching_direct_declaration(self) -> None:
+        payload = (
+            b'<nrml xmlns="http://openquake.org/xmlns/nrml/0.5"><sourceModel>'
+            b'<sourceGroup tectonicRegion="Subduction Interface">'
+            b'<complexFaultSource id="a"/>'
+            b'<complexFaultSource id="b" tectonicRegion="Subduction Interface"/>'
+            b'</sourceGroup></sourceModel></nrml>'
+        )
+        with patch.dict(subject.RECEIPTS, {PATH: _receipt(payload)}, clear=True):
+            profile = subject.profile_source_model_tectonic_regions(PATH, payload)
+        self.assertEqual(profile["effective_tectonic_region_counts"], {"Subduction Interface": 2})
+        self.assertEqual(
+            profile["tectonic_region_provenance_counts"],
+            {"direct": 0, "source_group": 1, "direct_and_source_group": 1},
+        )
+
+    def test_rejects_conflicting_group_and_direct_tectonic_region(self) -> None:
+        payload = (
+            b'<nrml><sourceModel><sourceGroup tectonicRegion="Active Shallow Crust">'
+            b'<areaSource tectonicRegion="Stable Shallow Crust"/>'
+            b'</sourceGroup></sourceModel></nrml>'
+        )
+        with patch.dict(subject.RECEIPTS, {PATH: _receipt(payload)}, clear=True):
+            with self.assertRaisesRegex(subject.SourceModelContentProfileError, "conflicts"):
+                subject.profile_source_model_tectonic_regions(PATH, payload)
+
+    def test_rejects_missing_or_blank_effective_tectonic_region(self) -> None:
+        payloads = (
+            b'<nrml><sourceModel><pointSource/></sourceModel></nrml>',
+            b'<nrml><sourceModel><pointSource tectonicRegion=" "/></sourceModel></nrml>',
+            b'<nrml><sourceModel><sourceGroup><pointSource tectonicRegion="A"/></sourceGroup></sourceModel></nrml>',
+        )
+        for payload in payloads:
+            with self.subTest(payload=payload):
+                with patch.dict(subject.RECEIPTS, {PATH: _receipt(payload)}, clear=True):
+                    with self.assertRaises(subject.SourceModelContentProfileError):
+                        subject.profile_source_model_tectonic_regions(PATH, payload)
+
+    def test_rejects_control_bearing_tectonic_region(self) -> None:
+        payload = b'<nrml><sourceModel><pointSource tectonicRegion="Active&#10;Crust"/></sourceModel></nrml>'
+        with patch.dict(subject.RECEIPTS, {PATH: _receipt(payload)}, clear=True):
+            with self.assertRaisesRegex(subject.SourceModelContentProfileError, "control"):
+                subject.profile_source_model_tectonic_regions(PATH, payload)
+
+    def test_rejects_unsupported_source_nesting(self) -> None:
+        payloads = (
+            b'<nrml><sourceModel><wrapper><pointSource tectonicRegion="A"/></wrapper></sourceModel></nrml>',
+            b'<nrml><sourceModel><pointSource tectonicRegion="A"><areaSource tectonicRegion="A"/></pointSource></sourceModel></nrml>',
+        )
+        for payload in payloads:
+            with self.subTest(payload=payload):
+                with patch.dict(subject.RECEIPTS, {PATH: _receipt(payload)}, clear=True):
+                    with self.assertRaisesRegex(subject.SourceModelContentProfileError, "nesting"):
+                        subject.profile_source_model_tectonic_regions(PATH, payload)
 
     def test_rejects_path_outside_exact_receipt_set(self) -> None:
         with self.assertRaisesRegex(subject.SourceModelContentProfileError, "outside exact receipt set"):
