@@ -33,6 +33,7 @@ SUPPORTED_NRML_NAMESPACES = frozenset(
         "http://openquake.org/xmlns/nrml/0.5",
     }
 )
+SUPPORTED_GML_NAMESPACES = frozenset({"http://www.opengis.net/gml"})
 SUPPORTED_SOURCE_TYPES = frozenset(
     {
         "areaSource",
@@ -71,13 +72,20 @@ class SourceModelContentProfileError(RuntimeError):
     """Fail-closed error for exact source-model content profiling."""
 
 
-def _split_tag(tag: object) -> tuple[str, str]:
+def _split_explicit_tag(tag: object) -> tuple[str, str]:
     if type(tag) is not str or not tag.startswith("{") or "}" not in tag:
         raise SourceModelContentProfileError(
-            "source-model XML must use an explicit supported NRML namespace"
+            "source-model XML must use explicit supported namespaces"
         )
     namespace, local = tag[1:].split("}", 1)
-    if namespace not in SUPPORTED_NRML_NAMESPACES or not local:
+    if not namespace or not local:
+        raise SourceModelContentProfileError("source-model XML contains an invalid tag")
+    return namespace, local
+
+
+def _split_tag(tag: object) -> tuple[str, str]:
+    namespace, local = _split_explicit_tag(tag)
+    if namespace not in SUPPORTED_NRML_NAMESPACES:
         raise SourceModelContentProfileError("source-model XML uses an unsupported NRML tag")
     return namespace, local
 
@@ -133,14 +141,19 @@ def _record_source(
             f"unsupported source-model child element: {source_type}"
         )
     for descendant in list(node.iter())[1:]:
-        descendant_local = _local_name_in_namespace(descendant.tag, namespace)
-        if (
-            descendant_local == "sourceGroup"
-            or descendant_local in SUPPORTED_SOURCE_TYPES
-            or descendant_local.endswith("Source")
-        ):
+        descendant_namespace, descendant_local = _split_explicit_tag(descendant.tag)
+        if descendant_namespace == namespace:
+            if (
+                descendant_local == "sourceGroup"
+                or descendant_local in SUPPORTED_SOURCE_TYPES
+                or descendant_local.endswith("Source")
+            ):
+                raise SourceModelContentProfileError(
+                    "nested source/sourceGroup structure is unsupported"
+                )
+        elif descendant_namespace not in SUPPORTED_GML_NAMESPACES:
             raise SourceModelContentProfileError(
-                "nested source/sourceGroup structure is unsupported"
+                "source-model descendant uses an unsupported namespace"
             )
 
     direct = node.attrib.get("tectonicRegion")
@@ -240,6 +253,7 @@ def profile_source_model(path: str, payload: bytes) -> dict[str, Any]:
         root = ET.fromstring(text)
     except ET.ParseError as exc:
         raise SourceModelContentProfileError("source-model XML is not well formed") from exc
+    root_namespace, _ = _split_tag(root.tag)
     counts: Counter[str] = Counter()
     element_count = 0
     for element in root.iter():
@@ -248,7 +262,11 @@ def profile_source_model(path: str, payload: bytes) -> dict[str, Any]:
             raise SourceModelContentProfileError("source-model XML exceeds element bound")
         if type(element.tag) is not str:
             raise SourceModelContentProfileError("source-model XML contains unsupported node type")
-        _, local = _split_tag(element.tag)
+        element_namespace, local = _split_explicit_tag(element.tag)
+        if element_namespace != root_namespace and element_namespace not in SUPPORTED_GML_NAMESPACES:
+            raise SourceModelContentProfileError(
+                "source-model XML contains an unsupported descendant namespace"
+            )
         counts[local] += 1
     trt_counts, provenance_counts = _profile_trt_structure(root)
     return {
