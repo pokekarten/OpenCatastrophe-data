@@ -253,7 +253,7 @@ def _validate_adapter_document(document: object) -> dict[str, Any]:
             raise KosovoResidentialOQ313ActionError("BLOCKED exit code drifted")
 
     diagnostic = document.get("native_failure_diagnostic")
-    if diagnostic is not None:
+    if "native_failure_diagnostic" in document:
         if status != "blocked" or type(diagnostic) is not dict or set(diagnostic) != {
             "byte_count",
             "sha256",
