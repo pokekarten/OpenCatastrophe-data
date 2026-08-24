@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import http.client
 import json
 import unittest
 
@@ -47,6 +48,11 @@ class _Response:
 
     def __exit__(self, exc_type, exc, tb):
         return False
+
+
+class _IncompleteResponse(_Response):
+    def read(self, size=-1):
+        raise http.client.IncompleteRead(b"partial-provider-bytes", worker.EXPECTED_BYTE_COUNT)
 
 
 def _profile_payload():
@@ -161,6 +167,25 @@ class FixedWorkerTests(unittest.TestCase):
                 profiler=profiler,
             )
         self.assertFalse(called)
+
+    def test_incomplete_http_stream_is_normalized_and_action_terminalized(self):
+        def opener(request, timeout):
+            return _IncompleteResponse(request.full_url, b"x" * worker.EXPECTED_BYTE_COUNT)
+
+        def acquire():
+            return worker.acquire_and_profile_athens_gmpe(
+                opener=opener,
+                monotonic=lambda: 0.0,
+                profiler=lambda raw: (_ for _ in ()).throw(AssertionError("profiler must not run")),
+            )
+
+        result = action._run(execution_sha=SHA, acquirer=acquire)
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["failure_class"], "acquisition_failure")
+        self.assertIsNone(result["provider_file_bytes_read"])
+        self.assertIsNone(result["evidence"])
+        self.assertNotIn("IncompleteRead", repr(result))
+        self.assertNotIn("partial-provider-bytes", repr(result))
 
 
 class ActionTests(unittest.TestCase):
