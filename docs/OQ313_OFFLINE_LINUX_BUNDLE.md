@@ -96,3 +96,4 @@ runtime can be materialized and imported. It does not establish:
 
 Those remain governed by the exact run/data evidence in #609 / #287 and the
 source-specific component issues.
+
