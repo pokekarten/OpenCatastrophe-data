@@ -214,6 +214,32 @@ class KosovoResidentialOQ313ActionTests(unittest.TestCase):
         self.assertEqual(result["status"], "blocked")
         self.assertEqual(result["adapter_result"]["failure_stage"], "openquake_run")
 
+    def test_run_action_rejects_adapter_top_level_field_drift(self) -> None:
+        cases = ("extra", "missing")
+        for case in cases:
+            with self.subTest(case=case):
+                def execute(*args: Any, **kwargs: Any) -> tuple[bytes, dict[str, Any]]:
+                    del args, kwargs
+                    document = _adapter_document()
+                    if case == "extra":
+                        document["unexpected_terminal_field"] = "must-not-cross"
+                    else:
+                        document.pop("issues")
+                    payload = _payload(document)
+                    return payload, _receipt(payload)
+
+                with self.assertRaisesRegex(
+                    subject.KosovoResidentialOQ313ActionError,
+                    "adapter result fields drifted",
+                ):
+                    subject.run_action(
+                        execution_sha=EXECUTION_SHA,
+                        source_group1_config=b"source",
+                        runtime_identity={},
+                        resolved_runtime={},
+                        execute=execute,
+                    )
+
     def test_run_action_rejects_adapter_authority_promotion(self) -> None:
         def execute(*args: Any, **kwargs: Any) -> tuple[bytes, dict[str, Any]]:
             del args, kwargs
