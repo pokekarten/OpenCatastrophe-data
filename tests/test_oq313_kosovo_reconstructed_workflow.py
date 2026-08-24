@@ -95,6 +95,21 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
         self.assertNotIn("github.event.inputs", text)
         self.assertNotIn("repository_path:", text)
 
+    def test_execution_image_is_pinned_to_admitted_bootstrap_digest(self) -> None:
+        text = self.text
+        digest = "sha256:dcfb88b3f9feb96eddee648690253492ba252619703ff48477affdbbb3c1151c"
+        self.assertIn(f'BASE_IMAGE="openquake/engine@{digest}"', text)
+        self.assertIn(f'EXPECTED_BOOTSTRAP_DIGEST="{digest}"', text)
+        self.assertIn('test "$BOOTSTRAP_DIGEST" = "$EXPECTED_BOOTSTRAP_DIGEST"', text)
+        self.assertIn("ARG BASE_IMAGE", text)
+        self.assertIn("FROM ${BASE_IMAGE}", text)
+        self.assertIn(
+            'docker build --pull=false --build-arg BASE_IMAGE="$BASE_IMAGE"',
+            text,
+        )
+        self.assertNotIn('BASE_IMAGE="openquake/engine:3.13.0"', text)
+        self.assertNotIn("FROM openquake/engine:3.13.0", text)
+
     def test_fixed_source_identities_are_reverified_before_derivation(self) -> None:
         text = self.text
         self.assertIn("wrapper.SOURCE_BYTE_COUNT", text)
