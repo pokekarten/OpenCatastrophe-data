@@ -102,6 +102,25 @@ class AthensGmpeProfileDiagnosticTests(unittest.TestCase):
                 self.assertEqual(code, expected)
                 self.assertNotIn("SECRET", code)
 
+    def test_known_logic_tree_branch_set_pair_gets_closed_schema_code(self):
+        message = "unexpected_direct_child:logicTree:logicTreeBranchSet"
+        exc = diagnostic.profile.GmpeLogicTreeProfileError(message)
+        code = diagnostic.classify_profile_error(exc)
+        self.assertEqual(code, "logic_tree_branch_set_direct_child")
+        self.assertIn(code, diagnostic.STRUCTURAL_PROFILE_FAILURE_CODES)
+
+        result = diagnostic._run_diagnostic_with(
+            execution_sha=SHA,
+            acquirer=_content_acquirer(message),
+        )
+        encoded = json.dumps(result, sort_keys=True)
+        self.assertEqual(result["failure_stage"], "profile")
+        self.assertEqual(result["failure_code"], code)
+        self.assertTrue(result["provider_file_bytes_read"])
+        self.assertTrue(result["byte_identity_verified"])
+        self.assertFalse(result["provider_file_content_profiled"])
+        self.assertNotIn("unexpected_direct_child:", encoded)
+
     def test_unknown_exception_text_collapses_without_leak(self):
         secret = "SECRET_PROVIDER_XML_OR_MODEL_TEXT"
         exc = diagnostic.profile.GmpeLogicTreeProfileError(secret)
