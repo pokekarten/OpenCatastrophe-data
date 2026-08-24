@@ -27,8 +27,11 @@ from typing import Any
 
 try:
     from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313_action as action
-except ModuleNotFoundError:  # pragma: no cover - direct script execution path
-    import run_esrm20_kosovo_residential_ebrisk_openquake313_action as action
+except ModuleNotFoundError as exc:  # pragma: no cover - direct script execution path
+    if exc.name != "scripts":
+        raise
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313_action as action
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _BASE_FIELDS = {
