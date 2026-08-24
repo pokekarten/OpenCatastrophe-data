@@ -39,6 +39,7 @@ SLOPE_CLAMP_CEILING = Decimal("0.3")
 REGION_DEFAULT = 0
 REGION_CALIBRATED_MIN = 1
 REGION_CALIBRATED_MAX = 5
+REGION_UINT32_MAX = (1 << 32) - 1
 EXPECTED_REGION_VALUE_SET_SHA256 = (
     "2100f74540b48d50e35963625f64f84081c74ca7512bc605dc7da10ddc0bffef"
 )
@@ -192,10 +193,10 @@ def profile_required_site_domains(
             if number == number.to_integral_value():
                 region["integral_numeric_count"] += 1
                 integer = int(number)
-                if integer == REGION_DEFAULT:
-                    region["runtime_default_region_count"] += 1
-                elif REGION_CALIBRATED_MIN <= integer <= REGION_CALIBRATED_MAX:
+                if REGION_CALIBRATED_MIN <= integer <= REGION_CALIBRATED_MAX:
                     region["calibrated_region_count"] += 1
+                elif 0 <= integer <= REGION_UINT32_MAX:
+                    region["runtime_default_region_count"] += 1
                 else:
                     region["consumer_domain_reject_count"] += 1
             else:
@@ -255,8 +256,11 @@ def profile_required_site_domains(
         "parameter_domains": {
             "region": {
                 **region,
-                "static_contract": "integral_numeric_0_default_or_calibrated_1_to_5",
-                "runtime_default_code": REGION_DEFAULT,
+                "static_contract": (
+                    "uint32_integral_calibrated_1_to_5_else_default_coefficients"
+                ),
+                "runtime_dtype": "uint32",
+                "explicit_default_code": REGION_DEFAULT,
                 "calibrated_inclusive_min": REGION_CALIBRATED_MIN,
                 "calibrated_inclusive_max": REGION_CALIBRATED_MAX,
                 "distinct_value_set_sha256": region_hash,
