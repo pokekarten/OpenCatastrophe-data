@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import configparser
 import hashlib
+import http.client
 import io
 import json
 import os
@@ -394,6 +395,7 @@ def _acquire_and_profile_for_test(
             )
     except (
         EfehrAcquisitionError,
+        http.client.HTTPException,
         urllib.error.URLError,
         urllib.error.HTTPError,
         OSError,
@@ -796,6 +798,7 @@ def main(argv: list[str] | None = None) -> int:
         raise AthensJobConfigContractError("Athens job-config result is too large")
     Path(args.output).write_text(encoded + "\n", encoding="utf-8")
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
