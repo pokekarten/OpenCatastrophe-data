@@ -8,12 +8,12 @@
 Provide a reproducible Linux/amd64 runtime checkpoint for the bounded EQ1 Kosovo
 OpenQuake 3.13 `reconstructed_experiment` lane.
 
-The workflow proves that the pinned historical runtime can be materialized,
-exported, and exercised through the portable launcher. It publishes only a
-metadata receipt in the GitHub Actions workflow summary. The generated rootfs
-itself remains runner-temporary and is **not uploaded or distributed** because
-redistribution authorization for the complete third-party rootfs aggregate has
-not been established.
+The workflow proves that the pinned reconstructed OpenQuake 3.13 runtime
+checkpoint can be materialized, exported, and exercised through the portable
+launcher. It publishes only a metadata receipt in the GitHub Actions workflow
+summary. The generated rootfs itself remains runner-temporary and is **not
+uploaded or distributed** because redistribution authorization for the complete
+third-party rootfs aggregate has not been established.
 
 This is engineering/reproducibility evidence, not scientific validation,
 publication authority, or model-use authority.
@@ -82,10 +82,9 @@ authorized operator has an equivalent local bundle. On Linux x86-64 it:
 2. invokes the rootfs glibc dynamic loader directly;
 3. uses the rootfs Python 3.8 standard library and OpenQuake dependency set;
 4. exposes the host `/proc` naturally to `psutil`;
-5. creates a temporary `/oq-engine` alias so the bounded runner's immutable
-   source-overlay contract is preserved;
-6. supplies rootfs-backed `git` and `oq` wrappers;
-7. removes the temporary source alias when the command exits.
+5. keeps the OpenQuake source at `$ROOTFS/oq-engine` and supplies it directly
+   through the rootfs-backed `PYTHONPATH`;
+6. supplies rootfs-backed `git` and `oq` wrappers without host-root aliases.
 
 The original plain-chroot prototype was rejected after testing showed that the
 development sandbox could not bind `/proc`.
