@@ -61,6 +61,11 @@ class GreeceGmpeLogicTreeProfileTests(unittest.TestCase):
         with self.assertRaisesRegex(subject.GmpeLogicTreeProfileError, "branch_direct_child_cardinality"):
             _profile(raw)
 
+    def test_rejects_displaced_branch_set_with_balanced_global_counts(self):
+        raw = b'''<nrml xmlns="http://openquake.org/xmlns/nrml/0.5"><logicTree><logicTreeBranchingLevel><wrapper><logicTreeBranchSet><logicTreeBranch><uncertaintyModel>X</uncertaintyModel><uncertaintyWeight>1</uncertaintyWeight></logicTreeBranch></logicTreeBranchSet></wrapper></logicTreeBranchingLevel></logicTree></nrml>'''
+        with self.assertRaisesRegex(subject.GmpeLogicTreeProfileError, "unexpected_direct_child:logicTreeBranchingLevel:wrapper"):
+            _profile(raw)
+
     def test_rejects_foreign_namespace(self):
         raw = b'''<nrml xmlns="http://openquake.org/xmlns/nrml/0.5"><logicTree><logicTreeBranchingLevel><logicTreeBranchSet><logicTreeBranch><uncertaintyModel>X</uncertaintyModel><uncertaintyWeight>1</uncertaintyWeight><x xmlns="urn:other"/></logicTreeBranch></logicTreeBranchSet></logicTreeBranchingLevel></logicTree></nrml>'''
         with self.assertRaisesRegex(subject.GmpeLogicTreeProfileError, "foreign_xml_namespace"):
