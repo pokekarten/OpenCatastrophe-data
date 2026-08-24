@@ -74,7 +74,10 @@ class SourceModelContentProfileTests(unittest.TestCase):
 
     def test_rejects_mixed_group_and_direct_sources(self) -> None:
         payload = b'<nrml xmlns="http://openquake.org/xmlns/nrml/0.5"><sourceModel><sourceGroup tectonicRegion="Craton"><areaSource/></sourceGroup><areaSource tectonicRegion="Craton"/></sourceModel></nrml>'
-        with self.assertRaisesRegex(subject.SourceModelContentProfileError, "mixes"):
+        with self.assertRaisesRegex(
+            subject.SourceModelContentProfileError,
+            "NRML 0.5 sourceModel must contain sourceGroup children",
+        ):
             _profile(payload)
 
     def test_rejects_unknown_or_nested_source_structure(self) -> None:
