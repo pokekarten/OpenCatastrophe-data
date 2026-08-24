@@ -10,6 +10,7 @@ is exposed and no raw provider bytes are returned or persisted.
 
 from __future__ import annotations
 
+import http.client
 import time
 import urllib.error
 import urllib.parse
@@ -221,7 +222,14 @@ def acquire_and_profile_athens_gmpe(
                 maximum=MAX_RESPONSE_BYTES,
                 monotonic=clock,
             )
-    except (EfehrAcquisitionError, urllib.error.URLError, urllib.error.HTTPError, OSError, TimeoutError) as exc:
+    except (
+        EfehrAcquisitionError,
+        urllib.error.URLError,
+        urllib.error.HTTPError,
+        http.client.HTTPException,
+        OSError,
+        TimeoutError,
+    ) as exc:
         raise AthensGmpeProfileAcquisitionError("fixed Athens GMPE acquisition failed") from exc
     if len(data) != EXPECTED_BYTE_COUNT:
         raise AthensGmpeProfileAcquisitionError("fixed Athens GMPE byte count drifted")
