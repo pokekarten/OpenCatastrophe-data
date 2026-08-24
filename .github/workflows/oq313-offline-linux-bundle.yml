@@ -9,6 +9,7 @@ on:
       - .github/workflows/oq313-offline-linux-bundle.yml
       - docs/OQ313_OFFLINE_LINUX_BUNDLE.md
       - scripts/run_oq313_offline_linux_runtime.sh
+      - tests/test_oq313_offline_linux_bundle_contract.py
   workflow_dispatch:
 
 permissions:
@@ -25,7 +26,8 @@ jobs:
     timeout-minutes: 90
     env:
       OQ_COMMIT: 16dd69ecea0c6dcaf49c22ca12edc9da3f024889
-      BASE_IMAGE: openquake/engine:3.13.0
+      BASE_IMAGE: openquake/engine@sha256:dcfb88b3f9feb96eddee648690253492ba252619703ff48477affdbbb3c1151c
+      EXPECTED_BOOTSTRAP_DIGEST: sha256:dcfb88b3f9feb96eddee648690253492ba252619703ff48477affdbbb3c1151c
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Checkout exact candidate source
@@ -61,6 +63,7 @@ jobs:
             --format='{{index .RepoDigests 0}}' "$BASE_IMAGE")"
           BOOTSTRAP_DIGEST="${BASE_REPO_DIGEST##*@}"
           printf '%s\n' "$BOOTSTRAP_DIGEST" | grep -Eq '^sha256:[0-9a-f]{64}$'
+          test "$BOOTSTRAP_DIGEST" = "$EXPECTED_BOOTSTRAP_DIGEST"
 
           BUILD_ROOT="$RUNNER_TEMP/oq313-offline-build"
           mkdir -p "$BUILD_ROOT"
@@ -69,7 +72,8 @@ jobs:
           rsync -a --delete --exclude='.git/' ./ "$BUILD_ROOT/opencatastrophe-data/"
 
           cat > "$BUILD_ROOT/Dockerfile" <<'EOF'
-          FROM openquake/engine:3.13.0
+          ARG BASE_IMAGE
+          FROM ${BASE_IMAGE}
           USER root
           RUN apt-get update \
               && apt-get install -y --no-install-recommends git \
@@ -81,14 +85,15 @@ jobs:
               && python -m pip install --disable-pip-version-check --no-warn-script-location \
                    -r /oq-engine/requirements-py38-linux64.txt \
               && python -m pip install --no-deps -e /oq-engine \
-              && rm -rf /root/.cache/pip /home/openquake/.cache/pip \
+              && rm -rf /root/.cache/pip \
               && chown -R openquake:openquake /oq-engine /opencatastrophe-data
           USER openquake
           WORKDIR /opencatastrophe-data
           EOF
 
           EXEC_IMAGE="oc-eq1-oq313-offline:${SOURCE_SHA}"
-          docker build --pull=false -t "$EXEC_IMAGE" "$BUILD_ROOT"
+          docker build --pull=false --build-arg BASE_IMAGE="$BASE_IMAGE" \
+            -t "$EXEC_IMAGE" "$BUILD_ROOT"
           EXEC_IMAGE_ID="$(docker image inspect --format='{{.Id}}' "$EXEC_IMAGE")"
           printf '%s\n' "$EXEC_IMAGE_ID" | grep -Eq '^sha256:[0-9a-f]{64}$'
 
@@ -148,7 +153,7 @@ jobs:
           }, sort_keys=True))
           PY
 
-      - name: Export compressed portable Linux runtime and receipts
+      - name: Materialize and probe non-distributed portable runtime
         id: bundle
         env:
           EXEC_IMAGE: ${{ steps.runtime.outputs.execution_image }}
@@ -189,6 +194,8 @@ jobs:
               "portable_host_proc": True,
               "provider_bytes_included": False,
               "model_execution_performed": False,
+              "rootfs_distributed": False,
+              "rootfs_redistribution_authorized": False,
               "historical_reproduction_verified": False,
               "scientific_validity_verified": False,
               "publication_authorized": False,
@@ -256,54 +263,58 @@ jobs:
           chmod +x "$OUT/offline-probe.sh"
 
           cat > "$OUT/README.txt" <<'EOF'
-          OpenCatastrophe OQ3.13 offline portable Linux runtime bundle.
+          OpenCatastrophe OQ3.13 ephemeral portable Linux runtime bundle.
 
-          This bundle contains a Linux/amd64 OpenQuake 3.13 runtime plus the
-          exact OpenCatastrophe-data source revision recorded in manifest.json.
-          It intentionally contains NO EFEHR/ESRM20 provider bytes.
+          This workflow-local bundle contains a Linux/amd64 OpenQuake 3.13
+          runtime plus the exact OpenCatastrophe-data source revision recorded
+          in manifest.json. It intentionally contains NO EFEHR/ESRM20 provider
+          bytes and is NOT uploaded or otherwise distributed by this workflow.
 
-          On Linux x86-64 with zstd, tar, and permission to create the temporary
-          /oq-engine source alias:
+          An authorized local operator retaining an equivalent bundle can run:
             sha256sum -c SHA256SUMS
             ./offline-probe.sh
-
-          Run an OpenCatastrophe Python entry point through the portable runtime:
             ./offline-python.sh -m <module> <arguments>
 
-          The wrapper uses the rootfs dynamic loader directly instead of chroot,
-          so psutil/OpenQuake can see the host /proc even in sandboxes where bind
-          mounts are prohibited. The /oq-engine alias is removed after each run.
-
-          For a full model execution, supply separately receipted provider input
-          bytes outside this bundle and use the repository's bounded runner.
-          Do not treat this runtime bundle as scientific validation or model-use
+          Do not treat this runtime materialization as scientific validation,
+          redistribution authorization, publication authority, or model-use
           authority.
           EOF
 
           (cd "$OUT" && sha256sum \
             rootfs.tar.zst manifest.json offline-python.sh offline-probe.sh README.txt \
             > SHA256SUMS)
+          ROOTFS_SHA256="$(sha256sum "$OUT/rootfs.tar.zst" | awk '{print $1}')"
+          MANIFEST_SHA256="$(sha256sum "$OUT/manifest.json" | awk '{print $1}')"
+          printf '%s\n' "$ROOTFS_SHA256" | grep -Eq '^[0-9a-f]{64}$'
+          printf '%s\n' "$MANIFEST_SHA256" | grep -Eq '^[0-9a-f]{64}$'
+          echo "rootfs_sha256=$ROOTFS_SHA256" >> "$GITHUB_OUTPUT"
+          echo "manifest_sha256=$MANIFEST_SHA256" >> "$GITHUB_OUTPUT"
           du -h "$OUT/rootfs.tar.zst"
 
-      - name: Upload offline runtime bundle
-        id: upload
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: oq313-offline-linux-runtime-${{ env.SOURCE_SHA }}
-          path: ${{ runner.temp }}/oq313-offline-bundle/
-          if-no-files-found: error
-          compression-level: 0
-          retention-days: 14
+          # Exercise the exported portable path before the ephemeral rootfs is discarded.
+          "$OUT/offline-probe.sh"
 
-      - name: Report artifact identity
+      - name: Publish metadata-only runtime receipt to workflow summary
         env:
-          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
-          ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
-          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          ROOTFS_SHA256: ${{ steps.bundle.outputs.rootfs_sha256 }}
+          MANIFEST_SHA256: ${{ steps.bundle.outputs.manifest_sha256 }}
         run: |
           set -euo pipefail
-          test -n "$ARTIFACT_ID"
-          test -n "$ARTIFACT_DIGEST"
-          printf 'source_sha=%s\nartifact_id=%s\nartifact_digest=%s\nartifact_url=%s\n' \
-            "$SOURCE_SHA" "$ARTIFACT_ID" "$ARTIFACT_DIGEST" "$ARTIFACT_URL"
-
+          printf '%s\n' "$ROOTFS_SHA256" | grep -Eq '^[0-9a-f]{64}$'
+          printf '%s\n' "$MANIFEST_SHA256" | grep -Eq '^[0-9a-f]{64}$'
+          {
+            echo '## OQ3.13 non-distributed runtime receipt'
+            echo
+            printf -- '- source_sha: `%s`\n' "$SOURCE_SHA"
+            printf -- '- bootstrap_image: `%s`\n' "$BASE_IMAGE"
+            printf -- '- rootfs_sha256: `%s`\n' "$ROOTFS_SHA256"
+            printf -- '- manifest_sha256: `%s`\n' "$MANIFEST_SHA256"
+            echo '- rootfs_distributed: `false`'
+            echo '- rootfs_redistribution_authorized: `false`'
+            echo
+            echo 'The rootfs was materialized and probed inside this job, then left in runner-temporary storage. Only this metadata receipt is published.'
+            echo
+            echo '```json'
+            cat "$RUNNER_TEMP/oq313-offline-bundle/manifest.json"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
