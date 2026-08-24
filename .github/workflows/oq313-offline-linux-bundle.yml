@@ -216,8 +216,6 @@ jobs:
           import sys
           from pathlib import Path
 
-          import openquake
-          openquake.__path__ = [str(Path("/oq-engine/openquake").resolve())]
           import openquake.baselib as baselib
           import h5py
           import numpy
