@@ -25,7 +25,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313_action as action
+try:
+    from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313_action as action
+except ModuleNotFoundError:  # pragma: no cover - direct script execution path
+    import run_esrm20_kosovo_residential_ebrisk_openquake313_action as action
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _BASE_FIELDS = {
