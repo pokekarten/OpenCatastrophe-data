@@ -27,12 +27,9 @@ MAX_ELEMENTS = 2_000_000
 MAX_SOURCES_PER_FILE = 250_000
 MAX_TRT_CHARS = 256
 MAX_UNIQUE_TRTS_PER_FILE = 64
-SUPPORTED_NRML_NAMESPACES = frozenset(
-    {
-        "http://openquake.org/xmlns/nrml/0.4",
-        "http://openquake.org/xmlns/nrml/0.5",
-    }
-)
+NRML_04_NAMESPACE = "http://openquake.org/xmlns/nrml/0.4"
+NRML_05_NAMESPACE = "http://openquake.org/xmlns/nrml/0.5"
+SUPPORTED_NRML_NAMESPACES = frozenset({NRML_04_NAMESPACE, NRML_05_NAMESPACE})
 SUPPORTED_GML_NAMESPACES = frozenset({"http://www.opengis.net/gml"})
 SUPPORTED_SOURCE_TYPES = frozenset(
     {
@@ -202,12 +199,25 @@ def _profile_trt_structure(root: ET.Element) -> tuple[dict[str, int], dict[str, 
         _local_name_in_namespace(child.tag, namespace) for child in direct_children
     ]
     group_flags = [tag == "sourceGroup" for tag in child_tags]
-    if any(group_flags) and not all(group_flags):
-        raise SourceModelContentProfileError(
-            "sourceModel mixes sourceGroup and direct source children"
-        )
 
-    if all(group_flags):
+    if namespace == NRML_04_NAMESPACE:
+        if any(group_flags):
+            raise SourceModelContentProfileError(
+                "NRML 0.4 sourceModel must contain direct source children"
+            )
+        for source_node in direct_children:
+            _record_source(
+                source_node,
+                namespace=namespace,
+                group_trt=None,
+                trt_counts=trt_counts,
+                provenance_counts=provenance_counts,
+            )
+    elif namespace == NRML_05_NAMESPACE:
+        if not all(group_flags):
+            raise SourceModelContentProfileError(
+                "NRML 0.5 sourceModel must contain sourceGroup children"
+            )
         for group in direct_children:
             group_trt = _safe_trt(
                 group.attrib.get("tectonicRegion"), "sourceGroup tectonicRegion"
@@ -223,15 +233,8 @@ def _profile_trt_structure(root: ET.Element) -> tuple[dict[str, int], dict[str, 
                     trt_counts=trt_counts,
                     provenance_counts=provenance_counts,
                 )
-    else:
-        for source_node in direct_children:
-            _record_source(
-                source_node,
-                namespace=namespace,
-                group_trt=None,
-                trt_counts=trt_counts,
-                provenance_counts=provenance_counts,
-            )
+    else:  # pragma: no cover - _split_tag already rejects this state.
+        raise SourceModelContentProfileError("source-model XML uses an unsupported NRML tag")
 
     if not trt_counts or sum(trt_counts.values()) != sum(provenance_counts.values()):
         raise SourceModelContentProfileError("source TRT counts do not reconcile")
