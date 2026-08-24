@@ -204,9 +204,13 @@ def _validate_terminal_result(result: object, *, execution_sha: str) -> dict[str
     if type(result) is not dict or set(result) != expected_fields:
         raise AthensGmpeProfileActionError("terminal fields drifted")
     for field, expected in base.items():
+        if field == "provider_file_bytes_read":
+            continue
         observed = result.get(field)
         if type(observed) is not type(expected) or observed != expected:
             raise AthensGmpeProfileActionError(f"terminal drifted at {field}")
+    if type(result.get("provider_file_bytes_read")) is not bool:
+        raise AthensGmpeProfileActionError("provider byte-read evidence is not boolean")
     if result.get("status") == "pass":
         if result.get("failure_class") is not None:
             raise AthensGmpeProfileActionError("PASS carries failure class")
