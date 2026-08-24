@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import http.client
 import io
 import time
 import urllib.error
@@ -255,7 +256,13 @@ def acquire_and_profile_kosovo_exposure(
         raise
     except EfehrAcquisitionError as exc:
         raise ExposureProfileError("Kosovo exposure retrieval failed closed") from exc
-    except (OSError, urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:
+    except (
+        OSError,
+        urllib.error.URLError,
+        urllib.error.HTTPError,
+        http.client.HTTPException,
+        TimeoutError,
+    ) as exc:
         raise ExposureProfileError(
             f"Kosovo exposure retrieval failed: {type(exc).__name__}"
         ) from exc
