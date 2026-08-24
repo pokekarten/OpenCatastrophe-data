@@ -244,3 +244,4 @@ jobs:
           test -n "$ARTIFACT_DIGEST"
           printf 'artifact_id=%s\nartifact_digest=%s\nartifact_url=%s\n' \
             "$ARTIFACT_ID" "$ARTIFACT_DIGEST" "$ARTIFACT_URL"
+
