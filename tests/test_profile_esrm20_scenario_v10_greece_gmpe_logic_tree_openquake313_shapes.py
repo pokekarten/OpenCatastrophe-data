@@ -86,6 +86,24 @@ class GreeceGmpeOpenQuake313ShapeTests(unittest.TestCase):
         self.assertEqual(result["branch_set_count"], 2)
         self.assertEqual(result["branch_count"], 2)
 
+    def test_rejects_multiple_branch_sets_inside_legacy_wrapper_like_openquake313(self):
+        raw = _nrml(
+            '<logicTreeBranchingLevel branchingLevelID="legacy">'
+            '<logicTreeBranchSet branchSetID="first" uncertaintyType="gmpeModel">'
+            f"{_branch('first-branch')}"
+            "</logicTreeBranchSet>"
+            '<logicTreeBranchSet branchSetID="second" uncertaintyType="gmpeModel">'
+            f"{_branch('second-branch')}"
+            "</logicTreeBranchSet>"
+            "</logicTreeBranchingLevel>"
+        )
+
+        with self.assertRaisesRegex(
+            subject.GmpeLogicTreeProfileError,
+            "branching_level_branch_set_cardinality_mismatch",
+        ):
+            _profile(raw)
+
     def test_rejects_unknown_direct_child_of_logic_tree(self):
         raw = _nrml("<wrapper/>")
 
