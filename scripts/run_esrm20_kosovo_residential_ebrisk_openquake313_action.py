@@ -57,6 +57,35 @@ _REQUEST_FIELDS = {
     "dataset_id",
     "requester",
 }
+_ADAPTER_RESULT_FIELDS = {
+    "schema_version",
+    "issues",
+    "experiment_label",
+    "scope",
+    "openquake",
+    "config",
+    "loss_semantics",
+    "source_runtime",
+    "resolved_runtime",
+    "execution",
+    "status",
+    "failure_stage",
+    "failure_code",
+    "external_provider_bytes_persisted",
+    "risk_by_event_receipt_emitted",
+    "historical_environment_verified",
+    "reference_base_image_byte_identity_verified",
+    "wheel_byte_identity_verified",
+    "historical_group_assignment_verified",
+    "vulnerability_horizontal_component_verified",
+    "horizontal_component_conversion_authorized",
+    "project186_value_structural_equivalence_verified",
+    "numerical_reference_loss_verified",
+    "independent_validation_established",
+    "publication_authorized",
+    "model_use_authorized",
+}
+_ADAPTER_BLOCKED_OPTIONAL_FIELDS = {"native_failure_diagnostic"}
 _NUMERICAL_RECEIPT_FIELDS = {
     "experiment_label",
     "insurance_scope",
@@ -178,6 +207,12 @@ def _read_json(path: Path, *, label: str) -> object:
 def _validate_adapter_document(document: object) -> dict[str, Any]:
     if type(document) is not dict:
         raise KosovoResidentialOQ313ActionError("adapter result must be an object")
+    observed_fields = set(document)
+    if not _ADAPTER_RESULT_FIELDS.issubset(observed_fields):
+        raise KosovoResidentialOQ313ActionError("adapter result fields drifted")
+    if observed_fields - (_ADAPTER_RESULT_FIELDS | _ADAPTER_BLOCKED_OPTIONAL_FIELDS):
+        raise KosovoResidentialOQ313ActionError("adapter result fields drifted")
+
     exact = (
         ("schema_version", runner.SCHEMA_VERSION),
         ("experiment_label", runner.EXPERIMENT_LABEL),
@@ -195,6 +230,8 @@ def _validate_adapter_document(document: object) -> dict[str, Any]:
     status = document.get("status")
     if status not in {"pass", "blocked"}:
         raise KosovoResidentialOQ313ActionError("adapter status is not terminal")
+    if status == "pass" and observed_fields != _ADAPTER_RESULT_FIELDS:
+        raise KosovoResidentialOQ313ActionError("adapter result fields drifted")
     execution = document.get("execution")
     if type(execution) is not dict or execution.get("command") != list(runner.COMMAND):
         raise KosovoResidentialOQ313ActionError("adapter command drifted")
@@ -214,6 +251,32 @@ def _validate_adapter_document(document: object) -> dict[str, Any]:
         exit_code = execution.get("exit_code")
         if type(exit_code) is not int or exit_code == 0:
             raise KosovoResidentialOQ313ActionError("BLOCKED exit code drifted")
+
+    diagnostic = document.get("native_failure_diagnostic")
+    if "native_failure_diagnostic" in document:
+        if status != "blocked" or type(diagnostic) is not dict or set(diagnostic) != {
+            "byte_count",
+            "sha256",
+            "content_exposed",
+        }:
+            raise KosovoResidentialOQ313ActionError(
+                "adapter native failure diagnostic fields drifted"
+            )
+        byte_count = diagnostic.get("byte_count")
+        digest = diagnostic.get("sha256")
+        content_exposed = diagnostic.get("content_exposed")
+        if type(byte_count) is not int or byte_count < 0:
+            raise KosovoResidentialOQ313ActionError(
+                "adapter native failure diagnostic byte count drifted"
+            )
+        if type(digest) is not str or _DIGEST_RE.fullmatch(digest) is None:
+            raise KosovoResidentialOQ313ActionError(
+                "adapter native failure diagnostic digest drifted"
+            )
+        if content_exposed is not False:
+            raise KosovoResidentialOQ313ActionError(
+                "adapter native failure diagnostic content boundary drifted"
+            )
 
     for field in _AUTHORITY_FALSE_FIELDS:
         if document.get(field) is not False:
