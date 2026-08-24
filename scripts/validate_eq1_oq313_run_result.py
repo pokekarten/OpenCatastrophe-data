@@ -1,12 +1,18 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Fail-closed offline validation for one public EQ1 Kosovo OQ3.13 terminal.
+"""Fail-closed offline content-contract validation for one EQ1 Kosovo OQ3.13 terminal.
 
 The trusted action already validates the runtime and numerical receipt before publishing.
-This module gives an external consumer a network-free second boundary over the durable
-GitHub result comment: exact execution SHA, envelope shape, adapter identity, authority
-ceilings and (when present) the canonical risk_by_event receipt are revalidated.
+This module gives an external consumer a network-free second boundary over a *supplied*
+result-comment body: exact outer fields, adapter self-consistency, authority ceilings and
+(when present) the canonical risk_by_event receipt are revalidated.
+
+This content-only boundary does **not** authenticate the GitHub comment actor/origin and
+does not independently establish the nested adapter's provenance. A consumer must obtain
+the body from the canonical public #609 ``github-actions[bot]`` terminal, or establish an
+equivalently trusted acquisition channel, before treating declared terminal identities as
+provenance evidence.
 """
 
 from __future__ import annotations
@@ -64,10 +70,14 @@ _OUTER_FALSE_FIELDS = (
     "model_use_authorized",
     "oq_datastore_persisted",
 )
+_VALIDATION_SCOPE = "terminal_body_contract_only"
+_ORIGIN_PRECONDITION = (
+    "canonical_public_issue_609_github_actions_bot_or_separately_trusted_channel"
+)
 
 
 class EQ1OQ313TerminalValidationError(ValueError):
-    """The durable OQ3.13 terminal is not the exact closed consumer contract."""
+    """The supplied OQ3.13 terminal body is not the exact closed content contract."""
 
 
 def _canonical_json_bytes(document: object) -> bytes:
@@ -97,7 +107,13 @@ def _parse_terminal_body(body: object) -> dict[str, Any]:
     return document
 
 
-def _validate_adapter_identity(result: dict[str, Any]) -> dict[str, Any]:
+def _validate_adapter_self_consistency(result: dict[str, Any]) -> dict[str, Any]:
+    """Apply the current action contract and verify the adjacent adapter receipt.
+
+    The receipt is intentionally treated as a self-consistency check over the supplied
+    adapter object, not as an independent trust anchor for its nested provenance.
+    """
+
     adapter = result.get("adapter_result")
     try:
         validated = action._validate_adapter_document(adapter)
@@ -116,12 +132,48 @@ def _validate_adapter_identity(result: dict[str, Any]) -> dict[str, Any]:
     return validated
 
 
+def _bounded_summary(
+    *,
+    expected_execution_sha: str,
+    terminal_status: str,
+    numerical_receipt_emitted: bool,
+    numerical_receipt_identity: dict[str, Any] | None = None,
+    row_count: int | None = None,
+) -> dict[str, Any]:
+    """Return a machine-readable summary that cannot promote content validation."""
+
+    summary: dict[str, Any] = {
+        "validation_scope": _VALIDATION_SCOPE,
+        "body_contract_validated": True,
+        "trusted_origin_required": True,
+        "github_comment_origin_authenticated": False,
+        "origin_precondition": _ORIGIN_PRECONDITION,
+        "adapter_provenance_independently_verified": False,
+        "declared_execution_sha": expected_execution_sha,
+        "declared_terminal_status": terminal_status,
+        "numerical_receipt_emitted": numerical_receipt_emitted,
+        "external_provider_bytes_persisted": False,
+        "historical_reproduction_verified": False,
+        "numerical_reference_loss_verified": False,
+        "independent_validation_established": False,
+        "scientific_validity_verified": False,
+        "publication_authorized": False,
+        "model_use_authorized": False,
+        "oq_datastore_persisted": False,
+    }
+    if numerical_receipt_identity is not None:
+        summary["numerical_receipt_identity"] = numerical_receipt_identity
+    if row_count is not None:
+        summary["row_count"] = row_count
+    return summary
+
+
 def validate_terminal_body(
     body: object,
     *,
     expected_execution_sha: str,
 ) -> dict[str, Any]:
-    """Validate one durable bot-comment body and return a bounded consumer summary."""
+    """Validate one supplied result body and return a bounded content-only summary."""
 
     if type(expected_execution_sha) is not str or _SHA_RE.fullmatch(expected_execution_sha) is None:
         raise EQ1OQ313TerminalValidationError("invalid expected execution SHA")
@@ -143,7 +195,7 @@ def validate_terminal_body(
         if result.get(field) is not False:
             raise EQ1OQ313TerminalValidationError(f"result authority boundary {field} drifted")
 
-    adapter = _validate_adapter_identity(result)
+    adapter = _validate_adapter_self_consistency(result)
     emitted = result.get("numerical_receipt_emitted")
     if type(emitted) is not bool:
         raise EQ1OQ313TerminalValidationError("numerical receipt emitted flag drifted")
@@ -151,11 +203,11 @@ def validate_terminal_body(
     if adapter["status"] == "blocked":
         if set(result) != _BASE_FIELDS or result.get("status") != "blocked" or emitted:
             raise EQ1OQ313TerminalValidationError("blocked adapter terminal shape drifted")
-        return {
-            "execution_sha": expected_execution_sha,
-            "numerical_receipt_emitted": False,
-            "status": "blocked",
-        }
+        return _bounded_summary(
+            expected_execution_sha=expected_execution_sha,
+            terminal_status="blocked",
+            numerical_receipt_emitted=False,
+        )
 
     if emitted:
         if set(result) != (_BASE_FIELDS | _NUMERICAL_SUCCESS_FIELDS):
@@ -178,13 +230,13 @@ def validate_terminal_body(
             )
         except action.KosovoResidentialOQ313ActionError as exc:
             raise EQ1OQ313TerminalValidationError("numerical receipt contract drifted") from exc
-        return {
-            "execution_sha": expected_execution_sha,
-            "numerical_receipt_emitted": True,
-            "numerical_receipt_identity": validated_identity,
-            "row_count": len(numerical["rows"]),
-            "status": "pass",
-        }
+        return _bounded_summary(
+            expected_execution_sha=expected_execution_sha,
+            terminal_status="pass",
+            numerical_receipt_emitted=True,
+            numerical_receipt_identity=validated_identity,
+            row_count=len(numerical["rows"]),
+        )
 
     if set(result) != (_BASE_FIELDS | _NUMERICAL_FAILURE_FIELDS):
         raise EQ1OQ313TerminalValidationError("numerical BLOCKED terminal fields drifted")
@@ -194,11 +246,11 @@ def validate_terminal_body(
         raise EQ1OQ313TerminalValidationError("numerical failure stage drifted")
     if result.get("numerical_receipt_failure_code") not in _NUMERICAL_FAILURE_CODES:
         raise EQ1OQ313TerminalValidationError("numerical failure code drifted")
-    return {
-        "execution_sha": expected_execution_sha,
-        "numerical_receipt_emitted": False,
-        "status": "blocked",
-    }
+    return _bounded_summary(
+        expected_execution_sha=expected_execution_sha,
+        terminal_status="blocked",
+        numerical_receipt_emitted=False,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
