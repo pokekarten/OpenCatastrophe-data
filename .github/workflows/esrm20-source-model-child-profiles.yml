@@ -174,7 +174,8 @@ jobs:
                   (.trt_provenance_counts | length) >= 1 and
                   (.trt_provenance_counts | length) <= 3 and
                   all(.trt_provenance_counts | to_entries[];
-                    ($provenance_types | index(.key)) != null and
+                    .key as $k |
+                    ($provenance_types | index($k)) != null and
                     (.value | type) == "number" and
                     .value == (.value | floor) and .value >= 1
                   ) and
