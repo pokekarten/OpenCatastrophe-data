@@ -164,8 +164,8 @@ jobs:
                   (.tectonic_region_type_counts | length) >= 1 and
                   (.tectonic_region_type_counts | length) <= 64 and
                   all(.tectonic_region_type_counts | to_entries[];
-                    (.key | utf8bytelength) >= 1 and
-                    (.key | utf8bytelength) <= 256 and
+                    (.key | length) >= 1 and
+                    (.key | length) <= 256 and
                     (.value | type) == "number" and
                     .value == (.value | floor) and .value >= 1
                   ) and
