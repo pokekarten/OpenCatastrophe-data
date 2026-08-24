@@ -226,7 +226,8 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
         _, execute_section = text.split("  execute-and-publish:", 1)
         execute_header, _ = execute_section.split("    steps:", 1)
 
-        self.assertIn("    timeout-minutes: 120", execute_header)
+        self.assertIn("    timeout-minutes: 180", execute_header)
+        self.assertNotIn("    timeout-minutes: 120", execute_header)
         self.assertNotIn("    timeout-minutes: 90", execute_header)
         self.assertNotIn("    timeout-minutes: 45", execute_header)
         self.assertEqual(execute_header.count("timeout-minutes:"), 1)
