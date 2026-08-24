@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 import unittest
 
 from scripts import acquire_efehr_greece_exposure_profile as worker
@@ -11,6 +12,7 @@ from scripts import run_efehr_greece_exposure_profile_action as action
 
 
 SHA = "a" * 40
+WORKFLOW = Path(".github/workflows/esrm20-greece-exposure-profile.yml")
 
 
 def _profile():
@@ -172,6 +174,26 @@ class GreeceExposureProfileActionTests(unittest.TestCase):
         body = action.RESULT_MARKER + "\n" + ("x" * action.MAX_TERMINAL_UTF8_BYTES)
         with self.assertRaises(action.GreeceExposureProfileActionError):
             action._parse_terminal(body, execution_sha=SHA)
+
+    def test_publisher_refences_current_main_without_checkout(self):
+        text = WORKFLOW.read_text(encoding="utf-8")
+        publisher = text.split("  publish-profile:", 1)[1]
+        self.assertIn("contents: read", publisher)
+        self.assertIn("issues: write", publisher)
+        self.assertIn(
+            "DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}",
+            publisher,
+        )
+        live_main_lookup = (
+            "gh api \"repos/$GITHUB_REPOSITORY/commits/$DEFAULT_BRANCH\" --jq '.sha'"
+        )
+        self.assertIn(live_main_lookup, publisher)
+        self.assertIn('test "$LATEST_SHA" = "$EXECUTION_SHA"', publisher)
+        self.assertNotIn("actions/checkout", publisher)
+        self.assertLess(
+            publisher.index(live_main_lookup),
+            publisher.index('"repos/$GITHUB_REPOSITORY/issues/285/comments"'),
+        )
 
 
 if __name__ == "__main__":
