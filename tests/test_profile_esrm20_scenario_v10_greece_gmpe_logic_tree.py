@@ -48,7 +48,17 @@ class GreeceGmpeLogicTreeProfileTests(unittest.TestCase):
 
     def test_rejects_branch_without_weight(self):
         raw = b'''<nrml xmlns="http://openquake.org/xmlns/nrml/0.5"><logicTree><logicTreeBranchingLevel><logicTreeBranchSet><logicTreeBranch><uncertaintyModel>X</uncertaintyModel></logicTreeBranch></logicTreeBranchSet></logicTreeBranchingLevel></logicTree></nrml>'''
-        with self.assertRaisesRegex(subject.GmpeLogicTreeProfileError, "missing_required_element:uncertaintyWeight"):
+        with self.assertRaisesRegex(subject.GmpeLogicTreeProfileError, "branch_direct_child_cardinality"):
+            _profile(raw)
+
+    def test_rejects_aggregate_balanced_but_per_branch_invalid_shape(self):
+        raw = b'''<nrml xmlns="http://openquake.org/xmlns/nrml/0.5"><logicTree><logicTreeBranchingLevel><logicTreeBranchSet><logicTreeBranch branchID="b1"><uncertaintyModel>A</uncertaintyModel><uncertaintyModel>B</uncertaintyModel><uncertaintyWeight>0.5</uncertaintyWeight><uncertaintyWeight>0.5</uncertaintyWeight></logicTreeBranch><logicTreeBranch branchID="b2"/></logicTreeBranchSet></logicTreeBranchingLevel></logicTree></nrml>'''
+        with self.assertRaisesRegex(subject.GmpeLogicTreeProfileError, "branch_direct_child_cardinality"):
+            _profile(raw)
+
+    def test_rejects_unexpected_direct_branch_child(self):
+        raw = b'''<nrml xmlns="http://openquake.org/xmlns/nrml/0.5"><logicTree><logicTreeBranchingLevel><logicTreeBranchSet><logicTreeBranch><uncertaintyModel>X</uncertaintyModel><uncertaintyWeight>1</uncertaintyWeight><extra/></logicTreeBranch></logicTreeBranchSet></logicTreeBranchingLevel></logicTree></nrml>'''
+        with self.assertRaisesRegex(subject.GmpeLogicTreeProfileError, "branch_direct_child_cardinality"):
             _profile(raw)
 
     def test_rejects_foreign_namespace(self):
