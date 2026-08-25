@@ -32,7 +32,7 @@ class OQ313KosovoFailureDiagnosticWorkflowTests(unittest.TestCase):
             self.primary_text,
         )
 
-    def test_job_requires_same_repo_issue_comment_and_non_success(self) -> None:
+    def test_job_requires_same_repo_issue_comment_and_actionable_failure(self) -> None:
         text = self.text
         self.assertIn(
             "github.event.workflow_run.event == 'issue_comment'",
@@ -42,8 +42,28 @@ class OQ313KosovoFailureDiagnosticWorkflowTests(unittest.TestCase):
             "github.event.workflow_run.head_repository.full_name == github.repository",
             text,
         )
-        self.assertIn(
+        self.assertNotIn(
             "github.event.workflow_run.conclusion != 'success'",
+            text,
+        )
+        for conclusion in (
+            "failure",
+            "cancelled",
+            "timed_out",
+            "action_required",
+            "stale",
+            "startup_failure",
+        ):
+            self.assertIn(
+                f"github.event.workflow_run.conclusion == '{conclusion}'",
+                text,
+            )
+        self.assertNotIn(
+            "github.event.workflow_run.conclusion == 'skipped'",
+            text,
+        )
+        self.assertNotIn(
+            "github.event.workflow_run.conclusion == 'neutral'",
             text,
         )
         self.assertIn(
