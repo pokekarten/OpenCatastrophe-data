@@ -167,22 +167,34 @@ class KosovoResidentialOQ313RunTests(unittest.TestCase):
 
     def test_native_child_stdout_is_suppressed_and_stderr_is_streamed(self) -> None:
         class EmptyStderr:
+            def __init__(self) -> None:
+                self.last_size: int | None = None
+                self.closed = False
+
             def read(self, size: int = -1) -> bytes:
                 self.last_size = size
                 return b""
 
+            def close(self) -> None:
+                self.closed = True
+
         class Process:
             def __init__(self) -> None:
                 self.stderr = EmptyStderr()
+                self.returncode = 0
+                self.wait_timeouts: list[float | None] = []
+                self.kill_calls = 0
 
-            def __enter__(self) -> Process:
-                return self
+            def wait(self, timeout: float | None = None) -> int:
+                self.wait_timeouts.append(timeout)
+                return self.returncode
 
-            def __exit__(self, *args: object) -> None:
-                return None
+            def poll(self) -> int:
+                return self.returncode
 
-            def wait(self) -> int:
-                return 0
+            def kill(self) -> None:
+                self.kill_calls += 1
+                self.returncode = -9
 
         process = Process()
         env = {"PATH": "/fixed"}
@@ -190,12 +202,18 @@ class KosovoResidentialOQ313RunTests(unittest.TestCase):
             returncode = subject._execute_native(subject.COMMAND, env)
 
         self.assertEqual(returncode, 0)
+        self.assertEqual(
+            process.wait_timeouts,
+            [subject.NATIVE_EXECUTION_TIMEOUT_SECONDS],
+        )
+        self.assertTrue(process.stderr.closed)
         popen.assert_called_once()
         args, kwargs = popen.call_args
         self.assertEqual(args[0], list(subject.COMMAND))
         self.assertEqual(kwargs["env"], env)
         self.assertIs(kwargs["stdout"], subject.subprocess.DEVNULL)
         self.assertIs(kwargs["stderr"], subject.subprocess.PIPE)
+        self.assertTrue(kwargs["start_new_session"])
         self.assertEqual(
             process.stderr.last_size,
             subject.NATIVE_STDERR_HASH_CHUNK_BYTES,
