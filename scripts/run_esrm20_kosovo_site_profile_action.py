@@ -51,6 +51,7 @@ RECEIPT_COMMENT_ID = 5308044390
 EXPECTED_BYTE_COUNT = 5_891
 EXPECTED_SHA256 = "746cf75d91507da8b55a9476c61bb5d884eed42c6268a36b1179f432e8850edd"
 TRUSTED_RESULT_LOGIN = "github-actions[bot]"
+MAX_RESULT_UTF8_BYTES = 55_000
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _SAFE_REQUESTER_RE = re.compile(r"^[A-Za-z0-9_.:@/+ -]{1,96}$")
@@ -194,8 +195,15 @@ def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
     before, after = body.split(RESULT_MARKER, 1)
     if before.strip() or not after.strip():
         raise SiteProfileActionError("trusted site-profile result envelope is malformed")
+    payload = after.strip()
     try:
-        result = json.loads(after.strip(), object_pairs_hook=_pairs, parse_constant=_reject_constant)
+        payload_size = len(payload.encode("utf-8", errors="strict"))
+    except UnicodeEncodeError as exc:
+        raise SiteProfileActionError("trusted site-profile result is not valid UTF-8") from exc
+    if payload_size > MAX_RESULT_UTF8_BYTES:
+        raise SiteProfileActionError("trusted site-profile result exceeds publication limit")
+    try:
+        result = json.loads(payload, object_pairs_hook=_pairs, parse_constant=_reject_constant)
     except SiteProfileActionError:
         raise
     except (json.JSONDecodeError, TypeError, ValueError) as exc:

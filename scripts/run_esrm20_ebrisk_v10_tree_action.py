@@ -227,6 +227,17 @@ def _base_result(*, execution_sha: str) -> dict[str, Any]:
     }
 
 
+def _bounded_result_payload(after: str) -> str:
+    payload = after.strip()
+    try:
+        payload_size = len(payload.encode("utf-8", errors="strict"))
+    except UnicodeEncodeError as exc:
+        raise EbriskTreeExecutionError("ebrisk result is not valid UTF-8") from exc
+    if payload_size > MAX_RESULT_UTF8_BYTES:
+        raise EbriskTreeExecutionError("ebrisk result exceeds publication limit")
+    return payload
+
+
 def _terminal_result_execution_sha(body: object) -> str | None:
     """Return a terminal result's own SHA after fail-closed envelope checks."""
     if type(body) is not str or RESULT_MARKER not in body:
@@ -236,8 +247,9 @@ def _terminal_result_execution_sha(body: object) -> str | None:
     before, after = body.split(RESULT_MARKER, 1)
     if before.strip() or not after.strip():
         raise EbriskTreeExecutionError("ebrisk result envelope is malformed")
+    payload = _bounded_result_payload(after)
     try:
-        result = json.loads(after.strip(), object_pairs_hook=_pairs, parse_constant=_reject_constant)
+        result = json.loads(payload, object_pairs_hook=_pairs, parse_constant=_reject_constant)
     except EbriskTreeExecutionError:
         raise
     except (json.JSONDecodeError, TypeError, ValueError) as exc:
@@ -267,8 +279,9 @@ def parse_terminal_result(body: object, *, execution_sha: str) -> bool:
     before, after = body.split(RESULT_MARKER, 1)
     if before.strip() or not after.strip():
         raise EbriskTreeExecutionError("ebrisk result envelope is malformed")
+    payload = _bounded_result_payload(after)
     try:
-        result = json.loads(after.strip(), object_pairs_hook=_pairs, parse_constant=_reject_constant)
+        result = json.loads(payload, object_pairs_hook=_pairs, parse_constant=_reject_constant)
     except EbriskTreeExecutionError:
         raise
     except (json.JSONDecodeError, TypeError, ValueError) as exc:
