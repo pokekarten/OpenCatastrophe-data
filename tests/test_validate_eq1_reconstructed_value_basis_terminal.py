@@ -29,6 +29,41 @@ class ReconstructedValueBasisTerminalConsumerTests(unittest.TestCase):
             "model_use_authorized": False,
         }
 
+    def _real_value_basis_evidence(self):
+        return {
+            "compatibility": {
+                "hazard_imts": ["PGA", "SA(0.3)", "SA(0.6)", "SA(1.0)"],
+                "vulnerability_imts": ["PGA", "SA(0.3)", "SA(0.6)", "SA(1.0)"],
+                "hazard_acceleration_unit": "g",
+                "vulnerability_intensity_unit": "g",
+                "native_components": ["GEOMETRIC_MEAN", "RotD50"],
+                "component_conversion_activated": False,
+                "vulnerability_horizontal_component": "UNKNOWN",
+                "required_site_parameters": ["geology", "region", "slope", "vs30", "xvf"],
+                "site_parameter_sufficiency_verified": True,
+                "historical_environment_verified": False,
+                "numerical_hazard_agreement_verified": False,
+                "scientific_validity_verified": False,
+                "publication_authorized": False,
+                "model_use_authorized": False,
+            },
+            "runtime_exposure_cost": {
+                "name": "structural",
+                "type": "aggregated",
+                "unit": "EUR",
+            },
+            "source_value_basis": "TOTAL_REPL_COST_EUR",
+            "source_value_basis_year": 2020,
+            "source_runtime_record_count": 1093,
+            "source_runtime_exact_value_count": 1051,
+            "source_runtime_non_equal_value_count": 42,
+            "source_runtime_max_abs_difference": "0.000000004",
+            "source_runtime_transform_verified": False,
+            "vulnerability_loss_category": "structural",
+            "vulnerability_response_basis": "total_replacement_cost",
+            "insured_value_semantics_verified": False,
+        }
+
     def _terminal(self, *, terminal_pass=True, consumable=True):
         return {
             "schema_version": "oc-eq1-reconstructed-terminal-consumer-v1",
@@ -99,6 +134,26 @@ class ReconstructedValueBasisTerminalConsumerTests(unittest.TestCase):
             "model_use_authorized",
         ):
             self.assertIs(result[field], False)
+
+    def test_real_value_basis_gate_is_composed_before_terminal_consumer(self):
+        evidence = self._real_value_basis_evidence()
+        with mock.patch.object(
+            subject,
+            "validate_reconstructed_terminal",
+            return_value=self._terminal(),
+        ) as terminal:
+            result = subject.validate_reconstructed_value_basis_terminal(
+                "terminal",
+                expected_execution_sha="a" * 40,
+                value_basis_evidence=evidence,
+            )
+
+        terminal.assert_called_once_with(
+            "terminal",
+            expected_execution_sha="a" * 40,
+            compatibility_evidence=evidence["compatibility"],
+        )
+        self.assertTrue(result["bounded_value_basis_relation_verified"])
 
     def test_value_basis_failure_short_circuits_terminal_consumer(self):
         with (
@@ -204,6 +259,82 @@ class ReconstructedValueBasisTerminalConsumerTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 subject.ReconstructedValueBasisTerminalConsumerError,
                 "terminal authority ceiling drifted",
+            ):
+                subject.validate_reconstructed_value_basis_terminal(
+                    "terminal",
+                    expected_execution_sha="a" * 40,
+                    value_basis_evidence={"compatibility": {}},
+                )
+
+    def test_terminal_execution_sha_must_match_requested_execution(self):
+        terminal_result = self._terminal()
+        terminal_result["declared_execution_sha"] = "b" * 40
+        with (
+            mock.patch.object(
+                subject,
+                "validate_reconstructed_value_basis_gate",
+                return_value=self._value_basis(),
+            ),
+            mock.patch.object(
+                subject,
+                "validate_reconstructed_terminal",
+                return_value=terminal_result,
+            ),
+        ):
+            with self.assertRaisesRegex(
+                subject.ReconstructedValueBasisTerminalConsumerError,
+                "execution SHA disagrees",
+            ):
+                subject.validate_reconstructed_value_basis_terminal(
+                    "terminal",
+                    expected_execution_sha="a" * 40,
+                    value_basis_evidence={"compatibility": {}},
+                )
+
+    def test_terminal_must_preserve_trusted_origin_precondition(self):
+        terminal_result = self._terminal()
+        terminal_result["trusted_origin_required"] = False
+        with (
+            mock.patch.object(
+                subject,
+                "validate_reconstructed_value_basis_gate",
+                return_value=self._value_basis(),
+            ),
+            mock.patch.object(
+                subject,
+                "validate_reconstructed_terminal",
+                return_value=terminal_result,
+            ),
+        ):
+            with self.assertRaisesRegex(
+                subject.ReconstructedValueBasisTerminalConsumerError,
+                "trusted-origin precondition drifted",
+            ):
+                subject.validate_reconstructed_value_basis_terminal(
+                    "terminal",
+                    expected_execution_sha="a" * 40,
+                    value_basis_evidence={"compatibility": {}},
+                )
+
+    def test_terminal_pass_and_consumable_types_must_be_boolean(self):
+        terminal_result = self._terminal()
+        terminal_result["terminal_pass"] = "blocked"
+        terminal_result["reconstructed_reference_result_consumable"] = False
+        with (
+            mock.patch.object(
+                subject,
+                "validate_reconstructed_value_basis_gate",
+                return_value=self._value_basis(),
+            ),
+            mock.patch.object(
+                subject,
+                "validate_reconstructed_terminal",
+                return_value=terminal_result,
+            ),
+        ):
+            with self.assertRaisesRegex(
+                subject.ReconstructedValueBasisTerminalConsumerError,
+                "types drifted",
             ):
                 subject.validate_reconstructed_value_basis_terminal(
                     "terminal",
