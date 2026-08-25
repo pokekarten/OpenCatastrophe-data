@@ -123,6 +123,10 @@ def _validate_adapter_self_consistency(result: dict[str, Any]) -> dict[str, Any]
     except action.KosovoResidentialOQ313ActionError as exc:
         raise EQ1OQ313TerminalValidationError("adapter result contract drifted") from exc
 
+    execution = validated.get("execution")
+    if type(execution) is not dict or type(execution.get("exit_code")) is not int:
+        raise EQ1OQ313TerminalValidationError("adapter execution exit code type drifted")
+
     receipt = result.get("adapter_receipt")
     if type(receipt) is not dict or set(receipt) != {"byte_count", "sha256"}:
         raise EQ1OQ313TerminalValidationError("adapter receipt fields drifted")
