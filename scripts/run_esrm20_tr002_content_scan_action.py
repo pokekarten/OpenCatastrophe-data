@@ -77,6 +77,7 @@ MAX_PAGES = 512
 CONTEXT_PAGES = (53, 79, 80, 81)
 CONTEXT_RADIUS_CHARS = 320
 MAX_CONTEXT_WINDOW_UTF8_BYTES = (2 * CONTEXT_RADIUS_CHARS + 64) * 4
+MAX_RESULT_UTF8_BYTES = 55_000
 PDFTOTEXT = "pdftotext"
 TRUSTED_RESULT_LOGIN = "github-actions[bot]"
 
@@ -613,8 +614,15 @@ def _parse_terminal_result(body: object, *, execution_sha: str) -> bool:
     before, after = body.split(RESULT_MARKER, 1)
     if before.strip() or not after.strip():
         raise Tr002ContentScanError("trusted result envelope is malformed")
+    payload = after.strip()
     try:
-        result = json.loads(after.strip(), object_pairs_hook=_pairs, parse_constant=_reject_constant)
+        payload_size = len(payload.encode("utf-8", errors="strict"))
+    except UnicodeEncodeError as exc:
+        raise Tr002ContentScanError("trusted result is not valid UTF-8") from exc
+    if payload_size > MAX_RESULT_UTF8_BYTES:
+        raise Tr002ContentScanError("trusted result exceeds publication limit")
+    try:
+        result = json.loads(payload, object_pairs_hook=_pairs, parse_constant=_reject_constant)
     except Tr002ContentScanError:
         raise
     except (json.JSONDecodeError, TypeError, ValueError) as exc:
