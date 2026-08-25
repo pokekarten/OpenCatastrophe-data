@@ -94,6 +94,22 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            [
+              "areaSource",
+              "pointSource",
+              "multiPointSource",
+              "simpleFaultSource",
+              "kiteFaultSource",
+              "complexFaultSource",
+              "characteristicFaultSource",
+              "nonParametricSeismicSource",
+              "multiFaultSource"
+            ] as $source_types |
+            [
+              "direct_source",
+              "group_inherited",
+              "group_effective_direct_confirmed"
+            ] as $provenance_types |
             . as $result |
             (keys | sort) == [
               "action",
@@ -169,12 +185,34 @@ jobs:
               .aggregate_profile.source_count >= 1 and
               (.aggregate_profile.source_type_counts | type) == "object" and
               (.aggregate_profile.source_type_counts | length) >= 1 and
+              (.aggregate_profile.source_type_counts | length) <= 9 and
+              all(.aggregate_profile.source_type_counts | to_entries[];
+                (.key as $key | $source_types | index($key)) != null and
+                (.value | type) == "number" and
+                .value == (.value | floor) and .value >= 1
+              ) and
               ([.aggregate_profile.source_type_counts[]] | add) == .aggregate_profile.source_count and
+              .aggregate_profile.unique_source_types == (.aggregate_profile.source_type_counts | keys) and
               (.aggregate_profile.tectonic_region_type_counts | type) == "object" and
               (.aggregate_profile.tectonic_region_type_counts | length) >= 1 and
+              (.aggregate_profile.tectonic_region_type_counts | length) <= 64 and
+              all(.aggregate_profile.tectonic_region_type_counts | to_entries[];
+                (.key | type) == "string" and
+                (.key | length) >= 1 and (.key | length) <= 256 and
+                (.key | test("[\\u0000-\\u001F\\u007F]")) == false and
+                (.value | type) == "number" and
+                .value == (.value | floor) and .value >= 1
+              ) and
               ([.aggregate_profile.tectonic_region_type_counts[]] | add) == .aggregate_profile.source_count and
+              .aggregate_profile.unique_tectonic_region_types == (.aggregate_profile.tectonic_region_type_counts | keys) and
               (.aggregate_profile.trt_provenance_counts | type) == "object" and
               (.aggregate_profile.trt_provenance_counts | length) >= 1 and
+              (.aggregate_profile.trt_provenance_counts | length) <= 3 and
+              all(.aggregate_profile.trt_provenance_counts | to_entries[];
+                (.key as $key | $provenance_types | index($key)) != null and
+                (.value | type) == "number" and
+                .value == (.value | floor) and .value >= 1
+              ) and
               ([.aggregate_profile.trt_provenance_counts[]] | add) == .aggregate_profile.source_count and
               .aggregate_profile.receipt_set_locator == {
                 "execution_sha":"473f03765fd63d2da7e48d0c22b1618d4e1254d8",
