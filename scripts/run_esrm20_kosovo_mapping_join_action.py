@@ -208,7 +208,8 @@ def _validate_source_identity(
                 f"trusted join source identity drifted at {field}"
             )
     if taxonomy:
-        if observed.get("taxonomy_count") != EXPECTED_TAXONOMY_COUNT:
+        taxonomy_count = observed.get("taxonomy_count")
+        if type(taxonomy_count) is not int or taxonomy_count != EXPECTED_TAXONOMY_COUNT:
             raise KosovoMappingJoinExecutionError("trusted taxonomy count drifted")
         if observed.get("taxonomy_value_set_sha256") != EXPECTED_TAXONOMY_VALUE_SET_SHA256:
             raise KosovoMappingJoinExecutionError("trusted taxonomy value-set identity drifted")
