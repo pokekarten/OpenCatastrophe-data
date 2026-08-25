@@ -165,22 +165,11 @@ class KosovoResidentialOQ313RunTests(unittest.TestCase):
         self.assertEqual(receipt["sha256"], hashlib.sha256(payload).hexdigest())
         self.assertTrue(payload.endswith(b"\n"))
 
-    def test_native_child_stdout_is_suppressed_and_stderr_is_streamed(self) -> None:
-        class EmptyStderr:
-            def __init__(self) -> None:
-                self.last_size: int | None = None
-                self.closed = False
-
-            def read(self, size: int = -1) -> bytes:
-                self.last_size = size
-                return b""
-
-            def close(self) -> None:
-                self.closed = True
-
+    def test_native_child_stdout_is_suppressed_and_stderr_is_file_backed(self) -> None:
         class Process:
+            pid = 424242
+
             def __init__(self) -> None:
-                self.stderr = EmptyStderr()
                 self.returncode = 0
                 self.wait_timeouts: list[float | None] = []
                 self.kill_calls = 0
@@ -198,7 +187,20 @@ class KosovoResidentialOQ313RunTests(unittest.TestCase):
 
         process = Process()
         env = {"PATH": "/fixed"}
-        with mock.patch.object(subject.subprocess, "Popen", return_value=process) as popen:
+        stderr_files: list[object] = []
+
+        def fake_popen(*args: object, **kwargs: object) -> Process:
+            stderr_file = kwargs["stderr"]
+            self.assertIsNot(stderr_file, subject.subprocess.PIPE)
+            self.assertTrue(hasattr(stderr_file, "fileno"))
+            self.assertFalse(stderr_file.closed)
+            stderr_files.append(stderr_file)
+            return process
+
+        with (
+            mock.patch.object(subject.subprocess, "Popen", side_effect=fake_popen) as popen,
+            mock.patch.object(subject, "_cleanup_residual_process_group") as cleanup,
+        ):
             returncode = subject._execute_native(subject.COMMAND, env)
 
         self.assertEqual(returncode, 0)
@@ -206,18 +208,16 @@ class KosovoResidentialOQ313RunTests(unittest.TestCase):
             process.wait_timeouts,
             [subject.NATIVE_EXECUTION_TIMEOUT_SECONDS],
         )
-        self.assertTrue(process.stderr.closed)
+        cleanup.assert_called_once_with(process.pid)
+        self.assertEqual(len(stderr_files), 1)
+        self.assertTrue(stderr_files[0].closed)
         popen.assert_called_once()
         args, kwargs = popen.call_args
         self.assertEqual(args[0], list(subject.COMMAND))
         self.assertEqual(kwargs["env"], env)
         self.assertIs(kwargs["stdout"], subject.subprocess.DEVNULL)
-        self.assertIs(kwargs["stderr"], subject.subprocess.PIPE)
+        self.assertIs(kwargs["stderr"], stderr_files[0])
         self.assertTrue(kwargs["start_new_session"])
-        self.assertEqual(
-            process.stderr.last_size,
-            subject.NATIVE_STDERR_HASH_CHUNK_BYTES,
-        )
 
     def test_runtime_identity_must_pin_exact_oq313_source_before_execution(self) -> None:
         identity = runtime_identity()
