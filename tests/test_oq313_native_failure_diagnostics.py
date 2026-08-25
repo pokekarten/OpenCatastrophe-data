@@ -15,12 +15,16 @@ class _ChunkedStderr:
     def __init__(self, chunks: list[bytes]) -> None:
         self._chunks = iter(chunks)
         self.read_sizes: list[int] = []
+        self.closed = False
 
     def read(self, size: int = -1) -> bytes:
         self.read_sizes.append(size)
         if size != subject.NATIVE_STDERR_HASH_CHUNK_BYTES:
             raise AssertionError(f"unexpected stderr read size: {size}")
         return next(self._chunks, b"")
+
+    def close(self) -> None:
+        self.closed = True
 
 
 class _RepeatedChunkStderr:
@@ -30,6 +34,7 @@ class _RepeatedChunkStderr:
         self.tail = tail
         self.tail_sent = False
         self.read_sizes: list[int] = []
+        self.closed = False
 
     def read(self, size: int = -1) -> bytes:
         self.read_sizes.append(size)
@@ -43,22 +48,29 @@ class _RepeatedChunkStderr:
             return self.tail
         return b""
 
+    def close(self) -> None:
+        self.closed = True
+
 
 class _FakeProcess:
     def __init__(self, stderr: object, returncode: int) -> None:
         self.stderr = stderr
         self.returncode = returncode
+        self.pid = 4242
         self.wait_calls = 0
+        self.wait_timeouts: list[float | None] = []
+        self.kill_calls = 0
 
-    def __enter__(self) -> _FakeProcess:
-        return self
-
-    def __exit__(self, *args: object) -> None:
-        return None
-
-    def wait(self) -> int:
+    def wait(self, timeout: float | None = None) -> int:
         self.wait_calls += 1
+        self.wait_timeouts.append(timeout)
         return self.returncode
+
+    def poll(self) -> int:
+        return self.returncode
+
+    def kill(self) -> None:
+        self.kill_calls += 1
 
 
 class OQ313NativeFailureDiagnosticsTests(unittest.TestCase):
@@ -87,12 +99,15 @@ class OQ313NativeFailureDiagnosticsTests(unittest.TestCase):
             [subject.NATIVE_STDERR_HASH_CHUNK_BYTES] * 2,
         )
         self.assertEqual(process.wait_calls, 1)
+        self.assertEqual(process.wait_timeouts, [subject.NATIVE_EXECUTION_TIMEOUT_SECONDS])
+        self.assertTrue(stderr.closed)
         popen.assert_called_once()
         args, kwargs = popen.call_args
         self.assertEqual(args[0], list(subject.COMMAND))
         self.assertEqual(kwargs["env"], {"PATH": "/fixed"})
         self.assertIs(kwargs["stdout"], subject.subprocess.DEVNULL)
         self.assertIs(kwargs["stderr"], subject.subprocess.PIPE)
+        self.assertTrue(kwargs["start_new_session"])
 
     def test_non_utf8_many_chunk_stderr_remains_content_opaque_and_bounded(self) -> None:
         chunk = b"\xff\xfe\x00"
@@ -117,6 +132,8 @@ class OQ313NativeFailureDiagnosticsTests(unittest.TestCase):
         )
         self.assertNotIn(-1, stderr.read_sizes)
         self.assertEqual(process.wait_calls, 1)
+        self.assertEqual(process.wait_timeouts, [subject.NATIVE_EXECUTION_TIMEOUT_SECONDS])
+        self.assertTrue(stderr.closed)
 
     def test_success_keeps_existing_result_shape_without_failure_diagnostic(self) -> None:
         stderr = _ChunkedStderr([b"non-published warning"])
@@ -128,6 +145,8 @@ class OQ313NativeFailureDiagnosticsTests(unittest.TestCase):
         self.assertEqual(returncode, 0)
         self.assertFalse(hasattr(returncode, "diagnostic"))
         self.assertEqual(process.wait_calls, 1)
+        self.assertEqual(process.wait_timeouts, [subject.NATIVE_EXECUTION_TIMEOUT_SECONDS])
+        self.assertTrue(stderr.closed)
 
     def test_blocked_adapter_publishes_only_bounded_diagnostic_fields(self) -> None:
         config = b"""[general]\ncalculation_mode = ebrisk\nignore_master_seed = true\nminimum_asset_loss = {'structural': 2000}\nrandom_seed = 113\n\n[exposure]\nexposure_file = ../Exposure/OQ_Exposure_Input_Kosovo_Residential_Reconstructed.xml\n\n[site_params]\nsite_model_file = ../Vs30/Site_model_Kosovo.xml\n"""

@@ -360,9 +360,20 @@ def _parse_terminal_result(body: object, *, execution_sha: str) -> bool:
     before, after = body.split(RESULT_MARKER, 1)
     if before.strip() or not after.strip():
         raise KosovoMappingJoinExecutionError("trusted mapping-join result envelope is malformed")
+    payload = after.strip()
+    try:
+        payload_size = len(payload.encode("utf-8", errors="strict"))
+    except UnicodeEncodeError as exc:
+        raise KosovoMappingJoinExecutionError(
+            "trusted mapping-join result is not valid UTF-8"
+        ) from exc
+    if payload_size > MAX_RESULT_UTF8_BYTES:
+        raise KosovoMappingJoinExecutionError(
+            "trusted mapping-join result exceeds publication limit"
+        )
     try:
         result = json.loads(
-            after.strip(),
+            payload,
             object_pairs_hook=_pairs,
             parse_constant=_reject_constant,
         )

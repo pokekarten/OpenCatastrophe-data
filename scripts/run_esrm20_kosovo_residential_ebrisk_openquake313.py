@@ -24,7 +24,9 @@ import hashlib
 import json
 import os
 import re
+import signal
 import subprocess
+import threading
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -61,6 +63,11 @@ LOSS_STAGE = "thresholded_ground_up"
 
 COMMAND = ("oq", "engine", "--run", CONFIG_LOGICAL_PATH)
 NATIVE_STDERR_HASH_CHUNK_BYTES = 64 * 1024
+# The trusted-main job has a 355-minute outer budget. End the native process
+# early enough to preserve a bounded shutdown and terminal-publication window.
+NATIVE_EXECUTION_TIMEOUT_SECONDS = 330 * 60
+NATIVE_TERMINATION_GRACE_SECONDS = 10
+NATIVE_TIMEOUT_EXIT_CODE = 124
 
 EXPECTED_DEPENDENCY_VERSIONS = {
     "h5py": "3.1.0",
@@ -109,10 +116,20 @@ class _NativeExitCode(int):
     """Integer exit code carrying bounded non-content failure evidence."""
 
     diagnostic: dict[str, object]
+    timed_out: bool
 
-    def __new__(cls, value: int, diagnostic: dict[str, object]) -> _NativeExitCode:
+    def __new__(
+        cls,
+        value: int,
+        diagnostic: dict[str, object],
+        *,
+        timed_out: bool = False,
+    ) -> _NativeExitCode:
+        if type(timed_out) is not bool:
+            raise KosovoResidentialOQ313RunError("native timeout provenance drifted")
         instance = int.__new__(cls, value)
         instance.diagnostic = diagnostic
+        instance.timed_out = timed_out
         return instance
 
 
@@ -444,27 +461,134 @@ def _stderr_diagnostic(stderr_stream: Any) -> dict[str, object]:
 
 
 def _execute_native(command: Sequence[str], env: Mapping[str, str]) -> int:
-    with subprocess.Popen(
+    process = subprocess.Popen(
         list(command),
         env=dict(env),
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
-    ) as process:
-        stderr_stream = process.stderr
-        if stderr_stream is None:
+        start_new_session=True,
+    )
+    stderr_stream = process.stderr
+    if stderr_stream is None:
+        try:
+            process.kill()
+            process.wait(timeout=NATIVE_TERMINATION_GRACE_SECONDS)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+        raise KosovoResidentialOQ313RunError(
+            "OpenQuake subprocess stderr pipe is unavailable"
+        )
+
+    diagnostic_holder: list[dict[str, object]] = []
+    diagnostic_errors: list[Exception] = []
+    drain_done = threading.Event()
+
+    def drain_stderr() -> None:
+        try:
+            diagnostic_holder.append(_stderr_diagnostic(stderr_stream))
+        except Exception as exc:  # noqa: BLE001 - re-raised on the controller thread
+            diagnostic_errors.append(exc)
+        finally:
+            drain_done.set()
+
+    drain_thread = threading.Thread(
+        target=drain_stderr,
+        name="oq313-stderr-diagnostic",
+        daemon=True,
+    )
+    drain_thread.start()
+
+    timed_out = False
+    returncode: int | None = None
+    try:
+        try:
+            returncode = process.wait(timeout=NATIVE_EXECUTION_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            except OSError as exc:
+                raise KosovoResidentialOQ313RunError(
+                    "OpenQuake timed-out process group could not be terminated"
+                ) from exc
+
+            try:
+                returncode = process.wait(timeout=NATIVE_TERMINATION_GRACE_SECONDS)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                except OSError as exc:
+                    raise KosovoResidentialOQ313RunError(
+                        "OpenQuake timed-out process group could not be killed"
+                    ) from exc
+                try:
+                    returncode = process.wait(
+                        timeout=NATIVE_TERMINATION_GRACE_SECONDS
+                    )
+                except subprocess.TimeoutExpired as exc:
+                    raise KosovoResidentialOQ313RunError(
+                        "OpenQuake timed-out process did not terminate"
+                    ) from exc
+
+        if not drain_done.wait(NATIVE_TERMINATION_GRACE_SECONDS):
             raise KosovoResidentialOQ313RunError(
-                "OpenQuake subprocess stderr pipe is unavailable"
+                "OpenQuake stderr stream did not close after process termination"
             )
-        diagnostic = _stderr_diagnostic(stderr_stream)
-        returncode = process.wait()
+        if diagnostic_errors:
+            raise KosovoResidentialOQ313RunError(
+                "OpenQuake stderr diagnostic failed"
+            ) from diagnostic_errors[0]
+        if len(diagnostic_holder) != 1:
+            raise KosovoResidentialOQ313RunError(
+                "OpenQuake stderr diagnostic was not produced exactly once"
+            )
+        diagnostic = diagnostic_holder[0]
+    finally:
+        if process.poll() is None:
+            try:
+                process.kill()
+            except OSError:
+                pass
+            try:
+                process.wait(timeout=NATIVE_TERMINATION_GRACE_SECONDS)
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+        if drain_done.is_set():
+            try:
+                stderr_stream.close()
+            except OSError:
+                pass
+        drain_done.wait(NATIVE_TERMINATION_GRACE_SECONDS)
+        drain_thread.join(timeout=0)
 
     if type(returncode) is not int:
         raise KosovoResidentialOQ313RunError(
             "OpenQuake subprocess returned a non-integer exit code"
         )
+    if timed_out:
+        return _NativeExitCode(
+            NATIVE_TIMEOUT_EXIT_CODE,
+            diagnostic,
+            timed_out=True,
+        )
     if returncode == 0:
         return returncode
     return _NativeExitCode(returncode, diagnostic)
+
+
+def _native_failure_code(returncode: int) -> str:
+    timed_out = getattr(returncode, "timed_out", False)
+    if type(timed_out) is not bool:
+        raise KosovoResidentialOQ313RunError("native timeout provenance drifted")
+    if timed_out:
+        if int(returncode) != NATIVE_TIMEOUT_EXIT_CODE:
+            raise KosovoResidentialOQ313RunError("native timeout exit code drifted")
+        return "openquake_run_timeout"
+    return "openquake_run_failed"
 
 
 def _canonical_payload(document: dict[str, Any]) -> tuple[bytes, dict[str, Any]]:
@@ -515,6 +639,7 @@ def _run_derived_config(
     exit_code = int(returncode)
 
     status = "pass" if exit_code == 0 else "blocked"
+    failure_code = None if status == "pass" else _native_failure_code(returncode)
     document = {
         "schema_version": SCHEMA_VERSION,
         "issues": {
@@ -583,7 +708,7 @@ def _run_derived_config(
         },
         "status": status,
         "failure_stage": None if status == "pass" else "openquake_run",
-        "failure_code": None if status == "pass" else "openquake_run_failed",
+        "failure_code": failure_code,
         "external_provider_bytes_persisted": False,
         "risk_by_event_receipt_emitted": False,
         "historical_environment_verified": False,
