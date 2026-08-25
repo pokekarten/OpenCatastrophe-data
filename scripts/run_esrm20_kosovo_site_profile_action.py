@@ -51,6 +51,7 @@ RECEIPT_COMMENT_ID = 5308044390
 EXPECTED_BYTE_COUNT = 5_891
 EXPECTED_SHA256 = "746cf75d91507da8b55a9476c61bb5d884eed42c6268a36b1179f432e8850edd"
 TRUSTED_RESULT_LOGIN = "github-actions[bot]"
+MAX_REQUEST_UTF8_BYTES = 4_096
 MAX_RESULT_UTF8_BYTES = 55_000
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -87,7 +88,15 @@ def validate_request(body: object, *, expected_issue: int, execution_sha: str) -
         raise SiteProfileActionError("wrong runtime issue")
     if type(execution_sha) is not str or not _SHA_RE.fullmatch(execution_sha):
         raise SiteProfileActionError("invalid execution SHA")
-    if type(body) is not str or body.count(REQUEST_MARKER) != 1:
+    if type(body) is not str:
+        raise SiteProfileActionError("invalid site-profile request marker")
+    try:
+        request_size = len(body.encode("utf-8", errors="strict"))
+    except UnicodeEncodeError as exc:
+        raise SiteProfileActionError("site-profile request is not UTF-8 encodable") from exc
+    if request_size > MAX_REQUEST_UTF8_BYTES:
+        raise SiteProfileActionError("site-profile request exceeds limit")
+    if body.count(REQUEST_MARKER) != 1:
         raise SiteProfileActionError("invalid site-profile request marker")
     before, after = body.split(REQUEST_MARKER, 1)
     if before.strip() or not after.strip():
