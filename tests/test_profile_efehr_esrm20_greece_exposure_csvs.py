@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import unittest
+from unittest import mock
 
 from scripts import profile_efehr_esrm20_greece_exposure_csvs as worker
 
@@ -199,19 +200,24 @@ class GreeceExposureCsvProfileTests(unittest.TestCase):
             "publication_authorized",
             "model_use_authorized",
         )
-        source = worker.profile_verified_csv_bytes
-        try:
-            worker.profile_verified_csv_bytes = lambda raw, *, repository_path: {
+
+        def fake_profile(raw: bytes, *, repository_path: str) -> dict[str, object]:
+            self.assertEqual(raw, b"x")
+            return {
                 "repository_path": repository_path,
                 "byte_count": 1,
                 "sha256": "0" * 64,
                 "profile": {"raw_rows_returned": False},
             }
+
+        with mock.patch.object(
+            worker,
+            "profile_verified_csv_bytes",
+            side_effect=fake_profile,
+        ):
             bundle = worker.profile_verified_bundle(
                 {path: b"x" for path, _, _ in worker.RECEIPTS}
             )
-        finally:
-            worker.profile_verified_csv_bytes = source
 
         self.assertIs(bundle["provider_file_content_profiled"], True)
         self.assertIs(bundle["raw_rows_returned"], False)
