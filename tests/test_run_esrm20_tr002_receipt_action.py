@@ -245,6 +245,35 @@ class Tr002ReceiptActionTests(unittest.TestCase):
         with self.assertRaisesRegex(subject.Tr002ReceiptActionError, "component_semantics_verified"):
             subject._parse_trusted_terminal_result(body, execution_sha=EXECUTION_SHA)
 
+    def test_oversized_multibyte_trusted_terminal_fails_before_json_parse(self) -> None:
+        payload = "é" * ((subject.MAX_RESULT_UTF8_BYTES // 2) + 1)
+        self.assertLess(len(payload), subject.MAX_RESULT_UTF8_BYTES)
+        self.assertGreater(len(payload.encode("utf-8")), subject.MAX_RESULT_UTF8_BYTES)
+        body = subject.RESULT_MARKER + "\n" + payload
+
+        with mock.patch.object(
+            subject.json,
+            "loads",
+            side_effect=AssertionError("oversized trusted terminal reached JSON parser"),
+        ) as loads:
+            with self.assertRaisesRegex(subject.Tr002ReceiptActionError, "publication limit"):
+                subject._parse_trusted_terminal_result(body, execution_sha=EXECUTION_SHA)
+
+        loads.assert_not_called()
+
+    def test_non_utf8_encodable_trusted_terminal_fails_before_json_parse(self) -> None:
+        body = subject.RESULT_MARKER + "\n\ud800"
+
+        with mock.patch.object(
+            subject.json,
+            "loads",
+            side_effect=AssertionError("non-UTF-8 trusted terminal reached JSON parser"),
+        ) as loads:
+            with self.assertRaisesRegex(subject.Tr002ReceiptActionError, "not valid UTF-8"):
+                subject._parse_trusted_terminal_result(body, execution_sha=EXECUTION_SHA)
+
+        loads.assert_not_called()
+
     def test_workflow_serializes_dedup_provider_and_terminal_publication_in_one_job(self) -> None:
         workflow = Path(".github/workflows/esrm20-tr002-receipt.yml").read_text(encoding="utf-8")
         pre_jobs, jobs = workflow.split("\njobs:\n", 1)
