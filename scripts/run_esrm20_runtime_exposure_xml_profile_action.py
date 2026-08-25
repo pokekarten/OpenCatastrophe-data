@@ -250,6 +250,18 @@ def _identity() -> dict[str, Any]:
     }
 
 
+def _validate_identity(identity: object) -> None:
+    expected_identity = _identity()
+    if type(identity) is not dict or set(identity) != set(expected_identity):
+        raise RuntimeExposureXmlProfileActionError("runtime exposure identity drifted")
+    for field, expected in expected_identity.items():
+        observed = identity.get(field)
+        if type(observed) is not type(expected) or observed != expected:
+            raise RuntimeExposureXmlProfileActionError(
+                f"runtime exposure identity drifted at {field}"
+            )
+
+
 def _base_result(execution_sha: str) -> dict[str, Any]:
     return {
         "schema_version": RESULT_SCHEMA_VERSION,
@@ -330,7 +342,6 @@ def _validate_terminal_result(result: object) -> str:
         ("source_issue", SOURCE_ISSUE),
         ("dataset_id", DATASET_ID),
         ("target_sha", execution_sha),
-        ("runtime_exposure_identity", _identity()),
         ("exact_kosovo_exposure_selected", False),
         ("value_structural_wiring_verified", False),
         ("external_bytes_persisted", False),
@@ -338,8 +349,10 @@ def _validate_terminal_result(result: object) -> str:
         ("model_use_authorized", False),
     )
     for field, expected in exact:
-        if result.get(field) != expected:
+        observed = result.get(field)
+        if type(observed) is not type(expected) or observed != expected:
             raise RuntimeExposureXmlProfileActionError(f"result {field} drifted")
+    _validate_identity(result.get("runtime_exposure_identity"))
     status = result.get("status")
     if status == "pass":
         if (
@@ -357,8 +370,10 @@ def _validate_terminal_result(result: object) -> str:
             "etag",
         }:
             raise RuntimeExposureXmlProfileActionError("PASS receipt drifted")
+        byte_count = receipt.get("byte_count")
         if (
-            receipt.get("byte_count") != EXPECTED_BYTE_COUNT
+            type(byte_count) is not int
+            or byte_count != EXPECTED_BYTE_COUNT
             or receipt.get("sha256") != EXPECTED_SHA256
         ):
             raise RuntimeExposureXmlProfileActionError("PASS byte identity drifted")
