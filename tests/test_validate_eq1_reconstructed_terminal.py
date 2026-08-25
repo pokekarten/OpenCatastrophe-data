@@ -107,7 +107,7 @@ class ReconstructedTerminalConsumerTests(unittest.TestCase):
                     expected_execution_sha="a" * 40,
                     compatibility_evidence={},
                 )
-        terminal.assert_called_once()
+        terminal.assert_not_called()
 
     def test_terminal_without_numerical_receipt_cannot_be_consumed(self):
         with (
