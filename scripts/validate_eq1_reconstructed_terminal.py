@@ -32,13 +32,13 @@ def validate_reconstructed_terminal(
     """Validate both closed contracts and return a non-promoting consumer disposition."""
 
     gate = validate_reconstructed_run_gate(compatibility_evidence)
+    if gate.get("run_may_proceed") is not True:
+        raise ReconstructedTerminalConsumerError("reconstructed compatibility gate did not pass")
+
     terminal = validate_terminal_body(
         terminal_body,
         expected_execution_sha=expected_execution_sha,
     )
-
-    if gate.get("run_may_proceed") is not True:
-        raise ReconstructedTerminalConsumerError("reconstructed compatibility gate did not pass")
 
     terminal_pass = (
         terminal.get("declared_terminal_status") == "pass"
