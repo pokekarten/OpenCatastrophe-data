@@ -21,7 +21,7 @@ class Eq1PackageExposureValueBasisTest(unittest.TestCase):
         self.assertIn("`TOTAL_REPL_COST_EUR`", text)
         self.assertIn("`COST_STRUCTURAL_EUR`", text)
         self.assertIn(
-            "the exact source/runtime value relation ties this field to source\n"
+            "the receipt-bound Decimal comparison relates this field to source\n"
             "  `TOTAL_REPL_COST_EUR`",
             text,
         )
@@ -30,6 +30,8 @@ class Eq1PackageExposureValueBasisTest(unittest.TestCase):
             "  `COST_STRUCTURAL_EUR`",
             text,
         )
+        self.assertIn("`1051/1093` exact values and `42` non-equal", text)
+        self.assertIn("maximum absolute difference `0.000000004`", text)
         self.assertNotIn(
             "- `structural`: aggregated structural replacement-cost input in EUR;",
             text,
@@ -39,7 +41,8 @@ class Eq1PackageExposureValueBasisTest(unittest.TestCase):
         text = PACKAGE.read_text(encoding="utf-8")
 
         self.assertIn(
-            "does **not** establish the exact converter, causal generation rule",
+            "does **not**\n"
+            "establish the exact converter, causal generation rule",
             text,
         )
         self.assertIn(
