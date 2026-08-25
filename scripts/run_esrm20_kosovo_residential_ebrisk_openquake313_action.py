@@ -86,6 +86,7 @@ _ADAPTER_RESULT_FIELDS = {
     "model_use_authorized",
 }
 _ADAPTER_BLOCKED_OPTIONAL_FIELDS = {"native_failure_diagnostic"}
+_BLOCKED_FAILURE_CODES = frozenset({"openquake_run_failed", "openquake_run_timeout"})
 _NUMERICAL_RECEIPT_FIELDS = {
     "experiment_label",
     "insurance_scope",
@@ -251,11 +252,21 @@ def _validate_adapter_document(document: object) -> dict[str, Any]:
     else:
         if document.get("failure_stage") != "openquake_run":
             raise KosovoResidentialOQ313ActionError("BLOCKED failure stage drifted")
-        if document.get("failure_code") != "openquake_run_failed":
+        failure_code = document.get("failure_code")
+        if failure_code not in _BLOCKED_FAILURE_CODES:
             raise KosovoResidentialOQ313ActionError("BLOCKED failure code drifted")
         exit_code = execution.get("exit_code")
         if type(exit_code) is not int or exit_code == 0:
             raise KosovoResidentialOQ313ActionError("BLOCKED exit code drifted")
+        if failure_code == "openquake_run_timeout":
+            if exit_code != runner.NATIVE_TIMEOUT_EXIT_CODE:
+                raise KosovoResidentialOQ313ActionError(
+                    "BLOCKED timeout exit code drifted"
+                )
+            if "native_failure_diagnostic" not in document:
+                raise KosovoResidentialOQ313ActionError(
+                    "BLOCKED timeout diagnostic missing"
+                )
 
     diagnostic = document.get("native_failure_diagnostic")
     if "native_failure_diagnostic" in document:
