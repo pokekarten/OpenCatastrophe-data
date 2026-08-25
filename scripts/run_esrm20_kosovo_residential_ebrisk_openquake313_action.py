@@ -239,8 +239,13 @@ def _validate_adapter_document(document: object) -> dict[str, Any]:
         raise KosovoResidentialOQ313ActionError("adapter execution flag drifted")
 
     if status == "pass":
-        if document.get("failure_stage") is not None or document.get("failure_code") is not None:
+        if (
+            document.get("failure_stage") is not None
+            or document.get("failure_code") is not None
+        ):
             raise KosovoResidentialOQ313ActionError("PASS has failure metadata")
+        if type(execution.get("exit_code")) is not int:
+            raise KosovoResidentialOQ313ActionError("PASS exit code type drifted")
         if execution.get("exit_code") != 0:
             raise KosovoResidentialOQ313ActionError("PASS has non-zero exit code")
     else:
@@ -304,7 +309,8 @@ def _canonical_result(
         "sha256",
     }:
         raise KosovoResidentialOQ313ActionError("adapter receipt fields drifted")
-    if adapter_receipt.get("byte_count") != len(adapter_payload):
+    byte_count = adapter_receipt.get("byte_count")
+    if type(byte_count) is not int or byte_count != len(adapter_payload):
         raise KosovoResidentialOQ313ActionError("adapter receipt byte count drifted")
     digest = adapter_receipt.get("sha256")
     if type(digest) is not str or _DIGEST_RE.fullmatch(digest) is None:

@@ -268,7 +268,7 @@ class EQ1OQ313TerminalValidatorTests(unittest.TestCase):
                 _refresh_adapter_receipt(result)
                 with self.assertRaisesRegex(
                     subject.EQ1OQ313TerminalValidationError,
-                    "exit code type",
+                    "adapter result contract drifted",
                 ):
                     subject.validate_terminal_body(
                         _body(result), expected_execution_sha=EXECUTION_SHA
