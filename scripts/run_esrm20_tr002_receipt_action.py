@@ -73,6 +73,7 @@ COMMIT_SHA = "05f83bbc9df81d02ee8ddb1801d9d781355ce783"
 REPOSITORY_PATH = "Documentation/EFEHR_TR002_ESRM20.pdf"
 WORKER_OPERATION_ID = "esrm20-tr002-release-pdf-v1"
 MAX_PDF_BYTES = 32 * 1024 * 1024
+MAX_RESULT_UTF8_BYTES = 55_000
 TRUSTED_RESULT_LOGIN = "github-actions[bot]"
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -312,8 +313,15 @@ def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
     before, after = body.split(RESULT_MARKER, 1)
     if before.strip() or not after.strip():
         raise Tr002ReceiptActionError("trusted result envelope is malformed")
+    payload = after.strip()
     try:
-        result = json.loads(after.strip(), object_pairs_hook=_pairs, parse_constant=_reject_constant)
+        payload_size = len(payload.encode("utf-8", errors="strict"))
+    except UnicodeEncodeError as exc:
+        raise Tr002ReceiptActionError("trusted result is not valid UTF-8") from exc
+    if payload_size > MAX_RESULT_UTF8_BYTES:
+        raise Tr002ReceiptActionError("trusted result exceeds publication limit")
+    try:
+        result = json.loads(payload, object_pairs_hook=_pairs, parse_constant=_reject_constant)
     except Tr002ReceiptActionError:
         raise
     except (json.JSONDecodeError, TypeError, ValueError) as exc:
