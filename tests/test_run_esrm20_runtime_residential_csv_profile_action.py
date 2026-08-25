@@ -60,6 +60,19 @@ def good_profile() -> dict[str, object]:
     }
 
 
+def pass_evidence() -> dict[str, object]:
+    return {
+        "receipt": {
+            "retrieved_at": "2026-08-21T11:18:50Z",
+            "byte_count": subject.EXPECTED_BYTE_COUNT,
+            "sha256": subject.EXPECTED_SHA256,
+            "content_type": "text/plain; charset=utf-8",
+            "etag": None,
+        },
+        "profile": good_profile(),
+    }
+
+
 class RuntimeResidentialCsvProfileActionTests(unittest.TestCase):
     def test_request_is_bound_to_exact_receipt_hash(self):
         parsed = subject.validate_request(
@@ -90,21 +103,20 @@ class RuntimeResidentialCsvProfileActionTests(unittest.TestCase):
         with self.assertRaises(subject.RuntimeResidentialCsvProfileActionError):
             subject._validate_profile(profile)
 
+    def test_profile_column_record_count_rejects_float_type_confusion(self):
+        profile = good_profile()
+        profile["columns"][0]["record_count"] = 2.0
+        with self.assertRaisesRegex(
+            subject.RuntimeResidentialCsvProfileActionError,
+            "column identity drifted",
+        ):
+            subject._validate_profile(profile)
+
     def test_pass_profiles_structure_but_keeps_scientific_authority_false(self):
-        evidence = {
-            "receipt": {
-                "retrieved_at": "2026-08-21T11:18:50Z",
-                "byte_count": subject.EXPECTED_BYTE_COUNT,
-                "sha256": subject.EXPECTED_SHA256,
-                "content_type": "text/plain; charset=utf-8",
-                "etag": None,
-            },
-            "profile": good_profile(),
-        }
         with mock.patch.object(
             subject,
             "profile_runtime_residential_csv",
-            return_value=evidence,
+            return_value=pass_evidence(),
         ):
             result = subject.run_profile(execution_sha=SHA)
         self.assertEqual(result["status"], "pass")
@@ -120,6 +132,74 @@ class RuntimeResidentialCsvProfileActionTests(unittest.TestCase):
         ):
             self.assertIs(result[field], False)
         self.assertEqual(subject._validate_terminal_result(result), SHA)
+
+    def test_terminal_rejects_json_numeric_type_confusion(self):
+        with mock.patch.object(
+            subject,
+            "profile_runtime_residential_csv",
+            return_value=pass_evidence(),
+        ):
+            canonical = subject.run_profile(execution_sha=SHA)
+
+        mutations = (
+            (
+                "source_issue_float",
+                lambda result: result.__setitem__(
+                    "source_issue", float(subject.SOURCE_ISSUE)
+                ),
+            ),
+            (
+                "authority_zero",
+                lambda result: result.__setitem__("publication_authorized", 0),
+            ),
+            (
+                "identity_project_id_float",
+                lambda result: result["runtime_residential_identity"].__setitem__(
+                    "project_id", float(subject.PROJECT_ID)
+                ),
+            ),
+            (
+                "identity_receipt_comment_id_float",
+                lambda result: result["runtime_residential_identity"].__setitem__(
+                    "receipt_comment_id", float(subject.RECEIPT_COMMENT_ID)
+                ),
+            ),
+            (
+                "identity_byte_count_float",
+                lambda result: result["runtime_residential_identity"].__setitem__(
+                    "receipt_byte_count", float(subject.EXPECTED_BYTE_COUNT)
+                ),
+            ),
+            (
+                "receipt_byte_count_float",
+                lambda result: result["receipt"].__setitem__(
+                    "byte_count", float(subject.EXPECTED_BYTE_COUNT)
+                ),
+            ),
+        )
+        for label, mutate in mutations:
+            with self.subTest(label=label):
+                result = json.loads(json.dumps(canonical))
+                mutate(result)
+                body = subject.RESULT_MARKER + "\n" + json.dumps(
+                    result, separators=(",", ":")
+                )
+                with self.assertRaises(subject.RuntimeResidentialCsvProfileActionError):
+                    subject.parse_terminal_result(body)
+
+    def test_run_profile_rejects_float_receipt_byte_count_before_pass(self):
+        evidence = pass_evidence()
+        evidence["receipt"]["byte_count"] = float(subject.EXPECTED_BYTE_COUNT)
+        with mock.patch.object(
+            subject,
+            "profile_runtime_residential_csv",
+            return_value=evidence,
+        ):
+            result = subject.run_profile(execution_sha=SHA)
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["failure_class"], "byte_identity_mismatch")
+        self.assertIsNone(result["receipt"])
+        self.assertIsNone(result["profile"])
 
     def test_byte_identity_mismatch_blocks_without_profile_evidence(self):
         with mock.patch.object(
