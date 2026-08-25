@@ -535,9 +535,27 @@ def _execute_native(command: Sequence[str], env: Mapping[str, str]) -> int:
                     ) from exc
 
         if not drain_done.wait(NATIVE_TERMINATION_GRACE_SECONDS):
-            raise KosovoResidentialOQ313RunError(
-                "OpenQuake stderr stream did not close after process termination"
-            )
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            except OSError as exc:
+                raise KosovoResidentialOQ313RunError(
+                    "OpenQuake residual process group could not be terminated"
+                ) from exc
+            if not drain_done.wait(NATIVE_TERMINATION_GRACE_SECONDS):
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                except OSError as exc:
+                    raise KosovoResidentialOQ313RunError(
+                        "OpenQuake residual process group could not be killed"
+                    ) from exc
+                if not drain_done.wait(NATIVE_TERMINATION_GRACE_SECONDS):
+                    raise KosovoResidentialOQ313RunError(
+                        "OpenQuake stderr stream did not close after residual process-group termination"
+                    )
         if diagnostic_errors:
             raise KosovoResidentialOQ313RunError(
                 "OpenQuake stderr diagnostic failed"
