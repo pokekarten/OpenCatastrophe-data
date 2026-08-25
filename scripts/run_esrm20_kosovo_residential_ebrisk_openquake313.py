@@ -26,7 +26,8 @@ import os
 import re
 import signal
 import subprocess
-import threading
+import tempfile
+import time
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -440,183 +441,151 @@ def _read_staged_config() -> bytes:
         ) from exc
 
 
-def _stderr_diagnostic(stderr_stream: Any) -> dict[str, object]:
-    byte_count = 0
+def _stderr_diagnostic_snapshot(stderr_file: Any) -> dict[str, object]:
+    if not hasattr(os, "pread"):
+        raise KosovoResidentialOQ313RunError(
+            "OpenQuake stderr snapshot requires POSIX positional reads"
+        )
+    try:
+        descriptor = stderr_file.fileno()
+        snapshot_size = os.fstat(descriptor).st_size
+    except (AttributeError, OSError) as exc:
+        raise KosovoResidentialOQ313RunError(
+            "OpenQuake stderr snapshot is unavailable"
+        ) from exc
+    if type(snapshot_size) is not int or snapshot_size < 0:
+        raise KosovoResidentialOQ313RunError(
+            "OpenQuake stderr snapshot size drifted"
+        )
+
     digest = hashlib.sha256()
-    while True:
-        chunk = stderr_stream.read(NATIVE_STDERR_HASH_CHUNK_BYTES)
-        if not chunk:
-            break
+    offset = 0
+    while offset < snapshot_size:
+        requested = min(NATIVE_STDERR_HASH_CHUNK_BYTES, snapshot_size - offset)
+        try:
+            chunk = os.pread(descriptor, requested, offset)
+        except OSError as exc:
+            raise KosovoResidentialOQ313RunError(
+                "OpenQuake stderr snapshot could not be read"
+            ) from exc
         if type(chunk) is not bytes:
             raise KosovoResidentialOQ313RunError(
-                "OpenQuake stderr stream returned non-byte content"
+                "OpenQuake stderr snapshot returned non-byte content"
             )
-        byte_count += len(chunk)
+        if not chunk:
+            raise KosovoResidentialOQ313RunError(
+                "OpenQuake stderr snapshot ended before its frozen boundary"
+            )
+        if len(chunk) > requested:
+            raise KosovoResidentialOQ313RunError(
+                "OpenQuake stderr snapshot read exceeded its frozen boundary"
+            )
         digest.update(chunk)
+        offset += len(chunk)
+
     return {
-        "byte_count": byte_count,
+        "byte_count": snapshot_size,
         "sha256": digest.hexdigest(),
         "content_exposed": False,
     }
 
 
-def _execute_native(command: Sequence[str], env: Mapping[str, str]) -> int:
-    process = subprocess.Popen(
-        list(command),
-        env=dict(env),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
-        start_new_session=True,
-    )
-    stderr_stream = process.stderr
-    if stderr_stream is None:
-        try:
-            process.kill()
-            process.wait(timeout=NATIVE_TERMINATION_GRACE_SECONDS)
-        except (OSError, subprocess.TimeoutExpired):
-            pass
-        raise KosovoResidentialOQ313RunError(
-            "OpenQuake subprocess stderr pipe is unavailable"
-        )
-
-    diagnostic_holder: list[dict[str, object]] = []
-    diagnostic_errors: list[Exception] = []
-    drain_done = threading.Event()
-
-    def drain_stderr() -> None:
-        try:
-            diagnostic_holder.append(_stderr_diagnostic(stderr_stream))
-        except Exception as exc:  # noqa: BLE001 - re-raised on the controller thread
-            diagnostic_errors.append(exc)
-        finally:
-            drain_done.set()
-
-    drain_thread = threading.Thread(
-        target=drain_stderr,
-        name="oq313-stderr-diagnostic",
-        daemon=True,
-    )
-    drain_thread.start()
-
-    timed_out = False
-    detached_success_stderr = False
-    diagnostic: dict[str, object] | None = None
-    returncode: int | None = None
+def _cleanup_residual_process_group(pgid: int) -> None:
     try:
-        try:
-            returncode = process.wait(timeout=NATIVE_EXECUTION_TIMEOUT_SECONDS)
-        except subprocess.TimeoutExpired:
-            timed_out = True
-            try:
-                os.killpg(process.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            except OSError as exc:
-                raise KosovoResidentialOQ313RunError(
-                    "OpenQuake timed-out process group could not be terminated"
-                ) from exc
+        os.killpg(pgid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+    except OSError as exc:
+        raise KosovoResidentialOQ313RunError(
+            "OpenQuake residual process group could not be terminated"
+        ) from exc
 
+    time.sleep(NATIVE_TERMINATION_GRACE_SECONDS)
+    try:
+        os.killpg(pgid, signal.SIGKILL)
+    except ProcessLookupError:
+        return
+    except OSError as exc:
+        raise KosovoResidentialOQ313RunError(
+            "OpenQuake residual process group could not be killed"
+        ) from exc
+
+
+def _execute_native(command: Sequence[str], env: Mapping[str, str]) -> int:
+    timed_out = False
+    returncode: int | None = None
+
+    with tempfile.TemporaryFile(mode="w+b") as stderr_file:
+        process = subprocess.Popen(
+            list(command),
+            env=dict(env),
+            stdout=subprocess.DEVNULL,
+            stderr=stderr_file,
+            start_new_session=True,
+        )
+        try:
             try:
-                returncode = process.wait(timeout=NATIVE_TERMINATION_GRACE_SECONDS)
+                returncode = process.wait(timeout=NATIVE_EXECUTION_TIMEOUT_SECONDS)
             except subprocess.TimeoutExpired:
+                timed_out = True
                 try:
-                    os.killpg(process.pid, signal.SIGKILL)
+                    os.killpg(process.pid, signal.SIGTERM)
                 except ProcessLookupError:
                     pass
                 except OSError as exc:
                     raise KosovoResidentialOQ313RunError(
-                        "OpenQuake timed-out process group could not be killed"
+                        "OpenQuake timed-out process group could not be terminated"
                     ) from exc
+
                 try:
                     returncode = process.wait(
                         timeout=NATIVE_TERMINATION_GRACE_SECONDS
                     )
-                except subprocess.TimeoutExpired as exc:
-                    raise KosovoResidentialOQ313RunError(
-                        "OpenQuake timed-out process did not terminate"
-                    ) from exc
-
-        if not drain_done.wait(NATIVE_TERMINATION_GRACE_SECONDS):
-            try:
-                os.killpg(process.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            except OSError as exc:
-                raise KosovoResidentialOQ313RunError(
-                    "OpenQuake residual process group could not be terminated"
-                ) from exc
-            if not drain_done.wait(NATIVE_TERMINATION_GRACE_SECONDS):
-                try:
-                    os.killpg(process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-                except OSError as exc:
-                    raise KosovoResidentialOQ313RunError(
-                        "OpenQuake residual process group could not be killed"
-                    ) from exc
-                if not drain_done.wait(NATIVE_TERMINATION_GRACE_SECONDS):
-                    if returncode == 0 and not timed_out:
-                        # OpenQuake 3.13 auto-starts its single-user dbserver with
-                        # inherited stdio, then double-forks + setsid(). Once the
-                        # engine process has exited successfully and its original
-                        # process group has been boundedly cleaned, that expected
-                        # detached daemon may still own the stderr write end. Its
-                        # inherited descriptor is not an engine-completion gate.
-                        detached_success_stderr = True
-                    else:
+                except subprocess.TimeoutExpired:
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    except OSError as exc:
                         raise KosovoResidentialOQ313RunError(
-                            "OpenQuake stderr stream did not close after residual process-group termination"
+                            "OpenQuake timed-out process group could not be killed"
+                        ) from exc
+                    try:
+                        returncode = process.wait(
+                            timeout=NATIVE_TERMINATION_GRACE_SECONDS
                         )
-        if not detached_success_stderr:
-            if diagnostic_errors:
-                raise KosovoResidentialOQ313RunError(
-                    "OpenQuake stderr diagnostic failed"
-                ) from diagnostic_errors[0]
-            if len(diagnostic_holder) != 1:
-                raise KosovoResidentialOQ313RunError(
-                    "OpenQuake stderr diagnostic was not produced exactly once"
-                )
-            diagnostic = diagnostic_holder[0]
-    finally:
-        if process.poll() is None:
-            try:
-                process.kill()
-            except OSError:
-                pass
-            try:
-                process.wait(timeout=NATIVE_TERMINATION_GRACE_SECONDS)
-            except (OSError, subprocess.TimeoutExpired):
-                pass
-        if drain_done.is_set():
-            try:
-                stderr_stream.close()
-            except OSError:
-                pass
-        if not detached_success_stderr:
-            drain_done.wait(NATIVE_TERMINATION_GRACE_SECONDS)
-        drain_thread.join(timeout=0)
+                    except subprocess.TimeoutExpired as exc:
+                        raise KosovoResidentialOQ313RunError(
+                            "OpenQuake timed-out process did not terminate"
+                        ) from exc
 
-    if type(returncode) is not int:
-        raise KosovoResidentialOQ313RunError(
-            "OpenQuake subprocess returned a non-integer exit code"
-        )
-    if timed_out:
-        if diagnostic is None:
-            raise KosovoResidentialOQ313RunError(
-                "OpenQuake timeout diagnostic was not produced"
-            )
-        return _NativeExitCode(
-            NATIVE_TIMEOUT_EXIT_CODE,
-            diagnostic,
-            timed_out=True,
-        )
-    if returncode == 0:
-        return returncode
-    if diagnostic is None:
-        raise KosovoResidentialOQ313RunError(
-            "OpenQuake failure diagnostic was not produced"
-        )
-    return _NativeExitCode(returncode, diagnostic)
+            _cleanup_residual_process_group(process.pid)
+
+            if type(returncode) is not int:
+                raise KosovoResidentialOQ313RunError(
+                    "OpenQuake subprocess returned a non-integer exit code"
+                )
+            if returncode == 0 and not timed_out:
+                return returncode
+
+            diagnostic = _stderr_diagnostic_snapshot(stderr_file)
+            if timed_out:
+                return _NativeExitCode(
+                    NATIVE_TIMEOUT_EXIT_CODE,
+                    diagnostic,
+                    timed_out=True,
+                )
+            return _NativeExitCode(returncode, diagnostic)
+        finally:
+            if process.poll() is None:
+                try:
+                    process.kill()
+                except OSError:
+                    pass
+                try:
+                    process.wait(timeout=NATIVE_TERMINATION_GRACE_SECONDS)
+                except (OSError, subprocess.TimeoutExpired):
+                    pass
 
 
 def _native_failure_code(returncode: int) -> str:
