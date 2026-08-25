@@ -172,6 +172,27 @@ def _existing_destination_matches(
     return True
 
 
+def _publish_verified_temp(
+    temp_path: Path,
+    destination: Path,
+    *,
+    expected_sha256: str,
+    expected_size: int,
+) -> None:
+    """Atomically publish a verified temp file without clobbering concurrent content."""
+
+    try:
+        os.link(temp_path, destination)
+    except FileExistsError:
+        _existing_destination_matches(
+            destination,
+            expected_sha256=expected_sha256,
+            expected_size=expected_size,
+        )
+    except OSError as exc:
+        raise MaterializationError(f"cannot publish verified cache destination: {exc}") from exc
+
+
 def _copy_and_verify(
     source: Path,
     destination: Path,
@@ -213,15 +234,18 @@ def _copy_and_verify(
         if actual_sha256 != expected_sha256:
             raise MaterializationError("source SHA-256 does not match admitted artifact")
 
-        if destination.exists() or destination.is_symlink():
-            _existing_destination_matches(
-                destination,
-                expected_sha256=expected_sha256,
-                expected_size=expected_size,
-            )
-            return
-
-        os.replace(temp_path, destination)
+        _publish_verified_temp(
+            temp_path,
+            destination,
+            expected_sha256=expected_sha256,
+            expected_size=expected_size,
+        )
+        try:
+            temp_path.unlink(missing_ok=True)
+        except OSError as exc:
+            raise MaterializationError(
+                f"cannot remove verified cache temporary alias: {exc}"
+            ) from exc
         temp_path = None
     except MaterializationError:
         raise
