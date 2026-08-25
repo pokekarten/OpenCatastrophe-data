@@ -98,6 +98,14 @@ def validate_reconstructed_value_basis_terminal(
         raise ReconstructedValueBasisTerminalConsumerError(
             "reconstructed terminal consumer did not validate both contracts"
         )
+    if terminal.get("declared_execution_sha") != expected_execution_sha:
+        raise ReconstructedValueBasisTerminalConsumerError(
+            "terminal execution SHA disagrees with requested execution"
+        )
+    if terminal.get("trusted_origin_required") is not True:
+        raise ReconstructedValueBasisTerminalConsumerError(
+            "terminal trusted-origin precondition drifted"
+        )
     _require_false_ceiling(terminal, _TERMINAL_FALSE_CEILINGS, "terminal")
 
     if terminal.get("run_label") != value_basis.get("run_label"):
@@ -105,10 +113,12 @@ def validate_reconstructed_value_basis_terminal(
             "reconstructed run labels disagree"
         )
 
-    terminal_pass = terminal.get("terminal_pass") is True
-    terminal_consumable = (
-        terminal.get("reconstructed_reference_result_consumable") is True
-    )
+    terminal_pass = terminal.get("terminal_pass")
+    terminal_consumable = terminal.get("reconstructed_reference_result_consumable")
+    if type(terminal_pass) is not bool or type(terminal_consumable) is not bool:
+        raise ReconstructedValueBasisTerminalConsumerError(
+            "terminal pass/consumable types drifted"
+        )
     if terminal_pass != terminal_consumable:
         raise ReconstructedValueBasisTerminalConsumerError(
             "terminal pass/consumable disposition drifted"
