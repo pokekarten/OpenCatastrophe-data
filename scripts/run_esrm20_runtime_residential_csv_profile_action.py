@@ -193,6 +193,18 @@ def _identity() -> dict[str, Any]:
     }
 
 
+def _validate_identity(identity: object) -> None:
+    expected_identity = _identity()
+    if type(identity) is not dict or set(identity) != set(expected_identity):
+        raise RuntimeResidentialCsvProfileActionError("runtime residential identity drifted")
+    for field, expected in expected_identity.items():
+        observed = identity.get(field)
+        if type(observed) is not type(expected) or observed != expected:
+            raise RuntimeResidentialCsvProfileActionError(
+                f"runtime residential identity drifted at {field}"
+            )
+
+
 def _base_result(execution_sha: str) -> dict[str, Any]:
     return {
         "schema_version": RESULT_SCHEMA_VERSION,
@@ -273,7 +285,12 @@ def _validate_profile(profile: object) -> dict[str, Any]:
             "decimal_summary",
         }:
             raise RuntimeResidentialCsvProfileActionError("column profile drifted")
-        if column.get("name") != expected_name or column.get("record_count") != record_count:
+        column_record_count = column.get("record_count")
+        if (
+            column.get("name") != expected_name
+            or type(column_record_count) is not int
+            or column_record_count != record_count
+        ):
             raise RuntimeResidentialCsvProfileActionError("column identity drifted")
         for key in ("empty_count", "nonempty_count", "distinct_count"):
             if type(column.get(key)) is not int or column[key] < 0:
@@ -313,7 +330,6 @@ def _validate_terminal_result(result: object) -> str:
         ("source_issue", SOURCE_ISSUE),
         ("dataset_id", DATASET_ID),
         ("target_sha", execution_sha),
-        ("runtime_residential_identity", _identity()),
         ("taxonomy_semantics_verified", False),
         ("crs_semantics_verified", False),
         ("value_semantics_verified", False),
@@ -323,8 +339,10 @@ def _validate_terminal_result(result: object) -> str:
         ("model_use_authorized", False),
     )
     for field, expected in exact:
-        if result.get(field) != expected:
+        observed = result.get(field)
+        if type(observed) is not type(expected) or observed != expected:
             raise RuntimeResidentialCsvProfileActionError(f"result {field} drifted")
+    _validate_identity(result.get("runtime_residential_identity"))
     status = result.get("status")
     if status == "pass":
         if result.get("failure_class") is not None or result.get("csv_content_profiled") is not True:
@@ -332,7 +350,12 @@ def _validate_terminal_result(result: object) -> str:
         receipt = result.get("receipt")
         if type(receipt) is not dict or set(receipt) != _RECEIPT_FIELDS:
             raise RuntimeResidentialCsvProfileActionError("PASS receipt drifted")
-        if receipt.get("byte_count") != EXPECTED_BYTE_COUNT or receipt.get("sha256") != EXPECTED_SHA256:
+        byte_count = receipt.get("byte_count")
+        if (
+            type(byte_count) is not int
+            or byte_count != EXPECTED_BYTE_COUNT
+            or receipt.get("sha256") != EXPECTED_SHA256
+        ):
             raise RuntimeResidentialCsvProfileActionError("PASS byte identity drifted")
         if type(receipt.get("retrieved_at")) is not str or not receipt["retrieved_at"]:
             raise RuntimeResidentialCsvProfileActionError("PASS retrieval time invalid")
@@ -420,9 +443,11 @@ def run_profile(*, execution_sha: str) -> dict[str, Any]:
 
     receipt = evidence.get("receipt")
     profile = evidence.get("profile")
+    byte_count = receipt.get("byte_count") if type(receipt) is dict else None
     if (
         type(receipt) is not dict
-        or receipt.get("byte_count") != EXPECTED_BYTE_COUNT
+        or type(byte_count) is not int
+        or byte_count != EXPECTED_BYTE_COUNT
         or receipt.get("sha256") != EXPECTED_SHA256
     ):
         result["failure_class"] = "byte_identity_mismatch"
