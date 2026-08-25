@@ -51,6 +51,11 @@ PROJECTS: dict[int, dict[str, Any]] = {
         "issues": frozenset({281, 282, 283, 284}),
         "datasets": frozenset({"efehr.esrm20.risk-inputs.v1.0"}),
     },
+    278: {
+        "project_path": "efehr/esrm20_sitemodel",
+        "issues": frozenset({291}),
+        "datasets": frozenset({"efehr.esrm20.risk-inputs.v1.0"}),
+    },
 }
 
 EXACT_PATHS: dict[tuple[int, int], frozenset[str]] = {
@@ -89,6 +94,19 @@ EXACT_PATHS: dict[tuple[int, int], frozenset[str]] = {
             "Vs30/Site_model_Kosovo.xml",
         }
     ),
+    (291, 278): frozenset(
+        {
+            "ExposureReadme.pdf",
+        }
+    ),
+}
+
+EXACT_COMMITS: dict[tuple[int, int, str], str] = {
+    (
+        291,
+        278,
+        "ExposureReadme.pdf",
+    ): "038c91d2bf5a07f6b54ff51639aad874d6837ea9",
 }
 
 ESHM20_PREFIX = "oq_computational/oq_configuration_eshm20_v12e_region_main/"
@@ -138,7 +156,7 @@ def validate_target(
     repository_path: str,
 ) -> ArtifactTarget:
     """Validate one immutable P0 EFEHR target and return its canonical identity."""
-    if type(source_issue) is not int or source_issue not in {281, 282, 283, 284}:
+    if type(source_issue) is not int or source_issue not in {281, 282, 283, 284, 291}:
         raise EfehrReceiptError("source_issue is outside the P0 EFEHR allow-list")
     if type(dataset_id) is not str or not SAFE_DATASET_RE.fullmatch(dataset_id):
         raise EfehrReceiptError("dataset_id is invalid")
@@ -163,6 +181,10 @@ def validate_target(
             raise EfehrReceiptError("ESHM20 path has an unsupported file type")
     else:
         raise EfehrReceiptError("target requires an exact source-derived file allow-list before acquisition")
+
+    exact_commit = EXACT_COMMITS.get((source_issue, project_id, path))
+    if exact_commit is not None and commit_sha != exact_commit:
+        raise EfehrReceiptError("commit_sha does not match the exact source-derived object")
 
     return ArtifactTarget(
         source_issue=source_issue,
