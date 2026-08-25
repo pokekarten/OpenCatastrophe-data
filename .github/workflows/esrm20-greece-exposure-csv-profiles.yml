@@ -1,0 +1,273 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Greece Exposure 3CSV Profiles
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-greece-exposure-csv-profiles-${{ github.repository }}-${{ github.event.issue.number == 285 && github.event.comment.user.login == github.event.repository.owner.login && github.event.comment.author_association == 'OWNER' && contains(github.event.comment.body, '<!-- oc-eq1-esrm20-greece-exposure-csv-profiles-request-v1 -->') && 'trusted-request' || format('noise-{0}', github.event.comment.id) }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main Greece exposure 3CSV profile request
+    if: >-
+      github.event.issue.number == 285 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-greece-exposure-csv-profiles-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_GREECE_EXPOSURE_PROFILE_REQUEST: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.acquire_efehr_esrm20_greece_exposure_csv_profiles \
+            --comment-body-env OC_GREECE_EXPOSURE_PROFILE_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-profile:
+    name: Execute exact receipt-bound Greece exposure 3CSV profiles
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up execution Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Deduplicate trusted terminal before provider I/O
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import acquire_efehr_esrm20_greece_exposure_csv_profiles as subject
+
+          skip = subject.has_terminal_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+
+      - name: Acquire exact three CSVs and run merged bounded profiler
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_GREECE_EXPOSURE_PROFILE_REQUEST: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/greece-exposure-3csv-profile.json
+        run: |
+          set -euo pipefail
+          python -m scripts.acquire_efehr_esrm20_greece_exposure_csv_profiles \
+            --comment-body-env OC_GREECE_EXPOSURE_PROFILE_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from scripts import acquire_efehr_esrm20_greece_exposure_csv_profiles as subject
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          sha = os.environ["EXECUTION_SHA"]
+          subject._validate_terminal_result(result, execution_sha=sha)
+          if result.get("target_sha") != sha or result.get("execution_sha") != sha:
+              raise SystemExit("Greece exposure profile left exact execution SHA")
+          PY
+
+      - name: Export bounded result to publisher
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        env:
+          RESULT_PATH: ${{ runner.temp }}/greece-exposure-3csv-profile.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(result, sort_keys=True, separators=(",", ":"), ensure_ascii=False))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-profile:
+    name: Publish bounded Greece exposure 3CSV structural evidence
+    needs: [validate-request, execute-profile]
+    if: >-
+      needs.execute-profile.result == 'success' &&
+      needs.execute-profile.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Re-fence result and publish without checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-profile.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-greece-exposure-csv-profiles-result-v1 -->"
+        run: |
+          set -euo pipefail
+          LATEST_SHA="$(
+            gh api "repos/$GITHUB_REPOSITORY/commits/$DEFAULT_BRANCH" --jq '.sha'
+          )"
+          test "$LATEST_SHA" = "$EXECUTION_SHA"
+
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-greece-exposure-csv-profiles-result-v1" and
+            .action == "esrm20_greece_exposure_three_csv_content_profile" and
+            .source_issue == 285 and
+            .parent_consumer_issue == 287 and
+            .dataset_id == "efehr.esrm20.risk-inputs.v1.0" and
+            .target_sha == $sha and
+            .execution_sha == $sha and
+            .exposure_identity.provider_host == "gitlab.seismo.ethz.ch" and
+            .exposure_identity.project_id == 269 and
+            .exposure_identity.project_path == "efehr/esrm20" and
+            .exposure_identity.release_tag == "v1.0" and
+            .exposure_identity.commit_sha == "05f83bbc9df81d02ee8ddb1801d9d781355ce783" and
+            .exposure_identity.consumer_event_id == "Greece_07-9-1999" and
+            .exposure_identity.parent_exposure_path == "Exposure/OQ_Exposure_Input_Greece.xml" and
+            .exposure_identity.receipt_comment_id == 5397480571 and
+            .exposure_identity.receipt_execution_sha == "4b1d3c41a5df739b9686303eb753577ca39ec58e" and
+            (.exposure_identity.files | length) == 3 and
+            .exposure_identity.files[0].repository_path == "Exposure/OQ_Exposure_Input_Greece_Com.csv" and
+            .exposure_identity.files[0].byte_count == 7672810 and
+            .exposure_identity.files[0].sha256 == "2281f079a6e0b2215fab696d442f9d98b9b0ba94a2b4b24f23f1fff4018d1b57" and
+            .exposure_identity.files[1].repository_path == "Exposure/OQ_Exposure_Input_Greece_Ind.csv" and
+            .exposure_identity.files[1].byte_count == 2822653 and
+            .exposure_identity.files[1].sha256 == "ad6698199d84002d017b41668dc204a2d53835a4b2429bc7e8eea56b328549c7" and
+            .exposure_identity.files[2].repository_path == "Exposure/OQ_Exposure_Input_Greece_Res.csv" and
+            .exposure_identity.files[2].byte_count == 5263604 and
+            .exposure_identity.files[2].sha256 == "928ac7f069dfc3181a936f73caafb951a5c2437f70379fa29518c002bbd3ef28" and
+            (
+              (
+                .status == "pass" and
+                .failure_class == null and
+                .provider_file_bytes_read == true and
+                .provider_file_content_profiled == true and
+                .byte_identity_verified == true and
+                .profile.schema_version == "oc-esrm20-greece-exposure-3csv-content-profile-v0" and
+                .profile.receipt_comment_id == 5397480571 and
+                .profile.receipt_execution_sha == "4b1d3c41a5df739b9686303eb753577ca39ec58e" and
+                (.profile.files | length) == 3 and
+                .profile.files[0].repository_path == "Exposure/OQ_Exposure_Input_Greece_Com.csv" and
+                .profile.files[0].byte_count == 7672810 and
+                .profile.files[0].sha256 == "2281f079a6e0b2215fab696d442f9d98b9b0ba94a2b4b24f23f1fff4018d1b57" and
+                .profile.files[1].repository_path == "Exposure/OQ_Exposure_Input_Greece_Ind.csv" and
+                .profile.files[1].byte_count == 2822653 and
+                .profile.files[1].sha256 == "ad6698199d84002d017b41668dc204a2d53835a4b2429bc7e8eea56b328549c7" and
+                .profile.files[2].repository_path == "Exposure/OQ_Exposure_Input_Greece_Res.csv" and
+                .profile.files[2].byte_count == 5263604 and
+                .profile.files[2].sha256 == "928ac7f069dfc3181a936f73caafb951a5c2437f70379fa29518c002bbd3ef28" and
+                (all(.profile.files[];
+                  .profile.raw_rows_returned == false and
+                  .profile.external_bytes_persisted == false and
+                  .profile.publication_authorized == false
+                )) and
+                .profile.provider_file_content_profiled == true and
+                .profile.raw_rows_returned == false and
+                .profile.exact_field_values_returned == false and
+                .profile.content_semantics_verified == false and
+                .profile.crs_semantics_verified == false and
+                .profile.taxonomy_semantics_verified == false and
+                .profile.replacement_cost_semantics_verified == false and
+                .profile.benchmark_agreement_inspected == false and
+                .profile.independent_validation_established == false and
+                .profile.holdout_status_established == false and
+                .profile.external_bytes_persisted == false and
+                .profile.publication_authorized == false and
+                .profile.model_use_authorized == false
+              ) or
+              (
+                .status == "blocked" and
+                (.failure_class == "acquisition_failure" or .failure_class == "profile_failure") and
+                .profile == null and
+                .provider_file_content_profiled == false and
+                .byte_identity_verified == false and
+                (
+                  (.failure_class == "acquisition_failure" and .provider_file_bytes_read == null) or
+                  (.failure_class == "profile_failure" and .provider_file_bytes_read == true)
+                )
+              )
+            ) and
+            .content_semantics_verified == false and
+            .crs_semantics_verified == false and
+            .taxonomy_semantics_verified == false and
+            .replacement_cost_semantics_verified == false and
+            .vulnerability_imt_selection_verified == false and
+            .benchmark_agreement_inspected == false and
+            .independent_validation_established == false and
+            .holdout_status_established == false and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and
+            .model_use_authorized == false
+          ' >/dev/null
+
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' \
+            > "$RUNNER_TEMP/greece-exposure-3csv-profile-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/285/comments" \
+            --input "$RUNNER_TEMP/greece-exposure-3csv-profile-comment.json"
