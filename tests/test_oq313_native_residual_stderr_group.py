@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import os
-import signal
 import sys
 import time
 import unittest
@@ -15,10 +14,18 @@ from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313 as subject
 
 @unittest.skipUnless(hasattr(os, "killpg"), "requires POSIX process groups")
 class ResidualStderrProcessGroupTests(unittest.TestCase):
-    def _run_parent_with_residual_child(self, *, ignore_sigterm: bool) -> tuple[int, float]:
+    def _run_parent_with_residual_child(
+        self,
+        *,
+        ignore_sigterm: bool,
+    ) -> tuple[int, float]:
         child_setup = (
             "import signal,time; "
-            + ("signal.signal(signal.SIGTERM, signal.SIG_IGN); " if ignore_sigterm else "")
+            + (
+                "signal.signal(signal.SIGTERM, signal.SIG_IGN); "
+                if ignore_sigterm
+                else ""
+            )
             + "time.sleep(60)"
         )
         parent = (
