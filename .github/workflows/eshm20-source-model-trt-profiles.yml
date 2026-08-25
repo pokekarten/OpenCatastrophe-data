@@ -199,7 +199,7 @@ jobs:
               all(.aggregate_profile.tectonic_region_type_counts | to_entries[];
                 (.key | type) == "string" and
                 (.key | length) >= 1 and (.key | length) <= 256 and
-                (.key | test("[\\u0000-\\u001F\\u007F]")) == false and
+                (.key | test("[\\x00-\\x1F\\x7F]")) == false and
                 (.value | type) == "number" and
                 .value == (.value | floor) and .value >= 1
               ) and
