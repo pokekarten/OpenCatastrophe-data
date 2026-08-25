@@ -248,6 +248,18 @@ class EQ1OQ313TerminalValidatorTests(unittest.TestCase):
                 _body(result), expected_execution_sha=EXECUTION_SHA
             )
 
+    def test_rejects_non_integer_adapter_receipt_byte_count(self) -> None:
+        result = _result()
+        result["adapter_receipt"]["byte_count"] = float(
+            result["adapter_receipt"]["byte_count"]
+        )
+        with self.assertRaisesRegex(
+            subject.EQ1OQ313TerminalValidationError, "adapter receipt byte count"
+        ):
+            subject.validate_terminal_body(
+                _body(result), expected_execution_sha=EXECUTION_SHA
+            )
+
     def test_rejects_zero_like_non_integer_adapter_exit_codes(self) -> None:
         for exit_code in (False, 0.0):
             with self.subTest(exit_code=exit_code):
