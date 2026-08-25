@@ -499,6 +499,8 @@ def _execute_native(command: Sequence[str], env: Mapping[str, str]) -> int:
     drain_thread.start()
 
     timed_out = False
+    detached_success_stderr = False
+    diagnostic: dict[str, object] | None = None
     returncode: int | None = None
     try:
         try:
@@ -553,18 +555,28 @@ def _execute_native(command: Sequence[str], env: Mapping[str, str]) -> int:
                         "OpenQuake residual process group could not be killed"
                     ) from exc
                 if not drain_done.wait(NATIVE_TERMINATION_GRACE_SECONDS):
-                    raise KosovoResidentialOQ313RunError(
-                        "OpenQuake stderr stream did not close after residual process-group termination"
-                    )
-        if diagnostic_errors:
-            raise KosovoResidentialOQ313RunError(
-                "OpenQuake stderr diagnostic failed"
-            ) from diagnostic_errors[0]
-        if len(diagnostic_holder) != 1:
-            raise KosovoResidentialOQ313RunError(
-                "OpenQuake stderr diagnostic was not produced exactly once"
-            )
-        diagnostic = diagnostic_holder[0]
+                    if returncode == 0 and not timed_out:
+                        # OpenQuake 3.13 auto-starts its single-user dbserver with
+                        # inherited stdio, then double-forks + setsid(). Once the
+                        # engine process has exited successfully and its original
+                        # process group has been boundedly cleaned, that expected
+                        # detached daemon may still own the stderr write end. Its
+                        # inherited descriptor is not an engine-completion gate.
+                        detached_success_stderr = True
+                    else:
+                        raise KosovoResidentialOQ313RunError(
+                            "OpenQuake stderr stream did not close after residual process-group termination"
+                        )
+        if not detached_success_stderr:
+            if diagnostic_errors:
+                raise KosovoResidentialOQ313RunError(
+                    "OpenQuake stderr diagnostic failed"
+                ) from diagnostic_errors[0]
+            if len(diagnostic_holder) != 1:
+                raise KosovoResidentialOQ313RunError(
+                    "OpenQuake stderr diagnostic was not produced exactly once"
+                )
+            diagnostic = diagnostic_holder[0]
     finally:
         if process.poll() is None:
             try:
@@ -580,7 +592,8 @@ def _execute_native(command: Sequence[str], env: Mapping[str, str]) -> int:
                 stderr_stream.close()
             except OSError:
                 pass
-        drain_done.wait(NATIVE_TERMINATION_GRACE_SECONDS)
+        if not detached_success_stderr:
+            drain_done.wait(NATIVE_TERMINATION_GRACE_SECONDS)
         drain_thread.join(timeout=0)
 
     if type(returncode) is not int:
@@ -588,6 +601,10 @@ def _execute_native(command: Sequence[str], env: Mapping[str, str]) -> int:
             "OpenQuake subprocess returned a non-integer exit code"
         )
     if timed_out:
+        if diagnostic is None:
+            raise KosovoResidentialOQ313RunError(
+                "OpenQuake timeout diagnostic was not produced"
+            )
         return _NativeExitCode(
             NATIVE_TIMEOUT_EXIT_CODE,
             diagnostic,
@@ -595,6 +612,10 @@ def _execute_native(command: Sequence[str], env: Mapping[str, str]) -> int:
         )
     if returncode == 0:
         return returncode
+    if diagnostic is None:
+        raise KosovoResidentialOQ313RunError(
+            "OpenQuake failure diagnostic was not produced"
+        )
     return _NativeExitCode(returncode, diagnostic)
 
 
