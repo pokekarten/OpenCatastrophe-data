@@ -188,6 +188,17 @@ class LedgerTests(unittest.TestCase):
         ):
             subject._parse_terminal_result(body, execution_sha=EXECUTION_SHA)
 
+    def test_trusted_result_taxonomy_count_float_fails_closed(self):
+        result = _execution_result()
+        result["join"]["taxonomy_source"]["taxonomy_count"] = float(
+            subject.EXPECTED_TAXONOMY_COUNT
+        )
+        body = subject.RESULT_MARKER + "\n" + json.dumps(result, separators=(",", ":"))
+        with self.assertRaisesRegex(
+            subject.KosovoMappingJoinExecutionError, "taxonomy count"
+        ):
+            subject._parse_terminal_result(body, execution_sha=EXECUTION_SHA)
+
 
 class ExecutionTests(unittest.TestCase):
     def test_duplicate_stops_before_provider_acquisition(self):
