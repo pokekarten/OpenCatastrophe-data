@@ -1,0 +1,139 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESHM20 Exact-51 Source-Model TRT Profiles
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eshm20-exact51-source-trt-${{ github.repository }}-${{ github.event.issue.number == 281 && github.event.comment.user.login == github.event.repository.owner.login && github.event.comment.author_association == 'OWNER' && contains(github.event.comment.body, '<!-- oc-eq1-eshm20-source-model-trt-profiles-request-v1 -->') && 'trusted-request' || format('noise-{0}', github.event.comment.id) }}
+  cancel-in-progress: false
+
+jobs:
+  execute-profile:
+    name: Execute exact-51 TRT profile on trusted default branch
+    if: >-
+      github.event.issue.number == 281 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-eshm20-source-model-trt-profiles-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.run.outputs.execution_sha }}
+      skip: ${{ steps.run.outputs.skip }}
+      result_json: ${{ steps.run.outputs.result_json }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Bind canonical receipt ledger and profile exact source models
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OC_ESHM20_TRT_REQUEST: ${{ github.event.comment.body }}
+          RESULT_PATH: ${{ runner.temp }}/eshm20-source-model-trt-profiles.json
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.run_eshm20_source_model_trt_profiles_action \
+            --comment-body-env OC_ESHM20_TRT_REQUEST \
+            --expected-issue 281 \
+            --execution-sha "$EXECUTION_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --token-env GH_TOKEN \
+            --output "$RESULT_PATH"
+          STATUS="$(jq -r '.status' "$RESULT_PATH")"
+          test "$STATUS" = "pass" -o "$STATUS" = "blocked" -o "$STATUS" = "duplicate"
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+          if test "$STATUS" = "duplicate"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "result_json=" >> "$GITHUB_OUTPUT"
+          else
+            RESULT_JSON="$(jq -cS . "$RESULT_PATH")"
+            test -n "$RESULT_JSON"
+            test "$(printf '%s\n%s' '<!-- oc-eq1-eshm20-source-model-trt-profiles-result-v1 -->' "$RESULT_JSON" | wc -c)" -le 64000
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish-profile:
+    name: Publish bounded exact-51 TRT evidence
+    needs: [execute-profile]
+    if: >-
+      needs.execute-profile.result == 'success' &&
+      needs.execute-profile.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Re-fence and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXECUTION_SHA: ${{ needs.execute-profile.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-profile.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-eshm20-source-model-trt-profiles-result-v1 -->"
+        run: |
+          set -euo pipefail
+          LATEST_SHA="$(gh api "repos/$GITHUB_REPOSITORY/commits/$DEFAULT_BRANCH" --jq '.sha')"
+          test "$LATEST_SHA" = "$EXECUTION_SHA"
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            ["areaSource","pointSource","multiPointSource","simpleFaultSource","kiteFaultSource","complexFaultSource","characteristicFaultSource","nonParametricSeismicSource","multiFaultSource"] as $source_types |
+            ["direct_source","group_inherited","group_effective_direct_confirmed"] as $provenance_types |
+            . as $result |
+            (keys | sort) == ["action","aggregate_profile","canonical_414_ledger_binding_verified","consumer_issue","dataset_id","execution_sha","external_bytes_persisted","failure_class","model_use_authorized","numerical_hazard_reproduction_verified","provider_file_bytes_read","publication_authorized","raw_xml_returned","receipt_issue","schema_version","source_gsim_trt_compatibility_verified","source_issue","status","target_sha"] and
+            .schema_version == "oc-eshm20-source-model-trt-profiles-result-v1" and .action == "eshm20_source_model_trt_profiles" and
+            .source_issue == 281 and .consumer_issue == 287 and .receipt_issue == 414 and .dataset_id == "efehr.eshm20" and
+            .target_sha == $sha and .execution_sha == $sha and (.status == "pass" or .status == "blocked") and
+            .raw_xml_returned == false and .source_gsim_trt_compatibility_verified == false and .numerical_hazard_reproduction_verified == false and
+            .external_bytes_persisted == false and .publication_authorized == false and .model_use_authorized == false and
+            (if .status == "pass" then
+              .failure_class == null and .provider_file_bytes_read == true and .canonical_414_ledger_binding_verified == true and
+              (.aggregate_profile | type) == "object" and
+              (.aggregate_profile | keys | sort) == ["branch_weight_validity_verified","canonical_414_ledger_binding_verified","child_count","child_paths_sha256","control_issue","dataset_id","external_bytes_persisted","model_use_authorized","numerical_hazard_reproduction_verified","publication_authorized","receipt_payload_identities_verified","receipt_set_locator","schema_version","source_count","source_gsim_trt_compatibility_verified","source_issue","source_physics_validity_verified","source_structure_profile_verified","source_type_counts","tectonic_region_type_counts","trt_provenance_counts","unique_source_types","unique_tectonic_region_types"] and
+              .aggregate_profile.schema_version == "oc-eshm20-source-model-trt-aggregate-v1" and .aggregate_profile.source_issue == 281 and
+              .aggregate_profile.control_issue == 435 and .aggregate_profile.dataset_id == "efehr.eshm20" and .aggregate_profile.child_count == 51 and
+              .aggregate_profile.child_paths_sha256 == "2fcc885dc9fbbd8e9ee45b185dc9f2339af3654e9976ae5f07d4d097551944b7" and
+              (.aggregate_profile.source_count | type) == "number" and .aggregate_profile.source_count == (.aggregate_profile.source_count | floor) and .aggregate_profile.source_count >= 1 and
+              (.aggregate_profile.source_type_counts | type) == "object" and (.aggregate_profile.source_type_counts | length) >= 1 and (.aggregate_profile.source_type_counts | length) <= 9 and
+              all(.aggregate_profile.source_type_counts | to_entries[]; (.key as $key | $source_types | index($key)) != null and (.value | type) == "number" and .value == (.value | floor) and .value >= 1) and
+              ([.aggregate_profile.source_type_counts[]] | add) == .aggregate_profile.source_count and .aggregate_profile.unique_source_types == (.aggregate_profile.source_type_counts | keys) and
+              (.aggregate_profile.tectonic_region_type_counts | type) == "object" and (.aggregate_profile.tectonic_region_type_counts | length) >= 1 and (.aggregate_profile.tectonic_region_type_counts | length) <= 64 and
+              all(.aggregate_profile.tectonic_region_type_counts | to_entries[]; (.key | type) == "string" and (.key | length) >= 1 and (.key | length) <= 256 and (.key | test("[\\x00-\\x1F\\x7F]")) == false and (.value | type) == "number" and .value == (.value | floor) and .value >= 1) and
+              ([.aggregate_profile.tectonic_region_type_counts[]] | add) == .aggregate_profile.source_count and .aggregate_profile.unique_tectonic_region_types == (.aggregate_profile.tectonic_region_type_counts | keys) and
+              (.aggregate_profile.trt_provenance_counts | type) == "object" and (.aggregate_profile.trt_provenance_counts | length) >= 1 and (.aggregate_profile.trt_provenance_counts | length) <= 3 and
+              all(.aggregate_profile.trt_provenance_counts | to_entries[]; (.key as $key | $provenance_types | index($key)) != null and (.value | type) == "number" and .value == (.value | floor) and .value >= 1) and
+              ([.aggregate_profile.trt_provenance_counts[]] | add) == .aggregate_profile.source_count and
+              .aggregate_profile.receipt_set_locator == {"execution_sha":"473f03765fd63d2da7e48d0c22b1618d4e1254d8","provider_commit":"fbd334de68f85d72669f73fc5a314a113db67317","result_comment_id":5306897047,"run_id":31940875325} and
+              .aggregate_profile.receipt_payload_identities_verified == true and .aggregate_profile.canonical_414_ledger_binding_verified == true and .aggregate_profile.source_structure_profile_verified == true and
+              .aggregate_profile.source_physics_validity_verified == false and .aggregate_profile.source_gsim_trt_compatibility_verified == false and .aggregate_profile.branch_weight_validity_verified == false and
+              .aggregate_profile.numerical_hazard_reproduction_verified == false and .aggregate_profile.external_bytes_persisted == false and .aggregate_profile.publication_authorized == false and .aggregate_profile.model_use_authorized == false
+            else
+              .failure_class == "source_model_trt_profile_failure" and .aggregate_profile == null and .provider_file_bytes_read == false and .canonical_414_ledger_binding_verified == false
+            end)
+          ' >/dev/null
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          test "$(printf '%s' "$BODY" | wc -c)" -le 64000
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/eshm20-trt-comment.json"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/281/comments" --input "$RUNNER_TEMP/eshm20-trt-comment.json"
