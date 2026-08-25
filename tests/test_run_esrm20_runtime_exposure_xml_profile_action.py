@@ -163,6 +163,54 @@ class ActionTests(unittest.TestCase):
         )
         self.assertNotIn(secret, json.dumps(result, sort_keys=True))
 
+    def test_terminal_rejects_json_numeric_type_confusion(self):
+        mutations = (
+            (
+                "source_issue_float",
+                lambda result: result.__setitem__(
+                    "source_issue", float(subject.SOURCE_ISSUE)
+                ),
+            ),
+            (
+                "authority_zero",
+                lambda result: result.__setitem__("publication_authorized", 0),
+            ),
+            (
+                "identity_project_id_float",
+                lambda result: result["runtime_exposure_identity"].__setitem__(
+                    "project_id", float(subject.PROJECT_ID)
+                ),
+            ),
+            (
+                "identity_byte_count_float",
+                lambda result: result["runtime_exposure_identity"].__setitem__(
+                    "receipt_byte_count", float(subject.EXPECTED_BYTE_COUNT)
+                ),
+            ),
+            (
+                "receipt_byte_count_float",
+                lambda result: result["receipt"].__setitem__(
+                    "byte_count", float(subject.EXPECTED_BYTE_COUNT)
+                ),
+            ),
+        )
+        for label, mutate in mutations:
+            with (
+                self.subTest(label=label),
+                mock.patch.object(
+                    subject,
+                    "profile_runtime_exposure_xml",
+                    return_value=evidence(),
+                ),
+            ):
+                result = subject.run_profile(execution_sha=SHA)
+                mutate(result)
+                body = subject.RESULT_MARKER + "\n" + json.dumps(
+                    result, separators=(",", ":")
+                )
+                with self.assertRaises(subject.RuntimeExposureXmlProfileActionError):
+                    subject.parse_terminal_result(body)
+
     def test_terminal_rejects_arbitrary_xml_failure_code(self):
         result = subject._base_result(SHA)
         result["failure_class"] = "xml_profile_failure"
