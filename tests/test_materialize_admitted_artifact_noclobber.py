@@ -74,6 +74,44 @@ class MaterializeAdmittedArtifactNoClobberTests(unittest.TestCase):
         self.assertEqual(destination.read_bytes(), BYTES)
         self.assertEqual(list(root.rglob(".oc-materialize-*")), [])
 
+    def test_successful_publication_cleanup_failure_fails_closed(self) -> None:
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        root = Path(temp_dir.name)
+        source = root / "source.bin"
+        destination = root / "cache" / "artifact"
+        destination.parent.mkdir()
+        source.write_bytes(BYTES)
+
+        real_unlink = Path.unlink
+
+        def fail_temp_unlink(path: Path, *args: object, **kwargs: object) -> None:
+            if path.name.startswith(".oc-materialize-"):
+                raise OSError("synthetic cleanup failure")
+            real_unlink(path, *args, **kwargs)
+
+        with mock.patch.object(
+            Path,
+            "unlink",
+            autospec=True,
+            side_effect=fail_temp_unlink,
+        ):
+            with self.assertRaisesRegex(
+                materializer.MaterializationError,
+                "cannot remove verified cache temporary alias",
+            ):
+                materializer._copy_and_verify(
+                    source,
+                    destination,
+                    expected_sha256=SHA,
+                    expected_size=len(BYTES),
+                )
+
+        self.assertEqual(destination.read_bytes(), BYTES)
+        temp_aliases = list(root.rglob(".oc-materialize-*"))
+        self.assertEqual(len(temp_aliases), 1)
+        temp_aliases[0].unlink()
+
 
 if __name__ == "__main__":
     unittest.main()
