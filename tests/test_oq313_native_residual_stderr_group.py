@@ -4,9 +4,12 @@
 from __future__ import annotations
 
 import os
+import signal
 import sys
+import tempfile
 import time
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313 as subject
@@ -53,6 +56,64 @@ class ResidualStderrProcessGroupTests(unittest.TestCase):
         returncode, elapsed = self._run_parent_with_residual_child(ignore_sigterm=True)
         self.assertEqual(returncode, 0)
         self.assertLess(elapsed, 3.0)
+
+    def test_success_releases_parent_capture_while_detached_writer_stays_alive(self) -> None:
+        captures: list[object] = []
+        real_temporary_file = subject.tempfile.TemporaryFile
+        detached_pid: int | None = None
+
+        def tracked_temporary_file(*args: object, **kwargs: object) -> object:
+            capture = real_temporary_file(*args, **kwargs)
+            captures.append(capture)
+            return capture
+
+        try:
+            with tempfile.TemporaryDirectory() as directory:
+                pid_path = Path(directory, "detached.pid")
+                child_setup = (
+                    "import sys,time; "
+                    "sys.stderr.write('detached-dbserver-stderr\\n'); "
+                    "sys.stderr.flush(); "
+                    "time.sleep(60)"
+                )
+                parent = (
+                    "import pathlib,subprocess,sys; "
+                    "child=subprocess.Popen([sys.executable, '-c', "
+                    + repr(child_setup)
+                    + "], start_new_session=True); "
+                    + f"pathlib.Path({str(pid_path)!r}).write_text(str(child.pid)); "
+                    + "raise SystemExit(0)"
+                )
+                env = os.environ.copy()
+                started = time.monotonic()
+                with (
+                    mock.patch.object(subject, "NATIVE_EXECUTION_TIMEOUT_SECONDS", 5),
+                    mock.patch.object(
+                        subject, "NATIVE_TERMINATION_GRACE_SECONDS", 0.1
+                    ),
+                    mock.patch.object(
+                        subject.tempfile,
+                        "TemporaryFile",
+                        side_effect=tracked_temporary_file,
+                    ),
+                ):
+                    returncode = subject._execute_native(
+                        [sys.executable, "-c", parent], env
+                    )
+
+                self.assertTrue(pid_path.exists())
+                detached_pid = int(pid_path.read_text(encoding="utf-8"))
+                os.kill(detached_pid, 0)
+                self.assertEqual(returncode, 0)
+                self.assertLess(time.monotonic() - started, 2.0)
+                self.assertEqual(len(captures), 1)
+                self.assertTrue(getattr(captures[0], "closed"))
+        finally:
+            if detached_pid is not None:
+                try:
+                    os.kill(detached_pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
 
 
 if __name__ == "__main__":

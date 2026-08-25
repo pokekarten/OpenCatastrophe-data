@@ -4,51 +4,24 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import signal
 import subprocess
-import threading
+import sys
 import unittest
 from unittest import mock
 
 from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313 as subject
 
 
-class _ChunkedStderr:
-    def __init__(self, chunks: list[bytes]) -> None:
-        self._chunks = iter(chunks)
-        self.closed = False
-
-    def read(self, size: int = -1) -> bytes:
-        if size != subject.NATIVE_STDERR_HASH_CHUNK_BYTES:
-            raise AssertionError(f"unexpected stderr read size: {size}")
-        return next(self._chunks, b"")
-
-    def close(self) -> None:
-        self.closed = True
-
-
-class _BlockingStderr:
-    def __init__(self) -> None:
-        self._closed = threading.Event()
-
-    def read(self, size: int = -1) -> bytes:
-        if size != subject.NATIVE_STDERR_HASH_CHUNK_BYTES:
-            raise AssertionError(f"unexpected stderr read size: {size}")
-        self._closed.wait()
-        return b""
-
-    def close(self) -> None:
-        self._closed.set()
-
-
 class _FakeProcess:
-    def __init__(self, stderr: object, wait_results: list[object]) -> None:
-        self.stderr = stderr
+    def __init__(self, wait_results: list[object]) -> None:
         self.pid = 4242
         self.wait_results = list(wait_results)
         self.wait_timeouts: list[float | None] = []
         self.returncode: int | None = None
         self.kill_calls = 0
+        self.stderr = None
 
     def wait(self, timeout: float | None = None) -> int:
         self.wait_timeouts.append(timeout)
@@ -72,23 +45,24 @@ class _FakeProcess:
         self.returncode = -signal.SIGKILL
 
 
+@unittest.skipUnless(hasattr(os, "killpg"), "requires POSIX process groups")
 class OQ313NativeExecutionTimeoutTests(unittest.TestCase):
     def test_timeout_terminates_process_group_and_returns_bounded_failure(self) -> None:
         secret = b"private runtime stderr must remain opaque\n"
-        process = _FakeProcess(
-            _ChunkedStderr([secret]),
-            [
-                subprocess.TimeoutExpired(subject.COMMAND, 1),
-                subprocess.TimeoutExpired(subject.COMMAND, 1),
-                -signal.SIGKILL,
-            ],
-        )
+        command = [
+            sys.executable,
+            "-c",
+            "import signal,sys,time; "
+            "signal.signal(signal.SIGTERM, signal.SIG_IGN); "
+            + f"sys.stderr.buffer.write({secret!r}); "
+            + "sys.stderr.flush(); time.sleep(60)",
+        ]
 
         with (
-            mock.patch.object(subject.subprocess, "Popen", return_value=process) as popen,
-            mock.patch.object(subject.os, "killpg") as killpg,
+            mock.patch.object(subject, "NATIVE_EXECUTION_TIMEOUT_SECONDS", 1.0),
+            mock.patch.object(subject, "NATIVE_TERMINATION_GRACE_SECONDS", 0.1),
         ):
-            returncode = subject._execute_native(subject.COMMAND, {"PATH": "/fixed"})
+            returncode = subject._execute_native(command, os.environ.copy())
 
         self.assertEqual(int(returncode), subject.NATIVE_TIMEOUT_EXIT_CODE)
         self.assertEqual(subject.NATIVE_TIMEOUT_EXIT_CODE, 124)
@@ -102,61 +76,34 @@ class OQ313NativeExecutionTimeoutTests(unittest.TestCase):
                 "content_exposed": False,
             },
         )
-        self.assertEqual(
-            killpg.call_args_list,
-            [
-                mock.call(process.pid, signal.SIGTERM),
-                mock.call(process.pid, signal.SIGKILL),
-            ],
-        )
-        self.assertEqual(
-            process.wait_timeouts[:3],
-            [
-                subject.NATIVE_EXECUTION_TIMEOUT_SECONDS,
-                subject.NATIVE_TERMINATION_GRACE_SECONDS,
-                subject.NATIVE_TERMINATION_GRACE_SECONDS,
-            ],
-        )
-
-        popen.assert_called_once()
-        _args, kwargs = popen.call_args
-        self.assertTrue(kwargs["start_new_session"])
-        self.assertIs(kwargs["stdout"], subject.subprocess.DEVNULL)
-        self.assertIs(kwargs["stderr"], subject.subprocess.PIPE)
 
     def test_termination_signal_failure_is_bounded_independently_of_stderr_eof(self) -> None:
-        stderr = _BlockingStderr()
         process = _FakeProcess(
-            stderr,
             [
                 subprocess.TimeoutExpired(subject.COMMAND, 1),
                 -signal.SIGKILL,
-            ],
+            ]
         )
 
-        try:
-            with (
-                mock.patch.object(subject.subprocess, "Popen", return_value=process),
-                mock.patch.object(subject.os, "killpg", side_effect=OSError("denied")),
-                mock.patch.object(subject, "NATIVE_TERMINATION_GRACE_SECONDS", 0.01),
+        with (
+            mock.patch.object(subject.subprocess, "Popen", return_value=process),
+            mock.patch.object(subject.os, "killpg", side_effect=OSError("denied")),
+            mock.patch.object(subject, "NATIVE_TERMINATION_GRACE_SECONDS", 0.01),
+        ):
+            with self.assertRaisesRegex(
+                subject.KosovoResidentialOQ313RunError,
+                "timed-out process group could not be terminated",
             ):
-                with self.assertRaisesRegex(
-                    subject.KosovoResidentialOQ313RunError,
-                    "timed-out process group could not be terminated",
-                ):
-                    subject._execute_native(subject.COMMAND, {"PATH": "/fixed"})
+                subject._execute_native(subject.COMMAND, {"PATH": "/fixed"})
 
-            self.assertEqual(process.kill_calls, 1)
-            self.assertFalse(stderr._closed.is_set())
-            self.assertEqual(
-                process.wait_timeouts,
-                [
-                    subject.NATIVE_EXECUTION_TIMEOUT_SECONDS,
-                    0.01,
-                ],
-            )
-        finally:
-            stderr._closed.set()
+        self.assertEqual(process.kill_calls, 1)
+        self.assertEqual(
+            process.wait_timeouts,
+            [
+                subject.NATIVE_EXECUTION_TIMEOUT_SECONDS,
+                0.01,
+            ],
+        )
 
     def test_native_exit_124_is_not_controller_timeout(self) -> None:
         diagnostic = {
