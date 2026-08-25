@@ -57,9 +57,20 @@ _CANONICAL_PROJECT_PATH = PROJECT_PATH
 _CANONICAL_RELEASE_TAG = RELEASE_TAG
 _CANONICAL_COMMIT_SHA = COMMIT_SHA
 _CANONICAL_TOTAL_DEADLINE_SECONDS = TOTAL_DEADLINE_SECONDS
+
+# Production acquisition dependencies are frozen at import time. The public
+# worker checks that the mutable module aliases have not drifted, while the
+# private acquisition path calls only these canonical identities.
 _CANONICAL_OPEN_FIXED = _open_fixed
 _CANONICAL_UTC_NOW = utc_now
 _CANONICAL_MONOTONIC = time.monotonic
+_CANONICAL_REMAINING = _remaining
+_CANONICAL_VALIDATE_EXACT_RESPONSE = _validate_exact_response
+_CANONICAL_READ_BOUNDED = _read_bounded
+_CANONICAL_HEADER_VALUE = _header_value
+_CANONICAL_SHA256 = hashlib.sha256
+_CANONICAL_REQUEST = urllib.request.Request
+_CANONICAL_QUOTE = urllib.parse.quote
 
 # path, provider Git blob SHA-1, provider tree byte count
 _CANONICAL_TARGETS = (
@@ -144,7 +155,9 @@ def _require_canonical_target() -> None:
     if len(TARGETS) != 3 or len({target[0] for target in TARGETS}) != 3:
         raise GreeceSourceCsvReceiptsError("Greece source CSV target cardinality drifted")
     for path, blob_sha1, tree_bytes in TARGETS:
-        if type(path) is not str or not path.startswith("_exposure_models/Exposure_Model_Greece_"):
+        if type(path) is not str or not path.startswith(
+            "_exposure_models/Exposure_Model_Greece_"
+        ):
             raise GreeceSourceCsvReceiptsError("Greece source CSV path authority drifted")
         if type(blob_sha1) is not str or _SHA1_RE.fullmatch(blob_sha1) is None:
             raise GreeceSourceCsvReceiptsError("Greece source CSV blob authority drifted")
@@ -152,11 +165,28 @@ def _require_canonical_target() -> None:
             raise GreeceSourceCsvReceiptsError("Greece source CSV tree size authority drifted")
 
 
+_CANONICAL_REQUIRE_CANONICAL_TARGET = _require_canonical_target
+
+
 def _require_production_transport_identity() -> None:
     identities = (
+        (_require_production_transport_identity, _CANONICAL_REQUIRE_PRODUCTION_TRANSPORT_IDENTITY, "identity gate"),
+        (_require_canonical_target, _CANONICAL_REQUIRE_CANONICAL_TARGET, "target validator"),
         (_open_fixed, _CANONICAL_OPEN_FIXED, "transport"),
         (utc_now, _CANONICAL_UTC_NOW, "UTC clock"),
         (time.monotonic, _CANONICAL_MONOTONIC, "monotonic clock"),
+        (_remaining, _CANONICAL_REMAINING, "deadline helper"),
+        (_validate_exact_response, _CANONICAL_VALIDATE_EXACT_RESPONSE, "response validator"),
+        (_read_bounded, _CANONICAL_READ_BOUNDED, "response reader"),
+        (_header_value, _CANONICAL_HEADER_VALUE, "response header reader"),
+        (hashlib.sha256, _CANONICAL_SHA256, "SHA-256 hasher"),
+        (urllib.request.Request, _CANONICAL_REQUEST, "request builder"),
+        (urllib.parse.quote, _CANONICAL_QUOTE, "URL encoder"),
+        (_raw_file_url, _CANONICAL_RAW_FILE_URL, "fixed URL builder"),
+        (_validate_header_value, _CANONICAL_VALIDATE_HEADER_VALUE, "header validator"),
+        (validate_receipt, _CANONICAL_VALIDATE_RECEIPT, "receipt validator"),
+        (validate_receipts, _CANONICAL_VALIDATE_RECEIPTS, "receipt bundle validator"),
+        (_acquire_for_test, _CANONICAL_ACQUIRE_FOR_TEST, "acquisition helper"),
     )
     for observed, expected, label in identities:
         if observed is not expected:
@@ -165,18 +195,24 @@ def _require_production_transport_identity() -> None:
             )
 
 
+_CANONICAL_REQUIRE_PRODUCTION_TRANSPORT_IDENTITY = _require_production_transport_identity
+
+
 def _raw_file_url(repository_path: str) -> str:
-    _require_canonical_target()
+    _CANONICAL_REQUIRE_CANONICAL_TARGET()
     if repository_path not in {target[0] for target in TARGETS}:
         raise GreeceSourceCsvReceiptsError(
             "Greece source CSV path left the frozen dependency set"
         )
-    encoded_path = urllib.parse.quote(repository_path, safe="")
-    encoded_ref = urllib.parse.quote(_CANONICAL_COMMIT_SHA, safe="")
+    encoded_path = _CANONICAL_QUOTE(repository_path, safe="")
+    encoded_ref = _CANONICAL_QUOTE(_CANONICAL_COMMIT_SHA, safe="")
     return (
         f"{PROVIDER_ROOT}/api/v4/projects/{_CANONICAL_PROJECT_ID}/repository/files/"
         f"{encoded_path}/raw?ref={encoded_ref}"
     )
+
+
+_CANONICAL_RAW_FILE_URL = _raw_file_url
 
 
 def _validate_header_value(value: object, *, field: str) -> str | None:
@@ -189,12 +225,15 @@ def _validate_header_value(value: object, *, field: str) -> str | None:
     return value
 
 
+_CANONICAL_VALIDATE_HEADER_VALUE = _validate_header_value
+
+
 def validate_receipt(
     value: object,
     *,
     expected_target: tuple[str, str, int],
 ) -> dict[str, Any]:
-    _require_canonical_target()
+    _CANONICAL_REQUIRE_CANONICAL_TARGET()
     if expected_target not in TARGETS:
         raise GreeceSourceCsvReceiptsError("receipt target left frozen dependency set")
     if type(value) is not dict or set(value) != _RECEIPT_FIELDS:
@@ -236,28 +275,36 @@ def validate_receipt(
         raise GreeceSourceCsvReceiptsError("Greece source CSV receipt timestamp is invalid")
     if type(value["sha256"]) is not str or _SHA256_RE.fullmatch(value["sha256"]) is None:
         raise GreeceSourceCsvReceiptsError("Greece source CSV receipt SHA-256 is invalid")
-    _validate_header_value(value["content_type"], field="content_type")
-    _validate_header_value(value["etag"], field="etag")
+    _CANONICAL_VALIDATE_HEADER_VALUE(value["content_type"], field="content_type")
+    _CANONICAL_VALIDATE_HEADER_VALUE(value["etag"], field="etag")
     return value
 
 
+_CANONICAL_VALIDATE_RECEIPT = validate_receipt
+
+
 def validate_receipts(value: object) -> list[dict[str, Any]]:
-    _require_canonical_target()
+    _CANONICAL_REQUIRE_CANONICAL_TARGET()
     if type(value) is not list or len(value) != len(TARGETS):
-        raise GreeceSourceCsvReceiptsError("Greece source CSV receipt bundle cardinality drifted")
+        raise GreeceSourceCsvReceiptsError(
+            "Greece source CSV receipt bundle cardinality drifted"
+        )
     return [
-        validate_receipt(receipt, expected_target=target)
+        _CANONICAL_VALIDATE_RECEIPT(receipt, expected_target=target)
         for receipt, target in zip(value, TARGETS, strict=True)
     ]
 
 
+_CANONICAL_VALIDATE_RECEIPTS = validate_receipts
+
+
 def _acquire_for_test(*, opener: Any, now: Any, monotonic: Any) -> list[dict[str, Any]]:
-    _require_canonical_target()
+    _CANONICAL_REQUIRE_CANONICAL_TARGET()
     deadline = monotonic() + _CANONICAL_TOTAL_DEADLINE_SECONDS
     receipts: list[dict[str, Any]] = []
     for repository_path, blob_sha1, expected_tree_bytes in TARGETS:
-        url = _raw_file_url(repository_path)
-        request = urllib.request.Request(
+        url = _CANONICAL_RAW_FILE_URL(repository_path)
+        request = _CANONICAL_REQUEST(
             url,
             headers={
                 "Accept": "text/csv,application/octet-stream;q=0.5",
@@ -266,17 +313,20 @@ def _acquire_for_test(*, opener: Any, now: Any, monotonic: Any) -> list[dict[str
             method="GET",
         )
         try:
-            with opener(request, timeout=_remaining(deadline, monotonic)) as response:
-                _validate_exact_response(response, url)
+            with opener(
+                request,
+                timeout=_CANONICAL_REMAINING(deadline, monotonic),
+            ) as response:
+                _CANONICAL_VALIDATE_EXACT_RESPONSE(response, url)
                 retrieved_at = now()
-                raw = _read_bounded(
+                raw = _CANONICAL_READ_BOUNDED(
                     response,
                     deadline=deadline,
                     maximum=expected_tree_bytes,
                     monotonic=monotonic,
                 )
-                content_type = _header_value(response, "Content-Type")
-                etag = _header_value(response, "ETag")
+                content_type = _CANONICAL_HEADER_VALUE(response, "Content-Type")
+                etag = _CANONICAL_HEADER_VALUE(response, "ETag")
         except (GreeceSourceCsvReceiptsError, EfehrAcquisitionError):
             raise
         except (OSError, urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:
@@ -308,7 +358,7 @@ def _acquire_for_test(*, opener: Any, now: Any, monotonic: Any) -> list[dict[str
             "expected_tree_byte_count": expected_tree_bytes,
             "retrieved_at": retrieved_at,
             "byte_count": len(raw),
-            "sha256": hashlib.sha256(raw).hexdigest(),
+            "sha256": _CANONICAL_SHA256(raw).hexdigest(),
             "content_type": content_type,
             "etag": etag,
             "provider_file_bytes_read": True,
@@ -321,15 +371,23 @@ def _acquire_for_test(*, opener: Any, now: Any, monotonic: Any) -> list[dict[str
             "publication_authorized": False,
             "model_use_authorized": False,
         }
-        receipts.append(validate_receipt(receipt, expected_target=(repository_path, blob_sha1, expected_tree_bytes)))
-    return validate_receipts(receipts)
+        receipts.append(
+            _CANONICAL_VALIDATE_RECEIPT(
+                receipt,
+                expected_target=(repository_path, blob_sha1, expected_tree_bytes),
+            )
+        )
+    return _CANONICAL_VALIDATE_RECEIPTS(receipts)
+
+
+_CANONICAL_ACQUIRE_FOR_TEST = _acquire_for_test
 
 
 def acquire_receipts() -> list[dict[str, Any]]:
     """Acquire SHA-256 receipts for exactly the three frozen project-186 Greece CSVs."""
-    _require_canonical_target()
-    _require_production_transport_identity()
-    return _acquire_for_test(
+    _CANONICAL_REQUIRE_CANONICAL_TARGET()
+    _CANONICAL_REQUIRE_PRODUCTION_TRANSPORT_IDENTITY()
+    return _CANONICAL_ACQUIRE_FOR_TEST(
         opener=_CANONICAL_OPEN_FIXED,
         now=_CANONICAL_UTC_NOW,
         monotonic=_CANONICAL_MONOTONIC,
