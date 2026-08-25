@@ -28,7 +28,20 @@ class EbriskDependencyProfileFailureDiagnosticWorkflowTests(unittest.TestCase):
         job = text.split("publish-failure-diagnostic:", 1)[1]
         self.assertIn("github.event.workflow_run.event == 'issue_comment'", job)
         self.assertIn("github.event.workflow_run.head_repository.full_name == github.repository", job)
-        self.assertIn("github.event.workflow_run.conclusion != 'success'", job)
+        self.assertNotIn("github.event.workflow_run.conclusion != 'success'", job)
+        for conclusion in (
+            "failure",
+            "cancelled",
+            "timed_out",
+            "action_required",
+            "stale",
+            "startup_failure",
+        ):
+            self.assertIn(
+                f"github.event.workflow_run.conclusion == '{conclusion}'", job
+            )
+        self.assertNotIn("github.event.workflow_run.conclusion == 'skipped'", job)
+        self.assertNotIn("github.event.workflow_run.conclusion == 'neutral'", job)
         self.assertIn("issues: write", job)
         self.assertNotIn("actions/checkout", job)
         self.assertNotIn("urllib", job)
