@@ -167,7 +167,7 @@ the bounded runtime field meanings are therefore:
 - `taxonomy`: runtime OpenQuake building taxonomy token;
 - `number`: structural-unit count;
 - `structural`: OpenQuake cost field named `structural`, type `aggregated`, unit `EUR`;
-  the exact source/runtime value relation ties this field to source
+  the receipt-bound Decimal comparison relates this field to source
   `TOTAL_REPL_COST_EUR`, so the token must **not** be read as source
   `COST_STRUCTURAL_EUR` or as structural-component-only replacement cost;
 - `day` / `night` / `transit`: occupant counts for those declared occupancy periods;
@@ -176,15 +176,17 @@ the bounded runtime field meanings are therefore:
 The immutable project-186 format companion defines `TOTAL_REPL_COST_EUR` as total
 replacement cost in 2020 EUR including structural, nonstructural and contents, while
 `COST_STRUCTURAL_EUR` is a separate structural-component field in 2018 EUR. The released
-exact-byte source/runtime comparison binds the project-269 runtime `structural` values to
-`TOTAL_REPL_COST_EUR`. This closes the consumer value-basis naming hazard but does
-**not** establish the exact converter, causal generation rule or reason the runtime
-OpenQuake loss-category token is named `structural`.
+receipt-bound Decimal comparison reports `1051/1093` exact values and `42` non-equal
+values with maximum absolute difference `0.000000004` between project-269 runtime
+`structural` and source `TOTAL_REPL_COST_EUR`. Together with the provider field
+definitions, this closes the consumer value-basis naming hazard but does **not**
+establish the exact converter, causal generation rule or reason the runtime OpenQuake
+loss-category token is named `structural`.
 
 Provider documentation establishes project 269's `Exposure` family as the OpenQuake-
 formatted final-model distribution corresponding to the ESRM20 exposure-model family.
 The exact project-186 source-file -> project-269 runtime-file converter, row-generation
-provenance and transformation intent remain unproved even though the exact value
+provenance and transformation intent remain unproved even though the value-field
 relation above is now bounded.
 
 The exact-Decimal comparator integrated by PR #599 provides the fail-closed,
@@ -385,8 +387,8 @@ missing; no report-level component claim is inferred from the runtime result abo
 | ESHM20 numerical hazard agreement | **BLOCKED** | A — byte/reference mechanics do not equal numerical validation |
 | ESRM20 source exposure byte identity | **PASS** | B — exact project-186 project/commit/path/bytes/SHA-256 |
 | ESRM20 runtime exposure byte identity | **PASS** | B — exact project-269 project/commit/path/160627 bytes/SHA-256 |
-| ESRM20 runtime exposure native-field semantics | **PASS** | B — wrapper-bound OpenQuake `structural`/aggregated/EUR token plus exact value relation to source `TOTAL_REPL_COST_EUR`; never source `COST_STRUCTURAL_EUR`; datum/EPSG excluded |
-| Project-186 source → project-269 runtime exact transform | **BLOCKED** | B — exact value relation is bounded, but converter/row-generation provenance and transformation intent are not proven |
+| ESRM20 runtime exposure native-field semantics | **PASS** | B — wrapper-bound OpenQuake `structural`/aggregated/EUR token plus bounded Decimal relation to source `TOTAL_REPL_COST_EUR` (`1051` exact; `42` differ by at most `0.000000004`); never source `COST_STRUCTURAL_EUR`; datum/EPSG excluded |
+| Project-186 source → project-269 runtime exact transform | **BLOCKED** | B — value-field relation is bounded, but converter/row-generation provenance and transformation intent are not proven |
 | Exposure taxonomy extraction | **PASS** | B — 86 exact literal values; no normalization |
 | Taxonomy → mapping join | **PASS** | B — 86/86 resolved; 0 unsupported; 0 ambiguous |
 | Mapping → vulnerability selection | **PASS** | B — exactly 47 canonical Risk IDs |
@@ -410,7 +412,7 @@ missing; no report-level component claim is inferred from the runtime result abo
 | Immutable TR002 component/conversion text authority | **BLOCKED** | B — exact report is renderable, but no durable exact-object term/page disposition yet |
 | ESRM20 site CRS / coordinate semantics | **BLOCKED** | B — datum/EPSG and historical generator authority intentionally remain false |
 | ESRM20 site missingness / unit semantics | **BLOCKED** | B — runtime acceptance does not prove all provider semantics |
-| Exposure valuation vintage / source-value-generation compatibility | **BLOCKED** | B — runtime field is exactly tied to 2020-EUR source `TOTAL_REPL_COST_EUR`, but causal converter/intent and broader valuation-generation provenance remain unproved |
+| Exposure valuation vintage / source-value-generation compatibility | **BLOCKED** | B — runtime field is bounded against 2020-EUR source `TOTAL_REPL_COST_EUR` (`1051` exact; `42` differ by at most `0.000000004`), but causal converter/intent and broader valuation-generation provenance remain unproved |
 | Vulnerability Kosovo empirical applicability | **BLOCKED** | B — intended ESRM20 use is not independent Kosovo validation |
 | Historical/default Kosovo `ebrisk` root | **BLOCKED** | B — provider v1.0 does not uniquely bind Kosovo to one default risk group |
 | Historical ESRM20 risk runtime | **BLOCKED** | B — reconstructed OQ3.14 is not historical-risk-runtime proof |
@@ -471,9 +473,9 @@ A consumer reproducing v0.1 should:
    the fixed 51-child source-model set; never substitute the Mode-B site model;
 7. for Mode B exposure, keep the project-186 source exposure and project-269 runtime
    OpenQuake exposure as separate exact identities; interpret runtime `structural` on
-   the bounded source `TOTAL_REPL_COST_EUR` value basis and never relabel it as source
-   `COST_STRUCTURAL_EUR`; do not infer the still-unproved converter or transformation
-   intent from the exact value relation;
+   the source `TOTAL_REPL_COST_EUR` value basis supported by the bounded Decimal
+   comparison and never relabel it as source `COST_STRUCTURAL_EUR`; do not infer the
+   still-unproved converter or transformation intent from that comparison;
 8. for Mode B, require the exact 86-taxonomy projection, exact literal mapping join and
    resulting canonical 47 Risk IDs before vulnerability selection;
 9. for Mode B vulnerability, keep the project-188 v2.1 47-file selection/provenance
@@ -523,9 +525,9 @@ The shortest remaining Mode-B sequence is:
 2. close Kosovo site CRS/datum, missingness and historical-generation semantics actually
    needed by the run, while retaining the already-passing 37/37 runtime-value/GSIM gate;
 3. close the remaining causal source→runtime exposure converter/row-generation and
-   valuation-intent provenance; the exact runtime `structural` -> source
-   `TOTAL_REPL_COST_EUR` value relation is already bounded and must not be reopened into
-   a structural-component-only interpretation;
+   valuation-intent provenance; the bounded Decimal runtime `structural` -> source
+   `TOTAL_REPL_COST_EUR` relation must not be reopened into a structural-component-only
+   interpretation;
 4. select a source-authorized full-risk configuration or construct and explicitly label
    a Kosovo-only reconstructed experiment configuration;
 5. execute one bounded end-to-end run and bind every materially used artifact/result
