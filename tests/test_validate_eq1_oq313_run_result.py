@@ -248,6 +248,32 @@ class EQ1OQ313TerminalValidatorTests(unittest.TestCase):
                 _body(result), expected_execution_sha=EXECUTION_SHA
             )
 
+    def test_rejects_non_integer_adapter_receipt_byte_count(self) -> None:
+        result = _result()
+        result["adapter_receipt"]["byte_count"] = float(
+            result["adapter_receipt"]["byte_count"]
+        )
+        with self.assertRaisesRegex(
+            subject.EQ1OQ313TerminalValidationError, "adapter receipt byte count"
+        ):
+            subject.validate_terminal_body(
+                _body(result), expected_execution_sha=EXECUTION_SHA
+            )
+
+    def test_rejects_zero_like_non_integer_adapter_exit_codes(self) -> None:
+        for exit_code in (False, 0.0):
+            with self.subTest(exit_code=exit_code):
+                result = _result()
+                result["adapter_result"]["execution"]["exit_code"] = exit_code
+                _refresh_adapter_receipt(result)
+                with self.assertRaisesRegex(
+                    subject.EQ1OQ313TerminalValidationError,
+                    "exit code type",
+                ):
+                    subject.validate_terminal_body(
+                        _body(result), expected_execution_sha=EXECUTION_SHA
+                    )
+
     def test_rejects_numerical_receipt_content_drift(self) -> None:
         result = _result()
         result["numerical_receipt"]["rows"][0]["loss_f32_be_hex"] = "40000000"

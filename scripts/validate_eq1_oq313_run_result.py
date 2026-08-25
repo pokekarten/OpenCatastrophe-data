@@ -123,11 +123,16 @@ def _validate_adapter_self_consistency(result: dict[str, Any]) -> dict[str, Any]
     except action.KosovoResidentialOQ313ActionError as exc:
         raise EQ1OQ313TerminalValidationError("adapter result contract drifted") from exc
 
+    execution = validated.get("execution")
+    if type(execution) is not dict or type(execution.get("exit_code")) is not int:
+        raise EQ1OQ313TerminalValidationError("adapter execution exit code type drifted")
+
     receipt = result.get("adapter_receipt")
     if type(receipt) is not dict or set(receipt) != {"byte_count", "sha256"}:
         raise EQ1OQ313TerminalValidationError("adapter receipt fields drifted")
     payload = _canonical_json_bytes(validated)
-    if receipt.get("byte_count") != len(payload):
+    byte_count = receipt.get("byte_count")
+    if type(byte_count) is not int or byte_count != len(payload):
         raise EQ1OQ313TerminalValidationError("adapter receipt byte count drifted")
     digest = receipt.get("sha256")
     if type(digest) is not str or digest != hashlib.sha256(payload).hexdigest():
