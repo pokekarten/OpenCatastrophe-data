@@ -240,6 +240,13 @@ def _copy_and_verify(
             expected_sha256=expected_sha256,
             expected_size=expected_size,
         )
+        try:
+            temp_path.unlink(missing_ok=True)
+        except OSError as exc:
+            raise MaterializationError(
+                f"cannot remove verified cache temporary alias: {exc}"
+            ) from exc
+        temp_path = None
     except MaterializationError:
         raise
     except OSError as exc:
