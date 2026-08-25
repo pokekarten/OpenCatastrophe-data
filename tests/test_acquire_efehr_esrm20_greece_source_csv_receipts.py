@@ -247,7 +247,10 @@ class GreeceSourceCsvReceiptsTests(unittest.TestCase):
             mock.patch.object(subject, "_CANONICAL_TARGETS", mismatched),
             mock.patch.object(subject, "TARGETS", mismatched),
         ):
-            with self.assertRaises(EfehrAcquisitionError):
+            with self.assertRaisesRegex(
+                subject.GreeceSourceCsvReceiptsError,
+                "byte count does not match frozen provider tree metadata",
+            ):
                 subject._acquire_for_test(
                     opener=opener,
                     now=lambda: "2026-08-25T22:46:00Z",
