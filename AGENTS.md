@@ -75,7 +75,9 @@ If a collision appears after a CLAIM, do not create or continue a competing writ
 
 Independent review is a quality-control role, not a second implementation claim. A reviewer should inspect the exact PR head, diff, tests, public evidence and declared scope without editing the builder's branch unless the builder explicitly hands it over.
 
-Reviewer independence is a process property, not merely a GitHub login. Multiple agents may operate through the same GitHub account, so Tier 1/2 PRs must record distinct builder/reviewer/challenger agent or run identifiers when identities are shared. An independent reviewer must not have authored the proposed diff or directed its implementation. Separate context and a fresh evidence read are preferred; a second pass by the same agent/run is self-review, not independent review.
+Reviewer independence is a process property, not a GitHub-account property. **A separate GitHub account is not required.** Multiple independent agents commonly operate through the same GitHub account. What matters is that the reviewer or challenger is a distinct agent/run that independently evaluates the exact candidate state and did not author the proposed diff or direct its implementation. When identities are shared, Tier 1/2 PRs must record distinct builder/reviewer/challenger agent or run identifiers in their durable CLAIM/HANDOFF records. A second pass by the same agent/run is self-review, not independent review. Separate context and a fresh evidence read are preferred.
+
+Do not treat GitHub's account-level review mechanics as the independence test. If GitHub prevents an `APPROVE` or `REQUEST_CHANGES` review because the shared account is also the PR author, a properly claimed and durably recorded review by a distinct agent/run can still satisfy the repository's independent-review role. The review must state its exact head, evidence, findings and disposition, and must not be represented as a separate GitHub-account approval.
 
 Use three review tiers:
 
