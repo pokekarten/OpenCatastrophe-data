@@ -151,7 +151,7 @@ _FROZEN_RISKLIB_MODULE_PATH_RE = re.compile(
 def _validated_lines(stderr_tail: bytes) -> list[bytes] | None:
     if type(stderr_tail) is not bytes:
         return None
-    if len(stderr_tail) > MAX_STDERR_CLASSIFIER_TAIL_BYTES:
+    if len(stderr_tail) >= MAX_STDERR_CLASSIFIER_TAIL_BYTES:
         return None
     try:
         stderr_tail.decode("utf-8", errors="strict")
