@@ -17,6 +17,9 @@ MAX_STDERR_CLASSIFIER_TAIL_BYTES = 64 * 1024
 UNCLASSIFIED_EXCEPTION_CLASS = "unclassified"
 UNCLASSIFIED_TRACEBACK_ORIGIN = "unclassified"
 UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS = "unclassified.multiple_traceback_headers"
+UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_ORIGIN_PREFIX = (
+    "unclassified.multiple_traceback_headers.first_origin"
+)
 UNCLASSIFIED_TRACEBACK_TERMINAL_SHAPE = "unclassified.terminal_shape"
 UNCLASSIFIED_TRACEBACK_MULTILINE_EXCEPTION = "unclassified.multiline_exception"
 
@@ -141,9 +144,14 @@ ALLOWED_TRACEBACK_ORIGINS = (
     | ALLOWED_RISKLIB_TRACEBACK_MODULES
     | ALLOWED_RISKLIB_ASSET_TRACEBACK_TOKENS
 )
+UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_ORIGIN_TOKENS = frozenset(
+    f"{UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_ORIGIN_PREFIX}.{origin}"
+    for origin in ALLOWED_TRACEBACK_ORIGINS
+)
 PUBLIC_TRACEBACK_ORIGIN_TOKENS = (
     ALLOWED_TRACEBACK_ORIGINS
     | UNCLASSIFIED_TRACEBACK_CONTEXT_TOKENS
+    | UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_ORIGIN_TOKENS
     | {UNCLASSIFIED_TRACEBACK_ORIGIN}
 )
 
@@ -183,8 +191,7 @@ def _terminal_context(lines: list[bytes]) -> tuple[int, bytes] | None:
     # Fail closed unless this is one bounded canonical traceback segment. A Python
     # exception message may contain embedded newlines, including text that looks
     # exactly like another traceback header or frame. Multiple headers are therefore
-    # ambiguous without parsing Python's full exception-chain grammar and cannot be
-    # used as bounded public diagnostic evidence here.
+    # ambiguous and never promoted to a final/root traceback origin by this helper.
     header_indexes = [
         index
         for index, line in enumerate(lines[:terminal_index])
@@ -214,6 +221,45 @@ def _terminal_context(lines: list[bytes]) -> tuple[int, bytes] | None:
     return terminal_index, terminal_line
 
 
+def _first_traceback_origin_from_multiple_headers(lines: list[bytes]) -> str | None:
+    """Return only the first real traceback origin from an ambiguous multi-header tail.
+
+    Later traceback-looking text can be injected through a multiline exception message,
+    so it is never trusted here. The first rendered traceback segment precedes that
+    message boundary. We require exact, unindented Python traceback headers and stop at
+    the first unindented class-shaped exception line before the second exact header.
+    The result is explicitly labelled ``first_origin`` and never claims to be the
+    terminal/root exception origin.
+    """
+
+    exact_headers = [
+        index for index, line in enumerate(lines) if line == _TRACEBACK_HEADER
+    ]
+    if len(exact_headers) < 2:
+        return None
+    first_header, second_header = exact_headers[0], exact_headers[1]
+
+    terminal_index: int | None = None
+    for index in range(first_header + 1, second_header):
+        line = lines[index]
+        stripped = line.strip()
+        if not stripped or line != line.lstrip():
+            continue
+        if _TERMINAL_CLASS_RE.fullmatch(stripped) is not None:
+            terminal_index = index
+            break
+    if terminal_index is None:
+        return None
+
+    # Reuse the already fail-closed single-traceback classifier on only the first
+    # segment. This recursion terminates because the synthetic segment has one header.
+    segment = b"\n".join(lines[first_header : terminal_index + 1]) + b"\n"
+    origin = classify_traceback_origin(segment)
+    if origin not in ALLOWED_TRACEBACK_ORIGINS:
+        return None
+    return origin
+
+
 def _terminal_context_rejection_token(lines: list[bytes]) -> str:
     """Return only a finite structural reason for canonical-context rejection."""
 
@@ -232,6 +278,12 @@ def _terminal_context_rejection_token(lines: list[bytes]) -> str:
     if not header_indexes:
         return UNCLASSIFIED_TRACEBACK_ORIGIN
     if len(header_indexes) != 1:
+        first_origin = _first_traceback_origin_from_multiple_headers(lines)
+        if first_origin is not None:
+            return (
+                f"{UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_ORIGIN_PREFIX}."
+                f"{first_origin}"
+            )
         return UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS
     header_index = header_indexes[0]
 
@@ -307,8 +359,10 @@ def classify_traceback_origin(stderr_tail: bytes) -> str:
     For the exact pinned ``openquake/risklib/asset.py`` frame only, a statically
     allow-listed function name may further refine that token. If strict terminal
     context rejects an otherwise canonical traceback, a finite ``unclassified.*``
-    structural reason may replace the generic sentinel. No path, line number,
-    arbitrary function name or message is returned.
+    structural reason may replace the generic sentinel. For ambiguous multi-header
+    tails, only a labelled first-traceback origin may be exposed; it is never treated
+    as the terminal/root origin. No path, line number, arbitrary function name or
+    message is returned.
     """
 
     lines = _validated_lines(stderr_tail)
