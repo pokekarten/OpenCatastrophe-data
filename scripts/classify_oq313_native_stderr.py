@@ -5,8 +5,8 @@
 
 The classifier is deliberately diagnostic-only. It accepts only a bounded byte tail,
 requires a canonical Python traceback header before the terminal non-empty line, and
-returns finite allow-listed tokens only. Messages, line numbers, function names,
-values and arbitrary exception names are never returned.
+returns finite allow-listed tokens only. Messages, line numbers, arbitrary function
+names, values and arbitrary exception names are never returned.
 """
 
 from __future__ import annotations
@@ -49,9 +49,6 @@ PUBLIC_EXCEPTION_CLASS_TOKENS = ALLOWED_EXCEPTION_CLASSES | {
 
 # The pinned OQ3.13 commit contains exactly these public Python modules directly
 # under ``openquake/risklib`` (excluding package ``__init__.py`` and tests/data).
-# Returning one of these finite tokens is the narrowest useful discriminator for
-# the current trusted AttributeError while still withholding path, line, function
-# and exception-message content.
 ALLOWED_RISKLIB_TRACEBACK_MODULES = frozenset(
     {
         "openquake.risklib.asset",
@@ -63,20 +60,75 @@ ALLOWED_RISKLIB_TRACEBACK_MODULES = frozenset(
     }
 )
 
-# Traceback-origin tokens expose only a fixed package boundary, except for the
-# direct risklib module set above. Anything outside the frozen /oq-engine source
-# tree remains unclassified.
-ALLOWED_TRACEBACK_ORIGINS = frozenset(
+# Only names statically present at the pinned OQ3.13 asset.py source are eligible
+# for the extra discriminator. Common dunder names are deliberately excluded
+# because a traceback does not carry the owning class, so they would not provide
+# an unambiguous source-level discriminator. The public token remains finite and
+# never contains caller/provider-controlled text.
+ALLOWED_RISKLIB_ASSET_TRACEBACK_FUNCTIONS = frozenset(
     {
-        "openquake.baselib",
-        "openquake.calculators",
-        "openquake.commands",
-        "openquake.commonlib",
-        "openquake.engine",
-        "openquake.hazardlib",
-        "openquake.risklib",
+        "_add_asset",
+        "_csv_header",
+        "_get_exposure",
+        "_minimal_tagcol",
+        "_populate_from",
+        "_read_csv",
+        "add",
+        "add_tags",
+        "add_tagname",
+        "aggregateby",
+        "agg_shape",
+        "arr_value",
+        "assets2array",
+        "assets_by_site",
+        "build_asset_array",
+        "check",
+        "extend",
+        "gen_tags",
+        "get_agg_values",
+        "get_aggkey",
+        "get_aids_by_tag",
+        "get_case_similar",
+        "get_mesh_assets_by_site",
+        "get_tag",
+        "get_tagdict",
+        "get_tagidx",
+        "get_tagvalues",
+        "get_units",
+        "get_value_fields",
+        "num_taxonomies_by_site",
+        "read",
+        "read_headers",
+        "reduce",
+        "reduce_also",
+        "retrofitted",
+        "to_dframe",
+        "value",
     }
-) | ALLOWED_RISKLIB_TRACEBACK_MODULES
+)
+ALLOWED_RISKLIB_ASSET_TRACEBACK_TOKENS = frozenset(
+    f"openquake.risklib.asset.{name}"
+    for name in ALLOWED_RISKLIB_ASSET_TRACEBACK_FUNCTIONS
+)
+
+# Traceback-origin tokens expose only a fixed package boundary, except for the
+# direct risklib module set above and the finite asset.py source discriminator.
+# Anything outside the frozen /oq-engine source tree remains unclassified.
+ALLOWED_TRACEBACK_ORIGINS = (
+    frozenset(
+        {
+            "openquake.baselib",
+            "openquake.calculators",
+            "openquake.commands",
+            "openquake.commonlib",
+            "openquake.engine",
+            "openquake.hazardlib",
+            "openquake.risklib",
+        }
+    )
+    | ALLOWED_RISKLIB_TRACEBACK_MODULES
+    | ALLOWED_RISKLIB_ASSET_TRACEBACK_TOKENS
+)
 PUBLIC_TRACEBACK_ORIGIN_TOKENS = ALLOWED_TRACEBACK_ORIGINS | {
     UNCLASSIFIED_TRACEBACK_ORIGIN
 }
@@ -86,7 +138,7 @@ _TERMINAL_CLASS_RE = re.compile(
     rb"^(?:[A-Za-z_][A-Za-z0-9_]*\.)*([A-Za-z_][A-Za-z0-9_]*)(?::.*)?$"
 )
 _TRACEBACK_FRAME_RE = re.compile(
-    rb'^\s*File "([^"\r\n]+)", line [1-9][0-9]*(?:, in [^\r\n]+)?$'
+    rb'^\s*File "([^"\r\n]+)", line [1-9][0-9]*(?:, in ([A-Za-z_][A-Za-z0-9_]*|<module>))?$'
 )
 _FROZEN_OQ_PATH_RE = re.compile(
     rb"^/oq-engine/openquake/([A-Za-z_][A-Za-z0-9_]*)/[^\r\n]+$"
@@ -121,7 +173,9 @@ def _terminal_context(lines: list[bytes]) -> tuple[int, bytes] | None:
     return terminal_index, terminal_line
 
 
-def _final_traceback_path(lines: list[bytes], terminal_index: int) -> bytes | None:
+def _final_traceback_frame(
+    lines: list[bytes], terminal_index: int
+) -> tuple[bytes, bytes | None] | None:
     frame_like_lines = [
         line
         for line in lines[:terminal_index]
@@ -132,7 +186,7 @@ def _final_traceback_path(lines: list[bytes], terminal_index: int) -> bytes | No
     final_frame = _TRACEBACK_FRAME_RE.fullmatch(frame_like_lines[-1])
     if final_frame is None:
         return None
-    return final_frame.group(1)
+    return final_frame.group(1), final_frame.group(2)
 
 
 def classify_terminal_exception(stderr_tail: bytes) -> str:
@@ -159,11 +213,13 @@ def classify_terminal_exception(stderr_tail: bytes) -> str:
 
 
 def classify_traceback_origin(stderr_tail: bytes) -> str:
-    """Return only the final allow-listed frozen-OQ package/module origin.
+    """Return only the final allow-listed frozen-OQ package/module discriminator.
 
-    For direct ``openquake.risklib`` Python frames at the pinned OQ3.13 commit,
-    return one of six finite module tokens. All other OpenQuake frames remain at
-    package granularity. No path, line number, function name or message is returned.
+    Direct ``openquake.risklib`` Python frames use one of six finite module tokens.
+    For the exact pinned ``openquake/risklib/asset.py`` frame only, a statically
+    allow-listed function name may further refine that token. Unknown/ambiguous
+    function names remain at module granularity. No path, line number, arbitrary
+    function name or message is returned.
     """
 
     lines = _validated_lines(stderr_tail)
@@ -174,9 +230,10 @@ def classify_traceback_origin(stderr_tail: bytes) -> str:
         return UNCLASSIFIED_TRACEBACK_ORIGIN
     terminal_index, _terminal_line = context
 
-    path = _final_traceback_path(lines, terminal_index)
-    if path is None:
+    frame = _final_traceback_frame(lines, terminal_index)
+    if frame is None:
         return UNCLASSIFIED_TRACEBACK_ORIGIN
+    path, function_bytes = frame
 
     risklib_path = _FROZEN_RISKLIB_MODULE_PATH_RE.fullmatch(path)
     if risklib_path is not None:
@@ -185,9 +242,17 @@ def classify_traceback_origin(stderr_tail: bytes) -> str:
         except UnicodeDecodeError:
             return UNCLASSIFIED_TRACEBACK_ORIGIN
         candidate = f"openquake.risklib.{module}"
-        if candidate in ALLOWED_RISKLIB_TRACEBACK_MODULES:
-            return candidate
-        return UNCLASSIFIED_TRACEBACK_ORIGIN
+        if candidate not in ALLOWED_RISKLIB_TRACEBACK_MODULES:
+            return UNCLASSIFIED_TRACEBACK_ORIGIN
+        if candidate == "openquake.risklib.asset" and function_bytes is not None:
+            try:
+                function_name = function_bytes.decode("ascii", errors="strict")
+            except UnicodeDecodeError:
+                return candidate
+            refined = f"{candidate}.{function_name}"
+            if refined in ALLOWED_RISKLIB_ASSET_TRACEBACK_TOKENS:
+                return refined
+        return candidate
 
     oq_path = _FROZEN_OQ_PATH_RE.fullmatch(path)
     if oq_path is None:
