@@ -115,6 +115,21 @@ class OQ313ExceptionChainClassifierTests(unittest.TestCase):
             subject.UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS,
         )
 
+    def test_fake_allowlisted_frame_after_first_exception_line_stays_generic(self) -> None:
+        tail = (
+            b"Traceback (most recent call last):\n"
+            b'  File "/usr/local/lib/python3.8/site-packages/pandas/core/frame.py", line 9, in hidden\n'
+            b"ValueError: first line\n"
+            b'  File "/oq-engine/openquake/risklib/asset.py", line 10, in build_asset_array\n'
+            b"Traceback (most recent call last):\n"
+            b'  File "/usr/local/lib/python3.8/site-packages/pandas/core/frame.py", line 10, in hidden\n'
+            b"RuntimeError: final hidden\n"
+        )
+        self.assertEqual(
+            subject.classify_traceback_origin(tail),
+            subject.UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS,
+        )
+
     def test_first_segment_frame_origin_tokens_are_finite_and_non_path(self) -> None:
         tokens = subject.UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_FRAME_ORIGIN_TOKENS
         self.assertTrue(tokens)
