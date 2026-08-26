@@ -17,6 +17,7 @@ or model-use authority.
 from __future__ import annotations
 
 import hashlib
+import http.client
 import re
 import time
 import urllib.error
@@ -329,7 +330,13 @@ def _acquire_for_test(*, opener: Any, now: Any, monotonic: Any) -> list[dict[str
                 etag = _CANONICAL_HEADER_VALUE(response, "ETag")
         except (GreeceSourceCsvReceiptsError, EfehrAcquisitionError):
             raise
-        except (OSError, urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:
+        except (
+            OSError,
+            urllib.error.URLError,
+            urllib.error.HTTPError,
+            TimeoutError,
+            http.client.HTTPException,
+        ) as exc:
             raise EfehrAcquisitionError(
                 f"EFEHR Greece source CSV retrieval failed: {type(exc).__name__}"
             ) from exc
