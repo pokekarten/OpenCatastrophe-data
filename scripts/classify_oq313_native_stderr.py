@@ -203,9 +203,17 @@ def _terminal_context(lines: list[bytes]) -> tuple[int, bytes] | None:
 def _final_traceback_frame(
     lines: list[bytes], terminal_index: int
 ) -> tuple[bytes, bytes | None] | None:
+    header_indexes = [
+        index
+        for index, line in enumerate(lines[:terminal_index])
+        if line.strip() == _TRACEBACK_HEADER
+    ]
+    if len(header_indexes) != 1:
+        return None
+    header_index = header_indexes[0]
     frame_like_lines = [
         line
-        for line in lines[:terminal_index]
+        for line in lines[header_index + 1 : terminal_index]
         if line.lstrip().startswith(b'File "')
     ]
     if not frame_like_lines:
