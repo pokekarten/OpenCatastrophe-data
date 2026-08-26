@@ -41,6 +41,7 @@ class OQ313NativeFailureDiagnosticsTests(unittest.TestCase):
                 "sha256": hashlib.sha256(secret).hexdigest(),
                 "content_exposed": False,
                 "exception_class": classifier.UNCLASSIFIED_EXCEPTION_CLASS,
+                "traceback_origin": classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
             },
         )
         self.assertNotIn("secret-value", json.dumps(diagnostic))
@@ -71,9 +72,48 @@ class OQ313NativeFailureDiagnosticsTests(unittest.TestCase):
             classifier.UNCLASSIFIED_EXCEPTION_CLASS,
         )
         self.assertEqual(
-            set(diagnostic),
-            {"byte_count", "sha256", "content_exposed", "exception_class"},
+            diagnostic["traceback_origin"],
+            classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
         )
+        self.assertEqual(
+            set(diagnostic),
+            {
+                "byte_count",
+                "sha256",
+                "content_exposed",
+                "exception_class",
+                "traceback_origin",
+            },
+        )
+
+    def test_canonical_traceback_publishes_only_allowlisted_origin_token(self) -> None:
+        stderr = (
+            b"Traceback (most recent call last):\n"
+            b'  File "/oq-engine/openquake/risklib/riskmodels.py", line 12, in run\n'
+            b"    hidden = provider_value\n"
+            b"AttributeError: secret-message\n"
+        )
+        command = [
+            sys.executable,
+            "-c",
+            "import sys; "
+            + f"sys.stderr.buffer.write({stderr!r}); "
+            + "sys.stderr.flush(); raise SystemExit(9)",
+        ]
+
+        with (
+            mock.patch.object(subject, "NATIVE_EXECUTION_TIMEOUT_SECONDS", 5),
+            mock.patch.object(subject, "NATIVE_TERMINATION_GRACE_SECONDS", 0.1),
+        ):
+            returncode = subject._execute_native(command, os.environ.copy())
+
+        diagnostic = getattr(returncode, "diagnostic")
+        self.assertEqual(diagnostic["exception_class"], "AttributeError")
+        self.assertEqual(diagnostic["traceback_origin"], "openquake.risklib")
+        serialized = json.dumps(diagnostic)
+        self.assertNotIn("riskmodels.py", serialized)
+        self.assertNotIn("secret-message", serialized)
+        self.assertNotIn("provider_value", serialized)
 
     def test_success_keeps_existing_result_shape_without_failure_diagnostic(self) -> None:
         command = [
@@ -142,6 +182,7 @@ class OQ313NativeFailureDiagnosticsTests(unittest.TestCase):
                 "sha256": hashlib.sha256(b"boom").hexdigest(),
                 "content_exposed": False,
                 "exception_class": classifier.UNCLASSIFIED_EXCEPTION_CLASS,
+                "traceback_origin": classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
             },
         )
         with (
@@ -165,6 +206,7 @@ class OQ313NativeFailureDiagnosticsTests(unittest.TestCase):
                 "sha256": hashlib.sha256(b"boom").hexdigest(),
                 "content_exposed": False,
                 "exception_class": classifier.UNCLASSIFIED_EXCEPTION_CLASS,
+                "traceback_origin": classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
             },
         )
         self.assertNotIn("boom", payload.decode("utf-8"))
