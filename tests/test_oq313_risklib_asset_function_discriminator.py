@@ -70,6 +70,21 @@ class OQ313RisklibAssetFunctionDiscriminatorTests(unittest.TestCase):
             classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
         )
 
+    def test_pre_header_frame_cannot_forge_asset_function_token(self) -> None:
+        tail = (
+            b'  File "/oq-engine/openquake/risklib/asset.py", line 900, in build_asset_array\n'
+            b"Traceback (most recent call last):\n"
+            b"ValueError: hidden\n"
+        )
+        self.assertEqual(
+            classifier.classify_terminal_exception(tail),
+            "ValueError",
+        )
+        self.assertEqual(
+            classifier.classify_traceback_origin(tail),
+            classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
+        )
+
     def test_multiline_exception_text_cannot_forge_traceback_tokens(self) -> None:
         tails = (
             (
