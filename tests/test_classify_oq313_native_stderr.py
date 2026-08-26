@@ -110,6 +110,19 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
             "openquake.risklib",
         )
 
+    def test_traceback_origin_external_final_frame_is_unclassified(self) -> None:
+        tail = (
+            b"Traceback (most recent call last):\n"
+            b'  File "/oq-engine/openquake/risklib/riskmodels.py", line 20, in get_risk_functions\n'
+            b'  File "/usr/local/lib/python3.8/site-packages/pandas/core/frame.py", line 9, in hidden\n'
+            b"AttributeError: hidden provider-dependent message\n"
+        )
+
+        self.assertEqual(
+            subject.classify_traceback_origin(tail),
+            subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
+        )
+
     def test_traceback_origin_does_not_expose_filename_function_or_line(self) -> None:
         tail = (
             b"Traceback (most recent call last):\n"
