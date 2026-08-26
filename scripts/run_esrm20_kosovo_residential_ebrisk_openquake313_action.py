@@ -277,6 +277,7 @@ def _validate_adapter_document(document: object) -> dict[str, Any]:
             "sha256",
             "content_exposed",
             "exception_class",
+            "traceback_origin",
         }:
             raise KosovoResidentialOQ313ActionError(
                 "adapter native failure diagnostic fields drifted"
@@ -285,6 +286,7 @@ def _validate_adapter_document(document: object) -> dict[str, Any]:
         digest = diagnostic.get("sha256")
         content_exposed = diagnostic.get("content_exposed")
         exception_class = diagnostic.get("exception_class")
+        traceback_origin = diagnostic.get("traceback_origin")
         if type(byte_count) is not int or byte_count < 0:
             raise KosovoResidentialOQ313ActionError(
                 "adapter native failure diagnostic byte count drifted"
@@ -303,6 +305,13 @@ def _validate_adapter_document(document: object) -> dict[str, Any]:
         ):
             raise KosovoResidentialOQ313ActionError(
                 "adapter native failure diagnostic exception class drifted"
+            )
+        if (
+            type(traceback_origin) is not str
+            or traceback_origin not in stderr_classifier.PUBLIC_TRACEBACK_ORIGIN_TOKENS
+        ):
+            raise KosovoResidentialOQ313ActionError(
+                "adapter native failure diagnostic traceback origin drifted"
             )
 
     for field in _AUTHORITY_FALSE_FIELDS:
