@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import inspect
 import unittest
 
@@ -201,6 +202,32 @@ class Project278ManualReceiptTests(unittest.TestCase):
                 now=lambda: RETRIEVED_AT,
                 monotonic=lambda: 0.0,
             )
+
+    def test_incomplete_http_stream_is_sanitized_without_partial_content(self) -> None:
+        url = expected_url()
+        partial = b"%PDF-1.4\nsecret partial provider content"
+
+        class IncompleteReadResponse(FakeResponse):
+            def read(self, size: int = -1) -> bytes:
+                raise http.client.IncompleteRead(partial=partial, expected=4096)
+
+        response = IncompleteReadResponse(
+            b"",
+            url,
+            headers={"Content-Type": "application/pdf"},
+        )
+        with self.assertRaises(EfehrAcquisitionError) as caught:
+            subject._acquire_for_test(
+                opener=lambda request, timeout: response,
+                now=lambda: RETRIEVED_AT,
+                monotonic=lambda: 0.0,
+            )
+
+        self.assertEqual(
+            str(caught.exception),
+            "EFEHR artifact retrieval failed: IncompleteRead",
+        )
+        self.assertNotIn("secret partial provider content", str(caught.exception))
 
 
 if __name__ == "__main__":
