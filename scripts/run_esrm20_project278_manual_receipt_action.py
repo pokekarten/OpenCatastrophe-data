@@ -57,6 +57,14 @@ _AUTHORITY_FALSE_FIELDS = (
     "publication_authorized",
     "model_use_authorized",
 )
+_MANUAL_IDENTITY_EXACT = (
+    ("project_id", PROJECT_ID),
+    ("project_path", PROJECT_PATH),
+    ("commit_sha", COMMIT_SHA),
+    ("repository_path", REPOSITORY_PATH),
+    ("worker_operation_id", WORKER_OPERATION_ID),
+)
+_MANUAL_IDENTITY_FIELDS = frozenset(field for field, _ in _MANUAL_IDENTITY_EXACT)
 
 
 class Project278ManualReceiptActionError(RuntimeError):
@@ -83,6 +91,18 @@ def _load_json(text: str, *, label: str) -> Any:
         raise
     except (json.JSONDecodeError, TypeError, ValueError) as exc:
         raise Project278ManualReceiptActionError(f"invalid {label} JSON") from exc
+
+
+def _validate_manual_identity(identity: object) -> dict[str, Any]:
+    if type(identity) is not dict or set(identity) != _MANUAL_IDENTITY_FIELDS:
+        raise Project278ManualReceiptActionError("trusted manual result identity fields drifted")
+    for field, expected in _MANUAL_IDENTITY_EXACT:
+        observed = identity.get(field)
+        if type(observed) is not type(expected) or observed != expected:
+            raise Project278ManualReceiptActionError(
+                f"trusted manual result identity drifted at {field}"
+            )
+    return identity
 
 
 def validate_request(body: object, *, expected_issue: int, execution_sha: str) -> dict[str, Any]:
@@ -159,13 +179,7 @@ def _base_result(*, execution_sha: str) -> dict[str, Any]:
         "dataset_id": DATASET_ID,
         "target_sha": execution_sha,
         "execution_sha": execution_sha,
-        "manual_identity": {
-            "project_id": PROJECT_ID,
-            "project_path": PROJECT_PATH,
-            "commit_sha": COMMIT_SHA,
-            "repository_path": REPOSITORY_PATH,
-            "worker_operation_id": WORKER_OPERATION_ID,
-        },
+        "manual_identity": dict(_MANUAL_IDENTITY_EXACT),
     }
     result.update({field: False for field in _AUTHORITY_FALSE_FIELDS})
     return result
@@ -200,6 +214,7 @@ def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
         observed = result.get(field)
         if type(observed) is not type(expected) or observed != expected:
             raise Project278ManualReceiptActionError(f"trusted manual result drifted at {field}")
+    _validate_manual_identity(result.get("manual_identity"))
     status = result.get("status")
     if status == "pass":
         receipt = result.get("receipt")
