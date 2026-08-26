@@ -506,12 +506,18 @@ def _stderr_diagnostic_snapshot(stderr_file: Any) -> dict[str, object]:
         raise KosovoResidentialOQ313RunError(
             "OpenQuake stderr exception class drifted"
         )
+    traceback_origin = stderr_classifier.classify_traceback_origin(stderr_tail)
+    if traceback_origin not in stderr_classifier.PUBLIC_TRACEBACK_ORIGIN_TOKENS:
+        raise KosovoResidentialOQ313RunError(
+            "OpenQuake stderr traceback origin drifted"
+        )
 
     return {
         "byte_count": snapshot_size,
         "sha256": digest.hexdigest(),
         "content_exposed": False,
         "exception_class": exception_class,
+        "traceback_origin": traceback_origin,
     }
 
 
@@ -762,6 +768,7 @@ def _run_derived_config(
             "sha256",
             "content_exposed",
             "exception_class",
+            "traceback_origin",
         }:
             raise KosovoResidentialOQ313RunError(
                 "native failure diagnostic fields drifted"
@@ -770,6 +777,7 @@ def _run_derived_config(
         digest = native_failure_diagnostic["sha256"]
         exposed = native_failure_diagnostic["content_exposed"]
         exception_class = native_failure_diagnostic["exception_class"]
+        traceback_origin = native_failure_diagnostic["traceback_origin"]
         if type(byte_count) is not int or byte_count < 0:
             raise KosovoResidentialOQ313RunError(
                 "native failure diagnostic byte count drifted"
@@ -788,6 +796,13 @@ def _run_derived_config(
         ):
             raise KosovoResidentialOQ313RunError(
                 "native failure diagnostic exception class drifted"
+            )
+        if (
+            type(traceback_origin) is not str
+            or traceback_origin not in stderr_classifier.PUBLIC_TRACEBACK_ORIGIN_TOKENS
+        ):
+            raise KosovoResidentialOQ313RunError(
+                "native failure diagnostic traceback origin drifted"
             )
         document["native_failure_diagnostic"] = dict(native_failure_diagnostic)
     return _canonical_payload(document)
