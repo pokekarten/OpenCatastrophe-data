@@ -70,8 +70,10 @@ _TERMINAL_CLASS_RE = re.compile(
     rb"^(?:[A-Za-z_][A-Za-z0-9_]*\.)*([A-Za-z_][A-Za-z0-9_]*)(?::.*)?$"
 )
 _TRACEBACK_FRAME_RE = re.compile(
-    rb'^\s*File "(/oq-engine/openquake/([A-Za-z_][A-Za-z0-9_]*)/[^"\r\n]+)", '
-    rb'line [1-9][0-9]*(?:, in [^\r\n]+)?$'
+    rb'^\s*File "([^"\r\n]+)", line [1-9][0-9]*(?:, in [^\r\n]+)?$'
+)
+_FROZEN_OQ_PATH_RE = re.compile(
+    rb"^/oq-engine/openquake/([A-Za-z_][A-Za-z0-9_]*)/[^\r\n]+$"
 )
 
 
@@ -126,8 +128,8 @@ def classify_terminal_exception(stderr_tail: bytes) -> str:
 def classify_traceback_origin(stderr_tail: bytes) -> str:
     """Return only the final allow-listed frozen-OQ package origin.
 
-    The returned token is intentionally coarse. It is derived from the last
-    canonical traceback frame before the terminal exception line and never
+    The returned token is intentionally coarse. It is derived from the actual final
+    canonical Python traceback frame before the terminal exception line and never
     exposes the source path, filename, line number or function name.
     """
 
@@ -139,19 +141,26 @@ def classify_traceback_origin(stderr_tail: bytes) -> str:
         return UNCLASSIFIED_TRACEBACK_ORIGIN
     terminal_index, _terminal_line = context
 
-    origin = UNCLASSIFIED_TRACEBACK_ORIGIN
-    for line in lines[:terminal_index]:
-        match = _TRACEBACK_FRAME_RE.fullmatch(line)
-        if match is None:
-            continue
-        try:
-            package = match.group(2).decode("ascii", errors="strict")
-        except UnicodeDecodeError:
-            return UNCLASSIFIED_TRACEBACK_ORIGIN
-        candidate = f"openquake.{package}"
-        origin = (
-            candidate
-            if candidate in ALLOWED_TRACEBACK_ORIGINS
-            else UNCLASSIFIED_TRACEBACK_ORIGIN
-        )
-    return origin
+    frame_like_lines = [
+        line
+        for line in lines[:terminal_index]
+        if line.lstrip().startswith(b'File "')
+    ]
+    if not frame_like_lines:
+        return UNCLASSIFIED_TRACEBACK_ORIGIN
+
+    final_frame = _TRACEBACK_FRAME_RE.fullmatch(frame_like_lines[-1])
+    if final_frame is None:
+        return UNCLASSIFIED_TRACEBACK_ORIGIN
+    path = final_frame.group(1)
+    oq_path = _FROZEN_OQ_PATH_RE.fullmatch(path)
+    if oq_path is None:
+        return UNCLASSIFIED_TRACEBACK_ORIGIN
+    try:
+        package = oq_path.group(1).decode("ascii", errors="strict")
+    except UnicodeDecodeError:
+        return UNCLASSIFIED_TRACEBACK_ORIGIN
+    candidate = f"openquake.{package}"
+    if candidate not in ALLOWED_TRACEBACK_ORIGINS:
+        return UNCLASSIFIED_TRACEBACK_ORIGIN
+    return candidate
