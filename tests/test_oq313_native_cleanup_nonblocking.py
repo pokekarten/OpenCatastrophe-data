@@ -10,6 +10,7 @@ import unittest
 from types import SimpleNamespace
 from unittest import mock
 
+from scripts import classify_oq313_native_stderr as classifier
 from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313 as subject
 
 
@@ -39,6 +40,7 @@ class OQ313NativeCleanupNonblockingTests(unittest.TestCase):
                 "byte_count": len(frozen),
                 "sha256": hashlib.sha256(frozen).hexdigest(),
                 "content_exposed": False,
+                "exception_class": classifier.UNCLASSIFIED_EXCEPTION_CLASS,
             },
         )
 
