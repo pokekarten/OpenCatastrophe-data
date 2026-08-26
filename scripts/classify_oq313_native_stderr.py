@@ -16,6 +16,10 @@ import re
 MAX_STDERR_CLASSIFIER_TAIL_BYTES = 64 * 1024
 UNCLASSIFIED_EXCEPTION_CLASS = "unclassified"
 UNCLASSIFIED_TRACEBACK_ORIGIN = "unclassified"
+UNCLASSIFIED_TRACEBACK_NO_HEADER = "unclassified.no_traceback_header"
+UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS = "unclassified.multiple_traceback_headers"
+UNCLASSIFIED_TRACEBACK_TERMINAL_SHAPE = "unclassified.terminal_shape"
+UNCLASSIFIED_TRACEBACK_MULTILINE_EXCEPTION = "unclassified.multiline_exception"
 
 # Keep this finite and conservative. ``InvalidFile`` is defined by the pinned
 # OpenQuake 3.13 source in ``openquake.baselib``; the remaining entries are
@@ -113,7 +117,17 @@ ALLOWED_RISKLIB_ASSET_TRACEBACK_TOKENS = frozenset(
 
 # Traceback-origin tokens expose only a fixed package boundary, except for the
 # direct risklib module set above and the finite asset.py source discriminator.
-# Anything outside the frozen /oq-engine source tree remains unclassified.
+# When strict terminal-context validation rejects a traceback, a finite refined
+# ``unclassified.*`` sentinel may expose only which structural gate rejected it.
+# No source text or caller/provider-controlled value enters those sentinels.
+UNCLASSIFIED_TRACEBACK_CONTEXT_TOKENS = frozenset(
+    {
+        UNCLASSIFIED_TRACEBACK_NO_HEADER,
+        UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS,
+        UNCLASSIFIED_TRACEBACK_TERMINAL_SHAPE,
+        UNCLASSIFIED_TRACEBACK_MULTILINE_EXCEPTION,
+    }
+)
 ALLOWED_TRACEBACK_ORIGINS = (
     frozenset(
         {
@@ -129,9 +143,11 @@ ALLOWED_TRACEBACK_ORIGINS = (
     | ALLOWED_RISKLIB_TRACEBACK_MODULES
     | ALLOWED_RISKLIB_ASSET_TRACEBACK_TOKENS
 )
-PUBLIC_TRACEBACK_ORIGIN_TOKENS = ALLOWED_TRACEBACK_ORIGINS | {
-    UNCLASSIFIED_TRACEBACK_ORIGIN
-}
+PUBLIC_TRACEBACK_ORIGIN_TOKENS = (
+    ALLOWED_TRACEBACK_ORIGINS
+    | UNCLASSIFIED_TRACEBACK_CONTEXT_TOKENS
+    | {UNCLASSIFIED_TRACEBACK_ORIGIN}
+)
 
 _TRACEBACK_HEADER = b"Traceback (most recent call last):"
 _TERMINAL_CLASS_RE = re.compile(
@@ -200,6 +216,43 @@ def _terminal_context(lines: list[bytes]) -> tuple[int, bytes] | None:
     return terminal_index, terminal_line
 
 
+def _terminal_context_rejection_token(lines: list[bytes]) -> str:
+    """Return only a finite structural reason for terminal-context rejection."""
+
+    nonempty = [(index, line.strip()) for index, line in enumerate(lines) if line.strip()]
+    if not nonempty:
+        return UNCLASSIFIED_TRACEBACK_TERMINAL_SHAPE
+    terminal_index, terminal_line = nonempty[-1]
+
+    header_indexes = [
+        index
+        for index, line in enumerate(lines[:terminal_index])
+        if line.strip() == _TRACEBACK_HEADER
+    ]
+    if not header_indexes:
+        return UNCLASSIFIED_TRACEBACK_NO_HEADER
+    if len(header_indexes) != 1:
+        return UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS
+    header_index = header_indexes[0]
+
+    terminal_raw = lines[terminal_index]
+    if terminal_raw != terminal_raw.lstrip():
+        return UNCLASSIFIED_TRACEBACK_TERMINAL_SHAPE
+    if _TERMINAL_CLASS_RE.fullmatch(terminal_line) is None:
+        return UNCLASSIFIED_TRACEBACK_TERMINAL_SHAPE
+
+    for line in lines[header_index + 1 : terminal_index]:
+        stripped = line.strip()
+        if not stripped or line != line.lstrip() or b":" not in stripped:
+            continue
+        if _TERMINAL_CLASS_RE.fullmatch(stripped) is not None:
+            return UNCLASSIFIED_TRACEBACK_MULTILINE_EXCEPTION
+
+    # Keep the generic fail-closed sentinel if this helper and the authoritative
+    # terminal-context predicate ever disagree after a future code change.
+    return UNCLASSIFIED_TRACEBACK_ORIGIN
+
+
 def _final_traceback_frame(
     lines: list[bytes], terminal_index: int
 ) -> tuple[bytes, bytes | None] | None:
@@ -252,9 +305,10 @@ def classify_traceback_origin(stderr_tail: bytes) -> str:
 
     Direct ``openquake.risklib`` Python frames use one of six finite module tokens.
     For the exact pinned ``openquake/risklib/asset.py`` frame only, a statically
-    allow-listed function name may further refine that token. Unknown/ambiguous
-    function names remain at module granularity. No path, line number, arbitrary
-    function name or message is returned.
+    allow-listed function name may further refine that token. If strict terminal
+    context is rejected, a finite ``unclassified.*`` structural reason may replace
+    the generic sentinel. No path, line number, arbitrary function name or message
+    is returned.
     """
 
     lines = _validated_lines(stderr_tail)
@@ -262,7 +316,7 @@ def classify_traceback_origin(stderr_tail: bytes) -> str:
         return UNCLASSIFIED_TRACEBACK_ORIGIN
     context = _terminal_context(lines)
     if context is None:
-        return UNCLASSIFIED_TRACEBACK_ORIGIN
+        return _terminal_context_rejection_token(lines)
     terminal_index, _terminal_line = context
 
     frame = _final_traceback_frame(lines, terminal_index)
