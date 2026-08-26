@@ -5,8 +5,8 @@
 
 The classifier is deliberately diagnostic-only. It accepts only a bounded byte tail,
 requires a canonical Python traceback header before the terminal non-empty line, and
-returns finite allow-listed tokens only. Messages, paths, function names, values and
-arbitrary exception names are never returned.
+returns finite allow-listed tokens only. Messages, line numbers, function names,
+values and arbitrary exception names are never returned.
 """
 
 from __future__ import annotations
@@ -47,9 +47,25 @@ PUBLIC_EXCEPTION_CLASS_TOKENS = ALLOWED_EXCEPTION_CLASSES | {
     UNCLASSIFIED_EXCEPTION_CLASS
 }
 
-# Traceback-origin tokens deliberately expose only a coarse package boundary from
-# the frozen /oq-engine source tree. No path, filename, line number or function is
-# returned. Anything outside these fixed OpenQuake packages remains unclassified.
+# The pinned OQ3.13 commit contains exactly these public Python modules directly
+# under ``openquake/risklib`` (excluding package ``__init__.py`` and tests/data).
+# Returning one of these finite tokens is the narrowest useful discriminator for
+# the current trusted AttributeError while still withholding path, line, function
+# and exception-message content.
+ALLOWED_RISKLIB_TRACEBACK_MODULES = frozenset(
+    {
+        "openquake.risklib.asset",
+        "openquake.risklib.countries",
+        "openquake.risklib.read_nrml",
+        "openquake.risklib.riskinput",
+        "openquake.risklib.riskmodels",
+        "openquake.risklib.scientific",
+    }
+)
+
+# Traceback-origin tokens expose only a fixed package boundary, except for the
+# direct risklib module set above. Anything outside the frozen /oq-engine source
+# tree remains unclassified.
 ALLOWED_TRACEBACK_ORIGINS = frozenset(
     {
         "openquake.baselib",
@@ -60,7 +76,7 @@ ALLOWED_TRACEBACK_ORIGINS = frozenset(
         "openquake.hazardlib",
         "openquake.risklib",
     }
-)
+) | ALLOWED_RISKLIB_TRACEBACK_MODULES
 PUBLIC_TRACEBACK_ORIGIN_TOKENS = ALLOWED_TRACEBACK_ORIGINS | {
     UNCLASSIFIED_TRACEBACK_ORIGIN
 }
@@ -74,6 +90,9 @@ _TRACEBACK_FRAME_RE = re.compile(
 )
 _FROZEN_OQ_PATH_RE = re.compile(
     rb"^/oq-engine/openquake/([A-Za-z_][A-Za-z0-9_]*)/[^\r\n]+$"
+)
+_FROZEN_RISKLIB_MODULE_PATH_RE = re.compile(
+    rb"^/oq-engine/openquake/risklib/([A-Za-z_][A-Za-z0-9_]*)\.py$"
 )
 
 
@@ -102,6 +121,20 @@ def _terminal_context(lines: list[bytes]) -> tuple[int, bytes] | None:
     return terminal_index, terminal_line
 
 
+def _final_traceback_path(lines: list[bytes], terminal_index: int) -> bytes | None:
+    frame_like_lines = [
+        line
+        for line in lines[:terminal_index]
+        if line.lstrip().startswith(b'File "')
+    ]
+    if not frame_like_lines:
+        return None
+    final_frame = _TRACEBACK_FRAME_RE.fullmatch(frame_like_lines[-1])
+    if final_frame is None:
+        return None
+    return final_frame.group(1)
+
+
 def classify_terminal_exception(stderr_tail: bytes) -> str:
     """Return only an allow-listed terminal traceback class or ``unclassified``."""
 
@@ -126,11 +159,11 @@ def classify_terminal_exception(stderr_tail: bytes) -> str:
 
 
 def classify_traceback_origin(stderr_tail: bytes) -> str:
-    """Return only the final allow-listed frozen-OQ package origin.
+    """Return only the final allow-listed frozen-OQ package/module origin.
 
-    The returned token is intentionally coarse. It is derived from the actual final
-    canonical Python traceback frame before the terminal exception line and never
-    exposes the source path, filename, line number or function name.
+    For direct ``openquake.risklib`` Python frames at the pinned OQ3.13 commit,
+    return one of six finite module tokens. All other OpenQuake frames remain at
+    package granularity. No path, line number, function name or message is returned.
     """
 
     lines = _validated_lines(stderr_tail)
@@ -141,18 +174,21 @@ def classify_traceback_origin(stderr_tail: bytes) -> str:
         return UNCLASSIFIED_TRACEBACK_ORIGIN
     terminal_index, _terminal_line = context
 
-    frame_like_lines = [
-        line
-        for line in lines[:terminal_index]
-        if line.lstrip().startswith(b'File "')
-    ]
-    if not frame_like_lines:
+    path = _final_traceback_path(lines, terminal_index)
+    if path is None:
         return UNCLASSIFIED_TRACEBACK_ORIGIN
 
-    final_frame = _TRACEBACK_FRAME_RE.fullmatch(frame_like_lines[-1])
-    if final_frame is None:
+    risklib_path = _FROZEN_RISKLIB_MODULE_PATH_RE.fullmatch(path)
+    if risklib_path is not None:
+        try:
+            module = risklib_path.group(1).decode("ascii", errors="strict")
+        except UnicodeDecodeError:
+            return UNCLASSIFIED_TRACEBACK_ORIGIN
+        candidate = f"openquake.risklib.{module}"
+        if candidate in ALLOWED_RISKLIB_TRACEBACK_MODULES:
+            return candidate
         return UNCLASSIFIED_TRACEBACK_ORIGIN
-    path = final_frame.group(1)
+
     oq_path = _FROZEN_OQ_PATH_RE.fullmatch(path)
     if oq_path is None:
         return UNCLASSIFIED_TRACEBACK_ORIGIN
