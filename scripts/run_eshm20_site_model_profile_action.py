@@ -27,6 +27,7 @@ ACTION = "eshm20_site_model_structural_profile"
 CONTROL_ISSUE = 281
 DATASET_ID = worker.DATASET_ID
 TRUSTED_RESULT_LOGIN = "github-actions[bot]"
+MAX_RESULT_UTF8_BYTES = 55_000
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _SAFE_REQUESTER_RE = re.compile(r"^[A-Za-z0-9_.:@/+ -]{1,96}$")
@@ -294,6 +295,17 @@ def _validate_terminal_result(result: object, *, execution_sha: str) -> dict[str
     raise SiteModelProfileActionError("trusted site-profile result has non-terminal status")
 
 
+def _bounded_result_payload(after: str) -> str:
+    payload = after.strip()
+    try:
+        payload_size = len(payload.encode("utf-8", errors="strict"))
+    except UnicodeEncodeError as exc:
+        raise SiteModelProfileActionError("trusted site-profile result is not valid UTF-8") from exc
+    if payload_size > MAX_RESULT_UTF8_BYTES:
+        raise SiteModelProfileActionError("trusted site-profile result exceeds publication limit")
+    return payload
+
+
 def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
     if type(body) is not str or RESULT_MARKER not in body:
         return False
@@ -304,8 +316,9 @@ def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
     before, after = body.split(RESULT_MARKER, 1)
     if before.strip() or not after.strip():
         raise SiteModelProfileActionError("trusted site-profile result envelope is malformed")
+    payload = _bounded_result_payload(after)
     try:
-        result = json.loads(after.strip(), object_pairs_hook=_pairs, parse_constant=_reject_constant)
+        result = json.loads(payload, object_pairs_hook=_pairs, parse_constant=_reject_constant)
     except SiteModelProfileActionError:
         raise
     except (json.JSONDecodeError, TypeError, ValueError) as exc:
