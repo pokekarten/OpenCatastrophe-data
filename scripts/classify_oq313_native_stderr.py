@@ -275,8 +275,9 @@ def _first_segment_frame_origin_from_multiple_headers(lines: list[bytes]) -> str
 
     This evidence is deliberately weaker than ``first_origin``. A segment without a
     terminal exception class is not promoted to a real traceback. We expose only the
-    finite frozen-OQ origin of its last canonical frame, and the caller labels the token
-    ``first_segment_frame_origin`` so it cannot be confused with terminal/root origin.
+    finite frozen-OQ origin of its last canonical frame before any unindented
+    exception-class line, and the caller labels the token ``first_segment_frame_origin``
+    so it cannot be confused with terminal/root origin or message continuation text.
     """
 
     exact_headers = [
@@ -285,9 +286,20 @@ def _first_segment_frame_origin_from_multiple_headers(lines: list[bytes]) -> str
     if len(exact_headers) < 2:
         return None
     first_header, second_header = exact_headers[0], exact_headers[1]
+
+    frame_scan_end = second_header
+    for index in range(first_header + 1, second_header):
+        line = lines[index]
+        stripped = line.strip()
+        if not stripped or line != line.lstrip():
+            continue
+        if _TERMINAL_CLASS_RE.fullmatch(stripped) is not None:
+            frame_scan_end = index
+            break
+
     frame_like_lines = [
         line
-        for line in lines[first_header + 1 : second_header]
+        for line in lines[first_header + 1 : frame_scan_end]
         if line.lstrip().startswith(b'File "')
     ]
     if not frame_like_lines:
