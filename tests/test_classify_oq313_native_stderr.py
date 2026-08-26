@@ -35,6 +35,10 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
             subject.classify_terminal_exception(tail),
             subject.UNCLASSIFIED_EXCEPTION_CLASS,
         )
+        self.assertEqual(
+            subject.classify_traceback_origin(tail),
+            subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
+        )
 
     def test_unallowlisted_class_is_unclassified(self) -> None:
         tail = (
@@ -55,6 +59,10 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
             subject.classify_terminal_exception(tail),
             subject.UNCLASSIFIED_EXCEPTION_CLASS,
         )
+        self.assertEqual(
+            subject.classify_traceback_origin(tail),
+            subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
+        )
 
     def test_non_utf8_interior_with_valid_terminal_is_unclassified(self) -> None:
         tail = (
@@ -68,6 +76,10 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
             subject.classify_terminal_exception(tail),
             subject.UNCLASSIFIED_EXCEPTION_CLASS,
         )
+        self.assertEqual(
+            subject.classify_traceback_origin(tail),
+            subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
+        )
 
     def test_oversized_tail_fails_closed(self) -> None:
         tail = (
@@ -80,12 +92,84 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
             subject.classify_terminal_exception(tail),
             subject.UNCLASSIFIED_EXCEPTION_CLASS,
         )
+        self.assertEqual(
+            subject.classify_traceback_origin(tail),
+            subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
+        )
 
-    def test_public_token_set_is_closed(self) -> None:
+    def test_traceback_origin_returns_only_final_allowlisted_oq_package(self) -> None:
+        tail = (
+            b"Traceback (most recent call last):\n"
+            b'  File "/oq-engine/openquake/commonlib/readinput.py", line 10, in get_oqparam\n'
+            b'  File "/oq-engine/openquake/risklib/riskmodels.py", line 20, in get_risk_functions\n'
+            b"AttributeError: hidden provider-dependent message\n"
+        )
+
+        self.assertEqual(
+            subject.classify_traceback_origin(tail),
+            "openquake.risklib",
+        )
+
+    def test_traceback_origin_external_final_frame_is_unclassified(self) -> None:
+        tail = (
+            b"Traceback (most recent call last):\n"
+            b'  File "/oq-engine/openquake/risklib/riskmodels.py", line 20, in get_risk_functions\n'
+            b'  File "/usr/local/lib/python3.8/site-packages/pandas/core/frame.py", line 9, in hidden\n'
+            b"AttributeError: hidden provider-dependent message\n"
+        )
+
+        self.assertEqual(
+            subject.classify_traceback_origin(tail),
+            subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
+        )
+
+    def test_traceback_origin_does_not_expose_filename_function_or_line(self) -> None:
+        tail = (
+            b"Traceback (most recent call last):\n"
+            b'  File "/oq-engine/openquake/calculators/event_based_risk.py", line 123, in secret_func\n'
+            b"AttributeError: hidden\n"
+        )
+
+        origin = subject.classify_traceback_origin(tail)
+        self.assertEqual(origin, "openquake.calculators")
+        self.assertNotIn("event_based_risk", origin)
+        self.assertNotIn("secret_func", origin)
+        self.assertNotIn("123", origin)
+
+    def test_traceback_origin_outside_frozen_oq_tree_is_unclassified(self) -> None:
+        tail = (
+            b"Traceback (most recent call last):\n"
+            b'  File "/usr/local/lib/python3.8/site-packages/pandas/core/frame.py", line 9, in hidden\n'
+            b"AttributeError: hidden\n"
+        )
+
+        self.assertEqual(
+            subject.classify_traceback_origin(tail),
+            subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
+        )
+
+    def test_unknown_openquake_package_is_unclassified(self) -> None:
+        tail = (
+            b"Traceback (most recent call last):\n"
+            b'  File "/oq-engine/openquake/providersecret/module.py", line 9, in hidden\n'
+            b"AttributeError: hidden\n"
+        )
+
+        self.assertEqual(
+            subject.classify_traceback_origin(tail),
+            subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
+        )
+
+    def test_public_token_sets_are_closed(self) -> None:
         self.assertIn("ValueError", subject.PUBLIC_EXCEPTION_CLASS_TOKENS)
         self.assertIn("InvalidFile", subject.PUBLIC_EXCEPTION_CLASS_TOKENS)
         self.assertIn(subject.UNCLASSIFIED_EXCEPTION_CLASS, subject.PUBLIC_EXCEPTION_CLASS_TOKENS)
         self.assertNotIn("ProviderSecretException", subject.PUBLIC_EXCEPTION_CLASS_TOKENS)
+
+        self.assertIn("openquake.risklib", subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS)
+        self.assertIn("openquake.calculators", subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS)
+        self.assertIn(subject.UNCLASSIFIED_TRACEBACK_ORIGIN, subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS)
+        self.assertNotIn("openquake.providersecret", subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS)
 
 
 if __name__ == "__main__":  # pragma: no cover
