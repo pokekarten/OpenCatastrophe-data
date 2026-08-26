@@ -219,7 +219,9 @@ def _terminal_context(lines: list[bytes]) -> tuple[int, bytes] | None:
 def _terminal_context_rejection_token(lines: list[bytes]) -> str:
     """Return only a finite structural reason for terminal-context rejection."""
 
-    nonempty = [(index, line.strip()) for index, line in enumerate(lines) if line.strip()]
+    nonempty = [
+        (index, line.strip()) for index, line in enumerate(lines) if line.strip()
+    ]
     if not nonempty:
         return UNCLASSIFIED_TRACEBACK_TERMINAL_SHAPE
     terminal_index, terminal_line = nonempty[-1]
