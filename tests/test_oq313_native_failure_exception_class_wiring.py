@@ -33,6 +33,7 @@ class OQ313NativeFailureExceptionClassWiringTests(unittest.TestCase):
                 "sha256": hashlib.sha256(payload).hexdigest(),
                 "content_exposed": False,
                 "exception_class": "ValueError",
+                "traceback_origin": classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
             },
         )
         self.assertNotIn("secret provider value", repr(diagnostic))
@@ -48,6 +49,10 @@ class OQ313NativeFailureExceptionClassWiringTests(unittest.TestCase):
         self.assertEqual(
             diagnostic["exception_class"],
             classifier.UNCLASSIFIED_EXCEPTION_CLASS,
+        )
+        self.assertEqual(
+            diagnostic["traceback_origin"],
+            classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
         )
         self.assertEqual(diagnostic["byte_count"], len(payload))
         self.assertEqual(diagnostic["sha256"], hashlib.sha256(payload).hexdigest())
@@ -90,6 +95,7 @@ class OQ313NativeFailureExceptionClassWiringTests(unittest.TestCase):
                 "sha256": hashlib.sha256(b"test").hexdigest(),
                 "content_exposed": False,
                 "exception_class": "SecretProviderException",
+                "traceback_origin": classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
             },
         }
         with self.assertRaisesRegex(
@@ -135,12 +141,17 @@ class OQ313NativeFailureExceptionClassWiringTests(unittest.TestCase):
                 "sha256": hashlib.sha256(b"test").hexdigest(),
                 "content_exposed": False,
                 "exception_class": classifier.UNCLASSIFIED_EXCEPTION_CLASS,
+                "traceback_origin": classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
             },
         }
         validated = action._validate_adapter_document(document)
         self.assertEqual(
             validated["native_failure_diagnostic"]["exception_class"],
             classifier.UNCLASSIFIED_EXCEPTION_CLASS,
+        )
+        self.assertEqual(
+            validated["native_failure_diagnostic"]["traceback_origin"],
+            classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
         )
 
 
