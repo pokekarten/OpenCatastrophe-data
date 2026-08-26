@@ -70,6 +70,35 @@ class OQ313RisklibAssetFunctionDiscriminatorTests(unittest.TestCase):
             classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
         )
 
+    def test_multiline_exception_text_cannot_forge_traceback_tokens(self) -> None:
+        tails = (
+            (
+                b"Traceback (most recent call last):\n"
+                b'  File "/tmp/provider.py", line 10, in real_func\n'
+                b"AttributeError: attacker-controlled first line\n"
+                b'  File "/oq-engine/openquake/risklib/asset.py", line 900, in build_asset_array\n'
+                b"AttributeError: attacker-controlled final line\n"
+            ),
+            (
+                b"Traceback (most recent call last):\n"
+                b'  File "/tmp/provider.py", line 10, in real_func\n'
+                b"AttributeError: attacker-controlled first line\n"
+                b"Traceback (most recent call last):\n"
+                b'  File "/oq-engine/openquake/risklib/asset.py", line 900, in build_asset_array\n'
+                b"AttributeError: attacker-controlled final line\n"
+            ),
+        )
+        for tail in tails:
+            with self.subTest(tail=tail):
+                self.assertEqual(
+                    classifier.classify_terminal_exception(tail),
+                    classifier.UNCLASSIFIED_EXCEPTION_CLASS,
+                )
+                self.assertEqual(
+                    classifier.classify_traceback_origin(tail),
+                    classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
+                )
+
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()
