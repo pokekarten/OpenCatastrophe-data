@@ -40,6 +40,7 @@ def _blocked_document(*, failure_code: str, exit_code: int) -> dict[str, object]
             "sha256": hashlib.sha256(b"").hexdigest(),
             "content_exposed": False,
             "exception_class": classifier.UNCLASSIFIED_EXCEPTION_CLASS,
+            "traceback_origin": classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
         },
     }
     for field in action._AUTHORITY_FALSE_FIELDS:
@@ -62,6 +63,10 @@ class OQ313TimeoutProvenanceTests(unittest.TestCase):
         self.assertEqual(
             validated["native_failure_diagnostic"]["exception_class"],
             classifier.UNCLASSIFIED_EXCEPTION_CLASS,
+        )
+        self.assertEqual(
+            validated["native_failure_diagnostic"]["traceback_origin"],
+            classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
         )
         for field in action._AUTHORITY_FALSE_FIELDS:
             self.assertIs(validated[field], False)

@@ -41,6 +41,7 @@ class OQ313NativeCleanupNonblockingTests(unittest.TestCase):
                 "sha256": hashlib.sha256(frozen).hexdigest(),
                 "content_exposed": False,
                 "exception_class": classifier.UNCLASSIFIED_EXCEPTION_CLASS,
+                "traceback_origin": classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
             },
         )
 

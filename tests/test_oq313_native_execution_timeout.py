@@ -76,6 +76,7 @@ class OQ313NativeExecutionTimeoutTests(unittest.TestCase):
                 "sha256": hashlib.sha256(secret).hexdigest(),
                 "content_exposed": False,
                 "exception_class": classifier.UNCLASSIFIED_EXCEPTION_CLASS,
+                "traceback_origin": classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
             },
         )
 
@@ -113,6 +114,7 @@ class OQ313NativeExecutionTimeoutTests(unittest.TestCase):
             "sha256": hashlib.sha256(b"").hexdigest(),
             "content_exposed": False,
             "exception_class": classifier.UNCLASSIFIED_EXCEPTION_CLASS,
+            "traceback_origin": classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
         }
         returncode = subject._NativeExitCode(
             subject.NATIVE_TIMEOUT_EXIT_CODE,
