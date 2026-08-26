@@ -59,6 +59,10 @@ def classify_terminal_exception(stderr_tail: bytes) -> str:
         return UNCLASSIFIED_EXCEPTION_CLASS
     if len(stderr_tail) > MAX_STDERR_CLASSIFIER_TAIL_BYTES:
         return UNCLASSIFIED_EXCEPTION_CLASS
+    try:
+        stderr_tail.decode("utf-8", errors="strict")
+    except UnicodeDecodeError:
+        return UNCLASSIFIED_EXCEPTION_CLASS
 
     lines = stderr_tail.splitlines()
     nonempty = [(index, line.strip()) for index, line in enumerate(lines) if line.strip()]
