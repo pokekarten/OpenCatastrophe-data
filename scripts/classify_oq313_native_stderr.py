@@ -20,12 +20,12 @@ UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS = "unclassified.multiple_traceback_heade
 UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_ORIGIN_PREFIX = (
     "unclassified.multiple_traceback_headers.first_origin"
 )
+UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_FRAME_ORIGIN_PREFIX = (
+    "unclassified.multiple_traceback_headers.first_segment_frame_origin"
+)
 UNCLASSIFIED_TRACEBACK_TERMINAL_SHAPE = "unclassified.terminal_shape"
 UNCLASSIFIED_TRACEBACK_MULTILINE_EXCEPTION = "unclassified.multiline_exception"
 
-# Keep this finite and conservative. ``InvalidFile`` is defined by the pinned
-# OpenQuake 3.13 source in ``openquake.baselib``; the remaining entries are
-# standard Python exception classes commonly used at runtime/input boundaries.
 ALLOWED_EXCEPTION_CLASSES = frozenset(
     {
         "AssertionError",
@@ -53,8 +53,6 @@ PUBLIC_EXCEPTION_CLASS_TOKENS = ALLOWED_EXCEPTION_CLASSES | {
     UNCLASSIFIED_EXCEPTION_CLASS
 }
 
-# The pinned OQ3.13 commit contains exactly these public Python modules directly
-# under ``openquake/risklib`` (excluding package ``__init__.py`` and tests/data).
 ALLOWED_RISKLIB_TRACEBACK_MODULES = frozenset(
     {
         "openquake.risklib.asset",
@@ -66,11 +64,6 @@ ALLOWED_RISKLIB_TRACEBACK_MODULES = frozenset(
     }
 )
 
-# Only names statically present at the pinned OQ3.13 asset.py source are eligible
-# for the extra discriminator. Common dunder names are deliberately excluded
-# because a traceback does not carry the owning class, so they would not provide
-# an unambiguous source-level discriminator. The public token remains finite and
-# never contains caller/provider-controlled text.
 ALLOWED_RISKLIB_ASSET_TRACEBACK_FUNCTIONS = frozenset(
     {
         "_add_asset",
@@ -117,11 +110,6 @@ ALLOWED_RISKLIB_ASSET_TRACEBACK_TOKENS = frozenset(
     for name in ALLOWED_RISKLIB_ASSET_TRACEBACK_FUNCTIONS
 )
 
-# Traceback-origin tokens expose only a fixed package boundary, except for the
-# direct risklib module set above and the finite asset.py source discriminator.
-# When strict terminal-context validation rejects an otherwise canonical traceback,
-# a finite refined ``unclassified.*`` sentinel may expose only which structural gate
-# rejected it. Non-traceback stderr stays at the generic sentinel.
 UNCLASSIFIED_TRACEBACK_CONTEXT_TOKENS = frozenset(
     {
         UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS,
@@ -148,10 +136,15 @@ UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_ORIGIN_TOKENS = frozenset(
     f"{UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_ORIGIN_PREFIX}.{origin}"
     for origin in ALLOWED_TRACEBACK_ORIGINS
 )
+UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_FRAME_ORIGIN_TOKENS = frozenset(
+    f"{UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_FRAME_ORIGIN_PREFIX}.{origin}"
+    for origin in ALLOWED_TRACEBACK_ORIGINS
+)
 PUBLIC_TRACEBACK_ORIGIN_TOKENS = (
     ALLOWED_TRACEBACK_ORIGINS
     | UNCLASSIFIED_TRACEBACK_CONTEXT_TOKENS
     | UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_ORIGIN_TOKENS
+    | UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_FRAME_ORIGIN_TOKENS
     | {UNCLASSIFIED_TRACEBACK_ORIGIN}
 )
 
@@ -188,10 +181,6 @@ def _terminal_context(lines: list[bytes]) -> tuple[int, bytes] | None:
         return None
     terminal_index, terminal_line = nonempty[-1]
 
-    # Fail closed unless this is one bounded canonical traceback segment. A Python
-    # exception message may contain embedded newlines, including text that looks
-    # exactly like another traceback header or frame. Multiple headers are therefore
-    # ambiguous and never promoted to a final/root traceback origin by this helper.
     header_indexes = [
         index
         for index, line in enumerate(lines[:terminal_index])
@@ -207,10 +196,6 @@ def _terminal_context(lines: list[bytes]) -> tuple[int, bytes] | None:
     if _TERMINAL_CLASS_RE.fullmatch(terminal_line) is None:
         return None
 
-    # The first rendered exception line terminates the traceback-frame region.
-    # If another class-like unindented line appears before the chosen terminal,
-    # the remaining text can be a multiline exception message. Do not let any
-    # frame-looking message continuation override the real final Python frame.
     for line in lines[header_index + 1 : terminal_index]:
         stripped = line.strip()
         if not stripped or line != line.lstrip() or b":" not in stripped:
@@ -222,15 +207,7 @@ def _terminal_context(lines: list[bytes]) -> tuple[int, bytes] | None:
 
 
 def _first_traceback_origin_from_multiple_headers(lines: list[bytes]) -> str | None:
-    """Return only the first real traceback origin from an ambiguous multi-header tail.
-
-    Later traceback-looking text can be injected through a multiline exception message,
-    so it is never trusted here. The first rendered traceback segment precedes that
-    message boundary. We require exact, unindented Python traceback headers and stop at
-    the first unindented class-shaped exception line before the second exact header.
-    The result is explicitly labelled ``first_origin`` and never claims to be the
-    terminal/root exception origin.
-    """
+    """Return only the first real traceback origin from an ambiguous multi-header tail."""
 
     exact_headers = [
         index for index, line in enumerate(lines) if line == _TRACEBACK_HEADER
@@ -251,13 +228,74 @@ def _first_traceback_origin_from_multiple_headers(lines: list[bytes]) -> str | N
     if terminal_index is None:
         return None
 
-    # Reuse the already fail-closed single-traceback classifier on only the first
-    # segment. This recursion terminates because the synthetic segment has one header.
     segment = b"\n".join(lines[first_header : terminal_index + 1]) + b"\n"
     origin = classify_traceback_origin(segment)
     if origin not in ALLOWED_TRACEBACK_ORIGINS:
         return None
     return origin
+
+
+def _origin_from_frame(path: bytes, function_bytes: bytes | None) -> str | None:
+    """Map one canonical frame to an existing finite frozen-OQ origin token."""
+
+    risklib_path = _FROZEN_RISKLIB_MODULE_PATH_RE.fullmatch(path)
+    if risklib_path is not None:
+        try:
+            module = risklib_path.group(1).decode("ascii", errors="strict")
+        except UnicodeDecodeError:
+            return None
+        candidate = f"openquake.risklib.{module}"
+        if candidate not in ALLOWED_RISKLIB_TRACEBACK_MODULES:
+            return None
+        if candidate == "openquake.risklib.asset" and function_bytes is not None:
+            try:
+                function_name = function_bytes.decode("ascii", errors="strict")
+            except UnicodeDecodeError:
+                return candidate
+            refined = f"{candidate}.{function_name}"
+            if refined in ALLOWED_RISKLIB_ASSET_TRACEBACK_TOKENS:
+                return refined
+        return candidate
+
+    oq_path = _FROZEN_OQ_PATH_RE.fullmatch(path)
+    if oq_path is None:
+        return None
+    try:
+        package = oq_path.group(1).decode("ascii", errors="strict")
+    except UnicodeDecodeError:
+        return None
+    candidate = f"openquake.{package}"
+    if candidate not in ALLOWED_TRACEBACK_ORIGINS:
+        return None
+    return candidate
+
+
+def _first_segment_frame_origin_from_multiple_headers(lines: list[bytes]) -> str | None:
+    """Return only a labelled frame candidate from the first exact-header segment.
+
+    This evidence is deliberately weaker than ``first_origin``. A segment without a
+    terminal exception class is not promoted to a real traceback. We expose only the
+    finite frozen-OQ origin of its last canonical frame, and the caller labels the token
+    ``first_segment_frame_origin`` so it cannot be confused with terminal/root origin.
+    """
+
+    exact_headers = [
+        index for index, line in enumerate(lines) if line == _TRACEBACK_HEADER
+    ]
+    if len(exact_headers) < 2:
+        return None
+    first_header, second_header = exact_headers[0], exact_headers[1]
+    frame_like_lines = [
+        line
+        for line in lines[first_header + 1 : second_header]
+        if line.lstrip().startswith(b'File "')
+    ]
+    if not frame_like_lines:
+        return None
+    final_frame = _TRACEBACK_FRAME_RE.fullmatch(frame_like_lines[-1])
+    if final_frame is None:
+        return None
+    return _origin_from_frame(final_frame.group(1), final_frame.group(2))
 
 
 def _terminal_context_rejection_token(lines: list[bytes]) -> str:
@@ -284,6 +322,12 @@ def _terminal_context_rejection_token(lines: list[bytes]) -> str:
                 f"{UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_ORIGIN_PREFIX}."
                 f"{first_origin}"
             )
+        first_segment_frame_origin = _first_segment_frame_origin_from_multiple_headers(lines)
+        if first_segment_frame_origin is not None:
+            return (
+                f"{UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_FRAME_ORIGIN_PREFIX}."
+                f"{first_segment_frame_origin}"
+            )
         return UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS
     header_index = header_indexes[0]
 
@@ -300,8 +344,6 @@ def _terminal_context_rejection_token(lines: list[bytes]) -> str:
         if _TERMINAL_CLASS_RE.fullmatch(stripped) is not None:
             return UNCLASSIFIED_TRACEBACK_MULTILINE_EXCEPTION
 
-    # Keep the generic fail-closed sentinel if this helper and the authoritative
-    # terminal-context predicate ever disagree after a future code change.
     return UNCLASSIFIED_TRACEBACK_ORIGIN
 
 
@@ -353,17 +395,7 @@ def classify_terminal_exception(stderr_tail: bytes) -> str:
 
 
 def classify_traceback_origin(stderr_tail: bytes) -> str:
-    """Return only the final allow-listed frozen-OQ package/module discriminator.
-
-    Direct ``openquake.risklib`` Python frames use one of six finite module tokens.
-    For the exact pinned ``openquake/risklib/asset.py`` frame only, a statically
-    allow-listed function name may further refine that token. If strict terminal
-    context rejects an otherwise canonical traceback, a finite ``unclassified.*``
-    structural reason may replace the generic sentinel. For ambiguous multi-header
-    tails, only a labelled first-traceback origin may be exposed; it is never treated
-    as the terminal/root origin. No path, line number, arbitrary function name or
-    message is returned.
-    """
+    """Return only a finite frozen-OQ traceback/structural-origin discriminator."""
 
     lines = _validated_lines(stderr_tail)
     if lines is None:
@@ -376,35 +408,7 @@ def classify_traceback_origin(stderr_tail: bytes) -> str:
     frame = _final_traceback_frame(lines, terminal_index)
     if frame is None:
         return UNCLASSIFIED_TRACEBACK_ORIGIN
-    path, function_bytes = frame
-
-    risklib_path = _FROZEN_RISKLIB_MODULE_PATH_RE.fullmatch(path)
-    if risklib_path is not None:
-        try:
-            module = risklib_path.group(1).decode("ascii", errors="strict")
-        except UnicodeDecodeError:
-            return UNCLASSIFIED_TRACEBACK_ORIGIN
-        candidate = f"openquake.risklib.{module}"
-        if candidate not in ALLOWED_RISKLIB_TRACEBACK_MODULES:
-            return UNCLASSIFIED_TRACEBACK_ORIGIN
-        if candidate == "openquake.risklib.asset" and function_bytes is not None:
-            try:
-                function_name = function_bytes.decode("ascii", errors="strict")
-            except UnicodeDecodeError:
-                return candidate
-            refined = f"{candidate}.{function_name}"
-            if refined in ALLOWED_RISKLIB_ASSET_TRACEBACK_TOKENS:
-                return refined
-        return candidate
-
-    oq_path = _FROZEN_OQ_PATH_RE.fullmatch(path)
-    if oq_path is None:
+    origin = _origin_from_frame(frame[0], frame[1])
+    if origin is None:
         return UNCLASSIFIED_TRACEBACK_ORIGIN
-    try:
-        package = oq_path.group(1).decode("ascii", errors="strict")
-    except UnicodeDecodeError:
-        return UNCLASSIFIED_TRACEBACK_ORIGIN
-    candidate = f"openquake.{package}"
-    if candidate not in ALLOWED_TRACEBACK_ORIGINS:
-        return UNCLASSIFIED_TRACEBACK_ORIGIN
-    return candidate
+    return origin
