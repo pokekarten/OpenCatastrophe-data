@@ -39,6 +39,10 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
             subject.classify_traceback_origin(tail),
             subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
         )
+        self.assertEqual(
+            subject.classify_risklib_traceback_module(tail),
+            subject.UNCLASSIFIED_TRACEBACK_MODULE,
+        )
 
     def test_unallowlisted_class_is_unclassified(self) -> None:
         tail = (
@@ -63,6 +67,10 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
             subject.classify_traceback_origin(tail),
             subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
         )
+        self.assertEqual(
+            subject.classify_risklib_traceback_module(tail),
+            subject.UNCLASSIFIED_TRACEBACK_MODULE,
+        )
 
     def test_non_utf8_interior_with_valid_terminal_is_unclassified(self) -> None:
         tail = (
@@ -80,6 +88,10 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
             subject.classify_traceback_origin(tail),
             subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
         )
+        self.assertEqual(
+            subject.classify_risklib_traceback_module(tail),
+            subject.UNCLASSIFIED_TRACEBACK_MODULE,
+        )
 
     def test_oversized_tail_fails_closed(self) -> None:
         tail = (
@@ -95,6 +107,10 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
         self.assertEqual(
             subject.classify_traceback_origin(tail),
             subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
+        )
+        self.assertEqual(
+            subject.classify_risklib_traceback_module(tail),
+            subject.UNCLASSIFIED_TRACEBACK_MODULE,
         )
 
     def test_traceback_origin_returns_only_final_allowlisted_oq_package(self) -> None:
@@ -122,6 +138,10 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
             subject.classify_traceback_origin(tail),
             subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
         )
+        self.assertEqual(
+            subject.classify_risklib_traceback_module(tail),
+            subject.UNCLASSIFIED_TRACEBACK_MODULE,
+        )
 
     def test_traceback_origin_does_not_expose_filename_function_or_line(self) -> None:
         tail = (
@@ -135,6 +155,10 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
         self.assertNotIn("event_based_risk", origin)
         self.assertNotIn("secret_func", origin)
         self.assertNotIn("123", origin)
+        self.assertEqual(
+            subject.classify_risklib_traceback_module(tail),
+            subject.UNCLASSIFIED_TRACEBACK_MODULE,
+        )
 
     def test_traceback_origin_outside_frozen_oq_tree_is_unclassified(self) -> None:
         tail = (
@@ -160,6 +184,55 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
             subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
         )
 
+    def test_risklib_module_returns_only_final_allowlisted_module(self) -> None:
+        tail = (
+            b"Traceback (most recent call last):\n"
+            b'  File "/oq-engine/openquake/risklib/scientific.py", line 7, in helper\n'
+            b'  File "/oq-engine/openquake/risklib/riskmodels.py", line 20, in hidden_func\n'
+            b"AttributeError: hidden provider-dependent message\n"
+        )
+
+        module = subject.classify_risklib_traceback_module(tail)
+        self.assertEqual(module, "openquake.risklib.riskmodels")
+        self.assertNotIn("hidden_func", module)
+        self.assertNotIn("20", module)
+
+    def test_risklib_module_unlisted_risklib_file_is_unclassified(self) -> None:
+        tail = (
+            b"Traceback (most recent call last):\n"
+            b'  File "/oq-engine/openquake/risklib/providersecret.py", line 1, in hidden\n'
+            b"AttributeError: hidden\n"
+        )
+
+        self.assertEqual(
+            subject.classify_risklib_traceback_module(tail),
+            subject.UNCLASSIFIED_TRACEBACK_MODULE,
+        )
+
+    def test_risklib_module_nested_path_is_unclassified(self) -> None:
+        tail = (
+            b"Traceback (most recent call last):\n"
+            b'  File "/oq-engine/openquake/risklib/tests/riskmodels_test.py", line 1, in hidden\n'
+            b"AttributeError: hidden\n"
+        )
+
+        self.assertEqual(
+            subject.classify_risklib_traceback_module(tail),
+            subject.UNCLASSIFIED_TRACEBACK_MODULE,
+        )
+
+    def test_risklib_module_init_is_unclassified(self) -> None:
+        tail = (
+            b"Traceback (most recent call last):\n"
+            b'  File "/oq-engine/openquake/risklib/__init__.py", line 1, in hidden\n'
+            b"AttributeError: hidden\n"
+        )
+
+        self.assertEqual(
+            subject.classify_risklib_traceback_module(tail),
+            subject.UNCLASSIFIED_TRACEBACK_MODULE,
+        )
+
     def test_public_token_sets_are_closed(self) -> None:
         self.assertIn("ValueError", subject.PUBLIC_EXCEPTION_CLASS_TOKENS)
         self.assertIn("InvalidFile", subject.PUBLIC_EXCEPTION_CLASS_TOKENS)
@@ -170,6 +243,11 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
         self.assertIn("openquake.calculators", subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS)
         self.assertIn(subject.UNCLASSIFIED_TRACEBACK_ORIGIN, subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS)
         self.assertNotIn("openquake.providersecret", subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS)
+
+        self.assertIn("openquake.risklib.asset", subject.PUBLIC_TRACEBACK_MODULE_TOKENS)
+        self.assertIn("openquake.risklib.riskmodels", subject.PUBLIC_TRACEBACK_MODULE_TOKENS)
+        self.assertIn(subject.UNCLASSIFIED_TRACEBACK_MODULE, subject.PUBLIC_TRACEBACK_MODULE_TOKENS)
+        self.assertNotIn("openquake.risklib.providersecret", subject.PUBLIC_TRACEBACK_MODULE_TOKENS)
 
 
 if __name__ == "__main__":  # pragma: no cover
