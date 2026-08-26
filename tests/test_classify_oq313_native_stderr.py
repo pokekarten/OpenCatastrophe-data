@@ -26,7 +26,7 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
         )
         self.assertEqual(subject.classify_terminal_exception(tail), "InvalidFile")
 
-    def test_message_without_canonical_traceback_has_bounded_no_header_reason(self) -> None:
+    def test_message_without_canonical_traceback_is_unclassified(self) -> None:
         tail = b"ValueError: forged-looking terminal text\n"
         self.assertEqual(
             subject.classify_terminal_exception(tail),
@@ -34,7 +34,7 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
         )
         self.assertEqual(
             subject.classify_traceback_origin(tail),
-            subject.UNCLASSIFIED_TRACEBACK_NO_HEADER,
+            subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
         )
 
     def test_unallowlisted_class_is_unclassified(self) -> None:
