@@ -1,0 +1,183 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Greece Source CSV Receipts
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-greece-source-csv-receipts-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main Greece source receipt request
+    if: >-
+      github.event.issue.number == 285 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-greece-source-csv-receipts-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_GREECE_SOURCE_RECEIPT_REQUEST: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.run_esrm20_greece_source_csv_receipts_action \
+            --comment-body-env OC_GREECE_SOURCE_RECEIPT_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-receipts:
+    name: Execute bounded Greece source CSV receipts
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prove complete issue-local dedup before provider access
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import run_esrm20_greece_source_csv_receipts_action as subject
+
+          skip = subject.has_terminal_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+
+      - name: Run exact frozen Greece source CSV receipt worker
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_GREECE_SOURCE_RECEIPT_REQUEST: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/greece-source-receipts.json
+        run: |
+          set -euo pipefail
+          python -m scripts.run_esrm20_greece_source_csv_receipts_action \
+            --comment-body-env OC_GREECE_SOURCE_RECEIPT_REQUEST \
+            --expected-issue 285 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+
+      - name: Export bounded result to publisher
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        env:
+          RESULT_PATH: ${{ runner.temp }}/greece-source-receipts.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-receipts:
+    name: Publish bounded Greece source CSV receipt evidence
+    needs: [validate-request, execute-receipts]
+    if: >-
+      needs.execute-receipts.result == 'success' &&
+      needs.execute-receipts.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Re-fence trusted main and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-receipts.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-greece-source-csv-receipts-result-v1 -->"
+        run: |
+          set -euo pipefail
+          LATEST_SHA="$(gh api "repos/$GITHUB_REPOSITORY/commits/$DEFAULT_BRANCH" --jq '.sha')"
+          test "$LATEST_SHA" = "$EXECUTION_SHA"
+
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-greece-source-csv-receipts-result-v1" and
+            .action == "esrm20_greece_source_csv_receipts" and
+            .source_issue == 285 and
+            .parent_consumer_issue == 287 and
+            .dataset_id == "efehr.esrm20.european-exposure-model.v1.0" and
+            .target_sha == $sha and
+            .execution_sha == $sha and
+            .project_id == 186 and
+            .project_path == "efehr/esrm20_exposure" and
+            .release_tag == "v1.0" and
+            .commit_sha == "900433ada80fbb424c0976c34d72eeef97bab1af" and
+            (.status == "pass" or (.status == "blocked" and .failure_class == "acquisition_failure" and .receipts == null)) and
+            .provider_file_content_profiled == false and
+            .source_runtime_lineage_verified == false and
+            .replacement_cost_semantics_verified == false and
+            .taxonomy_semantics_verified == false and
+            .crs_semantics_verified == false and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and
+            .model_use_authorized == false
+          ' >/dev/null
+
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/greece-source-receipts-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/285/comments" \
+            --input "$RUNNER_TEMP/greece-source-receipts-comment.json"
