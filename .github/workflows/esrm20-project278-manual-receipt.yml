@@ -1,0 +1,214 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Project-278 Manual Receipt
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-project278-manual-receipt-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main manual receipt request
+    if: >-
+      github.event.issue.number == 291 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-project278-manual-receipt-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_MANUAL_REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.run_esrm20_project278_manual_receipt_action \
+            --comment-body-env OC_MANUAL_REQUEST_BODY \
+            --expected-issue 291 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-manual-receipt:
+    name: Execute bounded project-278 manual receipt
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prove complete issue-local dedup before provider access
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import run_esrm20_project278_manual_receipt_action as subject
+
+          skip = subject.has_terminal_manual_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+
+      - name: Run exact frozen project-278 manual receipt worker
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_MANUAL_REQUEST_BODY: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/project278-manual-result.json
+        run: |
+          set -euo pipefail
+          python -m scripts.run_esrm20_project278_manual_receipt_action \
+            --comment-body-env OC_MANUAL_REQUEST_BODY \
+            --expected-issue 291 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          target = os.environ["EXECUTION_SHA"]
+          false_fields = (
+              "pdf_content_interpreted",
+              "crs_coordinate_semantics_verified",
+              "generator_invocation_verified",
+              "missingness_semantics_verified",
+              "site_model_compatibility_verified",
+              "external_bytes_persisted",
+              "publication_authorized",
+              "model_use_authorized",
+          )
+          if result.get("status") not in {"pass", "blocked"}:
+              raise SystemExit("manual receipt result has invalid status")
+          if result.get("execution_sha") != target or result.get("target_sha") != target:
+              raise SystemExit("manual receipt result failed SHA fence")
+          if any(result.get(field) is not False for field in false_fields):
+              raise SystemExit("manual receipt result widened authority")
+          if result.get("status") == "blocked" and (
+              result.get("failure_class") != "acquisition_failure"
+              or result.get("receipt") is not None
+          ):
+              raise SystemExit("blocked manual receipt is not safely bounded")
+          PY
+
+      - name: Export bounded result to publisher
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        env:
+          RESULT_PATH: ${{ runner.temp }}/project278-manual-result.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-manual-receipt:
+    name: Publish bounded project-278 manual receipt evidence
+    needs: [validate-request, execute-manual-receipt]
+    if: >-
+      needs.execute-manual-receipt.result == 'success' &&
+      needs.execute-manual-receipt.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Re-fence trusted main and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-manual-receipt.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-project278-manual-receipt-result-v1 -->"
+        run: |
+          set -euo pipefail
+          LATEST_SHA="$(gh api "repos/$GITHUB_REPOSITORY/commits/$DEFAULT_BRANCH" --jq '.sha')"
+          test "$LATEST_SHA" = "$EXECUTION_SHA"
+
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-project278-manual-receipt-result-v1" and
+            .action == "esrm20_project278_manual_receipt" and
+            .source_issue == 291 and
+            .dataset_id == "efehr.esrm20.sitemodel-source" and
+            .target_sha == $sha and
+            .execution_sha == $sha and
+            .manual_identity.project_id == 278 and
+            .manual_identity.project_path == "efehr/esrm20_sitemodel" and
+            .manual_identity.commit_sha == "038c91d2bf5a07f6b54ff51639aad874d6837ea9" and
+            .manual_identity.repository_path == "ExposureReadme.pdf" and
+            .manual_identity.worker_operation_id == "esrm20-project278-exposure-manual-receipt-v1" and
+            (.status == "pass" or (.status == "blocked" and .failure_class == "acquisition_failure" and .receipt == null)) and
+            .pdf_content_interpreted == false and
+            .crs_coordinate_semantics_verified == false and
+            .generator_invocation_verified == false and
+            .missingness_semantics_verified == false and
+            .site_model_compatibility_verified == false and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and
+            .model_use_authorized == false
+          ' >/dev/null
+
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/project278-manual-comment.json"
+          gh api \
+            --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/291/comments" \
+            --input "$RUNNER_TEMP/project278-manual-comment.json"
