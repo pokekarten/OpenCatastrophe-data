@@ -165,11 +165,38 @@ def _terminal_context(lines: list[bytes]) -> tuple[int, bytes] | None:
     if not nonempty:
         return None
     terminal_index, terminal_line = nonempty[-1]
-    if not any(
-        index < terminal_index and line.strip() == _TRACEBACK_HEADER
-        for index, line in enumerate(lines)
-    ):
+
+    # Fail closed unless this is one bounded canonical traceback segment. A Python
+    # exception message may contain embedded newlines, including text that looks
+    # exactly like another traceback header or frame. Multiple headers are therefore
+    # ambiguous without parsing Python's full exception-chain grammar and cannot be
+    # used as bounded public diagnostic evidence here.
+    header_indexes = [
+        index
+        for index, line in enumerate(lines[:terminal_index])
+        if line.strip() == _TRACEBACK_HEADER
+    ]
+    if len(header_indexes) != 1:
         return None
+    header_index = header_indexes[0]
+
+    terminal_raw = lines[terminal_index]
+    if terminal_raw != terminal_raw.lstrip():
+        return None
+    if _TERMINAL_CLASS_RE.fullmatch(terminal_line) is None:
+        return None
+
+    # The first rendered exception line terminates the traceback-frame region.
+    # If another class-like unindented line appears before the chosen terminal,
+    # the remaining text can be a multiline exception message. Do not let any
+    # frame-looking message continuation override the real final Python frame.
+    for line in lines[header_index + 1 : terminal_index]:
+        stripped = line.strip()
+        if not stripped or line != line.lstrip() or b":" not in stripped:
+            continue
+        if _TERMINAL_CLASS_RE.fullmatch(stripped) is not None:
+            return None
+
     return terminal_index, terminal_line
 
 
