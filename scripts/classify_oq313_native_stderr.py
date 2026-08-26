@@ -16,7 +16,6 @@ import re
 MAX_STDERR_CLASSIFIER_TAIL_BYTES = 64 * 1024
 UNCLASSIFIED_EXCEPTION_CLASS = "unclassified"
 UNCLASSIFIED_TRACEBACK_ORIGIN = "unclassified"
-UNCLASSIFIED_TRACEBACK_NO_HEADER = "unclassified.no_traceback_header"
 UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS = "unclassified.multiple_traceback_headers"
 UNCLASSIFIED_TRACEBACK_TERMINAL_SHAPE = "unclassified.terminal_shape"
 UNCLASSIFIED_TRACEBACK_MULTILINE_EXCEPTION = "unclassified.multiline_exception"
@@ -117,12 +116,11 @@ ALLOWED_RISKLIB_ASSET_TRACEBACK_TOKENS = frozenset(
 
 # Traceback-origin tokens expose only a fixed package boundary, except for the
 # direct risklib module set above and the finite asset.py source discriminator.
-# When strict terminal-context validation rejects a traceback, a finite refined
-# ``unclassified.*`` sentinel may expose only which structural gate rejected it.
-# No source text or caller/provider-controlled value enters those sentinels.
+# When strict terminal-context validation rejects an otherwise canonical traceback,
+# a finite refined ``unclassified.*`` sentinel may expose only which structural gate
+# rejected it. Non-traceback stderr stays at the generic sentinel.
 UNCLASSIFIED_TRACEBACK_CONTEXT_TOKENS = frozenset(
     {
-        UNCLASSIFIED_TRACEBACK_NO_HEADER,
         UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS,
         UNCLASSIFIED_TRACEBACK_TERMINAL_SHAPE,
         UNCLASSIFIED_TRACEBACK_MULTILINE_EXCEPTION,
@@ -217,13 +215,13 @@ def _terminal_context(lines: list[bytes]) -> tuple[int, bytes] | None:
 
 
 def _terminal_context_rejection_token(lines: list[bytes]) -> str:
-    """Return only a finite structural reason for terminal-context rejection."""
+    """Return only a finite structural reason for canonical-context rejection."""
 
     nonempty = [
         (index, line.strip()) for index, line in enumerate(lines) if line.strip()
     ]
     if not nonempty:
-        return UNCLASSIFIED_TRACEBACK_TERMINAL_SHAPE
+        return UNCLASSIFIED_TRACEBACK_ORIGIN
     terminal_index, terminal_line = nonempty[-1]
 
     header_indexes = [
@@ -232,7 +230,7 @@ def _terminal_context_rejection_token(lines: list[bytes]) -> str:
         if line.strip() == _TRACEBACK_HEADER
     ]
     if not header_indexes:
-        return UNCLASSIFIED_TRACEBACK_NO_HEADER
+        return UNCLASSIFIED_TRACEBACK_ORIGIN
     if len(header_indexes) != 1:
         return UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS
     header_index = header_indexes[0]
@@ -308,9 +306,9 @@ def classify_traceback_origin(stderr_tail: bytes) -> str:
     Direct ``openquake.risklib`` Python frames use one of six finite module tokens.
     For the exact pinned ``openquake/risklib/asset.py`` frame only, a statically
     allow-listed function name may further refine that token. If strict terminal
-    context is rejected, a finite ``unclassified.*`` structural reason may replace
-    the generic sentinel. No path, line number, arbitrary function name or message
-    is returned.
+    context rejects an otherwise canonical traceback, a finite ``unclassified.*``
+    structural reason may replace the generic sentinel. No path, line number,
+    arbitrary function name or message is returned.
     """
 
     lines = _validated_lines(stderr_tail)
