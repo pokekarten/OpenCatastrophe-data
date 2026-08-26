@@ -56,6 +56,19 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
             subject.UNCLASSIFIED_EXCEPTION_CLASS,
         )
 
+    def test_non_utf8_interior_with_valid_terminal_is_unclassified(self) -> None:
+        tail = (
+            b"Traceback (most recent call last):\n"
+            b'  File "x", line 1, in <module>\n'
+            b"\xff\xfe invalid frame detail\n"
+            b"ValueError: hidden\n"
+        )
+
+        self.assertEqual(
+            subject.classify_terminal_exception(tail),
+            subject.UNCLASSIFIED_EXCEPTION_CLASS,
+        )
+
     def test_oversized_tail_fails_closed(self) -> None:
         tail = (
             b"x" * subject.MAX_STDERR_CLASSIFIER_TAIL_BYTES
