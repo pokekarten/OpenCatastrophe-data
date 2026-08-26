@@ -10,6 +10,7 @@ import sys
 import unittest
 from unittest import mock
 
+from scripts import classify_oq313_native_stderr as classifier
 from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313 as subject
 
 
@@ -39,6 +40,7 @@ class OQ313NativeFailureDiagnosticsTests(unittest.TestCase):
                 "byte_count": len(secret),
                 "sha256": hashlib.sha256(secret).hexdigest(),
                 "content_exposed": False,
+                "exception_class": classifier.UNCLASSIFIED_EXCEPTION_CLASS,
             },
         )
         self.assertNotIn("secret-value", json.dumps(diagnostic))
@@ -64,7 +66,14 @@ class OQ313NativeFailureDiagnosticsTests(unittest.TestCase):
         self.assertEqual(diagnostic["byte_count"], len(expected))
         self.assertEqual(diagnostic["sha256"], hashlib.sha256(expected).hexdigest())
         self.assertIs(diagnostic["content_exposed"], False)
-        self.assertEqual(set(diagnostic), {"byte_count", "sha256", "content_exposed"})
+        self.assertEqual(
+            diagnostic["exception_class"],
+            classifier.UNCLASSIFIED_EXCEPTION_CLASS,
+        )
+        self.assertEqual(
+            set(diagnostic),
+            {"byte_count", "sha256", "content_exposed", "exception_class"},
+        )
 
     def test_success_keeps_existing_result_shape_without_failure_diagnostic(self) -> None:
         command = [
@@ -132,6 +141,7 @@ class OQ313NativeFailureDiagnosticsTests(unittest.TestCase):
                 "byte_count": 4,
                 "sha256": hashlib.sha256(b"boom").hexdigest(),
                 "content_exposed": False,
+                "exception_class": classifier.UNCLASSIFIED_EXCEPTION_CLASS,
             },
         )
         with (
@@ -154,6 +164,7 @@ class OQ313NativeFailureDiagnosticsTests(unittest.TestCase):
                 "byte_count": 4,
                 "sha256": hashlib.sha256(b"boom").hexdigest(),
                 "content_exposed": False,
+                "exception_class": classifier.UNCLASSIFIED_EXCEPTION_CLASS,
             },
         )
         self.assertNotIn("boom", payload.decode("utf-8"))
