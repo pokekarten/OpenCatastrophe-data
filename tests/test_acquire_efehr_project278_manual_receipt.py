@@ -181,7 +181,7 @@ class Project278ManualReceiptTests(unittest.TestCase):
             )
 
         empty = FakeResponse(b"", url, headers={})
-        with self.assertRaisesRegex(EfehrAcquisitionError, "empty object"):
+        with self.assertRaisesRegex(EfehrAcquisitionError, "artifact receipt failed"):
             subject._acquire_for_test(
                 opener=lambda request, timeout: empty,
                 now=lambda: RETRIEVED_AT,
