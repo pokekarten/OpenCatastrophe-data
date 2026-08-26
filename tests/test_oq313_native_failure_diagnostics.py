@@ -109,7 +109,7 @@ class OQ313NativeFailureDiagnosticsTests(unittest.TestCase):
 
         diagnostic = getattr(returncode, "diagnostic")
         self.assertEqual(diagnostic["exception_class"], "AttributeError")
-        self.assertEqual(diagnostic["traceback_origin"], "openquake.risklib")
+        self.assertEqual(diagnostic["traceback_origin"], "openquake.risklib.riskmodels")
         serialized = json.dumps(diagnostic)
         self.assertNotIn("riskmodels.py", serialized)
         self.assertNotIn("secret-message", serialized)
