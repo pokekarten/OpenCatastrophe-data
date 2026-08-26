@@ -33,6 +33,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts import build_esrm20_kosovo_residential_ebrisk_config as config_builder
+from scripts import classify_oq313_native_stderr as stderr_classifier
 from scripts import project_oq313_risk_by_event_receipt as risk_receipt
 
 SCHEMA_VERSION = "oc-esrm20-kosovo-residential-oq313-run-adapter-v1"
@@ -483,10 +484,34 @@ def _stderr_diagnostic_snapshot(stderr_file: Any) -> dict[str, object]:
         digest.update(chunk)
         offset += len(chunk)
 
+    tail_size = min(
+        snapshot_size,
+        stderr_classifier.MAX_STDERR_CLASSIFIER_TAIL_BYTES,
+    )
+    if tail_size:
+        try:
+            stderr_tail = os.pread(descriptor, tail_size, snapshot_size - tail_size)
+        except OSError as exc:
+            raise KosovoResidentialOQ313RunError(
+                "OpenQuake stderr classifier tail could not be read"
+            ) from exc
+        if type(stderr_tail) is not bytes or len(stderr_tail) != tail_size:
+            raise KosovoResidentialOQ313RunError(
+                "OpenQuake stderr classifier tail drifted"
+            )
+    else:
+        stderr_tail = b""
+    exception_class = stderr_classifier.classify_terminal_exception(stderr_tail)
+    if exception_class not in stderr_classifier.PUBLIC_EXCEPTION_CLASS_TOKENS:
+        raise KosovoResidentialOQ313RunError(
+            "OpenQuake stderr exception class drifted"
+        )
+
     return {
         "byte_count": snapshot_size,
         "sha256": digest.hexdigest(),
         "content_exposed": False,
+        "exception_class": exception_class,
     }
 
 
@@ -736,6 +761,7 @@ def _run_derived_config(
             "byte_count",
             "sha256",
             "content_exposed",
+            "exception_class",
         }:
             raise KosovoResidentialOQ313RunError(
                 "native failure diagnostic fields drifted"
@@ -743,6 +769,7 @@ def _run_derived_config(
         byte_count = native_failure_diagnostic["byte_count"]
         digest = native_failure_diagnostic["sha256"]
         exposed = native_failure_diagnostic["content_exposed"]
+        exception_class = native_failure_diagnostic["exception_class"]
         if type(byte_count) is not int or byte_count < 0:
             raise KosovoResidentialOQ313RunError(
                 "native failure diagnostic byte count drifted"
@@ -754,6 +781,13 @@ def _run_derived_config(
         if exposed is not False:
             raise KosovoResidentialOQ313RunError(
                 "native failure diagnostic content boundary drifted"
+            )
+        if (
+            type(exception_class) is not str
+            or exception_class not in stderr_classifier.PUBLIC_EXCEPTION_CLASS_TOKENS
+        ):
+            raise KosovoResidentialOQ313RunError(
+                "native failure diagnostic exception class drifted"
             )
         document["native_failure_diagnostic"] = dict(native_failure_diagnostic)
     return _canonical_payload(document)

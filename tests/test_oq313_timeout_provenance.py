@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import unittest
 
+from scripts import classify_oq313_native_stderr as classifier
 from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313 as runner
 from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313_action as action
 
@@ -38,6 +39,7 @@ def _blocked_document(*, failure_code: str, exit_code: int) -> dict[str, object]
             "byte_count": 0,
             "sha256": hashlib.sha256(b"").hexdigest(),
             "content_exposed": False,
+            "exception_class": classifier.UNCLASSIFIED_EXCEPTION_CLASS,
         },
     }
     for field in action._AUTHORITY_FALSE_FIELDS:
@@ -57,6 +59,10 @@ class OQ313TimeoutProvenanceTests(unittest.TestCase):
         self.assertEqual(validated["failure_code"], "openquake_run_timeout")
         self.assertEqual(validated["execution"]["exit_code"], 124)
         self.assertIs(validated["native_failure_diagnostic"]["content_exposed"], False)
+        self.assertEqual(
+            validated["native_failure_diagnostic"]["exception_class"],
+            classifier.UNCLASSIFIED_EXCEPTION_CLASS,
+        )
         for field in action._AUTHORITY_FALSE_FIELDS:
             self.assertIs(validated[field], False)
 

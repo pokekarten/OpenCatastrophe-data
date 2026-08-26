@@ -26,10 +26,12 @@ from pathlib import Path
 from typing import Any, Callable
 
 try:
+    from scripts import classify_oq313_native_stderr as stderr_classifier
     from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313 as runner
     from scripts import select_oq313_risk_by_event_rows as datastore_selector
     from scripts import project_oq313_risk_by_event_receipt as numerical_contract
 except ModuleNotFoundError:  # pragma: no cover - direct script execution path
+    import classify_oq313_native_stderr as stderr_classifier
     import run_esrm20_kosovo_residential_ebrisk_openquake313 as runner
     import select_oq313_risk_by_event_rows as datastore_selector
     import project_oq313_risk_by_event_receipt as numerical_contract
@@ -274,6 +276,7 @@ def _validate_adapter_document(document: object) -> dict[str, Any]:
             "byte_count",
             "sha256",
             "content_exposed",
+            "exception_class",
         }:
             raise KosovoResidentialOQ313ActionError(
                 "adapter native failure diagnostic fields drifted"
@@ -281,6 +284,7 @@ def _validate_adapter_document(document: object) -> dict[str, Any]:
         byte_count = diagnostic.get("byte_count")
         digest = diagnostic.get("sha256")
         content_exposed = diagnostic.get("content_exposed")
+        exception_class = diagnostic.get("exception_class")
         if type(byte_count) is not int or byte_count < 0:
             raise KosovoResidentialOQ313ActionError(
                 "adapter native failure diagnostic byte count drifted"
@@ -292,6 +296,13 @@ def _validate_adapter_document(document: object) -> dict[str, Any]:
         if content_exposed is not False:
             raise KosovoResidentialOQ313ActionError(
                 "adapter native failure diagnostic content boundary drifted"
+            )
+        if (
+            type(exception_class) is not str
+            or exception_class not in stderr_classifier.PUBLIC_EXCEPTION_CLASS_TOKENS
+        ):
+            raise KosovoResidentialOQ313ActionError(
+                "adapter native failure diagnostic exception class drifted"
             )
 
     for field in _AUTHORITY_FALSE_FIELDS:
