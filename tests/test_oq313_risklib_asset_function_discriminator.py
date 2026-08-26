@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import tempfile
 import unittest
 
@@ -48,7 +49,7 @@ class OQ313RisklibAssetFunctionDiscriminatorTests(unittest.TestCase):
             diagnostic,
             {
                 "byte_count": len(stderr),
-                "sha256": __import__("hashlib").sha256(stderr).hexdigest(),
+                "sha256": hashlib.sha256(stderr).hexdigest(),
                 "content_exposed": False,
                 "exception_class": "AttributeError",
                 "traceback_origin": "openquake.risklib.asset._get_exposure",
