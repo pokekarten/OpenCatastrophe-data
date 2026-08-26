@@ -12,6 +12,7 @@ from scripts import run_esrm20_greece_source_csv_receipts_action as subject
 
 class GreeceSourceCsvReceiptActionTests(unittest.TestCase):
     SHA = "a" * 40
+    PRIOR_SHA = "b" * 40
 
     def request_body(self) -> str:
         payload = {
@@ -23,6 +24,19 @@ class GreeceSourceCsvReceiptActionTests(unittest.TestCase):
             "requester": "unit-test",
         }
         return subject.REQUEST_MARKER + "\n" + json.dumps(payload, separators=(",", ":"))
+
+    def terminal_body(self, sha: str, *, status: str) -> str:
+        payload = subject._base_result(execution_sha=sha)
+        if status == "pass":
+            payload.update({"status": "pass", "failure_class": None, "receipts": []})
+        elif status == "blocked":
+            payload.update({"status": "blocked", "failure_class": "acquisition_failure", "receipts": None})
+        else:
+            raise AssertionError(status)
+        return subject.RESULT_MARKER + "\n" + json.dumps(payload, separators=(",", ":"))
+
+    def trusted_comment(self, body: str) -> dict[str, object]:
+        return {"user": {"login": subject.TRUSTED_RESULT_LOGIN}, "body": body}
 
     def test_validate_request_binds_execution_sha(self):
         result = subject.validate_request(
@@ -47,7 +61,52 @@ class GreeceSourceCsvReceiptActionTests(unittest.TestCase):
     def test_terminal_result_is_bounded_before_json(self):
         body = subject.RESULT_MARKER + "\n" + ("é" * 30_000)
         with self.assertRaisesRegex(subject.GreeceSourceCsvReceiptsActionError, "byte bound"):
-            subject._parse_trusted_terminal_result(body, execution_sha=self.SHA)
+            subject._parse_trusted_terminal_result(body)
+
+    def test_prior_sha_blocked_terminal_is_valid_non_match(self):
+        comments = [self.trusted_comment(self.terminal_body(self.PRIOR_SHA, status="blocked"))]
+        with mock.patch.object(subject, "fetch_repository_comments", return_value=comments):
+            self.assertFalse(subject.has_terminal_result(repository="owner/repo", token="token", execution_sha=self.SHA))
+
+    def test_prior_sha_pass_terminal_is_valid_non_match(self):
+        comments = [self.trusted_comment(self.terminal_body(self.PRIOR_SHA, status="pass"))]
+        with (
+            mock.patch.object(subject, "fetch_repository_comments", return_value=comments),
+            mock.patch.object(subject, "_validate_terminal_receipts", return_value=[]),
+        ):
+            self.assertFalse(subject.has_terminal_result(repository="owner/repo", token="token", execution_sha=self.SHA))
+
+    def test_later_malformed_prior_sha_terminal_fails_closed_after_current_match(self):
+        current = self.terminal_body(self.SHA, status="blocked")
+        malformed_payload = subject._base_result(execution_sha=self.PRIOR_SHA)
+        malformed_payload.update(
+            {
+                "target_sha": "c" * 40,
+                "status": "blocked",
+                "failure_class": "acquisition_failure",
+                "receipts": None,
+            }
+        )
+        malformed = subject.RESULT_MARKER + "\n" + json.dumps(malformed_payload, separators=(",", ":"))
+        comments = [self.trusted_comment(current), self.trusted_comment(malformed)]
+        with mock.patch.object(subject, "fetch_repository_comments", return_value=comments):
+            with self.assertRaisesRegex(subject.GreeceSourceCsvReceiptsActionError, "target_sha"):
+                subject.has_terminal_result(repository="owner/repo", token="token", execution_sha=self.SHA)
+
+    def test_terminal_execution_sha_must_be_canonical(self):
+        payload = subject._base_result(execution_sha=self.SHA)
+        payload.update(
+            {
+                "target_sha": "A" * 40,
+                "execution_sha": "A" * 40,
+                "status": "blocked",
+                "failure_class": "acquisition_failure",
+                "receipts": None,
+            }
+        )
+        body = subject.RESULT_MARKER + "\n" + json.dumps(payload, separators=(",", ":"))
+        with self.assertRaisesRegex(subject.GreeceSourceCsvReceiptsActionError, "execution SHA"):
+            subject._parse_trusted_terminal_result(body)
 
 
 if __name__ == "__main__":
