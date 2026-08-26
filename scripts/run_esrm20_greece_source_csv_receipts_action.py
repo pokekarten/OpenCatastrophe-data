@@ -144,9 +144,9 @@ def _validate_terminal_receipts(receipts: object) -> list[dict[str, Any]]:
     return validated
 
 
-def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
+def _parse_trusted_terminal_result(body: object) -> str | None:
     if type(body) is not str or RESULT_MARKER not in body:
-        return False
+        return None
     try:
         encoded = body.encode("utf-8", errors="strict")
     except UnicodeEncodeError as exc:
@@ -161,14 +161,17 @@ def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
     result = _load_json(after.strip(), label="trusted Greece result")
     if type(result) is not dict:
         raise GreeceSourceCsvReceiptsActionError("trusted Greece result is not an object")
+    terminal_sha = result.get("execution_sha")
+    if type(terminal_sha) is not str or _SHA_RE.fullmatch(terminal_sha) is None:
+        raise GreeceSourceCsvReceiptsActionError("trusted Greece result execution SHA is malformed")
     exact = (
         ("schema_version", RESULT_SCHEMA_VERSION),
         ("action", ACTION),
         ("source_issue", CONTROL_ISSUE),
         ("parent_consumer_issue", PARENT_CONSUMER_ISSUE),
         ("dataset_id", DATASET_ID),
-        ("target_sha", execution_sha),
-        ("execution_sha", execution_sha),
+        ("target_sha", terminal_sha),
+        ("execution_sha", terminal_sha),
         ("project_id", PROJECT_ID),
         ("project_path", PROJECT_PATH),
         ("release_tag", RELEASE_TAG),
@@ -181,11 +184,11 @@ def _parse_trusted_terminal_result(body: object, *, execution_sha: str) -> bool:
     status = result.get("status")
     if status == "pass":
         _validate_terminal_receipts(result.get("receipts"))
-        return True
+        return terminal_sha
     if status == "blocked":
         if result.get("failure_class") != "acquisition_failure" or result.get("receipts") is not None:
             raise GreeceSourceCsvReceiptsActionError("trusted Greece blocked result is not safely bounded")
-        return True
+        return terminal_sha
     raise GreeceSourceCsvReceiptsActionError("trusted Greece result has non-terminal status")
 
 
@@ -205,7 +208,8 @@ def has_terminal_result(*, repository: str, token: str, execution_sha: str, open
         login = user.get("login") if type(user) is dict else None
         if login != TRUSTED_RESULT_LOGIN:
             continue
-        if _parse_trusted_terminal_result(comment.get("body"), execution_sha=execution_sha):
+        terminal_sha = _parse_trusted_terminal_result(comment.get("body"))
+        if terminal_sha == execution_sha:
             match_seen = True
     return match_seen
 
