@@ -16,6 +16,7 @@ offline receipts cannot be confused with production acquisition evidence.
 
 from __future__ import annotations
 
+import http.client
 import time
 import urllib.error
 import urllib.request
@@ -167,7 +168,13 @@ def _acquire_for_test(
                 raise EfehrAcquisitionError("EFEHR artifact receipt failed") from exc
     except EfehrAcquisitionError:
         raise
-    except (OSError, urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:
+    except (
+        OSError,
+        http.client.HTTPException,
+        urllib.error.URLError,
+        urllib.error.HTTPError,
+        TimeoutError,
+    ) as exc:
         raise EfehrAcquisitionError(
             f"EFEHR artifact retrieval failed: {type(exc).__name__}"
         ) from exc
