@@ -3,10 +3,12 @@
 
 from __future__ import annotations
 
+import http.client
 import json
 import unittest
 from unittest import mock
 
+from scripts import acquire_efehr_esrm20_greece_source_csv_receipts as acquisition
 from scripts import run_esrm20_greece_source_csv_receipts_action as subject
 
 
@@ -57,6 +59,39 @@ class GreeceSourceCsvReceiptActionTests(unittest.TestCase):
         self.assertIsNone(result["receipts"])
         for field in subject._FALSE_FIELDS:
             self.assertIs(result[field], False)
+
+    def test_incomplete_http_stream_is_bounded_without_partial_byte_leakage(self):
+        def acquire_incomplete_stream():
+            response = mock.MagicMock()
+            with (
+                mock.patch.object(
+                    acquisition,
+                    "_CANONICAL_VALIDATE_EXACT_RESPONSE",
+                    return_value=None,
+                ),
+                mock.patch.object(
+                    acquisition,
+                    "_CANONICAL_READ_BOUNDED",
+                    side_effect=http.client.IncompleteRead(b"secret-partial-provider-bytes", 99),
+                ),
+            ):
+                return acquisition._acquire_for_test(
+                    opener=lambda request, timeout: response,
+                    now=lambda: "2026-08-26T10:05:00Z",
+                    monotonic=lambda: 0.0,
+                )
+
+        with mock.patch.object(subject, "acquire_receipts", side_effect=acquire_incomplete_stream):
+            result = subject.run_receipts(execution_sha=self.SHA)
+
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["failure_class"], "acquisition_failure")
+        self.assertIsNone(result["receipts"])
+        for field in subject._FALSE_FIELDS:
+            self.assertIs(result[field], False)
+        durable = json.dumps(result, sort_keys=True, separators=(",", ":"))
+        self.assertNotIn("secret-partial-provider-bytes", durable)
+        self.assertNotIn("IncompleteRead", durable)
 
     def test_terminal_result_is_bounded_before_json(self):
         body = subject.RESULT_MARKER + "\n" + ("é" * 30_000)
