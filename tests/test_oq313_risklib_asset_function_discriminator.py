@@ -88,22 +88,28 @@ class OQ313RisklibAssetFunctionDiscriminatorTests(unittest.TestCase):
     def test_multiline_exception_text_cannot_forge_traceback_tokens(self) -> None:
         tails = (
             (
-                b"Traceback (most recent call last):\n"
-                b'  File "/tmp/provider.py", line 10, in real_func\n'
-                b"AttributeError: attacker-controlled first line\n"
-                b'  File "/oq-engine/openquake/risklib/asset.py", line 900, in build_asset_array\n'
-                b"AttributeError: attacker-controlled final line\n"
+                (
+                    b"Traceback (most recent call last):\n"
+                    b'  File "/tmp/provider.py", line 10, in real_func\n'
+                    b"AttributeError: attacker-controlled first line\n"
+                    b'  File "/oq-engine/openquake/risklib/asset.py", line 900, in build_asset_array\n'
+                    b"AttributeError: attacker-controlled final line\n"
+                ),
+                classifier.UNCLASSIFIED_TRACEBACK_MULTILINE_EXCEPTION,
             ),
             (
-                b"Traceback (most recent call last):\n"
-                b'  File "/tmp/provider.py", line 10, in real_func\n'
-                b"AttributeError: attacker-controlled first line\n"
-                b"Traceback (most recent call last):\n"
-                b'  File "/oq-engine/openquake/risklib/asset.py", line 900, in build_asset_array\n'
-                b"AttributeError: attacker-controlled final line\n"
+                (
+                    b"Traceback (most recent call last):\n"
+                    b'  File "/tmp/provider.py", line 10, in real_func\n'
+                    b"AttributeError: attacker-controlled first line\n"
+                    b"Traceback (most recent call last):\n"
+                    b'  File "/oq-engine/openquake/risklib/asset.py", line 900, in build_asset_array\n'
+                    b"AttributeError: attacker-controlled final line\n"
+                ),
+                classifier.UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS,
             ),
         )
-        for tail in tails:
+        for tail, rejection_token in tails:
             with self.subTest(tail=tail):
                 self.assertEqual(
                     classifier.classify_terminal_exception(tail),
@@ -111,8 +117,14 @@ class OQ313RisklibAssetFunctionDiscriminatorTests(unittest.TestCase):
                 )
                 self.assertEqual(
                     classifier.classify_traceback_origin(tail),
-                    classifier.UNCLASSIFIED_TRACEBACK_ORIGIN,
+                    rejection_token,
                 )
+                self.assertIn(
+                    rejection_token,
+                    classifier.PUBLIC_TRACEBACK_ORIGIN_TOKENS,
+                )
+                self.assertNotIn("attacker-controlled", rejection_token)
+                self.assertNotIn("build_asset_array", rejection_token)
 
     def test_truncated_multiline_exception_text_cannot_forge_traceback_tokens(self) -> None:
         forged_continuation = (

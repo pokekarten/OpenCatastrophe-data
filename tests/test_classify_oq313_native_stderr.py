@@ -90,6 +90,17 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
             subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
         )
 
+    def test_terminal_shape_rejection_is_bounded(self) -> None:
+        tail = (
+            b"Traceback (most recent call last):\n"
+            b'  File "/oq-engine/openquake/risklib/asset.py", line 1, in read\n'
+            b"  AttributeError: hidden\n"
+        )
+        self.assertEqual(
+            subject.classify_traceback_origin(tail),
+            subject.UNCLASSIFIED_TRACEBACK_TERMINAL_SHAPE,
+        )
+
     def test_direct_risklib_final_frame_returns_only_allowlisted_module(self) -> None:
         tail = (
             b"Traceback (most recent call last):\n"
@@ -103,7 +114,14 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
         self.assertNotIn("20", origin)
 
     def test_each_pinned_direct_risklib_module_is_finite_public_token(self) -> None:
-        for module in ("asset", "countries", "read_nrml", "riskinput", "riskmodels", "scientific"):
+        for module in (
+            "asset",
+            "countries",
+            "read_nrml",
+            "riskinput",
+            "riskmodels",
+            "scientific",
+        ):
             with self.subTest(module=module):
                 tail = (
                     b"Traceback (most recent call last):\n"
@@ -183,15 +201,33 @@ class OQ313NativeStderrClassifierTests(unittest.TestCase):
     def test_public_token_sets_are_closed(self) -> None:
         self.assertIn("ValueError", subject.PUBLIC_EXCEPTION_CLASS_TOKENS)
         self.assertIn("InvalidFile", subject.PUBLIC_EXCEPTION_CLASS_TOKENS)
-        self.assertIn(subject.UNCLASSIFIED_EXCEPTION_CLASS, subject.PUBLIC_EXCEPTION_CLASS_TOKENS)
+        self.assertIn(
+            subject.UNCLASSIFIED_EXCEPTION_CLASS,
+            subject.PUBLIC_EXCEPTION_CLASS_TOKENS,
+        )
         self.assertNotIn("ProviderSecretException", subject.PUBLIC_EXCEPTION_CLASS_TOKENS)
 
         self.assertIn("openquake.risklib", subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS)
-        self.assertIn("openquake.risklib.riskmodels", subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS)
-        self.assertIn("openquake.risklib.scientific", subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS)
+        self.assertIn(
+            "openquake.risklib.riskmodels", subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS
+        )
+        self.assertIn(
+            "openquake.risklib.scientific", subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS
+        )
         self.assertIn("openquake.calculators", subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS)
-        self.assertIn(subject.UNCLASSIFIED_TRACEBACK_ORIGIN, subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS)
-        self.assertNotIn("openquake.risklib.providersecret", subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS)
+        self.assertIn(
+            subject.UNCLASSIFIED_TRACEBACK_ORIGIN,
+            subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS,
+        )
+        for token in subject.UNCLASSIFIED_TRACEBACK_CONTEXT_TOKENS:
+            with self.subTest(token=token):
+                self.assertIn(token, subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS)
+        self.assertNotIn(
+            "unclassified.provider_secret", subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS
+        )
+        self.assertNotIn(
+            "openquake.risklib.providersecret", subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS
+        )
         self.assertNotIn("openquake.providersecret", subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS)
 
 
