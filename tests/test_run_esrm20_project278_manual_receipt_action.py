@@ -154,6 +154,28 @@ class LedgerTests(unittest.TestCase):
                     execution_sha=EXECUTION_SHA,
                 )
 
+    def test_terminal_rejects_missing_or_drifted_manual_identity(self):
+        missing = self._pass_result()
+        missing.pop("manual_identity")
+        with self.assertRaisesRegex(subject.Project278ManualReceiptActionError, "identity"):
+            subject._parse_trusted_terminal_result(
+                _terminal(missing), execution_sha=EXECUTION_SHA
+            )
+
+        float_project = self._pass_result()
+        float_project["manual_identity"]["project_id"] = 278.0
+        with self.assertRaisesRegex(subject.Project278ManualReceiptActionError, "identity"):
+            subject._parse_trusted_terminal_result(
+                _terminal(float_project), execution_sha=EXECUTION_SHA
+            )
+
+        wrong_path = self._pass_result()
+        wrong_path["manual_identity"]["repository_path"] = "Other.pdf"
+        with self.assertRaisesRegex(subject.Project278ManualReceiptActionError, "identity"):
+            subject._parse_trusted_terminal_result(
+                _terminal(wrong_path), execution_sha=EXECUTION_SHA
+            )
+
     def test_terminal_byte_bound_precedes_json_parse(self):
         body = subject.RESULT_MARKER + "\n" + (" " * subject.MAX_TERMINAL_UTF8_BYTES) + "{}"
         with self.assertRaisesRegex(subject.Project278ManualReceiptActionError, "byte bound"):
