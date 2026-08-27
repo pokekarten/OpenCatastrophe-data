@@ -56,6 +56,7 @@ REPOSITORY_PATH = "ExposureReadme.pdf"
 EXPECTED_BYTE_COUNT = 2_121_105
 EXPECTED_SHA256 = "6a69d92ecb7df5e9b31c3609246baadff24e0f59ea352b576e900d74ad779590"
 PARSER_PACKAGE = "pypdf"
+EXPECTED_PARSER_VERSION = "6.16.2"
 TRUSTED_RESULT_LOGIN = "github-actions[bot]"
 MAX_TERMINAL_UTF8_BYTES = 40_000
 MAX_PAGES = 300
@@ -86,6 +87,30 @@ _AUTHORITY_FALSE_FIELDS = (
     "publication_authorized",
     "model_use_authorized",
 )
+_RESULT_FIELDS = {
+    "schema_version",
+    "action",
+    "source_issue",
+    "dataset_id",
+    "target_sha",
+    "execution_sha",
+    "manual_identity",
+    "pdf_content_profiled",
+    "status",
+    "failure_class",
+    "content_profile",
+    *_AUTHORITY_FALSE_FIELDS,
+}
+_PROFILE_FIELDS = {
+    "schema_version",
+    "parser",
+    "page_count",
+    "normalized_text_character_count",
+    "normalized_text_sha256",
+    "mention_pages",
+    "raw_text_exposed",
+}
+_PARSER_FIELDS = {"package", "version"}
 _MENTION_PATTERNS = {
     "coordinate_reference_system": re.compile(r"\bcoordinate\s+reference\s+system\b|\bcrs\b", re.I),
     "epsg": re.compile(r"\bepsg\b", re.I),
@@ -280,7 +305,7 @@ def _resolve_reader() -> tuple[Callable[..., Any], str]:
         raise Project278ManualContentProfileError("pypdf dependency unavailable") from exc
     version = getattr(pypdf, "__version__", None)
     reader = getattr(pypdf, "PdfReader", None)
-    if type(version) is not str or not version or reader is None:
+    if version != EXPECTED_PARSER_VERSION or reader is None:
         raise Project278ManualContentProfileError("pypdf runtime identity unavailable")
     return reader, version
 
@@ -411,6 +436,8 @@ def run_content_profile(*, execution_sha: str) -> dict[str, Any]:
 def _validate_terminal_payload(result: object, *, execution_sha: str) -> bool:
     if type(result) is not dict:
         raise Project278ManualContentProfileError("trusted profile result is not an object")
+    if set(result) != _RESULT_FIELDS:
+        raise Project278ManualContentProfileError("trusted profile result fields drifted")
     exact = (
         ("schema_version", RESULT_SCHEMA_VERSION),
         ("action", ACTION),
@@ -436,18 +463,46 @@ def _validate_terminal_payload(result: object, *, execution_sha: str) -> bool:
         raise Project278ManualContentProfileError("trusted profile manual identity drifted")
     status = result.get("status")
     if status == "pass":
+        if result.get("failure_class") is not None:
+            raise Project278ManualContentProfileError("trusted PASS failure class drifted")
         if result.get("pdf_content_profiled") is not True:
             raise Project278ManualContentProfileError("trusted PASS is not profiled")
         profile = result.get("content_profile")
-        if type(profile) is not dict or profile.get("schema_version") != PROFILE_SCHEMA_VERSION:
+        if type(profile) is not dict or set(profile) != _PROFILE_FIELDS:
+            raise Project278ManualContentProfileError("trusted PASS content profile fields drifted")
+        if profile.get("schema_version") != PROFILE_SCHEMA_VERSION:
             raise Project278ManualContentProfileError("trusted PASS content profile drifted")
+        parser = profile.get("parser")
+        if (
+            type(parser) is not dict
+            or set(parser) != _PARSER_FIELDS
+            or parser.get("package") != PARSER_PACKAGE
+            or parser.get("version") != EXPECTED_PARSER_VERSION
+        ):
+            raise Project278ManualContentProfileError("trusted PASS parser identity drifted")
+        page_count = profile.get("page_count")
+        if type(page_count) is not int or not (1 <= page_count <= MAX_PAGES):
+            raise Project278ManualContentProfileError("trusted PASS page count invalid")
+        character_count = profile.get("normalized_text_character_count")
+        if (
+            type(character_count) is not int
+            or not (1 <= character_count <= MAX_TOTAL_TEXT_CHARS)
+        ):
+            raise Project278ManualContentProfileError("trusted PASS character count invalid")
+        normalized_digest = profile.get("normalized_text_sha256")
+        if type(normalized_digest) is not str or _DIGEST_RE.fullmatch(normalized_digest) is None:
+            raise Project278ManualContentProfileError("trusted PASS text digest invalid")
         if profile.get("raw_text_exposed") is not False:
             raise Project278ManualContentProfileError("trusted PASS exposes source text")
         mention_pages = profile.get("mention_pages")
         if type(mention_pages) is not dict or set(mention_pages) != set(_MENTION_KEYS):
             raise Project278ManualContentProfileError("trusted PASS mention surface drifted")
         for pages in mention_pages.values():
-            if type(pages) is not list or any(type(page) is not int or page <= 0 for page in pages):
+            if (
+                type(pages) is not list
+                or pages != sorted(set(pages))
+                or any(type(page) is not int or not (1 <= page <= page_count) for page in pages)
+            ):
                 raise Project278ManualContentProfileError("trusted PASS mention pages invalid")
         return True
     if status == "blocked":
