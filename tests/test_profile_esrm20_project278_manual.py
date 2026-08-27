@@ -130,7 +130,7 @@ class Project278ManualContentProfileTests(unittest.TestCase):
             expected_byte_count=len(payload),
             expected_sha256=hashlib.sha256(payload).hexdigest(),
             reader_factory=_Reader,
-            parser_version="test",
+            parser_version=subject.EXPECTED_PARSER_VERSION,
         )
         result = subject._base_result(execution_sha=self.SHA)
         result.update(
