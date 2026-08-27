@@ -106,7 +106,8 @@ class OQ313RisklibAssetFunctionDiscriminatorTests(unittest.TestCase):
                     b'  File "/oq-engine/openquake/risklib/asset.py", line 900, in build_asset_array\n'
                     b"AttributeError: attacker-controlled final line\n"
                 ),
-                classifier.UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS,
+                "unclassified.multiple_traceback_headers.first_segment_structure."
+                "canonical_frame_outside_frozen_oq",
             ),
         )
         for tail, rejection_token in tails:
