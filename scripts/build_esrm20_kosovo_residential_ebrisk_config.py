@@ -57,6 +57,9 @@ _CANONICAL_EXPOSURE_RAW_PATH = (
 _CANONICAL_EXPOSURE_RESOLVED_PATH = (
     "Exposure/OQ_Exposure_Input_Kosovo_Residential_Reconstructed.xml"
 )
+_CANONICAL_AGGREGATE_SECTION = "general"
+_CANONICAL_AGGREGATE_OPTION = "aggregate_by"
+_CANONICAL_SOURCE_AGGREGATE_VALUE = "country"
 _CANONICAL_SOURCE_KOSOVO_EXPOSURE_RAW_PATH = "../Exposure/OQ_Exposure_Input_Kosovo.xml"
 _CANONICAL_SOURCE_KOSOVO_SITE_RAW_PATH = "../Vs30/Site_model_Kosovo.xml"
 
@@ -115,6 +118,9 @@ EXPOSURE_SECTION = _CANONICAL_EXPOSURE_SECTION
 EXPOSURE_OPTION = _CANONICAL_EXPOSURE_OPTION
 EXPOSURE_RAW_PATH = _CANONICAL_EXPOSURE_RAW_PATH
 EXPOSURE_RESOLVED_PATH = _CANONICAL_EXPOSURE_RESOLVED_PATH
+AGGREGATE_SECTION = _CANONICAL_AGGREGATE_SECTION
+AGGREGATE_OPTION = _CANONICAL_AGGREGATE_OPTION
+SOURCE_AGGREGATE_VALUE = _CANONICAL_SOURCE_AGGREGATE_VALUE
 SHARED_DEPENDENCIES = _CANONICAL_SHARED_DEPENDENCIES
 
 _CANONICAL_VERIFY_PAYLOAD_IDENTITY = risk_config._verify_payload_identity  # noqa: SLF001
@@ -286,7 +292,7 @@ def _alias_identity(option: str) -> str:
 
 
 def _reject_target_aliases(parser: configparser.ConfigParser) -> None:
-    target_options = (SITE_OPTION, EXPOSURE_OPTION)
+    target_options = (SITE_OPTION, EXPOSURE_OPTION, AGGREGATE_OPTION)
     for option in parser.defaults():
         for target in target_options:
             if _alias_identity(option) == _alias_identity(target):
@@ -477,6 +483,15 @@ def _derive_from_verified_text(
         option=EXPOSURE_OPTION,
         expected_section=EXPOSURE_SECTION,
     )
+    source_aggregate_value = _locate_target(
+        source_parser,
+        option=AGGREGATE_OPTION,
+        expected_section=AGGREGATE_SECTION,
+    )
+    if source_aggregate_value != SOURCE_AGGREGATE_VALUE:
+        raise KosovoResidentialEbriskConfigError(
+            "source Group1 aggregate_by value drifted"
+        )
     if _CANONICAL_SOURCE_KOSOVO_SITE_RAW_PATH not in source_site_value.split():
         raise KosovoResidentialEbriskConfigError(
             "source Group1 site selector does not contain Kosovo"
@@ -493,6 +508,7 @@ def _derive_from_verified_text(
     derived_parser = _parse_ini(source_text)
     derived_parser.set(SITE_SECTION, SITE_OPTION, SITE_RAW_PATH)
     derived_parser.set(EXPOSURE_SECTION, EXPOSURE_OPTION, EXPOSURE_RAW_PATH)
+    derived_parser.remove_option(AGGREGATE_SECTION, AGGREGATE_OPTION)
     derived_bytes = _serialize_canonical(derived_parser)
     try:
         derived_text = derived_bytes.decode("utf-8", errors="strict")
@@ -503,28 +519,31 @@ def _derive_from_verified_text(
 
     reparsed = _parse_ini(derived_text)
     after = _semantic_map(reparsed)
-    if set(before) != set(after):
+    if set(before) - {(AGGREGATE_SECTION, AGGREGATE_OPTION)} != set(after):
         raise KosovoResidentialEbriskConfigError(
-            "derived config added or removed semantic options"
+            "derived config added or removed unexpected semantic options"
         )
 
     changes = {
-        key: (before[key], after[key])
+        key: (before[key], after.get(key))
         for key in before
-        if before[key] != after[key]
+        if key not in after or before[key] != after[key]
     }
     expected_changes = {
         (SITE_SECTION, SITE_OPTION),
         (EXPOSURE_SECTION, EXPOSURE_OPTION),
+        (AGGREGATE_SECTION, AGGREGATE_OPTION),
     }
     if set(changes) != expected_changes:
         raise KosovoResidentialEbriskConfigError(
-            "derived config semantic diff is not exactly the two country selectors"
+            "derived config semantic diff is not exactly the Kosovo selectors and aggregate removal"
         )
     if after[(SITE_SECTION, SITE_OPTION)] != SITE_RAW_PATH:
         raise KosovoResidentialEbriskConfigError("derived site selector drifted")
     if after[(EXPOSURE_SECTION, EXPOSURE_OPTION)] != EXPOSURE_RAW_PATH:
         raise KosovoResidentialEbriskConfigError("derived exposure selector drifted")
+    if (AGGREGATE_SECTION, AGGREGATE_OPTION) in after:
+        raise KosovoResidentialEbriskConfigError("derived aggregate_by was not removed")
 
     derived_dependencies = _dependency_rows(derived_text)
     _validate_derived_dependencies(derived_dependencies, shared_dependencies)
@@ -554,6 +573,11 @@ def _derive_from_verified_text(
         },
         "semantic_changes": [
             {
+                "section": AGGREGATE_SECTION,
+                "option": AGGREGATE_OPTION,
+                "derived_value": None,
+            },
+            {
                 "section": EXPOSURE_SECTION,
                 "option": EXPOSURE_OPTION,
                 "derived_value": EXPOSURE_RAW_PATH,
@@ -565,7 +589,7 @@ def _derive_from_verified_text(
             },
         ],
         "derived_dependencies": derived_dependencies,
-        "semantic_change_count": 2,
+        "semantic_change_count": 3,
         "source_dependency_count": len(source_dependencies),
         "derived_dependency_count": len(derived_dependencies),
         "full_semantic_diff_verified": True,

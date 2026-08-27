@@ -14,6 +14,7 @@ from scripts import build_esrm20_kosovo_residential_ebrisk_config as subject
 def synthetic_group1() -> str:
     return """[general]
 calculation_mode = ebrisk
+aggregate_by = country
 random_seed = 113
 ignore_master_seed = true
 minimum_asset_loss = {'structural': 2000}
@@ -60,7 +61,7 @@ class KosovoResidentialEbriskConfigTests(unittest.TestCase):
             subject._verify_group1_identity(bytearray(b"x"))  # type: ignore[arg-type]
         decode.assert_not_called()
 
-    def test_verified_synthetic_config_changes_only_two_country_selectors(self) -> None:
+    def test_verified_synthetic_config_changes_only_kosovo_selectors_and_aggregate(self) -> None:
         source = synthetic_group1()
         first, evidence = subject._derive_from_verified_text(source)
         second, repeated_evidence = subject._derive_from_verified_text(source)
@@ -70,6 +71,11 @@ class KosovoResidentialEbriskConfigTests(unittest.TestCase):
         self.assertEqual(
             evidence["semantic_changes"],
             [
+                {
+                    "section": "general",
+                    "option": "aggregate_by",
+                    "derived_value": None,
+                },
                 {
                     "section": "exposure",
                     "option": "exposure_file",
@@ -85,7 +91,7 @@ class KosovoResidentialEbriskConfigTests(unittest.TestCase):
                 },
             ],
         )
-        self.assertEqual(evidence["semantic_change_count"], 2)
+        self.assertEqual(evidence["semantic_change_count"], 3)
         self.assertEqual(evidence["derived_dependency_count"], 7)
         self.assertIs(evidence["full_semantic_diff_verified"], True)
         self.assertIs(evidence["non_country_dependencies_preserved"], True)
@@ -102,6 +108,9 @@ class KosovoResidentialEbriskConfigTests(unittest.TestCase):
             "../Exposure/OQ_Exposure_Input_Kosovo_Residential_Reconstructed.xml",
             text,
         )
+        self.assertNotIn("aggregate_by", text)
+        self.assertIn("random_seed = 113", text)
+        self.assertIn("minimum_asset_loss = {'structural': 2000}", text)
         self.assertIn(
             "site_model_file = ../Vs30/Site_model_Kosovo.xml",
             text,
@@ -156,6 +165,16 @@ class KosovoResidentialEbriskConfigTests(unittest.TestCase):
         with self.assertRaisesRegex(
             subject.KosovoResidentialEbriskConfigError,
             "^source Group1 site selector does not contain Kosovo$",
+        ):
+            subject._derive_from_verified_text(source)
+
+    def test_source_aggregate_by_must_be_exact_country(self) -> None:
+        source = synthetic_group1().replace(
+            "aggregate_by = country", "aggregate_by = name_1"
+        )
+        with self.assertRaisesRegex(
+            subject.KosovoResidentialEbriskConfigError,
+            "^source Group1 aggregate_by value drifted$",
         ):
             subject._derive_from_verified_text(source)
 
@@ -216,7 +235,7 @@ class KosovoResidentialEbriskConfigTests(unittest.TestCase):
             mock.patch.object(subject, "_serialize_canonical", side_effect=mutate),
             self.assertRaisesRegex(
                 subject.KosovoResidentialEbriskConfigError,
-                "^derived config semantic diff is not exactly the two country selectors$",
+                "^derived config semantic diff is not exactly the Kosovo selectors and aggregate removal$",
             ),
         ):
             subject._derive_from_verified_text(synthetic_group1())
