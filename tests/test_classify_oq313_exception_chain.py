@@ -57,7 +57,7 @@ class OQ313ExceptionChainClassifierTests(unittest.TestCase):
             subject.UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS,
         )
 
-    def test_external_first_traceback_stays_generic_multiple_headers(self) -> None:
+    def test_external_first_traceback_exposes_only_bounded_structure(self) -> None:
         tail = (
             b"Traceback (most recent call last):\n"
             b'  File "/usr/local/lib/python3.8/site-packages/pandas/core/frame.py", line 9, in hidden\n'
@@ -68,7 +68,8 @@ class OQ313ExceptionChainClassifierTests(unittest.TestCase):
         )
         self.assertEqual(
             subject.classify_traceback_origin(tail),
-            subject.UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS,
+            "unclassified.multiple_traceback_headers.first_segment_structure."
+            "canonical_frame_outside_frozen_oq",
         )
 
     def test_first_origin_tokens_are_finite_and_do_not_include_arbitrary_paths(self) -> None:
@@ -102,7 +103,7 @@ class OQ313ExceptionChainClassifierTests(unittest.TestCase):
         self.assertNotIn("pandas", token)
         self.assertNotIn("RuntimeError", token)
 
-    def test_external_first_segment_frame_stays_generic_multiple_headers(self) -> None:
+    def test_external_first_segment_frame_exposes_only_bounded_structure(self) -> None:
         tail = (
             b"Traceback (most recent call last):\n"
             b'  File "/usr/local/lib/python3.8/site-packages/pandas/core/frame.py", line 9, in hidden\n'
@@ -112,10 +113,11 @@ class OQ313ExceptionChainClassifierTests(unittest.TestCase):
         )
         self.assertEqual(
             subject.classify_traceback_origin(tail),
-            subject.UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS,
+            "unclassified.multiple_traceback_headers.first_segment_structure."
+            "canonical_frame_outside_frozen_oq",
         )
 
-    def test_fake_allowlisted_frame_after_first_exception_line_stays_generic(self) -> None:
+    def test_fake_allowlisted_frame_after_first_exception_is_ignored(self) -> None:
         tail = (
             b"Traceback (most recent call last):\n"
             b'  File "/usr/local/lib/python3.8/site-packages/pandas/core/frame.py", line 9, in hidden\n'
@@ -127,7 +129,36 @@ class OQ313ExceptionChainClassifierTests(unittest.TestCase):
         )
         self.assertEqual(
             subject.classify_traceback_origin(tail),
-            subject.UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS,
+            "unclassified.multiple_traceback_headers.first_segment_structure."
+            "canonical_frame_outside_frozen_oq",
+        )
+
+    def test_first_segment_without_frame_exposes_only_bounded_structure(self) -> None:
+        tail = (
+            b"Traceback (most recent call last):\n"
+            b"  hidden continuation\n"
+            b"Traceback (most recent call last):\n"
+            b'  File "/oq-engine/openquake/risklib/asset.py", line 10, in build_asset_array\n'
+            b"AttributeError: hidden\n"
+        )
+        self.assertEqual(
+            subject.classify_traceback_origin(tail),
+            "unclassified.multiple_traceback_headers.first_segment_structure."
+            "no_canonical_frame",
+        )
+
+    def test_first_segment_malformed_frame_exposes_only_bounded_structure(self) -> None:
+        tail = (
+            b"Traceback (most recent call last):\n"
+            b'  File "/tmp/hidden.py", line nope, in hidden\n'
+            b"Traceback (most recent call last):\n"
+            b'  File "/oq-engine/openquake/risklib/asset.py", line 10, in build_asset_array\n'
+            b"AttributeError: hidden\n"
+        )
+        self.assertEqual(
+            subject.classify_traceback_origin(tail),
+            "unclassified.multiple_traceback_headers.first_segment_structure."
+            "malformed_frame",
         )
 
     def test_first_segment_frame_origin_tokens_are_finite_and_non_path(self) -> None:
@@ -138,6 +169,20 @@ class OQ313ExceptionChainClassifierTests(unittest.TestCase):
                 self.assertTrue(
                     token.startswith(
                         subject.UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_FRAME_ORIGIN_PREFIX
+                        + "."
+                    )
+                )
+                self.assertIn(token, subject.PUBLIC_TRACEBACK_ORIGIN_TOKENS)
+                self.assertNotIn("/", token)
+
+    def test_first_segment_structure_tokens_are_finite_and_non_path(self) -> None:
+        tokens = subject.UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_STRUCTURE_TOKENS
+        self.assertEqual(len(tokens), 3)
+        for token in tokens:
+            with self.subTest(token=token):
+                self.assertTrue(
+                    token.startswith(
+                        subject.UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_STRUCTURE_PREFIX
                         + "."
                     )
                 )

@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import re
 
+from scripts import classify_oq313_multiheader_first_segment as multiheader_structure
+
 MAX_STDERR_CLASSIFIER_TAIL_BYTES = 64 * 1024
 UNCLASSIFIED_EXCEPTION_CLASS = "unclassified"
 UNCLASSIFIED_TRACEBACK_ORIGIN = "unclassified"
@@ -22,6 +24,9 @@ UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_ORIGIN_PREFIX = (
 )
 UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_FRAME_ORIGIN_PREFIX = (
     "unclassified.multiple_traceback_headers.first_segment_frame_origin"
+)
+UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_STRUCTURE_PREFIX = (
+    "unclassified.multiple_traceback_headers.first_segment_structure"
 )
 UNCLASSIFIED_TRACEBACK_TERMINAL_SHAPE = "unclassified.terminal_shape"
 UNCLASSIFIED_TRACEBACK_MULTILINE_EXCEPTION = "unclassified.multiline_exception"
@@ -140,11 +145,23 @@ UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_FRAME_ORIGIN_TOKENS = froz
     f"{UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_FRAME_ORIGIN_PREFIX}.{origin}"
     for origin in ALLOWED_TRACEBACK_ORIGINS
 )
+ALLOWED_MULTIHEADER_FIRST_SEGMENT_STRUCTURES = frozenset(
+    {
+        multiheader_structure.NO_CANONICAL_FRAME,
+        multiheader_structure.MALFORMED_FRAME,
+        multiheader_structure.CANONICAL_FRAME_OUTSIDE_FROZEN_OQ,
+    }
+)
+UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_STRUCTURE_TOKENS = frozenset(
+    f"{UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_STRUCTURE_PREFIX}.{token}"
+    for token in ALLOWED_MULTIHEADER_FIRST_SEGMENT_STRUCTURES
+)
 PUBLIC_TRACEBACK_ORIGIN_TOKENS = (
     ALLOWED_TRACEBACK_ORIGINS
     | UNCLASSIFIED_TRACEBACK_CONTEXT_TOKENS
     | UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_ORIGIN_TOKENS
     | UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_FRAME_ORIGIN_TOKENS
+    | UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_STRUCTURE_TOKENS
     | {UNCLASSIFIED_TRACEBACK_ORIGIN}
 )
 
@@ -310,6 +327,24 @@ def _first_segment_frame_origin_from_multiple_headers(lines: list[bytes]) -> str
     return _origin_from_frame(final_frame.group(1), final_frame.group(2))
 
 
+def _first_segment_structure_from_multiple_headers(lines: list[bytes]) -> str | None:
+    """Return one reviewed #751 structural token after stronger gates fail."""
+
+    reconstructed_tail = b"\n".join(lines) + b"\n"
+    structure = multiheader_structure.classify_first_segment_structure(
+        reconstructed_tail
+    )
+    if structure not in ALLOWED_MULTIHEADER_FIRST_SEGMENT_STRUCTURES:
+        return None
+    candidate = (
+        f"{UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_STRUCTURE_PREFIX}."
+        f"{structure}"
+    )
+    if candidate not in UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_STRUCTURE_TOKENS:
+        return None
+    return candidate
+
+
 def _terminal_context_rejection_token(lines: list[bytes]) -> str:
     """Return only a finite structural reason for canonical-context rejection."""
 
@@ -340,6 +375,9 @@ def _terminal_context_rejection_token(lines: list[bytes]) -> str:
                 f"{UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS_FIRST_SEGMENT_FRAME_ORIGIN_PREFIX}."
                 f"{first_segment_frame_origin}"
             )
+        first_segment_structure = _first_segment_structure_from_multiple_headers(lines)
+        if first_segment_structure is not None:
+            return first_segment_structure
         return UNCLASSIFIED_TRACEBACK_MULTIPLE_HEADERS
     header_index = header_indexes[0]
 
