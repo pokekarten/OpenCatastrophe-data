@@ -49,10 +49,10 @@ REPOSITORY_PATH = "Exposure/OQ_Exposure_Input_Kosovo_Res.csv"
 COMMITS_API_URL = f"{PROVIDER_ROOT}/api/v4/projects/{PROJECT_ID}/repository/commits"
 PER_PAGE = 100
 MAX_PAGES = 10
-MAX_COMMITS = 200
+MAX_COMMITS = 50
 MAX_PAGE_BYTES = 1_048_576
 MAX_TOTAL_METADATA_BYTES = 4_194_304
-MAX_TITLE_CHARS = 300
+MAX_TITLE_CHARS = 200
 MAX_TERMINAL_UTF8_BYTES = 60_000
 TRUSTED_RESULT_LOGIN = "github-actions[bot]"
 
@@ -62,11 +62,8 @@ _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _SAFE_REQUESTER_RE = re.compile(r"^[A-Za-z0-9_.:@/+ -]{1,96}$")
 _ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T")
 _GENERATOR_PATH_HINT_RE = re.compile(
-    r"(?:^|/)(?:scripts?|tools?|utils?|src)(?:/|$)|"
-    r"(?:generat|format|convert|transform|exposure|openquake|oq_)",
-    re.I,
+    r"(?:generat|format|convert|transform|exposure|openquake|oq_)", re.I
 )
-_GENERATOR_EXTENSIONS = (".py", ".r", ".sh", ".ipynb", ".md", ".txt", ".yml", ".yaml")
 
 _REQUEST_FIELDS = {
     "schema_version",
@@ -246,15 +243,12 @@ def _canonical_commit(item: Any) -> dict[str, Any]:
         or "\r" in title
     ):
         raise KosovoRuntimeExposureHistoryError("commit title is invalid")
-    generator_hint = bool(_GENERATOR_PATH_HINT_RE.search(title)) or title.casefold().endswith(
-        tuple(extension.casefold() for extension in _GENERATOR_EXTENSIONS)
-    )
     return {
         "id": commit_id,
         "parent_ids": parents,
         "committed_date": committed_date,
         "title": title,
-        "title_generator_hint": generator_hint,
+        "title_generator_hint": bool(_GENERATOR_PATH_HINT_RE.search(title)),
     }
 
 
@@ -497,9 +491,10 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--output is required for execution")
     result = run_history(execution_sha=args.execution_sha)
     _validate_terminal_payload(result, execution_sha=args.execution_sha)
-    Path(args.output).write_text(
-        json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8"
-    )
+    encoded = (json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+    if len(encoded) > MAX_TERMINAL_UTF8_BYTES:
+        raise KosovoRuntimeExposureHistoryError("history result exceeds terminal byte bound")
+    Path(args.output).write_bytes(encoded)
     return 0
 
 
