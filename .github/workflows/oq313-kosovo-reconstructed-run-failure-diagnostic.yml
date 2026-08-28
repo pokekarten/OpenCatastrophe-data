@@ -75,6 +75,13 @@ jobs:
                   raise SystemExit("source workflow job inventory drifted")
               jobs.extend(page["jobs"])
 
+          output = Path(os.environ["GITHUB_OUTPUT"])
+          if not jobs:
+              with output.open("a", encoding="utf-8") as handle:
+                  handle.write("publish=false\n")
+                  handle.write("skip_reason=no_source_jobs\n")
+              raise SystemExit(0)
+
           validate = [
               job
               for job in jobs
@@ -126,8 +133,8 @@ jobs:
               if type(job_id) is not int or job_id <= 0:
                   raise SystemExit(f"{label} job id is invalid")
 
-          output = Path(os.environ["GITHUB_OUTPUT"])
           with output.open("a", encoding="utf-8") as handle:
+              handle.write("publish=true\n")
               handle.write(f"validation_job_id={validate[0]['id']}\n")
               handle.write(f"validation_conclusion={validation_conclusion}\n")
               handle.write(
@@ -139,6 +146,7 @@ jobs:
           PY
 
       - name: Publish checkoutless closed diagnostic
+        if: steps.bind.outputs.publish == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.event.workflow_run.id }}
