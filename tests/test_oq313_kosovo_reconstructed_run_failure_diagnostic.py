@@ -116,6 +116,15 @@ class OQ313KosovoFailureDiagnosticWorkflowTests(unittest.TestCase):
             text,
         )
 
+    def test_empty_source_job_inventory_is_expected_checkoutless_noop(self) -> None:
+        text = self.text
+        self.assertIn("if not jobs:", text)
+        self.assertIn('handle.write("publish=false\\n")', text)
+        self.assertIn('handle.write("skip_reason=no_source_jobs\\n")', text)
+        self.assertIn('handle.write("publish=true\\n")', text)
+        self.assertIn("if: steps.bind.outputs.publish == 'true'", text)
+        self.assertLess(text.index("if not jobs:"), text.index("validate = ["))
+
     def test_diagnostic_is_checkoutless_and_cannot_execute_provider_or_model(self) -> None:
         text = self.text
         for forbidden in (
