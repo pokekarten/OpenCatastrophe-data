@@ -11,7 +11,8 @@ runtime identity, command, thresholds, or scientific semantics.
 On a successful native run, the action additionally isolates the OpenQuake datastore
 inside a fresh temporary ``OQ_DATADIR`` and projects the one completed calculation
 through the already-reviewed datastore selector and numerical receipt projector.
-The datastore itself remains ephemeral; only the deterministic receipt is surfaced.
+The datastore itself remains ephemeral; only the deterministic receipt or a bounded
+cryptographic commitment to that fully validated receipt is surfaced.
 """
 
 from __future__ import annotations
@@ -46,6 +47,9 @@ PARENT_CONSUMER_ISSUE = 287
 DATASET_ID = "efehr.esrm20.risk-inputs.v1.0"
 OQ_DATADIR_ENV = "OQ_DATADIR"
 MAX_PUBLIC_NUMERICAL_RECEIPT_BYTES = 32_768
+NUMERICAL_RECEIPT_COMMITMENT_SCHEMA_VERSION = (
+    "oc-oq313-risk-by-event-receipt-commitment-v1"
+)
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -574,6 +578,46 @@ def _validate_numerical_receipt(
     return document, dict(receipt)
 
 
+def _numerical_receipt_commitment(
+    document: object,
+    identity: object,
+) -> dict[str, Any]:
+    """Bound a fully validated oversized v2 receipt without publishing its rows."""
+
+    if type(document) is not dict:
+        raise KosovoResidentialOQ313ActionError(
+            "validated numerical receipt must be an object"
+        )
+    rows = document.get("rows")
+    if type(rows) is not list or not rows:
+        raise KosovoResidentialOQ313ActionError(
+            "validated numerical receipt rows drifted"
+        )
+    if type(identity) is not dict or set(identity) != {"byte_count", "sha256"}:
+        raise KosovoResidentialOQ313ActionError(
+            "validated numerical receipt identity fields drifted"
+        )
+    byte_count = identity.get("byte_count")
+    digest = identity.get("sha256")
+    if (
+        type(byte_count) is not int
+        or byte_count <= MAX_PUBLIC_NUMERICAL_RECEIPT_BYTES
+    ):
+        raise KosovoResidentialOQ313ActionError(
+            "numerical receipt commitment requires an oversized receipt"
+        )
+    if type(digest) is not str or _DIGEST_RE.fullmatch(digest) is None:
+        raise KosovoResidentialOQ313ActionError(
+            "validated numerical receipt digest drifted"
+        )
+    return {
+        "schema_version": NUMERICAL_RECEIPT_COMMITMENT_SCHEMA_VERSION,
+        "source_schema_version": numerical_contract.SCHEMA_VERSION,
+        "row_count": len(rows),
+        "full_receipt_published": False,
+    }
+
+
 def _block_numerical_receipt(
     result: dict[str, Any],
     *,
@@ -654,11 +698,6 @@ def run_action_with_numerical_receipt(
                 result,
                 code="risk_by_event_selection_failed",
             )
-        if len(numerical_payload) > MAX_PUBLIC_NUMERICAL_RECEIPT_BYTES:
-            return _block_numerical_receipt(
-                result,
-                code="numerical_receipt_publication_budget_exceeded",
-            )
         try:
             numerical_document, numerical_identity = _validate_numerical_receipt(
                 numerical_payload,
@@ -670,11 +709,18 @@ def run_action_with_numerical_receipt(
                 result,
                 code="numerical_receipt_validation_failed",
             )
+
         result["numerical_receipt_emitted"] = True
         result["numerical_receipt_failure_stage"] = None
         result["numerical_receipt_failure_code"] = None
         result["numerical_receipt_identity"] = numerical_identity
-        result["numerical_receipt"] = numerical_document
+        if len(numerical_payload) > MAX_PUBLIC_NUMERICAL_RECEIPT_BYTES:
+            result["numerical_receipt_commitment"] = _numerical_receipt_commitment(
+                numerical_document,
+                numerical_identity,
+            )
+        else:
+            result["numerical_receipt"] = numerical_document
         return result
 
 
