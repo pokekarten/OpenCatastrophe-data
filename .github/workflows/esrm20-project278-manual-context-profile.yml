@@ -1,0 +1,217 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Project-278 Manual Context Profile
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-project278-manual-context-profile-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main PDF context request
+    if: >-
+      github.event.issue.number == 291 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-project278-manual-context-profile-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up validation Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_CONTEXT_REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.profile_esrm20_project278_manual_context \
+            --comment-body-env OC_CONTEXT_REQUEST_BODY \
+            --expected-issue 291 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute-profile:
+    name: Profile fixed project-278 manual contexts
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up profile Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Install pinned PDF parser
+        run: |
+          python -m pip install --require-hashes -r requirements-project278-pdf-profile.txt
+          python -m pip check
+
+      - name: Prove complete issue-local dedup before provider access
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import profile_esrm20_project278_manual_context as subject
+
+          skip = subject.has_terminal_context_profile_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+
+      - name: Acquire, identity-check, and profile exact manual contexts
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_CONTEXT_REQUEST_BODY: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/project278-manual-context-profile.json
+        run: |
+          set -euo pipefail
+          python -m scripts.profile_esrm20_project278_manual_context \
+            --comment-body-env OC_CONTEXT_REQUEST_BODY \
+            --expected-issue 291 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from scripts import profile_esrm20_project278_manual_context as subject
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          subject._validate_terminal_payload(result, execution_sha=os.environ["EXECUTION_SHA"])
+          PY
+
+      - name: Export bounded result to publisher
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        env:
+          RESULT_PATH: ${{ runner.temp }}/project278-manual-context-profile.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish-profile:
+    name: Publish bounded project-278 context profile
+    needs: [validate-request, execute-profile]
+    if: >-
+      needs.execute-profile.result == 'success' &&
+      needs.execute-profile.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Re-fence trusted main and publish without repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute-profile.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-project278-manual-context-profile-result-v1 -->"
+        run: |
+          set -euo pipefail
+          LATEST_SHA="$(gh api "repos/$GITHUB_REPOSITORY/commits/$DEFAULT_BRANCH" --jq '.sha')"
+          test "$LATEST_SHA" = "$EXECUTION_SHA"
+
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-project278-manual-context-profile-result-v1" and
+            .action == "esrm20_project278_manual_context_profile" and
+            .source_issue == 291 and
+            .dataset_id == "efehr.esrm20.sitemodel-source" and
+            .target_sha == $sha and
+            .execution_sha == $sha and
+            .manual_identity.project_id == 278 and
+            .manual_identity.commit_sha == "038c91d2bf5a07f6b54ff51639aad874d6837ea9" and
+            .manual_identity.repository_path == "ExposureReadme.pdf" and
+            .manual_identity.byte_count == 2121105 and
+            .manual_identity.sha256 == "6a69d92ecb7df5e9b31c3609246baadff24e0f59ea352b576e900d74ad779590" and
+            .source_profile_identity.page_count == 14 and
+            .source_profile_identity.normalized_text_character_count == 20841 and
+            .source_profile_identity.normalized_text_sha256 == "fa8cfc6789986951c4cc440a8977f1f7def24d1702872dd8d96136b051b98d83" and
+            .pdf_content_interpreted == false and
+            .crs_coordinate_semantics_verified == false and
+            .generator_invocation_verified == false and
+            .missingness_semantics_verified == false and
+            .site_model_compatibility_verified == false and
+            .external_bytes_persisted == false and
+            .publication_authorized == false and
+            .model_use_authorized == false and
+            (
+              (.status == "pass" and .context_profiled == true and
+               .failure_class == null and
+               .context_profile.schema_version == "oc-esrm20-project278-manual-context-profile-v1" and
+               .context_profile.raw_text_exposed == false and
+               .context_profile.snippets_exposed == false)
+              or
+              (.status == "blocked" and .context_profiled == false and
+               (.failure_class == "acquisition_failure" or .failure_class == "context_profile_failure") and
+               .context_profile == null)
+            )
+          ' >/dev/null
+
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/project278-context-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/291/comments" \
+            --input "$RUNNER_TEMP/project278-context-comment.json"
