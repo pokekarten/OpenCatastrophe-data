@@ -6,7 +6,7 @@
 The trusted action already validates the runtime and numerical receipt before publishing.
 This module gives an external consumer a network-free second boundary over a *supplied*
 result-comment body: exact outer fields, adapter self-consistency, authority ceilings and
-(when present) the canonical risk_by_event receipt are revalidated.
+(when present) the canonical risk_by_event receipt or its bounded commitment are checked.
 
 This content-only boundary does **not** authenticate the GitHub comment actor/origin and
 does not independently establish the nested adapter's provenance. A consumer must obtain
@@ -31,6 +31,7 @@ if __package__ in {None, ""}:
 from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313_action as action
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+_DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
 _BASE_FIELDS = {
     "schema_version",
     "action",
@@ -53,9 +54,13 @@ _NUMERICAL_FAILURE_FIELDS = {
     "numerical_receipt_failure_stage",
     "numerical_receipt_failure_code",
 }
-_NUMERICAL_SUCCESS_FIELDS = _NUMERICAL_FAILURE_FIELDS | {
+_NUMERICAL_FULL_SUCCESS_FIELDS = _NUMERICAL_FAILURE_FIELDS | {
     "numerical_receipt_identity",
     "numerical_receipt",
+}
+_NUMERICAL_COMMITMENT_SUCCESS_FIELDS = _NUMERICAL_FAILURE_FIELDS | {
+    "numerical_receipt_identity",
+    "numerical_receipt_commitment",
 }
 _NUMERICAL_FAILURE_CODES = {
     "calculation_datastore_discovery_failed",
@@ -64,6 +69,12 @@ _NUMERICAL_FAILURE_CODES = {
     "risk_by_event_selection_failed",
     "numerical_receipt_publication_budget_exceeded",
     "numerical_receipt_validation_failed",
+}
+_NUMERICAL_COMMITMENT_FIELDS = {
+    "schema_version",
+    "source_schema_version",
+    "row_count",
+    "full_receipt_published",
 }
 _OUTER_FALSE_FIELDS = (
     "external_provider_bytes_persisted",
@@ -138,6 +149,58 @@ def _validate_adapter_self_consistency(result: dict[str, Any]) -> dict[str, Any]
     if type(digest) is not str or digest != hashlib.sha256(payload).hexdigest():
         raise EQ1OQ313TerminalValidationError("adapter receipt digest drifted")
     return validated
+
+
+def _validate_commitment_identity(identity: object) -> dict[str, Any]:
+    if type(identity) is not dict or set(identity) != {"byte_count", "sha256"}:
+        raise EQ1OQ313TerminalValidationError(
+            "numerical receipt commitment identity fields drifted"
+        )
+    byte_count = identity.get("byte_count")
+    digest = identity.get("sha256")
+    if (
+        type(byte_count) is not int
+        or byte_count <= action.MAX_PUBLIC_NUMERICAL_RECEIPT_BYTES
+    ):
+        raise EQ1OQ313TerminalValidationError(
+            "numerical receipt commitment byte count drifted"
+        )
+    if type(digest) is not str or _DIGEST_RE.fullmatch(digest) is None:
+        raise EQ1OQ313TerminalValidationError(
+            "numerical receipt commitment digest drifted"
+        )
+    return dict(identity)
+
+
+def _validate_commitment(commitment: object) -> int:
+    if type(commitment) is not dict or set(commitment) != _NUMERICAL_COMMITMENT_FIELDS:
+        raise EQ1OQ313TerminalValidationError(
+            "numerical receipt commitment fields drifted"
+        )
+    if (
+        commitment.get("schema_version")
+        != action.NUMERICAL_RECEIPT_COMMITMENT_SCHEMA_VERSION
+    ):
+        raise EQ1OQ313TerminalValidationError(
+            "numerical receipt commitment schema drifted"
+        )
+    if (
+        commitment.get("source_schema_version")
+        != action.numerical_contract.SCHEMA_VERSION
+    ):
+        raise EQ1OQ313TerminalValidationError(
+            "numerical receipt commitment source schema drifted"
+        )
+    row_count = commitment.get("row_count")
+    if type(row_count) is not int or row_count <= 0:
+        raise EQ1OQ313TerminalValidationError(
+            "numerical receipt commitment row count drifted"
+        )
+    if commitment.get("full_receipt_published") is not False:
+        raise EQ1OQ313TerminalValidationError(
+            "numerical receipt commitment publication boundary drifted"
+        )
+    return row_count
 
 
 def _bounded_summary(
@@ -218,8 +281,6 @@ def validate_terminal_body(
         )
 
     if emitted:
-        if set(result) != (_BASE_FIELDS | _NUMERICAL_SUCCESS_FIELDS):
-            raise EQ1OQ313TerminalValidationError("PASS terminal fields drifted")
         if result.get("status") != "pass":
             raise EQ1OQ313TerminalValidationError("numerical receipt terminal status drifted")
         if result.get("numerical_receipt_failure_stage") is not None:
@@ -227,24 +288,45 @@ def validate_terminal_body(
         if result.get("numerical_receipt_failure_code") is not None:
             raise EQ1OQ313TerminalValidationError("PASS numerical failure code drifted")
 
-        numerical = result.get("numerical_receipt")
-        identity = result.get("numerical_receipt_identity")
-        payload = _canonical_json_bytes(numerical)
-        try:
-            _, validated_identity = action._validate_numerical_receipt(
-                payload,
-                identity,
-                expected_concurrent_tasks=action._adapter_concurrent_tasks(result),
+        observed_fields = set(result)
+        if observed_fields == (_BASE_FIELDS | _NUMERICAL_FULL_SUCCESS_FIELDS):
+            numerical = result.get("numerical_receipt")
+            identity = result.get("numerical_receipt_identity")
+            payload = _canonical_json_bytes(numerical)
+            try:
+                _, validated_identity = action._validate_numerical_receipt(
+                    payload,
+                    identity,
+                    expected_concurrent_tasks=action._adapter_concurrent_tasks(result),
+                )
+            except action.KosovoResidentialOQ313ActionError as exc:
+                raise EQ1OQ313TerminalValidationError(
+                    "numerical receipt contract drifted"
+                ) from exc
+            return _bounded_summary(
+                expected_execution_sha=expected_execution_sha,
+                terminal_status="pass",
+                numerical_receipt_emitted=True,
+                numerical_receipt_identity=validated_identity,
+                row_count=len(numerical["rows"]),
             )
-        except action.KosovoResidentialOQ313ActionError as exc:
-            raise EQ1OQ313TerminalValidationError("numerical receipt contract drifted") from exc
-        return _bounded_summary(
-            expected_execution_sha=expected_execution_sha,
-            terminal_status="pass",
-            numerical_receipt_emitted=True,
-            numerical_receipt_identity=validated_identity,
-            row_count=len(numerical["rows"]),
-        )
+
+        if observed_fields == (_BASE_FIELDS | _NUMERICAL_COMMITMENT_SUCCESS_FIELDS):
+            validated_identity = _validate_commitment_identity(
+                result.get("numerical_receipt_identity")
+            )
+            row_count = _validate_commitment(
+                result.get("numerical_receipt_commitment")
+            )
+            return _bounded_summary(
+                expected_execution_sha=expected_execution_sha,
+                terminal_status="pass",
+                numerical_receipt_emitted=True,
+                numerical_receipt_identity=validated_identity,
+                row_count=row_count,
+            )
+
+        raise EQ1OQ313TerminalValidationError("PASS terminal fields drifted")
 
     if set(result) != (_BASE_FIELDS | _NUMERICAL_FAILURE_FIELDS):
         raise EQ1OQ313TerminalValidationError("numerical BLOCKED terminal fields drifted")
