@@ -108,18 +108,24 @@ class OQ313NumericalReceiptPublicationBudgetTests(unittest.TestCase):
             project_datastore=lambda path: (payload, identity),
         )
 
-        self.assertEqual(result["status"], "blocked")
-        self.assertIs(result["numerical_receipt_emitted"], False)
-        self.assertEqual(
-            result["numerical_receipt_failure_stage"],
-            "risk_by_event_receipt",
-        )
-        self.assertEqual(
-            result["numerical_receipt_failure_code"],
-            "numerical_receipt_publication_budget_exceeded",
-        )
+        self.assertEqual(result["status"], "pass")
+        self.assertIs(result["numerical_receipt_emitted"], True)
+        self.assertIsNone(result["numerical_receipt_failure_stage"])
+        self.assertIsNone(result["numerical_receipt_failure_code"])
+        self.assertEqual(result["numerical_receipt_identity"], identity)
         self.assertNotIn("numerical_receipt", result)
-        self.assertNotIn("numerical_receipt_identity", result)
+
+        commitment = result["numerical_receipt_commitment"]
+        self.assertEqual(
+            commitment["schema_version"],
+            subject.NUMERICAL_RECEIPT_COMMITMENT_SCHEMA_VERSION,
+        )
+        self.assertEqual(
+            commitment["source_schema_version"],
+            numerical_contract.SCHEMA_VERSION,
+        )
+        self.assertEqual(commitment["row_count"], 1_000)
+        self.assertIs(commitment["full_receipt_published"], False)
         self.assertLess(
             len(json.dumps(result, sort_keys=True, separators=(",", ":"))),
             subject.MAX_PUBLIC_NUMERICAL_RECEIPT_BYTES,
