@@ -10,7 +10,9 @@ EQ1 datastore selector remains the numerical authority.
 The public summary binds the datastore bytes and either embeds the validated
 canonical numerical receipt or, when that receipt exceeds the repository's
 publication budget, emits the same bounded commitment used by the trusted action.
-The full canonical receipt may optionally be written to a new local file.
+The full canonical receipt may optionally be written to a new local file. An
+optional bounded descriptive numerical profile can be derived from the same
+projected receipt without a second OpenQuake run.
 """
 
 from __future__ import annotations
@@ -27,8 +29,10 @@ from pathlib import Path
 from typing import Any
 
 try:
+    from scripts import profile_oq313_risk_by_event_receipt as receipt_profiler
     from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313_action as action
 except ModuleNotFoundError:  # pragma: no cover - direct script execution path
+    import profile_oq313_risk_by_event_receipt as receipt_profiler
     import run_esrm20_kosovo_residential_ebrisk_openquake313_action as action
 
 SCHEMA_VERSION = "oc-oq313-existing-datastore-projection-v1"
@@ -151,12 +155,15 @@ def project_existing_datastore(
     path: Path,
     *,
     full_receipt_out: Path | None = None,
+    include_profile: bool = False,
     project_datastore: Callable[[Path], tuple[bytes, dict[str, Any]]] = action._project_exact_datastore,
 ) -> dict[str, Any]:
     """Return a bounded identity/receipt summary for one completed local datastore."""
 
     if not isinstance(path, Path):
         raise ExistingOQ313DatastoreProjectionError("datastore path must be a Path")
+    if type(include_profile) is not bool:
+        raise ExistingOQ313DatastoreProjectionError("include_profile must be a boolean")
     before = _stable_stat(path)
     try:
         payload, identity = project_datastore(path)
@@ -171,6 +178,15 @@ def project_existing_datastore(
         )
 
     document, validated_identity = _validate_projected_receipt(payload, identity)
+    numerical_profile: dict[str, Any] | None = None
+    if include_profile:
+        try:
+            numerical_profile = receipt_profiler.profile_receipt(payload)
+        except receipt_profiler.OQ313RiskByEventProfileError as exc:
+            raise ExistingOQ313DatastoreProjectionError(
+                "projected numerical receipt failed offline profiling"
+            ) from exc
+
     datastore_identity = _hash_file(path)
     after_hash = _stable_stat(path)
     if after_hash != before or datastore_identity["byte_count"] != before[0]:
@@ -210,6 +226,8 @@ def project_existing_datastore(
     else:
         result["projection_mode"] = "full_receipt"
         result["numerical_receipt"] = document
+    if numerical_profile is not None:
+        result["numerical_profile"] = numerical_profile
     return result
 
 
@@ -233,11 +251,20 @@ def main(argv: list[str] | None = None) -> int:
             "not already exist; provider/datastore bytes are never copied there."
         ),
     )
+    parser.add_argument(
+        "--include-profile",
+        action="store_true",
+        help=(
+            "Also emit the bounded offline empirical event-loss profile derived from "
+            "the same projected receipt. This does not annualize losses or rerun OQ."
+        ),
+    )
     args = parser.parse_args(argv)
     try:
         result = project_existing_datastore(
             args.datastore,
             full_receipt_out=args.full_receipt_out,
+            include_profile=args.include_profile,
         )
     except ExistingOQ313DatastoreProjectionError as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
