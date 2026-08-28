@@ -10,6 +10,7 @@ import unittest
 from pathlib import Path
 from typing import Any
 
+from scripts import profile_oq313_risk_by_event_receipt as profile_contract
 from scripts import project_existing_oq313_datastore as subject
 from scripts import project_oq313_risk_by_event_receipt as numerical_contract
 
@@ -63,11 +64,44 @@ class ExistingOQ313DatastoreProjectionTests(unittest.TestCase):
             result["numerical_receipt"]["schema_version"],
             numerical_contract.SCHEMA_VERSION,
         )
+        self.assertNotIn("numerical_profile", result)
         self.assertIs(result["full_receipt_written"], False)
         self.assertIs(result["historical_reproduction_verified"], False)
         self.assertIs(result["scientific_validity_verified"], False)
         self.assertIs(result["publication_authorized"], False)
         self.assertIs(result["model_use_authorized"], False)
+
+    def test_optional_profile_uses_same_projected_receipt_once(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            datastore = Path(temporary) / "calc_5.hdf5"
+            datastore.write_bytes(b"completed-datastore")
+            payload, identity = _receipt(row_count=3)
+            calls = 0
+
+            def projector(path: Path) -> tuple[bytes, dict[str, Any]]:
+                nonlocal calls
+                calls += 1
+                self.assertEqual(path, datastore)
+                return payload, identity
+
+            result = subject.project_existing_datastore(
+                datastore,
+                include_profile=True,
+                project_datastore=projector,
+            )
+
+        self.assertEqual(calls, 1)
+        profile = result["numerical_profile"]
+        self.assertEqual(profile["schema_version"], profile_contract.SCHEMA_VERSION)
+        self.assertEqual(profile["row_count"], 3)
+        self.assertEqual(profile["source_receipt"]["identity"], identity)
+        self.assertEqual(
+            profile["loss"]["exact_sum_binary"],
+            {"coefficient": "3", "binary_exponent": 0, "approx_decimal": "3"},
+        )
+        self.assertIs(profile["annualized_metrics_authorized"], False)
+        self.assertIs(profile["scientific_validity_verified"], False)
+        self.assertIs(profile["model_use_authorized"], False)
 
     def test_oversized_receipt_uses_bounded_commitment_without_rows(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -94,6 +128,25 @@ class ExistingOQ313DatastoreProjectionTests(unittest.TestCase):
             False,
         )
         self.assertNotIn('"rows"', json.dumps(result, sort_keys=True))
+
+    def test_oversized_receipt_can_emit_bounded_profile_without_full_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            datastore = Path(temporary) / "calc_10.hdf5"
+            datastore.write_bytes(b"completed-datastore")
+            payload, identity = _receipt(row_count=1_000)
+            result = subject.project_existing_datastore(
+                datastore,
+                include_profile=True,
+                project_datastore=lambda path: (payload, identity),
+            )
+
+        self.assertEqual(result["projection_mode"], "commitment")
+        self.assertNotIn("numerical_receipt", result)
+        profile = result["numerical_profile"]
+        self.assertEqual(profile["row_count"], 1_000)
+        self.assertEqual(len(profile["loss"]["top_loss_rows"]), 10)
+        self.assertEqual(len(profile["loss"]["empirical_nearest_ranks"]), 6)
+        self.assertNotIn("rows", profile)
 
     def test_optional_full_receipt_is_written_exactly_once(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -167,6 +220,20 @@ class ExistingOQ313DatastoreProjectionTests(unittest.TestCase):
                 subject.project_existing_datastore(
                     datastore,
                     project_datastore=lambda path: (payload, bad_identity),
+                )
+
+    def test_rejects_non_boolean_profile_switch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            datastore = Path(temporary) / "calc_6.hdf5"
+            datastore.write_bytes(b"completed-datastore")
+            with self.assertRaisesRegex(
+                subject.ExistingOQ313DatastoreProjectionError,
+                "include_profile must be a boolean",
+            ):
+                subject.project_existing_datastore(
+                    datastore,
+                    include_profile=1,  # type: ignore[arg-type]
+                    project_datastore=lambda path: _receipt(),
                 )
 
 
