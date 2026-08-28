@@ -1,0 +1,194 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESRM20 Kosovo Runtime Exposure Intro Tree Delta
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: esrm20-kosovo-runtime-exposure-intro-tree-delta-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate trusted-main intro-tree-delta request
+    if: >-
+      github.event.issue.number == 282 &&
+      github.event.comment.user.login == github.event.repository.owner.login &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '<!-- oc-eq1-esrm20-kosovo-runtime-exposure-intro-tree-delta-request-v1 -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      execution_sha: ${{ steps.fence.outputs.execution_sha }}
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Bind request to trusted main
+        id: fence
+        env:
+          OC_TREE_DELTA_REQUEST_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          EXECUTION_SHA="$(git rev-parse HEAD)"
+          python -m scripts.acquire_esrm20_kosovo_runtime_exposure_intro_tree_delta \
+            --comment-body-env OC_TREE_DELTA_REQUEST_BODY \
+            --expected-issue 282 \
+            --execution-sha "$EXECUTION_SHA" \
+            --validate-request-only
+          echo "execution_sha=$EXECUTION_SHA" >> "$GITHUB_OUTPUT"
+
+  execute:
+    name: Compare frozen parent and introducing trees
+    needs: [validate-request]
+    if: needs.validate-request.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
+      result_json: ${{ steps.result.outputs.result_json }}
+    steps:
+      - name: Checkout exact trusted execution commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.validate-request.outputs.execution_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Deduplicate before provider metadata access
+        id: dedup
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from scripts import acquire_esrm20_kosovo_runtime_exposure_intro_tree_delta as subject
+
+          skip = subject.has_terminal_result(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              token=os.environ["GH_TOKEN"],
+              execution_sha=os.environ["EXECUTION_SHA"],
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+
+      - name: Read exact recursive tree metadata
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          OC_TREE_DELTA_REQUEST_BODY: ${{ github.event.comment.body }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_PATH: ${{ runner.temp }}/kosovo-runtime-exposure-intro-tree-delta.json
+        run: |
+          set -euo pipefail
+          python -m scripts.acquire_esrm20_kosovo_runtime_exposure_intro_tree_delta \
+            --comment-body-env OC_TREE_DELTA_REQUEST_BODY \
+            --expected-issue 282 \
+            --execution-sha "$EXECUTION_SHA" \
+            --output "$RESULT_PATH"
+
+      - name: Export bounded result
+        if: steps.dedup.outputs.skip != 'true'
+        id: result
+        env:
+          RESULT_PATH: ${{ runner.temp }}/kosovo-runtime-exposure-intro-tree-delta.json
+        run: |
+          set -euo pipefail
+          RESULT_JSON="$(python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from scripts import acquire_esrm20_kosovo_runtime_exposure_intro_tree_delta as subject
+
+          result = json.loads(Path(os.environ["RESULT_PATH"]).read_text(encoding="utf-8"))
+          subject._validate_terminal_payload(result, execution_sha=result["execution_sha"])
+          print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$RESULT_JSON"
+          echo "result_json=$RESULT_JSON" >> "$GITHUB_OUTPUT"
+
+  publish:
+    name: Publish bounded intro-tree-delta result
+    needs: [validate-request, execute]
+    if: >-
+      needs.execute.result == 'success' &&
+      needs.execute.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Re-fence trusted main and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXECUTION_SHA: ${{ needs.validate-request.outputs.execution_sha }}
+          RESULT_JSON: ${{ needs.execute.outputs.result_json }}
+          RESULT_MARKER: "<!-- oc-eq1-esrm20-kosovo-runtime-exposure-intro-tree-delta-result-v1 -->"
+        run: |
+          set -euo pipefail
+          LATEST_SHA="$(gh api "repos/$GITHUB_REPOSITORY/commits/$DEFAULT_BRANCH" --jq '.sha')"
+          test "$LATEST_SHA" = "$EXECUTION_SHA"
+
+          printf '%s' "$RESULT_JSON" | jq -e --arg sha "$EXECUTION_SHA" '
+            .schema_version == "oc-esrm20-kosovo-runtime-exposure-intro-tree-delta-result-v1" and
+            .action == "esrm20_kosovo_runtime_exposure_intro_tree_delta" and
+            .source_issue == 282 and
+            .target_sha == $sha and
+            .execution_sha == $sha and
+            .external_file_bytes_accessed == false and
+            .external_bytes_persisted == false and
+            .transform_lineage_verified == false and
+            .publication_authorized == false and
+            .model_use_authorized == false and
+            (
+              (.status == "pass" and .failure_class == null and
+               .delta.project_id == 269 and
+               .delta.parent_sha == "8d62f10c36ff58ea1ce88d156e315591e66aa0e6" and
+               .delta.introducing_sha == "78e3f05af4fc3f285570172807c54774537ee309" and
+               .delta.target_path == "Exposure/OQ_Exposure_Input_Kosovo_Res.csv" and
+               .delta.target_change == "added" and
+               .delta.trees_complete == true and
+               .delta.diffs_requested == false and
+               .delta.file_payloads_requested == false)
+              or
+              (.status == "blocked" and .failure_class == "metadata_acquisition_failure" and .delta == null)
+            )
+          ' >/dev/null
+
+          BODY="$RESULT_MARKER
+          $RESULT_JSON"
+          jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/tree-delta-comment.json"
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/282/comments" \
+            --input "$RUNNER_TEMP/tree-delta-comment.json"
