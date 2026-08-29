@@ -9,8 +9,6 @@ import tempfile
 import unittest
 from unittest import mock
 
-import numpy
-
 from scripts import run_esrm20_scenario_v10_greece_shakemap_openquake3121_runtime_action as subject
 
 SHA = "a" * 40
@@ -32,19 +30,51 @@ def request_body(**updates):
     return subject.REQUEST_MARKER + "\n" + json.dumps(payload, sort_keys=True)
 
 
+class _FakeDType:
+    def __init__(self, names):
+        self.names = tuple(names)
+
+
+class _FakeField(list):
+    def __init__(self, values, *, names=()):
+        super().__init__(values)
+        self.dtype = _FakeDType(names)
+
+
+class _FakeNativeArray:
+    def __init__(self, rows):
+        self.dtype = _FakeDType(("lon", "lat", "vs30", "val", "std"))
+        self._fields = {
+            "lon": _FakeField([23.0] * rows),
+            "lat": _FakeField([38.0] * rows),
+            "vs30": _FakeField([760.0] * rows),
+            "val": _FakeField([None] * rows, names=subject._EXPECTED_IMTS),
+            "std": _FakeField([None] * rows, names=subject._EXPECTED_IMTS),
+        }
+
+    def __len__(self):
+        return len(self._fields["lon"])
+
+    def __getitem__(self, field):
+        return self._fields[field]
+
+
+class _FakeFiniteResult:
+    def __init__(self, values):
+        self._values = values
+
+    def all(self):
+        return all(value == value and value not in (float("inf"), float("-inf")) for value in self._values)
+
+
+class _FakeNumpyModule:
+    @staticmethod
+    def isfinite(values):
+        return _FakeFiniteResult(values)
+
+
 def native_array(rows=subject._EXPECTED_ROW_COUNT):
-    imts = [(imt, numpy.float32) for imt in subject._EXPECTED_IMTS]
-    dtype = [
-        ("lon", numpy.float32),
-        ("lat", numpy.float32),
-        ("vs30", numpy.float32),
-        ("val", imts),
-        ("std", imts),
-    ]
-    data = numpy.zeros(rows, dtype=dtype)
-    data["lon"] = 23.0
-    data["lat"] = 38.0
-    return data
+    return _FakeNativeArray(rows)
 
 
 class RequestContractTests(unittest.TestCase):
@@ -77,6 +107,7 @@ class RequestContractTests(unittest.TestCase):
             subject.validate_request(body, expected_issue=285, execution_sha=SHA)
 
 
+@mock.patch.dict("sys.modules", {"numpy": _FakeNumpyModule()})
 class NativeReaderTests(unittest.TestCase):
     def test_expected_native_array_is_bounded(self):
         result = subject._validate_native_array(native_array())
@@ -94,7 +125,7 @@ class NativeReaderTests(unittest.TestCase):
 
     def test_nonfinite_coordinates_are_rejected(self):
         data = native_array()
-        data["lon"][0] = numpy.nan
+        data["lon"][0] = float("nan")
         with self.assertRaises(subject.NativeReaderRejected):
             subject._validate_native_array(data)
 
