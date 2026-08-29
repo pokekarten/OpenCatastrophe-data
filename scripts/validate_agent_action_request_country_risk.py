@@ -54,6 +54,13 @@ def validate_request(
 
 
 def main(argv: list[str] | None = None) -> int:
-    # The trusted dispatcher imports this validator; direct CLI execution is not
-    # needed for the workflow and would otherwise call the legacy module global.
-    return _legacy.main(argv)
+    original = _legacy.validate_request
+    _legacy.validate_request = validate_request
+    try:
+        return _legacy.main(argv)
+    finally:
+        _legacy.validate_request = original
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
