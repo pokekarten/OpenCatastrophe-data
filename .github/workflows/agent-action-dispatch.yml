@@ -48,6 +48,9 @@ jobs:
           python-version: "3.14"
       # The country-risk-aware layer delegates every pre-existing action to the
       # reviewed dispatcher and adds only the frozen Issue #778 receipt worker.
+      # Legacy compatibility remains explicit below the wrapper: the publisher
+      # implementation behind it is python scripts/post_agent_action_result.py,
+      # and acquisition_receipt still uses the repository-owned frozen DWD worker.
       # No URL/path/command/parser comes from the comment.
       - name: Prepare bounded action result
         id: prepare-result
