@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import unittest
+from unittest import mock
 
 from scripts import profile_efehr_greece_site_model as subject
 
@@ -75,8 +76,13 @@ class GreeceSiteContentProfileTests(unittest.TestCase):
 
     def test_public_exact_wrapper_rejects_synthetic_identity_before_parse(self):
         raw = b"<not-xml"
-        with self.assertRaisesRegex(subject.GreeceSiteProfileError, "failed closed"):
-            subject.profile_verified_greece_site_model(raw)
+        with mock.patch.object(
+            subject.shared_profile,
+            "_decode_literal_xml",
+            side_effect=AssertionError("XML interpretation must not run"),
+        ):
+            with self.assertRaisesRegex(subject.GreeceSiteProfileError, "failed closed"):
+                subject.profile_verified_greece_site_model(raw)
 
     def test_dtd_and_entity_rejection_is_inherited(self):
         for raw in (
@@ -95,15 +101,25 @@ class GreeceSiteContentProfileTests(unittest.TestCase):
             _profile(raw)
 
     def test_shared_profile_schema_drift_fails_closed(self):
-        original = subject.shared_profile.SCHEMA_VERSION
-        subject.shared_profile.SCHEMA_VERSION = "drifted-schema"
-        try:
+        with mock.patch.object(subject.shared_profile, "SCHEMA_VERSION", "drifted-schema"):
             with self.assertRaisesRegex(
                 subject.GreeceSiteProfileError, "shared site-profile schema drifted"
             ):
                 _profile(b"<root/>")
-        finally:
-            subject.shared_profile.SCHEMA_VERSION = original
+
+    def test_shared_profile_result_shape_drift_fails_closed(self):
+        with mock.patch.object(
+            subject.shared_profile,
+            "profile_verified_xml_bytes",
+            return_value={
+                "schema_version": subject.SHARED_PROFILE_SCHEMA_VERSION,
+                "unexpected": True,
+            },
+        ):
+            with self.assertRaisesRegex(
+                subject.GreeceSiteProfileError, "result fields drifted"
+            ):
+                _profile(b"<root/>")
 
     def test_authority_ceilings_remain_false(self):
         result = _profile(b'<root><site a="1"/></root>')
