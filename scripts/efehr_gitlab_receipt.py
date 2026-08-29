@@ -48,7 +48,7 @@ PROJECTS: dict[int, dict[str, Any]] = {
     },
     269: {
         "project_path": "efehr/esrm20",
-        "issues": frozenset({281, 282, 283, 284}),
+        "issues": frozenset({281, 282, 283, 284, 778}),
         "datasets": frozenset({"efehr.esrm20.risk-inputs.v1.0"}),
     },
     278: {
@@ -99,10 +99,16 @@ EXACT_PATHS: dict[tuple[int, int], frozenset[str]] = {
             "ExposureReadme.pdf",
         }
     ),
+    (778, 269): frozenset(
+        {
+            "Risk/European_Risk_Country.csv",
+        }
+    ),
 }
 
 EXACT_COMMITS: dict[tuple[int, int], str] = {
     (291, 278): "038c91d2bf5a07f6b54ff51639aad874d6837ea9",
+    (778, 269): "05f83bbc9df81d02ee8ddb1801d9d781355ce783",
 }
 
 ESHM20_PREFIX = "oq_computational/oq_configuration_eshm20_v12e_region_main/"
@@ -152,7 +158,7 @@ def validate_target(
     repository_path: str,
 ) -> ArtifactTarget:
     """Validate one immutable P0 EFEHR target and return its canonical identity."""
-    if type(source_issue) is not int or source_issue not in {281, 282, 283, 284, 291}:
+    if type(source_issue) is not int or source_issue not in {281, 282, 283, 284, 291, 778}:
         raise EfehrReceiptError("source_issue is outside the P0 EFEHR allow-list")
     if type(dataset_id) is not str or not SAFE_DATASET_RE.fullmatch(dataset_id):
         raise EfehrReceiptError("dataset_id is invalid")
