@@ -28,7 +28,6 @@ _CANONICAL_MAX_ROWS: Final = 500_000
 _CANONICAL_MAX_COLUMNS: Final = 32
 _CANONICAL_MAX_XML_BYTES: Final = 6_000_000
 _HISTORICAL_OQ_3_12_1_UNIT_SENTINEL: Final = "ignored_by_openquake_3_12_1"
-_HISTORICAL_OQ_3_12_1_GRID_UNIT_FIELDS: Final = frozenset({"PGA"})
 
 GRID_BYTE_COUNT: Final = _CANONICAL_GRID_BYTE_COUNT
 GRID_SHA256: Final = _CANONICAL_GRID_SHA256
@@ -70,6 +69,8 @@ _UNCERTAINTY_FIELD_UNITS: Final = {
     "STDPSA10": frozenset({"ln(pctg)"}),
     "STDPSA30": frozenset({"ln(pctg)"}),
 }
+_HISTORICAL_OQ_3_12_1_GRID_UNIT_FIELDS: Final = frozenset(_GRID_FIELD_UNITS)
+_HISTORICAL_OQ_3_12_1_UNCERTAINTY_UNIT_FIELDS: Final = frozenset(_UNCERTAINTY_FIELD_UNITS)
 _OQ_VALUE_IMTS: Final = {
     "MMI": "MMI",
     "PGA": "PGA",
@@ -434,6 +435,11 @@ def _profile_verified_greece_shakemap_pair(
         max_rows=max_rows,
         max_columns=max_columns,
         max_xml_bytes=max_xml_bytes,
+        unit_metadata_ignored_fields=(
+            _HISTORICAL_OQ_3_12_1_UNCERTAINTY_UNIT_FIELDS
+            if historical_oq_3_12_1_compatibility
+            else frozenset()
+        ),
     )
     if grid.namespace != uncertainty.namespace:
         raise ShakeMapProfileError("shakemap_namespace_mismatch")
