@@ -12,7 +12,7 @@ from scripts import acquire_efehr_esrm20_country_risk_receipt as subject
 from scripts.efehr_gitlab_receipt import EfehrReceiptError, raw_file_api_url, validate_target
 
 RETRIEVED_AT = "2026-08-29T09:05:00Z"
-PAYLOAD = b"Country,AALR Residential (economic, per mille)\nSynthetic,1.25\n"
+PAYLOAD = b"synthetic_col_a,synthetic_col_b\nsynthetic_row,1.25\n"
 
 
 class FakeResponse:
