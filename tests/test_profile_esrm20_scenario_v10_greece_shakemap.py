@@ -169,6 +169,26 @@ class ShakeMapProfileTests(unittest.TestCase):
         self.assertEqual(result["metadata"]["event_id"], "provider-event")
         self.assertEqual(result["receipt_event_id"], "Greece_07-9-1999")
 
+    def test_shakemap_ids_must_match_across_pair(self):
+        grid = _xml(
+            GRID_FIELDS,
+            GRID_ROWS,
+            event_id="provider-event",
+        )
+        uncertainty = _xml(
+            UNC_FIELDS,
+            UNC_ROWS,
+            event_id="provider-event",
+        ).replace(
+            b'shakemap_id="provider-event"',
+            b'shakemap_id="other-map"',
+            1,
+        )
+        with self.assertRaisesRegex(
+            profile.ShakeMapProfileError, "shakemap_id_pair_mismatch"
+        ):
+            _call(grid, uncertainty)
+
     def test_duplicate_or_gapped_field_indexes_fail_closed(self):
         duplicate = list(GRID_FIELDS)
         duplicate[3] = (3, "PGV", "cms")

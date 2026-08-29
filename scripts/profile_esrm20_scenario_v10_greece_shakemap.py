@@ -449,6 +449,12 @@ def _profile_verified_greece_shakemap_pair(
         and grid.metadata["event_id"] != uncertainty.metadata["event_id"]
     ):
         raise ShakeMapProfileError("shakemap_event_id_pair_mismatch")
+    if (
+        grid.metadata["shakemap_id"]
+        and uncertainty.metadata["shakemap_id"]
+        and grid.metadata["shakemap_id"] != uncertainty.metadata["shakemap_id"]
+    ):
+        raise ShakeMapProfileError("shakemap_id_pair_mismatch")
     if grid.specification != uncertainty.specification:
         raise ShakeMapProfileError("grid_specification_mismatch")
     if grid.row_count != uncertainty.row_count:
