@@ -16,11 +16,13 @@ from typing import Any, Callable
 
 try:
     from scripts import acquire_efehr_esrm20_country_risk_receipt as _country
+    from scripts import agent_action_protocol_country_risk as _protocol
     from scripts import prepare_agent_action_result as _legacy
     from scripts import validate_agent_action_request_country_risk as _request
     from scripts import validate_agent_action_result_country_risk as _result
 except ModuleNotFoundError:  # pragma: no cover - direct script import path
     import acquire_efehr_esrm20_country_risk_receipt as _country
+    import agent_action_protocol_country_risk as _protocol
     import prepare_agent_action_result as _legacy
     import validate_agent_action_request_country_risk as _request
     import validate_agent_action_result_country_risk as _result
@@ -112,6 +114,7 @@ def prepare_completed_result(
 # Patch only runtime extension points used by the existing dispatcher main().
 _legacy.validate_request = _request.validate_request
 _legacy.validate_result = _result.validate_result
+_legacy.semantic_request_id = _protocol.semantic_request_id
 _legacy.NETWORK_ACTIONS = _legacy.NETWORK_ACTIONS | {ESRM20_COUNTRY_RISK_RECEIPT_ACTION}
 _legacy._receipt_field = _receipt_field
 _legacy.prepare_completed_result = prepare_completed_result
@@ -119,6 +122,7 @@ _legacy.prepare_completed_result = prepare_completed_result
 NETWORK_ACTIONS = _legacy.NETWORK_ACTIONS
 validate_request = _request.validate_request
 validate_result = _result.validate_result
+semantic_request_id = _protocol.semantic_request_id
 
 
 def main(argv: list[str] | None = None) -> int:
