@@ -7,6 +7,7 @@ from pathlib import Path
 import unittest
 
 from scripts import acquire_efehr_esrm20_country_risk_receipt as country
+from scripts import agent_action_protocol_country_risk as protocol
 from scripts import prepare_agent_action_result_country_risk as prepare
 from scripts import validate_agent_action_request_country_risk as request_validator
 from scripts import validate_agent_action_result_country_risk as result_validator
@@ -77,6 +78,10 @@ class CountryRiskRequestTests(unittest.TestCase):
             request_validator.ESRM20_COUNTRY_RISK_RECEIPT_ACTION,
             request_validator.ALLOWED_ACTIONS,
         )
+        self.assertIn(
+            request_validator.ESRM20_COUNTRY_RISK_RECEIPT_ACTION,
+            protocol.NETWORK_ACQUISITION_ACTIONS,
+        )
 
         for mutation in (
             {"issue": 777},
@@ -93,6 +98,14 @@ class CountryRiskRequestTests(unittest.TestCase):
         request["repository_path"] = country.REPOSITORY_PATH
         with self.assertRaises(request_validator.RequestError):
             request_validator.validate_request(request, expected_issue=778)
+
+    def test_semantic_identity_rejects_non_execution_target(self) -> None:
+        with self.assertRaises(protocol.ProtocolError):
+            protocol.semantic_request_id(
+                _request(target_sha="0" * 40),
+                MAIN_SHA,
+                "pokekarten/OpenCatastrophe-data",
+            )
 
 
 class CountryRiskResultTests(unittest.TestCase):
