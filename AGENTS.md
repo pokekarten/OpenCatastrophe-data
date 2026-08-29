@@ -72,14 +72,6 @@ Before substantive work:
 
 A longer task queue, governance document or status report alone is not progress.
 
-## Cross-programme modelling learning
-
-OpenCatastrophe-data remains the authority for Cat data provenance, rights, scientific roles and admitted artifact identities. After substantive data/model-interface work, ask whether the result teaches something that a future capital model should retain.
-
-Keep source-specific and Cat-data-specific evidence here. When a conclusion is materially reusable across capital models — for example loss-table identity, ELT/YLT/PLT semantics, model-input provenance, calibration/validation/holdout roles, or external Cat-model admission requirements — surface only the abstracted conclusion to `pokekarten/FFBK/research/capital-modeling/KNOWLEDGE_MAP.md` and keep this repository as the evidence owner.
-
-Do not duplicate raw evidence or provider-specific assumptions into the capital-model research layer.
-
 ## Definition of useful progress
 
 Prefer outcomes such as:
@@ -97,7 +89,6 @@ At the end, report briefly:
 ```text
 Done:
 Evidence/tests:
-Reusable capital-model learning: <only when material>
 Still open:
 Next causal action:
 ```
