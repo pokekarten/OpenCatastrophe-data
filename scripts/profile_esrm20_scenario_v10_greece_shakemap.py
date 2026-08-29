@@ -27,6 +27,8 @@ _CANONICAL_MAX_FIELDS: Final = 32
 _CANONICAL_MAX_ROWS: Final = 500_000
 _CANONICAL_MAX_COLUMNS: Final = 32
 _CANONICAL_MAX_XML_BYTES: Final = 6_000_000
+_HISTORICAL_OQ_3_12_1_UNIT_SENTINEL: Final = "ignored_by_openquake_3_12_1"
+_HISTORICAL_OQ_3_12_1_GRID_UNIT_FIELDS: Final = frozenset({"PGA"})
 
 GRID_BYTE_COUNT: Final = _CANONICAL_GRID_BYTE_COUNT
 GRID_SHA256: Final = _CANONICAL_GRID_SHA256
@@ -203,6 +205,7 @@ def _parse_fields(
     namespace: str,
     allowed_units: dict[str, frozenset[str]],
     max_fields: int,
+    unit_metadata_ignored_fields: frozenset[str] = frozenset(),
 ) -> tuple[tuple[int, str, str], ...]:
     fields: list[tuple[int, str, str]] = []
     seen_names: set[str] = set()
@@ -221,7 +224,9 @@ def _parse_fields(
         if name not in allowed_units:
             raise ShakeMapProfileError("unsupported_grid_field_name")
         if units not in allowed_units[name]:
-            raise ShakeMapProfileError("unsupported_grid_field_units")
+            if name not in unit_metadata_ignored_fields:
+                raise ShakeMapProfileError("unsupported_grid_field_units")
+            units = _HISTORICAL_OQ_3_12_1_UNIT_SENTINEL
         if index in seen_indices:
             raise ShakeMapProfileError("duplicate_grid_field_index")
         if name in seen_names:
@@ -331,6 +336,7 @@ def _profile_xml(
     max_rows: int,
     max_columns: int,
     max_xml_bytes: int,
+    unit_metadata_ignored_fields: frozenset[str] = frozenset(),
 ) -> _GridProfile:
     if len(data) != expected_byte_count:
         raise ShakeMapProfileError("byte_count_mismatch")
@@ -349,6 +355,7 @@ def _profile_xml(
         namespace=namespace,
         allowed_units=allowed_units,
         max_fields=max_fields,
+        unit_metadata_ignored_fields=unit_metadata_ignored_fields,
     )
     specification = _parse_specification(root, namespace=namespace, max_rows=max_rows)
     expected_rows = int(specification["nlon"]) * int(specification["nlat"])
@@ -387,8 +394,20 @@ def _profile_verified_greece_shakemap_pair(
     max_rows: int = _CANONICAL_MAX_ROWS,
     max_columns: int = _CANONICAL_MAX_COLUMNS,
     max_xml_bytes: int = _CANONICAL_MAX_XML_BYTES,
+    historical_oq_3_12_1_compatibility: bool = False,
 ) -> dict[str, object]:
     """Private injection seam for already-bound bytes and deterministic tests."""
+    if historical_oq_3_12_1_compatibility:
+        exact_identity = (
+            grid_expected_byte_count == _CANONICAL_GRID_BYTE_COUNT
+            and grid_expected_sha256 == _CANONICAL_GRID_SHA256
+            and uncertainty_expected_byte_count == _CANONICAL_UNCERTAINTY_BYTE_COUNT
+            and uncertainty_expected_sha256 == _CANONICAL_UNCERTAINTY_SHA256
+            and expected_event_id == _CANONICAL_EVENT_ID
+        )
+        if not exact_identity:
+            raise ShakeMapProfileError("historical_compatibility_requires_canonical_identity")
+
     grid = _profile_xml(
         grid_data,
         expected_byte_count=grid_expected_byte_count,
@@ -399,6 +418,11 @@ def _profile_verified_greece_shakemap_pair(
         max_rows=max_rows,
         max_columns=max_columns,
         max_xml_bytes=max_xml_bytes,
+        unit_metadata_ignored_fields=(
+            _HISTORICAL_OQ_3_12_1_GRID_UNIT_FIELDS
+            if historical_oq_3_12_1_compatibility
+            else frozenset()
+        ),
     )
     uncertainty = _profile_xml(
         uncertainty_data,
@@ -486,4 +510,5 @@ def profile_fixed_greece_shakemap_pair(grid_data: bytes, uncertainty_data: bytes
         max_rows=_CANONICAL_MAX_ROWS,
         max_columns=_CANONICAL_MAX_COLUMNS,
         max_xml_bytes=_CANONICAL_MAX_XML_BYTES,
+        historical_oq_3_12_1_compatibility=True,
     )
