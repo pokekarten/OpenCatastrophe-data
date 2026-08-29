@@ -42,20 +42,14 @@ def _xml(fields, rows):
     ).encode("ascii")
 
 
-GRID_FIELDS = [(1, "LON", "dd"), (2, "LAT", "dd"), (3, "PGA", "pctg")]
-UNCERTAINTY_FIELDS = [
-    (1, "LON", "dd"),
-    (2, "LAT", "dd"),
-    (3, "STDPGA", "ln(pctg)"),
-]
 ROWS = [(10, 21, 1), (11, 21, 2), (10, 20, 3), (11, 20, 4)]
 
 
 class GreeceShakeMapOq3121CompatibilityTests(unittest.TestCase):
-    def test_generic_parser_still_rejects_nonstandard_pga_unit(self):
-        fields = list(GRID_FIELDS)
-        fields[2] = (3, "PGA", "g")
-        root = ET.fromstring(_xml(fields, ROWS).decode("ascii"))
+    def test_generic_parser_still_rejects_nonstandard_unit_metadata(self):
+        root = ET.fromstring(
+            _xml([(1, "LON", "dd"), (2, "LAT", "dd"), (3, "PGA", "mystery")], ROWS)
+        )
         with self.assertRaisesRegex(
             profile.ShakeMapProfileError,
             "unsupported_grid_field_units",
@@ -67,49 +61,69 @@ class GreeceShakeMapOq3121CompatibilityTests(unittest.TestCase):
                 max_fields=32,
             )
 
-    def test_compatibility_redacts_only_nonstandard_pga_unit(self):
-        fields = list(GRID_FIELDS)
-        fields[2] = (3, "PGA", "g")
-        root = ET.fromstring(_xml(fields, ROWS).decode("ascii"))
+    def test_historical_grid_compatibility_covers_only_known_field_names(self):
+        self.assertEqual(
+            profile._HISTORICAL_OQ_3_12_1_GRID_UNIT_FIELDS,
+            frozenset(profile._GRID_FIELD_UNITS),
+        )
+        root = ET.fromstring(
+            _xml([(1, "LON", "dd"), (2, "LAT", "dd"), (3, "PGV", "mystery")], ROWS)
+        )
         parsed = profile._parse_fields(
             root,
             namespace="",
             allowed_units=profile._GRID_FIELD_UNITS,
             max_fields=32,
-            unit_metadata_ignored_fields=frozenset({"PGA"}),
+            unit_metadata_ignored_fields=profile._HISTORICAL_OQ_3_12_1_GRID_UNIT_FIELDS,
         )
-        self.assertEqual(parsed[2], (3, "PGA", "ignored_by_openquake_3_12_1"))
-        self.assertNotIn("g", profile._GRID_FIELD_UNITS["PGA"])
+        self.assertEqual(parsed[2], (3, "PGV", "ignored_by_openquake_3_12_1"))
 
-    def test_documented_pctg_unit_is_not_redacted(self):
-        root = ET.fromstring(_xml(GRID_FIELDS, ROWS).decode("ascii"))
+    def test_historical_uncertainty_compatibility_covers_known_field_names(self):
+        self.assertEqual(
+            profile._HISTORICAL_OQ_3_12_1_UNCERTAINTY_UNIT_FIELDS,
+            frozenset(profile._UNCERTAINTY_FIELD_UNITS),
+        )
+        root = ET.fromstring(
+            _xml(
+                [(1, "LON", "dd"), (2, "LAT", "dd"), (3, "STDPGA", "mystery")],
+                ROWS,
+            )
+        )
         parsed = profile._parse_fields(
             root,
             namespace="",
-            allowed_units=profile._GRID_FIELD_UNITS,
+            allowed_units=profile._UNCERTAINTY_FIELD_UNITS,
             max_fields=32,
-            unit_metadata_ignored_fields=frozenset({"PGA"}),
+            unit_metadata_ignored_fields=(
+                profile._HISTORICAL_OQ_3_12_1_UNCERTAINTY_UNIT_FIELDS
+            ),
         )
-        self.assertEqual(parsed[2], (3, "PGA", "pctg"))
+        self.assertEqual(parsed[2], (3, "STDPGA", "ignored_by_openquake_3_12_1"))
 
-    def test_compatibility_does_not_widen_other_grid_fields(self):
-        fields = [(1, "LON", "dd"), (2, "LAT", "dd"), (3, "PGV", "mystery")]
-        root = ET.fromstring(_xml(fields, ROWS).decode("ascii"))
+    def test_historical_compatibility_never_admits_unknown_field_name(self):
+        root = ET.fromstring(
+            _xml([(1, "LON", "dd"), (2, "LAT", "dd"), (3, "SECRET", "mystery")], ROWS)
+        )
         with self.assertRaisesRegex(
             profile.ShakeMapProfileError,
-            "unsupported_grid_field_units",
+            "unsupported_grid_field_name",
         ):
             profile._parse_fields(
                 root,
                 namespace="",
                 allowed_units=profile._GRID_FIELD_UNITS,
                 max_fields=32,
-                unit_metadata_ignored_fields=frozenset({"PGA"}),
+                unit_metadata_ignored_fields=(
+                    profile._HISTORICAL_OQ_3_12_1_GRID_UNIT_FIELDS
+                ),
             )
 
     def test_compatibility_flag_requires_canonical_receipt_identity(self):
-        grid = _xml(GRID_FIELDS, ROWS)
-        uncertainty = _xml(UNCERTAINTY_FIELDS, ROWS)
+        grid = _xml([(1, "LON", "dd"), (2, "LAT", "dd"), (3, "PGA", "pctg")], ROWS)
+        uncertainty = _xml(
+            [(1, "LON", "dd"), (2, "LAT", "dd"), (3, "STDPGA", "ln(pctg)")],
+            ROWS,
+        )
         with self.assertRaisesRegex(
             profile.ShakeMapProfileError,
             "historical_compatibility_requires_canonical_identity",
