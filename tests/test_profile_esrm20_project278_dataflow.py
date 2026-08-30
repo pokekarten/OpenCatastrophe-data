@@ -31,6 +31,13 @@ def classify(value):
     if value is None:
         return "Unknown"
     return value
+
+def outer(frame):
+    def inner():
+        output = frame.to_crs("EPSG:4326")
+        write_xml(output)
+        return output
+    return frame
 '''
 
 _NODE = b'''def make_node(longitude, latitude):
@@ -108,6 +115,18 @@ class Project278DataflowProfileTests(unittest.TestCase):
         self.assertTrue(any("epsg_4326" in record["markers"] for record in emit_records))
         self.assertTrue(any("negative_999" in record["markers"] for record in emit_records))
         self.assertTrue(any("write_xml" in record["writer_calls"] for record in emit_records))
+
+    def test_nested_scope_does_not_contaminate_parent_function(self) -> None:
+        profile = self._profile()
+        functions = {
+            (item["repository_path"], item["function"]): item
+            for item in profile["candidate_functions"]
+        }
+        self.assertNotIn(("exposure2site/exposure_to_site_tools.py", "outer"), functions)
+        inner = functions[("exposure2site/exposure_to_site_tools.py", "inner")]
+        self.assertIn("epsg_4326", inner["crs_markers"])
+        self.assertIn("write_xml", inner["writer_calls"])
+        self.assertIn("crs_and_writer_same_function", inner["relations"])
 
     def test_identity_drift_fails_before_ast_semantics(self) -> None:
         identities = {
