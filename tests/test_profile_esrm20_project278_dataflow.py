@@ -32,6 +32,10 @@ def classify(value):
         return "Unknown"
     return value
 
+def generic_transform(value):
+    transformed = transform(value)
+    return transformed
+
 def outer(frame):
     def inner():
         output = frame.to_crs("EPSG:4326")
@@ -67,7 +71,7 @@ class Project278DataflowProfileTests(unittest.TestCase):
             },
         )
 
-    def test_profile_finds_crs_writer_and_sentinel_relations(self) -> None:
+    def test_profile_finds_crs_writer_and_missing_relations(self) -> None:
         profile = self._profile()
         functions = {
             (item["repository_path"], item["function"]): item
@@ -77,19 +81,42 @@ class Project278DataflowProfileTests(unittest.TestCase):
         emit = functions[("exposure2site/exposure_to_site_tools.py", "emit_site")]
         self.assertIn("epsg_4326", emit["crs_markers"])
         self.assertIn("write_xml", emit["writer_calls"])
-        self.assertIn("negative_999", emit["sentinel_markers"])
-        self.assertIn("nan", emit["sentinel_markers"])
+        self.assertIn("negative_999", emit["missing_candidate_markers"])
+        self.assertIn("nan", emit["missing_candidate_markers"])
         self.assertEqual(
             {"longitude", "latitude", "vs30"} - set(emit["site_fields"]),
             set(),
         )
         self.assertIn("crs_and_writer_same_function", emit["relations"])
-        self.assertIn("sentinel_and_writer_same_function", emit["relations"])
+        self.assertIn("missing_and_writer_same_function", emit["relations"])
 
         preprocess = functions[("exposure2site/exposure_to_site_tools.py", "preprocess")]
         self.assertIn("epsg_3035", preprocess["crs_markers"])
         self.assertEqual(preprocess["writer_calls"], [])
         self.assertNotIn("crs_and_writer_same_function", preprocess["relations"])
+
+    def test_unknown_category_is_not_missingness(self) -> None:
+        profile = self._profile()
+        functions = {
+            (item["repository_path"], item["function"]): item
+            for item in profile["candidate_functions"]
+        }
+        classify = functions[("exposure2site/exposure_to_site_tools.py", "classify")]
+        self.assertIn("unknown", classify["category_markers"])
+        self.assertIn("none", classify["missing_candidate_markers"])
+        self.assertNotIn("unknown", classify["missing_candidate_markers"])
+        self.assertIs(profile["unknown_is_missing_marker"], False)
+
+    def test_generic_transform_is_not_classified_as_crs_call(self) -> None:
+        profile = self._profile()
+        functions = {
+            (item["repository_path"], item["function"]): item
+            for item in profile["candidate_functions"]
+        }
+        self.assertNotIn(
+            ("exposure2site/exposure_to_site_tools.py", "generic_transform"),
+            functions,
+        )
 
     def test_profile_emits_bounded_structural_facts_not_source_text(self) -> None:
         profile = self._profile()
@@ -100,21 +127,36 @@ class Project278DataflowProfileTests(unittest.TestCase):
             "exposure2site/exposure_to_site_tools.py:emit_site",
             profile["crs_writer_candidate_functions"],
         )
+        self.assertIn(
+            "exposure2site/exposure_to_site_tools.py:emit_site",
+            profile["missing_writer_candidate_functions"],
+        )
         serialized = json.dumps(profile, sort_keys=True)
         self.assertNotIn("frame = frame.to_crs", serialized)
         self.assertNotIn("payload = {", serialized)
         self.assertNotIn('return "Unknown"', serialized)
 
-    def test_statement_records_distinguish_markers_from_writer_calls(self) -> None:
+    def test_statement_records_keep_category_separate_from_missing(self) -> None:
         profile = self._profile()
         emit_records = [
             record
             for record in profile["statement_records"]
             if record["function"] == "emit_site"
         ]
-        self.assertTrue(any("epsg_4326" in record["markers"] for record in emit_records))
-        self.assertTrue(any("negative_999" in record["markers"] for record in emit_records))
+        classify_records = [
+            record
+            for record in profile["statement_records"]
+            if record["function"] == "classify"
+        ]
+        self.assertTrue(any("epsg_4326" in record["crs_markers"] for record in emit_records))
+        self.assertTrue(
+            any("negative_999" in record["missing_candidate_markers"] for record in emit_records)
+        )
         self.assertTrue(any("write_xml" in record["writer_calls"] for record in emit_records))
+        self.assertTrue(any("unknown" in record["category_markers"] for record in classify_records))
+        self.assertFalse(
+            any("unknown" in record["missing_candidate_markers"] for record in classify_records)
+        )
 
     def test_nested_scope_does_not_contaminate_parent_function(self) -> None:
         profile = self._profile()
