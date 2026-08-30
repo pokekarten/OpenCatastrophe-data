@@ -7,6 +7,10 @@ No provider access occurs here. The production entry point accepts only the two
 Python objects already byte-grounded by #291 and re-verifies byte count,
 SHA-256, and Git blob SHA-1 before parsing. Output is bounded structural
 evidence, never source text and never historical/CRS/missingness authority.
+
+Important semantic boundary: the ESRM20 methodology uses ``Unknown`` as a
+modelled geology category. This profiler therefore reports it as a *category*
+marker and never conflates it with missing/null/sentinel candidates.
 """
 
 from __future__ import annotations
@@ -53,12 +57,23 @@ _SITE_ALIASES = {
     "slope": "slope",
 }
 _WRITER_TAILS = {
-    "write", "write_xml", "to_xml", "to_file", "tostring",
-    "dump", "dumps", "save", "serialize", "export",
+    "write",
+    "write_xml",
+    "to_xml",
+    "to_file",
+    "tostring",
+    "dump",
+    "dumps",
+    "save",
+    "serialize",
+    "export",
 }
-_CRS_TAILS = {"to_crs", "reproject", "transform", "from_crs", "from_epsg"}
+# Deliberately exclude generic ``transform``: without receiver/type evidence it
+# is too broad to classify as a CRS operation. Exact CRS APIs/markers remain.
+_CRS_TAILS = {"to_crs", "reproject", "from_crs", "from_epsg"}
 _CRS_MARKERS = {"epsg_3035", "epsg_4326", "wgs84"}
-_SENTINEL_MARKERS = {"negative_999", "negative_9999", "nan", "nodata", "unknown", "none"}
+_MISSING_MARKERS = {"negative_999", "negative_9999", "nan", "nodata", "none"}
+_CATEGORY_MARKERS = {"unknown"}
 
 
 class Project278DataflowProfileError(RuntimeError):
@@ -190,8 +205,9 @@ def _scope_profile(
     fields = _site_fields(nodes)
     coordinate_related = bool({"longitude", "latitude"} & fields)
     crs_related = bool(crs_calls or markers & _CRS_MARKERS)
-    sentinel_related = bool(markers & _SENTINEL_MARKERS)
-    if not (writers or crs_related or sentinel_related or fields):
+    missing_related = bool(markers & _MISSING_MARKERS)
+    category_related = bool(markers & _CATEGORY_MARKERS)
+    if not (writers or crs_related or missing_related or category_related or fields):
         return None
 
     relations = []
@@ -199,8 +215,9 @@ def _scope_profile(
         ("coordinates_and_writer_same_function", coordinate_related and bool(writers)),
         ("crs_and_coordinates_same_function", crs_related and coordinate_related),
         ("crs_and_writer_same_function", crs_related and bool(writers)),
-        ("sentinel_and_site_fields_same_function", sentinel_related and bool(fields)),
-        ("sentinel_and_writer_same_function", sentinel_related and bool(writers)),
+        ("missing_and_site_fields_same_function", missing_related and bool(fields)),
+        ("missing_and_writer_same_function", missing_related and bool(writers)),
+        ("category_and_site_fields_same_function", category_related and bool(fields)),
     ):
         if matched:
             relations.append(name)
@@ -212,7 +229,8 @@ def _scope_profile(
         "line_end": getattr(function, "end_lineno", function.lineno),
         "site_fields": sorted(fields),
         "crs_markers": sorted(markers & _CRS_MARKERS),
-        "sentinel_markers": sorted(markers & _SENTINEL_MARKERS),
+        "missing_candidate_markers": sorted(markers & _MISSING_MARKERS),
+        "category_markers": sorted(markers & _CATEGORY_MARKERS),
         "crs_calls": sorted(crs_calls),
         "writer_calls": sorted(writers),
         "relations": relations,
@@ -229,8 +247,10 @@ def _statement_profile(
     writers, crs_calls = _call_sets(nodes)
     markers = _markers(nodes)
     fields = _site_fields(nodes)
-    relevant_markers = markers & (_CRS_MARKERS | _SENTINEL_MARKERS)
-    if not (writers or crs_calls or relevant_markers or fields):
+    crs_markers = markers & _CRS_MARKERS
+    missing_markers = markers & _MISSING_MARKERS
+    category_markers = markers & _CATEGORY_MARKERS
+    if not (writers or crs_calls or crs_markers or missing_markers or category_markers or fields):
         return None
     return {
         "repository_path": repository_path,
@@ -239,7 +259,9 @@ def _statement_profile(
         "line_start": statement.lineno,
         "line_end": getattr(statement, "end_lineno", statement.lineno),
         "site_fields": sorted(fields),
-        "markers": sorted(relevant_markers),
+        "crs_markers": sorted(crs_markers),
+        "missing_candidate_markers": sorted(missing_markers),
+        "category_markers": sorted(category_markers),
         "crs_calls": sorted(crs_calls),
         "writer_calls": sorted(writers),
     }
@@ -272,7 +294,8 @@ def _parse_verified(
     functions: list[dict[str, Any]] = []
     statements: list[dict[str, Any]] = []
     for function in (
-        node for node in ast.walk(tree)
+        node
+        for node in ast.walk(tree)
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
     ):
         profile = _scope_profile(function, repository_path)
@@ -289,11 +312,16 @@ def _parse_verified(
         if len(functions) > MAX_FUNCTIONS or len(statements) > MAX_STATEMENTS:
             raise Project278DataflowProfileError("AST profile exceeds result policy")
 
-    functions.sort(key=lambda item: (item["repository_path"], item["line_start"], item["function"]))
+    functions.sort(
+        key=lambda item: (item["repository_path"], item["line_start"], item["function"])
+    )
     statements.sort(
         key=lambda item: (
-            item["repository_path"], item["line_start"], item["line_end"],
-            item["function"], item["statement_type"],
+            item["repository_path"],
+            item["line_start"],
+            item["line_end"],
+            item["function"],
+            item["statement_type"],
         )
     )
     return functions, statements
@@ -342,7 +370,9 @@ def _profile_sources(
         "candidate_function_count": len(functions),
         "statement_record_count": len(statements),
         "crs_writer_candidate_functions": selected("crs_and_writer_same_function"),
-        "sentinel_writer_candidate_functions": selected("sentinel_and_writer_same_function"),
+        "missing_writer_candidate_functions": selected("missing_and_writer_same_function"),
+        "category_site_candidate_functions": selected("category_and_site_fields_same_function"),
+        "unknown_is_missing_marker": False,
         "raw_source_returned": False,
         "historical_kosovo_generator_invocation_verified": False,
         "crs_coordinate_semantics_verified": False,
@@ -377,7 +407,7 @@ def _read_fixed_sources(root: Path) -> dict[str, bytes]:
 
 def main(argv: Iterable[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Profile AST writer/CRS/sentinel relations in frozen project-278 source."
+        description="Profile AST writer/CRS/missing/category relations in frozen project-278 source."
     )
     parser.add_argument("--source-root", required=True, type=Path)
     parser.add_argument("--output", type=Path)
