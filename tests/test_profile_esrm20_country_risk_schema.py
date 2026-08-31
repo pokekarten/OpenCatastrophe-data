@@ -34,7 +34,7 @@ class CountryRiskSchemaProfileTests(unittest.TestCase):
         self.assertEqual(profile["kosovo_row_status"], "unique")
         self.assertEqual(profile["kosovo_name_literals"], ["Kosovo"])
         self.assertTrue(profile["residential_reference_schema_candidate"])
-        self.assertFalse(profile["provider_numeric_values_inspected"])
+        self.assertFalse(profile["provider_numeric_values_interpreted"])
         self.assertFalse(profile["provider_values_returned"])
         rendered = json.dumps(profile, sort_keys=True)
         self.assertNotIn("12.345", rendered)
