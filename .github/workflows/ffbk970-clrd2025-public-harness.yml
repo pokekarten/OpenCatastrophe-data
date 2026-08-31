@@ -41,22 +41,28 @@ jobs:
             "https://api.github.com/repos/casact/chainladder-python/git/blobs/8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0" \
             --output .tmp/clrd2025-blob.json
           python - <<'PY'
-          import base64, json
+          import base64, hashlib, json
           from pathlib import Path
+          expected = '8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0'
           payload = json.loads(Path('.tmp/clrd2025-blob.json').read_text(encoding='utf-8'))
-          assert payload['sha'] == '8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0', payload['sha']
+          assert payload['sha'] == expected, payload['sha']
           assert payload['encoding'] == 'base64', payload['encoding']
           data = base64.b64decode(payload['content'])
+          raw_git_sha = hashlib.sha1(f'blob {len(data)}\0'.encode('ascii') + data).hexdigest()
+          assert raw_git_sha == expected, raw_git_sha
           Path('.tmp/clrd2025.csv').write_bytes(data)
           print(f"API_BLOB_SIZE={payload.get('size')}")
           print(f"DECODED_BYTES={len(data)}")
+          print(f"PYTHON_RAW_GIT_BLOB={raw_git_sha}")
+          print(f"SOURCE_SHA256={hashlib.sha256(data).hexdigest()}")
           PY
-          actual="$(git hash-object .tmp/clrd2025.csv)"
-          echo "SOURCE_GIT_BLOB=$actual"
+          filtered="$(git hash-object .tmp/clrd2025.csv)"
+          unfiltered="$(git hash-object --no-filters .tmp/clrd2025.csv)"
+          echo "GIT_HASH_OBJECT_FILTERED=$filtered"
+          echo "GIT_HASH_OBJECT_NO_FILTERS=$unfiltered"
           echo "SOURCE_BYTES=$(wc -c < .tmp/clrd2025.csv)"
-          echo "SOURCE_SHA256=$(sha256sum .tmp/clrd2025.csv | awk '{print $1}')"
           head -n 1 .tmp/clrd2025.csv
-          test "$actual" = "8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0"
+          test "$unfiltered" = "8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0"
 
       - name: Execute exact FFBK #970 full-panel probe
         shell: bash
