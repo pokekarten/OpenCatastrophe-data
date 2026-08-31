@@ -229,7 +229,7 @@ def profile_country_risk_schema_bytes(
         **identity,
         "secondary_hypothesis_field_presence": field_presence,
         "residential_reference_schema_candidate": residential_candidate,
-        "provider_numeric_values_inspected": False,
+        "provider_numeric_values_interpreted": False,
         "provider_values_returned": False,
         "raw_rows_returned": False,
         "external_bytes_persisted": False,
