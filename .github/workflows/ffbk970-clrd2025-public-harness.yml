@@ -51,10 +51,16 @@ jobs:
           raw_git_sha = hashlib.sha1(f'blob {len(data)}\0'.encode('ascii') + data).hexdigest()
           assert raw_git_sha == expected, raw_git_sha
           Path('.tmp/clrd2025.csv').write_bytes(data)
+          source = {
+            'git_blob': raw_git_sha,
+            'bytes': len(data),
+            'sha256': hashlib.sha256(data).hexdigest(),
+          }
+          Path('.tmp/source-receipt.json').write_text(json.dumps(source, sort_keys=True) + '\n', encoding='utf-8')
           print(f"API_BLOB_SIZE={payload.get('size')}")
           print(f"DECODED_BYTES={len(data)}")
           print(f"PYTHON_RAW_GIT_BLOB={raw_git_sha}")
-          print(f"SOURCE_SHA256={hashlib.sha256(data).hexdigest()}")
+          print(f"SOURCE_SHA256={source['sha256']}")
           PY
           filtered="$(git hash-object .tmp/clrd2025.csv)"
           unfiltered="$(git hash-object --no-filters .tmp/clrd2025.csv)"
@@ -69,7 +75,7 @@ jobs:
         run: |
           set -euo pipefail
           python ffbk970_runner/scripts/reviewer_independent_clrd2025_check.py \
-            --csv .tmp/clrd2025.csv
+            --csv .tmp/clrd2025.csv | tee .tmp/reviewer-independent-output.txt
 
       - name: Independent no-import headline reconstruction
         shell: bash
@@ -86,14 +92,13 @@ jobs:
             --csv .tmp/clrd2025.csv \
             --output .tmp/clrd2025-ca-pa-full-panel-result.json
           echo "RESULT_SHA256=$(sha256sum .tmp/clrd2025-ca-pa-full-panel-result.json | awk '{print $1}')"
-          echo "RESULT_JSON_BASE64_BEGIN"
-          base64 -w0 .tmp/clrd2025-ca-pa-full-panel-result.json
-          echo
-          echo "RESULT_JSON_BASE64_END"
 
-      - name: Upload exact result receipt
+      - name: Upload exact result and reviewer receipts
         uses: actions/upload-artifact@v4
         with:
-          name: ffbk970-clrd2025-full-panel-result
-          path: .tmp/clrd2025-ca-pa-full-panel-result.json
+          name: ffbk970-clrd2025-review-receipts
+          path: |
+            .tmp/clrd2025-ca-pa-full-panel-result.json
+            .tmp/reviewer-independent-output.txt
+            .tmp/source-receipt.json
           if-no-files-found: error
