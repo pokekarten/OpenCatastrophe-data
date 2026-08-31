@@ -39,7 +39,12 @@ jobs:
           curl --fail --location --silent --show-error \
             "https://raw.githubusercontent.com/casact/chainladder-python/e07c09e506d27a522e5e678e532fd4352a82ac17/chainladder/utils/data/clrd2025.csv" \
             --output .tmp/clrd2025.csv
-          test "$(git hash-object .tmp/clrd2025.csv)" = "8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0"
+          actual="$(git hash-object .tmp/clrd2025.csv)"
+          echo "SOURCE_GIT_BLOB=$actual"
+          echo "SOURCE_BYTES=$(wc -c < .tmp/clrd2025.csv)"
+          echo "SOURCE_SHA256=$(sha256sum .tmp/clrd2025.csv | awk '{print $1}')"
+          head -n 1 .tmp/clrd2025.csv
+          test "$actual" = "8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0"
 
       - name: Execute exact FFBK #970 full-panel probe
         shell: bash
