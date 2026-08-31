@@ -33,6 +33,8 @@ class CountryRiskSchemaProfileTests(unittest.TestCase):
 
         self.assertEqual(profile["kosovo_row_status"], "unique")
         self.assertEqual(profile["kosovo_name_literals"], ["Kosovo"])
+        self.assertTrue(profile["residential_aal_schema_candidate"])
+        self.assertTrue(profile["residential_aalr_schema_candidate"])
         self.assertTrue(profile["residential_reference_schema_candidate"])
         self.assertFalse(profile["provider_numeric_values_interpreted"])
         self.assertFalse(profile["provider_values_returned"])
@@ -43,12 +45,30 @@ class CountryRiskSchemaProfileTests(unittest.TestCase):
         self.assertFalse(profile["threshold_compatibility_verified"])
         self.assertFalse(profile["reference_loss_agreement_verified"])
 
+    def test_residential_aalr_only_keeps_preferred_candidate_open(self) -> None:
+        payload = (
+            b'Name,"AALR Residential (economic, per mille)"\n'
+            b"Kosovo,7.890\n"
+            b"Albania,6.543\n"
+        )
+
+        profile = profile_country_risk_schema_bytes(payload, **_identity(payload))
+
+        self.assertEqual(profile["kosovo_row_status"], "unique")
+        self.assertFalse(profile["residential_aal_schema_candidate"])
+        self.assertTrue(profile["residential_aalr_schema_candidate"])
+        self.assertTrue(profile["residential_reference_schema_candidate"])
+        rendered = json.dumps(profile, sort_keys=True)
+        self.assertNotIn("7.890", rendered)
+
     def test_missing_hypothesis_fields_is_evidence_not_parse_failure(self) -> None:
         payload = b'Name,"AAL Total (economic, M EUR)"\nKosovo,42\n'
 
         profile = profile_country_risk_schema_bytes(payload, **_identity(payload))
 
         self.assertEqual(profile["kosovo_row_status"], "unique")
+        self.assertFalse(profile["residential_aal_schema_candidate"])
+        self.assertFalse(profile["residential_aalr_schema_candidate"])
         self.assertFalse(profile["residential_reference_schema_candidate"])
         self.assertFalse(
             profile["secondary_hypothesis_field_presence"][
@@ -82,6 +102,8 @@ class CountryRiskSchemaProfileTests(unittest.TestCase):
 
         self.assertEqual(profile["kosovo_row_count"], 2)
         self.assertEqual(profile["kosovo_row_status"], "ambiguous")
+        self.assertFalse(profile["residential_aal_schema_candidate"])
+        self.assertFalse(profile["residential_aalr_schema_candidate"])
         self.assertFalse(profile["residential_reference_schema_candidate"])
 
     def test_name_column_absence_is_structural_evidence(self) -> None:
@@ -91,6 +113,8 @@ class CountryRiskSchemaProfileTests(unittest.TestCase):
 
         self.assertFalse(profile["name_column_present"])
         self.assertEqual(profile["kosovo_row_status"], "name_column_absent")
+        self.assertFalse(profile["residential_aal_schema_candidate"])
+        self.assertFalse(profile["residential_aalr_schema_candidate"])
         self.assertFalse(profile["residential_reference_schema_candidate"])
 
     def test_sha256_mismatch_fails_closed(self) -> None:
