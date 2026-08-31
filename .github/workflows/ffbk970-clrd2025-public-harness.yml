@@ -31,14 +31,26 @@ jobs:
         working-directory: ffbk970_runner
         run: python -m unittest tests.test_clrd2025_ca_pa_full_panel_probe -v
 
-      - name: Materialize exact pinned CLRD2025 blob
+      - name: Materialize exact pinned CLRD2025 Git object
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p .tmp
           curl --fail --location --silent --show-error \
-            "https://raw.githubusercontent.com/casact/chainladder-python/e07c09e506d27a522e5e678e532fd4352a82ac17/chainladder/utils/data/clrd2025.csv" \
-            --output .tmp/clrd2025.csv
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/casact/chainladder-python/git/blobs/8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0" \
+            --output .tmp/clrd2025-blob.json
+          python - <<'PY'
+          import base64, json
+          from pathlib import Path
+          payload = json.loads(Path('.tmp/clrd2025-blob.json').read_text(encoding='utf-8'))
+          assert payload['sha'] == '8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0', payload['sha']
+          assert payload['encoding'] == 'base64', payload['encoding']
+          data = base64.b64decode(payload['content'])
+          Path('.tmp/clrd2025.csv').write_bytes(data)
+          print(f"API_BLOB_SIZE={payload.get('size')}")
+          print(f"DECODED_BYTES={len(data)}")
+          PY
           actual="$(git hash-object .tmp/clrd2025.csv)"
           echo "SOURCE_GIT_BLOB=$actual"
           echo "SOURCE_BYTES=$(wc -c < .tmp/clrd2025.csv)"
