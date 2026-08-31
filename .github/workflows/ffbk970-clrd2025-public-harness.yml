@@ -1,0 +1,65 @@
+name: FFBK 970 CLRD2025 public runner harness
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/ffbk970-clrd2025-public-harness.yml"
+      - "ffbk970_runner/**"
+
+permissions:
+  contents: read
+
+jobs:
+  exact-source-full-panel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify copied FFBK #970 code bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object ffbk970_runner/scripts/clrd2025_ca_pa_full_panel_probe.py)" = "a141c387db3fa047f071ffe8da695ffdc608a7dd"
+          test "$(git hash-object ffbk970_runner/tests/test_clrd2025_ca_pa_full_panel_probe.py)" = "f6df118790351aeb08deeeba694db41a4d256f6f"
+
+      - name: Focused unit tests
+        working-directory: ffbk970_runner
+        run: python -m unittest tests.test_clrd2025_ca_pa_full_panel_probe -v
+
+      - name: Materialize exact pinned CLRD2025 blob
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp/chainladder
+          git -C .tmp/chainladder init -q
+          git -C .tmp/chainladder remote add origin https://github.com/casact/chainladder-python.git
+          git -C .tmp/chainladder fetch -q --depth=1 origin e07c09e506d27a522e5e678e532fd4352a82ac17
+          actual="$(git -C .tmp/chainladder rev-parse FETCH_HEAD:chainladder/utils/data/clrd2025.csv)"
+          test "$actual" = "8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0"
+          git -C .tmp/chainladder show FETCH_HEAD:chainladder/utils/data/clrd2025.csv > .tmp/clrd2025.csv
+          test "$(git hash-object .tmp/clrd2025.csv)" = "8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0"
+
+      - name: Execute exact FFBK #970 full-panel probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          python ffbk970_runner/scripts/clrd2025_ca_pa_full_panel_probe.py \
+            --csv .tmp/clrd2025.csv \
+            --output .tmp/clrd2025-ca-pa-full-panel-result.json
+          echo "RESULT_SHA256=$(sha256sum .tmp/clrd2025-ca-pa-full-panel-result.json | awk '{print $1}')"
+          echo "RESULT_JSON_BASE64_BEGIN"
+          base64 -w0 .tmp/clrd2025-ca-pa-full-panel-result.json
+          echo
+          echo "RESULT_JSON_BASE64_END"
+
+      - name: Upload exact result receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk970-clrd2025-full-panel-result
+          path: .tmp/clrd2025-ca-pa-full-panel-result.json
+          if-no-files-found: error
