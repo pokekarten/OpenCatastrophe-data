@@ -5,6 +5,7 @@ This checker deliberately contains no target correlation constants and imports n
 FFBK probe. It verifies the pinned raw Git object, reconstructs paid log-link
 states, performs company×LoB×link centering / sample-SD normalization, and emits
 headline pooled, lag-specific, company-mean and leave-one-company diagnostics.
+It also separates normalized-sample eligibility from SD rescaling.
 """
 from __future__ import annotations
 
@@ -18,11 +19,7 @@ from pathlib import Path
 
 SOURCE_BLOB = "8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0"
 LOBS = {"comauto", "ppauto"}
-RELATIONS = {
-    "same_step": (0, 0),
-    "ca_to_pa_next": (0, 1),
-    "pa_to_ca_next": (1, 0),
-}
+RELATIONS = ("same_step", "ca_to_pa_next", "pa_to_ca_next")
 
 
 def raw_git_blob(data: bytes) -> str:
@@ -103,6 +100,8 @@ def load_positive_links(path):
             right = by_lag.get(lag + 1)
             if left is None or right is None or left <= 0.0 or right <= 0.0:
                 continue
+            # Algebraically equivalent to log(right / left), but deliberately
+            # different floating operation order to challenge numeric portability.
             links[(company, lob, lag)][ay] = math.log(right) - math.log(left)
     return links
 
@@ -123,15 +122,18 @@ def transform_blocks(links):
     return centered, normalized
 
 
-def pair_rows(state, relation, lag):
+def relation_coords(relation, lag):
     if relation == "same_step":
-        x_lob, x_lag, y_lob, y_lag = "comauto", lag, "ppauto", lag
-    elif relation == "ca_to_pa_next":
-        x_lob, x_lag, y_lob, y_lag = "comauto", lag, "ppauto", lag + 1
-    elif relation == "pa_to_ca_next":
-        x_lob, x_lag, y_lob, y_lag = "ppauto", lag, "comauto", lag + 1
-    else:
-        raise KeyError(relation)
+        return "comauto", lag, "ppauto", lag
+    if relation == "ca_to_pa_next":
+        return "comauto", lag, "ppauto", lag + 1
+    if relation == "pa_to_ca_next":
+        return "ppauto", lag, "comauto", lag + 1
+    raise KeyError(relation)
+
+
+def pair_rows(state, relation, lag):
+    x_lob, x_lag, y_lob, y_lag = relation_coords(relation, lag)
     companies = sorted({k[0] for k in state})
     rows = []
     for company in companies:
@@ -142,11 +144,34 @@ def pair_rows(state, relation, lag):
     return rows
 
 
+def pair_rows_gated(value_state, gate_state, relation, lag):
+    """Use values from value_state only where both gate-state blocks/AYs exist."""
+    x_lob, x_lag, y_lob, y_lag = relation_coords(relation, lag)
+    companies = sorted({k[0] for k in gate_state})
+    rows = []
+    for company in companies:
+        gx = gate_state.get((company, x_lob, x_lag), {})
+        gy = gate_state.get((company, y_lob, y_lag), {})
+        vx = value_state.get((company, x_lob, x_lag), {})
+        vy = value_state.get((company, y_lob, y_lag), {})
+        for ay in sorted(gx.keys() & gy.keys() & vx.keys() & vy.keys()):
+            rows.append((vx[ay], vy[ay], company))
+    return rows
+
+
 def pooled_rows(state, relation, max_lag):
     last = max_lag if relation == "same_step" else max_lag - 1
     rows = []
     for lag in range(1, last + 1):
         rows.extend(pair_rows(state, relation, lag))
+    return rows
+
+
+def pooled_rows_gated(value_state, gate_state, relation, max_lag):
+    last = max_lag if relation == "same_step" else max_lag - 1
+    rows = []
+    for lag in range(1, last + 1):
+        rows.extend(pair_rows_gated(value_state, gate_state, relation, lag))
     return rows
 
 
@@ -215,6 +240,7 @@ def main():
         "max_lag": max_lag,
         "pooled": {},
         "selected_pair_specific": {},
+        "eligibility_decomposition": {},
     }
 
     for relation in RELATIONS:
@@ -228,12 +254,23 @@ def main():
                 summary["leave_one_company"] = leave_one_company(rows)
             report["pooled"][relation][state_name] = summary
 
+        common_centered_rows = pooled_rows_gated(centered, normalized, relation, max_lag)
+        common_summary = summarize(common_centered_rows)
+        common_summary["leave_one_company"] = leave_one_company(common_centered_rows)
+        report["eligibility_decomposition"][relation] = {
+            "centered_on_normalized_eligibility": common_summary,
+            "normalized": report["pooled"][relation]["normalized"],
+        }
+
     for lag in (5, 7):
         report["selected_pair_specific"][str(lag)] = {}
         for state_name, state in states.items():
             report["selected_pair_specific"][str(lag)][state_name] = summarize(
                 pair_rows(state, "same_step", lag)
             )
+        report["selected_pair_specific"][str(lag)]["centered_on_normalized_eligibility"] = summarize(
+            pair_rows_gated(centered, normalized, "same_step", lag)
+        )
 
     print(json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=False))
     print("REVIEWER_CLRD2025_RECONSTRUCTION_OK")
