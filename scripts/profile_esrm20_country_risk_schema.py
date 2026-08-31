@@ -204,11 +204,14 @@ def profile_country_risk_schema_bytes(
     field_presence = {
         field: field in header for field in SECONDARY_HYPOTHESIS_HEADERS
     }
-    residential_candidate = (
-        identity["kosovo_row_status"] == "unique"
-        and field_presence[RESIDENTIAL_AAL_HEADER]
-        and field_presence[RESIDENTIAL_AALR_HEADER]
+    unique_kosovo = identity["kosovo_row_status"] == "unique"
+    residential_aal_candidate = (
+        unique_kosovo and field_presence[RESIDENTIAL_AAL_HEADER]
     )
+    residential_aalr_candidate = (
+        unique_kosovo and field_presence[RESIDENTIAL_AALR_HEADER]
+    )
+    residential_candidate = residential_aal_candidate or residential_aalr_candidate
 
     return {
         "schema_version": SCHEMA_VERSION,
@@ -228,6 +231,8 @@ def profile_country_risk_schema_bytes(
         "header_sha256": _header_sha256(header),
         **identity,
         "secondary_hypothesis_field_presence": field_presence,
+        "residential_aal_schema_candidate": residential_aal_candidate,
+        "residential_aalr_schema_candidate": residential_aalr_candidate,
         "residential_reference_schema_candidate": residential_candidate,
         "provider_numeric_values_interpreted": False,
         "provider_values_returned": False,
