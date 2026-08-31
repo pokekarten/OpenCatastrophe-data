@@ -64,6 +64,13 @@ jobs:
           head -n 1 .tmp/clrd2025.csv
           test "$unfiltered" = "8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0"
 
+      - name: Reviewer no-target independent reconstruction
+        shell: bash
+        run: |
+          set -euo pipefail
+          python ffbk970_runner/scripts/reviewer_independent_clrd2025_check.py \
+            --csv .tmp/clrd2025.csv
+
       - name: Independent no-import headline reconstruction
         shell: bash
         run: |
