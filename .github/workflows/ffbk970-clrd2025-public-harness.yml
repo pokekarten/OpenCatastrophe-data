@@ -64,6 +64,13 @@ jobs:
           head -n 1 .tmp/clrd2025.csv
           test "$unfiltered" = "8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0"
 
+      - name: Independent no-import headline reconstruction
+        shell: bash
+        run: |
+          set -euo pipefail
+          python ffbk970_runner/scripts/independent_clrd2025_full_panel_check.py \
+            --csv .tmp/clrd2025.csv
+
       - name: Execute exact FFBK #970 full-panel probe
         shell: bash
         run: |
