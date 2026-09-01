@@ -141,11 +141,11 @@ def _is_explicit_none_comparison(node: ast.AST) -> bool:
     if not isinstance(node, ast.Compare):
         return False
     operands = (node.left, *node.comparators)
-    if not any(_is_none_literal(operand) for operand in operands):
-        return False
+    allowed = (ast.Is, ast.IsNot, ast.Eq, ast.NotEq)
     return any(
-        isinstance(operator, (ast.Is, ast.IsNot, ast.Eq, ast.NotEq))
-        for operator in node.ops
+        isinstance(operator, allowed)
+        and (_is_none_literal(left) or _is_none_literal(right))
+        for left, operator, right in zip(operands, node.ops, operands[1:])
     )
 
 
