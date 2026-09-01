@@ -132,14 +132,29 @@ def _call_sets(nodes: Iterable[ast.AST]) -> tuple[set[str], set[str]]:
     return writers, crs
 
 
+def _is_none_literal(node: ast.AST) -> bool:
+    return isinstance(node, ast.Constant) and node.value is None
+
+
+def _is_explicit_none_comparison(node: ast.AST) -> bool:
+    """Recognize bounded explicit null checks, not generic Python ``None`` use."""
+    if not isinstance(node, ast.Compare):
+        return False
+    operands = (node.left, *node.comparators)
+    if not any(_is_none_literal(operand) for operand in operands):
+        return False
+    return any(
+        isinstance(operator, (ast.Is, ast.IsNot, ast.Eq, ast.NotEq))
+        for operator in node.ops
+    )
+
+
 def _markers(nodes: Iterable[ast.AST]) -> set[str]:
     result: set[str] = set()
     for node in nodes:
         if isinstance(node, ast.Constant):
             value = node.value
-            if value is None:
-                result.add("none")
-            elif isinstance(value, str):
+            if isinstance(value, str):
                 lower = value.casefold()
                 compact = lower.replace(" ", "").replace("-", "")
                 if "epsg:4326" in lower or "epsg=4326" in lower or compact == "epsg4326":
@@ -154,6 +169,8 @@ def _markers(nodes: Iterable[ast.AST]) -> set[str]:
                     result.add("unknown")
                 if lower.strip() == "nan":
                     result.add("nan")
+        elif _is_explicit_none_comparison(node):
+            result.add("none")
         elif isinstance(node, (ast.Name, ast.Attribute)):
             token = (node.id if isinstance(node, ast.Name) else node.attr).casefold()
             if token in {"nan", "isnan"}:
