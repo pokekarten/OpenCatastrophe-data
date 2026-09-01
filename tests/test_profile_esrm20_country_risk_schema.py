@@ -36,6 +36,7 @@ class CountryRiskSchemaProfileTests(unittest.TestCase):
         self.assertTrue(profile["residential_aal_schema_candidate"])
         self.assertTrue(profile["residential_aalr_schema_candidate"])
         self.assertTrue(profile["residential_reference_schema_candidate"])
+        self.assertFalse(profile["trusted_source_receipt_bound"])
         self.assertFalse(profile["provider_numeric_values_interpreted"])
         self.assertFalse(profile["provider_values_returned"])
         rendered = json.dumps(profile, sort_keys=True)
@@ -44,6 +45,24 @@ class CountryRiskSchemaProfileTests(unittest.TestCase):
         self.assertFalse(profile["annualized_metrics_authorized"])
         self.assertFalse(profile["threshold_compatibility_verified"])
         self.assertFalse(profile["reference_loss_agreement_verified"])
+
+    def test_self_hashed_synthetic_bytes_do_not_claim_provider_provenance(self) -> None:
+        payload = b"Name,Metric\nKosovo,1\n"
+
+        profile = profile_country_risk_schema_bytes(payload, **_identity(payload))
+
+        for field in (
+            "source_issue",
+            "project_id",
+            "project_path",
+            "release_tag",
+            "commit_sha",
+            "repository_path",
+        ):
+            self.assertNotIn(field, profile)
+        self.assertFalse(profile["trusted_source_receipt_bound"])
+        self.assertEqual(profile["sha256"], hashlib.sha256(payload).hexdigest())
+        self.assertEqual(profile["byte_count"], len(payload))
 
     def test_residential_aalr_only_keeps_preferred_candidate_open(self) -> None:
         payload = (
