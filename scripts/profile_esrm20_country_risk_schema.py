@@ -1,13 +1,16 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Profile the fixed ESRM20 v1.0 country-risk CSV without exposing values.
+"""Profile bounded country-risk CSV structure without exposing result values.
 
-This module is deliberately offline-only.  It consumes bytes that have already
-been acquired through the trusted receipt plane and binds them to an expected
-SHA-256 and byte count before interpreting the CSV.  Durable output is limited
-to structural schema evidence and a closed set of predeclared country-name
-literals.  Numeric provider result values are never returned or interpreted.
+This module is deliberately offline-only. It binds supplied bytes to an
+expected SHA-256 and byte count before interpreting the CSV, then emits only
+content-derived structural evidence. The expected identity is caller-supplied,
+so this pure profiler does *not* assert that the bytes came from a particular
+provider/project/commit/path. That provenance must be bound separately to a
+trusted acquisition receipt before durable source-specific claims are made.
+
+Numeric provider result values are never returned or interpreted.
 """
 
 from __future__ import annotations
@@ -20,12 +23,6 @@ import re
 from typing import Any
 
 SCHEMA_VERSION = "oc-esrm20-country-risk-schema-profile-v1"
-SOURCE_ISSUE = 778
-PROJECT_ID = 269
-PROJECT_PATH = "efehr/esrm20"
-RELEASE_TAG = "v1.0"
-COMMIT_SHA = "05f83bbc9df81d02ee8ddb1801d9d781355ce783"
-REPOSITORY_PATH = "Risk/European_Risk_Country.csv"
 
 MAX_FILE_BYTES = 8 * 1024 * 1024
 MAX_ROWS = 512
@@ -52,7 +49,7 @@ _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
 class CountryRiskSchemaProfileError(RuntimeError):
-    """Raised when fixed country-risk schema evidence cannot be proven safely."""
+    """Raised when bounded country-risk schema evidence cannot be proven safely."""
 
 
 def _bounded_text(value: object, *, field: str) -> str:
@@ -185,7 +182,13 @@ def profile_country_risk_schema_bytes(
     expected_sha256: str,
     expected_byte_count: int,
 ) -> dict[str, Any]:
-    """Return value-redacted structural evidence for exact receipted bytes."""
+    """Return value-redacted structural evidence for byte-identity-bound content.
+
+    The returned hash/count prove only which bytes were profiled. Source
+    provenance is intentionally left unverified here because the expected
+    identity is supplied by the caller rather than derived from a trusted
+    acquisition receipt.
+    """
     expected_sha256, expected_byte_count = _validate_expected_identity(
         expected_sha256,
         expected_byte_count,
@@ -193,10 +196,10 @@ def profile_country_risk_schema_bytes(
     if type(payload) is not bytes:
         raise CountryRiskSchemaProfileError("country-risk payload is not bytes")
     if len(payload) != expected_byte_count:
-        raise CountryRiskSchemaProfileError("country-risk byte count does not match receipt")
+        raise CountryRiskSchemaProfileError("country-risk byte count does not match expected identity")
     actual_sha256 = hashlib.sha256(payload).hexdigest()
     if actual_sha256 != expected_sha256:
-        raise CountryRiskSchemaProfileError("country-risk SHA-256 does not match receipt")
+        raise CountryRiskSchemaProfileError("country-risk SHA-256 does not match expected identity")
 
     text = _decode_csv(payload)
     delimiter, header, rows = _parse_csv(text)
@@ -215,14 +218,9 @@ def profile_country_risk_schema_bytes(
 
     return {
         "schema_version": SCHEMA_VERSION,
-        "source_issue": SOURCE_ISSUE,
-        "project_id": PROJECT_ID,
-        "project_path": PROJECT_PATH,
-        "release_tag": RELEASE_TAG,
-        "commit_sha": COMMIT_SHA,
-        "repository_path": REPOSITORY_PATH,
         "byte_count": len(payload),
         "sha256": actual_sha256,
+        "trusted_source_receipt_bound": False,
         "encoding": "utf-8",
         "delimiter": delimiter,
         "column_count": len(header),
