@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import unittest
@@ -127,6 +128,13 @@ class Project278DataflowProfileTests(unittest.TestCase):
             "exposure2site/exposure_to_site_tools.py:optional_writer",
             profile["missing_writer_candidate_functions"],
         )
+
+    def test_none_marker_is_bound_to_its_actual_chained_operator(self) -> None:
+        non_null_pair = ast.parse("None < value == marker", mode="eval").body
+        explicit_null_pair = ast.parse("value < marker is None", mode="eval").body
+
+        self.assertFalse(subject._is_explicit_none_comparison(non_null_pair))
+        self.assertTrue(subject._is_explicit_none_comparison(explicit_null_pair))
 
     def test_generic_transform_is_not_classified_as_crs_call(self) -> None:
         profile = self._profile()
