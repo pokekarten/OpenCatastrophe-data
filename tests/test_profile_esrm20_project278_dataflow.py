@@ -32,6 +32,10 @@ def classify(value):
         return "Unknown"
     return value
 
+def optional_writer(payload, optional=None):
+    write_xml(payload)
+    return None
+
 def generic_transform(value):
     transformed = transform(value)
     return transformed
@@ -106,6 +110,23 @@ class Project278DataflowProfileTests(unittest.TestCase):
         self.assertIn("none", classify["missing_candidate_markers"])
         self.assertNotIn("unknown", classify["missing_candidate_markers"])
         self.assertIs(profile["unknown_is_missing_marker"], False)
+
+    def test_generic_none_defaults_and_returns_are_not_missingness(self) -> None:
+        profile = self._profile()
+        functions = {
+            (item["repository_path"], item["function"]): item
+            for item in profile["candidate_functions"]
+        }
+        optional_writer = functions[
+            ("exposure2site/exposure_to_site_tools.py", "optional_writer")
+        ]
+        self.assertIn("write_xml", optional_writer["writer_calls"])
+        self.assertNotIn("none", optional_writer["missing_candidate_markers"])
+        self.assertNotIn("missing_and_writer_same_function", optional_writer["relations"])
+        self.assertNotIn(
+            "exposure2site/exposure_to_site_tools.py:optional_writer",
+            profile["missing_writer_candidate_functions"],
+        )
 
     def test_generic_transform_is_not_classified_as_crs_call(self) -> None:
         profile = self._profile()
