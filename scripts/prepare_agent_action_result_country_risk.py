@@ -78,6 +78,7 @@ def _build_country_risk_acquisition_result(
         and tree_profile.get("country_risk_path_status") == "blob"
         and receipt is not None
         and schema_profile is not None
+        and schema_profile.get("trusted_source_receipt_bound") is True
     )
     result = {
         "schema_version": _legacy.RESULT_SCHEMA_VERSION,
@@ -188,19 +189,26 @@ def prepare_completed_result(
                     )
                 receipt = _result.validate_esrm20_country_risk_receipt(acquired[0])
                 payload = acquired[1]
-                schema_profile = _result.validate_esrm20_country_risk_schema_profile(
+                pure_schema_profile = _result.validate_esrm20_country_risk_schema_profile(
                     schema_profiler(
                         payload,
                         expected_sha256=receipt["sha256"],
                         expected_byte_count=receipt["byte_count"],
                     )
                 )
-                _result.validate_schema_receipt_binding(schema_profile, receipt)
+                if pure_schema_profile["trusted_source_receipt_bound"] is not False:
+                    raise _result.ResultError(
+                        "pure country-risk schema profiler promoted source authority"
+                    )
+                _result.validate_schema_receipt_binding(pure_schema_profile, receipt)
+                schema_profile = dict(pure_schema_profile)
+                schema_profile["trusted_source_receipt_bound"] = True
             except (
                 _country.Esrm20CountryRiskReceiptError,
                 _schema.CountryRiskSchemaProfileError,
                 _result.ResultError,
             ):
+                schema_profile = None
                 print(
                     "acquisition blocked: ESRM20 country-risk byte/schema chain failed closed",
                     file=sys.stderr,
