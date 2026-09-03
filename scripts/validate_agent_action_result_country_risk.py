@@ -131,7 +131,6 @@ _SCHEMA_PROFILE_FIELDS = {
     "model_use_authorized",
 }
 _SCHEMA_FALSE_FIELDS = {
-    "trusted_source_receipt_bound",
     "provider_numeric_values_interpreted",
     "provider_values_returned",
     "raw_rows_returned",
@@ -358,7 +357,7 @@ def validate_esrm20_country_risk_receipt(receipt: Any) -> dict[str, Any]:
 
 
 def validate_esrm20_country_risk_schema_profile(profile: Any) -> dict[str, Any]:
-    """Revalidate value-redacted schema evidence without promoting source authority."""
+    """Revalidate value-redacted schema evidence without inferring provenance."""
     if type(profile) is not dict or set(profile) != _SCHEMA_PROFILE_FIELDS:
         raise ResultError("country-risk schema profile fields drifted")
     if profile["schema_version"] != _schema.SCHEMA_VERSION:
@@ -371,6 +370,8 @@ def validate_esrm20_country_risk_schema_profile(profile: Any) -> dict[str, Any]:
     sha256 = profile["sha256"]
     if type(sha256) is not str or not _legacy.DIGEST_RE.fullmatch(sha256):
         raise ResultError("country-risk schema sha256 is invalid")
+    if type(profile["trusted_source_receipt_bound"]) is not bool:
+        raise ResultError("country-risk schema receipt-bound flag must be boolean")
     for field in _SCHEMA_FALSE_FIELDS:
         if profile[field] is not False:
             raise ResultError(f"country-risk schema {field} must remain false")
@@ -583,6 +584,8 @@ def _validate_country_result(result: dict[str, Any]) -> dict[str, Any]:
             raise ResultError("successful country-risk acquisition requires blob precondition")
         receipt = validate_esrm20_country_risk_receipt(receipt)
         schema_profile = validate_esrm20_country_risk_schema_profile(schema_profile)
+        if schema_profile["trusted_source_receipt_bound"] is not True:
+            raise ResultError("successful country-risk schema evidence is not receipt-bound")
         validate_schema_receipt_binding(schema_profile, receipt)
         retrieved = _legacy._utc_second(
             receipt["retrieved_at"], f"{_COUNTRY_FIELD}.retrieved_at"
