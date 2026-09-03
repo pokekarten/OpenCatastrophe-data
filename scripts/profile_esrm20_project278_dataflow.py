@@ -165,7 +165,7 @@ def _markers(nodes: Iterable[ast.AST]) -> set[str]:
                     result.add("wgs84")
                 if "nodata" in compact or "no_data" in lower:
                     result.add("nodata")
-                if "unknown" in lower:
+                if lower.strip() == "unknown":
                     result.add("unknown")
                 if lower.strip() == "nan":
                     result.add("nan")
