@@ -22,15 +22,9 @@ MAIN_SHA = "7226582160bd129fb15a0d46db777be826f24d84"
 DATASET = "efehr.esrm20.risk-inputs.v1.0"
 RETRIEVED_AT = "2026-08-29T10:00:00Z"
 SCHEMA_PAYLOAD = (
-    b"Name,AAL Residential (economic M EUR),"
-    b"AALR Residential (economic per mille)\n"
+    b'Name,"AAL Residential (economic, M EUR)",'
+    b'"AALR Residential (economic, per mille)"\n'
     b"Kosovo,987654.321,654.987\n"
-)
-# Use exact provider-header spellings expected by the closed schema profiler.
-SCHEMA_PAYLOAD = SCHEMA_PAYLOAD.replace(
-    b"economic M EUR", b"economic, M EUR"
-).replace(
-    b"economic per mille", b"economic, per mille"
 )
 
 
