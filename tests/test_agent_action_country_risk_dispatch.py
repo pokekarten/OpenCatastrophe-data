@@ -12,6 +12,7 @@ from unittest import mock
 from scripts import acquire_efehr_esrm20_country_risk_receipt as country
 from scripts import agent_action_protocol_country_risk as protocol
 from scripts import prepare_agent_action_result_country_risk as prepare
+from scripts import profile_esrm20_country_risk_schema as schema
 from scripts import profile_esrm20_risk_v10_tree as risk_tree
 from scripts import validate_agent_action_request_country_risk as request_validator
 from scripts import validate_agent_action_result_country_risk as result_validator
@@ -20,6 +21,17 @@ from scripts.efehr_gitlab_receipt import raw_file_api_url, validate_target
 MAIN_SHA = "7226582160bd129fb15a0d46db777be826f24d84"
 DATASET = "efehr.esrm20.risk-inputs.v1.0"
 RETRIEVED_AT = "2026-08-29T10:00:00Z"
+SCHEMA_PAYLOAD = (
+    b"Name,AAL Residential (economic M EUR),"
+    b"AALR Residential (economic per mille)\n"
+    b"Kosovo,987654.321,654.987\n"
+)
+# Use exact provider-header spellings expected by the closed schema profiler.
+SCHEMA_PAYLOAD = SCHEMA_PAYLOAD.replace(
+    b"economic M EUR", b"economic, M EUR"
+).replace(
+    b"economic per mille", b"economic, per mille"
+)
 
 
 def _request(**overrides):
@@ -35,7 +47,7 @@ def _request(**overrides):
     return value
 
 
-def _receipt(**overrides):
+def _receipt(payload: bytes = SCHEMA_PAYLOAD, **overrides):
     target = validate_target(
         source_issue=country.SOURCE_ISSUE,
         dataset_id=country.DATASET_ID,
@@ -57,8 +69,8 @@ def _receipt(**overrides):
         "requested_url": url,
         "final_url": url,
         "retrieved_at": RETRIEVED_AT,
-        "byte_count": 123,
-        "sha256": "a" * 64,
+        "byte_count": len(payload),
+        "sha256": hashlib.sha256(payload).hexdigest(),
         "content_type": "text/csv",
         "etag": '"synthetic"',
         "external_bytes_persisted": False,
@@ -69,6 +81,10 @@ def _receipt(**overrides):
     }
     value.update(overrides)
     return value
+
+
+def _acquired(payload: bytes = SCHEMA_PAYLOAD):
+    return _receipt(payload), payload
 
 
 def _tree_entry(path: str, object_sha1: str, *, entry_type: str = "blob"):
@@ -140,7 +156,8 @@ def _run_request(**overrides):
         "run_attempt": 1,
         "started_at": "2026-08-29T09:59:00Z",
         "risk_tree_profiler": _tree_profile,
-        "country_risk_acquirer": _receipt,
+        "country_risk_acquirer": _acquired,
+        "schema_profiler": schema.profile_country_risk_schema_bytes,
     }
     kwargs.update(overrides)
     return prepare.prepare_completed_result(request, [], **kwargs)
@@ -206,6 +223,21 @@ class CountryRiskResultTests(unittest.TestCase):
                     _tree_profile(**mutation)
                 )
 
+    def test_pure_schema_profile_is_structural_and_unbound(self) -> None:
+        profile = schema.profile_country_risk_schema_bytes(
+            SCHEMA_PAYLOAD,
+            expected_sha256=hashlib.sha256(SCHEMA_PAYLOAD).hexdigest(),
+            expected_byte_count=len(SCHEMA_PAYLOAD),
+        )
+        self.assertIs(
+            result_validator.validate_esrm20_country_risk_schema_profile(profile),
+            profile,
+        )
+        self.assertFalse(profile["trusted_source_receipt_bound"])
+        self.assertTrue(profile["residential_reference_schema_candidate"])
+        self.assertNotIn("987654.321", str(profile))
+        self.assertNotIn("654.987", str(profile))
+
     def test_receipt_contract_is_identity_only_and_fail_closed(self) -> None:
         receipt = _receipt()
         self.assertIs(
@@ -225,7 +257,7 @@ class CountryRiskResultTests(unittest.TestCase):
             ):
                 result_validator.validate_esrm20_country_risk_receipt(bad)
 
-    def test_success_retains_blob_precondition_before_byte_receipt(self) -> None:
+    def test_success_binds_schema_to_same_receipted_bytes(self) -> None:
         result = _run_request()
         self.assertEqual(result["status"], "pass")
         self.assertEqual(result["phase"], "acquisition_receipt")
@@ -235,10 +267,15 @@ class CountryRiskResultTests(unittest.TestCase):
             ],
             "blob",
         )
-        self.assertEqual(
-            result["evidence"][prepare.COUNTRY_RISK_RECEIPT_FIELD]["repository_path"],
-            country.REPOSITORY_PATH,
-        )
+        receipt = result["evidence"][prepare.COUNTRY_RISK_RECEIPT_FIELD]
+        profile = result["evidence"][prepare.COUNTRY_RISK_SCHEMA_PROFILE_FIELD]
+        self.assertEqual(receipt["repository_path"], country.REPOSITORY_PATH)
+        self.assertEqual(profile["sha256"], receipt["sha256"])
+        self.assertEqual(profile["byte_count"], receipt["byte_count"])
+        self.assertTrue(profile["trusted_source_receipt_bound"])
+        self.assertTrue(profile["residential_reference_schema_candidate"])
+        self.assertNotIn("987654.321", str(result))
+        self.assertNotIn("654.987", str(result))
 
     def test_result_rejects_execution_sha_drift(self) -> None:
         result = _run_request()
@@ -252,6 +289,15 @@ class CountryRiskResultTests(unittest.TestCase):
         drifted = copy.deepcopy(result)
         drifted["evidence"][prepare.RISK_TREE_PROFILE_FIELD][
             "tree_identity_sha256"
+        ] = "0" * 64
+        with self.assertRaises(result_validator.ResultError):
+            result_validator.validate_result(drifted)
+
+    def test_result_rejects_schema_receipt_binding_tampering(self) -> None:
+        result = _run_request()
+        drifted = copy.deepcopy(result)
+        drifted["evidence"][prepare.COUNTRY_RISK_SCHEMA_PROFILE_FIELD][
+            "sha256"
         ] = "0" * 64
         with self.assertRaises(result_validator.ResultError):
             result_validator.validate_result(drifted)
@@ -270,11 +316,14 @@ class CountryRiskResultTests(unittest.TestCase):
             "blob",
         )
         self.assertIsNone(result["evidence"][prepare.COUNTRY_RISK_RECEIPT_FIELD])
+        self.assertIsNone(
+            result["evidence"][prepare.COUNTRY_RISK_SCHEMA_PROFILE_FIELD]
+        )
 
     def test_non_blob_precondition_never_invokes_byte_worker(self) -> None:
         for status in ("absent", "tree"):
             with self.subTest(status=status):
-                byte_worker = mock.Mock(return_value=_receipt())
+                byte_worker = mock.Mock(return_value=_acquired())
                 result = _run_request(
                     risk_tree_profiler=lambda status=status: _tree_profile(status),
                     country_risk_acquirer=byte_worker,
@@ -292,13 +341,16 @@ class CountryRiskResultTests(unittest.TestCase):
                 self.assertIsNone(
                     result["evidence"][prepare.COUNTRY_RISK_RECEIPT_FIELD]
                 )
+                self.assertIsNone(
+                    result["evidence"][prepare.COUNTRY_RISK_SCHEMA_PROFILE_FIELD]
+                )
                 byte_worker.assert_not_called()
 
     def test_tree_profile_failure_never_invokes_byte_worker(self) -> None:
         def blocked_profile():
             raise risk_tree.RiskTreeProfileError("provider detail must not escape")
 
-        byte_worker = mock.Mock(return_value=_receipt())
+        byte_worker = mock.Mock(return_value=_acquired())
         result = _run_request(
             risk_tree_profiler=blocked_profile,
             country_risk_acquirer=byte_worker,
@@ -307,7 +359,45 @@ class CountryRiskResultTests(unittest.TestCase):
         self.assertEqual(result["failure_class"], prepare.ACQUISITION_FAILURE_CLASS)
         self.assertIsNone(result["evidence"][prepare.RISK_TREE_PROFILE_FIELD])
         self.assertIsNone(result["evidence"][prepare.COUNTRY_RISK_RECEIPT_FIELD])
+        self.assertIsNone(
+            result["evidence"][prepare.COUNTRY_RISK_SCHEMA_PROFILE_FIELD]
+        )
         byte_worker.assert_not_called()
+
+    def test_schema_failure_retains_receipt_but_never_publishes_payload(self) -> None:
+        def blocked_schema(*args, **kwargs):
+            del args, kwargs
+            raise schema.CountryRiskSchemaProfileError("provider value must not escape")
+
+        byte_worker = mock.Mock(return_value=_acquired())
+        result = _run_request(
+            country_risk_acquirer=byte_worker,
+            schema_profiler=blocked_schema,
+        )
+        self.assertEqual(result["status"], "blocked")
+        self.assertIsNotNone(result["evidence"][prepare.COUNTRY_RISK_RECEIPT_FIELD])
+        self.assertIsNone(
+            result["evidence"][prepare.COUNTRY_RISK_SCHEMA_PROFILE_FIELD]
+        )
+        self.assertNotIn("987654.321", str(result))
+        byte_worker.assert_called_once_with()
+
+    def test_pure_schema_profiler_cannot_pre_promote_receipt_authority(self) -> None:
+        def overclaiming(payload, *, expected_sha256, expected_byte_count):
+            profile = schema.profile_country_risk_schema_bytes(
+                payload,
+                expected_sha256=expected_sha256,
+                expected_byte_count=expected_byte_count,
+            )
+            profile["trusted_source_receipt_bound"] = True
+            return profile
+
+        result = _run_request(schema_profiler=overclaiming)
+        self.assertEqual(result["status"], "blocked")
+        self.assertIsNotNone(result["evidence"][prepare.COUNTRY_RISK_RECEIPT_FIELD])
+        self.assertIsNone(
+            result["evidence"][prepare.COUNTRY_RISK_SCHEMA_PROFILE_FIELD]
+        )
 
 
 class CountryRiskWorkflowTests(unittest.TestCase):
