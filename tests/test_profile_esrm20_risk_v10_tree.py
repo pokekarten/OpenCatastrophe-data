@@ -17,7 +17,13 @@ _SHA_C = "3" * 40
 
 
 class _Response:
-    def __init__(self, url: str, payload: bytes, *, headers: dict[str, str] | None = None) -> None:
+    def __init__(
+        self,
+        url: str,
+        payload: bytes,
+        *,
+        headers: dict[str, str] | None = None,
+    ) -> None:
         self.status = 200
         self._url = url
         self._payload = payload
@@ -49,7 +55,12 @@ class _Clock:
         return 1.0
 
 
-def _entry(path: str, object_id: str, *, entry_type: str = "blob") -> dict[str, str]:
+def _entry(
+    path: str,
+    object_id: str,
+    *,
+    entry_type: str = "blob",
+) -> dict[str, str]:
     mode = "040000" if entry_type == "tree" else "100644"
     return {
         "id": object_id,
@@ -60,7 +71,12 @@ def _entry(path: str, object_id: str, *, entry_type: str = "blob") -> dict[str, 
     }
 
 
-def _opener_for(entries: list[dict[str, str]], *, tag_commit: str = target.EXPECTED_COMMIT_SHA):
+def _opener_for(
+    entries: list[dict[str, str]],
+    *,
+    tag_commit: str = target.EXPECTED_COMMIT_SHA,
+    tree_headers: dict[str, str] | None = None,
+):
     tag_url = target._tag_url()
     tree_url = target._tree_url(target.EXPECTED_COMMIT_SHA, 1)
     tag = json.dumps(
@@ -78,15 +94,13 @@ def _opener_for(entries: list[dict[str, str]], *, tag_commit: str = target.EXPEC
         if request.full_url == tag_url:
             return _Response(tag_url, tag)
         if request.full_url == tree_url:
-            return _Response(
-                tree_url,
-                tree,
-                headers={
-                    "X-Page": "1",
-                    "X-Per-Page": str(target.TREE_PER_PAGE),
-                    "X-Next-Page": "",
-                },
-            )
+            headers = {
+                "X-Page": "1",
+                "X-Per-Page": str(target.TREE_PER_PAGE),
+                "X-Next-Page": "",
+            }
+            headers.update(tree_headers or {})
+            return _Response(tree_url, tree, headers=headers)
         raise AssertionError(f"unexpected URL: {request.full_url}")
 
     return opener
@@ -170,7 +184,10 @@ class RiskV10TreeProfileTests(unittest.TestCase):
                 opener=_opener_for([_entry("Exposure/not-risk.xml", _SHA_A)]),
                 monotonic=_Clock(),
             )
-        self.assertEqual(ctx.exception.failure_class, "tree_metadata_validation_failure")
+        self.assertEqual(
+            ctx.exception.failure_class,
+            "tree_metadata_validation_failure",
+        )
 
     def test_duplicate_path_fails_closed(self) -> None:
         duplicate = _entry("Risk/European_Risk_Country.csv", _SHA_A)
@@ -179,7 +196,61 @@ class RiskV10TreeProfileTests(unittest.TestCase):
                 opener=_opener_for([duplicate, dict(duplicate)]),
                 monotonic=_Clock(),
             )
-        self.assertEqual(ctx.exception.failure_class, "tree_metadata_validation_failure")
+        self.assertEqual(
+            ctx.exception.failure_class,
+            "tree_metadata_validation_failure",
+        )
+
+    def test_terminal_page_must_reconcile_with_reported_total_pages(self) -> None:
+        with self.assertRaises(target.RiskTreeProfileError) as ctx:
+            target._profile_v10_tree_for_test(
+                opener=_opener_for(
+                    [_entry("Risk/European_Risk_Country.csv", _SHA_A)],
+                    tree_headers={
+                        "X-Total-Pages": "2",
+                        "X-Total": "101",
+                    },
+                ),
+                monotonic=_Clock(),
+            )
+        self.assertEqual(
+            ctx.exception.failure_class,
+            "tree_metadata_validation_failure",
+        )
+
+    def test_reported_total_pages_and_entries_must_agree(self) -> None:
+        with self.assertRaises(target.RiskTreeProfileError) as ctx:
+            target._profile_v10_tree_for_test(
+                opener=_opener_for(
+                    [_entry("Risk/European_Risk_Country.csv", _SHA_A)],
+                    tree_headers={
+                        "X-Total-Pages": "1",
+                        "X-Total": "101",
+                    },
+                ),
+                monotonic=_Clock(),
+            )
+        self.assertEqual(
+            ctx.exception.failure_class,
+            "tree_metadata_validation_failure",
+        )
+
+    def test_inventory_count_must_equal_provider_total_when_reported(self) -> None:
+        with self.assertRaises(target.RiskTreeProfileError) as ctx:
+            target._profile_v10_tree_for_test(
+                opener=_opener_for(
+                    [_entry("Risk/European_Risk_Country.csv", _SHA_A)],
+                    tree_headers={
+                        "X-Total-Pages": "1",
+                        "X-Total": "2",
+                    },
+                ),
+                monotonic=_Clock(),
+            )
+        self.assertEqual(
+            ctx.exception.failure_class,
+            "tree_metadata_validation_failure",
+        )
 
     def test_tag_commit_drift_fails_closed_before_tree_use(self) -> None:
         wrong = "f" * 40
@@ -191,7 +262,10 @@ class RiskV10TreeProfileTests(unittest.TestCase):
                 ),
                 monotonic=_Clock(),
             )
-        self.assertEqual(ctx.exception.failure_class, "tag_metadata_validation_failure")
+        self.assertEqual(
+            ctx.exception.failure_class,
+            "tag_metadata_validation_failure",
+        )
 
     def test_production_authority_rejects_target_constant_drift(self) -> None:
         with mock.patch.object(target, "COUNTRY_RISK_PATH", "Risk/other.csv"):
