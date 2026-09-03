@@ -112,6 +112,15 @@ class Project278DataflowProfileTests(unittest.TestCase):
         self.assertNotIn("unknown", classify["missing_candidate_markers"])
         self.assertIs(profile["unknown_is_missing_marker"], False)
 
+    def test_unknown_category_requires_exact_literal_or_identifier(self) -> None:
+        exact_literal = ast.parse('value = "Unknown"')
+        diagnostic_text = ast.parse('raise ValueError("unknown CRS")')
+        exact_identifier = ast.parse("value = unknown")
+
+        self.assertIn("unknown", subject._markers(ast.walk(exact_literal)))
+        self.assertIn("unknown", subject._markers(ast.walk(exact_identifier)))
+        self.assertNotIn("unknown", subject._markers(ast.walk(diagnostic_text)))
+
     def test_generic_none_defaults_and_returns_are_not_missingness(self) -> None:
         profile = self._profile()
         functions = {
