@@ -200,26 +200,82 @@ def _canonical_entry(raw: object) -> dict[str, str]:
     }
 
 
-def _pagination_next(response: object, *, page: int) -> int | None:
+def _optional_bounded_header_int(
+    response: object,
+    name: str,
+    *,
+    minimum: int,
+    maximum: int,
+) -> int | None:
+    try:
+        raw = _HEADER_VALUE(response, name)
+    except transport.EfehrAcquisitionError as exc:
+        raise RiskTreeProfileError(f"risk tree {name} header is invalid") from exc
+    if raw is None:
+        return None
+    if not raw or not raw.isascii() or not raw.isdigit():
+        raise RiskTreeProfileError(f"risk tree {name} header is invalid")
+    value = int(raw)
+    if not (minimum <= value <= maximum):
+        raise RiskTreeProfileError(f"risk tree {name} exceeds bounded policy")
+    return value
+
+
+def _pagination_state(
+    response: object,
+    *,
+    page: int,
+) -> tuple[int | None, int | None]:
     try:
         raw_page = _HEADER_VALUE(response, "X-Page")
         raw_per_page = _HEADER_VALUE(response, "X-Per-Page")
         raw_next = _HEADER_VALUE(response, "X-Next-Page")
     except transport.EfehrAcquisitionError as exc:
         raise RiskTreeProfileError("risk tree pagination header is invalid") from exc
+    if not all(type(value) is str for value in (raw_page, raw_per_page, raw_next)):
+        raise RiskTreeProfileError("risk tree pagination headers are incomplete")
     if raw_page != str(page) or raw_per_page != str(TREE_PER_PAGE):
         raise RiskTreeProfileError("risk tree pagination identity drifted")
+
+    total_pages = _optional_bounded_header_int(
+        response,
+        "X-Total-Pages",
+        minimum=1,
+        maximum=MAX_TREE_PAGES,
+    )
+    total_entries = _optional_bounded_header_int(
+        response,
+        "X-Total",
+        minimum=1,
+        maximum=MAX_TREE_ENTRIES,
+    )
+    if total_pages is not None and total_pages < page:
+        raise RiskTreeProfileError("risk tree total pages precede current page")
+    if total_pages is not None and total_entries is not None:
+        expected_total_pages = (total_entries + TREE_PER_PAGE - 1) // TREE_PER_PAGE
+        if expected_total_pages != total_pages:
+            raise RiskTreeProfileError("risk tree total pagination metadata disagrees")
+
     if raw_next == "":
-        return None
-    if type(raw_next) is not str or not raw_next.isascii() or not raw_next.isdigit():
+        if total_pages is not None and total_pages != page:
+            raise RiskTreeProfileError("risk tree terminal page disagrees with total pages")
+        return None, total_entries
+    if not raw_next.isascii() or not raw_next.isdigit():
         raise RiskTreeProfileError("risk tree next-page header is invalid")
     next_page = int(raw_next)
     if next_page != page + 1 or next_page > MAX_TREE_PAGES:
         raise RiskTreeProfileError("risk tree pagination is not contiguous")
-    return next_page
+    if total_pages is not None and next_page > total_pages:
+        raise RiskTreeProfileError("risk tree next page exceeds total pages")
+    return next_page, total_entries
 
 
-def _resolve_tag_commit(*, opener: Any, monotonic: Any, deadline: float) -> tuple[str, int]:
+def _resolve_tag_commit(
+    *,
+    opener: Any,
+    monotonic: Any,
+    deadline: float,
+) -> tuple[str, int]:
     url = _tag_url()
     request = _REQUEST(
         url,
@@ -268,7 +324,8 @@ def _resolve_tag_commit(*, opener: Any, monotonic: Any, deadline: float) -> tupl
         if exc.failure_class is not None:
             raise
         raise RiskTreeProfileError(
-            str(exc), failure_class="tag_metadata_validation_failure"
+            str(exc),
+            failure_class="tag_metadata_validation_failure",
         ) from exc
     except transport.EfehrAcquisitionError as exc:
         raise RiskTreeProfileError(
@@ -289,6 +346,8 @@ def _inventory_tree(
     total_bytes = tag_bytes
     page = 1
     pages_read = 0
+    reported_total_entries: int | None = None
+    totals_present: bool | None = None
     try:
         while True:
             pages_read += 1
@@ -313,7 +372,10 @@ def _inventory_tree(
                         monotonic=monotonic,
                     )
                     values = _strict_json_array(raw)
-                    next_page = _pagination_next(response, page=page)
+                    next_page, page_total_entries = _pagination_state(
+                        response,
+                        page=page,
+                    )
             except RiskTreeProfileError:
                 raise
             except urllib.error.HTTPError as exc:
@@ -337,6 +399,17 @@ def _inventory_tree(
                     failure_class="tree_metadata_acquisition_failure",
                 ) from exc
 
+            page_has_total = page_total_entries is not None
+            if totals_present is None:
+                totals_present = page_has_total
+            elif totals_present != page_has_total:
+                raise RiskTreeProfileError("risk tree total-entry header presence drifted")
+            if page_total_entries is not None:
+                if reported_total_entries is None:
+                    reported_total_entries = page_total_entries
+                elif reported_total_entries != page_total_entries:
+                    raise RiskTreeProfileError("risk tree total-entry count drifted")
+
             total_bytes += len(raw)
             if total_bytes > MAX_TOTAL_METADATA_BYTES:
                 raise RiskTreeProfileError("risk metadata byte bound exceeded")
@@ -355,12 +428,18 @@ def _inventory_tree(
         if exc.failure_class is not None:
             raise
         raise RiskTreeProfileError(
-            str(exc), failure_class="tree_metadata_validation_failure"
+            str(exc),
+            failure_class="tree_metadata_validation_failure",
         ) from exc
 
     if not entries:
         raise RiskTreeProfileError(
             "fixed risk subtree is empty",
+            failure_class="tree_metadata_validation_failure",
+        )
+    if reported_total_entries is not None and len(entries) != reported_total_entries:
+        raise RiskTreeProfileError(
+            "risk tree inventory count disagrees with provider total",
             failure_class="tree_metadata_validation_failure",
         )
     return [entries[path] for path in sorted(entries)], pages_read
@@ -386,10 +465,11 @@ def _public_inventory(entries: list[dict[str, str]]) -> list[dict[str, str]]:
     ]
 
 
-def _country_risk_path_status(entries: list[dict[str, str]]) -> tuple[str, dict[str, str] | None]:
+def _country_risk_path_status(
+    entries: list[dict[str, str]],
+) -> tuple[str, dict[str, str] | None]:
     matches = [entry for entry in entries if entry["path"] == COUNTRY_RISK_PATH]
     if len(matches) > 1:
-        # Defensive only: duplicate paths are already rejected by _inventory_tree.
         raise RiskTreeProfileError("country-risk path appears more than once")
     if not matches:
         return "absent", None
@@ -408,7 +488,9 @@ def _country_risk_path_status(entries: list[dict[str, str]]) -> tuple[str, dict[
 def _profile_v10_tree_for_test(*, opener: Any, monotonic: Any) -> dict[str, Any]:
     deadline = monotonic() + TOTAL_DEADLINE_SECONDS
     commit_sha, tag_bytes = _resolve_tag_commit(
-        opener=opener, monotonic=monotonic, deadline=deadline
+        opener=opener,
+        monotonic=monotonic,
+        deadline=deadline,
     )
     entries, pages_read = _inventory_tree(
         commit_sha,
@@ -454,7 +536,8 @@ _TREE_URL = _tree_url
 _STRICT_JSON_ARRAY_FN = _strict_json_array
 _BOUNDED_TEXT = _bounded_text
 _CANONICAL_ENTRY = _canonical_entry
-_PAGINATION_NEXT = _pagination_next
+_OPTIONAL_BOUNDED_HEADER_INT = _optional_bounded_header_int
+_PAGINATION_STATE = _pagination_state
 _RESOLVE_TAG_COMMIT = _resolve_tag_commit
 _INVENTORY_TREE = _inventory_tree
 _TREE_IDENTITY_SHA256 = _tree_identity_sha256
@@ -529,7 +612,8 @@ def _require_production_authority() -> None:
         (_strict_json_array, _STRICT_JSON_ARRAY_FN),
         (_bounded_text, _BOUNDED_TEXT),
         (_canonical_entry, _CANONICAL_ENTRY),
-        (_pagination_next, _PAGINATION_NEXT),
+        (_optional_bounded_header_int, _OPTIONAL_BOUNDED_HEADER_INT),
+        (_pagination_state, _PAGINATION_STATE),
         (_resolve_tag_commit, _RESOLVE_TAG_COMMIT),
         (_inventory_tree, _INVENTORY_TREE),
         (_tree_identity_sha256, _TREE_IDENTITY_SHA256),
