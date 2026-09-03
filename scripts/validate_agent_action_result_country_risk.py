@@ -111,11 +111,10 @@ def _validate_tree_inventory_entry(value: Any) -> dict[str, str]:
     if type(value) is not dict or set(value) != _TREE_ENTRY_FIELDS:
         raise ResultError("risk-tree inventory entry fields drifted")
     entry_type = value["type"]
-    if entry_type not in {"blob", "tree"}:
+    if entry_type not in _risk_tree._ALLOWED_MODES_BY_TYPE:
         raise ResultError("risk-tree inventory entry type is unsupported")
     mode = value["mode"]
-    expected_mode = "100644" if entry_type == "blob" else "040000"
-    if mode != expected_mode:
+    if type(mode) is not str or mode not in _risk_tree._ALLOWED_MODES_BY_TYPE[entry_type]:
         raise ResultError("risk-tree inventory type/mode identity drifted")
     object_sha1 = value["object_sha1"]
     if type(object_sha1) is not str or not _legacy.GIT_SHA_RE.fullmatch(object_sha1):
@@ -229,7 +228,7 @@ def validate_esrm20_risk_v10_tree_profile(profile: Any) -> dict[str, Any]:
         expected_status = "blob" if entry["type"] == "blob" else "tree"
         if status != expected_status or country_entry != entry:
             raise ResultError("risk-tree country path evidence is inconsistent")
-        if candidate_present is not (status == "blob"):
+        if candidate_present != (status == "blob"):
             raise ResultError("risk-tree blob-candidate flag is inconsistent")
     return profile
 
