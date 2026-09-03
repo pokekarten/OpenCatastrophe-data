@@ -3,12 +3,16 @@
 
 from __future__ import annotations
 
+import copy
+import hashlib
 from pathlib import Path
 import unittest
+from unittest import mock
 
 from scripts import acquire_efehr_esrm20_country_risk_receipt as country
 from scripts import agent_action_protocol_country_risk as protocol
 from scripts import prepare_agent_action_result_country_risk as prepare
+from scripts import profile_esrm20_risk_v10_tree as risk_tree
 from scripts import validate_agent_action_request_country_risk as request_validator
 from scripts import validate_agent_action_result_country_risk as result_validator
 from scripts.efehr_gitlab_receipt import raw_file_api_url, validate_target
@@ -67,6 +71,81 @@ def _receipt(**overrides):
     return value
 
 
+def _tree_entry(path: str, object_sha1: str, *, entry_type: str = "blob"):
+    return {
+        "mode": "040000" if entry_type == "tree" else "100644",
+        "object_sha1": object_sha1,
+        "path": path,
+        "type": entry_type,
+    }
+
+
+def _tree_profile(status: str = "blob", **overrides):
+    if status == "blob":
+        inventory = [_tree_entry(risk_tree.COUNTRY_RISK_PATH, "1" * 40)]
+    elif status == "tree":
+        inventory = [
+            _tree_entry(risk_tree.COUNTRY_RISK_PATH, "2" * 40, entry_type="tree")
+        ]
+    elif status == "absent":
+        inventory = [_tree_entry("Risk/European_Risk_Admin1.csv", "3" * 40)]
+    else:
+        raise ValueError(status)
+    canonical = "".join(
+        f"{entry['type']}\t{entry['mode']}\t{entry['object_sha1']}\t{entry['path']}\n"
+        for entry in inventory
+    ).encode("utf-8")
+    country_matches = [
+        entry for entry in inventory if entry["path"] == risk_tree.COUNTRY_RISK_PATH
+    ]
+    country_entry = country_matches[0] if country_matches else None
+    value = {
+        "schema_version": risk_tree.SCHEMA_VERSION,
+        "source_issue": risk_tree.SOURCE_ISSUE,
+        "dataset_id": risk_tree.DATASET_ID,
+        "project_id": risk_tree.PROJECT_ID,
+        "project_path": risk_tree.PROJECT_PATH,
+        "release_tag": risk_tree.RELEASE_TAG,
+        "commit_sha": risk_tree.EXPECTED_COMMIT_SHA,
+        "subtree_path": risk_tree.SUBTREE_PATH,
+        "pages_read": 1,
+        "entry_count": len(inventory),
+        "blob_count": sum(entry["type"] == "blob" for entry in inventory),
+        "tree_count": sum(entry["type"] == "tree" for entry in inventory),
+        "tree_identity_sha256": hashlib.sha256(canonical).hexdigest(),
+        "risk_inventory": inventory,
+        "country_risk_path": risk_tree.COUNTRY_RISK_PATH,
+        "country_risk_path_status": status,
+        "country_risk_path_entry": country_entry,
+        "country_risk_blob_candidate_present": status == "blob",
+        "provider_file_bytes_read": False,
+        "external_bytes_persisted": False,
+        "country_risk_bytes_verified": False,
+        "country_risk_schema_verified": False,
+        "reference_loss_agreement_verified": False,
+        "publication_authorized": False,
+        "model_use_authorized": False,
+    }
+    value.update(overrides)
+    return value
+
+
+def _run_request(**overrides):
+    request = request_validator.validate_request(_request(), expected_issue=778)
+    kwargs = {
+        "repository": "pokekarten/OpenCatastrophe-data",
+        "execution_sha": MAIN_SHA,
+        "source_comment_id": 1,
+        "run_id": 2,
+        "run_attempt": 1,
+        "started_at": "2026-08-29T09:59:00Z",
+        "risk_tree_profiler": _tree_profile,
+        "country_risk_acquirer": _receipt,
+    }
+    kwargs.update(overrides)
+    return prepare.prepare_completed_result(request, [], **kwargs)
+
+
 class CountryRiskRequestTests(unittest.TestCase):
     def test_request_is_exactly_bound_to_issue_dataset_and_action(self) -> None:
         request = _request()
@@ -109,6 +188,24 @@ class CountryRiskRequestTests(unittest.TestCase):
 
 
 class CountryRiskResultTests(unittest.TestCase):
+    def test_tree_profile_contract_recomputes_identity_and_path_state(self) -> None:
+        profile = _tree_profile()
+        self.assertIs(
+            result_validator.validate_esrm20_risk_v10_tree_profile(profile),
+            profile,
+        )
+        for mutation in (
+            {"tree_identity_sha256": "0" * 64},
+            {"country_risk_path_status": "absent"},
+            {"provider_file_bytes_read": True},
+        ):
+            with self.subTest(mutation=mutation), self.assertRaises(
+                result_validator.ResultError
+            ):
+                result_validator.validate_esrm20_risk_v10_tree_profile(
+                    _tree_profile(**mutation)
+                )
+
     def test_receipt_contract_is_identity_only_and_fail_closed(self) -> None:
         receipt = _receipt()
         self.assertIs(
@@ -128,51 +225,89 @@ class CountryRiskResultTests(unittest.TestCase):
             ):
                 result_validator.validate_esrm20_country_risk_receipt(bad)
 
-    def test_result_rejects_execution_sha_drift(self) -> None:
-        request = request_validator.validate_request(_request(), expected_issue=778)
-        result = prepare.prepare_completed_result(
-            request,
-            [],
-            repository="pokekarten/OpenCatastrophe-data",
-            execution_sha=MAIN_SHA,
-            source_comment_id=1,
-            run_id=2,
-            run_attempt=1,
-            started_at="2026-08-29T09:59:00Z",
-            country_risk_acquirer=_receipt,
-        )
+    def test_success_retains_blob_precondition_before_byte_receipt(self) -> None:
+        result = _run_request()
         self.assertEqual(result["status"], "pass")
         self.assertEqual(result["phase"], "acquisition_receipt")
+        self.assertEqual(
+            result["evidence"][prepare.RISK_TREE_PROFILE_FIELD][
+                "country_risk_path_status"
+            ],
+            "blob",
+        )
         self.assertEqual(
             result["evidence"][prepare.COUNTRY_RISK_RECEIPT_FIELD]["repository_path"],
             country.REPOSITORY_PATH,
         )
 
-        drifted = dict(result)
+    def test_result_rejects_execution_sha_drift(self) -> None:
+        result = _run_request()
+        drifted = copy.deepcopy(result)
         drifted["execution_sha"] = "0" * 40
         with self.assertRaises(result_validator.ResultError):
             result_validator.validate_result(drifted)
 
-    def test_worker_failure_returns_bounded_blocked_result(self) -> None:
-        request = request_validator.validate_request(_request(), expected_issue=778)
+    def test_result_rejects_tree_profile_tampering_after_dispatch(self) -> None:
+        result = _run_request()
+        drifted = copy.deepcopy(result)
+        drifted["evidence"][prepare.RISK_TREE_PROFILE_FIELD][
+            "tree_identity_sha256"
+        ] = "0" * 64
+        with self.assertRaises(result_validator.ResultError):
+            result_validator.validate_result(drifted)
 
+    def test_worker_failure_retains_blob_profile_and_returns_blocked(self) -> None:
         def blocked():
             raise country.Esrm20CountryRiskReceiptError("provider detail must not escape")
 
-        result = prepare.prepare_completed_result(
-            request,
-            [],
-            repository="pokekarten/OpenCatastrophe-data",
-            execution_sha=MAIN_SHA,
-            source_comment_id=1,
-            run_id=2,
-            run_attempt=1,
-            started_at="2026-08-29T09:59:00Z",
-            country_risk_acquirer=blocked,
+        result = _run_request(country_risk_acquirer=blocked)
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["failure_class"], prepare.ACQUISITION_FAILURE_CLASS)
+        self.assertEqual(
+            result["evidence"][prepare.RISK_TREE_PROFILE_FIELD][
+                "country_risk_path_status"
+            ],
+            "blob",
+        )
+        self.assertIsNone(result["evidence"][prepare.COUNTRY_RISK_RECEIPT_FIELD])
+
+    def test_non_blob_precondition_never_invokes_byte_worker(self) -> None:
+        for status in ("absent", "tree"):
+            with self.subTest(status=status):
+                byte_worker = mock.Mock(return_value=_receipt())
+                result = _run_request(
+                    risk_tree_profiler=lambda status=status: _tree_profile(status),
+                    country_risk_acquirer=byte_worker,
+                )
+                self.assertEqual(result["status"], "blocked")
+                self.assertEqual(
+                    result["failure_class"], prepare.ACQUISITION_FAILURE_CLASS
+                )
+                self.assertEqual(
+                    result["evidence"][prepare.RISK_TREE_PROFILE_FIELD][
+                        "country_risk_path_status"
+                    ],
+                    status,
+                )
+                self.assertIsNone(
+                    result["evidence"][prepare.COUNTRY_RISK_RECEIPT_FIELD]
+                )
+                byte_worker.assert_not_called()
+
+    def test_tree_profile_failure_never_invokes_byte_worker(self) -> None:
+        def blocked_profile():
+            raise risk_tree.RiskTreeProfileError("provider detail must not escape")
+
+        byte_worker = mock.Mock(return_value=_receipt())
+        result = _run_request(
+            risk_tree_profiler=blocked_profile,
+            country_risk_acquirer=byte_worker,
         )
         self.assertEqual(result["status"], "blocked")
         self.assertEqual(result["failure_class"], prepare.ACQUISITION_FAILURE_CLASS)
+        self.assertIsNone(result["evidence"][prepare.RISK_TREE_PROFILE_FIELD])
         self.assertIsNone(result["evidence"][prepare.COUNTRY_RISK_RECEIPT_FIELD])
+        byte_worker.assert_not_called()
 
 
 class CountryRiskWorkflowTests(unittest.TestCase):
