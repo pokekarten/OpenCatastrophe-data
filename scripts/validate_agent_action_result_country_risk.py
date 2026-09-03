@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Extend Agent Action result validation for the fixed ESRM20 country-risk receipt."""
+"""Extend Agent Action result validation for the fixed ESRM20 country-risk chain."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from typing import Any
 
 try:
     from scripts import acquire_efehr_esrm20_country_risk_receipt as _country
+    from scripts import profile_esrm20_country_risk_schema as _schema
     from scripts import profile_esrm20_risk_v10_tree as _risk_tree
     from scripts import validate_agent_action_result as _legacy
     from scripts.efehr_gitlab_receipt import PROVIDER_HOST, raw_file_api_url, validate_target
@@ -25,6 +26,7 @@ try:
     )
 except ModuleNotFoundError:  # pragma: no cover - direct script import path
     import acquire_efehr_esrm20_country_risk_receipt as _country
+    import profile_esrm20_country_risk_schema as _schema
     import profile_esrm20_risk_v10_tree as _risk_tree
     import validate_agent_action_result as _legacy
     from efehr_gitlab_receipt import PROVIDER_HOST, raw_file_api_url, validate_target
@@ -41,9 +43,11 @@ for _name in dir(_legacy):
 ALLOWED_ACTIONS = _legacy.ALLOWED_ACTIONS | {ESRM20_COUNTRY_RISK_RECEIPT_ACTION}
 _TREE_FIELD = "esrm20_risk_v10_tree_profile"
 _COUNTRY_FIELD = "esrm20_country_risk_receipt"
+_SCHEMA_FIELD = "esrm20_country_risk_schema_profile"
 _COUNTRY_EVIDENCE_FIELDS = _legacy.REQUEST_EVIDENCE_FIELDS | {
     _TREE_FIELD,
     _COUNTRY_FIELD,
+    _SCHEMA_FIELD,
 }
 _TREE_PROFILE_FIELDS = {
     "schema_version",
@@ -96,6 +100,49 @@ _COUNTRY_RECEIPT_FIELDS = {
     "publication_authorized",
     "model_use_authorized",
 }
+_SCHEMA_PROFILE_FIELDS = {
+    "schema_version",
+    "byte_count",
+    "sha256",
+    "trusted_source_receipt_bound",
+    "encoding",
+    "delimiter",
+    "column_count",
+    "row_count",
+    "headers",
+    "header_sha256",
+    "name_column_present",
+    "kosovo_row_count",
+    "kosovo_name_literals",
+    "kosovo_row_status",
+    "secondary_hypothesis_field_presence",
+    "residential_aal_schema_candidate",
+    "residential_aalr_schema_candidate",
+    "residential_reference_schema_candidate",
+    "provider_numeric_values_interpreted",
+    "provider_values_returned",
+    "raw_rows_returned",
+    "external_bytes_persisted",
+    "annualized_metrics_authorized",
+    "threshold_compatibility_verified",
+    "denominator_semantics_verified",
+    "reference_loss_agreement_verified",
+    "publication_authorized",
+    "model_use_authorized",
+}
+_SCHEMA_FALSE_FIELDS = {
+    "trusted_source_receipt_bound",
+    "provider_numeric_values_interpreted",
+    "provider_values_returned",
+    "raw_rows_returned",
+    "external_bytes_persisted",
+    "annualized_metrics_authorized",
+    "threshold_compatibility_verified",
+    "denominator_semantics_verified",
+    "reference_loss_agreement_verified",
+    "publication_authorized",
+    "model_use_authorized",
+}
 
 
 def _bounded_nullable_header(value: Any, field: str) -> None:
@@ -105,6 +152,20 @@ def _bounded_nullable_header(value: Any, field: str) -> None:
         raise ResultError(f"{field} must be null or bounded text")
     if any(ord(character) < 32 or ord(character) == 127 for character in value):
         raise ResultError(f"{field} contains control characters")
+
+
+def _bounded_schema_text(value: Any, field: str) -> str:
+    if type(value) is not str:
+        raise ResultError(f"{field} must be text")
+    try:
+        encoded = value.encode("utf-8")
+    except UnicodeEncodeError as exc:
+        raise ResultError(f"{field} must be UTF-8 encodable") from exc
+    if len(encoded) > _schema.MAX_CELL_UTF8_BYTES:
+        raise ResultError(f"{field} exceeds bounded policy")
+    if any(ord(character) < 32 or ord(character) == 127 for character in value):
+        raise ResultError(f"{field} contains control characters")
+    return value
 
 
 def _validate_tree_inventory_entry(value: Any) -> dict[str, str]:
@@ -296,6 +357,120 @@ def validate_esrm20_country_risk_receipt(receipt: Any) -> dict[str, Any]:
     return receipt
 
 
+def validate_esrm20_country_risk_schema_profile(profile: Any) -> dict[str, Any]:
+    """Revalidate value-redacted schema evidence without promoting source authority."""
+    if type(profile) is not dict or set(profile) != _SCHEMA_PROFILE_FIELDS:
+        raise ResultError("country-risk schema profile fields drifted")
+    if profile["schema_version"] != _schema.SCHEMA_VERSION:
+        raise ResultError("country-risk schema profile version drifted")
+    byte_count = profile["byte_count"]
+    if type(byte_count) is not int or isinstance(byte_count, bool) or not (
+        1 <= byte_count <= _schema.MAX_FILE_BYTES
+    ):
+        raise ResultError("country-risk schema byte_count is outside bounded policy")
+    sha256 = profile["sha256"]
+    if type(sha256) is not str or not _legacy.DIGEST_RE.fullmatch(sha256):
+        raise ResultError("country-risk schema sha256 is invalid")
+    for field in _SCHEMA_FALSE_FIELDS:
+        if profile[field] is not False:
+            raise ResultError(f"country-risk schema {field} must remain false")
+    if profile["encoding"] != "utf-8":
+        raise ResultError("country-risk schema encoding drifted")
+    if profile["delimiter"] not in {"comma", "semicolon", "tab"}:
+        raise ResultError("country-risk schema delimiter is unsupported")
+
+    column_count = profile["column_count"]
+    row_count = profile["row_count"]
+    if type(column_count) is not int or isinstance(column_count, bool) or not (
+        2 <= column_count <= _schema.MAX_COLUMNS
+    ):
+        raise ResultError("country-risk schema column_count is outside bounded policy")
+    if type(row_count) is not int or isinstance(row_count, bool) or not (
+        1 <= row_count <= _schema.MAX_ROWS
+    ):
+        raise ResultError("country-risk schema row_count is outside bounded policy")
+
+    headers = profile["headers"]
+    if type(headers) is not list or len(headers) != column_count:
+        raise ResultError("country-risk schema headers do not match column_count")
+    validated_headers = [
+        _bounded_schema_text(value, "country-risk schema header") for value in headers
+    ]
+    if any(not value or value != value.strip() for value in validated_headers):
+        raise ResultError("country-risk schema headers must be non-empty and trimmed")
+    folded = [value.casefold() for value in validated_headers]
+    if len(set(folded)) != len(folded):
+        raise ResultError("country-risk schema headers are not unique")
+    encoded_header = json.dumps(
+        validated_headers,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    if profile["header_sha256"] != hashlib.sha256(encoded_header).hexdigest():
+        raise ResultError("country-risk schema header SHA-256 drifted")
+
+    name_present = profile["name_column_present"]
+    if type(name_present) is not bool or name_present != (
+        _schema.NAME_HEADER in validated_headers
+    ):
+        raise ResultError("country-risk schema Name-column state is inconsistent")
+    kosovo_count = profile["kosovo_row_count"]
+    if type(kosovo_count) is not int or isinstance(kosovo_count, bool) or not (
+        0 <= kosovo_count <= row_count
+    ):
+        raise ResultError("country-risk schema Kosovo row count is invalid")
+    literals = profile["kosovo_name_literals"]
+    if type(literals) is not list or literals != sorted(set(literals)):
+        raise ResultError("country-risk schema Kosovo literals are not sorted and unique")
+    if any(value not in _schema.KOSOVO_NAME_LITERALS for value in literals):
+        raise ResultError("country-risk schema Kosovo literal is outside the closed set")
+    status = profile["kosovo_row_status"]
+    if not name_present:
+        if status != "name_column_absent" or kosovo_count != 0 or literals:
+            raise ResultError("country-risk schema missing-Name state is inconsistent")
+    else:
+        expected_status = "absent" if kosovo_count == 0 else (
+            "unique" if kosovo_count == 1 else "ambiguous"
+        )
+        if status != expected_status:
+            raise ResultError("country-risk schema Kosovo row status is inconsistent")
+        if kosovo_count == 0 and literals:
+            raise ResultError("country-risk schema absent Kosovo row has literals")
+        if kosovo_count > 0 and not literals:
+            raise ResultError("country-risk schema present Kosovo row lacks literal identity")
+
+    presence = profile["secondary_hypothesis_field_presence"]
+    expected_presence = {
+        field: field in validated_headers for field in _schema.SECONDARY_HYPOTHESIS_HEADERS
+    }
+    if type(presence) is not dict or presence != expected_presence:
+        raise ResultError("country-risk schema hypothesis-field presence drifted")
+    unique_kosovo = status == "unique"
+    aal_candidate = unique_kosovo and expected_presence[_schema.RESIDENTIAL_AAL_HEADER]
+    aalr_candidate = unique_kosovo and expected_presence[_schema.RESIDENTIAL_AALR_HEADER]
+    expected_candidates = {
+        "residential_aal_schema_candidate": aal_candidate,
+        "residential_aalr_schema_candidate": aalr_candidate,
+        "residential_reference_schema_candidate": aal_candidate or aalr_candidate,
+    }
+    for field, expected in expected_candidates.items():
+        if type(profile[field]) is not bool or profile[field] != expected:
+            raise ResultError(f"country-risk schema {field} is inconsistent")
+    return profile
+
+
+def validate_schema_receipt_binding(
+    schema_profile: dict[str, Any],
+    receipt: dict[str, Any],
+) -> None:
+    """Require the structural profile to describe exactly the receipted bytes."""
+    if (
+        schema_profile["byte_count"] != receipt["byte_count"]
+        or schema_profile["sha256"] != receipt["sha256"]
+    ):
+        raise ResultError("country-risk schema profile is not bound to receipted bytes")
+
+
 def _validate_country_result(result: dict[str, Any]) -> dict[str, Any]:
     if type(result) is not dict or set(result) != _legacy.REQUIRED_FIELDS:
         raise ResultError("country-risk result fields drifted")
@@ -399,6 +574,7 @@ def _validate_country_result(result: dict[str, Any]) -> dict[str, Any]:
 
     tree_profile = evidence[_TREE_FIELD]
     receipt = evidence[_COUNTRY_FIELD]
+    schema_profile = evidence[_SCHEMA_FIELD]
     if status == "pass":
         if failure_class is not None:
             raise ResultError("successful country-risk acquisition cannot carry failure_class")
@@ -406,6 +582,8 @@ def _validate_country_result(result: dict[str, Any]) -> dict[str, Any]:
         if tree_profile["country_risk_path_status"] != "blob":
             raise ResultError("successful country-risk acquisition requires blob precondition")
         receipt = validate_esrm20_country_risk_receipt(receipt)
+        schema_profile = validate_esrm20_country_risk_schema_profile(schema_profile)
+        validate_schema_receipt_binding(schema_profile, receipt)
         retrieved = _legacy._utc_second(
             receipt["retrieved_at"], f"{_COUNTRY_FIELD}.retrieved_at"
         )
@@ -414,10 +592,31 @@ def _validate_country_result(result: dict[str, Any]) -> dict[str, Any]:
                 f"{_COUNTRY_FIELD}.retrieved_at must fall within action start/finish bounds"
             )
     elif status == "blocked":
-        if failure_class != _legacy.ACQUISITION_FAILURE_CLASS or receipt is not None:
-            raise ResultError("blocked country-risk acquisition state is invalid")
-        if tree_profile is not None:
-            validate_esrm20_risk_v10_tree_profile(tree_profile)
+        if failure_class != _legacy.ACQUISITION_FAILURE_CLASS:
+            raise ResultError("blocked country-risk acquisition failure class is invalid")
+        if tree_profile is None:
+            if receipt is not None or schema_profile is not None:
+                raise ResultError("blocked country-risk metadata failure leaked later evidence")
+            return result
+        tree_profile = validate_esrm20_risk_v10_tree_profile(tree_profile)
+        if tree_profile["country_risk_path_status"] != "blob":
+            if receipt is not None or schema_profile is not None:
+                raise ResultError("non-blob country-risk precondition cannot carry byte evidence")
+            return result
+        if receipt is None:
+            if schema_profile is not None:
+                raise ResultError("country-risk schema evidence cannot precede byte receipt")
+            return result
+        receipt = validate_esrm20_country_risk_receipt(receipt)
+        retrieved = _legacy._utc_second(
+            receipt["retrieved_at"], f"{_COUNTRY_FIELD}.retrieved_at"
+        )
+        if retrieved < started or retrieved > finished:
+            raise ResultError(
+                f"{_COUNTRY_FIELD}.retrieved_at must fall within action start/finish bounds"
+            )
+        if schema_profile is not None:
+            raise ResultError("complete country-risk schema evidence cannot remain blocked")
     else:
         raise ResultError("duplicate country-risk network result must remain request_validation")
     return result
