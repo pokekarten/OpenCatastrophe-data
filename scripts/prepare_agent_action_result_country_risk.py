@@ -64,7 +64,7 @@ def _git_blob_sha1(payload: bytes) -> str:
     if type(payload) is not bytes:
         raise _result.ResultError("country-risk Git blob payload must be bytes")
     header = f"blob {len(payload)}\0".encode("ascii")
-    return hashlib.sha1(header + payload).hexdigest()
+    return hashlib.sha1(header + payload, usedforsecurity=False).hexdigest()
 
 
 def _build_country_risk_acquisition_result(
