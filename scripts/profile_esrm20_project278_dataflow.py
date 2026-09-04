@@ -81,7 +81,10 @@ class Project278DataflowProfileError(RuntimeError):
 
 
 def _git_blob_sha1(data: bytes) -> str:
-    return hashlib.sha1(f"blob {len(data)}\0".encode("ascii") + data).hexdigest()
+    return hashlib.sha1(
+        f"blob {len(data)}\0".encode("ascii") + data,
+        usedforsecurity=False,
+    ).hexdigest()
 
 
 def _safe_name(value: str) -> str:
