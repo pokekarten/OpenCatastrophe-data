@@ -43,10 +43,15 @@ for _name in dir(_legacy):
 ALLOWED_ACTIONS = _legacy.ALLOWED_ACTIONS | {ESRM20_COUNTRY_RISK_RECEIPT_ACTION}
 _TREE_FIELD = "esrm20_risk_v10_tree_profile"
 _COUNTRY_FIELD = "esrm20_country_risk_receipt"
+_BINDING_FIELD = "esrm20_country_risk_git_blob_binding"
 _SCHEMA_FIELD = "esrm20_country_risk_schema_profile"
+COUNTRY_RISK_GIT_BLOB_BINDING_SCHEMA_VERSION = (
+    "oc-esrm20-country-risk-git-blob-binding-v1"
+)
 _COUNTRY_EVIDENCE_FIELDS = _legacy.REQUEST_EVIDENCE_FIELDS | {
     _TREE_FIELD,
     _COUNTRY_FIELD,
+    _BINDING_FIELD,
     _SCHEMA_FIELD,
 }
 _TREE_PROFILE_FIELDS = {
@@ -99,6 +104,15 @@ _COUNTRY_RECEIPT_FIELDS = {
     "reference_loss_agreement_verified",
     "publication_authorized",
     "model_use_authorized",
+}
+_BINDING_FIELDS = {
+    "schema_version",
+    "repository_path",
+    "tree_object_sha1",
+    "payload_git_blob_sha1",
+    "payload_byte_count",
+    "payload_sha256",
+    "verified",
 }
 _SCHEMA_PROFILE_FIELDS = {
     "schema_version",
@@ -356,6 +370,54 @@ def validate_esrm20_country_risk_receipt(receipt: Any) -> dict[str, Any]:
     return receipt
 
 
+def validate_country_risk_git_blob_binding(
+    binding: Any,
+    tree_profile: dict[str, Any],
+    receipt: dict[str, Any],
+) -> dict[str, Any]:
+    """Revalidate the durable relation between tree metadata and fetched bytes."""
+    if type(binding) is not dict or set(binding) != _BINDING_FIELDS:
+        raise ResultError("country-risk Git blob binding fields drifted")
+    exact_values = {
+        "schema_version": COUNTRY_RISK_GIT_BLOB_BINDING_SCHEMA_VERSION,
+        "repository_path": _country.REPOSITORY_PATH,
+        "verified": True,
+    }
+    for field, expected in exact_values.items():
+        if type(binding[field]) is not type(expected) or binding[field] != expected:
+            raise ResultError(f"country-risk Git blob binding {field} drifted")
+
+    for field in ("tree_object_sha1", "payload_git_blob_sha1"):
+        value = binding[field]
+        if type(value) is not str or not _legacy.GIT_SHA_RE.fullmatch(value):
+            raise ResultError(f"country-risk Git blob binding {field} is invalid")
+    payload_byte_count = binding["payload_byte_count"]
+    if type(payload_byte_count) is not int or isinstance(payload_byte_count, bool) or not (
+        1 <= payload_byte_count <= _country.MAX_COUNTRY_RISK_BYTES
+    ):
+        raise ResultError("country-risk Git blob binding byte count is outside bounded policy")
+    payload_sha256 = binding["payload_sha256"]
+    if type(payload_sha256) is not str or not _legacy.DIGEST_RE.fullmatch(payload_sha256):
+        raise ResultError("country-risk Git blob binding SHA-256 is invalid")
+
+    if tree_profile["country_risk_path_status"] != "blob":
+        raise ResultError("country-risk Git blob binding requires blob tree state")
+    country_entry = tree_profile["country_risk_path_entry"]
+    if type(country_entry) is not dict:
+        raise ResultError("country-risk Git blob binding lacks tree entry")
+    if binding["tree_object_sha1"] != country_entry["object_sha1"]:
+        raise ResultError("country-risk Git blob binding does not match tree object")
+    if binding["payload_git_blob_sha1"] != binding["tree_object_sha1"]:
+        raise ResultError("country-risk fetched payload does not match immutable Git blob")
+    if (
+        binding["payload_byte_count"] != receipt["byte_count"]
+        or binding["payload_sha256"] != receipt["sha256"]
+        or binding["repository_path"] != receipt["repository_path"]
+    ):
+        raise ResultError("country-risk Git blob binding does not match byte receipt")
+    return binding
+
+
 def validate_esrm20_country_risk_schema_profile(profile: Any) -> dict[str, Any]:
     """Revalidate value-redacted schema evidence without inferring provenance."""
     if type(profile) is not dict or set(profile) != _SCHEMA_PROFILE_FIELDS:
@@ -575,6 +637,7 @@ def _validate_country_result(result: dict[str, Any]) -> dict[str, Any]:
 
     tree_profile = evidence[_TREE_FIELD]
     receipt = evidence[_COUNTRY_FIELD]
+    blob_binding = evidence[_BINDING_FIELD]
     schema_profile = evidence[_SCHEMA_FIELD]
     if status == "pass":
         if failure_class is not None:
@@ -583,6 +646,7 @@ def _validate_country_result(result: dict[str, Any]) -> dict[str, Any]:
         if tree_profile["country_risk_path_status"] != "blob":
             raise ResultError("successful country-risk acquisition requires blob precondition")
         receipt = validate_esrm20_country_risk_receipt(receipt)
+        validate_country_risk_git_blob_binding(blob_binding, tree_profile, receipt)
         schema_profile = validate_esrm20_country_risk_schema_profile(schema_profile)
         if schema_profile["trusted_source_receipt_bound"] is not True:
             raise ResultError("successful country-risk schema evidence is not receipt-bound")
@@ -598,17 +662,17 @@ def _validate_country_result(result: dict[str, Any]) -> dict[str, Any]:
         if failure_class != _legacy.ACQUISITION_FAILURE_CLASS:
             raise ResultError("blocked country-risk acquisition failure class is invalid")
         if tree_profile is None:
-            if receipt is not None or schema_profile is not None:
+            if receipt is not None or blob_binding is not None or schema_profile is not None:
                 raise ResultError("blocked country-risk metadata failure leaked later evidence")
             return result
         tree_profile = validate_esrm20_risk_v10_tree_profile(tree_profile)
         if tree_profile["country_risk_path_status"] != "blob":
-            if receipt is not None or schema_profile is not None:
+            if receipt is not None or blob_binding is not None or schema_profile is not None:
                 raise ResultError("non-blob country-risk precondition cannot carry byte evidence")
             return result
         if receipt is None:
-            if schema_profile is not None:
-                raise ResultError("country-risk schema evidence cannot precede byte receipt")
+            if blob_binding is not None or schema_profile is not None:
+                raise ResultError("country-risk later evidence cannot precede byte receipt")
             return result
         receipt = validate_esrm20_country_risk_receipt(receipt)
         retrieved = _legacy._utc_second(
@@ -618,8 +682,8 @@ def _validate_country_result(result: dict[str, Any]) -> dict[str, Any]:
             raise ResultError(
                 f"{_COUNTRY_FIELD}.retrieved_at must fall within action start/finish bounds"
             )
-        if schema_profile is not None:
-            raise ResultError("complete country-risk schema evidence cannot remain blocked")
+        if blob_binding is not None or schema_profile is not None:
+            raise ResultError("complete country-risk later evidence cannot remain blocked")
     else:
         raise ResultError("duplicate country-risk network result must remain request_validation")
     return result
