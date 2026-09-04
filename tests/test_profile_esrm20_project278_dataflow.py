@@ -7,6 +7,7 @@ import ast
 import hashlib
 import json
 import unittest
+from unittest import mock
 
 from scripts import profile_esrm20_project278_dataflow as subject
 
@@ -74,6 +75,16 @@ class Project278DataflowProfileTests(unittest.TestCase):
                 "exposure2site/exposure_to_site_tools.py": _identity(_SOURCE),
                 "exposure2site/node_handler.py": _identity(_NODE),
             },
+        )
+
+    def test_git_blob_sha1_is_identity_not_security_use(self) -> None:
+        digest = mock.Mock()
+        digest.hexdigest.return_value = "git-identity"
+        with mock.patch.object(hashlib, "sha1", return_value=digest) as sha1:
+            self.assertEqual(subject._git_blob_sha1(b"payload"), "git-identity")
+        sha1.assert_called_once_with(
+            b"blob 7\0payload",
+            usedforsecurity=False,
         )
 
     def test_profile_finds_crs_writer_and_missing_relations(self) -> None:
