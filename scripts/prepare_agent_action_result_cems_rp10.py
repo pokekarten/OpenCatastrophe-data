@@ -44,7 +44,9 @@ _CEMS_FAILURE_STAGES = frozenset(
         "dns",
         "transport",
         "response_contract",
-        "stream",
+        "stream_socket_access",
+        "stream_timeout_update",
+        "stream_non_bytes",
         "payload_contract",
         "deadline",
         "receipt_validation",
@@ -92,12 +94,12 @@ def _closed_cems_failure_stage(error: _cems.CemsRp10ReceiptError) -> str:
         "CEMS Content-Length is outside the bounded asset size",
     }:
         return "response_contract"
-    if message in {
-        "CEMS response socket cannot enforce the total deadline",
-        "CEMS response socket timeout update failed",
-        "CEMS response stream returned non-byte content",
-    }:
-        return "stream"
+    if message == "CEMS response socket cannot enforce the total deadline":
+        return "stream_socket_access"
+    if message == "CEMS response socket timeout update failed":
+        return "stream_timeout_update"
+    if message == "CEMS response stream returned non-byte content":
+        return "stream_non_bytes"
     if message in {
         "CEMS RP10 asset exceeded bounded byte size",
         "CEMS RP10 asset was empty",
