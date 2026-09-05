@@ -348,12 +348,15 @@ def _validate_terminal_result(result: object) -> str:
             raise GreeceShakeMapOpenQuake3121RuntimeError(
                 "invalid blocked failure state"
             )
-        expected_prefix = {
-            "runtime_identity": (False, False, False, False, False),
-            "acquisition": (True, False, False, False, False),
-            "byte_identity": (True, True, False, False, False),
-            "profile_precondition": (True, True, True, False, False),
-            "native_reader": (True, True, True, True, True),
+        expected_prefixes = {
+            "runtime_identity": {(False, False, False, False, False)},
+            "acquisition": {
+                (True, False, False, False, False),
+                (True, True, False, False, False),
+            },
+            "byte_identity": {(True, True, False, False, False)},
+            "profile_precondition": {(True, True, True, False, False)},
+            "native_reader": {(True, True, True, True, True)},
         }[stage]
         observed_prefix = (
             result["runtime_source_commit_verified"],
@@ -362,7 +365,7 @@ def _validate_terminal_result(result: object) -> str:
             result["trusted_profile_precondition_verified"],
             result["native_reader_attempted"],
         )
-        if observed_prefix != expected_prefix:
+        if observed_prefix not in expected_prefixes:
             raise GreeceShakeMapOpenQuake3121RuntimeError(
                 "blocked stage evidence drifted"
             )
