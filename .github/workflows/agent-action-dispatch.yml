@@ -55,6 +55,8 @@ jobs:
       # documents the country-risk publisher contract. The CEMS publisher reuses the
       # same base implementation, python scripts/post_agent_action_result.py, with the
       # CEMS-aware validator; legacy acquisition_receipt still uses the repository-owned frozen DWD worker.
+      # CEMS wrapper filenames retained for audit: prepare_agent_action_result_cems_rp10.py
+      # and post_agent_action_result_cems_rp10.py; runtime invocation uses package modules.
       - name: Prepare bounded action result
         id: prepare-result
         env:
