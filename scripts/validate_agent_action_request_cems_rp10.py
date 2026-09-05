@@ -36,13 +36,16 @@ def validate_request(
     if type(request) is not dict or request.get("action") != CEMS_RP10_RECEIPT_ACTION:
         return _legacy.validate_request(request, expected_issue=expected_issue)
 
-    if request.get("issue") != CEMS_RP10_RECEIPT_ISSUE:
-        raise RequestError("cems_europe_rp10_receipt is restricted to issue 793")
+    issue = request.get("issue")
+    if type(issue) is not int or issue != CEMS_RP10_RECEIPT_ISSUE:
+        raise RequestError("cems_europe_rp10_receipt is restricted to integer issue 793")
     if request.get("dataset_id") != CEMS_RP10_RECEIPT_DATASET_ID:
         raise RequestError(
             "cems_europe_rp10_receipt is restricted to the frozen CEMS v3.1.1 dataset"
         )
-    if expected_issue is not None and expected_issue != CEMS_RP10_RECEIPT_ISSUE:
+    if expected_issue is not None and (
+        type(expected_issue) is not int or expected_issue != CEMS_RP10_RECEIPT_ISSUE
+    ):
         raise RequestError("request issue does not match triggering GitHub issue/PR")
 
     # Reuse the already-reviewed common request shape. The proxy values are
