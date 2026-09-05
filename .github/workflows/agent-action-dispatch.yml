@@ -50,10 +50,11 @@ jobs:
       # reviewed country-risk-aware dispatcher and adds only the frozen Issue
       # #793 RP10 receipt worker. No URL/path/return-period/provider/parser comes
       # from the comment; all authorized actions remain in this one serialized lane.
-      # Compatibility chain remains explicit: prepare_agent_action_result_country_risk.py
-      # and post_agent_action_result_country_risk.py remain the reviewed inner layer;
-      # the publisher implementation behind it remains python scripts/post_agent_action_result.py,
-      # and legacy acquisition_receipt still uses the repository-owned frozen DWD worker.
+      # Compatibility remains explicit: prepare_agent_action_result_country_risk.py
+      # is the reviewed inner prepare layer, while post_agent_action_result_country_risk.py
+      # documents the country-risk publisher contract. The CEMS publisher reuses the
+      # same base implementation, python scripts/post_agent_action_result.py, with the
+      # CEMS-aware validator; legacy acquisition_receipt still uses the repository-owned frozen DWD worker.
       - name: Prepare bounded action result
         id: prepare-result
         env:
