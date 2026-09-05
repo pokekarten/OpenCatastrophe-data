@@ -1,0 +1,46 @@
+# Temporary execution surface for FFBK research. Not an OpenCatastrophe-data product workflow.
+name: tmp-ffbk1319-duration-frequency
+
+on:
+  push:
+    branches:
+      - tmp/ffbk-1319-independent-run-20260905
+    paths:
+      - .tmp_ffbk1319/independent_fremtpl_duration_frequency_runner.py
+      - .github/workflows/tmp-ffbk1319-duration-frequency.yml
+
+permissions:
+  contents: read
+
+jobs:
+  target-frequency-duration:
+    strategy:
+      fail-fast: false
+      matrix:
+        claimnb: [reference, raw]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned scientific stack
+        run: |
+          python -m pip install --disable-pip-version-check \
+            numpy==2.2.3 pandas==2.2.3 scipy==1.15.2 \
+            scikit-learn==1.8.0 pyarrow==19.0.1
+      - name: Compile runner
+        run: python -m py_compile .tmp_ffbk1319/independent_fremtpl_duration_frequency_runner.py
+      - name: Execute target challenger
+        run: |
+          mkdir -p .tmp_ffbk1319/results
+          python .tmp_ffbk1319/independent_fremtpl_duration_frequency_runner.py \
+            --claimnb '${{ matrix.claimnb }}' \
+            --output ".tmp_ffbk1319/results/duration-frequency-${{ matrix.claimnb }}.json"
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk1319-duration-frequency-${{ matrix.claimnb }}
+          path: .tmp_ffbk1319/results/duration-frequency-${{ matrix.claimnb }}.json
+          if-no-files-found: error
