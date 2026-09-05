@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import sys
 from typing import Any, Callable
+import urllib.error
 
 try:
     from scripts import acquire_cems_europe_rp10_receipt as _cems
@@ -37,11 +38,74 @@ CEMS_RP10_RECEIPT_ISSUE = _request.CEMS_RP10_RECEIPT_ISSUE
 CEMS_RP10_RECEIPT_DATASET_ID = _request.CEMS_RP10_RECEIPT_DATASET_ID
 CEMS_RP10_RECEIPT_FIELD = _result._CEMS_FIELD
 
+_CEMS_FAILURE_STAGES = frozenset(
+    {
+        "source_identity",
+        "dns",
+        "transport",
+        "response_contract",
+        "stream",
+        "payload_contract",
+        "deadline",
+        "receipt_validation",
+        "unknown",
+    }
+)
+
 
 def _receipt_field(action: str) -> str:
     if action == CEMS_RP10_RECEIPT_ACTION:
         return CEMS_RP10_RECEIPT_FIELD
     return _country_prepare._receipt_field(action)
+
+
+def _closed_cems_failure_stage(error: _cems.CemsRp10ReceiptError) -> str:
+    """Map a code-owned CEMS failure to a closed stage without provider details."""
+    message = str(error)
+    if "exceeded total deadline" in message:
+        return "deadline"
+    if message.startswith("trusted CEMS DNS"):
+        return "dns"
+    if message in {
+        "frozen CEMS source identity is invalid",
+        "HTTPS connection left the frozen CEMS provider",
+        "HTTP tunneling/proxies are forbidden for the frozen CEMS source",
+        "provider redirect is forbidden for the frozen CEMS source",
+        "CEMS final URL drifted from frozen source identity",
+    }:
+        return "source_identity"
+    if message == "CEMS RP10 acquisition failed":
+        if isinstance(error.__cause__, urllib.error.HTTPError):
+            return "response_contract"
+        return "transport"
+    if message in {
+        "trusted CEMS connection failed",
+        "trusted CEMS peer is not globally routable",
+    }:
+        return "transport"
+    if message in {
+        "CEMS response status is not exact HTTP 200",
+        "CEMS response used unexpected content encoding",
+        "CEMS response media type is missing",
+        "CEMS response media type is outside the fixed contract",
+        "CEMS Content-Length is not a canonical non-negative integer",
+        "CEMS Content-Length is outside the bounded asset size",
+    }:
+        return "response_contract"
+    if message in {
+        "CEMS response socket cannot enforce the total deadline",
+        "CEMS response socket timeout update failed",
+        "CEMS response stream returned non-byte content",
+    }:
+        return "stream"
+    if message in {
+        "CEMS RP10 asset exceeded bounded byte size",
+        "CEMS RP10 asset was empty",
+        "CEMS response byte count disagrees with Content-Length",
+        "CEMS RP10 payload does not have a TIFF/BigTIFF signature",
+    }:
+        return "payload_contract"
+    return "unknown"
 
 
 def prepare_completed_result(
@@ -86,8 +150,14 @@ def prepare_completed_result(
 
     try:
         receipt = _result.validate_cems_rp10_receipt(cems_acquirer())
-    except (_cems.CemsRp10ReceiptError, _result.ResultError):
-        print("acquisition blocked: fixed CEMS RP10 receipt failed closed", file=sys.stderr)
+    except _cems.CemsRp10ReceiptError as exc:
+        stage = _closed_cems_failure_stage(exc)
+        if stage not in _CEMS_FAILURE_STAGES:  # pragma: no cover - defensive fence
+            stage = "unknown"
+        print(f"CEMS_RP10_FAILURE_STAGE={stage}", file=sys.stderr, flush=True)
+        receipt = None
+    except _result.ResultError:
+        print("CEMS_RP10_FAILURE_STAGE=receipt_validation", file=sys.stderr, flush=True)
         receipt = None
 
     return _base.build_acquisition_result(
