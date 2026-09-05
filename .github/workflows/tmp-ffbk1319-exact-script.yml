@@ -1,0 +1,91 @@
+name: TEMP FFBK 1319 exact script bytes
+
+on:
+  push:
+    branches:
+      - tmp/ffbk-1319-exact-script-20260905
+
+permissions:
+  contents: read
+
+jobs:
+  exact-script:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned scientific stack
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy==2.2.3 pandas==2.2.3 scipy==1.15.2 scikit-learn==1.8.0 pyarrow==19.0.1
+      - name: Fetch and verify exact FFBK PR script blobs
+        env:
+          FFBK_HEAD: 6e57ea7115ceab4367c8efef51839fad70041e05
+          TOURNAMENT_BLOB: 33e1f7afc77bf24dc3c47389feec0a908211a82f
+          SENSITIVITY_BLOB: f4a56d58ddc261b6da3482847c5dac9000abedb0
+        run: |
+          mkdir -p exact/scripts
+          curl --fail --silent --show-error --location "https://raw.githubusercontent.com/pokekarten/FFBK/${FFBK_HEAD}/scripts/underwriting_fremtpl_raw_tournament.py" -o exact/scripts/underwriting_fremtpl_raw_tournament.py
+          curl --fail --silent --show-error --location "https://raw.githubusercontent.com/pokekarten/FFBK/${FFBK_HEAD}/scripts/underwriting_fremtpl_raw_sensitivity.py" -o exact/scripts/underwriting_fremtpl_raw_sensitivity.py
+          python - <<'PY'
+          import hashlib, json, os, pathlib
+          expected = {
+              'underwriting_fremtpl_raw_tournament.py': os.environ['TOURNAMENT_BLOB'],
+              'underwriting_fremtpl_raw_sensitivity.py': os.environ['SENSITIVITY_BLOB'],
+          }
+          receipt = {'ffbk_head': os.environ['FFBK_HEAD'], 'files': {}}
+          for name, wanted_blob in expected.items():
+              p = pathlib.Path('exact/scripts') / name
+              data = p.read_bytes()
+              git_blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+              sha256 = hashlib.sha256(data).hexdigest()
+              if git_blob != wanted_blob:
+                  raise SystemExit(f'blob mismatch for {name}: {git_blob} != {wanted_blob}')
+              receipt['files'][name] = {'bytes': len(data), 'git_blob_sha1': git_blob, 'sha256': sha256}
+          pathlib.Path('exact/source-receipt.json').write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(receipt, indent=2, sort_keys=True))
+          PY
+      - name: Execute exact tournament CLI
+        run: |
+          python exact/scripts/underwriting_fremtpl_raw_tournament.py --seeds 0,17,42 --output exact/tournament.json > exact/tournament.log
+          tail -n 2 exact/tournament.log
+      - name: Execute exact cleaning-sensitivity CLI
+        run: |
+          PYTHONPATH=exact python exact/scripts/underwriting_fremtpl_raw_sensitivity.py --seeds 0,17,42 --output exact/sensitivity.json > exact/sensitivity.log
+          tail -n 2 exact/sensitivity.log
+      - name: Build execution receipt
+        env:
+          FFBK_HEAD: 6e57ea7115ceab4367c8efef51839fad70041e05
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, pathlib, platform, sys
+          import numpy, pandas, scipy, sklearn, pyarrow
+          def digest(path):
+              return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
+          t = json.loads(pathlib.Path('exact/tournament.json').read_text())
+          s = json.loads(pathlib.Path('exact/sensitivity.json').read_text())
+          receipt = {
+              'ffbk_head': os.environ['FFBK_HEAD'],
+              'python': sys.version,
+              'platform': platform.platform(),
+              'versions': {
+                  'numpy': numpy.__version__, 'pandas': pandas.__version__, 'scipy': scipy.__version__,
+                  'scikit_learn': sklearn.__version__, 'pyarrow': pyarrow.__version__,
+              },
+              'tournament_semantic_receipt_sha256': t['semantic_receipt_sha256'],
+              'sensitivity_semantic_receipt_sha256': s['semantic_receipt_sha256'],
+              'tournament_file_sha256': digest('exact/tournament.json'),
+              'sensitivity_file_sha256': digest('exact/sensitivity.json'),
+          }
+          pathlib.Path('exact/execution-receipt.json').write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(receipt, indent=2, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ffbk1319-exact-script-results
+          path: exact/
+          if-no-files-found: error
