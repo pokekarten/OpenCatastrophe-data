@@ -1,9 +1,7 @@
 name: TEMP FFBK 1319 exact script bytes v2
 
 on:
-  push:
-    branches:
-      - tmp/ffbk-1319-exact-script-20260905
+  workflow_dispatch:
 
 permissions:
   contents: read

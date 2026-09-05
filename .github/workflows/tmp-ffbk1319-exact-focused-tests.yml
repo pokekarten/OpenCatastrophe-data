@@ -1,0 +1,44 @@
+name: TEMP FFBK 1319 exact focused tests
+
+on:
+  push:
+    branches:
+      - tmp/ffbk-1319-exact-script-20260905
+
+permissions:
+  contents: read
+
+jobs:
+  exact-focused-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned scientific stack and pytest
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy==2.2.3 pandas==2.2.3 scipy==1.15.2 scikit-learn==1.8.0 pyarrow==19.0.1 pytest
+      - name: Verify exact FFBK script and test blobs
+        run: |
+          python - <<'PY'
+          import hashlib, pathlib
+          expected = {
+              'tmp_ffbk1319_exact/scripts/underwriting_fremtpl_raw_tournament.py': '33e1f7afc77bf24dc3c47389feec0a908211a82f',
+              'tmp_ffbk1319_exact/scripts/underwriting_fremtpl_raw_sensitivity.py': 'f4a56d58ddc261b6da3482847c5dac9000abedb0',
+              'tmp_ffbk1319_exact/tests/test_underwriting_fremtpl_raw_tournament.py': 'bc9a3d472329b864a4ec751ea6855243d5d1cbbf',
+              'tmp_ffbk1319_exact/tests/test_underwriting_fremtpl_raw_sensitivity.py': '744687989737fca77f66347ff9d94456a247bcbc',
+          }
+          for name, wanted in expected.items():
+              data = pathlib.Path(name).read_bytes()
+              got = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+              print(name, got)
+              if got != wanted:
+                  raise SystemExit(f'blob mismatch: {name} {got} != {wanted}')
+          PY
+      - name: Run exact focused tests
+        working-directory: tmp_ffbk1319_exact
+        run: |
+          python -m pytest -q tests/test_underwriting_fremtpl_raw_tournament.py tests/test_underwriting_fremtpl_raw_sensitivity.py
