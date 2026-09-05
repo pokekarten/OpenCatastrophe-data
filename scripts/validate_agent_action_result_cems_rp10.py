@@ -34,6 +34,7 @@ for _name in dir(_legacy):
     if not _name.startswith("_"):
         globals()[_name] = getattr(_legacy, _name)
 
+_base = _legacy._legacy
 ALLOWED_ACTIONS = _legacy.ALLOWED_ACTIONS | {CEMS_RP10_RECEIPT_ACTION}
 _CEMS_FIELD = "cems_europe_rp10_receipt"
 _CEMS_EVIDENCE_FIELDS = _legacy.REQUEST_EVIDENCE_FIELDS | {_CEMS_FIELD}
@@ -87,7 +88,7 @@ def validate_cems_rp10_receipt(receipt: Any) -> dict[str, Any]:
         if type(receipt[field]) is not type(expected) or receipt[field] != expected:
             raise ResultError(f"CEMS RP10 receipt {field} drifted from frozen authority")
 
-    _legacy._utc_second(receipt["retrieved_at"], "cems_europe_rp10_receipt.retrieved_at")
+    _base._utc_second(receipt["retrieved_at"], "cems_europe_rp10_receipt.retrieved_at")
     media_type = receipt["media_type"]
     if type(media_type) is not str or media_type not in _cems.ALLOWED_MEDIA_TYPES:
         raise ResultError("CEMS RP10 receipt media_type is outside the fixed contract")
@@ -113,7 +114,7 @@ def validate_cems_rp10_receipt(receipt: Any) -> dict[str, Any]:
 def _validate_request_validation_state(
     result: dict[str, Any], *, status: str, duplicate_id: Any, failure_class: Any
 ) -> dict[str, Any]:
-    evidence = _legacy._validate_request_evidence(result["evidence"])
+    evidence = _base._validate_request_evidence(result["evidence"])
     if status == "pass":
         if (
             duplicate_id is not None
@@ -175,8 +176,8 @@ def _validate_cems_result(result: dict[str, Any]) -> dict[str, Any]:
     if semantic_id != expected_semantic_id:
         raise ResultError("semantic_request_id does not match bound result fields")
 
-    started = _legacy._utc_second(result["started_at"], "started_at")
-    finished = _legacy._utc_second(result["finished_at"], "finished_at")
+    started = _base._utc_second(result["started_at"], "started_at")
+    finished = _base._utc_second(result["finished_at"], "finished_at")
     if finished < started:
         raise ResultError("finished_at must not precede started_at")
     phase = result["phase"]
@@ -223,7 +224,7 @@ def _validate_cems_result(result: dict[str, Any]) -> dict[str, Any]:
         if failure_class is not None:
             raise ResultError("successful CEMS RP10 acquisition cannot carry failure_class")
         receipt = validate_cems_rp10_receipt(receipt)
-        retrieved = _legacy._utc_second(receipt["retrieved_at"], f"{_CEMS_FIELD}.retrieved_at")
+        retrieved = _base._utc_second(receipt["retrieved_at"], f"{_CEMS_FIELD}.retrieved_at")
         if retrieved < started or retrieved > finished:
             raise ResultError("CEMS RP10 retrieved_at must fall within action bounds")
     elif status == "blocked":
@@ -254,7 +255,7 @@ def main(argv: list[str] | None = None) -> int:
         print("BLOCKED: result environment variable is absent", file=sys.stderr)
         return 2
     try:
-        result = validate_result(_legacy._strict_json(os.environ[args.result_env]))
+        result = validate_result(_base._strict_json(os.environ[args.result_env]))
     except ResultError as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         return 2
