@@ -7,10 +7,15 @@ This module exposes one fixed target only. The caller cannot select provider,
 project, commit, path, dataset, issue, or operation. A successful result proves
 byte identity/retrieval provenance only; it does not publish provider rows or
 establish reference-loss agreement.
+
+A second trusted in-process entrypoint may return the same bounded bytes beside
+the receipt so an already-reviewed offline profiler can bind schema evidence to
+that exact acquisition. The payload is never included in the durable receipt.
 """
 
 from __future__ import annotations
 
+import hashlib
 import time
 import urllib.error
 import urllib.request
@@ -69,6 +74,27 @@ class Esrm20CountryRiskReceiptError(RuntimeError):
     """Fail-closed fixed country-risk receipt error."""
 
 
+class _CaptureStream:
+    """Tee bytes consumed by receipt_from_stream into bounded process memory."""
+
+    def __init__(self, stream: Any) -> None:
+        self._stream = stream
+        self._payload = bytearray()
+
+    def read(self, size: int = -1) -> bytes:
+        chunk = self._stream.read(size)
+        if type(chunk) is bytes and chunk:
+            if len(self._payload) + len(chunk) > MAX_COUNTRY_RISK_BYTES:
+                raise Esrm20CountryRiskReceiptError(
+                    "country-risk captured payload exceeded bounded byte limit"
+                )
+            self._payload.extend(chunk)
+        return chunk
+
+    def payload(self) -> bytes:
+        return bytes(self._payload)
+
+
 def _require_production_identity() -> None:
     if _open_fixed is not _CANONICAL_OPEN_FIXED:
         raise Esrm20CountryRiskReceiptError("production transport authority drifted")
@@ -88,12 +114,13 @@ def _require_production_identity() -> None:
             raise Esrm20CountryRiskReceiptError("frozen country-risk authority drifted")
 
 
-def _acquire_for_test(
+def _acquire_core_for_test(
     *,
     opener: Any,
     now: Any,
     monotonic: Any,
-) -> dict[str, Any]:
+    capture_payload: bool,
+) -> tuple[dict[str, Any], bytes | None]:
     deadline = monotonic() + TOTAL_DEADLINE_SECONDS
     try:
         target = validate_target(
@@ -118,15 +145,24 @@ def _acquire_for_test(
         },
         method="GET",
     )
+    captured: _CaptureStream | None = None
     try:
         with opener(request, timeout=_remaining(deadline, monotonic)) as response:
             _validate_exact_response(response, file_url)
             _declared_length(response, MAX_COUNTRY_RISK_BYTES)
             retrieved_at = now()
+            stream: Any = _DeadlineStream(
+                response,
+                deadline=deadline,
+                monotonic=monotonic,
+            )
+            if capture_payload:
+                captured = _CaptureStream(stream)
+                stream = captured
             try:
                 core_receipt = receipt_from_stream(
                     target,
-                    _DeadlineStream(response, deadline=deadline, monotonic=monotonic),
+                    stream,
                     final_url=file_url,
                     retrieved_at=retrieved_at,
                     headers=getattr(response, "headers", None),
@@ -149,7 +185,7 @@ def _acquire_for_test(
     result["provider_rows_exposed"] = False
     result["reference_loss_agreement_verified"] = False
     result["model_use_authorized"] = False
-    return {
+    receipt = {
         "schema_version": result["schema_version"],
         "operation_id": result["operation_id"],
         "source_issue": result["source_issue"],
@@ -172,6 +208,47 @@ def _acquire_for_test(
         "publication_authorized": result["publication_authorized"],
         "model_use_authorized": result["model_use_authorized"],
     }
+    payload = captured.payload() if captured is not None else None
+    if payload is not None and (
+        len(payload) != receipt["byte_count"]
+        or hashlib.sha256(payload).hexdigest() != receipt["sha256"]
+    ):
+        raise Esrm20CountryRiskReceiptError(
+            "captured country-risk bytes do not match trusted receipt"
+        )
+    return receipt, payload
+
+
+def _acquire_for_test(
+    *,
+    opener: Any,
+    now: Any,
+    monotonic: Any,
+) -> dict[str, Any]:
+    receipt, _ = _acquire_core_for_test(
+        opener=opener,
+        now=now,
+        monotonic=monotonic,
+        capture_payload=False,
+    )
+    return receipt
+
+
+def _acquire_with_payload_for_test(
+    *,
+    opener: Any,
+    now: Any,
+    monotonic: Any,
+) -> tuple[dict[str, Any], bytes]:
+    receipt, payload = _acquire_core_for_test(
+        opener=opener,
+        now=now,
+        monotonic=monotonic,
+        capture_payload=True,
+    )
+    if payload is None:
+        raise Esrm20CountryRiskReceiptError("country-risk payload capture failed closed")
+    return receipt, payload
 
 
 def acquire_country_risk_receipt(
@@ -188,3 +265,23 @@ def acquire_country_risk_receipt(
     elif opener is None:
         opener = _CANONICAL_OPEN_FIXED
     return _acquire_for_test(opener=opener, now=now, monotonic=monotonic)
+
+
+def acquire_country_risk_receipt_with_payload(
+    *,
+    opener: Any | None = None,
+    now: Any = utc_now,
+    monotonic: Any = time.monotonic,
+) -> tuple[dict[str, Any], bytes]:
+    """Return receipt plus the same bounded bytes for trusted in-process profiling."""
+    if opener is None and now is utc_now and monotonic is time.monotonic:
+        _require_production_identity()
+        opener = _CANONICAL_OPEN_FIXED
+        monotonic = _CANONICAL_MONOTONIC
+    elif opener is None:
+        opener = _CANONICAL_OPEN_FIXED
+    return _acquire_with_payload_for_test(
+        opener=opener,
+        now=now,
+        monotonic=monotonic,
+    )
