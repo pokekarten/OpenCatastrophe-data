@@ -222,6 +222,28 @@ class RuntimeStateMachineTests(unittest.TestCase):
         self.assertEqual(result["failure_stage"], "runtime_identity")
         self.assertFalse(result["provider_file_bytes_read"])
 
+    def test_partial_acquisition_failure_keeps_truthful_bounded_state(self):
+        def fail_after_grid():
+            raise subject.base.ShakeMapAcquisitionError(completed_files=1)
+
+        result = subject._run_native_with(
+            execution_sha=SHA,
+            image_digest=IMAGE,
+            runtime_verifier=lambda: None,
+            fetcher=fail_after_grid,
+            identity_checker=lambda _g, _u: None,
+            profile_checker=lambda _g, _u: {},
+            native_reader=lambda _g, _u: {},
+        )
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["failure_stage"], "acquisition")
+        self.assertTrue(result["provider_file_bytes_read"])
+        self.assertFalse(result["byte_identity_verified"])
+        self.assertFalse(result["trusted_profile_precondition_verified"])
+        self.assertFalse(result["native_reader_attempted"])
+        self.assertFalse(result["native_reader_acceptance_verified"])
+        self.assertIsNone(result["native_row_count"])
+
     @mock.patch.object(subject.base, "_validate_receipts", return_value=None)
     @mock.patch.object(subject.base, "_validate_profile", return_value={})
     def test_native_failure_publishes_no_partial_native_values(
