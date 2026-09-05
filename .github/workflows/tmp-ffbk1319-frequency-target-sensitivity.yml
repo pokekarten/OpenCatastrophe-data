@@ -1,0 +1,42 @@
+# Temporary execution surface for FFBK research. Not an OpenCatastrophe-data product workflow.
+name: tmp-ffbk1319-frequency-target-sensitivity
+
+on:
+  push:
+    branches:
+      - tmp/ffbk-1319-frequency-target-sensitivity-20260905
+    paths:
+      - .tmp_ffbk1319/frequency_target_semantics_sensitivity.py
+      - .github/workflows/tmp-ffbk1319-frequency-target-sensitivity.yml
+
+permissions:
+  contents: read
+
+jobs:
+  frequency-target-sensitivity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned scientific stack
+        run: |
+          python -m pip install --disable-pip-version-check \
+            numpy==2.2.3 pandas==2.2.3 scipy==1.15.2 \
+            scikit-learn==1.8.0 pyarrow==19.0.1
+      - name: Compile sensitivity
+        run: python -m py_compile .tmp_ffbk1319/frequency_target_semantics_sensitivity.py
+      - name: Execute target-definition sensitivity
+        working-directory: .tmp_ffbk1319
+        run: |
+          mkdir -p results
+          python frequency_target_semantics_sensitivity.py \
+            --output results/frequency-target-semantics.json
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk1319-frequency-target-semantics
+          path: .tmp_ffbk1319/results/frequency-target-semantics.json
+          if-no-files-found: error
