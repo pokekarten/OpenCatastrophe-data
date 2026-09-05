@@ -1,0 +1,33 @@
+name: Temporary FFBK 1319 independent replication
+
+on:
+  push:
+    branches:
+      - tmp/ffbk-1319-independent-run-20260905
+
+permissions:
+  contents: read
+
+jobs:
+  replicate:
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [capped, uncapped]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned scientific stack
+        run: python -m pip install --disable-pip-version-check numpy==2.2.3 pandas==2.2.3 scipy==1.15.2 scikit-learn==1.8.0 pyarrow==19.0.1
+      - name: Run independent replication
+        run: python .tmp_ffbk1319/independent_fremtpl_runner.py --variant '${{ matrix.variant }}' --output 'ffbk1319-${{ matrix.variant }}.json'
+      - name: Upload durable result
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk1319-${{ matrix.variant }}
+          path: ffbk1319-${{ matrix.variant }}.json
+          if-no-files-found: error
