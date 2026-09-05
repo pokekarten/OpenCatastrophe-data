@@ -85,6 +85,27 @@ jobs:
       - name: Exercise synthetic EU flood spatial transform
         run: python -m unittest tests.test_eu_flood_spatial_transform -v
 
+  cems-geotiff-profile:
+    name: CEMS GeoTIFF metadata profile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact workflow ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Install reviewed CEMS GeoTIFF dependency set
+        run: python -m pip install --disable-pip-version-check --no-input -r requirements-cems-geotiff-profile.txt
+      - name: Verify CEMS GeoTIFF dependency consistency
+        run: python -m pip check
+      - name: Exercise receipt-bound GeoTIFF metadata profile with synthetic bytes
+        run: python -m unittest tests.test_cems_rp10_geotiff_profile -v
+
   reuse:
     name: REUSE 6.2.0
     runs-on: ubuntu-24.04
@@ -125,7 +146,7 @@ jobs:
   required:
     name: Required
     if: always()
-    needs: [check, glofas-acquisition, reuse, dependency-review]
+    needs: [check, glofas-acquisition, cems-geotiff-profile, reuse, dependency-review]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
@@ -133,10 +154,12 @@ jobs:
         env:
           CHECK_RESULT: ${{ needs.check.result }}
           GLOFAS_ACQUISITION_RESULT: ${{ needs.glofas-acquisition.result }}
+          CEMS_GEOTIFF_PROFILE_RESULT: ${{ needs.cems-geotiff-profile.result }}
           REUSE_RESULT: ${{ needs.reuse.result }}
           DEPENDENCY_REVIEW_RESULT: ${{ needs.dependency-review.result }}
         run: |
           test "$CHECK_RESULT" = "success"
           test "$GLOFAS_ACQUISITION_RESULT" = "success"
+          test "$CEMS_GEOTIFF_PROFILE_RESULT" = "success"
           test "$REUSE_RESULT" = "success"
           test "$DEPENDENCY_REVIEW_RESULT" = "success" || test "$DEPENDENCY_REVIEW_RESULT" = "skipped"

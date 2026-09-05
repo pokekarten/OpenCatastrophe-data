@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Receipt-bound CEMS Phase-B GeoTIFF metadata reader.
+# Rasterio wheels bundle the reviewed GDAL runtime used only by this profile.
+rasterio==1.5.1
