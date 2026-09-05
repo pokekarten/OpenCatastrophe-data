@@ -97,6 +97,8 @@ def _resolve_with_timeout(
     timeout: float,
     resolver: Callable[..., Any] = socket.getaddrinfo,
 ) -> list[tuple[int, int, int, tuple[Any, ...]]]:
+    if host != EXPECTED_HOST or port != 443:
+        raise CemsRp10ReceiptError("trusted CEMS DNS target left the frozen provider boundary")
     if timeout <= 0:
         raise CemsRp10ReceiptError("CEMS RP10 acquisition exceeded total deadline")
     result: queue.Queue[tuple[str, Any]] = queue.Queue(maxsize=1)
@@ -124,6 +126,8 @@ class PublicOnlyHTTPSConnection(http.client.HTTPSConnection):
     """HTTPS connection pinned directly to one prevalidated public DNS answer."""
 
     def connect(self) -> None:
+        if self.host != EXPECTED_HOST or self.port != 443:
+            raise CemsRp10ReceiptError("HTTPS connection left the frozen CEMS provider")
         if self._tunnel_host:
             raise CemsRp10ReceiptError("HTTP tunneling/proxies are forbidden for the frozen CEMS source")
         budget = float(self.timeout)
@@ -192,6 +196,21 @@ def _parse_content_length(value: str | None) -> int | None:
     return parsed
 
 
+def _set_response_timeout(response: Any, timeout: float) -> None:
+    if timeout <= 0:
+        raise CemsRp10ReceiptError("CEMS RP10 acquisition exceeded total deadline")
+    try:
+        response_socket = response.fp.raw._sock
+    except AttributeError as exc:
+        raise CemsRp10ReceiptError(
+            "CEMS response socket cannot enforce the total deadline"
+        ) from exc
+    try:
+        response_socket.settimeout(timeout)
+    except (OSError, ValueError) as exc:
+        raise CemsRp10ReceiptError("CEMS response socket timeout update failed") from exc
+
+
 def acquire_cems_rp10_receipt(
     *,
     opener: Callable[[urllib.request.Request, float], Any] = _open_frozen_source,
@@ -233,7 +252,8 @@ def acquire_cems_rp10_receipt(
             byte_count = 0
             prefix = bytearray()
             while True:
-                _remaining(deadline, monotonic)
+                remaining = _remaining(deadline, monotonic)
+                _set_response_timeout(response, remaining)
                 chunk = response.read(CHUNK_SIZE)
                 _remaining(deadline, monotonic)
                 if not chunk:
