@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import socket
+import types
 import unittest
 from unittest import mock
 
@@ -20,6 +21,12 @@ class FakeResponse:
         self.status = status
         self.headers = dict(headers or {})
         self.read_calls = 0
+        self.socket_timeouts: list[float] = []
+        self.fp = types.SimpleNamespace(
+            raw=types.SimpleNamespace(
+                _sock=types.SimpleNamespace(settimeout=self.socket_timeouts.append)
+            )
+        )
 
     def __enter__(self):
         return self
@@ -175,6 +182,33 @@ class CemsRp10ReceiptTests(unittest.TestCase):
             run_with(response)
         self.assertEqual(response.read_calls, 0)
 
+    def test_stream_read_timeout_tracks_remaining_total_deadline(self) -> None:
+        payload = b"II*\x00" + b"abcdefgh"
+        response = FakeResponse(
+            payload,
+            headers={"Content-Type": "image/tiff", "Content-Length": str(len(payload))},
+        )
+        with mock.patch.object(mod, "CHUNK_SIZE", 4):
+            run_with(response)
+        self.assertEqual(len(response.socket_timeouts), response.read_calls)
+        self.assertGreaterEqual(len(response.socket_timeouts), 2)
+        self.assertTrue(
+            all(
+                0 < later < earlier
+                for earlier, later in zip(response.socket_timeouts, response.socket_timeouts[1:])
+            )
+        )
+
+    def test_missing_response_socket_fails_closed(self) -> None:
+        response = FakeResponse(
+            b"II*\x00x",
+            headers={"Content-Type": "image/tiff", "Content-Length": "5"},
+        )
+        del response.fp
+        with self.assertRaisesRegex(mod.CemsRp10ReceiptError, "cannot enforce the total deadline"):
+            run_with(response)
+        self.assertEqual(response.read_calls, 0)
+
     def test_url_constant_is_exact_https_without_selectors(self) -> None:
         self.assertTrue(mod._safe_source_url(mod.SOURCE_URL))
         self.assertFalse(mod._safe_source_url(mod.SOURCE_URL + "?x=1"))
@@ -192,6 +226,12 @@ class CemsRp10ReceiptTests(unittest.TestCase):
         ]
         admitted = mod._classify_public_sockaddrs(infos)
         self.assertEqual(len(admitted), 1)
+
+    def test_dns_resolution_rejects_provider_drift(self) -> None:
+        with self.assertRaisesRegex(mod.CemsRp10ReceiptError, "provider boundary"):
+            mod._resolve_with_timeout("example.com", 443, 1.0)
+        with self.assertRaisesRegex(mod.CemsRp10ReceiptError, "provider boundary"):
+            mod._resolve_with_timeout(mod.EXPECTED_HOST, 8443, 1.0)
 
     def test_redirect_handler_rejects_even_same_target(self) -> None:
         handler = mod.NoRedirectHandler()
