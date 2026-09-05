@@ -8,6 +8,7 @@ import copy
 import io
 from pathlib import Path
 import unittest
+import urllib.error
 from unittest import mock
 
 from scripts import acquire_cems_europe_rp10_receipt as cems
@@ -229,6 +230,20 @@ class CemsRp10ResultTests(unittest.TestCase):
                     prepare._closed_cems_failure_stage(cems.CemsRp10ReceiptError(message)),
                     expected,
                 )
+
+        wrapped_http = cems.CemsRp10ReceiptError("CEMS RP10 acquisition failed")
+        wrapped_http.__cause__ = urllib.error.HTTPError(
+            cems.SOURCE_URL, 403, "Forbidden", None, None
+        )
+        self.assertEqual(
+            prepare._closed_cems_failure_stage(wrapped_http), "response_contract"
+        )
+        self.assertEqual(
+            prepare._closed_cems_failure_stage(
+                cems.CemsRp10ReceiptError("CEMS RP10 acquisition failed")
+            ),
+            "transport",
+        )
 
         def blocked_worker():
             raise cems.CemsRp10ReceiptError("provider detail must not escape")
