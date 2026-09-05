@@ -93,6 +93,8 @@ class CemsRp10RequestTests(unittest.TestCase):
 
         for mutation in (
             {"issue": 792},
+            {"issue": 793.0},
+            {"issue": True},
             {"dataset_id": "other-dataset"},
             {"target_sha": "v3.1.1"},
         ):
@@ -102,6 +104,9 @@ class CemsRp10RequestTests(unittest.TestCase):
                 request_validator.validate_request(
                     _request(**mutation), expected_issue=793
                 )
+
+        with self.assertRaises(request_validator.RequestError):
+            request_validator.validate_request(_request(), expected_issue=793.0)
 
         for selector in ("url", "filename", "return_period_years", "provider"):
             selected = _request()
