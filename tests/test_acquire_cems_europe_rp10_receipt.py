@@ -22,10 +22,8 @@ class FakeResponse:
         self.headers = dict(headers or {})
         self.read_calls = 0
         self.socket_timeouts: list[float] = []
-        self.fp = types.SimpleNamespace(
-            raw=types.SimpleNamespace(
-                _sock=types.SimpleNamespace(settimeout=self.socket_timeouts.append)
-            )
+        self._oc_response_socket = types.SimpleNamespace(
+            settimeout=self.socket_timeouts.append
         )
 
     def __enter__(self):
@@ -199,12 +197,29 @@ class CemsRp10ReceiptTests(unittest.TestCase):
             )
         )
 
+    def test_deadline_response_retains_socket_after_connection_close(self) -> None:
+        response_socket, peer = socket.socketpair()
+        response = mod.DeadlineHTTPResponse(response_socket)
+        try:
+            self.assertIs(
+                mod.PublicOnlyHTTPSConnection.response_class,
+                mod.DeadlineHTTPResponse,
+            )
+            self.assertIs(response._oc_response_socket, response_socket)
+            response_socket.close()
+            mod._set_response_timeout(response, 0.25)
+            self.assertEqual(response_socket.gettimeout(), 0.25)
+        finally:
+            response.close()
+            response_socket.close()
+            peer.close()
+
     def test_missing_response_socket_fails_closed(self) -> None:
         response = FakeResponse(
             b"II*\x00x",
             headers={"Content-Type": "image/tiff", "Content-Length": "5"},
         )
-        del response.fp
+        del response._oc_response_socket
         with self.assertRaisesRegex(mod.CemsRp10ReceiptError, "cannot enforce the total deadline"):
             run_with(response)
         self.assertEqual(response.read_calls, 0)

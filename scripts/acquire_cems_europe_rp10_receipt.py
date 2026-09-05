@@ -124,8 +124,18 @@ def _resolve_with_timeout(
     return _classify_public_sockaddrs(payload)
 
 
+class DeadlineHTTPResponse(http.client.HTTPResponse):
+    """HTTP response that retains its originating socket for deadline control."""
+
+    def __init__(self, sock, *args, **kwargs):  # noqa: ANN001
+        self._oc_response_socket = sock
+        super().__init__(sock, *args, **kwargs)
+
+
 class PublicOnlyHTTPSConnection(http.client.HTTPSConnection):
     """HTTPS connection pinned directly to one prevalidated public DNS answer."""
+
+    response_class = DeadlineHTTPResponse
 
     def connect(self) -> None:
         if self.host != EXPECTED_HOST or self.port != 443:
@@ -201,14 +211,12 @@ def _parse_content_length(value: str | None) -> int | None:
 def _set_response_timeout(response: Any, timeout: float) -> None:
     if timeout <= 0:
         raise CemsRp10ReceiptError("CEMS RP10 acquisition exceeded total deadline")
+    response_socket = getattr(response, "_oc_response_socket", None)
+    settimeout = getattr(response_socket, "settimeout", None)
+    if not callable(settimeout):
+        raise CemsRp10ReceiptError("CEMS response socket cannot enforce the total deadline")
     try:
-        response_socket = response.fp.raw._sock
-    except AttributeError as exc:
-        raise CemsRp10ReceiptError(
-            "CEMS response socket cannot enforce the total deadline"
-        ) from exc
-    try:
-        response_socket.settimeout(timeout)
+        settimeout(timeout)
     except (OSError, ValueError) as exc:
         raise CemsRp10ReceiptError("CEMS response socket timeout update failed") from exc
 
