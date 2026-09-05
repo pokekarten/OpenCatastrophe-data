@@ -29,6 +29,7 @@ SOURCE_URL = (
 ACCEPTED_BYTE_COUNT = 272_286_610
 ACCEPTED_SHA256 = "15f86b86c228a065250b05488548d7386ac8e33cec4cba6da93f712f7500f45b"
 _HASH_CHUNK_SIZE = 1_048_576
+_MAX_BANDS = 64
 _MAX_CRS_TEXT = 65_536
 _MAX_UNIT_TEXT = 256
 _UNIT_TAG_KEYS = frozenset({"UNIT", "UNITS", "UNITTYPE", "UNIT_TYPE"})
@@ -143,8 +144,14 @@ def _profile_bound_geotiff(
                 raise CemsRp10GeoTiffProfileError("GeoTIFF width is invalid")
             if type(dataset.height) is not int or dataset.height <= 0:
                 raise CemsRp10GeoTiffProfileError("GeoTIFF height is invalid")
-            if type(dataset.count) is not int or dataset.count <= 0:
-                raise CemsRp10GeoTiffProfileError("GeoTIFF band count is invalid")
+            if (
+                type(dataset.count) is not int
+                or dataset.count <= 0
+                or dataset.count > _MAX_BANDS
+            ):
+                raise CemsRp10GeoTiffProfileError(
+                    "GeoTIFF band count is outside the bounded metadata contract"
+                )
 
             crs = dataset.crs
             crs_string = _bounded_text(
@@ -222,7 +229,6 @@ def _profile_bound_geotiff(
                     "proj_version": getattr(rasterio, "__proj_version__", None),
                 },
                 "raster_values_inspected": False,
-                "external_bytes_persisted": False,
                 "geotiff_metadata_verified": True,
                 "benchmark_use_authorized": False,
                 "publication_authorized": False,
