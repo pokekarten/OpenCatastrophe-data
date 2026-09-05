@@ -228,8 +228,11 @@ class CemsRp10WorkflowTests(unittest.TestCase):
         text = Path(".github/workflows/agent-action-dispatch.yml").read_text(
             encoding="utf-8"
         )
+        validate_job = text.split("  report-result:", 1)[0]
         self.assertIn("prepare_agent_action_result_cems_rp10.py", text)
         self.assertIn("post_agent_action_result_cems_rp10.py", text)
+        self.assertIn("timeout-minutes: 10", validate_job)
+        self.assertEqual(validate_job.count("timeout-minutes: 10"), 1)
         self.assertIn(request_validator.CEMS_RP10_RECEIPT_ACTION, prepare.NETWORK_ACTIONS)
         self.assertEqual(prepare.ledger_issue_for_request(_request()), 793)
         self.assertEqual(text.count("issue_comment:"), 1)
