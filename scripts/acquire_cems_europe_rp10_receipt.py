@@ -125,11 +125,24 @@ def _resolve_with_timeout(
 
 
 class DeadlineHTTPResponse(http.client.HTTPResponse):
-    """HTTP response that retains its originating socket for deadline control."""
+    """Single-use response that owns the validated TLS socket until close()."""
 
     def __init__(self, sock, *args, **kwargs):  # noqa: ANN001
         self._oc_response_socket = sock
+        self.url: str | None = None
         super().__init__(sock, *args, **kwargs)
+
+    def geturl(self) -> str | None:
+        return self.url
+
+    def close(self) -> None:
+        response_socket = self._oc_response_socket
+        self._oc_response_socket = None
+        try:
+            super().close()
+        finally:
+            if response_socket is not None:
+                response_socket.close()
 
 
 class PublicOnlyHTTPSConnection(http.client.HTTPSConnection):
@@ -176,25 +189,56 @@ class PublicOnlyHTTPSConnection(http.client.HTTPSConnection):
             raise
 
 
-class FixedHTTPSHandler(urllib.request.HTTPSHandler):
-    def https_open(self, req):  # noqa: ANN001
-        return self.do_open(PublicOnlyHTTPSConnection, req, context=self._context)
-
-
-class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
-    """Reject every redirect so final identity cannot drift from the frozen URL."""
-
-    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001
-        raise CemsRp10ReceiptError("provider redirect is forbidden for the frozen CEMS source")
-
-
 def _open_frozen_source(request: urllib.request.Request, timeout: float):
-    opener = urllib.request.build_opener(
-        urllib.request.ProxyHandler({}),
-        NoRedirectHandler(),
-        FixedHTTPSHandler(context=ssl.create_default_context()),
+    """Open exactly one fixed GET and transfer its validated TLS socket to the response."""
+    if (
+        request.full_url != SOURCE_URL
+        or request.get_method() != "GET"
+        or request.data is not None
+        or not _safe_source_url(request.full_url)
+    ):
+        raise CemsRp10ReceiptError("frozen CEMS source identity is invalid")
+    if timeout <= 0:
+        raise CemsRp10ReceiptError("CEMS RP10 acquisition exceeded total deadline")
+
+    parsed = urllib.parse.urlsplit(SOURCE_URL)
+    connection = PublicOnlyHTTPSConnection(
+        EXPECTED_HOST,
+        443,
+        timeout=timeout,
+        context=ssl.create_default_context(),
     )
-    return opener.open(request, timeout=timeout)
+    response: DeadlineHTTPResponse | None = None
+    try:
+        connection.request(
+            "GET",
+            parsed.path,
+            headers={
+                "Accept": "image/tiff, application/octet-stream",
+                "Accept-Encoding": "identity",
+                "Connection": "close",
+            },
+        )
+        response_socket = connection.sock
+        if response_socket is None:
+            raise CemsRp10ReceiptError("trusted CEMS connection failed")
+        response = connection.response_class(response_socket, method="GET")
+        response.begin()
+        if response._oc_response_socket is not response_socket:
+            raise CemsRp10ReceiptError("CEMS response socket cannot enforce the total deadline")
+
+        # http.client.getresponse() and urllib.request.do_open() both close the
+        # socket object for Connection: close before returning it. This worker
+        # is single-use, so explicitly transfer ownership instead: the response
+        # closes the same validated TLS socket when its context exits.
+        connection.sock = None
+        response.url = SOURCE_URL
+        return response
+    except Exception:
+        if response is not None:
+            response.close()
+        connection.close()
+        raise
 
 
 def _parse_content_length(value: str | None) -> int | None:
