@@ -193,7 +193,7 @@ def _git_blob_sha1(raw: bytes) -> str:
     if type(raw) is not bytes or not raw:
         raise ScenarioEventInputReceiptError("event input bytes must be non-empty")
     header = f"blob {len(raw)}\0".encode("ascii")
-    return hashlib.sha1(header + raw).hexdigest()  # noqa: S324 - Git object identity only
+    return hashlib.sha1(header + raw, usedforsecurity=False).hexdigest()
 
 
 def _bounded_header(response: Any, name: str) -> str | None:
