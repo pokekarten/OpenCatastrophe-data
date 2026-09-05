@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import sys
 from typing import Any, Callable
+import urllib.error
 
 try:
     from scripts import acquire_cems_europe_rp10_receipt as _cems
@@ -59,7 +60,7 @@ def _receipt_field(action: str) -> str:
 
 
 def _closed_cems_failure_stage(error: _cems.CemsRp10ReceiptError) -> str:
-    """Map a code-owned CEMS failure message to a closed stage without details."""
+    """Map a code-owned CEMS failure to a closed stage without provider details."""
     message = str(error)
     if "exceeded total deadline" in message:
         return "deadline"
@@ -73,10 +74,13 @@ def _closed_cems_failure_stage(error: _cems.CemsRp10ReceiptError) -> str:
         "CEMS final URL drifted from frozen source identity",
     }:
         return "source_identity"
+    if message == "CEMS RP10 acquisition failed":
+        if isinstance(error.__cause__, urllib.error.HTTPError):
+            return "response_contract"
+        return "transport"
     if message in {
         "trusted CEMS connection failed",
         "trusted CEMS peer is not globally routable",
-        "CEMS RP10 acquisition failed",
     }:
         return "transport"
     if message in {
