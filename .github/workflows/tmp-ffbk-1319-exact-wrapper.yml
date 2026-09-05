@@ -1,0 +1,84 @@
+name: tmp FFBK 1319 exact wrapper
+
+on:
+  push:
+    branches:
+      - tmp/ffbk-1319-exact-wrapper-sol56-20260905
+
+permissions:
+  contents: read
+
+jobs:
+  exact-wrapper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout exact FFBK head
+        uses: actions/checkout@v4
+        with:
+          repository: pokekarten/FFBK
+          ref: 6e57ea7115ceab4367c8efef51839fad70041e05
+          path: ffbk
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pinned scientific stack
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            numpy==2.2.3 \
+            pandas==2.2.3 \
+            scipy==1.15.2 \
+            scikit-learn==1.8.0 \
+            pyarrow==19.0.1 \
+            pytest
+
+      - name: Verify checked-out exact head and focused tests
+        working-directory: ffbk
+        run: |
+          test "$(git rev-parse HEAD)" = "6e57ea7115ceab4367c8efef51839fad70041e05"
+          python -m py_compile scripts/underwriting_fremtpl_raw_tournament.py scripts/underwriting_fremtpl_raw_sensitivity.py
+          pytest -q tests/test_underwriting_fremtpl_raw_tournament.py tests/test_underwriting_fremtpl_raw_sensitivity.py
+
+      - name: Execute exact repository sensitivity wrapper
+        working-directory: ffbk
+        run: |
+          python scripts/underwriting_fremtpl_raw_sensitivity.py \
+            --seeds 0,17,42 \
+            --output exact-ffbk-1319-result.json \
+            > exact-ffbk-1319-stdout.txt
+
+      - name: Emit bounded comparison receipt
+        working-directory: ffbk
+        run: |
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          p = Path('exact-ffbk-1319-result.json')
+          b = p.read_bytes()
+          d = json.loads(b)
+          print('RESULT_FILE_SHA256', hashlib.sha256(b).hexdigest())
+          print('SEMANTIC_RECEIPT', d['semantic_receipt_sha256'])
+          print('OPENML', json.dumps(d['data']['openml'], sort_keys=True))
+          print('CLEANING', json.dumps(d['data']['cleaning_receipt'], sort_keys=True))
+          for variant in ('reference_cleaned','uncapped_joined_claim_amount','raw_claimnb_reference_amount_cap'):
+              print('VARIANT', variant)
+              s = d['variants'][variant]['summary']['direct_vs_joint_product_same_power']
+              for model, rows in sorted(s.items()):
+                  for row in rows:
+                      power = str(row['selection_power'])
+                      print('DELTA', variant, model, row['seed'], power, row['deviance_difference_direct_minus_joint_product'][power], row['ordered_gini_difference_direct_minus_joint_product'])
+          print('DIRECT_CLAIMNB_INVARIANCE', json.dumps(d['direct_tweedie_claimnb_invariance'], sort_keys=True))
+          PY
+
+      - name: Upload exact result
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-1319-exact-wrapper-result
+          path: |
+            ffbk/exact-ffbk-1319-result.json
+            ffbk/exact-ffbk-1319-stdout.txt
+          if-no-files-found: error
