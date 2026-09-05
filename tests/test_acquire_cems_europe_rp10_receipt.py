@@ -219,6 +219,11 @@ class CemsRp10ReceiptTests(unittest.TestCase):
         with self.assertRaisesRegex(mod.CemsRp10ReceiptError, "non-global"):
             mod._classify_public_sockaddrs(infos)
 
+    def test_dns_classifier_rejects_returned_port_drift(self) -> None:
+        infos = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("8.8.8.8", 8443))]
+        with self.assertRaisesRegex(mod.CemsRp10ReceiptError, "provider port"):
+            mod._classify_public_sockaddrs(infos)
+
     def test_dns_classifier_accepts_unique_public_addresses(self) -> None:
         infos = [
             (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("8.8.8.8", 443)),
