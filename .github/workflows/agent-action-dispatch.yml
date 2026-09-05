@@ -28,7 +28,7 @@ jobs:
       github.event.comment.user.login == github.event.repository.owner.login &&
       github.event.comment.author_association == 'OWNER'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     permissions:
       contents: read
       issues: read
