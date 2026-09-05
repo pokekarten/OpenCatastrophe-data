@@ -1,4 +1,4 @@
-name: tmp FFBK 1319 exact wrapper
+name: tmp FFBK 1319 public data cache
 
 on:
   push:
@@ -9,17 +9,10 @@ permissions:
   contents: read
 
 jobs:
-  exact-wrapper:
+  materialize-openml:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 30
     steps:
-      - name: Checkout exact FFBK head
-        uses: actions/checkout@v4
-        with:
-          repository: pokekarten/FFBK
-          ref: 6e57ea7115ceab4367c8efef51839fad70041e05
-          path: ffbk
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -33,52 +26,42 @@ jobs:
             pandas==2.2.3 \
             scipy==1.15.2 \
             scikit-learn==1.8.0 \
-            pyarrow==19.0.1 \
-            pytest
+            pyarrow==19.0.1
 
-      - name: Verify checked-out exact head and focused tests
-        working-directory: ffbk
-        run: |
-          test "$(git rev-parse HEAD)" = "6e57ea7115ceab4367c8efef51839fad70041e05"
-          python -m py_compile scripts/underwriting_fremtpl_raw_tournament.py scripts/underwriting_fremtpl_raw_sensitivity.py
-          pytest -q tests/test_underwriting_fremtpl_raw_tournament.py tests/test_underwriting_fremtpl_raw_sensitivity.py
-
-      - name: Execute exact repository sensitivity wrapper
-        working-directory: ffbk
-        run: |
-          python scripts/underwriting_fremtpl_raw_sensitivity.py \
-            --seeds 0,17,42 \
-            --output exact-ffbk-1319-result.json \
-            > exact-ffbk-1319-stdout.txt
-
-      - name: Emit bounded comparison receipt
-        working-directory: ffbk
+      - name: Fetch public OpenML inputs into sklearn cache
+        env:
+          SCIKIT_LEARN_DATA: ${{ github.workspace }}/sklearn-data
         run: |
           python - <<'PY'
-          import hashlib, json
+          import hashlib, json, os
           from pathlib import Path
-          p = Path('exact-ffbk-1319-result.json')
-          b = p.read_bytes()
-          d = json.loads(b)
-          print('RESULT_FILE_SHA256', hashlib.sha256(b).hexdigest())
-          print('SEMANTIC_RECEIPT', d['semantic_receipt_sha256'])
-          print('OPENML', json.dumps(d['data']['openml'], sort_keys=True))
-          print('CLEANING', json.dumps(d['data']['cleaning_receipt'], sort_keys=True))
-          for variant in ('reference_cleaned','uncapped_joined_claim_amount','raw_claimnb_reference_amount_cap'):
-              print('VARIANT', variant)
-              s = d['variants'][variant]['summary']['direct_vs_joint_product_same_power']
-              for model, rows in sorted(s.items()):
-                  for row in rows:
-                      power = str(row['selection_power'])
-                      print('DELTA', variant, model, row['seed'], power, row['deviance_difference_direct_minus_joint_product'][power], row['ordered_gini_difference_direct_minus_joint_product'])
-          print('DIRECT_CLAIMNB_INVARIANCE', json.dumps(d['direct_tweedie_claimnb_invariance'], sort_keys=True))
-          PY
+          from sklearn.datasets import fetch_openml
 
-      - name: Upload exact result
+          out = {}
+          for data_id in (41214, 41215):
+              bunch = fetch_openml(data_id=data_id, as_frame=True)
+              details = bunch.details
+              out[str(data_id)] = {
+                  'data_id': int(details['id']),
+                  'name': details.get('name'),
+                  'version': int(details['version']),
+                  'md5_checksum': details.get('md5_checksum'),
+                  'status': details.get('status'),
+                  'rows': int(len(bunch.data)),
+                  'columns': list(map(str, bunch.data.columns)),
+              }
+          Path('openml-receipt.json').write_text(json.dumps(out, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(out, sort_keys=True))
+          print('CACHE_ROOT', os.environ['SCIKIT_LEARN_DATA'])
+          PY
+          tar -czf openml-cache.tgz sklearn-data
+          sha256sum openml-cache.tgz openml-receipt.json
+
+      - name: Upload public OpenML cache
         uses: actions/upload-artifact@v4
         with:
-          name: ffbk-1319-exact-wrapper-result
+          name: ffbk-1319-openml-cache
           path: |
-            ffbk/exact-ffbk-1319-result.json
-            ffbk/exact-ffbk-1319-stdout.txt
+            openml-cache.tgz
+            openml-receipt.json
           if-no-files-found: error
