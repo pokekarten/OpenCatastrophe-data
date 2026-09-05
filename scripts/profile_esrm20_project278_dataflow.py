@@ -111,6 +111,18 @@ def _call_name(func: ast.expr) -> str | None:
         parts.append(node.attr)
         node = node.value
     if not isinstance(node, ast.Name):
+        if isinstance(node, ast.Call) and parts:
+            terminal = parts[0]
+            tail = terminal.casefold()
+            if (
+                tail in _WRITER_TAILS
+                or tail.startswith("write_")
+                or tail.endswith("_writer")
+                or tail in _CRS_TAILS
+                or "reproject" in tail
+                or tail.endswith("_crs")
+            ):
+                return _safe_name(terminal)
         return None
     parts.append(node.id)
     return _safe_name(".".join(reversed(parts)))
