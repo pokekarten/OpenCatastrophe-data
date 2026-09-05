@@ -3,7 +3,9 @@
 
 from __future__ import annotations
 
+from contextlib import redirect_stderr
 import copy
+import io
 from pathlib import Path
 import unittest
 from unittest import mock
@@ -212,6 +214,40 @@ class CemsRp10ResultTests(unittest.TestCase):
         )
         self.assertEqual(result["status"], "blocked")
         self.assertIsNone(result["evidence"][prepare.CEMS_RP10_RECEIPT_FIELD])
+
+    def test_closed_failure_stage_is_bounded_and_hides_provider_detail(self) -> None:
+        cases = (
+            ("trusted CEMS DNS resolution failed", "dns"),
+            ("CEMS response media type is outside the fixed contract", "response_contract"),
+            ("CEMS RP10 payload does not have a TIFF/BigTIFF signature", "payload_contract"),
+            ("CEMS RP10 acquisition exceeded total deadline", "deadline"),
+            ("provider detail must not escape", "unknown"),
+        )
+        for message, expected in cases:
+            with self.subTest(message=message):
+                self.assertEqual(
+                    prepare._closed_cems_failure_stage(cems.CemsRp10ReceiptError(message)),
+                    expected,
+                )
+
+        def blocked_worker():
+            raise cems.CemsRp10ReceiptError("provider detail must not escape")
+
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            result = _run(cems_acquirer=blocked_worker)
+        diagnostic = stderr.getvalue()
+        self.assertEqual(result["status"], "blocked")
+        self.assertIn("CEMS_RP10_FAILURE_STAGE=unknown", diagnostic)
+        self.assertNotIn("provider detail must not escape", diagnostic)
+
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            result = _run(
+                cems_acquirer=lambda: _receipt(geotiff_semantics_verified=True)
+            )
+        self.assertEqual(result["status"], "blocked")
+        self.assertIn("CEMS_RP10_FAILURE_STAGE=receipt_validation", stderr.getvalue())
 
     def test_complete_ledger_dedup_stops_before_provider_worker(self) -> None:
         first = _run()
