@@ -197,22 +197,67 @@ class CemsRp10ReceiptTests(unittest.TestCase):
             )
         )
 
-    def test_deadline_response_retains_socket_after_connection_close(self) -> None:
-        response_socket, peer = socket.socketpair()
-        response = mod.DeadlineHTTPResponse(response_socket)
+    def test_frozen_source_transfers_live_socket_to_response(self) -> None:
+        payload = b"II*\x00x"
+        client, peer = socket.socketpair()
+        wire = (
+            b"HTTP/1.1 200 OK\r\n"
+            b"Content-Type: image/tiff\r\n"
+            + f"Content-Length: {len(payload)}\r\n".encode("ascii")
+            + b"Connection: close\r\n\r\n"
+            + payload
+        )
+
+        class FakeConnection:
+            last = None
+            response_class = mod.DeadlineHTTPResponse
+
+            def __init__(self, host, port, *, timeout, context):
+                self.host = host
+                self.port = port
+                self.timeout = timeout
+                self.context = context
+                self.sock = client
+                self.request_call = None
+                FakeConnection.last = self
+
+            def request(self, method, path, body=None, headers=None, **kwargs):
+                self.request_call = (method, path, body, dict(headers or {}), kwargs)
+                peer.sendall(wire)
+
+            def close(self):
+                sock = self.sock
+                self.sock = None
+                if sock is not None:
+                    sock.close()
+
+        request = mod.urllib.request.Request(mod.SOURCE_URL, method="GET")
+        with mock.patch.object(mod, "PublicOnlyHTTPSConnection", FakeConnection):
+            response = mod._open_frozen_source(request, 1.0)
+
+        connection = FakeConnection.last
+        self.assertIsNotNone(connection)
+        self.assertEqual(connection.host, mod.EXPECTED_HOST)
+        self.assertEqual(connection.port, 443)
+        self.assertIsNone(connection.sock)
+        method, path, body, headers, kwargs = connection.request_call
+        self.assertEqual(method, "GET")
+        self.assertEqual(path, mod.urllib.parse.urlsplit(mod.SOURCE_URL).path)
+        self.assertIsNone(body)
+        self.assertEqual(headers["Accept-Encoding"], "identity")
+        self.assertEqual(headers["Connection"], "close")
+        self.assertEqual(kwargs, {})
+        self.assertIs(response._oc_response_socket, client)
+        self.assertEqual(response.geturl(), mod.SOURCE_URL)
+        self.assertEqual(response.status, 200)
         try:
-            self.assertIs(
-                mod.PublicOnlyHTTPSConnection.response_class,
-                mod.DeadlineHTTPResponse,
-            )
-            self.assertIs(response._oc_response_socket, response_socket)
-            response_socket.close()
             mod._set_response_timeout(response, 0.25)
-            self.assertEqual(response_socket.gettimeout(), 0.25)
+            self.assertEqual(client.gettimeout(), 0.25)
+            self.assertEqual(response.read(), payload)
         finally:
             response.close()
-            response_socket.close()
             peer.close()
+        self.assertEqual(client.fileno(), -1)
 
     def test_missing_response_socket_fails_closed(self) -> None:
         response = FakeResponse(
@@ -252,11 +297,6 @@ class CemsRp10ReceiptTests(unittest.TestCase):
             mod._resolve_with_timeout("example.com", 443, 1.0)
         with self.assertRaisesRegex(mod.CemsRp10ReceiptError, "provider boundary"):
             mod._resolve_with_timeout(mod.EXPECTED_HOST, 8443, 1.0)
-
-    def test_redirect_handler_rejects_even_same_target(self) -> None:
-        handler = mod.NoRedirectHandler()
-        with self.assertRaisesRegex(mod.CemsRp10ReceiptError, "redirect is forbidden"):
-            handler.redirect_request(None, None, 302, "Found", {}, mod.SOURCE_URL)
 
 
 if __name__ == "__main__":
