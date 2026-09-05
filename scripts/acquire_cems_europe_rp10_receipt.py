@@ -76,6 +76,8 @@ def _classify_public_sockaddrs(
     for family, socktype, proto, _canonname, sockaddr in infos:
         if family not in (socket.AF_INET, socket.AF_INET6) or socktype != socket.SOCK_STREAM:
             continue
+        if len(sockaddr) < 2 or sockaddr[1] != 443:
+            raise CemsRp10ReceiptError("trusted CEMS DNS returned an unexpected provider port")
         try:
             ip = ipaddress.ip_address(str(sockaddr[0]))
         except ValueError as exc:
