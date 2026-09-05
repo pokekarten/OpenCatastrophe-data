@@ -46,12 +46,10 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.14"
-      # The country-risk-aware layer delegates every pre-existing action to the
-      # reviewed dispatcher and adds only the frozen Issue #778 receipt worker.
-      # Legacy compatibility remains explicit below the wrapper: the publisher
-      # implementation behind it is python scripts/post_agent_action_result.py,
-      # and acquisition_receipt still uses the repository-owned frozen DWD worker.
-      # No URL/path/command/parser comes from the comment.
+      # The CEMS-aware layer delegates every pre-existing action through the
+      # reviewed country-risk-aware dispatcher and adds only the frozen Issue
+      # #793 RP10 receipt worker. No URL/path/return-period/provider/parser comes
+      # from the comment; all authorized actions remain in this one serialized lane.
       - name: Prepare bounded action result
         id: prepare-result
         env:
@@ -64,7 +62,7 @@ jobs:
           OC_ACTION_GITHUB_TOKEN: ${{ github.token }}
         run: |
           EXECUTION_SHA="$(git rev-parse HEAD)"
-          RESULT_JSON="$(python scripts/prepare_agent_action_result_country_risk.py \
+          RESULT_JSON="$(python scripts/prepare_agent_action_result_cems_rp10.py \
             --comment-body-env OC_ACTION_COMMENT_BODY \
             --expected-issue "$OC_ACTION_TRIGGER_ISSUE" \
             --source-comment-id "$OC_ACTION_SOURCE_COMMENT_ID" \
@@ -103,7 +101,7 @@ jobs:
           OC_ACTION_REPOSITORY: ${{ github.repository }}
           OC_ACTION_GITHUB_TOKEN: ${{ github.token }}
         run: >-
-          python scripts/post_agent_action_result_country_risk.py
+          python scripts/post_agent_action_result_cems_rp10.py
           --result-env OC_ACTION_RESULT_JSON
           --repository "$OC_ACTION_REPOSITORY"
           --expected-issue "$OC_ACTION_TRIGGER_ISSUE"
