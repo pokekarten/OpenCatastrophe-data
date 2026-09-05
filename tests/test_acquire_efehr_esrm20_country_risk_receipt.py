@@ -54,23 +54,29 @@ def _url() -> str:
     return raw_file_api_url(target)
 
 
+def _opener_for(payload: bytes):
+    url = _url()
+    calls = []
+
+    def opener(request, timeout):
+        calls.append((request, timeout))
+        return FakeResponse(
+            payload,
+            url,
+            headers={
+                "Content-Length": str(len(payload)),
+                "Content-Type": "text/csv",
+                "ETag": '"synthetic"',
+            },
+        )
+
+    return opener, calls
+
+
 class Esrm20CountryRiskReceiptTests(unittest.TestCase):
     def test_fixed_worker_hashes_only_the_immutable_country_table(self) -> None:
         url = _url()
-        calls = []
-
-        def opener(request, timeout):
-            calls.append((request, timeout))
-            return FakeResponse(
-                PAYLOAD,
-                url,
-                headers={
-                    "Content-Length": str(len(PAYLOAD)),
-                    "Content-Type": "text/csv",
-                    "ETag": '"synthetic"',
-                },
-            )
-
+        opener, calls = _opener_for(PAYLOAD)
         receipt = subject.acquire_country_risk_receipt(
             opener=opener,
             now=lambda: RETRIEVED_AT,
@@ -95,6 +101,22 @@ class Esrm20CountryRiskReceiptTests(unittest.TestCase):
         self.assertFalse(receipt["publication_authorized"])
         self.assertFalse(receipt["model_use_authorized"])
         self.assertNotIn("rows", receipt)
+        self.assertNotIn(PAYLOAD.decode(), str(receipt))
+
+    def test_trusted_capture_returns_exact_same_receipted_bytes_in_process(self) -> None:
+        opener, calls = _opener_for(PAYLOAD)
+        receipt, payload = subject.acquire_country_risk_receipt_with_payload(
+            opener=opener,
+            now=lambda: RETRIEVED_AT,
+            monotonic=lambda: 0.0,
+        )
+
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(payload, PAYLOAD)
+        self.assertEqual(receipt["byte_count"], len(payload))
+        self.assertEqual(receipt["sha256"], hashlib.sha256(payload).hexdigest())
+        self.assertFalse(receipt["external_bytes_persisted"])
+        self.assertFalse(receipt["provider_rows_exposed"])
         self.assertNotIn(PAYLOAD.decode(), str(receipt))
 
     def test_issue_778_allowlist_is_exact_path_and_exact_commit(self) -> None:
@@ -124,19 +146,23 @@ class Esrm20CountryRiskReceiptTests(unittest.TestCase):
                 repository_path="Risk/another.csv",
             )
 
-    def test_worker_has_no_provider_target_selectors(self) -> None:
-        signature = inspect.signature(subject.acquire_country_risk_receipt)
-        self.assertEqual(set(signature.parameters), {"opener", "now", "monotonic"})
-        for forbidden in (
-            "project_id",
-            "project_path",
-            "commit_sha",
-            "repository_path",
-            "dataset_id",
-            "source_issue",
-            "url",
+    def test_worker_entrypoints_have_no_provider_target_selectors(self) -> None:
+        for worker in (
+            subject.acquire_country_risk_receipt,
+            subject.acquire_country_risk_receipt_with_payload,
         ):
-            self.assertNotIn(forbidden, signature.parameters)
+            signature = inspect.signature(worker)
+            self.assertEqual(set(signature.parameters), {"opener", "now", "monotonic"})
+            for forbidden in (
+                "project_id",
+                "project_path",
+                "commit_sha",
+                "repository_path",
+                "dataset_id",
+                "source_issue",
+                "url",
+            ):
+                self.assertNotIn(forbidden, signature.parameters)
 
     def test_declared_oversize_fails_before_payload_read(self) -> None:
         url = _url()
@@ -149,7 +175,7 @@ class Esrm20CountryRiskReceiptTests(unittest.TestCase):
         with self.assertRaisesRegex(
             subject.Esrm20CountryRiskReceiptError, "provider country-risk acquisition failed"
         ):
-            subject.acquire_country_risk_receipt(
+            subject.acquire_country_risk_receipt_with_payload(
                 opener=lambda request, timeout: response,
                 now=lambda: RETRIEVED_AT,
                 monotonic=lambda: 0.0,
