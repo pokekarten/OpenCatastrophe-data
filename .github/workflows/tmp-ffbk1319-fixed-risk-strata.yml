@@ -1,0 +1,42 @@
+# Temporary execution surface for FFBK research. Not an OpenCatastrophe-data product workflow.
+name: tmp-ffbk1319-fixed-risk-strata
+
+on:
+  push:
+    branches:
+      - tmp/ffbk-1319-fixed-risk-strata-20260905
+    paths:
+      - .tmp_ffbk1319/fixed_baseline_risk_strata_diagnostic.py
+      - .github/workflows/tmp-ffbk1319-fixed-risk-strata.yml
+
+permissions:
+  contents: read
+
+jobs:
+  fixed-risk-strata:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned scientific stack
+        run: |
+          python -m pip install --disable-pip-version-check \
+            numpy==2.2.3 pandas==2.2.3 scipy==1.15.2 \
+            scikit-learn==1.8.0 pyarrow==19.0.1
+      - name: Compile diagnostic
+        run: python -m py_compile .tmp_ffbk1319/fixed_baseline_risk_strata_diagnostic.py
+      - name: Execute corrected diagnostic
+        working-directory: .tmp_ffbk1319
+        run: |
+          mkdir -p results
+          python fixed_baseline_risk_strata_diagnostic.py \
+            --output results/fixed-baseline-risk-strata.json
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk1319-fixed-baseline-risk-strata
+          path: .tmp_ffbk1319/results/fixed-baseline-risk-strata.json
+          if-no-files-found: error
