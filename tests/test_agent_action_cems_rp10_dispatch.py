@@ -220,6 +220,15 @@ class CemsRp10ResultTests(unittest.TestCase):
         cases = (
             ("trusted CEMS DNS resolution failed", "dns"),
             ("CEMS response media type is outside the fixed contract", "response_contract"),
+            (
+                "CEMS response socket cannot enforce the total deadline",
+                "stream_socket_access",
+            ),
+            (
+                "CEMS response socket timeout update failed",
+                "stream_timeout_update",
+            ),
+            ("CEMS response stream returned non-byte content", "stream_non_bytes"),
             ("CEMS RP10 payload does not have a TIFF/BigTIFF signature", "payload_contract"),
             ("CEMS RP10 acquisition exceeded total deadline", "deadline"),
             ("provider detail must not escape", "unknown"),
