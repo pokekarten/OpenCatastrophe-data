@@ -55,6 +55,8 @@ jobs:
       # documents the country-risk publisher contract. The CEMS publisher reuses the
       # same base implementation, python scripts/post_agent_action_result.py, with the
       # CEMS-aware validator; legacy acquisition_receipt still uses the repository-owned frozen DWD worker.
+      # CEMS wrapper filenames retained for audit: prepare_agent_action_result_cems_rp10.py
+      # and post_agent_action_result_cems_rp10.py; runtime invocation uses package modules.
       - name: Prepare bounded action result
         id: prepare-result
         env:
@@ -67,7 +69,7 @@ jobs:
           OC_ACTION_GITHUB_TOKEN: ${{ github.token }}
         run: |
           EXECUTION_SHA="$(git rev-parse HEAD)"
-          RESULT_JSON="$(python scripts/prepare_agent_action_result_cems_rp10.py \
+          RESULT_JSON="$(python -m scripts.prepare_agent_action_result_cems_rp10 \
             --comment-body-env OC_ACTION_COMMENT_BODY \
             --expected-issue "$OC_ACTION_TRIGGER_ISSUE" \
             --source-comment-id "$OC_ACTION_SOURCE_COMMENT_ID" \
@@ -106,7 +108,7 @@ jobs:
           OC_ACTION_REPOSITORY: ${{ github.repository }}
           OC_ACTION_GITHUB_TOKEN: ${{ github.token }}
         run: >-
-          python scripts/post_agent_action_result_cems_rp10.py
+          python -m scripts.post_agent_action_result_cems_rp10
           --result-env OC_ACTION_RESULT_JSON
           --repository "$OC_ACTION_REPOSITORY"
           --expected-issue "$OC_ACTION_TRIGGER_ISSUE"
