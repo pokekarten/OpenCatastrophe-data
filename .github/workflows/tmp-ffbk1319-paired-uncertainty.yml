@@ -1,0 +1,29 @@
+name: Temporary FFBK 1319 paired uncertainty
+
+on:
+  push:
+    branches:
+      - tmp/ffbk-1319-paired-uncertainty-20260905-q4n8
+
+permissions:
+  contents: read
+
+jobs:
+  paired-uncertainty:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned scientific stack
+        run: python -m pip install --disable-pip-version-check numpy==2.2.3 pandas==2.2.3 scipy==1.15.2 scikit-learn==1.8.0 pyarrow==19.0.1
+      - name: Run paired policy uncertainty diagnostic
+        run: python .tmp_ffbk1319/paired_uncertainty.py
+      - name: Upload diagnostic result
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk1319-paired-uncertainty
+          path: ffbk1319-paired-uncertainty.json
+          if-no-files-found: error
