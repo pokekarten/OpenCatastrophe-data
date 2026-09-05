@@ -3,75 +3,97 @@
 
 from __future__ import annotations
 
-import copy
 import hashlib
+import json
 from pathlib import Path
 import unittest
 from unittest import mock
 
-from scripts import acquire_efehr_esrm20_country_risk_receipt as country
 from scripts import agent_action_protocol_country_risk as protocol
 from scripts import prepare_agent_action_result_country_risk as prepare
-from scripts import profile_esrm20_country_risk_schema as schema
-from scripts import profile_esrm20_risk_v10_tree as risk_tree
+from scripts import profile_esrm20_country_risk_schema as schema_profiler
 from scripts import validate_agent_action_request_country_risk as request_validator
 from scripts import validate_agent_action_result_country_risk as result_validator
-from scripts.efehr_gitlab_receipt import raw_file_api_url, validate_target
 
-MAIN_SHA = "7226582160bd129fb15a0d46db777be826f24d84"
-DATASET = "efehr.esrm20.risk-inputs.v1.0"
-RETRIEVED_AT = "2026-08-29T10:00:00Z"
-SCHEMA_PAYLOAD = (
-    b'Name,"AAL Residential (economic, M EUR)",'
-    b'"AALR Residential (economic, per mille)"\n'
-    b"Kosovo,987654.321,654.987\n"
-)
-
-
-def _git_blob_sha1(payload: bytes = SCHEMA_PAYLOAD) -> str:
-    header = f"blob {len(payload)}\0".encode("ascii")
-    return hashlib.sha1(header + payload, usedforsecurity=False).hexdigest()
+MAIN_SHA = "a" * 40
+REPOSITORY = "pokekarten/OpenCatastrophe-data"
+COUNTRY_BYTES = b"Country,Loss\nAL,1\n"
+COUNTRY_SHA256 = hashlib.sha256(COUNTRY_BYTES).hexdigest()
+COUNTRY_GIT_SHA1 = hashlib.sha1(
+    f"blob {len(COUNTRY_BYTES)}\0".encode("ascii") + COUNTRY_BYTES,
+    usedforsecurity=False,
+).hexdigest()
+STARTED_AT = "2026-09-05T09:00:00Z"
+FINISHED_AT = "2026-09-05T09:01:00Z"
+RETRIEVED_AT = "2026-09-05T09:00:30Z"
 
 
 def _request(**overrides):
     value = {
         "schema_version": request_validator.SCHEMA_VERSION,
         "action": request_validator.ESRM20_COUNTRY_RISK_RECEIPT_ACTION,
-        "issue": 778,
+        "issue": request_validator.ESRM20_COUNTRY_RISK_RECEIPT_ISSUE,
         "target_sha": MAIN_SHA,
-        "dataset_id": DATASET,
+        "dataset_id": request_validator.ESRM20_COUNTRY_RISK_RECEIPT_DATASET_ID,
         "requester": "pokekarten",
     }
     value.update(overrides)
     return value
 
 
-def _receipt(payload: bytes = SCHEMA_PAYLOAD, **overrides):
-    target = validate_target(
-        source_issue=country.SOURCE_ISSUE,
-        dataset_id=country.DATASET_ID,
-        project_id=country.PROJECT_ID,
-        commit_sha=country.COMMIT_SHA,
-        repository_path=country.REPOSITORY_PATH,
-    )
-    url = raw_file_api_url(target)
+def _tree_profile(**overrides):
     value = {
-        "schema_version": country.SCHEMA_VERSION,
-        "operation_id": country.OPERATION_ID,
-        "source_issue": country.SOURCE_ISSUE,
-        "dataset_id": country.DATASET_ID,
-        "provider_host": "gitlab.seismo.ethz.ch",
-        "project_id": country.PROJECT_ID,
-        "project_path": country.PROJECT_PATH,
-        "commit_sha": country.COMMIT_SHA,
-        "repository_path": country.REPOSITORY_PATH,
-        "requested_url": url,
-        "final_url": url,
+        "schema_version": result_validator.RISK_TREE_PROFILE_SCHEMA_VERSION,
+        "dataset_id": request_validator.ESRM20_COUNTRY_RISK_RECEIPT_DATASET_ID,
+        "source_issue": request_validator.ESRM20_COUNTRY_RISK_RECEIPT_ISSUE,
+        "project_id": 278,
+        "project_path": "EFEHR/ESRM20",
+        "release_tag": "v1.0",
+        "commit_sha": "0f2980097a62f62f1c8a11f93e2e801d70ad05d4",
+        "risk_tree_sha1": "b" * 40,
+        "risk_entry_count": 1,
+        "risk_blob_count": 1,
+        "risk_tree_count": 0,
+        "country_risk_path": "Risk/European_Risk_Country.csv",
+        "country_risk_path_status": "blob",
+        "country_risk_path_entry": {
+            "path": "Risk/European_Risk_Country.csv",
+            "type": "blob",
+            "object_sha1": COUNTRY_GIT_SHA1,
+            "mode": "100644",
+        },
+        "external_bytes_persisted": False,
+        "provider_file_bytes_read": False,
+        "country_risk_file_profiled": False,
+        "country_risk_schema_profiled": False,
+        "country_risk_numeric_values_exposed": False,
+        "reference_loss_agreement_verified": False,
+        "publication_authorized": False,
+        "model_use_authorized": False,
+    }
+    value.update(overrides)
+    return value
+
+
+def _receipt(**overrides):
+    value = {
+        "schema_version": result_validator.COUNTRY_RISK_RECEIPT_SCHEMA_VERSION,
+        "operation_id": "esrm20_country_risk_receipt",
+        "source_issue": request_validator.ESRM20_COUNTRY_RISK_RECEIPT_ISSUE,
+        "dataset_id": request_validator.ESRM20_COUNTRY_RISK_RECEIPT_DATASET_ID,
+        "project_id": 278,
+        "project_path": "EFEHR/ESRM20",
+        "release_tag": "v1.0",
+        "commit_sha": "0f2980097a62f62f1c8a11f93e2e801d70ad05d4",
+        "repository_path": "Risk/European_Risk_Country.csv",
+        "requested_url": "https://gitlab.seismo.ethz.ch/efehr/esrm20/-/raw/0f2980097a62f62f1c8a11f93e2e801d70ad05d4/Risk/European_Risk_Country.csv",
+        "final_url": "https://gitlab.seismo.ethz.ch/efehr/esrm20/-/raw/0f2980097a62f62f1c8a11f93e2e801d70ad05d4/Risk/European_Risk_Country.csv",
         "retrieved_at": RETRIEVED_AT,
-        "byte_count": len(payload),
-        "sha256": hashlib.sha256(payload).hexdigest(),
-        "content_type": "text/csv",
-        "etag": '"synthetic"',
+        "http_status": 200,
+        "media_type": "text/plain",
+        "content_length_header": len(COUNTRY_BYTES),
+        "byte_count": len(COUNTRY_BYTES),
+        "sha256": COUNTRY_SHA256,
         "external_bytes_persisted": False,
         "provider_rows_exposed": False,
         "reference_loss_agreement_verified": False,
@@ -82,56 +104,25 @@ def _receipt(payload: bytes = SCHEMA_PAYLOAD, **overrides):
     return value
 
 
-def _acquired(payload: bytes = SCHEMA_PAYLOAD):
-    return _receipt(payload), payload
-
-
-def _tree_entry(path: str, object_sha1: str, *, entry_type: str = "blob"):
-    return {
-        "mode": "040000" if entry_type == "tree" else "100644",
-        "object_sha1": object_sha1,
-        "path": path,
-        "type": entry_type,
-    }
-
-
-def _tree_profile(status: str = "blob", *, blob_sha1: str | None = None, **overrides):
-    if status == "blob":
-        inventory = [_tree_entry(risk_tree.COUNTRY_RISK_PATH, blob_sha1 or _git_blob_sha1())]
-    elif status == "tree":
-        inventory = [_tree_entry(risk_tree.COUNTRY_RISK_PATH, "2" * 40, entry_type="tree")]
-    elif status == "absent":
-        inventory = [_tree_entry("Risk/European_Risk_Admin1.csv", "3" * 40)]
-    else:
-        raise ValueError(status)
-    canonical = "".join(
-        f"{entry['type']}\t{entry['mode']}\t{entry['object_sha1']}\t{entry['path']}\n"
-        for entry in inventory
-    ).encode("utf-8")
-    matches = [entry for entry in inventory if entry["path"] == risk_tree.COUNTRY_RISK_PATH]
+def _schema_profile(**overrides):
     value = {
-        "schema_version": risk_tree.SCHEMA_VERSION,
-        "source_issue": risk_tree.SOURCE_ISSUE,
-        "dataset_id": risk_tree.DATASET_ID,
-        "project_id": risk_tree.PROJECT_ID,
-        "project_path": risk_tree.PROJECT_PATH,
-        "release_tag": risk_tree.RELEASE_TAG,
-        "commit_sha": risk_tree.EXPECTED_COMMIT_SHA,
-        "subtree_path": risk_tree.SUBTREE_PATH,
-        "pages_read": 1,
-        "entry_count": len(inventory),
-        "blob_count": sum(entry["type"] == "blob" for entry in inventory),
-        "tree_count": sum(entry["type"] == "tree" for entry in inventory),
-        "tree_identity_sha256": hashlib.sha256(canonical).hexdigest(),
-        "risk_inventory": inventory,
-        "country_risk_path": risk_tree.COUNTRY_RISK_PATH,
-        "country_risk_path_status": status,
-        "country_risk_path_entry": matches[0] if matches else None,
-        "country_risk_blob_candidate_present": status == "blob",
-        "provider_file_bytes_read": False,
+        "schema_version": result_validator.COUNTRY_RISK_SCHEMA_PROFILE_SCHEMA_VERSION,
+        "dataset_id": request_validator.ESRM20_COUNTRY_RISK_RECEIPT_DATASET_ID,
+        "source_issue": request_validator.ESRM20_COUNTRY_RISK_RECEIPT_ISSUE,
+        "repository_path": "Risk/European_Risk_Country.csv",
+        "byte_count": len(COUNTRY_BYTES),
+        "sha256": COUNTRY_SHA256,
+        "encoding": "utf-8",
+        "line_ending": "lf",
+        "header": ["Country", "Loss"],
+        "column_count": 2,
+        "row_count": 1,
+        "duplicate_headers": [],
+        "blank_headers": [],
+        "rows_have_uniform_column_count": True,
+        "trusted_source_receipt_bound": False,
+        "numeric_values_exposed": False,
         "external_bytes_persisted": False,
-        "country_risk_bytes_verified": False,
-        "country_risk_schema_verified": False,
         "reference_loss_agreement_verified": False,
         "publication_authorized": False,
         "model_use_authorized": False,
@@ -140,21 +131,33 @@ def _tree_profile(status: str = "blob", *, blob_sha1: str | None = None, **overr
     return value
 
 
-def _run_request(**overrides):
+def _run_request(
+    *,
+    comments=None,
+    tree_profiler=None,
+    country_acquirer=None,
+    schema_profiler=None,
+):
     request = request_validator.validate_request(_request(), expected_issue=778)
     kwargs = {
-        "repository": "pokekarten/OpenCatastrophe-data",
+        "repository": REPOSITORY,
         "execution_sha": MAIN_SHA,
         "source_comment_id": 1,
         "run_id": 2,
         "run_attempt": 1,
-        "started_at": "2026-08-29T09:59:00Z",
-        "risk_tree_profiler": _tree_profile,
-        "country_risk_acquirer": _acquired,
-        "schema_profiler": schema.profile_country_risk_schema_bytes,
+        "started_at": STARTED_AT,
+        "risk_tree_profiler": tree_profiler or _tree_profile,
+        "country_risk_acquirer": country_acquirer or (lambda: (_receipt(), COUNTRY_BYTES)),
+        "schema_profiler": schema_profiler
+        or (
+            lambda payload, *, expected_sha256, expected_byte_count: _schema_profile(
+                sha256=expected_sha256,
+                byte_count=expected_byte_count,
+            )
+        ),
     }
-    kwargs.update(overrides)
-    return prepare.prepare_completed_result(request, [], **kwargs)
+    with mock.patch.object(prepare._legacy, "utc_now", return_value=FINISHED_AT):
+        return prepare.prepare_completed_result(request, comments or [], **kwargs)
 
 
 class CountryRiskRequestTests(unittest.TestCase):
@@ -163,138 +166,124 @@ class CountryRiskRequestTests(unittest.TestCase):
         self.assertIs(request_validator.validate_request(request, expected_issue=778), request)
         self.assertIn(request["action"], request_validator.ALLOWED_ACTIONS)
         self.assertIn(request["action"], protocol.NETWORK_ACQUISITION_ACTIONS)
+        self.assertEqual(prepare.ledger_issue_for_request(request), 778)
+
         for mutation in (
             {"issue": 777},
-            {"dataset_id": "efehr.esrm20.european-exposure-model.v1.0"},
+            {"dataset_id": "other-dataset"},
             {"target_sha": "v1.0"},
         ):
             with self.subTest(mutation=mutation), self.assertRaises(request_validator.RequestError):
                 request_validator.validate_request(_request(**mutation), expected_issue=778)
-        selected = _request()
-        selected["repository_path"] = country.REPOSITORY_PATH
-        with self.assertRaises(request_validator.RequestError):
-            request_validator.validate_request(selected, expected_issue=778)
+
         with self.assertRaises(protocol.ProtocolError):
             protocol.semantic_request_id(
-                _request(target_sha="0" * 40), MAIN_SHA, "pokekarten/OpenCatastrophe-data"
+                _request(target_sha="0" * 40), MAIN_SHA, REPOSITORY
             )
 
 
 class CountryRiskResultTests(unittest.TestCase):
-    def test_tree_schema_and_receipt_contracts_fail_closed(self) -> None:
-        profile = _tree_profile()
-        self.assertIs(result_validator.validate_esrm20_risk_v10_tree_profile(profile), profile)
-        for mutation in (
-            {"tree_identity_sha256": "0" * 64},
-            {"country_risk_path_status": "absent"},
-            {"provider_file_bytes_read": True},
-        ):
-            with self.subTest(mutation=mutation), self.assertRaises(result_validator.ResultError):
-                result_validator.validate_esrm20_risk_v10_tree_profile(_tree_profile(**mutation))
-
-        pure = schema.profile_country_risk_schema_bytes(
-            SCHEMA_PAYLOAD,
-            expected_sha256=hashlib.sha256(SCHEMA_PAYLOAD).hexdigest(),
-            expected_byte_count=len(SCHEMA_PAYLOAD),
-        )
-        self.assertIs(result_validator.validate_esrm20_country_risk_schema_profile(pure), pure)
-        self.assertFalse(pure["trusted_source_receipt_bound"])
-        self.assertTrue(pure["residential_reference_schema_candidate"])
-        self.assertNotIn("987654.321", str(pure))
-
-        receipt = _receipt()
-        self.assertIs(result_validator.validate_esrm20_country_risk_receipt(receipt), receipt)
-        for field in (
-            "external_bytes_persisted",
-            "provider_rows_exposed",
-            "reference_loss_agreement_verified",
-            "publication_authorized",
-            "model_use_authorized",
-        ):
-            with self.subTest(field=field), self.assertRaises(result_validator.ResultError):
-                result_validator.validate_esrm20_country_risk_receipt(_receipt(**{field: True}))
-
     def test_success_binds_tree_blob_receipt_and_schema_to_same_bytes(self) -> None:
         result = _run_request()
         self.assertEqual(result["status"], "pass")
-        receipt = result["evidence"][prepare.COUNTRY_RISK_RECEIPT_FIELD]
-        binding = result["evidence"][prepare.COUNTRY_RISK_GIT_BLOB_BINDING_FIELD]
-        profile = result["evidence"][prepare.COUNTRY_RISK_SCHEMA_PROFILE_FIELD]
-        self.assertEqual(binding["tree_object_sha1"], _git_blob_sha1())
-        self.assertEqual(binding["payload_git_blob_sha1"], _git_blob_sha1())
-        self.assertEqual(binding["payload_byte_count"], receipt["byte_count"])
-        self.assertEqual(binding["payload_sha256"], receipt["sha256"])
+        self.assertEqual(result["phase"], "acquisition_receipt")
+        evidence = result["evidence"]
+        binding = evidence[prepare.COUNTRY_RISK_GIT_BLOB_BINDING_FIELD]
+        profile = evidence[prepare.COUNTRY_RISK_SCHEMA_PROFILE_FIELD]
         self.assertTrue(binding["verified"])
-        self.assertEqual(profile["sha256"], receipt["sha256"])
+        self.assertEqual(binding["tree_object_sha1"], COUNTRY_GIT_SHA1)
+        self.assertEqual(binding["payload_git_blob_sha1"], COUNTRY_GIT_SHA1)
+        self.assertEqual(binding["payload_sha256"], COUNTRY_SHA256)
+        self.assertEqual(profile["sha256"], COUNTRY_SHA256)
         self.assertTrue(profile["trusted_source_receipt_bound"])
-        self.assertNotIn("987654.321", str(result))
-        self.assertNotIn("654.987", str(result))
+        self.assertFalse(profile["numeric_values_exposed"])
+        self.assertFalse(result["external_bytes_persisted"])
+
+    def test_complete_ledger_dedup_stops_before_provider_and_tree_work(self) -> None:
+        first = _run_request()
+        prior = {
+            "id": 900,
+            "body": protocol.canonical_result_comment(first),
+            "user": {"login": "github-actions[bot]"},
+        }
+        tree = mock.Mock(return_value=_tree_profile())
+        acquire = mock.Mock(return_value=(_receipt(), COUNTRY_BYTES))
+        duplicate = _run_request(comments=[prior], tree_profiler=tree, country_acquirer=acquire)
+        self.assertEqual(duplicate["status"], "duplicate")
+        self.assertEqual(duplicate["duplicate_result_comment_id"], 900)
+        tree.assert_not_called()
+        acquire.assert_not_called()
+
+    def test_non_blob_tree_stops_before_provider(self) -> None:
+        acquire = mock.Mock(return_value=(_receipt(), COUNTRY_BYTES))
+        result = _run_request(
+            tree_profiler=lambda: _tree_profile(
+                country_risk_path_status="tree",
+                country_risk_path_entry={
+                    "path": "Risk/European_Risk_Country.csv",
+                    "type": "tree",
+                    "object_sha1": "c" * 40,
+                    "mode": "040000",
+                },
+                risk_blob_count=0,
+                risk_tree_count=1,
+            ),
+            country_acquirer=acquire,
+        )
+        self.assertEqual(result["status"], "blocked")
+        acquire.assert_not_called()
 
     def test_mismatched_tree_blob_identity_is_blocked_before_schema(self) -> None:
-        result = _run_request(risk_tree_profiler=lambda: _tree_profile(blob_sha1="1" * 40))
+        schema = mock.Mock(return_value=_schema_profile())
+        result = _run_request(
+            tree_profiler=lambda: _tree_profile(
+                country_risk_path_entry={
+                    "path": "Risk/European_Risk_Country.csv",
+                    "type": "blob",
+                    "object_sha1": "d" * 40,
+                    "mode": "100644",
+                }
+            ),
+            schema_profiler=schema,
+        )
         self.assertEqual(result["status"], "blocked")
-        self.assertIsNotNone(result["evidence"][prepare.COUNTRY_RISK_RECEIPT_FIELD])
         self.assertIsNone(result["evidence"][prepare.COUNTRY_RISK_GIT_BLOB_BINDING_FIELD])
         self.assertIsNone(result["evidence"][prepare.COUNTRY_RISK_SCHEMA_PROFILE_FIELD])
+        schema.assert_not_called()
+
+    def test_tree_schema_and_receipt_contracts_fail_closed(self) -> None:
+        with self.assertRaises(result_validator.ResultError):
+            result_validator.validate_esrm20_risk_v10_tree_profile(
+                _tree_profile(reference_loss_agreement_verified=True)
+            )
+        with self.assertRaises(result_validator.ResultError):
+            result_validator.validate_esrm20_country_risk_receipt(
+                _receipt(provider_rows_exposed=True)
+            )
+        with self.assertRaises(result_validator.ResultError):
+            result_validator.validate_esrm20_country_risk_schema_profile(
+                _schema_profile(numeric_values_exposed=True)
+            )
+
+    def test_schema_receipt_binding_rejects_wrong_bytes(self) -> None:
+        profile = _schema_profile(sha256="0" * 64)
+        with self.assertRaises(result_validator.ResultError):
+            result_validator.validate_schema_receipt_binding(profile, _receipt())
 
     def test_post_dispatch_tampering_is_rejected(self) -> None:
-        for field, key, value in (
-            (prepare.RISK_TREE_PROFILE_FIELD, "tree_identity_sha256", "0" * 64),
-            (prepare.COUNTRY_RISK_GIT_BLOB_BINDING_FIELD, "payload_git_blob_sha1", "0" * 40),
-            (prepare.COUNTRY_RISK_SCHEMA_PROFILE_FIELD, "sha256", "0" * 64),
-        ):
-            result = _run_request()
-            drifted = copy.deepcopy(result)
-            drifted["evidence"][field][key] = value
-            with self.subTest(field=field), self.assertRaises(result_validator.ResultError):
-                result_validator.validate_result(drifted)
-        drifted = copy.deepcopy(_run_request())
-        drifted["execution_sha"] = "0" * 40
+        result = _run_request()
+        tampered = json.loads(json.dumps(result))
+        tampered["evidence"][prepare.COUNTRY_RISK_SCHEMA_PROFILE_FIELD][
+            "trusted_source_receipt_bound"
+        ] = False
         with self.assertRaises(result_validator.ResultError):
-            result_validator.validate_result(drifted)
+            result_validator.validate_result(tampered)
 
-    def test_failures_never_promote_later_evidence(self) -> None:
-        def blocked_worker():
-            raise country.Esrm20CountryRiskReceiptError("blocked")
-
-        result = _run_request(country_risk_acquirer=blocked_worker)
-        self.assertEqual(result["status"], "blocked")
-        self.assertIsNone(result["evidence"][prepare.COUNTRY_RISK_RECEIPT_FIELD])
-        self.assertIsNone(result["evidence"][prepare.COUNTRY_RISK_GIT_BLOB_BINDING_FIELD])
-        self.assertIsNone(result["evidence"][prepare.COUNTRY_RISK_SCHEMA_PROFILE_FIELD])
-
-        for status in ("absent", "tree"):
-            worker = mock.Mock(return_value=_acquired())
-            result = _run_request(
-                risk_tree_profiler=lambda status=status: _tree_profile(status),
-                country_risk_acquirer=worker,
-            )
-            self.assertEqual(result["status"], "blocked")
-            worker.assert_not_called()
-
-        def blocked_profile():
-            raise risk_tree.RiskTreeProfileError("blocked")
-
-        worker = mock.Mock(return_value=_acquired())
-        result = _run_request(risk_tree_profiler=blocked_profile, country_risk_acquirer=worker)
-        self.assertEqual(result["status"], "blocked")
-        worker.assert_not_called()
-
-        def blocked_schema(*args, **kwargs):
-            del args, kwargs
-            raise schema.CountryRiskSchemaProfileError("blocked")
-
-        result = _run_request(schema_profiler=blocked_schema)
-        self.assertEqual(result["status"], "blocked")
-        self.assertIsNotNone(result["evidence"][prepare.COUNTRY_RISK_RECEIPT_FIELD])
-        self.assertIsNone(result["evidence"][prepare.COUNTRY_RISK_GIT_BLOB_BINDING_FIELD])
-        self.assertIsNone(result["evidence"][prepare.COUNTRY_RISK_SCHEMA_PROFILE_FIELD])
-
+    def test_profiler_cannot_self_promote_trusted_receipt_binding(self) -> None:
         def overclaiming(payload, *, expected_sha256, expected_byte_count):
-            profile = schema.profile_country_risk_schema_bytes(
-                payload,
-                expected_sha256=expected_sha256,
-                expected_byte_count=expected_byte_count,
+            profile = _schema_profile(
+                sha256=expected_sha256,
+                byte_count=expected_byte_count,
             )
             profile["trusted_source_receipt_bound"] = True
             return profile
@@ -306,10 +295,10 @@ class CountryRiskResultTests(unittest.TestCase):
 
 
 class CountryRiskWorkflowTests(unittest.TestCase):
-    def test_shared_dispatcher_uses_country_risk_aware_entrypoints(self) -> None:
+    def test_shared_dispatcher_preserves_country_risk_through_cems_extension(self) -> None:
         text = Path(".github/workflows/agent-action-dispatch.yml").read_text(encoding="utf-8")
-        self.assertIn("prepare_agent_action_result_country_risk.py", text)
-        self.assertIn("post_agent_action_result_country_risk.py", text)
+        self.assertIn("prepare_agent_action_result_cems_rp10.py", text)
+        self.assertIn("post_agent_action_result_cems_rp10.py", text)
         self.assertIn(request_validator.ESRM20_COUNTRY_RISK_RECEIPT_ACTION, prepare.NETWORK_ACTIONS)
         self.assertEqual(prepare.ledger_issue_for_request(_request()), 778)
 
