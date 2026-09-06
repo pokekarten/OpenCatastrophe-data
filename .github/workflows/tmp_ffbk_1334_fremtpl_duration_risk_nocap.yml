@@ -1,0 +1,92 @@
+name: TEMP FFBK 1334 freMTPL2 duration-risk no-cap
+
+on:
+  push:
+    branches:
+      - tmp/ffbk-1334-fremtpl-duration-risk-nocap-20260906
+
+permissions:
+  contents: read
+
+jobs:
+  target:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout exact temporary runner head
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install frozen scientific stack
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy==2.2.3 pandas==2.2.3 scipy==1.15.2 scikit-learn==1.8.0
+
+      - name: Record environment and exact scientific bytes
+        run: |
+          python --version
+          python - <<'PY'
+          import numpy, pandas, scipy, sklearn
+          print('numpy', numpy.__version__)
+          print('pandas', pandas.__version__)
+          print('scipy', scipy.__version__)
+          print('sklearn', sklearn.__version__)
+          PY
+          sha256sum tmp/ffbk-1334/underwriting_fremtpl_duration_risk_meanclass.py | tee scientific_sha256.txt
+          python -m pip freeze | sort > pip-freeze.txt
+
+      - name: Run synthetic contract check
+        run: |
+          python tmp/ffbk-1334/underwriting_fremtpl_duration_risk_meanclass.py --check > synthetic_check.json
+          python - <<'PY'
+          import json
+          d=json.load(open('synthetic_check.json'))
+          assert d['pass'] is True
+          assert d['outer_seeds'] == [2681590927,4015335633,287572447]
+          assert 'logExposure' not in d['m3a_features']
+          assert 'logExposure' in d['m3b_features']
+          print('SYNTHETIC_CONTRACT_OK')
+          PY
+
+      - name: Run declared no-count-cap sensitivity
+        run: |
+          python tmp/ffbk-1334/underwriting_fremtpl_duration_risk_meanclass.py --no-count-cap --output target_nocap.json > target_stdout.json
+          cmp target_nocap.json target_stdout.json
+          sha256sum target_nocap.json synthetic_check.json pip-freeze.txt >> scientific_sha256.txt
+
+      - name: Validate no-cap receipt shape
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('target_nocap.json'))
+          assert d['question_sha256'] == '9fd5d48fef5528d1112401df64e8c74b881a413f0d92ac518d2a14786d312ed8'
+          assert d['outer_seeds'] == [2681590927,4015335633,287572447]
+          assert d['target'] == 'freMTPL2freq.ClaimNb'
+          assert d['data']['cap_claimnb'] is False
+          assert d['openml']['data_id'] == 41214
+          assert d['openml']['version'] == 1
+          assert d['openml']['md5_checksum'] == 'f8875568bf0ca622929105197e2db613'
+          assert len(d['results']) == 3
+          for r in d['results']:
+              assert set(r['scores']) == {'M0','M1','M2','M3a','M3b'}
+              assert 'logExposure' not in r['hgb_feature_receipt']['m3a_features']
+              assert 'logExposure' in r['hgb_feature_receipt']['m3b_features']
+              assert r['m2_nesting']['crossfit_folds'] == 5
+          print('NOCAP_RECEIPT_SHAPE_OK')
+          PY
+
+      - name: Upload bounded no-cap receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-1334-fremtpl-duration-risk-nocap-receipt
+          path: |
+            target_nocap.json
+            synthetic_check.json
+            scientific_sha256.txt
+            pip-freeze.txt
+          if-no-files-found: warn
