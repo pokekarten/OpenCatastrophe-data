@@ -1,0 +1,41 @@
+name: FFBK LGPIF temporal persistence research run
+
+on:
+  push:
+    branches:
+      - research/ffbk-lgpif-temporal-run-20260906-sol56-a1
+
+permissions:
+  contents: read
+
+jobs:
+  run-benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact runner branch
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.13
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.13"
+      - name: Install frozen numerical dependencies
+        run: python -m pip install --disable-pip-version-check numpy==2.3.5 scipy==1.17.0
+      - name: Verify frozen executable identity
+        run: |
+          test "$(git hash-object research-runners/ffbk/lgpif_temporal_tournament.py)" = "44802c89b181513ee5094f3375cfbefb8ccd6393"
+          python research-runners/ffbk/lgpif_temporal_tournament.py --self-check
+          python - <<'PY'
+          import numpy, scipy, sys
+          print('python', sys.version)
+          print('numpy', numpy.__version__)
+          print('scipy', scipy.__version__)
+          PY
+      - name: Execute frozen empirical benchmark
+        run: |
+          python research-runners/ffbk/lgpif_temporal_tournament.py --output lgpif-temporal-result.json
+          sha256sum lgpif-temporal-result.json
+          cat lgpif-temporal-result.json
