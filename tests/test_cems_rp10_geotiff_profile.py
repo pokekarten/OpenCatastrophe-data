@@ -83,6 +83,47 @@ class CemsRp10GeoTiffProfileTests(unittest.TestCase):
         for forbidden in ("values", "pixels", "data", "array", "statistics"):
             self.assertNotIn(forbidden, profile)
 
+    def test_path_replacement_after_verification_cannot_redirect_reader(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path, byte_count, sha256 = self._fixture(directory)
+            replacement = Path(directory) / "replacement.tif"
+            with rasterio.open(
+                replacement,
+                "w",
+                driver="GTiff",
+                width=1,
+                height=1,
+                count=1,
+                dtype="uint8",
+                crs="EPSG:3857",
+                transform=from_origin(0.0, 1.0, 1.0, 1.0),
+            ) as dataset:
+                dataset.write(np.array([[7]], dtype="uint8"), 1)
+
+            original_verify = mod._verify_file_identity
+
+            def verify_then_replace(*args, **kwargs):
+                verified = original_verify(*args, **kwargs)
+                replacement.replace(path)
+                return verified
+
+            with mock.patch.object(
+                mod,
+                "_verify_file_identity",
+                side_effect=verify_then_replace,
+            ):
+                profile = mod._profile_bound_geotiff(
+                    path,
+                    expected_byte_count=byte_count,
+                    expected_sha256=sha256,
+                )
+
+        self.assertEqual(profile["receipt_byte_count"], byte_count)
+        self.assertEqual(profile["receipt_sha256"], sha256)
+        self.assertEqual(profile["width"], 3)
+        self.assertEqual(profile["height"], 2)
+        self.assertEqual(profile["crs"]["epsg"], 4326)
+
     def test_public_profile_is_frozen_to_trusted_main_receipt(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path, _byte_count, _sha256 = self._fixture(directory)
