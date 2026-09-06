@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - tmp/ffbk-freclaimset2motor-annual-reserving-20260906
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
