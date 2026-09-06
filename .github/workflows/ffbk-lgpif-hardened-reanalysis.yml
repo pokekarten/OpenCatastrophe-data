@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - research/ffbk-lgpif-hardened-reanalysis-20260907-sol56-a2
+    paths:
+      - research-runners/ffbk/lgpif_hardened_reanalysis.READY
 
 permissions:
   contents: read
@@ -27,9 +29,9 @@ jobs:
       - name: Install frozen numerical dependencies
         run: python -m pip install --disable-pip-version-check numpy==2.3.5 scipy==1.17.0
 
-      - name: Decode and verify hardened executor
+      - name: Assemble and verify hardened executor
         run: |
-          gzip -dc research-runners/ffbk/lgpif_hardened_reanalysis.py.gz > /tmp/lgpif_hardened_reanalysis.py
+          cat research-runners/ffbk/lgpif_hardened_reanalysis.py.part-* > /tmp/lgpif_hardened_reanalysis.py
           test "$(sha256sum /tmp/lgpif_hardened_reanalysis.py | awk '{print $1}')" = "a5aa7df1c228e4bc671810f84307e61c436737b68e4fcef8ab3ebfd6fbdff55c"
           python /tmp/lgpif_hardened_reanalysis.py --self-check
           python - <<'PY'
@@ -45,10 +47,8 @@ jobs:
           sha256sum lgpif-hardened-reanalysis.json
           python - <<'PY'
           import json
-          p='lgpif-hardened-reanalysis.json'
-          d=json.load(open(p))
-          r=d['result']
-          s=r['primary_2010']
+          d=json.load(open('lgpif-hardened-reanalysis.json'))
+          r=d['result']; s=r['primary_2010']
           print('RECEIPT_STATUS', d['receipt_status'])
           print('SOURCE_BLOB', d['source']['git_blob_sha1'])
           print('ROWS', d['source']['rows'])
@@ -59,7 +59,8 @@ jobs:
           print('CONTRASTS', json.dumps(s['contrasts'], sort_keys=True))
           print('REVERSALS', json.dumps(r['sensitivity_order_reversals'], sort_keys=True))
           print('GAP_CLOCK', json.dumps({k:v for k,v in r['gap_clock_sensitivity'].items() if k in ('status','GAP_CLOCK_MIXED','calendar_delta','index_delta','clock_semantics_differ_policy_fraction_at_calendar_delta','selected_scheme_weights_differ_policy_fraction')}, sort_keys=True))
-          print('TRAINING_BOOTSTRAP', json.dumps(r['training_selection_refit_uncertainty'], sort_keys=True))
+          t=r['training_selection_refit_uncertainty']
+          print('TRAINING_BOOTSTRAP_SUMMARY', json.dumps({k:t.get(k) for k in ('attempted','successful','failure_count','success_rate','status','mean_family_selection_counts','delta_selection_counts','M1_boundary_hit_count_after_final_fit','M2_boundary_hit_count_after_final_fit','r_M1','r_M2','D10','D21','D32')}, sort_keys=True))
           print('OBS_WARNING', r['outcome_blind_observation_diagnostic']['continuation']['TENURE_ADJUSTED_HISTORY_WARNING'])
           print('PRIMARY_BOUNDARY_BLOCK', r['interpretation']['primary_dispersion_boundary_block'])
           print('OVERALL', r['status'])
