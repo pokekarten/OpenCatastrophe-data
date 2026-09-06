@@ -1,0 +1,41 @@
+name: tmp-ffbk-duration-exact-wrapper
+
+on:
+  push:
+    branches:
+      - tmp/ffbk-duration-meanclass-20260906
+    paths:
+      - .github/workflows/tmp-ffbk-duration-exact-wrapper.yml
+
+permissions:
+  contents: read
+
+jobs:
+  run-exact-wrapper:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.13'
+      - name: Install frozen research environment
+        run: python -m pip install --disable-pip-version-check 'numpy==2.3.5' 'pandas==2.2.3' 'scipy==1.17.0' 'scikit-learn==1.8.0'
+      - name: Fetch and bind exact FFBK scientific script
+        run: |
+          curl -fsSL -o /tmp/ffbk_duration_exact.py 'https://raw.githubusercontent.com/pokekarten/FFBK/d0f48eab4eae20eefb8724843da26e1f5356b8a2/scripts/underwriting_fremtpl_duration_risk_meanclass.py'
+          test "$(git hash-object /tmp/ffbk_duration_exact.py)" = '5d3b29b8e927f9a5cf962c38f462fd817abb442d'
+          sha256sum /tmp/ffbk_duration_exact.py
+      - name: Run exact primary target
+        run: python /tmp/ffbk_duration_exact.py --output exact_primary.json
+      - name: Run exact no-count-cap sensitivity
+        run: python /tmp/ffbk_duration_exact.py --no-count-cap --output exact_no_count_cap.json
+      - name: Upload exact receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-duration-exact-wrapper-results
+          path: |
+            exact_primary.json
+            exact_no_count_cap.json
+          if-no-files-found: warn
