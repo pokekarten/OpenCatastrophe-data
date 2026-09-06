@@ -1,0 +1,45 @@
+name: Recover FFBK 1334 receipt
+
+on:
+  push:
+    paths:
+      - '.github/workflows/tmp_ffbk_1334_recover_receipt.yml'
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp/ffbk-1334-fremtpl-duration-risk-run-20260906
+          fetch-depth: 0
+
+      - name: Download exact prior receipt artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ffbk-1334-fremtpl-duration-risk-receipt
+          path: recovered/ffbk-1334
+          github-token: ${{ github.token }}
+          run-id: 34026909404
+
+      - name: Inventory recovered receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          find recovered/ffbk-1334 -type f -print -exec sha256sum {} \; | tee recovered/ffbk-1334/RECOVERED_SHA256.txt
+
+      - name: Commit durable receipt bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p receipts/ffbk-1334
+          cp -a recovered/ffbk-1334/. receipts/ffbk-1334/
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add receipts/ffbk-1334
+          git commit -m 'research-run: preserve FFBK 1334 receipt bytes'
+          git push origin HEAD:tmp/ffbk-1334-fremtpl-duration-risk-run-20260906
