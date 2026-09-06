@@ -104,7 +104,11 @@ jobs:
       - name: Verify CEMS GeoTIFF dependency consistency
         run: python -m pip check
       - name: Exercise receipt-bound GeoTIFF metadata profile with synthetic bytes
-        run: python -m unittest tests.test_cems_rp10_geotiff_profile -v
+        run: >-
+          python -m unittest
+          tests.test_cems_rp10_geotiff_profile
+          tests.test_cems_rp10_trusted_profile
+          -v
 
   reuse:
     name: REUSE 6.2.0

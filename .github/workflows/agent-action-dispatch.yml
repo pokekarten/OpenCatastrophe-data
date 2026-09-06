@@ -46,17 +46,23 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.14"
-      # The CEMS-aware layer delegates every pre-existing action through the
-      # reviewed country-risk-aware dispatcher and adds only the frozen Issue
-      # #793 RP10 receipt worker. No URL/path/return-period/provider/parser comes
-      # from the comment; all authorized actions remain in this one serialized lane.
-      # Compatibility remains explicit: prepare_agent_action_result_country_risk.py
-      # is the reviewed inner prepare layer, while post_agent_action_result_country_risk.py
-      # documents the country-risk publisher contract. The CEMS publisher reuses the
-      # same base implementation, python scripts/post_agent_action_result.py, with the
-      # CEMS-aware validator; legacy acquisition_receipt still uses the repository-owned frozen DWD worker.
-      # CEMS wrapper filenames retained for audit: prepare_agent_action_result_cems_rp10.py
-      # and post_agent_action_result_cems_rp10.py; runtime invocation uses package modules.
+      - name: Install reviewed CEMS GeoTIFF profile dependency set
+        run: python -m pip install --disable-pip-version-check --no-input -r requirements-cems-geotiff-profile.txt
+      - name: Verify CEMS GeoTIFF profile dependency consistency
+        run: python -m pip check
+      # The CEMS-profile-aware layer delegates every pre-existing action through
+      # the reviewed CEMS receipt dispatcher and adds only the frozen Issue #802
+      # receipt-bound GeoTIFF metadata profile. Compatibility parents remain
+      # prepare_agent_action_result_cems_rp10.py and post_agent_action_result_cems_rp10.py;
+      # the CEMS receipt layer in turn retains prepare_agent_action_result_country_risk.py
+      # for pre-existing country-risk actions, while profile result validation extends
+      # the CEMS -> country-risk validator chain used by post_agent_action_result_country_risk.py.
+      # This layer only wraps their reviewed request/result/ledger behavior.
+      # Compatibility therefore still covers the repository-owned frozen DWD worker;
+      # the profile-aware publisher delegates to the reviewed
+      # `python scripts/post_agent_action_result.py` implementation for publication.
+      # No URL/path/return-period/provider/reader/parser comes from the comment;
+      # all authorized actions remain in this one serialized owner-only lane.
       - name: Prepare bounded action result
         id: prepare-result
         env:
@@ -69,7 +75,7 @@ jobs:
           OC_ACTION_GITHUB_TOKEN: ${{ github.token }}
         run: |
           EXECUTION_SHA="$(git rev-parse HEAD)"
-          RESULT_JSON="$(python -m scripts.prepare_agent_action_result_cems_rp10 \
+          RESULT_JSON="$(python -m scripts.prepare_agent_action_result_cems_rp10_profile \
             --comment-body-env OC_ACTION_COMMENT_BODY \
             --expected-issue "$OC_ACTION_TRIGGER_ISSUE" \
             --source-comment-id "$OC_ACTION_SOURCE_COMMENT_ID" \
@@ -108,7 +114,7 @@ jobs:
           OC_ACTION_REPOSITORY: ${{ github.repository }}
           OC_ACTION_GITHUB_TOKEN: ${{ github.token }}
         run: >-
-          python -m scripts.post_agent_action_result_cems_rp10
+          python -m scripts.post_agent_action_result_cems_rp10_profile
           --result-env OC_ACTION_RESULT_JSON
           --repository "$OC_ACTION_REPOSITORY"
           --expected-issue "$OC_ACTION_TRIGGER_ISSUE"
