@@ -1,0 +1,140 @@
+        n = len(policies)
+        return {
+            "eligible_policies": n,
+            "contiguous_count": contiguous,
+            "contiguous_fraction": float(contiguous / n) if n else None,
+            "has_missing_calendar_year_count": differing,
+            "has_missing_calendar_year_fraction": float(differing / n) if n else None,
+            "max_internal_gap_distribution": dict(sorted(Counter(gaps).items())),
+            "disappear_and_reappear_before_forecast_count": reentry,
+        }
+
+    def observation_diagnostic(self) -> dict:
+        # Outcome-blind with respect to 2010 Freq/BCClaim: use only row presence in 2010.
+        broad = []
+        for p in self.policy_ids.tolist():
+            idx = self.rows_by_policy[int(p)]
+            pre = idx[self.d["Year"][idx] <= 2009]
+            years = sorted(set(int(y) for y in self.d["Year"][pre]))
+            if len(years) < 2:
+                continue
+            snap_year = max(years)
+            snap = pre[self.d["Year"][pre] == snap_year]
+            if len(snap) != 1:
+                raise ProtocolError("snapshot uniqueness failure")
+            s = int(snap[0])
+            prior_count = int(np.sum(self.d["Freq"][pre]))
+            band = "0" if prior_count == 0 else ("1" if prior_count == 1 else "2+")
+            observed2010 = int(np.any(self.d["Year"][idx] == 2010))
+            first, last = min(years), max(years)
+            internal_gap = int(any(y not in years for y in range(first, last + 1)))
+            broad.append({
+                "PolicyNum": int(p), "Observed2010": observed2010, "PriorCount": prior_count,
+                "HistoryBand": band, "HistoryYears": len(years), "LastObservedYear": last,
+                "Observed2009": int(2009 in years), "HasInternalGap": internal_gap,
+                "SnapshotYear": snap_year, "EntityType": int(self.d["EntityType"][s]),
+                "AlarmCredit": int(self.d["AlarmCredit"][s]), "Fire5": int(self.d["Fire5"][s]),
+            })
+
+        def rates(rows, keys: Sequence[str]) -> list[dict]:
+            groups: dict[tuple, list[int]] = defaultdict(list)
+            for r in rows:
+                groups[tuple(r[k] for k in keys)].append(int(r["Observed2010"]))
+            out = []
+            for key, vals in sorted(groups.items(), key=lambda kv: tuple(str(x) for x in kv[0])):
+                rec = {k: v for k, v in zip(keys, key)}
+                rec.update({"n": len(vals), "observed2010_count": int(sum(vals)), "rate": float(np.mean(vals))})
+                out.append(rec)
+            return out
+
+        broad_summary = {
+            "n": len(broad), "observed2010_rate": float(np.mean([r["Observed2010"] for r in broad])) if broad else None,
+            "by_HistoryYears": rates(broad, ["HistoryYears"]),
+            "by_LastObservedYear": rates(broad, ["LastObservedYear"]),
+            "by_Observed2009": rates(broad, ["Observed2009"]),
+            "by_HasInternalGap": rates(broad, ["HasInternalGap"]),
+            "HistoryBand_x_Observed2010": rates(broad, ["HistoryBand"]),
+            "by_EntityType_snapshot": rates(broad, ["EntityType"]),
+            "by_AlarmCredit_snapshot": rates(broad, ["AlarmCredit"]),
+            "by_Fire5_snapshot": rates(broad, ["Fire5"]),
+        }
+        continuation = [r for r in broad if r["Observed2009"] == 1]
+        by_hb = rates(continuation, ["HistoryYears", "HistoryBand"])
+        directions: list[dict] = []
+        order = {"0": 0, "1": 1, "2+": 2}
+        for hy in sorted(set(r["HistoryYears"] for r in continuation)):
+            cells = [r for r in by_hb if r["HistoryYears"] == hy]
+            cells.sort(key=lambda r: order[r["HistoryBand"]])
+            if len(cells) < 2:
+                continue
+            vals = [r["rate"] for r in cells]
+            nondec = all(a <= b for a, b in zip(vals, vals[1:]))
+            noninc = all(a >= b for a, b in zip(vals, vals[1:]))
+            if all(a == vals[0] for a in vals):
+                direction = "FLAT"
+            elif nondec:
+                direction = "UP"
+            elif noninc:
+                direction = "DOWN"
+            else:
+                direction = "NONMONOTONE"
+            directions.append({"HistoryYears": int(hy), "direction": direction, "cells": cells})
+        informative = directions
+        if len(informative) == 0:
+            warning = "NOT_DISCRIMINATING"
+        elif len(informative) == 1:
+            warning = "INCONCLUSIVE_SINGLE_STRATUM"
+        else:
+            dirs = [x["direction"] for x in informative]
+            warning = "TRUE" if all(d == dirs[0] and d in {"UP", "DOWN"} for d in dirs) else "NOT_STABLE_DIRECTIONAL_WARNING"
+        equal_exposure = (
+            len(set(r["HistoryYears"] for r in broad)) == 1
+            and all(r["Observed2009"] == 1 for r in broad)
+            and all(r["HasInternalGap"] == 0 for r in broad)
+        ) if broad else False
+        return {
+            "broad": broad_summary,
+            "continuation": {
+                "n": len(continuation),
+                "observed2010_rate": float(np.mean([r["Observed2010"] for r in continuation])) if continuation else None,
+                "HistoryBand_within_HistoryYears": by_hb,
+                "HasInternalGap_x_HistoryBand": rates(continuation, ["HasInternalGap", "HistoryBand"]),
+                "by_EntityType_snapshot": rates(continuation, ["EntityType"]),
+                "by_AlarmCredit_snapshot": rates(continuation, ["AlarmCredit"]),
+                "by_Fire5_snapshot": rates(continuation, ["Fire5"]),
+                "informative_directions": informative,
+                "TENURE_ADJUSTED_HISTORY_WARNING": warning,
+                "equal_history_exposure_note": "NOT_DISCRIMINATING_EQUAL_HISTORY_EXPOSURE" if equal_exposure else None,
+            },
+            "policy_snapshots": broad,
+        }
+
+    def row_weights_from_policy_multiplicity(self, multiplicity: np.ndarray) -> np.ndarray:
+        if multiplicity.shape != (len(self.pre2010_policy_ids),):
+            raise ProtocolError("multiplicity shape mismatch")
+        w = np.zeros(self.n, dtype=float)
+        valid = self.row_pre2010_policy_pos >= 0
+        w[valid] = multiplicity[self.row_pre2010_policy_pos[valid]]
+        return w
+
+    def _fit_pipeline(
+        self,
+        row_weights: np.ndarray | None = None,
+        policy_weights: np.ndarray | None = None,
+        include_noclaim: bool = False,
+        forced_family: str | None = None,
+        clock: str = "calendar",
+    ) -> dict:
+        selection = self.select_mean(row_weights, include_noclaim) if forced_family is None else None
+        family = forced_family or selection["selected"]
+        val_rows = self.policy_target_rows(self.validation_policies, 2009)
+        required_val_rows = val_rows if row_weights is None else val_rows[row_weights[val_rows] > 0]
+        if forced_family is None:
+            dev_fit = selection["candidates"][family]["fit"]
+        else:
+            dev_fit = self.fit_poisson(family, [2006, 2007, 2008], required_val_rows, row_weights, include_noclaim)
+        # Complete development estimation: M1 and M2 each estimate their own r; only M2 r enters M3.
+        m1_dev = self.fit_m1_r(dev_fit, [2006, 2007, 2008], row_weights)
+        m2_dev = self.fit_m2_r(dev_fit, [2006, 2007, 2008], policy_weights)
+        delta_sel = self.select_delta(dev_fit, m2_dev.r, row_weights, clock=clock)
+        final_rows = self.policy_target_rows(self.final_policies, 2010)
