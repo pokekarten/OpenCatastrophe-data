@@ -1,0 +1,140 @@
+        alarm = _parse_int_exact(raw["AlarmCredit"], "AlarmCredit", line_number)
+        premium = _parse_float(raw["Premium"], "Premium", line_number)
+        deduct = _parse_float(raw["Deduct"], "Deduct", line_number)
+        bccov = _parse_float(raw["BCcov"], "BCcov", line_number)
+        bcclaim = _parse_float(raw["BCClaim"], "BCClaim", line_number)
+        if freq < 0:
+            raise ProtocolError(f"row {line_number}: negative Freq")
+        if deduct <= 0 or bccov <= 0:
+            raise ProtocolError(f"row {line_number}: Deduct and BCcov must be >0")
+        if fire5 not in (0, 1):
+            raise ProtocolError(f"row {line_number}: Fire5 must be binary")
+        if noclaim not in (0, 1):
+            raise ProtocolError(f"row {line_number}: NoClaimCredit must be binary")
+        rows.append({
+            "PolicyNum": policy, "Year": year, "Premium": premium,
+            "Deduct": deduct, "BCcov": bccov, "Freq": freq,
+            "Fire5": fire5, "NoClaimCredit": noclaim,
+            "EntityType": entity, "AlarmCredit": alarm, "BCClaim": bcclaim,
+        })
+
+    if not rows:
+        raise ProtocolError("empty source")
+    years = sorted({int(r["Year"]) for r in rows})
+    if years != [2006, 2007, 2008, 2009, 2010]:
+        raise ProtocolError(f"unexpected year support: {years}")
+
+    out: dict[str, np.ndarray] = {}
+    for col in EXPECTED_COLUMNS:
+        if col in {"PolicyNum", "Year", "Freq", "Fire5", "NoClaimCredit", "EntityType", "AlarmCredit"}:
+            out[col] = np.asarray([int(r[col]) for r in rows], dtype=np.int64)
+        else:
+            out[col] = np.asarray([float(r[col]) for r in rows], dtype=np.float64)
+    order = np.lexsort((out["Year"], out["PolicyNum"]))
+    for k in out:
+        out[k] = out[k][order]
+    return out
+
+
+class Tournament:
+    def __init__(self, data: dict[str, np.ndarray]):
+        self.d = data
+        self.n = len(data["Year"])
+        self.policy_ids = np.unique(data["PolicyNum"])
+        self.policy_to_pos = {int(p): i for i, p in enumerate(self.policy_ids.tolist())}
+        self.row_policy_pos = np.asarray([self.policy_to_pos[int(p)] for p in data["PolicyNum"]], dtype=np.int64)
+        self.rows_by_policy: dict[int, np.ndarray] = {}
+        for p in self.policy_ids:
+            self.rows_by_policy[int(p)] = np.flatnonzero(data["PolicyNum"] == p)
+        self.pre2010_policy_ids = np.asarray(sorted({int(p) for p in data["PolicyNum"][data["Year"] <= 2009]}), dtype=np.int64)
+        self.pre2010_pos = {int(p): i for i, p in enumerate(self.pre2010_policy_ids.tolist())}
+        self.row_pre2010_policy_pos = np.full(self.n, -1, dtype=np.int64)
+        for i, p in enumerate(data["PolicyNum"]):
+            if int(p) in self.pre2010_pos:
+                self.row_pre2010_policy_pos[i] = self.pre2010_pos[int(p)]
+        self.validation_policies = self._eligible_policies(2009, range(2006, 2009), min_history_years=2)
+        self.final_policies = self._eligible_policies(2010, range(2006, 2010), min_history_years=2)
+        self.balanced_policies = self._balanced_policies()
+        if not self.validation_policies or not self.final_policies:
+            raise ProtocolError("empty validation or final population")
+
+    def _eligible_policies(self, target_year: int, history_years: Iterable[int], min_history_years: int) -> list[int]:
+        allowed = set(history_years)
+        result: list[int] = []
+        for p in self.policy_ids:
+            idx = self.rows_by_policy[int(p)]
+            yrs = self.d["Year"][idx]
+            if np.sum(yrs == target_year) != 1:
+                continue
+            prior = {int(y) for y in yrs if int(y) in allowed}
+            if len(prior) >= min_history_years:
+                result.append(int(p))
+        return result
+
+    def _balanced_policies(self) -> list[int]:
+        required = {2006, 2007, 2008, 2009, 2010}
+        out = []
+        for p in self.policy_ids:
+            yrs = {int(y) for y in self.d["Year"][self.rows_by_policy[int(p)]]}
+            if required.issubset(yrs):
+                out.append(int(p))
+        return out
+
+    def policy_target_rows(self, policies: Sequence[int], year: int) -> np.ndarray:
+        pos = []
+        pset = set(int(p) for p in policies)
+        for i, (p, y) in enumerate(zip(self.d["PolicyNum"], self.d["Year"])):
+            if int(y) == year and int(p) in pset:
+                pos.append(i)
+        return np.asarray(pos, dtype=np.int64)
+
+    @staticmethod
+    def _sorted_levels(values: np.ndarray) -> tuple[int, ...]:
+        return tuple(int(v) for v in sorted(np.unique(values).tolist()))
+
+    def make_mean_spec(
+        self,
+        family: str,
+        fit_mask: np.ndarray,
+        row_weights: np.ndarray | None = None,
+        include_noclaim: bool = False,
+        required_prediction_rows: np.ndarray | None = None,
+    ) -> MeanSpec:
+        if family not in {"A", "B"}:
+            raise ProtocolError(f"invalid mean family {family}")
+        active = fit_mask.copy()
+        if row_weights is not None:
+            active &= row_weights > 0
+        if not np.any(active):
+            raise ProtocolError("empty mean fit window")
+        entity_levels = self._sorted_levels(self.d["EntityType"][active])
+        alarm_levels = self._sorted_levels(self.d["AlarmCredit"][active])
+        spec = MeanSpec(family, entity_levels, alarm_levels, include_noclaim)
+        if required_prediction_rows is not None:
+            self.validate_levels(spec, required_prediction_rows)
+        return spec
+
+    def validate_levels(self, spec: MeanSpec, row_idx: np.ndarray) -> None:
+        es = set(spec.entity_levels)
+        als = set(spec.alarm_levels)
+        bad_e = sorted(set(int(x) for x in self.d["EntityType"][row_idx]) - es)
+        bad_a = sorted(set(int(x) for x in self.d["AlarmCredit"][row_idx]) - als)
+        if bad_e or bad_a:
+            raise ProtocolError(f"unseen category; entity={bad_e}, alarm={bad_a}")
+
+    def x(self, row_idx: np.ndarray, spec: MeanSpec) -> np.ndarray:
+        self.validate_levels(spec, row_idx)
+        cols = [
+            np.ones(len(row_idx)),
+            np.log(self.d["BCcov"][row_idx] / 1_000_000.0),
+            np.log(self.d["Deduct"][row_idx]),
+            self.d["Fire5"][row_idx].astype(float),
+        ]
+        for level in spec.entity_levels[1:]:
+            cols.append((self.d["EntityType"][row_idx] == level).astype(float))
+        for level in spec.alarm_levels[1:]:
+            cols.append((self.d["AlarmCredit"][row_idx] == level).astype(float))
+        if spec.family == "B":
+            cols.append((self.d["Year"][row_idx] - 2007).astype(float))
+        if spec.include_noclaim:
+            cols.append(self.d["NoClaimCredit"][row_idx].astype(float))
