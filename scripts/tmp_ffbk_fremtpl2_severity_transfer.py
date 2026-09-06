@@ -1,240 +1,249 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+from collections import Counter
 import hashlib
 import json
-import urllib.request
 from pathlib import Path
+import struct
+import tempfile
+import urllib.request
 
 import numpy as np
 import pandas as pd
-from scipy.stats import gamma as gamma_dist
-from scipy.stats import invgauss
-from sklearn.compose import ColumnTransformer
+import rdata
 from sklearn.datasets import fetch_openml
-from sklearn.linear_model import TweedieRegressor
-from sklearn.metrics import mean_tweedie_deviance
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
+CAS_SHA = "227fb56b8734bdb7c0327a41180e01d2ddaeaf26"
 FREQ_ID = 41214
 SEV_ID = 41215
-SEEDS = (26090601, 26090617, 26090643)
-ALPHAS = (0.0, 0.01, 0.1, 1.0, 10.0)
-CAT = ("VehBrand", "VehGas", "Region", "Area")
-NUM = ("VehPower", "VehAge", "DrivAge", "BonusMalus", "LogDensity")
-MAX_UNMATCHED_SHARE = 0.005
+EXPECTED_CURRENT_SHA256 = {
+    "frequency": "82c8598513d9fa78226b6c7d271a9940eca4b8083e9e32320a75d377bdfe15a3",
+    "severity": "78e6e5016ae046603b37e88ff8ad8ca327f5d59f827c1f75d140388de09b14b3",
+}
 OUT = Path("tmp_ffbk_severity_transfer_result.json")
+
+
+def fetch_bytes(url: str) -> tuple[bytes, str]:
+    req = urllib.request.Request(url, headers={"User-Agent": "ffbk-research-reconciliation/1"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        data = r.read()
+    return data, hashlib.sha256(data).hexdigest()
 
 
 def openml_meta(data_id: int) -> dict:
     url = f"https://www.openml.org/api/v1/json/data/{data_id}"
-    with urllib.request.urlopen(url, timeout=60) as r:
+    req = urllib.request.Request(url, headers={"User-Agent": "ffbk-research-reconciliation/1"})
+    with urllib.request.urlopen(req, timeout=60) as r:
         d = json.loads(r.read().decode())["data_set_description"]
+    keys = ("id", "name", "version", "md5_checksum", "status", "upload_date", "processing_date", "file_id", "url", "parquet_url")
+    return {k: d.get(k) for k in keys}
+
+
+def read_current_rda(kind: str) -> tuple[pd.DataFrame, dict]:
+    object_name = "freMTPL2freq" if kind == "frequency" else "freMTPL2sev"
+    url = f"https://raw.githubusercontent.com/dutangc/CASdatasets/{CAS_SHA}/data/{object_name}.rda"
+    raw, sha256 = fetch_bytes(url)
+    with tempfile.NamedTemporaryFile(suffix=".rda") as f:
+        f.write(raw)
+        f.flush()
+        obj = rdata.read_rda(f.name)
+    if object_name not in obj:
+        raise RuntimeError(f"{object_name} absent from current RData: {list(obj)}")
+    df = pd.DataFrame(obj[object_name]).copy()
+    return df, {
+        "repository": "dutangc/CASdatasets",
+        "commit": CAS_SHA,
+        "path": f"data/{object_name}.rda",
+        "bytes": len(raw),
+        "sha256": sha256,
+        "independent_manifest_expected_sha256": EXPECTED_CURRENT_SHA256[kind],
+        "independent_manifest_hash_match": sha256 == EXPECTED_CURRENT_SHA256[kind],
+    }
+
+
+def normalize_severity(df: pd.DataFrame) -> pd.DataFrame:
+    out = df[["IDpol", "ClaimAmount"]].copy()
+    out["IDpol"] = pd.to_numeric(out["IDpol"], errors="raise").astype("int64")
+    out["ClaimAmount"] = pd.to_numeric(out["ClaimAmount"], errors="raise").astype("float64")
+    return out
+
+
+def normalize_frequency(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    out["IDpol"] = pd.to_numeric(out["IDpol"], errors="raise").astype("int64")
+    for col in out.columns:
+        if col == "IDpol":
+            continue
+        if col in {"VehBrand", "VehGas", "Area", "Region"}:
+            out[col] = out[col].astype(str).str.strip("'")
+        else:
+            out[col] = pd.to_numeric(out[col], errors="raise")
+    return out
+
+
+def float_bits(x: float) -> int:
+    return int(np.asarray([x], dtype=np.float64).view(np.uint64)[0])
+
+
+def bits_float(bits: int) -> float:
+    return float(np.asarray([bits], dtype=np.uint64).view(np.float64)[0])
+
+
+def claim_counter(df: pd.DataFrame) -> Counter:
+    return Counter((int(i), float_bits(float(a))) for i, a in zip(df["IDpol"], df["ClaimAmount"]))
+
+
+def counter_digest(counter: Counter) -> str:
+    h = hashlib.sha256()
+    for (idpol, amount_bits), n in sorted(counter.items()):
+        h.update(struct.pack(">qQI", idpol, amount_bits, n))
+    return h.hexdigest()
+
+
+def counter_examples(counter: Counter, limit: int = 20) -> list[dict]:
+    out = []
+    for (idpol, amount_bits), n in sorted(counter.items())[:limit]:
+        out.append({"IDpol": idpol, "ClaimAmount": bits_float(amount_bits), "float64_bits_hex": f"{amount_bits:016x}", "multiplicity": int(n)})
+    return out
+
+
+def compare_frequency(openml_freq: pd.DataFrame, current_freq: pd.DataFrame) -> dict:
+    o = normalize_frequency(openml_freq)
+    c = normalize_frequency(current_freq)
+    oid = set(o["IDpol"])
+    cid = set(c["IDpol"])
+    openml_only = sorted(oid - cid)
+    current_only = sorted(cid - oid)
+    common = sorted(oid & cid)
+
+    oi = o.set_index("IDpol").loc[common].sort_index()
+    ci = c.set_index("IDpol").loc[common].sort_index()
+    shared_cols = [x for x in oi.columns if x in ci.columns]
+    mismatch = {}
+    for col in shared_cols:
+        a = oi[col]
+        b = ci[col]
+        if pd.api.types.is_numeric_dtype(a) and pd.api.types.is_numeric_dtype(b):
+            av = a.to_numpy()
+            bv = b.to_numpy()
+            same = (av == bv) | (pd.isna(av) & pd.isna(bv))
+        else:
+            av = a.astype(str).to_numpy()
+            bv = b.astype(str).to_numpy()
+            same = av == bv
+        mismatch[col] = int((~same).sum())
+
     return {
-        "data_id": int(d["id"]),
-        "name": d.get("name"),
-        "version": int(d["version"]) if d.get("version") else None,
-        "md5_checksum": d.get("md5_checksum"),
-        "status": d.get("status"),
+        "openml_rows": int(len(o)),
+        "current_rows": int(len(c)),
+        "openml_unique_ids": int(len(oid)),
+        "current_unique_ids": int(len(cid)),
+        "openml_only_id_count": len(openml_only),
+        "current_only_id_count": len(current_only),
+        "openml_only_ids": openml_only,
+        "current_only_ids": current_only,
+        "common_id_count": len(common),
+        "common_row_value_mismatches_by_column": mismatch,
     }
-
-
-def load_claim_level() -> tuple[pd.DataFrame, dict]:
-    freq = fetch_openml(data_id=FREQ_ID, as_frame=True).data.copy()
-    sev = fetch_openml(data_id=SEV_ID, as_frame=True).data.copy()
-    freq["IDpol"] = freq["IDpol"].astype("int64")
-    sev["IDpol"] = sev["IDpol"].astype("int64")
-    sev["ClaimAmount"] = sev["ClaimAmount"].astype(float)
-    for c in freq.columns:
-        if freq[c].dtype == object or isinstance(freq[c].dtype, pd.CategoricalDtype):
-            freq[c] = freq[c].astype(str).str.strip("'")
-
-    sev_pos = sev[sev["ClaimAmount"] > 0].copy()
-    unmatched = ~sev_pos["IDpol"].isin(freq["IDpol"])
-    unmatched_rows = int(unmatched.sum())
-    unmatched_row_share = float(unmatched.mean()) if len(sev_pos) else 0.0
-    unmatched_amount = float(sev_pos.loc[unmatched, "ClaimAmount"].sum())
-    total_amount = float(sev_pos["ClaimAmount"].sum())
-    unmatched_amount_share = unmatched_amount / total_amount if total_amount > 0 else 0.0
-    reconciliation = {
-        "positive_severity_rows_raw": int(len(sev_pos)),
-        "positive_severity_rows_without_policy": unmatched_rows,
-        "unmatched_row_share": unmatched_row_share,
-        "unmatched_claim_amount": unmatched_amount,
-        "unmatched_claim_amount_share": unmatched_amount_share,
-        "rule_frozen_after_pre_model_join_failure": "exclude unmatched rows only if both row and amount share <= 0.5%; otherwise stop",
-    }
-    if unmatched_row_share > MAX_UNMATCHED_SHARE or unmatched_amount_share > MAX_UNMATCHED_SHARE:
-        raise RuntimeError(f"unmatched severity materiality gate failed: {reconciliation}")
-
-    sev_use = sev_pos.loc[~unmatched].copy()
-    keep = ["IDpol", "VehPower", "VehAge", "DrivAge", "BonusMalus", "VehBrand", "VehGas", "Area", "Density", "Region"]
-    d = sev_use.merge(freq[keep], on="IDpol", how="left", validate="many_to_one")
-    if d["Region"].isna().any():
-        raise RuntimeError("matched severity rows lost rating covariates")
-    d["LogDensity"] = np.log(d["Density"].astype(float))
-    return d, {
-        "openml": {"frequency": openml_meta(FREQ_ID), "severity": openml_meta(SEV_ID)},
-        "reconciliation": reconciliation,
-    }
-
-
-def make_pipe(power: float, alpha: float) -> Pipeline:
-    prep = ColumnTransformer(
-        [
-            ("cat", OneHotEncoder(handle_unknown="ignore", drop="first"), list(CAT)),
-            ("num", StandardScaler(), list(NUM)),
-        ]
-    )
-    reg = TweedieRegressor(power=power, alpha=alpha, link="log", max_iter=1000, tol=1e-8)
-    return Pipeline([("prep", prep), ("reg", reg)])
-
-
-def select_alpha(train: pd.DataFrame, valid: pd.DataFrame, power: float) -> tuple[float, list[dict]]:
-    rows = []
-    Xtr, ytr = train[list(CAT + NUM)], train["ClaimAmount"].to_numpy(float)
-    Xva, yva = valid[list(CAT + NUM)], valid["ClaimAmount"].to_numpy(float)
-    for alpha in ALPHAS:
-        m = make_pipe(power, alpha)
-        m.fit(Xtr, ytr)
-        p = m.predict(Xva)
-        rows.append({"alpha": alpha, "validation_family_deviance": float(mean_tweedie_deviance(yva, p, power=power))})
-    best = min(rows, key=lambda r: (r["validation_family_deviance"], r["alpha"]))
-    return float(best["alpha"]), rows
-
-
-def pearson_phi(y: np.ndarray, mu: np.ndarray, power: float) -> float:
-    phi = float(np.mean((y - mu) ** 2 / np.maximum(mu, 1e-12) ** power))
-    return max(phi, 1e-12)
-
-
-def logloss(y: np.ndarray, mu: np.ndarray, phi: float, power: float) -> np.ndarray:
-    if power == 2.0:
-        ll = gamma_dist.logpdf(y, a=1.0 / phi, scale=phi * mu)
-    elif power == 3.0:
-        ll = invgauss.logpdf(y, mu=phi * mu, scale=1.0 / phi)
-    else:
-        raise ValueError(power)
-    if not np.isfinite(ll).all():
-        raise RuntimeError("non-finite held-out log density")
-    return -ll
-
-
-def quantile(mu: np.ndarray, phi: float, power: float, q: float) -> np.ndarray:
-    if power == 2.0:
-        return gamma_dist.ppf(q, a=1.0 / phi, scale=phi * mu)
-    return invgauss.ppf(q, mu=phi * mu, scale=1.0 / phi)
-
-
-def policy_bootstrap_delta(ids: np.ndarray, loss_gamma: np.ndarray, loss_ig: np.ndarray, seed: int, reps: int = 500) -> dict:
-    tmp = pd.DataFrame({"IDpol": ids, "g": loss_gamma, "ig": loss_ig})
-    grp = tmp.groupby("IDpol", sort=False).agg(g=("g", "sum"), ig=("ig", "sum"), n=("g", "size"))
-    g = grp["g"].to_numpy(float)
-    ig = grp["ig"].to_numpy(float)
-    n = grp["n"].to_numpy(float)
-    rng = np.random.default_rng(seed)
-    vals = np.empty(reps)
-    m = len(grp)
-    for b in range(reps):
-        idx = rng.integers(0, m, size=m)
-        vals[b] = (ig[idx].sum() - g[idx].sum()) / n[idx].sum()
-    point = float((ig.sum() - g.sum()) / n.sum())
-    return {
-        "delta_nll_ig_minus_gamma": point,
-        "ci95": [float(np.quantile(vals, 0.025)), float(np.quantile(vals, 0.975))],
-        "bootstrap_reps": reps,
-        "bootstrap_unit": "policy_IDpol",
-    }
-
-
-def fit_family(dev_train: pd.DataFrame, inner_valid: pd.DataFrame, dev_all: pd.DataFrame, test: pd.DataFrame, power: float) -> tuple[dict, np.ndarray]:
-    alpha, alpha_rows = select_alpha(dev_train, inner_valid, power)
-    Xdev = dev_all[list(CAT + NUM)]
-    ydev = dev_all["ClaimAmount"].to_numpy(float)
-    Xtest = test[list(CAT + NUM)]
-    ytest = test["ClaimAmount"].to_numpy(float)
-    model = make_pipe(power, alpha)
-    model.fit(Xdev, ydev)
-    mu_dev = model.predict(Xdev)
-    mu_test = model.predict(Xtest)
-    phi = pearson_phi(ydev, mu_dev, power)
-    losses = logloss(ytest, mu_test, phi, power)
-    q95 = quantile(mu_test, phi, power, 0.95)
-    q99 = quantile(mu_test, phi, power, 0.99)
-    return {
-        "power": power,
-        "alpha": alpha,
-        "alpha_selection": alpha_rows,
-        "pearson_phi_train": phi,
-        "mean_nll_test": float(np.mean(losses)),
-        "actual_over_predicted_mean": float(np.sum(ytest) / np.sum(mu_test)),
-        "gamma_deviance_test": float(mean_tweedie_deviance(ytest, mu_test, power=2)),
-        "inverse_gaussian_deviance_test": float(mean_tweedie_deviance(ytest, mu_test, power=3)),
-        "q95_exceedance_rate_test": float(np.mean(ytest > q95)),
-        "q99_exceedance_rate_test": float(np.mean(ytest > q99)),
-        "predicted_mean_test": float(np.mean(mu_test)),
-        "observed_mean_test": float(np.mean(ytest)),
-    }, losses
 
 
 def main() -> None:
-    d, provenance = load_claim_level()
-    source_summary = {
-        **provenance,
-        "claim_rows_positive_used": int(len(d)),
-        "unique_claim_policy_ids": int(d["IDpol"].nunique()),
-        "policies_with_multiple_positive_claim_rows": int((d.groupby("IDpol").size() > 1).sum()),
-        "claim_amount_summary_used": {
-            "mean": float(d["ClaimAmount"].mean()),
-            "p95": float(d["ClaimAmount"].quantile(0.95)),
-            "p99": float(d["ClaimAmount"].quantile(0.99)),
-            "max": float(d["ClaimAmount"].max()),
-        },
-    }
-    results = []
-    all_ids = np.array(sorted(d["IDpol"].unique()))
-    for seed in SEEDS:
-        dev_ids, test_ids = train_test_split(all_ids, test_size=0.20, random_state=seed)
-        tr_ids, va_ids = train_test_split(dev_ids, test_size=0.25, random_state=seed + 1)
-        dev_train = d[d["IDpol"].isin(tr_ids)].copy()
-        inner_valid = d[d["IDpol"].isin(va_ids)].copy()
-        dev_all = d[d["IDpol"].isin(dev_ids)].copy()
-        test = d[d["IDpol"].isin(test_ids)].copy()
-        g, lg = fit_family(dev_train, inner_valid, dev_all, test, 2.0)
-        ig, lig = fit_family(dev_train, inner_valid, dev_all, test, 3.0)
-        boot = policy_bootstrap_delta(test["IDpol"].to_numpy("int64"), lg, lig, seed + 777)
-        results.append({
-            "seed": seed,
-            "split_counts": {
-                "development_policy_ids": int(len(dev_ids)),
-                "test_policy_ids": int(len(test_ids)),
-                "development_claim_rows": int(len(dev_all)),
-                "test_claim_rows": int(len(test)),
-            },
-            "gamma": g,
-            "inverse_gaussian": ig,
-            "paired_logscore": boot,
-        })
+    current_freq_raw, current_freq_src = read_current_rda("frequency")
+    current_sev_raw, current_sev_src = read_current_rda("severity")
+
+    openml_freq_raw = fetch_openml(data_id=FREQ_ID, as_frame=True).data.copy()
+    openml_sev_raw = fetch_openml(data_id=SEV_ID, as_frame=True).data.copy()
+
+    current_sev = normalize_severity(current_sev_raw)
+    openml_sev = normalize_severity(openml_sev_raw)
+    openml_freq = normalize_frequency(openml_freq_raw)
+    current_freq = normalize_frequency(current_freq_raw)
+
+    openml_positive = openml_sev.loc[openml_sev["ClaimAmount"] > 0].copy()
+    legacy_unmatched_mask = ~openml_positive["IDpol"].isin(openml_freq["IDpol"])
+    openml_matched = openml_positive.loc[~legacy_unmatched_mask].copy()
+    current_unmatched_mask = ~current_sev["IDpol"].isin(current_freq["IDpol"])
+
+    current_counter = claim_counter(current_sev)
+    matched_counter = claim_counter(openml_matched)
+    current_minus_matched = current_counter - matched_counter
+    matched_minus_current = matched_counter - current_counter
+
+    frequency_compare = compare_frequency(openml_freq, current_freq)
+    removed_freq_ids = set(frequency_compare["openml_only_ids"])
+    openml_claim_rows_on_removed_freq_ids = openml_positive[openml_positive["IDpol"].isin(removed_freq_ids)]
+
+    legacy_orphan = openml_positive.loc[legacy_unmatched_mask]
+    legacy_orphan_amount = float(legacy_orphan["ClaimAmount"].sum())
+    legacy_total_amount = float(openml_positive["ClaimAmount"].sum())
+
+    exact_equal = current_counter == matched_counter
+    verdict = "SUPPORTED" if exact_equal else "FALSIFIED"
+
     payload = {
-        "protocol": {
-            "seeds": list(SEEDS),
-            "alphas": list(ALPHAS),
-            "outer_split": "80/20 unique policy IDpol",
-            "inner_split": "75/25 of development unique policy IDs",
-            "primary_target": "raw positive claim-level ClaimAmount; no 200k cap",
-            "features": {"categorical_one_hot_drop_first": list(CAT), "numeric_standardized": list(NUM), "LogDensity": "log(Density)"},
-            "families": {"gamma": 2, "inverse_gaussian": 3},
-            "pre_fit_reconciliation_materiality_gate": MAX_UNMATCHED_SHARE,
+        "research_question": (
+            "Is current CASdatasets freMTPL2sev exactly the OpenML 41215 positive-claim subset "
+            "whose IDpol is present in OpenML 41214, or did the publisher revision change additional claim rows/amounts?"
+        ),
+        "hypothesis_tested": {
+            "H0": "current CASdatasets severity multiset == OpenML positive severity restricted only by policy linkage",
+            "H1": "current CASdatasets changes additional claim rows and/or ClaimAmount values beyond policy-linkage restriction",
         },
-        "source": source_summary,
-        "results": results,
+        "result": {
+            "verdict_for_H0": verdict,
+            "bitwise_float64_claim_multiset_equal": exact_equal,
+            "current_minus_openml_matched_count": int(sum(current_minus_matched.values())),
+            "openml_matched_minus_current_count": int(sum(matched_minus_current.values())),
+            "current_minus_openml_matched_examples": counter_examples(current_minus_matched),
+            "openml_matched_minus_current_examples": counter_examples(matched_minus_current),
+            "current_claim_multiset_sha256": counter_digest(current_counter),
+            "openml_matched_claim_multiset_sha256": counter_digest(matched_counter),
+        },
+        "sources": {
+            "current_casdatasets": {
+                "frequency": current_freq_src,
+                "severity": current_sev_src,
+            },
+            "openml": {
+                "frequency": openml_meta(FREQ_ID),
+                "severity": openml_meta(SEV_ID),
+            },
+        },
+        "population_reconciliation": {
+            "openml_frequency_rows": int(len(openml_freq)),
+            "openml_positive_severity_rows": int(len(openml_positive)),
+            "openml_positive_severity_rows_without_openml_policy": int(legacy_unmatched_mask.sum()),
+            "openml_matched_positive_severity_rows": int(len(openml_matched)),
+            "legacy_orphan_claim_amount": legacy_orphan_amount,
+            "legacy_orphan_row_share": float(legacy_unmatched_mask.mean()),
+            "legacy_orphan_amount_share": legacy_orphan_amount / legacy_total_amount,
+            "current_frequency_rows": int(len(current_freq)),
+            "current_severity_rows": int(len(current_sev)),
+            "current_severity_rows_without_current_policy": int(current_unmatched_mask.sum()),
+            "current_positive_severity_rows": int((current_sev["ClaimAmount"] > 0).sum()),
+        },
+        "frequency_version_diff": {
+            **frequency_compare,
+            "openml_positive_claim_rows_on_frequency_ids_removed_in_current_casdatasets": int(len(openml_claim_rows_on_removed_freq_ids)),
+            "openml_positive_claim_amount_on_frequency_ids_removed_in_current_casdatasets": float(openml_claim_rows_on_removed_freq_ids["ClaimAmount"].sum()),
+        },
+        "method": {
+            "claim_identity": "exact multiset of (IDpol, IEEE-754 float64 ClaimAmount bits), preserving duplicates",
+            "policy_linkage_rule": "OpenML positive severity row retained iff IDpol occurs in OpenML frequency table; no ClaimAmount threshold beyond >0 and no model output used",
+            "frequency_identity": "IDpol set comparison plus exact value mismatch counts on common IDs after quote stripping for categorical columns",
+            "model_fit_executed": False,
+        },
+        "consumer_boundary": (
+            "claim-level severity conditional on rating covariates. This test does not authorize exclusion "
+            "for an all-legacy-claims consumer and does not rank Gamma versus Inverse Gaussian."
+        ),
     }
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
-    payload["result_payload_sha256_without_receipt"] = hashlib.sha256(canonical).hexdigest()
-    OUT.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps(payload, indent=2, sort_keys=True))
+
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    payload["receipt_sha256_without_receipt_field"] = hashlib.sha256(canonical).hexdigest()
+    OUT.write_text(json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8")
+    print(json.dumps(payload, indent=2, sort_keys=True, allow_nan=False))
 
 
 if __name__ == "__main__":
