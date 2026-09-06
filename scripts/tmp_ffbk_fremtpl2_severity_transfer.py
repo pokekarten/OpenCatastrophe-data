@@ -22,6 +22,7 @@ EXPECTED_CURRENT_SHA256 = {
     "severity": "78e6e5016ae046603b37e88ff8ad8ca327f5d59f827c1f75d140388de09b14b3",
 }
 OUT = Path("tmp_ffbk_severity_transfer_result.json")
+SEVERITY_FEATURES = ("VehPower", "VehAge", "DrivAge", "BonusMalus", "VehBrand", "VehGas", "Area", "Density", "Region")
 
 
 def fetch_bytes(url: str) -> tuple[bytes, str]:
@@ -108,7 +109,49 @@ def counter_examples(counter: Counter, limit: int = 20) -> list[dict]:
     return out
 
 
-def compare_frequency(openml_freq: pd.DataFrame, current_freq: pd.DataFrame) -> dict:
+def mismatch_mask(a: pd.Series, b: pd.Series) -> np.ndarray:
+    if pd.api.types.is_numeric_dtype(a) and pd.api.types.is_numeric_dtype(b):
+        av = a.to_numpy()
+        bv = b.to_numpy()
+        return ~((av == bv) | (pd.isna(av) & pd.isna(bv)))
+    av = a.astype(str).to_numpy()
+    bv = b.astype(str).to_numpy()
+    return av != bv
+
+
+def region_characterization(oi: pd.DataFrame, ci: pd.DataFrame, claim_policy_ids: set[int]) -> dict:
+    pairs = pd.DataFrame({"openml_region": oi["Region"].astype(str), "current_region": ci["Region"].astype(str)}, index=oi.index)
+    pair_counts = (
+        pairs.value_counts(sort=True)
+        .rename("n")
+        .reset_index()
+        .sort_values(["openml_region", "current_region"])
+    )
+    open_to_current = pairs.groupby("openml_region")["current_region"].nunique()
+    current_to_open = pairs.groupby("current_region")["openml_region"].nunique()
+    claim_pairs = pairs.loc[pairs.index.isin(claim_policy_ids)]
+    claim_pair_counts = (
+        claim_pairs.value_counts(sort=True)
+        .rename("n")
+        .reset_index()
+        .sort_values(["openml_region", "current_region"])
+    )
+    return {
+        "openml_unique_regions": sorted(pairs["openml_region"].unique().tolist()),
+        "current_unique_regions": sorted(pairs["current_region"].unique().tolist()),
+        "distinct_region_pairs": int(len(pair_counts)),
+        "openml_to_current_is_function": bool((open_to_current == 1).all()),
+        "current_to_open_is_function": bool((current_to_open == 1).all()),
+        "bijective_relabel_only": bool((open_to_current == 1).all() and (current_to_open == 1).all() and len(open_to_current) == len(current_to_open)),
+        "openml_regions_with_multiple_current_values": {str(k): int(v) for k, v in open_to_current[open_to_current > 1].items()},
+        "current_regions_with_multiple_openml_values": {str(k): int(v) for k, v in current_to_open[current_to_open > 1].items()},
+        "pair_counts": pair_counts.to_dict(orient="records"),
+        "claim_policy_distinct_region_pairs": int(len(claim_pair_counts)),
+        "claim_policy_pair_counts": claim_pair_counts.to_dict(orient="records"),
+    }
+
+
+def compare_frequency(openml_freq: pd.DataFrame, current_freq: pd.DataFrame, claim_policy_ids: set[int]) -> dict:
     o = normalize_frequency(openml_freq)
     c = normalize_frequency(current_freq)
     oid = set(o["IDpol"])
@@ -121,18 +164,22 @@ def compare_frequency(openml_freq: pd.DataFrame, current_freq: pd.DataFrame) -> 
     ci = c.set_index("IDpol").loc[common].sort_index()
     shared_cols = [x for x in oi.columns if x in ci.columns]
     mismatch = {}
+    claim_mismatch = {}
+    claim_idx = oi.index.isin(claim_policy_ids)
+    numeric_delta = {}
     for col in shared_cols:
-        a = oi[col]
-        b = ci[col]
-        if pd.api.types.is_numeric_dtype(a) and pd.api.types.is_numeric_dtype(b):
-            av = a.to_numpy()
-            bv = b.to_numpy()
-            same = (av == bv) | (pd.isna(av) & pd.isna(bv))
-        else:
-            av = a.astype(str).to_numpy()
-            bv = b.astype(str).to_numpy()
-            same = av == bv
-        mismatch[col] = int((~same).sum())
+        mask = mismatch_mask(oi[col], ci[col])
+        mismatch[col] = int(mask.sum())
+        claim_mismatch[col] = int(mask[claim_idx].sum())
+        if pd.api.types.is_numeric_dtype(oi[col]) and pd.api.types.is_numeric_dtype(ci[col]) and mask.any():
+            delta = ci.loc[mask, col].astype(float).to_numpy() - oi.loc[mask, col].astype(float).to_numpy()
+            numeric_delta[col] = {
+                "min_current_minus_openml": float(np.min(delta)),
+                "max_current_minus_openml": float(np.max(delta)),
+                "mean_current_minus_openml": float(np.mean(delta)),
+                "distinct_delta_count": int(len(np.unique(delta))),
+                "first_deltas": [float(x) for x in np.unique(delta)[:20]],
+            }
 
     return {
         "openml_rows": int(len(o)),
@@ -145,6 +192,11 @@ def compare_frequency(openml_freq: pd.DataFrame, current_freq: pd.DataFrame) -> 
         "current_only_ids": current_only,
         "common_id_count": len(common),
         "common_row_value_mismatches_by_column": mismatch,
+        "claim_policy_common_id_count": int(claim_idx.sum()),
+        "claim_policy_value_mismatches_by_column": claim_mismatch,
+        "severity_protocol_feature_mismatches_on_claim_policies": {k: claim_mismatch[k] for k in SEVERITY_FEATURES},
+        "numeric_delta_characterization": numeric_delta,
+        "region_characterization": region_characterization(oi, ci, claim_policy_ids),
     }
 
 
@@ -170,7 +222,8 @@ def main() -> None:
     current_minus_matched = current_counter - matched_counter
     matched_minus_current = matched_counter - current_counter
 
-    frequency_compare = compare_frequency(openml_freq, current_freq)
+    matched_claim_policy_ids = set(int(x) for x in openml_matched["IDpol"].unique())
+    frequency_compare = compare_frequency(openml_freq, current_freq, matched_claim_policy_ids)
     removed_freq_ids = set(frequency_compare["openml_only_ids"])
     openml_claim_rows_on_removed_freq_ids = openml_positive[openml_positive["IDpol"].isin(removed_freq_ids)]
 
@@ -184,14 +237,16 @@ def main() -> None:
     payload = {
         "research_question": (
             "Is current CASdatasets freMTPL2sev exactly the OpenML 41215 positive-claim subset "
-            "whose IDpol is present in OpenML 41214, or did the publisher revision change additional claim rows/amounts?"
+            "whose IDpol is present in OpenML 41214, or did the publisher revision change additional claim rows/amounts; "
+            "and do policy-covariate changes remain relevant to the frozen severity protocol?"
         ),
         "hypothesis_tested": {
-            "H0": "current CASdatasets severity multiset == OpenML positive severity restricted only by policy linkage",
-            "H1": "current CASdatasets changes additional claim rows and/or ClaimAmount values beyond policy-linkage restriction",
+            "H0_claims": "current CASdatasets severity multiset == OpenML positive severity restricted only by policy linkage",
+            "H1_claims": "current CASdatasets changes additional claim rows and/or ClaimAmount values beyond policy-linkage restriction",
+            "H0_covariates": "for matched claim policies, frozen severity-protocol covariates are unchanged or differ only by a lossless categorical relabel",
         },
         "result": {
-            "verdict_for_H0": verdict,
+            "verdict_for_claim_multiset_H0": verdict,
             "bitwise_float64_claim_multiset_equal": exact_equal,
             "current_minus_openml_matched_count": int(sum(current_minus_matched.values())),
             "openml_matched_minus_current_count": int(sum(matched_minus_current.values())),
