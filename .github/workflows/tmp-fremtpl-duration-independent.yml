@@ -28,5 +28,5 @@ jobs:
             numpy==2.3.5 pandas==2.2.3 scipy==1.17.0 scikit-learn==1.8.0 pyarrow==19.0.1
       - name: Execute independent same-lineage tournament
         run: |
-          python tmp_research/independent_fremtpl_duration_meanclass.py
-          sha256sum tmp_research/independent_fremtpl_duration_meanclass.py independent_fremtpl_duration_result.json
+          python tmp_research/run_independent_fremtpl_duration.py
+          sha256sum tmp_research/independent_fremtpl_duration_meanclass.py tmp_research/run_independent_fremtpl_duration.py independent_fremtpl_duration_result.json
