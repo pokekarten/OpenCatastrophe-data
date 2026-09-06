@@ -54,7 +54,10 @@ jobs:
       # the reviewed CEMS receipt dispatcher and adds only the frozen Issue #802
       # receipt-bound GeoTIFF metadata profile. Compatibility parents remain
       # prepare_agent_action_result_cems_rp10.py and post_agent_action_result_cems_rp10.py;
-      # this layer only wraps their reviewed request/result/ledger behavior.
+      # the CEMS receipt layer in turn retains prepare_agent_action_result_country_risk.py
+      # for pre-existing country-risk actions, while profile result validation extends
+      # the CEMS -> country-risk validator chain used by post_agent_action_result_country_risk.py.
+      # This layer only wraps their reviewed request/result/ledger behavior.
       # Compatibility therefore still covers the repository-owned frozen DWD worker;
       # the profile-aware publisher delegates to the reviewed
       # `python scripts/post_agent_action_result.py` implementation for publication.
