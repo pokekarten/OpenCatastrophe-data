@@ -1,0 +1,28 @@
+name: norauto exposure semantics diagnostic
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/norauto_exposure_semantics_diagnostic.py'
+      - '.github/workflows/norauto-exposure-diagnostic.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install numpy==2.3.3 pandas==2.3.2 pyreadr==0.5.3
+      - run: python research_runners/norauto_exposure_semantics_diagnostic.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: norauto-exposure-diagnostic
+          path: norauto_exposure_diagnostic_artifact/diagnostic.json
+          if-no-files-found: error
+          retention-days: 30
