@@ -40,6 +40,12 @@ jobs:
               raise SystemExit(f'OBJECT_COUNT {len(obj)}')
           df = next(iter(obj.values())).reset_index(drop=True)
           df.to_parquet('bemtpl97.parquet', index=False)
+          df.to_csv(
+              'bemtpl97.csv.gz',
+              index=False,
+              float_format='%.17g',
+              compression={'method': 'gzip', 'mtime': 0},
+          )
           receipt = {
               'source_url': url,
               'expected_git_blob_sha1': expected_blob,
@@ -49,6 +55,9 @@ jobs:
               'decoded_rows': len(df),
               'decoded_columns': list(map(str, df.columns)),
               'parquet_sha256': hashlib.sha256(pathlib.Path('bemtpl97.parquet').read_bytes()).hexdigest(),
+              'csv_gz_sha256': hashlib.sha256(pathlib.Path('bemtpl97.csv.gz').read_bytes()).hexdigest(),
+              'csv_float_format': '%.17g',
+              'gzip_mtime': 0,
               'pandas': pd.__version__,
               'pyreadr': getattr(pyreadr, '__version__', 'unknown'),
           }
@@ -60,6 +69,5 @@ jobs:
           name: bemtpl97-exact-materialization
           path: |
             bemtpl97.parquet
+            bemtpl97.csv.gz
             materialization-receipt.json
-
-# trigger: second push after workflow registration
