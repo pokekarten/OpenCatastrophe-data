@@ -1,0 +1,140 @@
+            alt_pipe["final_mean"], alt_pipe["m1_final"].r, alt_pipe["m2_final"].r,
+            alt_pipe["delta"]["selected_delta"], self.final_policies, 2010, clock="calendar",
+        )
+        alt_summary = self.summarize_target(alt_scores, alt_pipe["delta"]["selected_delta"], include_pit=False)
+
+        # Balanced panel uses the already-fitted primary models and selected delta; only population changes.
+        balanced_scores = self.conditional_nlls(
+            primary_pipe["final_mean"], primary_pipe["m1_final"].r, primary_pipe["m2_final"].r,
+            primary_pipe["delta"]["selected_delta"], self.balanced_policies, 2010, clock="calendar",
+        )
+        balanced_summary = self.summarize_target(balanced_scores, primary_pipe["delta"]["selected_delta"], include_pit=False)
+
+        # History-derived rating sensitivity: keep primary mean family, add NoClaimCredit; re-run its pre-2010 fit/delta/refit pipeline.
+        ncc_pipe = self._fit_pipeline(include_noclaim=True, forced_family=selected_family)
+        ncc_scores = self.conditional_nlls(
+            ncc_pipe["final_mean"], ncc_pipe["m1_final"].r, ncc_pipe["m2_final"].r,
+            ncc_pipe["delta"]["selected_delta"], self.final_policies, 2010, clock="calendar",
+        )
+        ncc_summary = self.summarize_target(ncc_scores, ncc_pipe["delta"]["selected_delta"], include_pit=False)
+
+        # Gap-clock sensitivity only if a relevant gap exists in either validation/final eligible population.
+        relevant_gaps = (gap_2009["has_missing_calendar_year_count"] > 0 or gap_2010["has_missing_calendar_year_count"] > 0)
+        if relevant_gaps:
+            # Same mean/M2-r conventions; only the M3 clock and its 2009-selected delta change.
+            index_delta = self.select_delta(primary_pipe["dev_mean"], primary_pipe["m2_dev"].r, None, clock="index")
+            index_scores = self.conditional_nlls(
+                primary_pipe["final_mean"], primary_pipe["m1_final"].r, primary_pipe["m2_final"].r,
+                index_delta["selected_delta"], self.final_policies, 2010, clock="index",
+            )
+            index_summary = self.summarize_target(index_scores, index_delta["selected_delta"], include_pit=False)
+            c = primary_summary["contrasts"]["D32_M3_minus_M2"]
+            i = index_summary["contrasts"]["D32_M3_minus_M2"]
+            def sign(x: float) -> str:
+                return "NEGATIVE" if x < 0 else ("POSITIVE" if x > 0 else "ZERO")
+            gap_mixed = sign(c["mean"]) != sign(i["mean"]) or c["classification"] != i["classification"]
+            gap_sensitivity = {
+                "status": "MIXED / NO_PROMOTION" if gap_mixed else "NO_CLOCK_REVERSAL",
+                "GAP_CLOCK_MIXED": bool(gap_mixed),
+                "calendar_delta": primary_pipe["delta"]["selected_delta"], "index_delta": index_delta["selected_delta"],
+                "calendar_D32": c, "index_D32": i,
+                "index_delta_selection": index_delta,
+                "index_target": index_summary,
+                "clock_semantics_differ_policy_fraction_at_calendar_delta": self._different_clock_fraction(primary_pipe["delta"]["selected_delta"], primary_pipe["delta"]["selected_delta"]),
+                "selected_scheme_weights_differ_policy_fraction": self._different_clock_fraction(primary_pipe["delta"]["selected_delta"], index_delta["selected_delta"]),
+            }
+        else:
+            gap_sensitivity = {"status": "NOT_DISCRIMINATING_NO_GAPS", "GAP_CLOCK_MIXED": False}
+
+        def sgn(summary: dict, key: str) -> int:
+            x = float(summary["contrasts"][key]["mean"])
+            return -1 if x < 0 else (1 if x > 0 else 0)
+        reversals = {
+            "alternate_mean_D21": sgn(primary_summary, "D21_M2_minus_M1") != sgn(alt_summary, "D21_M2_minus_M1"),
+            "alternate_mean_D32": sgn(primary_summary, "D32_M3_minus_M2") != sgn(alt_summary, "D32_M3_minus_M2"),
+            "balanced_D21": sgn(primary_summary, "D21_M2_minus_M1") != sgn(balanced_summary, "D21_M2_minus_M1"),
+            "balanced_D32": sgn(primary_summary, "D32_M3_minus_M2") != sgn(balanced_summary, "D32_M3_minus_M2"),
+            "NoClaimCredit_D21": sgn(primary_summary, "D21_M2_minus_M1") != sgn(ncc_summary, "D21_M2_minus_M1"),
+            "NoClaimCredit_D32": sgn(primary_summary, "D32_M3_minus_M2") != sgn(ncc_summary, "D32_M3_minus_M2"),
+        }
+        any_reversal = any(reversals.values()) or bool(gap_sensitivity.get("GAP_CLOCK_MIXED"))
+
+        train = self.training_bootstrap(self.final_policies) if training_bootstrap else {"status": "SKIPPED_SELF_CHECK"}
+        primary_d21 = primary_summary["contrasts"]["D21_M2_minus_M1"]
+        primary_d32 = primary_summary["contrasts"]["D32_M3_minus_M2"]
+        primary_boundary_block = bool(primary_pipe["m1_final"].boundary_hit or primary_pipe["m2_final"].boundary_hit)
+        overall = "MIXED / NO_PROMOTION" if any_reversal else "NO_PROMOTION"
+        return {
+            "status": overall,
+            "protocol_head": PROTOCOL_HEAD,
+            "populations": {
+                "validation_2009_n": len(self.validation_policies), "final_2010_n": len(self.final_policies),
+                "balanced_2006_2010_n": len(self.balanced_policies),
+            },
+            "outcome_blind_observation_diagnostic": observation,
+            "gap_audit": {"validation_2009": gap_2009, "final_2010": gap_2010},
+            "primary_pipeline": self.pipeline_receipt(primary_pipe),
+            "primary_2010": primary_summary,
+            "alternate_mean_sensitivity": {"pipeline": self.pipeline_receipt(alt_pipe), "target": alt_summary},
+            "balanced_panel_sensitivity": balanced_summary,
+            "NoClaimCredit_sensitivity": {"pipeline": self.pipeline_receipt(ncc_pipe), "target": ncc_summary},
+            "gap_clock_sensitivity": gap_sensitivity,
+            "sensitivity_order_reversals": reversals,
+            "any_required_order_reversal": bool(any_reversal),
+            "training_selection_refit_uncertainty": train,
+            "interpretation": {
+                "D21": primary_d21["classification"],
+                "D32": primary_d32["classification"],
+                "primary_dispersion_boundary_block": primary_boundary_block,
+                "primary_dispersion_boundary_note": "A primary M1/M2 log-r boundary hit blocks substantive dispersion/frailty interpretation even when predictive scores are reported." if primary_boundary_block else None,
+                "evaluation_history": "REUSED_EVALUATION / POST_TARGET_REANALYSIS",
+                "agreement_evidence_note": "Agreement with prior #1394 is robustness/reproducibility evidence only and cannot uplift model-family confidence as independent OOS confirmation; reversal or instability may weaken prior confidence.",
+                "M3_asymmetric_note": "An M3 loss weakens only the frozen common-r discounted-history predictor, not dynamic/state-space families generally.",
+                "mechanism_note": "Predictive history value does not identify latent persistent frailty or ignorable renewal/observation.",
+                "nextgen": "challenger",
+            },
+        }
+
+    def _different_clock_fraction(self, delta_calendar: float, delta_index: float) -> float:
+        differing = 0
+        for p in self.final_policies:
+            idx = self._history_indices(int(p), 2010)
+            yrs = np.sort(self.d["Year"][idx])
+            if len(yrs) == 0:
+                continue
+            lag = 2010 - yrs
+            wc = (lag == 1).astype(float) if delta_calendar == 0 else np.power(delta_calendar, lag - 1, dtype=float)
+            j = np.arange(len(yrs), 0, -1)
+            wi = (j == 1).astype(float) if delta_index == 0 else np.power(delta_index, j - 1, dtype=float)
+            if len(wc) != len(wi) or not np.allclose(wc, wi, atol=0.0, rtol=0.0):
+                differing += 1
+        return float(differing / len(self.final_policies)) if self.final_policies else 0.0
+
+
+def mean_selection_json(selection: dict | None) -> dict | None:
+    if selection is None:
+        return None
+    return {
+        "selected": selection["selected"],
+        "A": {"validation_sum_nll": selection["candidates"]["A"]["validation_sum_nll"]},
+        "B": {"validation_sum_nll": selection["candidates"]["B"]["validation_sum_nll"]},
+    }
+
+
+def synthetic_rows() -> dict[str, np.ndarray]:
+    rows = []
+    # 30 fully observed policies plus 5 with deterministic gaps/re-entry.
+    for p in range(30):
+        for year in range(2006, 2011):
+            freq = int(((p * 3 + year) % 7) == 0) + int(p % 11 == 0)
+            rows.append({
+                "PolicyNum": 1000 + p, "Year": year, "Premium": 1000 + 10 * p,
+                "Deduct": 500.0 + 500.0 * (p % 3), "BCcov": 1_000_000.0 * (1.0 + p / 10.0),
+                "Freq": freq, "Fire5": p % 2, "NoClaimCredit": int(freq == 0),
+                "EntityType": 1 + (p % 3), "AlarmCredit": 1 + (p % 2), "BCClaim": float(freq * 1000),
+            })
+    for p in range(5):
+        for year in (2006, 2008, 2009, 2010):
+            freq = int((p + year) % 4 == 0)
+            rows.append({
+                "PolicyNum": 2000 + p, "Year": year, "Premium": 500 + p,
