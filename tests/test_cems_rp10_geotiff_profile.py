@@ -136,7 +136,7 @@ class CemsRp10GeoTiffProfileTests(unittest.TestCase):
     def test_identity_mismatch_fails_before_raster_reader(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path, byte_count, sha256 = self._fixture(directory)
-            with mock.patch.object(mod.rasterio, "open") as reader:
+            with mock.patch.object(mod.MemoryFile, "open", autospec=True) as reader:
                 with self.assertRaisesRegex(
                     mod.CemsRp10GeoTiffProfileError,
                     "SHA-256.*accepted receipt",
@@ -151,7 +151,7 @@ class CemsRp10GeoTiffProfileTests(unittest.TestCase):
     def test_oversize_identity_fails_while_hashing_before_raster_reader(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path, byte_count, sha256 = self._fixture(directory)
-            with mock.patch.object(mod.rasterio, "open") as reader:
+            with mock.patch.object(mod.MemoryFile, "open", autospec=True) as reader:
                 with self.assertRaisesRegex(
                     mod.CemsRp10GeoTiffProfileError,
                     "exceeds accepted receipt",
