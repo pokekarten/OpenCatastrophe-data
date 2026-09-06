@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
 import urllib.request
 from pathlib import Path
 
@@ -25,6 +24,7 @@ SEEDS = (26090601, 26090617, 26090643)
 ALPHAS = (0.0, 0.01, 0.1, 1.0, 10.0)
 CAT = ("VehBrand", "VehGas", "Region", "Area")
 NUM = ("VehPower", "VehAge", "DrivAge", "BonusMalus", "LogDensity")
+MAX_UNMATCHED_SHARE = 0.005
 OUT = Path("tmp_ffbk_severity_transfer_result.json")
 
 
@@ -50,19 +50,41 @@ def load_claim_level() -> tuple[pd.DataFrame, dict]:
     for c in freq.columns:
         if freq[c].dtype == object or isinstance(freq[c].dtype, pd.CategoricalDtype):
             freq[c] = freq[c].astype(str).str.strip("'")
+
+    sev_pos = sev[sev["ClaimAmount"] > 0].copy()
+    unmatched = ~sev_pos["IDpol"].isin(freq["IDpol"])
+    unmatched_rows = int(unmatched.sum())
+    unmatched_row_share = float(unmatched.mean()) if len(sev_pos) else 0.0
+    unmatched_amount = float(sev_pos.loc[unmatched, "ClaimAmount"].sum())
+    total_amount = float(sev_pos["ClaimAmount"].sum())
+    unmatched_amount_share = unmatched_amount / total_amount if total_amount > 0 else 0.0
+    reconciliation = {
+        "positive_severity_rows_raw": int(len(sev_pos)),
+        "positive_severity_rows_without_policy": unmatched_rows,
+        "unmatched_row_share": unmatched_row_share,
+        "unmatched_claim_amount": unmatched_amount,
+        "unmatched_claim_amount_share": unmatched_amount_share,
+        "rule_frozen_after_pre_model_join_failure": "exclude unmatched rows only if both row and amount share <= 0.5%; otherwise stop",
+    }
+    if unmatched_row_share > MAX_UNMATCHED_SHARE or unmatched_amount_share > MAX_UNMATCHED_SHARE:
+        raise RuntimeError(f"unmatched severity materiality gate failed: {reconciliation}")
+
+    sev_use = sev_pos.loc[~unmatched].copy()
     keep = ["IDpol", "VehPower", "VehAge", "DrivAge", "BonusMalus", "VehBrand", "VehGas", "Area", "Density", "Region"]
-    d = sev.merge(freq[keep], on="IDpol", how="left", validate="many_to_one")
+    d = sev_use.merge(freq[keep], on="IDpol", how="left", validate="many_to_one")
     if d["Region"].isna().any():
-        raise RuntimeError("severity rows without rating-policy match")
-    d = d[d["ClaimAmount"] > 0].copy()
+        raise RuntimeError("matched severity rows lost rating covariates")
     d["LogDensity"] = np.log(d["Density"].astype(float))
-    return d, {"frequency": openml_meta(FREQ_ID), "severity": openml_meta(SEV_ID)}
+    return d, {
+        "openml": {"frequency": openml_meta(FREQ_ID), "severity": openml_meta(SEV_ID)},
+        "reconciliation": reconciliation,
+    }
 
 
 def make_pipe(power: float, alpha: float) -> Pipeline:
     prep = ColumnTransformer(
         [
-            ("cat", OneHotEncoder(handle_unknown="ignore"), list(CAT)),
+            ("cat", OneHotEncoder(handle_unknown="ignore", drop="first"), list(CAT)),
             ("num", StandardScaler(), list(NUM)),
         ]
     )
@@ -127,7 +149,7 @@ def policy_bootstrap_delta(ids: np.ndarray, loss_gamma: np.ndarray, loss_ig: np.
     }
 
 
-def fit_family(dev_train: pd.DataFrame, inner_valid: pd.DataFrame, dev_all: pd.DataFrame, test: pd.DataFrame, power: float) -> tuple[dict, np.ndarray, np.ndarray]:
+def fit_family(dev_train: pd.DataFrame, inner_valid: pd.DataFrame, dev_all: pd.DataFrame, test: pd.DataFrame, power: float) -> tuple[dict, np.ndarray]:
     alpha, alpha_rows = select_alpha(dev_train, inner_valid, power)
     Xdev = dev_all[list(CAT + NUM)]
     ydev = dev_all["ClaimAmount"].to_numpy(float)
@@ -154,17 +176,17 @@ def fit_family(dev_train: pd.DataFrame, inner_valid: pd.DataFrame, dev_all: pd.D
         "q99_exceedance_rate_test": float(np.mean(ytest > q99)),
         "predicted_mean_test": float(np.mean(mu_test)),
         "observed_mean_test": float(np.mean(ytest)),
-    }, losses, mu_test
+    }, losses
 
 
 def main() -> None:
-    d, meta = load_claim_level()
+    d, provenance = load_claim_level()
     source_summary = {
-        "openml": meta,
-        "claim_rows_positive": int(len(d)),
+        **provenance,
+        "claim_rows_positive_used": int(len(d)),
         "unique_claim_policy_ids": int(d["IDpol"].nunique()),
         "policies_with_multiple_positive_claim_rows": int((d.groupby("IDpol").size() > 1).sum()),
-        "claim_amount_summary": {
+        "claim_amount_summary_used": {
             "mean": float(d["ClaimAmount"].mean()),
             "p95": float(d["ClaimAmount"].quantile(0.95)),
             "p99": float(d["ClaimAmount"].quantile(0.99)),
@@ -180,8 +202,8 @@ def main() -> None:
         inner_valid = d[d["IDpol"].isin(va_ids)].copy()
         dev_all = d[d["IDpol"].isin(dev_ids)].copy()
         test = d[d["IDpol"].isin(test_ids)].copy()
-        g, lg, _ = fit_family(dev_train, inner_valid, dev_all, test, 2.0)
-        ig, lig, _ = fit_family(dev_train, inner_valid, dev_all, test, 3.0)
+        g, lg = fit_family(dev_train, inner_valid, dev_all, test, 2.0)
+        ig, lig = fit_family(dev_train, inner_valid, dev_all, test, 3.0)
         boot = policy_bootstrap_delta(test["IDpol"].to_numpy("int64"), lg, lig, seed + 777)
         results.append({
             "seed": seed,
@@ -202,8 +224,9 @@ def main() -> None:
             "outer_split": "80/20 unique policy IDpol",
             "inner_split": "75/25 of development unique policy IDs",
             "primary_target": "raw positive claim-level ClaimAmount; no 200k cap",
-            "features": {"categorical": list(CAT), "numeric_standardized": list(NUM), "LogDensity": "log(Density)"},
+            "features": {"categorical_one_hot_drop_first": list(CAT), "numeric_standardized": list(NUM), "LogDensity": "log(Density)"},
             "families": {"gamma": 2, "inverse_gaussian": 3},
+            "pre_fit_reconciliation_materiality_gate": MAX_UNMATCHED_SHARE,
         },
         "source": source_summary,
         "results": results,
