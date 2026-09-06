@@ -1,0 +1,142 @@
+name: TEMP FFBK 1333 CLRD2025 Cape Cod holdout
+
+on:
+  push:
+    branches:
+      - tmp/ffbk-1333-clrd2025-cape-cod-run-20260906
+
+permissions:
+  contents: read
+
+jobs:
+  target:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact temporary runner head
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Download exact frozen probe and pinned CLRD2025 bytes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from urllib.request import urlopen
+          import hashlib
+
+          def get(url, out):
+              data = urlopen(url, timeout=120).read()
+              Path(out).write_bytes(data)
+              return data
+
+          probe = get(
+              'https://raw.githubusercontent.com/pokekarten/FFBK/2e90b117d233d21201deec1b29cbd63ce7324e7c/scripts/reserving_clrd2025_cape_cod_holdout_probe.py',
+              'probe.py',
+          )
+          probe_blob = hashlib.sha1(f'blob {len(probe)}\0'.encode() + probe).hexdigest()
+          assert probe_blob == '746c79e9fd9b27febcfdbccacc77be3a32aa80e2', probe_blob
+
+          data = get(
+              'https://raw.githubusercontent.com/casact/chainladder-python/e07c09e506d27a522e5e678e532fd4352a82ac17/chainladder/utils/data/clrd2025.csv',
+              'clrd2025.csv',
+          )
+          assert len(data) == 5868245, len(data)
+          assert hashlib.sha256(data).hexdigest() == '045f10559ec9ed2bb0b4e5f74f9d611e20723ce51c7192a30b0dabcb75111456'
+          data_blob = hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest()
+          assert data_blob == '8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0', data_blob
+          print('PINNED_BYTES_OK')
+          PY
+
+      - name: Run frozen FFBK 1333 probe unchanged
+        run: |
+          python probe.py clrd2025.csv --json-out frozen_result.json > frozen_stdout.json
+          cmp frozen_result.json frozen_stdout.json
+          python - <<'PY'
+          import json
+          d=json.load(open('frozen_result.json'))
+          assert d['status'] == 'COMPUTED'
+          assert d['source']['sha256'] == '045f10559ec9ed2bb0b4e5f74f9d611e20723ce51c7192a30b0dabcb75111456'
+          assert d['source']['git_blob'] == '8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0'
+          assert d['summary']['n_cells'] > 0
+          assert d['summary']['n_companies'] > 1
+          print(json.dumps(d['summary'], sort_keys=True))
+          PY
+
+      - name: Run predeclared paired company-cluster bootstrap
+        run: |
+          python - <<'PY'
+          import importlib.util, json, random
+          from collections import defaultdict
+          from pathlib import Path
+
+          spec = importlib.util.spec_from_file_location('p', 'probe.py')
+          p = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(p)
+
+          path=Path('clrd2025.csv')
+          p.verify_source(path)
+          triangles,premium,names=p.load(path)
+          states,donor_pool=p.build_states(triangles,premium)
+          rows=p.make_rows(triangles,premium,names,states,donor_pool)
+
+          methods=('cape_cod','bornhuetter_ferguson')
+          by_company=defaultdict(lambda: {'n':0, 'cl_sse':0.0, 'cape_cod_sse':0.0, 'bornhuetter_ferguson_sse':0.0})
+          for r in rows:
+              g=r['grcode']; b=by_company[g]; b['n']+=1
+              b['cl_sse'] += (r['chain_ladder']-r['actual'])**2
+              for m in methods:
+                  b[m+'_sse'] += (r[m]-r['actual'])**2
+
+          companies=sorted(by_company)
+          seed=13332026
+          B=20000
+          rng=random.Random(seed)
+
+          def quantile(xs, q):
+              ys=sorted(xs); x=(len(ys)-1)*q; lo=int(x); hi=min(lo+1,len(ys)-1); w=x-lo
+              return ys[lo]*(1-w)+ys[hi]*w
+
+          out={'seed':seed,'resamples':B,'cluster':'GRCODE company','estimand':'pooled cell MSE difference challenger minus Chain Ladder','n_companies':len(companies),'methods':{}}
+          for m in methods:
+              obs_num=sum(by_company[g][m+'_sse']-by_company[g]['cl_sse'] for g in companies)
+              obs_den=sum(by_company[g]['n'] for g in companies)
+              obs=obs_num/obs_den
+              draws=[]
+              for _ in range(B):
+                  sample=[companies[rng.randrange(len(companies))] for _ in companies]
+                  num=sum(by_company[g][m+'_sse']-by_company[g]['cl_sse'] for g in sample)
+                  den=sum(by_company[g]['n'] for g in sample)
+                  draws.append(num/den)
+              out['methods'][m]={
+                  'observed_delta_mse':obs,
+                  'percentile_95':[quantile(draws,0.025),quantile(draws,0.975)],
+                  'bootstrap_fraction_delta_lt_0':sum(x<0 for x in draws)/B,
+                  'direction':'negative favors challenger',
+              }
+          Path('company_cluster_bootstrap.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(out, sort_keys=True))
+          PY
+
+      - name: Record exact execution receipt
+        run: |
+          python --version | tee environment.txt
+          sha256sum probe.py clrd2025.csv frozen_result.json company_cluster_bootstrap.json | tee sha256.txt
+          git rev-parse HEAD | tee runner_head.txt
+
+      - name: Upload bounded research receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-1333-clrd2025-cape-cod-receipt
+          path: |
+            frozen_result.json
+            frozen_stdout.json
+            company_cluster_bootstrap.json
+            sha256.txt
+            environment.txt
+            runner_head.txt
+          if-no-files-found: warn
