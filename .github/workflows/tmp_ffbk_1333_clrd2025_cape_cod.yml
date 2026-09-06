@@ -21,34 +21,26 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Download exact frozen probe and pinned CLRD2025 bytes
+      - name: Bind exact frozen probe and download pinned CLRD2025 bytes
         run: |
+          cp tmp/ffbk-1333/reserving_clrd2025_cape_cod_holdout_probe.py probe.py
           python - <<'PY'
           from pathlib import Path
           from urllib.request import urlopen
           import hashlib
 
-          def get(url, out):
-              data = urlopen(url, timeout=120).read()
-              Path(out).write_bytes(data)
-              return data
-
-          probe = get(
-              'https://raw.githubusercontent.com/pokekarten/FFBK/2e90b117d233d21201deec1b29cbd63ce7324e7c/scripts/reserving_clrd2025_cape_cod_holdout_probe.py',
-              'probe.py',
-          )
+          probe = Path('probe.py').read_bytes()
           probe_blob = hashlib.sha1(f'blob {len(probe)}\0'.encode() + probe).hexdigest()
           assert probe_blob == '746c79e9fd9b27febcfdbccacc77be3a32aa80e2', probe_blob
 
-          data = get(
-              'https://raw.githubusercontent.com/casact/chainladder-python/e07c09e506d27a522e5e678e532fd4352a82ac17/chainladder/utils/data/clrd2025.csv',
-              'clrd2025.csv',
-          )
+          url='https://raw.githubusercontent.com/casact/chainladder-python/e07c09e506d27a522e5e678e532fd4352a82ac17/chainladder/utils/data/clrd2025.csv'
+          data=urlopen(url, timeout=120).read()
+          Path('clrd2025.csv').write_bytes(data)
           assert len(data) == 5868245, len(data)
           assert hashlib.sha256(data).hexdigest() == '045f10559ec9ed2bb0b4e5f74f9d611e20723ce51c7192a30b0dabcb75111456'
           data_blob = hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest()
           assert data_blob == '8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0', data_blob
-          print('PINNED_BYTES_OK')
+          print('PINNED_PROBE_AND_DATA_BYTES_OK')
           PY
 
       - name: Run frozen FFBK 1333 probe unchanged
@@ -76,7 +68,6 @@ jobs:
           spec = importlib.util.spec_from_file_location('p', 'probe.py')
           p = importlib.util.module_from_spec(spec)
           spec.loader.exec_module(p)
-
           path=Path('clrd2025.csv')
           p.verify_source(path)
           triangles,premium,names=p.load(path)
