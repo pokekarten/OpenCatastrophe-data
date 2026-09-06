@@ -67,6 +67,7 @@ def read_current_rda(name: str, expected_sha256: str) -> tuple[pd.DataFrame, dic
 
 def norm_freq(df: pd.DataFrame) -> pd.DataFrame:
     x = df.copy()
+    x.columns = x.columns.map(str)
     x["IDpol"] = pd.to_numeric(x["IDpol"], errors="raise").astype("int64")
     for c in x.columns:
         if c == "IDpol":
@@ -79,7 +80,9 @@ def norm_freq(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def norm_sev(df: pd.DataFrame) -> pd.DataFrame:
-    x = df[["IDpol", "ClaimAmount"]].copy()
+    x = df.copy()
+    x.columns = x.columns.map(str)
+    x = x[["IDpol", "ClaimAmount"]]
     x["IDpol"] = pd.to_numeric(x["IDpol"], errors="raise").astype("int64")
     x["ClaimAmount"] = pd.to_numeric(x["ClaimAmount"], errors="raise").astype("float64")
     return x[x["ClaimAmount"] > 0].copy()
@@ -136,6 +139,7 @@ def canonicalize_and_gate(current_freq: pd.DataFrame, current_sev: pd.DataFrame,
         raise RuntimeError(f"severity feature inputs still differ after canonicalization: {mismatch}")
 
     d = current_sev.merge(cf[["IDpol", *FEATURES]], on="IDpol", how="left", validate="many_to_one")
+    d.columns = d.columns.map(str)
     if d[list(FEATURES)].isna().any().any():
         raise RuntimeError("current paired publisher data lost severity covariates")
     d["LogDensity"] = np.log(d["Density"].astype(float))
