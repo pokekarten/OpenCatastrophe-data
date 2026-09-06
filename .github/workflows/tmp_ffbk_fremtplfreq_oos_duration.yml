@@ -13,6 +13,10 @@ permissions:
 
 jobs:
   replicate:
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [3434773802, 2255464811, 4262288853]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -25,28 +29,39 @@ jobs:
           python -m pip install --disable-pip-version-check \
             numpy==2.2.3 pandas==2.2.3 scipy==1.15.2 \
             scikit-learn==1.8.0 pyreadr==0.5.6
-      - name: Execute prospectively frozen replication
+      - name: Execute one prospectively frozen holdout
+        env:
+          SEED: ${{ matrix.seed }}
         run: |
           sha256sum tmp_ffbk/underwriting_fremtplfreq_oos_duration_replication.py
-          python tmp_ffbk/underwriting_fremtplfreq_oos_duration_replication.py \
-            --output fremtplfreq_oos_duration_result.json \
-            > fremtplfreq_oos_duration_stdout.json
-          sha256sum fremtplfreq_oos_duration_result.json fremtplfreq_oos_duration_stdout.json
           python - <<'PY'
-          import json
-          r=json.load(open('fremtplfreq_oos_duration_result.json'))
-          print('STATUS', r['research_status'])
-          print('DATA_SHA256', r['dataset']['sha256'])
-          print('ROWS', r['dataset']['rows'])
-          print('MEAN_DEV_DELTA', r['mean_delta_pro_rata_minus_duration_deviance'])
-          print('MEAN_BAND_CAL_DELTA', r['mean_delta_band_abs_error_pro_rata_minus_duration'])
-          for s in r['splits']:
-              print('SEED', s['seed'], 'DEV_DELTA', s['delta_pro_rata_minus_duration_deviance'], 'CAL_DELTA', s['delta_band_abs_error_pro_rata_minus_duration'])
+          import importlib.util, json, os, pathlib, platform
+          p=pathlib.Path('tmp_ffbk/underwriting_fremtplfreq_oos_duration_replication.py')
+          spec=importlib.util.spec_from_file_location('probe', p)
+          m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+          df, identity=m.load_canonical_dataset()
+          seed=int(os.environ['SEED'])
+          split=m.evaluate_one_split(df, seed)
+          out={'question_fingerprint':m.QUESTION_FINGERPRINT,'question_sha256':m.QUESTION_SHA256,'seed':seed,'dataset':identity,'split':split,'environment':{'python':platform.python_version(),'numpy':m.np.__version__,'pandas':m.pd.__version__},'authority':{'predictive_variance_authorized':False,'tail_transport_authorized':False,'nextgen_promotion':'none'}}
+          pathlib.Path(f'fremtplfreq_oos_duration_seed_{seed}.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print('SEED', seed)
+          print('DATA_SHA256', identity['sha256'])
+          print('ROWS', identity['rows'])
+          print('DEV_DELTA', split['delta_pro_rata_minus_duration_deviance'])
+          print('CAL_DELTA', split['delta_band_abs_error_pro_rata_minus_duration'])
+          print('BASE_DEV', split['pro_rata']['weighted_mean_poisson_deviance'])
+          print('DUR_DEV', split['duration_aware']['weighted_mean_poisson_deviance'])
+          print('BASE_PO', split['pro_rata']['predicted_over_observed'])
+          print('DUR_PO', split['duration_aware']['predicted_over_observed'])
+          for band in m.DURATION_BANDS:
+              name=band[0]
+              b=split['pro_rata']['duration_calibration'][name]
+              d=split['duration_aware']['duration_calibration'][name]
+              print('BAND', name, 'ROWS', b['rows'], 'BASE_PO', b['predicted_over_observed'], 'DUR_PO', d['predicted_over_observed'])
           PY
+          sha256sum fremtplfreq_oos_duration_seed_${SEED}.json
       - uses: actions/upload-artifact@v4
         with:
-          name: fremtplfreq-oos-duration-replication
-          path: |
-            fremtplfreq_oos_duration_result.json
-            fremtplfreq_oos_duration_stdout.json
+          name: fremtplfreq-oos-duration-${{ matrix.seed }}
+          path: fremtplfreq_oos_duration_seed_${{ matrix.seed }}.json
           if-no-files-found: error
