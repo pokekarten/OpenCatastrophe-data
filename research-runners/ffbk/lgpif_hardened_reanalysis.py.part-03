@@ -1,0 +1,140 @@
+    def fit_m2_r(self, fit: MeanFit, years: Sequence[int], policy_weights: np.ndarray | None = None) -> RFit:
+        idx = np.flatnonzero(np.isin(self.d["Year"], np.asarray(years)))
+        p_all = self.row_pre2010_policy_pos[idx]
+        if np.any(p_all < 0):
+            raise ProtocolError("M2 fit row outside pre-2010 policy universe")
+        n_pol = len(self.pre2010_policy_ids)
+        if policy_weights is None:
+            pw = np.ones(n_pol, dtype=float)
+        else:
+            pw = np.asarray(policy_weights, dtype=float)
+            if pw.shape != (n_pol,):
+                raise ProtocolError("policy-weight shape mismatch")
+        row_keep = pw[p_all] > 0
+        if not np.any(row_keep):
+            raise ProtocolError("empty M2 fit")
+        idx = idx[row_keep]
+        p = p_all[row_keep]
+        mu = self.mu(fit, idx)
+        y = self.d["Freq"][idx].astype(float)
+        Y = np.bincount(p, weights=y, minlength=n_pol)
+        M = np.bincount(p, weights=mu, minlength=n_pol)
+        const = np.bincount(p, weights=y * np.log(mu) - gammaln(y + 1.0), minlength=n_pol)
+        active = (M > 0) & (pw > 0)
+        if not np.any(active):
+            raise ProtocolError("empty M2 fit")
+        Y, M, const, pw = Y[active], M[active], const[active], pw[active]
+
+        def objective(r: float) -> float:
+            ll = (
+                gammaln(r + Y) - gammaln(r) + r * math.log(r)
+                - (r + Y) * np.log(r + M) + const
+            )
+            return -float(np.sum(pw * ll))
+
+        return self._fit_r_scalar(objective, "M2")
+
+    def _history_indices(self, policy: int, forecast_year: int) -> np.ndarray:
+        idx = self.rows_by_policy[int(policy)]
+        return idx[self.d["Year"][idx] < forecast_year]
+
+    def _weighted_history_state(
+        self,
+        policy: int,
+        forecast_year: int,
+        mean_fit: MeanFit,
+        r: float,
+        delta: float,
+        clock: str,
+    ) -> tuple[float, float]:
+        hidx = self._history_indices(policy, forecast_year)
+        if len(hidx) == 0:
+            return r, r
+        hidx = hidx[np.argsort(self.d["Year"][hidx])]
+        if clock == "calendar":
+            lags = forecast_year - self.d["Year"][hidx]
+            if delta == 0.0:
+                weights = (lags == 1).astype(float)
+            else:
+                weights = np.power(delta, lags - 1, dtype=float)
+        elif clock == "index":
+            # Most recent observed prior row j=1, next-oldest j=2, ...
+            j = np.arange(len(hidx), 0, -1)
+            if delta == 0.0:
+                weights = (j == 1).astype(float)
+            else:
+                weights = np.power(delta, j - 1, dtype=float)
+        else:
+            raise ProtocolError(f"invalid clock {clock}")
+        mu_hist = self.mu(mean_fit, hidx)
+        a = float(r + np.sum(weights * self.d["Freq"][hidx]))
+        b = float(r + np.sum(weights * mu_hist))
+        return a, b
+
+    def conditional_nlls(
+        self,
+        mean_fit: MeanFit,
+        r_m1: float,
+        r_m2: float,
+        delta: float,
+        policies: Sequence[int],
+        target_year: int,
+        clock: str = "calendar",
+    ) -> dict[str, np.ndarray]:
+        rows = self.policy_target_rows(policies, target_year)
+        if len(rows) != len(policies):
+            raise ProtocolError("target population row count mismatch")
+        mu = self.mu(mean_fit, rows)
+        y = self.d["Freq"][rows]
+        out = {
+            "policy": self.d["PolicyNum"][rows].astype(np.int64),
+            "y": y.astype(np.int64),
+            "mu": mu,
+            "M0": -poisson.logpmf(y, mu),
+            "M1": -self.nb_logpmf(y, mu, r_m1),
+        }
+        m2 = np.empty(len(rows), dtype=float)
+        m3 = np.empty(len(rows), dtype=float)
+        pred_mean = {"M0": mu.copy(), "M1": mu.copy(), "M2": np.empty(len(rows)), "M3": np.empty(len(rows))}
+        pmf_y = {"M0": poisson.pmf(y, mu), "M1": np.exp(self.nb_logpmf(y, mu, r_m1)), "M2": np.empty(len(rows)), "M3": np.empty(len(rows))}
+        cdf_lower = {"M0": poisson.cdf(y - 1, mu), "M1": nbinom.cdf(y - 1, r_m1, r_m1 / (r_m1 + mu)), "M2": np.empty(len(rows)), "M3": np.empty(len(rows))}
+        for k, (p, target_row) in enumerate(zip(out["policy"].tolist(), rows.tolist())):
+            a2, b2 = self._weighted_history_state(int(p), target_year, mean_fit, r_m2, 1.0, clock="calendar")
+            p2 = b2 / (b2 + mu[k])
+            m2[k] = -float(nbinom.logpmf(int(y[k]), a2, p2))
+            pred_mean["M2"][k] = mu[k] * a2 / b2
+            pmf_y["M2"][k] = float(nbinom.pmf(int(y[k]), a2, p2))
+            cdf_lower["M2"][k] = float(nbinom.cdf(int(y[k]) - 1, a2, p2))
+            a3, b3 = self._weighted_history_state(int(p), target_year, mean_fit, r_m2, delta, clock=clock)
+            p3 = b3 / (b3 + mu[k])
+            m3[k] = -float(nbinom.logpmf(int(y[k]), a3, p3))
+            pred_mean["M3"][k] = mu[k] * a3 / b3
+            pmf_y["M3"][k] = float(nbinom.pmf(int(y[k]), a3, p3))
+            cdf_lower["M3"][k] = float(nbinom.cdf(int(y[k]) - 1, a3, p3))
+        out["M2"] = m2
+        out["M3"] = m3
+        out["pred_mean"] = pred_mean
+        out["pmf_y"] = pmf_y
+        out["cdf_lower"] = cdf_lower
+        for k in ("M0", "M1", "M2", "M3"):
+            if np.any(~np.isfinite(out[k])):
+                raise ProtocolError(f"non-finite {k} NLL")
+        return out
+
+    def select_delta(
+        self,
+        dev_mean: MeanFit,
+        r_m2_dev: float,
+        row_weights: np.ndarray | None = None,
+        clock: str = "calendar",
+    ) -> dict:
+        rows = self.policy_target_rows(self.validation_policies, 2009)
+        if row_weights is None:
+            active_policies = list(self.validation_policies)
+            w = np.ones(len(rows), dtype=float)
+        else:
+            w = row_weights[rows].astype(float)
+            active_policies = [int(p) for p, ww in zip(self.d["PolicyNum"][rows].tolist(), w.tolist()) if ww > 0]
+        keep = w > 0
+        if not np.any(keep) or not active_policies:
+            raise ProtocolError("empty delta validation")
