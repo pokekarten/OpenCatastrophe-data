@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+"""Exact-head executor for FFBK PR #1412's frozen WiscPropFund temporal protocol.
+
+Protocol authority (read-only): pokekarten/FFBK PR #1412 exact reviewed head
+824a9f3ca63e95efbae92839a30cacf213db8840
+
+This file is intentionally a successor to the already-executed v0 script.  It does
+not rewrite that historical artifact.
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import hashlib
+import io
+import json
+import math
+import sys
+import urllib.request
+from collections import Counter, defaultdict
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterable, Sequence
+
+import numpy as np
+import scipy
+from scipy.optimize import minimize, minimize_scalar
+from scipy.special import gammaln
+from scipy.stats import nbinom, poisson
+
+PROTOCOL_HEAD = "824a9f3ca63e95efbae92839a30cacf213db8840"
+SOURCE_COMMIT = "8410b067ed2548e0e09077bbb880a476a0a2cdf9"
+SOURCE_PATH = "Data/WiscPropFund.csv"
+SOURCE_URL = f"https://raw.githubusercontent.com/OpenActTextDev/LDA_Ed2/{SOURCE_COMMIT}/{SOURCE_PATH}"
+EXPECTED_GIT_BLOB = "267025ccdbff95d47706fd65241f52049243effc"
+EXPECTED_COLUMNS = [
+    "PolicyNum", "Year", "Premium", "Deduct", "BCcov", "Freq", "Fire5",
+    "NoClaimCredit", "EntityType", "AlarmCredit", "BCClaim",
+]
+DELTA_GRID = (0.0, 0.25, 0.50, 0.75, 0.90, 1.00)
+LOG_R_BOUNDS = (-12.0, 12.0)
+LOG_R_XATOL = 1e-10
+LOG_R_MAXITER = 1000
+BOUNDARY_EPS = 1e-6
+EVAL_BOOT_REPS = 10_000
+EVAL_BOOT_SEED = 20260906
+TRAIN_BOOT_REPS = 2_000
+TRAIN_BOOT_SEED = 20260907
+PIT_SEED = 20260908
+TIE_TOL = 1e-8
+
+
+class ProtocolError(RuntimeError):
+    pass
+
+
+@dataclass(frozen=True)
+class MeanSpec:
+    family: str  # "A" or "B"
+    entity_levels: tuple[int, ...]
+    alarm_levels: tuple[int, ...]
+    include_noclaim: bool = False
+
+
+@dataclass
+class MeanFit:
+    spec: MeanSpec
+    beta: np.ndarray
+    nll: float
+    optimizer: dict
+
+
+@dataclass
+class RFit:
+    r: float
+    log_r: float
+    objective: float
+    boundary_hit: bool
+    optimizer: dict
+
+
+def git_blob_sha1(payload: bytes) -> str:
+    return hashlib.sha1(f"blob {len(payload)}\0".encode() + payload).hexdigest()
+
+
+def sha256_bytes(payload: bytes) -> str:
+    return hashlib.sha256(payload).hexdigest()
+
+
+def load_payload(path: Path | None) -> tuple[bytes, str]:
+    if path is not None:
+        return path.read_bytes(), str(path)
+    with urllib.request.urlopen(SOURCE_URL, timeout=60) as response:
+        return response.read(), SOURCE_URL
+
+
+def _parse_int_exact(value: str, field: str, row_number: int) -> int:
+    try:
+        x = float(value)
+    except Exception as exc:
+        raise ProtocolError(f"row {row_number}: non-numeric {field}") from exc
+    if not math.isfinite(x) or not x.is_integer():
+        raise ProtocolError(f"row {row_number}: {field} must be a finite integer, got {value!r}")
+    return int(x)
+
+
+def _parse_float(value: str, field: str, row_number: int) -> float:
+    try:
+        x = float(value)
+    except Exception as exc:
+        raise ProtocolError(f"row {row_number}: non-numeric {field}") from exc
+    if not math.isfinite(x):
+        raise ProtocolError(f"row {row_number}: {field} non-finite")
+    return x
+
+
+def parse_payload(payload: bytes) -> dict[str, np.ndarray]:
+    try:
+        text = payload.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ProtocolError("source is not UTF-8") from exc
+    reader = csv.DictReader(io.StringIO(text))
+    if reader.fieldnames != EXPECTED_COLUMNS:
+        raise ProtocolError(f"unexpected columns: {reader.fieldnames!r}")
+
+    rows: list[dict[str, float | int]] = []
+    seen: set[tuple[int, int]] = set()
+    for line_number, raw in enumerate(reader, start=2):
+        if any(raw.get(c) is None or raw[c] == "" for c in EXPECTED_COLUMNS):
+            raise ProtocolError(f"row {line_number}: missing required field")
+        policy = _parse_int_exact(raw["PolicyNum"], "PolicyNum", line_number)
+        year = _parse_int_exact(raw["Year"], "Year", line_number)
+        key = (policy, year)
+        if key in seen:
+            raise ProtocolError(f"duplicate (PolicyNum,Year): {key}")
+        seen.add(key)
+        freq = _parse_int_exact(raw["Freq"], "Freq", line_number)
+        fire5 = _parse_int_exact(raw["Fire5"], "Fire5", line_number)
+        noclaim = _parse_int_exact(raw["NoClaimCredit"], "NoClaimCredit", line_number)
+        entity = _parse_int_exact(raw["EntityType"], "EntityType", line_number)
