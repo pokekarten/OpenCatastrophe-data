@@ -173,10 +173,11 @@ class PublicSurfaceTests(unittest.TestCase):
         self.assertIn("permissions:\n  contents: read", workflow)
         self.assertIn("name: Required", workflow)
         self.assertIn(
-            "needs: [check, glofas-acquisition, reuse, dependency-review]",
+            "needs: [check, glofas-acquisition, cems-geotiff-profile, reuse, dependency-review]",
             workflow,
         )
         self.assertIn("GLOFAS_ACQUISITION_RESULT", workflow)
+        self.assertIn("CEMS_GEOTIFF_PROFILE_RESULT", workflow)
         self.assertNotIn("PR_FILE_COLLISIONS_RESULT", workflow)
         self.assertNotIn("pull_request_target", workflow)
         self.assertNotIn("GITHUB_TOKEN", workflow)
