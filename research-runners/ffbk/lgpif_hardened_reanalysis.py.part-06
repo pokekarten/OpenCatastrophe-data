@@ -1,0 +1,140 @@
+        final_fit = self.fit_poisson(family, [2006, 2007, 2008, 2009], final_rows, row_weights, include_noclaim)
+        m1_final = self.fit_m1_r(final_fit, [2006, 2007, 2008, 2009], row_weights)
+        m2_final = self.fit_m2_r(final_fit, [2006, 2007, 2008, 2009], policy_weights)
+        return {
+            "family": family, "mean_selection": selection, "dev_mean": dev_fit, "final_mean": final_fit,
+            "m1_dev": m1_dev, "m2_dev": m2_dev, "m1_final": m1_final, "m2_final": m2_final,
+            "delta": delta_sel,
+        }
+
+    @staticmethod
+    def _meanfit_receipt(f: MeanFit) -> dict:
+        return {"family": f.spec.family, "entity_levels": list(f.spec.entity_levels), "alarm_levels": list(f.spec.alarm_levels),
+                "include_NoClaimCredit": f.spec.include_noclaim, "beta": f.beta.tolist(), "fit_nll": f.nll, "optimizer": f.optimizer}
+
+    @staticmethod
+    def _rfit_receipt(f: RFit) -> dict:
+        return {"r": f.r, "log_r": f.log_r, "objective": f.objective, "boundary_hit": f.boundary_hit, "optimizer": f.optimizer}
+
+    def pipeline_receipt(self, p: dict) -> dict:
+        selection = None
+        if p["mean_selection"] is not None:
+            selection = {
+                "selected": p["mean_selection"]["selected"],
+                "A_2009_sum_nll": p["mean_selection"]["candidates"]["A"]["validation_sum_nll"],
+                "B_2009_sum_nll": p["mean_selection"]["candidates"]["B"]["validation_sum_nll"],
+                "A_development_fit": self._meanfit_receipt(p["mean_selection"]["candidates"]["A"]["fit"]),
+                "B_development_fit": self._meanfit_receipt(p["mean_selection"]["candidates"]["B"]["fit"]),
+                "tie_tolerance": TIE_TOL,
+            }
+        return {
+            "mean_family": p["family"], "mean_selection": selection,
+            "development_mean": self._meanfit_receipt(p["dev_mean"]),
+            "final_mean": self._meanfit_receipt(p["final_mean"]),
+            "M1_r_development": self._rfit_receipt(p["m1_dev"]),
+            "M2_r_development": self._rfit_receipt(p["m2_dev"]),
+            "M1_r_final": self._rfit_receipt(p["m1_final"]),
+            "M2_r_final": self._rfit_receipt(p["m2_final"]),
+            "delta_selection": p["delta"],
+        }
+
+    def training_bootstrap(self, original_final_scores_target: Sequence[int]) -> dict:
+        N = len(self.pre2010_policy_ids)
+        rng = np.random.Generator(np.random.PCG64(TRAIN_BOOT_SEED))
+        successes = []
+        failures = Counter()
+        mean_selection = Counter()
+        delta_selection = Counter()
+        stage_reached = Counter()
+        m1_boundary = 0
+        m2_boundary = 0
+        for b in range(TRAIN_BOOT_REPS):
+            sampled = rng.integers(0, N, size=N)
+            mult = np.bincount(sampled, minlength=N).astype(float)
+            row_w = self.row_weights_from_policy_multiplicity(mult)
+            try:
+                # Run stage-by-stage so selection frequencies remain observable even if a later stage fails.
+                selection = self.select_mean(row_w, include_noclaim=False)
+                family = selection["selected"]
+                mean_selection[family] += 1
+                stage_reached["mean_selected"] += 1
+                dev_fit = selection["candidates"][family]["fit"]
+                _m1_dev = self.fit_m1_r(dev_fit, [2006, 2007, 2008], row_w)
+                m2_dev = self.fit_m2_r(dev_fit, [2006, 2007, 2008], mult)
+                stage_reached["development_r_fitted"] += 1
+                delta = self.select_delta(dev_fit, m2_dev.r, row_w, clock="calendar")
+                delta_selection[f"{delta['selected_delta']:.2f}"] += 1
+                stage_reached["delta_selected"] += 1
+                final_rows = self.policy_target_rows(self.final_policies, 2010)
+                final_fit = self.fit_poisson(family, [2006, 2007, 2008, 2009], final_rows, row_w, False)
+                m1_final = self.fit_m1_r(final_fit, [2006, 2007, 2008, 2009], row_w)
+                m2_final = self.fit_m2_r(final_fit, [2006, 2007, 2008, 2009], mult)
+                m1_boundary += int(m1_final.boundary_hit)
+                m2_boundary += int(m2_final.boundary_hit)
+                stage_reached["final_r_fitted"] += 1
+                scores = self.conditional_nlls(
+                    final_fit, m1_final.r, m2_final.r, delta["selected_delta"],
+                    original_final_scores_target, 2010, clock="calendar",
+                )
+                d10 = float(np.mean(scores["M1"] - scores["M0"]))
+                d21 = float(np.mean(scores["M2"] - scores["M1"]))
+                d32 = float(np.mean(scores["M3"] - scores["M2"]))
+                successes.append({"D10": d10, "D21": d21, "D32": d32,
+                                  "r_M1": m1_final.r, "r_M2": m2_final.r})
+                stage_reached["target_scored"] += 1
+            except Exception as exc:
+                msg = str(exc)
+                if "unseen category" in msg:
+                    key = "unseen_category"
+                elif "poisson_fit_failed" in msg:
+                    key = "poisson_nonconvergence"
+                elif "r_fit_failed" in msg:
+                    key = "r_nonconvergence_or_nonfinite"
+                elif "empty weighted 2009 validation" in msg or "empty delta validation" in msg:
+                    key = "empty_validation_after_resample"
+                else:
+                    key = f"other:{type(exc).__name__}:{msg[:120]}"
+                failures[key] += 1
+        success_n = len(successes)
+        attempted = TRAIN_BOOT_REPS
+        rate = success_n / attempted
+        out = {
+            "attempted": attempted, "successful": success_n, "failure_count": attempted - success_n,
+            "success_rate": rate, "failure_reasons": dict(failures), "stage_reached_counts": dict(stage_reached),
+            "mean_family_selection_counts": {k: int(mean_selection.get(k, 0)) for k in ("A", "B")},
+            "delta_selection_counts": {f"{d:.2f}": int(delta_selection.get(f"{d:.2f}", 0)) for d in DELTA_GRID},
+            "M1_boundary_hit_count_after_final_fit": int(m1_boundary),
+            "M2_boundary_hit_count_after_final_fit": int(m2_boundary),
+            "status": "STABLE_SUCCESS_DISTRIBUTION" if rate >= 0.95 else "TRAINING_SELECTION_UNCERTAINTY_UNSTABLE",
+            "seed": TRAIN_BOOT_SEED,
+            "sampling": "PCG64 integers with replacement over distinct pre-2010 PolicyNum; duplicate copies represented exactly by integer likelihood multiplicities",
+        }
+        if success_n:
+            for name in ("r_M1", "r_M2", "D10", "D21", "D32"):
+                vals = np.asarray([x[name] for x in successes], dtype=float)
+                stats = {"median": float(np.median(vals)), "q025": float(np.quantile(vals, 0.025)), "q975": float(np.quantile(vals, 0.975))}
+                out[name] = stats
+            if rate >= 0.95:
+                out["successful_replicate_contrasts"] = [{k: v for k, v in x.items() if k.startswith("D")} for x in successes]
+            else:
+                out["successful_only_quantile_note"] = "Descriptive conditional-on-success quantiles only; protocol forbids treating them as a stable refit interval below 95% completion."
+        return out
+
+    def execute(self, training_bootstrap: bool = True) -> dict:
+        # Outcome-blind diagnostics are intentionally computed first.
+        observation = self.observation_diagnostic()
+        gap_2009 = self.gap_audit(self.validation_policies, 2009)
+        gap_2010 = self.gap_audit(self.final_policies, 2010)
+
+        primary_pipe = self._fit_pipeline()
+        selected_family = primary_pipe["family"]
+        primary_scores = self.conditional_nlls(
+            primary_pipe["final_mean"], primary_pipe["m1_final"].r, primary_pipe["m2_final"].r,
+            primary_pipe["delta"]["selected_delta"], self.final_policies, 2010, clock="calendar",
+        )
+        primary_summary = self.summarize_target(primary_scores, primary_pipe["delta"]["selected_delta"], include_pit=True)
+
+        # Alternate mean sensitivity: full same pre-target pipeline with the non-selected family.
+        alt_family = "B" if selected_family == "A" else "A"
+        alt_pipe = self._fit_pipeline(forced_family=alt_family)
+        alt_scores = self.conditional_nlls(
