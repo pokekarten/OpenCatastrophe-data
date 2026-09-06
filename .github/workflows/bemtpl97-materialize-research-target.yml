@@ -1,0 +1,63 @@
+name: Materialize beMTPL97 research target
+
+on:
+  push:
+    branches:
+      - 'research-run/bemtpl97-duration-transfer-20260906-sol56'
+
+permissions:
+  contents: read
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Materialize exact pinned target and decode without filtering
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet pyreadr pandas pyarrow
+          python - <<'PY'
+          import hashlib, json, pathlib, urllib.request
+          import pandas as pd
+          import pyreadr
+
+          url = 'https://raw.githubusercontent.com/henckr/treeML/71bf218fa3528fd66dd3c6f9eed9a4bf06e58a22/mtpl_data.rds'
+          expected_blob = '11b3aa146f426eef59044884208d921ca56d370d'
+          p = pathlib.Path('mtpl_data.rds')
+          urllib.request.urlretrieve(url, p)
+          b = p.read_bytes()
+          blob = hashlib.sha1(b'blob ' + str(len(b)).encode() + b'\0' + b).hexdigest()
+          if blob != expected_blob:
+              raise SystemExit(f'BLOB_MISMATCH {blob} != {expected_blob}')
+          obj = pyreadr.read_r(str(p))
+          if len(obj) != 1:
+              raise SystemExit(f'OBJECT_COUNT {len(obj)}')
+          df = next(iter(obj.values())).reset_index(drop=True)
+          df.to_parquet('bemtpl97.parquet', index=False)
+          receipt = {
+              'source_url': url,
+              'expected_git_blob_sha1': expected_blob,
+              'observed_git_blob_sha1': blob,
+              'downloaded_sha256': hashlib.sha256(b).hexdigest(),
+              'downloaded_bytes': len(b),
+              'decoded_rows': len(df),
+              'decoded_columns': list(map(str, df.columns)),
+              'parquet_sha256': hashlib.sha256(pathlib.Path('bemtpl97.parquet').read_bytes()).hexdigest(),
+              'pandas': pd.__version__,
+              'pyreadr': getattr(pyreadr, '__version__', 'unknown'),
+          }
+          pathlib.Path('materialization-receipt.json').write_text(json.dumps(receipt, indent=2, sort_keys=True))
+          print(json.dumps(receipt, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bemtpl97-exact-materialization
+          path: |
+            bemtpl97.parquet
+            materialization-receipt.json
