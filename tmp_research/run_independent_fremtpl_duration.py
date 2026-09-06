@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +12,7 @@ MODULE_PATH = Path(__file__).with_name("independent_fremtpl_duration_meanclass.p
 spec = importlib.util.spec_from_file_location("independent_fremtpl_duration_meanclass", MODULE_PATH)
 module = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
+sys.modules[spec.name] = module
 spec.loader.exec_module(module)
 
 _original_dumps = module.json.dumps
