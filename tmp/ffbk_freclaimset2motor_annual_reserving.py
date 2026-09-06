@@ -72,8 +72,6 @@ def chain_ladder_prediction(cum: pd.DataFrame, valuation_year: int) -> float:
         factors[j] = float(nxt[mask].sum() / denom)
 
     pred = 0.0
-    # Exclude the oldest origin: under the finite observed triangle it has no
-    # estimable next development factor. The target uses the same origin set.
     for i in origins:
         if i <= MIN_ORIGIN:
             continue
@@ -88,8 +86,6 @@ def chain_ladder_prediction(cum: pd.DataFrame, valuation_year: int) -> float:
 
 
 def state_prediction(df: pd.DataFrame, valuation_year: int) -> tuple[float, dict[str, int]]:
-    # Fit only transitions whose next management-year endpoint is already
-    # observed by the valuation date. This prevents future leakage.
     train = df[(df["ManagYear"] + 1 <= valuation_year) & df["has_consecutive_next"]].copy()
     train = train[(train["OccurYear"] > MIN_ORIGIN) & (train["OccurYear"] <= valuation_year)]
     train["dev_band"] = np.minimum(train["dev_age"].to_numpy(), DEV_BAND_CAP)
@@ -181,9 +177,6 @@ def main() -> None:
     df["has_consecutive_next"] = next_year.eq(df["ManagYear"] + 1)
     df["next_increment"] = next_paid - df["PaidAmount"]
 
-    # Aggregate incremental observations into a paid triangle. Any gap is
-    # explicitly audited below; the row_increment is recorded at its observed
-    # management year rather than inventing unobserved intra-gap timing.
     inc = (
         df.groupby(["OccurYear", "dev_age"], observed=True)["row_increment"]
         .sum()
@@ -192,7 +185,7 @@ def main() -> None:
         .sort_index(axis=1)
     )
     all_devs = list(range(int(inc.columns.max()) + 1))
-    inc = inc.reindex(columns=all_devs, fill_value=0.0)
+    inc = inc.reindex(columns=all_devs, fill_value=0.0).fillna(0.0)
     cum = inc.cumsum(axis=1)
 
     years = CALIBRATION_YEARS + EVALUATION_YEARS
