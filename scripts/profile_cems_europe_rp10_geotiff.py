@@ -5,7 +5,7 @@
 
 This module never reads raster values. The public profiler first verifies the
 complete local byte identity accepted by Issue #793 and only then opens the
-file with Rasterio for bounded structural metadata.
+verified private byte binding with Rasterio for bounded structural metadata.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 import rasterio
+from rasterio.io import MemoryFile
 
 SOURCE_ISSUE = 793
 PROFILE_ISSUE = 802
@@ -72,7 +73,8 @@ def _verify_file_identity(
     *,
     expected_byte_count: int,
     expected_sha256: str,
-) -> tuple[int, str]:
+) -> tuple[MemoryFile, int, str]:
+    """Verify source bytes and retain the exact verified object in private memory."""
     if type(expected_byte_count) is not int or expected_byte_count <= 0:
         raise CemsRp10GeoTiffProfileError("expected byte count is invalid")
     if (
@@ -84,6 +86,7 @@ def _verify_file_identity(
 
     digest = hashlib.sha256()
     byte_count = 0
+    memory_file = MemoryFile()
     try:
         with path.open("rb") as handle:
             while True:
@@ -96,15 +99,25 @@ def _verify_file_identity(
                 if byte_count > expected_byte_count:
                     raise CemsRp10GeoTiffProfileError("local GeoTIFF byte count exceeds accepted receipt")
                 digest.update(chunk)
+                memory_file.write(chunk)
+    except CemsRp10GeoTiffProfileError:
+        memory_file.close()
+        raise
     except OSError as exc:
+        memory_file.close()
         raise CemsRp10GeoTiffProfileError("local GeoTIFF bytes could not be read") from exc
+    except Exception as exc:
+        memory_file.close()
+        raise CemsRp10GeoTiffProfileError("local GeoTIFF bytes could not be bound for metadata inspection") from exc
 
     sha256 = digest.hexdigest()
     if byte_count != expected_byte_count:
+        memory_file.close()
         raise CemsRp10GeoTiffProfileError("local GeoTIFF byte count differs from accepted receipt")
     if sha256 != expected_sha256:
+        memory_file.close()
         raise CemsRp10GeoTiffProfileError("local GeoTIFF SHA-256 differs from accepted receipt")
-    return byte_count, sha256
+    return memory_file, byte_count, sha256
 
 
 def _filtered_unit_tags(dataset: Any) -> list[dict[str, str]]:
@@ -130,110 +143,111 @@ def _profile_bound_geotiff(
 ) -> dict[str, Any]:
     """Internal testable profiler with caller-supplied byte identity."""
     local_path = Path(path)
-    byte_count, sha256 = _verify_file_identity(
+    memory_file, byte_count, sha256 = _verify_file_identity(
         local_path,
         expected_byte_count=expected_byte_count,
         expected_sha256=expected_sha256,
     )
 
     try:
-        with rasterio.open(local_path, "r") as dataset:
-            if dataset.driver != "GTiff":
-                raise CemsRp10GeoTiffProfileError("receipt-bound object is not a GDAL GeoTIFF dataset")
-            if type(dataset.width) is not int or dataset.width <= 0:
-                raise CemsRp10GeoTiffProfileError("GeoTIFF width is invalid")
-            if type(dataset.height) is not int or dataset.height <= 0:
-                raise CemsRp10GeoTiffProfileError("GeoTIFF height is invalid")
-            if (
-                type(dataset.count) is not int
-                or dataset.count <= 0
-                or dataset.count > _MAX_BANDS
-            ):
-                raise CemsRp10GeoTiffProfileError(
-                    "GeoTIFF band count is outside the bounded metadata contract"
+        with memory_file:
+            with memory_file.open() as dataset:
+                if dataset.driver != "GTiff":
+                    raise CemsRp10GeoTiffProfileError("receipt-bound object is not a GDAL GeoTIFF dataset")
+                if type(dataset.width) is not int or dataset.width <= 0:
+                    raise CemsRp10GeoTiffProfileError("GeoTIFF width is invalid")
+                if type(dataset.height) is not int or dataset.height <= 0:
+                    raise CemsRp10GeoTiffProfileError("GeoTIFF height is invalid")
+                if (
+                    type(dataset.count) is not int
+                    or dataset.count <= 0
+                    or dataset.count > _MAX_BANDS
+                ):
+                    raise CemsRp10GeoTiffProfileError(
+                        "GeoTIFF band count is outside the bounded metadata contract"
+                    )
+
+                crs = dataset.crs
+                crs_string = _bounded_text(
+                    None if crs is None else str(crs),
+                    field="CRS string",
+                    limit=_MAX_CRS_TEXT,
+                )
+                crs_wkt = _bounded_text(
+                    None if crs is None else crs.to_wkt(),
+                    field="CRS WKT",
+                    limit=_MAX_CRS_TEXT,
+                )
+                crs_epsg = None if crs is None else crs.to_epsg()
+                if crs_epsg is not None and (type(crs_epsg) is not int or crs_epsg <= 0):
+                    raise CemsRp10GeoTiffProfileError("CRS EPSG metadata is invalid")
+
+                reader_units = [
+                    _bounded_text(unit, field="band unit", limit=_MAX_UNIT_TEXT)
+                    for unit in dataset.units
+                ]
+                unit_tags = _filtered_unit_tags(dataset)
+                unit_metadata_present = any(unit is not None and unit != "" for unit in reader_units) or any(
+                    bool(tags) for tags in unit_tags
                 )
 
-            crs = dataset.crs
-            crs_string = _bounded_text(
-                None if crs is None else str(crs),
-                field="CRS string",
-                limit=_MAX_CRS_TEXT,
-            )
-            crs_wkt = _bounded_text(
-                None if crs is None else crs.to_wkt(),
-                field="CRS WKT",
-                limit=_MAX_CRS_TEXT,
-            )
-            crs_epsg = None if crs is None else crs.to_epsg()
-            if crs_epsg is not None and (type(crs_epsg) is not int or crs_epsg <= 0):
-                raise CemsRp10GeoTiffProfileError("CRS EPSG metadata is invalid")
+                transform = [_number(value, field="affine transform") for value in dataset.transform.to_gdal()]
+                resolution = [_number(value, field="pixel resolution") for value in dataset.res]
+                bounds = [
+                    _number(value, field="raster bounds")
+                    for value in (dataset.bounds.left, dataset.bounds.bottom, dataset.bounds.right, dataset.bounds.top)
+                ]
+                nodata = [_number(value, field="band nodata") for value in dataset.nodatavals]
+                scales = [_number(value, field="band scale") for value in dataset.scales]
+                offsets = [_number(value, field="band offset") for value in dataset.offsets]
+                descriptions = [
+                    _bounded_text(value, field="band description", limit=_MAX_UNIT_TEXT)
+                    for value in dataset.descriptions
+                ]
 
-            reader_units = [
-                _bounded_text(unit, field="band unit", limit=_MAX_UNIT_TEXT)
-                for unit in dataset.units
-            ]
-            unit_tags = _filtered_unit_tags(dataset)
-            unit_metadata_present = any(unit is not None and unit != "" for unit in reader_units) or any(
-                bool(tags) for tags in unit_tags
-            )
-
-            transform = [_number(value, field="affine transform") for value in dataset.transform.to_gdal()]
-            resolution = [_number(value, field="pixel resolution") for value in dataset.res]
-            bounds = [
-                _number(value, field="raster bounds")
-                for value in (dataset.bounds.left, dataset.bounds.bottom, dataset.bounds.right, dataset.bounds.top)
-            ]
-            nodata = [_number(value, field="band nodata") for value in dataset.nodatavals]
-            scales = [_number(value, field="band scale") for value in dataset.scales]
-            offsets = [_number(value, field="band offset") for value in dataset.offsets]
-            descriptions = [
-                _bounded_text(value, field="band description", limit=_MAX_UNIT_TEXT)
-                for value in dataset.descriptions
-            ]
-
-            return {
-                "schema_version": "oc-cems-rp10-geotiff-profile-v1",
-                "dataset_id": DATASET_ID,
-                "source_issue": SOURCE_ISSUE,
-                "profile_issue": PROFILE_ISSUE,
-                "release": RELEASE,
-                "filename": FILENAME,
-                "source_url": SOURCE_URL,
-                "receipt_byte_count": byte_count,
-                "receipt_sha256": sha256,
-                "receipt_identity_verified": True,
-                "driver": dataset.driver,
-                "band_count": dataset.count,
-                "dtypes": list(dataset.dtypes),
-                "width": dataset.width,
-                "height": dataset.height,
-                "crs": {
-                    "string": crs_string,
-                    "epsg": crs_epsg,
-                    "wkt": crs_wkt,
-                },
-                "transform_gdal": transform,
-                "resolution": resolution,
-                "bounds": bounds,
-                "nodatavals": nodata,
-                "scales": scales,
-                "offsets": offsets,
-                "descriptions": descriptions,
-                "band_units": reader_units,
-                "band_unit_tags": unit_tags,
-                "unit_metadata_present": unit_metadata_present,
-                "reader": {
-                    "name": "rasterio",
-                    "version": rasterio.__version__,
-                    "gdal_version": getattr(rasterio, "__gdal_version__", None),
-                    "proj_version": getattr(rasterio, "__proj_version__", None),
-                },
-                "raster_values_inspected": False,
-                "geotiff_metadata_verified": True,
-                "benchmark_use_authorized": False,
-                "publication_authorized": False,
-                "model_use_authorized": False,
-            }
+                return {
+                    "schema_version": "oc-cems-rp10-geotiff-profile-v1",
+                    "dataset_id": DATASET_ID,
+                    "source_issue": SOURCE_ISSUE,
+                    "profile_issue": PROFILE_ISSUE,
+                    "release": RELEASE,
+                    "filename": FILENAME,
+                    "source_url": SOURCE_URL,
+                    "receipt_byte_count": byte_count,
+                    "receipt_sha256": sha256,
+                    "receipt_identity_verified": True,
+                    "driver": dataset.driver,
+                    "band_count": dataset.count,
+                    "dtypes": list(dataset.dtypes),
+                    "width": dataset.width,
+                    "height": dataset.height,
+                    "crs": {
+                        "string": crs_string,
+                        "epsg": crs_epsg,
+                        "wkt": crs_wkt,
+                    },
+                    "transform_gdal": transform,
+                    "resolution": resolution,
+                    "bounds": bounds,
+                    "nodatavals": nodata,
+                    "scales": scales,
+                    "offsets": offsets,
+                    "descriptions": descriptions,
+                    "band_units": reader_units,
+                    "band_unit_tags": unit_tags,
+                    "unit_metadata_present": unit_metadata_present,
+                    "reader": {
+                        "name": "rasterio",
+                        "version": rasterio.__version__,
+                        "gdal_version": getattr(rasterio, "__gdal_version__", None),
+                        "proj_version": getattr(rasterio, "__proj_version__", None),
+                    },
+                    "raster_values_inspected": False,
+                    "geotiff_metadata_verified": True,
+                    "benchmark_use_authorized": False,
+                    "publication_authorized": False,
+                    "model_use_authorized": False,
+                }
     except CemsRp10GeoTiffProfileError:
         raise
     except Exception as exc:
