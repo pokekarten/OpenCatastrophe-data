@@ -1,0 +1,76 @@
+name: FFBK LGPIF hardened reused-target reanalysis
+
+on:
+  push:
+    branches:
+      - research/ffbk-lgpif-hardened-reanalysis-20260907-sol56-a2
+
+permissions:
+  contents: read
+
+jobs:
+  run-reanalysis:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact runner branch
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.13"
+
+      - name: Install frozen numerical dependencies
+        run: python -m pip install --disable-pip-version-check numpy==2.3.5 scipy==1.17.0
+
+      - name: Decode and verify hardened executor
+        run: |
+          gzip -dc research-runners/ffbk/lgpif_hardened_reanalysis.py.gz > /tmp/lgpif_hardened_reanalysis.py
+          test "$(sha256sum /tmp/lgpif_hardened_reanalysis.py | awk '{print $1}')" = "a5aa7df1c228e4bc671810f84307e61c436737b68e4fcef8ab3ebfd6fbdff55c"
+          python /tmp/lgpif_hardened_reanalysis.py --self-check
+          python - <<'PY'
+          import numpy, scipy, sys
+          print('python', sys.version)
+          print('numpy', numpy.__version__)
+          print('scipy', scipy.__version__)
+          PY
+
+      - name: Execute reused-target hardened reanalysis
+        run: |
+          python /tmp/lgpif_hardened_reanalysis.py --output lgpif-hardened-reanalysis.json > lgpif-hardened-reanalysis.stdout.json
+          sha256sum lgpif-hardened-reanalysis.json
+          python - <<'PY'
+          import json
+          p='lgpif-hardened-reanalysis.json'
+          d=json.load(open(p))
+          r=d['result']
+          s=r['primary_2010']
+          print('RECEIPT_STATUS', d['receipt_status'])
+          print('SOURCE_BLOB', d['source']['git_blob_sha1'])
+          print('ROWS', d['source']['rows'])
+          print('POPULATIONS', json.dumps(r['populations'], sort_keys=True))
+          print('MEAN_FAMILY', r['primary_pipeline']['mean_family'])
+          print('DELTA', r['primary_pipeline']['delta_selection']['selected_delta'])
+          print('MODEL_MEAN_NLL', json.dumps({k:v['mean_nll'] for k,v in s['models'].items()}, sort_keys=True))
+          print('CONTRASTS', json.dumps(s['contrasts'], sort_keys=True))
+          print('REVERSALS', json.dumps(r['sensitivity_order_reversals'], sort_keys=True))
+          print('GAP_CLOCK', json.dumps({k:v for k,v in r['gap_clock_sensitivity'].items() if k in ('status','GAP_CLOCK_MIXED','calendar_delta','index_delta','clock_semantics_differ_policy_fraction_at_calendar_delta','selected_scheme_weights_differ_policy_fraction')}, sort_keys=True))
+          print('TRAINING_BOOTSTRAP', json.dumps(r['training_selection_refit_uncertainty'], sort_keys=True))
+          print('OBS_WARNING', r['outcome_blind_observation_diagnostic']['continuation']['TENURE_ADJUSTED_HISTORY_WARNING'])
+          print('PRIMARY_BOUNDARY_BLOCK', r['interpretation']['primary_dispersion_boundary_block'])
+          print('OVERALL', r['status'])
+          PY
+
+      - name: Upload full audit receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ffbk-lgpif-hardened-reanalysis
+          path: |
+            lgpif-hardened-reanalysis.json
+            lgpif-hardened-reanalysis.stdout.json
+          if-no-files-found: error
+          retention-days: 30
