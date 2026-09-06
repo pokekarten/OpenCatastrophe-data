@@ -1,0 +1,52 @@
+name: tmp FFBK freMTPLfreq OOS duration replication
+
+on:
+  push:
+    branches:
+      - tmp/ffbk-fremtplfreq-oos-20260906
+    paths:
+      - tmp_ffbk/underwriting_fremtplfreq_oos_duration_replication.py
+      - .github/workflows/tmp_ffbk_fremtplfreq_oos_duration.yml
+
+permissions:
+  contents: read
+
+jobs:
+  replicate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install scientific stack
+        run: |
+          python -m pip install --disable-pip-version-check \
+            numpy==2.2.3 pandas==2.2.3 scipy==1.15.2 \
+            scikit-learn==1.8.0 pyreadr==0.5.6
+      - name: Execute prospectively frozen replication
+        run: |
+          sha256sum tmp_ffbk/underwriting_fremtplfreq_oos_duration_replication.py
+          python tmp_ffbk/underwriting_fremtplfreq_oos_duration_replication.py \
+            --output fremtplfreq_oos_duration_result.json \
+            > fremtplfreq_oos_duration_stdout.json
+          sha256sum fremtplfreq_oos_duration_result.json fremtplfreq_oos_duration_stdout.json
+          python - <<'PY'
+          import json
+          r=json.load(open('fremtplfreq_oos_duration_result.json'))
+          print('STATUS', r['research_status'])
+          print('DATA_SHA256', r['dataset']['sha256'])
+          print('ROWS', r['dataset']['rows'])
+          print('MEAN_DEV_DELTA', r['mean_delta_pro_rata_minus_duration_deviance'])
+          print('MEAN_BAND_CAL_DELTA', r['mean_delta_band_abs_error_pro_rata_minus_duration'])
+          for s in r['splits']:
+              print('SEED', s['seed'], 'DEV_DELTA', s['delta_pro_rata_minus_duration_deviance'], 'CAL_DELTA', s['delta_band_abs_error_pro_rata_minus_duration'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fremtplfreq-oos-duration-replication
+          path: |
+            fremtplfreq_oos_duration_result.json
+            fremtplfreq_oos_duration_stdout.json
+          if-no-files-found: error
