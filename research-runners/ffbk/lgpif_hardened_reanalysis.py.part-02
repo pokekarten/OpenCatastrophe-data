@@ -1,0 +1,139 @@
+        return np.column_stack(cols)
+
+    def fit_poisson(
+        self,
+        family: str,
+        years: Sequence[int],
+        required_prediction_rows: np.ndarray,
+        row_weights: np.ndarray | None = None,
+        include_noclaim: bool = False,
+    ) -> MeanFit:
+        fit_mask = np.isin(self.d["Year"], np.asarray(years))
+        if row_weights is None:
+            weights = np.ones(self.n, dtype=float)
+        else:
+            weights = np.asarray(row_weights, dtype=float)
+            if weights.shape != (self.n,):
+                raise ProtocolError("row-weight shape mismatch")
+        active = fit_mask & (weights > 0)
+        spec = self.make_mean_spec(family, fit_mask, weights, include_noclaim, required_prediction_rows)
+        idx = np.flatnonzero(active)
+        X = self.x(idx, spec)
+        y = self.d["Freq"][idx].astype(float)
+        w = weights[idx]
+        denom = float(np.sum(w))
+        if denom <= 0:
+            raise ProtocolError("zero Poisson fit weight")
+        ybar = float(np.sum(w * y) / denom)
+        b0 = np.zeros(X.shape[1], dtype=float)
+        b0[0] = math.log(max(ybar, 1e-8))
+
+        def fg(beta: np.ndarray) -> tuple[float, np.ndarray]:
+            eta = X @ beta
+            if np.any(eta > 700) or np.any(~np.isfinite(eta)):
+                return 1e300, np.full_like(beta, 1e100)
+            mu = np.exp(eta)
+            nll = np.sum(w * (mu - y * eta + gammaln(y + 1.0)))
+            grad = X.T @ (w * (mu - y))
+            if not math.isfinite(float(nll)) or np.any(~np.isfinite(grad)):
+                return 1e300, np.full_like(beta, 1e100)
+            return float(nll), grad
+
+        res = minimize(
+            lambda b: fg(b)[0], b0, jac=lambda b: fg(b)[1], method="BFGS",
+            options={"gtol": 1e-8, "maxiter": 2000},
+        )
+        final_nll, final_grad = fg(np.asarray(res.x, dtype=float))
+        grad_inf = float(np.max(np.abs(final_grad)))
+        if (not res.success and grad_inf > 1e-5) or not math.isfinite(final_nll):
+            raise ProtocolError(f"poisson_fit_failed:{res.message}:grad_inf={grad_inf}")
+        return MeanFit(
+            spec=spec,
+            beta=np.asarray(res.x, dtype=float),
+            nll=final_nll,
+            optimizer={"method": "BFGS", "success": bool(res.success), "message": str(res.message),
+                       "nit": int(getattr(res, "nit", -1)), "grad_inf": grad_inf},
+        )
+
+    def mu(self, fit: MeanFit, rows: np.ndarray) -> np.ndarray:
+        eta = self.x(rows, fit.spec) @ fit.beta
+        if np.any(~np.isfinite(eta)) or np.any(eta > 700):
+            raise ProtocolError("non-finite/overflow mean prediction")
+        mu = np.exp(eta)
+        if np.any(~np.isfinite(mu)) or np.any(mu <= 0):
+            raise ProtocolError("invalid mean prediction")
+        return mu
+
+    def select_mean(self, row_weights: np.ndarray | None = None, include_noclaim: bool = False) -> dict:
+        val_rows = self.policy_target_rows(self.validation_policies, 2009)
+        required_val_rows = val_rows if row_weights is None else val_rows[row_weights[val_rows] > 0]
+        if len(required_val_rows) == 0:
+            raise ProtocolError("empty weighted 2009 validation population")
+        candidates: dict[str, dict] = {}
+        for family in ("A", "B"):
+            fit = self.fit_poisson(family, [2006, 2007, 2008], required_val_rows, row_weights, include_noclaim)
+            mu = self.mu(fit, val_rows)
+            y = self.d["Freq"][val_rows]
+            if row_weights is None:
+                w = np.ones(len(val_rows))
+            else:
+                w = row_weights[val_rows]
+            keep = w > 0
+            if not np.any(keep):
+                raise ProtocolError("empty weighted 2009 validation population")
+            nll_vec = -(poisson.logpmf(y[keep], mu[keep]))
+            total = float(np.sum(w[keep] * nll_vec))
+            candidates[family] = {"fit": fit, "validation_sum_nll": total, "validation_weight": float(np.sum(w[keep]))}
+        da = candidates["A"]["validation_sum_nll"]
+        db = candidates["B"]["validation_sum_nll"]
+        if abs(da - db) < TIE_TOL:
+            selected = "A"
+        else:
+            selected = "A" if da < db else "B"
+        return {"selected": selected, "candidates": candidates}
+
+    @staticmethod
+    def nb_logpmf(y: np.ndarray, mu: np.ndarray, r: float) -> np.ndarray:
+        y = np.asarray(y, dtype=float)
+        mu = np.asarray(mu, dtype=float)
+        if r <= 0 or np.any(mu <= 0):
+            return np.full_like(mu, -np.inf)
+        return (
+            gammaln(y + r) - gammaln(r) - gammaln(y + 1.0)
+            + r * (math.log(r) - np.log(r + mu))
+            + y * (np.log(mu) - np.log(r + mu))
+        )
+
+    def _fit_r_scalar(self, objective, label: str) -> RFit:
+        def obj(log_r: float) -> float:
+            val = float(objective(math.exp(float(log_r))))
+            if not math.isfinite(val):
+                return float("inf")
+            return val
+        res = minimize_scalar(
+            obj,
+            bounds=LOG_R_BOUNDS,
+            method="bounded",
+            options={"xatol": LOG_R_XATOL, "maxiter": LOG_R_MAXITER},
+        )
+        if not bool(res.success) or not math.isfinite(float(res.fun)):
+            raise ProtocolError(f"{label}_r_fit_failed:{res.message}")
+        log_r = float(res.x)
+        boundary = (abs(log_r - LOG_R_BOUNDS[0]) <= BOUNDARY_EPS or abs(log_r - LOG_R_BOUNDS[1]) <= BOUNDARY_EPS)
+        return RFit(
+            r=math.exp(log_r), log_r=log_r, objective=float(res.fun), boundary_hit=boundary,
+            optimizer={"method": "bounded", "xatol": LOG_R_XATOL, "maxiter": LOG_R_MAXITER,
+                       "success": bool(res.success), "message": str(res.message), "nfev": int(getattr(res, "nfev", -1))},
+        )
+
+    def fit_m1_r(self, fit: MeanFit, years: Sequence[int], row_weights: np.ndarray | None = None) -> RFit:
+        idx = np.flatnonzero(np.isin(self.d["Year"], np.asarray(years)))
+        w = np.ones(len(idx)) if row_weights is None else row_weights[idx].astype(float)
+        keep = w > 0
+        if not np.any(keep):
+            raise ProtocolError("empty M1 fit")
+        idx = idx[keep]
+        w = w[keep]
+        mu = self.mu(fit, idx)
+        y = self.d["Freq"][idx]
+        return self._fit_r_scalar(lambda r: -float(np.sum(w * self.nb_logpmf(y, mu, r))), "M1")
