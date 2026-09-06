@@ -1,0 +1,140 @@
+        active_rows = self.policy_target_rows(active_policies, 2009)
+        active_w = row_weights[active_rows].astype(float) if row_weights is not None else np.ones(len(active_rows), dtype=float)
+        scores: list[dict] = []
+        # M0/M1 values are irrelevant here; use r_m2 for both placeholders.
+        for delta in DELTA_GRID:
+            vals = self.conditional_nlls(dev_mean, r_m2_dev, r_m2_dev, delta, active_policies, 2009, clock=clock)["M3"]
+            total = float(np.sum(active_w * vals))
+            scores.append({"delta": float(delta), "sum_nll": total, "weight": float(np.sum(active_w))})
+        best_nll = min(x["sum_nll"] for x in scores)
+        tied = [x["delta"] for x in scores if abs(x["sum_nll"] - best_nll) <= TIE_TOL]
+        selected = max(tied)
+        return {"selected_delta": float(selected), "scores": scores, "tie_tolerance": TIE_TOL, "clock": clock}
+
+    @staticmethod
+    def bootstrap_interval(diff: np.ndarray, seed: int = EVAL_BOOT_SEED, reps: int = EVAL_BOOT_REPS) -> dict:
+        d = np.asarray(diff, dtype=float)
+        if len(d) == 0 or np.any(~np.isfinite(d)):
+            raise ProtocolError("invalid paired difference vector")
+        rng = np.random.Generator(np.random.PCG64(seed))
+        means = np.empty(reps, dtype=float)
+        n = len(d)
+        for b in range(reps):
+            idx = rng.integers(0, n, size=n)
+            means[b] = float(np.mean(d[idx]))
+        lo, hi = np.quantile(means, [0.025, 0.975])
+        return {"mean": float(np.mean(d)), "ci95": [float(lo), float(hi)], "reps": reps, "seed": seed}
+
+    @staticmethod
+    def classify(boot: dict) -> str:
+        mean = float(boot["mean"])
+        lo, hi = map(float, boot["ci95"])
+        if mean < 0 and hi < 0:
+            return "SUPPORTED"
+        if lo > 0:
+            return "WEAKENED"
+        return "INCONCLUSIVE"
+
+    def summarize_target(self, scores: dict[str, np.ndarray], delta: float, include_pit: bool = True) -> dict:
+        contrasts = {
+            "D10_M1_minus_M0": scores["M1"] - scores["M0"],
+            "D21_M2_minus_M1": scores["M2"] - scores["M1"],
+            "D32_M3_minus_M2": scores["M3"] - scores["M2"],
+        }
+        contrast_summary = {}
+        for name, diff in contrasts.items():
+            b = self.bootstrap_interval(diff)
+            b["classification"] = self.classify(b)
+            contrast_summary[name] = b
+        model_scores = {m: {"sum_nll": float(np.sum(scores[m])), "mean_nll": float(np.mean(scores[m]))} for m in ("M0", "M1", "M2", "M3")}
+        out = {
+            "n": int(len(scores["policy"])),
+            "models": model_scores,
+            "contrasts": contrast_summary,
+            "selected_delta": float(delta),
+            "per_policy": [
+                {"PolicyNum": int(p), "Freq": int(y), "mu": float(mu),
+                 "M0_nll": float(a), "M1_nll": float(b), "M2_nll": float(c), "M3_nll": float(d)}
+                for p, y, mu, a, b, c, d in zip(scores["policy"], scores["y"], scores["mu"], scores["M0"], scores["M1"], scores["M2"], scores["M3"])
+            ],
+        }
+        if include_pit:
+            rng = np.random.Generator(np.random.PCG64(PIT_SEED))
+            pit = {}
+            for model in ("M0", "M1", "M2", "M3"):
+                u = rng.random(len(scores["policy"]))
+                v = scores["cdf_lower"][model] + u * scores["pmf_y"][model]
+                counts, edges = np.histogram(v, bins=np.linspace(0.0, 1.0, 11))
+                pit[model] = {
+                    "seed": PIT_SEED, "mean": float(np.mean(v)),
+                    "q05_q50_q95": [float(x) for x in np.quantile(v, [0.05, 0.50, 0.95])],
+                    "decile_counts": counts.astype(int).tolist(), "edges": edges.tolist(),
+                }
+            out["randomized_pit"] = pit
+            out["calibration"] = self._calibration_diagnostics(scores)
+        return out
+
+    def _calibration_diagnostics(self, scores: dict[str, np.ndarray]) -> dict:
+        result: dict[str, dict] = {}
+        for band_name, predicate in {
+            "prior_0": lambda x: x == 0,
+            "prior_1": lambda x: x == 1,
+            "prior_2plus": lambda x: x >= 2,
+        }.items():
+            mask = []
+            hist_years = []
+            for p in scores["policy"].tolist():
+                idx = self._history_indices(int(p), 2010)
+                prior_count = int(np.sum(self.d["Freq"][idx]))
+                mask.append(bool(predicate(prior_count)))
+                hist_years.append(len(set(int(y) for y in self.d["Year"][idx])))
+            mask_arr = np.asarray(mask, dtype=bool)
+            if not np.any(mask_arr):
+                result[band_name] = {"n": 0}
+                continue
+            entry = {"n": int(np.sum(mask_arr)), "observed_mean": float(np.mean(scores["y"][mask_arr]))}
+            for m in ("M0", "M1", "M2", "M3"):
+                entry[m] = {
+                    "predictive_mean": float(np.mean(scores["pred_mean"][m][mask_arr])),
+                    "mean_nll": float(np.mean(scores[m][mask_arr])),
+                }
+            result[band_name] = entry
+        # Score differences vs available history length.
+        by_years: dict[str, dict] = {}
+        history_len = []
+        for p in scores["policy"].tolist():
+            idx = self._history_indices(int(p), 2010)
+            history_len.append(len(set(int(y) for y in self.d["Year"][idx])))
+        history_len = np.asarray(history_len, dtype=int)
+        for h in sorted(set(history_len.tolist())):
+            mask = history_len == h
+            by_years[str(h)] = {
+                "n": int(np.sum(mask)),
+                "D10_mean": float(np.mean((scores["M1"] - scores["M0"])[mask])),
+                "D21_mean": float(np.mean((scores["M2"] - scores["M1"])[mask])),
+                "D32_mean": float(np.mean((scores["M3"] - scores["M2"])[mask])),
+            }
+        return {"prior_count_bands": result, "score_difference_by_history_years": by_years}
+
+    def gap_audit(self, policies: Sequence[int], forecast_year: int) -> dict:
+        gaps = []
+        contiguous = 0
+        reentry = 0
+        differing = 0
+        for p in policies:
+            idx = self._history_indices(int(p), forecast_year)
+            yrs = sorted(set(int(y) for y in self.d["Year"][idx]))
+            if not yrs:
+                continue
+            expected = list(range(yrs[0], forecast_year))
+            missing = sorted(set(expected) - set(yrs))
+            if not missing:
+                contiguous += 1
+            else:
+                differing += 1
+                # Internal gap/re-entry means missing before the latest observed pre-forecast year.
+                if any(m < max(yrs) for m in missing):
+                    reentry += 1
+            gap_lengths = [max(0, int(b - a - 1)) for a, b in zip(yrs, yrs[1:])]
+            gap_lengths.append(max(0, int(forecast_year - yrs[-1] - 1)))
+            gaps.append(int(max(gap_lengths) if gap_lengths else 0))
