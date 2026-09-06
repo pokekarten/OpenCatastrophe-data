@@ -1,0 +1,37 @@
+name: tmp-ffbk-duration-no-count-cap
+
+on:
+  push:
+    branches:
+      - tmp/ffbk-duration-meanclass-20260906
+    paths:
+      - scripts/tmp_ffbk_duration_no_count_cap.py
+      - .github/workflows/tmp-ffbk-duration-no-count-cap.yml
+
+permissions:
+  contents: read
+
+jobs:
+  run-sensitivity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.13'
+      - name: Install frozen research environment
+        run: python -m pip install --disable-pip-version-check 'numpy==2.3.5' 'pandas==2.2.3' 'scipy==1.17.0' 'scikit-learn==1.8.0'
+      - name: Record sensitivity script identities
+        run: |
+          sha256sum scripts/tmp_ffbk_duration_meanclass_independent.py
+          sha256sum scripts/tmp_ffbk_duration_no_count_cap.py
+      - name: Run predeclared no-count-cap sensitivity
+        run: python scripts/tmp_ffbk_duration_no_count_cap.py
+      - name: Upload sensitivity receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-duration-no-count-cap-result
+          path: tmp_ffbk_duration_no_count_cap_result.json
+          if-no-files-found: warn
