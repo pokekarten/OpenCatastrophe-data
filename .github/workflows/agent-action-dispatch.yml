@@ -55,6 +55,9 @@ jobs:
       # receipt-bound GeoTIFF metadata profile. Compatibility parents remain
       # prepare_agent_action_result_cems_rp10.py and post_agent_action_result_cems_rp10.py;
       # this layer only wraps their reviewed request/result/ledger behavior.
+      # Compatibility therefore still covers the repository-owned frozen DWD worker;
+      # the profile-aware publisher delegates to the reviewed
+      # `python scripts/post_agent_action_result.py` implementation for publication.
       # No URL/path/return-period/provider/reader/parser comes from the comment;
       # all authorized actions remain in this one serialized owner-only lane.
       - name: Prepare bounded action result
