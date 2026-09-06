@@ -52,9 +52,11 @@ jobs:
         run: python -m pip check
       # The CEMS-profile-aware layer delegates every pre-existing action through
       # the reviewed CEMS receipt dispatcher and adds only the frozen Issue #802
-      # receipt-bound GeoTIFF metadata profile. No URL/path/return-period/provider/
-      # reader/parser comes from the comment; all authorized actions remain in
-      # this one serialized owner-only lane. Runtime invocation uses package modules.
+      # receipt-bound GeoTIFF metadata profile. Compatibility parents remain
+      # prepare_agent_action_result_cems_rp10.py and post_agent_action_result_cems_rp10.py;
+      # this layer only wraps their reviewed request/result/ledger behavior.
+      # No URL/path/return-period/provider/reader/parser comes from the comment;
+      # all authorized actions remain in this one serialized owner-only lane.
       - name: Prepare bounded action result
         id: prepare-result
         env:
