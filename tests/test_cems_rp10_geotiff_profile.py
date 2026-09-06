@@ -164,32 +164,30 @@ class CemsRp10GeoTiffProfileTests(unittest.TestCase):
                 reader.assert_not_called()
 
     def test_band_count_is_bounded_before_per_band_metadata(self) -> None:
-        class TooManyBands:
-            driver = "GTiff"
-            width = 1
-            height = 1
-            count = mod._MAX_BANDS + 1
-
-            def __enter__(self):
-                return self
-
-            def __exit__(self, exc_type, exc, tb):
-                return False
-
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "identity.bin"
-            path.write_bytes(b"identity")
+            path = Path(directory) / "too-many-bands.tif"
+            with rasterio.open(
+                path,
+                "w",
+                driver="GTiff",
+                width=1,
+                height=1,
+                count=mod._MAX_BANDS + 1,
+                dtype="uint8",
+                crs="EPSG:4326",
+                transform=from_origin(0.0, 1.0, 1.0, 1.0),
+            ):
+                pass
             raw = path.read_bytes()
-            with mock.patch.object(mod.rasterio, "open", return_value=TooManyBands()):
-                with self.assertRaisesRegex(
-                    mod.CemsRp10GeoTiffProfileError,
-                    "band count.*bounded metadata contract",
-                ):
-                    mod._profile_bound_geotiff(
-                        path,
-                        expected_byte_count=len(raw),
-                        expected_sha256=hashlib.sha256(raw).hexdigest(),
-                    )
+            with self.assertRaisesRegex(
+                mod.CemsRp10GeoTiffProfileError,
+                "band count.*bounded metadata contract",
+            ):
+                mod._profile_bound_geotiff(
+                    path,
+                    expected_byte_count=len(raw),
+                    expected_sha256=hashlib.sha256(raw).hexdigest(),
+                )
 
     def test_missing_unit_metadata_is_reported_not_inferred(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
