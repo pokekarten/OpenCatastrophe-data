@@ -6,6 +6,7 @@ from pathlib import Path
 
 import tmp_ffbk_fremtpl2_aggregate_law as study
 
+# Fixed before multi-split execution; do not tune from target outcomes.
 SEEDS = (26090731, 26090747, 26090773)
 OUT = Path("tmp_ffbk_aggregate_law_multisplit_result.json")
 
