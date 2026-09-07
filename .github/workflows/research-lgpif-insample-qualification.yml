@@ -1,0 +1,228 @@
+name: Research LGPIF in-sample qualification bridge
+
+on:
+  push:
+    branches:
+      - research-bridge/lgpif-insample-qualification-20260907
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Install reader
+        run: python -m pip install --disable-pip-version-check --no-cache-dir pyreadr pandas numpy
+
+      - name: Materialize only in-sample sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p work out
+          curl --fail --location --retry 3 --retry-delay 2 \
+            --output work/data.RData \
+            'https://users.ssc.wisc.edu/~jfrees/InsurableRisks/DataDownload/PropertyFundData/data.RData'
+          curl --fail --location --retry 3 --retry-delay 2 \
+            --output work/WiscPropFund.csv \
+            'https://raw.githubusercontent.com/OpenActTextDev/LDA_Ed2/8410b067ed2548e0e09077bbb880a476a0a2cdf9/Data/WiscPropFund.csv'
+          test -s work/data.RData
+          test -s work/WiscPropFund.csv
+
+      - name: Compare deterministic in-sample semantics
+        shell: bash
+        run: |
+          cat > work/qualify.py <<'PY'
+          from __future__ import annotations
+          import hashlib, json, math
+          from pathlib import Path
+          import numpy as np
+          import pandas as pd
+          import pyreadr
+
+          RDATA = Path('work/data.RData')
+          WISC = Path('work/WiscPropFund.csv')
+          OUT = Path('out/lgpif-insample-qualification.json')
+
+          def sha256(path: Path) -> str:
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+
+          def git_blob_sha1(path: Path) -> str:
+              b = path.read_bytes()
+              return hashlib.sha1(f'blob {len(b)}\0'.encode() + b).hexdigest()
+
+          def safe_num(s):
+              return pd.to_numeric(s, errors='coerce')
+
+          obj = pyreadr.read_r(str(RDATA))
+          keys = list(obj.keys())
+          if len(keys) != 1:
+              raise RuntimeError(f'expected exactly one object in data.RData, got {keys!r}')
+          src = obj[keys[0]].copy()
+          wisc = pd.read_csv(WISC)
+
+          required_src = [
+              'PolicyNum','Year','ClaimBC','TypeCity','TypeCounty','TypeMisc',
+              'TypeSchool','TypeTown','TypeVillage','CoverageBC','lnDeductBC',
+              'NoClaimCreditBC','FreqBC'
+          ]
+          missing_required = [c for c in required_src if c not in src.columns]
+          required_wisc = [
+              'PolicyNum','Year','Premium','Deduct','BCcov','Freq','Fire5',
+              'NoClaimCredit','EntityType','AlarmCredit','BCClaim'
+          ]
+          missing_wisc = [c for c in required_wisc if c not in wisc.columns]
+          if missing_required or missing_wisc:
+              raise RuntimeError({'missing_required_src': missing_required, 'missing_wisc': missing_wisc})
+
+          for df in (src, wisc):
+              df['PolicyNum'] = safe_num(df['PolicyNum']).astype('Int64')
+              df['Year'] = safe_num(df['Year']).astype('Int64')
+
+          src_dupes = int(src.duplicated(['PolicyNum','Year']).sum())
+          wisc_dupes = int(wisc.duplicated(['PolicyNum','Year']).sum())
+          merged = wisc.merge(src, on=['PolicyNum','Year'], how='outer', indicator=True, suffixes=('_wisc','_src'))
+          both = merged[merged['_merge'] == 'both'].copy()
+          wisc_only = merged[merged['_merge'] == 'left_only'].copy()
+          src_only = merged[merged['_merge'] == 'right_only'].copy()
+
+          def numeric_cmp(a, b, atol=1e-10, rtol=1e-10):
+              aa = safe_num(a).astype(float).to_numpy()
+              bb = safe_num(b).astype(float).to_numpy()
+              finite = np.isfinite(aa) & np.isfinite(bb)
+              equal_na = (~np.isfinite(aa)) & (~np.isfinite(bb))
+              ok = np.zeros(len(aa), dtype=bool)
+              ok[finite] = np.isclose(aa[finite], bb[finite], atol=atol, rtol=rtol)
+              ok[equal_na] = True
+              dif = np.abs(aa[finite] - bb[finite])
+              return {
+                  'n': int(len(aa)),
+                  'n_equal': int(ok.sum()),
+                  'n_mismatch': int((~ok).sum()),
+                  'max_abs_diff_finite': None if dif.size == 0 else float(np.max(dif)),
+              }
+
+          comparisons = {}
+          comparisons['Freq_vs_FreqBC'] = numeric_cmp(both['Freq'], both['FreqBC'], atol=0, rtol=0)
+          comparisons['NoClaimCredit_vs_NoClaimCreditBC'] = numeric_cmp(
+              both['NoClaimCredit'], both['NoClaimCreditBC'], atol=0, rtol=0
+          )
+          comparisons['BCClaim_vs_ClaimBC'] = numeric_cmp(both['BCClaim'], both['ClaimBC'], atol=0.005, rtol=1e-12)
+
+          cov_src = safe_num(both['CoverageBC']).astype(float)
+          ded_src = safe_num(both['lnDeductBC']).astype(float)
+          cov_candidates = {
+              'exp_CoverageBC_times_1e6': np.exp(cov_src) * 1e6,
+              'exp_CoverageBC': np.exp(cov_src),
+              'CoverageBC_raw': cov_src,
+          }
+          ded_candidates = {
+              'exp_lnDeductBC': np.exp(ded_src),
+              'lnDeductBC_raw': ded_src,
+          }
+          comparisons['BCcov_transform_candidates'] = {
+              k: numeric_cmp(both['BCcov'], v, atol=0.51, rtol=1e-9) for k, v in cov_candidates.items()
+          }
+          comparisons['Deduct_transform_candidates'] = {
+              k: numeric_cmp(both['Deduct'], v, atol=0.01, rtol=1e-10) for k, v in ded_candidates.items()
+          }
+
+          type_cols = ['TypeCity','TypeCounty','TypeMisc','TypeSchool','TypeTown','TypeVillage']
+          type_matrix = both[type_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
+          both['derived_type_name'] = type_matrix.idxmax(axis=1)
+          both['type_active_count'] = (type_matrix > 0.5).sum(axis=1)
+          entity_cross = pd.crosstab(both['EntityType'].astype(str), both['derived_type_name'].astype(str))
+
+          absent_from_src = [c for c in ['Premium','Fire5','AlarmCredit'] if c not in src.columns]
+          shared_reconstructible = {
+              'PolicyNum': 'direct',
+              'Year': 'direct',
+              'BCcov': 'candidate exp(CoverageBC)*1e6',
+              'Deduct': 'candidate exp(lnDeductBC)',
+              'Freq': 'FreqBC',
+              'NoClaimCredit': 'NoClaimCreditBC',
+              'EntityType': 'candidate reconstruction from Type* dummies',
+              'BCClaim': 'ClaimBC',
+          }
+
+          receipt = {
+              'status': 'IN_SAMPLE_ONLY_TARGET_NOT_ACCESSED',
+              'source_identity': {
+                  'authoritative_in_sample_url': 'https://users.ssc.wisc.edu/~jfrees/InsurableRisks/DataDownload/PropertyFundData/data.RData',
+                  'data_rdata_bytes': RDATA.stat().st_size,
+                  'data_rdata_sha256': sha256(RDATA),
+                  'wisc_repository': 'OpenActTextDev/LDA_Ed2',
+                  'wisc_commit': '8410b067ed2548e0e09077bbb880a476a0a2cdf9',
+                  'wisc_path': 'Data/WiscPropFund.csv',
+                  'wisc_bytes': WISC.stat().st_size,
+                  'wisc_sha256': sha256(WISC),
+                  'wisc_git_blob_sha1': git_blob_sha1(WISC),
+                  'wisc_expected_git_blob_sha1': '267025ccdbff95d47706fd65241f52049243effc',
+              },
+              'rdata_object_names': keys,
+              'source_shape': [int(src.shape[0]), int(src.shape[1])],
+              'source_columns': list(map(str, src.columns)),
+              'source_years': sorted(int(x) for x in pd.unique(src['Year'].dropna())),
+              'wisc_shape': [int(wisc.shape[0]), int(wisc.shape[1])],
+              'wisc_columns': list(map(str, wisc.columns)),
+              'wisc_years': sorted(int(x) for x in pd.unique(wisc['Year'].dropna())),
+              'key_diagnostics': {
+                  'source_duplicate_policy_year': src_dupes,
+                  'wisc_duplicate_policy_year': wisc_dupes,
+                  'both': int(len(both)),
+                  'wisc_only': int(len(wisc_only)),
+                  'source_only': int(len(src_only)),
+                  'source_only_year_counts': {str(int(k)): int(v) for k, v in src_only['Year'].value_counts().sort_index().items()},
+              },
+              'comparisons_on_common_policy_year': comparisons,
+              'entity_type_crosstab': {
+                  str(idx): {str(col): int(entity_cross.loc[idx, col]) for col in entity_cross.columns}
+                  for idx in entity_cross.index
+              },
+              'type_active_count_distribution': {
+                  str(int(k)): int(v) for k, v in both['type_active_count'].value_counts().sort_index().items()
+              },
+              'shared_reconstructible_fields': shared_reconstructible,
+              'wisc_fields_absent_from_rdata_schema': absent_from_src,
+              'target_access': {
+                  'dataout_RData_downloaded': False,
+                  'dataout_RData_opened': False,
+                  'year_2011_outcome_accessed': False,
+              },
+          }
+
+          # A bounded semantic gate: key identity plus count/outcome and transformed
+          # exposure/deductible must agree; missing required baseline rating fields are
+          # reported rather than repaired.
+          cov_best = comparisons['BCcov_transform_candidates']['exp_CoverageBC_times_1e6']['n_mismatch']
+          ded_best = comparisons['Deduct_transform_candidates']['exp_lnDeductBC']['n_mismatch']
+          required_common_mismatch = sum([
+              comparisons['Freq_vs_FreqBC']['n_mismatch'],
+              comparisons['NoClaimCredit_vs_NoClaimCreditBC']['n_mismatch'],
+              comparisons['BCClaim_vs_ClaimBC']['n_mismatch'],
+              cov_best,
+              ded_best,
+          ])
+          receipt['bounded_verdict'] = {
+              'common_panel_semantics': 'SUPPORTED' if (
+                  len(wisc_only) == 0 and required_common_mismatch == 0
+              ) else 'FALSIFIED_OR_UNRESOLVED',
+              'full_current_model_schema_compatibility': 'FALSIFIED' if absent_from_src else 'SUPPORTED',
+              'reason': (
+                  'Common PolicyNum-Year semantics are assessed independently; full compatibility fails if current-model rating fields are absent from data.RData.'
+              ),
+          }
+
+          OUT.write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n')
+          print(OUT.read_text())
+          PY
+          python work/qualify.py
+
+      - name: Upload qualification receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: lgpif-insample-qualification
+          path: out/lgpif-insample-qualification.json
+          if-no-files-found: error
