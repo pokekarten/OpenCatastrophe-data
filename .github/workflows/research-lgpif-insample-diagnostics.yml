@@ -23,91 +23,117 @@ jobs:
             'https://users.ssc.wisc.edu/~jfrees/InsurableRisks/DataDownload/PropertyFundData/data.RData'
           curl --fail --location --retry 3 --output work/WiscPropFund.csv \
             'https://raw.githubusercontent.com/OpenActTextDev/LDA_Ed2/8410b067ed2548e0e09077bbb880a476a0a2cdf9/Data/WiscPropFund.csv'
-      - name: Resolve transformations and mismatches
+          curl --fail --location --retry 3 --output work/LGPIF-assessor.rda \
+            'https://raw.githubusercontent.com/jhlee1408/assessor/f25a700a60/data/LGPIF.rda'
+      - name: Resolve transformations, aggregate target, and independent mirror identity
         shell: bash
         run: |
           cat > work/diagnose.py <<'PY'
-          import json
+          import hashlib, json
           from pathlib import Path
           import numpy as np
           import pandas as pd
           import pyreadr
 
-          src = list(pyreadr.read_r('work/data.RData').values())[0].copy()
-          w = pd.read_csv('work/WiscPropFund.csv')
-          for d in (src,w):
-              d['PolicyNum']=pd.to_numeric(d['PolicyNum']).astype('Int64')
-              d['Year']=pd.to_numeric(d['Year']).astype('Int64')
-          m=w.merge(src,on=['PolicyNum','Year'],how='outer',indicator=True,suffixes=('_w','_s'))
-          b=m[m['_merge']=='both'].copy()
-          so=m[m['_merge']=='right_only'].copy()
-
-          def n(x): return pd.to_numeric(x,errors='coerce').astype(float)
+          def sha256(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+          def n(x):
+              return pd.to_numeric(x, errors='coerce').astype(float)
           def cmp(a,b,atol=1e-8,rtol=1e-10):
               aa=n(a).to_numpy(); bb=n(b).to_numpy()
               ok=np.isclose(aa,bb,atol=atol,rtol=rtol,equal_nan=True)
-              diff=np.abs(aa-bb)
-              fin=np.isfinite(diff)
-              return {'n':len(aa),'equal':int(ok.sum()),'mismatch':int((~ok).sum()),
+              diff=np.abs(aa-bb); fin=np.isfinite(diff)
+              return {'n':int(len(aa)),'equal':int(ok.sum()),'mismatch':int((~ok).sum()),
                       'max_abs':None if not fin.any() else float(diff[fin].max()),
                       'median_abs':None if not fin.any() else float(np.median(diff[fin]))}
 
-          cov=n(b['CoverageBC'])
-          ded=n(b['lnDeductBC'])
-          trans={
-            'BCcov_vs_CoverageBC_times_1e6':cmp(b['BCcov'],cov*1e6,atol=.51,rtol=1e-9),
-            'BCcov_vs_CoverageBC_times_1000':cmp(b['BCcov'],cov*1000,atol=.51,rtol=1e-9),
-            'BCcov_vs_CoverageBC':cmp(b['BCcov'],cov,atol=.51,rtol=1e-9),
-            'BCcov_log_vs_CoverageBC':cmp(np.log(n(b['BCcov'])),cov,atol=1e-10,rtol=1e-10),
-            'BCcov_log_millions_vs_CoverageBC':cmp(np.log(n(b['BCcov'])/1e6),cov,atol=1e-10,rtol=1e-10),
-            'Deduct_vs_exp_lnDeductBC':cmp(b['Deduct'],np.exp(ded),atol=.01,rtol=1e-10),
-            'Freq_vs_FreqBC':cmp(b['Freq'],b['FreqBC'],atol=0,rtol=0),
-            'NoClaimCredit_vs_NoClaimCreditBC':cmp(b['NoClaimCredit'],b['NoClaimCreditBC'],atol=0,rtol=0),
-            'BCClaim_vs_ClaimBC':cmp(b['BCClaim'],b['ClaimBC'],atol=.005,rtol=1e-12),
-          }
+          src = list(pyreadr.read_r('work/data.RData').values())[0].copy()
+          mirror_obj = pyreadr.read_r('work/LGPIF-assessor.rda')
+          if len(mirror_obj) != 1:
+              raise RuntimeError(f'unexpected assessor objects: {list(mirror_obj)}')
+          mirror = list(mirror_obj.values())[0].copy()
+          w = pd.read_csv('work/WiscPropFund.csv')
+          for d in (src, mirror, w):
+              d['PolicyNum']=pd.to_numeric(d['PolicyNum']).astype('Int64')
+              d['Year']=pd.to_numeric(d['Year']).astype('Int64')
 
-          freq_bad=b[n(b['Freq'])!=n(b['FreqBC'])].copy()
-          claim_bad=b[~np.isclose(n(b['BCClaim']),n(b['ClaimBC']),atol=.005,rtol=1e-12,equal_nan=True)].copy()
-          ncc_bad=b[n(b['NoClaimCredit'])!=n(b['NoClaimCreditBC'])].copy()
-          ded_bad=b[~np.isclose(n(b['Deduct']),np.exp(n(b['lnDeductBC'])),atol=.01,rtol=1e-10,equal_nan=True)].copy()
+          srcs=src.sort_values(['PolicyNum','Year']).reset_index(drop=True)
+          mirs=mirror.sort_values(['PolicyNum','Year']).reset_index(drop=True)
+          mirror_cmp={'shape_equal':list(srcs.shape)==list(mirs.shape),
+                      'columns_equal':list(srcs.columns)==list(mirs.columns),
+                      'per_column':{}}
+          if mirror_cmp['shape_equal'] and mirror_cmp['columns_equal']:
+              for c in srcs.columns:
+                  if pd.api.types.is_numeric_dtype(srcs[c]) and pd.api.types.is_numeric_dtype(mirs[c]):
+                      mirror_cmp['per_column'][c]=cmp(srcs[c],mirs[c],atol=0,rtol=0)
+                  else:
+                      a=srcs[c].astype(str).fillna('<NA>'); b=mirs[c].astype(str).fillna('<NA>')
+                      mirror_cmp['per_column'][c]={'n':int(len(a)),'equal':int((a==b).sum()),'mismatch':int((a!=b).sum())}
+              mirror_cmp['all_values_equal']=all(v['mismatch']==0 for v in mirror_cmp['per_column'].values())
+          else:
+              mirror_cmp['all_values_equal']=False
+
+          m=w.merge(src,on=['PolicyNum','Year'],how='outer',indicator=True,suffixes=('_w','_s'))
+          b=m[m['_merge']=='both'].copy(); so=m[m['_merge']=='right_only'].copy()
+          freq_cols=['FreqBC','FreqIM','FreqPN','FreqPO','FreqCN','FreqCO']
+          claim_cols=['ClaimBC','ClaimIM','ClaimPN','ClaimPO','ClaimCN','ClaimCO']
+          b['FreqAll6']=sum(n(b[c]).fillna(0) for c in freq_cols)
+          b['ClaimAll6']=sum(n(b[c]).fillna(0) for c in claim_cols)
 
           type_cols=['TypeCity','TypeCounty','TypeMisc','TypeSchool','TypeTown','TypeVillage']
           tmat=b[type_cols].apply(pd.to_numeric,errors='coerce').fillna(0)
           b['type_name']=tmat.idxmax(axis=1)
           cross=pd.crosstab(b['EntityType'].astype(str),b['type_name'])
 
-          def sample(df, cols, k=20):
-              if df.empty:return []
-              out=df[cols].head(k).copy()
-              return json.loads(out.to_json(orient='records'))
+          trans={
+            'BCcov_vs_CoverageBC_times_1e6':cmp(b['BCcov'],n(b['CoverageBC'])*1e6,atol=.51,rtol=1e-9),
+            'Deduct_vs_exp_lnDeductBC':cmp(b['Deduct'],np.exp(n(b['lnDeductBC'])),atol=.01,rtol=1e-10),
+            'Freq_vs_FreqBC':cmp(b['Freq'],b['FreqBC'],atol=0,rtol=0),
+            'Freq_vs_sum_all_6_perils':cmp(b['Freq'],b['FreqAll6'],atol=0,rtol=0),
+            'BCClaim_vs_ClaimBC':cmp(b['BCClaim'],b['ClaimBC'],atol=.005,rtol=1e-12),
+            'BCClaim_vs_sum_all_6_perils':cmp(b['BCClaim'],b['ClaimAll6'],atol=.005,rtol=1e-12),
+            'NoClaimCredit_vs_NoClaimCreditBC':cmp(b['NoClaimCredit'],b['NoClaimCreditBC'],atol=0,rtol=0),
+          }
+          # Candidate subset sums: identify whether textbook Freq has a transparent peril composition.
+          subset_freq={}
+          from itertools import combinations
+          for r in range(1,len(freq_cols)+1):
+              for cs in combinations(freq_cols,r):
+                  key='+'.join(cs)
+                  pred=sum(n(b[c]).fillna(0) for c in cs)
+                  out=cmp(b['Freq'],pred,atol=0,rtol=0)
+                  subset_freq[key]=out
+          best=sorted(subset_freq.items(), key=lambda kv:(kv[1]['mismatch'],len(kv[0])))[:10]
 
-          # Explore whether the 38 source-only rows are exactly non-BC exposure rows.
-          so_cov=n(so['CoverageBC']) if len(so) else pd.Series(dtype=float)
-          so_summary={
-            'n':int(len(so)),
-            'coverageBC_zero':int((so_cov==0).sum()) if len(so) else 0,
-            'coverageBC_nonpositive':int((so_cov<=0).sum()) if len(so) else 0,
-            'coverageBC_min':None if not len(so) else float(np.nanmin(so_cov)),
-            'coverageBC_max':None if not len(so) else float(np.nanmax(so_cov)),
-            'years':{} if not len(so) else {str(int(k)):int(v) for k,v in so['Year'].value_counts().sort_index().items()},
-            'sample':sample(so,['PolicyNum','Year','CoverageBC','lnDeductBC','FreqBC','ClaimBC','NoClaimCreditBC'],20),
+          # Direction and totals for BC-only vs textbook frequency.
+          ww=n(b['Freq']); bc=n(b['FreqBC']); all6=n(b['FreqAll6'])
+          freq_direction={
+            'wisc_sum':float(ww.sum()), 'FreqBC_sum':float(bc.sum()), 'all6_sum':float(all6.sum()),
+            'wisc_gt_FreqBC_rows':int((ww>bc).sum()), 'wisc_lt_FreqBC_rows':int((ww<bc).sum()),
+            'wisc_eq_FreqBC_rows':int((ww==bc).sum()),
+            'wisc_gt_all6_rows':int((ww>all6).sum()), 'wisc_lt_all6_rows':int((ww<all6).sum()),
+            'wisc_eq_all6_rows':int((ww==all6).sum()),
           }
 
-          # Frequency mismatch contingency and direction.
-          ftab=pd.crosstab(n(b['Freq']).astype('Int64'),n(b['FreqBC']).astype('Int64'))
-          freq_cross={str(idx):{str(col):int(ftab.loc[idx,col]) for col in ftab.columns} for idx in ftab.index}
-
+          source_only_cov=n(so['CoverageBC']) if len(so) else pd.Series(dtype=float)
           receipt={
             'status':'IN_SAMPLE_ONLY_TARGET_NOT_ACCESSED',
+            'source_identity':{
+              'authoritative_data_RData_sha256':sha256('work/data.RData'),
+              'wisc_sha256':sha256('work/WiscPropFund.csv'),
+              'assessor_repository':'jhlee1408/assessor',
+              'assessor_commit':'f25a700a60',
+              'assessor_path':'data/LGPIF.rda',
+              'assessor_sha256':sha256('work/LGPIF-assessor.rda')},
+            'key_diagnostics':{
+              'common':int(len(b)), 'wisc_only':int((m['_merge']=='left_only').sum()),
+              'source_only':int(len(so)), 'source_only_zero_CoverageBC':int((source_only_cov==0).sum()) if len(so) else 0},
             'transformations':trans,
-            'source_only_diagnostics':so_summary,
-            'frequency_cross_tab':freq_cross,
-            'frequency_mismatch_sample':sample(freq_bad,['PolicyNum','Year','BCcov','CoverageBC','Freq','FreqBC','BCClaim','ClaimBC','Deduct','lnDeductBC'],30),
-            'claim_mismatch_sample':sample(claim_bad,['PolicyNum','Year','Freq','FreqBC','BCClaim','ClaimBC','yAvgBC'],30),
-            'noclaimcredit_mismatch_sample':sample(ncc_bad,['PolicyNum','Year','NoClaimCredit','NoClaimCreditBC','Freq','FreqBC'],10),
-            'deductible_mismatch_sample':sample(ded_bad,['PolicyNum','Year','Deduct','lnDeductBC'],10),
+            'best_frequency_subset_candidates':[{'columns':k,**v} for k,v in best],
+            'frequency_direction_and_totals':freq_direction,
             'entity_type_crosstab':{str(idx):{str(col):int(cross.loc[idx,col]) for col in cross.columns} for idx in cross.index},
             'wisc_fields_absent_from_rdata':[c for c in ['Premium','Fire5','AlarmCredit'] if c not in src.columns],
+            'independent_assessor_mirror_comparison':mirror_cmp,
             'target_access':{'dataout_RData_downloaded':False,'dataout_RData_opened':False,'year_2011_outcome_accessed':False},
           }
           Path('out/lgpif-insample-diagnostics.json').write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n')
