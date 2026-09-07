@@ -25,7 +25,7 @@ jobs:
           fi
           Rscript --version
 
-      - name: Download only in-sample LGPIF and pinned comparison CSV
+      - name: Download only in-sample sources
         shell: bash
         run: |
           set -euo pipefail
@@ -35,107 +35,66 @@ jobs:
           curl --fail --location --silent --show-error \
             'https://raw.githubusercontent.com/OpenActTextDev/LDA_Ed2/8410b067ed2548e0e09077bbb880a476a0a2cdf9/Data/WiscPropFund.csv' \
             --output /tmp/WiscPropFund.csv
-          echo 'BYTE_RECEIPTS'
           sha256sum /tmp/data.RData /tmp/WiscPropFund.csv
           wc -c /tmp/data.RData /tmp/WiscPropFund.csv
 
-      - name: Compare 2006-2010 identity without target access
+      - name: Diagnose deterministic 2006-2010 mappings only
         shell: bash
         run: |
           set -euo pipefail
           Rscript - <<'RSCRIPT'
-          options(width=220, digits=17)
-          rdata_path <- "/tmp/data.RData"
-          csv_path <- "/tmp/WiscPropFund.csv"
-          sha256 <- function(path) strsplit(system2("sha256sum", path, stdout=TRUE), "[[:space:]]+")[[1]][1]
-          bytes <- function(path) unname(file.info(path)$size)
-          cat("BLINDNESS=dataout.RData_NOT_ACCESSED\n")
-          cat(sprintf("RDATA_SHA256=%s\n", sha256(rdata_path)))
-          cat(sprintf("RDATA_BYTES=%s\n", bytes(rdata_path)))
-          cat(sprintf("CSV_SHA256=%s\n", sha256(csv_path)))
-          cat(sprintf("CSV_BYTES=%s\n", bytes(csv_path)))
-
-          env <- new.env(parent=baseenv())
-          loaded <- load(rdata_path, envir=env)
-          cat("RDATA_OBJECTS=", paste(loaded, collapse=","), "\n", sep="")
-          dfs <- loaded[vapply(loaded, function(nm) is.data.frame(get(nm, envir=env)), logical(1))]
-          if ("data" %in% dfs) {
-            d <- get("data", envir=env); chosen <- "data"
-          } else if (length(dfs) == 1L) {
-            chosen <- dfs[[1]]; d <- get(chosen, envir=env)
-          } else stop(sprintf("cannot select unique data.frame: %s", paste(dfs, collapse=",")))
-          w <- read.csv(csv_path, stringsAsFactors=FALSE, check.names=FALSE)
-          cat(sprintf("RDATA_CHOSEN_OBJECT=%s\n", chosen))
-          cat(sprintf("RDATA_ROWS=%d\nCSV_ROWS=%d\n", nrow(d), nrow(w)))
-          cat("RDATA_COLUMNS=", paste(names(d), collapse=","), "\n", sep="")
-          cat("CSV_COLUMNS=", paste(names(w), collapse=","), "\n", sep="")
-
-          if (!all(c("PolicyNum","Year") %in% names(d))) stop("RData PolicyNum/Year missing")
+          options(width=240, digits=17)
+          e <- new.env(parent=baseenv())
+          load('/tmp/data.RData', envir=e)
+          d <- get('data', envir=e)
+          w <- read.csv('/tmp/WiscPropFund.csv', stringsAsFactors=FALSE, check.names=FALSE)
           d$PolicyNum <- as.character(d$PolicyNum); w$PolicyNum <- as.character(w$PolicyNum)
           d$Year <- as.integer(d$Year); w$Year <- as.integer(w$Year)
-          cat("RDATA_YEARS=", paste(sort(unique(d$Year)), collapse=","), "\n", sep="")
-          cat("CSV_YEARS=", paste(sort(unique(w$Year)), collapse=","), "\n", sep="")
-          if (any(d$Year > 2010L, na.rm=TRUE)) stop("TARGET_BLINDNESS_STOP: in-sample file contains Year > 2010")
+          if (any(d$Year > 2010L, na.rm=TRUE)) stop('TARGET_BLINDNESS_STOP')
+          m <- merge(d,w,by=c('PolicyNum','Year'),all=FALSE,suffixes=c('.rdata','.csv'),sort=FALSE)
+          kd <- paste(d$PolicyNum,d$Year,sep='|'); kw <- paste(w$PolicyNum,w$Year,sep='|')
+          extra <- d[!(kd %in% kw),,drop=FALSE]
+          cat('BLINDNESS=dataout.RData_NOT_ACCESSED\n')
+          cat(sprintf('ROWS_RDATA=%d ROWS_CSV=%d COMMON=%d RDATA_ONLY=%d CSV_ONLY=%d\n',nrow(d),nrow(w),nrow(m),nrow(extra),length(setdiff(kw,kd))))
 
-          key <- function(x) paste(x$PolicyNum, x$Year, sep="|")
-          kd <- key(d); kw <- key(w)
-          cat(sprintf("RDATA_DUPLICATE_KEYS=%d\n", sum(duplicated(kd))))
-          cat(sprintf("CSV_DUPLICATE_KEYS=%d\n", sum(duplicated(kw))))
-          cat(sprintf("KEY_INTERSECTION=%d\n", length(intersect(unique(kd), unique(kw)))))
-          cat(sprintf("KEY_RDATA_ONLY=%d\n", length(setdiff(unique(kd), unique(kw)))))
-          cat(sprintf("KEY_CSV_ONLY=%d\n", length(setdiff(unique(kw), unique(kd)))))
-          cat("YEAR_POPULATION_TABLE\n")
-          for (yr in sort(union(unique(d$Year), unique(w$Year)))) {
-            ad <- unique(kd[d$Year == yr]); aw <- unique(kw[w$Year == yr])
-            cat(sprintf("%d rdata=%d csv=%d intersection=%d rdata_only=%d csv_only=%d\n", yr, length(ad), length(aw), length(intersect(ad,aw)), length(setdiff(ad,aw)), length(setdiff(aw,ad))))
+          score <- function(name,a,b,atol=1e-8,rtol=1e-10) {
+            a <- as.numeric(a); b <- as.numeric(b)
+            ok <- is.finite(a)&is.finite(b)
+            delta <- abs(a-b); matched <- ok & delta <= atol+rtol*pmax(abs(a),abs(b))
+            cat(sprintf('%s comparable=%d matched=%d mismatched=%d max_abs=%.17g\n',name,sum(ok),sum(matched),sum(ok&!matched),if(any(ok))max(delta[ok]) else NaN))
           }
-          common <- merge(d, w, by=c("PolicyNum","Year"), suffixes=c(".rdata",".csv"), all=FALSE, sort=FALSE)
-          cat(sprintf("COMMON_ROWS=%d\n", nrow(common)))
+          cat('COVERAGE_SUMMARY_RDATA\n'); print(summary(as.numeric(m$CoverageBC)))
+          cat('COVERAGE_SUMMARY_CSV\n'); print(summary(as.numeric(m$BCcov)))
+          score('COV_raw',m$BCcov,m$CoverageBC)
+          score('COV_x1e6',m$BCcov,as.numeric(m$CoverageBC)*1e6,1e-5,1e-10)
+          score('COV_exp',m$BCcov,exp(as.numeric(m$CoverageBC)),1e-5,1e-10)
+          score('COV_exp_x1e6',m$BCcov,exp(as.numeric(m$CoverageBC))*1e6,1e-5,1e-10)
 
-          cmp_numeric <- function(label, lhs, rhs, atol=1e-8, rtol=1e-10) {
-            lhs <- as.numeric(lhs); rhs <- as.numeric(rhs)
-            comparable <- is.finite(lhs) & is.finite(rhs)
-            delta <- abs(lhs-rhs); tol <- atol + rtol*pmax(abs(lhs),abs(rhs))
-            matched <- comparable & delta <= tol
-            cat(sprintf("MAP_%s rows=%d comparable=%d matched=%d mismatched=%d max_abs=%.17g\n", label, length(lhs), sum(comparable), sum(matched), sum(comparable & !matched), if(any(comparable)) max(delta[comparable]) else NaN))
-            all(matched)
-          }
+          cat('DEDUCT_SUMMARY_RDATA\n'); print(summary(as.numeric(m$lnDeductBC)))
+          cat('DEDUCT_SUMMARY_CSV\n'); print(summary(as.numeric(m$Deduct)))
+          score('DEDUCT_raw',m$Deduct,m$lnDeductBC)
+          score('DEDUCT_exp',m$Deduct,exp(as.numeric(m$lnDeductBC)),1e-8,1e-10)
 
-          mapping_ok <- TRUE
-          req <- c("FreqBC","CoverageBC","lnDeductBC","NoClaimCreditBC","ClaimBC")
-          missing <- setdiff(req, names(d))
-          cat("RDATA_REQUIRED_MAPPING_FIELDS_MISSING=", paste(missing, collapse=","), "\n", sep="")
-          if (length(missing)) mapping_ok <- FALSE
-          if (!length(missing)) {
-            mapping_ok <- cmp_numeric("Freq__FreqBC", common$Freq, common$FreqBC, 0, 0) && mapping_ok
-            mapping_ok <- cmp_numeric("BCcov__expCoverageBC_x1e6", common$BCcov, exp(as.numeric(common$CoverageBC))*1e6, 1e-5, 1e-10) && mapping_ok
-            mapping_ok <- cmp_numeric("Deduct__expLnDeductBC", common$Deduct, exp(as.numeric(common$lnDeductBC)), 1e-8, 1e-10) && mapping_ok
-            mapping_ok <- cmp_numeric("NoClaimCredit__NoClaimCreditBC", common$NoClaimCredit, common$NoClaimCreditBC, 0, 0) && mapping_ok
-            mapping_ok <- cmp_numeric("BCClaim__ClaimBC", common$BCClaim, common$ClaimBC, 1e-8, 1e-10) && mapping_ok
+          cat('FREQ_DISTRIBUTION_CSV\n'); print(table(m$Freq,useNA='ifany'))
+          cat('FREQBC_DISTRIBUTION_RDATA\n'); print(table(m$FreqBC,useNA='ifany'))
+          cat('FREQ_CROSSTAB\n'); print(table(CSV=m$Freq,RDATA=m$FreqBC,useNA='ifany'))
+          score('FREQ_exact',m$Freq,m$FreqBC,0,0)
+          score('NOCLAIM_exact',m$NoClaimCredit,m$NoClaimCreditBC,0,0)
+          score('CLAIM_AMOUNT_exact',m$BCClaim,m$ClaimBC,1e-8,1e-10)
+
+          bad <- which(as.numeric(m$Freq) != as.numeric(m$FreqBC) & is.finite(as.numeric(m$Freq)) & is.finite(as.numeric(m$FreqBC)))
+          cat(sprintf('FREQ_MISMATCH_ROWS=%d\n',length(bad)))
+          if (length(bad)) {
+            cols <- intersect(c('PolicyNum','Year','Freq','FreqBC','BCClaim','ClaimBC','yAvgBC','BCcov','CoverageBC'),names(m))
+            print(head(m[bad,cols,drop=FALSE],20))
           }
 
-          entity_cols <- c("TypeCity","TypeCounty","TypeMisc","TypeSchool","TypeTown","TypeVillage")
-          entity_ok <- FALSE
-          if (all(entity_cols %in% names(d))) {
-            mat <- as.matrix(common[,entity_cols,drop=FALSE]); storage.mode(mat) <- "numeric"
-            onehot_n <- rowSums(mat == 1, na.rm=TRUE)
-            labels <- apply(mat,1,function(z){hits<-entity_cols[which(z==1)]; if(length(hits)==1) hits else NA_character_})
-            tab <- table(EntityType=as.character(common$EntityType), LGPIF=labels, useNA="ifany")
-            cat(sprintf("ENTITY_ONEHOT_EXACTLY_ONE=%d/%d\n", sum(onehot_n==1), nrow(common)))
-            print(tab)
-            entity_ok <- all(onehot_n==1) && all(rowSums(tab>0)<=1) && all(colSums(tab>0)<=1)
-          }
-          cat(sprintf("MAP_EntityType__TypeOneHot_BIJECTIVE=%s\n", if(entity_ok) "TRUE" else "FALSE"))
-          mapping_ok <- mapping_ok && entity_ok
+          cat('RDATA_ONLY_DIAGNOSTICS\n')
+          cat(sprintf('extra_rows=%d CoverageBC_NA=%d CoverageBC_nonpositive=%d lnDeductBC_NA=%d FreqBC_NA=%d ClaimBC_NA=%d\n',
+              nrow(extra),sum(is.na(extra$CoverageBC)),sum(!is.na(extra$CoverageBC)&extra$CoverageBC<=0),sum(is.na(extra$lnDeductBC)),sum(is.na(extra$FreqBC)),sum(is.na(extra$ClaimBC))))
+          print(table(extra$Year,useNA='ifany'))
 
-          present <- c(Fire5="Fire5" %in% names(d), AlarmCredit="AlarmCredit" %in% names(d))
-          for (nm in names(present)) cat(sprintf("CURRENT_MEAN_FIELD_%s_PRESENT=%s\n", nm, if(present[[nm]]) "TRUE" else "FALSE"))
-          exact_population <- identical(sort(unique(kd)), sort(unique(kw))) && !anyDuplicated(kd) && !anyDuplicated(kw)
-          cat(sprintf("EXACT_POLICY_YEAR_POPULATION=%s\n", if(exact_population) "TRUE" else "FALSE"))
-          cat(sprintf("COMMON_FIELD_MAPPING_OK=%s\n", if(mapping_ok) "TRUE" else "FALSE"))
-          transportable <- exact_population && mapping_ok && all(present)
-          cat(sprintf("CURRENT_TOURNAMENT_TRANSPORTABLE=%s\n", if(transportable) "TRUE" else "FALSE"))
-          classification <- if (transportable) "DATA_IDENTITY_CONFIRMED" else "BLOCKED_BY_DATA_IDENTITY"
-          cat(sprintf("FINAL_CLASSIFICATION=%s\n", classification))
-          cat("TARGET_ACCESS=dataout.RData_NOT_DOWNLOADED_NOT_LOADED_NOT_SCORED\n")
+          cat(sprintf('Fire5_PRESENT=%s AlarmCredit_PRESENT=%s Premium_PRESENT=%s\n',
+              'Fire5'%in%names(d),'AlarmCredit'%in%names(d),'Premium'%in%names(d)))
+          cat('TARGET_ACCESS=dataout.RData_NOT_DOWNLOADED_NOT_LOADED_NOT_SCORED\n')
           RSCRIPT
