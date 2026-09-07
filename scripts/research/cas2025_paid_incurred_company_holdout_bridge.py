@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Public-runner execution bridge for FFBK PR #1473.
 
-No external CAS bytes are committed.  This independently implements the frozen
-scientific contract in FFBK/scripts/reserving_cas_paid_incurred_company_holdout.py
-at FFBK branch head 0156dbb0ad6c9a1a20e51401bd7629d6ec7981b9.
+No external CAS bytes are committed. This independently implements the frozen
+scientific contract in FFBK/scripts/reserving_cas_paid_incurred_company_holdout.py.
+The only post-first-run change is a schema-only alias: current CAS files expose
+`IncurredLosses` rather than the prereg parser's `IncurLoss*`. Run 34156404426
+failed at header resolution before transition construction or target scoring.
 """
 from __future__ import annotations
 
@@ -44,15 +46,16 @@ def norm(s: str) -> str:
     return "".join(c for c in s.lower() if c.isalnum())
 
 
-def col(fields: list[str], stem: str) -> str:
-    n = norm(stem)
-    exact = [x for x in fields if norm(x) == n]
-    if len(exact) == 1:
-        return exact[0]
-    pref = [x for x in fields if norm(x).startswith(n)]
-    if len(pref) == 1:
-        return pref[0]
-    raise ValueError(f"cannot resolve {stem}: {fields}")
+def col(fields: list[str], *aliases: str) -> str:
+    for stem in aliases:
+        n = norm(stem)
+        exact = [x for x in fields if norm(x) == n]
+        if len(exact) == 1:
+            return exact[0]
+        pref = [x for x in fields if norm(x).startswith(n)]
+        if len(pref) == 1:
+            return pref[0]
+    raise ValueError(f"cannot resolve any of {aliases}: {fields}")
 
 
 def read_rows(path: Path):
@@ -60,7 +63,8 @@ def read_rows(path: Path):
         rd = csv.DictReader(f)
         fields = list(rd.fieldnames or [])
         cg, co, cy, cl = (col(fields, x) for x in ("GRCODE", "AccidentYear", "DevelopmentYear", "DevelopmentLag"))
-        ci, cp = col(fields, "IncurLoss"), col(fields, "CumPaidLoss")
+        ci = col(fields, "IncurLoss", "IncurredLosses")
+        cp = col(fields, "CumPaidLoss")
         out = {}
         for r in rd:
             try:
@@ -100,7 +104,8 @@ def transitions(rows):
 
 def means(rows, pos):
     d = defaultdict(list)
-    for r in rows: d[r[1]].append(r[pos])
+    for r in rows:
+        d[r[1]].append(r[pos])
     return {k: float(np.mean(v)) for k, v in d.items()}
 
 
@@ -111,19 +116,24 @@ def design(rows, ages, hm, qm, arm):
         if lag not in ages or lag not in hm or lag not in qm:
             raise ValueError(f"unseen lag {lag}")
         x = [1.0] + [1.0 if lag == a else 0.0 for a in ages[1:]]
-        if arm in ("MH", "MHQ"): x.append(h - hm[lag])
-        if arm in ("MQ", "MHQ"): x.append(q - qm[lag])
+        if arm in ("MH", "MHQ"):
+            x.append(h - hm[lag])
+        if arm in ("MQ", "MHQ"):
+            x.append(q - qm[lag])
         xx.append(x)
     return np.asarray(xx, float)
 
 
 def fit(rows, ages, hm, qm, arm):
-    x = design(rows, ages, hm, qm, arm); y = np.asarray([r[2] for r in rows])
+    x = design(rows, ages, hm, qm, arm)
+    y = np.asarray([r[2] for r in rows])
     b, _, rank, _ = np.linalg.lstsq(x, y, rcond=None)
-    if rank < x.shape[1]: raise ValueError(f"rank deficient {arm}")
+    if rank < x.shape[1]:
+        raise ValueError(f"rank deficient {arm}")
     resid = y - x @ b
     sig = math.sqrt(float(np.mean(resid * resid)))
-    if not math.isfinite(sig) or sig <= 0: raise ValueError(f"bad sigma {arm}")
+    if not math.isfinite(sig) or sig <= 0:
+        raise ValueError(f"bad sigma {arm}")
     return b, sig
 
 
@@ -132,12 +142,14 @@ def logscore(y, mu, sig):
 
 
 def eval_lob(lob: str, path: Path, url: str):
-    rows, fields = read_rows(path); all_train, all_target = transitions(rows)
+    rows, fields = read_rows(path)
+    all_train, all_target = transitions(rows)
     train_g = {r[0] for r in all_train if bucket(lob, r[0]) != 0}
     final_g = {r[0] for r in all_target if bucket(lob, r[0]) == 0}
     tr = [r for r in all_train if r[0] in train_g]
     te = [r for r in all_target if r[0] in final_g]
-    if {r[0] for r in tr} & final_g: raise AssertionError("company leakage")
+    if {r[0] for r in tr} & final_g:
+        raise AssertionError("company leakage")
     ages = sorted({r[1] for r in tr}); tlags = sorted({r[1] for r in te})
     base = dict(lob=lob, source_url=url, filename=path.name, bytes=path.stat().st_size,
                 sha256=file_sha(path), header=fields, triangle_rows=len(rows),
@@ -155,7 +167,8 @@ def eval_lob(lob: str, path: Path, url: str):
     cs = {a: logscore(y, arms[a][2], common) for a in arms}
     ads = {a: logscore(y, arms[a][2], arms[a][1]) for a in ("MH", "MHQ")}
     by = defaultdict(list)
-    for i, r in enumerate(te): by[r[0]].append(i)
+    for i, r in enumerate(te):
+        by[r[0]].append(i)
     companies = {}
     for g, ii0 in sorted(by.items()):
         ii = np.asarray(ii0, int)
@@ -188,12 +201,14 @@ def eval_lob(lob: str, path: Path, url: str):
 
 def bootstrap(rr):
     ok = [r for r in rr if r["status"] == "EXECUTED"]
-    if len(ok) < 4: return {"eligible_lobs": len(ok), "classification": "BLOCKED_BY_DATA"}
+    if len(ok) < 4:
+        return {"eligible_lobs": len(ok), "classification": "BLOCKED_BY_DATA"}
     rng = np.random.default_rng(SEED); draws = {}; pooled = np.empty(REPS)
     for r in ok:
         v = np.asarray([x["primary_delta_mhq_minus_mh"] for x in r["company_results"].values()])
         draws[r["lob"]] = v[rng.integers(0, len(v), size=(REPS, len(v)))].mean(1)
-    for i in range(REPS): pooled[i] = np.mean([draws[r["lob"]][i] for r in ok])
+    for i in range(REPS):
+        pooled[i] = np.mean([draws[r["lob"]][i] for r in ok])
     point = float(np.mean([r["primary_delta_mhq_minus_mh"] for r in ok]))
     lo, hi = map(float, np.quantile(pooled, [0.025, 0.975])); pos = sum(r["primary_delta_mhq_minus_mh"] > 0 for r in ok)
     req = 5 if len(ok) == 6 else len(ok)
@@ -213,9 +228,11 @@ def main():
     a = p.parse_args(); paths = dict((k, Path(v)) for k, v in map(kv, a.dataset)); urls = dict(map(kv, a.source_url))
     rr = [eval_lob(k, paths[k], urls[k]) for k in paths]
     receipt = {"schema": "reserving-cas2025-paid-incurred-company-holdout-v0", "created_at_utc": datetime.now(timezone.utc).isoformat(),
-               "bridge": {"repository": "pokekarten/OpenCatastrophe-data", "purpose": "public runner only", "ffbk_pr": 1473},
+               "bridge": {"repository": "pokekarten/OpenCatastrophe-data", "purpose": "public runner only", "ffbk_pr": 1473,
+                          "first_run": 34156404426, "first_run_failure": "schema alias only; no target scoring"},
                "lob_results": rr, "aggregate": bootstrap(rr)}
     Path(a.output).write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(json.dumps(receipt["aggregate"], sort_keys=True))
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()
