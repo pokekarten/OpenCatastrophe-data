@@ -30,7 +30,13 @@ if PROFILE_DEPS_AVAILABLE:
     "requires requirements-cems-geotiff-profile.txt",
 )
 class CemsMaskGeoTiffProfileTests(unittest.TestCase):
-    def _fixture(self, directory: str, *, dtype: str = "uint8", nodata: int = 255) -> tuple[Path, int, str]:
+    def _fixture(
+        self,
+        directory: str,
+        *,
+        dtype: str = "uint8",
+        nodata: int = 255,
+    ) -> tuple[Path, int, str]:
         path = Path(directory) / "synthetic-mask.tif"
         data = np.array([[0, 1, nodata], [1, 0, 1]], dtype=dtype)
         with rasterio.open(
@@ -50,29 +56,28 @@ class CemsMaskGeoTiffProfileTests(unittest.TestCase):
         return path, len(raw), hashlib.sha256(raw).hexdigest()
 
     def _profile_dict(self, *, mask: bool = True) -> dict:
+        mask_receipt = mod.MASK_RECEIPTS["permanent_water"]
         profile = {
             "schema_version": (
-                mod.PROFILE_SCHEMA_VERSION if mask else "oc-cems-rp10-geotiff-profile-v1"
+                mod.PROFILE_SCHEMA_VERSION
+                if mask
+                else mod.RP10_PROFILE_SCHEMA_VERSION
             ),
             "dataset_id": mod.DATASET_ID,
-            "source_issue": mod.SOURCE_ISSUE if mask else 793,
-            "profile_issue": mod.PROFILE_ISSUE if mask else 802,
+            "source_issue": mod.SOURCE_ISSUE if mask else rp10.SOURCE_ISSUE,
+            "profile_issue": mod.PROFILE_ISSUE if mask else rp10.PROFILE_ISSUE,
             "release": mod.RELEASE,
-            "filename": (
-                mod.MASK_RECEIPTS["permanent_water"]["filename"]
+            "filename": mask_receipt["filename"] if mask else rp10.FILENAME,
+            "source_url": (
+                mod.BASE_URL + mask_receipt["filename"]
                 if mask
-                else "Europe_RP10_filled_depth.tif"
+                else rp10.SOURCE_URL
             ),
-            "source_url": "https://example.invalid/frozen.tif",
             "receipt_byte_count": (
-                mod.MASK_RECEIPTS["permanent_water"]["byte_count"]
-                if mask
-                else 272_286_610
+                mask_receipt["byte_count"] if mask else rp10.ACCEPTED_BYTE_COUNT
             ),
             "receipt_sha256": (
-                mod.MASK_RECEIPTS["permanent_water"]["sha256"]
-                if mask
-                else "15f86b86c228a065250b05488548d7386ac8e33cec4cba6da93f712f7500f45b"
+                mask_receipt["sha256"] if mask else rp10.ACCEPTED_SHA256
             ),
             "receipt_identity_verified": True,
             "driver": "GTiff",
@@ -90,7 +95,12 @@ class CemsMaskGeoTiffProfileTests(unittest.TestCase):
                 -0.0008333333333333334,
             ],
             "resolution": [0.0008333333333333334, 0.0008333333333333334],
-            "bounds": [-24.54208333, 27.80708333333334, 67.25958333666668, 71.13375],
+            "bounds": [
+                -24.54208333,
+                27.80708333333334,
+                67.25958333666668,
+                71.13375,
+            ],
             "nodatavals": [-9999.0],
             "scales": [1.0],
             "offsets": [0.0],
@@ -145,7 +155,10 @@ class CemsMaskGeoTiffProfileTests(unittest.TestCase):
                 {"permanent_water": synthetic_receipt},
                 clear=False,
             ):
-                profile = mod.profile_cems_mask_geotiff(path, mask_kind="permanent_water")
+                profile = mod.profile_cems_mask_geotiff(
+                    path,
+                    mask_kind="permanent_water",
+                )
 
         self.assertEqual(profile["schema_version"], mod.PROFILE_SCHEMA_VERSION)
         self.assertEqual(profile["source_issue"], 809)
@@ -169,7 +182,10 @@ class CemsMaskGeoTiffProfileTests(unittest.TestCase):
                 mod.CemsMaskGeoTiffProfileError,
                 "outside the frozen #809 receipt set",
             ):
-                mod.profile_cems_mask_geotiff("unused.tif", mask_kind="caller-selected")
+                mod.profile_cems_mask_geotiff(
+                    "unused.tif",
+                    mask_kind="caller-selected",
+                )
         profiler.assert_not_called()
 
     def test_receipt_sha_drift_fails_before_raster_reader(self) -> None:
@@ -181,11 +197,18 @@ class CemsMaskGeoTiffProfileTests(unittest.TestCase):
                 "sha256": "0" * 64 if sha256 != "0" * 64 else "1" * 64,
             }
             with (
-                mock.patch.dict(mod.MASK_RECEIPTS, {"permanent_water": bad}, clear=False),
+                mock.patch.dict(
+                    mod.MASK_RECEIPTS,
+                    {"permanent_water": bad},
+                    clear=False,
+                ),
                 mock.patch.object(rp10.MemoryFile, "open", autospec=True) as reader,
                 self.assertRaisesRegex(mod.CemsMaskGeoTiffProfileError, "SHA-256"),
             ):
-                mod.profile_cems_mask_geotiff(path, mask_kind="permanent_water")
+                mod.profile_cems_mask_geotiff(
+                    path,
+                    mask_kind="permanent_water",
+                )
             reader.assert_not_called()
 
     def test_grid_match_is_separate_from_container_differences(self) -> None:
@@ -211,7 +234,11 @@ class CemsMaskGeoTiffProfileTests(unittest.TestCase):
         mask = self._profile_dict(mask=True)
         reference = self._profile_dict(mask=False)
         mask["width"] += 1
-        mask["crs"] = {"string": "EPSG:3857", "epsg": 3857, "wkt": "WebMercator"}
+        mask["crs"] = {
+            "string": "EPSG:3857",
+            "epsg": 3857,
+            "wkt": "WebMercator",
+        }
         mask["transform_gdal"] = list(mask["transform_gdal"])
         mask["transform_gdal"][0] += 1.0
 
@@ -224,11 +251,12 @@ class CemsMaskGeoTiffProfileTests(unittest.TestCase):
         self.assertTrue(comparison["grid_field_equal"]["height"])
         self.assertTrue(comparison["grid_field_equal"]["resolution"])
 
-    def test_comparison_rejects_receipt_or_authority_drift(self) -> None:
+    def test_comparison_rejects_mask_receipt_or_authority_drift(self) -> None:
         reference = self._profile_dict(mask=False)
         for field, value in (
             ("receipt_sha256", "0" * 64),
             ("receipt_byte_count", 1),
+            ("source_url", "https://example.invalid/drift.tif"),
             ("mask_values_inspected", True),
             ("model_use_authorized", True),
         ):
@@ -236,6 +264,25 @@ class CemsMaskGeoTiffProfileTests(unittest.TestCase):
                 mask = copy.deepcopy(self._profile_dict(mask=True))
                 mask[field] = value
                 with self.assertRaises(mod.CemsMaskGeoTiffProfileError):
+                    mod.compare_mask_profile_to_rp10(mask, reference)
+
+    def test_comparison_requires_exact_accepted_rp10_identity(self) -> None:
+        mask = self._profile_dict(mask=True)
+        for field, value in (
+            ("receipt_sha256", "0" * 64),
+            ("receipt_byte_count", 1),
+            ("source_issue", 999),
+            ("profile_issue", 999),
+            ("filename", "other.tif"),
+            ("source_url", "https://example.invalid/other.tif"),
+        ):
+            with self.subTest(field=field):
+                reference = copy.deepcopy(self._profile_dict(mask=False))
+                reference[field] = value
+                with self.assertRaisesRegex(
+                    mod.CemsMaskGeoTiffProfileError,
+                    "accepted #793/#802 identity",
+                ):
                     mod.compare_mask_profile_to_rp10(mask, reference)
 
     def test_existing_rp10_public_profile_contract_is_unchanged(self) -> None:
