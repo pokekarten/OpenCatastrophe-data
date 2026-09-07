@@ -1,0 +1,160 @@
+name: Execute Dutch MTPL frequency-severity Gate A
+
+on:
+  push:
+    branches:
+      - 'research-run/mtpl-freqsev-gatea-20260907-sol56'
+
+permissions:
+  contents: read
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Materialize pinned MTPL source and execute frozen Gate A
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet pyreadr pandas numpy scipy statsmodels
+          python - <<'PY'
+          import hashlib
+          import json
+          import pathlib
+          import platform
+          import subprocess
+          import sys
+          import urllib.request
+
+          import numpy as np
+          import pandas as pd
+          import pyreadr
+          import scipy
+          import statsmodels
+
+          source_url = 'https://raw.githubusercontent.com/MHaringa/insurancerating/688e4208dec8c096552a2447fd1c246bc95a03a8/data/MTPL.rda'
+          expected_blob = 'f40daffb76ad9b92034f4e6af41024327fa1f696'
+          expected_size = 99111
+          expected_md5 = '591c5cf616aa5b946395674fdf67a192'
+          expected_replay_sha256 = '24f272771d82f8250131f1ba8a97e995b014fd5a3d2e4e94fb9264d4187b5369'
+
+          rda = pathlib.Path('MTPL.rda')
+          urllib.request.urlretrieve(source_url, rda)
+          raw = rda.read_bytes()
+          observed_blob = hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
+          observed_md5 = hashlib.md5(raw).hexdigest()
+          observed_sha256 = hashlib.sha256(raw).hexdigest()
+          if len(raw) != expected_size:
+              raise SystemExit(f'RDA_SIZE_MISMATCH {len(raw)} != {expected_size}')
+          if observed_blob != expected_blob:
+              raise SystemExit(f'RDA_BLOB_MISMATCH {observed_blob} != {expected_blob}')
+          if observed_md5 != expected_md5:
+              raise SystemExit(f'RDA_MD5_MISMATCH {observed_md5} != {expected_md5}')
+
+          replay = pathlib.Path('research_runtime/frequency_severity_dependence_mtpl_replay.py')
+          replay_hash = hashlib.sha256(replay.read_bytes()).hexdigest()
+          if replay_hash != expected_replay_sha256:
+              raise SystemExit(f'REPLAY_SHA256_MISMATCH {replay_hash} != {expected_replay_sha256}')
+
+          objects = pyreadr.read_r(str(rda))
+          if len(objects) != 1:
+              raise SystemExit(f'RDA_OBJECT_COUNT {len(objects)}')
+          object_name, df = next(iter(objects.items()))
+          df = df.reset_index(drop=True)
+          expected_columns = ['age_policyholder', 'nclaims', 'exposure', 'amount', 'power', 'bm', 'zip']
+          if list(map(str, df.columns)) != expected_columns:
+              raise SystemExit(f'COLUMN_MISMATCH {list(df.columns)}')
+          if len(df) != 30000:
+              raise SystemExit(f'ROW_MISMATCH {len(df)}')
+
+          # The package's current executable vignette reports these zip-level totals.
+          # They are a semantic sanity check in addition to the exact source-blob gate.
+          g = df.assign(zip=df['zip'].astype(str)).groupby('zip', sort=True).agg(
+              amount=('amount', 'sum'), nclaims=('nclaims', 'sum'), exposure=('exposure', 'sum')
+          )
+          expected = {
+              '0': (821510.0, 29.0, 206.8438),
+              '1': (116178669.0, 1593.0, 11080.6274),
+              '2': (59751985.0, 1008.0, 7782.6301),
+              '3': (58988962.0, 1038.0, 7587.5644),
+          }
+          for z, (amount, nclaims, exposure) in expected.items():
+              row = g.loc[z]
+              if abs(float(row['amount']) - amount) > 0.5:
+                  raise SystemExit(f'ZIP_AMOUNT_MISMATCH {z} {row["amount"]}')
+              if abs(float(row['nclaims']) - nclaims) > 0.0:
+                  raise SystemExit(f'ZIP_NCLAIMS_MISMATCH {z} {row["nclaims"]}')
+              if abs(float(row['exposure']) - exposure) > 0.0001:
+                  raise SystemExit(f'ZIP_EXPOSURE_MISMATCH {z} {row["exposure"]}')
+
+          csv = pathlib.Path('MTPL-derived.csv')
+          df.to_csv(csv, index=False, float_format='%.17g', lineterminator='\n')
+          csv_sha256 = hashlib.sha256(csv.read_bytes()).hexdigest()
+
+          # Frozen target execution: no change to split/design/score/bootstrap.
+          result_bytes = subprocess.check_output([
+              sys.executable,
+              str(replay),
+              '--csv', str(csv),
+              '--expected-sha256', csv_sha256,
+          ])
+          pathlib.Path('gate-a-result.json').write_bytes(result_bytes)
+          result = json.loads(result_bytes)
+
+          # Record a separate self-check receipt without altering the target result.
+          self_check_bytes = subprocess.check_output([sys.executable, str(replay), '--self-check'])
+          pathlib.Path('gate-a-self-check.json').write_bytes(self_check_bytes)
+
+          receipt = {
+              'status': 'EXECUTED_EXACT_SOURCE_AND_FROZEN_REPLAY',
+              'source_url': source_url,
+              'source_upstream_commit': '688e4208dec8c096552a2447fd1c246bc95a03a8',
+              'source_cran_commit': '5fe40e5d5e425820ace87b4f961dfffad2a99589',
+              'expected_git_blob_sha1': expected_blob,
+              'observed_git_blob_sha1': observed_blob,
+              'rda_bytes': len(raw),
+              'rda_md5': observed_md5,
+              'rda_sha256': observed_sha256,
+              'r_object_name': object_name,
+              'decoded_rows': len(df),
+              'decoded_columns': expected_columns,
+              'derived_csv_sha256': csv_sha256,
+              'derived_csv_bytes': csv.stat().st_size,
+              'csv_float_format': '%.17g',
+              'csv_lineterminator': 'LF',
+              'replay_sha256': replay_hash,
+              'frozen_ffbk_replay_commit': 'f715f3cd66ec5e2b841c8e5293e19db0665edf37',
+              'ffbk_main_at_runner_staging': '2d0c6a747894cc29495e897cf0e3c47db0d19b47',
+              'python': platform.python_version(),
+              'numpy': np.__version__,
+              'pandas': pd.__version__,
+              'scipy': scipy.__version__,
+              'statsmodels': statsmodels.__version__,
+              'pyreadr': getattr(pyreadr, '__version__', 'unknown'),
+              'zip_aggregates': {
+                  str(z): {
+                      'amount': float(row['amount']),
+                      'nclaims': int(row['nclaims']),
+                      'exposure': float(row['exposure']),
+                  }
+                  for z, row in g.iterrows()
+              },
+              'target_result': result,
+          }
+          pathlib.Path('materialization-execution-receipt.json').write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + '\n'
+          )
+          print(json.dumps(receipt, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mtpl-freqsev-gatea-exact-result
+          path: |
+            gate-a-result.json
+            gate-a-self-check.json
+            materialization-execution-receipt.json
