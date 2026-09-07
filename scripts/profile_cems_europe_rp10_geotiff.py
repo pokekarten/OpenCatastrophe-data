@@ -6,6 +6,9 @@
 This module never reads raster values. The public profiler first verifies the
 complete local byte identity accepted by Issue #793 and only then opens the
 verified private byte binding with Rasterio for bounded structural metadata.
+The internal profiler accepts explicit, code-owned identity metadata so later
+CEMS assets can reuse the same extraction vocabulary without weakening the
+public RP10 binding.
 """
 
 from __future__ import annotations
@@ -140,8 +143,15 @@ def _profile_bound_geotiff(
     *,
     expected_byte_count: int,
     expected_sha256: str,
+    schema_version: str = "oc-cems-rp10-geotiff-profile-v1",
+    dataset_id: str = DATASET_ID,
+    source_issue: int = SOURCE_ISSUE,
+    profile_issue: int = PROFILE_ISSUE,
+    release: str = RELEASE,
+    filename: str = FILENAME,
+    source_url: str = SOURCE_URL,
 ) -> dict[str, Any]:
-    """Internal testable profiler with caller-supplied byte identity."""
+    """Internal testable profiler with caller-supplied receipt and source identity."""
     local_path = Path(path)
     memory_file, byte_count, sha256 = _verify_file_identity(
         local_path,
@@ -187,15 +197,23 @@ def _profile_bound_geotiff(
                     for unit in dataset.units
                 ]
                 unit_tags = _filtered_unit_tags(dataset)
-                unit_metadata_present = any(unit is not None and unit != "" for unit in reader_units) or any(
-                    bool(tags) for tags in unit_tags
-                )
+                unit_metadata_present = any(
+                    unit is not None and unit != "" for unit in reader_units
+                ) or any(bool(tags) for tags in unit_tags)
 
-                transform = [_number(value, field="affine transform") for value in dataset.transform.to_gdal()]
+                transform = [
+                    _number(value, field="affine transform")
+                    for value in dataset.transform.to_gdal()
+                ]
                 resolution = [_number(value, field="pixel resolution") for value in dataset.res]
                 bounds = [
                     _number(value, field="raster bounds")
-                    for value in (dataset.bounds.left, dataset.bounds.bottom, dataset.bounds.right, dataset.bounds.top)
+                    for value in (
+                        dataset.bounds.left,
+                        dataset.bounds.bottom,
+                        dataset.bounds.right,
+                        dataset.bounds.top,
+                    )
                 ]
                 nodata = [_number(value, field="band nodata") for value in dataset.nodatavals]
                 scales = [_number(value, field="band scale") for value in dataset.scales]
@@ -206,13 +224,13 @@ def _profile_bound_geotiff(
                 ]
 
                 return {
-                    "schema_version": "oc-cems-rp10-geotiff-profile-v1",
-                    "dataset_id": DATASET_ID,
-                    "source_issue": SOURCE_ISSUE,
-                    "profile_issue": PROFILE_ISSUE,
-                    "release": RELEASE,
-                    "filename": FILENAME,
-                    "source_url": SOURCE_URL,
+                    "schema_version": schema_version,
+                    "dataset_id": dataset_id,
+                    "source_issue": source_issue,
+                    "profile_issue": profile_issue,
+                    "release": release,
+                    "filename": filename,
+                    "source_url": source_url,
                     "receipt_byte_count": byte_count,
                     "receipt_sha256": sha256,
                     "receipt_identity_verified": True,
