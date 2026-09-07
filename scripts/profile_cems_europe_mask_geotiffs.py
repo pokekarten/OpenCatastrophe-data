@@ -26,6 +26,7 @@ RELEASE = _rp10.RELEASE
 BASE_URL = "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-EFAS/flood_hazard/"
 PROFILE_SCHEMA_VERSION = "oc-cems-mask-geotiff-profile-v1"
 COMPARISON_SCHEMA_VERSION = "oc-cems-mask-rp10-metadata-comparison-v1"
+RP10_PROFILE_SCHEMA_VERSION = "oc-cems-rp10-geotiff-profile-v1"
 
 MASK_RECEIPTS: dict[str, dict[str, Any]] = {
     "permanent_water": {
@@ -111,6 +112,25 @@ def _require_verified_profile(profile: Any, *, label: str) -> dict[str, Any]:
     return profile
 
 
+def _require_exact_rp10_identity(profile: dict[str, Any]) -> None:
+    expected = {
+        "schema_version": RP10_PROFILE_SCHEMA_VERSION,
+        "dataset_id": DATASET_ID,
+        "source_issue": _rp10.SOURCE_ISSUE,
+        "profile_issue": _rp10.PROFILE_ISSUE,
+        "release": _rp10.RELEASE,
+        "filename": _rp10.FILENAME,
+        "source_url": _rp10.SOURCE_URL,
+        "receipt_byte_count": _rp10.ACCEPTED_BYTE_COUNT,
+        "receipt_sha256": _rp10.ACCEPTED_SHA256,
+    }
+    for field, value in expected.items():
+        if profile.get(field) != value:
+            raise CemsMaskGeoTiffProfileError(
+                f"RP10 profile {field} drifted from accepted #793/#802 identity"
+            )
+
+
 def compare_mask_profile_to_rp10(
     mask_profile: dict[str, Any],
     rp10_profile: dict[str, Any],
@@ -119,16 +139,23 @@ def compare_mask_profile_to_rp10(
     mask_profile = _require_verified_profile(mask_profile, label="mask")
     rp10_profile = _require_verified_profile(rp10_profile, label="RP10")
 
-    if mask_profile.get("dataset_id") != DATASET_ID or rp10_profile.get("dataset_id") != DATASET_ID:
-        raise CemsMaskGeoTiffProfileError("profile dataset identity drifted from frozen CEMS dataset")
+    _require_exact_rp10_identity(rp10_profile)
+    if mask_profile.get("schema_version") != PROFILE_SCHEMA_VERSION:
+        raise CemsMaskGeoTiffProfileError("mask profile schema drifted")
+    if mask_profile.get("dataset_id") != DATASET_ID:
+        raise CemsMaskGeoTiffProfileError("mask profile dataset identity drifted")
     if mask_profile.get("source_issue") != SOURCE_ISSUE:
         raise CemsMaskGeoTiffProfileError("mask profile is not bound to Issue #809")
     if mask_profile.get("profile_issue") != PROFILE_ISSUE:
         raise CemsMaskGeoTiffProfileError("mask profile is not bound to Issue #816")
+    if mask_profile.get("release") != RELEASE:
+        raise CemsMaskGeoTiffProfileError("mask profile release drifted")
     mask_kind = mask_profile.get("mask_kind")
     receipt = _receipt(mask_kind)
     if mask_profile.get("filename") != receipt["filename"]:
         raise CemsMaskGeoTiffProfileError("mask profile filename drifted from #809 receipt")
+    if mask_profile.get("source_url") != BASE_URL + receipt["filename"]:
+        raise CemsMaskGeoTiffProfileError("mask profile source URL drifted from frozen CEMS route")
     if mask_profile.get("receipt_byte_count") != receipt["byte_count"]:
         raise CemsMaskGeoTiffProfileError("mask profile byte count drifted from #809 receipt")
     if mask_profile.get("receipt_sha256") != receipt["sha256"]:
@@ -151,7 +178,7 @@ def compare_mask_profile_to_rp10(
         "profile_issue": PROFILE_ISSUE,
         "mask_kind": mask_kind,
         "mask_filename": mask_profile["filename"],
-        "rp10_filename": rp10_profile.get("filename"),
+        "rp10_filename": rp10_profile["filename"],
         "grid_field_equal": grid_equal,
         "grid_metadata_equal": all(grid_equal.values()),
         "container_field_equal": container_equal,
