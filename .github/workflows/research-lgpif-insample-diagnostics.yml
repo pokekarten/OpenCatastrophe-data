@@ -1,0 +1,121 @@
+name: Research LGPIF in-sample semantic diagnostics
+
+on:
+  push:
+    branches:
+      - research-bridge/lgpif-insample-qualification-20260907
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - run: python -m pip install --disable-pip-version-check --no-cache-dir pyreadr pandas numpy
+      - name: Materialize in-sample sources only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p work out
+          curl --fail --location --retry 3 --output work/data.RData \
+            'https://users.ssc.wisc.edu/~jfrees/InsurableRisks/DataDownload/PropertyFundData/data.RData'
+          curl --fail --location --retry 3 --output work/WiscPropFund.csv \
+            'https://raw.githubusercontent.com/OpenActTextDev/LDA_Ed2/8410b067ed2548e0e09077bbb880a476a0a2cdf9/Data/WiscPropFund.csv'
+      - name: Resolve transformations and mismatches
+        shell: bash
+        run: |
+          cat > work/diagnose.py <<'PY'
+          import json
+          from pathlib import Path
+          import numpy as np
+          import pandas as pd
+          import pyreadr
+
+          src = list(pyreadr.read_r('work/data.RData').values())[0].copy()
+          w = pd.read_csv('work/WiscPropFund.csv')
+          for d in (src,w):
+              d['PolicyNum']=pd.to_numeric(d['PolicyNum']).astype('Int64')
+              d['Year']=pd.to_numeric(d['Year']).astype('Int64')
+          m=w.merge(src,on=['PolicyNum','Year'],how='outer',indicator=True,suffixes=('_w','_s'))
+          b=m[m['_merge']=='both'].copy()
+          so=m[m['_merge']=='right_only'].copy()
+
+          def n(x): return pd.to_numeric(x,errors='coerce').astype(float)
+          def cmp(a,b,atol=1e-8,rtol=1e-10):
+              aa=n(a).to_numpy(); bb=n(b).to_numpy()
+              ok=np.isclose(aa,bb,atol=atol,rtol=rtol,equal_nan=True)
+              diff=np.abs(aa-bb)
+              fin=np.isfinite(diff)
+              return {'n':len(aa),'equal':int(ok.sum()),'mismatch':int((~ok).sum()),
+                      'max_abs':None if not fin.any() else float(diff[fin].max()),
+                      'median_abs':None if not fin.any() else float(np.median(diff[fin]))}
+
+          cov=n(b['CoverageBC'])
+          ded=n(b['lnDeductBC'])
+          trans={
+            'BCcov_vs_CoverageBC_times_1e6':cmp(b['BCcov'],cov*1e6,atol=.51,rtol=1e-9),
+            'BCcov_vs_CoverageBC_times_1000':cmp(b['BCcov'],cov*1000,atol=.51,rtol=1e-9),
+            'BCcov_vs_CoverageBC':cmp(b['BCcov'],cov,atol=.51,rtol=1e-9),
+            'BCcov_log_vs_CoverageBC':cmp(np.log(n(b['BCcov'])),cov,atol=1e-10,rtol=1e-10),
+            'BCcov_log_millions_vs_CoverageBC':cmp(np.log(n(b['BCcov'])/1e6),cov,atol=1e-10,rtol=1e-10),
+            'Deduct_vs_exp_lnDeductBC':cmp(b['Deduct'],np.exp(ded),atol=.01,rtol=1e-10),
+            'Freq_vs_FreqBC':cmp(b['Freq'],b['FreqBC'],atol=0,rtol=0),
+            'NoClaimCredit_vs_NoClaimCreditBC':cmp(b['NoClaimCredit'],b['NoClaimCreditBC'],atol=0,rtol=0),
+            'BCClaim_vs_ClaimBC':cmp(b['BCClaim'],b['ClaimBC'],atol=.005,rtol=1e-12),
+          }
+
+          freq_bad=b[n(b['Freq'])!=n(b['FreqBC'])].copy()
+          claim_bad=b[~np.isclose(n(b['BCClaim']),n(b['ClaimBC']),atol=.005,rtol=1e-12,equal_nan=True)].copy()
+          ncc_bad=b[n(b['NoClaimCredit'])!=n(b['NoClaimCreditBC'])].copy()
+          ded_bad=b[~np.isclose(n(b['Deduct']),np.exp(n(b['lnDeductBC'])),atol=.01,rtol=1e-10,equal_nan=True)].copy()
+
+          type_cols=['TypeCity','TypeCounty','TypeMisc','TypeSchool','TypeTown','TypeVillage']
+          tmat=b[type_cols].apply(pd.to_numeric,errors='coerce').fillna(0)
+          b['type_name']=tmat.idxmax(axis=1)
+          cross=pd.crosstab(b['EntityType'].astype(str),b['type_name'])
+
+          def sample(df, cols, k=20):
+              if df.empty:return []
+              out=df[cols].head(k).copy()
+              return json.loads(out.to_json(orient='records'))
+
+          # Explore whether the 38 source-only rows are exactly non-BC exposure rows.
+          so_cov=n(so['CoverageBC']) if len(so) else pd.Series(dtype=float)
+          so_summary={
+            'n':int(len(so)),
+            'coverageBC_zero':int((so_cov==0).sum()) if len(so) else 0,
+            'coverageBC_nonpositive':int((so_cov<=0).sum()) if len(so) else 0,
+            'coverageBC_min':None if not len(so) else float(np.nanmin(so_cov)),
+            'coverageBC_max':None if not len(so) else float(np.nanmax(so_cov)),
+            'years':{} if not len(so) else {str(int(k)):int(v) for k,v in so['Year'].value_counts().sort_index().items()},
+            'sample':sample(so,['PolicyNum','Year','CoverageBC','lnDeductBC','FreqBC','ClaimBC','NoClaimCreditBC'],20),
+          }
+
+          # Frequency mismatch contingency and direction.
+          ftab=pd.crosstab(n(b['Freq']).astype('Int64'),n(b['FreqBC']).astype('Int64'))
+          freq_cross={str(idx):{str(col):int(ftab.loc[idx,col]) for col in ftab.columns} for idx in ftab.index}
+
+          receipt={
+            'status':'IN_SAMPLE_ONLY_TARGET_NOT_ACCESSED',
+            'transformations':trans,
+            'source_only_diagnostics':so_summary,
+            'frequency_cross_tab':freq_cross,
+            'frequency_mismatch_sample':sample(freq_bad,['PolicyNum','Year','BCcov','CoverageBC','Freq','FreqBC','BCClaim','ClaimBC','Deduct','lnDeductBC'],30),
+            'claim_mismatch_sample':sample(claim_bad,['PolicyNum','Year','Freq','FreqBC','BCClaim','ClaimBC','yAvgBC'],30),
+            'noclaimcredit_mismatch_sample':sample(ncc_bad,['PolicyNum','Year','NoClaimCredit','NoClaimCreditBC','Freq','FreqBC'],10),
+            'deductible_mismatch_sample':sample(ded_bad,['PolicyNum','Year','Deduct','lnDeductBC'],10),
+            'entity_type_crosstab':{str(idx):{str(col):int(cross.loc[idx,col]) for col in cross.columns} for idx in cross.index},
+            'wisc_fields_absent_from_rdata':[c for c in ['Premium','Fire5','AlarmCredit'] if c not in src.columns],
+            'target_access':{'dataout_RData_downloaded':False,'dataout_RData_opened':False,'year_2011_outcome_accessed':False},
+          }
+          Path('out/lgpif-insample-diagnostics.json').write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n')
+          print(Path('out/lgpif-insample-diagnostics.json').read_text())
+          PY
+          python work/diagnose.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lgpif-insample-diagnostics
+          path: out/lgpif-insample-diagnostics.json
+          if-no-files-found: error
