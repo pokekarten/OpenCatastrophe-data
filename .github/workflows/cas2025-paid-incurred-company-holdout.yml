@@ -1,0 +1,73 @@
+name: CAS paid-incurred company holdout bridge
+
+on:
+  push:
+    branches:
+      - research-run/cas2025-paid-incurred-20260907-sol56
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install frozen numeric dependency
+        run: python -m pip install --disable-pip-version-check numpy==2.3.5
+      - name: Compile frozen bridge
+        run: python -m py_compile scripts/research/cas2025_paid_incurred_company_holdout_bridge.py
+      - name: Download exact current CAS Schedule-P targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target
+          curl --fail --location --retry 5 --retry-all-errors \
+            'https://www.casact.org/sites/default/files/2026-03/ppauto_pos98-07%20%281%29.csv' -o target/ppauto.csv
+          curl --fail --location --retry 5 --retry-all-errors \
+            'https://www.casact.org/sites/default/files/2026-03/wkcomp_pos_98-07.csv' -o target/wkcomp.csv
+          curl --fail --location --retry 5 --retry-all-errors \
+            'https://www.casact.org/sites/default/files/2026-03/comauto_pos_98-07.csv' -o target/comauto.csv
+          curl --fail --location --retry 5 --retry-all-errors \
+            'https://www.casact.org/sites/default/files/2026-03/medmal_pos_98-07.csv' -o target/medmal.csv
+          curl --fail --location --retry 5 --retry-all-errors \
+            'https://www.casact.org/sites/default/files/2026-03/prodliab_pos_98-07.csv' -o target/prodliab.csv
+          curl --fail --location --retry 5 --retry-all-errors \
+            'https://www.casact.org/sites/default/files/2026-03/othliab_pos_98-07.csv' -o target/othliab.csv
+          sha256sum target/*.csv > source-sha256.txt
+          wc -c target/*.csv > source-bytes.txt
+      - name: Execute preregistered tournament
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/research/cas2025_paid_incurred_company_holdout_bridge.py \
+            --dataset 'ppauto=target/ppauto.csv' \
+            --dataset 'wkcomp=target/wkcomp.csv' \
+            --dataset 'comauto=target/comauto.csv' \
+            --dataset 'medmal=target/medmal.csv' \
+            --dataset 'prodliab=target/prodliab.csv' \
+            --dataset 'othliab=target/othliab.csv' \
+            --source-url 'ppauto=https://www.casact.org/sites/default/files/2026-03/ppauto_pos98-07%20%281%29.csv' \
+            --source-url 'wkcomp=https://www.casact.org/sites/default/files/2026-03/wkcomp_pos_98-07.csv' \
+            --source-url 'comauto=https://www.casact.org/sites/default/files/2026-03/comauto_pos_98-07.csv' \
+            --source-url 'medmal=https://www.casact.org/sites/default/files/2026-03/medmal_pos_98-07.csv' \
+            --source-url 'prodliab=https://www.casact.org/sites/default/files/2026-03/prodliab_pos_98-07.csv' \
+            --source-url 'othliab=https://www.casact.org/sites/default/files/2026-03/othliab_pos_98-07.csv' \
+            --output result.json
+          sha256sum scripts/research/cas2025_paid_incurred_company_holdout_bridge.py > bridge-sha256.txt
+      - name: Upload receipt only
+        uses: actions/upload-artifact@v4
+        with:
+          name: cas-paid-incurred-receipt
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            result.json
+            source-sha256.txt
+            source-bytes.txt
+            bridge-sha256.txt
