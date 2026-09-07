@@ -1,0 +1,144 @@
+name: Diagnose Dutch MTPL Gate A receipts
+
+on:
+  push:
+    branches:
+      - 'research-run/mtpl-freqsev-gatea-20260907-sol56'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Re-materialize exact source and run post-hoc diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet pyreadr pandas numpy scipy statsmodels
+          python - <<'PY'
+          import hashlib
+          import importlib.util
+          import json
+          import math
+          import pathlib
+          import urllib.request
+
+          import numpy as np
+          import pyreadr
+          import statsmodels.api as sm
+
+          source_url = 'https://raw.githubusercontent.com/MHaringa/insurancerating/688e4208dec8c096552a2447fd1c246bc95a03a8/data/MTPL.rda'
+          expected_blob = 'f40daffb76ad9b92034f4e6af41024327fa1f696'
+          expected_replay_sha256 = '24f272771d82f8250131f1ba8a97e995b014fd5a3d2e4e94fb9264d4187b5369'
+
+          rda = pathlib.Path('MTPL.rda')
+          urllib.request.urlretrieve(source_url, rda)
+          raw = rda.read_bytes()
+          blob = hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
+          if blob != expected_blob:
+              raise SystemExit(f'RDA_BLOB_MISMATCH {blob}')
+
+          replay_path = pathlib.Path('research_runtime/frequency_severity_dependence_mtpl_replay.py')
+          replay_sha = hashlib.sha256(replay_path.read_bytes()).hexdigest()
+          if replay_sha != expected_replay_sha256:
+              raise SystemExit(f'REPLAY_SHA256_MISMATCH {replay_sha}')
+          spec = importlib.util.spec_from_file_location('gatea', replay_path)
+          gatea = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(gatea)
+
+          df = next(iter(pyreadr.read_r(str(rda)).values())).reset_index(drop=True)
+          gatea.validate_source(df)
+          split = gatea.deterministic_partition(len(df))
+          train = df.iloc[np.flatnonzero(split == 0)].reset_index(drop=True)
+          final = df.iloc[np.flatnonzero(split == 2)].reset_index(drop=True)
+          full_x = gatea._design(train)
+          x_array = full_x.to_numpy(float)
+          x_rank = int(np.linalg.matrix_rank(x_array))
+          x_cols = int(x_array.shape[1])
+          svals = np.linalg.svd(x_array, compute_uv=False)
+
+          observed = final['amount'].to_numpy(float)
+          models = {}
+          invariance = {}
+          for dependent in (False, True):
+              freq, sev, sigma, columns = gatea.fit_models(train, dependent=dependent)
+              scores, expected = gatea.score_policy_totals(final, freq, sev, sigma, columns, dependent=dependent)
+              raw_ae = float(np.sum(observed) / np.sum(expected))
+              corrected_expected = expected * math.exp((sigma * sigma) / 2.0)
+              corrected_ae = float(np.sum(observed) / np.sum(corrected_expected))
+              sev_matrix = gatea._design(train.loc[train['nclaims'].to_numpy(float) > 0], columns=columns)
+              if dependent:
+                  sev_matrix['count'] = train.loc[train['nclaims'].to_numpy(float) > 0, 'nclaims'].to_numpy(float)
+              sev_rank = int(np.linalg.matrix_rank(sev_matrix.to_numpy(float)))
+              models['dependent' if dependent else 'independent'] = {
+                  'sigma_log_severity': float(sigma),
+                  'raw_aggregate_ae_from_frozen_diagnostic': raw_ae,
+                  'lognormal_mean_corrected_aggregate_ae': corrected_ae,
+                  'mean_correction_factor': float(math.exp((sigma * sigma) / 2.0)),
+                  'severity_design_columns': int(sev_matrix.shape[1]),
+                  'severity_design_rank': sev_rank,
+                  'count_beta': float(sev.params.get('count', 0.0)),
+                  'mean_policy_total_log_score': float(np.mean(scores)),
+              }
+
+              # Parameterization-invariance check: drop one region dummy to make
+              # the intercept + region coding full rank. This is diagnostic only.
+              drop_col = next(c for c in columns if c.startswith('zip_'))
+              reduced_cols = [c for c in columns if c != drop_col]
+              x_train_red = gatea._design(train, columns=reduced_cols)
+              count = train['nclaims'].to_numpy(float)
+              exposure = train['exposure'].to_numpy(float)
+              freq_red = sm.GLM(count, x_train_red, family=sm.families.Poisson(), offset=np.log(exposure)).fit()
+              pos = count > 0
+              sev_x_red = x_train_red.loc[pos].copy()
+              if dependent:
+                  sev_x_red['count'] = count[pos]
+              avg = train.loc[pos, 'amount'].to_numpy(float) / count[pos]
+              sev_red = sm.OLS(np.log(avg), sev_x_red).fit()
+              sigma_red = float(np.sqrt(np.mean(np.asarray(sev_red.resid) ** 2)))
+              score_red, _ = gatea.score_policy_totals(final, freq_red, sev_red, sigma_red, reduced_cols, dependent=dependent)
+              invariance['dependent' if dependent else 'independent'] = {
+                  'dropped_column': drop_col,
+                  'max_abs_logscore_difference': float(np.max(np.abs(score_red - scores))),
+                  'mean_logscore_difference': float(np.mean(score_red - scores)),
+                  'sigma_difference': float(sigma_red - sigma),
+                  'count_beta_difference': float(sev_red.params.get('count', 0.0) - sev.params.get('count', 0.0)),
+              }
+
+          receipt = {
+              'status': 'POSTHOC_DIAGNOSTIC_ONLY_NO_CHANGE_TO_PREREGISTERED_GATE_A',
+              'source_git_blob': blob,
+              'replay_sha256': replay_sha,
+              'train_rows': int(len(train)),
+              'selection_rows': int(np.sum(split == 1)),
+              'final_rows': int(len(final)),
+              'all_positive_count_rows': int(np.sum(df['nclaims'].to_numpy(float) > 0)),
+              'train_positive_count_rows': int(np.sum(train['nclaims'].to_numpy(float) > 0)),
+              'final_positive_count_rows': int(np.sum(final['nclaims'].to_numpy(float) > 0)),
+              'max_nclaims_all': int(df['nclaims'].max()),
+              'max_nclaims_final': int(final['nclaims'].max()),
+              'frequency_design_columns': x_cols,
+              'frequency_design_rank': x_rank,
+              'frequency_design_smallest_singular_value': float(svals[-1]),
+              'models': models,
+              'parameterization_invariance': invariance,
+              'interpretation': {
+                  'rank_deficiency': 'intercept plus complete zip-dummy basis; inspect invariance under reference-coded zip',
+                  'raw_ae': 'frozen replay omitted the lognormal exp(sigma^2/2) mean correction; corrected A/E is diagnostic only',
+              },
+          }
+          out = pathlib.Path('gate-a-posthoc-diagnostic.json')
+          out.write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(receipt, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mtpl-freqsev-gatea-posthoc-diagnostic
+          path: gate-a-posthoc-diagnostic.json
