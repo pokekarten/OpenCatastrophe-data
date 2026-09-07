@@ -1,0 +1,2 @@
+Trigger the branch-scoped fair-score audit after its workflow file exists at branch head.
+This file has no model, data, parameter, scoring or decision semantics.
