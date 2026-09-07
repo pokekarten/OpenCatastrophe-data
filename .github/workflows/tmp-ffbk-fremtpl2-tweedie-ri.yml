@@ -1,0 +1,37 @@
+name: FFBK freMTPL2 direct Tweedie RI tournament
+
+on:
+  push:
+    branches:
+      - research/fremtpl2-tweedie-ri-20260908-sol56
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install frozen runtime
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy==2.5.3 pandas==3.0.5 scipy==1.18.1 scikit-learn==1.9.0 rdata==1.1.0
+      - name: Compile research scripts
+        run: |
+          python -m py_compile scripts/tmp_ffbk_fremtpl2_aggregate_law.py scripts/tmp_ffbk_fremtpl2_tweedie_ri.py
+      - name: Execute frozen tournament
+        run: python scripts/tmp_ffbk_fremtpl2_tweedie_ri.py
+      - name: Upload exact result receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-fremtpl2-tweedie-ri-result
+          path: tmp_ffbk_fremtpl2_tweedie_ri_result.json
+          if-no-files-found: error
+          retention-days: 90
