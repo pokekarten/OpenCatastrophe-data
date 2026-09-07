@@ -308,7 +308,9 @@ class Eshm20GsimOpenQuakeRuntimeTests(unittest.TestCase):
             ).strip()
 
             with patch.object(gate, "OPENQUAKE_COMMIT", head):
-                self.assertEqual(gate._verify_exact_openquake_checkout(source), root)
+                self.assertEqual(
+                    gate._verify_exact_openquake_checkout(source), root.resolve()
+                )
                 (root / "openquake" / "evil.py").write_text(
                     "BAD = True\n",
                     encoding="utf-8",
