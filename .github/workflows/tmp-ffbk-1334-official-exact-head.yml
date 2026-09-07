@@ -1,0 +1,108 @@
+name: FFBK 1334 exact-head duration-risk receipt
+
+on:
+  push:
+    branches:
+      - research-run/ffbk-1334-official-exact-head-20260908
+
+permissions:
+  contents: read
+
+jobs:
+  execute-official-receipt:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout runner repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install frozen runtime
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            numpy==2.3.5 \
+            pandas==2.2.3 \
+            scipy==1.17.0 \
+            scikit-learn==1.8.0 \
+            pyarrow==19.0.1
+
+      - name: Checkout exact FFBK PR head
+        env:
+          EXPECTED_HEAD: 8a1c7322430eb3f1ec443861e177d4a7c6d5d8bc
+        run: |
+          git clone --filter=blob:none https://github.com/pokekarten/FFBK.git ffbk
+          git -C ffbk checkout --detach "$EXPECTED_HEAD"
+          test "$(git -C ffbk rev-parse HEAD)" = "$EXPECTED_HEAD"
+          git -C ffbk status --porcelain=v1
+
+      - name: Verify frozen blob identities
+        working-directory: ffbk
+        run: |
+          test "$(git hash-object scripts/underwriting_fremtpl_duration_risk_meanclass.py)" = "5d3b29b8e927f9a5cf962c38f462fd817abb442d"
+          test "$(git hash-object scripts/underwriting_fremtpl_duration_risk_meanclass_receipted.py)" = "fcee0f2a1d4332caf838438d7a74bead3e35fcbb"
+          test "$(git hash-object tests/test_underwriting_fremtpl_duration_risk_meanclass.py)" = "b6188128d1115be153de421862a3cf1babd26581"
+          test "$(git hash-object tests/test_underwriting_fremtpl_duration_risk_meanclass_receipted.py)" = "9fa2a32400b1014808b34eb999b165481ae133fe"
+          sha256sum \
+            scripts/underwriting_fremtpl_duration_risk_meanclass.py \
+            scripts/underwriting_fremtpl_duration_risk_meanclass_receipted.py \
+            tests/test_underwriting_fremtpl_duration_risk_meanclass.py \
+            tests/test_underwriting_fremtpl_duration_risk_meanclass_receipted.py \
+            | tee ../authored_sha256.txt
+
+      - name: Compile and run focused contract tests
+        working-directory: ffbk
+        run: |
+          python -m py_compile \
+            scripts/underwriting_fremtpl_duration_risk_meanclass.py \
+            scripts/underwriting_fremtpl_duration_risk_meanclass_receipted.py \
+            tests/test_underwriting_fremtpl_duration_risk_meanclass.py \
+            tests/test_underwriting_fremtpl_duration_risk_meanclass_receipted.py
+          python -m unittest -v tests/test_underwriting_fremtpl_duration_risk_meanclass.py
+          python -m unittest -v tests/test_underwriting_fremtpl_duration_risk_meanclass_receipted.py
+          python scripts/underwriting_fremtpl_duration_risk_meanclass_receipted.py --check --output ../contract_check.json
+
+      - name: Execute exact target once under frozen contract
+        working-directory: ffbk
+        run: |
+          python scripts/underwriting_fremtpl_duration_risk_meanclass_receipted.py \
+            --expected-git-commit 8a1c7322430eb3f1ec443861e177d4a7c6d5d8bc \
+            --bootstrap 1000 \
+            --output ../ffbk_1334_official_receipt.json \
+            > ../ffbk_1334_stdout.json
+
+      - name: Record environment and receipt hashes
+        run: |
+          {
+            echo "runner_repo=pokekarten/OpenCatastrophe-data"
+            echo "runner_commit=$(git rev-parse HEAD)"
+            echo "ffbk_expected_head=8a1c7322430eb3f1ec443861e177d4a7c6d5d8bc"
+            python --version
+            python - <<'PY'
+          import numpy, pandas, scipy, sklearn, pyarrow
+          print('numpy=' + numpy.__version__)
+          print('pandas=' + pandas.__version__)
+          print('scipy=' + scipy.__version__)
+          print('scikit_learn=' + sklearn.__version__)
+          print('pyarrow=' + pyarrow.__version__)
+          PY
+          } | tee environment_receipt.txt
+          sha256sum contract_check.json ffbk_1334_official_receipt.json ffbk_1334_stdout.json environment_receipt.txt authored_sha256.txt | tee result_sha256.txt
+
+      - name: Upload exact execution evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-1334-official-exact-head-receipt
+          path: |
+            ffbk_1334_official_receipt.json
+            ffbk_1334_stdout.json
+            contract_check.json
+            environment_receipt.txt
+            authored_sha256.txt
+            result_sha256.txt
+          if-no-files-found: error
+          retention-days: 90
