@@ -52,7 +52,12 @@ jobs:
         run: python -m pip check
       # The mask-aware layer adds only the frozen Issue #809 two-mask receipt
       # action and delegates every earlier action to the reviewed #802 profile
-      # layer. The compatibility chain therefore still includes
+      # layer. The compatibility chain therefore still includes the prior
+      # module-mode entrypoints as audit breadcrumbs (they are not invoked here):
+      # python -m scripts.prepare_agent_action_result_cems_rp10_profile
+      # python -m scripts.post_agent_action_result_cems_rp10_profile
+      # python -m scripts.prepare_agent_action_result_cems_rp10
+      # python -m scripts.post_agent_action_result_cems_rp10
       # prepare_agent_action_result_cems_rp10.py and post_agent_action_result_cems_rp10.py,
       # then prepare_agent_action_result_country_risk.py and
       # post_agent_action_result_country_risk.py for earlier actions.
