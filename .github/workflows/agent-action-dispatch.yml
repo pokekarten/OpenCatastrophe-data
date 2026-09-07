@@ -61,6 +61,7 @@ jobs:
       # prepare_agent_action_result_cems_rp10.py and post_agent_action_result_cems_rp10.py,
       # then prepare_agent_action_result_country_risk.py and
       # post_agent_action_result_country_risk.py for earlier actions.
+      # Compatibility therefore still covers the repository-owned frozen DWD worker;
       # The profile layer still owns the frozen #802 receipt-bound GeoTIFF reader;
       # this new action performs receipt-only acquisition and never selects URLs,
       # filenames, provider, mask kind, reader, parser or output from the comment.
