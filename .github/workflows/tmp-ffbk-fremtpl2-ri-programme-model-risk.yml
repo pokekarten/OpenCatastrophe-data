@@ -1,0 +1,36 @@
+name: Temporary FFBK freMTPL2 RI programme model-risk study
+
+on:
+  push:
+    branches:
+      - research/fremtpl2-ri-programme-model-risk-20260908-sol56
+    paths:
+      - scripts/tmp_ffbk_fremtpl2_ri_programme_model_risk.py
+      - .github/workflows/tmp-ffbk-fremtpl2-ri-programme-model-risk.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run-study:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Install frozen analysis dependencies
+        run: >-
+          python -m pip install --disable-pip-version-check --no-input
+          numpy==2.5.3 pandas==3.0.5 scipy==1.18.1 scikit-learn==1.9.0 rdata==1.1.0
+      - name: Run study
+        run: python scripts/tmp_ffbk_fremtpl2_ri_programme_model_risk.py
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-fremtpl2-ri-programme-model-risk-result
+          path: tmp_ffbk_fremtpl2_ri_programme_model_risk_result.json
+          if-no-files-found: error
+          retention-days: 14
