@@ -6,159 +6,117 @@ on:
       - research/freclaimset2motor-audit-20260908
 
 jobs:
-  audit:
+  audit2:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - name: Download pinned source and verify Git identity
+      - name: Download pinned source
         shell: bash
         run: |
           set -euo pipefail
-          url='https://raw.githubusercontent.com/dutangc/CASdatasets/227fb56b8734bdb7c0327a41180e01d2ddaeaf26/data/freclaimset2motor.rda'
-          curl --fail --location --retry 3 "$url" --output /tmp/freclaimset2motor.rda
+          curl --fail --location --retry 3 'https://raw.githubusercontent.com/dutangc/CASdatasets/227fb56b8734bdb7c0327a41180e01d2ddaeaf26/data/freclaimset2motor.rda' --output /tmp/freclaimset2motor.rda
           echo "SOURCE_BYTES=$(stat -c '%s' /tmp/freclaimset2motor.rda)"
           echo "SOURCE_SHA256=$(sha256sum /tmp/freclaimset2motor.rda | awk '{print $1}')"
           echo "SOURCE_GIT_BLOB=$(git hash-object /tmp/freclaimset2motor.rda)"
           test "$(git hash-object /tmp/freclaimset2motor.rda)" = 'a232d3a63f0ecc7bd28e45ce8364afb660f2eb4f'
-
       - name: Ensure R runtime
         shell: bash
         run: |
           set -euo pipefail
-          if ! command -v Rscript >/dev/null 2>&1; then
-            sudo apt-get update -qq
-            sudo apt-get install -y --no-install-recommends r-base-core
-          fi
+          if ! command -v Rscript >/dev/null 2>&1; then sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends r-base-core; fi
           Rscript --version
-
-      - name: Audit claim-development semantics
+      - name: Follow-up ambiguity and delayed-entry audit
         shell: bash
         run: |
           set -euo pipefail
-          cat > /tmp/audit.R <<'RS'
-          options(width=200, scipen=999)
-          path <- "/tmp/freclaimset2motor.rda"
-          e <- new.env(parent=emptyenv())
-          loaded <- load(path, envir=e)
-          cat("LOADED_OBJECTS=", paste(loaded, collapse=","), "\n", sep="")
-          stopifnot(length(loaded) == 1L)
-          x <- e[[loaded[[1]]]]
-          cat("TOP_CLASS=", paste(class(x), collapse=","), "\n", sep="")
-          cat("COMPONENTS=", paste(names(x), collapse=","), "\n", sep="")
-          stopifnot(all(c("claimset", "aggdata") %in% names(x)))
-          d <- x$claimset
-          a <- x$aggdata
-          cat("CLAIMSET_DIM=", nrow(d), "x", ncol(d), "\n", sep="")
-          cat("AGGDATA_DIM=", nrow(a), "x", ncol(a), "\n", sep="")
-          cat("CLAIMSET_COLUMNS=", paste(names(d), collapse=","), "\n", sep="")
-          cat("AGGDATA_COLUMNS=", paste(names(a), collapse=","), "\n", sep="")
-          cat("UNIQUE_CLAIMS=", length(unique(d$ClaimID)), "\n", sep="")
-          cat("OCCUR_YEAR_RANGE=", min(d$OccurYear, na.rm=TRUE), ":", max(d$OccurYear, na.rm=TRUE), "\n", sep="")
-          cat("MANAG_YEAR_RANGE=", min(d$ManagYear, na.rm=TRUE), ":", max(d$ManagYear, na.rm=TRUE), "\n", sep="")
-          cat("AGG_YEAR_RANGE=", min(a$Year, na.rm=TRUE), ":", max(a$Year, na.rm=TRUE), "\n", sep="")
+          cat > /tmp/audit2.R <<'RS'
+          options(width=240, scipen=999)
+          e <- new.env(parent=emptyenv()); load('/tmp/freclaimset2motor.rda', envir=e)
+          x <- e$freclaimset2motor; d <- x$claimset; a <- x$aggdata
+          uclaims <- unique(d$ClaimID)
+          cat('UNIQUE_CLAIMS=', length(uclaims), '\n', sep='')
+          cat('DOC_CLAIM_COUNT=735079\n')
+          cat('UNIQUE_MINUS_DOC=', length(uclaims)-735079L, '\n', sep='')
+          cat('SUM_AGG_CLAIMNB=', sum(a$ClaimNb), '\n', sep='')
 
-          for (nm in names(d)) cat("NA_", toupper(nm), "=", sum(is.na(d[[nm]])), "\n", sep="")
-          cat("DUPLICATE_FULL_ROWS=", sum(duplicated(d)), "\n", sep="")
-          key <- paste(d$ClaimID, d$ManagYear, sep="|")
-          dupkey <- duplicated(key) | duplicated(key, fromLast=TRUE)
-          cat("DUPLICATE_CLAIM_MANAG_ROWS=", sum(dupkey), "\n", sep="")
-          cat("DUPLICATE_CLAIM_MANAG_KEYS=", length(unique(key[dupkey])), "\n", sep="")
-          cat("DUPLICATE_CLAIM_MANAG_CLAIMS=", length(unique(d$ClaimID[dupkey])), "\n", sep="")
-          prefix_year <- suppressWarnings(as.integer(substr(as.character(d$ClaimID), 1, 4)))
-          cat("CLAIMID_OCCURYEAR_MISMATCH=", sum(is.na(prefix_year) | prefix_year != d$OccurYear), "\n", sep="")
-          cat("MANAG_BEFORE_OCCUR=", sum(d$ManagYear < d$OccurYear, na.rm=TRUE), "\n", sep="")
-
-          sameyr <- d$OccurYear == d$ManagYear
-          first_counts <- table(d$OccurYear[sameyr])
-          agg_counts <- setNames(as.numeric(a$ClaimNb), as.character(a$Year))
-          common <- intersect(names(first_counts), names(agg_counts))
-          diffs <- as.numeric(first_counts[common]) - agg_counts[common]
-          cat("AGG_CLAIMNB_FIRSTYEAR_MAX_ABS_DIFF=", max(abs(diffs)), "\n", sep="")
-          cat("AGG_CLAIMNB_FIRSTYEAR_ALL_EQUAL=", all(diffs == 0), "\n", sep="")
-
-          numcols <- c("PaidAmount","RecourseAmount","ExpectCharge","ExpectRecourse")
-          for (nm in numcols) {
-            v <- d[[nm]]
-            cat("NEGATIVE_", toupper(nm), "=", sum(v < 0, na.rm=TRUE), "\n", sep="")
-            cat("NONFINITE_", toupper(nm), "=", sum(!is.finite(v)), "\n", sep="")
-            cat("ZERO_", toupper(nm), "=", sum(v == 0, na.rm=TRUE), "\n", sep="")
-          }
-
-          cat("STATUS_LEVELS=", paste(sort(unique(as.character(d$ClaimStatus))), collapse="|"), "\n", sep="")
-          sttab <- sort(table(d$ClaimStatus), decreasing=TRUE)
-          cat("STATUS_COUNTS=", paste(paste(names(sttab), as.integer(sttab), sep=":"), collapse="|"), "\n", sep="")
-
-          o <- order(d$ClaimID, d$ManagYear, method="radix")
-          s <- d[o, , drop=FALSE]
-          same_claim <- c(FALSE, s$ClaimID[-1] == s$ClaimID[-nrow(s)])
-          year_gap <- c(NA_integer_, diff(s$ManagYear))
-          transition <- same_claim
-          cat("WITHIN_CLAIM_TRANSITIONS=", sum(transition), "\n", sep="")
-          cat("YEAR_GAP_GT1_TRANSITIONS=", sum(transition & year_gap > 1, na.rm=TRUE), "\n", sep="")
-          cat("YEAR_GAP_GT1_CLAIMS=", length(unique(s$ClaimID[transition & year_gap > 1])), "\n", sep="")
-          cat("NONPOSITIVE_YEAR_STEP_TRANSITIONS=", sum(transition & year_gap <= 0, na.rm=TRUE), "\n", sep="")
-
-          delta_metric <- function(nm) {
-            v <- s[[nm]]
-            dv <- c(NA_real_, diff(v))
-            neg <- transition & !is.na(dv) & dv < 0
-            pos <- transition & !is.na(dv) & dv > 0
-            cat("DECREASE_TRANSITIONS_", toupper(nm), "=", sum(neg), "\n", sep="")
-            cat("DECREASE_CLAIMS_", toupper(nm), "=", length(unique(s$ClaimID[neg])), "\n", sep="")
-            cat("INCREASE_TRANSITIONS_", toupper(nm), "=", sum(pos), "\n", sep="")
-            if (any(neg)) {
-              cat("MOST_NEGATIVE_DELTA_", toupper(nm), "=", min(dv[neg]), "\n", sep="")
-              cat("TOTAL_NEGATIVE_DELTA_", toupper(nm), "=", sum(dv[neg]), "\n", sep="")
-            }
-          }
-          for (nm in numcols) delta_metric(nm)
-
-          prev_status <- c(NA_character_, as.character(s$ClaimStatus[-nrow(s)]))
-          curr_status <- as.character(s$ClaimStatus)
-          reopened <- transition & prev_status == "fully closed" & curr_status != "fully closed"
-          cat("FULLY_CLOSED_TO_NONFULL_TRANSITIONS=", sum(reopened, na.rm=TRUE), "\n", sep="")
-          cat("FULLY_CLOSED_TO_NONFULL_CLAIMS=", length(unique(s$ClaimID[reopened])), "\n", sep="")
-
-          ends <- c(s$ClaimID[-nrow(s)] != s$ClaimID[-1], TRUE)
-          last <- s[ends, , drop=FALSE]
+          o <- order(d$ClaimID, d$ManagYear, method='radix'); s <- d[o,,drop=FALSE]
           starts <- c(TRUE, s$ClaimID[-1] != s$ClaimID[-nrow(s)])
-          first <- s[starts, , drop=FALSE]
-          stopifnot(nrow(last) == nrow(first), nrow(last) == length(unique(d$ClaimID)))
-          devyears <- last$ManagYear - last$OccurYear
-          cat("LAST_STATUS_COUNTS=", paste(paste(names(sort(table(last$ClaimStatus), decreasing=TRUE)), as.integer(sort(table(last$ClaimStatus), decreasing=TRUE)), sep=":"), collapse="|"), "\n", sep="")
-          cat("LAST_MANAG_2014_SHARE=", mean(last$ManagYear == 2014), "\n", sep="")
-          cat("DEVYEARS_P50=", unname(quantile(devyears, .50, type=1)), "\n", sep="")
-          cat("DEVYEARS_P95=", unname(quantile(devyears, .95, type=1)), "\n", sep="")
-          cat("DEVYEARS_MAX=", max(devyears), "\n", sep="")
-          cat("DEVYEARS_GE5_SHARE=", mean(devyears >= 5), "\n", sep="")
-          cat("DEVYEARS_GE10_SHARE=", mean(devyears >= 10), "\n", sep="")
+          ends <- c(s$ClaimID[-nrow(s)] != s$ClaimID[-1], TRUE)
+          first <- s[starts,,drop=FALSE]; last <- s[ends,,drop=FALSE]
+          first_delay <- first$ManagYear - first$OccurYear
+          fd <- table(first_delay)
+          cat('FIRST_RECORD_DELAY_COUNTS=', paste(paste(names(fd), as.integer(fd), sep=':'), collapse=';'), '\n', sep='')
+          cat('CLAIMS_NO_OCCURRENCE_YEAR_ROW=', sum(first_delay>0), '\n', sep='')
+          cat('CLAIMS_FIRST_RECORD_DELAY_GE2=', sum(first_delay>=2), '\n', sep='')
+          cat('FIRST_DELAY_MAX=', max(first_delay), '\n', sep='')
 
+          key <- paste(d$ClaimID, d$ManagYear, sep='|')
+          dup <- duplicated(key) | duplicated(key, fromLast=TRUE)
+          dd <- d[dup,,drop=FALSE]
+          spl <- split(seq_len(nrow(dd)), paste(dd$ClaimID,dd$ManagYear,sep='|'))
+          group_n <- lengths(spl)
+          cat('DUPKEY_GROUPS=', length(spl), '\n', sep='')
+          cat('DUPKEY_GROUP_SIZE_COUNTS=', paste(paste(names(table(group_n)),as.integer(table(group_n)),sep=':'),collapse=';'), '\n', sep='')
+          same_all <- vapply(spl, function(ii) nrow(unique(dd[ii,,drop=FALSE]))==1L, logical(1))
+          cat('DUPKEY_EXACT_IDENTICAL_GROUPS=', sum(same_all), '\n', sep='')
+          cat('DUPKEY_CONFLICTING_GROUPS=', sum(!same_all), '\n', sep='')
+          fields <- c('ClaimStatus','PaidAmount','RecourseAmount','ExpectCharge','ExpectRecourse')
+          for (nm in fields) {
+            diffgrp <- vapply(spl, function(ii) length(unique(dd[[nm]][ii]))>1L, logical(1))
+            cat('DUPKEY_GROUPS_DIFFER_', toupper(nm), '=', sum(diffgrp), '\n', sep='')
+          }
+          finfields <- c('PaidAmount','RecourseAmount','ExpectCharge','ExpectRecourse')
+          financial_conflict <- vapply(spl, function(ii) any(vapply(finfields, function(nm) length(unique(dd[[nm]][ii]))>1L, logical(1))), logical(1))
+          cat('DUPKEY_FINANCIAL_CONFLICT_GROUPS=', sum(financial_conflict), '\n', sep='')
+          cat('DUPKEY_STATUS_ONLY_CONFLICT_GROUPS=', sum(!same_all & !financial_conflict), '\n', sep='')
+          if (any(financial_conflict)) {
+            exkeys <- names(spl)[financial_conflict][seq_len(min(10,sum(financial_conflict)))]
+            cat('DUPKEY_FINANCIAL_CONFLICT_EXAMPLE_KEYS=', paste(exkeys, collapse=';'), '\n', sep='')
+          }
+
+          # After removing exact duplicate full rows, can each claim-year still have >1 financial state?
+          dr <- d[!duplicated(d),,drop=FALSE]
+          keyr <- paste(dr$ClaimID, dr$ManagYear, sep='|')
+          dupr <- duplicated(keyr) | duplicated(keyr, fromLast=TRUE)
+          ddr <- dr[dupr,,drop=FALSE]
+          splr <- split(seq_len(nrow(ddr)), paste(ddr$ClaimID,ddr$ManagYear,sep='|'))
+          fin_conf_r <- if(length(splr)) vapply(splr, function(ii) any(vapply(finfields,function(nm) length(unique(ddr[[nm]][ii]))>1L,logical(1))),logical(1)) else logical()
+          cat('POST_EXACT_DEDUP_DUPKEY_GROUPS=', length(splr), '\n', sep='')
+          cat('POST_EXACT_DEDUP_FINANCIAL_CONFLICT_GROUPS=', sum(fin_conf_r), '\n', sep='')
+
+          # Chronological consecutive-year deltas on keys that are unique after exact de-dup only.
+          # This intentionally does not invent a within-year ordering for conflicting keys.
+          ambig_keys <- names(splr)
+          keep <- !(keyr %in% ambig_keys)
+          q <- dr[keep,,drop=FALSE]
+          oq <- order(q$ClaimID,q$ManagYear,method='radix'); q <- q[oq,,drop=FALSE]
+          sameq <- c(FALSE,q$ClaimID[-1]==q$ClaimID[-nrow(q)])
+          gapq <- c(NA_integer_,diff(q$ManagYear))
+          dp <- c(NA_real_,diff(q$PaidAmount))
+          negp <- sameq & gapq>0 & dp<0
+          cat('UNAMBIGUOUS_POSITIVE_YEARSTEP_PAID_DECREASE_TRANSITIONS=',sum(negp,na.rm=TRUE),'\n',sep='')
+          cat('UNAMBIGUOUS_PAID_DECREASE_CLAIMS=',length(unique(q$ClaimID[negp])),'\n',sep='')
+          cat('UNAMBIGUOUS_PAID_DECREASE_TOTAL=',sum(dp[negp],na.rm=TRUE),'\n',sep='')
+
+          # Explicit source statuses and re-open patterns, using unique-year subset only.
+          ps <- c(NA_character_,as.character(q$ClaimStatus[-nrow(q)])); cs <- as.character(q$ClaimStatus)
+          reopened_status <- sameq & gapq>0 & ps=='fully closed' & cs!='fully closed'
+          cat('UNAMBIGUOUS_FULLY_CLOSED_TO_NONFULL=',sum(reopened_status,na.rm=TRUE),'\n',sep='')
+          cat('UNAMBIGUOUS_FULLY_CLOSED_TO_NONFULL_CLAIMS=',length(unique(q$ClaimID[reopened_status])),'\n',sep='')
+
+          # Source end-of-file censoring / unresolved state by occurrence cohort.
+          last_openish <- !(last$ClaimStatus %in% c('fully closed','closed without further action'))
+          byyr <- tapply(last_openish,last$OccurYear,mean)
+          cat('OPENISH_LAST_SHARE_BY_OCCURYEAR=',paste(paste(names(byyr),sprintf('%.6f',byyr),sep=':'),collapse=';'),'\n',sep='')
+          cat('MATURE_1995_2004_OPENISH_LAST_SHARE=',mean(last_openish[last$OccurYear<=2004]),'\n',sep='')
+          cat('RECENT_2010_2014_OPENISH_LAST_SHARE=',mean(last_openish[last$OccurYear>=2010]),'\n',sep='')
+
+          # Quantiles, explicitly delimited.
           tp <- last$PaidAmount
-          qs <- quantile(tp, probs=c(.5,.9,.95,.99,.995,.999), na.rm=TRUE, type=1)
-          cat("TERMINAL_PAID_QUANTILES=", paste(names(qs), format(qs, scientific=FALSE, trim=TRUE), sep=":"), "\n", sep="")
-          cat("TERMINAL_PAID_MEAN=", mean(tp), "\n", sep="")
-          cat("TERMINAL_PAID_MAX=", max(tp), "\n", sep="")
-          cat("TERMINAL_PAID_ZERO_SHARE=", mean(tp == 0), "\n", sep="")
-          tot <- sum(tp)
-          ordtp <- sort(tp, decreasing=TRUE)
-          top_share <- function(n) sum(head(ordtp, n))/tot
-          cat("TERMINAL_PAID_TOP1_SHARE=", top_share(1), "\n", sep="")
-          cat("TERMINAL_PAID_TOP10_SHARE=", top_share(10), "\n", sep="")
-          cat("TERMINAL_PAID_TOP100_SHARE=", top_share(100), "\n", sep="")
-          cat("TERMINAL_PAID_TOP1PCT_SHARE=", top_share(ceiling(length(ordtp)*0.01)), "\n", sep="")
+          probs <- c(.5,.9,.95,.99,.995,.999)
+          qs <- as.numeric(quantile(tp, probs=probs, na.rm=TRUE, type=1))
+          cat('TERMINAL_PAID_QUANTILES=',paste(paste0(probs,':',qs),collapse=';'),'\n',sep='')
 
-          cohort_n <- table(last$OccurYear)
-          cohort_paid <- tapply(last$PaidAmount, last$OccurYear, sum)
-          cat("COHORT_CLAIMS=", paste(paste(names(cohort_n), as.integer(cohort_n), sep=":"), collapse="|"), "\n", sep="")
-          cat("COHORT_TERMINAL_PAID=", paste(paste(names(cohort_paid), format(cohort_paid, scientific=FALSE, trim=TRUE), sep=":"), collapse="|"), "\n", sep="")
-
-          # Mature-cohort boundary: years 1995-2004 have at least 10 calendar years to the 2014 data endpoint.
-          mature <- last$OccurYear <= 2004
-          cat("MATURE_1995_2004_CLAIMS=", sum(mature), "\n", sep="")
-          cat("MATURE_1995_2004_PAID_TOTAL=", sum(last$PaidAmount[mature]), "\n", sep="")
-          cat("MATURE_1995_2004_LAST_FULLY_CLOSED_SHARE=", mean(last$ClaimStatus[mature] == "fully closed"), "\n", sep="")
-          cat("RECENT_2010_2014_LAST_FULLY_CLOSED_SHARE=", mean(last$ClaimStatus[last$OccurYear >= 2010] == "fully closed"), "\n", sep="")
-
-          cat("AUDIT_STATUS=PASS\n")
+          cat('AUDIT2_STATUS=PASS\n')
           RS
-          Rscript /tmp/audit.R
+          Rscript /tmp/audit2.R
