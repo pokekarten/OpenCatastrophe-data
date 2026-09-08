@@ -1,0 +1,93 @@
+{
+  "english_workbook": {
+    "downloaded_size_bytes": 246366,
+    "file_id": 46360495,
+    "filename": "P-COLD-English ver.xlsx",
+    "metadata_size_bytes": 246366,
+    "sha256": "d3d22f6121b9f405ba3c12a7e0491d907f44a2a3d59d1e8ed105804b5f0e924c"
+  },
+  "execution": {
+    "head_sha": "9d89d2416fc95fe5e7b6c5811739de8afd80a523",
+    "repository": "pokekarten/OpenCatastrophe-data",
+    "run_attempt": "1",
+    "run_id": "34217306809",
+    "workflow": "P-COLD v3 source lock"
+  },
+  "ffbk_preregistration_pr": 1462,
+  "figshare": {
+    "article_id": 23940069,
+    "doi_expected": "10.6084/m9.figshare.23940069.v3",
+    "doi_metadata": "10.6084/m9.figshare.23940069.v3",
+    "figshare_url": "https://figshare.com/articles/dataset/A_cross-institutional_database_of_operational_risk_external_loss_events_in_Chinese_banking_sector_1986-2023/23940069",
+    "modified_date": "2024-05-16T03:01:10Z",
+    "published_date": "2024-05-16T03:01:10Z",
+    "title": "A cross-institutional database of operational risk external loss events in Chinese banking sector 1986-2023",
+    "version": 3,
+    "version_api_url": "https://api.figshare.com/v2/articles/23940069/versions/3"
+  },
+  "firewall": {
+    "annual_counts_computed": false,
+    "dispersion_statistics_computed": false,
+    "monthly_counts_computed": false,
+    "validation_or_final_scores_computed": false
+  },
+  "schema": "pcold-figshare-v3-source-lock-v0",
+  "status": "SOURCE_LOCKED_NO_TARGET_COUNTS_SCORED",
+  "workbook": {
+    "date_parsing_convention": "openpyxl native date/datetime; otherwise python-dateutil parser with dayfirst=False, yearfirst=False, fuzzy=False",
+    "sheets": [
+      {
+        "data_rows": 3725,
+        "date_candidates": [
+          {
+            "column_index_1based": 2,
+            "header": "Occurrence year",
+            "max_date": null,
+            "min_date": null,
+            "nonblank": 3723,
+            "parsed": 0
+          },
+          {
+            "column_index_1based": 3,
+            "header": "Occurrence month",
+            "max_date": null,
+            "min_date": null,
+            "nonblank": 3723,
+            "parsed": 0
+          },
+          {
+            "column_index_1based": 8,
+            "header": "Province occurred",
+            "max_date": null,
+            "min_date": null,
+            "nonblank": 3723,
+            "parsed": 0
+          },
+          {
+            "column_index_1based": 9,
+            "header": "City occurred",
+            "max_date": null,
+            "min_date": null,
+            "nonblank": 3723,
+            "parsed": 0
+          }
+        ],
+        "headers": [
+          "Event ID",
+          "Occurrence year",
+          "Occurrence month",
+          "End year",
+          "End month",
+          "Loss amount (Unit: 10,000 CNY)",
+          "Bank involved code",
+          "Province occurred",
+          "City occurred",
+          "Causal factor",
+          "Event type",
+          "Business line"
+        ],
+        "sheet": "Sheet1"
+      }
+    ]
+  }
+}
