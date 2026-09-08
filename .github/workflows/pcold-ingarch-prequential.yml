@@ -1,0 +1,93 @@
+name: P-COLD INGARCH prequential challenge
+
+on:
+  push:
+    branches:
+      - research-run/pcold-ingarch-prequential-20260908-sol56
+    paths:
+      - .github/workflows/pcold-ingarch-prequential.yml
+
+permissions:
+  contents: write
+
+jobs:
+  execute-frozen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install frozen scientific runtime
+        run: python -m pip install --disable-pip-version-check numpy==2.3.5 scipy==1.17.0 openpyxl==3.1.5
+      - name: Verify source locks and pre-target controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f research-results/pcold-v3-source-lock-v0.json
+          test -f research-results/pcold-v3-date-component-lock-v1.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          source=json.loads(Path('research-results/pcold-v3-source-lock-v0.json').read_text())
+          date=json.loads(Path('research-results/pcold-v3-date-component-lock-v1.json').read_text())
+          expected='d3d22f6121b9f405ba3c12a7e0491d907f44a2a3d59d1e8ed105804b5f0e924c'
+          if source.get('sha256') != expected and source.get('workbook_sha256') != expected:
+              raise SystemExit('FAIL_CLOSED source-lock SHA mismatch')
+          if date.get('workbook_sha256') != expected:
+              raise SystemExit('FAIL_CLOSED date-lock SHA mismatch')
+          if date.get('valid_exact_occurrence_month_rows') != 3047:
+              raise SystemExit('FAIL_CLOSED exact-date count mismatch')
+          if date.get('max_valid_occurrence_month') != '2022-11':
+              raise SystemExit('FAIL_CLOSED source endpoint mismatch')
+          print('SOURCE_LOCKS_OK')
+          PY
+          python -m py_compile research-scripts/pcold_ingarch_prequential.py tests/test_pcold_ingarch_prequential.py
+          python -m unittest tests.test_pcold_ingarch_prequential -v
+      - name: Execute frozen retrospective prequential target
+        shell: bash
+        run: |
+          set -euo pipefail
+          python research-scripts/pcold_ingarch_prequential.py
+      - name: Add exact execution provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          p=Path('research-results/pcold-ingarch-prequential-v0.json')
+          r=json.loads(p.read_text())
+          script=Path('research-scripts/pcold_ingarch_prequential.py')
+          test=Path('tests/test_pcold_ingarch_prequential.py')
+          ex=r['execution']
+          ex['repository']='pokekarten/OpenCatastrophe-data'
+          ex['workflow']='P-COLD INGARCH prequential challenge'
+          ex['run_id']=os.environ['GITHUB_RUN_ID']
+          ex['run_attempt']=os.environ['GITHUB_RUN_ATTEMPT']
+          ex['pre_result_head_sha']=os.environ['GITHUB_SHA']
+          ex['runner_sha256']=hashlib.sha256(script.read_bytes()).hexdigest()
+          ex['runner_git_blob']=subprocess.check_output(['git','rev-parse','HEAD:research-scripts/pcold_ingarch_prequential.py'],text=True).strip()
+          ex['focused_test_sha256']=hashlib.sha256(test.read_bytes()).hexdigest()
+          ex['focused_test_git_blob']=subprocess.check_output(['git','rev-parse','HEAD:tests/test_pcold_ingarch_prequential.py'],text=True).strip()
+          ex['source_lock_v0_git_blob']=subprocess.check_output(['git','rev-parse','HEAD:research-results/pcold-v3-source-lock-v0.json'],text=True).strip()
+          ex['date_lock_v1_git_blob']=subprocess.check_output(['git','rev-parse','HEAD:research-results/pcold-v3-date-component-lock-v1.json'],text=True).strip()
+          ex['ffbk_preregistration_pr']=1501
+          ex['ffbk_preregistration_commit']='aa0802631e7e4e7329f6a16d8f3208055a5c7a11'
+          ex['pre_target_selftest_run_id']='34222434900'
+          ex['pre_target_selftest_job_id']='102048476931'
+          p.write_text(json.dumps(r,indent=2,sort_keys=True)+'\n')
+          print('RESULT_SHA256', hashlib.sha256(p.read_bytes()).hexdigest())
+          PY
+      - name: Commit durable result receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add research-results/pcold-ingarch-prequential-v0.json
+          git commit -m 'Research: record P-COLD INGARCH prequential result'
+          git push origin HEAD:${GITHUB_REF_NAME}
