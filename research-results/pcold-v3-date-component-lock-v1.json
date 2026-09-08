@@ -1,0 +1,39 @@
+{
+  "F_semantics": "Workbook NOTE states that information not disclosed in the original operational-risk event text is populated with F.",
+  "event_ids_exact_1_to_3723": true,
+  "event_row_rule": "Event ID must be an integer; exact IDs 1..3723 are required. The sole non-integer Event ID cell is the workbook NOTE and is not an event.",
+  "event_rows": 3723,
+  "excluded_by_reason": {
+    "occurrence_month_undisclosed_F": 570,
+    "occurrence_month_unparseable": 41,
+    "occurrence_year_undisclosed_F": 65
+  },
+  "excluded_occurrence_date_rows": 676,
+  "excluded_partition_membership_from_year_if_known": {
+    "final": 8,
+    "training": 551,
+    "unknown_year": 65,
+    "validation": 52
+  },
+  "firewall": {
+    "accepted_validation_or_final_partition_counts_emitted": false,
+    "annual_counts_computed": false,
+    "category_values_emitted": false,
+    "dispersion_statistics_computed": false,
+    "loss_values_emitted": false,
+    "monthly_counts_computed": false,
+    "validation_or_final_scores_computed": false
+  },
+  "max_valid_occurrence_month": "2022-11",
+  "min_valid_occurrence_month": "1988-06",
+  "non_event_note": {
+    "event_id_literal": "NOTE\uff1aAll information that was not disclosed in the original operational risk event text is populated with F",
+    "excel_row_number": 3726
+  },
+  "occurrence_date_rule": "admit only integer Occurrence year plus integer Occurrence month in 1..12; F/blank/other non-integer components are missing/unparseable and excluded, never imputed",
+  "schema": "pcold-v3-date-component-lock-v1",
+  "sheet": "Sheet1",
+  "status": "DATE_COMPONENTS_LOCKED_NO_TARGET_MODEL_SCORES",
+  "valid_exact_occurrence_month_rows": 3047,
+  "workbook_sha256": "d3d22f6121b9f405ba3c12a7e0491d907f44a2a3d59d1e8ed105804b5f0e924c"
+}
