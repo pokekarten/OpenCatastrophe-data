@@ -22,99 +22,112 @@ jobs:
         with:
           python-version: '3.13'
       - run: python -m pip install --disable-pip-version-check openpyxl==3.1.5
-      - name: Lock event-row and occurrence-date semantics only
+      - name: Freeze event-row and occurrence-date source semantics
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
-          import hashlib, json, urllib.request
+          import collections, hashlib, json, urllib.request
           from pathlib import Path
           import openpyxl
 
-          ARTICLE_ID=23940069
-          VERSION=3
-          FILE_ID=46360495
-          EXPECTED_NAME='P-COLD-English ver.xlsx'
-          EXPECTED_SHA='d3d22f6121b9f405ba3c12a7e0491d907f44a2a3d59d1e8ed105804b5f0e924c'
-          API=f'https://api.figshare.com/v2/articles/{ARTICLE_ID}/versions/{VERSION}'
-          req=urllib.request.Request(API,headers={'User-Agent':'OpenCatastrophe-data research date lock'})
-          with urllib.request.urlopen(req,timeout=60) as r:
-              meta=json.loads(r.read())
-          files=[f for f in meta['files'] if f.get('id')==FILE_ID and f.get('name')==EXPECTED_NAME]
-          if len(files)!=1:
-              raise SystemExit('FAIL_CLOSED exact locked file identity not found')
-          req=urllib.request.Request(files[0]['download_url'],headers={'User-Agent':'OpenCatastrophe-data research date lock'})
-          with urllib.request.urlopen(req,timeout=120) as r:
-              data=r.read()
-          if hashlib.sha256(data).hexdigest()!=EXPECTED_SHA:
-              raise SystemExit('FAIL_CLOSED workbook SHA mismatch')
-          p=Path('tmp-pcold.xlsx'); p.write_bytes(data)
+          ARTICLE_ID=23940069; VERSION=3; FILE_ID=46360495
+          NAME='P-COLD-English ver.xlsx'
+          SHA='d3d22f6121b9f405ba3c12a7e0491d907f44a2a3d59d1e8ed105804b5f0e924c'
+          NOTE='NOTE：All information that was not disclosed in the original operational risk event text is populated with F'
+          api=f'https://api.figshare.com/v2/articles/{ARTICLE_ID}/versions/{VERSION}'
+          req=urllib.request.Request(api,headers={'User-Agent':'OpenCatastrophe-data research date lock'})
+          with urllib.request.urlopen(req,timeout=60) as r: meta=json.loads(r.read())
+          fs=[f for f in meta['files'] if f.get('id')==FILE_ID and f.get('name')==NAME]
+          if len(fs)!=1: raise SystemExit('FAIL_CLOSED exact file identity')
+          req=urllib.request.Request(fs[0]['download_url'],headers={'User-Agent':'OpenCatastrophe-data research date lock'})
+          with urllib.request.urlopen(req,timeout=120) as r: data=r.read()
+          if hashlib.sha256(data).hexdigest()!=SHA: raise SystemExit('FAIL_CLOSED workbook SHA')
+          p=Path('pcold.xlsx'); p.write_bytes(data)
           wb=openpyxl.load_workbook(p,read_only=True,data_only=True)
-          if wb.sheetnames!=['Sheet1']:
-              raise SystemExit(f'FAIL_CLOSED sheet identity {wb.sheetnames!r}')
-          ws=wb['Sheet1']
-          it=ws.iter_rows(values_only=True)
-          headers=[str(x).strip() if x is not None else '' for x in next(it)]
-          required=['Event ID','Occurrence year','Occurrence month']
-          idx={h:headers.index(h) for h in required}
-          ids=[]; dates=[]; missing_date_rows=[]; invalid_date_rows=[]
-          physical_rows=0
-          for row in it:
-              physical_rows+=1
-              event_id=row[idx['Event ID']] if idx['Event ID']<len(row) else None
-              if event_id in (None,''):
-                  continue
-              eid=str(event_id).strip()
-              ids.append(eid)
-              y=row[idx['Occurrence year']] if idx['Occurrence year']<len(row) else None
-              m=row[idx['Occurrence month']] if idx['Occurrence month']<len(row) else None
-              if y in (None,'') or m in (None,''):
-                  missing_date_rows.append(eid); continue
+          if wb.sheetnames!=['Sheet1']: raise SystemExit(f'FAIL_CLOSED sheets {wb.sheetnames!r}')
+          ws=wb['Sheet1']; it=ws.iter_rows(values_only=True)
+          hdr=[str(x).strip() if x is not None else '' for x in next(it)]
+          ix={h:hdr.index(h) for h in ['Event ID','Occurrence year','Occurrence month']}
+
+          def integer(v):
               try:
-                  yy=int(float(y)); mm=int(float(m))
-                  if float(y)!=yy or float(m)!=mm or not (1<=mm<=12):
-                      raise ValueError
-              except Exception:
-                  invalid_date_rows.append(eid); continue
-              dates.append((yy,mm))
-          if len(ids)!=3723:
-              raise SystemExit(f'FAIL_CLOSED nonblank Event ID rows {len(ids)} != 3723')
-          if len(set(ids))!=3723:
-              raise SystemExit(f'FAIL_CLOSED unique Event IDs {len(set(ids))} != 3723')
-          if missing_date_rows or invalid_date_rows:
-              raise SystemExit(f'FAIL_CLOSED occurrence date quality missing={len(missing_date_rows)} invalid={len(invalid_date_rows)}')
-          min_date=min(dates); max_date=max(dates)
+                  f=float(v)
+                  if f.is_integer(): return int(f)
+              except Exception: pass
+              return None
+
+          ids=[]; accepted=[]; excluded=[]; non_event=[]
+          for rn,row in enumerate(it,start=2):
+              eid_raw=row[ix['Event ID']] if ix['Event ID']<len(row) else None
+              if eid_raw in (None,''): continue
+              eid=integer(eid_raw)
+              if eid is None:
+                  non_event.append({'excel_row_number':rn,'event_id_literal':str(eid_raw).strip()})
+                  continue
+              ids.append(eid)
+              yraw=row[ix['Occurrence year']] if ix['Occurrence year']<len(row) else None
+              mraw=row[ix['Occurrence month']] if ix['Occurrence month']<len(row) else None
+              y=integer(yraw); m=integer(mraw)
+              reason=None
+              if y is None:
+                  reason='occurrence_year_undisclosed_F' if str(yraw).strip().upper()=='F' else 'occurrence_year_unparseable'
+              elif m is None:
+                  reason='occurrence_month_undisclosed_F' if str(mraw).strip().upper()=='F' else 'occurrence_month_unparseable'
+              elif not 1<=m<=12:
+                  reason='occurrence_month_outside_1_12'
+              if reason is None:
+                  accepted.append((eid,y,m))
+              else:
+                  if y is None: part='unknown_year'
+                  elif y<=2014: part='training'
+                  elif y<=2018: part='validation'
+                  else: part='final'
+                  excluded.append({'event_id':eid,'reason':reason,'partition_from_year_if_known':part})
+
+          if sorted(ids)!=list(range(1,3724)):
+              raise SystemExit('FAIL_CLOSED Event IDs are not exactly 1..3723 once non-event rows are excluded')
+          if non_event!=[{'excel_row_number':3726,'event_id_literal':NOTE}]:
+              raise SystemExit(f'FAIL_CLOSED unexpected non-event rows: {non_event!r}')
+          if not accepted: raise SystemExit('FAIL_CLOSED no valid occurrence months')
+
+          by_reason=collections.Counter(x['reason'] for x in excluded)
+          excluded_partition=collections.Counter(x['partition_from_year_if_known'] for x in excluded)
+          min_y,min_m=min((y,m) for _,y,m in accepted); max_y,max_m=max((y,m) for _,y,m in accepted)
           receipt={
-              'schema':'pcold-v3-date-component-lock-v0',
-              'status':'DATE_COMPONENTS_LOCKED_NO_TARGET_COUNTS_SCORED',
-              'workbook_sha256':EXPECTED_SHA,
-              'sheet':'Sheet1',
-              'physical_data_rows_after_header':physical_rows,
-              'event_row_rule':'nonblank Event ID',
-              'event_rows':len(ids),
-              'unique_event_ids':len(set(ids)),
-              'occurrence_date_rule':'first calendar day of integer Occurrence year + integer Occurrence month; month must be 1..12',
-              'missing_occurrence_date_rows':len(missing_date_rows),
-              'invalid_occurrence_date_rows':len(invalid_date_rows),
-              'min_occurrence_month':f'{min_date[0]:04d}-{min_date[1]:02d}',
-              'max_occurrence_month':f'{max_date[0]:04d}-{max_date[1]:02d}',
-              'firewall':{
-                  'monthly_counts_computed':False,
-                  'annual_counts_computed':False,
-                  'validation_or_final_scores_computed':False,
-                  'dispersion_statistics_computed':False,
-              },
+            'schema':'pcold-v3-date-component-lock-v1',
+            'status':'DATE_COMPONENTS_LOCKED_NO_TARGET_MODEL_SCORES',
+            'workbook_sha256':SHA,
+            'sheet':'Sheet1',
+            'event_row_rule':'Event ID must be an integer; exact IDs 1..3723 are required. The sole non-integer Event ID cell is the workbook NOTE and is not an event.',
+            'event_rows':len(ids),
+            'event_ids_exact_1_to_3723':True,
+            'non_event_note':non_event[0],
+            'F_semantics':'Workbook NOTE states that information not disclosed in the original operational-risk event text is populated with F.',
+            'occurrence_date_rule':'admit only integer Occurrence year plus integer Occurrence month in 1..12; F/blank/other non-integer components are missing/unparseable and excluded, never imputed',
+            'valid_exact_occurrence_month_rows':len(accepted),
+            'excluded_occurrence_date_rows':len(excluded),
+            'excluded_by_reason':dict(by_reason),
+            'excluded_partition_membership_from_year_if_known':dict(excluded_partition),
+            'min_valid_occurrence_month':f'{min_y:04d}-{min_m:02d}',
+            'max_valid_occurrence_month':f'{max_y:04d}-{max_m:02d}',
+            'firewall':{
+              'accepted_validation_or_final_partition_counts_emitted':False,
+              'monthly_counts_computed':False,'annual_counts_computed':False,
+              'validation_or_final_scores_computed':False,'dispersion_statistics_computed':False,
+              'loss_values_emitted':False,'category_values_emitted':False,
+            },
           }
-          out=Path('research-results/pcold-v3-date-component-lock-v0.json')
+          out=Path('research-results/pcold-v3-date-component-lock-v1.json')
           out.write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n')
           print(json.dumps(receipt,indent=2,sort_keys=True))
           PY
-      - name: Commit durable date-component receipt
+      - name: Commit durable date lock
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add research-results/pcold-v3-date-component-lock-v0.json
-          git commit -m 'Research: record P-COLD occurrence year-month source lock'
+          git add research-results/pcold-v3-date-component-lock-v1.json
+          git commit -m 'Research: freeze P-COLD event-row and missing-date semantics'
           git push origin HEAD:${GITHUB_REF_NAME}
