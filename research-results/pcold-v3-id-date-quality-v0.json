@@ -1,0 +1,48 @@
+{
+  "duplicate_event_ids": [],
+  "firewall": {
+    "annual_counts_computed": false,
+    "category_values_emitted": false,
+    "dispersion_statistics_computed": false,
+    "loss_values_emitted": false,
+    "monthly_counts_computed": false,
+    "validation_or_final_scores_computed": false
+  },
+  "integer_event_id_max": 3723,
+  "integer_event_id_min": 1,
+  "integer_event_id_rows": 3723,
+  "missing_integer_ids_from_1_to_max": [],
+  "nonblank_event_id_rows": 3724,
+  "noninteger_event_id_rows": [
+    {
+      "event_id_literal": "NOTE\uff1aAll information that was not disclosed in the original operational risk event text is populated with F",
+      "excel_row_number": 3726,
+      "kind": "other"
+    }
+  ],
+  "occurrence_month_quality_counts": {
+    "F": 628,
+    "blank": 1,
+    "integer": 3054,
+    "other": 41
+  },
+  "occurrence_year_month_joint_quality_counts": {
+    "F|F": 58,
+    "F|integer": 7,
+    "blank|blank": 1,
+    "integer|F": 570,
+    "integer|integer": 3047,
+    "integer|other": 41
+  },
+  "occurrence_year_quality_counts": {
+    "F": 65,
+    "blank": 1,
+    "integer": 3658
+  },
+  "published_event_count_reference": 3723,
+  "schema": "pcold-v3-id-date-quality-v0",
+  "status": "SOURCE_QUALITY_ONLY_NO_TARGET_COUNTS_SCORED",
+  "unique_event_id_literals": 3724,
+  "unique_integer_event_ids": 3723,
+  "workbook_sha256": "d3d22f6121b9f405ba3c12a7e0491d907f44a2a3d59d1e8ed105804b5f0e924c"
+}
