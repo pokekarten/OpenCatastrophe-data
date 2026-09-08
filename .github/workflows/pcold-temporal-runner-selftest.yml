@@ -1,0 +1,27 @@
+name: P-COLD temporal runner selftest
+
+on:
+  push:
+    branches:
+      - research-run/pcold-v3-source-lock-20260908-sol56
+    paths:
+      - .github/workflows/pcold-temporal-runner-selftest.yml
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install exact scientific runtime
+        run: python -m pip install --disable-pip-version-check numpy==2.3.5 scipy==1.17.0 openpyxl==3.1.5
+      - name: Compile frozen runner and focused controls
+        run: |
+          python -m py_compile research-scripts/pcold_temporal_frequency_tournament.py tests/test_pcold_temporal_frequency_tournament.py
+          python -m unittest tests.test_pcold_temporal_frequency_tournament -v
