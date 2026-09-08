@@ -1,0 +1,596 @@
+{
+  "claim_boundary": [
+    "retrospective/prequential benchmark after prior P-COLD target access",
+    "no untouched holdout claim",
+    "no insurer/P&C transfer",
+    "no production/default family promotion",
+    "no NextGen API promotion",
+    "no tail or capital quantity produced in this run"
+  ],
+  "execution": {
+    "attempt1_classification": "PRE_SCORE_GATE_SCHEMA_MISMATCH_NO_TARGET_EXECUTION",
+    "attempt1_failure_git_blob": "4f12dd492acb0133976a6447f95b6e4fa047c3e4",
+    "attempt1_job_id": "102048746882",
+    "attempt1_run_id": "34222516940",
+    "bootstrap_reps": 10000,
+    "bootstrap_seed": 20260908,
+    "date_lock_v1_git_blob": "f24079f46385743c2ccc58d9b440670c7b4f8844",
+    "ffbk_preregistration_commit": "aa0802631e7e4e7329f6a16d8f3208055a5c7a11",
+    "ffbk_preregistration_pr": 1501,
+    "focused_test_git_blob": "f735db50b96d6d5c51795d43d24e1e854c69899b",
+    "focused_test_sha256": "b40819c798959c4bb8acc2c55ace90b08732c38dfe2df1d82f075f5e91608550",
+    "ingarch_start_grid": [
+      [
+        0.1,
+        0.5
+      ],
+      [
+        0.3,
+        0.3
+      ],
+      [
+        0.01,
+        0.01
+      ]
+    ],
+    "numpy": "2.3.5",
+    "openpyxl": "3.1.5",
+    "persistence_cap": 0.995,
+    "pre_result_head_sha": "efa4e902cfc2249280b1cadb158b5279c2bba1e3",
+    "pre_target_selftest_job_id": "102048476931",
+    "pre_target_selftest_run_id": "34222434900",
+    "primary_block_length_months": 12,
+    "python": "3.13.15",
+    "repository": "pokekarten/OpenCatastrophe-data",
+    "run_attempt": "1",
+    "run_id": "34222646390",
+    "runner_git_blob": "2a0550c33a826e8bedffece79a4dd1e573107279",
+    "runner_sha256": "6bd9b19ef4af3cc9885eb1777786b11c6ee9bfff4d11d9271f5d6edf23630d4a",
+    "scipy": "1.17.0",
+    "secondary_block_length_months": 6,
+    "source_lock_v0_git_blob": "cb2f4f04490587a30db795767da37e39c1f2e9e8",
+    "workflow": "P-COLD INGARCH prequential challenge"
+  },
+  "ffbk_preregistration_pr": 1501,
+  "prequential": {
+    "contrasts": {
+      "D0-D1": {
+        "primary_12m": {
+          "block_length_months": 12,
+          "mean_improvement": 0.7641776435344756,
+          "median": 0.778354333956496,
+          "q025": 0.21207002511446005,
+          "q975": 1.5489642784414845,
+          "reps": 10000,
+          "seed": 20260908
+        },
+        "secondary_6m": {
+          "block_length_months": 6,
+          "mean_improvement": 0.7641776435344756,
+          "median": 0.7531034462545871,
+          "q025": 0.25393790832260826,
+          "q975": 1.4072397321470702,
+          "reps": 10000,
+          "seed": 20260908
+        }
+      },
+      "S0-D0": {
+        "primary_12m": {
+          "block_length_months": 12,
+          "mean_improvement": 6.708440809803362,
+          "median": 6.658201058882648,
+          "q025": 3.2968355164476715,
+          "q975": 11.43800203379566,
+          "reps": 10000,
+          "seed": 20260908
+        },
+        "secondary_6m": {
+          "block_length_months": 6,
+          "mean_improvement": 6.708440809803362,
+          "median": 6.668748703819757,
+          "q025": 3.8185090720922203,
+          "q975": 10.234564738007533,
+          "reps": 10000,
+          "seed": 20260908
+        }
+      },
+      "S0-S1": {
+        "primary_12m": {
+          "block_length_months": 12,
+          "mean_improvement": 6.581981769231174,
+          "median": 6.590573109342892,
+          "q025": 2.7815356957656685,
+          "q975": 11.845846895761799,
+          "reps": 10000,
+          "seed": 20260908
+        },
+        "secondary_6m": {
+          "block_length_months": 6,
+          "mean_improvement": 6.581981769231174,
+          "median": 6.53892085218701,
+          "q025": 3.4410786205616293,
+          "q975": 10.353212763673069,
+          "reps": 10000,
+          "seed": 20260908
+        }
+      },
+      "S1-D1": {
+        "primary_12m": {
+          "block_length_months": 12,
+          "mean_improvement": 0.890636684106662,
+          "median": 0.891527948242357,
+          "q025": 0.5525288993705268,
+          "q975": 1.2019956549984085,
+          "reps": 10000,
+          "seed": 20260908
+        },
+        "secondary_6m": {
+          "block_length_months": 6,
+          "mean_improvement": 0.890636684106662,
+          "median": 0.8988804860886235,
+          "q025": 0.548534521286742,
+          "q975": 1.1893452597762915,
+          "reps": 10000,
+          "seed": 20260908
+        }
+      }
+    },
+    "models": {
+      "D0": {
+        "diagnostics": {
+          "central_interval_coverage": {
+            "50": 0.4558139534883721,
+            "90": 0.7767441860465116,
+            "95": 0.8325581395348837
+          },
+          "pearson_residual": {
+            "acf_lag1": 0.2525440735485113,
+            "acf_lag12": 0.1386179598185993,
+            "ljung_box": {
+              "Q12": 36.47020823634554,
+              "pvalue_chi2_df12": 0.00027214537580982115
+            },
+            "mean": 0.16633940457195098,
+            "variance_population": 4.278473628709349
+          },
+          "randomized_pit": {
+            "ks_pvalue": 0.004411074300718434,
+            "ks_statistic": 0.11837012946626913,
+            "mean": 0.49482804804097097,
+            "seed": 20260908
+          }
+        },
+        "fit_failures": 0,
+        "mean_nll": 3.748983694442809,
+        "parameter_trajectory_summary": {
+          "a": {
+            "last": 0.44603157447485026,
+            "median": 0.20190469984314807,
+            "n": 215,
+            "q025": 0.16176644822813238,
+            "q975": 0.4459421548908491
+          },
+          "b": {
+            "last": 0.5336224822436513,
+            "median": 0.7929310892359848,
+            "n": 215,
+            "q025": 0.5332546878674076,
+            "q975": 0.8332274383181384
+          },
+          "kappa": {
+            "last": 0.0,
+            "median": 0.0,
+            "n": 215,
+            "q025": 0.0,
+            "q975": 0.0
+          },
+          "omega": {
+            "last": 0.04908528010752119,
+            "median": 0.004625120345425544,
+            "n": 215,
+            "q025": 0.003087349055864051,
+            "q975": 0.053387054450264836
+          },
+          "persistence": {
+            "last": 0.9796540567185015,
+            "median": 0.9949571952326977,
+            "n": 215,
+            "q025": 0.9789004607940348,
+            "q975": 0.9949938865462709
+          }
+        }
+      },
+      "D1": {
+        "diagnostics": {
+          "central_interval_coverage": {
+            "50": 0.5627906976744186,
+            "90": 0.8744186046511628,
+            "95": 0.9069767441860465
+          },
+          "pearson_residual": {
+            "acf_lag1": 0.2379844667135396,
+            "acf_lag12": 0.11470399586049664,
+            "ljung_box": {
+              "Q12": 35.222259122955265,
+              "pvalue_chi2_df12": 0.00043161892375135854
+            },
+            "mean": 0.14272379928486445,
+            "variance_population": 1.9433916019940147
+          },
+          "randomized_pit": {
+            "ks_pvalue": 0.396020049597436,
+            "ks_statistic": 0.060455394119210526,
+            "mean": 0.5093425182402718,
+            "seed": 20260908
+          }
+        },
+        "fit_failures": 0,
+        "mean_nll": 2.984806050908333,
+        "parameter_trajectory_summary": {
+          "a": {
+            "last": 0.40464956108069533,
+            "median": 0.1832831435786758,
+            "n": 215,
+            "q025": 0.1579897024506166,
+            "q975": 0.40417865033124384
+          },
+          "b": {
+            "last": 0.5754488601094293,
+            "median": 0.8116307587148706,
+            "n": 215,
+            "q025": 0.5754717289582807,
+            "q975": 0.8370041840956541
+          },
+          "kappa": {
+            "last": 0.19576021186994674,
+            "median": 0.0876406178003184,
+            "n": 215,
+            "q025": 0.05237701041532227,
+            "q975": 0.19586286329191432
+          },
+          "omega": {
+            "last": 0.04030681443940449,
+            "median": 0.003801529683641553,
+            "n": 215,
+            "q025": 0.0029775263020663956,
+            "q975": 0.043624927072767515
+          },
+          "persistence": {
+            "last": 0.9800984211901247,
+            "median": 0.9949938865462706,
+            "n": 215,
+            "q025": 0.9793428071133891,
+            "q975": 0.9949938865462709
+          }
+        }
+      },
+      "S0": {
+        "diagnostics": {
+          "central_interval_coverage": {
+            "50": 0.13488372093023257,
+            "90": 0.30697674418604654,
+            "95": 0.3581395348837209
+          },
+          "pearson_residual": {
+            "acf_lag1": 0.6969703959790615,
+            "acf_lag12": 0.33335031509961904,
+            "ljung_box": {
+              "Q12": 581.222311126849,
+              "pvalue_chi2_df12": 1.0816072849239102e-116
+            },
+            "mean": 3.0609579207405226,
+            "variance_population": 24.662163327342554
+          },
+          "randomized_pit": {
+            "ks_pvalue": 3.2530776019496035e-54,
+            "ks_statistic": 0.5182693389598919,
+            "mean": 0.7459254200585564,
+            "seed": 20260908
+          }
+        },
+        "fit_failures": 0,
+        "mean_nll": 10.457424504246168,
+        "parameter_trajectory_summary": {
+          "kappa": {
+            "last": 0.0,
+            "median": 0.0,
+            "n": 215,
+            "q025": 0.0,
+            "q975": 0.0
+          },
+          "mu": {
+            "last": 7.375302663438257,
+            "median": 5.07516339869281,
+            "n": 215,
+            "q025": 2.5206563845050214,
+            "q975": 7.936494488188977
+          }
+        }
+      },
+      "S1": {
+        "diagnostics": {
+          "central_interval_coverage": {
+            "50": 0.2744186046511628,
+            "90": 0.8232558139534883,
+            "95": 0.8837209302325582
+          },
+          "pearson_residual": {
+            "acf_lag1": 0.6582071686177935,
+            "acf_lag12": 0.3215102713157274,
+            "ljung_box": {
+              "Q12": 499.72066907226645,
+              "pvalue_chi2_df12": 2.5414628441499615e-99
+            },
+            "mean": 1.0863492439284121,
+            "variance_population": 2.4940841067891677
+          },
+          "randomized_pit": {
+            "ks_pvalue": 8.339032296594834e-42,
+            "ks_statistic": 0.4582380664086189,
+            "mean": 0.7395536274713843,
+            "seed": 20260908
+          }
+        },
+        "fit_failures": 0,
+        "mean_nll": 3.875442735014996,
+        "parameter_trajectory_summary": {
+          "kappa": {
+            "last": 1.8179731981932816,
+            "median": 1.595146657044272,
+            "n": 215,
+            "q025": 1.2418302996988226,
+            "q975": 1.8409832893256568
+          },
+          "mu": {
+            "last": 7.375302915566593,
+            "median": 5.075163387537623,
+            "n": 215,
+            "q025": 2.5206547550637985,
+            "q975": 7.936495752270544
+          }
+        }
+      }
+    },
+    "raw_scored_count_mean": 11.869767441860466,
+    "raw_scored_count_variance_population": 160.17838831800978,
+    "scored_end": "2022-11",
+    "scored_months": 215,
+    "scored_start": "2005-01",
+    "strata": {
+      "early_2005_2014": {
+        "D0": {
+          "diagnostics": {
+            "central_interval_coverage": {
+              "50": 0.4666666666666667,
+              "90": 0.825,
+              "95": 0.8916666666666667
+            },
+            "pearson_residual": {
+              "acf_lag1": 0.08953624113801248,
+              "acf_lag12": 0.022299777873110188,
+              "ljung_box": {
+                "Q12": 15.274373317976021,
+                "pvalue_chi2_df12": 0.2267736256386945
+              },
+              "mean": 0.17309025464463407,
+              "variance_population": 2.0688164259026576
+            },
+            "randomized_pit": {
+              "ks_pvalue": 0.05255078027974659,
+              "ks_statistic": 0.12166470310967992,
+              "mean": 0.5145998815340521,
+              "seed": 20260908
+            }
+          },
+          "mean_nll": 2.988645600560261,
+          "months": 120
+        },
+        "D1": {
+          "diagnostics": {
+            "central_interval_coverage": {
+              "50": 0.6,
+              "90": 0.8916666666666667,
+              "95": 0.9416666666666667
+            },
+            "pearson_residual": {
+              "acf_lag1": 0.07735886955792616,
+              "acf_lag12": 0.021688292804626814,
+              "ljung_box": {
+                "Q12": 15.346760228011153,
+                "pvalue_chi2_df12": 0.2230186367602161
+              },
+              "mean": 0.1478713799111568,
+              "variance_population": 1.2222109085367447
+            },
+            "randomized_pit": {
+              "ks_pvalue": 0.19166505648938736,
+              "ks_statistic": 0.09743882130266812,
+              "mean": 0.5340673718121968,
+              "seed": 20260908
+            }
+          },
+          "mean_nll": 2.8596001921278806,
+          "months": 120
+        },
+        "S0": {
+          "diagnostics": {
+            "central_interval_coverage": {
+              "50": 0.16666666666666666,
+              "90": 0.375,
+              "95": 0.44166666666666665
+            },
+            "pearson_residual": {
+              "acf_lag1": 0.37989233641594544,
+              "acf_lag12": 0.050171695915099936,
+              "ljung_box": {
+                "Q12": 66.10087969311026,
+                "pvalue_chi2_df12": 1.705184281890907e-09
+              },
+              "mean": 3.0036272406723894,
+              "variance_population": 6.016816647016012
+            },
+            "randomized_pit": {
+              "ks_pvalue": 1.0856130358111154e-49,
+              "ks_statistic": 0.6478902174771183,
+              "mean": 0.8987941349806292,
+              "seed": 20260908
+            }
+          },
+          "mean_nll": 6.302430552710208,
+          "months": 120
+        },
+        "S1": {
+          "diagnostics": {
+            "central_interval_coverage": {
+              "50": 0.2,
+              "90": 0.875,
+              "95": 0.9333333333333333
+            },
+            "pearson_residual": {
+              "acf_lag1": 0.35425259980248563,
+              "acf_lag12": 0.06936367982186094,
+              "ljung_box": {
+                "Q12": 63.22335889031764,
+                "pvalue_chi2_df12": 5.797446571396041e-09
+              },
+              "mean": 1.1328168889188295,
+              "variance_population": 0.8554868186495737
+            },
+            "randomized_pit": {
+              "ks_pvalue": 6.92570691344492e-46,
+              "ks_statistic": 0.6254308315373621,
+              "mean": 0.8446686947345098,
+              "seed": 20260908
+            }
+          },
+          "mean_nll": 3.8774821637476786,
+          "months": 120
+        }
+      },
+      "previously_opened_2015_2022_11": {
+        "D0": {
+          "diagnostics": {
+            "central_interval_coverage": {
+              "50": 0.4421052631578947,
+              "90": 0.7157894736842105,
+              "95": 0.7578947368421053
+            },
+            "pearson_residual": {
+              "acf_lag1": 0.3131806372061122,
+              "acf_lag12": 0.18288958053716775,
+              "ljung_box": {
+                "Q12": 24.970991967110006,
+                "pvalue_chi2_df12": 0.014960934214618686
+              },
+              "mean": 0.1578120150064566,
+              "variance_population": 7.069489285595481
+            },
+            "randomized_pit": {
+              "ks_pvalue": 0.021466197976807665,
+              "ks_statistic": 0.152513457355462,
+              "mean": 0.4850274508243327,
+              "seed": 20260908
+            }
+          },
+          "mean_nll": 4.709410760399713,
+          "months": 95
+        },
+        "D1": {
+          "diagnostics": {
+            "central_interval_coverage": {
+              "50": 0.5157894736842106,
+              "90": 0.8526315789473684,
+              "95": 0.8631578947368421
+            },
+            "pearson_residual": {
+              "acf_lag1": 0.32601459011511513,
+              "acf_lag12": 0.16699055350145967,
+              "ljung_box": {
+                "Q12": 26.563790973510386,
+                "pvalue_chi2_df12": 0.008924595414062493
+              },
+              "mean": 0.13622159217796886,
+              "variance_population": 2.8542809391337634
+            },
+            "randomized_pit": {
+              "ks_pvalue": 0.3410173208320054,
+              "ks_statistic": 0.09463291358198767,
+              "mean": 0.49429282784632594,
+              "seed": 20260908
+            }
+          },
+          "mean_nll": 3.1429608198941676,
+          "months": 95
+        },
+        "S0": {
+          "diagnostics": {
+            "central_interval_coverage": {
+              "50": 0.09473684210526316,
+              "90": 0.22105263157894736,
+              "95": 0.25263157894736843
+            },
+            "pearson_residual": {
+              "acf_lag1": 0.746647834265337,
+              "acf_lag12": 0.3754293933510029,
+              "ljung_box": {
+                "Q12": 319.1303826311067,
+                "pvalue_chi2_df12": 4.476764157496286e-61
+              },
+              "mean": 3.1333756218792157,
+              "variance_population": 48.20478410720895
+            },
+            "randomized_pit": {
+              "ks_pvalue": 2.297244808808046e-12,
+              "ks_statistic": 0.37287661473526645,
+              "mean": 0.5525790624078367,
+              "seed": 20260908
+            }
+          },
+          "mean_nll": 15.705837916712648,
+          "months": 95
+        },
+        "S1": {
+          "diagnostics": {
+            "central_interval_coverage": {
+              "50": 0.3684210526315789,
+              "90": 0.7578947368421053,
+              "95": 0.8210526315789474
+            },
+            "pearson_residual": {
+              "acf_lag1": 0.7295188796102261,
+              "acf_lag12": 0.3785828042892222,
+              "ljung_box": {
+                "Q12": 294.1195619647655,
+                "pvalue_chi2_df12": 8.052925082247574e-56
+              },
+              "mean": 1.0276532713089372,
+              "variance_population": 4.557718526777282
+            },
+            "randomized_pit": {
+              "ks_pvalue": 2.168017581197301e-06,
+              "ks_statistic": 0.26526612056571525,
+              "mean": 0.6107403971343347,
+              "seed": 20260908
+            }
+          },
+          "mean_nll": 3.872866614510554,
+          "months": 95
+        }
+      }
+    }
+  },
+  "schema": "pcold-ingarch-prequential-v0",
+  "source": {
+    "article_id": 23940069,
+    "doi": "10.6084/m9.figshare.23940069.v3",
+    "excluded_occurrence_date_rows": 676,
+    "file_id": 46360495,
+    "filename": "P-COLD-English ver.xlsx",
+    "monthly_series_end": "2022-11",
+    "monthly_series_start": "1988-06",
+    "sha256": "d3d22f6121b9f405ba3c12a7e0491d907f44a2a3d59d1e8ed105804b5f0e924c",
+    "valid_exact_occurrence_month_rows": 3047,
+    "version": 3
+  },
+  "status": "RETROSPECTIVE_PREQUENTIAL_EXECUTED_NO_UNTOUCHED_HOLDOUT_CLAIM"
+}
