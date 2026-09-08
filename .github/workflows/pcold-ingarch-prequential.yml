@@ -29,21 +29,27 @@ jobs:
           set -euo pipefail
           test -f research-results/pcold-v3-source-lock-v0.json
           test -f research-results/pcold-v3-date-component-lock-v1.json
+          test -f research-results/pcold-ingarch-prequential-attempt1-pre-score-failure-v0.json
           python - <<'PY'
           import json
           from pathlib import Path
           source=json.loads(Path('research-results/pcold-v3-source-lock-v0.json').read_text())
           date=json.loads(Path('research-results/pcold-v3-date-component-lock-v1.json').read_text())
+          attempt1=json.loads(Path('research-results/pcold-ingarch-prequential-attempt1-pre-score-failure-v0.json').read_text())
           expected='d3d22f6121b9f405ba3c12a7e0491d907f44a2a3d59d1e8ed105804b5f0e924c'
-          if source.get('sha256') != expected and source.get('workbook_sha256') != expected:
+          if source.get('english_workbook',{}).get('sha256') != expected:
               raise SystemExit('FAIL_CLOSED source-lock SHA mismatch')
+          if source.get('english_workbook',{}).get('file_id') != 46360495:
+              raise SystemExit('FAIL_CLOSED source-lock file identity mismatch')
           if date.get('workbook_sha256') != expected:
               raise SystemExit('FAIL_CLOSED date-lock SHA mismatch')
           if date.get('valid_exact_occurrence_month_rows') != 3047:
               raise SystemExit('FAIL_CLOSED exact-date count mismatch')
           if date.get('max_valid_occurrence_month') != '2022-11':
               raise SystemExit('FAIL_CLOSED source endpoint mismatch')
-          print('SOURCE_LOCKS_OK')
+          if attempt1.get('dynamic_p_cold_scores_computed') is not False or attempt1.get('target_execute_step_started') is not False:
+              raise SystemExit('FAIL_CLOSED attempt1 pre-score classification mismatch')
+          print('SOURCE_LOCKS_AND_ATTEMPT1_OK')
           PY
           python -m py_compile research-scripts/pcold_ingarch_prequential.py tests/test_pcold_ingarch_prequential.py
           python -m unittest tests.test_pcold_ingarch_prequential -v
@@ -75,6 +81,10 @@ jobs:
           ex['focused_test_git_blob']=subprocess.check_output(['git','rev-parse','HEAD:tests/test_pcold_ingarch_prequential.py'],text=True).strip()
           ex['source_lock_v0_git_blob']=subprocess.check_output(['git','rev-parse','HEAD:research-results/pcold-v3-source-lock-v0.json'],text=True).strip()
           ex['date_lock_v1_git_blob']=subprocess.check_output(['git','rev-parse','HEAD:research-results/pcold-v3-date-component-lock-v1.json'],text=True).strip()
+          ex['attempt1_failure_git_blob']=subprocess.check_output(['git','rev-parse','HEAD:research-results/pcold-ingarch-prequential-attempt1-pre-score-failure-v0.json'],text=True).strip()
+          ex['attempt1_run_id']='34222516940'
+          ex['attempt1_job_id']='102048746882'
+          ex['attempt1_classification']='PRE_SCORE_GATE_SCHEMA_MISMATCH_NO_TARGET_EXECUTION'
           ex['ffbk_preregistration_pr']=1501
           ex['ffbk_preregistration_commit']='aa0802631e7e4e7329f6a16d8f3208055a5c7a11'
           ex['pre_target_selftest_run_id']='34222434900'
