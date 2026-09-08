@@ -1,0 +1,16 @@
+{
+  "schema": "pcold-ingarch-prequential-attempt-failure-v0",
+  "attempt": 1,
+  "run_id": "34222516940",
+  "job_id": "102048746882",
+  "pre_result_head_sha": "523a4f0ea5f89c25defde9ab65db6f2cd2b7b797",
+  "classification": "PRE_SCORE_GATE_SCHEMA_MISMATCH_NO_TARGET_EXECUTION",
+  "failed_step": "Verify source locks and pre-target controls",
+  "cause": "Workflow checked the locked workbook SHA only at top-level receipt keys, but pcold-v3-source-lock-v0.json stores it at english_workbook.sha256.",
+  "source_lock_actual_sha256": "d3d22f6121b9f405ba3c12a7e0491d907f44a2a3d59d1e8ed105804b5f0e924c",
+  "target_execute_step_started": false,
+  "dynamic_p_cold_scores_computed": false,
+  "result_receipt_created": false,
+  "allowed_repair": "Read english_workbook.sha256 from the already committed source-lock receipt; scientific source/model/split/metric contract unchanged. Re-run all pre-target controls before target execution.",
+  "scientific_contract_changed": false
+}
