@@ -1,0 +1,548 @@
+{
+  "environment": {
+    "numpy": "2.3.5",
+    "openpyxl": "3.1.5",
+    "platform": "Linux 6.17.0-1022-azure",
+    "python": "3.13.15 (main, Aug  6 2026, 02:15:18) [GCC 13.3.0]",
+    "scipy": "1.17.0"
+  },
+  "execution": {
+    "attempt1_amendment_git_blob": "c2ca774782fa9a3854aa9133b4532154409521a3",
+    "attempt1_classification": "PRE_SCORE_NUMERICAL_FAILURE_NO_RESULT_RECEIPT",
+    "attempt1_job_id": "102035238322",
+    "attempt1_run_id": "34218311906",
+    "attempt_number": 2,
+    "base_focused_test_git_blob": "3718713854cd572627a6e5964bd6f936be66a2a0",
+    "base_focused_test_sha256": "e7ab08a9cc38d7286ee7fef7c1bebbea88efd7a58a939f5d2015d77391ba1b62",
+    "base_runner_git_blob": "5478be979c628191204b35fac05244b7e0eee544",
+    "base_runner_sha256": "83d3eb1660efa1a25f23a34113ee665f62396ac60bcbd0ab6c8bc5ead49f3e5f",
+    "block_length_months": 6,
+    "bootstrap_reps": 10000,
+    "bootstrap_seed": 20260907,
+    "date_lock_v1_git_blob": "f24079f46385743c2ccc58d9b440670c7b4f8844",
+    "head_sha": "c1df26dc0d795c44b7d3d20b14fa226ec3243496",
+    "numeric_regression_test_git_blob": "ec07c2e5d908791f8be98482d9573a2accf03921",
+    "numeric_regression_test_sha256": "915becf11f9be2ef343e75eadd87d3e87b88a7065eeb3784af321f41f03abd0c",
+    "numeric_wrapper_git_blob": "e373745cad710fc8327561cf4a4bd372f3986026",
+    "numeric_wrapper_sha256": "ae074b5dbf3668e7824d5ce95d48f7381751167ab94fe116dcec3a198cc4ce00",
+    "numerical_amendment": "algebraically stable NB2 log-PMF near Poisson boundary only; scientific contract unchanged",
+    "pit_seed": 20260907,
+    "repository": "pokekarten/OpenCatastrophe-data",
+    "run_attempt": "1",
+    "run_id": "34218730645",
+    "source_lock_v0_git_blob": "cb2f4f04490587a30db795767da37e39c1f2e9e8",
+    "workflow": "P-COLD temporal frequency tournament"
+  },
+  "ffbk_preregistration_pr": 1462,
+  "final": {
+    "label": "final_2019_to_2022_11_exact_date_admissible",
+    "models": {
+      "M0": {
+        "catastrophic_calibration_failure": true,
+        "catastrophic_rule": "50% coverage must be in [0.20,0.80], 90% >=0.70, 95% >=0.80, randomized-PIT KS statistic <=0.30",
+        "central_interval_coverage": {
+          "50": 0.0,
+          "90": 0.14893617021276595,
+          "95": 0.40425531914893614
+        },
+        "mean_nll": 12.890203146513194,
+        "pearson_residual": {
+          "acf_lag1": 0.9102925740027168,
+          "acf_lag12": 0.23796265055404628,
+          "ljung_box": {
+            "Q12": 183.15158430115238,
+            "pvalue_chi2_df12": 9.615289938172713e-33
+          },
+          "mean": 1.3700568350504285,
+          "variance_population": 48.28722752897725
+        },
+        "randomized_pit": {
+          "ks_pvalue": 1.2451501734844276e-21,
+          "ks_statistic": 0.6739843937909612,
+          "mean": 0.23401734828001056,
+          "seed": 20260907
+        }
+      },
+      "M1": {
+        "catastrophic_calibration_failure": true,
+        "catastrophic_rule": "50% coverage must be in [0.20,0.80], 90% >=0.70, 95% >=0.80, randomized-PIT KS statistic <=0.30",
+        "central_interval_coverage": {
+          "50": 0.40425531914893614,
+          "90": 0.8297872340425532,
+          "95": 0.8297872340425532
+        },
+        "mean_nll": 3.0314281382949537,
+        "pearson_residual": {
+          "acf_lag1": 0.9102925740027161,
+          "acf_lag12": 0.23796265055404642,
+          "ljung_box": {
+            "Q12": 183.15158430115244,
+            "pvalue_chi2_df12": 9.615289938172576e-33
+          },
+          "mean": 0.4805314544158123,
+          "variance_population": 5.940235258883531
+        },
+        "randomized_pit": {
+          "ks_pvalue": 2.7526191601757613e-05,
+          "ks_statistic": 0.3377816036239464,
+          "mean": 0.3893058840107079,
+          "seed": 20260907
+        }
+      },
+      "M2": {
+        "catastrophic_calibration_failure": true,
+        "catastrophic_rule": "50% coverage must be in [0.20,0.80], 90% >=0.70, 95% >=0.80, randomized-PIT KS statistic <=0.30",
+        "central_interval_coverage": {
+          "50": 0.02127659574468085,
+          "90": 0.0425531914893617,
+          "95": 0.0425531914893617
+        },
+        "mean_nll": 27.230531460033866,
+        "pearson_residual": {
+          "acf_lag1": 0.9232144915990826,
+          "acf_lag12": 0.6290523637636949,
+          "ljung_box": {
+            "Q12": 257.4832230768104,
+            "pvalue_chi2_df12": 3.7558278936787924e-48
+          },
+          "mean": -4.230021632747391,
+          "variance_population": 10.524344479743686
+        },
+        "randomized_pit": {
+          "ks_pvalue": 6.237945912723972e-36,
+          "ks_statistic": 0.826219385064693,
+          "mean": 0.1601102648556809,
+          "seed": 20260907
+        }
+      },
+      "M3": {
+        "catastrophic_calibration_failure": true,
+        "catastrophic_rule": "50% coverage must be in [0.20,0.80], 90% >=0.70, 95% >=0.80, randomized-PIT KS statistic <=0.30",
+        "central_interval_coverage": {
+          "50": 0.1702127659574468,
+          "90": 0.19148936170212766,
+          "95": 0.2127659574468085
+        },
+        "mean_nll": 8.165494463888324,
+        "pearson_residual": {
+          "acf_lag1": 0.9131555726244533,
+          "acf_lag12": 0.39780690889285136,
+          "ljung_box": {
+            "Q12": 204.6563001553165,
+            "pvalue_chi2_df12": 3.5626710036607354e-37
+          },
+          "mean": -1.472590149081054,
+          "variance_population": 0.47666153637414405
+        },
+        "randomized_pit": {
+          "ks_pvalue": 2.236699899086496e-31,
+          "ks_statistic": 0.7859770560327043,
+          "mean": 0.09914794286800149,
+          "seed": 20260907
+        }
+      }
+    },
+    "months": 47,
+    "paired_nll_improvement": {
+      "M1-M0": {
+        "block_length_months": 6,
+        "mean_improvement": 9.858775008218247,
+        "median": 8.358242234504909,
+        "q025": 2.0337944750013475,
+        "q975": 20.771984523247422,
+        "reps": 10000,
+        "resampling": "ordinary moving blocks: sample contiguous length-6 start positions with replacement, concatenate and truncate to partition length",
+        "seed": 20260907
+      },
+      "M2-M0": {
+        "block_length_months": 6,
+        "mean_improvement": -14.340328313520667,
+        "median": -17.33807228935292,
+        "q025": -30.016011300760628,
+        "q975": 4.749410921375847,
+        "reps": 10000,
+        "resampling": "ordinary moving blocks: sample contiguous length-6 start positions with replacement, concatenate and truncate to partition length",
+        "seed": 20260907
+      },
+      "M3-M0": {
+        "block_length_months": 6,
+        "mean_improvement": 4.724708682624876,
+        "median": 2.5982558349252476,
+        "q025": -5.127817549347994,
+        "q975": 18.346720206649103,
+        "reps": 10000,
+        "resampling": "ordinary moving blocks: sample contiguous length-6 start positions with replacement, concatenate and truncate to partition length",
+        "seed": 20260907
+      },
+      "M3-M2": {
+        "block_length_months": 6,
+        "mean_improvement": 19.065036996145544,
+        "median": 19.77989908292936,
+        "q025": 13.441524702946879,
+        "q975": 24.99153048633347,
+        "reps": 10000,
+        "resampling": "ordinary moving blocks: sample contiguous length-6 start positions with replacement, concatenate and truncate to partition length",
+        "seed": 20260907
+      }
+    },
+    "raw_count_mean": 8.361702127659575,
+    "raw_count_variance_population": 252.48619284744223
+  },
+  "final_supported_vs_M0": {
+    "M1": true,
+    "M2": false,
+    "M3": false
+  },
+  "interpretive_pattern": "RESIDUAL_OVERDISPERSION_SUPPORTED_IN_FINAL",
+  "partition": {
+    "final": "2019-01..2022-11 exact-date admissible endpoint",
+    "final_months": 47,
+    "training_end": "2014-12",
+    "training_months": 319,
+    "validation": "2015-01..2018-12",
+    "validation_months": 48
+  },
+  "schema": "pcold-temporal-frequency-tournament-v0",
+  "scientific_boundary": [
+    "external public-media Chinese banking benchmark only",
+    "exact-date admissible subset; 676 events with undisclosed/unparseable occurrence date are excluded under the preregistered source-quality rule",
+    "no causal interpretation of calendar trend",
+    "no insurer/P&C default transfer",
+    "no parameter uncertainty in secondary tail sensitivity",
+    "no production, regulatory, capital, schema, or NextGen API promotion"
+  ],
+  "secondary_frequency_only_tail": {
+    "annual": {
+      "2019": {
+        "M0": {
+          "ES99.5_quantile_integral": 8683.267475812234,
+          "ES_definition": "(integral_p^1 VaR_u du)/(1-p), implemented exactly for discrete mass including only F(VaR)-p of the VaR atom",
+          "VaR99.5": 8400.0,
+          "pmf_mass_after_normalization": 0.9999999999999999,
+          "stop_loss_expectation": 2.122196119749889e-10
+        },
+        "M1": {
+          "ES99.5_quantile_integral": 14708.369751596621,
+          "ES_definition": "(integral_p^1 VaR_u du)/(1-p), implemented exactly for discrete mass including only F(VaR)-p of the VaR atom",
+          "VaR99.5": 13500.0,
+          "pmf_mass_after_normalization": 1.0,
+          "stop_loss_expectation": 13.123852320528183
+        },
+        "M2": {
+          "ES99.5_quantile_integral": 39416.18194425582,
+          "ES_definition": "(integral_p^1 VaR_u du)/(1-p), implemented exactly for discrete mass including only F(VaR)-p of the VaR atom",
+          "VaR99.5": 38800.0,
+          "pmf_mass_after_normalization": 0.9999999999999999,
+          "stop_loss_expectation": 21415.898311103396
+        },
+        "M3": {
+          "ES99.5_quantile_integral": 77602.52535052042,
+          "ES_definition": "(integral_p^1 VaR_u du)/(1-p), implemented exactly for discrete mass including only F(VaR)-p of the VaR atom",
+          "VaR99.5": 74300.0,
+          "pmf_mass_after_normalization": 1.0,
+          "stop_loss_expectation": 38475.22726742226
+        }
+      },
+      "2020": {
+        "M0": {
+          "ES99.5_quantile_integral": 8683.267475812234,
+          "ES_definition": "(integral_p^1 VaR_u du)/(1-p), implemented exactly for discrete mass including only F(VaR)-p of the VaR atom",
+          "VaR99.5": 8400.0,
+          "pmf_mass_after_normalization": 0.9999999999999999,
+          "stop_loss_expectation": 2.122196119749889e-10
+        },
+        "M1": {
+          "ES99.5_quantile_integral": 14708.369751596621,
+          "ES_definition": "(integral_p^1 VaR_u du)/(1-p), implemented exactly for discrete mass including only F(VaR)-p of the VaR atom",
+          "VaR99.5": 13500.0,
+          "pmf_mass_after_normalization": 1.0,
+          "stop_loss_expectation": 13.123852320528183
+        },
+        "M2": {
+          "ES99.5_quantile_integral": 43889.59123254432,
+          "ES_definition": "(integral_p^1 VaR_u du)/(1-p), implemented exactly for discrete mass including only F(VaR)-p of the VaR atom",
+          "VaR99.5": 43200.0,
+          "pmf_mass_after_normalization": 1.0,
+          "stop_loss_expectation": 25571.294813162072
+        },
+        "M3": {
+          "ES99.5_quantile_integral": 89435.48684988263,
+          "ES_definition": "(integral_p^1 VaR_u du)/(1-p), implemented exactly for discrete mass including only F(VaR)-p of the VaR atom",
+          "VaR99.5": 85600.0,
+          "pmf_mass_after_normalization": 1.0000000000000002,
+          "stop_loss_expectation": 46360.851819645555
+        }
+      },
+      "2021": {
+        "M0": {
+          "ES99.5_quantile_integral": 8683.267475812234,
+          "ES_definition": "(integral_p^1 VaR_u du)/(1-p), implemented exactly for discrete mass including only F(VaR)-p of the VaR atom",
+          "VaR99.5": 8400.0,
+          "pmf_mass_after_normalization": 0.9999999999999999,
+          "stop_loss_expectation": 2.122196119749889e-10
+        },
+        "M1": {
+          "ES99.5_quantile_integral": 14708.369751596621,
+          "ES_definition": "(integral_p^1 VaR_u du)/(1-p), implemented exactly for discrete mass including only F(VaR)-p of the VaR atom",
+          "VaR99.5": 13500.0,
+          "pmf_mass_after_normalization": 1.0,
+          "stop_loss_expectation": 13.123852320528183
+        },
+        "M2": {
+          "ES99.5_quantile_integral": 48887.71671240764,
+          "ES_definition": "(integral_p^1 VaR_u du)/(1-p), implemented exactly for discrete mass including only F(VaR)-p of the VaR atom",
+          "VaR99.5": 48200.0,
+          "pmf_mass_after_normalization": 1.0000000000000002,
+          "stop_loss_expectation": 30235.075293507136
+        },
+        "M3": {
+          "ES99.5_quantile_integral": 103096.78700730992,
+          "ES_definition": "(integral_p^1 VaR_u du)/(1-p), implemented exactly for discrete mass including only F(VaR)-p of the VaR atom",
+          "VaR99.5": 98700.0,
+          "pmf_mass_after_normalization": 1.0000000000000002,
+          "stop_loss_expectation": 55465.16824246792
+        }
+      }
+    },
+    "attachment_formula": "2 * 100 * (12 * observed training monthly mean count)",
+    "complete_final_calendar_years": [
+      2019,
+      2020,
+      2021
+    ],
+    "independence": "monthly predictive counts are convolved as conditionally independent under each frozen plug-in model",
+    "parameter_uncertainty": "omitted by preregistration",
+    "severity_per_event": 100.0,
+    "stop_loss_attachment": 12549.21630094044
+  },
+  "source": {
+    "article_id": 23940069,
+    "doi": "10.6084/m9.figshare.23940069.v3",
+    "endpoint_boundary": "Exact-date admissible series ends 2022-11. No synthetic zero months are appended into 2023 because undisclosed-month events exist; 2023 is not treated as observed zero-count time.",
+    "event_ids_exact_1_to_3723": true,
+    "excluded_by_reason": {
+      "occurrence_month_undisclosed_F": 570,
+      "occurrence_month_unparseable": 41,
+      "occurrence_year_undisclosed_F": 65
+    },
+    "excluded_occurrence_date_rows": 676,
+    "excluded_partition_membership_from_year_if_known": {
+      "final": 8,
+      "training": 551,
+      "unknown_year": 65,
+      "validation": 52
+    },
+    "file_id": 46360495,
+    "filename": "P-COLD-English ver.xlsx",
+    "monthly_series_end": "2022-11",
+    "monthly_series_start": "1988-06",
+    "sha256": "d3d22f6121b9f405ba3c12a7e0491d907f44a2a3d59d1e8ed105804b5f0e924c",
+    "valid_exact_occurrence_month_rows": 3047,
+    "version": 3
+  },
+  "status": "EXECUTED_ONCE_AFTER_SOURCE_LOCK",
+  "training": {
+    "models": {
+      "M0": {
+        "alpha": 0.0,
+        "converged": true,
+        "family": "poisson_stationary",
+        "mu": 5.22884012539185
+      },
+      "M1": {
+        "alpha": 1.3633595954883864,
+        "converged": true,
+        "family": "nb2_stationary",
+        "mu": 5.2288578005514825,
+        "optimizer": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+        "poisson_boundary": false
+      },
+      "M2": {
+        "alpha": 0.0,
+        "beta": [
+          1.2882641697749682,
+          0.11541852967243904,
+          0.09897015157647236,
+          0.0063572218752129634
+        ],
+        "converged": true,
+        "family": "poisson_calendar",
+        "optimizer": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH"
+      },
+      "M3": {
+        "alpha": 0.2799151911692332,
+        "beta": [
+          1.1926667680011183,
+          0.14370720832522907,
+          0.06767013682619345,
+          0.004938099956053832
+        ],
+        "converged": true,
+        "family": "nb2_calendar",
+        "optimizer": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+        "poisson_boundary": false
+      }
+    },
+    "raw_count_mean": 5.22884012539185,
+    "raw_count_variance_population": 27.89434066096049
+  },
+  "validation": {
+    "label": "validation_2015_2018",
+    "models": {
+      "M0": {
+        "catastrophic_calibration_failure": true,
+        "catastrophic_rule": "50% coverage must be in [0.20,0.80], 90% >=0.70, 95% >=0.80, randomized-PIT KS statistic <=0.30",
+        "central_interval_coverage": {
+          "50": 0.1875,
+          "90": 0.375,
+          "95": 0.4375
+        },
+        "mean_nll": 21.62540602459518,
+        "pearson_residual": {
+          "acf_lag1": 0.595770236286931,
+          "acf_lag12": 0.47424141461600855,
+          "ljung_box": {
+            "Q12": 103.57647525296557,
+            "pvalue_chi2_df12": 1.1060527716749025e-16
+          },
+          "mean": 6.6965741394383755,
+          "variance_population": 59.405768093858235
+        },
+        "randomized_pit": {
+          "ks_pvalue": 8.115442604686848e-22,
+          "ks_statistic": 0.6704530630934112,
+          "mean": 0.8953675502148178,
+          "seed": 20260907
+        }
+      },
+      "M1": {
+        "catastrophic_calibration_failure": true,
+        "catastrophic_rule": "50% coverage must be in [0.20,0.80], 90% >=0.70, 95% >=0.80, randomized-PIT KS statistic <=0.30",
+        "central_interval_coverage": {
+          "50": 0.1875,
+          "90": 0.6458333333333334,
+          "95": 0.7083333333333334
+        },
+        "mean_nll": 5.1806908969358725,
+        "pearson_residual": {
+          "acf_lag1": 0.5957702362869308,
+          "acf_lag12": 0.47424141461600844,
+          "ljung_box": {
+            "Q12": 103.57647525296557,
+            "pvalue_chi2_df12": 1.1060527716749025e-16
+          },
+          "mean": 2.348755810161196,
+          "variance_population": 7.308024425308503
+        },
+        "randomized_pit": {
+          "ks_pvalue": 2.406986000528169e-16,
+          "ks_statistic": 0.5883103617706114,
+          "mean": 0.8618422237464486,
+          "seed": 20260907
+        }
+      },
+      "M2": {
+        "catastrophic_calibration_failure": true,
+        "catastrophic_rule": "50% coverage must be in [0.20,0.80], 90% >=0.70, 95% >=0.80, randomized-PIT KS statistic <=0.30",
+        "central_interval_coverage": {
+          "50": 0.125,
+          "90": 0.2916666666666667,
+          "95": 0.3333333333333333
+        },
+        "mean_nll": 7.923673705098729,
+        "pearson_residual": {
+          "acf_lag1": 0.5602460783142992,
+          "acf_lag12": 0.41057391114787,
+          "ljung_box": {
+            "Q12": 60.77724305321766,
+            "pvalue_chi2_df12": 1.6283718423186602e-08
+          },
+          "mean": -0.26221628396621766,
+          "variance_population": 12.017115109397404
+        },
+        "randomized_pit": {
+          "ks_pvalue": 8.657432373745058e-11,
+          "ks_statistic": 0.4821157206218096,
+          "mean": 0.3170160174314072,
+          "seed": 20260907
+        }
+      },
+      "M3": {
+        "catastrophic_calibration_failure": true,
+        "catastrophic_rule": "50% coverage must be in [0.20,0.80], 90% >=0.70, 95% >=0.80, randomized-PIT KS statistic <=0.30",
+        "central_interval_coverage": {
+          "50": 0.25,
+          "90": 0.8125,
+          "95": 0.9375
+        },
+        "mean_nll": 4.155072900696415,
+        "pearson_residual": {
+          "acf_lag1": 0.5540722195344089,
+          "acf_lag12": 0.3597080004407718,
+          "ljung_box": {
+            "Q12": 55.654390304134054,
+            "pvalue_chi2_df12": 1.3810688561317608e-07
+          },
+          "mean": -0.6265921878279525,
+          "variance_population": 0.7735076027058675
+        },
+        "randomized_pit": {
+          "ks_pvalue": 3.94522943131712e-08,
+          "ks_statistic": 0.41845550232375,
+          "mean": 0.2889340431936042,
+          "seed": 20260907
+        }
+      }
+    },
+    "months": 48,
+    "paired_nll_improvement": {
+      "M1-M0": {
+        "block_length_months": 6,
+        "mean_improvement": 16.444715127659308,
+        "median": 14.850755280251914,
+        "q025": 3.4363466385770547,
+        "q975": 28.648448546212677,
+        "reps": 10000,
+        "resampling": "ordinary moving blocks: sample contiguous length-6 start positions with replacement, concatenate and truncate to partition length",
+        "seed": 20260907
+      },
+      "M2-M0": {
+        "block_length_months": 6,
+        "mean_improvement": 13.701732319496449,
+        "median": 12.242050766564233,
+        "q025": 1.050064714391647,
+        "q975": 25.720793621240148,
+        "reps": 10000,
+        "resampling": "ordinary moving blocks: sample contiguous length-6 start positions with replacement, concatenate and truncate to partition length",
+        "seed": 20260907
+      },
+      "M3-M0": {
+        "block_length_months": 6,
+        "mean_improvement": 17.470333123898765,
+        "median": 15.77500115342793,
+        "q025": 3.340281528849115,
+        "q975": 30.77324946240906,
+        "reps": 10000,
+        "resampling": "ordinary moving blocks: sample contiguous length-6 start positions with replacement, concatenate and truncate to partition length",
+        "seed": 20260907
+      },
+      "M3-M2": {
+        "block_length_months": 6,
+        "mean_improvement": 3.7686008044023147,
+        "median": 3.501972592058057,
+        "q025": 1.7864120112223127,
+        "q975": 5.590034685649207,
+        "reps": 10000,
+        "resampling": "ordinary moving blocks: sample contiguous length-6 start positions with replacement, concatenate and truncate to partition length",
+        "seed": 20260907
+      }
+    },
+    "raw_count_mean": 20.541666666666668,
+    "raw_count_variance_population": 310.62326388888886
+  },
+  "validation_selection": {
+    "passed_challengers": [],
+    "tie_within_1e-6": false,
+    "winner": "M0"
+  }
+}
