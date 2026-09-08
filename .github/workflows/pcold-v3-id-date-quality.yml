@@ -1,0 +1,120 @@
+name: P-COLD v3 ID and date quality
+
+on:
+  push:
+    branches:
+      - research-run/pcold-v3-source-lock-20260908-sol56
+    paths:
+      - .github/workflows/pcold-v3-id-date-quality.yml
+
+permissions:
+  contents: write
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install --disable-pip-version-check openpyxl==3.1.5
+      - name: Qualify IDs and missing-date markers without target aggregation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import collections, hashlib, json, urllib.request
+          from pathlib import Path
+          import openpyxl
+
+          ARTICLE_ID=23940069; VERSION=3; FILE_ID=46360495
+          NAME='P-COLD-English ver.xlsx'
+          SHA='d3d22f6121b9f405ba3c12a7e0491d907f44a2a3d59d1e8ed105804b5f0e924c'
+          api=f'https://api.figshare.com/v2/articles/{ARTICLE_ID}/versions/{VERSION}'
+          req=urllib.request.Request(api,headers={'User-Agent':'OpenCatastrophe-data research source quality'})
+          with urllib.request.urlopen(req,timeout=60) as r: meta=json.loads(r.read())
+          fs=[f for f in meta['files'] if f.get('id')==FILE_ID and f.get('name')==NAME]
+          if len(fs)!=1: raise SystemExit('FAIL_CLOSED file identity')
+          req=urllib.request.Request(fs[0]['download_url'],headers={'User-Agent':'OpenCatastrophe-data research source quality'})
+          with urllib.request.urlopen(req,timeout=120) as r: data=r.read()
+          if hashlib.sha256(data).hexdigest()!=SHA: raise SystemExit('FAIL_CLOSED SHA')
+          p=Path('pcold.xlsx'); p.write_bytes(data)
+          wb=openpyxl.load_workbook(p,read_only=True,data_only=True); ws=wb['Sheet1']
+          it=ws.iter_rows(values_only=True); hdr=[str(x).strip() if x is not None else '' for x in next(it)]
+          ix={h:hdr.index(h) for h in ['Event ID','Occurrence year','Occurrence month']}
+
+          id_rows=collections.defaultdict(list)
+          integer_ids=[]
+          id_noninteger=[]
+          year_quality=collections.Counter(); month_quality=collections.Counter(); joint_quality=collections.Counter()
+          rows=[]
+
+          def int_token(v):
+              if v in (None,''): return ('blank',None)
+              s=str(v).strip()
+              if s.upper()=='F': return ('F',None)
+              try:
+                  f=float(v)
+                  if f.is_integer(): return ('integer',int(f))
+              except Exception: pass
+              return ('other',s)
+
+          for rn,row in enumerate(it,start=2):
+              eid=row[ix['Event ID']] if ix['Event ID']<len(row) else None
+              if eid in (None,''): continue
+              es=str(eid).strip(); id_rows[es].append(rn)
+              ek,ev=int_token(eid)
+              if ek=='integer': integer_ids.append(ev)
+              else: id_noninteger.append({'event_id_literal':es,'excel_row_number':rn,'kind':ek})
+              y=row[ix['Occurrence year']] if ix['Occurrence year']<len(row) else None
+              m=row[ix['Occurrence month']] if ix['Occurrence month']<len(row) else None
+              yk,yv=int_token(y); mk,mv=int_token(m)
+              if mk=='integer' and not (1<=mv<=12): mk='integer_outside_1_12'
+              year_quality[yk]+=1; month_quality[mk]+=1; joint_quality[f'{yk}|{mk}']+=1
+              rows.append((rn,es,yk,yv,mk,mv))
+
+          duplicate_ids=[{'event_id_literal':eid,'excel_rows':rns,'count':len(rns)} for eid,rns in id_rows.items() if len(rns)>1]
+          numeric_unique=sorted(set(integer_ids))
+          missing_from_1_to_max=[]
+          if numeric_unique:
+              present=set(numeric_unique)
+              missing_from_1_to_max=[i for i in range(1,max(numeric_unique)+1) if i not in present]
+          receipt={
+            'schema':'pcold-v3-id-date-quality-v0',
+            'status':'SOURCE_QUALITY_ONLY_NO_TARGET_COUNTS_SCORED',
+            'workbook_sha256':SHA,
+            'nonblank_event_id_rows':sum(len(v) for v in id_rows.values()),
+            'unique_event_id_literals':len(id_rows),
+            'integer_event_id_rows':len(integer_ids),
+            'noninteger_event_id_rows':id_noninteger,
+            'integer_event_id_min':min(integer_ids) if integer_ids else None,
+            'integer_event_id_max':max(integer_ids) if integer_ids else None,
+            'unique_integer_event_ids':len(numeric_unique),
+            'duplicate_event_ids':duplicate_ids,
+            'missing_integer_ids_from_1_to_max':missing_from_1_to_max,
+            'occurrence_year_quality_counts':dict(year_quality),
+            'occurrence_month_quality_counts':dict(month_quality),
+            'occurrence_year_month_joint_quality_counts':dict(joint_quality),
+            'published_event_count_reference':3723,
+            'firewall':{
+              'loss_values_emitted':False,'category_values_emitted':False,
+              'monthly_counts_computed':False,'annual_counts_computed':False,
+              'validation_or_final_scores_computed':False,'dispersion_statistics_computed':False,
+            },
+          }
+          out=Path('research-results/pcold-v3-id-date-quality-v0.json'); out.write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(receipt,indent=2,sort_keys=True))
+          PY
+      - name: Commit durable quality receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add research-results/pcold-v3-id-date-quality-v0.json
+          git commit -m 'Research: record P-COLD event-ID and date-quality receipt'
+          git push origin HEAD:${GITHUB_REF_NAME}
