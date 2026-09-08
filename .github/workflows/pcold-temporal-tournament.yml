@@ -23,33 +23,50 @@ jobs:
           python-version: '3.13'
       - name: Install frozen scientific runtime
         run: python -m pip install --disable-pip-version-check numpy==2.3.5 scipy==1.17.0 openpyxl==3.1.5
-      - name: Verify pre-target source-lock receipts and frozen code
+      - name: Verify source locks, frozen base, numerical amendment and focused controls
         shell: bash
         run: |
           set -euo pipefail
           test -f research-results/pcold-v3-source-lock-v0.json
           test -f research-results/pcold-v3-id-date-quality-v0.json
           test -f research-results/pcold-v3-date-component-lock-v1.json
-          python -m py_compile research-scripts/pcold_temporal_frequency_tournament.py tests/test_pcold_temporal_frequency_tournament.py
-          python -m unittest tests.test_pcold_temporal_frequency_tournament -v
-      - name: Execute frozen chronological target once
+          test -f research-results/pcold-temporal-execution-attempt1-amendment-v0.md
+          python -m py_compile \
+            research-scripts/pcold_temporal_frequency_tournament.py \
+            research-scripts/pcold_temporal_frequency_tournament_numeric_v1.py \
+            tests/test_pcold_temporal_frequency_tournament.py \
+            tests/test_pcold_temporal_numeric_v1.py
+          python -m unittest \
+            tests.test_pcold_temporal_frequency_tournament \
+            tests.test_pcold_temporal_numeric_v1 -v
+      - name: Execute frozen chronological target after numerical-only repair
         shell: bash
         run: |
           set -euo pipefail
-          python research-scripts/pcold_temporal_frequency_tournament.py
+          python research-scripts/pcold_temporal_frequency_tournament_numeric_v1.py
           python - <<'PY'
           import hashlib, json, subprocess
           from pathlib import Path
           p=Path('research-results/pcold-temporal-frequency-tournament-v0.json')
           r=json.loads(p.read_text())
-          script=Path('research-scripts/pcold_temporal_frequency_tournament.py')
-          test=Path('tests/test_pcold_temporal_frequency_tournament.py')
-          r['execution']['runner_sha256']=hashlib.sha256(script.read_bytes()).hexdigest()
-          r['execution']['runner_git_blob']=subprocess.check_output(['git','rev-parse','HEAD:research-scripts/pcold_temporal_frequency_tournament.py'],text=True).strip()
-          r['execution']['focused_test_sha256']=hashlib.sha256(test.read_bytes()).hexdigest()
-          r['execution']['focused_test_git_blob']=subprocess.check_output(['git','rev-parse','HEAD:tests/test_pcold_temporal_frequency_tournament.py'],text=True).strip()
+          paths={
+            'base_runner':'research-scripts/pcold_temporal_frequency_tournament.py',
+            'numeric_wrapper':'research-scripts/pcold_temporal_frequency_tournament_numeric_v1.py',
+            'base_focused_test':'tests/test_pcold_temporal_frequency_tournament.py',
+            'numeric_regression_test':'tests/test_pcold_temporal_numeric_v1.py',
+          }
+          for label,path in paths.items():
+              q=Path(path)
+              r['execution'][label+'_sha256']=hashlib.sha256(q.read_bytes()).hexdigest()
+              r['execution'][label+'_git_blob']=subprocess.check_output(['git','rev-parse',f'HEAD:{path}'],text=True).strip()
           r['execution']['source_lock_v0_git_blob']=subprocess.check_output(['git','rev-parse','HEAD:research-results/pcold-v3-source-lock-v0.json'],text=True).strip()
           r['execution']['date_lock_v1_git_blob']=subprocess.check_output(['git','rev-parse','HEAD:research-results/pcold-v3-date-component-lock-v1.json'],text=True).strip()
+          r['execution']['attempt_number']=2
+          r['execution']['attempt1_run_id']='34218311906'
+          r['execution']['attempt1_job_id']='102035238322'
+          r['execution']['attempt1_classification']='PRE_SCORE_NUMERICAL_FAILURE_NO_RESULT_RECEIPT'
+          r['execution']['numerical_amendment']='algebraically stable NB2 log-PMF near Poisson boundary only; scientific contract unchanged'
+          r['execution']['attempt1_amendment_git_blob']=subprocess.check_output(['git','rev-parse','HEAD:research-results/pcold-temporal-execution-attempt1-amendment-v0.md'],text=True).strip()
           p.write_text(json.dumps(r,indent=2,sort_keys=True)+'\n')
           print('RESULT_SHA256',hashlib.sha256(p.read_bytes()).hexdigest())
           PY
@@ -60,5 +77,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add research-results/pcold-temporal-frequency-tournament-v0.json
-          git commit -m 'Research: record frozen P-COLD temporal frequency result'
+          git commit -m 'Research: record frozen P-COLD temporal frequency result after numerical repair'
           git push origin HEAD:${GITHUB_REF_NAME}
