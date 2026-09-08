@@ -1,0 +1,52 @@
+name: tmp-ffbk-freclaimset2motor-representation-20260909
+
+on:
+  push:
+    branches:
+      - research/ffbk-freclaimset2motor-representation-20260909-sol56
+    paths:
+      - scripts/tmp_ffbk_freclaimset2motor_representation_20260909.R
+      - .github/workflows/tmp-ffbk-freclaimset2motor-representation-20260909.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  representation-falsification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.3.3'
+          use-public-rspm: true
+      - name: Materialize and verify canonical source bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tmp_ffbk_source results
+          curl -L --fail --retry 3 \
+            'https://raw.githubusercontent.com/dutangc/CASdatasets/227fb56b8734bdb7c0327a41180e01d2ddaeaf26/data/freclaimset2motor.rda' \
+            -o tmp_ffbk_source/freclaimset2motor.rda
+          test "$(stat -c%s tmp_ffbk_source/freclaimset2motor.rda)" = "9482793"
+          echo '4409adb022d18e24a3a0e724523706616e707c53e55f8625ce9fc122a20185d6  tmp_ffbk_source/freclaimset2motor.rda' | sha256sum -c -
+          test "$(git hash-object tmp_ffbk_source/freclaimset2motor.rda)" = "a232d3a63f0ecc7bd28e45ce8364afb660f2eb4f"
+          sha256sum tmp_ffbk_source/freclaimset2motor.rda | tee results/source_sha256.txt
+          git hash-object tmp_ffbk_source/freclaimset2motor.rda | tee results/source_git_blob.txt
+          stat -c%s tmp_ffbk_source/freclaimset2motor.rda | tee results/source_bytes.txt
+      - name: Run frozen representation consumer test
+        shell: bash
+        run: |
+          set -euo pipefail
+          Rscript scripts/tmp_ffbk_freclaimset2motor_representation_20260909.R \
+            tmp_ffbk_source/freclaimset2motor.rda results | tee results/receipt.txt
+      - name: Upload bounded research receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-freclaimset2motor-representation-20260909
+          path: results/
+          if-no-files-found: warn
+          retention-days: 30
