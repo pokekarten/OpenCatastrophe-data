@@ -1,0 +1,151 @@
+name: P-COLD v3 event row diagnostic
+
+on:
+  push:
+    branches:
+      - research-run/pcold-v3-source-lock-20260908-sol56
+    paths:
+      - .github/workflows/pcold-v3-event-row-diagnostic.yml
+
+permissions:
+  contents: write
+
+jobs:
+  event-row-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install --disable-pip-version-check openpyxl==3.1.5
+      - name: Diagnose non-event shaped rows only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, urllib.request
+          from pathlib import Path
+          import openpyxl
+
+          ARTICLE_ID=23940069
+          VERSION=3
+          FILE_ID=46360495
+          EXPECTED_NAME='P-COLD-English ver.xlsx'
+          EXPECTED_SHA='d3d22f6121b9f405ba3c12a7e0491d907f44a2a3d59d1e8ed105804b5f0e924c'
+          API=f'https://api.figshare.com/v2/articles/{ARTICLE_ID}/versions/{VERSION}'
+
+          req=urllib.request.Request(API,headers={'User-Agent':'OpenCatastrophe-data research row diagnostic'})
+          with urllib.request.urlopen(req,timeout=60) as r:
+              meta=json.loads(r.read())
+          files=[f for f in meta['files'] if f.get('id')==FILE_ID and f.get('name')==EXPECTED_NAME]
+          if len(files)!=1:
+              raise SystemExit('FAIL_CLOSED exact locked file identity not found')
+          req=urllib.request.Request(files[0]['download_url'],headers={'User-Agent':'OpenCatastrophe-data research row diagnostic'})
+          with urllib.request.urlopen(req,timeout=120) as r:
+              data=r.read()
+          if hashlib.sha256(data).hexdigest()!=EXPECTED_SHA:
+              raise SystemExit('FAIL_CLOSED workbook SHA mismatch')
+          p=Path('tmp-pcold.xlsx'); p.write_bytes(data)
+          wb=openpyxl.load_workbook(p,read_only=True,data_only=True)
+          if wb.sheetnames!=['Sheet1']:
+              raise SystemExit(f'FAIL_CLOSED sheet identity {wb.sheetnames!r}')
+          ws=wb['Sheet1']
+          it=ws.iter_rows(values_only=True)
+          headers=[str(x).strip() if x is not None else '' for x in next(it)]
+          idx={h:headers.index(h) for h in ['Event ID','Occurrence year','Occurrence month']}
+
+          anomalies=[]
+          shaped_event_rows=0
+          nonblank_event_id_rows=0
+          blank_event_id_rows=0
+          for excel_row_number,row in enumerate(it,start=2):
+              eid_raw=row[idx['Event ID']] if idx['Event ID']<len(row) else None
+              year_raw=row[idx['Occurrence year']] if idx['Occurrence year']<len(row) else None
+              month_raw=row[idx['Occurrence month']] if idx['Occurrence month']<len(row) else None
+              nonblank_bitmap=[i+1 for i,v in enumerate(row) if v not in (None,'')]
+              if eid_raw in (None,''):
+                  blank_event_id_rows += 1
+                  if nonblank_bitmap:
+                      anomalies.append({
+                          'excel_row_number':excel_row_number,
+                          'reason':'blank_event_id_but_other_cells_nonblank',
+                          'event_id_literal':None,
+                          'occurrence_year_literal':None if year_raw is None else str(year_raw),
+                          'occurrence_month_literal':None if month_raw is None else str(month_raw),
+                          'nonblank_column_indices_1based':nonblank_bitmap,
+                          'nonblank_header_names':[headers[i-1] for i in nonblank_bitmap],
+                      })
+                  continue
+              nonblank_event_id_rows += 1
+              eid=str(eid_raw).strip()
+              event_id_integer=False
+              year_integer=False
+              month_integer=False
+              month_valid=False
+              try:
+                  f=float(eid_raw); event_id_integer=(f.is_integer())
+              except Exception:
+                  pass
+              try:
+                  f=float(year_raw); year_integer=(f.is_integer())
+              except Exception:
+                  pass
+              try:
+                  f=float(month_raw); month_integer=(f.is_integer()); month_valid=month_integer and 1<=int(f)<=12
+              except Exception:
+                  pass
+              shaped=event_id_integer and year_integer and month_valid
+              if shaped:
+                  shaped_event_rows += 1
+              else:
+                  anomalies.append({
+                      'excel_row_number':excel_row_number,
+                      'reason':'nonblank_event_id_not_event_shaped',
+                      'event_id_literal':eid,
+                      'occurrence_year_literal':None if year_raw is None else str(year_raw),
+                      'occurrence_month_literal':None if month_raw is None else str(month_raw),
+                      'event_id_integer':event_id_integer,
+                      'occurrence_year_integer':year_integer,
+                      'occurrence_month_integer':month_integer,
+                      'occurrence_month_valid_1_12':month_valid,
+                      'nonblank_column_indices_1based':nonblank_bitmap,
+                      'nonblank_header_names':[headers[i-1] for i in nonblank_bitmap],
+                  })
+
+          receipt={
+              'schema':'pcold-v3-event-row-diagnostic-v0',
+              'status':'SCHEMA_DIAGNOSTIC_NO_TARGET_COUNTS_SCORED',
+              'workbook_sha256':EXPECTED_SHA,
+              'sheet':'Sheet1',
+              'physical_rows_after_header':ws.max_row-1,
+              'nonblank_event_id_rows':nonblank_event_id_rows,
+              'blank_event_id_rows':blank_event_id_rows,
+              'strict_event_shaped_rows':shaped_event_rows,
+              'anomalies':anomalies,
+              'diagnostic_rule':'strict event shape requires integer Event ID, integer Occurrence year, and integer Occurrence month in 1..12; this diagnostic does not yet authorize filtering',
+              'firewall':{
+                  'loss_values_emitted':False,
+                  'category_values_emitted':False,
+                  'monthly_counts_computed':False,
+                  'annual_counts_computed':False,
+                  'validation_or_final_scores_computed':False,
+                  'dispersion_statistics_computed':False,
+              },
+          }
+          out=Path('research-results/pcold-v3-event-row-diagnostic-v0.json')
+          out.write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(receipt,indent=2,sort_keys=True))
+          PY
+      - name: Commit durable row diagnostic
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add research-results/pcold-v3-event-row-diagnostic-v0.json
+          git commit -m 'Research: record P-COLD event-row schema diagnostic'
+          git push origin HEAD:${GITHUB_REF_NAME}
