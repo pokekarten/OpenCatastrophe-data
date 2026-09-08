@@ -1,0 +1,120 @@
+name: P-COLD v3 date component lock
+
+on:
+  push:
+    branches:
+      - research-run/pcold-v3-source-lock-20260908-sol56
+    paths:
+      - .github/workflows/pcold-v3-date-component-lock.yml
+
+permissions:
+  contents: write
+
+jobs:
+  date-lock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install --disable-pip-version-check openpyxl==3.1.5
+      - name: Lock event-row and occurrence-date semantics only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, urllib.request
+          from pathlib import Path
+          import openpyxl
+
+          ARTICLE_ID=23940069
+          VERSION=3
+          FILE_ID=46360495
+          EXPECTED_NAME='P-COLD-English ver.xlsx'
+          EXPECTED_SHA='d3d22f6121b9f405ba3c12a7e0491d907f44a2a3d59d1e8ed105804b5f0e924c'
+          API=f'https://api.figshare.com/v2/articles/{ARTICLE_ID}/versions/{VERSION}'
+          req=urllib.request.Request(API,headers={'User-Agent':'OpenCatastrophe-data research date lock'})
+          with urllib.request.urlopen(req,timeout=60) as r:
+              meta=json.loads(r.read())
+          files=[f for f in meta['files'] if f.get('id')==FILE_ID and f.get('name')==EXPECTED_NAME]
+          if len(files)!=1:
+              raise SystemExit('FAIL_CLOSED exact locked file identity not found')
+          req=urllib.request.Request(files[0]['download_url'],headers={'User-Agent':'OpenCatastrophe-data research date lock'})
+          with urllib.request.urlopen(req,timeout=120) as r:
+              data=r.read()
+          if hashlib.sha256(data).hexdigest()!=EXPECTED_SHA:
+              raise SystemExit('FAIL_CLOSED workbook SHA mismatch')
+          p=Path('tmp-pcold.xlsx'); p.write_bytes(data)
+          wb=openpyxl.load_workbook(p,read_only=True,data_only=True)
+          if wb.sheetnames!=['Sheet1']:
+              raise SystemExit(f'FAIL_CLOSED sheet identity {wb.sheetnames!r}')
+          ws=wb['Sheet1']
+          it=ws.iter_rows(values_only=True)
+          headers=[str(x).strip() if x is not None else '' for x in next(it)]
+          required=['Event ID','Occurrence year','Occurrence month']
+          idx={h:headers.index(h) for h in required}
+          ids=[]; dates=[]; missing_date_rows=[]; invalid_date_rows=[]
+          physical_rows=0
+          for row in it:
+              physical_rows+=1
+              event_id=row[idx['Event ID']] if idx['Event ID']<len(row) else None
+              if event_id in (None,''):
+                  continue
+              eid=str(event_id).strip()
+              ids.append(eid)
+              y=row[idx['Occurrence year']] if idx['Occurrence year']<len(row) else None
+              m=row[idx['Occurrence month']] if idx['Occurrence month']<len(row) else None
+              if y in (None,'') or m in (None,''):
+                  missing_date_rows.append(eid); continue
+              try:
+                  yy=int(float(y)); mm=int(float(m))
+                  if float(y)!=yy or float(m)!=mm or not (1<=mm<=12):
+                      raise ValueError
+              except Exception:
+                  invalid_date_rows.append(eid); continue
+              dates.append((yy,mm))
+          if len(ids)!=3723:
+              raise SystemExit(f'FAIL_CLOSED nonblank Event ID rows {len(ids)} != 3723')
+          if len(set(ids))!=3723:
+              raise SystemExit(f'FAIL_CLOSED unique Event IDs {len(set(ids))} != 3723')
+          if missing_date_rows or invalid_date_rows:
+              raise SystemExit(f'FAIL_CLOSED occurrence date quality missing={len(missing_date_rows)} invalid={len(invalid_date_rows)}')
+          min_date=min(dates); max_date=max(dates)
+          receipt={
+              'schema':'pcold-v3-date-component-lock-v0',
+              'status':'DATE_COMPONENTS_LOCKED_NO_TARGET_COUNTS_SCORED',
+              'workbook_sha256':EXPECTED_SHA,
+              'sheet':'Sheet1',
+              'physical_data_rows_after_header':physical_rows,
+              'event_row_rule':'nonblank Event ID',
+              'event_rows':len(ids),
+              'unique_event_ids':len(set(ids)),
+              'occurrence_date_rule':'first calendar day of integer Occurrence year + integer Occurrence month; month must be 1..12',
+              'missing_occurrence_date_rows':len(missing_date_rows),
+              'invalid_occurrence_date_rows':len(invalid_date_rows),
+              'min_occurrence_month':f'{min_date[0]:04d}-{min_date[1]:02d}',
+              'max_occurrence_month':f'{max_date[0]:04d}-{max_date[1]:02d}',
+              'firewall':{
+                  'monthly_counts_computed':False,
+                  'annual_counts_computed':False,
+                  'validation_or_final_scores_computed':False,
+                  'dispersion_statistics_computed':False,
+              },
+          }
+          out=Path('research-results/pcold-v3-date-component-lock-v0.json')
+          out.write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(receipt,indent=2,sort_keys=True))
+          PY
+      - name: Commit durable date-component receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add research-results/pcold-v3-date-component-lock-v0.json
+          git commit -m 'Research: record P-COLD occurrence year-month source lock'
+          git push origin HEAD:${GITHUB_REF_NAME}
