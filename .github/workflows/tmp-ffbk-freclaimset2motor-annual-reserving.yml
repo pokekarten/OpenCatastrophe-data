@@ -7,6 +7,10 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - 'tmp/ffbk_freclaimset2motor_annual_reserving_v2.py'
+      - '.github/workflows/tmp-ffbk-freclaimset2motor-annual-reserving.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,7 +18,7 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout exact runner branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -26,8 +30,25 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install bounded data dependencies
-        run: python -m pip install --disable-pip-version-check --no-input pandas pyarrow
-      - name: Execute exact public-data gate
+        run: python -m pip install --disable-pip-version-check --no-input numpy pandas pyarrow pyreadr
+      - name: Record environment
         run: |
-          python tmp/ffbk_freclaimset2motor_annual_reserving.py > /tmp/ffbk-result.json
-          cat /tmp/ffbk-result.json
+          python --version
+          python -m pip freeze | sort
+      - name: Compile corrected public-data gate
+        run: python -m py_compile tmp/ffbk_freclaimset2motor_annual_reserving_v2.py
+      - name: Execute corrected exact public-data gate
+        run: |
+          set -euo pipefail
+          python tmp/ffbk_freclaimset2motor_annual_reserving_v2.py > ffbk_freclaimset2motor_annual_reserving_v2_result.json
+          python -m json.tool ffbk_freclaimset2motor_annual_reserving_v2_result.json >/dev/null
+          sha256sum ffbk_freclaimset2motor_annual_reserving_v2_result.json
+          cat ffbk_freclaimset2motor_annual_reserving_v2_result.json
+      - name: Upload corrected result receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-freclaimset2motor-annual-reserving-v2-result
+          path: ffbk_freclaimset2motor_annual_reserving_v2_result.json
+          if-no-files-found: error
+          retention-days: 14
