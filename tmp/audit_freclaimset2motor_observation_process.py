@@ -8,7 +8,6 @@ import json
 import urllib.request
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 SOURCE_COMMIT = "10af669a599c1d4d69288f62f13978be2e82b3b4"
@@ -18,6 +17,7 @@ SOURCE_PATH = "src/casdatasets/data/parquet/freclaimset2motor/claimset.parquet"
 SOURCE_URL = f"https://raw.githubusercontent.com/MathiasValla/casdatasets-py/{SOURCE_COMMIT}/{SOURCE_PATH}"
 YEARS = list(range(2004, 2014))
 EPS = 1e-12
+CLOSED_STATUSES = {"fully closed", "closed without further action"}
 
 
 def git_blob_sha1(data: bytes) -> str:
@@ -32,23 +32,30 @@ def status_counts(frame: pd.DataFrame) -> dict[str, int]:
 
 
 def summarize_slice(frame: pd.DataFrame) -> dict:
+    exact = frame[frame["has_exact_next"]]
     missing = frame[~frame["has_exact_next"]]
-    later = missing[missing["has_later_row"]]
-    terminal = missing[~missing["has_later_row"]]
+    same_year_duplicate_next = missing[missing["has_same_year_duplicate_next"]]
+    later_gap = missing[missing["has_later_gap"]]
+    terminal = missing[missing["is_terminal_no_next_row"]]
+    terminal_open_like = terminal[~terminal["status_norm"].isin(CLOSED_STATUSES)]
     return {
         "rows": int(len(frame)),
-        "exact_t_plus_1_rows": int(frame["has_exact_next"].sum()),
+        "exact_t_plus_1_rows": int(len(exact)),
+        "exact_t_plus_1_by_current_status": status_counts(exact),
         "missing_exact_t_plus_1_rows": int(len(missing)),
         "missing_exact_t_plus_1_share": float(len(missing) / len(frame)) if len(frame) else None,
         "missing_by_current_status": status_counts(missing),
-        "missing_with_later_reappearance": int(len(later)),
-        "missing_terminal_no_later_row": int(len(terminal)),
-        "later_reappearance_with_nonzero_paid_change": int(
-            (later["next_observed_paid_change"].abs() > EPS).sum()
+        "same_year_duplicate_next_rows": int(len(same_year_duplicate_next)),
+        "missing_with_later_gap_gt_1": int(len(later_gap)),
+        "missing_terminal_no_next_row": int(len(terminal)),
+        "terminal_missing_by_current_status": status_counts(terminal),
+        "terminal_missing_open_like_rows": int(len(terminal_open_like)),
+        "later_gap_with_nonzero_paid_change": int(
+            (later_gap["next_observed_paid_change"].abs() > EPS).sum()
         ),
-        "later_reappearance_gap_years": {
+        "later_gap_years": {
             str(int(k)): int(v)
-            for k, v in later["next_observed_gap"].value_counts().sort_index().to_dict().items()
+            for k, v in later_gap["next_observed_gap"].value_counts().sort_index().to_dict().items()
         },
     }
 
@@ -78,12 +85,14 @@ def main() -> None:
     next_paid = grouped["PaidAmount"].shift(-1)
     df["next_observed_year"] = next_year
     df["next_observed_gap"] = next_year - df["ManagYear"]
-    df["has_exact_next"] = next_year.eq(df["ManagYear"] + 1)
-    df["has_later_row"] = next_year.notna()
+    df["has_exact_next"] = df["next_observed_gap"].eq(1)
+    df["has_same_year_duplicate_next"] = df["next_observed_gap"].eq(0)
+    df["has_later_gap"] = df["next_observed_gap"].gt(1)
+    df["is_terminal_no_next_row"] = next_year.isna()
     df["next_observed_paid_change"] = next_paid - df["PaidAmount"]
 
     all_missing = df[~df["has_exact_next"]]
-    later_missing = all_missing[all_missing["has_later_row"]]
+    later_gap_missing = all_missing[all_missing["has_later_gap"]]
 
     by_year = {
         str(year): summarize_slice(df[df["ManagYear"] == year])
@@ -105,15 +114,16 @@ def main() -> None:
             "unique_claim_ids": int(df["ClaimID"].nunique()),
         },
         "all_rows": summarize_slice(df),
-        "all_missing_with_later_reappearance_by_current_status": status_counts(later_missing),
+        "all_later_gap_missing_by_current_status": status_counts(later_gap_missing),
         "years_2004_2013": by_year,
         "identification_boundary": {
             "missing_exact_t_plus_1_is_observed_zero": False,
             "reason": (
                 "An absent exact t+1 row does not itself reveal the unobserved within-gap path. "
-                "Later reappearance, especially with changed cumulative paid, is direct evidence that "
-                "row absence and economic zero movement are distinct concepts. Terminal absence may "
-                "be consistent with closure but is not converted into an observed t+1 cash fact by this audit."
+                "Rows with a later management-year reappearance (gap > 1), especially with changed cumulative paid, "
+                "directly show that row absence and observed economic zero movement are distinct concepts. "
+                "Same-year duplicate rows are tracked separately and are not called later reappearance. "
+                "Terminal absence may be consistent with closure but is not converted into an observed t+1 cash fact by this audit."
             ),
             "model_use": "sensitivity_only_until_observation_semantics_are_independently_justified",
         },
