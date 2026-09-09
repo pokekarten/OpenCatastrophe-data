@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Synthetic-first CEMS companion-mask necessary-condition challenge runtime.
+-r requirements-cems-geotiff-profile.txt
+pyproj==3.7.2
