@@ -9,6 +9,8 @@ on:
       - main
     paths:
       - 'tmp/ffbk_freclaimset2motor_annual_reserving_v2.py'
+      - 'tmp/materialize_freclaimset2motor_exact.R'
+      - 'tmp/run_ffbk_freclaimset2motor_annual_reserving_v2_exact_source.py'
       - '.github/workflows/tmp-ffbk-freclaimset2motor-annual-reserving.yml'
   workflow_dispatch:
 
@@ -41,13 +43,15 @@ jobs:
           python --version
           Rscript --version
           python -m pip freeze | sort
-      - name: Compile corrected public-data gate
-        run: python -m py_compile tmp/ffbk_freclaimset2motor_annual_reserving_v2.py
-      - name: Execute corrected exact public-data gate
+      - name: Compile frozen V2 and exact-source adapter
+        run: |
+          python -m py_compile tmp/ffbk_freclaimset2motor_annual_reserving_v2.py
+          python -m py_compile tmp/run_ffbk_freclaimset2motor_annual_reserving_v2_exact_source.py
+      - name: Execute frozen V2 through exact-source adapter
         run: |
           set -euo pipefail
           rm -f ffbk_freclaimset2motor_annual_reserving_v2_result.json
-          python tmp/ffbk_freclaimset2motor_annual_reserving_v2.py > ffbk_freclaimset2motor_annual_reserving_v2_result.json
+          python tmp/run_ffbk_freclaimset2motor_annual_reserving_v2_exact_source.py > ffbk_freclaimset2motor_annual_reserving_v2_result.json
           python -m json.tool ffbk_freclaimset2motor_annual_reserving_v2_result.json >/dev/null
           sha256sum ffbk_freclaimset2motor_annual_reserving_v2_result.json
           cat ffbk_freclaimset2motor_annual_reserving_v2_result.json
