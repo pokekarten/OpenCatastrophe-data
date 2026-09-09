@@ -83,7 +83,7 @@ def _inventory_windows(
     *,
     cardinality_cap: int,
 ) -> dict[str, Any]:
-    """Aggregate every supplied window without materialising the full raster."""
+    """Aggregate supplied test/internal windows without full-raster materialisation."""
     _require_numpy()
     if type(cardinality_cap) is not int or not (1 <= cardinality_cap <= CARDINALITY_CAP):
         raise CemsMaskValueProfileError(
@@ -158,6 +158,18 @@ def _inventory_windows(
             f"window scan covered {total_cells} cells, expected {expected_cells}"
         )
 
+    accounted_cells = (
+        nodata_count
+        + nan_non_nodata_count
+        + positive_infinity_count
+        + negative_infinity_count
+        + finite_count
+    )
+    if accounted_cells != total_cells:
+        raise CemsMaskValueProfileError(
+            f"value accounting covered {accounted_cells} cells, expected {total_cells}"
+        )
+
     if cardinality_cap_exceeded:
         finite_unique_value_count: int | None = None
         finite_value_counts: list[dict[str, Any]] | None = None
@@ -208,11 +220,9 @@ def inventory_dataset(
     dataset: Any,
     *,
     cardinality_cap: int = CARDINALITY_CAP,
-    windows: Iterable[Any] | None = None,
 ) -> dict[str, Any]:
-    """Inventory a single-band dataset using only explicit raster windows."""
-    if windows is None:
-        windows = (window for _index, window in dataset.block_windows(1))
+    """Inventory the complete single-band dataset through its own block windows."""
+    windows = (window for _index, window in dataset.block_windows(1))
     return _inventory_windows(
         dataset,
         windows,
