@@ -187,6 +187,33 @@ class CemsMaskValueInventoryTests(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     mod.inventory_dataset(dataset, windows=windows)
 
+    def test_public_inventory_does_not_accept_caller_selected_cardinality_cap(self) -> None:
+        data = np.zeros((2, 2), dtype="float64")
+        with tempfile.TemporaryDirectory() as directory:
+            path, _byte_count, _sha256 = self._fixture(directory, data)
+            with rasterio.open(path) as dataset:
+                with self.assertRaises(TypeError):
+                    mod.inventory_dataset(
+                        dataset,
+                        cardinality_cap=mod.CARDINALITY_CAP - 1,
+                    )
+
+    def test_private_aggregator_rejects_cap_above_preregistered_bound(self) -> None:
+        data = np.zeros((2, 2), dtype="float64")
+        with tempfile.TemporaryDirectory() as directory:
+            path, _byte_count, _sha256 = self._fixture(directory, data)
+            with rasterio.open(path) as dataset:
+                windows = [window for _index, window in dataset.block_windows(1)]
+                with self.assertRaisesRegex(
+                    mod.CemsMaskValueProfileError,
+                    "preregistered bound",
+                ):
+                    mod._inventory_windows(
+                        dataset,
+                        windows,
+                        cardinality_cap=mod.CARDINALITY_CAP + 1,
+                    )
+
     def test_exact_receipt_bound_profile_keeps_all_authority_false(self) -> None:
         data = np.array([[1.0, -9999.0], [1.0, 1.0]], dtype="float64")
         with tempfile.TemporaryDirectory() as directory:
@@ -274,20 +301,6 @@ class CemsMaskValueInventoryTests(unittest.TestCase):
                 mod.require_exact_grid_before_comparison({}, {}),
                 accepted,
             )
-
-    def test_cardinality_cap_cannot_be_relaxed_by_caller(self) -> None:
-        data = np.zeros((2, 2), dtype="float64")
-        with tempfile.TemporaryDirectory() as directory:
-            path, _byte_count, _sha256 = self._fixture(directory, data)
-            with rasterio.open(path) as dataset:
-                with self.assertRaisesRegex(
-                    mod.CemsMaskValueProfileError,
-                    "preregistered bound",
-                ):
-                    mod.inventory_dataset(
-                        dataset,
-                        cardinality_cap=mod.CARDINALITY_CAP + 1,
-                    )
 
 
 if __name__ == "__main__":
