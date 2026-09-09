@@ -6,13 +6,13 @@ import hashlib
 import json
 import math
 import platform
+import subprocess
 import sys
 import urllib.request
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import pyreadr
 
 PARQUET_REPO = "MathiasValla/casdatasets-py"
 PARQUET_COMMIT = "10af669a599c1d4d69288f62f13978be2e82b3b4"
@@ -69,37 +69,57 @@ def normal_crps(mu: float, sigma: float, y: float) -> float:
     return sigma * (z * (2.0 * Phi - 1.0) + 2.0 * phi - 1.0 / math.sqrt(math.pi))
 
 
-def scalar(v) -> float:
-    return float(np.asarray(v).reshape(-1)[0])
-
-
 def canonical_audit(rdata_path: Path) -> dict:
-    objects = pyreadr.read_r(rdata_path)
-    keys = list(objects.keys())
-    if not keys:
-        raise SystemExit("canonical RData contains no readable data frame")
-    # The package data file is expected to contain exactly the named dataset;
-    # fail closed if multiple objects make the identity ambiguous.
-    if "freclaimset2motor" in objects:
-        key = "freclaimset2motor"
-    elif len(keys) == 1:
-        key = keys[0]
-    else:
-        raise SystemExit(f"ambiguous RData objects: {keys}")
-    rdf = objects[key]
-    audit = {
-        "object_key": key,
-        "objects": keys,
+    claims_csv = Path("/tmp/freclaimset2motor-canonical-claimset.csv")
+    aggregate_csv = Path("/tmp/freclaimset2motor-canonical-aggdata.csv")
+    r_code = r'''
+args <- commandArgs(trailingOnly = TRUE)
+source_rda <- args[[1L]]
+claims_csv <- args[[2L]]
+aggregate_csv <- args[[3L]]
+env <- new.env(parent = baseenv())
+loaded <- load(source_rda, envir = env)
+required <- c("claimset", "aggdata")
+if (!all(required %in% loaded)) {
+  stop(sprintf("source .rda missing required objects: %s", paste(setdiff(required, loaded), collapse = ",")))
+}
+claimset <- get("claimset", envir = env, inherits = FALSE)
+aggdata <- get("aggdata", envir = env, inherits = FALSE)
+if (!is.data.frame(claimset) || !is.data.frame(aggdata)) {
+  stop("claimset and aggdata must both be data.frames")
+}
+write.table(claimset, file = claims_csv, sep = ",", row.names = FALSE, col.names = TRUE,
+            quote = TRUE, na = "NA", qmethod = "double", eol = "\n", fileEncoding = "UTF-8")
+write.table(aggdata, file = aggregate_csv, sep = ",", row.names = FALSE, col.names = TRUE,
+            quote = TRUE, na = "NA", qmethod = "double", eol = "\n", fileEncoding = "UTF-8")
+cat(sprintf("loaded=%s claim_rows=%d agg_rows=%d\n", paste(sort(loaded), collapse = ","), nrow(claimset), nrow(aggdata)))
+'''
+    completed = subprocess.run(
+        ["Rscript", "--vanilla", "-e", r_code, str(rdata_path), str(claims_csv), str(aggregate_csv)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode != 0:
+        raise SystemExit(f"canonical RData materialization failed: {completed.stderr.strip()}")
+    if not claims_csv.is_file() or not aggregate_csv.is_file():
+        raise SystemExit("canonical RData materialization did not produce both CSV transports")
+
+    columns = list(pd.read_csv(claims_csv, nrows=0).columns)
+    rdf = pd.read_csv(claims_csv, usecols=["ClaimID", "OccurYear", "ManagYear"], low_memory=False)
+    agg_rows = sum(1 for _ in open(aggregate_csv, "r", encoding="utf-8")) - 1
+    return {
+        "objects_required": ["claimset", "aggdata"],
+        "materializer": "base_R_load_isolated_environment",
+        "materializer_stdout": completed.stdout.strip(),
         "rows": int(len(rdf)),
-        "columns": [str(x) for x in rdf.columns],
+        "aggregate_rows": int(agg_rows),
+        "columns": [str(x) for x in columns],
+        "unique_claim_ids": int(rdf["ClaimID"].nunique(dropna=True)),
+        "rows_management_equals_occurrence": int((pd.to_numeric(rdf["ManagYear"], errors="coerce") == pd.to_numeric(rdf["OccurYear"], errors="coerce")).sum()),
+        "claims_csv_sha256": hashlib.sha256(claims_csv.read_bytes()).hexdigest(),
+        "aggregate_csv_sha256": hashlib.sha256(aggregate_csv.read_bytes()).hexdigest(),
     }
-    if "ClaimID" in rdf.columns:
-        audit["unique_claim_ids"] = int(rdf["ClaimID"].nunique(dropna=True))
-    if "OccurYear" in rdf.columns and "ManagYear" in rdf.columns:
-        oy = pd.to_numeric(rdf["OccurYear"], errors="coerce")
-        my = pd.to_numeric(rdf["ManagYear"], errors="coerce")
-        audit["rows_management_equals_occurrence"] = int((my == oy).sum())
-    return audit
 
 
 def prepare_parquet(path: Path) -> tuple[pd.DataFrame, dict]:
@@ -307,7 +327,7 @@ def main() -> None:
             "platform": platform.platform(),
             "pandas": pd.__version__,
             "numpy": np.__version__,
-            "pyreadr": getattr(pyreadr, "__version__", "unknown"),
+            "canonical_materializer": "Rscript/base-R load",
         },
         "canonical_rdata_audit": canonical,
         "parquet_audit": audit,
