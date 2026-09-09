@@ -18,8 +18,12 @@ import math
 from pathlib import Path
 from typing import Any
 
-import rasterio
-from rasterio.io import MemoryFile
+try:
+    import rasterio
+    from rasterio.io import MemoryFile
+except ImportError:  # Optional outside the reviewed GeoTIFF-profile environment.
+    rasterio = None
+    MemoryFile = None
 
 SOURCE_ISSUE = 793
 PROFILE_ISSUE = 802
@@ -78,6 +82,11 @@ def _verify_file_identity(
     expected_sha256: str,
 ) -> tuple[MemoryFile, int, str]:
     """Verify source bytes and retain the exact verified object in private memory."""
+    if MemoryFile is None:
+        raise CemsRp10GeoTiffProfileError(
+            "Rasterio profile dependency is unavailable; install "
+            "requirements-cems-geotiff-profile.txt"
+        )
     if type(expected_byte_count) is not int or expected_byte_count <= 0:
         raise CemsRp10GeoTiffProfileError("expected byte count is invalid")
     if (

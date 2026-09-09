@@ -50,10 +50,15 @@ jobs:
         run: python -m pip install --disable-pip-version-check --no-input -r requirements-cems-geotiff-profile.txt
       - name: Verify CEMS GeoTIFF profile dependency consistency
         run: python -m pip check
-      # The mask-aware layer adds only the frozen Issue #809 two-mask receipt
-      # action and delegates every earlier action to the reviewed #802 profile
-      # layer. The compatibility chain therefore still includes the prior
-      # module-mode entrypoints as audit breadcrumbs (they are not invoked here):
+      # The mask-profile layer adds only the frozen Issue #816 structural profile
+      # action and delegates every earlier action to the reviewed #809 mask layer.
+      # It reacquires only exact receipt-bound CEMS objects on trusted main, stores
+      # them ephemerally, reads structural GeoTIFF metadata only, and keeps mask
+      # values plus benchmark/publication/model authority outside the action.
+      # The compatibility chain therefore still includes the prior module-mode
+      # entrypoints as audit breadcrumbs (they are not invoked here):
+      # python -m scripts.prepare_agent_action_result_cems_masks
+      # python -m scripts.post_agent_action_result_cems_masks
       # python -m scripts.prepare_agent_action_result_cems_rp10_profile
       # python -m scripts.post_agent_action_result_cems_rp10_profile
       # python -m scripts.prepare_agent_action_result_cems_rp10
@@ -62,11 +67,10 @@ jobs:
       # then prepare_agent_action_result_country_risk.py and
       # post_agent_action_result_country_risk.py for earlier actions.
       # Compatibility therefore still covers the repository-owned frozen DWD worker;
-      # The profile layer still owns the frozen #802 receipt-bound GeoTIFF reader;
-      # this new action performs receipt-only acquisition and never selects URLs,
-      # filenames, provider, mask kind, reader, parser or output from the comment.
-      # The publisher still delegates to `python scripts/post_agent_action_result.py`.
-      # All authorized network actions remain in this one serialized owner-only lane.
+      # the publisher still delegates to `python scripts/post_agent_action_result.py`.
+      # No URL, filename, provider, mask kind, reader, parser or output comes from
+      # the comment. All authorized network actions remain in this one serialized
+      # owner-only lane.
       - name: Prepare bounded action result
         id: prepare-result
         env:
@@ -79,7 +83,7 @@ jobs:
           OC_ACTION_GITHUB_TOKEN: ${{ github.token }}
         run: |
           EXECUTION_SHA="$(git rev-parse HEAD)"
-          RESULT_JSON="$(python -m scripts.prepare_agent_action_result_cems_masks \
+          RESULT_JSON="$(python -m scripts.prepare_agent_action_result_cems_mask_profiles \
             --comment-body-env OC_ACTION_COMMENT_BODY \
             --expected-issue "$OC_ACTION_TRIGGER_ISSUE" \
             --source-comment-id "$OC_ACTION_SOURCE_COMMENT_ID" \
@@ -118,7 +122,7 @@ jobs:
           OC_ACTION_REPOSITORY: ${{ github.repository }}
           OC_ACTION_GITHUB_TOKEN: ${{ github.token }}
         run: >-
-          python -m scripts.post_agent_action_result_cems_masks
+          python -m scripts.post_agent_action_result_cems_mask_profiles
           --result-env OC_ACTION_RESULT_JSON
           --repository "$OC_ACTION_REPOSITORY"
           --expected-issue "$OC_ACTION_TRIGGER_ISSUE"
