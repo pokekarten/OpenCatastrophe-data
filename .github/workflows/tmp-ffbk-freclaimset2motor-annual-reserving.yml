@@ -11,6 +11,7 @@ on:
       - 'tmp/ffbk_freclaimset2motor_annual_reserving_v2.py'
       - 'tmp/materialize_freclaimset2motor_exact.R'
       - 'tmp/run_ffbk_freclaimset2motor_annual_reserving_v2_exact_source.py'
+      - 'tmp/audit_freclaimset2motor_observation_process.py'
       - '.github/workflows/tmp-ffbk-freclaimset2motor-annual-reserving.yml'
   workflow_dispatch:
 
@@ -43,10 +44,19 @@ jobs:
           python --version
           Rscript --version
           python -m pip freeze | sort
-      - name: Compile frozen V2 and exact-source adapter
+      - name: Compile frozen V2 and audit adapters
         run: |
           python -m py_compile tmp/ffbk_freclaimset2motor_annual_reserving_v2.py
           python -m py_compile tmp/run_ffbk_freclaimset2motor_annual_reserving_v2_exact_source.py
+          python -m py_compile tmp/audit_freclaimset2motor_observation_process.py
+      - name: Execute observation-process audit
+        run: |
+          set -euo pipefail
+          rm -f ffbk_freclaimset2motor_observation_process_audit.json
+          python tmp/audit_freclaimset2motor_observation_process.py > ffbk_freclaimset2motor_observation_process_audit.json
+          python -m json.tool ffbk_freclaimset2motor_observation_process_audit.json >/dev/null
+          sha256sum ffbk_freclaimset2motor_observation_process_audit.json
+          cat ffbk_freclaimset2motor_observation_process_audit.json
       - name: Execute frozen V2 through exact-source adapter
         run: |
           set -euo pipefail
@@ -55,11 +65,13 @@ jobs:
           python -m json.tool ffbk_freclaimset2motor_annual_reserving_v2_result.json >/dev/null
           sha256sum ffbk_freclaimset2motor_annual_reserving_v2_result.json
           cat ffbk_freclaimset2motor_annual_reserving_v2_result.json
-      - name: Upload corrected result receipt
+      - name: Upload exact-source evidence receipts
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: ffbk-freclaimset2motor-annual-reserving-v2-result
-          path: ffbk_freclaimset2motor_annual_reserving_v2_result.json
+          name: ffbk-freclaimset2motor-annual-reserving-v2-evidence
+          path: |
+            ffbk_freclaimset2motor_observation_process_audit.json
+            ffbk_freclaimset2motor_annual_reserving_v2_result.json
           if-no-files-found: error
           retention-days: 14
