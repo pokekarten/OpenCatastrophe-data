@@ -216,17 +216,13 @@ def _inventory_windows(
     return result
 
 
-def inventory_dataset(
-    dataset: Any,
-    *,
-    cardinality_cap: int = CARDINALITY_CAP,
-) -> dict[str, Any]:
-    """Inventory the complete single-band dataset through its own block windows."""
+def inventory_dataset(dataset: Any) -> dict[str, Any]:
+    """Inventory the complete raster using only frozen block/cardinality rules."""
     windows = (window for _index, window in dataset.block_windows(1))
     return _inventory_windows(
         dataset,
         windows,
-        cardinality_cap=cardinality_cap,
+        cardinality_cap=CARDINALITY_CAP,
     )
 
 
