@@ -114,6 +114,14 @@ class CemsMaskValueInventoryTests(unittest.TestCase):
         self.assertEqual(result["finite_count"], 2)
         self.assertEqual(result["finite_min"], 0)
         self.assertEqual(result["finite_max"], 2)
+        self.assertEqual(
+            result["nodata_count"]
+            + result["nan_non_nodata_count"]
+            + result["positive_infinity_count"]
+            + result["negative_infinity_count"]
+            + result["finite_count"],
+            result["total_cells"],
+        )
 
     def test_cardinality_above_preregistered_cap_is_bounded(self) -> None:
         data = np.arange(33, dtype="float64").reshape(3, 11)
@@ -136,8 +144,16 @@ class CemsMaskValueInventoryTests(unittest.TestCase):
             )
             with rasterio.open(path) as dataset:
                 windows = [window for _index, window in dataset.block_windows(1)]
-                forward = mod.inventory_dataset(dataset, windows=windows)
-                reverse = mod.inventory_dataset(dataset, windows=reversed(windows))
+                forward = mod._inventory_windows(
+                    dataset,
+                    windows,
+                    cardinality_cap=mod.CARDINALITY_CAP,
+                )
+                reverse = mod._inventory_windows(
+                    dataset,
+                    reversed(windows),
+                    cardinality_cap=mod.CARDINALITY_CAP,
+                )
 
         self.assertGreater(len(windows), 1)
         self.assertEqual(forward, reverse)
@@ -156,7 +172,20 @@ class CemsMaskValueInventoryTests(unittest.TestCase):
                     mod.CemsMaskValueProfileError,
                     "window scan covered",
                 ):
-                    mod.inventory_dataset(dataset, windows=windows[:-1])
+                    mod._inventory_windows(
+                        dataset,
+                        windows[:-1],
+                        cardinality_cap=mod.CARDINALITY_CAP,
+                    )
+
+    def test_public_inventory_does_not_accept_caller_selected_windows(self) -> None:
+        data = np.zeros((16, 16), dtype="float64")
+        with tempfile.TemporaryDirectory() as directory:
+            path, _byte_count, _sha256 = self._fixture(directory, data, tiled=True)
+            with rasterio.open(path) as dataset:
+                windows = [window for _index, window in dataset.block_windows(1)]
+                with self.assertRaises(TypeError):
+                    mod.inventory_dataset(dataset, windows=windows)
 
     def test_exact_receipt_bound_profile_keeps_all_authority_false(self) -> None:
         data = np.array([[1.0, -9999.0], [1.0, 1.0]], dtype="float64")
