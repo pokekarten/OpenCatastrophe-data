@@ -1,4 +1,4 @@
-name: tmp FFBK CLRD2025 geometry profile
+name: tmp FFBK CLRD cross-vintage profile
 
 on:
   pull_request:
@@ -16,61 +16,81 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Materialize pinned CLRD2025 bytes
+      - name: Materialize pinned legacy and 2025 CLRD bytes
         shell: bash
         run: |
           set -euo pipefail
-          url='https://raw.githubusercontent.com/casact/chainladder-python/371afe311f8ca9ebfca4e00f3788048905e6c8c9/chainladder/utils/data/clrd2025.csv'
-          curl --fail --location --silent --show-error "$url" --output /tmp/clrd2025.csv
+          base='https://raw.githubusercontent.com/casact/chainladder-python/371afe311f8ca9ebfca4e00f3788048905e6c8c9/chainladder/utils/data'
+          curl --fail --location --silent --show-error "$base/clrd.csv" --output /tmp/clrd.csv
+          curl --fail --location --silent --show-error "$base/clrd2025.csv" --output /tmp/clrd2025.csv
           python - <<'PY'
           import hashlib
           from pathlib import Path
-          p=Path('/tmp/clrd2025.csv'); b=p.read_bytes()
-          blob=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
-          sha=hashlib.sha256(b).hexdigest()
-          print(f'bytes={len(b)} git_blob={blob} sha256={sha}')
-          assert len(b)==5868245
-          assert blob=='8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0'
+          expected={
+            '/tmp/clrd.csv':(3235366,'04e54cfa41e7bd879877e5c5aea5e63a6d20d29b','5785a95d5d24943f601a9c46b83cb313ba5109a374331a71e28a86eb702d9eef'),
+            '/tmp/clrd2025.csv':(5868245,'8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0','045f10559ec9ed2bb0b4e5f74f9d611e20723ce51c7192a30b0dabcb75111456'),
+          }
+          for path,(size,wblob,wsha) in expected.items():
+              b=Path(path).read_bytes()
+              blob=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
+              sha=hashlib.sha256(b).hexdigest()
+              print(path,len(b),blob,sha)
+              assert (len(b),blob,sha)==(size,wblob,wsha)
           PY
 
-      - name: Profile triangle geometry only
+      - name: Profile cross-vintage continuity
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p tmp/ffbk_clrd2025_profile
           python - <<'PY'
           import csv, json, hashlib
-          from collections import Counter, defaultdict
+          from collections import defaultdict, Counter
           from pathlib import Path
-          p=Path('/tmp/clrd2025.csv')
-          b=p.read_bytes()
-          with p.open('r',encoding='utf-8-sig',newline='') as h:
-              r=csv.DictReader(h); fields=r.fieldnames or []
-              rows=0; ay=[]; dy=[]; lobs=Counter(); groups=set(); geom=defaultdict(lambda:{'ays':set(),'max_age':0,'rows':0})
-              for x in r:
-                  rows+=1
-                  a=int(x['AccidentYear']); d=int(x['DevelopmentYear']); lob=x['LOB'].strip(); name=x['GRNAME'].strip()
-                  ay.append(a); dy.append(d); lobs[lob]+=1; groups.add(name)
-                  g=geom[(lob,name)]; g['ays'].add(a); g['max_age']=max(g['max_age'],d-a+1); g['rows']+=1
-          candidates=[]
-          for (lob,name),g in geom.items():
-              n_ay=len(g['ays'])
-              if n_ay>=15 and g['max_age']>=10:
-                  candidates.append({'lob':lob,'grname':name,'accident_years':n_ay,'ay_min':min(g['ays']),'ay_max':max(g['ays']),'max_age':g['max_age'],'rows':g['rows']})
-          candidates.sort(key=lambda x:(x['lob'],x['grname']))
+
+          def read(path, incurred_name):
+              p=Path(path); b=p.read_bytes(); groups=defaultdict(lambda:{'name':None,'ays':set(),'max_age':0,'rows':0,'positive_net_ays':set()})
+              with p.open('r',encoding='utf-8-sig',newline='') as h:
+                  r=csv.DictReader(h); fields=r.fieldnames or []; years=[]; devs=[]; lobs=Counter(); coords=set()
+                  for x in r:
+                      g=int(x['GRCODE']); name=x['GRNAME'].strip(); lob=x['LOB'].strip(); ay=int(x['AccidentYear']); dy=int(x['DevelopmentYear']);
+                      key=(g,lob,ay,dy)
+                      if key in coords: raise AssertionError(('duplicate',key))
+                      coords.add(key); years.append(ay); devs.append(dy); lobs[lob]+=1
+                      z=groups[(g,lob)]; z['name']=name if z['name'] is None else z['name']; z['ays'].add(ay); z['max_age']=max(z['max_age'],dy-ay+1); z['rows']+=1
+                      if float(x['EarnedPremNet'])>0: z['positive_net_ays'].add(ay)
+              return {'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),'fields':fields,'ay_min':min(years),'ay_max':max(years),'dy_min':min(devs),'dy_max':max(devs),'max_age':max(d-a+1 for a,d in zip(years,devs)),'lobs':dict(sorted(lobs.items())),'groups':groups}
+
+          old=read('/tmp/clrd.csv','IncurLoss'); new=read('/tmp/clrd2025.csv','IncurredLosses')
+          common=sorted(set(old['groups']) & set(new['groups']))
+          candidates=[]; name_mismatch=[]
+          for key in common:
+              a=old['groups'][key]; b=new['groups'][key]; g,lob=key
+              if a['name'] != b['name']: name_mismatch.append({'grcode':g,'lob':lob,'legacy_name':a['name'],'new_name':b['name']})
+              old_ays=sorted(a['ays']); new_ays=sorted(b['ays'])
+              if old_ays==list(range(1988,1998)) and new_ays==list(range(1998,2008)) and a['max_age']>=10 and b['max_age']>=10:
+                  candidates.append({'grcode':g,'lob':lob,'legacy_name':a['name'],'new_name':b['name'],'legacy_rows':a['rows'],'new_rows':b['rows'],'legacy_positive_net_ays':len(a['positive_net_ays']),'new_positive_net_ays':len(b['positive_net_ays'])})
+          by_lob=Counter(x['lob'] for x in candidates)
           out={
-            'source':{'repository':'casact/chainladder-python','commit':'371afe311f8ca9ebfca4e00f3788048905e6c8c9','path':'chainladder/utils/data/clrd2025.csv','bytes':len(b),'git_blob_sha1':hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest(),'sha256':hashlib.sha256(b).hexdigest()},
-            'fields':fields,'rows':rows,'accident_year_min':min(ay),'accident_year_max':max(ay),'development_year_min':min(dy),'development_year_max':max(dy),'max_age':max(d-a+1 for a,d in zip(ay,dy)),'lob_row_counts':dict(sorted(lobs.items())),'company_names':len(groups),'candidate_company_lobs_nay15_age10':candidates,'candidate_count':len(candidates)
+            'source_commit':'371afe311f8ca9ebfca4e00f3788048905e6c8c9',
+            'legacy':{k:v for k,v in old.items() if k!='groups'},
+            'clrd2025':{k:v for k,v in new.items() if k!='groups'},
+            'field_mapping':{'IncurLoss':'IncurredLosses','CumPaidLoss':'CumPaidLoss','BulkLoss':'BulkLoss','EarnedPremDIR':'EarnedPremDIR','EarnedPremCeded':'EarnedPremCeded','EarnedPremNet':'EarnedPremNet','PostedReserve97':'PostedReserves2007'},
+            'common_grcode_lob_count':len(common),
+            'full_10_plus_10_candidates':candidates,
+            'candidate_count':len(candidates),
+            'candidate_count_by_lob':dict(sorted(by_lob.items())),
+            'name_mismatches':name_mismatch,
+            'name_mismatch_count':len(name_mismatch),
           }
-          text=json.dumps(out,sort_keys=True,separators=(',',':'))+'\n'
-          Path('tmp/ffbk_clrd2025_profile/profile.json').write_text(text)
-          print(json.dumps({k:out[k] for k in ['rows','accident_year_min','accident_year_max','development_year_min','development_year_max','max_age','lob_row_counts','company_names','candidate_count']},sort_keys=True))
+          text=json.dumps(out,sort_keys=True,separators=(',',':'))+'\n'; Path('tmp/ffbk_clrd2025_profile/cross_vintage_profile.json').write_text(text)
+          print(json.dumps({'legacy_ay':[old['ay_min'],old['ay_max']],'legacy_dy':[old['dy_min'],old['dy_max']],'new_ay':[new['ay_min'],new['ay_max']],'new_dy':[new['dy_min'],new['dy_max']],'common':len(common),'candidates':len(candidates),'by_lob':dict(sorted(by_lob.items())),'name_mismatches':len(name_mismatch)},sort_keys=True))
           PY
 
       - name: Upload profile artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ffbk-clrd2025-geometry-profile
+          name: ffbk-clrd-cross-vintage-profile
           retention-days: 7
           if-no-files-found: error
-          path: tmp/ffbk_clrd2025_profile/profile.json
+          path: tmp/ffbk_clrd2025_profile/cross_vintage_profile.json
