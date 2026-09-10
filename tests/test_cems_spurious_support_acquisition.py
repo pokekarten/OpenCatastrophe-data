@@ -114,15 +114,15 @@ class CemsSpuriousSupportAcquisitionTests(unittest.TestCase):
     def _blank(self):
         return np.full((8, 8), np.nan, dtype="float64")
 
-    def test_exact_synthetic_bytes_are_challenged_then_removed(self) -> None:
+    def test_exact_synthetic_bytes_are_challenged_from_memory_then_removed(self) -> None:
         mask = self._blank()
         rp10 = self._blank().astype("float32")
         mask[3, 3] = 1.0
         rp10[3, 3] = 12.0
-        paths: list[Path] = []
+        dataset_names: list[str] = []
 
         def challenge(mask_dataset, rp10_dataset):
-            paths.extend((Path(mask_dataset.name), Path(rp10_dataset.name)))
+            dataset_names.extend((mask_dataset.name, rp10_dataset.name))
             return worker._challenge.challenge_spurious_support(mask_dataset, rp10_dataset)
 
         result = self._run(mask, rp10, challenger=challenge)
@@ -131,8 +131,10 @@ class CemsSpuriousSupportAcquisitionTests(unittest.TestCase):
             result["challenge"]["verdict"],
             "NOT_FALSIFIED_BY_CURRENT_RP10_NECESSARY_CONDITION",
         )
-        self.assertTrue(paths)
-        self.assertTrue(all(not path.exists() for path in paths))
+        self.assertEqual(result["receipt_to_reader_binding"], "verified_bytes_memoryfile")
+        self.assertEqual(len(dataset_names), 2)
+        self.assertTrue(all(name.startswith("/vsimem/") for name in dataset_names))
+        self.assertTrue(all(not Path(name).exists() for name in dataset_names))
         self.assertFalse(result["external_bytes_persisted"])
         self.assertFalse(result["mask_value_semantics_verified"])
         self.assertFalse(result["per_cell_scientific_correctness_verified"])
