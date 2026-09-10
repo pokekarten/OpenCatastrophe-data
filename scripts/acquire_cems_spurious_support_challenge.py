@@ -6,23 +6,17 @@
 This worker composes only already frozen provider identities. It does not expose a
 caller-selectable URL, filename, mask, threshold, distance model, or output path.
 Provider bytes are copied into one private TemporaryDirectory only long enough to
-bind their complete SHA-256 identities. The verified byte objects are then moved
-into Rasterio MemoryFiles and the temporary files are deleted before any raster
-value is read, preserving the receipt-to-reader TOCTOU boundary.
+bind their complete SHA-256 identities. The already-reviewed RP10 identity binder
+copies those verified bytes into Rasterio MemoryFiles; path-addressable files are
+then deleted before any raster value is read.
 """
 
 from __future__ import annotations
 
-import hashlib
 import tempfile
 import time
 from pathlib import Path
 from typing import Any, Callable
-
-try:
-    from rasterio.io import MemoryFile
-except ImportError:  # Optional outside the reviewed CEMS support runtime.
-    MemoryFile = None
 
 try:
     from scripts import acquire_cems_europe_mask_receipts as _masks
@@ -42,7 +36,6 @@ SOURCE_ISSUE = 823
 SPURIOUS_KIND = "spurious_depth"
 SPURIOUS_FILENAME = "Europe_spurious_depth_areas.tif"
 EXPECTED_CANDIDATE_SUPPORT_CELLS = 17_242_147
-_HASH_CHUNK_SIZE = 1_048_576
 
 
 class CemsSpuriousSupportAcquisitionError(RuntimeError):
@@ -81,35 +74,6 @@ class _TeeResponse:
                     "CEMS Stage-D ephemeral byte sink failed"
                 ) from exc
         return chunk
-
-
-def _read_verified_bytes(path: Path, *, expected_count: int, expected_sha256: str) -> bytes:
-    """Return exactly the bytes whose complete local identity was verified."""
-    try:
-        digest = hashlib.sha256()
-        chunks: list[bytes] = []
-        count = 0
-        with path.open("rb") as source:
-            while True:
-                chunk = source.read(_HASH_CHUNK_SIZE)
-                if not chunk:
-                    break
-                count += len(chunk)
-                digest.update(chunk)
-                chunks.append(chunk)
-    except OSError as exc:
-        raise CemsSpuriousSupportAcquisitionError(
-            "CEMS Stage-D local byte identity could not be verified"
-        ) from exc
-    if count != expected_count:
-        raise CemsSpuriousSupportAcquisitionError(
-            "CEMS Stage-D local byte count differs from accepted receipt"
-        )
-    if digest.hexdigest() != expected_sha256:
-        raise CemsSpuriousSupportAcquisitionError(
-            "CEMS Stage-D local SHA-256 differs from accepted receipt"
-        )
-    return b"".join(chunks)
 
 
 def _materialize_rp10(
@@ -229,12 +193,9 @@ def acquire_and_challenge_cems_spurious_support(
     challenger: Callable[[Any, Any], dict[str, Any]] = _challenge.challenge_spurious_support,
 ) -> dict[str, Any]:
     """Run exact-byte Stage D and return bounded evidence after deleting provider files."""
-    if MemoryFile is None:
-        raise CemsSpuriousSupportAcquisitionError(
-            "CEMS Stage-D runtime requires requirements-cems-mask-support-challenge.txt"
-        )
-
     paths: list[Path] = []
+    rp10_memory = None
+    mask_memory = None
     try:
         with tempfile.TemporaryDirectory(prefix="oc-cems-spurious-stage-d-") as raw_directory:
             directory = Path(raw_directory)
@@ -256,18 +217,24 @@ def acquire_and_challenge_cems_spurious_support(
             )
 
             accepted_mask = _mask_metadata.MASK_RECEIPTS[SPURIOUS_KIND]
-            rp10_bytes = _read_verified_bytes(
-                rp10_path,
-                expected_count=_rp10_profile.ACCEPTED_BYTE_COUNT,
-                expected_sha256=_rp10_profile.ACCEPTED_SHA256,
-            )
-            mask_bytes = _read_verified_bytes(
-                mask_path,
-                expected_count=accepted_mask["byte_count"],
-                expected_sha256=accepted_mask["sha256"],
-            )
+            try:
+                rp10_memory, _rp10_count, _rp10_sha = _rp10_profile._verify_file_identity(
+                    rp10_path,
+                    expected_byte_count=_rp10_profile.ACCEPTED_BYTE_COUNT,
+                    expected_sha256=_rp10_profile.ACCEPTED_SHA256,
+                )
+                mask_memory, _mask_count, _mask_sha = _rp10_profile._verify_file_identity(
+                    mask_path,
+                    expected_byte_count=accepted_mask["byte_count"],
+                    expected_sha256=accepted_mask["sha256"],
+                )
+            except _rp10_profile.CemsRp10GeoTiffProfileError as exc:
+                raise CemsSpuriousSupportAcquisitionError(
+                    "CEMS Stage-D receipt-bound MemoryFile identity failed"
+                ) from exc
 
-            # Delete path-addressable provider bytes before raster interpretation.
+            # The verified MemoryFiles now own the exact reader bytes. Remove all
+            # path-addressable provider payloads before opening either GDAL dataset.
             try:
                 rp10_path.unlink()
                 mask_path.unlink()
@@ -281,7 +248,7 @@ def acquire_and_challenge_cems_spurious_support(
                 )
 
             try:
-                with MemoryFile(mask_bytes) as mask_memory, MemoryFile(rp10_bytes) as rp10_memory:
+                with mask_memory, rp10_memory:
                     with mask_memory.open() as mask_dataset, rp10_memory.open() as rp10_dataset:
                         challenge_result = _validate_challenge_result(
                             challenger(mask_dataset, rp10_dataset)
@@ -292,6 +259,12 @@ def acquire_and_challenge_cems_spurious_support(
                 raise CemsSpuriousSupportAcquisitionError(
                     "CEMS Stage-D exact-byte raster challenge failed"
                 ) from exc
+            finally:
+                # Close defensively even if a pre-context exception interrupted setup.
+                if mask_memory is not None:
+                    mask_memory.close()
+                if rp10_memory is not None:
+                    rp10_memory.close()
 
             result = {
                 "schema_version": SCHEMA_VERSION,
@@ -316,8 +289,16 @@ def acquire_and_challenge_cems_spurious_support(
             )
         return result
     except CemsSpuriousSupportAcquisitionError:
+        if mask_memory is not None:
+            mask_memory.close()
+        if rp10_memory is not None:
+            rp10_memory.close()
         raise
     except Exception as exc:
+        if mask_memory is not None:
+            mask_memory.close()
+        if rp10_memory is not None:
+            rp10_memory.close()
         raise CemsSpuriousSupportAcquisitionError(
             "CEMS Stage-D acquisition/challenge failed"
         ) from exc
