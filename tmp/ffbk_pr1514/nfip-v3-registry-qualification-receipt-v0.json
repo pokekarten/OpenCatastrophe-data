@@ -1,0 +1,86 @@
+{
+  "captured_on": "2026-09-08",
+  "claim_rows_accessed": false,
+  "decision": {
+    "dataset_identity": "AUTHORITATIVE_REGISTRY_CONFIRMED",
+    "future_target_access": "FORBIDDEN",
+    "historical_snapshot_contract": "NOT_YET_ADMISSIBLE",
+    "severity_family_promotion": "FORBIDDEN",
+    "v2_v3_naive_vintage_stitching": "FORBIDDEN"
+  },
+  "evidence_boundary": [
+    "FEMA DataSets registry is authoritative for dataset identity and lifecycle metadata.",
+    "FEMA policy/claims guidance independently establishes that NFIP claim payments are shaped by coverage, deductibles and settlement terms; that does not identify any specific v3 field without the v3 data dictionary.",
+    "Third-party or OSS field-name corroboration is implementation evidence only.",
+    "No field becomes economically qualified until FEMA field definitions are materialized and reviewed.",
+    "No claim endpoint or claim-value row was accessed to construct this receipt."
+  ],
+  "fema_registry": {
+    "predecessor": {
+      "data_frozen_as_of": "2026-06-01",
+      "depDate": "2026-10-15T00:00:00.000Z",
+      "depNewURL": "https://www.fema.gov/openfema-data-page/nfip-redacted-claims-v3",
+      "hash": "79fc70f5b522333209682b510f86fee6d1d6b5d4",
+      "lastDataSetRefresh": "2026-06-01T19:41:55.078Z",
+      "name": "FimaNfipClaims",
+      "recordCount": 2721780,
+      "version": 2,
+      "webService": "https://www.fema.gov/api/open/v2/FimaNfipClaims"
+    },
+    "registry_rundate": "2026-08-10T10:02:27.298Z",
+    "source_citation_scope": "dataset identity, lifecycle, access level, refresh cadence, record count and official data-dictionary pointer",
+    "source_url": "https://www.fema.gov/api/open/v1/DataSets",
+    "dataset": {
+      "accessLevel": "public",
+      "accrualPeriodicity": "R/P1M",
+      "api": true,
+      "dataDictionary": "https://www.fema.gov/openfema-data-page/nfip-redacted-claims-v3",
+      "hash": "9eaf194937eba43e6df9f1809f311d2c63058c81",
+      "id": "38707079-3400-4c56-bb50-3282881e21be",
+      "lastDataSetRefresh": "2026-08-04T09:21:02.984Z",
+      "lastRefresh": "2026-08-04T22:40:36.263Z",
+      "modified": "2026-07-20T00:00:00.000Z",
+      "name": "NfipClaims",
+      "publisher": "FEMA/Resilience/Federal Insurance Directorate",
+      "recordCount": 2724656,
+      "temporal": "1970-08-31/",
+      "title": "NFIP Redacted Claims",
+      "version": 3,
+      "webService": "https://www.fema.gov/api/open/v3/NfipClaims"
+    }
+  },
+  "field_semantics": {
+    "authoritative_dictionary_url": "https://www.fema.gov/openfema-data-page/nfip-redacted-claims-v3",
+    "authoritative_fields_qualified": [],
+    "economic_semantics_independent_of_field_mapping": {
+      "status": "COVERED_PAYMENT_NOT_GROUND_UP_SUPPORTED",
+      "source_scope": "FEMA policy and claims guidance; exact v3 field mapping unresolved"
+    },
+    "independent_corroboration_is_authoritative": false,
+    "independent_implementation_evidence": {
+      "classification": "INDEPENDENT_IMPLEMENTATION_EVIDENCE_ONLY",
+      "commit": "ae95db9067d24cdb9dc0df236cb3a7e673da20bf",
+      "endpoint": "https://www.fema.gov/api/open/v3/NfipClaims",
+      "path": "libs/providers/hazards/src/earthlens/nsi/nsi_data_catalog.yaml",
+      "records_key": "NfipClaims",
+      "repository": "serapeum-org/earthlens"
+    },
+    "independently_corroborated_names": [
+      "id",
+      "dateOfLoss",
+      "yearOfLoss",
+      "ratedFloodZone",
+      "floodZoneCurrent",
+      "amountPaidOnBuildingClaim"
+    ],
+    "materialization_attempt": {
+      "checked_on": "2026-09-08",
+      "claim_rows_accessed": false,
+      "http_status_in_this_access_lane": 403,
+      "url": "https://www.fema.gov/openfema-data-page/nfip-redacted-claims-v3"
+    },
+    "materialization_status": "BLOCKED_403_IN_THIS_ACCESS_LANE",
+    "promotion_status": "BLOCKED"
+  },
+  "receipt_version": "nfip-v3-registry-qualification-v0"
+}
