@@ -1,0 +1,70 @@
+name: TEMP FFBK freclaimset2motor claim-loss transform gate
+
+on:
+  push:
+    branches:
+      - tmp/ffbk-freclaimset2motor-claim-loss-transform-clean-20260910
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'tmp/ffbk_freclaimset2motor_claim_loss_transform_v1.py'
+      - '.github/workflows/tmp-ffbk-freclaimset2motor-claim-loss-transform.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact runner branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+      - name: Install bounded data dependencies
+        run: python -m pip install --disable-pip-version-check --no-input numpy pandas pyarrow
+      - name: Verify dependency consistency
+        run: python -m pip check
+      - name: Record environment
+        run: |
+          python --version
+          python -m pip freeze | sort
+      - name: Compile bounded consumer probe
+        run: python -m py_compile tmp/ffbk_freclaimset2motor_claim_loss_transform_v1.py
+      - name: Execute exact-byte bounded claim-loss transform
+        run: |
+          set -euo pipefail
+          rm -f ffbk_freclaimset2motor_claim_loss_transform_v1_result.json
+          python tmp/ffbk_freclaimset2motor_claim_loss_transform_v1.py > ffbk_freclaimset2motor_claim_loss_transform_v1_result.json
+          python -m json.tool ffbk_freclaimset2motor_claim_loss_transform_v1_result.json >/dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('ffbk_freclaimset2motor_claim_loss_transform_v1_result.json').read_text())
+          expected = result['consumer_disposition']
+          assert result['status'] == 'BOUNDED_CLAIM_LEVEL_LOSS_TRANSFORM_EXECUTED_NO_TREATY_PROMOTION'
+          assert expected['simple_claim_level_paid_loss_transform'] == 'BOUNDED_EXECUTABLE_ON_DECLARED_COHORT'
+          assert expected['occurrence_or_event_reinsurance'].startswith('NOT_IDENTIFIED')
+          assert expected['market_reinsurance_pricing'].startswith('NOT_IDENTIFIED')
+          assert expected['dated_liquidity'].startswith('NOT_IDENTIFIED')
+          assert expected['counterparty_or_recoverable_lifecycle'] == 'NOT_IDENTIFIED'
+          assert abs(result['evaluation_all']['gross_ceded_net_residual_eur']) <= 1e-9
+          PY
+          sha256sum ffbk_freclaimset2motor_claim_loss_transform_v1_result.json
+          cat ffbk_freclaimset2motor_claim_loss_transform_v1_result.json
+      - name: Upload exact-source consumer evidence
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-freclaimset2motor-claim-loss-transform-v1-evidence
+          path: ffbk_freclaimset2motor_claim_loss_transform_v1_result.json
+          if-no-files-found: error
+          retention-days: 14
