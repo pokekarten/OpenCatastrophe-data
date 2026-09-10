@@ -1,0 +1,144 @@
+name: tmp FFBK PR1545 CLRD net-net exact probe
+
+on:
+  pull_request:
+    paths:
+      - 'tmp/ffbk_pr1545/**'
+      - '.github/workflows/tmp_ffbk_pr1545_clrd_netnet_probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout temporary evidence branch
+        uses: actions/checkout@v4
+
+      - name: Verify copied FFBK identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          expected = {
+              'tmp/ffbk_pr1545/scripts/reserve_underwriting_clrd_empirical_probe.py':
+                  'e78666c30ef4bd6ac35baaa20e3507090787c94a',
+              'tmp/ffbk_pr1545/scripts/reserve_underwriting_clrd_empirical_probe_receipted.py':
+                  'a21bcdcb2c5e75b373e47e24dcecf19de398fa35',
+              'tmp/ffbk_pr1545/tests/test_reserve_underwriting_clrd_empirical_probe.py':
+                  '33450dc6699050c6acfeddfb0d54af83dea6b589',
+          }
+          for path, wanted in expected.items():
+              data = Path(path).read_bytes()
+              blob = hashlib.sha1(
+                  b'blob ' + str(len(data)).encode() + b'\0' + data
+              ).hexdigest()
+              print(f'{path} bytes={len(data)} git_blob={blob}')
+              assert blob == wanted, (path, blob, wanted)
+          PY
+
+      - name: Materialize pinned public CLRD bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://raw.githubusercontent.com/casact/chainladder-python/221c4015d7d33c8520f57e3b522970f2e8baffab/chainladder/utils/data/clrd.csv'
+          curl --fail --location --silent --show-error "$url" --output /tmp/clrd.csv
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          path = Path('/tmp/clrd.csv')
+          data = path.read_bytes()
+          git_blob = hashlib.sha1(
+              b'blob ' + str(len(data)).encode() + b'\0' + data
+          ).hexdigest()
+          sha256 = hashlib.sha256(data).hexdigest()
+          receipt = {
+              'source_repository': 'casact/chainladder-python',
+              'source_commit': '221c4015d7d33c8520f57e3b522970f2e8baffab',
+              'source_path': 'chainladder/utils/data/clrd.csv',
+              'bytes': len(data),
+              'git_blob_sha1': git_blob,
+              'sha256': sha256,
+          }
+          print(json.dumps(receipt, sort_keys=True))
+          assert len(data) == 3235366, len(data)
+          assert git_blob == '04e54cfa41e7bd879877e5c5aea5e63a6d20d29b', git_blob
+          assert sha256 == '5785a95d5d24943f601a9c46b83cb313ba5109a374331a71e28a86eb702d9eef', sha256
+          Path('tmp/ffbk_pr1545/source_receipt.json').write_text(
+              json.dumps(receipt, sort_keys=True, separators=(',', ':')) + '\n'
+          )
+          PY
+
+      - name: Run focused basis regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile \
+            tmp/ffbk_pr1545/scripts/reserve_underwriting_clrd_empirical_probe.py \
+            tmp/ffbk_pr1545/scripts/reserve_underwriting_clrd_empirical_probe_receipted.py \
+            tmp/ffbk_pr1545/tests/test_reserve_underwriting_clrd_empirical_probe.py
+          python -m unittest discover -v \
+            -s tmp/ffbk_pr1545/tests \
+            -p 'test_reserve_underwriting_clrd_empirical_probe.py' \
+            2>&1 | tee tmp/ffbk_pr1545/focused_test.log
+
+      - name: Execute source-bound net-net pilot
+        shell: bash
+        run: |
+          set -euo pipefail
+          python \
+            tmp/ffbk_pr1545/scripts/reserve_underwriting_clrd_empirical_probe_receipted.py \
+            /tmp/clrd.csv --check > tmp/ffbk_pr1545/result.json
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          result_path = Path('tmp/ffbk_pr1545/result.json')
+          result = json.loads(result_path.read_text())
+          source = result['source']
+          assert source['matches_pinned_source'] is True
+          assert source['git_blob_sha1'] == '04e54cfa41e7bd879877e5c5aea5e63a6d20d29b'
+          assert source['bytes'] == 3235366
+          assert source['sha256'] == '5785a95d5d24943f601a9c46b83cb313ba5109a374331a71e28a86eb702d9eef'
+          assert result['panel']['n'] == 63
+          assert result['panel']['companies'] == 7
+          assert result['panel']['years'] == list(range(1989, 1998))
+          assert 'EarnedPremNet' in result['design']['financial_basis']
+          expected_sensitivities = {
+              'legacy_net_premium_normalized',
+              'legacy_unscaled_level',
+              'original_direct_premium_uw_mismatch',
+              'original_direct_premium_both_mismatch',
+          }
+          assert set(result['sensitivities']) == expected_sensitivities
+          summary = {
+              'source': source,
+              'design': result['design'],
+              'panel': result['panel'],
+              'primary': result['primary'],
+              'sensitivities': result['sensitivities'],
+              'per_company': result['per_company'],
+              'leave_one_company_out': result['leave_one_company_out'],
+              'result_sha256': hashlib.sha256(result_path.read_bytes()).hexdigest(),
+          }
+          print(json.dumps(summary, sort_keys=True))
+          Path('tmp/ffbk_pr1545/execution_summary.json').write_text(
+              json.dumps(summary, sort_keys=True, separators=(',', ':')) + '\n'
+          )
+          PY
+
+      - name: Upload bounded evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-pr1545-clrd-netnet-exact-probe
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            tmp/ffbk_pr1545/source_receipt.json
+            tmp/ffbk_pr1545/focused_test.log
+            tmp/ffbk_pr1545/result.json
+            tmp/ffbk_pr1545/execution_summary.json
