@@ -112,6 +112,7 @@ jobs:
           tests.test_cems_mask_value_inventory
           tests.test_cems_spurious_depth_support
           tests.test_cems_spurious_support_acquisition
+          tests.test_agent_action_cems_spurious_support
           -v
 
   reuse:
