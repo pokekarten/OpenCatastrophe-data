@@ -18,18 +18,22 @@ jobs:
       - name: Checkout temporary evidence branch
         uses: actions/checkout@v4
 
-      - name: Verify copied FFBK runner identity
+      - name: Verify copied FFBK runner identities
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           import hashlib
           from pathlib import Path
-          p = Path('tmp/ffbk_pr1498/reserve_underwriting_clrd_empirical_probe.py')
-          b = p.read_bytes()
-          blob = hashlib.sha1(b'blob ' + str(len(b)).encode() + b'\0' + b).hexdigest()
-          print(f'runner_bytes={len(b)} runner_git_blob={blob}')
-          assert blob == '198ff1eea9b841f0a07de5e37d5d04d8a9a03869', blob
+          expected = {
+              'tmp/ffbk_pr1498/reserve_underwriting_clrd_empirical_probe.py': '198ff1eea9b841f0a07de5e37d5d04d8a9a03869',
+              'tmp/ffbk_pr1498/reserve_underwriting_clrd_empirical_probe_receipted.py': 'a21bcdcb2c5e75b373e47e24dcecf19de398fa35',
+          }
+          for path, wanted in expected.items():
+              b = Path(path).read_bytes()
+              blob = hashlib.sha1(b'blob ' + str(len(b)).encode() + b'\0' + b).hexdigest()
+              print(f'{path} bytes={len(b)} git_blob={blob}')
+              assert blob == wanted, (path, blob, wanted)
           PY
 
       - name: Materialize pinned public CLRD bytes
@@ -54,32 +58,41 @@ jobs:
               'sha256': sha256,
           }
           print(json.dumps(receipt, sort_keys=True))
-          assert len(b) == 3295090, len(b)
+          assert len(b) == 3235366, len(b)
           assert git_blob == '04e54cfa41e7bd879877e5c5aea5e63a6d20d29b', git_blob
+          assert sha256 == '5785a95d5d24943f601a9c46b83cb313ba5109a374331a71e28a86eb702d9eef', sha256
           Path('tmp/ffbk_pr1498/source_receipt.json').write_text(json.dumps(receipt, sort_keys=True, separators=(',', ':')) + '\n')
           PY
 
-      - name: Execute exact FFBK PR1498 pilot
+      - name: Execute source-bound FFBK PR1498 pilot
         shell: bash
         run: |
           set -euo pipefail
-          python -m py_compile tmp/ffbk_pr1498/reserve_underwriting_clrd_empirical_probe.py
-          python tmp/ffbk_pr1498/reserve_underwriting_clrd_empirical_probe.py /tmp/clrd.csv --check > tmp/ffbk_pr1498/result.json
+          python -m py_compile \
+            tmp/ffbk_pr1498/reserve_underwriting_clrd_empirical_probe.py \
+            tmp/ffbk_pr1498/reserve_underwriting_clrd_empirical_probe_receipted.py
+          python tmp/ffbk_pr1498/reserve_underwriting_clrd_empirical_probe_receipted.py /tmp/clrd.csv --check > tmp/ffbk_pr1498/result.json
           python - <<'PY'
           import hashlib, json
           from pathlib import Path
           result_path = Path('tmp/ffbk_pr1498/result.json')
           result = json.loads(result_path.read_text())
+          source = result['source']
+          assert source['matches_pinned_source'] is True
+          assert source['git_blob_sha1'] == '04e54cfa41e7bd879877e5c5aea5e63a6d20d29b'
+          assert source['bytes'] == 3235366
+          assert source['sha256'] == '5785a95d5d24943f601a9c46b83cb313ba5109a374331a71e28a86eb702d9eef'
+          assert result['panel']['n'] == 63
+          assert result['panel']['companies'] == 7
+          assert len(result['panel']['years']) == 9
           summary = {
+              'source': source,
               'panel': result['panel'],
               'primary': result['primary'],
               'sensitivities': result['sensitivities'],
               'result_sha256': hashlib.sha256(result_path.read_bytes()).hexdigest(),
           }
           print(json.dumps(summary, sort_keys=True))
-          assert result['panel']['n'] == 63
-          assert result['panel']['companies'] == 7
-          assert len(result['panel']['years']) == 9
           Path('tmp/ffbk_pr1498/execution_summary.json').write_text(json.dumps(summary, sort_keys=True, separators=(',', ':')) + '\n')
           PY
 
