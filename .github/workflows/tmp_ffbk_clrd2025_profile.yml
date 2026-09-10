@@ -1,0 +1,76 @@
+name: tmp FFBK CLRD2025 geometry profile
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/tmp_ffbk_clrd2025_profile.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Materialize pinned CLRD2025 bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://raw.githubusercontent.com/casact/chainladder-python/371afe311f8ca9ebfca4e00f3788048905e6c8c9/chainladder/utils/data/clrd2025.csv'
+          curl --fail --location --silent --show-error "$url" --output /tmp/clrd2025.csv
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          p=Path('/tmp/clrd2025.csv'); b=p.read_bytes()
+          blob=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
+          sha=hashlib.sha256(b).hexdigest()
+          print(f'bytes={len(b)} git_blob={blob} sha256={sha}')
+          assert len(b)==5868245
+          assert blob=='8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0'
+          PY
+
+      - name: Profile triangle geometry only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tmp/ffbk_clrd2025_profile
+          python - <<'PY'
+          import csv, json, hashlib
+          from collections import Counter, defaultdict
+          from pathlib import Path
+          p=Path('/tmp/clrd2025.csv')
+          b=p.read_bytes()
+          with p.open('r',encoding='utf-8-sig',newline='') as h:
+              r=csv.DictReader(h); fields=r.fieldnames or []
+              rows=0; ay=[]; dy=[]; lobs=Counter(); groups=set(); geom=defaultdict(lambda:{'ays':set(),'max_age':0,'rows':0})
+              for x in r:
+                  rows+=1
+                  a=int(x['AccidentYear']); d=int(x['DevelopmentYear']); lob=x['LOB'].strip(); name=x['GRNAME'].strip()
+                  ay.append(a); dy.append(d); lobs[lob]+=1; groups.add(name)
+                  g=geom[(lob,name)]; g['ays'].add(a); g['max_age']=max(g['max_age'],d-a+1); g['rows']+=1
+          candidates=[]
+          for (lob,name),g in geom.items():
+              n_ay=len(g['ays'])
+              if n_ay>=15 and g['max_age']>=10:
+                  candidates.append({'lob':lob,'grname':name,'accident_years':n_ay,'ay_min':min(g['ays']),'ay_max':max(g['ays']),'max_age':g['max_age'],'rows':g['rows']})
+          candidates.sort(key=lambda x:(x['lob'],x['grname']))
+          out={
+            'source':{'repository':'casact/chainladder-python','commit':'371afe311f8ca9ebfca4e00f3788048905e6c8c9','path':'chainladder/utils/data/clrd2025.csv','bytes':len(b),'git_blob_sha1':hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest(),'sha256':hashlib.sha256(b).hexdigest()},
+            'fields':fields,'rows':rows,'accident_year_min':min(ay),'accident_year_max':max(ay),'development_year_min':min(dy),'development_year_max':max(dy),'max_age':max(d-a+1 for a,d in zip(ay,dy)),'lob_row_counts':dict(sorted(lobs.items())),'company_names':len(groups),'candidate_company_lobs_nay15_age10':candidates,'candidate_count':len(candidates)
+          }
+          text=json.dumps(out,sort_keys=True,separators=(',',':'))+'\n'
+          Path('tmp/ffbk_clrd2025_profile/profile.json').write_text(text)
+          print(json.dumps({k:out[k] for k in ['rows','accident_year_min','accident_year_max','development_year_min','development_year_max','max_age','lob_row_counts','company_names','candidate_count']},sort_keys=True))
+          PY
+
+      - name: Upload profile artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-clrd2025-geometry-profile
+          retention-days: 7
+          if-no-files-found: error
+          path: tmp/ffbk_clrd2025_profile/profile.json
