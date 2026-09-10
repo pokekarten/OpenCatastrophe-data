@@ -86,7 +86,7 @@ jobs:
         run: python -m unittest tests.test_eu_flood_spatial_transform -v
 
   cems-geotiff-profile:
-    name: CEMS GeoTIFF metadata profile
+    name: CEMS GeoTIFF profile and support challenge
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -99,17 +99,18 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.14"
-      - name: Install reviewed CEMS GeoTIFF dependency set
-        run: python -m pip install --disable-pip-version-check --no-input -r requirements-cems-geotiff-profile.txt
-      - name: Verify CEMS GeoTIFF dependency consistency
+      - name: Install reviewed CEMS support-challenge dependency set
+        run: python -m pip install --disable-pip-version-check --no-input -r requirements-cems-mask-support-challenge.txt
+      - name: Verify CEMS support-challenge dependency consistency
         run: python -m pip check
-      - name: Exercise receipt-bound CEMS GeoTIFF profiles with synthetic bytes
+      - name: Exercise receipt-bound CEMS profiles and support challenge with synthetic bytes
         run: >-
           python -m unittest
           tests.test_cems_rp10_geotiff_profile
           tests.test_cems_rp10_trusted_profile
           tests.test_cems_mask_geotiff_profile
           tests.test_cems_mask_value_inventory
+          tests.test_cems_spurious_depth_support
           -v
 
   reuse:
