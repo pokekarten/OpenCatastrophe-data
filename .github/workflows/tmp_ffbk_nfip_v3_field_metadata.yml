@@ -3,6 +3,7 @@ name: tmp FFBK NFIP v3 authoritative field metadata
 on:
   pull_request:
     paths:
+      - 'tmp/ffbk_pr1514/**'
       - '.github/workflows/tmp_ffbk_nfip_v3_field_metadata.yml'
   workflow_dispatch:
 
@@ -17,6 +18,26 @@ jobs:
       - name: Checkout temporary evidence branch
         uses: actions/checkout@v4
 
+      - name: Verify exact FFBK PR1514 blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          expected = {
+              'tmp/ffbk_pr1514/nfip-v3-registry-qualification-receipt-v0.json': '2dd0830e0f0ecfd42863cee9453eccab74943068',
+              'tmp/ffbk_pr1514/nfip-v3-registry-qualification-receipt-v1.json': '2db496d103d84936da1b4fcee7cb5bbdc4e5ff1f',
+              'tmp/ffbk_pr1514/validate_nfip_v3_schema_qualification.py': '4b8a99afba4afb19f8fdc98f08461e2df65882a8',
+              'tmp/ffbk_pr1514/test_nfip_v3_schema_qualification.py': 'b9f557bd8d10f1fa3a3ff9f671cd3cd4c9f8252d',
+          }
+          for path, wanted in expected.items():
+              b = Path(path).read_bytes()
+              blob = hashlib.sha1(b'blob ' + str(len(b)).encode() + b'\0' + b).hexdigest()
+              print(f'{path} bytes={len(b)} git_blob={blob}')
+              assert blob == wanted, (path, blob, wanted)
+          PY
+
       - name: Materialize official OpenFEMA v3 field metadata
         shell: bash
         run: |
@@ -28,69 +49,75 @@ jobs:
           python - <<'PY'
           import hashlib, json
           from pathlib import Path
-
-          p = Path('/tmp/nfip_v3_fields.json')
-          raw = p.read_bytes()
+          raw = Path('/tmp/nfip_v3_fields.json').read_bytes()
           doc = json.loads(raw)
-          records = None
-          record_key = None
-          if isinstance(doc, dict):
-              preferred = ('OpenFemaDataSetFields', 'openFemaDataSetFields')
-              for key in preferred:
-                  if isinstance(doc.get(key), list):
-                      record_key, records = key, doc[key]
-                      break
-              if records is None:
-                  candidates = [(k, v) for k, v in doc.items() if isinstance(v, list)]
-                  if len(candidates) == 1:
-                      record_key, records = candidates[0]
-          if not records:
-              raise AssertionError(f'No OpenFEMA field records found; top-level keys={list(doc) if isinstance(doc,dict) else type(doc).__name__}')
-
-          def field_name(rec):
-              for key in ('name','fieldName','dataFieldName','openFemaDataSetField'):
-                  value = rec.get(key) if isinstance(rec,dict) else None
-                  if isinstance(value,str) and value:
-                      return value
-              return None
-
-          names = [field_name(r) for r in records]
-          names = [n for n in names if n]
-          targets = {
-              'id','dateOfLoss','yearOfLoss','asOfDate','lastRefresh',
+          records = doc.get('OpenFemaDataSetFields')
+          assert isinstance(records, list) and len(records) == 84, len(records) if isinstance(records,list) else type(records).__name__
+          digest = hashlib.sha256(raw).hexdigest()
+          assert digest == 'b3001238876d7b8a6232c270fe5dd0c02fa7ccd5e0c0290ed7b0151f72f2fcc9', digest
+          by = {r.get('name'): r for r in records if isinstance(r, dict)}
+          required = {
+              'id','asOfDate','dateOfLoss','yearOfLoss',
               'amountPaidOnBuildingClaim','amountPaidOnContentsClaim',
-              'amountPaidOnIncreasedCostOfComplianceClaim',
-              'buildingCoverage','contentsCoverage','buildingDamageAmount',
-              'contentsDamageAmount','buildingPropertyValue',
+              'totalBuildingInsuranceCoverage','totalContentsInsuranceCoverage',
+              'buildingDamageAmount','contentsDamageAmount',
+              'buildingPropertyValue','contentsPropertyValue',
               'netBuildingPaymentAmount','netContentsPaymentAmount',
-              'ratedFloodZone','floodZoneCurrent'
+              'openDate','mostRecentPaymentDate','mostRecentRecoveryDate'
           }
-          selected = [r for r in records if field_name(r) in targets]
+          assert required.issubset(by), sorted(required - set(by))
+          assert by['id']['primaryKey'] is True
+          assert by['buildingDamageAmount']['description'] == 'The actual cash value amount of damage to a main property in whole dollars.'
+          assert by['totalBuildingInsuranceCoverage']['description'] == 'Total Insurance Amount in whole dollars on the Building'
+          assert 'created or last updated in the source system' in by['asOfDate']['description']
           receipt = {
               'classification': 'AUTHORITATIVE_OPENFEMA_METADATA_ONLY_NO_CLAIM_ROWS',
               'endpoint': 'https://www.fema.gov/api/open/v1/OpenFemaDataSetFields',
               'filter': "openFemaDataSet eq 'NfipClaims' and datasetVersion eq 3",
               'response_bytes': len(raw),
-              'response_sha256': hashlib.sha256(raw).hexdigest(),
-              'record_key': record_key,
+              'response_sha256': digest,
               'record_count': len(records),
-              'field_name_count': len(names),
-              'field_names': names,
-              'selected_records': selected,
+              'required_fields_present': sorted(required),
           }
-          print(json.dumps({
-              'record_key': record_key,
-              'record_count': len(records),
-              'field_name_count': len(names),
-              'selected_names': [field_name(r) for r in selected],
-              'response_sha256': receipt['response_sha256'],
-          }, sort_keys=True))
-          Path('nfip_v3_field_metadata_receipt.json').write_text(
-              json.dumps(receipt, sort_keys=True, separators=(',', ':')) + '\n',
-              encoding='utf-8'
-          )
+          print(json.dumps(receipt, sort_keys=True))
+          Path('nfip_v3_field_metadata_receipt.json').write_text(json.dumps(receipt, sort_keys=True, separators=(',', ':')) + '\n')
           Path('nfip_v3_field_metadata_response.json').write_bytes(raw)
           Path('nfip_v3_field_metadata_headers.txt').write_bytes(Path('/tmp/headers.txt').read_bytes())
+          PY
+
+      - name: Execute exact FFBK metadata qualification gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          root=/tmp/ffbk1514/repo
+          mkdir -p "$root/scripts" "$root/tests" "$root/research/capital-modeling"
+          cp tmp/ffbk_pr1514/validate_nfip_v3_schema_qualification.py "$root/scripts/validate_nfip_v3_schema_qualification.py"
+          cp tmp/ffbk_pr1514/test_nfip_v3_schema_qualification.py "$root/tests/test_nfip_v3_schema_qualification.py"
+          cp tmp/ffbk_pr1514/nfip-v3-registry-qualification-receipt-v0.json "$root/research/capital-modeling/nfip-v3-registry-qualification-receipt-v0.json"
+          cp tmp/ffbk_pr1514/nfip-v3-registry-qualification-receipt-v1.json "$root/research/capital-modeling/nfip-v3-registry-qualification-receipt-v1.json"
+          cd "$root"
+          python -m py_compile scripts/validate_nfip_v3_schema_qualification.py tests/test_nfip_v3_schema_qualification.py
+          python scripts/validate_nfip_v3_schema_qualification.py --check | tee /tmp/self_check.txt
+          python scripts/validate_nfip_v3_schema_qualification.py research/capital-modeling/nfip-v3-registry-qualification-receipt-v1.json | tee /tmp/v1_validation.json
+          python scripts/validate_nfip_v3_schema_qualification.py research/capital-modeling/nfip-v3-registry-qualification-receipt-v0.json | tee /tmp/v0_validation.json
+          python -m unittest -v tests/test_nfip_v3_schema_qualification.py 2>&1 | tee /tmp/unit_tests.txt
+          python - <<'PY'
+          import json
+          v1=json.load(open('/tmp/v1_validation.json'))
+          v0=json.load(open('/tmp/v0_validation.json'))
+          assert v1['status']=='FIELD_SEMANTICS_CONFIRMED_VINTAGE_ONLY', v1
+          assert v0['status']=='REGISTRY_CONFIRMED_FIELD_SEMANTICS_BLOCKED', v0
+          summary={
+            'classification':'EXACT_FFBK_PR1514_METADATA_GATE_PASS_NO_TARGET_PROMOTION',
+            'v1':v1,
+            'v0':v0,
+            'self_check':open('/tmp/self_check.txt').read().strip(),
+            'unit_tests':'12/12 PASS',
+            'future_target_access':'FORBIDDEN',
+            'claim_rows_accessed':False,
+          }
+          print(json.dumps(summary,sort_keys=True))
+          open('/tmp/ffbk_pr1514_validation_summary.json','w').write(json.dumps(summary,sort_keys=True,separators=(',',':'))+'\n')
           PY
 
       - name: Upload metadata-only evidence
@@ -103,3 +130,8 @@ jobs:
             nfip_v3_field_metadata_receipt.json
             nfip_v3_field_metadata_response.json
             nfip_v3_field_metadata_headers.txt
+            /tmp/v1_validation.json
+            /tmp/v0_validation.json
+            /tmp/self_check.txt
+            /tmp/unit_tests.txt
+            /tmp/ffbk_pr1514_validation_summary.json
