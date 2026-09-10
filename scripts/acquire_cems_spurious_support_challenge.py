@@ -5,8 +5,10 @@
 
 This worker composes only already frozen provider identities. It does not expose a
 caller-selectable URL, filename, mask, threshold, distance model, or output path.
-Provider bytes exist only inside one TemporaryDirectory and are deleted before a
-result can escape the worker.
+Provider bytes are copied into one private TemporaryDirectory only long enough to
+bind their complete SHA-256 identities. The verified byte objects are then moved
+into Rasterio MemoryFiles and the temporary files are deleted before any raster
+value is read, preserving the receipt-to-reader TOCTOU boundary.
 """
 
 from __future__ import annotations
@@ -18,9 +20,9 @@ from pathlib import Path
 from typing import Any, Callable
 
 try:
-    import rasterio
+    from rasterio.io import MemoryFile
 except ImportError:  # Optional outside the reviewed CEMS support runtime.
-    rasterio = None
+    MemoryFile = None
 
 try:
     from scripts import acquire_cems_europe_mask_receipts as _masks
@@ -81,9 +83,11 @@ class _TeeResponse:
         return chunk
 
 
-def _verify_path_identity(path: Path, *, expected_count: int, expected_sha256: str) -> None:
+def _read_verified_bytes(path: Path, *, expected_count: int, expected_sha256: str) -> bytes:
+    """Return exactly the bytes whose complete local identity was verified."""
     try:
         digest = hashlib.sha256()
+        chunks: list[bytes] = []
         count = 0
         with path.open("rb") as source:
             while True:
@@ -92,6 +96,7 @@ def _verify_path_identity(path: Path, *, expected_count: int, expected_sha256: s
                     break
                 count += len(chunk)
                 digest.update(chunk)
+                chunks.append(chunk)
     except OSError as exc:
         raise CemsSpuriousSupportAcquisitionError(
             "CEMS Stage-D local byte identity could not be verified"
@@ -104,6 +109,7 @@ def _verify_path_identity(path: Path, *, expected_count: int, expected_sha256: s
         raise CemsSpuriousSupportAcquisitionError(
             "CEMS Stage-D local SHA-256 differs from accepted receipt"
         )
+    return b"".join(chunks)
 
 
 def _materialize_rp10(
@@ -132,11 +138,6 @@ def _materialize_rp10(
             raise CemsSpuriousSupportAcquisitionError(
                 "CEMS Stage-D RP10 receipt SHA-256 differs from accepted #793 identity"
             )
-        _verify_path_identity(
-            path,
-            expected_count=_rp10_profile.ACCEPTED_BYTE_COUNT,
-            expected_sha256=_rp10_profile.ACCEPTED_SHA256,
-        )
         return receipt
     except (CemsSpuriousSupportAcquisitionError, _rp10_receipt.CemsRp10ReceiptError):
         raise
@@ -179,11 +180,6 @@ def _materialize_spurious_mask(
             raise CemsSpuriousSupportAcquisitionError(
                 "CEMS Stage-D mask receipt SHA-256 differs from accepted #809 identity"
             )
-        _verify_path_identity(
-            path,
-            expected_count=accepted["byte_count"],
-            expected_sha256=accepted["sha256"],
-        )
         return receipt
     except (CemsSpuriousSupportAcquisitionError, _masks.CemsMaskReceiptError):
         raise
@@ -232,8 +228,8 @@ def acquire_and_challenge_cems_spurious_support(
     monotonic: Callable[[], float] = time.monotonic,
     challenger: Callable[[Any, Any], dict[str, Any]] = _challenge.challenge_spurious_support,
 ) -> dict[str, Any]:
-    """Run exact-byte Stage D and return bounded evidence after deleting provider bytes."""
-    if rasterio is None:
+    """Run exact-byte Stage D and return bounded evidence after deleting provider files."""
+    if MemoryFile is None:
         raise CemsSpuriousSupportAcquisitionError(
             "CEMS Stage-D runtime requires requirements-cems-mask-support-challenge.txt"
         )
@@ -259,11 +255,37 @@ def acquire_and_challenge_cems_spurious_support(
                 monotonic=monotonic,
             )
 
+            accepted_mask = _mask_metadata.MASK_RECEIPTS[SPURIOUS_KIND]
+            rp10_bytes = _read_verified_bytes(
+                rp10_path,
+                expected_count=_rp10_profile.ACCEPTED_BYTE_COUNT,
+                expected_sha256=_rp10_profile.ACCEPTED_SHA256,
+            )
+            mask_bytes = _read_verified_bytes(
+                mask_path,
+                expected_count=accepted_mask["byte_count"],
+                expected_sha256=accepted_mask["sha256"],
+            )
+
+            # Delete path-addressable provider bytes before raster interpretation.
             try:
-                with rasterio.open(mask_path) as mask_dataset, rasterio.open(rp10_path) as rp10_dataset:
-                    challenge_result = _validate_challenge_result(
-                        challenger(mask_dataset, rp10_dataset)
-                    )
+                rp10_path.unlink()
+                mask_path.unlink()
+            except OSError as exc:
+                raise CemsSpuriousSupportAcquisitionError(
+                    "CEMS Stage-D verified provider files could not be removed before reading"
+                ) from exc
+            if rp10_path.exists() or mask_path.exists():  # pragma: no cover - defensive
+                raise CemsSpuriousSupportAcquisitionError(
+                    "CEMS Stage-D path-addressable provider bytes remain before reading"
+                )
+
+            try:
+                with MemoryFile(mask_bytes) as mask_memory, MemoryFile(rp10_bytes) as rp10_memory:
+                    with mask_memory.open() as mask_dataset, rp10_memory.open() as rp10_dataset:
+                        challenge_result = _validate_challenge_result(
+                            challenger(mask_dataset, rp10_dataset)
+                        )
             except CemsSpuriousSupportAcquisitionError:
                 raise
             except Exception as exc:
@@ -279,6 +301,7 @@ def acquire_and_challenge_cems_spurious_support(
                 "rp10_receipt": rp10_receipt,
                 "spurious_depth_receipt": mask_receipt,
                 "challenge": challenge_result,
+                "receipt_to_reader_binding": "verified_bytes_memoryfile",
                 "external_bytes_persisted": False,
                 "mask_value_semantics_verified": False,
                 "per_cell_scientific_correctness_verified": False,
