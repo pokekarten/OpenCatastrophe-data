@@ -1,0 +1,95 @@
+name: tmp FFBK PR1498 CLRD exact probe
+
+on:
+  pull_request:
+    paths:
+      - 'tmp/ffbk_pr1498/**'
+      - '.github/workflows/tmp_ffbk_pr1498_clrd_probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout temporary evidence branch
+        uses: actions/checkout@v4
+
+      - name: Verify copied FFBK runner identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          p = Path('tmp/ffbk_pr1498/reserve_underwriting_clrd_empirical_probe.py')
+          b = p.read_bytes()
+          blob = hashlib.sha1(b'blob ' + str(len(b)).encode() + b'\0' + b).hexdigest()
+          print(f'runner_bytes={len(b)} runner_git_blob={blob}')
+          assert blob == '198ff1eea9b841f0a07de5e37d5d04d8a9a03869', blob
+          PY
+
+      - name: Materialize pinned public CLRD bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://raw.githubusercontent.com/casact/chainladder-python/221c4015d7d33c8520f57e3b522970f2e8baffab/chainladder/utils/data/clrd.csv'
+          curl --fail --location --silent --show-error "$url" --output /tmp/clrd.csv
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          p = Path('/tmp/clrd.csv')
+          b = p.read_bytes()
+          git_blob = hashlib.sha1(b'blob ' + str(len(b)).encode() + b'\0' + b).hexdigest()
+          sha256 = hashlib.sha256(b).hexdigest()
+          receipt = {
+              'source_repository': 'casact/chainladder-python',
+              'source_commit': '221c4015d7d33c8520f57e3b522970f2e8baffab',
+              'source_path': 'chainladder/utils/data/clrd.csv',
+              'bytes': len(b),
+              'git_blob_sha1': git_blob,
+              'sha256': sha256,
+          }
+          print(json.dumps(receipt, sort_keys=True))
+          assert len(b) == 3295090, len(b)
+          assert git_blob == '04e54cfa41e7bd879877e5c5aea5e63a6d20d29b', git_blob
+          Path('tmp/ffbk_pr1498/source_receipt.json').write_text(json.dumps(receipt, sort_keys=True, separators=(',', ':')) + '\n')
+          PY
+
+      - name: Execute exact FFBK PR1498 pilot
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile tmp/ffbk_pr1498/reserve_underwriting_clrd_empirical_probe.py
+          python tmp/ffbk_pr1498/reserve_underwriting_clrd_empirical_probe.py /tmp/clrd.csv --check > tmp/ffbk_pr1498/result.json
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          result_path = Path('tmp/ffbk_pr1498/result.json')
+          result = json.loads(result_path.read_text())
+          summary = {
+              'panel': result['panel'],
+              'primary': result['primary'],
+              'sensitivities': result['sensitivities'],
+              'result_sha256': hashlib.sha256(result_path.read_bytes()).hexdigest(),
+          }
+          print(json.dumps(summary, sort_keys=True))
+          assert result['panel']['n'] == 63
+          assert result['panel']['companies'] == 7
+          assert len(result['panel']['years']) == 9
+          Path('tmp/ffbk_pr1498/execution_summary.json').write_text(json.dumps(summary, sort_keys=True, separators=(',', ':')) + '\n')
+          PY
+
+      - name: Upload bounded evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-pr1498-clrd-exact-probe
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            tmp/ffbk_pr1498/source_receipt.json
+            tmp/ffbk_pr1498/result.json
+            tmp/ffbk_pr1498/execution_summary.json
