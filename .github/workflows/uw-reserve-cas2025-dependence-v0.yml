@@ -17,11 +17,15 @@ jobs:
           python-version: '3.13'
       - name: Install bounded numeric dependency
         run: python -m pip install --disable-pip-version-check 'numpy==2.3.3'
-      - name: Execute fail-closed research probe
+      - name: Execute primary fail-closed probe
         run: python research_execution/uw_reserve_cas2025_dependence_probe.py
-      - name: Upload result only
+      - name: Execute training-only rank-copula sensitivity
+        run: python research_execution/uw_reserve_cas2025_rank_copula_probe.py
+      - name: Upload result receipts
         uses: actions/upload-artifact@v4
         with:
           name: uw-reserve-cas2025-dependence-result
-          path: research_execution/result.json
+          path: |
+            research_execution/result.json
+            research_execution/result_rank.json
           if-no-files-found: error
