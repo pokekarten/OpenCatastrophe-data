@@ -1,0 +1,145 @@
+{
+  "captured_on": "2026-09-10",
+  "claim_rows_accessed": false,
+  "decision": {
+    "dataset_identity": "AUTHORITATIVE_REGISTRY_CONFIRMED",
+    "field_semantics": "AUTHORITATIVE_V3_METADATA_CONFIRMED",
+    "future_target_access": "FORBIDDEN",
+    "historical_snapshot_contract": "ADMISSIBLE_FOR_VINTAGE_DRIFT_ONLY",
+    "prospective_target_status": "NOT_YET_ADMISSIBLE_MATURITY_AND_TARGET_PROTOCOL_OPEN",
+    "severity_family_promotion": "FORBIDDEN",
+    "v2_v3_naive_vintage_stitching": "FORBIDDEN"
+  },
+  "evidence_boundary": [
+    "Official FEMA OpenFemaDataSetFields metadata was queried for NfipClaims version 3; no NfipClaims claim endpoint was queried.",
+    "No claim row, claim value, target value, severity statistic, threshold or model fit was accessed.",
+    "The official metadata resolves field identity and definitions but does not prove row-level claim finality; no close-date field was identified in the 84-field metadata.",
+    "Actual-cash-value damage fields are now authoritative candidate damage measures, but prospective target admissibility remains blocked by maturity/blind-target protocol.",
+    "Covered-payment and net-payment fields remain contract- and recovery-shaped and must not be relabeled as unrestricted ground-up severity."
+  ],
+  "evidence_harness": {
+    "artifact_id": 10168167626,
+    "artifact_name": "ffbk-nfip-v3-authoritative-field-metadata",
+    "artifact_zip_sha256": "6bc84862bc125c1321314078b25d423e11d94f8695195846fed4dcf087f3d0ab",
+    "head_sha": "d0eaee8dd04d9bb68d1559a45abc484d522bfadb",
+    "repository": "pokekarten/OpenCatastrophe-data",
+    "run_id": 34517252512,
+    "temporary_pr": 828
+  },
+  "fema_registry": {
+    "dataset": {
+      "accrualPeriodicity": "R/P1M",
+      "dataDictionary": "https://www.fema.gov/openfema-data-page/nfip-redacted-claims-v3",
+      "hash": "9eaf194937eba43e6df9f1809f311d2c63058c81",
+      "id": "38707079-3400-4c56-bb50-3282881e21be",
+      "name": "NfipClaims",
+      "recordCount": 2724656,
+      "version": 3,
+      "webService": "https://www.fema.gov/api/open/v3/NfipClaims"
+    },
+    "predecessor": {
+      "data_frozen_as_of": "2026-06-01",
+      "depDate": "2026-10-15T00:00:00.000Z",
+      "name": "FimaNfipClaims",
+      "version": 2
+    }
+  },
+  "field_semantics": {
+    "authoritative_definitions": {
+      "amountPaidOnBuildingClaim": "Dollar amount paid on the building claim. In some instances, a negative amount may appear which occurs when a check issued to a policy holder is not cashed and has to be re-issued",
+      "amountPaidOnContentsClaim": "Dollar amount paid on the contents claim. In some instances, a negative amount may appear, which occurs when a check issued to a policy holder is not cashed and has to be re-issued",
+      "amountPaidOnIncreasedCostOfComplianceClaim": "ICC coverage is one of several flood insurance resources for policyholders who need additional help rebuilding after a flood. It provides up to $30,000 to help cover the cost of mitigation measures that will reduce the flood risk",
+      "asOfDate": "The effective date of the data in the file. In other words, the date when the record was created or last updated in the source system. When time is not specified in the field, it will default to T00:00:00.000Z",
+      "buildingDamageAmount": "The actual cash value amount of damage to a main property in whole dollars.",
+      "buildingPropertyValue": "The actual cash value of the main building prior to any flooding event in whole dollars as estimated by an adjuster. Based on the initial policy provided by the WYO.",
+      "contentsDamageAmount": "The actual cash value amount of damage to contents in whole dollars",
+      "contentsPropertyValue": "The actual cash value of the contents prior to any flooding event in whole dollars as estimated by an adjuster. Based on the initial policy provided by the WYO. Types of contents would be things such as Appliances, Furniture, Clothing and Personal Items, Electronics, Food Freezer and Stored, Artwork, furs, jewelry and precious metals (up to $2500 limit). Note that personal properties stored within a basement are not covered.",
+      "dateOfLoss": "Date on which water first entered the insured building. When time is not specified in the field, it will default to T00:00:00.000Z",
+      "id": "Unique ID assigned to the record",
+      "mostRecentPaymentDate": "The most recent date a claim payment was issued to insured.",
+      "mostRecentRecoveryDate": "Date of overpayment  on building, contents, ICC, salvage or subrogation was recovered from insured",
+      "netBuildingPaymentAmount": "Net building payment amount made to insured in dollars. It is the amountPaidOnBuildingClaim minus any recovery amounts.",
+      "netContentsPaymentAmount": "Net contents payment amount made to insured in dollars. This is the amountPaidOnContentsClaim minus recovery amounts.",
+      "openDate": "Date the claim was opened in the system.",
+      "totalBuildingInsuranceCoverage": "Total Insurance Amount in whole dollars on the Building",
+      "totalContentsInsuranceCoverage": "Total Insurance Amount in whole dollars on the Contents",
+      "yearOfLoss": "Year in which the flood loss occurred"
+    },
+    "authoritative_fields_qualified": [
+      "id", "asOfDate", "dateOfLoss", "yearOfLoss", "ratedFloodZone", "floodZoneCurrent",
+      "amountPaidOnBuildingClaim", "amountPaidOnContentsClaim", "amountPaidOnIncreasedCostOfComplianceClaim",
+      "totalBuildingInsuranceCoverage", "totalContentsInsuranceCoverage", "buildingDamageAmount", "contentsDamageAmount",
+      "buildingPropertyValue", "contentsPropertyValue", "netBuildingPaymentAmount", "netContentsPaymentAmount",
+      "buildingDeductibleCode", "contentsDeductibleCode", "openDate", "mostRecentPaymentDate", "mostRecentRecoveryDate",
+      "iccCoverage", "buildingReplacementCost", "contentsReplacementCost"
+    ],
+    "authoritative_metadata_endpoint": "https://www.fema.gov/api/open/v1/OpenFemaDataSetFields",
+    "authoritative_metadata_filter": "openFemaDataSet eq 'NfipClaims' and datasetVersion eq 3",
+    "economic_classification": {
+      "coverage_and_deductible": {
+        "buildingDeductibleCode": "BUILDING_DEDUCTIBLE_CODE_WITH_DOLLAR_MAPPING",
+        "contentsDeductibleCode": "CONTENTS_DEDUCTIBLE_CODE_WITH_DOLLAR_MAPPING",
+        "iccCoverage": "ICC_COVERAGE_AMOUNT",
+        "totalBuildingInsuranceCoverage": "BUILDING_INSURANCE_AMOUNT",
+        "totalContentsInsuranceCoverage": "CONTENTS_INSURANCE_AMOUNT"
+      },
+      "covered_payment": {
+        "amountPaidOnBuildingClaim": "COVERED_PAYMENT_NOT_GROUND_UP",
+        "amountPaidOnContentsClaim": "COVERED_PAYMENT_NOT_GROUND_UP",
+        "amountPaidOnIncreasedCostOfComplianceClaim": "ICC_COVERAGE_PAYMENT_NOT_PHYSICAL_DAMAGE"
+      },
+      "damage_candidate": {
+        "buildingDamageAmount": "ACTUAL_CASH_VALUE_DAMAGE_AMOUNT_CANDIDATE_NOT_YET_PROSPECTIVE_TARGET",
+        "contentsDamageAmount": "ACTUAL_CASH_VALUE_DAMAGE_AMOUNT_CANDIDATE_NOT_YET_PROSPECTIVE_TARGET"
+      },
+      "identity_and_vintage": {
+        "asOfDate": "SOURCE_SYSTEM_RECORD_CREATED_OR_LAST_UPDATED_DATE",
+        "finality": "NOT_IDENTIFIED_NO_CLOSE_DATE_FIELD_IN_84_FIELD_METADATA",
+        "id": "UNIQUE_PRIMARY_KEY",
+        "mostRecentPaymentDate": "MOST_RECENT_PAYMENT_DATE",
+        "mostRecentRecoveryDate": "MOST_RECENT_RECOVERY_DATE",
+        "openDate": "CLAIM_OPEN_DATE"
+      },
+      "net_payment": {
+        "netBuildingPaymentAmount": "PAID_BUILDING_MINUS_RECOVERIES",
+        "netContentsPaymentAmount": "PAID_CONTENTS_MINUS_RECOVERIES"
+      },
+      "property_value": {
+        "buildingPropertyValue": "PRE_FLOOD_ACTUAL_CASH_VALUE_ADJUSTER_ESTIMATE",
+        "contentsPropertyValue": "PRE_FLOOD_ACTUAL_CASH_VALUE_ADJUSTER_ESTIMATE"
+      }
+    },
+    "materialization_status": "AUTHORITATIVE_FIELD_SEMANTICS_CONFIRMED",
+    "metadata_record_count": 84,
+    "metadata_response_sha256": "b3001238876d7b8a6232c270fe5dd0c02fa7ccd5e0c0290ed7b0151f72f2fcc9",
+    "promotion_status": "FIELD_METADATA_ONLY_NO_MODEL_PROMOTION",
+    "qualified_field_records": [
+      {"hash":"ab68526efca22eb37d9921744de7abbdd16c3de1","name":"id","primaryKey":true,"type":"bigint"},
+      {"hash":"546604ede998914f7a41b58d9b1cfe33faacde47","name":"asOfDate","primaryKey":false,"type":"datetime"},
+      {"hash":"7136bab1db08037fe424af65f786fad374261fae","name":"dateOfLoss","primaryKey":false,"type":"datetime"},
+      {"hash":"c4124b641804115e594e4f9804a03b880ddd54a2","name":"yearOfLoss","primaryKey":false,"type":"smallint"},
+      {"hash":"e73263208e05b19383de35ebe43cba27985e8c91","name":"ratedFloodZone","primaryKey":false,"type":"text"},
+      {"hash":"a56a15914b81b33720b0e22267a994b52d5816cd","name":"floodZoneCurrent","primaryKey":false,"type":"text"},
+      {"hash":"1e6a109c301892e9c741e9b6719d81a6e0a4ee31","name":"amountPaidOnBuildingClaim","primaryKey":false,"type":"decimal(12,2)"},
+      {"hash":"19900c3473e97c8f1efe878913ef3325c6ef760b","name":"amountPaidOnContentsClaim","primaryKey":false,"type":"decimal(12,2)"},
+      {"hash":"ef35d753a1623bdc89ceaa65f85d2b8773f44928","name":"amountPaidOnIncreasedCostOfComplianceClaim","primaryKey":false,"type":"decimal(12,2)"},
+      {"hash":"6a54273419037614e0d2735397a003160627c427","name":"totalBuildingInsuranceCoverage","primaryKey":false,"type":"integer"},
+      {"hash":"81fca53f5a73632c8324eb7b2dd9e07008b91229","name":"totalContentsInsuranceCoverage","primaryKey":false,"type":"integer"},
+      {"hash":"0d681ea7fa6c62a97da0c6529db7dee37b6f0684","name":"buildingDamageAmount","primaryKey":false,"type":"integer"},
+      {"hash":"de9224261bfad2330311ff26add321418b2cd3ef","name":"contentsDamageAmount","primaryKey":false,"type":"integer"},
+      {"hash":"45fe5968aa0cea887936a44a61fe38f29173549f","name":"buildingPropertyValue","primaryKey":false,"type":"integer"},
+      {"hash":"e82b5df6baf0a5efbc659ccb7e5856ab0f64fd89","name":"contentsPropertyValue","primaryKey":false,"type":"integer"},
+      {"hash":"55b35795cfd35adc552b152ad7dd7aff915de5ab","name":"netBuildingPaymentAmount","primaryKey":false,"type":"decimal(12,2)"},
+      {"hash":"6b1496b475846d913d995e04771c730892d4c587","name":"netContentsPaymentAmount","primaryKey":false,"type":"decimal(12,2)"},
+      {"hash":"30f828b03da78e3a5f1b947ee04d1659bec06e32","name":"buildingDeductibleCode","primaryKey":false,"type":"text"},
+      {"hash":"70fc7d6161d0fe8ed5f99386962c47134cb410fa","name":"contentsDeductibleCode","primaryKey":false,"type":"text"},
+      {"hash":"7f4644ced8401e3ad6e77a56e798bdd2b7d533b5","name":"openDate","primaryKey":false,"type":"date"},
+      {"hash":"211a7be1ac6cac112b9d571d79a596764ecb5534","name":"mostRecentPaymentDate","primaryKey":false,"type":"date"},
+      {"hash":"899c07b21377c105be9fd624341c2f371873b3a4","name":"mostRecentRecoveryDate","primaryKey":false,"type":"date"},
+      {"hash":"5dfb27697f5aac819cb25e0be73bd8fea5a9c395","name":"iccCoverage","primaryKey":false,"type":"integer"},
+      {"hash":"ebacf747219d8cb2639b4c016b26e24f1a3a9ea8","name":"buildingReplacementCost","primaryKey":false,"type":"bigint"},
+      {"hash":"ed9ffdabf387baac0e9c08dd41ca7420426adc10","name":"contentsReplacementCost","primaryKey":false,"type":"integer"}
+    ]
+  },
+  "receipt_version": "nfip-v3-registry-qualification-v1"
+}
