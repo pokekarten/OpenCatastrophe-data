@@ -111,6 +111,7 @@ jobs:
           tests.test_cems_mask_geotiff_profile
           tests.test_cems_mask_value_inventory
           tests.test_cems_spurious_depth_support
+          tests.test_cems_spurious_support_acquisition
           -v
 
   reuse:
