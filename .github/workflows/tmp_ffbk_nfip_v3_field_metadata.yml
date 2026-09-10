@@ -1,0 +1,105 @@
+name: tmp FFBK NFIP v3 authoritative field metadata
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/tmp_ffbk_nfip_v3_field_metadata.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  metadata-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout temporary evidence branch
+        uses: actions/checkout@v4
+
+      - name: Materialize official OpenFEMA v3 field metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://www.fema.gov/api/open/v1/OpenFemaDataSetFields?$filter=openFemaDataSet%20eq%20%27NfipClaims%27%20and%20datasetVersion%20eq%203&$top=1000'
+          curl --fail-with-body --location --silent --show-error \
+            --dump-header /tmp/headers.txt \
+            "$url" --output /tmp/nfip_v3_fields.json
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+
+          p = Path('/tmp/nfip_v3_fields.json')
+          raw = p.read_bytes()
+          doc = json.loads(raw)
+          records = None
+          record_key = None
+          if isinstance(doc, dict):
+              preferred = ('OpenFemaDataSetFields', 'openFemaDataSetFields')
+              for key in preferred:
+                  if isinstance(doc.get(key), list):
+                      record_key, records = key, doc[key]
+                      break
+              if records is None:
+                  candidates = [(k, v) for k, v in doc.items() if isinstance(v, list)]
+                  if len(candidates) == 1:
+                      record_key, records = candidates[0]
+          if not records:
+              raise AssertionError(f'No OpenFEMA field records found; top-level keys={list(doc) if isinstance(doc,dict) else type(doc).__name__}')
+
+          def field_name(rec):
+              for key in ('name','fieldName','dataFieldName','openFemaDataSetField'):
+                  value = rec.get(key) if isinstance(rec,dict) else None
+                  if isinstance(value,str) and value:
+                      return value
+              return None
+
+          names = [field_name(r) for r in records]
+          names = [n for n in names if n]
+          targets = {
+              'id','dateOfLoss','yearOfLoss','asOfDate','lastRefresh',
+              'amountPaidOnBuildingClaim','amountPaidOnContentsClaim',
+              'amountPaidOnIncreasedCostOfComplianceClaim',
+              'buildingCoverage','contentsCoverage','buildingDamageAmount',
+              'contentsDamageAmount','buildingPropertyValue',
+              'netBuildingPaymentAmount','netContentsPaymentAmount',
+              'ratedFloodZone','floodZoneCurrent'
+          }
+          selected = [r for r in records if field_name(r) in targets]
+          receipt = {
+              'classification': 'AUTHORITATIVE_OPENFEMA_METADATA_ONLY_NO_CLAIM_ROWS',
+              'endpoint': 'https://www.fema.gov/api/open/v1/OpenFemaDataSetFields',
+              'filter': "openFemaDataSet eq 'NfipClaims' and datasetVersion eq 3",
+              'response_bytes': len(raw),
+              'response_sha256': hashlib.sha256(raw).hexdigest(),
+              'record_key': record_key,
+              'record_count': len(records),
+              'field_name_count': len(names),
+              'field_names': names,
+              'selected_records': selected,
+          }
+          print(json.dumps({
+              'record_key': record_key,
+              'record_count': len(records),
+              'field_name_count': len(names),
+              'selected_names': [field_name(r) for r in selected],
+              'response_sha256': receipt['response_sha256'],
+          }, sort_keys=True))
+          Path('nfip_v3_field_metadata_receipt.json').write_text(
+              json.dumps(receipt, sort_keys=True, separators=(',', ':')) + '\n',
+              encoding='utf-8'
+          )
+          Path('nfip_v3_field_metadata_response.json').write_bytes(raw)
+          Path('nfip_v3_field_metadata_headers.txt').write_bytes(Path('/tmp/headers.txt').read_bytes())
+          PY
+
+      - name: Upload metadata-only evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-nfip-v3-authoritative-field-metadata
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            nfip_v3_field_metadata_receipt.json
+            nfip_v3_field_metadata_response.json
+            nfip_v3_field_metadata_headers.txt
