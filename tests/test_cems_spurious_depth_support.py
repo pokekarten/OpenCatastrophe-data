@@ -7,6 +7,7 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 DEPS_AVAILABLE = all(
     importlib.util.find_spec(name) is not None
@@ -16,6 +17,7 @@ DEPS_AVAILABLE = all(
 if DEPS_AVAILABLE:
     import numpy as np
     import rasterio
+    from pyproj import Geod
     from rasterio.transform import from_origin
 
     from scripts import challenge_cems_spurious_depth_support as mod
@@ -177,6 +179,36 @@ class CemsSpuriousDepthSupportTests(unittest.TestCase):
             "affine transforms differ",
         ):
             self._run(mask, rp10, rp10_transform=shifted)
+
+    def test_geodesic_candidates_are_vectorized_once_per_candidate_row(self) -> None:
+        transform = from_origin(10.0, 50.0, 0.01, 0.01)
+        candidates = np.array([1, 3, 5], dtype=np.int64)
+        seed_rows = {
+            2: np.array([1, 4], dtype=np.int64),
+            3: np.array([0, 2, 5], dtype=np.int64),
+            4: np.array([3, 6], dtype=np.int64),
+        }
+        initially_covered = np.zeros(candidates.size, dtype=bool)
+        geod = Geod(ellps="WGS84")
+
+        with mock.patch.object(
+            mod,
+            "_distance_metres",
+            wraps=mod._distance_metres,
+        ) as distance:
+            covered = mod._mark_exactly_covered(
+                candidates,
+                3,
+                seed_rows,
+                transform=transform,
+                geod=geod,
+                distance_threshold_metres=5_000.0,
+                max_col_offset=10,
+                initial_covered=initially_covered,
+            )
+
+        self.assertTrue(bool(covered.all()))
+        self.assertEqual(distance.call_count, 1)
 
 
 if __name__ == "__main__":
