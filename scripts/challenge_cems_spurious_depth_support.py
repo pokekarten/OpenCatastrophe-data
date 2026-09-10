@@ -366,6 +366,11 @@ def challenge_spurious_support(mask_dataset: Any, rp10_dataset: Any) -> dict[str
         )
         farther_cells += int((~covered).sum())
 
+    if candidate_cells == 0:
+        raise CemsSpuriousSupportChallengeError(
+            "Stage-D candidate support is empty and cannot be falsified"
+        )
+
     within_cells = candidate_cells - farther_cells
     if not (
         0 <= same_cell_overlap_cells <= within_cells <= candidate_cells
