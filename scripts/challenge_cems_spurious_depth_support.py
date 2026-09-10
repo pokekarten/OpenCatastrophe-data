@@ -12,7 +12,6 @@ whether candidate cell centres have a current RP10 depth >10 m cell centre withi
 
 from __future__ import annotations
 
-import math
 from typing import Any
 
 try:
@@ -240,24 +239,28 @@ def _mark_exactly_covered(
     max_col_offset: int,
     initial_covered: Any,
 ) -> Any:
+    """Mark candidates covered by any exact WGS84-near seed in the row envelope.
+
+    For a fixed seed row, only the nearest seed immediately left/right of a
+    candidate can minimize longitude separation. Gather those bounded pairs for
+    every retained seed row, then make one vectorized Geod.inv call per candidate
+    row instead of millions of small geodesic calls on the real Europe raster.
+    """
     covered = initial_covered.copy()
-    if candidate_columns.size == 0:
+    remaining = np.flatnonzero(~covered)
+    if remaining.size == 0:
         return covered
 
-    candidate_latitude = _cell_centre(transform, candidate_row, 0)[1]
-    ordered_rows = sorted(seed_rows, key=lambda row: (abs(row - candidate_row), row))
+    candidates = candidate_columns[remaining]
+    pair_candidate_indices: list[Any] = []
+    pair_seed_columns: list[Any] = []
+    pair_seed_rows: list[Any] = []
 
-    for seed_row in ordered_rows:
-        remaining = np.flatnonzero(~covered)
-        if remaining.size == 0:
-            break
+    for seed_row in sorted(seed_rows, key=lambda row: (abs(row - candidate_row), row)):
         seeds = seed_rows[seed_row]
         if seeds.size == 0:
             continue
-
-        candidates = candidate_columns[remaining]
         insertions = np.searchsorted(seeds, candidates)
-        seed_latitude = _cell_centre(transform, seed_row, 0)[1]
 
         for side in ("left", "right"):
             if side == "left":
@@ -277,41 +280,53 @@ def _mark_exactly_covered(
                 continue
 
             remaining_indices = remaining_indices[envelope]
-            candidate_subset = candidate_subset[envelope]
             seed_subset = seed_subset[envelope]
+            pair_candidate_indices.append(remaining_indices)
+            pair_seed_columns.append(seed_subset)
+            pair_seed_rows.append(
+                np.full(seed_subset.shape, seed_row, dtype=np.int64)
+            )
 
-            candidate_longitudes = (
-                float(transform.c)
-                + (candidate_subset.astype(float) + 0.5) * float(transform.a)
-            )
-            seed_longitudes = (
-                float(transform.c)
-                + (seed_subset.astype(float) + 0.5) * float(transform.a)
-            )
-            candidate_latitudes = np.full(
-                candidate_longitudes.shape,
-                candidate_latitude,
-                dtype=float,
-            )
-            seed_latitudes = np.full(
-                seed_longitudes.shape,
-                seed_latitude,
-                dtype=float,
-            )
-            distances = np.asarray(
-                _distance_metres(
-                    geod,
-                    candidate_longitudes,
-                    candidate_latitudes,
-                    seed_longitudes,
-                    seed_latitudes,
-                ),
-                dtype=float,
-            )
-            within = distances <= distance_threshold_metres
-            if bool(within.any()):
-                covered[remaining_indices[within]] = True
+    if not pair_candidate_indices:
+        return covered
 
+    candidate_indices = np.concatenate(pair_candidate_indices)
+    seed_columns = np.concatenate(pair_seed_columns)
+    seed_row_indices = np.concatenate(pair_seed_rows)
+    candidate_subset = candidate_columns[candidate_indices]
+
+    candidate_longitudes = (
+        float(transform.c)
+        + (candidate_subset.astype(float) + 0.5) * float(transform.a)
+    )
+    candidate_latitude = _cell_centre(transform, candidate_row, 0)[1]
+    candidate_latitudes = np.full(
+        candidate_longitudes.shape,
+        candidate_latitude,
+        dtype=float,
+    )
+    seed_longitudes = (
+        float(transform.c)
+        + (seed_columns.astype(float) + 0.5) * float(transform.a)
+    )
+    seed_latitudes = (
+        float(transform.f)
+        + (seed_row_indices.astype(float) + 0.5) * float(transform.e)
+    )
+
+    distances = np.asarray(
+        _distance_metres(
+            geod,
+            candidate_longitudes,
+            candidate_latitudes,
+            seed_longitudes,
+            seed_latitudes,
+        ),
+        dtype=float,
+    )
+    within = distances <= distance_threshold_metres
+    if bool(within.any()):
+        covered[np.unique(candidate_indices[within])] = True
     return covered
 
 
