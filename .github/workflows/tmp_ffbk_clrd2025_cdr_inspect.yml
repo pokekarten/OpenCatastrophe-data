@@ -1,0 +1,103 @@
+name: tmp FFBK CLRD2025 realised CDR challenge
+
+on:
+  pull_request:
+    paths:
+      - 'tmp/ffbk_clrd2025_cdr/**'
+      - '.github/workflows/tmp_ffbk_clrd2025_cdr_inspect.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  challenge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Materialize pinned sequential CLRD vintages
+        shell: bash
+        run: |
+          set -euo pipefail
+          old_url='https://raw.githubusercontent.com/casact/chainladder-python/221c4015d7d33c8520f57e3b522970f2e8baffab/chainladder/utils/data/clrd.csv'
+          new_url='https://raw.githubusercontent.com/casact/chainladder-python/c8be839aa273a9ae87ce1d03fc12d03e81d76cf2/chainladder/utils/data/clrd2025.csv'
+          curl --fail --location --silent --show-error "$old_url" --output /tmp/clrd.csv
+          curl --fail --location --silent --show-error "$new_url" --output /tmp/clrd2025.csv
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          expected = {
+              '/tmp/clrd.csv': {
+                  'bytes': 3235366,
+                  'blob': '04e54cfa41e7bd879877e5c5aea5e63a6d20d29b',
+                  'sha256': '5785a95d5d24943f601a9c46b83cb313ba5109a374331a71e28a86eb702d9eef',
+              },
+              '/tmp/clrd2025.csv': {
+                  'bytes': 5868245,
+                  'blob': '8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0',
+                  'sha256': '045f10559ec9ed2bb0b4e5f74f9d611e20723ce51c7192a30b0dabcb75111456',
+              },
+          }
+          receipt = {}
+          for filename, wanted in expected.items():
+              data = Path(filename).read_bytes()
+              got = {
+                  'bytes': len(data),
+                  'blob': hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest(),
+                  'sha256': hashlib.sha256(data).hexdigest(),
+              }
+              assert got == wanted, (filename, got, wanted)
+              receipt[filename] = got
+          Path('tmp/ffbk_clrd2025_cdr/source_receipt.json').write_text(
+              json.dumps(receipt, sort_keys=True, separators=(',', ':')) + '\n'
+          )
+          print(json.dumps(receipt, sort_keys=True))
+          PY
+
+      - name: Reconfirm CLRD2025 time geometry
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile tmp/ffbk_clrd2025_cdr/inspect_clrd2025.py
+          python tmp/ffbk_clrd2025_cdr/inspect_clrd2025.py /tmp/clrd2025.csv > tmp/ffbk_clrd2025_cdr/inspection.log
+
+      - name: Execute rolling realised-CDR challenge
+        shell: bash
+        run: |
+          set -euo pipefail
+          script=tmp/ffbk_clrd2025_cdr/reserve_underwriting_clrd2025_realised_cdr_probe_v3.py
+          python -m py_compile tmp/ffbk_clrd2025_cdr/reserve_underwriting_clrd2025_realised_cdr_probe_v2.py "$script"
+          python "$script" /tmp/clrd.csv /tmp/clrd2025.csv --check > tmp/ffbk_clrd2025_cdr/result.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads(Path('tmp/ffbk_clrd2025_cdr/result.json').read_text())
+          summary = {
+              'schema': r['schema'],
+              'design': r['design'],
+              'source': r['source'],
+              'panel': r['panel'],
+              'correlations': r['correlations'],
+              'heterogeneity': r['heterogeneity'],
+              'target_comparisons': r['target_comparisons'],
+              'distributions': r['distributions'],
+          }
+          Path('tmp/ffbk_clrd2025_cdr/summary.json').write_text(
+              json.dumps(summary, sort_keys=True, separators=(',', ':')) + '\n'
+          )
+          print(json.dumps(summary, sort_keys=True))
+          PY
+
+      - name: Upload bounded research evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-clrd2025-realised-cdr-challenge
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            tmp/ffbk_clrd2025_cdr/source_receipt.json
+            tmp/ffbk_clrd2025_cdr/inspection.json
+            tmp/ffbk_clrd2025_cdr/inspection.log
+            tmp/ffbk_clrd2025_cdr/result.json
+            tmp/ffbk_clrd2025_cdr/summary.json
