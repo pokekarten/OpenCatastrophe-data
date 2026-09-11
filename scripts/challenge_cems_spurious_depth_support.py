@@ -239,12 +239,14 @@ def _mark_exactly_covered(
     max_col_offset: int,
     initial_covered: Any,
 ) -> Any:
-    """Mark candidates covered by any exact WGS84-near seed in the row envelope.
+    """Mark candidates covered by an exact WGS84-near seed in the row envelope.
 
-    For a fixed seed row, only the nearest seed immediately left/right of a
-    candidate can minimize longitude separation. Gather those bounded pairs for
-    every retained seed row, then make one vectorized Geod.inv call per candidate
-    row instead of millions of small geodesic calls on the real Europe raster.
+    The WGS84 ellipsoid is invariant under longitude rotation and reflection.
+    On the accepted north-up unrotated grid, distance for a fixed candidate row,
+    seed row, and absolute column offset is therefore identical for every column.
+    We still select both nearest left/right seeds exactly as preregistered, but
+    evaluate each distinct (seed row, absolute column offset) geometry only once
+    with Geod.inv and reuse that exact geodesic result within this candidate row.
     """
     covered = initial_covered.copy()
     remaining = np.flatnonzero(~covered)
@@ -253,8 +255,8 @@ def _mark_exactly_covered(
 
     candidates = candidate_columns[remaining]
     pair_candidate_indices: list[Any] = []
-    pair_seed_columns: list[Any] = []
     pair_seed_rows: list[Any] = []
+    pair_col_offsets: list[Any] = []
 
     for seed_row in sorted(seed_rows, key=lambda row: (abs(row - candidate_row), row)):
         seeds = seed_rows[seed_row]
@@ -275,46 +277,65 @@ def _mark_exactly_covered(
             remaining_indices = remaining[valid]
             candidate_subset = candidate_columns[remaining_indices]
             seed_subset = seeds[seed_indices[valid]]
-            envelope = np.abs(seed_subset - candidate_subset) <= max_col_offset
+            col_offsets = np.abs(seed_subset - candidate_subset).astype(
+                np.int64,
+                copy=False,
+            )
+            envelope = col_offsets <= max_col_offset
             if not bool(envelope.any()):
                 continue
 
             remaining_indices = remaining_indices[envelope]
-            seed_subset = seed_subset[envelope]
+            col_offsets = col_offsets[envelope]
             pair_candidate_indices.append(remaining_indices)
-            pair_seed_columns.append(seed_subset)
             pair_seed_rows.append(
-                np.full(seed_subset.shape, seed_row, dtype=np.int64)
+                np.full(col_offsets.shape, seed_row, dtype=np.int64)
             )
+            pair_col_offsets.append(col_offsets)
 
     if not pair_candidate_indices:
         return covered
 
     candidate_indices = np.concatenate(pair_candidate_indices)
-    seed_columns = np.concatenate(pair_seed_columns)
     seed_row_indices = np.concatenate(pair_seed_rows)
-    candidate_subset = candidate_columns[candidate_indices]
+    col_offsets = np.concatenate(pair_col_offsets)
 
-    candidate_longitudes = (
-        float(transform.c)
-        + (candidate_subset.astype(float) + 0.5) * float(transform.a)
+    # Encode each repeated geodesic geometry as one bounded integer key.
+    # seed_row is non-negative and col_offsets is already bounded by the frozen
+    # envelope, so this mapping is one-to-one for the current candidate row.
+    stride = max_col_offset + 1
+    geometry_keys = seed_row_indices * stride + col_offsets
+    unique_keys, inverse = np.unique(geometry_keys, return_inverse=True)
+    lookup_seed_rows = unique_keys // stride
+    lookup_col_offsets = unique_keys % stride
+
+    candidate_longitude, candidate_latitude = _cell_centre(
+        transform,
+        candidate_row,
+        0,
     )
-    candidate_latitude = _cell_centre(transform, candidate_row, 0)[1]
+    candidate_longitudes = np.full(
+        lookup_col_offsets.shape,
+        candidate_longitude,
+        dtype=float,
+    )
     candidate_latitudes = np.full(
-        candidate_longitudes.shape,
+        lookup_col_offsets.shape,
         candidate_latitude,
         dtype=float,
     )
     seed_longitudes = (
-        float(transform.c)
-        + (seed_columns.astype(float) + 0.5) * float(transform.a)
+        candidate_longitude
+        + lookup_col_offsets.astype(float) * float(transform.a)
     )
     seed_latitudes = (
         float(transform.f)
-        + (seed_row_indices.astype(float) + 0.5) * float(transform.e)
+        + (lookup_seed_rows.astype(float) + 0.5) * float(transform.e)
     )
 
-    distances = np.asarray(
+    # One vectorized exact-geodesic call per candidate row, now bounded by
+    # (#retained seed rows) * (max_col_offset + 1), independent of candidate count.
+    lookup_distances = np.asarray(
         _distance_metres(
             geod,
             candidate_longitudes,
@@ -324,6 +345,7 @@ def _mark_exactly_covered(
         ),
         dtype=float,
     )
+    distances = lookup_distances[inverse]
     within = distances <= distance_threshold_metres
     if bool(within.any()):
         covered[np.unique(candidate_indices[within])] = True

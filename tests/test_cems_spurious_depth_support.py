@@ -180,22 +180,83 @@ class CemsSpuriousDepthSupportTests(unittest.TestCase):
         ):
             self._run(mask, rp10, rp10_transform=shifted)
 
-    def test_geodesic_candidates_are_vectorized_once_per_candidate_row(self) -> None:
+    def test_geodesic_lookup_matches_direct_pairwise_decisions(self) -> None:
         transform = from_origin(10.0, 50.0, 0.01, 0.01)
-        candidates = np.array([1, 3, 5], dtype=np.int64)
+        candidates = np.array([1, 3, 5, 7, 9, 11], dtype=np.int64)
         seed_rows = {
-            2: np.array([1, 4], dtype=np.int64),
-            3: np.array([0, 2, 5], dtype=np.int64),
-            4: np.array([3, 6], dtype=np.int64),
+            2: np.array([0, 2, 4, 8, 12], dtype=np.int64),
+            3: np.array([0, 6, 10, 13], dtype=np.int64),
+            4: np.array([1, 5, 9, 12], dtype=np.int64),
         }
         initially_covered = np.zeros(candidates.size, dtype=bool)
         geod = Geod(ellps="WGS84")
 
-        with mock.patch.object(
-            mod,
-            "_distance_metres",
-            wraps=mod._distance_metres,
-        ) as distance:
+        def direct(threshold: float):
+            covered = initially_covered.copy()
+            for candidate_index, candidate_column in enumerate(candidates):
+                candidate_lon, candidate_lat = mod._cell_centre(
+                    transform, 3, int(candidate_column)
+                )
+                for seed_row, seeds in seed_rows.items():
+                    insertion = int(np.searchsorted(seeds, candidate_column))
+                    for seed_index in (insertion - 1, insertion):
+                        if not 0 <= seed_index < seeds.size:
+                            continue
+                        seed_column = int(seeds[seed_index])
+                        if abs(seed_column - int(candidate_column)) > 10:
+                            continue
+                        seed_lon, seed_lat = mod._cell_centre(
+                            transform, seed_row, seed_column
+                        )
+                        distance = float(
+                            mod._distance_metres(
+                                geod,
+                                candidate_lon,
+                                candidate_lat,
+                                seed_lon,
+                                seed_lat,
+                            )
+                        )
+                        if distance <= threshold:
+                            covered[candidate_index] = True
+                            break
+                    if covered[candidate_index]:
+                        break
+            return covered
+
+        for threshold in (500.0, 1_000.0, 1_500.0, 2_500.0):
+            with self.subTest(threshold=threshold):
+                optimized = mod._mark_exactly_covered(
+                    candidates,
+                    3,
+                    seed_rows,
+                    transform=transform,
+                    geod=geod,
+                    distance_threshold_metres=threshold,
+                    max_col_offset=10,
+                    initial_covered=initially_covered,
+                )
+                self.assertTrue(np.array_equal(optimized, direct(threshold)))
+
+    def test_geodesic_lookup_deduplicates_repeated_row_offset_geometry(self) -> None:
+        transform = from_origin(10.0, 50.0, 0.01, 0.01)
+        candidates = np.arange(1, 100, 2, dtype=np.int64)
+        seed_rows = {
+            2: np.arange(0, 100, 4, dtype=np.int64),
+            3: np.arange(0, 100, 4, dtype=np.int64),
+            4: np.arange(0, 100, 4, dtype=np.int64),
+        }
+        initially_covered = np.zeros(candidates.size, dtype=bool)
+        geod = Geod(ellps="WGS84")
+        observed_points: list[int] = []
+
+        original = mod._distance_metres
+
+        def recording_distance(geod_arg, lon1, lat1, lon2, lat2):
+            observed_points.append(int(np.asarray(lon1).size))
+            return original(geod_arg, lon1, lat1, lon2, lat2)
+
+        with mock.patch.object(mod, "_distance_metres", side_effect=recording_distance) as distance:
             covered = mod._mark_exactly_covered(
                 candidates,
                 3,
@@ -209,6 +270,9 @@ class CemsSpuriousDepthSupportTests(unittest.TestCase):
 
         self.assertTrue(bool(covered.all()))
         self.assertEqual(distance.call_count, 1)
+        self.assertEqual(len(observed_points), 1)
+        self.assertLessEqual(observed_points[0], len(seed_rows) * (10 + 1))
+        self.assertLess(observed_points[0], candidates.size * len(seed_rows) * 2)
 
 
 if __name__ == "__main__":
