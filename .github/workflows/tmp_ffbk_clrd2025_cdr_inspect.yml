@@ -66,8 +66,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          script=tmp/ffbk_clrd2025_cdr/reserve_underwriting_clrd2025_realised_cdr_probe_v2.py
-          python -m py_compile "$script"
+          script=tmp/ffbk_clrd2025_cdr/reserve_underwriting_clrd2025_realised_cdr_probe_v3.py
+          python -m py_compile tmp/ffbk_clrd2025_cdr/reserve_underwriting_clrd2025_realised_cdr_probe_v2.py "$script"
           python "$script" /tmp/clrd.csv /tmp/clrd2025.csv --check > tmp/ffbk_clrd2025_cdr/result.json
           python - <<'PY'
           import json
