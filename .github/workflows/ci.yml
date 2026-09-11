@@ -114,6 +114,7 @@ jobs:
           tests.test_cems_spurious_support_acquisition
           tests.test_agent_action_cems_spurious_support
           tests.test_cems_spurious_falsifier_diagnostics
+          tests.test_cems_spurious_falsifier_derivation
           -v
 
   reuse:
