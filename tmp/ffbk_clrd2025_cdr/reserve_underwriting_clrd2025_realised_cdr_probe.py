@@ -103,14 +103,31 @@ def combine_vintages(old: Mapping[Coord, dict], new: Mapping[Coord, dict]) -> di
 
 
 def complete_company(rows: Mapping[Coord, dict], grcode: int) -> bool:
-    for ay in range(OLD_START_AY, NEW_END_AY + 1):
-        for lag in range(1, MAX_LAG + 1):
-            if (grcode, ay, lag) not in rows:
-                return False
-    for ay in range(EVAL_START_YEAR, EVAL_END_YEAR + 1):
-        base = rows[(grcode, ay, 1)]
-        if base["prem_net"] <= 0 or base["incurred"] <= 0:
+    """Balanced complete-case gate using only cells consumed by the experiment.
+
+    Requiring two complete 10x10 vintages would select on long-run reporting
+    continuity far beyond what the rolling CDR actually consumes. This gate
+    instead requires the UW cell, opening-premium cell, and the two successive
+    cumulative observations needed for every evaluated CDR year.
+    """
+    for year in range(EVAL_START_YEAR, EVAL_END_YEAR + 1):
+        uw_key = (grcode, year, 1)
+        if uw_key not in rows:
             return False
+        uw = rows[uw_key]
+        if uw["prem_net"] <= 0 or uw["incurred"] <= 0:
+            return False
+        for ay in range(year - (MAX_LAG - 1), year):
+            age_open = year - ay
+            required = (
+                (grcode, ay, 1),
+                (grcode, ay, age_open),
+                (grcode, ay, age_open + 1),
+            )
+            if any(key not in rows for key in required):
+                return False
+            if rows[(grcode, ay, 1)]["prem_net"] <= 0:
+                return False
     return True
 
 
