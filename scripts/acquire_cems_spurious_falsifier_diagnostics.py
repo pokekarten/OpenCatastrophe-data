@@ -38,6 +38,61 @@ EXPECTED_MAX_COL_OFFSET = 71
 EXPECTED_LOWER_BOUND_METRES_PER_RADIAN = 6_300_000.0
 EXPECTED_PYPROJ_VERSION = "3.7.2"
 
+_ALLOWED_DERIVATION_KEYS = frozenset(
+    {
+        "schema_version",
+        "source_issue",
+        "stage_d_source_issue",
+        "candidate_support_cells",
+        "rp10_seed_cells",
+        "candidate_farther_than_threshold_cells",
+        "distance_threshold_metres",
+        "max_row_offset",
+        "max_col_offset",
+        "global_nearest_row_pruning_lower_bound_metres_per_radian",
+        "diagnostic",
+        "diagnostic_only",
+        "small_channel_filter_reconstructed",
+        "mask_value_semantics_verified",
+        "per_cell_scientific_correctness_verified",
+        "benchmark_use_authorized",
+        "model_use_authorized",
+        "publication_authorized",
+        "external_bytes_persisted",
+    }
+)
+_ALLOWED_DIAGNOSTIC_KEYS = frozenset(
+    {
+        "schema_version",
+        "source_issue",
+        "stage_d_source_issue",
+        "stage_d_verdict",
+        "stage_d_disposition",
+        "falsifier_count",
+        "distance_threshold_metres",
+        "falsifier_digest_sha256",
+        "falsifier_digest_encoding",
+        "raster_cell_bbox",
+        "cell_centre_bounds",
+        "nearest_distance_summary_metres",
+        "first_16_falsifiers",
+        "components_4_neighbour",
+        "components_8_neighbour",
+        "edge_envelope_falsifier_cells",
+        "interior_falsifier_cells",
+        "max_row_offset",
+        "max_col_offset",
+        "diagnostic_only",
+        "small_channel_filter_reconstructed",
+        "mask_value_semantics_verified",
+        "per_cell_scientific_correctness_verified",
+        "benchmark_use_authorized",
+        "model_use_authorized",
+        "publication_authorized",
+        "external_bytes_persisted",
+    }
+)
+
 
 class CemsSpuriousFalsifierDiagnosticAcquisitionError(RuntimeError):
     """Raised when exact-byte #835 acquisition/diagnostics fail closed."""
@@ -47,6 +102,15 @@ def _require_false(mapping: dict[str, Any], field: str, *, label: str) -> None:
     if mapping.get(field) is not False:
         raise CemsSpuriousFalsifierDiagnosticAcquisitionError(
             f"{label} exceeded authority ceiling: {field}"
+        )
+
+
+def _validate_exact_projection(mapping: dict[str, Any], allowed: frozenset[str], *, label: str) -> None:
+    unexpected = set(mapping) - allowed
+    missing = allowed - set(mapping)
+    if unexpected or missing:
+        raise CemsSpuriousFalsifierDiagnosticAcquisitionError(
+            f"CEMS #835 {label} projection keys drifted"
         )
 
 
@@ -147,6 +211,7 @@ def _validate_derivation_result(result: dict[str, Any]) -> dict[str, Any]:
         raise CemsSpuriousFalsifierDiagnosticAcquisitionError(
             "CEMS #835 derivation result schema is invalid"
         )
+    _validate_exact_projection(result, _ALLOWED_DERIVATION_KEYS, label="derivation")
     exact_fields = {
         "source_issue": SOURCE_ISSUE,
         "stage_d_source_issue": 823,
@@ -171,6 +236,7 @@ def _validate_derivation_result(result: dict[str, Any]) -> dict[str, Any]:
         raise CemsSpuriousFalsifierDiagnosticAcquisitionError(
             "CEMS #835 bounded diagnostic schema is invalid"
         )
+    _validate_exact_projection(diagnostic, _ALLOWED_DIAGNOSTIC_KEYS, label="diagnostic")
     if diagnostic.get("source_issue") != SOURCE_ISSUE:
         raise CemsSpuriousFalsifierDiagnosticAcquisitionError(
             "CEMS #835 bounded diagnostic issue binding drifted"
@@ -238,7 +304,11 @@ def _validate_derivation_result(result: dict[str, Any]) -> dict[str, Any]:
         previous_cell = current_cell
         for field in ("longitude", "latitude", "nearest_distance_metres"):
             value = item.get(field)
-            if type(value) not in (int, float) or isinstance(value, bool) or not math.isfinite(float(value)):
+            if (
+                type(value) not in (int, float)
+                or isinstance(value, bool)
+                or not math.isfinite(float(value))
+            ):
                 raise CemsSpuriousFalsifierDiagnosticAcquisitionError(
                     f"CEMS #835 audit sample field is invalid: {field}"
                 )
