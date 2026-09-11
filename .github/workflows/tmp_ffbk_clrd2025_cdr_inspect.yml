@@ -1,0 +1,51 @@
+name: tmp FFBK CLRD2025 CDR inspection
+
+on:
+  pull_request:
+    paths:
+      - 'tmp/ffbk_clrd2025_cdr/**'
+      - '.github/workflows/tmp_ffbk_clrd2025_cdr_inspect.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Materialize pinned CLRD2025 bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://raw.githubusercontent.com/casact/chainladder-python/c8be839aa273a9ae87ce1d03fc12d03e81d76cf2/chainladder/utils/data/clrd2025.csv'
+          curl --fail --location --silent --show-error "$url" --output /tmp/clrd2025.csv
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          p = Path('/tmp/clrd2025.csv')
+          data = p.read_bytes()
+          blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+          print('bytes', len(data), 'blob', blob, 'sha256', hashlib.sha256(data).hexdigest())
+          assert len(data) == 5868245, len(data)
+          assert blob == '8d0400f1ace87c3e1e1202d359ef3bb6111b3dd0', blob
+          PY
+
+      - name: Inspect time geometry
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile tmp/ffbk_clrd2025_cdr/inspect_clrd2025.py
+          python tmp/ffbk_clrd2025_cdr/inspect_clrd2025.py /tmp/clrd2025.csv | tee tmp/ffbk_clrd2025_cdr/inspection.log
+
+      - name: Upload inspection evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-clrd2025-cdr-inspection
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            tmp/ffbk_clrd2025_cdr/inspection.json
+            tmp/ffbk_clrd2025_cdr/inspection.log
