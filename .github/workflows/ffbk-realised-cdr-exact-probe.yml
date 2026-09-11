@@ -1,0 +1,98 @@
+name: FFBK realised CDR exact probe
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tmp/ffbk_realised_cdr/**'
+      - '.github/workflows/ffbk-realised-cdr-exact-probe.yml'
+permissions:
+  contents: read
+jobs:
+  exact-probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout temporary evidence branch
+        uses: actions/checkout@v4
+      - name: Verify copied research code identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          for p in [
+              Path('tmp/ffbk_realised_cdr/scripts/reserve_underwriting_realised_cdr_panel.py'),
+              Path('tmp/ffbk_realised_cdr/tests/test_reserve_underwriting_realised_cdr_panel.py'),
+              Path('tmp/ffbk_realised_cdr/scripts/reserve_underwriting_h0h3_preflight.py'),
+          ]:
+              b=p.read_bytes(); blob=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
+              print(p, 'bytes=', len(b), 'git_blob=', blob)
+          PY
+      - name: Materialize pinned public CLRD bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://raw.githubusercontent.com/casact/chainladder-python/221c4015d7d33c8520f57e3b522970f2e8baffab/chainladder/utils/data/clrd.csv'
+          curl --fail --location --silent --show-error "$url" --output /tmp/clrd.csv
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          p=Path('/tmp/clrd.csv'); b=p.read_bytes()
+          blob=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
+          sha=hashlib.sha256(b).hexdigest()
+          print('bytes',len(b),'git_blob',blob,'sha256',sha)
+          assert len(b)==3235366
+          assert blob=='04e54cfa41e7bd879877e5c5aea5e63a6d20d29b'
+          assert sha=='5785a95d5d24943f601a9c46b83cb313ba5109a374331a71e28a86eb702d9eef'
+          PY
+      - name: Run focused CDR construction tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile \
+            tmp/ffbk_realised_cdr/scripts/reserve_underwriting_realised_cdr_panel.py \
+            tmp/ffbk_realised_cdr/tests/test_reserve_underwriting_realised_cdr_panel.py \
+            tmp/ffbk_realised_cdr/scripts/reserve_underwriting_h0h3_preflight.py
+          python -m unittest discover -v -s tmp/ffbk_realised_cdr/tests -p 'test_reserve_underwriting_realised_cdr_panel.py' \
+            2>&1 | tee tmp/ffbk_realised_cdr/focused_test.log
+      - name: Build source-bound realised CDR panels
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tmp/ffbk_realised_cdr/out
+          python tmp/ffbk_realised_cdr/scripts/reserve_underwriting_realised_cdr_panel.py \
+            /tmp/clrd.csv --check-source --output-dir tmp/ffbk_realised_cdr/out \
+            > tmp/ffbk_realised_cdr/builder_stdout.json
+          cat tmp/ffbk_realised_cdr/out/realised_cdr_panel_summary.json
+      - name: Run H0-H3 on both reserve targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for model in volume median; do
+            panel="tmp/ffbk_realised_cdr/out/realised_cdr_panel_${model}.csv"
+            sha=$(sha256sum "$panel" | awk '{print $1}')
+            python tmp/ffbk_realised_cdr/scripts/reserve_underwriting_h0h3_preflight.py \
+              "$panel" --target-kind REALISED_CDR --expected-input-sha256 "$sha" \
+              --output "tmp/ffbk_realised_cdr/out/h0h3_${model}.json"
+          done
+          python - <<'PY'
+          import json, pathlib
+          for model in ('volume','median'):
+              p=pathlib.Path(f'tmp/ffbk_realised_cdr/out/h0h3_{model}.json')
+              d=json.loads(p.read_text())
+              print(model, json.dumps(d, sort_keys=True))
+          PY
+      - name: Upload bounded evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffbk-realised-cdr-1549-exact-probe
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            tmp/ffbk_realised_cdr/focused_test.log
+            tmp/ffbk_realised_cdr/builder_stdout.json
+            tmp/ffbk_realised_cdr/out/realised_cdr_panel_summary.json
+            tmp/ffbk_realised_cdr/out/realised_cdr_panel_volume.csv
+            tmp/ffbk_realised_cdr/out/realised_cdr_panel_median.csv
+            tmp/ffbk_realised_cdr/out/h0h3_volume.json
+            tmp/ffbk_realised_cdr/out/h0h3_median.json
