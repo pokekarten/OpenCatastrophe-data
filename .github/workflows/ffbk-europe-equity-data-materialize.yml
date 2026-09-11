@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: Apache-2.0
+name: FFBK Europe equity data materialize
+
+on:
+  push:
+    branches:
+      - research/ffbk-europe-equity-data-materialize-20260911
+
+permissions:
+  contents: read
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Download exact official transport
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Europe_3_Factors_Daily_CSV.zip'
+          expected='b6c3a900677aecf716aa9e0915290b25e7a07c8e8d6db134b9244c18ff0d033e'
+          curl --fail --location --retry 3 --retry-all-errors --output Europe_3_Factors_Daily_CSV.zip "$url"
+          actual="$(sha256sum Europe_3_Factors_Daily_CSV.zip | awk '{print $1}')"
+          bytes="$(wc -c < Europe_3_Factors_Daily_CSV.zip | tr -d ' ')"
+          echo "actual_sha256=$actual"
+          echo "bytes=$bytes"
+          test "$actual" = "$expected"
+          test "$bytes" = '64386'
+          python - <<'PY'
+          import csv, io, zipfile
+          p='Europe_3_Factors_Daily_CSV.zip'
+          with zipfile.ZipFile(p) as z:
+              names=z.namelist()
+              assert names == ['Europe_3_Factors_Daily.csv'], names
+              b=z.read(names[0])
+          rows=[]
+          for r in csv.reader(io.StringIO(b.decode('utf-8-sig'))):
+              if len(r)>=5 and r[0].strip().isdigit() and len(r[0].strip())==8:
+                  rows.append(r[0].strip())
+          print(f'member={names[0]} member_bytes={len(b)} rows={len(rows)} first={rows[0]} last={rows[-1]}')
+          assert len(rows)==9392
+          assert rows[0]=='19900702'
+          assert rows[-1]=='20260630'
+          PY
+      - name: Upload exact transport artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ffbk-europe-equity-data-202606
+          path: Europe_3_Factors_Daily_CSV.zip
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
