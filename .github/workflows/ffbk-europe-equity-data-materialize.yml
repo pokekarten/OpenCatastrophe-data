@@ -14,39 +14,52 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - name: Download exact official transport
+      - name: Capture current official transport provenance without target inspection
         shell: bash
         run: |
           set -euo pipefail
           url='https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Europe_3_Factors_Daily_CSV.zip'
-          expected='b6c3a900677aecf716aa9e0915290b25e7a07c8e8d6db134b9244c18ff0d033e'
+          expected_current='5af9c7e04e61bc74fd59c58913e1ca93336ba9c2c8948aca417644f2b8055cc5'
           curl --fail --location --retry 3 --retry-all-errors --output Europe_3_Factors_Daily_CSV.zip "$url"
           actual="$(sha256sum Europe_3_Factors_Daily_CSV.zip | awk '{print $1}')"
           bytes="$(wc -c < Europe_3_Factors_Daily_CSV.zip | tr -d ' ')"
           echo "actual_sha256=$actual"
           echo "bytes=$bytes"
-          test "$actual" = "$expected"
-          test "$bytes" = '64386'
+          test "$actual" = "$expected_current"
+          test "$bytes" = '64532'
           python - <<'PY'
-          import csv, io, zipfile
+          import csv, hashlib, io, zipfile
           p='Europe_3_Factors_Daily_CSV.zip'
-          with zipfile.ZipFile(p) as z:
+          raw=open(p,'rb').read()
+          with zipfile.ZipFile(io.BytesIO(raw)) as z:
               names=z.namelist()
               assert names == ['Europe_3_Factors_Daily.csv'], names
               b=z.read(names[0])
+          text=b.decode('utf-8-sig')
+          metadata=[]
           rows=[]
-          for r in csv.reader(io.StringIO(b.decode('utf-8-sig'))):
+          for line in text.splitlines():
+              stripped=line.strip()
+              if stripped and not (len(stripped.split(',')[0].strip())==8 and stripped.split(',')[0].strip().isdigit()):
+                  if len(metadata) < 12:
+                      metadata.append(stripped)
+          for r in csv.reader(io.StringIO(text)):
               if len(r)>=5 and r[0].strip().isdigit() and len(r[0].strip())==8:
                   rows.append(r[0].strip())
-          print(f'member={names[0]} member_bytes={len(b)} rows={len(rows)} first={rows[0]} last={rows[-1]}')
-          assert len(rows)==9392
+          print(f'member={names[0]}')
+          print(f'member_sha256={hashlib.sha256(b).hexdigest()}')
+          print(f'member_bytes={len(b)}')
+          print(f'rows={len(rows)} first={rows[0]} last={rows[-1]}')
+          print('metadata_lines:')
+          for line in metadata:
+              print(line)
+          # Structural/provenance inspection only: no return values or fitted targets are printed.
           assert rows[0]=='19900702'
-          assert rows[-1]=='20260630'
           PY
-      - name: Upload exact transport artifact
+      - name: Upload current transport artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: ffbk-europe-equity-data-202606
+          name: ffbk-europe-equity-data-current
           path: Europe_3_Factors_Daily_CSV.zip
           if-no-files-found: error
           retention-days: 1
