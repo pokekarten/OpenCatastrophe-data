@@ -1,0 +1,54 @@
+name: CAS 2010 exact source transport
+
+on:
+  push:
+    branches:
+      - research-run/cas2010-exact-source-transport-sol
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  transport:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download exact authorized CAS source bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target
+          curl --fail --location --retry 5 --retry-all-errors \
+            'https://www.casact.org/sites/default/files/2026-03/ppauto_pos98-07%20%281%29.csv' -o target/ppauto.csv
+          curl --fail --location --retry 5 --retry-all-errors \
+            'https://www.casact.org/sites/default/files/2026-03/wkcomp_pos_98-07.csv' -o target/wkcomp.csv
+          curl --fail --location --retry 5 --retry-all-errors \
+            'https://www.casact.org/sites/default/files/2026-03/comauto_pos_98-07.csv' -o target/comauto.csv
+          curl --fail --location --retry 5 --retry-all-errors \
+            'https://www.casact.org/sites/default/files/2026-03/medmal_pos_98-07.csv' -o target/medmal.csv
+          curl --fail --location --retry 5 --retry-all-errors \
+            'https://www.casact.org/sites/default/files/2026-03/prodliab_pos_98-07.csv' -o target/prodliab.csv
+          curl --fail --location --retry 5 --retry-all-errors \
+            'https://www.casact.org/sites/default/files/2026-03/othliab_pos_98-07.csv' -o target/othliab.csv
+          cat > expected.sha256 <<'EOF'
+          6e838f1e44c67218133ef1c8e28ca2b34b9f21ba4ee94de408c412638f798d96  target/ppauto.csv
+          8d0b02bed0939e932f9078f65266e9a398f580f90e5227cde053dd5b520affef  target/wkcomp.csv
+          5012bd4c9048e300669e2f4fc915850449099e159481b4c3349b574f6f00afe1  target/comauto.csv
+          50ea237914797562661b82996765e40b1fd09784a63130463bbd4972f74dbba3  target/medmal.csv
+          f1070b5a95658bfeb6719fdf4ffdabc8b7e3f97771cdb4b3f503eb7d6e486f01  target/prodliab.csv
+          f514136de4be7b5ac114346709c309cd2464861e9fbb683051849f9fa6eadc50  target/othliab.csv
+          EOF
+          sha256sum --check expected.sha256
+          sha256sum target/*.csv
+          wc -c target/*.csv
+      - name: Upload byte-exact source artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cas2010-exact-sources
+          path: target/*.csv
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
