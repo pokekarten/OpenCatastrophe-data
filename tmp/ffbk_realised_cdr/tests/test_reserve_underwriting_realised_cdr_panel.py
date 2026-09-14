@@ -68,7 +68,7 @@ class CdrPanelTests(unittest.TestCase):
         cells = synthetic_cells()
         # Perturb one development ratio to make weighting matter.
         old = cells[(1, 2002, 2003)]
-        cells[(1, 2002, 2003)] = mod.Cell(old.grcode, old.grname, old.ay, old.calendar, old.incurred, old.paid*1.25, old.prem_net)
+        cells[(1, 2002, 2003)] = mod.Cell(old.grcode, old.grname, old.lob, old.ay, old.calendar, old.incurred, old.paid*1.25, old.prem_net)
         fv = mod.fit_factors(cells, 1, 2004, 3, 'volume')
         fm = mod.fit_factors(cells, 1, 2004, 3, 'median')
         self.assertNotEqual(fv[1], fm[1])
