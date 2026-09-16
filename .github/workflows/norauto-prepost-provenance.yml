@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: norauto pre-post provenance comparison
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/norauto_prepost_provenance_compare.py'
+      - '.github/workflows/norauto-prepost-provenance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install numpy==2.3.3 pandas==2.3.2 pyreadr==0.5.3
+      - run: python research_runners/norauto_prepost_provenance_compare.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: norauto-prepost-provenance
+          path: norauto_prepost_provenance_artifact/
+          if-no-files-found: error
+          retention-days: 30
