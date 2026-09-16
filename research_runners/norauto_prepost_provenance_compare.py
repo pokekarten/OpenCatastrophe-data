@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
 """PROVENANCE ONLY: compare norauto.rda immediately before/after CASdatasets 8205811c.
 
 This diagnostic answers one bounded source-history question left open by FFBK #1520:
@@ -11,7 +13,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
 import urllib.request
 from pathlib import Path
 
@@ -66,7 +67,10 @@ def equal_mask(a: pd.Series, b: pd.Series) -> np.ndarray:
     try:
         eq = a.eq(b).fillna(False).to_numpy(dtype=bool)
     except Exception:
-        eq = (a.astype("string").fillna("<NA>") == b.astype("string").fillna("<NA>")).to_numpy(dtype=bool)
+        eq = (
+            a.astype("string").fillna("<NA>")
+            == b.astype("string").fillna("<NA>")
+        ).to_numpy(dtype=bool)
     return eq | both_na
 
 
@@ -124,7 +128,9 @@ if not same_shape or not same_columns:
         "pre_columns": list(pre.columns),
         "post_columns": list(post.columns),
     }
-    (OUT / "result.json").write_text(json.dumps(structural, indent=2, sort_keys=True) + "\n")
+    (OUT / "result.json").write_text(
+        json.dumps(structural, indent=2, sort_keys=True) + "\n"
+    )
     print(json.dumps(structural, indent=2, sort_keys=True))
     raise SystemExit(0)
 
@@ -167,7 +173,10 @@ expo = {}
 if "Expo" in pre.columns:
     pre_expo = pd.to_numeric(pre["Expo"], errors="raise").to_numpy(dtype=float)
     post_expo = pd.to_numeric(post["Expo"], errors="raise").to_numpy(dtype=float)
-    expo_changed = ~(np.isclose(pre_expo, post_expo, rtol=0.0, atol=0.0) | (np.isnan(pre_expo) & np.isnan(post_expo)))
+    expo_changed = ~(
+        np.isclose(pre_expo, post_expo, rtol=0.0, atol=0.0)
+        | (np.isnan(pre_expo) & np.isnan(post_expo))
+    )
     expo = {
         "changed_rows_exact": int(expo_changed.sum()),
         "pre_min": float(np.nanmin(pre_expo)),
@@ -191,7 +200,10 @@ else:
 
 receipt = {
     "status": "PROVENANCE_DIAGNOSTIC_ONLY_NO_MODEL_SCORES",
-    "question": "Did CASdatasets commit 8205811c ('rescale data file 11') alter norauto materialized data, especially Expo?",
+    "question": (
+        "Did CASdatasets commit 8205811c ('rescale data file 11') alter norauto "
+        "materialized data, especially Expo?"
+    ),
     "source": {
         "repository": REPOSITORY,
         "path": PATH,
@@ -217,8 +229,9 @@ receipt = {
     "columns": columns,
     "conclusion": conclusion,
     "authority_boundary": (
-        "This result characterizes exact pre/post source objects only. It does not authorize reverse-rescaling, "
-        "row filtering, duration-model fitting, model promotion, or a causal interpretation of Expo."
+        "This result characterizes exact pre/post source objects only. It does not "
+        "authorize reverse-rescaling, row filtering, duration-model fitting, model "
+        "promotion, or a causal interpretation of Expo."
     ),
 }
 
