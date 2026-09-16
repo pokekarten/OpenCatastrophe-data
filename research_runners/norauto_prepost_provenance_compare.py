@@ -13,8 +13,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-import urllib.request
 from pathlib import Path
+import urllib.request
 
 import numpy as np
 import pandas as pd
@@ -53,7 +53,9 @@ def download(commit: str, expected_blob: str, name: str) -> tuple[bytes, Path]:
 def read_single(path: Path) -> tuple[str, pd.DataFrame]:
     objects = pyreadr.read_r(str(path))
     if len(objects) != 1:
-        raise RuntimeError(f"expected exactly one R object in {path}, got {list(objects)}")
+        raise RuntimeError(
+            f"expected exactly one R object in {path}, got {list(objects)}"
+        )
     name, df = next(iter(objects.items()))
     if not isinstance(df, pd.DataFrame):
         raise RuntimeError(f"expected data.frame, got {type(df)!r}")
@@ -154,7 +156,9 @@ for col in pre.columns:
         post_num = pd.to_numeric(post[col], errors="coerce")
         numeric_fraction = float((pre_num.notna() & post_num.notna()).mean())
         if numeric_fraction > 0.99:
-            item["numeric_change_profile"] = numeric_profile(pre[col], post[col], changed)
+            item["numeric_change_profile"] = numeric_profile(
+                pre[col], post[col], changed
+            )
         examples = []
         for idx in np.flatnonzero(changed)[:10]:
             av = pre[col].iloc[int(idx)]
