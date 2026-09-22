@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """PROVENANCE ONLY: compare norauto.rda immediately before/after CASdatasets 8205811c.
 
-This diagnostic answers one bounded source-history question left open by FFBK #1520:
+This diagnostic answers one bounded source-history question about the public CASdatasets lineage:
 did the 2017 commit labelled ``rescale data file 11`` change the materialized
 ``norauto`` table, and specifically its ``Expo`` values?
 
