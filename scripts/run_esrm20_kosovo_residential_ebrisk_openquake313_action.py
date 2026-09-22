@@ -31,16 +31,24 @@ try:
     from scripts import run_esrm20_kosovo_residential_ebrisk_openquake313 as runner
     from scripts import select_oq313_risk_by_event_rows as datastore_selector
     from scripts import project_oq313_risk_by_event_receipt as numerical_contract
+    from scripts import project_oq313_annualization_evidence as annualization_projector
 except ModuleNotFoundError:  # pragma: no cover - direct script execution path
     import classify_oq313_native_stderr as stderr_classifier
     import run_esrm20_kosovo_residential_ebrisk_openquake313 as runner
     import select_oq313_risk_by_event_rows as datastore_selector
     import project_oq313_risk_by_event_receipt as numerical_contract
+    import project_oq313_annualization_evidence as annualization_projector
 
 REQUEST_MARKER = "<!-- oc-eq1-esrm20-kosovo-oq313-run-request-v1 -->"
 RESULT_MARKER = "<!-- oc-eq1-esrm20-kosovo-oq313-run-result-v1 -->"
+ANNUALIZATION_RESULT_MARKER = (
+    "<!-- oc-eq1-esrm20-kosovo-oq313-annualization-result-v1 -->"
+)
 REQUEST_SCHEMA_VERSION = "oc-esrm20-kosovo-oq313-run-request-v1"
 RESULT_SCHEMA_VERSION = "oc-esrm20-kosovo-oq313-run-result-v1"
+ANNUALIZATION_RESULT_SCHEMA_VERSION = (
+    "oc-esrm20-kosovo-oq313-annualization-result-v1"
+)
 ACTION = "esrm20_kosovo_residential_oq313_run"
 CONTROL_ISSUE = 609
 PARENT_CONSUMER_ISSUE = 287
@@ -93,6 +101,26 @@ _ADAPTER_RESULT_FIELDS = {
 }
 _ADAPTER_BLOCKED_OPTIONAL_FIELDS = {"native_failure_diagnostic"}
 _BLOCKED_FAILURE_CODES = frozenset({"openquake_run_failed", "openquake_run_timeout"})
+_ANNUALIZATION_EVIDENCE_FIELDS = {
+    "schema_version",
+    "source_datasets",
+    "loss_type",
+    "structural_loss_id",
+    "runtime",
+    "events",
+    "weights",
+    "avg_losses",
+    "policy_present",
+    "insured_loss_present",
+    "datastore_rows_returned",
+    "external_provider_bytes_persisted",
+    "annualization_evidence_projected",
+    "reference_loss_comparison_performed",
+    "reference_loss_agreement_verified",
+    "scientific_validity_verified",
+    "publication_authorized",
+    "model_use_authorized",
+}
 _NUMERICAL_RECEIPT_FIELDS = {
     "experiment_label",
     "insurance_scope",
@@ -432,6 +460,196 @@ def _project_exact_datastore(path: Path) -> tuple[bytes, dict[str, Any]]:
                     ) from exc
 
 
+def _project_exact_annualization(
+    path: Path,
+) -> tuple[bytes, dict[str, Any]]:
+    if path.is_symlink() or not path.is_file():
+        raise KosovoResidentialOQ313ActionError(
+            "OpenQuake calculation datastore must be one regular file"
+        )
+    try:
+        from openquake.commonlib import datastore as oq_datastore
+    except ImportError as exc:  # pragma: no cover - only available in runtime image
+        raise KosovoResidentialOQ313ActionError(
+            "OpenQuake datastore runtime is unavailable"
+        ) from exc
+
+    dstore = None
+    primary_error_active = False
+    try:
+        dstore = oq_datastore.read(str(path), mode="r")
+        oq = dstore["oqparam"]
+        return annualization_projector.project_oq313_annualization_evidence(
+            dstore,
+            oq,
+        )
+    except annualization_projector.OQ313AnnualizationEvidenceError as exc:
+        primary_error_active = True
+        raise KosovoResidentialOQ313ActionError(
+            "completed OpenQuake datastore failed annualization projection"
+        ) from exc
+    except (KeyError, OSError, TypeError, ValueError) as exc:
+        primary_error_active = True
+        raise KosovoResidentialOQ313ActionError(
+            "cannot consume completed OpenQuake datastore for annualization"
+        ) from exc
+    finally:
+        if dstore is not None:
+            try:
+                dstore.close()
+            except (OSError, RuntimeError, ValueError) as exc:
+                if not primary_error_active:
+                    raise KosovoResidentialOQ313ActionError(
+                        "cannot close completed OpenQuake datastore"
+                    ) from exc
+
+
+def _validate_annualization_evidence(
+    payload: object,
+    identity: object,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    if type(payload) is not bytes or not payload:
+        raise KosovoResidentialOQ313ActionError(
+            "annualization evidence payload must be non-empty bytes"
+        )
+    if type(identity) is not dict or set(identity) != {"byte_count", "sha256"}:
+        raise KosovoResidentialOQ313ActionError(
+            "annualization evidence identity fields drifted"
+        )
+    byte_count = identity.get("byte_count")
+    digest = identity.get("sha256")
+    if type(byte_count) is not int or byte_count != len(payload):
+        raise KosovoResidentialOQ313ActionError(
+            "annualization evidence byte count drifted"
+        )
+    if type(digest) is not str or _DIGEST_RE.fullmatch(digest) is None:
+        raise KosovoResidentialOQ313ActionError(
+            "annualization evidence digest is invalid"
+        )
+    if digest != hashlib.sha256(payload).hexdigest():
+        raise KosovoResidentialOQ313ActionError(
+            "annualization evidence digest drifted"
+        )
+    try:
+        text = payload.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        raise KosovoResidentialOQ313ActionError(
+            "annualization evidence payload is not UTF-8"
+        ) from exc
+    document = _load_json_text(text, label="annualization evidence")
+    if type(document) is not dict or set(document) != _ANNUALIZATION_EVIDENCE_FIELDS:
+        raise KosovoResidentialOQ313ActionError(
+            "annualization evidence fields drifted"
+        )
+
+    exact = (
+        ("schema_version", annualization_projector.SCHEMA_VERSION),
+        ("loss_type", annualization_projector.LOSS_TYPE),
+        ("policy_present", False),
+        ("insured_loss_present", False),
+        ("datastore_rows_returned", False),
+        ("external_provider_bytes_persisted", False),
+        ("annualization_evidence_projected", True),
+        ("reference_loss_comparison_performed", False),
+        ("reference_loss_agreement_verified", False),
+        ("scientific_validity_verified", False),
+        ("publication_authorized", False),
+        ("model_use_authorized", False),
+    )
+    for field, expected in exact:
+        observed = document.get(field)
+        if type(observed) is not type(expected) or observed != expected:
+            raise KosovoResidentialOQ313ActionError(
+                f"annualization evidence {field} drifted"
+            )
+    if document.get("source_datasets") != {
+        "events": annualization_projector.EVENTS_DATASET,
+        "weights": annualization_projector.WEIGHTS_DATASET,
+        "avg_losses": annualization_projector.AVG_LOSSES_DATASET,
+    }:
+        raise KosovoResidentialOQ313ActionError(
+            "annualization evidence source datasets drifted"
+        )
+    for field in ("runtime", "events", "weights", "avg_losses"):
+        if type(document.get(field)) is not dict:
+            raise KosovoResidentialOQ313ActionError(
+                f"annualization evidence {field} shape drifted"
+            )
+    return document, dict(identity)
+
+
+def _annualization_terminal(
+    *,
+    execution_sha: str,
+    payload: object,
+    identity: object,
+) -> dict[str, Any]:
+    evidence, validated_identity = _validate_annualization_evidence(
+        payload,
+        identity,
+    )
+    return {
+        "schema_version": ANNUALIZATION_RESULT_SCHEMA_VERSION,
+        "source_issue": CONTROL_ISSUE,
+        "parent_consumer_issue": PARENT_CONSUMER_ISSUE,
+        "dataset_id": DATASET_ID,
+        "execution_sha": execution_sha,
+        "status": "pass",
+        "evidence_emitted": True,
+        "evidence_identity": validated_identity,
+        "evidence": evidence,
+        "oq_datastore_persisted": False,
+        "external_provider_bytes_persisted": False,
+        "reference_loss_comparison_performed": False,
+        "reference_loss_agreement_verified": False,
+        "scientific_validity_verified": False,
+        "publication_authorized": False,
+        "model_use_authorized": False,
+    }
+
+
+def _blocked_annualization_terminal(
+    *,
+    execution_sha: str,
+    code: str,
+) -> dict[str, Any]:
+    if code not in {
+        "annualization_projection_failed",
+        "annualization_validation_failed",
+    }:
+        raise KosovoResidentialOQ313ActionError(
+            "annualization failure code is not bounded"
+        )
+    return {
+        "schema_version": ANNUALIZATION_RESULT_SCHEMA_VERSION,
+        "source_issue": CONTROL_ISSUE,
+        "parent_consumer_issue": PARENT_CONSUMER_ISSUE,
+        "dataset_id": DATASET_ID,
+        "execution_sha": execution_sha,
+        "status": "blocked",
+        "evidence_emitted": False,
+        "failure_stage": "annualization_evidence",
+        "failure_code": code,
+        "oq_datastore_persisted": False,
+        "external_provider_bytes_persisted": False,
+        "reference_loss_comparison_performed": False,
+        "reference_loss_agreement_verified": False,
+        "scientific_validity_verified": False,
+        "publication_authorized": False,
+        "model_use_authorized": False,
+    }
+
+
+def _write_annualization_terminal(path: Path, document: dict[str, Any]) -> None:
+    payload = json.dumps(document, sort_keys=True, separators=(",", ":")) + "\n"
+    try:
+        path.write_text(payload, encoding="utf-8")
+    except OSError as exc:
+        raise KosovoResidentialOQ313ActionError(
+            "cannot write annualization terminal"
+        ) from exc
+
+
 def _adapter_concurrent_tasks(result: object) -> int:
     if type(result) is not dict:
         raise KosovoResidentialOQ313ActionError("canonical result must be an object")
@@ -638,6 +856,8 @@ def run_action_with_numerical_receipt(
     resolved_runtime: object,
     execute: Callable[..., tuple[bytes, dict[str, Any]]] = runner.run_kosovo_residential_ebrisk_openquake313,
     project_datastore: Callable[[Path], tuple[bytes, dict[str, Any]]] = _project_exact_datastore,
+    annualization_output: Path | None = None,
+    project_annualization: Callable[[Path], tuple[bytes, dict[str, Any]]] = _project_exact_annualization,
 ) -> dict[str, Any]:
     """Run the closed action and consume exactly one ephemeral completed datastore."""
 
@@ -691,6 +911,33 @@ def run_action_with_numerical_receipt(
                 code="calculation_datastore_path_invalid",
             )
 
+        if annualization_output is not None:
+            try:
+                annualization_payload, annualization_identity = (
+                    project_annualization(calc_path)
+                )
+            except KosovoResidentialOQ313ActionError:
+                annualization_terminal = _blocked_annualization_terminal(
+                    execution_sha=execution_sha,
+                    code="annualization_projection_failed",
+                )
+            else:
+                try:
+                    annualization_terminal = _annualization_terminal(
+                        execution_sha=execution_sha,
+                        payload=annualization_payload,
+                        identity=annualization_identity,
+                    )
+                except KosovoResidentialOQ313ActionError:
+                    annualization_terminal = _blocked_annualization_terminal(
+                        execution_sha=execution_sha,
+                        code="annualization_validation_failed",
+                    )
+            _write_annualization_terminal(
+                annualization_output,
+                annualization_terminal,
+            )
+
         try:
             numerical_payload, numerical_identity = project_datastore(calc_path)
         except KosovoResidentialOQ313ActionError:
@@ -734,6 +981,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--runtime-identity", type=Path)
     parser.add_argument("--resolved-runtime", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--annualization-output", type=Path)
     args = parser.parse_args(argv)
 
     body = os.environ.get(args.comment_body_env)
@@ -764,6 +1012,7 @@ def main(argv: list[str] | None = None) -> int:
         ),
         runtime_identity=_read_json(args.runtime_identity, label="runtime identity"),
         resolved_runtime=_read_json(args.resolved_runtime, label="resolved runtime"),
+        annualization_output=args.annualization_output,
     )
     payload = json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n"
     args.output.write_text(payload, encoding="utf-8")
