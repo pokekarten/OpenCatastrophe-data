@@ -61,6 +61,26 @@ class ViewerProvenanceTests(unittest.TestCase):
             "VIEWER_MAIN_BLOB_DIFFERS_FROM_FROZEN_V1_0",
         )
 
+    def test_redirect_chain_can_prove_canonicalization_before_sign_in(self) -> None:
+        result = subject.build_result(
+            legacy_final_url="https://gitlab.seismo.ethz.ch/users/sign_in",
+            legacy_redirect_chain=[
+                (
+                    "https://gitlab.seismo.ethz.ch/efehr/esrm20/-/raw/main/"
+                    "Risk/European_Risk_Country.csv?inline=false"
+                ),
+                "https://gitlab.seismo.ethz.ch/users/sign_in",
+            ],
+            project_metadata=self.project(),
+            file_metadata=self.file(),
+        )
+        self.assertTrue(result["legacy_raw_redirects_to_canonical"])
+        self.assertTrue(result["viewer_main_byte_equivalence_verified"])
+        self.assertEqual(
+            result["conclusion"],
+            "VIEWER_MAIN_BLOB_IDENTICAL_TO_FROZEN_V1_0",
+        )
+
     def test_wrong_redirect_fails_closed(self) -> None:
         result = subject.build_result(
             legacy_final_url=(
