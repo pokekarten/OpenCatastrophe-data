@@ -506,7 +506,8 @@ jobs:
             --source-group1-config /stage/Configuration_files/config_ebrisk_Group1.ini \
             --runtime-identity /receipts/runtime-identity.json \
             --resolved-runtime /receipts/resolved-runtime.json \
-            --output /result/oq313-terminal.json
+            --output /result/oq313-terminal.json \
+            --annualization-output /result/oq313-annualization.json
 
       - name: Re-fence bounded result and publish terminal evidence
         if: steps.dedup.outputs.skip != 'true'
@@ -549,3 +550,126 @@ jobs:
           gh api --method POST \
             "repos/$GITHUB_REPOSITORY/issues/609/comments" \
             --input "$RUNNER_TEMP/oq313-terminal-comment.json"
+
+
+      - name: Re-fence bounded annualization evidence and publish separately
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ANNUALIZATION_JSON="$(python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path(
+              os.environ["RUNNER_TEMP"],
+              "oq313-terminal-output",
+              "oq313-annualization.json",
+          )
+          result = json.loads(path.read_text(encoding="utf-8"))
+          common = {
+              "schema_version",
+              "source_issue",
+              "parent_consumer_issue",
+              "dataset_id",
+              "execution_sha",
+              "status",
+              "evidence_emitted",
+              "oq_datastore_persisted",
+              "external_provider_bytes_persisted",
+              "reference_loss_comparison_performed",
+              "reference_loss_agreement_verified",
+              "scientific_validity_verified",
+              "publication_authorized",
+              "model_use_authorized",
+          }
+          exact = {
+              "schema_version": "oc-esrm20-kosovo-oq313-annualization-result-v1",
+              "source_issue": 609,
+              "parent_consumer_issue": 287,
+              "dataset_id": "efehr.esrm20.risk-inputs.v1.0",
+              "execution_sha": os.environ["EXECUTION_SHA"],
+              "oq_datastore_persisted": False,
+              "external_provider_bytes_persisted": False,
+              "reference_loss_comparison_performed": False,
+              "reference_loss_agreement_verified": False,
+              "scientific_validity_verified": False,
+              "publication_authorized": False,
+              "model_use_authorized": False,
+          }
+          for field, expected in exact.items():
+              if type(result.get(field)) is not type(expected) or result.get(field) != expected:
+                  raise SystemExit(f"annualization terminal drifted at {field}")
+
+          status = result.get("status")
+          if status == "pass":
+              if set(result) != common | {"evidence_identity", "evidence"}:
+                  raise SystemExit("annualization PASS fields drifted")
+              if result.get("evidence_emitted") is not True:
+                  raise SystemExit("annualization PASS evidence flag drifted")
+              evidence = result.get("evidence")
+              identity = result.get("evidence_identity")
+              if type(evidence) is not dict:
+                  raise SystemExit("annualization PASS evidence shape drifted")
+              if type(identity) is not dict or set(identity) != {"byte_count", "sha256"}:
+                  raise SystemExit("annualization PASS identity fields drifted")
+              payload = (
+                  json.dumps(
+                      evidence,
+                      ensure_ascii=True,
+                      separators=(",", ":"),
+                      sort_keys=True,
+                  ).encode("utf-8")
+                  + b"\n"
+              )
+              if identity.get("byte_count") != len(payload):
+                  raise SystemExit("annualization PASS byte count drifted")
+              digest = identity.get("sha256")
+              if (
+                  not isinstance(digest, str)
+                  or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+                  or digest != hashlib.sha256(payload).hexdigest()
+              ):
+                  raise SystemExit("annualization PASS digest drifted")
+              if evidence.get("schema_version") != "oc-oq313-annualization-evidence-v1":
+                  raise SystemExit("annualization evidence schema drifted")
+              for field, expected in {
+                  "annualization_evidence_projected": True,
+                  "reference_loss_comparison_performed": False,
+                  "reference_loss_agreement_verified": False,
+                  "scientific_validity_verified": False,
+                  "publication_authorized": False,
+                  "model_use_authorized": False,
+                  "external_provider_bytes_persisted": False,
+                  "datastore_rows_returned": False,
+              }.items():
+                  if type(evidence.get(field)) is not type(expected) or evidence.get(field) != expected:
+                      raise SystemExit(f"annualization evidence drifted at {field}")
+          elif status == "blocked":
+              if set(result) != common | {"failure_stage", "failure_code"}:
+                  raise SystemExit("annualization BLOCKED fields drifted")
+              if result.get("evidence_emitted") is not False:
+                  raise SystemExit("annualization BLOCKED evidence flag drifted")
+              if result.get("failure_stage") != "annualization_evidence":
+                  raise SystemExit("annualization BLOCKED stage drifted")
+              if result.get("failure_code") not in {
+                  "annualization_projection_failed",
+                  "annualization_validation_failed",
+              }:
+                  raise SystemExit("annualization BLOCKED code drifted")
+          else:
+              raise SystemExit("annualization terminal status drifted")
+
+          print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+          PY
+          )"
+          test -n "$ANNUALIZATION_JSON"
+          MARKER='<!-- oc-eq1-esrm20-kosovo-oq313-annualization-result-v1 -->'
+          BODY="$MARKER
+          $ANNUALIZATION_JSON"
+          jq -n --arg body "$BODY" '{body:$body}'             > "$RUNNER_TEMP/oq313-annualization-comment.json"
+          gh api --method POST             "repos/$GITHUB_REPOSITORY/issues/609/comments"             --input "$RUNNER_TEMP/oq313-annualization-comment.json"
