@@ -160,17 +160,23 @@ def _parse_file_head(headers: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _legacy_redirect_matches(final_url: str) -> bool:
-    parsed = _validate_https_provider_url(final_url)
+def _is_canonical_viewer_raw_url(url: str) -> bool:
+    parsed = _validate_https_provider_url(url)
     if parsed.path != CANONICAL_VIEWER_RAW_PATH:
         return False
     query = urllib.parse.parse_qs(parsed.query, keep_blank_values=True)
     return query in ({}, {"inline": ["false"]})
 
 
+def _legacy_redirect_matches(final_url: str, redirect_chain: list[str] | None = None) -> bool:
+    candidates = list(redirect_chain or []) + [final_url]
+    return any(_is_canonical_viewer_raw_url(url) for url in candidates)
+
+
 def build_result(
     *,
     legacy_final_url: str,
+    legacy_redirect_chain: list[str] | None = None,
     project_metadata: dict[str, Any],
     file_metadata: dict[str, Any],
 ) -> dict[str, Any]:
@@ -179,7 +185,10 @@ def build_result(
         and project_metadata.get("project_path") == CANONICAL_PROJECT_PATH
         and project_metadata.get("default_branch") == DEFAULT_BRANCH
     )
-    legacy_raw_redirects_to_canonical = _legacy_redirect_matches(legacy_final_url)
+    legacy_redirect_chain = list(legacy_redirect_chain or [])
+    legacy_raw_redirects_to_canonical = _legacy_redirect_matches(
+        legacy_final_url, legacy_redirect_chain
+    )
     main_blob_matches_frozen = (
         file_metadata.get("blob_id") == FROZEN_V10_BLOB_SHA1
         and file_metadata.get("size") == FROZEN_V10_BYTE_COUNT
@@ -212,6 +221,7 @@ def build_result(
         ),
         "legacy_viewer_raw_url": LEGACY_VIEWER_RAW_URL,
         "legacy_viewer_raw_final_url": legacy_final_url,
+        "legacy_viewer_raw_redirect_chain": legacy_redirect_chain,
         "legacy_raw_redirects_to_canonical": legacy_raw_redirects_to_canonical,
         "canonical_project": project_metadata,
         "canonical_project_verified": canonical_project_verified,
@@ -237,18 +247,39 @@ def build_result(
     }
 
 
-def _open_head(url: str) -> tuple[str, Mapping[str, Any]]:
+class _RedirectRecorder(urllib.request.HTTPRedirectHandler):
+    def __init__(self) -> None:
+        super().__init__()
+        self.locations: list[str] = []
+
+    def redirect_request(
+        self,
+        req: urllib.request.Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Mapping[str, Any],
+        newurl: str,
+    ) -> urllib.request.Request | None:
+        _validate_https_provider_url(newurl)
+        self.locations.append(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def _open_head(url: str) -> tuple[str, Mapping[str, Any], list[str]]:
     request = urllib.request.Request(
         url,
         method="HEAD",
         headers={"User-Agent": "OpenCatastrophe-data provenance diagnostic"},
     )
-    with urllib.request.urlopen(request, timeout=60) as response:
+    recorder = _RedirectRecorder()
+    opener = urllib.request.build_opener(recorder)
+    with opener.open(request, timeout=60) as response:
         if getattr(response, "status", 200) != 200:
             raise ViewerProvenanceError("provider HEAD request did not return HTTP 200")
         final_url = response.geturl()
         _validate_https_provider_url(final_url)
-        return final_url, response.headers
+        return final_url, response.headers, recorder.locations
 
 
 def _open_project_metadata() -> bytes:
@@ -271,15 +302,18 @@ def _open_project_metadata() -> bytes:
 
 
 def run() -> dict[str, Any]:
-    legacy_final_url, _ = _open_head(LEGACY_VIEWER_RAW_URL)
+    legacy_final_url, _, legacy_redirect_chain = _open_head(LEGACY_VIEWER_RAW_URL)
     project_metadata = _parse_project_metadata(_open_project_metadata())
-    file_final_url, file_headers = _open_head(CANONICAL_FILE_HEAD_URL)
+    file_final_url, file_headers, file_redirect_chain = _open_head(CANONICAL_FILE_HEAD_URL)
+    if file_redirect_chain:
+        raise ViewerProvenanceError("canonical file metadata request redirected unexpectedly")
     expected_file_api_path = urllib.parse.urlsplit(CANONICAL_FILE_HEAD_URL).path
     if urllib.parse.urlsplit(file_final_url).path != expected_file_api_path:
         raise ViewerProvenanceError("canonical file metadata request redirected unexpectedly")
     file_metadata = _parse_file_head(file_headers)
     return build_result(
         legacy_final_url=legacy_final_url,
+        legacy_redirect_chain=legacy_redirect_chain,
         project_metadata=project_metadata,
         file_metadata=file_metadata,
     )
