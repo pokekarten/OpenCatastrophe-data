@@ -214,18 +214,33 @@ class AnnualizationEvidenceTests(unittest.TestCase):
         ):
             subject.project_oq313_annualization_evidence(Store(avg=avg), Oq())
 
-    def test_sparse_event_realization_ids_fail_closed(self):
+    def test_event_realization_outside_weight_dimension_fails_closed(self):
         events = [
             {"id": 1, "rup_id": 101, "rlz_id": 0},
             {"id": 2, "rup_id": 102, "rlz_id": 2},
         ]
         with self.assertRaisesRegex(
             subject.OQ313AnnualizationEvidenceError,
-            "dense from zero",
+            "outside the weights dimension",
         ):
             subject.project_oq313_annualization_evidence(
                 Store(events=events), Oq()
             )
+
+    def test_zero_event_realization_is_preserved_explicitly(self):
+        events = [
+            {"id": 1, "rup_id": 101, "rlz_id": 0},
+        ]
+        payload, _ = subject.project_oq313_annualization_evidence(
+            Store(events=events), Oq()
+        )
+        self.assertEqual(
+            json.loads(payload)["events"]["event_count_by_realization"],
+            [
+                {"rlz_id": 0, "event_count": 1},
+                {"rlz_id": 1, "event_count": 0},
+            ],
+        )
 
     def test_policy_input_remains_forbidden(self):
         oq = Oq()
