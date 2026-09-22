@@ -95,6 +95,12 @@ class ExposureValueSpatialProfileTests(unittest.TestCase):
         self.assertEqual(profile["numeric_fields"]["BUILDINGS"]["zero_count"], 1)
         self.assertEqual(profile["numeric_fields"]["DWELLINGS"]["negative_count"], 1)
         self.assertEqual(
+            profile["replacement_cost_component_diagnostic"][
+                "total_replacement_cost_eur_sum"
+            ],
+            "301",
+        )
+        self.assertEqual(
             profile["replacement_cost_component_diagnostic"]["nonzero_residual_count"],
             1,
         )
@@ -137,6 +143,12 @@ class ExposureValueSpatialProfileTests(unittest.TestCase):
         self.assertEqual(
             profile["replacement_cost_component_diagnostic"][
                 "maximum_absolute_residual_eur"
+            ],
+            exact_total,
+        )
+        self.assertEqual(
+            profile["replacement_cost_component_diagnostic"][
+                "total_replacement_cost_eur_sum"
             ],
             exact_total,
         )
