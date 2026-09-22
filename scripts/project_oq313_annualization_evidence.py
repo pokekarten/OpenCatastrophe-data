@@ -34,7 +34,7 @@ AVG_LOSSES_DATASET = "avg_losses-rlzs/structural"
 WEIGHTS_DATASET = "weights"
 EVENTS_DATASET = "events"
 MAX_REALIZATIONS = 100_000
-MAX_ASSETS = 100_000_000
+MAX_ASSETS = 10_000_000
 
 
 class OQ313AnnualizationEvidenceError(ValueError):
@@ -98,6 +98,30 @@ def _f64_hex(value: float, *, label: str) -> str:
     if not math.isfinite(value):
         raise OQ313AnnualizationEvidenceError(f"{label} must be finite")
     return struct.pack("!d", value).hex()
+
+
+class _NeumaierSum:
+    """Deterministic constant-memory compensated binary64 summation."""
+
+    def __init__(self) -> None:
+        self.total = 0.0
+        self.correction = 0.0
+
+    def add(self, value: float) -> None:
+        tentative = self.total + value
+        if abs(self.total) >= abs(value):
+            self.correction += (self.total - tentative) + value
+        else:
+            self.correction += (value - tentative) + self.total
+        self.total = tentative
+
+    def result(self) -> float:
+        value = self.total + self.correction
+        if not math.isfinite(value):
+            raise OQ313AnnualizationEvidenceError(
+                "compensated sum produced non-finite value"
+            )
+        return value
 
 
 def _runtime_evidence(oq: object) -> dict[str, Any]:
@@ -319,8 +343,7 @@ def _avg_losses_evidence(
             "avg_losses output realization count disagrees with runtime mode"
         )
 
-    totals = [0.0] * output_realization_count
-    columns: list[list[float]] = [[] for _ in range(output_realization_count)]
+    accumulators = [_NeumaierSum() for _ in range(output_realization_count)]
     row_count = 0
     try:
         for row in raw:
@@ -334,7 +357,7 @@ def _avg_losses_evidence(
                     raise OQ313AnnualizationEvidenceError(
                         "avg_losses values must be finite and non-negative"
                     )
-                columns[index].append(number)
+                accumulators[index].add(number)
             row_count += 1
     except OQ313AnnualizationEvidenceError:
         raise
@@ -345,7 +368,7 @@ def _avg_losses_evidence(
 
     if row_count != asset_count:
         raise OQ313AnnualizationEvidenceError("avg_losses asset count drifted")
-    totals = [math.fsum(column) for column in columns]
+    totals = [accumulator.result() for accumulator in accumulators]
 
     totals_digest = hashlib.sha256()
     for index, total in enumerate(totals):
