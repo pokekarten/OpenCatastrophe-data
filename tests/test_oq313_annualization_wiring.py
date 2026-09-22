@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import os
@@ -126,6 +127,22 @@ def _fail_numerical(_path: Path) -> tuple[bytes, dict[str, Any]]:
 
 
 class OQ313AnnualizationWiringTests(unittest.TestCase):
+
+    def test_runtime_modules_parse_as_python38(self) -> None:
+        for path in (
+            Path("scripts/project_oq313_annualization_evidence.py"),
+            Path(
+                "scripts/"
+                "run_esrm20_kosovo_residential_ebrisk_openquake313_action.py"
+            ),
+        ):
+            with self.subTest(path=str(path)):
+                ast.parse(
+                    path.read_text(encoding="utf-8"),
+                    filename=str(path),
+                    feature_version=(3, 8),
+                )
+
     def test_pass_terminal_preserves_authority_ceiling(self) -> None:
         payload = _canonical_bytes(_annualization_document())
         terminal = subject._annualization_terminal(
