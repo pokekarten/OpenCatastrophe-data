@@ -182,6 +182,21 @@ def _row_identity(row: list[str]) -> bytes:
     return digest.digest()
 
 
+def _exact_sum(values: list[Decimal]) -> Decimal:
+    if not values:
+        raise ExposureValueSpatialProfileError("numeric sum is empty")
+    try:
+        with localcontext(_EXACT_DECIMAL_CONTEXT) as context:
+            total = Decimal(0)
+            for value in values:
+                total = context.add(total, value)
+            return total
+    except (Inexact, Rounded) as exc:
+        raise ExposureValueSpatialProfileError(
+            "numeric sum exceeds exact decimal working bound"
+        ) from exc
+
+
 def _numeric_summary(values: list[Decimal]) -> dict[str, Any]:
     if not values:
         raise ExposureValueSpatialProfileError("numeric summary is empty")
@@ -320,6 +335,9 @@ def profile_verified_exposure_value_spatial(
             **_duplicate_summary(candidate_identities),
         },
         "replacement_cost_component_diagnostic": {
+            "total_replacement_cost_eur_sum": _canonical_decimal(
+                _exact_sum(numeric_values["TOTAL_REPL_COST_EUR"])
+            ),
             "equation_measured": (
                 "TOTAL_REPL_COST_EUR - "
                 "(COST_STRUCTURAL_EUR + COST_NONSTRUCTURAL_EUR + COST_CONTENTS_EUR)"
