@@ -186,7 +186,11 @@ def _runtime_evidence(oq: object) -> dict[str, Any]:
     }
 
 
-def _events_evidence(dstore: object) -> tuple[dict[str, Any], int]:
+def _events_evidence(
+    dstore: object,
+    *,
+    realization_count: int,
+) -> dict[str, Any]:
     try:
         raw = dstore[EVENTS_DATASET][:]
     except (KeyError, TypeError, AttributeError) as exc:
@@ -206,29 +210,31 @@ def _events_evidence(dstore: object) -> tuple[dict[str, Any], int]:
                 label=f"events[{index}].rlz_id",
                 maximum=(1 << 16) - 1,
             )
-        except (KeyError, TypeError, IndexError, selector.OQ313DatastoreSelectionError) as exc:
+        except (
+            KeyError,
+            TypeError,
+            IndexError,
+            selector.OQ313DatastoreSelectionError,
+        ) as exc:
             raise OQ313AnnualizationEvidenceError("events row contract drifted") from exc
+        if rlz_id >= realization_count:
+            raise OQ313AnnualizationEvidenceError(
+                "event realization id is outside the weights dimension"
+            )
         counts[rlz_id] += 1
         event_count += 1
 
     if event_count == 0:
         raise OQ313AnnualizationEvidenceError("events dataset must not be empty")
-    if len(counts) > MAX_REALIZATIONS:
-        raise OQ313AnnualizationEvidenceError("event realization count exceeds bound")
-    ids = sorted(counts)
-    if ids != list(range(len(ids))):
-        raise OQ313AnnualizationEvidenceError(
-            "event realization ids must be dense from zero"
-        )
 
     return {
         "event_count": event_count,
-        "realization_count": len(ids),
+        "realization_count": realization_count,
         "event_count_by_realization": [
             {"rlz_id": rlz_id, "event_count": counts[rlz_id]}
-            for rlz_id in ids
+            for rlz_id in range(realization_count)
         ],
-    }, len(ids)
+    }
 
 
 def _read_numeric_array(dstore: object, path: str) -> object:
@@ -242,8 +248,6 @@ def _read_numeric_array(dstore: object, path: str) -> object:
 
 def _weights_evidence(
     dstore: object,
-    *,
-    event_realization_count: int,
 ) -> tuple[dict[str, Any], list[float]]:
     raw = _read_numeric_array(dstore, WEIGHTS_DATASET)
     shape = getattr(raw, "shape", None)
@@ -287,11 +291,6 @@ def _weights_evidence(
     weight_sum = math.fsum(values)
     if not math.isclose(weight_sum, 1.0, rel_tol=1e-12, abs_tol=1e-12):
         raise OQ313AnnualizationEvidenceError("realization weights do not sum to one")
-    if event_realization_count > count:
-        raise OQ313AnnualizationEvidenceError(
-            "events reference more realizations than the weights dataset"
-        )
-
     return {
         "dtype": dtype,
         "count": count,
@@ -419,10 +418,10 @@ def project_oq313_annualization_evidence(
         ) from exc
 
     runtime = _runtime_evidence(oq)
-    events, event_realization_count = _events_evidence(dstore)
-    weights, weight_values = _weights_evidence(
+    weights, weight_values = _weights_evidence(dstore)
+    events = _events_evidence(
         dstore,
-        event_realization_count=event_realization_count,
+        realization_count=len(weight_values),
     )
     avg_losses = _avg_losses_evidence(
         dstore,
