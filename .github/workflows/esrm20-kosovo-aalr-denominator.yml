@@ -36,4 +36,4 @@ jobs:
           tests.test_esrm20_kosovo_aalr_denominator
           -v
       - name: Run exact provider-bound denominator diagnostic
-        run: python research_runners/esrm20_kosovo_aalr_denominator.py
+        run: python -m research_runners.esrm20_kosovo_aalr_denominator
