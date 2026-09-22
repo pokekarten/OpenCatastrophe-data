@@ -14,6 +14,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import tempfile
 import urllib.request
 
 import numpy as np
@@ -36,7 +37,9 @@ def git_blob_sha1(raw: bytes) -> str:
     return hashlib.sha1(header + raw).hexdigest()
 
 
-def download(commit: str, expected_blob: str, name: str) -> tuple[bytes, Path]:
+def download(
+    commit: str, expected_blob: str, name: str, scratch: Path
+) -> tuple[bytes, Path]:
     url = f"https://raw.githubusercontent.com/{REPOSITORY}/{commit}/{PATH}"
     with urllib.request.urlopen(url, timeout=120) as response:
         raw = response.read()
@@ -45,7 +48,7 @@ def download(commit: str, expected_blob: str, name: str) -> tuple[bytes, Path]:
         raise RuntimeError(
             f"{name} blob mismatch: expected {expected_blob}, observed {observed_blob}"
         )
-    path = OUT / f"{name}.rda"
+    path = scratch / f"{name}.rda"
     path.write_bytes(raw)
     return raw, path
 
@@ -114,10 +117,12 @@ def numeric_profile(a: pd.Series, b: pd.Series, changed: np.ndarray) -> dict:
     return profile
 
 
-pre_raw, pre_path = download(PRE_COMMIT, EXPECTED_PRE_BLOB, "pre")
-post_raw, post_path = download(POST_COMMIT, EXPECTED_POST_BLOB, "post")
-pre_name, pre = read_single(pre_path)
-post_name, post = read_single(post_path)
+with tempfile.TemporaryDirectory(prefix="norauto-prepost-") as tmp:
+    scratch = Path(tmp)
+    pre_raw, pre_path = download(PRE_COMMIT, EXPECTED_PRE_BLOB, "pre", scratch)
+    post_raw, post_path = download(POST_COMMIT, EXPECTED_POST_BLOB, "post", scratch)
+    pre_name, pre = read_single(pre_path)
+    post_name, post = read_single(post_path)
 
 same_shape = pre.shape == post.shape
 same_columns = list(pre.columns) == list(post.columns)
@@ -129,6 +134,7 @@ if not same_shape or not same_columns:
         "post_shape": list(post.shape),
         "pre_columns": list(pre.columns),
         "post_columns": list(post.columns),
+        "external_bytes_persisted": False,
     }
     (OUT / "result.json").write_text(
         json.dumps(structural, indent=2, sort_keys=True) + "\n"
@@ -223,6 +229,7 @@ receipt = {
         "post_bytes": len(post_raw),
         "pre_r_object": pre_name,
         "post_r_object": post_name,
+        "external_bytes_persisted": False,
     },
     "shape": {"rows": int(len(pre)), "columns": int(len(pre.columns))},
     "same_column_order": True,
