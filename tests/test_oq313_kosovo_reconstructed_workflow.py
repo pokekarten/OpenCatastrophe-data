@@ -137,6 +137,44 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
         self.assertIn('"publication_authorized": False', text)
         self.assertIn('"model_use_authorized": False', text)
 
+    def test_annualization_evidence_is_separate_bounded_comment_not_artifact(self) -> None:
+        text = self.text
+        self.assertIn(
+            "--annualization-output /result/oq313-annualization.json",
+            text,
+        )
+        self.assertIn(
+            "<!-- oc-eq1-esrm20-kosovo-oq313-annualization-result-v1 -->",
+            text,
+        )
+        self.assertIn(
+            "Re-fence bounded annualization evidence and publish separately",
+            text,
+        )
+        self.assertIn(
+            '"reference_loss_comparison_performed": False',
+            text,
+        )
+        self.assertIn(
+            '"reference_loss_agreement_verified": False',
+            text,
+        )
+        self.assertIn(
+            '"scientific_validity_verified": False',
+            text,
+        )
+        self.assertIn(
+            '"external_provider_bytes_persisted": False',
+            text,
+        )
+        self.assertIn(
+            '"datastore_rows_returned": False',
+            text,
+        )
+        self.assertNotIn("actions/upload-artifact", text)
+        self.assertNotIn("oq313-annualization.zip", text)
+        self.assertNotIn("calc_*.hdf5", text)
+
     def test_runtime_probe_pins_dependencies_observes_oqparam_and_binds_source(self) -> None:
         text = self.text
         for name, version in {
