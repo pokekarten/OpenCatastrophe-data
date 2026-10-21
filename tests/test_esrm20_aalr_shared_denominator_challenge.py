@@ -33,12 +33,23 @@ class SharedDenominatorChallengeTests(unittest.TestCase):
         self.assertEqual(result["shared_denominator_sum_incompatible_under_display_rounding"], 44)
         self.assertEqual(result["shared_denominator_sum_compatible_under_display_rounding"], 0)
         self.assertTrue(result["shared_all_occupancy_denominator_hypothesis_rejected"])
+        self.assertEqual(result["total_aalr_within_occupancy_range_under_rounding"], 44)
+        self.assertEqual(result["total_aalr_outside_occupancy_range_under_rounding"], 0)
+        self.assertEqual(
+            result["implied_occupancy_replacement_costs_additive_under_rounding"], 44
+        )
+        self.assertEqual(
+            result["implied_occupancy_replacement_costs_nonadditive_under_rounding"], 0
+        )
+        self.assertEqual(result["implied_occupancy_replacement_costs_unassessable"], 0)
+        self.assertTrue(result["costs_from_aal_divided_by_aalr_are_hypothetical"])
         self.assertEqual(
             result["conclusion"],
             "SHARED_DENOMINATOR_NECESSARY_CONDITION_FALSIFIED_UNDER_ROUNDING",
         )
         for key in (
             "occupancy_specific_denominator_verified",
+            "implied_costs_are_provider_verified",
             "provider_rounding_rule_verified",
             "provider_numeric_values_returned",
             "provider_rows_returned",
@@ -57,6 +68,10 @@ class SharedDenominatorChallengeTests(unittest.TestCase):
         result = subject.analyze_rows(rows)
         self.assertFalse(result["shared_all_occupancy_denominator_hypothesis_rejected"])
         self.assertEqual(result["shared_denominator_sum_compatible_under_display_rounding"], 44)
+        self.assertEqual(result["total_aalr_outside_occupancy_range_under_rounding"], 44)
+        self.assertEqual(
+            result["implied_occupancy_replacement_costs_nonadditive_under_rounding"], 44
+        )
 
     def test_absolute_aal_nonadditivity_does_not_reject_denominator(self):
         rows = [_row(i, shared=True) for i in range(subject.EXPECTED_ROWS)]
@@ -67,6 +82,38 @@ class SharedDenominatorChallengeTests(unittest.TestCase):
         self.assertEqual(result["absolute_aal_not_additive_under_display_rounding"], 44)
         self.assertEqual(result["shared_denominator_sum_incompatible_under_display_rounding"], 0)
         self.assertFalse(result["shared_all_occupancy_denominator_hypothesis_rejected"])
+
+    def test_exact_positive_cost_denominators_recover_additive_portfolio(self):
+        aal = tuple(subject._interval(x) for x in ("1.000", "1.000", "2.000", "4.000"))
+        ratios = tuple(
+            subject._interval(x) for x in ("10.000", "20.000", "30.000", "18.462")
+        )
+        self.assertTrue(subject._total_within_occupancy_ratio_range(ratios))
+        self.assertIs(subject._cost_denominators_compatible(aal, ratios), True)
+        self.assertIsInstance(
+            subject._replacement_cost_interval(aal[0], ratios[0])[0], Decimal
+        )
+
+    def test_cost_sum_fails_for_inconsistent_total_ratio(self):
+        aal = tuple(subject._interval(x) for x in ("1.000", "1.000", "2.000", "4.000"))
+        ratios = tuple(
+            subject._interval(x) for x in ("10.000", "20.000", "30.000", "50.000")
+        )
+        self.assertFalse(subject._total_within_occupancy_ratio_range(ratios))
+        self.assertIs(subject._cost_denominators_compatible(aal, ratios), False)
+
+    def test_zero_ratio_is_unassessable_not_falsified(self):
+        rows = [_row(i) for i in range(subject.EXPECTED_ROWS)]
+        for row in rows:
+            row[subject.AALR_COLUMNS[0]] = "0.000"
+        result = subject.analyze_rows(rows)
+        self.assertEqual(result["implied_occupancy_replacement_costs_unassessable"], 44)
+        self.assertEqual(result["implied_occupancy_replacement_costs_nonadditive_under_rounding"], 0)
+        self.assertIsNone(
+            subject._replacement_cost_interval(
+                subject._interval("1.000"), subject._interval("0.000")
+            )
+        )
 
     def test_scientific_notation_preserves_half_display_unit(self):
         self.assertEqual(subject._interval("1E+3"), (Decimal("5E+2"), Decimal("1.5E+3")))
