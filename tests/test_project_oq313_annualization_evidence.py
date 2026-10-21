@@ -300,10 +300,9 @@ class AnnualizationEvidenceTests(unittest.TestCase):
         store.datasets["avg_losses-rlzs/structural"] = StrictChunkDataset(
             avg, max_rows=2
         )
-        with (
-            mock.patch.object(subject, "EVENT_CHUNK_ROWS", 2),
-            mock.patch.object(subject, "MAX_CHUNK_ELEMENTS", 4),
-        ):
+        with mock.patch.object(
+            subject, "EVENT_CHUNK_ROWS", 2
+        ), mock.patch.object(subject, "MAX_CHUNK_ELEMENTS", 4):
             payload, _ = subject.project_oq313_annualization_evidence(
                 store, Oq()
             )
@@ -339,15 +338,13 @@ class AnnualizationEvidenceTests(unittest.TestCase):
             )
 
     def test_inconsistent_event_shape_fails_closed_before_publication(self):
-        events = EventArray(_events())
-        events.shape = (4,)
+        store = Store()
+        store.datasets["events"].shape = (4,)
         with self.assertRaisesRegex(
             subject.OQ313AnnualizationEvidenceError,
             "chunk length drifted",
         ):
-            subject.project_oq313_annualization_evidence(
-                Store(events=events), Oq()
-            )
+            subject.project_oq313_annualization_evidence(store, Oq())
 
     def test_payload_is_deterministic_under_event_permutation(self):
         a = subject.project_oq313_annualization_evidence(Store(), Oq())
