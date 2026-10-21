@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import struct
 import unittest
+from unittest import mock
 
 from scripts import project_oq313_annualization_evidence as subject
 
@@ -37,11 +38,33 @@ class EventArray(list):
 class Dataset:
     def __init__(self, array):
         self.array = array
+        self.shape = array.shape
+        self.dtype = array.dtype
 
     def __getitem__(self, key):
         if isinstance(key, slice):
-            return self.array
+            # Unbounded [:] is retained for the small, capped weights array.
+            return self.array if key.start is None and key.stop is None else self.array[key]
         return self.array[key]
+
+
+class StrictChunkDataset(Dataset):
+    def __init__(self, array, *, max_rows):
+        super().__init__(array)
+        self.max_rows = max_rows
+        self.reads = []
+
+    def __getitem__(self, key):
+        if (
+            not isinstance(key, slice)
+            or type(key.start) is not int
+            or type(key.stop) is not int
+            or key.step is not None
+            or key.stop - key.start > self.max_rows
+        ):
+            raise AssertionError("full-table read or unbounded slice")
+        self.reads.append((key.start, key.stop))
+        return super().__getitem__(key)
 
 
 class Store:
@@ -259,6 +282,69 @@ class AnnualizationEvidenceTests(unittest.TestCase):
             "must be positive",
         ):
             subject.project_oq313_annualization_evidence(Store(), oq)
+
+    def test_large_datasets_are_read_only_in_bounded_slices(self):
+        events = [
+            {"id": i, "rup_id": 100 + i, "rlz_id": i % 2}
+            for i in range(7)
+        ]
+        avg = Array(
+            [[float(i + 1), float(2 * i + 1)] for i in range(7)],
+            dtype="float32",
+            shape=(7, 2),
+        )
+        store = Store(events=events, avg=avg)
+        store.datasets["events"] = StrictChunkDataset(
+            EventArray(events), max_rows=2
+        )
+        store.datasets["avg_losses-rlzs/structural"] = StrictChunkDataset(
+            avg, max_rows=2
+        )
+        with mock.patch.object(
+            subject, "EVENT_CHUNK_ROWS", 2
+        ), mock.patch.object(subject, "MAX_CHUNK_ELEMENTS", 4):
+            payload, _ = subject.project_oq313_annualization_evidence(
+                store, Oq()
+            )
+        doc = json.loads(payload)
+        self.assertEqual(doc["events"]["event_count"], 7)
+        self.assertEqual(doc["avg_losses"]["shape"], [7, 2])
+        self.assertEqual(
+            store.datasets["events"].reads,
+            [(0, 2), (2, 4), (4, 6), (6, 7)],
+        )
+        self.assertEqual(
+            store.datasets["avg_losses-rlzs/structural"].reads,
+            [(0, 2), (2, 4), (4, 6), (6, 7)],
+        )
+        # The exact evidence contract is independent of chunk boundaries.
+        normal_payload, _ = subject.project_oq313_annualization_evidence(
+            Store(events=events, avg=avg), Oq()
+        )
+        self.assertEqual(payload, normal_payload)
+
+    def test_inconsistent_asset_shape_fails_closed_before_publication(self):
+        avg = Array(
+            [[1.0, 2.0], [3.0, 4.0]],
+            dtype="float32",
+            shape=(3, 2),
+        )
+        with self.assertRaisesRegex(
+            subject.OQ313AnnualizationEvidenceError,
+            "chunk length drifted",
+        ):
+            subject.project_oq313_annualization_evidence(
+                Store(avg=avg), Oq()
+            )
+
+    def test_inconsistent_event_shape_fails_closed_before_publication(self):
+        store = Store()
+        store.datasets["events"].shape = (4,)
+        with self.assertRaisesRegex(
+            subject.OQ313AnnualizationEvidenceError,
+            "chunk length drifted",
+        ):
+            subject.project_oq313_annualization_evidence(store, Oq())
 
     def test_payload_is_deterministic_under_event_permutation(self):
         a = subject.project_oq313_annualization_evidence(Store(), Oq())

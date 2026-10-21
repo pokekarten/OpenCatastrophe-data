@@ -35,6 +35,9 @@ WEIGHTS_DATASET = "weights"
 EVENTS_DATASET = "events"
 MAX_REALIZATIONS = 100_000
 MAX_ASSETS = 10_000_000
+# Bound HDF5 reads independently of total event/asset dimensions.
+EVENT_CHUNK_ROWS = 4096
+MAX_CHUNK_ELEMENTS = 65_536
 
 
 class OQ313AnnualizationEvidenceError(ValueError):
@@ -186,46 +189,88 @@ def _runtime_evidence(oq: object) -> dict[str, Any]:
     }
 
 
+def _read_dataset(dstore: object, path: str) -> object:
+    try:
+        return dstore[path]
+    except (KeyError, TypeError, AttributeError, ValueError) as exc:
+        raise OQ313AnnualizationEvidenceError(
+            f"cannot open datastore dataset {path}"
+        ) from exc
+
+
+def _iter_bounded_chunks(
+    dataset: object, *, rows: int, chunk_rows: int, label: str
+):
+    """Visit contiguous HDF5 slices without ever materializing the full array."""
+
+    for start in range(0, rows, chunk_rows):
+        stop = min(start + chunk_rows, rows)
+        try:
+            batch = dataset[start:stop]
+            if len(batch) != stop - start:
+                raise OQ313AnnualizationEvidenceError(
+                    f"{label} chunk length drifted"
+                )
+        except OQ313AnnualizationEvidenceError:
+            raise
+        except (KeyError, TypeError, AttributeError, ValueError, IndexError, OSError) as exc:
+            raise OQ313AnnualizationEvidenceError(
+                f"cannot read bounded {label} chunk"
+            ) from exc
+        yield start, batch
+
+
 def _events_evidence(
     dstore: object,
     *,
     realization_count: int,
 ) -> dict[str, Any]:
+    dataset = _read_dataset(dstore, EVENTS_DATASET)
     try:
-        raw = dstore[EVENTS_DATASET][:]
-    except (KeyError, TypeError, AttributeError) as exc:
-        raise OQ313AnnualizationEvidenceError("cannot read events dataset") from exc
-
-    try:
-        selector._assert_events_native_dtype(raw)
+        selector._assert_events_native_dtype(dataset)
     except selector.OQ313DatastoreSelectionError as exc:
         raise OQ313AnnualizationEvidenceError("events dtype contract drifted") from exc
 
+    shape = getattr(dataset, "shape", None)
+    if not isinstance(shape, Sequence) or len(shape) != 1:
+        raise OQ313AnnualizationEvidenceError("events dataset must be one-dimensional")
+    expected_events = _nonnegative_int(
+        shape[0], label="events shape", maximum=(1 << 32) - 1
+    )
+    if expected_events == 0:
+        raise OQ313AnnualizationEvidenceError("events dataset must not be empty")
+
     counts: Counter[int] = Counter()
     event_count = 0
-    for index, record in enumerate(raw):
-        try:
-            rlz_id = selector._uint(
-                record["rlz_id"],
-                label=f"events[{index}].rlz_id",
-                maximum=(1 << 16) - 1,
-            )
-        except (
-            KeyError,
-            TypeError,
-            IndexError,
-            selector.OQ313DatastoreSelectionError,
-        ) as exc:
-            raise OQ313AnnualizationEvidenceError("events row contract drifted") from exc
-        if rlz_id >= realization_count:
-            raise OQ313AnnualizationEvidenceError(
-                "event realization id is outside the weights dimension"
-            )
-        counts[rlz_id] += 1
-        event_count += 1
+    for start, batch in _iter_bounded_chunks(
+        dataset, rows=expected_events, chunk_rows=EVENT_CHUNK_ROWS, label="events"
+    ):
+        for offset, record in enumerate(batch):
+            index = start + offset
+            try:
+                rlz_id = selector._uint(
+                    record["rlz_id"],
+                    label=f"events[{index}].rlz_id",
+                    maximum=(1 << 16) - 1,
+                )
+            except (
+                KeyError,
+                TypeError,
+                IndexError,
+                selector.OQ313DatastoreSelectionError,
+            ) as exc:
+                raise OQ313AnnualizationEvidenceError(
+                    "events row contract drifted"
+                ) from exc
+            if rlz_id >= realization_count:
+                raise OQ313AnnualizationEvidenceError(
+                    "event realization id is outside the weights dimension"
+                )
+            counts[rlz_id] += 1
+            event_count += 1
 
-    if event_count == 0:
-        raise OQ313AnnualizationEvidenceError("events dataset must not be empty")
+    if event_count != expected_events:
+        raise OQ313AnnualizationEvidenceError("events count drifted")
 
     return {
         "event_count": event_count,
@@ -239,7 +284,7 @@ def _events_evidence(
 
 def _read_numeric_array(dstore: object, path: str) -> object:
     try:
-        return dstore[path][:]
+        return _read_dataset(dstore, path)[:]
     except (KeyError, TypeError, AttributeError, ValueError) as exc:
         raise OQ313AnnualizationEvidenceError(
             f"cannot read datastore dataset {path}"
@@ -306,9 +351,9 @@ def _avg_losses_evidence(
     collect_rlzs: bool,
     weights: list[float],
 ) -> dict[str, Any]:
-    raw = _read_numeric_array(dstore, AVG_LOSSES_DATASET)
-    shape = getattr(raw, "shape", None)
-    dtype = str(getattr(raw, "dtype", ""))
+    dataset = _read_dataset(dstore, AVG_LOSSES_DATASET)
+    shape = getattr(dataset, "shape", None)
+    dtype = str(getattr(dataset, "dtype", ""))
     if (
         not isinstance(shape, Sequence)
         or isinstance(shape, (str, bytes, bytearray))
@@ -344,20 +389,29 @@ def _avg_losses_evidence(
 
     accumulators = [_NeumaierSum() for _ in range(output_realization_count)]
     row_count = 0
+    # A single asset row is indivisible; otherwise read at most this many
+    # float32 elements per batch. Preserve the original row/column sum order.
+    chunk_rows = max(1, MAX_CHUNK_ELEMENTS // output_realization_count)
     try:
-        for row in raw:
-            if len(row) != output_realization_count:
-                raise OQ313AnnualizationEvidenceError(
-                    "avg_losses row width drifted"
-                )
-            for index, value in enumerate(row):
-                number = float(value)
-                if not math.isfinite(number) or number < 0.0:
+        for _, batch in _iter_bounded_chunks(
+            dataset,
+            rows=asset_count,
+            chunk_rows=chunk_rows,
+            label="avg_losses-rlzs structural",
+        ):
+            for row in batch:
+                if len(row) != output_realization_count:
                     raise OQ313AnnualizationEvidenceError(
-                        "avg_losses values must be finite and non-negative"
+                        "avg_losses row width drifted"
                     )
-                accumulators[index].add(number)
-            row_count += 1
+                for index, value in enumerate(row):
+                    number = float(value)
+                    if not math.isfinite(number) or number < 0.0:
+                        raise OQ313AnnualizationEvidenceError(
+                            "avg_losses values must be finite and non-negative"
+                        )
+                    accumulators[index].add(number)
+                row_count += 1
     except OQ313AnnualizationEvidenceError:
         raise
     except (TypeError, ValueError, OverflowError) as exc:
