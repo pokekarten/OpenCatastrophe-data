@@ -32,7 +32,7 @@ from research_runners import esrm20_country_viewer_provenance as viewer
 from scripts import acquire_efehr_esrm20_country_risk_receipt as country
 from scripts import profile_esrm20_country_risk_schema as schema
 
-SCHEMA_VERSION = "oc-esrm20-aalr-shared-denominator-challenge-v1"
+SCHEMA_VERSION = "oc-esrm20-aalr-shared-denominator-challenge-v2"
 EXPECTED_ROWS = 44
 EXPECTED_COLUMNS = 18
 ALLOWED_DECIMAL = re.compile(r"^(?:0|[0-9]+)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$")
@@ -93,6 +93,56 @@ def _intervals_overlap(
     return lower <= total[1] and total[0] <= upper
 
 
+def _total_within_occupancy_ratio_range(
+    ratios: tuple[tuple[Decimal, Decimal], ...],
+) -> bool:
+    """Necessary condition for a positive, cost-weighted occupancy mean."""
+
+    return (
+        ratios[3][0] <= max(item[1] for item in ratios[:3])
+        and ratios[3][1] >= min(item[0] for item in ratios[:3])
+    )
+
+
+def _replacement_cost_interval(
+    aal: tuple[Decimal, Decimal],
+    aalr: tuple[Decimal, Decimal],
+) -> tuple[Decimal, Decimal] | None:
+    """Hypothetical cost in M EUR from AAL (M EUR) and AALR (per mille).
+
+    This is a mathematical interval, never a provider-supplied exposure value.
+    When an AALR interval includes zero, a finite upper cost bound is absent,
+    so the row is not eligible for the additive-denominator challenge.
+    """
+
+    if aalr[0] <= 0:
+        return None
+    with localcontext(CALC_CONTEXT):
+        return (
+            Decimal(1000) * aal[0] / aalr[1],
+            Decimal(1000) * aal[1] / aalr[0],
+        )
+
+
+def _cost_denominators_compatible(
+    aal: tuple[tuple[Decimal, Decimal], ...],
+    ratios: tuple[tuple[Decimal, Decimal], ...],
+) -> bool | None:
+    """Test whether implied three category costs can sum to total cost."""
+
+    costs = tuple(
+        _replacement_cost_interval(loss, ratio)
+        for loss, ratio in zip(aal, ratios)
+    )
+    if any(cost is None for cost in costs):
+        return None
+    # The guard above guarantees four finite two-element Decimal intervals.
+    with localcontext(CALC_CONTEXT):
+        lower = sum((cost[0] for cost in costs[:3]), Decimal(0))
+        upper = sum((cost[1] for cost in costs[:3]), Decimal(0))
+    return lower <= costs[3][1] and costs[3][0] <= upper
+
+
 def analyze_rows(rows: list[dict[str, str]]) -> dict[str, Any]:
     """Only bounded aggregate hypothesis checks; no provider rows in output."""
 
@@ -103,6 +153,11 @@ def analyze_rows(rows: list[dict[str, str]]) -> dict[str, Any]:
     aal_nonadditive = 0
     ratio_sum_incompatible_when_aal_additive = 0
     ratio_sum_compatible_when_aal_additive = 0
+    total_ratio_within_component_range = 0
+    total_ratio_outside_component_range = 0
+    implied_cost_sum_compatible = 0
+    implied_cost_sum_incompatible = 0
+    implied_cost_sum_unassessable = 0
     for row in rows:
         if type(row) is not dict or any(k not in row for k in REQUIRED_COLUMNS):
             raise SharedDenominatorChallengeError("country risk fields drifted")
@@ -114,6 +169,17 @@ def analyze_rows(rows: list[dict[str, str]]) -> dict[str, Any]:
         ratios = tuple(_interval(row[column]) for column in AALR_COLUMNS)
         if _intervals_overlap(aal[:3], aal[3]):
             aal_additive += 1
+            if _total_within_occupancy_ratio_range(ratios):
+                total_ratio_within_component_range += 1
+            else:
+                total_ratio_outside_component_range += 1
+            implied_costs = _cost_denominators_compatible(aal, ratios)
+            if implied_costs is None:
+                implied_cost_sum_unassessable += 1
+            elif implied_costs:
+                implied_cost_sum_compatible += 1
+            else:
+                implied_cost_sum_incompatible += 1
             if _intervals_overlap(ratios[:3], ratios[3]):
                 ratio_sum_compatible_when_aal_additive += 1
             else:
@@ -134,9 +200,32 @@ def analyze_rows(rows: list[dict[str, str]]) -> dict[str, Any]:
         "shared_denominator_sum_compatible_under_display_rounding": (
             ratio_sum_compatible_when_aal_additive
         ),
+        "total_aalr_within_occupancy_range_under_rounding": (
+            total_ratio_within_component_range
+        ),
+        "total_aalr_outside_occupancy_range_under_rounding": (
+            total_ratio_outside_component_range
+        ),
+        "implied_occupancy_replacement_costs_additive_under_rounding": (
+            implied_cost_sum_compatible
+        ),
+        "implied_occupancy_replacement_costs_nonadditive_under_rounding": (
+            implied_cost_sum_incompatible
+        ),
+        "implied_occupancy_replacement_costs_unassessable": (
+            implied_cost_sum_unassessable
+        ),
+        "implied_costs_are_provider_verified": False,
+        "costs_from_aal_divided_by_aalr_are_hypothetical": True,
         "predeclared_hypothesis": (
             "If four occupancy-level/total AALRs share an identical denominator "
             "and AAL scopes add, then occupancy AALRs must sum to Total AALR."
+        ),
+        "additional_necessary_conditions": (
+            "Under additive occupancy economic losses and positive replacement "
+            "costs, total AALR must be a cost-weighted mean of occupancy AALRs; "
+            "implied replacement costs AAL*1000/AALR must be additive, only "
+            "where finite bounded intervals exist. Compatibility is not proof."
         ),
         "rounding_assumption": (
             "Nearest rounding to half of each literal's least significant "
