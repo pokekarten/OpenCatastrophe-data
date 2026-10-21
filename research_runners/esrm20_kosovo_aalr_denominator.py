@@ -64,8 +64,11 @@ def _decimal_places(value: Decimal) -> int:
 
 
 def _half_display_unit(value: Decimal) -> Decimal:
-    places = _decimal_places(value)
-    return Decimal(5).scaleb(-(places + 1))
+    # Decimal's exponent identifies the least significant *displayed* digit.
+    # For "1E+3" this is 1000 (half-unit 500), not 1 (half-unit 0.5).
+    # Preserve that precision when testing a hypothetical nearest-rounding
+    # interval; an incorrect half-unit could falsely reject compatibility.
+    return Decimal(5).scaleb(value.as_tuple().exponent - 1)
 
 
 def _canonical(value: Decimal, *, places: int = 18) -> str:
