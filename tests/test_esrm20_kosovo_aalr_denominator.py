@@ -48,6 +48,37 @@ class KosovoAalrDenominatorTests(unittest.TestCase):
         self.assertFalse(result["denominator_semantics_verified"])
         self.assertFalse(result["reference_loss_agreement_verified"])
 
+    def test_half_display_unit_preserves_decimal_exponent(self) -> None:
+        # An exponent-positive literal has fewer significant displayed digits.
+        self.assertEqual(
+            subject._half_display_unit(Decimal("1E+3")), Decimal("5E+2")
+        )
+        # Ordinary integer and fixed-decimal literals retain their precision.
+        self.assertEqual(
+            subject._half_display_unit(Decimal("1000")), Decimal("0.5")
+        )
+        self.assertEqual(
+            subject._half_display_unit(Decimal("1.00")), Decimal("0.005")
+        )
+
+    def test_scientific_notation_rounding_prevents_false_incompatibility(self) -> None:
+        # Entirely synthetic case: a rounded "1E+3" M EUR can mean
+        # [500, 1500] M EUR under the stated nearest-rounding hypothesis.
+        # Treating the half-unit as 0.5 would incorrectly reject this case.
+        result = subject.build_result(
+            aal_m_eur=Decimal("1E+3"),
+            aalr_per_mille=Decimal("1"),
+            residential_replacement_cost_eur=Decimal("2500000000000"),
+        )
+        self.assertTrue(
+            result["nearest_decimal_display_rounding_hypothesis"][
+                "compatible_with_residential_replacement_cost"
+            ]
+        )
+        self.assertEqual(result["aal_literal_decimal_places"], 0)
+        self.assertFalse(result["denominator_semantics_verified"])
+        self.assertFalse(result["reference_loss_agreement_verified"])
+
     def test_wrong_residential_denominator_is_incompatible(self) -> None:
         result = subject.build_result(
             aal_m_eur=Decimal("2.0"),
