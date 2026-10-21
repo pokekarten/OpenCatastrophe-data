@@ -211,7 +211,19 @@ def analyze_frozen_bytes(
         raise SharedDenominatorChallengeError("frozen CSV encoding/structure drifted") from exc
     if any(None in row or any(v is None for v in row.values()) for row in rows):
         raise SharedDenominatorChallengeError("frozen CSV row width drifted")
-    return analyze_rows(rows)
+    result = analyze_rows(rows)
+    # Carry the trusted immutable source identity in the durable aggregate
+    # evidence; synthetic analyze_rows() calls never claim this provenance.
+    result["trusted_source_receipt_bound"] = True
+    result["source_identity"] = {
+        "project_id": country.PROJECT_ID,
+        "commit_sha": viewer.FROZEN_V10_COMMIT,
+        "repository_path": viewer.COUNTRY_RISK_PATH,
+        "byte_count": viewer.FROZEN_V10_BYTE_COUNT,
+        "sha256": expected_sha,
+        "git_blob_sha1": viewer.FROZEN_V10_BLOB_SHA1,
+    }
+    return result
 
 
 def run() -> dict[str, Any]:
