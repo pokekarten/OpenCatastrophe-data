@@ -15,7 +15,8 @@ class OQ313KosovoExactSourceVersionReceiptTests(unittest.TestCase):
 
     def test_derived_runtime_can_compute_the_frozen_git_suffix(self) -> None:
         text = self.text
-        install_git = "apt-get install -y --no-install-recommends git"
+        # APT may carry bounded retry/cache flags between apt-get and install.
+        install_git = "install -y --no-install-recommends git"
         pin_abbrev = "git -C /oq-engine config core.abbrev 10"
         verify_abbrev = (
             'test "$(git -C /oq-engine rev-parse --short HEAD)" = "16dd69ecea"'

@@ -110,6 +110,21 @@ class OQ313KosovoReconstructedWorkflowTests(unittest.TestCase):
         self.assertNotIn('BASE_IMAGE="openquake/engine:3.13.0"', text)
         self.assertNotIn("FROM openquake/engine:3.13.0", text)
 
+    def test_docker_build_refreshes_stale_bullseye_indexes_without_changing_pin(self) -> None:
+        text = self.text
+        start = text.index("          # The immutable OQ3.13 image")
+        end = text.index("\n          EOF", start)
+        dockerfile = text[start:end]
+        # The pinned bootstrap image can contain apt list entries for Debian
+        # security revisions that the mirror no longer serves (HTTP 404).
+        self.assertIn("RUN rm -rf /var/lib/apt/lists/*", dockerfile)
+        self.assertIn("-o Acquire::http::No-Cache=true", dockerfile)
+        self.assertIn("-o Acquire::https::No-Cache=true update", dockerfile)
+        self.assertIn("Acquire::Retries=3", dockerfile)
+        self.assertIn("install -y --no-install-recommends git", dockerfile)
+        self.assertIn('test "$(git -C /oq-engine rev-parse --short HEAD)"', dockerfile)
+        self.assertIn("python -m pip install --no-deps -e /oq-engine", dockerfile)
+
     def test_fixed_source_identities_are_reverified_before_derivation(self) -> None:
         text = self.text
         self.assertIn("wrapper.SOURCE_BYTE_COUNT", text)
