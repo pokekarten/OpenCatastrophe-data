@@ -249,6 +249,13 @@ jobs:
           test "$(git -C "$OQ_ROOT" rev-parse 'HEAD^{commit}')" = "$OQ_COMMIT"
           test -z "$(git -C "$OQ_ROOT" status --porcelain=v1)"
 
+      - name: Verify pinned OQ3.13 loss threshold reaches AAL aggregation
+        if: steps.dedup.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          python -m research_runners.oq313_minimum_asset_loss_provenance \
+            --source-root "$RUNNER_TEMP/oq-engine"
+
       - name: Build and receipt exact-source OQ3.13 execution image
         if: steps.dedup.outputs.skip != 'true'
         id: runtime
