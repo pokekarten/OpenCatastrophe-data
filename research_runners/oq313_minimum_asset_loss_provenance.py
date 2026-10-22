@@ -145,14 +145,14 @@ def probe_source_bytes(blobs: dict[str, bytes]) -> dict[str, Any]:
         label="risk event/annual-average aggregator",
     )
 
-    execute = _section(
+    aggregate_result = _section(
         calculator,
-        "    def execute(self):",
+        "    def agg_dicts(self, dummy, dic):",
         "    def post_execute(self, dummy):",
         label="annual-average asset accumulation",
     )
     _ordered(
-        execute,
+        aggregate_result,
         (
             "for ln, ls in dic['avg'].items():",
             "self.avg_losses[coo.row, coo.col, lti[ln]] += coo.data",
