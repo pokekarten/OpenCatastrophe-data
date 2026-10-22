@@ -256,6 +256,14 @@ jobs:
           python -m research_runners.oq313_minimum_asset_loss_provenance \
             --source-root "$RUNNER_TEMP/oq-engine"
 
+      - name: Verify frozen ESRM20 Group1 and Kosovo minimum-loss alignment
+        if: steps.dedup.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          python -m research_runners.esrm20_group1_kosovo_threshold_link \
+            --source-group1-config "$RUNNER_TEMP/esrm20-stage/Configuration_files/config_ebrisk_Group1.ini" \
+            --reconstructed-kosovo-config "$RUNNER_TEMP/esrm20-stage/Configuration_files/config_ebrisk_Kosovo_Residential_Reconstructed.ini"
+
       - name: Build and receipt exact-source OQ3.13 execution image
         if: steps.dedup.outputs.skip != 'true'
         id: runtime
