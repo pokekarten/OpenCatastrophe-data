@@ -111,11 +111,7 @@ class MinimumAssetLossProvenanceTests(unittest.TestCase):
     def test_threshold_only_after_averaging_is_not_accepted(self):
         changed = dict(self.blobs)
         changed["openquake/calculators/event_based_risk.py"] = CALCULATOR.replace(
-            b"    coo = average_losses(\n", b"    # coo = average_losses(\n"
-        ).replace(
-            b"    fast_agg(eids + U64(K), values, correl, li, acc)",
-            b"    fast_agg(eids + U64(K), values, correl, li, acc)\n"
-            b"    coo = average_losses(\n",
+            b"    coo = average_losses(\n", b"    ignored = no_annualization(\n"
         )
         with mock.patch.dict(subject.EXPECTED_GIT_BLOBS, {
             k: subject.git_blob_id(v) for k, v in changed.items()
