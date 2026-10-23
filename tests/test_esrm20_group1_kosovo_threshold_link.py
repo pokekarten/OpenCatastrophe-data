@@ -73,6 +73,62 @@ class Group1ThresholdLinkTests(unittest.TestCase):
         ):
             self.assertIs(result[flag], False, flag)
 
+    @staticmethod
+    def source_membership_ini(*, change_exposure=False, duplicate=False, omit_kosovo=False):
+        countries = [f"Country{chr(65 + i)}" for i in range(22)] + ["Kosovo"]
+        if omit_kosovo:
+            countries[-1] = "CountryZ"
+        if duplicate:
+            countries[-1] = countries[0]
+        exposed = list(countries)
+        if change_exposure:
+            exposed[-1] = "AnotherCountry"
+        sites = "\n".join(
+            f"    ../Vs30/Site_model_{name}.xml" for name in countries
+        )
+        exposures = "\n".join(
+            f"    ../Exposure/OQ_Exposure_Input_{name}.xml" for name in exposed
+        )
+        return (
+            "[site_params]\nsite_model_file =\n" + sites + "\n"
+            "[exposure]\nexposure_file =\n" + exposures + "\n"
+        )
+
+    def test_source_group1_kosovo_site_and_exposure_membership(self):
+        result = subject._group1_country_membership(self.source_membership_ini())
+        self.assertEqual(result["source_group1_country_count"], 23)
+        self.assertTrue(result["source_group1_kosovo_site_model_present"])
+        self.assertTrue(result["source_group1_kosovo_exposure_present"])
+        self.assertTrue(result["source_group1_site_exposure_lists_identical"])
+        self.assertIs(result["published_kosovo_output_group_assignment_verified"], False)
+
+    def test_group1_source_membership_missing_duplicate_and_mismatch_rejected(self):
+        for variant in (
+            {"change_exposure": True},
+            {"duplicate": True},
+            {"omit_kosovo": True},
+        ):
+            with self.subTest(variant=variant):
+                with self.assertRaises(subject.SourceThresholdLinkError):
+                    subject._group1_country_membership(
+                        self.source_membership_ini(**variant)
+                    )
+
+    def test_group1_source_membership_wrong_count_or_path_rejected(self):
+        original = self.source_membership_ini()
+        with self.assertRaises(subject.SourceThresholdLinkError):
+            subject._group1_country_membership(
+                original.replace("Site_model_CountryA.xml", "Site_model_missing.xml")
+            )
+        with self.assertRaises(subject.SourceThresholdLinkError):
+            subject._group1_country_membership(
+                original.replace("    ../Vs30/Site_model_CountryA.xml\n", "")
+            )
+        with self.assertRaises(subject.SourceThresholdLinkError):
+            subject._group1_country_membership(
+                original.replace("../Vs30/", "../../Vs30/", 1)
+            )
+
     def test_changed_source_hash_rejected_even_with_same_runtime(self):
         source = _source_profile()
         source["sha256"] = "0" * 64
@@ -124,8 +180,18 @@ class Group1ThresholdLinkTests(unittest.TestCase):
             ) as builder, mock.patch.object(
                 subject.runtime, "project_group1_risk_runtime_scalars",
                 return_value=_source_profile(),
-            ) as projector:
+            ) as projector, mock.patch.object(
+                subject, "_group1_country_membership",
+                return_value={
+                    "source_group1_country_count": 23,
+                    "source_group1_kosovo_site_model_present": True,
+                    "source_group1_kosovo_exposure_present": True,
+                    "source_group1_site_exposure_lists_identical": True,
+                    "published_kosovo_output_group_assignment_verified": False,
+                },
+            ) as country_check:
                 result = subject.run(source_path, derived_path)
+            country_check.assert_called_once_with(group1.decode("utf-8"))
             builder.assert_called_once_with(group1)
             projector.assert_called_once_with(group1)
         self.assertTrue(result["source_config_threshold_match_verified"])
