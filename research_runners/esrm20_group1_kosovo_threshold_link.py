@@ -18,18 +18,25 @@ The latter's threshold/reference compatibility remains UNKNOWN.
 from __future__ import annotations
 
 import argparse
+import configparser
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 from scripts import build_esrm20_kosovo_residential_ebrisk_config as config
 from scripts import project_esrm20_group1_risk_runtime_scalars as runtime
 
-SCHEMA_VERSION = "oc-eq1-esrm20-group1-kosovo-threshold-link-v1"
+SCHEMA_VERSION = "oc-eq1-esrm20-group1-kosovo-threshold-link-v2"
 EXPECTED_MODE = "ebrisk"
 EXPECTED_MINIMUM_LOSS = "2000"
 MAX_SOURCE_BYTES = 8192
 MAX_DERIVED_BYTES = 8192
+EXPECTED_GROUP1_COUNTRIES = 23
+_SITE_PATTERN = re.compile(r"^\.\./Vs30/Site_model_([A-Za-z_]+)\.xml$")
+_EXPOSURE_PATTERN = re.compile(
+    r"^\.\./Exposure/OQ_Exposure_Input_([A-Za-z_]+)\.xml$"
+)
 
 
 class SourceThresholdLinkError(ValueError):
@@ -118,6 +125,53 @@ def compare_profiles(
     }
 
 
+def _group1_country_membership(source_text: str) -> dict[str, Any]:
+    """Validate the two aligned original Group1 country file lists.
+
+    This proves source-declared model-input membership, not historical
+    execution, a published-results crosswalk, or Kosovo output provenance.
+    """
+
+    if type(source_text) is not str or not source_text or len(source_text) > MAX_SOURCE_BYTES:
+        raise SourceThresholdLinkError("Group1 source text violates bounds")
+    parser = configparser.ConfigParser(
+        interpolation=None, strict=True, empty_lines_in_values=False
+    )
+    parser.optionxform = str
+    try:
+        parser.read_string(source_text)
+        raw_site = parser.get("site_params", "site_model_file", raw=True)
+        raw_exposure = parser.get("exposure", "exposure_file", raw=True)
+    except configparser.Error as exc:
+        raise SourceThresholdLinkError("Group1 site/exposure input fields invalid") from exc
+
+    def parse_list(value: str, pattern: re.Pattern[str], label: str) -> tuple[str, ...]:
+        entries = value.split()
+        if len(entries) != EXPECTED_GROUP1_COUNTRIES:
+            raise SourceThresholdLinkError(f"Group1 {label} country count drifted")
+        names = []
+        for entry in entries:
+            match = pattern.fullmatch(entry)
+            if match is None:
+                raise SourceThresholdLinkError(f"Group1 {label} country path drifted")
+            names.append(match.group(1))
+        if len(set(names)) != len(names):
+            raise SourceThresholdLinkError(f"Group1 {label} country repeats")
+        return tuple(names)
+
+    sites = parse_list(raw_site, _SITE_PATTERN, "site model")
+    exposures = parse_list(raw_exposure, _EXPOSURE_PATTERN, "exposure")
+    if sites != exposures or sites.count("Kosovo") != 1:
+        raise SourceThresholdLinkError("Group1 Kosovo membership/alignment drifted")
+    return {
+        "source_group1_country_count": EXPECTED_GROUP1_COUNTRIES,
+        "source_group1_kosovo_site_model_present": True,
+        "source_group1_kosovo_exposure_present": True,
+        "source_group1_site_exposure_lists_identical": True,
+        "published_kosovo_output_group_assignment_verified": False,
+    }
+
+
 def _read_bounded_file(path: Path, limit: int) -> bytes:
     if path.is_symlink() or not path.is_file():
         raise SourceThresholdLinkError("staged source config is not an ordinary file")
@@ -140,11 +194,19 @@ def run(group1_path: Path, reconstructed_path: Path) -> dict[str, Any]:
     except UnicodeDecodeError as exc:
         raise SourceThresholdLinkError("reconstructed config is not UTF-8") from exc
     derived_profile = runtime.project_runtime_scalars_from_verified_text(derived_text)
-    return compare_profiles(
+    # Source bytes are verified by the original Group1 projector above.
+    try:
+        original_text = group1.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise SourceThresholdLinkError("Group1 source config is not UTF-8") from exc
+    membership = _group1_country_membership(original_text)
+    result = compare_profiles(
         source_profile=group1_profile,
         derived_runtime=derived_profile,
         reconstructed_bytes_identical=True,
     )
+    result.update(membership)
+    return result
 
 
 def main() -> int:
