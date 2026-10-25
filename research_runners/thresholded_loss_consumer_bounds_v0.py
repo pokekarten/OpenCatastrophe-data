@@ -3,7 +3,7 @@
 """Conservative counterfactual bounds for a *declared* thresholded loss view.
 
 Assumption: every omitted nonnegative asset-event loss is <= explicit maximum.
-NOT a claim that OpenQuake 'risk_by_event' omitted rows or uses this formula.
+NOT a claim that OpenQuake `risk_by_event` omitted rows or uses this formula.
 A source reviewer must independently establish dropped record counts and rule.
 The bound is on a lossy view, not insured coverage or scientific calibration.
 """
