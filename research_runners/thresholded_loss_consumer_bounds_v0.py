@@ -62,7 +62,10 @@ def weighted_annual_loss_interval(worlds: tuple[tuple[Fraction, Interval], ...])
         raise LossBoundError('complete weighted world catalogue required')
     total = Fraction()
     lo = hi = Fraction()
-    for weight, interval in worlds:
+    for entry in worlds:
+        if type(entry) is not tuple or len(entry) != 2:
+            raise LossBoundError('each world must be an exact (probability, interval) pair')
+        weight, interval = entry
         if type(weight) is not Fraction or weight <= 0 or type(interval) is not Interval:
             raise LossBoundError('positive rational probability and interval required')
         lower = _money(interval.lower_eur, 'world.lower_eur')
