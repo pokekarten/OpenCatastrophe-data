@@ -46,6 +46,19 @@ class ThresholdedLossBoundsTests(unittest.TestCase):
         with self.assertRaises(LossBoundError):
             occurrence_xl_interval(Interval(1,2),attachment_eur=0,limit_eur=0)
 
+    def test_malformed_world_rows_fail_with_domain_error(self):
+        bad_catalogues = (
+            ((Fraction(1), Interval(0, 0), 'unexpected'),),
+            ((Fraction(1),),),
+            ((Fraction(1), Interval(0, 0)), 42),
+            ([Fraction(1), Interval(0, 0)],),
+        )
+        for worlds in bad_catalogues:
+            with self.subTest(worlds=worlds), self.assertRaises(LossBoundError):
+                weighted_annual_loss_interval(worlds)
+            with self.subTest(worlds=worlds), self.assertRaises(LossBoundError):
+                weighted_exceedance_bounds(worlds, threshold_eur=0)
+
     def test_no_unjustified_overflow_or_model_output(self):
         with self.assertRaises(LossBoundError):
             event_loss_interval(retained_loss_eur=10**16,omitted_count=1,max_omitted_eur=1)
