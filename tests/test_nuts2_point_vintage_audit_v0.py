@@ -3,7 +3,7 @@
 import copy
 import json
 import unittest
-from nuts2_point_vintage_audit_v0 import audit, VintageError
+from research_runners.nuts2_point_vintage_audit_v0 import audit, VintageError
 
 
 def payload(codes=('DE21', 'FRJ1'), null_area=False):
