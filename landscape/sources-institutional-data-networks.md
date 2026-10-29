@@ -13,10 +13,10 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 > This Markdown file is a deterministic human-readable projection of the canonical JSON file named above. It does not create a second source of truth or change admission, rights or scientific-review state.
 
 **Schema version:** `1.0.0`  
-**Review date:** `2026-08-10`  
+**Review date:** `2026-10-29`  
 **Purpose:** Non-admission discovery registry of institutional data networks, catastrophe-risk benchmarks and interoperable observation services relevant to catastrophe risk.
 
-**Entries:** 10
+**Entries:** 11
 
 ## DRMKC Risk Data Hub API and geospatial services
 
@@ -167,3 +167,18 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** PERILS documents market sums insured by CRESTA zone, line of business and coverage type and added severe convective storm exposure in 2025. Treat this as a high-value benchmark lead, not open data; exact access, redistribution and commercial terms require provider-specific review.
+
+## PERILS Industry Exposure Database 2026
+
+**Candidate ID:** `perils.industry-exposure-database.2026`  
+**Provider:** PERILS AG  
+**Categories:** `insured_exposure`, `market_sums_insured`, `natural_catastrophe`, `insurance`, `cresta`  
+**Spatial scope:** 21 markets across Europe, Canada and Asia-Pacific (18 PERILS CORE exposure-and-loss markets, plus Indonesia, Philippines and Thailand with exposure-only coverage)  
+**Temporal scope:** insurance exposure in force at 2026-01-01; release published 2026-04-22  
+**Resolution / granularity:** 67 peril-market portfolios; industry sums insured by CRESTA zone, Property and Motor lines of business, occupancy and coverage components where available; published total USD 150 trillion, not individual insurer TIV  
+**Potential roles:** `insured_exposure_benchmark`, `market_level_cat_loss_validation`, `hypothetical_portfolio_allocation_constraint`, `cresta_aggregation_reference`, `market_vulnerability_challenge`  
+**Access hint:** `annual_subscription_license_required_no_open_exposure_download`  
+**Authoritative source:** <https://www.perils.org/news/perils-industry-exposure-database-2026>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** 2026 IED is a new dated market-exposure vintage; retain the 2025 candidate separately. PERILS CORE directly aggregates insurer submissions to market level and PERILS EXTENDED provides distinct, broader country-level industry loss estimates (not new market exposure). The public USD 150 trillion and 67-portfolio figures are product-wide summary claims, not company-level holdings or reusable site records. No commercial data bytes, vendor loss footprint, company-specific TIV, event rate or redistribution rights were acquired; provider license and event/peril/coverage/CRESTA vintage review are required before any CAT calibration or model ingestion.
