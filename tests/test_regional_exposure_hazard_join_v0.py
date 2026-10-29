@@ -3,7 +3,7 @@
 
 import copy
 import unittest
-from regional_exposure_hazard_join_v0 import InputError, join
+from research_runners.regional_exposure_hazard_join_v0 import InputError, join
 
 
 def example():
