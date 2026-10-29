@@ -90,3 +90,14 @@ Offline commands after source-specific licensing / source-byte acquisition:
 **Execution status:** 14/14 local standard-library unit tests passed using synthetic records, and the committed Python/test Git content blob IDs were checked against executed local files. The two *complete real Eurostat* source JSON files were independently inspected through GitHub connector code, but the **Python script was not run on those complete real source files** in the offline local environment. This separation is intentional and auditable.
 
 **Next physical CAT join requires** GISCO **NUTS2 polygons**, verified region vintage, coordinate systems, defensible footprint–polygon intersection/area/insured-value weighting and matching coverage/event time. NUTS-2 label points or one region's maximum gust alone do not generate market losses or insurer portfolios; EIOPA coverage remains a 2020 sample, not the whole market.
+
+
+### Real NUTS-2 polygon comparison, not just label-point metadata
+
+The matching **actual region-polygon** GeoJSONs (Eurostat/Nuts2json; projection CRS84/EPSG:4326; intended generalization scale **1:20M**) were also read from their *complete* GitHub source documents on 2026-10-30:
+
+- **2021 polygons:** [pub/v2/2021/4326/20M/nutsrg_2.json](https://github.com/eurostat/Nuts2json/blob/master/pub/v2/2021/4326/20M/nutsrg_2.json), **328 polygon features**, Git content blob **a0726c3eca5b6f4326dcbc42f0fff98d5789f0ce**.
+- **2024 polygons:** [pub/v2/2024/4326/20M/nutsrg_2.json](https://github.com/eurostat/Nuts2json/blob/master/pub/v2/2024/4326/20M/nutsrg_2.json), **293 polygon features**, Git content blob **a16d0bb84852a9b0607138f8820a838ab5c9e735**.
+- **Shared IDs 282; all 282** shared IDs have nonidentical serialized **polygon geometry coordinate arrays** between 2021 and 2024; specifically **38/38** Germany IDs and **22/22** France IDs. This is a check for byte/coordinate inequality of the 1:20M generalized polygons, **not a geometric overlap or land-boundary change analysis**. Different coordinate values can result from source processing, rounding or generalized geometry at the same display scale and are not evidence of actual administrative border change. No geometric union, area intersection or loss overlap was calculated.
+
+Scientific decision: even when the NUTS2 region code is stable, **2021 and 2024 polygon source geometries cannot be silently substituted** in the insured CAT spatial overlay. The exact matched vintage, reproducible polygon asset and geometry-operation contract must precede all area/exposure allocation. In particular, using the geographic **label points** as building locations would be scientifically invalid.
