@@ -101,3 +101,37 @@ The matching **actual region-polygon** GeoJSONs (Eurostat/Nuts2json; projection 
 - **Shared IDs 282; all 282** shared IDs have nonidentical serialized **polygon geometry coordinate arrays** between 2021 and 2024; specifically **38/38** Germany IDs and **22/22** France IDs. This is a check for byte/coordinate inequality of the 1:20M generalized polygons, **not a geometric overlap or land-boundary change analysis**. Different coordinate values can result from source processing, rounding or generalized geometry at the same display scale and are not evidence of actual administrative border change. No geometric union, area intersection or loss overlap was calculated.
 
 Scientific decision: even when the NUTS2 region code is stable, **2021 and 2024 polygon source geometries cannot be silently substituted** in the insured CAT spatial overlay. The exact matched vintage, reproducible polygon asset and geometry-operation contract must precede all area/exposure allocation. In particular, using the geographic **label points** as building locations would be scientifically invalid.
+
+
+## Implemented optional geometry stage: EPSG:3035 wind-footprint / NUTS2 polygon intersection
+
+Research module: research_runners/regional_wind_footprint_overlay_v0.py.
+Tests: tests/test_regional_wind_footprint_overlay_v0.py.
+
+This is the first **spatial intersection implementation**, rather than a list of expected data joins. It requires the already-pinned optional Python geometry profile in requirements-eu-flood-spatial.txt (Shapely 2.1.2; PyProj 3.7.2). The module imports Shapely only when invoked; its tests explicitly skip when Shapely is absent from the core environment. No new dependency was added.
+
+**Contract and correctness boundaries:**
+
+- Regions are an explicitly source-hashed, prepared NUTS2 region list with Polygon or MultiPolygon geometries. Storm data are explicitly source-hashed **individual preprocessed** event grid cells containing maximum 10-m gust in m/s. The event is an extratropical windstorm, not arbitrary convective-storm or hail loss. **Both layers must have been independently converted to EPSG:3035 metres**. CRS transformation and NetCDF ingestion are not implemented by this module; input CRS declaration alone cannot prove the underlying geometries were converted correctly.
+- Strictly rejects geographic label points, unreviewed NUTS vintage (only 2021 or 2024 input currently), invalid/self-intersecting polygons, missing event date, invalid wind gusts, duplicate cell/region keys and event cells that overlap within a region (which would double-count weighted coverage).
+- Uses spatial index and actual Shapely polygon intersections, respecting MultiPolygon parts and polygon holes. Summarises **area-weighted weather gust on the *covered* part only**, peak gust over intersecting cells, region area, actually covered area and coverage fraction. Uncovered region has **unknown weather**, never wind speed zero. Coverage by storm-footprint grid is not equivalent to insurance attachment or risk assets; the grid cell maximum is not a footprint-wide observed maximum loss speed.
+- The output is **weather-only, no exposure, no policy data, no claims**. Do not use the area-weighted average gust as an insured-value-weighted gust; locations/assets would need their own density profile.
+- The two input files are accepted only after exact **caller-approved input-file SHA256 checks**, and each input declares the independently sourced raw-data SHA256. Declared raw source hash must be checked against acquired raw assets outside the module; a well-formed string is not independent provenance verification.
+
+With independently prepared local rights-cleared geo inputs, invoke:
+
+    python research_runners/regional_wind_footprint_overlay_v0.py /local/regions-epsg3035.json /local/event-grid-epsg3035.json --regions-input-sha256 EXPECTED_LOCAL_REGIONS_SHA256 --footprint-input-sha256 EXPECTED_LOCAL_FOOTPRINT_SHA256
+
+### Checks executed
+
+The three newly scoped suites run **together under repository-root import semantics**, without PYTHONPATH modifications:
+
+    python -m unittest discover -s tests -p 'test*.py' -v
+
+On a locally reconstructed subset consisting only of these three Python source/test pairs, **45/45 tests PASS** (15 NUTS2 observation pair tests + 14 NUTS source-vintage tests + 16 geometry intersection tests). Earlier two test files were also fixed to import their target source from the repository-root research_runners namespace. The repository-wide check_all.py still requires an actual full checkout / license/project tests and **was not run**.
+
+For the new geometry module and tests, the exact GitHub blobs were read back and independently compared against the SHA of locally executed content: module 9d480655d5ad6f65bcec10a0cc6090e28554db7d; tests 00284add2a09c565bb4f01bdcfd64a9b27f33a6d, both matching. All new fixtures are deliberately synthetic with source ID SYNTHETIC-NOT-C3S.
+
+**Not yet integrated with real event grids**: Real GISCO or Nuts2json Polygon / MultiPolygon geometries were examined from the official Eurostat repository via the connected reader, but the full original files could not be locally downloaded in the sandbox. Likewise C3S event-specific NetCDF and EIOPA insurance workbooks are not yet locally available / approved. No real event raster-cell intersections, no EIOPA exposure join and no insurer CAT Monte Carlo are claimed.
+
+The next technical adapters should be: (1) exact-source GISCO/Nuts2json EPSG3035 Polygon input normalization and pinned geographic-licence review; (2) exact-source C3S NetCDF cell bounds and CRS transformation with 72-hour-window/event/track provenance; (3) a new bridge that conveys coverage fractions and no-data into the sample insured-exposure join rather than silently treating partially covered areas as fully exposed; (4) a separate vulnerability and deductible/coverage loss stage for NextGen.
