@@ -54,6 +54,10 @@ class AnnualCsvTests(unittest.TestCase):
         for bad in ['Infinity', '-Infinity', '-1']:
             with self.subTest(bad=bad),self.assertRaises(AnnualSummaryError):
                 parse_annual_csv(csv(f'2021,DE21,20,1,23,100,0.1,{bad},0.9,Hodges\n'))
+    def test_reject_large_or_underflowing_metric(self):
+        for bad in ['1e9999', '1e-9999']:
+            with self.subTest(bad=bad), self.assertRaises(AnnualSummaryError):
+                parse_annual_csv(csv(f'2021,DE21,20,1,23,100,0.1,{bad},0.9,Hodges\n'))
     def test_reject_ratio_over_one(self):
         with self.assertRaises(AnnualSummaryError):parse_annual_csv(csv('2021,DE21,20,1,23,100,0.1,1.01,0.9,Hodges\n'))
     def test_reject_noninteger_count(self):
