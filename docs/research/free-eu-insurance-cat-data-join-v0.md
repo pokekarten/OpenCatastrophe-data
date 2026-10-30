@@ -192,3 +192,23 @@ https://cds.climate.copernicus.eu/datasets/sis-european-wind-storm-reanalysis?ta
 This provides a faster **regional validation** track once the *actual CSV and its NUTS vintage* are inspected. An annual storm index **is not** an event footprint or insured loss and must never be passed as a per-event storm to the spatial overlay or used to reconstruct annual treaty event sequences. C3S CSV/NetCDF and EIOPA XLSX source bytes have not yet been ingested.
 
 **Next required sources:** pin GISCO polygon and C3S event NetCDF exact bytes, project real weather grid boundaries to EPSG3035 with actual event/time/track metadata, spatially overlay with projected region polygons, acquire/rights-review EIOPA insured sample exposure, preserve NUTS and as-of temporal constraints, then apply a separate event vulnerability + insurance terms + joint Monte Carlo/treaty/retro pipeline.
+
+
+### Verified C3S annual storm-indicator CSV field contract (official product user guide, Table 5)
+
+The full official C3S Windstorm Product User Guide, Table 5 at https://confluence.ecmwf.int/spaces/CKB/pages/462911116/Windstorm+tracks+and+footprints+derived+from+reanalysis+over+Europe+between+1940+to+present+Product+User+Guide, explicitly lists **ten CSV fields**:
+
+| CSV header | Semantics |
+| --- | --- |
+| year | Annual reporting year |
+| region | NUTS region code; NUTS0, NUTS1 and NUTS2 appear in the service |
+| threshold | Wind-gust threshold, m/s; **0, 15.6, 20 or 25** |
+| storm_number | Annual count of decontaminated storm footprints affecting the region above threshold |
+| mean_wind_gust | Mean 10-m gust for affected region/threshold, m/s; unaffected areas are ignored, not zero-filled |
+| ssi | Area-weighted storm severity index, m^5 s^-3 |
+| normalised_ssi | Dimensionless severity index normalized with geographic area and climatological P98 |
+| area_ratio | Area above threshold relative to whole region (dimensionless) |
+| wind_gust_ratio | Gust normalized against region's 1991–2020 P98 reference |
+| algorithm | Storm-detection/tracking method (Hodges or TempestExtremes family) |
+
+**Nonadditivity guardrails for NextGen/FFBK:** Keep year, NUTS region, threshold, and detection algorithm as a **joint primary key**. Do not sum across thresholds (the threshold groups are nested), algorithms (Hodges and TempestExtremes generate overlapping and nonidentical event sets), or NUTS levels (the administrative hierarchy is nested). Do not interpret region count as policy claims, or annual SSI/NSSI as gross/insured EUR loss or one event. The CSV release's **exact NUTS geographic vintage remains to be established from real file/metadata**, so automatic joins to 2021/2024 insurer regions must remain blocked until that date and version have been independently established. The CSV source has not been downloaded in this research run.
