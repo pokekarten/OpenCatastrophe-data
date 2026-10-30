@@ -15,6 +15,7 @@ from decimal import Decimal, InvalidOperation
 import hashlib
 import io
 import json
+import math
 from pathlib import Path
 import re
 
@@ -41,6 +42,9 @@ def _decimal(raw: str, label: str, optional: bool = False) -> Decimal | None:
         raise AnnualSummaryError(f"{label}: nonnumeric value") from exc
     if not number.is_finite() or number < 0:
         raise AnnualSummaryError(f"{label}: nonfinite or negative")
+    converted = float(number)
+    if not math.isfinite(converted) or (number != 0 and converted == 0):
+        raise AnnualSummaryError(f"{label}: outside supported finite float precision")
     return number
 
 
@@ -50,8 +54,8 @@ def _float_or_none(value: Decimal | None) -> float | None:
 
 def parse_annual_csv(blob: bytes) -> dict:
     """Validate the original CSV bytes; never collapse thresholds, algorithms or NUTS levels."""
-    if not isinstance(blob, bytes) or not blob:
-        raise AnnualSummaryError("nonempty CSV bytes required")
+    if not isinstance(blob, bytes) or not blob or len(blob) > 250_000_000:
+        raise AnnualSummaryError("CSV must be nonempty and no larger than 250 MB")
     try:
         text = blob.decode("utf-8-sig")
     except UnicodeError as exc:
@@ -142,7 +146,7 @@ def main() -> int:
     if args.csv_file.resolve() == args.out.resolve():
         raise AnnualSummaryError("refusing to overwrite original C3S CSV")
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(output, sort_keys=True, indent=2), encoding="utf-8")
+    args.out.write_text(json.dumps(output, sort_keys=True, indent=2, allow_nan=False), encoding="utf-8")
     return 0
 
 
