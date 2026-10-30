@@ -144,3 +144,51 @@ A single **real region polygon** was read from the complete official eurostat/Nu
 The region was intersected by Shapely using the new committed algorithm with **two synthetic 10-m wind-gust grid rectangles** (20 m/s western cell, 40 m/s eastern cell). The rectangles cover the region completely by construction. Executed local result: **17,457.126642 km2** physical region and covered area, **coverage 1.0**, regional peak cell gust **40 m/s**, covered-area-weighted gust **28.866698 m/s**. The geographic area matches an independent sum-of-cross-products (shoelace) of the actual official EPSG3035 DE21 polygon coordinates (17,457.1266425 km2). The regional wind speed is **not** an observed or C3S-derived storm measurement, and is **not** exposure-weighted.
 
 For this first manual local pilot, the original Git blob is a source pointer but the local extracted polygon's raw-source SHA256 field was filled with an explicit placeholder; **full source-byte hash and transformation lineage have not been independently frozen**. No source bytes, extracted polygon fixture or fake wind data were checked into Git. Do not promote this test to a real CAT event validation or claim source SHA256 clearance on its basis.
+
+
+## Eurostat dual-projection source adapter, implemented 2026-10-30
+
+The new executable research_runners/eurostat_nuts2_3035_adapter_v0.py now prepares the **exact five-field polygon input accepted by** regional_wind_footprint_overlay_v0.py. It never downloads files, computes insurance claims, guesses missing region geometry, or substitutes label points for polygons.
+
+**Two real and separate official file identities** are required for the *same NUTS vintage* (2021 or 2024), at Eurostat's simplified 1:20M map scale:
+- Projected polygon source in metres: https://raw.githubusercontent.com/eurostat/Nuts2json/master/pub/v2/2021/3035/20M/nutsrg_2.json (change 2021 to 2024 for that vintage)
+- Independent reference-code source: https://raw.githubusercontent.com/eurostat/Nuts2json/master/pub/v2/2021/4326/20M/nutsrg_2.json (change 2021 to 2024)
+- Official publisher https://github.com/eurostat/Nuts2json; its project contains a EUPL-1.2 licence file. Separately inspect GISCO underlying geographical data terms at https://gisco-services.ec.europa.eu/distribution/v2/nuts/ before acquisition, processing or any derived-data publication. No third-party source bytes have been committed.
+
+**Full source-file region-code audit, run using the connected GitHub reader**:
+
+| NUTS year | Projected polygons 3035 | Reference polygons 4326 | Germany region IDs | France region IDs | Other projection coverage gaps |
+| --- | ---: | ---: | --- | --- | --- |
+| 2021 | 327 | 328 | 38/38 identical | 22/22 identical | PT20, PT30 missing in projected; ES70 extra in projected |
+| 2024 | 292 | 293 | 38/38 identical | 22/22 identical | PT20, PT30 missing in projected; ES70 extra in projected |
+
+Real source Git blob SHA identifiers: projected 2021 9cbb7e97afc48965b0bd6a05d0121eb1f41987a1, geographic 2021 a0726c3eca5b6f4326dcbc42f0fff98d5789f0ce, projected 2024 5ea9c1ab73dd03addb83a568aa4b089c6d2f1f30, geographic 2024 a16d0bb84852a9b0607138f8820a838ab5c9e735. **Git blob SHA1 is not SHA256.** The caller must verify and pin an independently approved **full raw file SHA256**, and should freeze an immutable source commit rather than relying on mutable GitHub master branch.
+
+The converter refuses invalid/duplicate country or region identifiers, unsupported NUTS year, nonpolygon or malformed geometry, obviously unprojected degree coordinates, and any missing/extra region within the **explicitly selected countries** when comparing both source projections. This means DE/FR can be prepared without claiming complete PT/ES coverage. It produces a separate local provenance receipt with the two SHA256 hashes and a selected-code list. The source files themselves omit a self-authenticating CRS property: projected coordinates are accepted only in combination with the separately verified source path and the pinned raw bytes. A source URL in the receipt does not itself prove that a user's downloaded file came from that URL.
+
+Example run with independently reviewed, local, licensed source files:
+
+    python -m research_runners.eurostat_nuts2_3035_adapter_v0 \
+      /local/2021/3035/20M/nutsrg_2.json \
+      /local/2021/4326/20M/nutsrg_2.json \
+      --vintage 2021 --country DE --country FR \
+      --expected-3035-sha256 APPROVED_RAW_3035_SHA256 \
+      --expected-4326-sha256 APPROVED_RAW_4326_SHA256 \
+      --out /local/private/de-fr-regions.json \
+      --receipt /local/private/de-fr-receipt.json
+
+Only the output from this code has the geometry schema needed for the existing physical C3S storm-overlay stage; local, rights-cleared footprint cells must be supplied separately. The 20M polygon data are simplified map geometries, **not cadastral precision** or insured site polygons. The converter and its local weather-overlay validation do **not** claim real C3S event ingestion, EIOPA XLSX ingestion, insured-loss calibration or treaty/retro simulation.
+
+**Actual local tests:** 63 tests PASS via normal repository-root unittest discovery on a reconstructed test subset. This includes 16 new strict adapter tests, two additional subprocess tests which prove correct source-SHA256 pinning and fail-without-writing if checksums disagree, and the previously existing 45 scoped tests. GitHub committed Python and test code content was fetched and independently checked against the local executed files' Git blob SHAs. The complete OpenCatastrophe-data repository check_all.py and its entire validation suite have **not** been executed.
+
+### Separate annual-C3S NUTS2 route without full NetCDF storm grids
+
+C3S's official Enhanced Windstorm Product User Guide confirms **annual NUTS-0/1/2 CSV storm indicators**, including yearly storm count, mean gust, SSI and NSSI by wind threshold:
+https://confluence.ecmwf.int/spaces/CKB/pages/462911116/Windstorm+tracks+and+footprints+derived+from+reanalysis+over+Europe+between+1940+to+present+Product+User+Guide
+
+Official data catalogue and CC-BY citation DOI 10.24381/bf1f06a9:
+https://cds.climate.copernicus.eu/datasets/sis-european-wind-storm-reanalysis?tab=overview
+
+This provides a faster **regional validation** track once the *actual CSV and its NUTS vintage* are inspected. An annual storm index **is not** an event footprint or insured loss and must never be passed as a per-event storm to the spatial overlay or used to reconstruct annual treaty event sequences. C3S CSV/NetCDF and EIOPA XLSX source bytes have not yet been ingested.
+
+**Next required sources:** pin GISCO polygon and C3S event NetCDF exact bytes, project real weather grid boundaries to EPSG3035 with actual event/time/track metadata, spatially overlay with projected region polygons, acquire/rights-review EIOPA insured sample exposure, preserve NUTS and as-of temporal constraints, then apply a separate event vulnerability + insurance terms + joint Monte Carlo/treaty/retro pipeline.
