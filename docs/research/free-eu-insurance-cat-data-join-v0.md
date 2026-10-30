@@ -212,3 +212,31 @@ The full official C3S Windstorm Product User Guide, Table 5 at https://confluenc
 | algorithm | Storm-detection/tracking method (Hodges or TempestExtremes family) |
 
 **Nonadditivity guardrails for NextGen/FFBK:** Keep year, NUTS region, threshold, and detection algorithm as a **joint primary key**. Do not sum across thresholds (the threshold groups are nested), algorithms (Hodges and TempestExtremes generate overlapping and nonidentical event sets), or NUTS levels (the administrative hierarchy is nested). Do not interpret region count as policy claims, or annual SSI/NSSI as gross/insured EUR loss or one event. The CSV release's **exact NUTS geographic vintage remains to be established from real file/metadata**, so automatic joins to 2021/2024 insurer regions must remain blocked until that date and version have been independently established. The CSV source has not been downloaded in this research run.
+
+
+## C3S annual CSV offline importer: executable validation contract (2026-10-30)
+
+New executable: research_runners/c3s_wind_annual_summary_v0.py; 19 offline regression tests: tests/test_c3s_wind_annual_summary_v0.py. Implemented and locally run with only Python standard library. New GitHub files were re-read and source Git blob SHAs matched the exact locally executed files: source dad02361cb6370505f3789a42fe78026bed6fac8; tests 4500ea0999afc9825c7a1908f99118f78ed98d26.
+
+**Authoritative public-data record:** [Copernicus C3S Enhanced Windstorm dataset](https://cds.climate.copernicus.eu/datasets/sis-european-wind-storm-reanalysis?tab=overview), DOI 10.24381/bf1f06a9, licence **CC BY 4.0**; [official user guide, Table 5](https://confluence.ecmwf.int/spaces/CKB/pages/462911116/Windstorm+tracks+and+footprints+derived+from+reanalysis+over+Europe+between+1940+to+present+Product+User+Guide). This product explicitly contains a single yearly summary CSV for NUTS0/1/2, separate from event tracks and event footprint NetCDF. The source year cutoff in this **2026-vintage parser** is 1940–2026; future releases require intentional supported-version updates. The real provider CSV has **not** been downloaded in this runtime (CDS account/API and external network access are needed); all 19 tests use clearly fabricated CSV values.
+
+The importer has a fail-closed ten-column schema matching the official guide:
+year, region, threshold, storm_number, mean_wind_gust, ssi, normalised_ssi, area_ratio, wind_gust_ratio, algorithm.
+It preserves **one observation per** (year, NUTS0/1/2 region, threshold, tracking algorithm), validates four official gust thresholds 0 / 15.6 / 20 / 25 m/s, requires integer event counts, checks nonnegative finite numeric values and area_ratio in [0,1], refuses duplicate keys, and checks storm count monotonicity across **nested gust thresholds** within one year/region/algorithm. Empty or provider NA/NaN metric values become explicit null with a missing-field list, **never** made-up zeroes. This is a research parser; actual released CSV formatting and null markers must be checked against the first successfully acquired provider file, and the adapter revised if necessary rather than changing source bytes.
+
+**Non-additive dimensions:** Do not sum thresholds, do not sum storm counts across Hodges/TempestExtremes algorithms, and do not sum across nested NUTS regions. The source annual count is not an insured damage count or unique global event identifier. Annual SSI and NSSI do not constitute EUR loss values. The nuts_vintage deliberately remains **unverified** and automatic_nuts_join_permitted=false because the CSV region code does not independently identify the GISCO/NUTS release version. The output may be used only as an isolated hazard-quality comparison until geographic vintage evidence is obtained. Neither source year nor raw-file hash identifies source NUTS version.
+
+Example once a legally accessible genuine CSV file has been acquired **outside Git** using official CDS download/API under CC-BY licence and its bytes and access query independently reviewed:
+
+    python -m research_runners.c3s_wind_annual_summary_v0 \
+      /local/source/original-c3s-annual-summary.csv \
+      --expected-source-sha256 APPROVED_ORIGINAL_CSV_SHA256 \
+      --out /local/private/c3s-annual-audit.json
+
+The original input file is never overwritten. The command refuses mismatching source bytes before generating output; no false published CSV fixture or real-data validation is claimed.
+
+**Two distinct next routes**:
+1. *Regional benchmark:* once the real annual CSV and exact NUTS vintage are verified, compare each NUTS2 **year/threshold/algorithm-specific** historical hazard observation with separately qualified sample exposure or loss validation data; exposure year, units and insured-vs-economic semantics remain distinct. Do not pool 1940–2026 wind indices into a pretend company event series.
+2. *Event-wise CAT simulation:* acquire C3S event-specific 72-hour max 10-m-gust NetCDF footprints with event/track IDs, project grid cells and intersect verified region polygons using the earlier spatial overlay, then apply synthetic location exposure, vulnerability, coverage and treaty/retro cash flow in separate modules. The annual index CSV **cannot substitute** for this event/time path.
+
+**Scoped tests:** 19/19 newly added standard-library tests passed, covering schema, empty/NA values, non-additivity and nested-threshold monotonicity, year/region fields, UTF8-BOM, CLI positive/negative hash checks. Earlier work reported 63/63 other scoped tests separately; **full repository check_all.py was not run on the new HEAD**, nor was the actual C3S annual CSV processed. Do not add 63 + 19 into a claimed single executed test-suite result.
