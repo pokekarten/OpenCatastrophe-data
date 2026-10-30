@@ -93,4 +93,44 @@ class ConvertTest(unittest.TestCase):
         with self.assertRaisesRegex(AdapterError,'missing='):
             convert(encode(geo(('DE21',))),encode(geo(('DE21','DE22'),False)),'2024',('DE',))
 
-if __name__ == '__main__':unittest.main()
+# CLI verification is deliberately synthetic; provider raw files are not present.
+class CommandLineTest(unittest.TestCase):
+    def _run(self, valid=True):
+        import hashlib
+        import subprocess
+        import sys
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp)
+            proj=encode(geo(('DE21',), True))
+            ref=encode(geo(('DE21',), False))
+            (p/'source.json').write_bytes(proj)
+            (p/'reference.json').write_bytes(ref)
+            sha_proj=hashlib.sha256(proj).hexdigest()
+            sha_ref=hashlib.sha256(ref).hexdigest()
+            cmd=[sys.executable, '-m', 'research_runners.eurostat_nuts2_3035_adapter_v0',
+                 str(p/'source.json'),str(p/'reference.json'), '--vintage','2021',
+                 '--country','DE','--expected-3035-sha256',sha_proj if valid else '0'*64,
+                 '--expected-4326-sha256',sha_ref,'--out',str(p/'converted.json'),
+                 '--receipt',str(p/'receipt.json')]
+            response=subprocess.run(cmd,capture_output=True,text=True,check=False)
+            if valid:
+                self.assertEqual(response.returncode,0,response.stderr)
+                result=json.loads((p/'converted.json').read_text())
+                receipt=json.loads((p/'receipt.json').read_text())
+                self.assertEqual(result['source_sha256'],sha_proj)
+                self.assertEqual(receipt['reference_sha256'],sha_ref)
+                self.assertEqual(receipt['selected_region_codes'],['DE21'])
+            else:
+                self.assertNotEqual(response.returncode,0)
+                self.assertIn('SHA256 does not match',response.stderr)
+                self.assertFalse((p/'converted.json').exists())
+                self.assertFalse((p/'receipt.json').exists())
+    def test_cli_pins_two_source_hashes(self):
+        self._run(True)
+    def test_cli_refuses_unreviewed_source_hash(self):
+        self._run(False)
+
+if __name__ == '__main__':
+    unittest.main()
