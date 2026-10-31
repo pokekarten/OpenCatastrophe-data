@@ -10,6 +10,8 @@ on:
       - "research_runners/historical_cat_csv_provider_receipt_v0.py"
       - "scripts/verify_historical_cat_csv_provider_receipts.py"
       - "research_runners/historical_cat_benchmark_csv_preflight_v0.py"
+      - "research_runners/historical_country_year_availability_v0.py"
+      - "tests/test_historical_country_year_availability_v0.py"
       - "tests/test_verify_historical_cat_csv_provider_receipts.py"
   workflow_dispatch:
 
@@ -36,8 +38,8 @@ jobs:
         with:
           python-version: "3.14"
       - name: Recheck synthetic boundary tests
-        run: python -m unittest tests.test_verify_historical_cat_csv_provider_receipts -v
+        run: python -m unittest tests.test_verify_historical_cat_csv_provider_receipts tests.test_historical_country_year_availability_v0 -v
       - name: Recheck original publisher bytes against exact SHA-256 and profile
         run: |
           python scripts/verify_historical_cat_csv_provider_receipts.py --fetch --output "$RUNNER_TEMP/historical-cat-csv-provider-check.json"
-          python -c 'import json,os,pathlib; p=pathlib.Path(os.environ["RUNNER_TEMP"])/"historical-cat-csv-provider-check.json"; r=json.loads(p.read_text()); assert len(r["results"]) == 2 and r["source_admitted"] is False; print("PASS: both pinned original provider CSVs independently validated; no source rows saved")'
+          python -c 'import json,os,pathlib; p=pathlib.Path(os.environ["RUNNER_TEMP"])/"historical-cat-csv-provider-check.json"; r=json.loads(p.read_text()); assert len(r["results"]) == 2 and r["source_admitted"] is False; a=r["historical_country_year_availability"]; assert a["event_count"]==2780 and a["source_admitted"] is False and a["insured_loss_created"] is False and a["asset_exposure_created"] is False; assert a["event_count"] == a["event_count_outside_2001_2025_eligibility"]+a["event_count_with_exact_country_prior_year_indicator"]+a["event_count_without_exact_country_prior_year_indicator"]; print("PASS: pinned original CSVs and non-loss country/year overlap; no provider rows saved"); print("COVERAGE_METADATA="+json.dumps(a, sort_keys=True))'

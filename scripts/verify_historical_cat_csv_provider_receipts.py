@@ -9,7 +9,9 @@ raw provider rows. Offline mode accepts explicitly downloaded source files.
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
+import io
 import json
 from pathlib import Path
 import sys
@@ -21,6 +23,7 @@ from research_runners.historical_cat_benchmark_csv_preflight_v0 import (  # noqa
     SourcePreflightError, inspect_hanze_v302, inspect_residential_v2025,
 )
 
+from research_runners.historical_country_year_availability_v0 import audit_verified_rows  # noqa: E402
 from research_runners.historical_cat_csv_provider_receipt_v0 import SOURCE_RECEIPT  # noqa: E402
 PROFILE = {
     "hanze_v3_0_2_beta": inspect_hanze_v302,
@@ -74,14 +77,21 @@ def verify_one(key: str, raw: bytes, record: dict) -> dict:
 
 
 def verify_pair(hanze: bytes, residential: bytes, receipt: dict) -> dict:
+    # Both original publisher byte identities and complete schema/profiles MUST pass
+    # before the second-order availability-only comparison can inspect their rows.
+    verified = [
+        verify_one("hanze_v3_0_2_beta", hanze, receipt["sources"]["hanze_v3_0_2_beta"]),
+        verify_one("residential_v2025", residential, receipt["sources"]["residential_v2025"]),
+    ]
+    events = csv.DictReader(io.StringIO(hanze.decode("utf-8-sig"), newline=""), strict=True)
+    exposure = csv.DictReader(io.StringIO(residential.decode("utf-8-sig"), newline=""), strict=True)
+    availability = audit_verified_rows(events, exposure)
     return {
         "schema_version": "research-source-byte-receipt-check-v0",
         "source_admitted": False,
         "insured_loss_or_asset_tiv_created": False,
-        "results": [
-            verify_one("hanze_v3_0_2_beta", hanze, receipt["sources"]["hanze_v3_0_2_beta"]),
-            verify_one("residential_v2025", residential, receipt["sources"]["residential_v2025"]),
-        ],
+        "results": verified,
+        "historical_country_year_availability": availability,
     }
 
 
@@ -93,6 +103,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--residential-csv", type=Path)
     parser.add_argument("--output", type=Path, help="optional metadata-only output file")
     args = parser.parse_args(argv)
+    if args.output is not None and not args.fetch:
+        # This receipt is derived from ORIGINAL publisher CSVs. A mistaken
+        # --output pointing to a source (or symlink/hardlink alias) must not
+        # overwrite the evidence that the pinned SHA/MD5 just verified.
+        if args.residential_csv is None:
+            parser.error("--residential-csv required with --hanze-csv")
+        destination = args.output.resolve()
+        for original in (args.hanze_csv, args.residential_csv):
+            if (destination == original.resolve() or
+                    (args.output.exists() and original.exists()
+                     and args.output.samefile(original))):
+                raise SourcePreflightError(
+                    "refusing to overwrite original provider CSV with receipt")
     records = read_receipt()
     if args.fetch:
         if args.residential_csv is not None:

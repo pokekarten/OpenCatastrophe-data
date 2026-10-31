@@ -28,3 +28,32 @@ Provider SHA-256, publisher MD5, byte size, exact CSV headers and all profile co
     python -m unittest tests.test_verify_historical_cat_csv_provider_receipts -v
 
 The initial receipt was profiled from complete publisher byte-range retrievals and has now been independently reproduced by the Python --fetch verifier on public GitHub Actions (runs 41226668464 and 41226804269, both successful). This confirms exact source bytes and preflight profiles, NOT scientific model suitability or any downstream rights admission. Review actual provider licence and attribution separately. Never infer insurer claims, insurance portfolio ownership, per-building values, or hazard polygons from the two CSV families.
+
+## Verified country/prior-year availability witness (research only)
+
+The byte-exact public GitHub Actions check of the `HANZE v3.0.2 beta` and
+`Residential exposure v2025` files in [run 41244147338](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41244147338)
+completed successfully on 2026-10-31. The additional *presence-only* diagnostic
+`research_runners/historical_country_year_availability_v0.py` reported:
+
+- 2,780 published historical flood event rows, of which 1,735 occur outside the
+  eligibility window for an available previous calendar year (2001–2025).
+- 1,045 events eligible for the literal country/code and previous-year check,
+  consisting of 970 event rows with a matching prior-year residential indicator
+  and 75 without such a match. `970 + 75 + 1735 == 2780` is enforced.
+- 33 distinct countries in matched event contexts and 399 distinct country/year
+  context pairs across the output inventory.
+- 576 matched event rows also have a *reported economic loss field*.
+  This does not make these losses insured, and missing fields are never treated
+  as a zero amount.
+- All indicator families are kept at their documented country/year granularity.
+  The EU aggregate is excluded; no event footprint, subnational insured TIV,
+  ground-up claim or monetary aggregate is generated.
+
+This is a **source availability** diagnostic, not scientific calibration or an
+as-of-event portfolio reconstruction. The previous calendar-year rule prevents
+obvious future-year leakage but does **not** prove that the annual indicator was
+known or effective on the flood date. Source-country code matches are literal;
+no semantic crosswalk, regional mapping, interpolation, synthetic policy
+ownership, insurer concentration or deductible is inferred. Source data bytes
+remain outside Git.
