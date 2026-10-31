@@ -27,4 +27,4 @@ Provider SHA-256, publisher MD5, byte size, exact CSV headers and all profile co
 
     python -m unittest tests.test_verify_historical_cat_csv_provider_receipts -v
 
-The initial receipt was profiled from provider byte ranges via external web extraction and has not yet been reproduced in Python on an internet-connected machine. Pass the fetch check before scientific promotion. Review actual provider licence and attribution separately. Never infer insurer claims, insurance portfolio ownership, per-building values, or hazard polygons from the two CSV families.
+The initial receipt was profiled from complete publisher byte-range retrievals and has now been independently reproduced by the Python --fetch verifier on public GitHub Actions (runs 41226668464 and 41226804269, both successful). This confirms exact source bytes and preflight profiles, NOT scientific model suitability or any downstream rights admission. Review actual provider licence and attribution separately. Never infer insurer claims, insurance portfolio ownership, per-building values, or hazard polygons from the two CSV families.
