@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: EFFIS Wildfire Event Geometry Probe
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/effis-wildfire-event-probe.yml"
+      - "scripts/inspect_effis_burnt_area_v0.py"
+      - "tests/test_inspect_effis_burnt_area_v0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: effis-geometry-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-single-public-event:
+    name: Verify official EFFIS burnt-area event geometry
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout exact workflow ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Test synthetic geometry and source invariants
+        run: python -m unittest tests.test_inspect_effis_burnt_area_v0 -v
+      - name: Validate one real public EFFIS event without storing geometries
+        run: |
+          python scripts/inspect_effis_burnt_area_v0.py --fetch --event-id 646790 --out "$RUNNER_TEMP/effis-wildfire-event-metadata.json"
+          python -c 'import json,os,pathlib; d=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"effis-wildfire-event-metadata.json").read_text()); assert d["event_id"] == 646790 and d["geometry_type"] == "MultiPolygon" and d["model_admission"] is False; print(json.dumps(d,sort_keys=True))'
