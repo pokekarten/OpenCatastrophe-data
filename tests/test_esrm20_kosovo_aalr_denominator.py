@@ -144,6 +144,41 @@ class KosovoAalrDenominatorTests(unittest.TestCase):
                 residential_replacement_cost_eur=Decimal("0"),
             )
 
+    def test_direct_operands_fail_closed_before_arithmetic(self) -> None:
+        # A caller bypassing the trusted CSV parser must not trigger a raw
+        # Decimal DivisionByZero/InvalidOperation or make NaN look compatible.
+        valid = {
+            "aal_m_eur": Decimal("2.0"),
+            "aalr_per_mille": Decimal("1.0"),
+            "residential_replacement_cost_eur": Decimal("2000000000"),
+        }
+        invalid = (
+            Decimal("0"), Decimal("-1"), Decimal("NaN"),
+            Decimal("Infinity"), Decimal("-Infinity"), Decimal("1E+51"),
+            Decimal("1E-51"), Decimal("1." + "0" * 70),
+            1, 1.0, "1", None, True,
+        )
+        for key in valid:
+            for value in invalid:
+                with self.subTest(field=key, value=str(value)):
+                    operands = dict(valid)
+                    operands[key] = value
+                    with self.assertRaises(subject.DenominatorDiagnosticError):
+                        subject.build_result(**operands)
+
+    def test_valid_direct_decimal_operands_stay_compatible(self) -> None:
+        result = subject.build_result(
+            aal_m_eur=Decimal("2.0"),
+            aalr_per_mille=Decimal("1.0"),
+            residential_replacement_cost_eur=Decimal("2000000000"),
+        )
+        self.assertTrue(
+            result["nearest_decimal_display_rounding_hypothesis"][
+                "compatible_with_residential_replacement_cost"
+            ]
+        )
+        self.assertFalse(result["reference_loss_agreement_verified"])
+
 
 if __name__ == "__main__":
     unittest.main()

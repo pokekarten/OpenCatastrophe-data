@@ -45,6 +45,15 @@ class DenominatorDiagnosticError(RuntimeError):
     """Raised when the bounded denominator experiment cannot be trusted."""
 
 
+def _require_positive_bounded_decimal(number: Decimal, *, field: str) -> Decimal:
+    """Enforce the same numeric trust boundary for parsed and direct inputs."""
+    if type(number) is not Decimal or not number.is_finite() or number <= 0:
+        raise DenominatorDiagnosticError(f"{field} must be finite and positive Decimal")
+    if len(number.as_tuple().digits) > 64 or abs(number.adjusted()) > 50:
+        raise DenominatorDiagnosticError(f"{field} exceeds bounded decimal policy")
+    return number
+
+
 def _parse_positive_decimal(value: str, *, field: str) -> Decimal:
     if type(value) is not str or value == "" or value != value.strip():
         raise DenominatorDiagnosticError(f"{field} is empty or padded")
@@ -52,11 +61,7 @@ def _parse_positive_decimal(value: str, *, field: str) -> Decimal:
         number = Decimal(value)
     except InvalidOperation as exc:
         raise DenominatorDiagnosticError(f"{field} is not decimal") from exc
-    if not number.is_finite() or number <= 0:
-        raise DenominatorDiagnosticError(f"{field} must be finite and positive")
-    if len(number.as_tuple().digits) > 64 or abs(number.adjusted()) > 50:
-        raise DenominatorDiagnosticError(f"{field} exceeds bounded decimal policy")
-    return number
+    return _require_positive_bounded_decimal(number, field=field)
 
 
 def _decimal_places(value: Decimal) -> int:
@@ -131,8 +136,12 @@ def build_result(
     aalr_per_mille: Decimal,
     residential_replacement_cost_eur: Decimal,
 ) -> dict[str, Any]:
-    if residential_replacement_cost_eur <= 0:
-        raise DenominatorDiagnosticError("residential replacement-cost sum must be positive")
+    for field, number in (
+        ("published residential AAL", aal_m_eur),
+        ("published residential AALR", aalr_per_mille),
+        ("residential replacement-cost sum", residential_replacement_cost_eur),
+    ):
+        _require_positive_bounded_decimal(number, field=field)
 
     with localcontext(_CALC_CONTEXT) as context:
         billion = Decimal(1_000_000_000)
