@@ -121,10 +121,18 @@ def overlay(regions: dict, footprint: dict) -> dict:
             raise OverlayError('duplicate footprint cell ID')
         cell_ids.add(cell_id)
         gust = cell['max_gust_mps']
-        if type(gust) not in (float, int) or not math.isfinite(gust) or gust < 0:
+        if type(gust) not in (float, int) or gust < 0:
+            raise OverlayError('gust must be finite, nonnegative metres per second')
+        # math.isfinite(huge_int) can raise OverflowError before this module
+        # returns its controlled OverlayError for unrepresentable inputs.
+        try:
+            numeric_gust = float(gust)
+        except (OverflowError, ValueError) as exc:
+            raise OverlayError('gust must be finite, nonnegative metres per second') from exc
+        if not math.isfinite(numeric_gust):
             raise OverlayError('gust must be finite, nonnegative metres per second')
         grid_shapes.append(_geometry(cell['geometry'], 'grid cell'))
-        gusts.append(float(gust))
+        gusts.append(numeric_gust)
 
     tree = STRtree(grid_shapes)
     output = []
