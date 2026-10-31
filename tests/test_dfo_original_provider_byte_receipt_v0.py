@@ -26,7 +26,7 @@ def fixture():
         "﹟": "5512", "Glide ﹟": "", "Start Date": "12/30/23", "End Date": "1/4/24",
         "Country": "Fictional Germany", "Area (km²)": "1,234", "Source": "Synthetic",
         "Main Cause": "Heavy rain", "Fatalities": "0", "Displaced": "",
-        "Severity": "1.5", "Flood impact index ": "2.2",
+        "Severity": "1.5", "Flood impact index": "2.2",
     })
     return buffer.getvalue().encode("utf-8")
 
