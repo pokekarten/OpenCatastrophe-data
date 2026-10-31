@@ -8,6 +8,12 @@ from scripts import inspect_climk_winds_era5_v0 as mod
 
 
 class CLIMKWindProbeTests(unittest.TestCase):
+    def test_exact_sha256_and_native_units_pinned(self):
+        self.assertEqual(mod.PINNED_SHA256, "92856dea4578ac556ff5598176ff33411b56baa7c2af0170150e288bd5581102")
+        self.assertEqual(mod.EXPECTED_DIMENSIONS, {"storm_number": 50, "latitude": 181, "longitude": 269})
+        self.assertEqual(mod.EXPECTED_FIELDS["absolute_maxwindgusts"][1], "m s**-1")
+        self.assertEqual(mod.EXPECTED_FIELDS["LI_gridpoint"][1], "none")
+
     def test_fixed_published_data_receipt(self):
         self.assertEqual(mod.PUBLISHED_SIZE, 6792278)
         self.assertEqual(mod.PUBLISHED_MD5, "887ae3218793c599862f115876c145f9")
