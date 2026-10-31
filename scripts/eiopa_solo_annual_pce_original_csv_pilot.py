@@ -58,6 +58,21 @@ def _strict_rows(raw: bytes) -> tuple[list[tuple], dict]:
         if reader.fieldnames is None or tuple(reader.fieldnames) != HEADER:
             raise EIOPACSVError("EIOPA S.05.01 CSV header/version changed")
         country_set, year_set, type_set, extraction_set = set(), set(), set(), set()
+        nonlife_country_year = set()
+        # Each selected source item has a *different* insurance accounting basis.
+        # Count nonmissing observations; NEVER add or reclassify their values.
+        selected_nonlife_codes = {
+            "R0110": "direct_written_premium",
+            "R0120": "proportional_reinsurance_accepted_written",
+            "R0130": "nonproportional_reinsurance_accepted_written",
+            "R0140": "reinsurers_share_written",
+            "R0200": "net_written_premium",
+            "R0310": "gross_direct_claims_incurred",
+            "R0340": "reinsurers_share_claims_incurred",
+            "R0400": "net_claims_incurred",
+        }
+        nonlife_present = {code: set() for code in selected_nonlife_codes}
+        country_year_business = set()
         seen = set()
         rows = []
         counts = dict(numeric=0, missing=0, zero=0, negative=0)
@@ -109,6 +124,11 @@ def _strict_rows(raw: bytes) -> tuple[list[tuple], dict]:
             country_set.add(country)
             year_set.add(period)
             type_set.add(business)
+            country_year_business.add((country, period, business))
+            if business == "Non-Life":
+                nonlife_country_year.add((country, period))
+                if code in nonlife_present and not is_missing:
+                    nonlife_present[code].add((country, period))
             extraction_set.add(extracted)
     except csv.Error as exc:
         raise EIOPACSVError("malformed original EIOPA CSV syntax") from exc
@@ -121,6 +141,14 @@ def _strict_rows(raw: bytes) -> tuple[list[tuple], dict]:
         "country_count":len(country_set), "country_labels":sorted(country_set),
         "reference_periods":sorted(year_set),
         "business_types":sorted(type_set),
+        "country_year_business_type_combinations":len(country_year_business),
+        "nonlife_country_year_combinations":len(nonlife_country_year),
+        "selected_nonlife_accounting_item_presence": {
+            selected_nonlife_codes[code]:len(pairs)
+            for code,pairs in sorted(nonlife_present.items())
+        },
+        "selected_nonlife_item_presence_rule":
+            "count country-year observations with source value present, never sum measures",
         "extraction_dates":sorted(extraction_set), "value_state_counts":counts,
         "denominator":"country_year_business_type_item_code",
         "solo_annual_not_group_or_quarterly":True,
