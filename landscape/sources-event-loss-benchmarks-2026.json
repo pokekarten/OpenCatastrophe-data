@@ -1,0 +1,215 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry of event-level CAT observations, empirical-loss references, exposure values and restricted data candidates for future scientific evaluation.",
+  "review_date": "2026-10-31",
+  "entries": [
+    {
+      "candidate_id": "hanze.historical-flood-impacts.v3.0.2-beta",
+      "name": "HANZE Historical Flood Impacts Europe v3.0.2 beta",
+      "provider": "Dominik Paprotny / Potsdam Institute for Climate Impact Research",
+      "categories": [
+        "flood",
+        "historical_loss",
+        "event_catalogue",
+        "validation"
+      ],
+      "spatial_scope": "42 European countries, mostly subnational NUTS3 and UK ITL3 regions, vintage 2024",
+      "temporal_scope": "1870-2025, 2780 events; version v3.0.2 beta published 2026-10-30",
+      "resolution_or_granularity": "UTF-8 event/reference CSV tables and NUTS/ITL 2024 regional GIS shapefile ZIP",
+      "potential_roles": [
+        "historical_flood_validation",
+        "economic_loss_reference",
+        "event_geography_validation"
+      ],
+      "authoritative_url": "https://zenodo.org/records/23670886",
+      "access_class_hint": "public_download_cc_by_4.0_declared_pending_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Historical economic impacts in original currencies and 2025 EUR, NOT insured loss, exact hazard footprint or policy claims. Missing impacts are not zero; preserve unique event IDs and source revision. Version v3.0.2 beta supersedes previous candidate v3.0.1 beta. Pin full CSV, region vintage and per-file SHA before scientific use."
+    },
+    {
+      "candidate_id": "paprotny.residential-exposure-europe.v2025",
+      "name": "Residential Exposure to Natural Hazards in Europe v2025",
+      "provider": "Dominik Paprotny / Potsdam Institute for Climate Impact Research",
+      "categories": [
+        "residential_exposure",
+        "valuation",
+        "replacement_cost",
+        "synthetic_portfolio"
+      ],
+      "spatial_scope": "33 European countries, national averages only",
+      "temporal_scope": "Annual 2000-2024; published 2025-12-05, version v2025",
+      "resolution_or_granularity": "CSV containing 18 indicators with country code and year; XLSX and methodological PDF; building/contents replacement values per square metre",
+      "potential_roles": [
+        "synthetic_residential_valuation",
+        "exposure_benchmark",
+        "valuation_sensitivity"
+      ],
+      "authoritative_url": "https://zenodo.org/records/17828544",
+      "access_class_hint": "public_download_cc_by_4.0_declared_pending_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "A country/year mean per square metre does not identify an individual building, floor area, coverage, TIV or insured loss. Keep separate structure and contents categories, nominal versus real price basis and currency/year. Series revised versus v2022; freeze exact v2025 bytes and independent floor-space assumptions."
+    },
+    {
+      "candidate_id": "ethz.euradhail.2013-2021",
+      "name": "EURADHAIL European Radar Hail Occurrence 2013-2021",
+      "provider": "ETH Zurich / Ruoyi Cui and Iris Thurnherr",
+      "categories": [
+        "hail",
+        "radar",
+        "observation",
+        "validation"
+      ],
+      "spatial_scope": "Europe with heterogeneous OPERA network coverage, including gaps and terrain artefacts",
+      "temporal_scope": "2013-2021; released 2024-06-13",
+      "resolution_or_granularity": "Monthly tar.gz archives of hourly NetCDF binary hail masks (0/1); 2 km Lambert azimuthal equal-area grid",
+      "potential_roles": [
+        "hail_occurrence_validation",
+        "peril_footprint_benchmark",
+        "radar_coverage_audit"
+      ],
+      "authoritative_url": "https://www.research-collection.ethz.ch/handle/20.500.11850/701924",
+      "access_class_hint": "open_access_cc_by_4.0_declared_pending_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Binary radar-inferred hail occurrence, NOT hail diameter or ground truth. ETH README documents 53 dBZ inference threshold and incomplete geographic coverage; portal displays review state. Check individual file rights, projection, artefacts, unit interpretation and holdout independence before use."
+    },
+    {
+      "candidate_id": "climk.winds.storm-footprints.v2",
+      "name": "CLIMK-WINDS Extreme European Winter Storm Footprints v2",
+      "provider": "Clare Flynn and coauthors / Zenodo",
+      "categories": [
+        "windstorm",
+        "footprint",
+        "reanalysis",
+        "validation"
+      ],
+      "spatial_scope": "Europe",
+      "temporal_scope": "1995-2015 winter storms; version 2 published 2025-04-29",
+      "resolution_or_granularity": "Four NetCDF files, each selecting 50 extreme events from ERA5, COSMO-REA6, CCLM_ERA5_EUR-11 and CCLM_ERA5_CEU-3",
+      "potential_roles": [
+        "wind_footprint_benchmark",
+        "model_intercomparison",
+        "storm_validation"
+      ],
+      "authoritative_url": "https://zenodo.org/records/15305753",
+      "access_class_hint": "public_download_cc_by_4.0_declared_pending_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Four source-specific 50-storm selections are NOT assumed to form one aligned common event catalogue. Check event IDs, wind variables, averaging window, units, CRS, model selection bias and independence from C3S/ERA5 before benchmark claims. No original NetCDF inputs verified."
+    },
+    {
+      "candidate_id": "global.fire-atlas.v20260408",
+      "name": "Global Fire Atlas v20260408",
+      "provider": "Niels Andela and Matthew William Jones / Zenodo",
+      "categories": [
+        "wildfire",
+        "burned_area",
+        "event_perimeter",
+        "observation"
+      ],
+      "spatial_scope": "Global MODIS coverage",
+      "temporal_scope": "2002-February 2026, locally defined fire seasons; published 2026-07-22",
+      "resolution_or_granularity": "WGS84 ignition/perimeter shapefiles; 500 m daily spread/burn raster data in MODIS sinusoidal projection",
+      "potential_roles": [
+        "wildfire_event_validation",
+        "burned_area_footprints",
+        "fire_spread_research"
+      ],
+      "authoritative_url": "https://zenodo.org/records/17669692",
+      "access_class_hint": "public_dataset_record_licence_scope_pending_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Publisher explicitly warns NOT to append newer-year files to previous releases because per-tile whole-series model parameters change. File year denotes local fire season, NOT calendar year; recent 2025-2026 fire seasons may be incomplete. Burned area does not imply insured loss or measured asset damage."
+    },
+    {
+      "candidate_id": "ec-jrc.effis.burnt-area-services",
+      "name": "EFFIS Burnt Area and Fire Severity Services",
+      "provider": "European Commission JRC / European Forest Fire Information System",
+      "categories": [
+        "wildfire",
+        "burned_area",
+        "remote_sensing",
+        "monitoring"
+      ],
+      "spatial_scope": "Europe and EFFIS surrounding monitoring domain",
+      "temporal_scope": "Time-indexed operational products; provider exposes severity imagery for multiple years including 2018-2025",
+      "resolution_or_granularity": "Public WMS with TIME parameter, burnt-area monitoring and severity image/TIFF data; country aggregate spreadsheets",
+      "potential_roles": [
+        "wildfire_extent_validation",
+        "fire_severity_reference",
+        "monitoring_context"
+      ],
+      "authoritative_url": "https://forest-fire.emergency.copernicus.eu/downloads-instructions",
+      "access_class_hint": "public_wms_download_provider_data_licence_review_required",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Distinct from the already catalogued GWIS fire-danger FORECAST. WMS map pixels and country statistics are not automatically lossless event vectors, intensity fields or property-level losses. Pin exact layer, legend, date, returned media/CRS, licence and data export method before use."
+    },
+    {
+      "candidate_id": "meteoswiss.operational-hail-radar-stac",
+      "name": "MeteoSwiss Operational Hail POH/MESHS STAC",
+      "provider": "Federal Office of Meteorology and Climatology MeteoSwiss",
+      "categories": [
+        "hail",
+        "radar",
+        "near_real_time",
+        "weather"
+      ],
+      "spatial_scope": "Swiss operational radar coverage, LV95 EPSG:2056",
+      "temporal_scope": "1 April-30 September; public rolling last 14 days; archives available by request",
+      "resolution_or_granularity": "FSDI STAC collection ch.meteoschweiz.ogd-radar-hail; 5-minute ODIM HDF5; POH percent; MESHS millimetres",
+      "potential_roles": [
+        "hail_intensity_proxy",
+        "near_real_time_hazard_validation",
+        "hail_footprint_validation"
+      ],
+      "authoritative_url": "https://opendatadocs.meteoswiss.ch/d-radar-data/d3-hail-radar-products",
+      "access_class_hint": "public_stac_last_14_days_older_archive_on_request",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Different operational access product from registered MeteoSwiss national hail climatology. POH probability and MESHS severe-hail size are not EURADHAIL binary hail observations. 24-hour aggregate files coexist with 5-minute UTC files; protect temporal and spatial semantics and attribution. No long-term feed assumed."
+    },
+    {
+      "candidate_id": "gfz.howas21.flood-damage-database",
+      "name": "HOWAS 21 Flood Damage Database",
+      "provider": "GFZ Helmholtz Centre for Geosciences",
+      "categories": [
+        "flood",
+        "damage_observation",
+        "vulnerability",
+        "restricted_data"
+      ],
+      "spatial_scope": "Germany and Austria; site locations generalised for privacy",
+      "temporal_scope": "Historical reported flood damage observations; exact scope determined by approved access",
+      "resolution_or_granularity": "Registered filtered Excel downloads with anonymised/generalised damage records",
+      "potential_roles": [
+        "flood_damage_function_research",
+        "vulnerability_validation",
+        "empirical_holdout_if_licensed"
+      ],
+      "authoritative_url": "https://howas21.gfz.de/usage.html",
+      "access_class_hint": "registration_and_signed_data_agreement_required",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "NOT openly reusable raw data. External scientific/non-commercial users may receive restricted access only after registration and signed agreement; data providers have separate permissions. Never scrape, publish raw rows, infer exact addresses or train/calibrate proprietary/production models without explicit terms."
+    }
+  ]
+}
