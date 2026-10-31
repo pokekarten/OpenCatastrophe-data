@@ -103,6 +103,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--residential-csv", type=Path)
     parser.add_argument("--output", type=Path, help="optional metadata-only output file")
     args = parser.parse_args(argv)
+    if args.output is not None and not args.fetch:
+        # This receipt is derived from ORIGINAL publisher CSVs. A mistaken
+        # --output pointing to a source (or symlink/hardlink alias) must not
+        # overwrite the evidence that the pinned SHA/MD5 just verified.
+        if args.residential_csv is None:
+            parser.error("--residential-csv required with --hanze-csv")
+        destination = args.output.resolve()
+        for original in (args.hanze_csv, args.residential_csv):
+            if (destination == original.resolve() or
+                    (args.output.exists() and original.exists()
+                     and args.output.samefile(original))):
+                raise SourcePreflightError(
+                    "refusing to overwrite original provider CSV with receipt")
     records = read_receipt()
     if args.fetch:
         if args.residential_csv is not None:
