@@ -28,6 +28,18 @@ class CountryLagAvailabilityTests(unittest.TestCase):
         self.assertFalse(r["insured_loss_created"])
         self.assertFalse(r["asset_exposure_created"])
 
+    def test_economic_loss_whitespace_is_missing_but_reported_zero_is_present(self):
+        exposures = [indicator(**{"2024": "10"})]
+        result = audit_verified_rows(
+            [event(2025, loss="  "), event(2025, loss="\\t"),
+             event(2025, loss="0"), event(2025, loss=" 7 ")], exposures)
+        self.assertEqual(result["event_count_with_exact_country_prior_year_indicator"], 4)
+        self.assertEqual(result["matched_event_count_with_reported_economic_loss_field"], 2)
+        self.assertEqual(result["distinct_country_year_context_pairs"], 1)
+        self.assertFalse(result["event_economic_loss_aggregated"])
+        with self.assertRaisesRegex(AvailabilityError, "economic-loss field type"):
+            audit_verified_rows([event(2025, loss=3)], exposures)
+
     def test_current_year_only_must_not_be_used(self):
         r = audit_verified_rows([event(2024)], [indicator(**{"2024": "100"})])
         self.assertEqual(r["event_count_with_exact_country_prior_year_indicator"], 0)
