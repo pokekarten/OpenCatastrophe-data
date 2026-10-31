@@ -70,6 +70,13 @@ class EIOPAOriginalCSVTests(unittest.TestCase):
         self.assertEqual(profile["reference_periods"],["Y2024","Y2025"])
         self.assertEqual(profile["value_state_counts"],{
             "numeric":3,"missing":1,"zero":1,"negative":1})
+        self.assertEqual(profile["country_year_business_type_combinations"],2)
+        self.assertEqual(profile["nonlife_country_year_combinations"],2)
+        presence=profile["selected_nonlife_accounting_item_presence"]
+        self.assertEqual(presence["direct_written_premium"],1)
+        self.assertEqual(presence["net_written_premium"],1)  # numeric zero counts as present
+        self.assertEqual(presence["gross_direct_claims_incurred"],1)
+        self.assertEqual(presence["reinsurers_share_written"],0)
         self.assertEqual(profile["value_unit"],"NOT_VERIFIED_DO_NOT_CONVERT")
         self.assertFalse(profile["company_level_observations_created"])
         self.assertFalse(profile["model_source_admitted"])
