@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: GLEIF Neon Read-only Dedup Research
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/gleif-neon-readonly-audit.yml"
+      - "scripts/gleif_neon_readonly_identity_audit_v0.py"
+      - "tests/test_gleif_neon_readonly_identity_audit_v0.py"
+      - "scripts/gleif_level1_insurer_identity_pilot.py"
+      - "scripts/export_cat_source_registry_sqlite.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-readonly-dedup:
+    name: Prove policy-gated LEI dedup without Neon credentials or writes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact PR commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: 14 synthetic database identity and policy checks
+        run: python -m unittest tests.test_gleif_neon_readonly_identity_audit_v0 -v
+      - name: Assert no external connection secret or Neon mutations
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path("scripts/gleif_neon_readonly_identity_audit_v0.py").read_text()
+          assert "mcp__Neon__" not in s and "psycopg" not in s
+          assert "mode=ro" in s and "query_only=ON" in s
+          assert "neon_updated" in s and "automatic_import_allowed" in s
+          print("PASS: read-only local file comparison; no Neon connection or write API")
+          PY
