@@ -22,10 +22,16 @@ from pathlib import Path
 import re
 from urllib.parse import urlsplit
 
-from research_runners.dfo_floodrecords_csv_preflight_v0 import parse_dfo_csv
-from research_runners.historical_cat_benchmark_csv_preflight_v0 import (
-    HANZE_COLUMNS, inspect_hanze_v302,
-)
+if __package__:
+    from .dfo_floodrecords_csv_preflight_v0 import parse_dfo_csv
+    from .historical_cat_benchmark_csv_preflight_v0 import (
+        HANZE_COLUMNS, inspect_hanze_v302,
+    )
+else:
+    from dfo_floodrecords_csv_preflight_v0 import parse_dfo_csv
+    from historical_cat_benchmark_csv_preflight_v0 import (
+        HANZE_COLUMNS, inspect_hanze_v302,
+    )
 
 SHA = re.compile(r"[0-9a-f]{64}\Z")
 ISO2 = re.compile(r"[A-Z]{2}\Z")
