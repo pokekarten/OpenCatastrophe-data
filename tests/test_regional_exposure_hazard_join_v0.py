@@ -63,6 +63,16 @@ class JoinTests(unittest.TestCase):
         for n in (float('nan'),float('inf'),-2,True,'100'):
             data=example();data['exposures'][0]['sum_insured_eur']=n
             with self.subTest(n=n),self.assertRaises(InputError):join(data)
+    def test_enormous_integer_numeric_is_contract_error_not_python_overflow(self):
+        # Regression: Python math.isfinite(10**400) and float(10**400)
+        # raise OverflowError, not the documented fail-closed InputError.
+        for table, field in (('exposures', 'sum_insured_eur'),
+                             ('hazards', 'gust_mps')):
+            data = example()
+            data[table][0][field] = 10**400
+            with self.subTest(table=table, field=field), self.assertRaises(InputError):
+                join(data)
+
     def test_unsupported_peril_rejected(self):
         data=example();data['hazards'][0]['peril']='convective_storm'
         with self.assertRaises(InputError):join(data)
