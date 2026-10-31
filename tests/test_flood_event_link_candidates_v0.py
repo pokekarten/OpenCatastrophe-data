@@ -34,7 +34,7 @@ def dfo_row(**kwargs):
         "﹟": "5510", "Glide ﹟": "",
         "Start Date": "12/30/23", "End Date": "1/4/24", "Country": "Germany",
         "Area (km²)": "100", "Main Cause": "Heavy rain", "Source": "News",
-        "Fatalities": "0", "Displaced": "", "Severity": "1", "Flood impact index ": "2.5",
+        "Fatalities": "0", "Displaced": "", "Severity": "1", "Flood impact index": "2.5",
     })
     row.update(kwargs)
     return row
