@@ -31,26 +31,34 @@ class WindPointError(ValueError):
     """Real provider grid point science or synthetic point location is uncertain."""
 
 
+def _finite_native_coordinate(value, label: str) -> float:
+    """No unhandled OverflowError when integer-like user coordinates are huge."""
+    if type(value) not in (int, float):
+        raise WindPointError(label + " must be a finite number")
+    try:
+        number = float(value)
+    except (OverflowError, ValueError, TypeError) as exc:
+        raise WindPointError(label + " outside bounded numeric conversion") from exc
+    if not math.isfinite(number):
+        raise WindPointError(label + " must be finite")
+    return number
+
+
 def nearest_native_cell(values: tuple, target: float) -> tuple[int, float]:
     """Nearest center on strict uniform monotonic 1D angular grid; no extrapolation."""
     if type(values) is not tuple or len(values) < 2:
         raise WindPointError("grid axis must have at least two centers")
-    if type(target) not in (int, float) or not math.isfinite(target):
-        raise WindPointError("finite angular site coordinate required")
-    points = []
-    for v in values:
-        if type(v) not in (int, float) or not math.isfinite(v):
-            raise WindPointError("grid axis has nonfinite or unsupported numeric coordinate")
-        points.append(float(v))
+    target = _finite_native_coordinate(target, "angular site coordinate")
+    points = [_finite_native_coordinate(v, "grid axis coordinate") for v in values]
     increasing = points[-1] > points[0]
     series = points if increasing else list(reversed(points))
     widths = [series[i+1]-series[i] for i in range(len(series)-1)]
-    if min(widths) <= 0 or abs(max(widths)-min(widths)) > 1e-7:
+    if any(not math.isfinite(w) or w <= 0 for w in widths) or max(widths)-min(widths) > 1e-7:
         raise WindPointError("non-monotonic or irregular source grid axis")
     half = widths[0] / 2
     if target < series[0]-half-1e-10 or target > series[-1]+half+1e-10:
         raise WindPointError("site outside native source grid: no nearest extrapolation")
-    ix = bisect_left(series, float(target))
+    ix = bisect_left(series, target)
     ix = max(0, min(len(series)-1, ix))
     if ix > 0 and abs(series[ix-1]-target) <= abs(series[ix]-target):
         ix -= 1
@@ -87,8 +95,8 @@ def _source_storm_label(raw, label: str) -> str:
             raise WindPointError(label + " is not valid UTF-8") from exc
     if not isinstance(raw, str) or not 0 < len(raw) <= 120 or raw != raw.strip():
         raise WindPointError(label + " absent, padded, or unbounded")
-    if any(ord(ch) < 32 or ord(ch) == 127 for ch in raw):
-        raise WindPointError(label + " has invalid control characters")
+    if not raw.isprintable():
+        raise WindPointError(label + " has nonprintable or control characters")
     return raw
 
 
