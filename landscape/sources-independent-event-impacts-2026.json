@@ -14,7 +14,7 @@
         "event_catalogue"
       ],
       "spatial_scope": "global; large reported flood events, not uniformly complete across countries",
-      "temporal_scope": "January 1985 to December 2023 in the immutable v0.9.0 Zenodo release",
+      "temporal_scope": "Publisher describes January 1985 to December 2023 for v0.9.0, but the published CSV preview contains January 2024 records; actual coverage boundary requires reconciliation",
       "resolution_or_granularity": "Zenodo record 19288171; downloadable Global_Flood_Records.csv and GeoPackage; catalogue lists event date intervals, affected area approximations, causes, fatalities, displaced people and source labels",
       "potential_roles": [
         "historical_flood_event_reconciliation",
@@ -23,7 +23,7 @@
       ],
       "authoritative_url": "https://zenodo.org/records/19288171",
       "access_class_hint": "public_versioned_zenodo_catalogue_cc0_claim_separate_from_legacy_maps",
-      "note": "Publisher FloodRecords wiki states CC0 for this event-record product and points to the v0.9.0 Zenodo release; independently inspect its bundled LICENSE.txt and pin exact downloaded bytes before any admission. Legacy Flood Observatory archive and event inundation raster/maps may have different noncommercial terms; CC0 must never be carried over to those separate files. Catalogue area affected is not measured flood-depth raster or insured loss; repeated, fragmented and cross-border events need manual identity review.",
+      "note": "Publisher FloodRecords wiki states CC0 for this event-record product and points to the v0.9.0 Zenodo release; independently inspect its bundled LICENSE.txt and pin exact downloaded bytes before any admission. Legacy Flood Observatory archive and event inundation raster/maps may have different noncommercial terms; CC0 must never be carried over to those separate files. Catalogue area affected is not measured flood-depth raster or insured loss; repeated, fragmented and cross-border events need manual identity review. Observed source inconsistency: v0.9.0 CSV starts with January 2024-dated rows despite its stated December 2023 endpoint; the source release is not yet date-range validated. Original CSV uses M/D/YY dates, not ISO YYYY-MM-DD; any importer must parse them unambiguously and preserve the raw receipt.",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",

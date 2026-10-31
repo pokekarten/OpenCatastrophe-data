@@ -24,14 +24,14 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Provider:** Dartmouth Flood Observatory / University of Colorado  
 **Categories:** `flood`, `historical_events`, `reported_impacts`, `event_catalogue`  
 **Spatial scope:** global; large reported flood events, not uniformly complete across countries  
-**Temporal scope:** January 1985 to December 2023 in the immutable v0.9.0 Zenodo release  
+**Temporal scope:** Publisher describes January 1985 to December 2023 for v0.9.0, but the published CSV preview contains January 2024 records; actual coverage boundary requires reconciliation  
 **Resolution / granularity:** Zenodo record 19288171; downloadable Global_Flood_Records.csv and GeoPackage; catalogue lists event date intervals, affected area approximations, causes, fatalities, displaced people and source labels  
 **Potential roles:** `historical_flood_event_reconciliation`, `country_date_event_holdout`, `reported_human_impact_quality_review`  
 **Access hint:** `public_versioned_zenodo_catalogue_cc0_claim_separate_from_legacy_maps`  
 **Authoritative source:** <https://zenodo.org/records/19288171>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Publisher FloodRecords wiki states CC0 for this event-record product and points to the v0.9.0 Zenodo release; independently inspect its bundled LICENSE.txt and pin exact downloaded bytes before any admission. Legacy Flood Observatory archive and event inundation raster/maps may have different noncommercial terms; CC0 must never be carried over to those separate files. Catalogue area affected is not measured flood-depth raster or insured loss; repeated, fragmented and cross-border events need manual identity review.
+**Note:** Publisher FloodRecords wiki states CC0 for this event-record product and points to the v0.9.0 Zenodo release; independently inspect its bundled LICENSE.txt and pin exact downloaded bytes before any admission. Legacy Flood Observatory archive and event inundation raster/maps may have different noncommercial terms; CC0 must never be carried over to those separate files. Catalogue area affected is not measured flood-depth raster or insured loss; repeated, fragmented and cross-border events need manual identity review. Observed source inconsistency: v0.9.0 CSV starts with January 2024-dated rows despite its stated December 2023 endpoint; the source release is not yet date-range validated. Original CSV uses M/D/YY dates, not ISO YYYY-MM-DD; any importer must parse them unambiguously and preserve the raw receipt.
 
 ## NOAA Storm Prediction Center Severe Weather GIS through 2025
 
