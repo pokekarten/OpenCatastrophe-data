@@ -29,8 +29,8 @@ except ImportError:
     )
 
 MAX_BYTES = 500_000
-# The exact relations and exceptions were observed in the 2026-10-30 FFBK
-# source receipt (GLEIF CC0 API), not inferred from company-name similarity.
+# The exact relations and exceptions were observed in a 2026-10-30
+# independent GLEIF CC0 API research receipt, not inferred from names.
 # If a live source has changed, fail rather than force a historical assertion.
 PILOT = (
     ("5299006ZIILJ6VJVSJ32", "direct-parent-relationship", "529900F2F9VZ5FRROH89"),
