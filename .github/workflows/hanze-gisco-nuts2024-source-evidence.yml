@@ -9,6 +9,7 @@ on:
       - ".github/workflows/hanze-gisco-nuts2024-source-evidence.yml"
       - "research_runners/hanze_gisco_nuts2024_attribute_audit_v0.py"
       - "research_runners/hanze_gisco_nuts2024_original_receipt_v0.py"
+      - "research_runners/hanze_gisco_nuts2024_source_receipt_v0.py"
       - "tests/test_hanze_gisco_nuts2024_attribute_audit_v0.py"
   workflow_dispatch:
 
@@ -39,4 +40,7 @@ jobs:
       - name: Fetch official v2024 NUTS attributes and exact HANZE-DFO sources (memory only)
         run: |
           python research_runners/hanze_gisco_nuts2024_original_receipt_v0.py --out "$RUNNER_TEMP/nuts2024-coverage.json"
-          python -c 'import json,os,pathlib; d=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"nuts2024-coverage.json").read_text()); assert d["candidate_pair_count"] == 9 and sum(d["candidate_code_status_counts"].values()) == 9 and d["gisco_original_source"]["official_attribute_rows"] > 1000 and not d["model_source_admitted"] and not d["verified_geographic_point_or_polygon_overlay"]; print("Official GISCO 2024 original attributes metadata + HANZE candidate-code categories (NO polygons):", json.dumps({k:d[k] for k in ("gisco_original_source","candidate_code_status_counts")}, sort_keys=True))'
+          python -c 'import json,os,pathlib; d=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"nuts2024-coverage.json").read_text()); assert d["candidate_pair_count"] == 9 and sum(d["candidate_code_status_counts"].values()) == 9 and d["gisco_original_source"]["official_attribute_rows"] == 1971 and d["gisco_original_source"]["original_file_sha256_pinned"] and not d["model_source_admitted"] and not d["verified_geographic_point_or_polygon_overlay"]; print("Official GISCO 2024 original attributes metadata + HANZE candidate-code categories (NO polygons):", json.dumps({k:d[k] for k in ("gisco_original_source","candidate_code_status_counts")}, sort_keys=True))'
+      - name: Reproduce frozen aggregate evidence and prevent commercial admission
+        run: |
+          python -c 'import json,os,pathlib; from research_runners.hanze_gisco_nuts2024_source_receipt_v0 import GISCO_2024_HANZE_RECEIPT as e; d=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"nuts2024-coverage.json").read_text()); g=d["gisco_original_source"]; c=d["candidate_code_status_counts"]; assert g["source_sha256"]==e["source_sha256"] and g["byte_length"]==e["source_original_byte_length"] and g["official_attribute_rows"]==e["source_attribute_rows"] and g["official_country_code_count"]==e["source_country_count"] and g["official_rows_by_nuts_level"]==e["source_nuts_level_row_counts"] and c["exact_official_country_level_vintage_code_matches"]==0 and c["multi_region_or_noncanonical_code_manual_review"]==9 and not e["commercial_use_approved"] and not e["unmatched_id_implies_no_geographic_exposure"]; print("PASS: 9 composite HANZE candidate regional codes; original GISCO v2024 source and noncommercial research gate confirmed")'
