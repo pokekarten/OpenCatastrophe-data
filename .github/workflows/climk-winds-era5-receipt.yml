@@ -41,5 +41,5 @@ jobs:
         run: python -m unittest tests.test_inspect_climk_winds_era5_v0 -v
       - name: Reproduce real publisher ERA5 NetCDF source and scientific header
         run: |
-          python scripts/inspect_climk_winds_era5_v0.py --fetch --output "$RUNNER_TEMP/climk-era5-metadata.json"
+          python scripts/inspect_climk_winds_era5_v0.py --fetch --require-sha256 --output "$RUNNER_TEMP/climk-era5-metadata.json"
           python -c 'import json,os,pathlib; p=pathlib.Path(os.environ["RUNNER_TEMP"])/"climk-era5-metadata.json"; d=json.loads(p.read_text()); assert d["inventory"]["metadata_only"] is True and d["model_admission"] is False; print(json.dumps(d,sort_keys=True))'
