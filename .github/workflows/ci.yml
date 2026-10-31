@@ -84,6 +84,12 @@ jobs:
         run: python -m pip check
       - name: Exercise synthetic EU flood spatial transform
         run: python -m unittest tests.test_eu_flood_spatial_transform -v
+      - name: Exercise mandatory pinned Eurostat NUTS2 geometry and wind overlay regressions
+        run: >-
+          python -m unittest
+          tests.test_eurostat_nuts2_3035_adapter_v0
+          tests.test_regional_wind_footprint_overlay_v0
+          -v
 
   cems-geotiff-profile:
     name: CEMS GeoTIFF profile and support challenge
