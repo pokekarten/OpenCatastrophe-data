@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+from contextlib import closing
 import hashlib
 import json
 from pathlib import Path
@@ -144,7 +145,9 @@ def ingest_verified_lei_pilot(output: Path, sources: dict[str, bytes], observed_
     output = Path(output).expanduser()
     if output.is_symlink() or not output.is_file():
         raise GLEIFPilotError("requires an existing regular CAT registry SQLite file, not a symlink")
-    with sqlite3.connect(output) as con:
+    # A Connection context commits/rolls back but does not CLOSE SQLite.
+    # Close explicitly to avoid leaving a writable handle open after a pilot.
+    with closing(sqlite3.connect(output)) as con, con:
         if (con.execute("PRAGMA application_id").fetchone()[0] != CAT_APP_ID or
                 con.execute("PRAGMA user_version").fetchone()[0] != CAT_SCHEMA_VERSION):
             raise GLEIFPilotError("refusing unknown or non-CAT database")

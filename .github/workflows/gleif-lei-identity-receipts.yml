@@ -10,6 +10,7 @@ on:
       - "scripts/gleif_level1_insurer_identity_pilot.py"
       - "scripts/gleif_level2_relationship_pilot.py"
       - "tests/test_gleif_level2_relationship_pilot.py"
+      - "tests/test_export_cat_source_registry_sqlite.py"
       - "scripts/export_cat_source_registry_sqlite.py"
       - "tests/test_gleif_level1_insurer_identity_pilot.py"
   workflow_dispatch:

@@ -6,6 +6,7 @@ from pathlib import Path
 import sqlite3
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 from scripts.export_cat_source_registry_sqlite import materialize_source_catalog
 from scripts.gleif_level1_insurer_identity_pilot import PILOT_LEIS, ingest_verified_lei_pilot
@@ -144,6 +145,60 @@ class GLEIFLevel2PilotTests(unittest.TestCase):
                 self.assertEqual(con.execute("SELECT count(*) FROM cat_gleif_level2_observation").fetchone()[0],7)
                 self.assertEqual(con.execute("SELECT count(*) FROM cat_source_candidate").fetchone()[0],1)
                 self.assertEqual(con.execute("SELECT count(*) FROM cat_gleif_level2_observation WHERE parent_lei IS NULL").fetchone()[0],2)
+
+    def test_refresh_cat_source_catalog_preserves_verified_lei_and_level2_tables(self):
+        with TemporaryDirectory() as d:
+            root=Path(d);db=init_db(root)
+            raw={(child,suffix):fixture(child,suffix,target) for child,suffix,target in PILOT}
+            store_level2(db,raw,"2026-10-31T20:00:00+00:00")
+            with sqlite3.connect(db) as con:
+                identity_before=con.execute(
+                    "SELECT lei,source_sha256 FROM cat_gleif_legal_entity ORDER BY lei").fetchall()
+                level2_before=con.execute(
+                    "SELECT child_lei,endpoint_suffix,original_sha256 FROM cat_gleif_level2_observation ORDER BY 1,2").fetchall()
+            # Materializing a *new version* of the discovery registry may
+            # delete/recreate only source candidate rows. It must not clobber
+            # independently verified legal-entity and consolidation evidence.
+            output=materialize_source_catalog(db,root/"land")
+            self.assertFalse(output["model_source_admission"])
+            with sqlite3.connect(db) as con:
+                self.assertEqual(identity_before,con.execute(
+                    "SELECT lei,source_sha256 FROM cat_gleif_legal_entity ORDER BY lei").fetchall())
+                self.assertEqual(level2_before,con.execute(
+                    "SELECT child_lei,endpoint_suffix,original_sha256 FROM cat_gleif_level2_observation ORDER BY 1,2").fetchall())
+                self.assertEqual(con.execute(
+                    "SELECT count(*) FROM cat_source_candidate WHERE admission_status!='not_admitted'"
+                ).fetchone()[0],0)
+                self.assertEqual(con.execute("PRAGMA application_id").fetchone()[0],
+                                 0x43415431)
+
+    def test_gleif_connections_are_explicitly_closed_on_success(self):
+        with TemporaryDirectory() as d:
+            root=Path(d);db=init_db(root)
+            # sqlite3.Connection.__exit__ commits but does NOT call close().
+            # Tracking actual SQLite Connection subclasses catches leaked
+            # writer handles in either pilot without relying on GC warnings.
+            original_connect=sqlite3.connect
+            opened=[]
+            class TrackingConnection(sqlite3.Connection):
+                def close(self):
+                    self.did_close=True
+                    return super().close()
+            def tracked_connect(*args,**kwargs):
+                con=original_connect(*args,factory=TrackingConnection,**kwargs)
+                con.did_close=False
+                opened.append(con)
+                return con
+            with patch.object(sqlite3,"connect",side_effect=tracked_connect):
+                from scripts.gleif_level1_insurer_identity_pilot import (
+                    ingest_verified_lei_pilot,
+                )
+                ingest_verified_lei_pilot(db,{lei:level1(lei) for lei in PILOT_LEIS},
+                                          "2026-10-31T20:00:00+00:00")
+                store_level2(db,{(a,b):fixture(a,b,c) for a,b,c in PILOT},
+                             "2026-10-31T20:01:00+00:00")
+            self.assertEqual(len(opened),2)
+            self.assertTrue(all(con.did_close for con in opened))
 
     def test_unknown_database_and_missing_receipts_are_blocked(self):
         with TemporaryDirectory() as d:

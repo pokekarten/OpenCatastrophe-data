@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+from contextlib import closing
 import hashlib
 import json
 from pathlib import Path
@@ -174,7 +175,8 @@ def store_level2(db_path: Path, sources: dict[tuple[str, str],bytes], captured_a
     db_path = Path(db_path).expanduser()
     if db_path.is_symlink() or not db_path.is_file():
         raise GLEIFPilotError("refuse absent or nonregular CAT database")
-    with sqlite3.connect(db_path) as con:
+    # The SQLite transaction context alone does not release its file handle.
+    with closing(sqlite3.connect(db_path)) as con, con:
         if (con.execute("PRAGMA application_id").fetchone()[0] != CAT_APP_ID
             or con.execute("PRAGMA user_version").fetchone()[0] != CAT_SCHEMA_VERSION):
             raise GLEIFPilotError("refuse unrelated database")
