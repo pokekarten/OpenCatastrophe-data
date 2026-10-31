@@ -22,6 +22,9 @@ import re
 MAX_SOURCE_BYTES = 20_000_000
 SHA256_RE = re.compile(r"[0-9a-f]{64}\Z")
 COUNTRY_RE = re.compile(r"[A-Z][A-Z0-9]{1,7}\Z")
+EVENT_ID_RE = re.compile(r"[0-9]+\Z")
+YEAR_RE = re.compile(r"[0-9]{4}\Z")
+DATE_RE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}\Z")
 HANZE_COLUMNS = (
     "id", "country_code", "event_start_date_year", "country_name",
     "start_date", "end_date", "event_type", "hips_label", "hips_identifier",
@@ -93,11 +96,15 @@ def inspect_hanze_v302(blob: bytes, expected_sha256: str) -> dict:
     observed_losses = 0
     for row in rows:
         event_id = row["id"]
-        if not event_id.isdecimal() or event_id in seen:
+        if not EVENT_ID_RE.fullmatch(event_id) or event_id in seen:
             raise SourcePreflightError("invalid or repeated HANZE event ID")
         seen.add(event_id)
         if not COUNTRY_RE.fullmatch(row["country_code"]):
             raise SourcePreflightError("invalid event country code")
+        if not YEAR_RE.fullmatch(row["event_start_date_year"]) or not (
+            DATE_RE.fullmatch(row["start_date"]) and DATE_RE.fullmatch(row["end_date"])
+        ):
+            raise SourcePreflightError("invalid event date/year format; require ASCII YYYY-MM-DD")
         try:
             year = int(row["event_start_date_year"])
             start = date.fromisoformat(row["start_date"])
