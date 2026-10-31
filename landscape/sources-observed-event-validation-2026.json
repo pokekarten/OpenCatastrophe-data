@@ -1,0 +1,243 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry of source-original event footprints, cross-peril hazard proxies and empirical damage benchmarks for OpenCatastrophe scientific validation.",
+  "review_date": "2026-10-31",
+  "entries": [
+    {
+      "candidate_id": "cloudtostreet.global-flood-database.v1",
+      "name": "Global Flood Database MODIS Events v1",
+      "provider": "Cloud to Street / Dartmouth Flood Observatory",
+      "categories": [
+        "flood",
+        "observed_inundation",
+        "event_footprint",
+        "validation"
+      ],
+      "spatial_scope": "global; 169 countries represented by selected mapped flood events",
+      "temporal_scope": "2000-2018",
+      "resolution_or_granularity": "913 quality-controlled flood events; MODIS-based maximum extent, inundation duration and cloud-quality bands; Earth Engine image collection and georeferenced data exports",
+      "potential_roles": [
+        "flood_extent_holdout",
+        "event_footprint_comparison",
+        "observation_quality_challenge"
+      ],
+      "authoritative_url": "https://developers.google.com/earth-engine/datasets/catalog/GLOBAL_FLOOD_DB_MODIS_EVENTS_V1",
+      "access_class_hint": "earth_engine_and_external_geotiff_download_rights_restricted",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "The official Earth Engine catalogue states CC BY-NC 4.0 for flood-map data; MIT licensing of the associated analysis code must NOT be interpreted as licensing the raster data. Satellite-derived mapping is not flood depth, insured loss or a representative probability sample; preserve event IDs, cloud flags, temporal composites and commercial-use restrictions."
+    },
+    {
+      "candidate_id": "compass.tc.affected-areas.d1p4.v1",
+      "name": "COMPASS D1.4 Tropical Cyclone-Affected Areas v1.0",
+      "provider": "COMPASS project / Potsdam Institute for Climate Impact Research (PIK)",
+      "categories": [
+        "tropical_cyclone",
+        "windstorm",
+        "rainfall",
+        "storm_surge",
+        "compound_hazard"
+      ],
+      "spatial_scope": "global historical IBTrACS tropical-cyclone footprint coverage",
+      "temporal_scope": "1950-2023; provisional 2024 subset; five named hourly example cyclones",
+      "resolution_or_granularity": "NetCDF gridded 300 arc-second (~10 km) storm-lifetime maximum wind, maximum 24 h rain and modelled coastal surge depth; selected hourly wind/rain cases",
+      "potential_roles": [
+        "multiperil_footprint_research",
+        "historical_storm_replay",
+        "joint_event_identity_challenge",
+        "parametric_hazard_comparison"
+      ],
+      "authoritative_url": "https://zenodo.org/records/14547984",
+      "access_class_hint": "public_zenodo_download_rights_review_required",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Use the final v1.0 record, not the superseded v0.1 Zenodo version. Wind fields use H08/ER11 methods, rainfall uses TCR, surge uses GeoClaw; these are MODELLED fields partly derived from IBTrACS/ERA5, not independent observed footprints. Do not add wind/rain/surge damage, infer event frequency or reuse an IBTrACS identifier as proof of independently validated event correlation."
+    },
+    {
+      "candidate_id": "gem.geid.2026",
+      "name": "Global Earthquake Impact Database (GEID)",
+      "provider": "GEM Foundation / Global Earthquake Model",
+      "categories": [
+        "earthquake",
+        "historical_impacts",
+        "shaking",
+        "vulnerability_validation"
+      ],
+      "spatial_scope": "global; historical damaging earthquake case studies across multiple regions",
+      "temporal_scope": "historical earthquake archive; 2026 GEM release described by publisher",
+      "resolution_or_granularity": "More than 100 event case studies with observed/reported damage, fatalities, economic impacts, station/rupture information and OpenQuake-compatible scenario resources",
+      "potential_roles": [
+        "independent_earthquake_loss_validation",
+        "event_impact_benchmark",
+        "openquake_scenario_fixture_research"
+      ],
+      "authoritative_url": "https://github.com/gem/geid",
+      "access_class_hint": "public_git_repository_case_data_separate_license_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Distinguish field observations and reported impacts from reconstructed/modelled shaking and scenario assumptions. Case-specific completeness, coverage and damage-class conventions vary; freeze an immutable release/commit and each input's provenance before quantitative comparison. No claim of historical ESRM20/Kosovo equivalence."
+    },
+    {
+      "candidate_id": "ibm.impactmesh.fire.v1",
+      "name": "ImpactMesh-Fire v1",
+      "provider": "IBM Research / DLR / ESA Phi-lab",
+      "categories": [
+        "wildfire",
+        "remote_sensing",
+        "burn_scar",
+        "machine_learning_validation"
+      ],
+      "spatial_scope": "global benchmark sample; 229 mapped wildfire events",
+      "temporal_scope": "event-based multisensor collection; version 1 documented in current publisher card",
+      "resolution_or_granularity": "16,512 labelled image samples, four time steps and Sentinel-1 SAR, Sentinel-2 optical, Copernicus DEM and burn-scar masks; event-separated test holdout",
+      "potential_roles": [
+        "wildfire_burn_extent_segmentation",
+        "independent_holdout_design",
+        "multimodal_event_footprint_benchmark"
+      ],
+      "authoritative_url": "https://huggingface.co/datasets/ibm-esa-geospatial/ImpactMesh-Fire",
+      "access_class_hint": "public_huggingface_dataset_download_underlying_rights_review_required",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Publisher card labels benchmark CC BY 4.0, but underlying Sentinel/Copernicus DEM and source annotation terms require separate review. Do not treat burn-scar masks as fire heat intensity, loss or calibrated vulnerability. Retain v1 event holdout and avoid leakage across multiple temporal images of one event."
+    },
+    {
+      "candidate_id": "ibm.impactmesh.flood.v1",
+      "name": "ImpactMesh-Flood v1",
+      "provider": "IBM Research / DLR / ESA Phi-lab",
+      "categories": [
+        "flood",
+        "remote_sensing",
+        "observed_inundation",
+        "machine_learning_validation"
+      ],
+      "spatial_scope": "global benchmark sample; 206 mapped flood events",
+      "temporal_scope": "event-based multisensor collection; version 1 documented in current publisher card",
+      "resolution_or_granularity": "24,578 labelled samples using multi-temporal Sentinel-1 SAR, Sentinel-2 optical, Copernicus DEM and annotated flood masks; distinct event-level test holdout",
+      "potential_roles": [
+        "flood_extent_segmentation",
+        "independent_holdout_design",
+        "cross_sensor_footprint_validation"
+      ],
+      "authoritative_url": "https://huggingface.co/datasets/ibm-esa-geospatial/ImpactMesh-Flood",
+      "access_class_hint": "public_huggingface_dataset_download_underlying_rights_review_required",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Publisher card labels benchmark CC BY 4.0; separately verify underlying satellite/DEM and original Copernicus EMS mapping rights. A flood mask is neither water depth nor insurer claim. Preserve source-event splits and avoid test leakage from multiple dates of one physical event."
+    },
+    {
+      "candidate_id": "links.geoid-flood.v1",
+      "name": "GEOID-Flood v1",
+      "provider": "Fondazione LINKS / Politecnico di Torino",
+      "categories": [
+        "flood",
+        "remote_sensing",
+        "sar",
+        "event_extent_validation"
+      ],
+      "spatial_scope": "65 countries with 219 Copernicus EMS Rapid Mapping flood events",
+      "temporal_scope": "2016-2026 event archive described in 2026 dataset publication",
+      "resolution_or_granularity": "14,282 1024x1024 image tiles at 10 m with Sentinel-1 GRD/RTC, Sentinel-2, Copernicus DEM and three-class hand-checked inundation labels; approximately 588 GB complete dataset",
+      "potential_roles": [
+        "flood_segmentation_holdout",
+        "sar_footprint_benchmark",
+        "cross_sensor_quality_challenge"
+      ],
+      "authoritative_url": "https://huggingface.co/datasets/links-ads/geoid-flood",
+      "access_class_hint": "public_huggingface_large_scale_download_underlying_dem_rights_review_required",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Compilation labels and splits are CC BY 4.0; code MIT, but the DEM has separate upstream conditions. Source authors document event-separated splits; preserve those and validity masks. Dataset size makes single bounded tile/event acquisition preferable to full bulk import. Labels distinguish flooded water from permanent water, not flood depth or insured loss."
+    },
+    {
+      "candidate_id": "niwa.fiji-winston-building-wind-damage.v1",
+      "name": "2016 Tropical Cyclone Winston empirical building wind-damage dataset",
+      "provider": "NIWA / Fiji Meteorological Service / Paulik et al.",
+      "categories": [
+        "tropical_cyclone",
+        "windstorm",
+        "building_damage",
+        "empirical_vulnerability"
+      ],
+      "spatial_scope": "Fiji; selected post-event surveyed locations on Viti Levu",
+      "temporal_scope": "20 February 2016 storm; March 2016 field survey; dataset released 2024",
+      "resolution_or_granularity": "Approximately 700 building-level field-survey records as CSV, with building attributes, roof/wall damage states, water ingress, disruption and geolocated sampled sites",
+      "potential_roles": [
+        "wind_vulnerability_curve_validation",
+        "building_damage_observation",
+        "empirical_hazard_to_damage_challenge"
+      ],
+      "authoritative_url": "https://zenodo.org/records/14353428",
+      "access_class_hint": "public_zenodo_csv_download_with_data_and_location_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "The companion 2025 Data in Brief article is CC BY; verify Zenodo DATA rights separately, especially precise site coordinates and reuse scope. Survey sample is not an exhaustive census nor an insurer claims portfolio; wind-speed/source-intensity matching, construction taxonomy and selection bias require separate work."
+    },
+    {
+      "candidate_id": "us.nifc.wfigs.interagency-perimeters",
+      "name": "WFIGS Interagency Fire Perimeters",
+      "provider": "US National Interagency Fire Center (NIFC)",
+      "categories": [
+        "wildfire",
+        "observed_fire_perimeter",
+        "historical_events",
+        "spatial_validation"
+      ],
+      "spatial_scope": "United States",
+      "temporal_scope": "historical events and ongoing year-to-date/current incident layers; mutable operational updates",
+      "resolution_or_granularity": "Per-fire polygons and IRWIN/FODR-linked event attribution through hosted ArcGIS feature services, GIS exports and public map views",
+      "potential_roles": [
+        "wildfire_footprint_validation",
+        "event_identity_lineage",
+        "observational_holdout"
+      ],
+      "authoritative_url": "https://data-nifc.opendata.arcgis.com/pages/wfigs-page",
+      "access_class_hint": "public_arcgis_service_per_layer_access_and_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "The provider warns that consolidated perimeters may be incomplete, updated late or replaced as attribution improves. Preserve retrieval time, service/layer identifiers, IRWIN/FODR IDs, geometry revision and quality flags; do not infer flame intensity, every historical fire, exposed assets or paid insurance damage from the polygon."
+    },
+    {
+      "candidate_id": "vescovo.noto.earthquake-building-damage.2024",
+      "name": "2024 Noto Peninsula earthquake building damage assessment dataset",
+      "provider": "Vescovo et al. / Japanese research collaborators",
+      "categories": [
+        "earthquake",
+        "building_damage",
+        "geospatial_validation",
+        "empirical_impact"
+      ],
+      "spatial_scope": "Japan; Noto Peninsula, Ishikawa Prefecture",
+      "temporal_scope": "1 January 2024 earthquake; research publication 2025",
+      "resolution_or_granularity": "140,208 building-footprint polygons with visually assessed damage labels assembled from multiple imagery and voluntary ground-truth sources; source deposit DOI described by authors",
+      "potential_roles": [
+        "earthquake_damage_validation",
+        "damage_class_confusion_analysis",
+        "spatial_holdout_benchmark"
+      ],
+      "authoritative_url": "https://essd.copernicus.org/articles/17/5259/2025/",
+      "access_class_hint": "public_research_data_deposit_rights_and_label_review_required",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Authors point to Zenodo 10.5281/zenodo.11055711; exact dataset version and redistribution terms need separate receipt. Visual assessments and reported event effects include uncertainty and are not contract loss or directly comparable to Kosovo residential ESRM20 without harmonizing damage/exposure/ground-motion definitions."
+    }
+  ]
+}
