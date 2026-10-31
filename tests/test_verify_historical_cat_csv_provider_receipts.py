@@ -95,6 +95,8 @@ class ProviderByteReceiptTests(unittest.TestCase):
         result = verify_pair(a, b, records)
         self.assertFalse(result["source_admitted"])
         self.assertFalse(result["insured_loss_or_asset_tiv_created"])
+        self.assertEqual(result["historical_country_year_availability"]["event_count_with_exact_country_prior_year_indicator"], 1)
+        self.assertFalse(result["historical_country_year_availability"]["insured_loss_created"])
 
 
 if __name__ == "__main__":
