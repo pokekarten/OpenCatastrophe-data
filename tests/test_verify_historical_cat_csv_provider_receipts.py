@@ -4,13 +4,18 @@
 import csv
 import hashlib
 import io
+import json
+import os
+from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
 from research_runners.historical_cat_benchmark_csv_preflight_v0 import (
     HANZE_COLUMNS, EXPOSURE_COLUMNS, SourcePreflightError,
 )
 from scripts.verify_historical_cat_csv_provider_receipts import (
-    read_receipt, verify_one, verify_pair,
+    read_receipt, verify_one, verify_pair, main,
 )
 
 
@@ -46,6 +51,59 @@ def pin(raw, profile):
 
 
 class ProviderByteReceiptTests(unittest.TestCase):
+    def test_output_must_not_overwrite_original_csv_even_through_alias(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            a=root/"hanze.csv"
+            b=root/"residential.csv"
+            a.write_bytes(hanze())
+            b.write_bytes(residential())
+            x=a.read_bytes()
+            y=b.read_bytes()
+            destinations=[
+                a, b,
+                root/"hanze-hardlink.csv",
+                root/"residential-hardlink.csv",
+                root/"hanze-symlink.csv",
+                root/"residential-symlink.csv",
+            ]
+            os.link(a,destinations[2])
+            os.link(b,destinations[3])
+            destinations[4].symlink_to(a)
+            destinations[5].symlink_to(b)
+            for out in destinations:
+                with self.subTest(path=out.name), self.assertRaisesRegex(
+                        SourcePreflightError,"refusing to overwrite original"):
+                    main(["--hanze-csv",str(a),"--residential-csv",str(b),
+                          "--output",str(out)])
+                self.assertEqual(a.read_bytes(),x)
+                self.assertEqual(b.read_bytes(),y)
+
+    def test_distinct_output_writes_only_metadata_without_mutating_sources(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            a=root/"hanze.csv"
+            b=root/"residential.csv"
+            dest=root/"out"/"receipt.json"
+            x,y=hanze(),residential()
+            a.write_bytes(x);b.write_bytes(y)
+            manifest={"sources":{
+                "hanze_v3_0_2_beta":pin(x,{"event_count":1}),
+                "residential_v2025":pin(y,{"indicator_country_row_count":1})}}
+            with patch("scripts.verify_historical_cat_csv_provider_receipts.read_receipt",
+                       return_value=manifest):
+                self.assertEqual(main(["--hanze-csv",str(a),
+                                       "--residential-csv",str(b),
+                                       "--output",str(dest)]),0)
+            self.assertEqual(a.read_bytes(),x)
+            self.assertEqual(b.read_bytes(),y)
+            receipt=json.loads(dest.read_text())
+            self.assertFalse(receipt["source_admitted"])
+            self.assertFalse(receipt["insured_loss_or_asset_tiv_created"])
+            self.assertEqual(
+                receipt["historical_country_year_availability"][
+                    "event_count_with_exact_country_prior_year_indicator"],1)
+
     def test_committed_receipt_is_nonadmitted_and_pinned(self):
         records = read_receipt()
         self.assertEqual(set(records["sources"]), {"hanze_v3_0_2_beta", "residential_v2025"})
