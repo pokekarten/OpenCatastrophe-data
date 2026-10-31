@@ -13,10 +13,10 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 > This Markdown file is a deterministic human-readable projection of the canonical JSON file named above. It does not create a second source of truth or change admission, rights or scientific-review state.
 
 **Schema version:** `1.0.0`  
-**Review date:** `2026-08-12`  
+**Review date:** `2026-10-31`  
 **Purpose:** Non-admission discovery registry of observation and physical-context sources relevant to catastrophe risk.
 
-**Entries:** 17
+**Entries:** 19
 
 ## RADKLIM gauge-adjusted one-hour precipitation sums v2017.002
 
@@ -47,6 +47,36 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Event objects are derived using a specific W3 threshold and Eta selection method; preserve catalogue version, event-definition semantics and the distinction from raw precipitation fields.
+
+## CatRaRE W3 Eta heavy-rainfall event catalogue v2026.01
+
+**Candidate ID:** `dwd.catrare.w3-eta.v2026.01`  
+**Provider:** Deutscher Wetterdienst  
+**Categories:** `extreme_rainfall`, `event_catalogue`, `weather_radar`, `validation`  
+**Spatial scope:** Germany  
+**Temporal scope:** 2001-01-01 to 2025-12-31, dataset version v2026.01  
+**Resolution / granularity:** CSV event identifiers and dates; ESRI File Geodatabase precipitation-maxima points and event-zone polygons, derived from 1 km hourly RADKLIM-RW across 11 durations  
+**Potential roles:** `pluvial_flood_event_validation`, `extreme_rainfall_catalogue`, `source_lineage_link_with_radklim`  
+**Access hint:** `public_official_download_csv_and_geodatabase_exact_rights_and_bytes_pending`  
+**Authoritative source:** <https://opendata.dwd.de/climate_environment/CDC/help/landing_pages/doi_landingpage_CatRaRE_W3_Eta_v2026.01-de.html>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Latest independently observed official v2026.01 product: same RADKLIM-RW V2017.002 parent as earlier v2025.01, extended to 2025. NOT an independent validation of that radar product. Keep W3 selection threshold, version, KEY_FIELD/Event_ID, UTC event times, RADKLIM-native projection, publication corrections and event-zone geometry exact; verify source bytes/SHA256 and terms before admission. Do not add W3 and T5 event counts as distinct weather events.
+
+## CatRaRE T5 Eta five-year-threshold heavy-rainfall catalogue v2026.01
+
+**Candidate ID:** `dwd.catrare.t5-eta.v2026.01`  
+**Provider:** Deutscher Wetterdienst  
+**Categories:** `extreme_rainfall`, `event_catalogue`, `weather_radar`, `validation`  
+**Spatial scope:** Germany  
+**Temporal scope:** 2001-01-01 to 2025-12-31, dataset version v2026.01  
+**Resolution / granularity:** CSV events and geodatabase point/polygon records derived from 1 km RADKLIM-RW, threshold based on five-year return period, across 11 accumulation durations  
+**Potential roles:** `extreme_rainfall_catalogue`, `event_definition_sensitivity_check`, `source_lineage_link_with_radklim`  
+**Access hint:** `public_official_download_csv_and_geodatabase_exact_rights_and_bytes_pending`  
+**Authoritative source:** <https://opendata.dwd.de/climate_environment/CDC/help/landing_pages/doi_landingpage_CatRaRE_T5_Eta_v2026.01-de.html>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** T5 and W3 are distinct detection thresholds based on the same radar precipitation source, NOT independent event catalogues. Preserve exact threshold and Eta selection, original event ids qualified by catalogue variant/release, UTC time, event-zone polygon and projection. Require source bytes checksum, licences and threshold-specific event alignment before quantitative comparison or flood-model use.
 
 ## HYRAS-DE hydrometeorological gridded data
 
