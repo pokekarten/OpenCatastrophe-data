@@ -24,6 +24,13 @@ VERSION_URL = "https://zenodo.org/records/19288171"
 BYTES_URL = "https://zenodo.org/api/records/19288171/files/Global_Flood_Records.csv/content"
 PUBLISHER_MD5 = "8fe3cd72474abe8d4d83641e2d33266f"
 PUBLISHER_SIZE = 428865
+PINNED_ORIGINAL_SHA256 = "9ebcb24b96e06f826a2a18f37e51788f7e8410575258e58f0c4c6310cece7924"
+PINNED_PROFILE = {
+    "reported_event_count": 5503,
+    "observed_first_start_date": "1985-01-01",
+    "observed_last_end_date": "2024-01-09",
+    "events_beyond_publisher_declared_end_year": 4,
+}
 MAX_SOURCE_BYTES = 1_000_000
 SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -103,7 +110,12 @@ def main() -> int:
     if args.file is not None and args.out is not None and args.file.resolve() == args.out.resolve():
         raise DFOPreflightError("output cannot overwrite the original source")
     blob = fetch_publisher_bytes() if args.fetch else args.file.read_bytes()
-    report = verify_source_bytes(blob, expected_sha256=args.expected_sha256)
+    if args.expected_sha256 is not None and args.expected_sha256 != PINNED_ORIGINAL_SHA256:
+        raise DFOPreflightError("DFO v0.9.0 exact-source override is not authorized")
+    report = verify_source_bytes(blob, expected_sha256=PINNED_ORIGINAL_SHA256)
+    for key, expected in PINNED_PROFILE.items():
+        if report.get(key) != expected:
+            raise DFOPreflightError("DFO source profile drift: " + key)
     text = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False) + "\n"
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
