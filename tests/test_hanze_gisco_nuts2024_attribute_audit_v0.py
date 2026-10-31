@@ -99,12 +99,12 @@ class NUTS2024AttributeAuditTests(unittest.TestCase):
                     nuts2024_index(official_csv(**bad))
         with self.assertRaisesRegex(NUTS2024AuditError, "header"):
             nuts2024_index(csv_blob(GISCO_HEADER[:-1], [{"CNTR_CODE": "DE", "NUTS_ID": "DE"}]))
-        with self.assertRaisesRegex(NUTS2024AuditError, "empty"):
+        with self.assertRaisesRegex(NUTS2024AuditError, "byte size invalid"):
             nuts2024_index(b"")
 
     def test_upstream_hanze_sha_and_model_identity_are_checked(self):
         hanze, candidates = upstream()
-        with self.assertRaisesRegex(Exception, "SHA256|bytes differ"):
+        with self.assertRaisesRegex(NUTS2024AuditError, "invalid upstream"):
             audit_hanze_candidate_region_codes(hanze, "0"*64, candidates, official_csv())
         candidates["common_event_identity_proven"] = True
         with self.assertRaisesRegex(NUTS2024AuditError, "upstream"):
