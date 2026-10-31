@@ -23,7 +23,8 @@ class FakeVariable:
 
 
 class FakeDataset:
-    def __init__(self, abs_value=34.5, rel_value=1.12):
+    def __init__(self, abs_value=34.5, rel_value=1.12,
+                 storm_name="TEST STORM", storm_date="2000-01-01"):
         self.abs_var = FakeVariable(value=abs_value)
         self.rel_var = FakeVariable(value=rel_value)
         self.variables = {
@@ -31,6 +32,8 @@ class FakeDataset:
             "latitude": FakeVariable(data=[50.25, 50.0, 49.75]),
             "absolute_maxwindgusts": self.abs_var,
             "relative_maxwindgusts": self.rel_var,
+            "Storm_Names": FakeVariable(data=[storm_name]*50),
+            "Storm_Dates": FakeVariable(data=[storm_date]*50),
         }
 
     def __enter__(self):
@@ -93,6 +96,9 @@ class CLIMKSyntheticSiteSamplingTests(unittest.TestCase):
         ds = FakeDataset()
         result = staged_sample(ds, [("SYNTH_DE", 10.1, 50.1)], storm_index=12)
         self.assertEqual(result["site_count"], 1)
+        self.assertEqual(result["source_storm_name"], "TEST STORM")
+        self.assertEqual(result["source_storm_date_label"], "2000-01-01")
+        self.assertIs(result["source_storm_date_parsed_as_utc"], False)
         self.assertEqual(result["event_key"], "climk-winds:v2:ERA5:storm-index:12")
         self.assertEqual(result["site_samples"][0]["native_cell_x"], 1)
         self.assertEqual(result["site_samples"][0]["native_cell_y"], 1)
@@ -128,6 +134,28 @@ class CLIMKSyntheticSiteSamplingTests(unittest.TestCase):
                     synthetic_sites_json=sites([("A",10.0,50.0)]),
                     storm_index=idx,
                 )
+
+    def test_source_authoritative_labels_are_not_inferred_utc(self):
+        result = staged_sample(FakeDataset(storm_name="STORM-A",
+                                           storm_date="26 Dec 1999"),
+                               [("A",10.0,50.0)])
+        self.assertEqual(result["source_storm_date_label"], "26 Dec 1999")
+        self.assertFalse(result["source_storm_date_parsed_as_utc"])
+
+    def test_missing_or_malformed_event_label_refused(self):
+        for name, date in (("", "1999-12-26"), ("Storm", ""),
+                           ("Storm ", "1999-12-26"),
+                           ("Storm", "1999-12-26\n")):
+            with self.subTest(name=name,date=date), self.assertRaises(
+                    mod.WindPointError):
+                staged_sample(FakeDataset(storm_name=name, storm_date=date),
+                              [("A",10.0,50.0)])
+
+    def test_publisher_binary_event_labels_decode(self):
+        result = staged_sample(FakeDataset(storm_name=b"STORM-A",
+                                           storm_date=b"1999-12-26"),
+                               [("A",10.0,50.0)])
+        self.assertEqual(result["source_storm_name"], "STORM-A")
 
     def test_source_bytes_must_be_pinned(self):
         with self.assertRaises(ValueError):

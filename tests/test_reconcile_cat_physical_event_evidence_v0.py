@@ -52,6 +52,9 @@ def wind_report():
         "event_key": "climk-winds:v2:ERA5:storm-index:0",
         "peril": "WINDSTORM",
         "physical_intensity_unit": "m s**-1",
+        "source_storm_name": "STORM-A",
+        "source_storm_date_label": "1999-12-26",
+        "source_storm_date_parsed_as_utc": False,
         "source_sha256": mod.PINNED_SHA256,
         "source_sha_pinned": True,
         "event_identity_cross_model_matched": False,
@@ -97,7 +100,9 @@ class PhysicalEventEvidenceTests(unittest.TestCase):
         self.assertEqual([e["peril"] for e in report["events"]], ["WILDFIRE", "WINDSTORM"])
         self.assertEqual(report["events"][0]["event_time"]["utc"], "2026-08-25T11:01:00Z")
         self.assertEqual(report["events"][1]["event_time"]["state"],
-                         "UNEXPORTED_IN_V0_SOURCE_SAMPLER")
+                         "SOURCE_DATE_LABEL_WITHOUT_VERIFIED_UTC_INSTANT")
+        self.assertEqual(report["events"][1]["event_time"]["provider_date_label"], "1999-12-26")
+        self.assertEqual(report["events"][1]["provider_storm_name"], "STORM-A")
         self.assertIsNone(report["events"][1]["event_time"]["utc"])
         self.assertFalse(report["events_are_the_same_physical_occurrence"])
         for flag in ("cross_peril_dependency_inferred",
@@ -227,6 +232,16 @@ class PhysicalEventEvidenceTests(unittest.TestCase):
         fire["event_timestamp"] = "2026-08-25T13:01:00"
         with self.assertRaises(mod.PhysicalEventEvidenceError):
             reconcile(fire=fire)
+
+    def test_missing_or_forged_climk_event_labels_refused(self):
+        for k,v in (("source_storm_name", ""),
+                    ("source_storm_date_label", "unknown\n"),
+                    ("source_storm_date_parsed_as_utc", True)):
+            wind = wind_report()
+            wind[k] = v
+            with self.subTest(key=k), self.assertRaises(
+                    mod.PhysicalEventEvidenceError):
+                reconcile(wind=wind)
 
     def test_wind_no_event_time_is_not_imputed_from_fire(self):
         report = reconcile()

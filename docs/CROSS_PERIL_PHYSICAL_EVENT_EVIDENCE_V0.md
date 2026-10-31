@@ -16,7 +16,7 @@ Each output event has its **own** provider-scoped event key, raw source-byte SHA
 
 ## Deliberate missing evidence (no guessing)
 
-The existing CLIMK source sampler exports a zero-based storm index but **does not yet export its Storm_Dates calendar value**; `event_time.utc=null` and the status is explicit. It is incorrect to copy EFFIS' date onto CLIMK, to synthesize an annual rate from 50 selected extreme storms, or to claim two different source events are one jointly correlated event. EFFIS burning membership is **not** physical wildfire heat intensity, insured exposure or building destruction. No vulnerability, location ownership, financial sum, RI/retro, or loss probability is applied.
+The CLIMK source sampler now exports original `Storm_Names` and `Storm_Dates` labels from the pinned NetCDF. Those are kept under `provider_storm_name` and `event_time.provider_date_label`, but do **not** establish an exact UTC instant; `event_time.utc=null` remains explicit. It is incorrect to copy EFFIS' date onto CLIMK, to synthesize an annual rate from 50 selected extreme storms, or to claim two different source events are one jointly correlated event. EFFIS burning membership is **not** physical wildfire heat intensity, insured exposure or building destruction. No vulnerability, location ownership, financial sum, RI/retro, or loss probability is applied.
 
 ## Reproduction on an internet-enabled runner
 

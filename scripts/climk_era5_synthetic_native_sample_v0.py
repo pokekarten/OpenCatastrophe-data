@@ -78,6 +78,20 @@ def _safe_variable_value(raw, name: str, max_value: float) -> float:
     return value
 
 
+def _source_storm_label(raw, label: str) -> str:
+    """Preserve publisher's exact event label; no automatic date/UTC parsing."""
+    if isinstance(raw, bytes):
+        try:
+            raw = raw.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise WindPointError(label + " is not valid UTF-8") from exc
+    if not isinstance(raw, str) or not 0 < len(raw) <= 120 or raw != raw.strip():
+        raise WindPointError(label + " absent, padded, or unbounded")
+    if any(ord(ch) < 32 or ord(ch) == 127 for ch in raw):
+        raise WindPointError(label + " has invalid control characters")
+    return raw
+
+
 def sample_climk_era5(*, original: bytes, synthetic_sites_json: bytes,
                       storm_index: int) -> dict:
     if type(storm_index) is not int or not 0 <= storm_index < 50:
@@ -100,6 +114,10 @@ def sample_climk_era5(*, original: bytes, synthetic_sites_json: bytes,
                 raise WindPointError("nonfinite native grid coordinates")
             gust = ds.variables["absolute_maxwindgusts"]
             ratio = ds.variables["relative_maxwindgusts"]
+            storm_name = _source_storm_label(
+                ds.variables["Storm_Names"][storm_index], "Storm_Names")
+            storm_date = _source_storm_label(
+                ds.variables["Storm_Dates"][storm_index], "Storm_Dates")
             hits = []
             for ident, lon, lat in sites:
                 ix, cx = nearest_native_cell(longitude, lon)
@@ -130,6 +148,9 @@ def sample_climk_era5(*, original: bytes, synthetic_sites_json: bytes,
         "source_sha_pinned": evidence["sha256_pinned"],
         "event_key": f"climk-winds:v2:ERA5:storm-index:{storm_index}",
         "storm_index_zero_based": storm_index,
+        "source_storm_name": storm_name,
+        "source_storm_date_label": storm_date,
+        "source_storm_date_parsed_as_utc": False,
         "event_identity_cross_model_matched": False,
         "grid_coordinate_system": "source_native_lat_lon_degrees",
         "spatial_sampling": "nearest_native_grid_center_no_extrapolation",
