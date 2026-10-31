@@ -59,8 +59,8 @@ class DFOOriginalProviderReceiptTests(unittest.TestCase):
         from research_runners.dfo_original_provider_byte_receipt_v0 import (
             PINNED_ORIGINAL_SHA256, PINNED_PROFILE,
         )
-        receipt_path = ROOT / "research/receipts/dfo-hanze-germany-original-20261031.json"
-        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        from research_runners.dfo_hanze_germany_original_overlap_receipt_v0 import ORIGINAL_OVERLAP_RECEIPT
+        receipt = ORIGINAL_OVERLAP_RECEIPT
         dfo = receipt["sources"]["dfo"]
         self.assertEqual(dfo["sha256"], PINNED_ORIGINAL_SHA256)
         self.assertEqual(dfo["observed_events"], PINNED_PROFILE["reported_event_count"])
