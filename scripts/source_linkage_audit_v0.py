@@ -65,6 +65,14 @@ RECIPES = (
         "Affected area and fatalities are not observed flood depth or insured loss; non-matches are not zero events.",
     ),
     (
+        "usgs-gfid-original-versus-derived-flood-lineage",
+        ("usgs.gfid.original-contributed-files.2026", "usgs.gfid.geocoded-aggregated-duplicate-screen.2026", "dfo.floodrecords.v0.9.0", "hanze.historical-flood-impacts.v3.0.2-beta"),
+        "reused_upstream_records_and_unconfirmed_duplicate_screen",
+        "GFID Source_ID and provider tags; original DFO/HANZE file version and SHA256; event interval, country source fields, geocoding method and representative EPSG4326 location",
+        "Compare GFID original DFO_FloodData.csv/HANZE_Events_v3.csv schemas, vintage and file hashes to our separately pinned releases. Inspect Potential_Duplicate_Events.csv 30-day/25-km methodology, third-party licences and resulting one-to-many identity hypotheses.",
+        "USGS GFID derived, geocoded and source-original files are NOT independent evidence; 30-day/25-km flags are NOT confirmed duplicate events and point coordinates are NOT flood footprints or insured losses.",
+    ),
+    (
         "dfo-gfm-flood-validation",
         ("dfo.floodrecords.v0.9.0", "copernicus.cems.gfm.v4.1.1"),
         "manual_spatiotemporal_event_challenge",

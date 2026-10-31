@@ -160,6 +160,59 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "usgs.gfid.original-contributed-files.2026",
+      "name": "USGS Global Flood Impacts Database (GFID): original contributed flood datasets",
+      "provider": "US Geological Survey and underlying DFO / EM-DAT / HANZE / DesInventar providers",
+      "categories": [
+        "flood",
+        "historical_event_sources",
+        "multi_provider_lineage",
+        "reported_impacts"
+      ],
+      "spatial_scope": "global provider inputs with separate country/time coverage; original upstream coverage is heterogeneous",
+      "temporal_scope": "USGS GFID catalog updated 2026-10-05; individual included original dataset versions and time ranges require exact archive verification",
+      "resolution_or_granularity": "USGS data release DOI 10.5066/P135ARGI; separate DFO_FloodData.csv, EMDAT_FloodData.xlsx, HANZE_Events_v3.csv and DesInventar country records/aggregate; source-native IDs, geography and report fields",
+      "potential_roles": [
+        "identify_shared_upstream_flood_reports",
+        "versioned_source_lineage_reconciliation",
+        "historical_event_field_mapping_audit"
+      ],
+      "authoritative_url": "https://catalog.data.gov/dataset/original-data-the-global-flood-impacts-database-gfid",
+      "access_class_hint": "public_usgs_dataset_containing_third_party_data_rights_source_version_and_redistribution_review_required",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "This is a collection of copied original upstream records, not a new independent flood-observation source. USGS public access does not grant uniform redistribution or commercial-use rights to contributed EM-DAT, HANZE, DesInventar or DFO inputs. The DFO_FloodData.csv and HANZE_Events_v3.csv schemas described in the release are not automatically identical to our separately pinned DFO v0.9.0 and HANZE v3.0.2-beta CSVs. Freeze individual file versions, hashes, source fields, attribution and third-party conditions; do not reuse release aggregate counts as unique physical disasters."
+    },
+    {
+      "candidate_id": "usgs.gfid.geocoded-aggregated-duplicate-screen.2026",
+      "name": "USGS Global Flood Impacts Database (GFID): aggregated geocoded event and duplicate-screening products",
+      "provider": "US Geological Survey and underlying DFO / EM-DAT / HANZE / DesInventar providers",
+      "categories": [
+        "flood",
+        "multi_source_aggregation",
+        "geocoded_events",
+        "potential_duplicates",
+        "reported_impacts"
+      ],
+      "spatial_scope": "197 countries and territories represented by selected provider inputs; not exhaustive world flood observations",
+      "temporal_scope": "USGS release metadata catalog updated 2026-10-05; upstream temporal windows and aggregation snapshot require exact original publication proof",
+      "resolution_or_granularity": "136,642 reported flood event records, 82,245 with at least one reported nonzero impact; AggregatedFloodData.xlsx, geocoded DFO/EM-DAT/HANZE/DesInventar records and Potential_Duplicate_Events.csv using 30-day and 25-km screening; representative EPSG:4326 point coordinates",
+      "potential_roles": [
+        "external_candidate_duplicate_screen_challenge",
+        "source_field_lineage_audit",
+        "reported_human_impact_completeness_comparison"
+      ],
+      "authoritative_url": "https://catalog.data.gov/dataset/the-global-flood-impacts-database-gfid",
+      "access_class_hint": "public_usgs_derived_product_containing_third_party_source_inputs_rights_and_exact_bytes_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "The 30-day and 25-km proximity file contains only possible duplicate/overlapping records, NOT confirmed same-event identity. It must not be treated as independent validation of DFO, HANZE, EM-DAT or DesInventar. USGS GEO_LAT/GEO_LON and HANZE LAT/LON are representative coordinates for indexing (often region-derived), not flood footprints, exact impact addresses or flood depths. Economic-loss columns use different currencies, baselines and definitions; reported nonzero impacts are not insured claims. Compare only version-matched source IDs and verified input SHA256, retaining exact source-specific metadata and licence gates."
     }
   ]
 }
