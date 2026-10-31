@@ -102,7 +102,14 @@ def audit_verified_rows(
         matched_countries.add(country)
         matched_year_countries.add((country, reference_year))
         total_indicator_presence_event_multiplicity += len(present)
-        if row.get("economic_loss_value_eur") not in (None, ""):
+        # A whitespace-only CSV cell is missing, exactly like an empty
+        # cell. Zero ("0") is a genuinely reported value, not missing.
+        # The independent provider preflight already validated finite
+        # numeric content; this diagnostic records presence only.
+        economic_loss = row.get("economic_loss_value_eur")
+        if economic_loss is not None and not isinstance(economic_loss, str):
+            raise AvailabilityError("invalid event economic-loss field type")
+        if economic_loss is not None and economic_loss.strip() != "":
             losses_present_matched += 1
 
     if not events:
