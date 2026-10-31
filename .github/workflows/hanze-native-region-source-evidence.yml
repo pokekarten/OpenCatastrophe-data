@@ -9,6 +9,7 @@ on:
       - ".github/workflows/hanze-native-region-source-evidence.yml"
       - "research_runners/hanze_native_regions2024_source_audit_v0.py"
       - "research_runners/hanze_native_regions2024_original_receipt_v0.py"
+      - "research_runners/hanze_native_regions2024_source_receipt_v0.py"
       - "tests/test_hanze_native_regions2024_source_audit_v0.py"
   workflow_dispatch:
 
@@ -39,4 +40,7 @@ jobs:
       - name: Reproduce real publisher-source regional glossary coverage (no raw files saved)
         run: |
           python research_runners/hanze_native_regions2024_original_receipt_v0.py --out "$RUNNER_TEMP/hanze-s2-regional-audit.json"
-          python -c 'import json,os,pathlib; r=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-s2-regional-audit.json").read_text()); s=r["original_glossary"]; assert r["candidate_pair_count"] == 9 and sum(r["status_counts"].values()) == 9 and s["publisher_md5_confirmed"] and s["distinct_region_codes"] >= 1000 and not r["source_event_identity_proven"] and not r["model_input_admitted"] and not r["gis_geometry_loaded"]; print("HANZE v3.0.2 original S2 glossary/region list source metadata, NOT flood footprint:", json.dumps({k:r[k] for k in ("original_glossary","status_counts","region_tokens_from_accepted_lists")},sort_keys=True))'
+          python -c 'import json,os,pathlib; r=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-s2-regional-audit.json").read_text()); s=r["original_glossary"]; assert r["candidate_pair_count"] == 9 and sum(r["status_counts"].values()) == 9 and s["publisher_md5_confirmed"] and s["sha256_independently_pinned"] and s["distinct_region_codes"] == 1442 and r["status_counts"]["exact_multi_region_glossary_matched"] == 9 and r["region_tokens_from_accepted_lists"] == 150 and not r["source_event_identity_proven"] and not r["model_input_admitted"] and not r["gis_geometry_loaded"]; print("HANZE v3.0.2 original S2 glossary/region list source metadata, NOT flood footprint:", json.dumps({k:r[k] for k in ("original_glossary","status_counts","region_tokens_from_accepted_lists")},sort_keys=True))'
+      - name: Verify frozen official original source receipt
+        run: |
+          python -c 'import json,os,pathlib; from research_runners.hanze_native_regions2024_source_receipt_v0 import HANZE_S2_V2024_RECEIPT as e; r=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-s2-regional-audit.json").read_text()); s=r["original_glossary"]; assert s["observed_sha256"] == e["observed_sha256"] and s["publisher_byte_length"] == e["bytes"] and s["distinct_region_codes"] == e["region_codes"] and s["distinct_region_country_prefixes"] == e["country_prefixes"] and r["status_counts"]["exact_multi_region_glossary_matched"] == e["all_token_sequences_exact_in_native_glossary"] and r["region_tokens_from_accepted_lists"] == e["total_region_tokens_in_9_compound_lists"] and not e["model_source_admitted"]; print("PASS: verified original HANZE 2024 source IDs; 9 multi-region lists with 150 tokens, not flood polygons")'
