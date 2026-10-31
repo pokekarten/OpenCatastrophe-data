@@ -36,7 +36,7 @@ def example_row(**overrides):
 
 def csv_bytes(rows, columns=HEADER, *, bom=False):
     stream = io.StringIO(newline="")
-    writer = csv.DictWriter(stream, fieldnames=columns, lineterminator="\n")
+    writer = csv.DictWriter(stream, fieldnames=columns, lineterminator="\n", extrasaction="ignore")
     writer.writeheader()
     for row in rows:
         writer.writerow(row)
