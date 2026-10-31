@@ -13,10 +13,10 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 > This Markdown file is a deterministic human-readable projection of the canonical JSON file named above. It does not create a second source of truth or change admission, rights or scientific-review state.
 
 **Schema version:** `1.0.0`  
-**Review date:** `2026-08-10`  
+**Review date:** `2026-10-31`  
 **Purpose:** Non-admission discovery registry of additional exposure, built-environment and impact-validation sources relevant to catastrophe risk.
 
-**Entries:** 11
+**Entries:** 13
 
 ## Google Open Buildings 2.5D Temporal Dataset v1
 
@@ -182,3 +182,33 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Overture documents the Buildings theme under ODbL 1.0 and conflates multiple community, national/municipal and ML-derived building sources. GERS can provide stable entity linkage across datasets/releases, including insurance-to-building joins, but conflated footprints are not cadastral, occupancy, value or portfolio truth. Public data releases are retained for at most 60 days, so any future use must pin an exact release/schema and byte identities; rights remain unreviewed in this discovery registry.
+
+## GEM Global Exposure Model v2026.0.0
+
+**Candidate ID:** `gem.global-exposure-model.v2026.0.0`  
+**Provider:** Global Earthquake Model (GEM) Foundation  
+**Categories:** `exposure`, `building_stock`, `replacement_value`, `earthquake`, `portfolio_benchmark`  
+**Spatial scope:** 215 countries and territories; publicly downloadable country/subnational summaries at first administrative level; finer resolution requires source-specific licence check  
+**Temporal scope:** June 2026 model release; building stock and population updated toward 2025, replacement costs to 2024-2025  
+**Resolution / granularity:** building counts, taxonomy classes, occupancy, cost and vulnerability mappings; public Adm1 aggregate, finer ~0.01-degree country assets under separate licences  
+**Potential roles:** `regional_exposure_benchmark`, `replacement_value_sanity_check`, `earthquake_taxonomy_mapping`, `synthetic_portfolio_calibration_context`  
+**Access hint:** `public_download_noncommercial_licence; finer_resolution_requires_separate_licence`  
+**Authoritative source:** <https://github.com/gem/global_exposure_model/releases/tag/v2026.0.0>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Primary GitHub release of 19 June 2026 and publisher terms identify the v2026.0.0 dataset as CC BY-NC-SA 4.0; a 2026.1 map label on the product page is not the same dataset release identity. Commercial insurer use and redistribution in this commercial-use-ready repository are blocked without a separate GEM licence and exact file-level review. v2026.0.0 breaks earlier folder, CSV-header and administrative-ID conventions; GEM Taxonomy v4.0 applies. Modelled building replacement cost is not insured sum insured/TIV; published aggregate geography does not substantiate 1-km commercial rights.
+
+## GEM Global Vulnerability Model v2026.0.0
+
+**Candidate ID:** `gem.global-vulnerability-model.v2026.0.0`  
+**Provider:** Global Earthquake Model (GEM) Foundation  
+**Categories:** `earthquake`, `vulnerability`, `building_damage`, `structural_loss`, `contents_loss`  
+**Spatial scope:** global, organized by region and country or territory and building taxonomy  
+**Temporal scope:** June 2026 model release; model assumptions depend on region and applicable building taxonomy  
+**Resolution / granularity:** OpenQuake-compatible XML vulnerability functions for structural, nonstructural, contents and fatality metrics by building typology  
+**Potential roles:** `earthquake_vulnerability_benchmark`, `taxonomy_to_damage_curve_mapping`, `openquake_interoperability_validation`  
+**Access hint:** `public_github_release_noncommercial_licence`  
+**Authoritative source:** <https://github.com/gem/global_vulnerability_model>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Official v2026.0.0 repository and CITATION.cff identify CC BY-NC-SA 4.0: commercial application or copying curves into a commercially reusable public model requires a negotiated licence and explicit rights review. This is earthquake-only vulnerability evidence, not wind/flood damage curves. Before any risk run, pin a release tag, verify intensity-measure units, loss component denominators, GEM Taxonomy v4.0 exposure mappings and regional scientific validity; metadata discovery alone is not admission.
