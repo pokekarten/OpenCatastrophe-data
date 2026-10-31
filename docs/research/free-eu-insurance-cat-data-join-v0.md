@@ -48,7 +48,7 @@ Priority P0: license-clear and pin C3S event data plus GISCO geographic version;
 
 Priority P1: compare **separately** national GDV insured losses, EEA economic/insured country totals, and building stock from DLR/Overture. GDV text/data mining requires express permission; a documentation link does not grant an ingestion licence.
 
-Priority P2: a genuine risk model for FFBK/NextGen requires peril-specific damage-to-value functions, insurance attachment/coverage terms, synthetic insurer scenario assumptions, shared event IDs and Monte Carlo years, then separate treaty and retrocession stages. This code intentionally does none of them.
+Priority P2: a genuine downstream insurance-capital risk model requires peril-specific damage-to-value functions, insurance attachment/coverage terms, synthetic insurer scenario assumptions, shared event IDs and Monte Carlo years, then separate treaty and retrocession stages. This code intentionally does none of them.
 
 
 ## Further zero-price benchmark paths discovered 2026-10-30
@@ -211,7 +211,7 @@ The full official C3S Windstorm Product User Guide, Table 5 at https://confluenc
 | wind_gust_ratio | Gust normalized against region's 1991–2020 P98 reference |
 | algorithm | Storm-detection/tracking method (Hodges or TempestExtremes family) |
 
-**Nonadditivity guardrails for NextGen/FFBK:** Keep year, NUTS region, threshold, and detection algorithm as a **joint primary key**. Do not sum across thresholds (the threshold groups are nested), algorithms (Hodges and TempestExtremes generate overlapping and nonidentical event sets), or NUTS levels (the administrative hierarchy is nested). Do not interpret region count as policy claims, or annual SSI/NSSI as gross/insured EUR loss or one event. The CSV release's **exact NUTS geographic vintage remains to be established from real file/metadata**, so automatic joins to 2021/2024 insurer regions must remain blocked until that date and version have been independently established. The CSV source has not been downloaded in this research run.
+**Nonadditivity guardrails for downstream insurance-risk consumers:** Keep year, NUTS region, threshold, and detection algorithm as a **joint primary key**. Do not sum across thresholds (the threshold groups are nested), algorithms (Hodges and TempestExtremes generate overlapping and nonidentical event sets), or NUTS levels (the administrative hierarchy is nested). Do not interpret region count as policy claims, or annual SSI/NSSI as gross/insured EUR loss or one event. The CSV release's **exact NUTS geographic vintage remains to be established from real file/metadata**, so automatic joins to 2021/2024 insurer regions must remain blocked until that date and version have been independently established. The CSV source has not been downloaded in this research run.
 
 
 ## C3S annual CSV offline importer: executable validation contract (2026-10-30)
