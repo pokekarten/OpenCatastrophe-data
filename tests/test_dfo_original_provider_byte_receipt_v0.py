@@ -54,6 +54,22 @@ class DFOOriginalProviderReceiptTests(unittest.TestCase):
         self.assertNotIn("events", report)
         self.assertNotIn("Fictional Germany", str(report))
 
+    def test_real_receipt_pins_source_identity_without_rows(self):
+        import json
+        from research_runners.dfo_original_provider_byte_receipt_v0 import (
+            PINNED_ORIGINAL_SHA256, PINNED_PROFILE,
+        )
+        receipt_path = ROOT / "research/receipts/dfo-hanze-germany-original-20261031.json"
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        dfo = receipt["sources"]["dfo"]
+        self.assertEqual(dfo["sha256"], PINNED_ORIGINAL_SHA256)
+        self.assertEqual(dfo["observed_events"], PINNED_PROFILE["reported_event_count"])
+        self.assertEqual(dfo["records_beyond_publisher_declared_end_year_2023"], 4)
+        self.assertEqual(receipt["country_only_results"]["possible_same_country_and_time_pairs"], 9)
+        self.assertFalse(receipt["raw_provider_rows_in_git"])
+        self.assertFalse(any(receipt["scientific_gates"].values()))
+        self.assertNotIn("candidate_pairs", receipt)
+
     def test_publisher_md5_or_size_rejects_changed_bytes(self):
         raw = fixture()
         with self.assertRaisesRegex(DFOPreflightError, "length mismatch"):
