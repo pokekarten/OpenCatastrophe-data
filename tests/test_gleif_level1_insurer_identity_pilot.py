@@ -63,7 +63,7 @@ def build_db(root):
 
 class GLEIFLevel1IdentityPilotTests(unittest.TestCase):
     def test_curated_lei_iso_checksum_and_evidence_identity(self):
-        self.assertEqual(len(PILOT_LEIS), 3)
+        self.assertEqual(len(PILOT_LEIS), 6)
         for lei in PILOT_LEIS:
             with self.subTest(lei=lei):
                 self.assertTrue(valid_lei(lei))
@@ -106,17 +106,17 @@ class GLEIFLevel1IdentityPilotTests(unittest.TestCase):
             db = build_db(root)
             blobs = {lei: payload(lei, name=f"Synthetic {i}") for i,lei in enumerate(sorted(PILOT_LEIS))}
             out = ingest_verified_lei_pilot(db, blobs, "2026-10-31T20:00:00+00:00")
-            self.assertEqual(out["lei_records_verified"], 3)
+            self.assertEqual(out["lei_records_verified"], 6)
             self.assertFalse(out["parent_relationships_verified"])
             self.assertFalse(out["portfolio_exposure_created"])
             with sqlite3.connect(db) as con:
-                self.assertEqual(con.execute("SELECT count(*) FROM cat_gleif_legal_entity").fetchone()[0], 3)
+                self.assertEqual(con.execute("SELECT count(*) FROM cat_gleif_legal_entity").fetchone()[0], 6)
                 self.assertEqual(con.execute("SELECT count(*) FROM cat_source_candidate").fetchone()[0], 1)
-                self.assertEqual(con.execute("SELECT count(*) FROM cat_gleif_legal_entity WHERE source_license='CC0-1.0' AND relationship_status='not_fetched'").fetchone()[0], 3)
+                self.assertEqual(con.execute("SELECT count(*) FROM cat_gleif_legal_entity WHERE source_license='CC0-1.0' AND relationship_status='not_fetched'").fetchone()[0], 6)
             again = ingest_verified_lei_pilot(db, blobs, "2026-10-31T20:01:00+00:00")
-            self.assertEqual(again["lei_records_verified"], 3)
+            self.assertEqual(again["lei_records_verified"], 6)
             with sqlite3.connect(db) as con:
-                self.assertEqual(con.execute("SELECT count(*) FROM cat_gleif_legal_entity").fetchone()[0], 3)
+                self.assertEqual(con.execute("SELECT count(*) FROM cat_gleif_legal_entity").fetchone()[0], 6)
 
     def test_rejects_unknown_database_without_writing(self):
         with TemporaryDirectory() as d:
