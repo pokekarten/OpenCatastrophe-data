@@ -44,7 +44,7 @@ def _date(raw: str, field: str) -> str:
         result = date(year, month, day)
     except ValueError as exc:
         raise DFOPreflightError(field + " is not a Gregorian date") from exc
-    if year < 1985 or year > 2099:
+    if year < 1985 or year > 2026:
         raise DFOPreflightError(field + " outside supported DFO release calendar")
     return result.isoformat()
 
