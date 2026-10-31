@@ -22,7 +22,7 @@ import re
 HEADER = (
     "﹟", "Glide ﹟", "Start Date", "End Date", "Country",
     "Area (km²)", "Source", "Main Cause", "Fatalities", "Displaced",
-    "Severity", "Flood impact index ",
+    "Severity", "Flood impact index",
 )
 DIGEST = re.compile(r"[0-9a-f]{64}\Z")
 DATE = re.compile(r"([0-9]{1,2})/([0-9]{1,2})/([0-9]{2})\Z")
@@ -112,7 +112,7 @@ def parse_dfo_csv(blob: bytes) -> dict:
             "reported_fatalities": _quantity(row["Fatalities"], "Fatalities", integer=True),
             "reported_displaced": _quantity(row["Displaced"], "Displaced", integer=True),
             "reported_severity": _quantity(row["Severity"], "Severity"),
-            "reported_flood_impact_index": _quantity(row["Flood impact index "], "Flood impact index"),
+            "reported_flood_impact_index": _quantity(row["Flood impact index"], "Flood impact index"),
         })
     if not events:
         raise DFOPreflightError("no source events")
