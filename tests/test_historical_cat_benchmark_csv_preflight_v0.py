@@ -61,6 +61,20 @@ class HistoricalBenchmarkPreflightTest(unittest.TestCase):
         with self.assertRaises(SourcePreflightError):
             inspect_hanze_v302(blob, digest(blob))
 
+    def test_hanze_rejects_non_ascii_event_id_and_year(self):
+        for override in ({"id": "٢٠٠٠"}, {"event_start_date_year": "٢٠٢٥"}):
+            with self.subTest(override=override):
+                blob = csv_bytes(HANZE_COLUMNS, [hanze_row(**override)])
+                with self.assertRaises(SourcePreflightError):
+                    inspect_hanze_v302(blob, digest(blob))
+
+    def test_hanze_rejects_noncanonical_date_spellings(self):
+        for bad_date in ("20250102", "2025-W01-4", "2025-1-2"):
+            with self.subTest(bad_date=bad_date):
+                blob = csv_bytes(HANZE_COLUMNS, [hanze_row(start_date=bad_date)])
+                with self.assertRaises(SourcePreflightError):
+                    inspect_hanze_v302(blob, digest(blob))
+
     def test_hanze_rejects_wrong_price_reference(self):
         blob = csv_bytes(HANZE_COLUMNS, [hanze_row(
             economic_loss_value_eur="20", reference_year_eur="2024")])
