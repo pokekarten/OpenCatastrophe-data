@@ -124,7 +124,10 @@ def parse_level2(blob: bytes, child: str, suffix: str, expected: str) -> dict:
         actual_parent = expected
         kind = REQUIRED_TYPES[suffix]
     else:
-        ex = attrs.get("exception")
+        # The GLEIF JSON:API reporting-exception endpoint exposes
+        # lei/category/reason directly as attributes. Some response revisions
+        # wrap those exact fields in an "exception" object instead.
+        ex = attrs.get("exception", attrs)
         if not isinstance(ex, dict):
             raise GLEIFPilotError("missing exception detail")
         if ex.get("lei") != child or ex.get("category") != EXCEPTION_CATEGORIES[suffix]:
