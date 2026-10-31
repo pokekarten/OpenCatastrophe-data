@@ -146,7 +146,7 @@ def inspect_hanze_region_geometry_zip(blob: bytes, expected_sha256: str | None =
                 raise RegionArchiveError("archive expansion exceeds total bound")
             suffix = path.suffix.lower()
             if suffix not in EXPECTED_TYPES:
-                raise RegionArchiveError("unreviewed archive file extension")
+                raise RegionArchiveError("unreviewed archive file extension: " + repr(suffix) + "; file: " + repr(name))
             types[suffix] += 1
             key = str(path.with_suffix(""))
             group = groups.setdefault(key, {})
