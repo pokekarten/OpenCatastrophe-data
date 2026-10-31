@@ -15,7 +15,10 @@ import json
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from scripts.source_landscape_contract import DEFAULT_LANDSCAPE_DIR, load_landscape_shards
+if __package__:
+    from .source_landscape_contract import DEFAULT_LANDSCAPE_DIR, load_landscape_shards
+else:
+    from source_landscape_contract import DEFAULT_LANDSCAPE_DIR, load_landscape_shards
 
 
 # Non-exhaustive researched examples: every endpoint must exist in the canonical
