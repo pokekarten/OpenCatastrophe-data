@@ -157,6 +157,35 @@ class CLIMKSyntheticSiteSamplingTests(unittest.TestCase):
                                [("A",10.0,50.0)])
         self.assertEqual(result["source_storm_name"], "STORM-A")
 
+    def test_unicode_publisher_event_labels_preserved(self):
+        result = staged_sample(
+            FakeDataset(storm_name="Tempête Éva", storm_date="26 Déc 1999"),
+            [("A", 10.0, 50.0)],
+        )
+        self.assertEqual(result["source_storm_name"], "Tempête Éva")
+        self.assertEqual(result["source_storm_date_label"], "26 Déc 1999")
+        self.assertIs(result["source_storm_date_parsed_as_utc"], False)
+
+    def test_nonprintable_publisher_event_labels_fail_closed(self):
+        for bad in ("\u0085", "\u200b", "\u2028", "\x00"):
+            with self.subTest(char=repr(bad)), self.assertRaises(mod.WindPointError):
+                staged_sample(
+                    FakeDataset(storm_name="STORM" + bad),
+                    [("A", 10.0, 50.0)],
+                )
+
+    def test_huge_integer_coordinates_fail_closed(self):
+        huge = 10 ** 400
+        cases = (
+            ((0.0, 0.25, 0.5), huge),
+            ((0.0, huge, 0.5), 0.25),
+            ((-huge, 0, huge), 0),
+        )
+        for axis, target in cases:
+            with self.subTest(axis=str(axis)[:40]), self.assertRaises(
+                    mod.WindPointError):
+                mod.nearest_native_cell(axis, target)
+
     def test_source_bytes_must_be_pinned(self):
         with self.assertRaises(ValueError):
             mod.sample_climk_era5(original=b"invalid source",
