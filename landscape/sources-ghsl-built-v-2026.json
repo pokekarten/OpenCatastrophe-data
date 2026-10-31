@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission CAT source discovery; rights and scientific review pending; no source or insurer model admission.",
+  "review_date": "2026-10-31",
+  "entries": [
+    {
+      "candidate_id": "ec-jrc.ghsl.ghs-built-v.r2023a",
+      "name": "GHSL GHS-BUILT-V R2023A",
+      "provider": "European Commission JRC",
+      "categories": [
+        "exposure"
+      ],
+      "spatial_scope": "global",
+      "temporal_scope": "1975-2030",
+      "resolution_or_granularity": "GHS-BUILT-V R2023A built-up volume (m3 per native grid cell), derived from built surface and height, multitemporal 1975-2030 five-year epochs",
+      "potential_roles": [
+        "synthetic_exposure_weights"
+      ],
+      "authoritative_url": "https://human-settlement.emergency.copernicus.eu/ghs_buV2023.php",
+      "access_class_hint": "CC BY 4.0; verify exact release",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "JRC DOI 10.2905/AB2F107A-03CD-47A3-85E5-139D8EC63283. Derived total/non-residential volume, not summed insured values, portfolio exposure or observed catastrophe loss. Do not use m3 as m2, or infer independent building counts from volume without a calibrated model. Exact raster and rights review required."
+    }
+  ]
+}

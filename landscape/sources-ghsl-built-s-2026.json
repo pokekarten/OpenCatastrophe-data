@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission CAT source discovery; rights and scientific review pending; no source or insurer model admission.",
+  "review_date": "2026-10-31",
+  "entries": [
+    {
+      "candidate_id": "ec-jrc.ghsl.ghs-built-s.r2023a",
+      "name": "GHSL GHS-BUILT-S R2023A",
+      "provider": "European Commission JRC",
+      "categories": [
+        "exposure"
+      ],
+      "spatial_scope": "global",
+      "temporal_scope": "1975-2030",
+      "resolution_or_granularity": "GHS-BUILT-S R2023A built-up surface (m2 per native grid cell), multitemporal global raster; spatial pixel resolution and epoch must be selected per file",
+      "potential_roles": [
+        "synthetic_exposure"
+      ],
+      "authoritative_url": "https://human-settlement.emergency.copernicus.eu/ghs_buS2023.php",
+      "access_class_hint": "CC BY 4.0",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "JRC DOI 10.2905/9F06F36F-4B11-47EC-ABB0-4F8B7B1D72EA. Modelled total/non-residential built-up surface in square metres, with spatial/temporal interpolation or extrapolation at five-year epochs 1975-2030; not building count, occupancy, insured TIV or claim. Commercial model input blocked pending exact raster/rights/attribution/source-byte review."
+    }
+  ]
+}

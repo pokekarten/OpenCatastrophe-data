@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission CAT source discovery; rights and scientific review pending; no source or insurer model admission.",
+  "review_date": "2026-10-31",
+  "entries": [
+    {
+      "candidate_id": "fr.tacct.catnat-commune.2026",
+      "name": "French CatNat declaration per commune (GASPAR-derived)",
+      "provider": "TACCT/data.gouv.fr",
+      "categories": [
+        "historical_events",
+        "flood"
+      ],
+      "spatial_scope": "France, commune",
+      "temporal_scope": "since 1982",
+      "resolution_or_granularity": "one official recognition per commune/decree",
+      "potential_roles": [
+        "historical_event_comparison"
+      ],
+      "authoritative_url": "https://www.data.gouv.fr/datasets/arretes-de-catastrophe-naturelle-par-commune",
+      "access_class_hint": "Open Licence 2.0; exact release pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "TACCT derived data.gouv.fr catnat.csv, a commune × official decree recognition table with potential repeated communes for multiple decrees. Source GASPAR; preserve derived publisher, snapshot/version and historical administrative codes. This is NOT first-party GASPAR and not a CAT physical event, flood footprint or insured claim."
+    }
+  ]
+}

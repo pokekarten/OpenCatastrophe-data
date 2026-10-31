@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission CAT source discovery; rights and scientific review pending; no source or insurer model admission.",
+  "review_date": "2026-10-31",
+  "entries": [
+    {
+      "candidate_id": "fr.gaspar.catnat.commune.v2026",
+      "name": "GASPAR French commune catastrophe recognitions",
+      "provider": "Georisques",
+      "categories": [
+        "historical_events"
+      ],
+      "spatial_scope": "France commune",
+      "temporal_scope": "1982 onward",
+      "resolution_or_granularity": "commune declaration",
+      "potential_roles": [
+        "event_validation"
+      ],
+      "authoritative_url": "https://www.georisques.gouv.fr/donnees/bases-de-donnees/procedures-administratives-relatives-aux-risques",
+      "access_class_hint": "review pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Primary Géorisques GASPAR administrative recognition decisions for communes, updated after Journal Officiel publication. One recognition/decree or municipality does not establish an independent geophysical CAT event; preserve commune historical code, decision status, hazard/recognition period and publication lag. Not flooded geometry, house count, claim or insured TIV."
+    }
+  ]
+}
