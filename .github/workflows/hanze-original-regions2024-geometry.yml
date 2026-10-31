@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: HANZE v3 Region Geometry Original Archive Byte Profile
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/hanze-original-regions2024-geometry.yml"
+      - "research_runners/hanze_regions2024_geometry_zip_audit_v0.py"
+      - "research_runners/hanze_regions2024_zip_original_receipt_v0.py"
+      - "tests/test_hanze_regions2024_geometry_zip_audit_v0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hanze2024-geometry-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-original-archive:
+    name: Inspect exact original HANZE 2024 region geometry archive
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Exact branch checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Test fail-closed archive byte/header contract on synthetic fixtures
+        run: python -m unittest tests.test_hanze_regions2024_geometry_zip_audit_v0 -v
+      - name: Download and inspect original provider archive (nothing persisted to Git)
+        run: |
+          python research_runners/hanze_regions2024_zip_original_receipt_v0.py --out "$RUNNER_TEMP/hanze-regions2024-zip-metadata.json"
+          python -c 'import json,os,pathlib; r=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-regions2024-zip-metadata.json").read_text()); assert r["publisher_md5_matched"] and r["original_bytes"]==2430309 and r["shapefile_component_groups"] and not r["model_input_admitted"] and not r["geometry_topology_or_projection_validated"]; print("HANZE native regions archive header/field metadata ONLY:", json.dumps({k:r[k] for k in ("observed_sha256","archive_member_count","total_decompressed_member_bytes","member_extensions_counts","shapefile_component_groups")},sort_keys=True))'
