@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Synthetic source-fixture tests; no Eurostat geometry bytes in Git."""
 import copy
+import importlib.util
 import json
 import unittest
 from research_runners.eurostat_nuts2_3035_adapter_v0 import AdapterError, convert
@@ -26,6 +27,10 @@ def encode(x):
     return json.dumps(x, sort_keys=True).encode()
 
 
+# Geometry is an optional, pinned spatial runtime, not part of the core
+# validation environment. The required spatial CI job runs these unskipped.
+@unittest.skipUnless(importlib.util.find_spec('shapely'),
+                     'optional pinned EU spatial profile requires shapely')
 class ConvertTest(unittest.TestCase):
     def test_normalizes_to_overlay_schema(self):
         out, receipt = convert(encode(geo()), encode(geo(projected=False)), '2021', ('DE', 'FR'))
@@ -94,6 +99,8 @@ class ConvertTest(unittest.TestCase):
             convert(encode(geo(('DE21',))),encode(geo(('DE21','DE22'),False)),'2024',('DE',))
 
 # CLI verification is deliberately synthetic; provider raw files are not present.
+@unittest.skipUnless(importlib.util.find_spec('shapely'),
+                     'optional pinned EU spatial profile requires shapely')
 class CommandLineTest(unittest.TestCase):
     def _run(self, valid=True):
         import hashlib
