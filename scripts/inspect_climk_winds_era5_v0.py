@@ -24,10 +24,19 @@ SOURCE_NAME = "ERA5_StormFootprint_Database_Europe_Winter_1995-2015.nc"
 PUBLISHED_SIZE = 6_792_278
 PUBLISHED_MD5 = "887ae3218793c599862f115876c145f9"
 # This is set only after an independently reproduced exact-head live receipt.
-PINNED_SHA256 = ""
+PINNED_SHA256 = "92856dea4578ac556ff5598176ff33411b56baa7c2af0170150e288bd5581102"
 MAX_SOURCE_SIZE = 7_500_000
 MAX_DIMENSIONS = 30
 MAX_VARIABLES = 80
+EXPECTED_DIMENSIONS = {"storm_number": 50, "latitude": 181, "longitude": 269}
+EXPECTED_FIELDS = {
+    "Storm_Dates": (("storm_number",), "none"),
+    "Storm_Names": (("storm_number",), "none"),
+    "LI3D_CoreEurope": (("storm_number",), "none"),
+    "LI_gridpoint": (("storm_number", "latitude", "longitude"), "none"),
+    "relative_maxwindgusts": (("storm_number", "latitude", "longitude"), "none"),
+    "absolute_maxwindgusts": (("storm_number", "latitude", "longitude"), "m s**-1"),
+}
 
 
 class WindSourceError(ValueError):
@@ -80,10 +89,16 @@ def inspect_netcdf_header(data: bytes) -> dict:
             dims = {name: len(dim) for name, dim in ds.dimensions.items()}
             if not dims or len(dims) > MAX_DIMENSIONS:
                 raise WindSourceError("invalid NetCDF dimension inventory")
-            if 50 not in dims.values():
-                raise WindSourceError("50-storm selection not evidenced by any dimension")
+            if dims != EXPECTED_DIMENSIONS:
+                raise WindSourceError("unexpected ERA5 native-grid or storm dimension schema")
             if not ds.variables or len(ds.variables) > MAX_VARIABLES:
                 raise WindSourceError("invalid NetCDF variable inventory")
+            for name, (axes, unit) in EXPECTED_FIELDS.items():
+                if name not in ds.variables:
+                    raise WindSourceError(f"missing mandatory CLIMK scientific variable: {name}")
+                variable = ds.variables[name]
+                if variable.dimensions != axes or str(getattr(variable, "units", "")) != unit:
+                    raise WindSourceError(f"CLIMK variable axes or units drifted: {name}")
             variables = []
             for name, var in ds.variables.items():
                 if len(name) > 128 or len(var.dimensions) > MAX_DIMENSIONS:
