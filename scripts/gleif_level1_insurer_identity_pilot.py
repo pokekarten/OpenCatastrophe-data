@@ -37,6 +37,9 @@ PILOT_LEIS = {
     "529900K9B0N5BT694847": "https://www.allianz.com/de/impressum-allianz-se.html",
     "529900MUF4C20K50JS49": "https://www.munichre.com/de/allgemein/impressum.html",
     "529900KIN5BE45V5KB18": "https://www.hannover-re.com/de/impressum",
+    "96950056ULJ4JI7V3752": "https://acpr.banque-france.fr/fr/fiche-detaillee/scor",
+    "969500PB3BN0WIF01B32": "https://acpr.banque-france.fr/fr/fiche-detaillee/scor",
+    "549300KCPG3666EE4546": "https://acpr.banque-france.fr/fr/fiche-detaillee/scor",
 }
 
 
@@ -133,7 +136,7 @@ def fetch_lei(lei: str) -> bytes:
 def ingest_verified_lei_pilot(output: Path, sources: dict[str, bytes], observed_at: str) -> dict:
     """Atomic replacement of a small CAT-only *identity* table."""
     if set(sources) != set(PILOT_LEIS):
-        raise GLEIFPilotError("pilot requires exactly the three published LEIs")
+        raise GLEIFPilotError("pilot requires exactly the six first-party published LEIs")
     if not isinstance(observed_at, str) or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+00:00", observed_at):
         raise GLEIFPilotError("require explicit UTC capture timestamp")
     # Verify original bytes completely before mutating the target database.
@@ -201,7 +204,7 @@ def ingest_verified_lei_pilot(output: Path, sources: dict[str, bytes], observed_
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
-    mode.add_argument("--fetch", action="store_true", help="fetch 3 fixed records from official GLEIF API")
+    mode.add_argument("--fetch", action="store_true", help="fetch 6 fixed records from official GLEIF API")
     mode.add_argument("--offline-dir", type=Path, help="directory with exactly named LEI.json files")
     parser.add_argument("--out", required=True, type=Path,
                         help="existing dedicated CAT SQLite database created by export_cat_source_registry_sqlite.py")
