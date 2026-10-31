@@ -38,6 +38,12 @@ else:
     )
 
 
+PINNED_GISCO_SHA256 = "2dab51394b7dc50eb18eb2ec37c5a69993a1b955af8d203d19e899581c4d9ee1"
+PINNED_GISCO_BYTES = 92282
+PINNED_GISCO_ATTRIBUTES = 1971
+
+
+
 def fetch_official_nuts2024_attributes() -> bytes:
     request = urllib.request.Request(
         GISCO_URL, headers={"User-Agent": "OpenCatastropheNUTS2024SourceProof/1.0"},
@@ -47,7 +53,7 @@ def fetch_official_nuts2024_attributes() -> bytes:
         if final.scheme != "https" or final.hostname != "gisco-services.ec.europa.eu":
             raise ValueError("GISCO download redirected outside official publisher")
         data = response.read(MAX_BYTES + 1)
-    if not 0 < len(data) <= MAX_BYTES:
+    if len(data) != PINNED_GISCO_BYTES or not 0 < len(data) <= MAX_BYTES:
         raise ValueError("original GISCO attribute file is missing or oversized")
     return data
 
@@ -83,8 +89,12 @@ def main() -> None:
     result = make_gisco_hanze_receipt(
         fetch_publisher_bytes(), fetch_hanze_pinned(),
         fetch_official_nuts2024_attributes(),
-        expected_gisco_sha256=args.expected_gisco_sha256,
+        expected_gisco_sha256=PINNED_GISCO_SHA256,
     )
+    if result["gisco_original_source"]["official_attribute_rows"] != PINNED_GISCO_ATTRIBUTES:
+        raise ValueError("GISCO exact original attribute row count drift")
+    if args.expected_gisco_sha256 is not None and args.expected_gisco_sha256 != PINNED_GISCO_SHA256:
+        raise ValueError("GISCO source SHA256 manual override differs from reviewed original")
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result, sort_keys=True, indent=2, allow_nan=False) + "\n", encoding="utf-8")
 
