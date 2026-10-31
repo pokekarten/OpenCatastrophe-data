@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: EFFIS Synthetic Point Overlay
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/effis-synthetic-point-overlay.yml"
+      - "scripts/effis_synthetic_point_overlay_v0.py"
+      - "tests/test_effis_synthetic_point_overlay_v0.py"
+      - "scripts/inspect_effis_burnt_area_v0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: effis-synthetic-overlay-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  live-synthetic-overlap:
+    name: Live EFFIS polygon and synthetic point intersection
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Synthetic closed-schema and polygon topology tests
+        run: python -m unittest tests.test_effis_synthetic_point_overlay_v0 -v
+      - name: Stage two synthetic points near and away from NL fire event
+        run: |
+          python -c 'import json,os,pathlib; p=pathlib.Path(os.environ["RUNNER_TEMP"])/"sites.json"; obj={"schema_version":"oc-effis-synthetic-sites-v0","crs":"OGC:CRS84","synthetic_only":True,"sites":[{"site_id":"SYNTH_A","longitude":5.958677287830914,"latitude":52.41546239242131},{"site_id":"SYNTH_B","longitude":6.02,"latitude":52.47}]}; p.write_text(json.dumps(obj))'
+      - name: Compare synthetic points with live EFFIS event, metadata-only
+        run: |
+          python scripts/effis_synthetic_point_overlay_v0.py --event-id 646790 --fetch --synthetic-sites "$RUNNER_TEMP/sites.json" --out "$RUNNER_TEMP/effis-hit-report.json"
+          python -c 'import json,os,pathlib; p=pathlib.Path(os.environ["RUNNER_TEMP"])/"effis-hit-report.json"; r=json.loads(p.read_text()); assert r["site_count"] == 2 and r["point_hits"] == 1 and r["model_admitted"] is False and r["gross_loss_calculated"] is False; print(json.dumps(r,sort_keys=True))'
