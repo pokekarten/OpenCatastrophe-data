@@ -86,6 +86,11 @@ class OverlayTest(unittest.TestCase):
             with self.subTest(val=val):
                 a,b=example();b['grid_cells'][0]['max_gust_mps']=val
                 with self.assertRaises(OverlayError):overlay(a,b)
+    def test_enormous_gust_integer_raises_overlay_error(self):
+        a,b=example()
+        b['grid_cells'][0]['max_gust_mps']=10**400
+        with self.assertRaises(OverlayError):
+            overlay(a,b)
     def test_wrong_peril_blocked(self):
         a,b=example();b['peril']='hail'
         with self.assertRaises(OverlayError):overlay(a,b)
