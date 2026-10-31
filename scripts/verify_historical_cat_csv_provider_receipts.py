@@ -21,7 +21,7 @@ from research_runners.historical_cat_benchmark_csv_preflight_v0 import (  # noqa
     SourcePreflightError, inspect_hanze_v302, inspect_residential_v2025,
 )
 
-RECEIPT = ROOT / "research" / "historical_cat_csv_provider_receipts_20261031.json"
+from research_runners.historical_cat_csv_provider_receipt_v0 import SOURCE_RECEIPT  # noqa: E402
 PROFILE = {
     "hanze_v3_0_2_beta": inspect_hanze_v302,
     "residential_v2025": inspect_residential_v2025,
@@ -29,8 +29,8 @@ PROFILE = {
 MAX_BYTES = 2_000_000
 
 
-def read_receipt(path: Path = RECEIPT) -> dict:
-    record = json.loads(path.read_text(encoding="utf-8"))
+def read_receipt() -> dict:
+    record = SOURCE_RECEIPT
     if record.get("schema_version") != "research-source-byte-receipt-v0":
         raise SourcePreflightError("unsupported provider-byte receipt schema")
     if set(record.get("sources", {})) != set(PROFILE):
@@ -91,10 +91,9 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--fetch", action="store_true", help="fetch only pinned public provider URLs")
     mode.add_argument("--hanze-csv", type=Path, help="offline source path")
     parser.add_argument("--residential-csv", type=Path)
-    parser.add_argument("--receipt", type=Path, default=RECEIPT)
     parser.add_argument("--output", type=Path, help="optional metadata-only output file")
     args = parser.parse_args(argv)
-    records = read_receipt(args.receipt)
+    records = read_receipt()
     if args.fetch:
         if args.residential_csv is not None:
             parser.error("--fetch cannot be combined with offline CSV arguments")

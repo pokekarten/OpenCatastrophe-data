@@ -7,7 +7,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/historical-cat-provider-csv-receipts.yml"
-      - "research/historical_cat_csv_provider_receipts_20261031.json"
+      - "research_runners/historical_cat_csv_provider_receipt_v0.py"
       - "scripts/verify_historical_cat_csv_provider_receipts.py"
       - "research_runners/historical_cat_benchmark_csv_preflight_v0.py"
       - "tests/test_verify_historical_cat_csv_provider_receipts.py"

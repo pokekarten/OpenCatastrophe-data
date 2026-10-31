@@ -1,4 +1,9 @@
-{
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+"""Pinned metadata-only original provider bytes; not CAT model admission."""
+import json
+
+SOURCE_RECEIPT = json.loads(r"""{
   "schema_version": "research-source-byte-receipt-v0",
   "observed_on": "2026-10-31",
   "origin": "Full exact-version publisher-hosted Zenodo CSV bytes retrieved through HTTP byte ranges",
@@ -74,4 +79,4 @@
       "admission_status": "not_admitted"
     }
   }
-}
+}""")
