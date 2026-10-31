@@ -29,7 +29,7 @@ MAX_UNCOMPRESSED_BYTES = 150_000_000
 MAX_MEMBER_BYTES = 100_000_000
 MAX_MEMBERS = 80
 SHA256 = re.compile(r"[0-9a-f]{64}\Z")
-EXPECTED_TYPES = frozenset({".shp", ".shx", ".dbf", ".prj", ".cpg", ".xml", ".qix", ".sbn", ".sbx"})
+EXPECTED_TYPES = frozenset({".shp", ".shx", ".dbf", ".prj", ".cpg", ".xml", ".qix", ".qmd", ".sbn", ".sbx"})
 
 
 class RegionArchiveError(ValueError):
