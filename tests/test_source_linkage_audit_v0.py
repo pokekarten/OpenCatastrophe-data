@@ -23,7 +23,7 @@ class SourceLinkageAuditTests(unittest.TestCase):
         cls.audit = build_audit(load_landscape_shards())
 
     def test_registry_is_completely_inventoried(self):
-        self.assertGreaterEqual(self.audit["source_count"], 141)
+        self.assertGreaterEqual(self.audit["source_count"], 143)
         self.assertEqual(len(self.audit["source_inventory"]), self.audit["source_count"])
         self.assertEqual(self.audit["sources_not_admitted"], self.audit["source_count"])
         self.assertEqual(self.audit["source_reviews_not_completed"], self.audit["source_count"])
@@ -50,6 +50,7 @@ class SourceLinkageAuditTests(unittest.TestCase):
         links = {x["recipe_id"]: x for x in self.audit["linkage_hypotheses"]}
         self.assertEqual(links["dwd-radklim-catrare"]["relationship"], "shared_lineage")
         self.assertEqual(links["noaa-spc-ncei"]["relationship"], "same_underlying_reporting_lineage")
+        self.assertEqual(links["dwd-catrare-2026-threshold-overlap"]["relationship"], "shared_lineage_distinct_detection_thresholds")
         self.assertEqual(links["openfema-nfip-policy-claims"]["relationship"], "aggregate_only_insurance")
         self.assertIn("property", links["nfip-building-context"]["prohibited_inferences"])
         self.assertIn("PAGER", links["usgs-event-products"]["prohibited_inferences"])

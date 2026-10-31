@@ -33,6 +33,14 @@ RECIPES = (
         "Do not count a CatRaRE event as independent confirmation of its parent RADKLIM precipitation or infer insured flood loss.",
     ),
     (
+        "dwd-catrare-2026-threshold-overlap",
+        ("dwd.radklim.rw.v2017.002", "dwd.catrare.w3-eta.v2026.01", "dwd.catrare.t5-eta.v2026.01"),
+        "shared_lineage_distinct_detection_thresholds",
+        "RADKLIM input version, CatRaRE v2026.01 variant-qualified KEY_FIELD and Event_ID, UTC interval, projection and event polygon",
+        "W3 and T5 select overlapping extreme-rainfall objects by different thresholds; compare matching spatial/time objects only after inspecting both original product bytes and event definitions.",
+        "Do not sum W3 plus T5 event counts, call them independent observations or infer downstream flood loss from rain maxima.",
+    ),
+    (
         "usgs-event-products",
         ("usgs.anss.comcat", "usgs.shakemap", "usgs.comcat.dyfi", "usgs.comcat.losspager"),
         "same_event_mixed_observed_modelled",
