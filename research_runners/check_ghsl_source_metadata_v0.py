@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
 """Check that newly researched GHSL source candidates are not admitted."""
 import json
 from pathlib import Path

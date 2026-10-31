@@ -1,9 +1,12 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
 """Synthetic fail-closed GHSL candidate tests with no provider raster bytes."""
 import json
 import tempfile
 import unittest
 from pathlib import Path
-from check_ghsl_source_metadata_v0 import test_current_catalogue
+from research_runners.check_ghsl_source_metadata_v0 import test_current_catalogue
 
 def sample(id, unit):
     return {'candidate_id':id,'resolution_or_granularity':'global '+unit+' raster',

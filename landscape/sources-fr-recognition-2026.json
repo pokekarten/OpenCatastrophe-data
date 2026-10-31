@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.1.0",
-  "purpose": "French disaster recognition source research only",
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission CAT source discovery; rights and scientific review pending; no source or insurer model admission.",
   "review_date": "2026-10-31",
   "entries": [
     {
@@ -22,7 +22,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Commune × peril × decree, not a georeferenced individual insured loss, distinct physical event, or flood-depth observation. Preserve decree/date window and historical commune code."
+      "note": "Primary Géorisques GASPAR administrative recognition decisions for communes, updated after Journal Officiel publication. One recognition/decree or municipality does not establish an independent geophysical CAT event; preserve commune historical code, decision status, hazard/recognition period and publication lag. Not flooded geometry, house count, claim or insured TIV."
     }
   ]
 }
