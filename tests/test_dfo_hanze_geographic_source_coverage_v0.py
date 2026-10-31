@@ -91,6 +91,27 @@ class DFOHANZEGeographicFieldCoverageTests(unittest.TestCase):
         with self.assertRaisesRegex(GeographicCoverageError, "candidate ID missing"):
             survey_geographic_source_coverage(overlap, dfo, hanze, sha(hanze))
 
+    def test_real_aggregate_receipt_is_consistent_and_never_reveals_rows(self):
+        from research_runners.dfo_hanze_germany_original_overlap_receipt_v0 import ORIGINAL_OVERLAP_RECEIPT
+        report = ORIGINAL_OVERLAP_RECEIPT["geographic_source_field_coverage"]
+        old = ORIGINAL_OVERLAP_RECEIPT["country_only_results"]
+        self.assertEqual(report["candidate_pair_count"], old["possible_same_country_and_time_pairs"])
+        self.assertEqual(report["candidate_pair_count"], 9)
+        self.assertEqual(report["dfo_glide_identifier_present_pairs"], 0)
+        self.assertEqual(report["hanze_nonempty_original_field_pair_counts"]["admin_unit_code"], 9)
+        self.assertEqual(report["hanze_nonempty_original_field_pair_counts"]["area_affected"], 1)
+        self.assertEqual(report["hanze_nonempty_original_field_pair_counts"]["event_source"], 7)
+        self.assertEqual(report["hanze_nonempty_original_field_pair_counts"]["sources_author_year"], 9)
+        self.assertEqual(report["hanze_nonempty_original_field_pair_counts"]["sources_impact_information"], 0)
+        self.assertFalse(any(report[k] for k in (
+            "region_polygon_overlap_proven",
+            "source_bibliography_independently_verified",
+            "same_flood_event_identity_confirmed", "insured_loss_calculated",
+            "provider_rows_emitted", "source_model_admitted",
+        )))
+        self.assertNotIn("candidate_pairs", report)
+        self.assertNotIn("hanze_event_id", report)
+
     def test_empty_pairs_mean_no_linkage_not_no_disaster(self):
         overlap, dfo, hanze = example()
         overlap["candidate_pairs"] = []
