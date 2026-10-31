@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-10-31`  
 **Purpose:** Non-admission discovery registry of official insurance legal-entity identifiers and national/regional market benchmark data needed to calibrate synthetic insurer and reinsurer CAT portfolios.
 
-**Entries:** 7
+**Entries:** 11
 
 ## EIOPA Register of Insurance Undertakings
 
@@ -122,3 +122,63 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** IAIS 2025 public report uses confidential Individual Insurer Monitoring and Sector-Wide Monitoring submissions. Only publicly released aggregates may be researched after copyright review; do not infer the 57 insurer-level observations from report totals or fabricate group-specific treaty/retro placements. Distinguish 2024 observation period from 2025 publication and do not call the 2026 report released before its official publication.
+
+## NAIC 2025 U.S. Property/Casualty market share by state and line
+
+**Candidate ID:** `naic.p-c-market-share.2025`  
+**Provider:** National Association of Insurance Commissioners (NAIC)  
+**Categories:** `insurance`, `insurer_group`, `premium`, `lob`, `market_share`, `united_states`  
+**Spatial scope:** United States by state and countrywide; top group coverage varies by published report  
+**Temporal scope:** annual market-share reporting year 2025, published in 2026  
+**Resolution / granularity:** public market share report PDF by group/company and statutory property/casualty annual statement line; premium volumes, market shares and selected ratios  
+**Potential roles:** `us_insurer_group_portfolio_size_benchmark`, `state_lob_premium_allocation`, `group_market_share_constraint`, `insurer_entity_crosswalk`  
+**Access hint:** `free_download_published_pdf_not_full_statutory_statement; reuse_terms_review_pending`  
+**Authoritative source:** <https://content.naic.org/publications>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** NAIC publication pages describe top 10 groups by state and top 125 groups countrywide by P/C line; the underlying annual statutory statements and NAIC datasets can carry additional paid licences. Verify exact 2025 report/version and every output field before use. Group code and company code are distinct; do not sum group and member-company results or assume premium market share directly equals insurer-specific CAT exposure share.
+
+## California DOI 2025 Property and Casualty market share insurer detail
+
+**Candidate ID:** `us.california.doi.pc-market-share.2025`  
+**Provider:** California Department of Insurance  
+**Categories:** `insurance`, `company`, `premium`, `incurred_loss`, `state`, `lob`, `market_share`  
+**Spatial scope:** California, USA, with NAIC company and group identifiers  
+**Temporal scope:** annual 2025 market share report, publicly listed in 2026  
+**Resolution / granularity:** insurer/company and group by property/casualty line; written/earned direct premiums, direct incurred losses, market share and loss ratios, Excel and PDF outputs  
+**Potential roles:** `us_state_specific_insurer_share`, `property_lob_ratio_benchmark`, `company_naic_identity_join`, `insured_loss_market_context`  
+**Access hint:** `public_regulator_excel_pdf_download_file_rights_and_format_review_pending`  
+**Authoritative source:** <https://www.insurance.ca.gov/01-consumers/120-company/04-mrktshare/2025/index.cfm>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** The source explicitly defines NAIC assigned group/company identifiers, Direct Written Premiums, Direct Earned Premiums, Direct Incurred Losses and loss ratios. Annual totals are direct statutory insurance accounting, NOT catastrophe-event claims or insured asset sums; do not combine group and company rows or confuse 2025 report-year losses with a spatial hazard footprint. Licensing, exact XLSX bytes and third-party material require approval before repository publication.
+
+## North Carolina DOI 2025 insurance company market-share and premium reports
+
+**Candidate ID:** `us.north-carolina.doi.market-share.2025`  
+**Provider:** North Carolina Department of Insurance  
+**Categories:** `insurance`, `company`, `premium`, `lob`, `state`, `market_share`, `flood`  
+**Spatial scope:** North Carolina, USA by reporting property/casualty business line  
+**Temporal scope:** annual 2025 market-share volumes  
+**Resolution / granularity:** separate 2025 Property/Casualty tabular report sections for homeowners, fire, allied lines, commercial multiple peril, private and federal flood, and other lines  
+**Potential roles:** `us_state_flood_homeowners_market_benchmark`, `insurer_lob_portfolio_mix`, `multi_state_regulator_comparison`  
+**Access hint:** `public_state_reports_download_terms_review_pending`  
+**Authoritative source:** <https://www.ncdoi.gov/insurance-industry/financial-analysis/insurance-company-market-share-and-premium-information>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Insurance-class reports distinguish private flood, federal flood, homeowners, fire, allied and commercial coverage; the published market report must be read with its annual statement basis. Do not treat premiums as insured exposure or misidentify flood coverage in generic homeowners policy. Freeze report year, company identifiers, state and coverage definitions, licence and file identity before data import.
+
+## SEC EDGAR Companyfacts XBRL and issuer filing history APIs
+
+**Candidate ID:** `us.sec.edgar.xbrl-companyfacts`  
+**Provider:** U.S. Securities and Exchange Commission (SEC)  
+**Categories:** `insurance`, `legal_entity`, `company_financials`, `xbrl`, `us_public_company`, `api`  
+**Spatial scope:** SEC-reporting U.S. and foreign public issuers; excludes many mutual/non-filing insurers and reinsurers  
+**Temporal scope:** historical 10-K, 10-Q, 20-F and other filings with continually updated submissions  
+**Resolution / granularity:** JSON company submissions and standardized GAAP/IFRS/XBRL companyfacts by CIK, taxonomy concept, units, form, fiscal period and accession  
+**Potential roles:** `public_insurer_financial_timeseries`, `company_segment_context`, `issuer_identity_crosswalk`, `reinsurer_public_disclosure_lookup`  
+**Access hint:** `public_no_key_rest_api_with_fair_access_automation_policy_and_bulk_exports`  
+**Authoritative source:** <https://www.sec.gov/search-filings/edgar-application-programming-interfaces>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Companyfacts API includes standardized non-custom taxonomy facts applying to an entire filer; insurer-specific segment facts and custom insurance tags may require direct filing/XBRL review and must not be fabricated. Use CIK and filing accession/year, distinguish consolidated group from legal entity, preserve monetary units, restatements and amendment dates. SEC public API asks for fair access and has an operational request ceiling; API availability is separate from rights review.
