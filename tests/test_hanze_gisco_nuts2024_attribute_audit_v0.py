@@ -110,6 +110,23 @@ class NUTS2024AttributeAuditTests(unittest.TestCase):
         with self.assertRaisesRegex(NUTS2024AuditError, "upstream"):
             audit_hanze_candidate_region_codes(hanze, sha(hanze), candidates, official_csv())
 
+    def test_frozen_real_gisco_receipt_does_not_claim_absent_floods(self):
+        from research_runners.hanze_gisco_nuts2024_source_receipt_v0 import GISCO_2024_HANZE_RECEIPT
+        from research_runners.hanze_gisco_nuts2024_original_receipt_v0 import (
+            PINNED_GISCO_SHA256, PINNED_GISCO_BYTES, PINNED_GISCO_ATTRIBUTES,
+        )
+        r = GISCO_2024_HANZE_RECEIPT
+        self.assertEqual(r["source_sha256"], PINNED_GISCO_SHA256)
+        self.assertEqual(r["source_original_byte_length"], PINNED_GISCO_BYTES)
+        self.assertEqual(r["source_attribute_rows"], PINNED_GISCO_ATTRIBUTES)
+        self.assertEqual(r["gisco_exact_single_region_eligible_pairs"], 0)
+        self.assertEqual(r["hanze_noncanonical_or_multi_region_raw_code_pairs"], 9)
+        self.assertFalse(r["unmatched_id_implies_no_geographic_exposure"])
+        self.assertFalse(r["rights_review_completed"])
+        self.assertFalse(r["commercial_use_approved"])
+        self.assertFalse(r["source_admitted"])
+        self.assertFalse(r["source_data_redistributed"])
+
     def test_zero_candidates_means_no_validated_join_not_no_floods(self):
         hanze, candidates = upstream()
         candidates["candidate_pairs"] = []
