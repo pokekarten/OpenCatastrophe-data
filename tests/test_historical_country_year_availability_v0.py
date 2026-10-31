@@ -64,6 +64,10 @@ class CountryLagAvailabilityTests(unittest.TestCase):
         r = audit_verified_rows([event(2025)], [indicator(**{"2023": "0"})])
         self.assertEqual(r["event_count_without_exact_country_prior_year_indicator"], 1)
 
+    def test_whitespace_only_cell_is_missing(self):
+        r = audit_verified_rows([event(2025)], [indicator(**{"2024": "   "})])
+        self.assertEqual(r["event_count_with_exact_country_prior_year_indicator"], 0)
+
     def test_duplicate_indicators_rejected(self):
         with self.assertRaises(AvailabilityError):
             audit_verified_rows([event()], [indicator(), indicator()])
