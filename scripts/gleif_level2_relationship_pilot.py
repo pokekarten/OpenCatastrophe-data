@@ -80,7 +80,9 @@ def _json(blob: bytes) -> dict:
 
 
 def _extract_node(node) -> str:
-    if not isinstance(node, dict) or node.get("type") not in (None, "lei") or not valid_lei(node.get("id")):
+    # GLEIF RR-CDF uses the token "LEI" for node types. The JSON:API
+    # representation can preserve that uppercase spelling.
+    if not isinstance(node, dict) or node.get("type") not in (None, "lei", "LEI") or not valid_lei(node.get("id")):
         raise GLEIFPilotError("invalid child/parent LEI endpoint")
     return node["id"]
 
