@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: CLIMK ERA5 Synthetic Site Hazard Sampler
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/climk-era5-synthetic-site-sample.yml"
+      - "scripts/climk_era5_synthetic_native_sample_v0.py"
+      - "tests/test_climk_era5_synthetic_native_sample_v0.py"
+      - "scripts/inspect_climk_winds_era5_v0.py"
+      - "scripts/effis_synthetic_point_overlay_v0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: climk-sample-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  real-storm-physical-hazard:
+    name: Sample real storm wind intensity at synthetic site coordinates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - name: Checkout exact workflow ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Install isolated pinned NetCDF4 acquisition dependency
+        run: |
+          python -m pip install --no-input --disable-pip-version-check -r requirements-glofas-acquisition.txt
+          python -m pip check
+      - name: Test synthetic nearest grid/units/ambiguity invariants
+        run: python -m unittest tests.test_climk_era5_synthetic_native_sample_v0 -v
+      - name: Prepare two synthetic European locations, no insured exposure
+        run: |
+          python -c 'import json,os,pathlib; obj={"schema_version":"oc-effis-synthetic-sites-v0","crs":"OGC:CRS84","synthetic_only":True,"sites":[{"site_id":"SYNTH_DE","longitude":10.0,"latitude":50.0},{"site_id":"SYNTH_FR","longitude":2.0,"latitude":48.0}]}; (pathlib.Path(os.environ["RUNNER_TEMP"])/"synthetic-sites.json").write_text(json.dumps(obj))'
+      - name: Fetch exact pinned CLIMK ERA5 bytes and sample storm 0
+        run: |
+          python scripts/climk_era5_synthetic_native_sample_v0.py --fetch --sites "$RUNNER_TEMP/synthetic-sites.json" --storm-index 0 --out "$RUNNER_TEMP/climk-synthetic-sample.json"
+          python -c 'import json,os,pathlib; r=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"climk-synthetic-sample.json").read_text()); assert r["site_count"] == 2 and len(r["site_samples"]) == 2 and r["scientifically_admitted"] is False and r["damage_or_insured_loss_computed"] is False; print(json.dumps(r,sort_keys=True))'
