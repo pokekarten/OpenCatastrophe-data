@@ -1,0 +1,34 @@
+{
+  "schema": "OPENCAT_PROVIDER_ORIGINAL_CSV_OUTPUT_ALIAS_ISOLATED_GUARD_RECEIPT_V0",
+  "date_utc": "2026-10-31",
+  "pr": 879,
+  "source_git_blob": "ead58bd38e0cfb50873bb2723f0d9045eefbad01",
+  "test_git_blob": "05a7ffebab01f63af6bf7bb1235d0e81e8d18d23",
+  "scope": "isolated Python 3.13 filesystem path-guard witness using identical guard conditions, NOT full GitHub CLI/test module",
+  "cases": [
+    "same HANZE path blocked",
+    "same residential path blocked",
+    "hard link to HANZE blocked",
+    "hard link to residential blocked",
+    "symbolic link to HANZE blocked",
+    "symbolic link to residential blocked",
+    "unrelated output path allowed"
+  ],
+  "results": {
+    "passed": 7,
+    "run": 7,
+    "errors": 0
+  },
+  "original_bytes_preserved": true,
+  "authored_cli_tests_in_pr": 2,
+  "complete_cli_tests_executed": false,
+  "full_provider_pair_preflight_executed": false,
+  "original_Zenodo_sources_downloaded": false,
+  "full_repository_suite_executed": false,
+  "prior_exact_availability_module_tests": {
+    "passed": 13,
+    "run": 13,
+    "source_git_blob": "0d7357d45d342d21e0d0aaf2e6b2f2a401053a8c",
+    "test_git_blob": "90bef6cf2198801c770ecd14566fdb256c560e97"
+  }
+}
