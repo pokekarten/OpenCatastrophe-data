@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: HANZE and Eurostat GISCO 2024 Region-ID Source Evidence
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/hanze-gisco-nuts2024-source-evidence.yml"
+      - "research_runners/hanze_gisco_nuts2024_attribute_audit_v0.py"
+      - "research_runners/hanze_gisco_nuts2024_original_receipt_v0.py"
+      - "tests/test_hanze_gisco_nuts2024_attribute_audit_v0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hanze-gisco-2024-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  exact-attributes:
+    name: Recheck original GISCO and HANZE code evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact PR branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Test schema and false-spatial-join safeguards on synthetic data
+        run: python -m unittest tests.test_hanze_gisco_nuts2024_attribute_audit_v0 -v
+      - name: Fetch official v2024 NUTS attributes and exact HANZE-DFO sources (memory only)
+        run: |
+          python research_runners/hanze_gisco_nuts2024_original_receipt_v0.py --out "$RUNNER_TEMP/nuts2024-coverage.json"
+          python -c 'import json,os,pathlib; d=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"nuts2024-coverage.json").read_text()); assert d["candidate_pair_count"] == 9 and sum(d["candidate_code_status_counts"].values()) == 9 and d["gisco_original_source"]["official_attribute_rows"] > 1000 and not d["model_source_admitted"] and not d["verified_geographic_point_or_polygon_overlay"]; print("Official GISCO 2024 original attributes metadata + HANZE candidate-code categories (NO polygons):", json.dumps({k:d[k] for k in ("gisco_original_source","candidate_code_status_counts")}, sort_keys=True))'
