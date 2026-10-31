@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: GLEIF CC0 insurer identity source verification
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/gleif-lei-identity-receipts.yml"
+      - "scripts/gleif_level1_insurer_identity_pilot.py"
+      - "scripts/export_cat_source_registry_sqlite.py"
+      - "tests/test_gleif_level1_insurer_identity_pilot.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gleif-identity-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-gleif-public-identities:
+    name: Verify 3 legal entity identities against official CC0 GLEIF API
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout exact PR commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Offline schema and isolation tests
+        run: python -m unittest tests.test_gleif_level1_insurer_identity_pilot tests.test_export_cat_source_registry_sqlite -v
+      - name: Initialize separate CAT-only SQLite source registry
+        run: python scripts/export_cat_source_registry_sqlite.py --out "$RUNNER_TEMP/opencat-research.sqlite"
+      - name: Check exact official LEI identity records and persist isolated pilot
+        run: python scripts/gleif_level1_insurer_identity_pilot.py --fetch --out "$RUNNER_TEMP/opencat-research.sqlite"
+      - name: Assert 3 legal entities and zero insured portfolio facts
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import sqlite3
+          p = Path(os.environ["RUNNER_TEMP"]) / "opencat-research.sqlite"
+          with sqlite3.connect(p) as db:
+              assert db.execute("select count(*) from cat_gleif_legal_entity").fetchone()[0] == 3
+              assert db.execute("select count(*) from cat_gleif_legal_entity where relationship_status!='not_fetched' or insured_exposure_status!='not_available'").fetchone()[0] == 0
+              print("PASS: 3 official LEIs matched; normalized CAT-only legal entity rows; no insurance exposure, treaty or parent links inferred.")
+          PY
