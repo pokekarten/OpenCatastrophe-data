@@ -113,6 +113,26 @@ class DFOHANZETemporalEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(TemporalDiagnosticError, "reversed"):
             summarize_candidate_evidence(overlap, dfo)
 
+    def test_real_byte_receipt_freezes_temporal_and_cause_counts_without_event_ids(self):
+        from research_runners.dfo_hanze_germany_original_overlap_receipt_v0 import (
+            ORIGINAL_OVERLAP_RECEIPT,
+        )
+        receipt = ORIGINAL_OVERLAP_RECEIPT
+        summary = receipt["temporal_and_cause_diagnostics"]
+        self.assertEqual(summary["candidate_pair_count"], 9)
+        self.assertEqual(sum(summary["inclusive_temporal_overlap_days"].values()), 9)
+        self.assertEqual(sum(summary["absolute_start_date_difference_days"].values()), 9)
+        self.assertEqual(summary["absolute_start_date_difference_days"]["0"], 3)
+        self.assertEqual(summary["pairs_with_both_cause_texts"], 9)
+        self.assertEqual(summary["pairs_with_exactly_same_casefolded_cause_text"], 0)
+        self.assertEqual(summary["candidate_pair_count"],
+                         receipt["country_only_results"]["possible_same_country_and_time_pairs"])
+        self.assertFalse(any(summary[key] for key in (
+            "cause_taxonomies_harmonized", "same_event_identity_confirmed",
+            "geography_confirmed", "insured_loss_observed", "raw_provider_rows_emitted",
+        )))
+        self.assertNotIn("candidate_pairs", summary)
+
     def test_empty_candidate_set_means_no_matches_not_no_disaster(self):
         overlap, dfo = example()
         overlap["candidate_pairs"] = []
