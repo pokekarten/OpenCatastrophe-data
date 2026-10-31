@@ -31,7 +31,7 @@ class CountryLagAvailabilityTests(unittest.TestCase):
     def test_economic_loss_whitespace_is_missing_but_reported_zero_is_present(self):
         exposures = [indicator(**{"2024": "10"})]
         result = audit_verified_rows(
-            [event(2025, loss="  "), event(2025, loss="\\t"),
+            [event(2025, loss="  "), event(2025, loss=chr(9)),
              event(2025, loss="0"), event(2025, loss=" 7 ")], exposures)
         self.assertEqual(result["event_count_with_exact_country_prior_year_indicator"], 4)
         self.assertEqual(result["matched_event_count_with_reported_economic_loss_field"], 2)
