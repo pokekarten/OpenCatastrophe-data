@@ -105,6 +105,26 @@ class HANZENativeRegionGlossaryTests(unittest.TestCase):
         with self.assertRaisesRegex(target.HANZERegionGlossaryError, "missing"):
             verify_with_synthetic_glossary(h, o)
 
+    def test_pinned_original_s2_glossary_receipt_no_false_loss_or_geometry(self):
+        from research_runners.hanze_native_regions2024_source_receipt_v0 import HANZE_S2_V2024_RECEIPT
+        from research_runners.hanze_native_regions2024_original_receipt_v0 import (
+            PINNED_S2_SHA256, PINNED_S2_REGION_COUNT,
+            PINNED_S2_COUNTRY_COUNT, PINNED_REGION_LIST_TOKENS,
+        )
+        r = HANZE_S2_V2024_RECEIPT
+        self.assertEqual(r["observed_sha256"], PINNED_S2_SHA256)
+        self.assertEqual(r["region_codes"], PINNED_S2_REGION_COUNT)
+        self.assertEqual(r["country_prefixes"], PINNED_S2_COUNTRY_COUNT)
+        self.assertEqual(r["total_region_tokens_in_9_compound_lists"], PINNED_REGION_LIST_TOKENS)
+        self.assertEqual(r["all_token_sequences_exact_in_native_glossary"], 9)
+        self.assertIsNone(r["unique_regions_or_flood_extent_count"])
+        for key in ("underlying_geodata_sublicense_review_completed",
+                    "source_events_confirmed_equivalent",
+                    "administrative_region_is_an_observed_flood_footprint",
+                    "source_rows_or_names_reproduced",
+                    "insured_loss_or_exposure_created", "model_source_admitted"):
+            self.assertFalse(r[key])
+
     def test_no_candidates_cannot_imply_zero_flood_exposure(self):
         h, o = fixture()
         o["candidate_pairs"] = []
