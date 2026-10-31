@@ -32,6 +32,13 @@ else:
     from flood_event_link_candidates_v0 import link_candidates
 
 
+PINNED_S2_SHA256 = "4d5f26a28b742debf86598f1cfd99887930de1d0e45ca72a6c3cd2ea90d57edc"
+PINNED_S2_REGION_COUNT = 1442
+PINNED_S2_COUNTRY_COUNT = 42
+PINNED_MULTI_REGION_PAIRS = 9
+PINNED_REGION_LIST_TOKENS = 150
+
+
 def fetch_versioned_hanze_regions() -> bytes:
     request = urllib.request.Request(FILE_URL, headers={"User-Agent": "OpenCatastropheHANZENativeRegions/1.0"})
     with urllib.request.urlopen(request, timeout=60) as response:
@@ -69,8 +76,15 @@ def main():
     args = parser.parse_args()
     result = reproduce_s2_receipt(
         fetch_publisher_bytes(), fetch_hanze_pinned(), fetch_versioned_hanze_regions(),
-        expected_s2_sha256=args.expected_s2_sha256,
+        expected_s2_sha256=PINNED_S2_SHA256,
     )
+    if args.expected_s2_sha256 is not None and args.expected_s2_sha256 != PINNED_S2_SHA256:
+        raise ValueError("HANZE S2 independently pinned checksum cannot be overridden")
+    if (result["original_glossary"]["distinct_region_codes"] != PINNED_S2_REGION_COUNT
+            or result["original_glossary"]["distinct_region_country_prefixes"] != PINNED_S2_COUNTRY_COUNT
+            or result["status_counts"]["exact_multi_region_glossary_matched"] != PINNED_MULTI_REGION_PAIRS
+            or result["region_tokens_from_accepted_lists"] != PINNED_REGION_LIST_TOKENS):
+        raise ValueError("HANZE S2 original regional glossary or candidate profile drift")
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False) + "\n", encoding="utf-8")
 
