@@ -91,6 +91,14 @@ class GLEIFLevel2PilotTests(unittest.TestCase):
         self.assertNotEqual(direct["relation_kind"],ultimate["relation_kind"])
         self.assertNotEqual(direct["parent_lei"],ultimate["parent_lei"])
 
+    def test_flat_official_exception_attributes(self):
+        child,suffix,reason=PILOT[-1]
+        x=json.loads(fixture(child,suffix,reason))
+        x["data"]["attributes"]=x["data"]["attributes"]["exception"]
+        parsed=parse_level2(json.dumps(x).encode(),child,suffix,reason)
+        self.assertIsNone(parsed["parent_lei"])
+        self.assertEqual(parsed["reporting_exception_reason"],reason)
+
     def test_exception_never_constructs_parent(self):
         child,suffix,target=PILOT[-1]
         row=parse_level2(fixture(child,suffix,target),child,suffix,target)
