@@ -59,7 +59,8 @@ class EFFISSyntheticPointOverlayTests(unittest.TestCase):
                      "real_exposure_used", "vulnerability_applied",
                      "gross_loss_calculated", "insured_loss_calculated", "model_admitted"):
             self.assertFalse(result[flag])
-        self.assertNotIn("coordinates", json.dumps(result))
+        self.assertNotIn('"longitude"', json.dumps(result))
+        self.assertNotIn('"latitude"', json.dumps(result))
 
     def test_source_identity_must_match(self):
         with self.assertRaises(ValueError):
