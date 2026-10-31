@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: DFO FloodRecords Original CSV Byte Receipt
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/dfo-floodrecords-original-byte-receipt.yml"
+      - "research_runners/dfo_original_provider_byte_receipt_v0.py"
+      - "research_runners/dfo_floodrecords_csv_preflight_v0.py"
+      - "tests/test_dfo_original_provider_byte_receipt_v0.py"
+      - "tests/test_dfo_floodrecords_csv_preflight_v0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dfo-original-csv-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-publisher-csv:
+    name: Verify DFO v0.9.0 official original CSV
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact PR commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up validation Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Fail-closed synthetic exact-byte regressions
+        run: python -m unittest tests.test_dfo_original_provider_byte_receipt_v0 tests.test_dfo_floodrecords_csv_preflight_v0 -v
+      - name: Read publisher CSV in memory and verify Zenodo MD5, bytes and actual header/profile
+        run: |
+          python research_runners/dfo_original_provider_byte_receipt_v0.py --fetch --out "$RUNNER_TEMP/dfo-source-metadata.json"
+          python -c 'import json,os,pathlib; p=pathlib.Path(os.environ["RUNNER_TEMP"])/"dfo-source-metadata.json"; d=json.loads(p.read_text()); assert d["publisher_md5_verified"] and d["reported_event_count"] > 0 and not d["source_admitted"] and not d["original_rows_emitted"]; print("DFO exact provider-source evidence (metadata only):", json.dumps({k:d[k] for k in ("bytes","observed_sha256","reported_event_count","observed_first_start_date","observed_last_end_date","events_beyond_publisher_declared_end_year")},sort_keys=True))'
