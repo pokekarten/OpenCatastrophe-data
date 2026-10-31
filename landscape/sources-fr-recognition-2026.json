@@ -1,1 +1,28 @@
-{"schema_version":"0.1.0","purpose":"French disaster recognition source research only","review_date":"2026-10-31","entries":[{"candidate_id":"fr.gaspar.catnat.commune.v2026","name":"GASPAR French commune catastrophe recognitions","provider":"Georisques","categories":["historical_events"],"spatial_scope":"France commune","temporal_scope":"1982 onward","resolution_or_granularity":"commune declaration","potential_roles":["event_validation"],"authoritative_url":"https://www.georisques.gouv.fr","access_class_hint":"review pending","candidate_status":"evidence_checked","rights_review_status":"not_reviewed","scientific_review_status":"not_reviewed","admission_status":"not_admitted","note":"Administrative declaration is not insured loss."}]}
+{
+  "schema_version": "0.1.0",
+  "purpose": "French disaster recognition source research only",
+  "review_date": "2026-10-31",
+  "entries": [
+    {
+      "candidate_id": "fr.gaspar.catnat.commune.v2026",
+      "name": "GASPAR French commune catastrophe recognitions",
+      "provider": "Georisques",
+      "categories": [
+        "historical_events"
+      ],
+      "spatial_scope": "France commune",
+      "temporal_scope": "1982 onward",
+      "resolution_or_granularity": "commune declaration",
+      "potential_roles": [
+        "event_validation"
+      ],
+      "authoritative_url": "https://www.georisques.gouv.fr/donnees/bases-de-donnees/procedures-administratives-relatives-aux-risques",
+      "access_class_hint": "review pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Commune × peril × decree, not a georeferenced individual insured loss, distinct physical event, or flood-depth observation. Preserve decree/date window and historical commune code."
+    }
+  ]
+}
