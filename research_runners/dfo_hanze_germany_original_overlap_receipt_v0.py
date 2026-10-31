@@ -72,5 +72,32 @@ ORIGINAL_OVERLAP_RECEIPT = json.loads(r'''{
     "geography_confirmed": false,
     "insured_loss_observed": false,
     "raw_provider_rows_emitted": false
+  },
+  "geographic_source_field_coverage": {
+    "evidence_stage": "SOURCE_FIELD_AVAILABILITY_NOT_GEOGRAPHIC_MATCHING",
+    "workflow_run": "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41245936246",
+    "candidate_pair_count": 9,
+    "distinct_dfo_records_in_pairs": 9,
+    "distinct_hanze_records_in_pairs": 9,
+    "dfo_glide_identifier_present_pairs": 0,
+    "hanze_nonempty_original_field_pair_counts": {
+      "admin_unit_nomenclature": 9,
+      "admin_unit_level": 9,
+      "admin_unit_year": 9,
+      "admin_unit_code": 9,
+      "event_source": 7,
+      "sources_author_year": 9,
+      "sources_impact_information": 0,
+      "hips_label": 9,
+      "hips_identifier": 9,
+      "hips_version": 9,
+      "area_affected": 1
+    },
+    "region_polygon_overlap_proven": false,
+    "source_bibliography_independently_verified": false,
+    "same_flood_event_identity_confirmed": false,
+    "insured_loss_calculated": false,
+    "provider_rows_emitted": false,
+    "source_model_admitted": false
   }
 }''')

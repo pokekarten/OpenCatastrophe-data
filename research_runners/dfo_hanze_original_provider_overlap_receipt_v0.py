@@ -22,6 +22,7 @@ if __package__:
     )
     from .flood_event_link_candidates_v0 import link_candidates
     from .dfo_hanze_temporal_evidence_v0 import summarize_candidate_evidence
+    from .dfo_hanze_geographic_source_coverage_v0 import survey_geographic_source_coverage
     from .dfo_floodrecords_csv_preflight_v0 import parse_dfo_csv
     from .historical_cat_csv_provider_receipt_v0 import SOURCE_RECEIPT
 else:
@@ -31,6 +32,7 @@ else:
     )
     from flood_event_link_candidates_v0 import link_candidates
     from dfo_hanze_temporal_evidence_v0 import summarize_candidate_evidence
+    from dfo_hanze_geographic_source_coverage_v0 import survey_geographic_source_coverage
     from dfo_floodrecords_csv_preflight_v0 import parse_dfo_csv
     from historical_cat_csv_provider_receipt_v0 import SOURCE_RECEIPT
 
@@ -103,6 +105,7 @@ def make_aggregate_receipt(dfo: bytes, hanze: bytes) -> dict:
         "dfo_events_mapped_but_no_hanze_time_overlap": overlap["mapped_dfo_events_without_overlapping_hanze_dates"],
         "candidate_country_time_pairs": overlap["candidate_pair_count"],
         "candidate_temporal_and_cause_diagnostics": summarize_candidate_evidence(overlap, parse_dfo_csv(dfo)),
+        "candidate_geographic_source_field_coverage": survey_geographic_source_coverage(overlap, parse_dfo_csv(dfo), hanze, src["observed_sha256"]),
         "distinct_dfo_events_with_candidates": len({p["dfo_event_id"] for p in pairs}),
         "distinct_hanze_events_with_candidates": len({p["hanze_event_id"] for p in pairs}),
         "candidate_pair_detail_emitted": False,
