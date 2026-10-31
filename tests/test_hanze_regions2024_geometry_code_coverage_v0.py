@@ -114,6 +114,38 @@ class HANZEGeometryCodeMembershipTests(unittest.TestCase):
         self.assertEqual(report["dbf_repeated_code_surplus_features"],1)
         self.assertFalse(report["model_input_admitted"])
 
+    def test_real_original_source_coverage_receipt_is_pinned_and_nonadmitted(self):
+        from research_runners.hanze_regions2024_geometry_source_receipt_v0 import (
+            HANZE_NATIVE_REGION_GEOMETRY_RECEIPT_V0 as rec,
+        )
+        from research_runners.hanze_regions2024_zip_original_receipt_v0 import (
+            PINNED_ZIP_SHA256,
+        )
+        self.assertEqual(rec["source_archive_observed_sha256"], PINNED_ZIP_SHA256)
+        self.assertEqual(rec["shapefile_declared_feature_count"], 1449)
+        self.assertEqual(rec["dbf_distinct_valid_code_count"], 1449)
+        self.assertEqual(rec["dbf_repeated_code_surplus"], 0)
+        self.assertEqual(rec["s2_distinct_code_count"], 1442)
+        self.assertEqual(rec["in_both_original_s2_and_dbf_code_counts"], 1382)
+        self.assertEqual(rec["in_dbf_not_s2_code_count"], 67)
+        self.assertEqual(rec["in_s2_not_dbf_code_count"], 60)
+        self.assertEqual(
+            rec["in_both_original_s2_and_dbf_code_counts"] +
+            rec["in_s2_not_dbf_code_count"], rec["s2_distinct_code_count"])
+        self.assertEqual(
+            rec["in_both_original_s2_and_dbf_code_counts"] +
+            rec["in_dbf_not_s2_code_count"], rec["dbf_distinct_valid_code_count"])
+        self.assertEqual(rec["candidate_original_hanze_region_lists_fully_present_in_dbf"], 9)
+        self.assertEqual(rec["original_hanze_region_token_occurrences_all_in_dbf"], 150)
+        for key in ("spatial_crs_and_polygon_topology_verified",
+                    "any_observed_flood_inundation_footprint_mapped",
+                    "dfo_hanze_event_identity_verified",
+                    "economic_loss_or_insurer_tiv_joined",
+                    "geometry_and_third_party_licensing_review_complete",
+                    "original_polygon_geometry_or_code_rows_redistributed",
+                    "model_source_admitted"):
+            self.assertFalse(rec[key])
+
     def test_corrupt_zip_byte_sha_cannot_be_assumed_geometry(self):
         geo,gloss,hanze,overlaps=source_context()
         with self.assertRaisesRegex(zipmod.RegionArchiveError,"original archive provider-byte"):
