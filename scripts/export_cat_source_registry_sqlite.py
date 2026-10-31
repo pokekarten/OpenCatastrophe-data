@@ -51,7 +51,10 @@ def _validated_rows(landscape_dir: Path):
 
 def materialize_source_catalog(output: Path, landscape_dir: Path = DEFAULT_LANDSCAPE_DIR) -> dict:
     """Rebuild a projection of the validated catalog; never merge third-party rows."""
-    output = Path(output).expanduser().resolve()
+    output = Path(output).expanduser()
+    if output.is_symlink():
+        raise CATSourceDBError("symbolic link output is not permitted")
+    output = output.resolve()
     landscape_dir = Path(landscape_dir).expanduser().resolve()
     validated = _validated_rows(landscape_dir)  # Validate *before* opening DB.
     if not validated:
@@ -60,8 +63,6 @@ def materialize_source_catalog(output: Path, landscape_dir: Path = DEFAULT_LANDS
         raise CATSourceDBError("CAT metadata output must be a SQLite filename")
     if output.is_dir():
         raise CATSourceDBError("database output is a directory")
-    if output.is_symlink():
-        raise CATSourceDBError("symbolic link output is not permitted")
     output.parent.mkdir(parents=True, exist_ok=True)
     existed = output.exists()
     if existed and not output.is_file():
@@ -75,11 +76,13 @@ def materialize_source_catalog(output: Path, landscape_dir: Path = DEFAULT_LANDS
             raise CATSourceDBError("refusing to modify an unknown/non-CAT SQLite database")
         if not existed and (appid != 0 or version != 0):
             raise CATSourceDBError("unexpected initial database identity")
-        with con:
-            if not existed:
-                con.execute(f"PRAGMA application_id={CAT_APP_ID}")
-                con.execute(f"PRAGMA user_version={CAT_SCHEMA_VERSION}")
-            con.executescript("""
+        if not existed:
+            con.execute(f"PRAGMA application_id={CAT_APP_ID}")
+            con.execute(f"PRAGMA user_version={CAT_SCHEMA_VERSION}")
+        # DDL is independent of the atomic replace operation. executescript
+        # commits implicitly, so all row changes must be in a *later*
+        # dedicated transaction to avoid partially refreshed catalogs.
+        con.executescript("""
 CREATE TABLE IF NOT EXISTS cat_source_candidate (
   candidate_id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -113,6 +116,7 @@ CREATE INDEX IF NOT EXISTS cat_source_provider_index ON cat_source_candidate(pro
 CREATE INDEX IF NOT EXISTS cat_source_category_index ON cat_source_category(category);
 CREATE INDEX IF NOT EXISTS cat_source_role_index ON cat_source_role(role);
 """)
+        with con:
             con.execute("DELETE FROM cat_source_candidate")
             for entry, filename, digest, reviewed_at in validated:
                 con.execute("""INSERT INTO cat_source_candidate VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
