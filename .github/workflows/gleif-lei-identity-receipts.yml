@@ -8,6 +8,8 @@ on:
     paths:
       - ".github/workflows/gleif-lei-identity-receipts.yml"
       - "scripts/gleif_level1_insurer_identity_pilot.py"
+      - "scripts/gleif_level2_relationship_pilot.py"
+      - "tests/test_gleif_level2_relationship_pilot.py"
       - "scripts/export_cat_source_registry_sqlite.py"
       - "tests/test_gleif_level1_insurer_identity_pilot.py"
   workflow_dispatch:
@@ -35,12 +37,14 @@ jobs:
         with:
           python-version: "3.14"
       - name: Offline schema and isolation tests
-        run: python -m unittest tests.test_gleif_level1_insurer_identity_pilot tests.test_export_cat_source_registry_sqlite -v
+        run: python -m unittest tests.test_gleif_level1_insurer_identity_pilot tests.test_gleif_level2_relationship_pilot tests.test_export_cat_source_registry_sqlite -v
       - name: Initialize separate CAT-only SQLite source registry
         run: python scripts/export_cat_source_registry_sqlite.py --out "$RUNNER_TEMP/opencat-research.sqlite"
       - name: Check six exact official LEI identity records and persist isolated pilot
         run: python scripts/gleif_level1_insurer_identity_pilot.py --fetch --out "$RUNNER_TEMP/opencat-research.sqlite"
-      - name: Assert 3 legal entities and zero insured portfolio facts
+      - name: Verify original GLEIF Level-2 relationships and reporting exceptions
+        run: python scripts/gleif_level2_relationship_pilot.py --fetch --out "$RUNNER_TEMP/opencat-research.sqlite"
+      - name: Assert six identities and seven verified Level-2 observations
         run: |
           python - <<'PY'
           import os
@@ -49,6 +53,8 @@ jobs:
           p = Path(os.environ["RUNNER_TEMP"]) / "opencat-research.sqlite"
           with sqlite3.connect(p) as db:
               assert db.execute("select count(*) from cat_gleif_legal_entity").fetchone()[0] == 6
+              assert db.execute("select count(*) from cat_gleif_level2_observation").fetchone()[0] == 7
+              assert db.execute("select count(*) from cat_gleif_level2_observation where parent_lei is not null").fetchone()[0] == 5
               assert db.execute("select count(*) from cat_gleif_legal_entity where relationship_status!='not_fetched' or insured_exposure_status!='not_available'").fetchone()[0] == 0
-              print("PASS: 6 official LEIs matched; normalized CAT-only legal entity rows; no insurance exposure, treaty or parent links inferred.")
+              print("PASS: 6 verified LEIs; 5 GLEIF accounting consolidation links; 2 reporting exceptions; no insured exposure or treaty inferred.")
           PY
