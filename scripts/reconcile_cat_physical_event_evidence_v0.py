@@ -22,7 +22,7 @@ from scripts.effis_synthetic_point_overlay_v0 import (  # noqa: E402
     audit_synthetic_overlay, load_synthetic_sites,
 )
 from scripts.climk_era5_synthetic_native_sample_v0 import (  # noqa: E402
-    sample_climk_era5,
+    WindPointError, _source_storm_label, sample_climk_era5,
 )
 from scripts.inspect_effis_burnt_area_v0 import retrieve_event  # noqa: E402
 from scripts.inspect_climk_winds_era5_v0 import (  # noqa: E402
@@ -52,9 +52,13 @@ def _canonical(value) -> bytes:
 
 
 def _finite_number(value, low: float, high: float, why: str) -> float:
-    _need(type(value) in (int, float) and math.isfinite(value) and low <= value <= high,
-          why)
-    return float(value)
+    _need(type(value) in (int, float), why)
+    try:
+        number = float(value)
+    except (OverflowError, ValueError, TypeError) as exc:
+        raise PhysicalEventEvidenceError(why) from exc
+    _need(math.isfinite(number) and low <= number <= high, why)
+    return number
 
 
 def _ids(rows, field):
@@ -109,10 +113,15 @@ def reconcile_original_physical_sources(
     # but not a UTC instant or independently matched global storm identity.
     for key in ("source_storm_name", "source_storm_date_label"):
         label = wind.get(key)
-        _need(type(label) is str and 0 < len(label) <= 120
-              and label == label.strip()
-              and all(32 <= ord(ch) < 127 for ch in label),
-              f"CLIMK source event label missing/invalid: {key}")
+        _need(type(label) is str, f"CLIMK source event label missing/invalid: {key}")
+        try:
+            # Share the source sampler's exact printable-UTF-8 policy. A
+            # sampler-valid publisher label must remain valid in this handoff.
+            _source_storm_label(label, key)
+        except WindPointError as exc:
+            raise PhysicalEventEvidenceError(
+                f"CLIMK source event label missing/invalid: {key}"
+            ) from exc
     _need(wind.get("source_storm_date_parsed_as_utc") is False,
           "CLIMK date label must not be reclassified as UTC")
 
