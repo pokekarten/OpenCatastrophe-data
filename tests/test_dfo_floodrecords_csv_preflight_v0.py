@@ -28,7 +28,7 @@ def example_row(**overrides):
         "End Date": "1/4/24", "Country": "Syntheticland, Testisland",
         "Area (km²)": "1,234", "Source": "Synthetic",
         "Main Cause": "Heavy rain", "Fatalities": "0", "Displaced": "",
-        "Severity": "1.5", "Flood impact index ": "5.2",
+        "Severity": "1.5", "Flood impact index": "5.2",
     }
     row.update(overrides)
     return row
