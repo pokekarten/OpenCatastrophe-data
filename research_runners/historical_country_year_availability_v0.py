@@ -21,7 +21,6 @@ class AvailabilityError(ValueError):
 
 
 COUNTRY_CODE = re.compile(r"[A-Z][A-Z0-9]{1,7}\Z", re.ASCII)
-INDICATOR_CODE = re.compile(r"[A-Za-z0-9_.-]+\Z", re.ASCII)
 YEAR_START, YEAR_END = 2000, 2024
 
 
@@ -41,11 +40,13 @@ def audit_verified_rows(
     exposure_count = 0
     for row in exposure_rows:
         exposure_count += 1
-        country = row.get("CountryCode")
-        indicator = row.get("IndicatorCode")
-        if not isinstance(country, str) or not COUNTRY_CODE.fullmatch(country):
+        country_raw = row.get("CountryCode")
+        indicator_raw = row.get("IndicatorCode")
+        country = country_raw.strip() if isinstance(country_raw, str) else ""
+        indicator = indicator_raw.strip() if isinstance(indicator_raw, str) else ""
+        if not COUNTRY_CODE.fullmatch(country):
             raise AvailabilityError("invalid residential source geography")
-        if not isinstance(indicator, str) or not INDICATOR_CODE.fullmatch(indicator):
+        if not indicator:
             raise AvailabilityError("invalid residential indicator identity")
         identity = (country, indicator)
         if identity in observed_indicator_keys:
@@ -58,7 +59,7 @@ def audit_verified_rows(
             raw = row.get(str(year))
             if not isinstance(raw, str):
                 raise AvailabilityError("missing/malformed residential annual cell")
-            if raw != "":
+            if raw.strip() != "":
                 # Values are independently validated in the pinned provider preflight.
                 # The string "0" is present and must not be treated as missing.
                 available[(country, year)].add(indicator)
