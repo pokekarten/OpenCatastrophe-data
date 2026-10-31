@@ -48,5 +48,29 @@ ORIGINAL_OVERLAP_RECEIPT = json.loads(r'''{
     "model_data_admitted": false
   },
   "raw_provider_rows_in_git": false,
-  "interpretation": "Exploratory 9 candidate pairs only. Shared country and overlapping dates do not establish duplicate records or identical flood events. 5490 unmapped DFO rows are deliberate absence of a reviewed country crosswalk, not evidence of absent flood risk."
+  "interpretation": "Exploratory 9 candidate pairs only. Shared country and overlapping dates do not establish duplicate records or identical flood events. 5490 unmapped DFO rows are deliberate absence of a reviewed country crosswalk, not evidence of absent flood risk.",
+  "temporal_and_cause_diagnostics": {
+    "evidence_stage": "AGGREGATE_EVENT_INTERVAL_AND_CAUSE_LABEL_COMPLETENESS_ONLY",
+    "reproducer_workflow": "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41243868121",
+    "candidate_pair_count": 9,
+    "inclusive_temporal_overlap_days": {
+      "1": 0,
+      "2-3": 3,
+      "4-7": 4,
+      "8+": 2
+    },
+    "absolute_start_date_difference_days": {
+      "0": 3,
+      "1-3": 2,
+      "4-7": 2,
+      "8+": 2
+    },
+    "pairs_with_both_cause_texts": 9,
+    "pairs_with_exactly_same_casefolded_cause_text": 0,
+    "cause_taxonomies_harmonized": false,
+    "same_event_identity_confirmed": false,
+    "geography_confirmed": false,
+    "insured_loss_observed": false,
+    "raw_provider_rows_emitted": false
+  }
 }''')
