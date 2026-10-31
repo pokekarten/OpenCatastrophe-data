@@ -57,9 +57,17 @@ def _validate_region(r: dict) -> None:
 
 
 def _number(v: object, field: str) -> float:
-    if type(v) not in {int, float} or not math.isfinite(v) or v < 0:
+    if type(v) not in {int, float} or v < 0:
         raise InputError(f'{field} must be a finite nonnegative number')
-    return float(v)
+    # math.isfinite(very_large_int) itself raises OverflowError on Python;
+    # convert once and fail closed with the public contract error instead.
+    try:
+        number = float(v)
+    except (OverflowError, ValueError) as exc:
+        raise InputError(f'{field} must be a finite nonnegative number') from exc
+    if not math.isfinite(number):
+        raise InputError(f'{field} must be a finite nonnegative number')
+    return number
 
 
 def join(payload: dict) -> dict:
