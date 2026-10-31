@@ -10,6 +10,8 @@ on:
       - "research_runners/hanze_regions2024_geometry_zip_audit_v0.py"
       - "research_runners/hanze_regions2024_zip_original_receipt_v0.py"
       - "tests/test_hanze_regions2024_geometry_zip_audit_v0.py"
+      - "research_runners/hanze_regions2024_geometry_code_coverage_v0.py"
+      - "tests/test_hanze_regions2024_geometry_code_coverage_v0.py"
   workflow_dispatch:
 
 permissions:
@@ -35,8 +37,11 @@ jobs:
         with:
           python-version: "3.14"
       - name: Test fail-closed archive byte/header contract on synthetic fixtures
-        run: python -m unittest tests.test_hanze_regions2024_geometry_zip_audit_v0 -v
+        run: python -m unittest tests.test_hanze_regions2024_geometry_zip_audit_v0 tests.test_hanze_regions2024_geometry_code_coverage_v0 -v
       - name: Download and inspect original provider archive (nothing persisted to Git)
         run: |
           python research_runners/hanze_regions2024_zip_original_receipt_v0.py --out "$RUNNER_TEMP/hanze-regions2024-zip-metadata.json"
-          python -c 'import json,os,pathlib; r=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-regions2024-zip-metadata.json").read_text()); assert r["publisher_md5_matched"] and r["original_bytes"]==2430309 and r["shapefile_component_groups"] and not r["model_input_admitted"] and not r["geometry_topology_or_projection_validated"]; print("HANZE native regions archive header/field metadata ONLY:", json.dumps({k:r[k] for k in ("observed_sha256","archive_member_count","total_decompressed_member_bytes","member_extensions_counts","shapefile_component_groups")},sort_keys=True))'
+          python -c 'import json,os,pathlib; r=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-regions2024-zip-metadata.json").read_text()); assert r["publisher_md5_matched"] and r["original_sha256_independently_pinned"] and r["original_bytes"]==2430309 and r["shapefile_component_groups"] and not r["model_input_admitted"] and not r["geometry_topology_or_projection_validated"]; print("HANZE native regions archive header/field metadata ONLY:", json.dumps({k:r[k] for k in ("observed_sha256","archive_member_count","total_decompressed_member_bytes","member_extensions_counts","shapefile_component_groups")},sort_keys=True))'
+      - name: Original HANZE geometry DBF Code against native S2 region IDs and 9 candidate lists
+        run: |
+          python -c 'import json,os,pathlib; r=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-regions2024-zip-metadata.json").read_text()); g=r["native_glossary_geometry_id_comparison"]; c=r["candidate_region_geometry_id_coverage"]; assert c["candidate_pair_count"]==9 and g["glossary_region_count"]==1442 and c["region_token_occurrences"]==150 and not c["source_polygon_geometry_intersections_computed"] and not c["model_input_admitted"]; print("HANZE region geometry DBF exact source Code coverage, no flood polygons:", json.dumps({"glossary_matches":g["glossary_codes_also_in_geometry"],"geometry_only":g["geometry_codes_not_in_glossary"],"glossary_only":g["glossary_codes_not_in_geometry"],"distinct_dbf_codes":g["original_geometry"]["dbf_distinct_canonical_code_count"],"repeated_dbf_features":g["original_geometry"]["dbf_repeated_code_surplus_features"],"candidate_coverage":c},sort_keys=True))'
