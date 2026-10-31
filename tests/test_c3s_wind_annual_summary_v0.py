@@ -90,6 +90,23 @@ class AnnualCsvTests(unittest.TestCase):
             r=subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
             self.assertNotEqual(r.returncode,0)
             self.assertFalse(out.exists())
+    def test_cli_never_overwrites_source_hardlink_or_symlink_alias(self):
+        with tempfile.TemporaryDirectory() as d:
+            input_path=Path(d)/'source.csv';input_path.write_bytes(csv())
+            hardlink=Path(d)/'hardlink.csv';hardlink.hardlink_to(input_path)
+            symlink=Path(d)/'symlink.csv';symlink.symlink_to(input_path)
+            original=input_path.read_bytes()
+            for out in (hardlink,symlink):
+                with self.subTest(alias=out.name):
+                    cmd=[sys.executable,'-m','research_runners.c3s_wind_annual_summary_v0',
+                         str(input_path),'--out',str(out),'--expected-source-sha256',
+                         hashlib.sha256(original).hexdigest()]
+                    r=subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+                    self.assertNotEqual(r.returncode,0,r.stderr)
+                    self.assertIn('refusing to overwrite',r.stderr)
+                    self.assertEqual(input_path.read_bytes(),original)
+                    self.assertEqual(out.read_bytes(),original)
+
     def test_cli_never_overwrites_original_csv(self):
         with tempfile.TemporaryDirectory() as d:
             f=Path(d)/'input.csv';f.write_bytes(csv())

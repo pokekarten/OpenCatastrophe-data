@@ -139,6 +139,11 @@ def main() -> int:
     parser.add_argument("--expected-source-sha256", required=True)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
+    # Refuse all source aliases before reading or producing an output receipt.
+    # Path.resolve catches symlinks, Path.samefile catches hardlink aliases.
+    if (args.out.is_symlink() or args.csv_file.resolve() == args.out.resolve()
+            or (args.out.exists() and args.csv_file.samefile(args.out))):
+        raise AnnualSummaryError("refusing to overwrite original C3S CSV or linked alias")
     blob = args.csv_file.read_bytes()
     if not SHA256.fullmatch(args.expected_source_sha256) or hashlib.sha256(blob).hexdigest() != args.expected_source_sha256:
         raise AnnualSummaryError("CSV raw bytes differ from approved SHA256")

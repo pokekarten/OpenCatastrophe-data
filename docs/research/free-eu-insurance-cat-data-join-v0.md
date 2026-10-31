@@ -242,3 +242,7 @@ The original input file is never overwritten. The command refuses mismatching so
 **Scoped tests:** 20/20 newly added standard-library tests passed, covering schema, empty/NA values, non-additivity and nested-threshold monotonicity, year/region fields, UTF8-BOM, CLI positive/negative hash checks. Earlier work reported 63/63 other scoped tests separately; **full repository check_all.py was not run on the new HEAD**, nor was the actual C3S annual CSV processed. Do not add 63 + 19 into a claimed single executed test-suite result.
 
 Extra numeric precision hardening: the parser now also rejects finite Decimal numbers that would overflow to infinity or underflow silently to zero in the JSON float representation; one additional local regression test covers both cases. The 20-test suite was re-run and passed, then the GitHub source/test content was re-fetched and independently matched with the locally executed Git blobs.
+
+## Output collision safety and original data retention
+
+The C3S annual indicator CLI refuses output destinations that are identical to the raw original CSV, including symbolic and hard-link aliases. This check is applied **before** parsing the original bytes, and leaves the downloaded source file untouched. The exact raw SHA-256 and the output's separated research-only role are maintained. No provider C3S CSV download was executed by this isolated guard test.
