@@ -243,6 +243,31 @@ class PhysicalEventEvidenceTests(unittest.TestCase):
                     mod.PhysicalEventEvidenceError):
                 reconcile(wind=wind)
 
+    def test_unicode_original_storm_label_survives_reconciliation(self):
+        wind = wind_report()
+        wind["source_storm_name"] = "Tempête Éva"
+        wind["source_storm_date_label"] = "26 Déc 1999"
+        result = reconcile(wind=wind)
+        self.assertEqual(result["events"][1]["provider_storm_name"], "Tempête Éva")
+        self.assertEqual(result["events"][1]["event_time"]["provider_date_label"],
+                         "26 Déc 1999")
+        self.assertIsNone(result["events"][1]["event_time"]["utc"])
+        self.assertFalse(result["events_are_the_same_physical_occurrence"])
+
+    def test_source_sampler_and_reconciler_reject_same_nonprintables(self):
+        for bad in ("\u0085", "\u200b", "\u2028", "\x00"):
+            wind = wind_report()
+            wind["source_storm_name"] = "STORM" + bad
+            with self.subTest(char=repr(bad)), self.assertRaises(
+                    mod.PhysicalEventEvidenceError):
+                reconcile(wind=wind)
+
+    def test_oversized_wind_numeric_fails_as_domain_error(self):
+        wind = wind_report()
+        wind["site_samples"][0]["absolute_max_gust_m_s"] = 10 ** 400
+        with self.assertRaises(mod.PhysicalEventEvidenceError):
+            reconcile(wind=wind)
+
     def test_wind_no_event_time_is_not_imputed_from_fire(self):
         report = reconcile()
         wind_time = report["events"][1]["event_time"]
