@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   verify-gleif-public-identities:
-    name: Verify 3 legal entity identities against official CC0 GLEIF API
+    name: Verify 6 legal entity identities against official CC0 GLEIF API
     runs-on: ubuntu-24.04
     timeout-minutes: 6
     steps:
@@ -38,7 +38,7 @@ jobs:
         run: python -m unittest tests.test_gleif_level1_insurer_identity_pilot tests.test_export_cat_source_registry_sqlite -v
       - name: Initialize separate CAT-only SQLite source registry
         run: python scripts/export_cat_source_registry_sqlite.py --out "$RUNNER_TEMP/opencat-research.sqlite"
-      - name: Check exact official LEI identity records and persist isolated pilot
+      - name: Check six exact official LEI identity records and persist isolated pilot
         run: python scripts/gleif_level1_insurer_identity_pilot.py --fetch --out "$RUNNER_TEMP/opencat-research.sqlite"
       - name: Assert 3 legal entities and zero insured portfolio facts
         run: |
@@ -48,7 +48,7 @@ jobs:
           import sqlite3
           p = Path(os.environ["RUNNER_TEMP"]) / "opencat-research.sqlite"
           with sqlite3.connect(p) as db:
-              assert db.execute("select count(*) from cat_gleif_legal_entity").fetchone()[0] == 3
+              assert db.execute("select count(*) from cat_gleif_legal_entity").fetchone()[0] == 6
               assert db.execute("select count(*) from cat_gleif_legal_entity where relationship_status!='not_fetched' or insured_exposure_status!='not_available'").fetchone()[0] == 0
-              print("PASS: 3 official LEIs matched; normalized CAT-only legal entity rows; no insurance exposure, treaty or parent links inferred.")
+              print("PASS: 6 official LEIs matched; normalized CAT-only legal entity rows; no insurance exposure, treaty or parent links inferred.")
           PY
