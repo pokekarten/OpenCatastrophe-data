@@ -15,9 +15,10 @@ from pathlib import Path
 import re
 import urllib.request
 
-from research_runners.dfo_floodrecords_csv_preflight_v0 import (
-    DFOPreflightError, parse_dfo_csv,
-)
+if __package__:
+    from .dfo_floodrecords_csv_preflight_v0 import DFOPreflightError, parse_dfo_csv
+else:
+    from dfo_floodrecords_csv_preflight_v0 import DFOPreflightError, parse_dfo_csv
 
 VERSION_URL = "https://zenodo.org/records/19288171"
 BYTES_URL = "https://zenodo.org/api/records/19288171/files/Global_Flood_Records.csv/content"
