@@ -28,3 +28,5 @@ The source exact bytes are independently SHA-256 pinned, original scientific Net
 ## NextGen integration gates
 
 The NextGen C3S stager assumes a different wind measure (72-hour maximum of 3-second gusts), plus explicit vulnerability and site-to-cell mapping. It is scientifically incorrect to substitute this CLIMK footprint for that C3S source. Future work must establish storm identity/date matching, sampling/temporal semantics, source rights and attribution, exposure/vulnerability mappings, and independent validation before a NextGen loss stage.
+
+The source sampler now also exports the exact provider `Storm_Names` and `Storm_Dates` labels at the same zero-based source-specific storm index. These are **annotations**, not a cross-model event match; the date label is intentionally never parsed as an exact UTC timestamp without its source time convention.

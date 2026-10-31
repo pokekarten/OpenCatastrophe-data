@@ -105,6 +105,17 @@ def reconcile_original_physical_sources(
           and wind["source_sha_pinned"] is True
           and wind["event_identity_cross_model_matched"] is False,
           "CLIMK event identifier, source version, units or digest drift")
+    # The source sampler knows the original provider's name/date label,
+    # but not a UTC instant or independently matched global storm identity.
+    for key in ("source_storm_name", "source_storm_date_label"):
+        label = wind.get(key)
+        _need(type(label) is str and 0 < len(label) <= 120
+              and label == label.strip()
+              and all(32 <= ord(ch) < 127 for ch in label),
+              f"CLIMK source event label missing/invalid: {key}")
+    _need(wind.get("source_storm_date_parsed_as_utc") is False,
+          "CLIMK date label must not be reclassified as UTC")
+
     for gate in ("real_exposure_used", "vulnerability_applied", "gross_loss_calculated",
                  "insured_loss_calculated", "model_admitted"):
         _need(fire.get(gate) is False, f"EFFIS financial admission gate {gate} is not false")
@@ -167,9 +178,14 @@ def reconcile_original_physical_sources(
             "source_content_sha256": wind["source_sha256"],
             "source_mutable": False,
             "peril": "WINDSTORM",
-            # The existing v0 source sampler exports storm index but no
-            # provider date. A global date/annual frequency must NOT be guessed.
-            "event_time": {"state": "UNEXPORTED_IN_V0_SOURCE_SAMPLER", "utc": None},
+            # The actual provider label is preserved, but it does not
+            # authorize an exact UTC instant or annual event frequency.
+            "event_time": {
+                "state": "SOURCE_DATE_LABEL_WITHOUT_VERIFIED_UTC_INSTANT",
+                "utc": None,
+                "provider_date_label": wind["source_storm_date_label"],
+            },
+            "provider_storm_name": wind["source_storm_name"],
             "spatial_type": "NATIVE_ERA5_GRID_NEAREST_CELL",
             "observation_type": "PHYSICAL_GUST_M_S",
             "observations": wind_rows,
