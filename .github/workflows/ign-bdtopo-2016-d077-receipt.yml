@@ -1,0 +1,144 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: IGN 2016 D077 full archive research receipt
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/ign-bdtopo-2016-d077-receipt.yml"
+      - "research_runners/fr_bdtopo_2016_d077_archive_receipt_v0.py"
+      - "research_runners/fr_bdtopo_2016_rnb_polygon_bridge_v0.py"
+      - "tests/test_fr_bdtopo_2016_rnb_polygon_bridge_v0.py"
+      - "research_runners/fr_bdtopo_2016_rnb_id_provenance_v0.py"
+      - "tests/test_fr_bdtopo_2016_rnb_id_provenance_v0.py"
+      - "landscape/fr_bdtopo_d077_2016_archive_candidate_v0.toml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ign-d077-2016-receipt-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  historical-archive:
+    name: Full 2016 D077 mirror-byte preflight (not model admission)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact proposed source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Verify synthetic tests before acquiring outside Git
+        run: python -m unittest tests.test_fr_bdtopo_2016_d077_archive_receipt_v0 -v
+      - name: Download bounded public archived source into temporary runner space
+        env:
+          ARCHIVE_NAME: BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z
+          SOURCE_URL: https://files.opendatarchives.fr/professionnels.ign.fr/bdtopo/BDTOPO_2-1_2016-03-24/BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z
+        run: |
+          set -euo pipefail
+          umask 077
+          curl --fail --location --silent --show-error --retry 1 \
+            --connect-timeout 20 --max-time 170 --max-filesize 120000000 \
+            --output "$RUNNER_TEMP/$ARCHIVE_NAME" "$SOURCE_URL"
+          python research_runners/fr_bdtopo_2016_d077_archive_receipt_v0.py \
+            --archive "$RUNNER_TEMP/$ARCHIVE_NAME" \
+            --descriptor landscape/fr_bdtopo_d077_2016_archive_candidate_v0.toml
+      - name: Test 7z stream and enumerate historical building layer files
+        env:
+          ARCHIVE_NAME: BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z
+        run: |
+          set -euo pipefail
+          command -v 7z
+          7z t -bd -bso0 "$RUNNER_TEMP/$ARCHIVE_NAME"
+          7z l -slt "$RUNNER_TEMP/$ARCHIVE_NAME" > "$RUNNER_TEMP/ign_2016_contents.txt"
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+          listing = Path(os.environ["RUNNER_TEMP"], "ign_2016_contents.txt").read_text(errors="replace")
+          names = re.findall(r"(?m)^Path = (.+)$", listing)
+          shape = [n for n in names if re.search(r"(?i)(batiment|b[aâ]ti).*[.](shp|shx|dbf|prj)$", n)]
+          print("verified_7z_archive_test=true")
+          print("archive_member_count=", len(names))
+          print("candidate_building_components=", len(shape))
+          for item in shape[:22]:
+              print("building_component=", item)
+          if not any(n.lower().endswith(".shp") for n in shape):
+              raise SystemExit("BLOCKED: no historic building shapefile found in full archive")
+          PY
+      - name: Extract only three historic building geometry families outside Git
+        env:
+          ARCHIVE_NAME: BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ign-2016-bati"
+          python - <<'PY' > "$RUNNER_TEMP/ign-2016-member-arguments.txt"
+          from pathlib import Path
+          import os
+          import re
+          source = Path(os.environ["RUNNER_TEMP"], "ign_2016_contents.txt").read_text(errors="replace")
+          found = []
+          for line in source.splitlines():
+              if not line.startswith("Path = "):
+                  continue
+              member = line.removeprefix("Path = ")
+              if re.search(
+                  r"/E_BATI/(BATI_INDIFFERENCIE|BATI_INDUSTRIEL|BATI_REMARQUABLE)[.](SHP|SHX|DBF|PRJ)$",
+                  member,
+              ):
+                  found.append(member)
+          if len(found) != 12 or len(set(found)) != 12:
+              raise SystemExit(f"BLOCKED: expected 12 exact buildings SHP components, saw {len(found)}")
+          for member in sorted(found):
+              print(member)
+          PY
+          mapfile -t historical_members < "$RUNNER_TEMP/ign-2016-member-arguments.txt"
+          7z e -bd -bso0 -y "-o$RUNNER_TEMP/ign-2016-bati" \
+            "$RUNNER_TEMP/$ARCHIVE_NAME" "${historical_members[@]}"
+          echo "extracted_component_names:"
+          find "$RUNNER_TEMP/ign-2016-bati" -maxdepth 1 -type f -printf "%f\\n" | sort
+          # The official-era archive stores upper-case SHP/SHX/DBF/PRJ names.
+          # Normalize extensions ONLY in this ephemeral runner to satisfy
+          # the expected standard local .shp/.shx/.dbf/.prj file paths.
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          folder = Path(os.environ["RUNNER_TEMP"], "ign-2016-bati")
+          for family in ("BATI_INDIFFERENCIE", "BATI_INDUSTRIEL", "BATI_REMARQUABLE"):
+              for extension in ("SHP", "SHX", "DBF", "PRJ"):
+                  source = folder / f"{family}.{extension}"
+                  destination = folder / f"{family}.{extension.lower()}"
+                  if not source.is_file() or source.is_symlink() or destination.exists():
+                      raise SystemExit(f"BLOCKED: unexpected historical layer component {source.name}")
+                  source.rename(destination)
+          print("normalized_archived_uppercase_extension_components=12")
+          PY
+          python -m pip install --no-input --disable-pip-version-check \
+            -r requirements-eu-flood-spatial.txt "pyshp==2.3.1"
+          python -m unittest tests.test_fr_bdtopo_2016_d077_bounded_buildings_v0 -v
+          python research_runners/fr_bdtopo_2016_d077_bounded_buildings_v0.py \
+            --extracted-building-shapefiles "$RUNNER_TEMP/ign-2016-bati"
+          # Full original-era SHP and live exact-ID RNB geometry comparison.
+          # Print only 3x2 polygon metrics and source hashes, no source geometry.
+          python -m unittest tests.test_fr_bdtopo_2016_rnb_polygon_bridge_v0 -v
+          python -m research_runners.fr_bdtopo_2016_rnb_polygon_bridge_v0 \
+            --extracted-building-shapefiles "$RUNNER_TEMP/ign-2016-bati"
+          # Old v2.1 original DBF identities and computer dates vs 2023
+          # current RNB ext_ids; hash-only, no cross-version ID admission.
+          python -m unittest tests.test_fr_bdtopo_2016_rnb_id_provenance_v0 -v
+          python -m research_runners.fr_bdtopo_2016_rnb_id_provenance_v0 \
+            --extracted-building-shapefiles "$RUNNER_TEMP/ign-2016-bati"
+      - name: Delete archive after receipt (no third-party artifact upload)
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z"
+          rm -rf "$RUNNER_TEMP/ign-2016-bati" "$RUNNER_TEMP/ign_2016_contents.txt" "$RUNNER_TEMP/ign-2016-member-arguments.txt"
