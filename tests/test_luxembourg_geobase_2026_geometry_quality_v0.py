@@ -69,6 +69,8 @@ class LuxembourgGeoBaseFullGeometryTests(unittest.TestCase):
             repair["structure_vs_linework_symmetric_difference_area_disagreements_over_tolerance"], 0
         )
         self.assertEqual(repair["nonpositive_nominal_invalid_polygon_area"], 1)
+        self.assertEqual(repair["source_boundary_to_linework_boundary_comparable"], 1)
+        self.assertEqual(repair["source_boundary_to_linework_boundary_nonfinite_or_failed"], 0)
         self.assertEqual(repair["absolute_nominal_vs_repaired_area_change_sum_m2"], 2.0)
         self.assertTrue(repair["all_repaired_polygons_quarantined_for_manual_scientific_review"])
         self.assertEqual(sum(result["invalid_topology_classes_aggregate"].values()), 1)
@@ -98,6 +100,27 @@ class LuxembourgGeoBaseFullGeometryTests(unittest.TestCase):
         self.assertNotIn("3 3", json.dumps(report))
         self.assertNotIn("POLYGON", json.dumps(report))
         self.assertNotIn("SYNTH-ACC", json.dumps(report))
+
+    def test_invalid_spike_preserves_nominal_area_but_changes_boundary(self):
+        # Deliberately invalid polygon: a retraced inward two-metre spike.
+        # A nominal polygon area delta of zero MUST NOT hide this contour change.
+        spike = Polygon([(0, 0), (4, 0), (4, 4), (2, 4),
+                         (2, 2), (2, 4), (0, 4)])
+        self.assertFalse(spike.is_valid)
+        diagnostic = RepairDiagnostics()
+        diagnostic.observe(spike)
+        report = diagnostic.summary(1)
+        self.assertEqual(report["repair_single_polygon"], 1)
+        self.assertEqual(report["absolute_nominal_vs_repaired_area_change_sum_m2"], 0)
+        self.assertEqual(report["source_boundary_to_linework_boundary_comparable"], 1)
+        self.assertEqual(report["source_boundary_to_linework_hausdorff_over_1m"], 1)
+        self.assertGreater(report["source_boundary_to_linework_hausdorff_max_projected_m"], 1)
+        self.assertGreater(
+            report["source_boundary_to_linework_boundary_length_change_sum_projected_m"], 0
+        )
+        self.assertFalse(report["source_boundary_position_accuracy_ground_control_verified"])
+        # Original coordinate values are not present in report.
+        self.assertNotIn("POLYGON", json.dumps(report))
 
     def test_untrusted_geom_flags_srs_and_size_fail(self):
         geom = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
