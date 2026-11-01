@@ -139,6 +139,14 @@ def preflight(item: Any) -> dict[str, Any]:
     if not (0 < vals[1] < 0.001 and -0.001 < vals[5] < 0
             and abs(vals[2]) < 1e-12 and abs(vals[4]) < 1e-12):
         raise STACPreflightError("unexpected affine grid scale/orientation")
+    grid_west, grid_north = vals[0], vals[3]
+    grid_east = grid_west + shape[1] * vals[1]
+    grid_south = grid_north + shape[0] * vals[5]
+    if any(abs(a - b) > 1e-4 for a, b in (
+        (grid_west, west), (grid_north, north),
+        (grid_east, east), (grid_south, south),
+    )):
+        raise STACPreflightError("raster geotransform disagrees with declared bbox")
     links = item["links"]
     if (type(links) is not list or not any(
         type(x) is dict and x.get("rel") == "self"
