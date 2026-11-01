@@ -72,3 +72,16 @@ approved by this byte-range capability gate.
 
 **No full original GeoTIFF SHA, LAZ bytes, buildings, insured exposure,
 hazard or model-input admission in this stage.**
+
+## Actual original server result (2026-11-01)
+
+The fixed-source GitHub Actions run [41313098014](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41313098014) succeeded. All **nine synthetic network-safety tests** passed, and the official provider responded to both strict requests with **206 Partial Content**, correct range `bytes 0-4095`, valid **BigTIFF** headers and exactly 4096 bytes of payload per source. These are *remote original fragment receipts*, not whole-file hashes or height validation.
+
+| Official 2024 raster | Observed HTTP total size | Actual downloaded in this probe |
+| --- | ---: | ---: |
+| Digital Terrain Model **MNT** | **40,131,787,860 bytes** | **4,096 bytes** |
+| Digital Surface Model **MNS** | **42,849,815,758 bytes** | **4,096 bytes** |
+
+Both actual fragments reported SHA-256
+`c2bceb795e786013f8d235e3aa3fe5707e75faf6a6be39b2a3d7da67113161c8`
+(**fragment digest only**; common BigTIFF file header is not evidence the source rasters are the same). The server byte-range capability is therefore **verified** on these exact official paths, without downloading either full source. Next gate: a minimal fixed-area, range-only GDAL raster metadata/window probe with strict byte/window bounds, source CRS, nodata and coverage. Do not claim heights or roof membership before that succeeds.
