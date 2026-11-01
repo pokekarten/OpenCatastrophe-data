@@ -27,7 +27,7 @@ def feed(entries, total, *, namespace=True):
             f"<entry><id>{escape(eid)}</id><title>{escape(title)}</title></entry>"
             for eid, title in entries
         )
-    return (head + f"<gpf_dl:totalentries>{total}</gpf_dl>" + body + "</feed>").encode()
+    return (head + f"<gpf_dl:totalentries>{total}</gpf_dl:totalentries>" + body + "</feed>").encode()
 
 
 class HistoricalIGNCatalogueTests(unittest.TestCase):
