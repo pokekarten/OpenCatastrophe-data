@@ -88,7 +88,8 @@ def _concrete_row(row: object) -> dict[str, object]:
     if not isinstance(row.get("gspatialjp_files"), list):
         raise CataloguePreflightError("target gspatialjp_files must be an array")
     # Deliberately do not dereference, copy, download, persist or return any file URL.
-    _https_url_or_null(row.get("url"), "citygml.url")
+    if not _https_url_or_null(row.get("url"), "citygml.url"):
+        raise CataloguePreflightError("target original citygml.url is required")
     if row.get("composite_url") is not None:
         _https_url_or_null(row["composite_url"], "citygml.composite_url")
     return {
