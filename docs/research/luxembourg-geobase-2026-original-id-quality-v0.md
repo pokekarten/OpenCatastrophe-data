@@ -42,3 +42,21 @@ The specialized workflow output is the only authority for actual observed qualit
 A unique `BU_BuildingID` in the 2026 source establishes **intra-file** uniqueness only. It does not prove that `buildingid` from ACT2023v2 uses the same ID namespace or that EUBUCCO LU00 uses the original official 2013 CityGML object ID. Resolve these identifiers through official schema definitions, known control records, release chronology and a manually adjudicated split/merge sample before any cross-vintage matching.
 
 Unknown or contradictory source rights, axis order and roof-versus-ground geometry semantics remain blocking. No output represents sum insured, replacement value, construction year, insurer exposure, CAT damage or loss.
+
+## Verified original-data execution (1 November 2026)
+
+[GitHub workflow run 41310484331](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41310484331) retrieved the exact previously fingerprinted ACT October-2026 GeoBase ZIP, revalidated official MD5 and independently observed original ZIP/GPKG SHA-256, and ran the aggregate-only read-only original GeoPackage SQL. Eight synthetic quality tests passed first. The resulting original-file counts were:
+
+| Exact original GeoBase field | Observed quality | Count |
+| --- | --- | ---: |
+| Buildings_BU_Building | original feature objects | 230,353 |
+| id | distinct internal primary IDs | 230,353 |
+| geom | NULL geometry rows | 0 |
+| BU_BuildingID | nonempty building IDs | 230,353 |
+| BU_BuildingID | distinct nonempty building IDs | 230,353 |
+| BU_BuildingID | duplicate-excess IDs | 0 |
+| Source | nonempty source labels | 230,344 |
+| Source | missing/blank source labels | 9 |
+| Source | distinct nonempty source labels | 5 |
+
+These are **actual aggregate observations from the original source**, not manually sampled rows or inferred counts. This verifies full field presence and intra-file key uniqueness, NOT consistency across survey years, different GeoBase/ACT ID namespaces, the published source labels' legal permission, physical polygon validity, observed construction dates or source independence. Do not treat the 2026 230,353 count as the same objects as 2013 or 2023; any growth/change number requires a reviewed building identity crosswalk and split/merge treatment. No original provider row was exported or persisted.
