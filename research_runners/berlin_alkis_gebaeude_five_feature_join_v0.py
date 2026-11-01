@@ -180,21 +180,32 @@ def inspect_building_geojson(raw: bytes) -> tuple[dict, list[tuple[float, float]
 
 def stage_derived_footprints(
     raw: bytes, region_codes: list[str], output: Path, *,
-    receipt_utc: str,
+    receipt_utc: str, cat1: Path, cat2: Path,
 ) -> dict:
     """Create NEW local CAT4 file containing derived geometry, no private fields.
 
-    Caller already passed exact WFS source validation and independently
-    source-pinned CAT1/CAT2 point joins. Revalidate the exact same bytes here,
-    never issue a second provider request. Only local polygon WKB/areas and
-    verified administrative NUTS code are staged. No source feature IDs,
-    names, addresses, tags, or monetary attributes survive into the DB.
+    Revalidate source bytes AND each region assignment against the pinned
+    CAT1/CAT2 spatial databases, including when called directly rather than
+    from probe(). A string list saying 'DE3' is not independent region proof.
+    Never issue a second provider request. Source IDs and personal attributes
+    do not survive the staging boundary.
     """
-    stats, _ = inspect_building_geojson(raw)
-    if len(region_codes) != stats["sampled_feature_count"] or any(
-        code != "DE3" for code in region_codes
-    ):
+    stats, points = inspect_building_geojson(raw)
+    if (type(region_codes) is not list
+            or len(region_codes) != stats["sampled_feature_count"]
+            or any(type(code) is not str or code != "DE3" for code in region_codes)):
         raise BerlinBuildingSampleError("all sample polygons require independent DE3 attribution")
+    # The staging function is public and can be called without probe().
+    # Require real, independently pinned CAT1/CAT2 lookup on the exact
+    # polygons parsed above rather than trusting the caller's claimed codes.
+    if not isinstance(cat1, Path) or not isinstance(cat2, Path):
+        raise BerlinBuildingSampleError("both original CAT1 and CAT2 sources required")
+    for (lon, lat), claimed_code in zip(points, region_codes):
+        hit = resolve_nuts1_for_point(cat1, cat2, lon, lat)
+        if (hit is None or hit.get("nuts1_code") != claimed_code
+                or hit.get("nuts_version") != 2021
+                or hit.get("nuts_cartographic_scale") != "10M"):
+            raise BerlinBuildingSampleError("CAT4 building region claim is not verified by CAT1/CAT2")
     target = _check_destination(output)
     from shapely.geometry import shape
 
@@ -324,6 +335,7 @@ def probe(
         derived_stage = stage_derived_footprints(
             raw, joined_per_feature, cat4_output,
             receipt_utc=checked.astimezone(timezone.utc).isoformat(),
+            cat1=cat1, cat2=cat2,
         )
 
     return {

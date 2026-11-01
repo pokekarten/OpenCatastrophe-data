@@ -194,6 +194,16 @@ python -m research_runners.berlin_alkis_gebaeude_five_feature_join_v0 \\
   --cat4-output /secure/cat-data/staging/berlin-5-buildings.cat.sqlite
 ```
 
+Before writing a derived CAT building database, `stage_derived_footprints` now
+**independently rechecks** each original source polygon's representative point
+against the pinned CAT1 and CAT2 SQLite databases. A caller-provided array of
+`DE3` labels is never sufficient to establish region proof; missing CAT paths,
+mismatched 2021 version, incorrect 10M source scale and non-DE3 returned regions
+block the write. The same bounded WFS bytes are reused, without another
+provider request. Synthetic negative tests cover deliberately forged
+region labels. This is a research-stage location integrity check, not
+proof of a building's construction date or regional insured assets.
+
 Output-only tables:
 
 - `provenance`: official WFS source and feature type, exact response
