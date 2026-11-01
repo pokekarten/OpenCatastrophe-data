@@ -32,7 +32,7 @@ original BigTIFF IFD metadata using Python's standard library and two
 - Print only small aggregate source metadata. No original TIFF pages,
   tile pixel values, coordinates, building IDs, source archive,
   insurance exposure or CAT model input is exported/persisted.
-- **11 fully synthetic unit tests**; narrow original-source workflow
+- **12 fully synthetic unit tests**; narrow original-source workflow
   `.github/workflows/luxembourg-lidar2024-bigtiff-ifd.yml`
   checks MNT and MNS separately on disposable GitHub runners.
 
@@ -62,3 +62,37 @@ https://data.public.lu/en/datasets/lidar-2024-releve-3d-du-territoire-luxembourg
 
 Original URL and 4KiB source receipts:
 `docs/research/luxembourg-lidar2024-mnt-mns-cog-http-range-v0.md`.
+
+## Actual original provider BigTIFF metadata receipt, 2026-11-01
+
+The original-source job successfully read both provider COG first IFDs,
+using **one 4,096-byte** HTTP Range per source; the previous first-page
+fragment digest matched for both original assets.
+
+**Initial real provider run:**
+https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41314087848
+
+| First IFD metadata | MNT original | MNS original |
+| --- | ---: | ---: |
+| Width (pixels) | **114,617** | **114,617** |
+| Height (pixels) | **163,687** | **163,687** |
+| Declared pixel size | **0.5 × 0.5** | **0.5 × 0.5** |
+| Internal TIFF tile | **128 × 128** | **128 × 128** |
+| Internal tile array entries | **1,145,984** | **1,145,984** |
+| Bits per sample | **64** | **64** |
+| Compression code | **5 (TIFF LZW)** | **5 (TIFF LZW)** |
+| Projected GeoKey code | **2169** | **2169** |
+| HTTP provider-reported source bytes | **40,131,787,860** | **42,849,815,758** |
+| Actual downloaded | **4,096 bytes** | **4,096 bytes** |
+
+These are real source metadata, not estimated pixel measurements.
+The first-IFD tag sequence is valid and its internal tile count is
+consistent with dimensions and tile size; the subsequent grid-digest
+verification uses the full declared scale, tiepoint and dimensions to
+check whether source georeferencing is exactly congruent. Matching
+scale/dimensions alone is insufficient to prove matching pixel origins.
+
+**No original pixel values or building heights were read.** The pixel
+scale is horizontal CRS units, not a vertical accuracy or an insured
+building height. A full-raster SHA-256 and ground-controlled axis order
+remain unavailable.
