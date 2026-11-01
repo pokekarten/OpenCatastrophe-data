@@ -44,6 +44,7 @@ class PrefixTests(unittest.TestCase):
         result = probe_prefix(o)
         self.assertTrue(result["source_zip_available_for_further_rights_review"])
         self.assertTrue(result["range_honored"])
+        self.assertEqual(result["archive_size_bytes_from_range"], 100)
         self.assertEqual(r.read_n, 4)
         self.assertEqual(o.request.get_header("Range"), "bytes=0-3")
         self.assertEqual(o.request.get_method(), "GET")
