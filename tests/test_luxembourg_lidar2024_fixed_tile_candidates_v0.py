@@ -26,7 +26,7 @@ class RealisticSyntheticIndexTests(unittest.TestCase):
     def create_index(self, *, url2="http://untrusted.invalid/secret.zip", include_rtree=True,
                      crs=2169):
         db = sqlite3.connect(self.file)
-        db.execute("PRAGMA application_id=1196436551")  # 0x47504B47
+        db.execute("PRAGMA application_id=1196444487")  # 0x47504B47
         db.execute("CREATE TABLE gpkg_contents(table_name TEXT,data_type TEXT,srs_id INTEGER,min_x REAL,min_y REAL,max_x REAL,max_y REAL)")
         db.execute("CREATE TABLE gpkg_geometry_columns(table_name TEXT,column_name TEXT,geometry_type_name TEXT,srs_id INTEGER)")
         db.execute("CREATE TABLE gpkg_spatial_ref_sys(srs_id INTEGER)")
