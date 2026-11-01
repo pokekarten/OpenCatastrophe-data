@@ -22,7 +22,7 @@ ENTITY = "NfipResidentialPenetrationRates"
 VERSION = "v1"
 MAX_BYTES = 15_000_000
 MAX_RECORDS = 10_000
-FIPS = re.compile(r"[0-9]{5}\\Z")
+FIPS = re.compile(r"[0-9]{5}\Z")
 
 
 class NFIPPenetrationError(ValueError):
@@ -107,7 +107,7 @@ def validate_original(raw, expected_sha256):
         if not isinstance(fips, str) or FIPS.fullmatch(fips) is None:
             raise NFIPPenetrationError("invalid 5-digit original county FIPS")
         date_text = row.get("asOfDate")
-        if not isinstance(date_text, str) or re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", date_text) is None:
+        if not isinstance(date_text, str) or re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_text) is None:
             raise NFIPPenetrationError("invalid asOfDate format")
         try:
             date.fromisoformat(date_text)
