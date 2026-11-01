@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg CC0 footprint original GeoPackage receipt
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/luxembourg_gpkg_zip_preflight_v0.py'
+      - 'tests/test_luxembourg_gpkg_zip_preflight_v0.py'
+      - '.github/workflows/luxembourg-gpkg-original-preflight.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  original-cc0-receipt:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - name: Checkout original-receipt code
+        uses: actions/checkout@v4
+      - name: Synthetic-only source ZIP / GPKG checks
+        run: python -m unittest tests.test_luxembourg_gpkg_zip_preflight_v0 -v
+      - name: Bounded single official CC0 GeoPackage download and temporary read
+        shell: bash
+        run: |
+          set -euo pipefail
+          file="$RUNNER_TEMP/act2023v2-buildings3d-footprints.gpkg.zip"
+          trap 'rm -f "$file"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 --retry 0 \
+            --max-filesize 115343360 --output "$file" \
+            'https://download.data.public.lu/resources/base-de-donnees-nationale-des-batiments-3d-2023/20260317-160936/act2023v2-buildings3d-footprints.gpkg.zip'
+          # Logs contain only byte hashes, schema metadata and aggregate counts.
+          # No original dataset artifact or database is ever uploaded or committed.
+          python scripts/luxembourg_gpkg_zip_preflight_v0.py --source-zip "$file"
