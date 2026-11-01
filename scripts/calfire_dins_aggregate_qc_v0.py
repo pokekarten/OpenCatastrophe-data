@@ -33,7 +33,7 @@ DAMAGE_STATES = frozenset({
 TOP_KEYS = frozenset({
     "schema_version", "source_id", "event_year", "origin",
     "source_snapshot_sha256", "inspection_frame", "damage_counts",
-    "contains_feature_rows",
+    "contains_feature_rows", "hazard_type", "event_year_basis",
 })
 MAX_BYTES = 16384
 MIN_PUBLIC_NONZERO_CELL = 10
@@ -75,6 +75,10 @@ def evaluate_aggregate(raw: bytes) -> dict[str, Any]:
     year = obj["event_year"]
     if type(year) is not int or not 2013 <= year <= 2100:
         raise DinsAggregateError("invalid event year")
+    if obj["hazard_type"] != "Fire":
+        raise DinsAggregateError("DINS source layer also contains non-fire hazards")
+    if obj["event_year_basis"] != "INCIDENTSTARTDATE":
+        raise DinsAggregateError("event year must come from incident start date")
     if obj["inspection_frame"] != FRAME or obj["contains_feature_rows"] is not False:
         raise DinsAggregateError("unreviewed inspection frame or feature rows included")
     origin = obj["origin"]
@@ -107,6 +111,8 @@ def evaluate_aggregate(raw: bytes) -> dict[str, Any]:
         "event_year": year,
         "origin": origin,
         "inspection_frame": FRAME,
+        "hazard_type": "Fire",
+        "event_year_basis": "INCIDENTSTARTDATE",
         "input_sha256": hashlib.sha256(raw).hexdigest(),
         "source_snapshot_hash_supplied_but_not_verified": origin != "synthetic",
         "counts_suppressed": suppressed,
