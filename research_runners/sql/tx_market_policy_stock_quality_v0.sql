@@ -51,8 +51,7 @@ SELECT
     CASE
         WHEN p.malformed_rows > 0
           OR p.quarantine_status_mismatches > 0
-          OR p.distinct_zip_policy_type_pairs <> p.source_rows - p.quarantined_rows
-                 + p.quarantined_rows THEN 'BLOCKED_SOURCE_INTEGRITY'
+          OR p.distinct_zip_policy_type_pairs <> p.source_rows THEN 'BLOCKED_SOURCE_INTEGRITY'
         WHEN p.rows_with_provider_original_hash <> p.source_rows THEN 'BLOCKED_ORIGINAL_SOURCE_PROVENANCE'
         WHEN p.rows_with_legal_carrier <> p.source_rows THEN 'BLOCKED_NO_CARRIER_ZIP_IDENTITY'
         WHEN p.rows_with_actual_insured_tiv <> p.source_rows THEN 'BLOCKED_NO_INSURED_TIV'
