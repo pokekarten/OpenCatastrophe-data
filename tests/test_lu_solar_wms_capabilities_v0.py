@@ -64,8 +64,8 @@ class WMSCapabilityTests(unittest.TestCase):
             parse_capabilities(b"<!DOCTYPE a [<!ENTITY x 'hi'>]>" + EXAMPLE)
 
     def test_repeated_layer_names_are_blocked(self):
-        duplicate = EXAMPLE.replace(b"</Layer>\n   <Layer queryable=\"1\"><Name>dachteilflaechen\"",
-                                     b"</Layer>\n   <Layer queryable=\"1\"><Name>buildings\"")
+        duplicate = EXAMPLE.replace(b"<Name>dachteilflaechen</Name>",
+                                    b"<Name>buildings</Name>")
         with self.assertRaisesRegex(WMSMetadataError, "Repeated"):
             parse_capabilities(duplicate)
 
