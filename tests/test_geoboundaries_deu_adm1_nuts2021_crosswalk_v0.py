@@ -13,6 +13,7 @@ import unittest
 
 from research_runners.geoboundaries_deu_adm1_nuts2021_crosswalk_v0 import (
     CROSSWALK_APP_ID, EUROSTAT_COMMIT, EUROSTAT_SHA256, EUROSTAT_SIZE,
+    EUROSTAT_10M_SIZE, EUROSTAT_10M_SHA256, EUROSTAT_VARIANTS,
     EXPECTED_NUTS, CrosswalkError, audit_crosswalk, build_crosswalk_staging,
     _parse_eurostat, resolve_nuts1_for_point,
 )
@@ -73,6 +74,12 @@ class OfficialSourceIdentityTests(unittest.TestCase):
             _parse_eurostat(data, expected_sha256=hashlib.sha256(data).hexdigest(),
                             expected_size=len(data) - 1)
 
+    def test_10m_source_is_explicitly_frozen_not_a_mutable_alias(self):
+        self.assertEqual(EUROSTAT_10M_SIZE, 371684)
+        self.assertEqual(len(EUROSTAT_10M_SHA256), 64)
+        self.assertNotEqual(EUROSTAT_SHA256, EUROSTAT_10M_SHA256)
+        self.assertNotEqual(EUROSTAT_VARIANTS["20M"], EUROSTAT_VARIANTS["10M"])
+
     def test_duplicate_or_nonfinite_json_blocked(self):
         for bad in (
             b'{"type":"FeatureCollection","type":"FeatureCollection"}',
@@ -112,6 +119,31 @@ class IndependentPolygonMatchingTests(unittest.TestCase):
         # Intentionally no match on label: source shapeName STATE-nn,
         # official reference labels reference-DE*, but geometries coincide.
         self.assertNotIn("shape_names", receipt)
+
+    def test_10m_variant_preserves_local_source_specific_provenance(self):
+        geo, nuts = pair()
+        a, b = raw(geo), raw(nuts)
+        mapping, report = audit_crosswalk(
+            a, b, geo_sha256=hashlib.sha256(a).hexdigest(),
+            geo_size=len(a), nuts_sha256=hashlib.sha256(b).hexdigest(),
+            nuts_size=len(b), nuts_scale="10M",
+        )
+        self.assertEqual(report["nuts_cartographic_scale"], "10M")
+        self.assertIn("10M", report["profile"])
+        self.assertEqual(len(mapping), 16)
+        with tempfile.TemporaryDirectory(prefix="oc-nuts-scale-test-") as tmp:
+            db = Path(tmp) / "10m.cat.sqlite"
+            build_crosswalk_staging(mapping, report, db)
+            with sqlite3.connect(db) as conn:
+                self.assertEqual(
+                    conn.execute("SELECT geographic_scale FROM provenance").fetchone()[0],
+                    "10M",
+                )
+                self.assertEqual(conn.execute(
+                    "SELECT model_input_approved FROM provenance"
+                ).fetchone()[0], 0)
+        with self.assertRaisesRegex(CrosswalkError, "unreviewed"):
+            audit_crosswalk(a, b, nuts_scale="03M")
 
     def test_non_bijective_and_drifted_nuts_geometry_fail(self):
         geo, nuts = pair()

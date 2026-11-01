@@ -38,6 +38,14 @@ EUROSTAT_URL = (
 )
 EUROSTAT_SIZE = 194_955
 EUROSTAT_SHA256 = "1cacacf29694f518f6446ec286b5f251f3fea109d84874eb317c50b7300419b1"
+EUROSTAT_10M_SIZE = 371_684
+EUROSTAT_10M_SHA256 = "d3e02d4b23809db8e178483606e07a780103f49797f83d989b685fede2feee19"
+# Alternative official 2021 cartographic resolution is independently
+# frozen to the SAME Eurostat Git commit and country/NUTS vintage.
+EUROSTAT_VARIANTS = {
+    "20M": (EUROSTAT_SIZE, EUROSTAT_SHA256),
+    "10M": (EUROSTAT_10M_SIZE, EUROSTAT_10M_SHA256),
+}
 EUROSTAT_BLOB_SHA1 = "0d0ce3881456017f3013cc07fe350646b69f216d"
 EUROSTAT_TOTAL_NUTS1 = 123
 CROSSWALK_SCHEMA = "deu_adm1_2021_to_eurostat_nuts1_2021_simplified20M_v0"
@@ -47,7 +55,7 @@ EXPECTED_NUTS = frozenset(
      "DE9", "DEA", "DEB", "DEC", "DED", "DEE", "DEF", "DEG"]
 )
 MIN_BIDIRECTIONAL_OVERLAP = 0.75
-MAX_SOURCE_BYTES = 300_000
+MAX_SOURCE_BYTES = 500_000
 
 
 class CrosswalkError(ValueError):
@@ -121,10 +129,13 @@ def audit_crosswalk(
     nuts_sha256: str = EUROSTAT_SHA256,
     nuts_size: int = EUROSTAT_SIZE,
     nuts_total: int = EUROSTAT_TOTAL_NUTS1,
+    nuts_scale: str = "20M",
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Independent source projections; return local-only mapping and safe summary."""
     # The caller cannot pretend another NUTS dataset is the published real
     # vintage in the provenance: synthetic fixtures must still have 16 DE codes.
+    if nuts_scale not in EUROSTAT_VARIANTS:
+        raise CrosswalkError("unreviewed NUTS source cartographic resolution")
     inspect_geojson_bytes(geo_raw, expected_sha256=geo_sha256,
                           expected_size=geo_size)
     if nuts_total != EUROSTAT_TOTAL_NUTS1:
@@ -205,13 +216,13 @@ def audit_crosswalk(
     if len(mapping) != EXPECTED_FEATURES or set(codes) != EXPECTED_NUTS:
         raise CrosswalkError("non-bijective polygon crosswalk: duplicate/missing NUTS1 region")
     return mapping, {
-        "profile": CROSSWALK_SCHEMA,
+        "profile": CROSSWALK_SCHEMA if nuts_scale == "20M" else CROSSWALK_SCHEMA.replace("20M", nuts_scale),
         "geo_boundaries_germany_source_sha256": geo_sha256,
         "eurostat_nuts2021_source_sha256": nuts_sha256,
         "source_region_count": len(mapping),
         "matched_distinct_nuts1_codes": len(set(codes)),
         "nuts_version": "2021",
-        "nuts_cartographic_scale": "20M",
+        "nuts_cartographic_scale": nuts_scale,
         "projected_area_crs": "EPSG:3035",
         "minimum_geo_polygon_coverage": round(min(x["geo_coverage_fraction"] for x in mapping), 6),
         "minimum_nuts_polygon_coverage": round(min(x["nuts_coverage_fraction"] for x in mapping), 6),
@@ -257,10 +268,11 @@ def build_crosswalk_staging(
                 );
             """)
             with conn:
-                conn.execute("INSERT INTO provenance VALUES (?, ?, ?, ?, ?, 2021, '20M', 0)",
-                    (CROSSWALK_SCHEMA, BOUNDARY_ID,
+                conn.execute("INSERT INTO provenance VALUES (?, ?, ?, ?, ?, 2021, ?, 0)",
+                    (receipt["profile"], BOUNDARY_ID,
                      receipt["geo_boundaries_germany_source_sha256"],
-                     EUROSTAT_COMMIT, receipt["eurostat_nuts2021_source_sha256"]))
+                     EUROSTAT_COMMIT, receipt["eurostat_nuts2021_source_sha256"],
+                     receipt["nuts_cartographic_scale"]))
                 for row in mapping:
                     conn.execute("INSERT INTO region_mapping VALUES (?, ?, ?, ?)",
                         (row["shape_id"], row["nuts1_code"],
@@ -292,9 +304,15 @@ def resolve_nuts1_for_point(cat_geo_db: Path, crosswalk_db: Path,
         ):
             raise CrosswalkError("foreign CAT crosswalk database")
         stored = conn.execute(
-            "SELECT source_sha256, nuts_sha256, nuts_version FROM provenance"
+            "SELECT source_sha256, nuts_sha256, nuts_version, geographic_scale FROM provenance"
         ).fetchone()
-        if stored != (SOURCE_LFS_OID_SHA256, EUROSTAT_SHA256, 2021):
+        if (
+            stored is None
+            or stored[0] != SOURCE_LFS_OID_SHA256
+            or stored[2] != 2021
+            or stored[3] not in EUROSTAT_VARIANTS
+            or stored[1] != EUROSTAT_VARIANTS[stored[3]][1]
+        ):
             raise CrosswalkError("unapproved source digest/vintage in crosswalk")
         row = conn.execute(
             "SELECT nuts1_code, geo_overlap_fraction, nuts_overlap_fraction "
@@ -304,6 +322,7 @@ def resolve_nuts1_for_point(cat_geo_db: Path, crosswalk_db: Path,
         raise CrosswalkError("point matched ADM1 but crosswalk row missing")
     return {
         "nuts1_code": row[0], "nuts_version": 2021,
+        "nuts_cartographic_scale": stored[3],
         "geoboundaries_shape_id": hit["shape_id"],
         "geoboundaries_year_represented": hit["source_year"],
         "geo_overlap_fraction": row[1],
@@ -317,19 +336,24 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--geo-original", type=Path, required=True)
     parser.add_argument("--nuts2021-original", type=Path, required=True)
+    parser.add_argument("--nuts-scale", choices=sorted(EUROSTAT_VARIANTS), default="20M")
     parser.add_argument("--output", type=Path, required=True,
                         help="fresh absolute *.cat.sqlite file outside repo")
     args = parser.parse_args(argv)
     try:
+        nuts_size, nuts_sha = EUROSTAT_VARIANTS[args.nuts_scale]
         if (not args.geo_original.is_file() or args.geo_original.is_symlink()
             or args.geo_original.stat().st_size != SOURCE_LFS_SIZE
             or not args.nuts2021_original.is_file()
             or args.nuts2021_original.is_symlink()
-            or args.nuts2021_original.stat().st_size != EUROSTAT_SIZE):
+            or args.nuts2021_original.stat().st_size != nuts_size):
             raise CrosswalkError("exact original files required, no Git LFS pointer")
         geo = args.geo_original.read_bytes()
         nuts = args.nuts2021_original.read_bytes()
-        mapping, receipt = audit_crosswalk(geo, nuts)
+        mapping, receipt = audit_crosswalk(
+            geo, nuts, nuts_size=nuts_size, nuts_sha256=nuts_sha,
+            nuts_scale=args.nuts_scale,
+        )
         build_crosswalk_staging(mapping, receipt, args.output)
         print(json.dumps({**receipt, "cat_crosswalk_sqlite_created": True,
                           "original_source_bytes_committed": False,
