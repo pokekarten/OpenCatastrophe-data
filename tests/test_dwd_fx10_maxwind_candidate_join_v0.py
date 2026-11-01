@@ -132,6 +132,18 @@ class FX10CandidateJoinTests(unittest.TestCase):
             report["original_parameter_unit_categories_by_candidate_days"],
             {"verified_unit_m_per_s": 455})
 
+    def test_frozen_provider_m_per_sec_is_exact_unit_alias_not_conversion(self):
+        rows = default_parameters()
+        rows[1] = par("FX_10", "20100101", "20101231", unit="m/sec")
+        path, sha = source(self.root, parameter_rows=rows)
+        result = inspect(path, expected_sha256=sha)
+        self.assertEqual(result["one_pair_days_with_non_matching_unit"], 0)
+        self.assertEqual(result["one_pair_days_with_original_m_per_sec_alias"], 365)
+        self.assertEqual(result["original_parameter_unit_categories_by_candidate_days"],
+                         {"equivalent_unit_m_per_sec_provider_alias": 365,
+                          "verified_unit_m_per_s": 90})
+        self.assertFalse(result["scientific_instrument_join_approved"])
+
     def test_invalid_candidate_mast_height_is_never_promoted(self):
         path, sha = source(self.root, eq_rows=[
             eq("19900101", "20091231"), eq("20100101", "20191231", height="-999")])
