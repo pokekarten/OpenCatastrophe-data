@@ -294,5 +294,52 @@ blocker**, never interpreted as zero flood risk.
 
 The isolated workflow \`.github/workflows/berlin-srhk-depth-zip-head.yml\`
 runs its synthetic HTTP tests on PR, and real HEAD requests only
-after a reviewed workflow revision lands on main. Original outcome:
-**pending the first exact main workflow run**.
+after a reviewed workflow revision lands on main. Original outcome: **both verified in separate first-party original requests**,
+[GitHub Actions run 41330381774](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41330381774)
+on main commit \`1f9f1116d3374e6f67b982bf8984da9499aef375\`.
+
+| Original HTTPS HEAD property | Extreme water depth | Extraordinary water depth |
+| --- | --- | --- |
+| Content-Length (exact) | **619,211,977 B** | **563,115,763 B** |
+| Declared MIME | \`application/zip\` | \`application/zip\` |
+| Server Accept-Ranges | \`bytes\` (unproven GET) | \`bytes\` (unproven GET) |
+| Last-Modified UTC | \`2025-02-12T06:54:20+00:00\` | \`2025-02-12T06:55:33+00:00\` |
+| HTTP HEAD receipt UTC | \`2026-11-01T17:13:59.277252+00:00\` | \`2026-11-01T17:14:07.615626+00:00\` |
+| ETag | present, **not** original SHA | present, **not** original SHA |
+| Original source ZIP payload bytes read | **0** | **0** |
+
+This HEAD confirms two exact provider file objects exist and report
+size, type and range support. It does not establish true ZIP bytes or
+internal TIFF code, labels, EPSG or raster scenarios.
+
+## Bounded actual ZIP prefix / Range GET scientific canary
+
+The follow-on reviewed \`research_runners/berlin_srhk_depth_zip_prefix_v0.py\`
+checks the two **exact** official filenames only, with exactly one
+\`GET Range: bytes=0-511\` per scenario. It requires HTTP **206**,
+matching original total byte count from the prior HEAD, exactly
+512 returned bytes, identity encoding and valid ZIP local header
+\`PK\\x03\\x04\`. It computes SHA-256 of those **512 source bytes
+only** and verifies local-header compression method and bounded filename
+length without printing the member name or storing raw bytes.
+
+Reject any ignored Range/HTTP 200, changed source URL, changed total,
+unexpected MIME, ZIP encryption, malformed header or extra bytes.
+A successful prefix **does not** prove complete ZIP contents, central
+directory, compressed TIFF tile positions, internal pixel CRS/units,
+NoData mask, hazard/vulnerability semantics, full file digest or
+building-hazard modelling fitness.
+
+Dedicated source-specific workflow:
+\`.github/workflows/berlin-srhk-depth-zip-prefix.yml\` runs
+synthetic tests on PR and fixed bounded original requests only
+after its reviewed workflow revision is merged on main.
+The original prefix outcome is **pending** until that workflow
+confirms actual provider bytes.
+
+
+**Research security invariant:** source ZIP prefix SHA-256 is a digest of exactly
+512 public provider bytes, never an archive-level or GeoTIFF-level digest.
+No tile names, full ZIP asset, production CAT database, or privately-held
+exposure is exported in this canary. The full repository public-surface
+CI must pass at the updated main merge base before any merge.
