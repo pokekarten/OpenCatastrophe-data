@@ -53,6 +53,7 @@ def synthetic_tiff() -> bytes:
         (262, 3, [2]),
         (277, 3, [4]),
         (284, 3, [1]),
+        (306, 2, ["2018:10:11 23:59:59\x00"]),
         (322, 3, [512]),
         (323, 3, [512]),
         (324, 4, [6000] * 361),
@@ -68,7 +69,9 @@ def synthetic_tiff() -> bytes:
     offset = 256
     formats = {3: "H", 4: "I", 12: "d"}
     for i, (tag, typ, values) in enumerate(tags):
-        raw = struct.pack("<" + formats[typ] * len(values), *values)
+        raw = values[0].encode("ascii") if typ == 2 else struct.pack(
+            "<" + formats[typ] * len(values), *values
+        )
         entry = 10 + i * 12
         if len(raw) <= 4:
             buf[entry:entry + 8] = struct.pack("<HHI", tag, typ, len(values))
@@ -108,6 +111,9 @@ class NOAATIFFHeaderTests(unittest.TestCase):
         self.assertEqual(p["tile_block_count"], 361)
         self.assertEqual(p["block_size_pixels"], [512, 512])
         self.assertEqual(p["declared_crs"], "EPSG:4326")
+        self.assertEqual(p["tiff_datetime_calendar_day"], "2018-10-11")
+        self.assertTrue(p["tiff_datetime_is_end_of_day_marker"])
+        self.assertFalse(p["exact_flight_capture_time_verified"])
         self.assertTrue(re.fullmatch(r"[a-f0-9]{64}", p["partial_header_sha256"]))
         for k in ("original_full_file_hash_verified", "asset_identity_bound_by_full_hash",
                   "image_alpha_coverage_measured", "independent_fema_damage_validation_proven",
@@ -134,6 +140,26 @@ class NOAATIFFHeaderTests(unittest.TestCase):
     def test_reject_tiff_tile_count_mismatch(self):
         with self.assertRaisesRegex(TIFFHeaderError, "offset/byte-count"):
             preflight(modify_tag(synthetic_tiff(), 324, new_count=360), item())
+
+    def test_reject_date_tag_with_wrong_day_or_missing_tag(self):
+        b = bytearray(synthetic_tiff())
+        count = struct.unpack_from("<H", b, 8)[0]
+        for i in range(count):
+            pos = 10 + i * 12
+            if struct.unpack_from("<H", b, pos)[0] == 306:
+                off = struct.unpack_from("<I", b, pos + 8)[0]
+                b[off:off + 10] = b"2018:10:12"
+                break
+        with self.assertRaisesRegex(TIFFHeaderError, "day differs"):
+            preflight(bytes(b), item())
+        b = bytearray(synthetic_tiff())
+        for i in range(count):
+            pos = 10 + i * 12
+            if struct.unpack_from("<H", b, pos)[0] == 306:
+                struct.pack_into("<H", b, pos, 999)
+                break
+        with self.assertRaisesRegex(TIFFHeaderError, "required TIFF tag"):
+            preflight(bytes(b), item())
 
     def test_reject_unavailable_array_outside_header(self):
         with self.assertRaisesRegex(TIFFHeaderError, "outside"):
