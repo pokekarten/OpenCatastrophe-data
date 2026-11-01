@@ -89,6 +89,14 @@ RECIPES = (
         "Do not match individual homes, equate reporting year with payment year, or treat NFIP as all US insurers.",
     ),
     (
+        "calfire-dins-frap-incident-identity-candidate",
+        ("us.calfire.dins.structure-damage", "us.calfire.frap.historical-fire-perimeters.firep25-1"),
+        "same_fire_possible_but_incident_identity_unverified",
+        "DINS INCIDENTNUM, CALFIREUNIT, INCIDENTSTARTDATE and HAZARDTYPE=Fire versus FRAP INC_NUM, UNIT_ID, ALARM_DATE, YEAR_ and optional IRWINID; both exact provider snapshot SHA256",
+        "Resolve official two-system incident-number crosswalk, one-to-many or duplicate perimeter cases and exact event dates. The offline calfire_dins_frap_identity_preflight_v0.py only flags synthetic or externally prepared header-level candidates; it never proves identity or fetches features. Check FRAP firep25_1 revision, mapped geometry and DINS survey selection before any spatial test.",
+        "Do not join events on names, stripped incident suffixes alone or spatial proximity; do not equate final perimeters with observed building burn intensity, missing DINS records with zero damage, inspected counts with total building exposure, or any damage class with paid or insured loss.",
+    ),
+    (
         "nfip-building-context",
         ("fema.openfema.nfip-redacted-claims.v3", "usace.nsi.base.2026"),
         "aggregate_only_exposure_context",
