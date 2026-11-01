@@ -134,8 +134,12 @@ any downloaded provider data. It wrote only metadata to the public log.
 | ESRI \`.lyr\` style files | **18** |
 | Filenames loosely containing “04” or “ponthierry” | **13** (only name hints) |
 
-The exact receipt is saved as
-[\`cems-emns028-original-archive-receipt-20261101.json\`](cems-emns028-original-archive-receipt-20261101.json).
+The exact structured source receipt is preserved in the JSON appendix below.
+The previous standalone JSON path was outside the registered canonical
+projection families and is deliberately not retained as an independently
+editable file. Its original Git blob remains addressable in repository
+history; all recorded source values are preserved in this document.
+
 The ZIP was automatically deleted from temporary runner storage;
 no private asset, credentials or original geodata is stored here.
 
@@ -147,3 +151,52 @@ download; an independent publisher-provided signature is not claimed.
 Copernicus restricted-activation and third-party rights must still be
 confirmed before reuse or distribution. All CAT model admission remains
 blocked.
+
+## Complete original receipt metadata (verbatim historical JSON)
+
+The following block preserves all source receipt fields and values without
+changing any scientific or licence decision. This is **not** a new dataset,
+a raw CEMS feature, a publisher-signed checksum, or an approved CAT input.
+
+```json
+{
+  "schema_version": "1.0.0",
+  "receipt_id": "cems-emns028-france-gdb-zip-20261101",
+  "source_provider": "Copernicus Emergency Management Service (European Commission)",
+  "source_activation": "EMSN028",
+  "activation_page": "https://mapping.emergency.copernicus.eu/activations/EMSN028/",
+  "stable_archive_url": "https://mapping.emergency.copernicus.eu/download/EMSN028/EMNS028_AOI_FRANCE_utm31n.gdb.zip",
+  "exact_published_filename": "EMNS028_AOI_FRANCE_utm31n.gdb.zip",
+  "filename_typo_note": "Official archive filename uses EMNS028, while the activation identifier is EMSN028; preserve published bytes and filename.",
+  "evidence_date": "2026-11-01",
+  "evidence_ci_url": "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41336175575",
+  "original_download_completed_ephemerally": true,
+  "original_archive_retained": false,
+  "original_archive_bytes": 155898548,
+  "original_archive_sha256": "7ef43d0637447abae705728723c06d2f05415a21667fdee1f10e8fc25b5bf3c2",
+  "sha256_basis": "Locally calculated SHA-256 of entire downloaded public ZIP bytes; no independent provider-signed checksum.",
+  "original_archive_zip_member_count": 173,
+  "original_archive_declared_uncompressed_bytes": 297718220,
+  "gdb_directories_detected": 1,
+  "zip_member_extension_counts": {
+    "": 2,
+    ".atx": 21,
+    ".freelist": 22,
+    ".gdbindexes": 29,
+    ".gdbtable": 30,
+    ".gdbtablx": 30,
+    ".lyr": 18,
+    ".spx": 20
+  },
+  "aoi04_filename_hint_count": 13,
+  "aoi04_filename_hint_is_validated_layer": false,
+  "archive_member_payloads_decompressed": false,
+  "archive_extracted": false,
+  "provider_terms_url": "https://mapping.emergency.copernicus.eu/terms-and-conditions/",
+  "rights_review_status": "PENDING_ACTIVATION_SPECIFIC_AND_THIRD_PARTY_RIGHTS",
+  "aoi04_observed_extent_geometry_verified": false,
+  "historical_2016_building_geometry_verified": false,
+  "insurer_specific_tiv_or_loss_evidence": false,
+  "model_input_approved": false
+}
+```
