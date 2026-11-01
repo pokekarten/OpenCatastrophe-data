@@ -20,7 +20,10 @@ from urllib.parse import urlsplit
 
 TARGET_CITY_CODE = "13104"  # Shinjuku, from the official PLATEAU API documentation
 TARGET_YEAR = 2024
-MAX_INPUT_BYTES = 2 * 1024 * 1024
+# The provider says the unfiltered catalogue normally exceeds 2 MB; this is an
+# offline input budget only, distinct from the unapproved 64 KiB network probe
+# ceiling in the source access contract. Larger inputs still fail closed.
+MAX_INPUT_BYTES = 8 * 1024 * 1024
 
 
 class CataloguePreflightError(ValueError):
@@ -116,13 +119,31 @@ def _concrete_row(row: object) -> dict[str, object]:
         not isinstance(v, str) or not re.fullmatch(r"[a-z0-9_]{2,32}", v) for v in types
     ) or len(types) != len(set(types)):
         raise CataloguePreflightError("target feature_types malformed or duplicate")
-    file_size = row.get("file_size")
-    if file_size is not None and (type(file_size) is not int or file_size <= 0):
-        raise CataloguePreflightError("target file_size must be a positive integer or null")
     gspatial = _https_url_or_null(row.get("gspatialjp_dataset_url"), "gspatialjp_dataset_url")
-    if not isinstance(row.get("gspatialjp_files"), list):
-        raise CataloguePreflightError("target gspatialjp_files must be an array")
-    # Deliberately do not dereference, copy, download, persist or return any file URL.
+    linked_files = row.get("gspatialjp_files")
+    if not isinstance(linked_files, list) or len(linked_files) > 1000:
+        raise CataloguePreflightError("target gspatialjp_files must be a bounded array")
+    # Provider file_size belongs to the nested gspatialjp_files entries, not
+    # the CityGML row. The CMS zip and G-Spatial archive are distinct releases.
+    gspatial_citygml_count = 0
+    gspatial_citygml_all_sizes_known = True
+    for index, item in enumerate(linked_files):
+        if not isinstance(item, dict) or item.get("kind") not in {
+            "citygml", "3dtiles_mvt", "related", "other",
+        }:
+            raise CataloguePreflightError("gspatial file kind missing or invalid")
+        name = item.get("name")
+        if not isinstance(name, str) or not name.strip() or len(name) > 256:
+            raise CataloguePreflightError("gspatial file name missing or invalid")
+        if not _https_url_or_null(item.get("url"), f"gspatialjp_files[{index}].url"):
+            raise CataloguePreflightError("gspatial file URL is required")
+        size = item.get("file_size")
+        if size is not None and (type(size) is not int or size <= 0 or size > 2**63 - 1):
+            raise CataloguePreflightError("gspatial file_size must be a positive signed int64 or null")
+        if item["kind"] == "citygml":
+            gspatial_citygml_count += 1
+            gspatial_citygml_all_sizes_known &= size is not None
+    # Do not dereference, copy, download, persist or return any file URL.
     if not _https_url_or_null(row.get("url"), "citygml.url"):
         raise CataloguePreflightError("target original citygml.url is required")
     original_url = urlsplit(row["url"])
@@ -135,7 +156,8 @@ def _concrete_row(row: object) -> dict[str, object]:
         "registration_year": registration_year,
         "spec": spec,
         "bldg_advertised": "bldg" in types,
-        "provider_file_size_known": file_size is not None,
+        "gspatial_citygml_file_count": gspatial_citygml_count,
+        "gspatial_citygml_file_sizes_all_known": bool(gspatial_citygml_count) and gspatial_citygml_all_sizes_known,
         "gspatial_catalogue_page_known": gspatial,
         "fixed_year_composite_url_present": fixed_composite,
     }
@@ -188,7 +210,8 @@ def preflight_bytes(raw: bytes) -> dict[str, object]:
         "registration_year": candidate["registration_year"],
         "source_spec": candidate["spec"],
         "bldg_advertised": True,
-        "provider_file_size_known": candidate["provider_file_size_known"],
+        "gspatial_citygml_file_count": candidate["gspatial_citygml_file_count"],
+        "gspatial_citygml_file_sizes_all_known": candidate["gspatial_citygml_file_sizes_all_known"],
         "gspatial_catalogue_page_known": candidate["gspatial_catalogue_page_known"],
         "fixed_year_composite_url_present": candidate["fixed_year_composite_url_present"],
         "mutable_latest_alias_present_but_not_selected": mutable_latest_present,
