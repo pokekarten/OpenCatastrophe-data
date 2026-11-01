@@ -24,6 +24,11 @@ python -m unittest tests.test_probe_emsc_fdsn_event_v0 -v
 python scripts/probe_emsc_fdsn_event_v0.py --live
 ```
 
+After merging the workflow into the default branch, operators may alternatively run
+`.github/workflows/emsc-one-event-receipt.yml` with the manual
+**Run workflow** action in GitHub Actions. It uses the same frozen CLI and
+prints only the bounded receipt. CI never invokes this live job by default.
+
 The live command has no generic URL, date, event ID, coordinate, header,
 credential, pagination or bulk-harvest parameters. It disables proxies and
 redirects, uses TLS, enforces a 30-second request timeout and a 1 MiB response
