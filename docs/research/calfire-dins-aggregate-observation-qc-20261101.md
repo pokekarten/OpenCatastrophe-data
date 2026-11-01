@@ -36,7 +36,12 @@ coordinates, parcel keys, policy records, insured values, or loss ratios.
 No URL parameters, API calls, remote requests, source downloads or
 redistribution steps are implemented.
 
-A fixed six-class taxonomy and exact input schema are required. Missing,
+A fixed six-class taxonomy and exact input schema are required. The
+input must also declare `hazard_type=Fire` and
+`event_year_basis=INCIDENTSTARTDATE`, because the official layer
+permits additional hazards including earthquake and flood; source update
+dates must not be silently used as wildfire event dates.
+ Missing,
 negative, boolean, unknown or fractional counts and unrecognized frame
 identities are rejected. Source years begin at 2013; before 2018 the
 `No Damage` cohort is not an eligible recorded control group. All outputs
@@ -61,6 +66,7 @@ cohorts without independent disclosure-control review.
 
 A synthetic input with `event_year=2022`, `origin=synthetic`,
 `source_snapshot_sha256=null`, `contains_feature_rows=false`,
+`hazard_type=Fire`, `event_year_basis=INCIDENTSTARTDATE`,
 `inspection_frame=calfire_dins_inspected_structures` and all six
 published provider damage class counts equal to 10 passes inspection.
 The output reports 60 *inspected records in that synthetic cohort*, **not**
@@ -68,7 +74,7 @@ The output reports 60 *inspected records in that synthetic cohort*, **not**
 
 ## Tests and evidence boundary
 
-`tests/test_calfire_dins_aggregate_qc_v0.py` contains 20 offline
+`tests/test_calfire_dins_aggregate_qc_v0.py` contains 22 offline
 synthetic tests: verified schema, historic 2013/2017/2018 break, full-table
 small-cell suppression, null/invalid source SHA semantics, boolean and
 negative/fractional count traps, extra address fields, duplicate JSON keys,
