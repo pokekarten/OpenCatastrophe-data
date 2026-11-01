@@ -334,8 +334,44 @@ Dedicated source-specific workflow:
 \`.github/workflows/berlin-srhk-depth-zip-prefix.yml\` runs
 synthetic tests on PR and fixed bounded original requests only
 after its reviewed workflow revision is merged on main.
-The original prefix outcome is **pending** until that workflow
-confirms actual provider bytes.
+The original prefix outcomes were **both successfully verified** on
+2026-11-01 in
+[GitHub Actions 41331185963](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41331185963),
+merge commit \`620d3650f779acd37faee3aef43ff7e8596ce16b\`.
+
+| Exactly verified source fact | Extreme depth | Extraordinary depth |
+| --- | --- | --- |
+| Original exact HTTP range | \`bytes 0-511/619211977\` | \`bytes 0-511/563115763\` |
+| HTTP status / body bytes | **206 / 512** | **206 / 512** |
+| Original 512-byte SHA-256 | \`49c954a118d834e33dac1902c4df3f7df47e9022c963bd966451f9a20b3ee30f\` | \`0486e017feaf9a74b56a351f53e238ed72d45cfe23cdeeda4464fc8f774cd9c8\` |
+| Original ZIP local magic | \`PK\x03\x04\` | \`PK\x03\x04\` |
+| ZIP version needed | 20 | 20 |
+| First ZIP member compression method | 8, Deflate | 8, Deflate |
+| First member filename field length (bytes) | 38 | 39 |
+| Extra field length (bytes) | 0 | 0 |
+| Original read UTC | \`17:23:10.162218+00:00\` | \`17:23:21.327964+00:00\` |
+| Raw provider bytes or member names persisted | **No** | **No** |
+
+The exact executing code SHA-256 was
+\`e3252822016e348299e38a960f86eb19f74ee92af171523c60e1c1135193c3f5\`.
+The sample digest covers **512 bytes each**, not the complete ZIP
+archives or their original TIFF contents. The known combined full
+object sizes are 1,182,327,740 bytes from HEAD; only 1,024 bytes
+of public source body were read across both GETs.
+The ZIP local header demonstrates range access and ZIP/Deflate
+structure; it does not validate ZIP central directory, archive
+completeness, all file CRC-32, TIFF compression, internal
+EPSG/depth units, NoData masks or values at Berlin buildings.
+The discrepancy between the Atom EPSG:25833 label and the source PDF
+EPSG:25832 label is **still unresolved**.
+
+**Next proper scientific source gate:** review a second bounded,
+source-version-consistent ZIP *end-of-central-directory* tail Range
+(avoiding any bulk download), and enumerate exact archive member
+metadata safely before selecting one limited GeoTIFF sample. Validate
+full sample geometry CRS, physical depth units and missing support
+against verified building polygons only under separate model admission.
+
 
 
 **Research security invariant:** source ZIP prefix SHA-256 is a digest of exactly
