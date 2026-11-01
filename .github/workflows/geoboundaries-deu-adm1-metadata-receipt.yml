@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: geoBoundaries DEU ADM1 metadata receipt
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: geoboundaries-deu-adm1-metadata-receipt
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    name: Fixed geoBoundaries gbOpen DEU ADM1 metadata check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Checkout exact workflow ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Exercise offline identity, rights and URL-drift guards
+        run: python -m unittest tests.test_probe_geoboundaries_deu_adm1_v0 -v
+      - name: Fetch one exact official metadata object and print safe receipt only
+        run: python scripts/probe_geoboundaries_deu_adm1_v0.py --live
