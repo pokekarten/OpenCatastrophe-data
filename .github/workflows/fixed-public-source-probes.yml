@@ -23,6 +23,8 @@ jobs:
           persist-credentials: false
       - name: Validate fixed-source probe bounds and synthetic negative cases
         run: python -m unittest tests.test_probe_fixed_public_sources_v0 -v
+      - name: Summarize current source-access readiness without provider downloads
+        run: python scripts/build_source_access_inventory.py --summary
 
   one-request-per-source:
     needs: offline-contract-tests
