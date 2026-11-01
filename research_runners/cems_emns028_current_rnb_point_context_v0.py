@@ -38,6 +38,11 @@ def challenge_invalid_bbox_candidate(source_polygon, point_geometries, ordinal):
         raise ValueError("unknown candidate geometry type")
     if get_num_coordinates(source_polygon) > 100_000:
         raise ValueError("candidate exceeds geometry safety bound")
+    source_bounds = source_polygon.bounds
+    source_bbox_area_m2 = float(
+        (source_bounds[2]-source_bounds[0]) *
+        (source_bounds[3]-source_bounds[1])
+    )
     receipts = []
     recovered = []
     for method, keep_collapsed in (("linework", True), ("structure", False)):
@@ -51,6 +56,11 @@ def challenge_invalid_bbox_candidate(source_polygon, point_geometries, ordinal):
             "method": method,
             "usable_polygonal_repair": bool(usable),
             "repair_output_type": geom.geom_type,
+            "repair_area_m2": round(float(geom.area), 2) if usable else None,
+            "repair_component_count": (
+                len(geom.geoms) if geom.geom_type=="MultiPolygon"
+                else 1 if geom.geom_type=="Polygon" else None
+            ),
             "point_covered": [
                 bool(geom.covers(p)) if usable else None
                 for p in point_geometries
@@ -71,9 +81,12 @@ def challenge_invalid_bbox_candidate(source_polygon, point_geometries, ordinal):
     return {
         "source_feature_ordinal_zero_based_not_global_id": ordinal,
         "original_topology_reason": explain_validity(source_polygon)[:130],
+        "original_source_bbox_area_m2_not_inundation": round(source_bbox_area_m2, 2),
+        "original_source_coordinate_count": int(get_num_coordinates(source_polygon)),
         "repair_candidates": receipts,
         "both_repair_methods_valid_polygonal": both_usable,
         "between_repair_methods_symmetric_difference_area_m2": delta_m2,
+        "original_invalid_polygon_area_is_not_used_as_truth": True,
         "candidate_intersections_not_physical_inundation_proof": True,
         "repaired_geodata_persisted": False,
         "cat_model_admitted": False,
