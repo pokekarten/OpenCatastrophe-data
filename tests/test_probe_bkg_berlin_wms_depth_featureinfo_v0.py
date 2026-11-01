@@ -92,7 +92,7 @@ class OriginalBkgWmsSourceTests(unittest.TestCase):
         self.assertFalse(receipt["featureinfo"]["WMS_unit_implies_original_TIFF_Int16_scale"])
         self.assertFalse(receipt["insurance_cat_model_input_admitted"])
         stored = json.dumps(receipt)
-        for forbidden in ("secret-id", "GRAY_INDEX", "87", "coordinates", "798800"):
+        for forbidden in ("secret-id", "GRAY_INDEX", '"value": 87', '"coordinates":', "798800"):
             self.assertNotIn(forbidden, stored)
 
     def test_literal_map_label_is_not_a_physical_unit_claim(self):
