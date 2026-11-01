@@ -112,6 +112,33 @@ class CompletenessAndMatchingTests(unittest.TestCase):
         self.assertEqual(report["height_positive_numeric_count"],3)
 
     @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
+    def test_both_sources_must_explicitly_declare_projected_crs(self):
+        a,h=pair()
+        for source in ("alkis","height"):
+            with self.subTest(source=source):
+                aa,hh=copy.deepcopy(a),copy.deepcopy(h)
+                (aa if source=="alkis" else hh).pop("crs")
+                with self.assertRaisesRegex(CompleteBboxError,"explicitly declare"):
+                    evaluate(raw(aa),raw(hh))
+        a,h=pair()
+        h["crs"]={"type":"name","properties":{"name":"EPSG:4326"}}
+        with self.assertRaisesRegex(CompleteBboxError,"explicitly declare"):
+            evaluate(raw(a),raw(h))
+
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
+    def test_distinct_source_ids_cannot_hide_duplicate_original_geometries(self):
+        a,h=pair()
+        h["features"][1]["geometry"]=copy.deepcopy(h["features"][0]["geometry"])
+        h["features"][1]["id"]="different-source-id-same-footprint"
+        with self.assertRaisesRegex(CompleteBboxError,"duplicate original source footprint"):
+            evaluate(raw(a),raw(h))
+        a,h=pair()
+        a["features"][1]["geometry"]=copy.deepcopy(a["features"][0]["geometry"])
+        a["features"][1]["id"]="different-alkis-id-same-footprint"
+        with self.assertRaisesRegex(CompleteBboxError,"duplicate original source footprint"):
+            evaluate(raw(a),raw(h))
+
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
     def test_two_exact_original_requests_and_no_serialized_source_values(self):
         a,h=pair()
         calls=[]
