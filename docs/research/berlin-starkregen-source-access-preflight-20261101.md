@@ -128,3 +128,36 @@ treat **partial model-area coverage** as a separate gating source.
 
 Only service metadata accessibility is verified. Provider response
 bytes were not persisted and no BLD4/insurer CAT model or DB modified.
+
+
+## Exact Berlin SRHK Atom root – separate metadata access experiment
+
+The official Berlin source information for the `Starkregenhinweiskarte`
+identifies a separate Atom feed at
+`https://gdi.berlin.de/data/ua_srhk/atom/`. This is distinct from
+both observed WFS XML GetCapabilities endpoints and the actual
+EPSG:25832 GeoTIFF depth/velocity ZIPs. The source documentation
+describes download availability, **not** an exact authorized ZIP
+identity or current ZIP digest.
+
+`research_runners/berlin_srhk_atom_root_preflight_v0.py` performs a
+single explicit **root-only** metadata GET after main-review workflow
+update; 1 MiB max response, 35s timeout, TLS, no redirects or
+proxy, strict Atom XML root, DTD/ENTITY rejection, 300-entry and
+500-link caps. It **does not follow** Atom links, child feeds or
+any ZIP/download. It reports only aggregate link/media counts,
+response size/SHA/time and negative source-data/model-admission flags.
+An HTML directory, changed URL/format, oversized feed or invalid
+XML is an explicit blocker, never misclassified as downloadable
+hazard pixels.
+
+One-off workflow:
+`.github/workflows/berlin-srhk-atom-root.yml`.
+Only synthetic XML tests on pull requests. A reviewed workflow file
+change on main authorizes **one** original root metadata request.
+A subsequent ZIP selection/fetch must have its own separately
+documented exact URL, rights review, hash, byte budget and
+decompression/CRS/nodata/units proof before any physically meaningful
+BLD4 building flood grid comparison.
+
+**Original Atom root result:** pending first reviewed source run.
