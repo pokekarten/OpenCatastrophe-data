@@ -94,7 +94,8 @@ class LuxembourgEubuccoTests(unittest.TestCase):
         report = self.report()
         self.assertIn("floors_source", report["missing_attribute_provenance_columns"])
         self.assertIn("construction_year_source", report["missing_attribute_provenance_columns"])
-        self.assertNotIn("geometry", json.dumps(report))
+        self.assertNotIn("SYN-LU-A", json.dumps(report))
+        self.assertFalse(report["building_identifiers_or_geometries_exported"])
 
     def test_malformed_parquet_magic_is_rejected_before_decoding(self):
         self.path.write_bytes(b"other local file")
@@ -103,9 +104,15 @@ class LuxembourgEubuccoTests(unittest.TestCase):
             inspect(self.path, digest)
 
     def test_nonbinary_geometry_column_is_rejected(self):
-        self.fields["geometry"] = ["polygon", "polygon", "polygon"]
+        table = pa.table({
+            key: pa.array(value, type=pa.string())
+            for key, value in self.fields.items()
+            if key != "geometry"
+        }).append_column("geometry", pa.array(["polygon"] * 3, type=pa.string()))
+        pq.write_table(table, self.path, compression="NONE")
+        digest = hashlib.sha256(self.path.read_bytes()).hexdigest()
         with self.assertRaisesRegex(EubuccoPreflightError, "not WKB binary"):
-            self.report()
+            inspect(self.path, digest)
 
     def test_cli_emits_only_aggregate_and_blocks_output_overwrite(self):
         digest = self.write()
