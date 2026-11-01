@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: EUBUCCO Luxembourg LU00 synthetic Parquet preflight
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/eubucco_lu00_lineage_preflight_v0.py'
+      - 'tests/test_eubucco_lu00_lineage_preflight_v0.py'
+      - '.github/workflows/eubucco-lu00-parquet-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-source-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Install pinned Parquet test runtime
+        run: python -m pip install --disable-pip-version-check --no-input pyarrow==20.0.0
+      - name: Verify dependency consistency
+        run: python -m pip check
+      - name: Run synthetic Parquet and safety regression tests
+        run: python -m unittest tests.test_eubucco_lu00_lineage_preflight_v0 -v
+      # No original EUBUCCO download, source bytes, object-store access,
+      # model imports, Neon writes or published provider artifacts.
