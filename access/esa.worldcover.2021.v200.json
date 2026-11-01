@@ -6,7 +6,7 @@
   ],
   "provider": "European Space Agency (ESA) WorldCover consortium / VITO",
   "interface_type": "object_store",
-  "status": "documented_only",
+  "status": "probe_ready",
   "documentation_url": "https://esa-worldcover.org/en/data-access",
   "service_root": "https://esa-worldcover.s3.eu-central-1.amazonaws.com",
   "api_version": "WorldCover 2021 v200; AWS bucket esa-worldcover; prefix v200/2021/map",
@@ -23,12 +23,14 @@
   "request_contract": {
     "allowed_operations": [
       "list_v200_map_prefix",
-      "fetch_exact_v200_tile"
+      "fetch_exact_v200_tile",
+      "probe_exact_v200_tile_head"
     ],
     "path_templates": [
-      "/v200/2021/map/"
+      "/v200/2021/map/",
+      "/v200/2021/map/ESA_WorldCover_10m_2021_v200_N48E009_Map.tif"
     ],
-    "parameter_rules": "This contract documents the official WorldCover 2021 v200 delivery identity but authorizes no network operation yet. The provider documents anonymous no-sign access to bucket esa-worldcover and the versioned map prefix v200/2021/map. A future source-specific worker must first freeze one exact v200/2021 map tile object key from authoritative provider evidence and then keep bucket, region, version, year, prefix, object key, query, headers and redirect targets repository-controlled. Caller-selected object paths, prefix-wide sync, bucket enumeration and arbitrary raster downloads are forbidden. The Zenodo DOI 10.5281/zenodo.7254221 is an immutable release/provenance identity, not caller-controlled alternate download authority."
+    "parameter_rules": "This source-specific T1 probe freezes exactly one HEAD request for the candidate 3x3-degree N48E009 WorldCover 2021 v200 Map GeoTIFF under the documented ESA public S3 prefix. The object key is constructed from the published tile naming/3-degree grid scheme, and its actual existence must be independently established by the HEAD response. Only the fixed HTTPS HEAD request is executable. Historical list_v200_map_prefix and fetch_exact_v200_tile operation names remain documentation-only and MUST NOT be executed under this probe. No GET, Range, S3 list/sync, arbitrary host, redirect, caller-supplied key, variant, product year, other geographic tile, credential or private endpoint is allowed. The DOI 10.5281/zenodo.7254221 anchors the release identity, not this individual object hash."
   },
   "response_contract": {
     "expected_media_types": [
@@ -43,8 +45,8 @@
     "max_probe_bytes": 65536,
     "max_sample_bytes": 52428800,
     "retry_policy": "none",
-    "rate_limit_notes": "The official WorldCover data-access page explicitly documents programmatic AWS CLI sync and Python subset download using the public no-sign bucket. No repository-specific request-rate entitlement or rate budget is stated in the reviewed evidence. This documented-only contract still authorizes no S3 ListObjects, HEAD, GET, Range request, prefix sync, crawling or repeated probe because no exact tile object/canary has been frozen.",
-    "mutability_notes": "The product identity is versioned as 2021 v200 and is also anchored by immutable release DOI 10.5281/zenodo.7254221. The official AWS prefix is v200/2021/map, but no exact tile object is frozen by this contract. Any later acquisition must bind the exact object key and requested/final storage identity, retrieval UTC, byte count and SHA-256, validate the COG structure, EPSG:4326 grid/extent and class coding, and preserve the v200 product identity before scientific use."
+    "rate_limit_notes": "ESA documents anonymous programmatic no-sign AWS access for the versioned S3 product. This contract permits only one fixed HEAD request when an explicitly reviewed test workflow executes. No ongoing polling, bulk listing, download or paid quota assumption is authorized.",
+    "mutability_notes": "The 2021 v200 product identity and ESA DOI are stable reference labels; this HEAD probe checks whether the candidate exact N48E009 Map object exists and obtains its HTTP content length, ETag metadata and media type. A mutable S3 ETag is NOT an independent SHA-256 of source bytes, nor a provenance receipt sufficient for CAT model admission. Exact source hash, COG georeference/grid, class values, licence, scientific year and derived-use scope require a distinct source-byte workflow."
   },
   "rights_and_policy": {
     "dataset_rights_status": "verified",
@@ -52,21 +54,29 @@
     "terms_url": "https://esa-worldcover.org/en/data-access",
     "commercial_automation_status": "allowed",
     "redistribution_status": "allowed",
-    "notes": "The official WorldCover data-access page states that the WorldCover product is provided free of charge without restriction under Creative Commons Attribution 4.0, requires acknowledgement to the ESA WorldCover project, and explicitly documents programmatic AWS CLI no-sign sync plus a Python subset-download route. Dataset commercial reuse/redistribution and documented programmatic service use are therefore supported by reviewed provider evidence. This contract nevertheless authorizes no network probe or fetch until one exact v200/2021 tile object and its bounded evidence contract are separately frozen; no raster bytes are admitted."
+    "notes": "ESA officially permits CC BY 4.0 WorldCover dataset reuse with attribution and documents anonymous programmatic AWS access. This T1 contract authorizes only a single fixed anonymous HEAD against one candidate 2021 v200 map tile. It does not authorize downloading/reproducing pixels, bulk collection, secondary redistribution by this repository, or accepting land-cover classes as insured physical buildings."
   },
   "probe_contract": {
-    "mode": "none",
-    "operation": null,
+    "mode": "head",
+    "operation": "probe_exact_v200_tile_head",
     "requires_credentials": false,
-    "expected_evidence": []
+    "expected_evidence": [
+      "fixed region-specific HTTPS HEAD returned HTTP 200, or explicit blocked status",
+      "nonzero Content-Length and Content-Type recorded without obtaining raster bytes",
+      "source object identity, contract SHA-256, execution-code SHA-256 and UTC receipt",
+      "ETag hash recorded as transport metadata, never treated as source SHA-256",
+      "source_bytes_downloaded=false and model_input_approved=false"
+    ]
   },
-  "implementation_decision": "document_only",
-  "reviewed_at": "2026-08-12",
+  "implementation_decision": "build_later",
+  "reviewed_at": "2026-11-01",
   "evidence_urls": [
     "https://esa-worldcover.org/en/data-access",
     "https://registry.opendata.aws/esa-worldcover-vito/index.html",
     "https://zenodo.org/records/7254221",
-    "https://creativecommons.org/licenses/by/4.0/"
+    "https://creativecommons.org/licenses/by/4.0/",
+    "https://github.com/ESA-WorldCover/esa-worldcover-datasets",
+    "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/docs/WorldCover_PUM_V2.0.pdf"
   ],
-  "notes": "This is a narrow pre-execution source-access contract for #173/#242. It freezes WorldCover 2021 v200 machine-delivery, release, scientific and dataset-rights identities without selecting or downloading a raster tile. A later exact-tile task must separately review the provider object key, service execution boundary, byte identity, attribution and intended scientific role before any sample, admission or publication step."
+  "notes": "T1 anonymous HEAD-only candidate tile availability check for a single ESA WorldCover 2021 v200 3x3-degree map object near southern Germany, with pinned host, product/year/tile identity and no source-byte download. Tile existence and service Content-Type must be proven live; GeoTIFF pixels, scientific input fitness and distribution approval remain separate. No other paths or previously documented list/fetch operations become executable."
 }
