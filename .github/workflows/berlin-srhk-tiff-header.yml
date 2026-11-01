@@ -9,6 +9,8 @@ on:
     paths:
       - research_runners/berlin_srhk_zip_first_tiff_header_v0.py
       - tests/test_berlin_srhk_zip_first_tiff_header_v0.py
+      - research_runners/berlin_srhk_tiff_grid_affine_v0.py
+      - tests/test_berlin_srhk_tiff_grid_affine_v0.py
       - .github/workflows/berlin-srhk-tiff-header.yml
   push:
     branches: [main]
@@ -43,6 +45,8 @@ jobs:
           python-version: "3.14"
       - name: Synthetic ZIP, TIFF GeoKey, malicious range and decompression-cap tests
         run: python -m unittest tests.test_berlin_srhk_zip_first_tiff_header_v0 -v
+      - name: Synthetic projected TIFF grid and fixed Berlin pilot coverage gates
+        run: python -m unittest tests.test_berlin_srhk_tiff_grid_affine_v0 -v
       - name: Exactly 65536 original ZIP bytes and bounded in-memory TIFF metadata
         if: github.event_name != 'pull_request'
         run: python -m research_runners.berlin_srhk_zip_first_tiff_header_v0 --scenario ${{ matrix.scenario }} --live
