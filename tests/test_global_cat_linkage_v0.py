@@ -58,7 +58,7 @@ class GlobalCatLinkageTests(unittest.TestCase):
     def test_derived_and_distinct_products_remain_distinguishable(self):
         audit = build_audit(load_landscape_shards())
         links = {r["recipe_id"]: r for r in audit["linkage_hypotheses"]}
-        self.assertIn("shared", links["jrc-flood-depth-versus-gfm-shared-source"]["relationship"])
+        self.assertIn("same_sentinel1", links["jrc-flood-depth-versus-gfm-shared-source"]["relationship"])
         self.assertIn("shared", links["openbuildingmap-overture-ghsl-common-upstream"]["relationship"])
         self.assertIn("distinct", links["aqueduct-water-risk-versus-aqueduct-floods"]["relationship"])
         self.assertIn("observational_input", links["iris-ibtracs-storm-dependence"]["relationship"])
