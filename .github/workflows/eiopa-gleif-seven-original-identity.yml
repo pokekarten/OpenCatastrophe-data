@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: EIOPA GLEIF seven original legal identity receipts
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/eiopa-gleif-seven-original-identity.yml'
+      - 'scripts/eiopa_gleif_seven_identity_receipt_v0.py'
+      - 'tests/test_eiopa_gleif_seven_identity_receipt_v0.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-original-identity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact audited source without retaining credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Synthetic offline GLEIF identity and non-admission regressions
+        run: python -m unittest tests.test_eiopa_gleif_seven_identity_receipt_v0 -v
+      - name: Read exactly seven public original GLEIF legal-entity records
+        id: live_identity
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          receipt="$RUNNER_TEMP/eiopa-gleif-seven-receipt.json"
+          trap 'rm -f "$receipt"' EXIT
+          python -m scripts.eiopa_gleif_seven_identity_receipt_v0 --live > "$receipt"
+          python - "$receipt" <<'PY'
+          import json
+          from pathlib import Path
+          import sys
+          result = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+          if result["source_lei_count"] != 7 or result["status_active_issued_count"] != 7:
+              raise SystemExit("BLOCKED: incomplete seven-LEI GLEIF identity check")
+          if result["model_input_approved"] or result["neon_updated"]:
+              raise SystemExit("BLOCKED: unauthorized model or database admission")
+          for row in result["source_receipts"]:
+              print(
+                  f"GLEIF LEI {row['lei']} country={row['jurisdiction']} "
+                  f"name={row['eiopa_to_gleif_name_relation']} "
+                  f"reg={row['eiopa_to_gleif_local_registration_relation']} "
+                  f"original_sha256={row['gleif_original_byte_sha256']}"
+              )
+          print("GLEIF_ORIGINAL_COMPLETE=7/7")
+          print(
+              "Identity only: no regulator currentness, ownership, exposure, "
+              "Neon writes or model admission verified."
+          )
+          PY
