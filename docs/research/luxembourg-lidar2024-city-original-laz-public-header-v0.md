@@ -66,6 +66,58 @@ for the original ZIP/LAS headers and COPC info VLR.
 Strict HTTP206 and `Content-Range` validation abort before touching
 a potentially huge HTTP200 body. No arbitrary source or network redirects.
 
+## Verified original-source execution, 2026-11-01
+
+**Original provider GitHub Actions run:**
+<https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41322987189>.
+All **29 synthetic header/ZIP/VLR/hierarchy tests passed**; exact
+original provider HTTPS JSON, HEAD and bounded HTTP206 ranges successfully
+read the one actual city `77000_75500` LAS public header, four VLRs and
+one COPC root hierarchy page.
+
+| Actual original declared metadata | Result |
+| --- | ---: |
+| Source ZIP total published bytes (HEAD verified; NOT full hash) | **1,700,086,212** |
+| Selected single `.laz` member bytes, ZIP method 0 (stored) | **179,965,521** |
+| LAS version / declared point format | **1.4 / 7** |
+| Original LAS full public header read | **375 bytes** |
+| Original public VLR section read | **1,412 bytes; 4 entries** |
+| First `copc` info VLR 160 bytes, original hierarchy pointers checked | **Yes** |
+| COPC root hierarchy byte offset *within selected LAZ* | **179,952,913** |
+| COPC root hierarchy page size | **12,608 bytes** |
+| COPC root hierarchy octree entries read | **394** |
+| Nested hierarchy pages required by root | **0** |
+| Hierarchy entries referencing compressed point chunks | **394** |
+| Total points declared by all root entries | **10,205,549** |
+| Original LAS header declared points | **10,205,549** |
+
+Actual octree entry count by public hierarchy level:
+**level 0: 1**, **level 1: 4**, **level 2: 16**,
+**level 3: 89**, **level 4: 284**. The cross-check of root declared
+chunk point-count sum **exactly equals the LAS header population**;
+this is meaningful internal structural consistency, not proof of
+correct individual point classifications.
+
+**Important remaining evidence:**
+- The source ZIP full SHA1 is publisher-reported, **not verified**
+  against all 1.7GB original bytes. The selected LAZ compressed chunks
+  are **not read**.
+- LAS 1.4 and public COPC VLR/hierarchy metadata are verified for
+  this **single fixed public city tile only**; other LAZ tile archives
+  may differ.
+- Actual `class=5` / `class=6` counts, vegetation/building accuracy,
+  roof matches, vertical datum and independent survey validation
+  remain **unmeasured**.
+- The public root hierarchy describes 394 compressed point nodes.
+  Their public octree keys, offsets and byte sizes were used only
+  internally for metadata integrity and were **not exported** as
+  feature-level geospatial or point records.
+
+**Decision:** Move to a separate source-CRS-checked spatial octree
+window preflight to determine how many compressed nodes a fixed
+100m ROI intersects, without point transfer. Only then consider a
+strictly size-bounded, rights-cleared classification diagnostic.
+
 ## Scientific gate
 
 Only after confirming exact original LAS/COPC header and identifying
