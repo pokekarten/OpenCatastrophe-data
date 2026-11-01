@@ -35,7 +35,12 @@ or proxies**, and the code rejects unknown hosts, CRS, untrusted
 queries, changed feature types, empty/malformed GeoJSON,
 invalid/duplicate original feature identity, nonpolygon geometry,
 nonfinite/invalid coordinates, unreasonable areas and out-of-scope
-polygons. Most importantly, it **requires source-provided integer
+polygons. **Both original GeoJSON sources must explicitly declare
+EPSG:25833**; the WFS request parameter alone is not proof of response
+coordinate semantics. Source geometries are also required to be
+topologically distinct even when their feature IDs differ, preventing
+duplicate-footprint inflation of the matching statistics.
+Most importantly, it **requires source-provided integer
 `numberMatched` and `numberReturned` to be equal to the actual
 number of features returned**, with at most 50 features per source.
 If the 2022/2026 live source data now have more than 50 features
