@@ -1,0 +1,87 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+-->
+
+# Luxembourg official ACT rooftops versus GeoBase building polygons
+
+**Research-only** source-family comparison. It does not establish independent
+external buildings, building-identity crosswalks, or admitted exposure.
+
+## Why this comparison is worth executing
+
+The full ACT2023v2 to ACT GeoBase2026 original ID diagnostic,
+merged PR #932, measured **zero exact common ID texts** across 238,189
+ACT2023 rooftop records and 230,353 GeoBase2026 building records.
+The prior ACT2023 versus EUBUCCO Luxembourg original 250m central-city
+window measured 149 ACT roofs versus 45 EUBUCCO records, nine unique
+IoU≥0.60 pairs and 136 ambiguous ACT roofs. EUBUCCO's 2013 government
+source is also an ACT topographic product, so neither comparison
+automatically supplies independent scientific ground truth.
+
+This pilot tests **how the two separately modelled ACT source-family
+polygon definitions overlap**, rather than trying to join their incompatible
+identifiers.
+
+## Frozen providers and exact source receipts
+
+- ACT2023v2 roof-derived MultiPolygon original GeoPackage SHA-256:
+  `9765b04eaeb9332aa606b8dca44031116588e285553aab061d61037938a002bf`;
+  ZIP SHA-256
+  `a271b1cbcc22ded018f9bab0c150e9f33efa6cb7ebca8cf4dc4bdb1f5d84859a`.
+- ACT BD-L-GeoBase Buildings 2026-10-01 original GPKG SHA-256:
+  `ec70bd1175b6f67b6dceaf8ab39e0433bc871e1099ff308c3eb8323127aa5676`;
+  original ZIP SHA-256
+  `6630f217b39edde5f20f1078bef8a3d6eb4a09337af48394975f45f208bcfed3`.
+  Publisher MD5 also checked by its separate original source preflight.
+- Both original polygon declarations are **EPSG:2169** MultiPolygon;
+  this does not prove matching entity semantics or certified field control.
+- Original sources are obtained only from fixed official HTTPS URLs on
+  a temporary GitHub Actions runner; neither ZIP, GeoPackage nor
+  temporary selected geometry leaves that runner.
+
+## Method / reproduction
+
+`research_runners/luxembourg_act2023_geobase2026_geometry_v0.py`
+uses already tested exact-file source-GPKG and RTree validators. It
+selects one fixed central Luxembourg research square of
+**250m × 250m** around 6.1319°E, 49.6116°N. It reads at most
+**400** ACT roof and **400** GeoBase building polygons, via the two
+original GeoPackage RTree spatial indices, into automatically removed
+private temporary GeoJSON files with declared native EPSG:2169.
+The reviewed `scripts/building_footprint_overlap_v0.py` projects both
+to European equal area EPSG:3035, applies an illustrative IoU≥0.60 and
+substantial-overlap≥0.20 research classification, and outputs **only**
+aggregate unique candidates, ambiguous splits/merges, weak/no overlap,
+bounded pair counts and median candidate IoU.
+
+```bash
+python -m pip install -r requirements-eu-flood-spatial.txt
+python -m unittest tests.test_luxembourg_act2023_geobase2026_geometry_v0 -v
+python -m research_runners.luxembourg_act2023_geobase2026_geometry_v0 \
+  --act-gpkg /private/original-ACT2023v2.gpkg \
+  --geobase-gpkg /private/original-GeoBase20261001.gpkg
+```
+
+A source-hash drift, absent index, empty/too-dense window, invalid
+geometry or source population drift must fail closed. Both original
+fixed-source URLs and zip/GPKG hashes are independently checked before
+extracting any comparison window.
+
+## Interpretation limits
+
+- An **exact text ID match is absent** in both original full populations.
+  A high IoU is not equivalent to an official mapping between ID namespaces.
+- One ACT2023 rooftop can cover several GeoBase buildings, or the reverse.
+  Without a manually adjudicated crosswalk these must stay **ambiguous**.
+- ACT is the publisher of both, so this is **correlated source-family**
+  research, not independent ground truth.
+- Differences in observation date (2023 versus 2026), roof/ground/record
+  definitions, surveying detail, segmentation, CRS and completeness are
+  confounded. No count is interpreted as a construction/demolition,
+  property-level insurance exposure, replacement value, claim or catastrophe
+  loss. Even a precise overlap is **not a model-input admission**.
+
+Next: stratify urban/rural manually adjudicated windows with independently
+verified coordinate controls, survey date and dimensional semantics; consider
+an official ACT ID crosswalk if the publisher makes one available.
