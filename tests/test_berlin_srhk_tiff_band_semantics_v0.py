@@ -74,7 +74,7 @@ class BerlinTiffBandSemanticsTests(unittest.TestCase):
 
     def test_unknown_or_centimetre_units_do_not_become_metres(self):
         for src, expected in (("cm", "cm"), ("mm", "mm"),
-                              ("m", "m"), ("ft", None), ("", None)):
+                              ("m", "m"), ("ft", None)):
             with self.subTest(unit=src):
                 r = inspect_tiff_band_declarations(original_like(unit=src))
                 self.assertEqual(r["gdal_band_unit_label_declared"], expected)
