@@ -238,6 +238,71 @@ class CompletenessAndMatchingTests(unittest.TestCase):
             evaluate(raw(a),raw(h))
 
     @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
+    def test_method_code_to_description_empirical_ambiguity_only_aggregate(self):
+        a,h=pair()
+        # One code with two labels; one of those labels on a second code.
+        values=[("1000","PRIVATE Laser A"),("1000","PRIVATE Laser B"),
+                ("5000","PRIVATE Laser A")]
+        for feature,(code,label) in zip(h["features"],values):
+            feature["properties"].update({
+                "quelledachhoehe":code,"quelledachhoehe_txt":label,
+            })
+        report=evaluate(raw(a),raw(h))
+        grouped=report["height_method_empirical_code_text_concordance"][
+            "all_height_features"]["quelledachhoehe"]
+        self.assertEqual(grouped["paired_records"],3)
+        self.assertEqual(grouped["distinct_code_groups"],2)
+        self.assertEqual(grouped["distinct_description_groups"],2)
+        self.assertEqual(grouped["codes_with_multiple_descriptions"],1)
+        self.assertEqual(grouped["descriptions_with_multiple_codes"],1)
+        self.assertEqual(grouped["records_in_multi_description_code_groups"],2)
+        self.assertEqual(grouped["records_in_multi_code_description_groups"],2)
+        self.assertFalse(report["height_method_code_text_semantics_validated"])
+        self.assertFalse(report["method_code_or_description_values_exported"])
+        self.assertFalse(report["model_input_admitted"])
+        for sensitive in ("Laser A","Laser B","1000","5000"):
+            self.assertNotIn(sensitive,str(report))
+
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
+    def test_method_empirical_concordance_handles_case_whitespace_and_missing(self):
+        a,h=pair()
+        props=[f["properties"] for f in h["features"]]
+        props[0].update({"quellebodenhoehe":0,"quellebodenhoehe_txt":"  DGM  1 "})
+        props[1].update({"quellebodenhoehe":0,"quellebodenhoehe_txt":"dgm 1"})
+        props[2].update({"quellebodenhoehe":None,"quellebodenhoehe_txt":"some label"})
+        report=evaluate(raw(a),raw(h))
+        con=report["height_method_empirical_code_text_concordance"][
+            "all_height_features"]["quellebodenhoehe"]
+        self.assertEqual(con["paired_records"],2)
+        self.assertEqual(con["distinct_code_groups"],1)
+        self.assertEqual(con["distinct_description_groups"],1)
+        self.assertEqual(con["codes_with_multiple_descriptions"],0)
+        self.assertEqual(con["descriptions_with_multiple_codes"],0)
+        self.assertFalse(report["height_method_code_text_semantics_validated"])
+        self.assertFalse(report["model_input_admitted"])
+
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
+    def test_method_concordance_quarantined_vs_unique_subset_and_bad_text(self):
+        a,h=pair()
+        for feat in h["features"]:
+            feat["properties"].update({
+                "quellelage":"1000","quellelage_txt":"unreviewed-method-word",
+            })
+        h["features"][1]["geometry"]=copy.deepcopy(h["features"][0]["geometry"])
+        report=evaluate(raw(a),raw(h))
+        groups=report["height_method_empirical_code_text_concordance"]
+        self.assertEqual(groups["all_height_features"]["quellelage"]["paired_records"],3)
+        self.assertEqual(groups["uniquely_matched_height_features"]["quellelage"]["paired_records"],1)
+        self.assertEqual(groups["duplicate_footprint_quarantined_height_features"]["quellelage"]["paired_records"],2)
+        self.assertNotIn("unreviewed-method-word",str(report))
+        self.assertFalse(report["model_input_admitted"])
+        aa,hh=pair()
+        hh["features"][0]["properties"]["quelledachhoehe"]=7
+        hh["features"][0]["properties"]["quelledachhoehe_txt"]=13
+        with self.assertRaisesRegex(CompleteBboxError,"description must be text"):
+            evaluate(raw(aa),raw(hh))
+
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
     def test_missing_or_unbounded_source_population_refused(self):
         a,h=pair()
         h["numberMatched"]=4

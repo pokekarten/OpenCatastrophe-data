@@ -312,3 +312,39 @@ the official method-code domains must be independently understood,
 linked to DOM/bDOM/DGM1 methodology, rights reviewed and all
 `Gebäudeteil` source identities handled at the appropriate
 segmentation level. **CAT/model-admitted heights remain zero.**
+
+## Empirical code↔description consistency review (not codebook verification)
+
+The next audit computes *aggregate-only*, producer-source method
+**internal consistency**, separately for Bodenhöhe, Dachhöhe and Lage.
+For every method, within (1) all original LoD2 records, (2) uniquely
+matched historical source-part polygons, and (3) quarantined duplicate
+footprints, the audit reports:
+
+- Number of observations with **both** code and description, distinct
+  code groups, and distinct normalized description groups.
+- How many code groups correspond to **multiple text descriptions**,
+  and how many description groups correspond to **multiple codes**.
+- How many observations are affected by either direction of potential
+  inconsistency, without revealing which source codes or source texts.
+
+Comparison trims/normalizes whitespace and letter case for text;
+type-sensitive code grouping is intentionally conservative. No
+method codes, descriptions, feature IDs, raw GeoJSON, stable hashes of
+individual values or height measurements are exported or persisted.
+
+**Crucial limitation:** one code consistently producing one label
+does **not** establish that the label correctly interprets the
+official AdV codebook, or that any height is a directly measured
+observation. The Berlin [data dictionary](https://fbinter.stadt-berlin.de/fb_daten/beschreibung/umweltatlas/datenformatbeschreibung/Datenformatbeschreibung_06_10_1gebhoehen.html)
+names the fields but does not specify a complete numeric-to-text
+codebook. The German AdV [LoD2-DE dataset description](https://www.adv-online.de/AdV-Produkte/Standards-und-Produktblaetter/ZSHH/Datenformatbeschreibung_LoD2-DE_V_3.19509.pdf)
+references the separate AdV product-quality standard for source
+method code semantics; no Berlin-specific field-to-codebook
+equivalence is proven by this work. Any such mapping requires
+distinct versioned legal, scientific and official provider reviews.
+
+Neither a coherent code/description relationship nor positive
+`hoehe` can establish the source method's precision or automatically
+turn historical **Gebäudeteil** polygons into insured buildings.
+CAT model admission remains false.
