@@ -8,7 +8,7 @@ import unittest
 
 REQUIRED=all(importlib.util.find_spec(x) for x in ("rasterio","numpy","pyproj"))
 from research_runners.luxembourg_lidar2024_bounded_cog_window_v0 import (
-    CogWindowError,native_bbox,bounded_window_from_source,compute_proxy
+    CogWindowError,native_bbox,bounded_window_from_source,compute_proxy,source_crs_is_epsg2169
 )
 
 
@@ -33,6 +33,18 @@ class LocalRasterWindowTests(unittest.TestCase):
         import rasterio
         with rasterio.Env(GDAL_CACHEMAX=8, GDAL_HTTP_TIMEOUT="20", VSI_CACHE="FALSE"):
             self.assertTrue(True)
+
+    def test_original_wkt1_luref_projection_without_epsg_root_code(self):
+        from types import SimpleNamespace
+        from rasterio.crs import CRS as RasterCRS
+        from pyproj import CRS
+        original_wkt=CRS.from_epsg(2169).to_wkt(version="WKT1_GDAL")
+        older=RasterCRS.from_wkt(original_wkt)
+        self.assertIsNone(older.to_epsg())
+        self.assertTrue(source_crs_is_epsg2169(SimpleNamespace(crs=older)))
+        altered=original_wkt.replace('PARAMETER["false_easting",80000]', 'PARAMETER["false_easting",81000]')
+        self.assertNotEqual(altered,original_wkt)
+        self.assertFalse(source_crs_is_epsg2169(SimpleNamespace(crs=RasterCRS.from_wkt(altered))))
 
     def test_original_city_window_stays_bounded(self):
         mem,src=self.synthetic()
