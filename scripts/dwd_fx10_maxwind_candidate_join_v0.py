@@ -19,6 +19,7 @@ from decimal import Decimal, InvalidOperation
 import hashlib
 import io
 import json
+import re
 from pathlib import Path
 import sys
 import zipfile
@@ -54,11 +55,25 @@ def _positive_height(value: str) -> bool:
     return height.is_finite() and Decimal("0") < height <= Decimal("300")
 
 
+def _unit_class(value: str) -> str:
+    """Only a bounded unit label is exposed; never a source data row."""
+    canonical = value.strip().strip('"').strip().replace(" ", "").casefold()
+    if canonical == "m/s":
+        return "verified_unit_m_per_s"
+    # The provider unit itself is public, but do not emit arbitrary upstream
+    # text into Action logs. Classify an explicitly small recognized alphabet.
+    if len(value) <= 24 and re.fullmatch(r"[A-Za-z0-9/*.^_ -]+", value):
+        return "unrecognized_unit_" + value.strip().replace(" ", "_")
+    return "unrecognized_unit_sha256_" + hashlib.sha256(
+        value.encode("utf-8")).hexdigest()[:12]
+
+
 def _daily_pair_count(eq: list[dict], params: list[dict]) -> dict:
     counts = Counter()
     monthly = {}
     distinct_candidate_equipment = set()
     unrecognized_unit_days = 0
+    unit_days = Counter()
     plausible_sensor_height_days = 0
     day = START
     while day <= END:
@@ -87,7 +102,9 @@ def _daily_pair_count(eq: list[dict], params: list[dict]) -> dict:
                 e0["Messverfahren"],
                 e0["Geberhoehe ueber Grund [m]"],
             ))
-            if p0["Einheit"].strip() != GUST_UNIT:
+            unit_category = _unit_class(p0["Einheit"])
+            unit_days[unit_category] += 1
+            if unit_category != "verified_unit_m_per_s":
                 unrecognized_unit_days += 1
             if _positive_height(e0["Geberhoehe ueber Grund [m]"]):
                 plausible_sensor_height_days += 1
@@ -101,6 +118,8 @@ def _daily_pair_count(eq: list[dict], params: list[dict]) -> dict:
         "missing_candidate_pair_days": counts["none"],
         "multiple_candidate_pair_days": counts["multiple"],
         "one_pair_days_with_non_matching_unit": unrecognized_unit_days,
+        "original_parameter_unit_categories_by_candidate_days":
+            dict(sorted(unit_days.items())),
         "one_pair_days_with_plausible_unverified_sensor_height": plausible_sensor_height_days,
         "distinct_device_method_height_tuples_for_one_pair_days":
             len(distinct_candidate_equipment),
