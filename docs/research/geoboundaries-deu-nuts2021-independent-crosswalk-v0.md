@@ -135,3 +135,37 @@ correspondence as proof, or represent the full 16-region crosswalk as
 production-usable. A second one-shot bounded live workflow will report
 only suspect NUTS code(s) and numeric overlap fractions (no provider
 feature identifiers or coordinates) and keep the same fail-closed cutoff.
+
+## Exact root-cause evidence: 20M cartographic adjacency issue
+
+A second source-pinned run
+[41317364634](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41317364634)
+collected all the original-source failures without releasing coordinates or
+the original source feature names. **14 of the 16 source regions cleared the
+75% bidirectional overlap and <10% runner-up thresholds; two did not:**
+
+| Best independent NUTS2021 region | % source area covered by its NUTS polygon | % NUTS area covered by source polygon | Largest runner-up / best intersection | Failed gate |
+| --- | ---: | ---: | ---: | --- |
+| `DE3` Berlin | 89.8923% | 90.8861% | 11.2443% | Runner-up `>=10%` |
+| `DE5` Bremen | 82.5459% | 90.1874% | 17.6251% | Runner-up `>=10%` |
+
+The full mapping remains **blocked**. Both primary overlap fractions are
+above 75%, so merely lowering the bidirectional area-coverage threshold
+would not address this conflict. Germany's city states Berlin and Bremen
+are disproportionately affected by polygon simplification, but the
+current evidence does not prove that is the only cause. The most defensible
+next experiment is independently source-pinned **Eurostat 2021 / 4326 /
+10M / NUTS1** geometry with the *same* 16-region geometry and separation
+checks. This higher cartographic resolution has a distinct exact file
+length **371,684 bytes** and SHA-256
+`d3e02d4b23809db8e178483606e07a780103f49797f83d989b685fede2feee19`,
+at the same original Eurostat repository revision
+`8186be451525164ea24b43560cb943fda7c5520c`.
+
+The implemented `--nuts-scale 10M` choice checks this **distinct
+source** without reinterpreting the existing 20M dataset. No source
+regions, names, bounds or source geometry are committed; any successful
+CAT2 mapping will remain local **unadmitted research staging**, not a
+NUTS2016↔NUTS2021 equivalence or building-value estimator. If 10M still
+fails the unchanged acceptance tests, retain the blocker and research
+higher-detail official geodata rather than manufacturing a mapping.
