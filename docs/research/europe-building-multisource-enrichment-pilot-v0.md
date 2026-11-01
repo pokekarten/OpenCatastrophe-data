@@ -87,21 +87,21 @@ For a reliable CAT model, the relevant success metric is not raw number of rows.
 
 ## Offline executable diagnostic (implemented in this PR)
 
-The script \`scripts/building_id_enrichment_v0.py\` and synthetic regression tests
-\`tests/test_building_id_enrichment_v0.py\` implement the **strict building-ID**
+The script `scripts/building_id_enrichment_v0.py` and synthetic regression tests
+`tests/test_building_id_enrichment_v0.py` implement the **strict building-ID**
 part of the pilot. This is intentionally not a cadastral geometry join and not
 an external-data loader.
 
 Minimal *synthetic* input contract:
 
-\`\`\`text
+```text
 base.csv: building_id,construction_year,roof_type,floors_above_ground
 supplement.csv: source_record_id,building_id,record_kind,observation_kind,construction_year,roof_type,floors_above_ground
-\`\`\`
+```
 
-\`record_kind\` is one of \`building|dwelling|address|parcel|certificate\`. Only
-\`building\` can participate. \`observation_kind\` is
-\`measured|official_record|modelled|statistical_estimate\`. A \`statistical_estimate\`
+`record_kind` is one of `building|dwelling|address|parcel|certificate`. Only
+`building` can participate. `observation_kind` is
+`measured|official_record|modelled|statistical_estimate`. A `statistical_estimate`
 for an individual building is **blocked** as an observed fill, and a modelled
 attribute is counted separately. Missing is the empty CSV cell, not a fabricated
 zero, "N/A" or an imputed date.
@@ -109,7 +109,7 @@ zero, "N/A" or an imputed date.
 After creating your own **synthetic-only or independently rights-cleared** local
 CSV fixtures, run:
 
-\`\`\`bash
+```bash
 python scripts/building_id_enrichment_v0.py \
   --base /tmp/building-base.csv \
   --supplement /tmp/building-supplement.csv \
@@ -119,7 +119,7 @@ python scripts/building_id_enrichment_v0.py \
   --out /tmp/building-id-diagnostic.json
 
 python -m unittest -v tests.test_building_id_enrichment_v0
-\`\`\`
+```
 
 The diagnostic JSON contains *aggregate counts and file SHA-256*, not per-building
 identifiers, source-row contents, buildings' original attribute values, or a
@@ -128,7 +128,7 @@ per-attribute agreements/conflicts and proposed observed/modelled fills; ambiguo
 multiple building matches are excluded, rather than arbitrarily choosing the
 first. Source and rights statuses are assertions about a *local diagnostic only*:
 the script **never promotes data to admitted model input**, even when
-\`--rights-state reviewed_for_local_analysis\` is supplied. It cannot prove legal
+`--rights-state reviewed_for_local_analysis` is supplied. It cannot prove legal
 rights or that identically spelled IDs belong to the same ID namespace.
 
 If EHR-to-EUBUCCO has **no documented shared building identifier**, **do not
