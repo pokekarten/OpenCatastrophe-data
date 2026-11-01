@@ -7,6 +7,8 @@ on:
     paths:
       - 'research_runners/luxembourg_geobase_2026_geometry_quality_v0.py'
       - 'research_runners/luxembourg_geobase_2026_repair_diagnostic_v0.py'
+      - 'research_runners/luxembourg_spslux_202604_axis_station_screen_v0.py'
+      - 'tests/test_luxembourg_spslux_202604_axis_station_screen_v0.py'
       - 'tests/test_luxembourg_geobase_2026_geometry_quality_v0.py'
       - '.github/workflows/luxembourg-geobase-2026-geometry-quality.yml'
   workflow_dispatch:
@@ -29,10 +31,14 @@ jobs:
           python-version: "3.13"
       - name: Install reviewed original-geometry validator
         run: |
-          python -m pip install --disable-pip-version-check --no-input shapely==2.1.2
+          python -m pip install --disable-pip-version-check --no-input shapely==2.1.2 pyproj==3.7.2
           python -m pip check
       - name: Synthetic corrupt and valid GeoPackage geometry regressions
         run: python -m unittest tests.test_luxembourg_geobase_2026_geometry_quality_v0 -v
+      - name: Screen official seven April 2026 SPSLux reference stations without publishing positions
+        run: |
+          python -m unittest tests.test_luxembourg_spslux_202604_axis_station_screen_v0 -v
+          python -m research_runners.luxembourg_spslux_202604_axis_station_screen_v0
       - name: Inspect complete exact-original ACT GeoBase geometry, aggregate only
         shell: bash
         run: |
