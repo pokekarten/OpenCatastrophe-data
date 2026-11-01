@@ -63,6 +63,50 @@ verified before any comparison.
   source axis, original-source scientific independence, manual match
   precision/recall, model-input admission and insurer exposure import.
 
+## Observed real-source result (2026-11-01; first successful pilot)
+
+**Original GitHub Actions run:** <https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41308584880>.
+Both upstream pinned archive/source digests passed, all four synthetic
+regressions passed, and the real fixed-window matched candidate
+diagnostics executed successfully in temporary runner storage.
+
+| Measure | Actual 250 m × 250 m central Luxembourg result |
+| --- | ---: |
+| Original ACT roof polygons intersecting the window | **149** |
+| Original EUBUCCO building polygons intersecting the window | **45** |
+| Original polygon bounding-box candidate pairs checked | **267** |
+| Unique ACT-to-EUBUCCO overlap candidate above illustrative 0.60 IoU | **9** |
+| ACT roof polygons with one-to-many / many-to-one ambiguity | **136** |
+| ACT roofs with no substantial overlap | **4** |
+| Single-candidate ACT roofs below IoU 0.60 | **0** |
+| Mean IoU among the 9 unique candidate pairs | **0.823780** |
+| Median IoU among the 9 unique candidate pairs | **0.794262** |
+
+The ACT-side categorisation partitions its 149 source roof
+polygons into **9 + 136 + 4 + 0**. It does NOT establish 136 duplicate
+buildings, 4 missing buildings, 9 cadastral building identities or a
+valid national completeness fraction. Both provider source entity
+definitions and observation vintages differ. Connected structures,
+complex roof forms, overhangs, multi-source crowding and upstream
+lineage can create strong cross-pair cardinality differences. The
+small, nonrandom city-centre window is not representative of rural
+areas or entire Luxembourg. The **ACT native as-stored XY axis
+remains a plausible research hypothesis, not field-verified geodetic
+truth**. No independent hand-adjudicated match set exists.
+
+No original geometry, per-building ID or source file was persisted,
+uploaded or admitted to the insurance database. Both source hashes,
+total source counts and false scientific-admission flags are in
+the original workflow log.
+
+**Decision:** The observed high ambiguity is a strong reason
+**not to auto-merge original building IDs or impute building values
+from rooftop overlap**. Next, identify whether each ACT rooftop
+polygon is one roof face or one stable physical building, map
+EUBUCCO government source lineage, manually adjudicate mixed
+urban/rural examples, and calibrate source-specific cardinality rules
+and crosswalk precision/recall.
+
 ## What a successful run does and does not establish
 
 If the original research window is nonempty and the original source
