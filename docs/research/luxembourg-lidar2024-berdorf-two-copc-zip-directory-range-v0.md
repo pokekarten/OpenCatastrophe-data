@@ -70,3 +70,40 @@ share ACT LiDAR upstream and **are not independent accuracy ground truth**.
 No 2024 vertical datum certification, roof-class accuracy, individual
 building survey, source redistribution rights or CAT model/exposure
 approval is established by this ZIP directory study.
+
+## Actual original official ZIP range results (2026-11-01)
+
+Original source GitHub workflow [41323272332](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41323272332)
+completed **successfully** with **9/9 fake-network/synthetic archive tests**
+and both real official source ZIP HTTP 206 metadata reads.
+
+| Verified source outcome (real original bytes) | Berdorf south `C030_R028` | Berdorf north `C030_R029` |
+| --- | ---: | ---: |
+| Publisher JSON/HEAD agreed original full archive bytes | **1,701,393,927** | **1,736,263,124** |
+| Exact HTTP206 original ZIP tail acquired | **65,557 bytes** | **65,557 bytes** |
+| Exact HTTP206 original central-directory acquired | **549 bytes** | **552 bytes** |
+| Parsed original ZIP member count | **9** | **9** |
+| Members ending in `.laz` | **9** | **9** |
+| Members ending in `.copc.laz` | **0** | **0** |
+| Expected published study tiles appearing **exactly once** | **2 of 2** | **2 of 2** |
+| Original LAZ payload, LAS point count, class 2/5/6 contents acquired | **NONE** | **NONE** |
+
+That means **18 real original LAZ file entries across the two official
+Berdorf group ZIPs**, with all four predeclared fixed village tiles
+accounted for exactly once. Original ZIP directory bytes downloaded
+for Berdorf total only **132,215 bytes**, compared with the
+**3,437,657,051-byte** combined full archives. HTTP range requests
+remained bounded, and the source-metadata SHA1 values remain *publisher
+reported, not archive-byte verified*. Each internal LAZ name was parsed
+only transiently, never written into the source report. The file
+suffix alone does **not** prove COPC compliance, class-6 building-point
+coverage, vertical datum or roof/classifier accuracy. Those need actual
+LAS public headers and later an independently quality-controlled
+spatial point-class sample.
+
+Combined with the **9 real city LAZ entries** from merged #991,
+the **three original archives contain 27 LAZ entry names**, of
+which the **five specific studied 500m tile entries** are all now
+present in actual publisher ZIP central directories. These are
+source-directory findings, not 27 independent buildings or 27
+downloaded data files. No CAT exposure/model-input admission occurred.
