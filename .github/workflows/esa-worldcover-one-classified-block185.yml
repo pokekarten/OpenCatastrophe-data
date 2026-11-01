@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESA WorldCover one exact original land-cover pixel block 185
+
+on:
+  pull_request:
+    paths:
+      - 'access/esa.worldcover.2021.v200.json'
+      - 'access/esa.worldcover.2021.v200.md'
+      - 'scripts/probe_esa_worldcover_classified_block185_v0.py'
+      - 'tests/test_probe_esa_worldcover_classified_block185_v0.py'
+      - '.github/workflows/esa-worldcover-one-classified-block185.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: worldcover-original-block185-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  one-reviewed-classified-block:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact PR ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Confirm canonical source access projection
+        run: python scripts/render_public_views.py --check --scope access
+      - name: Synthetic class-code, TIFF compression, size and security negative tests
+        run: python -m unittest tests.test_probe_esa_worldcover_classified_block185_v0 -v
+      - name: Exactly one fixed 4KiB header, 10368B table and 56442B block; aggregate counts only
+        run: python -m scripts.probe_esa_worldcover_classified_block185_v0 --live
