@@ -107,7 +107,7 @@ def classify_name(name: str, schema_fields: list[str]) -> dict:
         "observed_extent_name_hint": observed_hint and not modeled_hint,
         "modeled_or_depth_name_hint": modeled_hint,
         "has_aoi_discriminator_field_hint": any(
-            word in fields for word in ("aoi", "areaofinterest", "area_name")
+            word in fields for word in ("aoi", "areaofinterest", "area_name", "area_code", "area_id")
         ),
         "observed_aoi04_layer_proven": False,
     }
