@@ -108,7 +108,11 @@ def profile(path: Path) -> dict[str, object]:
                     sampled.append({
                         "byte_count": len(raw),
                         "sha256": hashlib.sha256(raw).hexdigest(),
-                        "structure_screen": "pass",
+                        "structure_screen": (
+                            "partial" if receipt["lod0_polygon_screen_budget_exhausted"]
+                            or receipt["lod0_geometry_unresolved_property_count"] > 0
+                            else "pass"
+                        ),
                         "building_count": receipt["building_element_count"],
                         "measured_height_count": receipt["measured_height_m_count"],
                         "lod0_ground_ring_screened_count": receipt.get(
@@ -116,6 +120,9 @@ def profile(path: Path) -> dict[str, object]:
                         ),
                         "lod0_unresolved_count": receipt.get(
                             "lod0_geometry_unresolved_property_count", 0
+                        ),
+                        "lod0_polygons_not_screened_due_to_budget": receipt.get(
+                            "lod0_polygons_not_screened_due_to_budget", 0
                         ),
                         "provider_origin_beyond_git_blob": False,
                         "model_input_admitted": False,
