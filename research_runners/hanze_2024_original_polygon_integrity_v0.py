@@ -50,8 +50,13 @@ def _wkt_metadata(value: bytes) -> dict:
     units = re.findall(r'(?:UNIT|LENGTHUNIT|ANGLEUNIT)\s*[\[(]\s*"([^"]{1,80})"', text, re.I)
     if not units:
         raise RegionArchiveError("PRJ WKT has no explicit coordinate units")
+    name = re.search(r'^(?:GEOGCS|PROJCS|GEOGCRS|PROJCRS)\s*[\[(]\s*"([^"]{1,120})"', text, re.I)
+    method = re.search(r'PROJECTION\s*[\[(]\s*"([^"]{1,120})"', text, re.I)
     return {
         "prj_source_bytes": len(value),
+        "declared_crs_name_unverified": name.group(1) if name else None,
+        "declared_projection_method_unverified": method.group(1) if method else None,
+        "declared_unit_names_unverified": sorted(set(units)),
         "wkt_header_family": re.match(r"[A-Za-z]+", text).group(0).upper(),
         "wkt_authority_epsg_codes_reported": sorted(set(epsg)),
         "wkt_contains_unit_declaration": bool(units),
