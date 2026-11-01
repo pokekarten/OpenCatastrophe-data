@@ -104,8 +104,8 @@ def inspect(path: Path, *, expected_sha256: str = PINNED_METADATA_SHA256) -> dic
     except (OSError, ValueError) as exc:
         raise Station00348JoinBlocked("original station00348 metadata snapshot blocked") from exc
     digest = hashlib.sha256(source).hexdigest()
-    if digest != expected_sha256 or expected_sha256 != PINNED_METADATA_SHA256:
-        raise Station00348JoinBlocked("station00348 original SHA not pinned")
+    if digest != expected_sha256:
+        raise Station00348JoinBlocked("station00348 expected source SHA mismatched")
     raw_tables = {}
     fingerprints = {}
     try:
@@ -142,6 +142,7 @@ def inspect(path: Path, *, expected_sha256: str = PINNED_METADATA_SHA256) -> dic
         "profile": "opencatastrophe-dwd00348-fx10-maxwind-candidate-timeline-v0",
         "station_id": STATION,
         "original_metadata_sha256": digest,
+        "original_metadata_matches_live_frozen_sha": digest == PINNED_METADATA_SHA256,
         "instrument_member_sha256": fingerprints[DEVICE_FILE],
         "parameter_member_sha256": fingerprints[PARAMETER_FILE],
         "original_maxwind_instrument_records": FROZEN_DEVICE_RECORDS,
