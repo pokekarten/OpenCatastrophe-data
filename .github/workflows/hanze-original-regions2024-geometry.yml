@@ -19,6 +19,7 @@ on:
       - "tests/test_hanze_2024_independent_crs_geos_audit_v0.py"
       - "research_runners/hanze_2024_gdal_fiona_geometry_review_v0.py"
       - "tests/test_hanze_2024_gdal_fiona_geometry_review_v0.py"
+      - "research_runners/hanze_2024_cross_reader_source_receipt_v0.py"
       - "research_runners/hanze_2024_independent_geometry_source_receipt_v0.py"
       - "research_runners/hanze_regions2024_geometry_source_receipt_v0.py"
   workflow_dispatch:
@@ -74,3 +75,6 @@ jobs:
       - name: Compare original regions from alternate GDAL/Fiona shapefile interpretation
         run: |
           python -c 'import json,os,pathlib; r=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-regions2024-zip-metadata.json").read_text()); g=r["independent_gdal_fiona_geometry_validity"]; v=g["validity_counts"]; assert g["original_zip_sha256_verified"] and g["read_feature_count"]==1449 and v["geos_valid"]+v["geos_invalid"]+v["null_geometries"]==1449 and not g["original_geometry_bytes_or_region_ids_exported"] and not g["automatic_geometry_makevalid_performed"] and not g["model_input_admitted"]; print("Independent GDAL/Fiona original shapes vs GEOS aggregate (no source features):",json.dumps(g,sort_keys=True))'
+      - name: Pin exact original feature-by-feature reader agreement against frozen source evidence
+        run: |
+          python -c 'import json,os,pathlib; from research_runners.hanze_2024_cross_reader_source_receipt_v0 import HANZE_GDAL_PYSHP_ORIGINAL_CROSSCHECK_V0 as e; g=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-regions2024-zip-metadata.json").read_text())["independent_gdal_fiona_geometry_validity"]; c=g["cross_reader_per_feature_validity_counts"]; assert g["read_feature_count"]==e["original_geometries"] and c["both_valid"]==e["both_readers_valid"] and c["both_invalid"]==e["both_readers_flagged_invalid"] and c["gdal_valid_pyshp_invalid"]==e["gdal_valid_pyshp_invalid"] and c["gdal_invalid_pyshp_valid"]==e["gdal_invalid_pyshp_valid"] and c["geometry_types_disagree"]==e["geometric_type_disagreements"] and g["invalid_reason_family_counts"]==e["identified_invalid_family_counts"] and g["original_feature_code_order_agrees_without_emitting_identifiers"] and not e["model_data_admitted"]; print("PASS: GDAL and pyshp same original features: 555 jointly valid, 894 jointly flagged, zero individual disagreements; model excluded")'
