@@ -123,8 +123,14 @@ def _concrete_row(row: object) -> dict[str, object]:
     linked_files = row.get("gspatialjp_files")
     if not isinstance(linked_files, list) or len(linked_files) > 1000:
         raise CataloguePreflightError("target gspatialjp_files must be a bounded array")
-    # Provider file_size belongs to the nested gspatialjp_files entries, not
-    # the CityGML row. The CMS zip and G-Spatial archive are distinct releases.
+    # Official guide documents optional REST row-level file_size (CMS original).
+    # Nested gspatialjp_files[].file_size describes a DIFFERENT archive.
+    cms_zip_size = row.get("file_size")
+    if cms_zip_size is not None and (
+        type(cms_zip_size) is not int or cms_zip_size <= 0
+        or cms_zip_size > 2**63 - 1
+    ):
+        raise CataloguePreflightError("REST CMS file_size must be a positive signed int64 or null")
     gspatial_citygml_count = 0
     gspatial_citygml_all_sizes_known = True
     for index, item in enumerate(linked_files):
@@ -156,6 +162,7 @@ def _concrete_row(row: object) -> dict[str, object]:
         "registration_year": registration_year,
         "spec": spec,
         "bldg_advertised": "bldg" in types,
+        "cms_original_size_metadata_known": cms_zip_size is not None,
         "gspatial_citygml_file_count": gspatial_citygml_count,
         "gspatial_citygml_file_sizes_all_known": bool(gspatial_citygml_count) and gspatial_citygml_all_sizes_known,
         "gspatial_catalogue_page_known": gspatial,
@@ -210,6 +217,7 @@ def preflight_bytes(raw: bytes) -> dict[str, object]:
         "registration_year": candidate["registration_year"],
         "source_spec": candidate["spec"],
         "bldg_advertised": True,
+        "cms_original_size_metadata_known": candidate["cms_original_size_metadata_known"],
         "gspatial_citygml_file_count": candidate["gspatial_citygml_file_count"],
         "gspatial_citygml_file_sizes_all_known": candidate["gspatial_citygml_file_sizes_all_known"],
         "gspatial_catalogue_page_known": candidate["gspatial_catalogue_page_known"],
@@ -226,8 +234,9 @@ def preflight_bytes(raw: bytes) -> dict[str, object]:
 
 
 GRAPHQL_MAX_INPUT_BYTES = 64 * 1024
-# Exact documented selection from the provider's CityGMLDataset GraphQL type.
-# Keep in sync with the non-executable access contract; there is no fileSize.
+# Minimal cross-version GraphQL selection. Provider's schema reference and
+# CityGML guide disagree on fileSize, so do not request it or infer CMS bytes.
+# Keep in sync with the non-executable access contract.
 GRAPHQL_CITYGML_FIELD_NAMES = (
     "id", "cityCode", "prefectureCode", "year", "registrationYear",
     "url", "compositeUrl", "featureTypes", "metadataZipUrls",
@@ -261,8 +270,8 @@ def preflight_graphql_bytes(raw: bytes) -> dict[str, object]:
     if not isinstance(rows, list) or len(rows) != 1 or not isinstance(rows[0], dict):
         raise CataloguePreflightError("GraphQL query must return exactly one CityGML row")
     row = rows[0]
-    # Keep this projection exactly in sync with the documented
-    # CityGMLDataset GraphQL type. Notably it has no fileSize field.
+    # Keep this response in sync with our exact GraphQL selection,
+    # not every field in the evolving provider CityGMLDataset type.
     required_fields = set(GRAPHQL_CITYGML_FIELD_NAMES)
     if set(row) != required_fields:
         raise CataloguePreflightError("GraphQL CityGML selection is missing documented fields or includes unsupported fields")
