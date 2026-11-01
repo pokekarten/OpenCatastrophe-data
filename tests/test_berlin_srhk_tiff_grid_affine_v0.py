@@ -125,5 +125,25 @@ class BerlinFloodTiffGridTests(unittest.TestCase):
         self.assertIsNone(r["pilot_bbox_intersects_header_raster_extent"])
 
 
+    def test_existing_bounded_zip_worker_includes_affine_grid_receipt(self):
+        from hashlib import sha256
+        from io import BytesIO
+        from zipfile import ZIP_DEFLATED, ZipFile
+        from research_runners.berlin_srhk_zip_first_tiff_header_v0 import (
+            READ_BYTES, inspect_prefix,
+        )
+        archive = BytesIO()
+        with ZipFile(archive, "w", compression=ZIP_DEFLATED) as z:
+            z.writestr("n"*34 + ".tif", header())
+        raw = archive.getvalue().ljust(READ_BYTES, b"\0")
+        receipt = inspect_prefix(raw, scenario="extreme",
+                                 expected_512_sha=sha256(raw[:512]).hexdigest())
+        self.assertTrue(receipt["header_only_georeferencing_verified"])
+        self.assertTrue(receipt["header_covers_entire_pilot_bbox"])
+        self.assertFalse(receipt["original_tiff_pixels_sampled"])
+        self.assertFalse(receipt["actual_flood_exposure_admitted"])
+
+
+
 if __name__ == "__main__":
     unittest.main()
