@@ -50,10 +50,14 @@ surface-minus-terrain proxy from the very same source raster pixel grid**.
    Select at most 400 original roof and 400 original building polygons, and
    remove RTree bounding rectangle hits with no actual positive area in the
    rotated square. No alternative/random/expanded study window.
-2. Compute all cross-source polygon IoUs **after clipping to the exact study
-   square**. Admit only IoU ≥0.60 with **no competing alternate polygon from
-   either source** at IoU ≥0.20. This yields at most one-to-one *spatial
-   candidates*; a geometric overlap still does not confirm physical identity.
+2. Compute all cross-source polygon IoUs on the **complete, uncut
+   original polygons**, before any clipping to the 100m study square.
+   Otherwise two large neighboring polygons can appear artificially identical
+   at the region edge. Admit only full-source IoU ≥0.60 with **no competing
+   alternate polygon from either source** at full-source IoU ≥0.20. This yields
+   at most one-to-one *spatial candidates*; even complete-source high IoU
+   does not certify the same physical building. Clip only the **raster masks**
+   after that independent candidate gate.
 3. Read exactly two matching MNT/MNS source raster windows, maximum 200k
    original pixels per raster and matching native source transform.
    Reject invalid/nodata/outlier source elevation pairs.
