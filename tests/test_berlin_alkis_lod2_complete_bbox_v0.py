@@ -159,6 +159,85 @@ class CompletenessAndMatchingTests(unittest.TestCase):
         self.assertEqual(report["matched_source_height_admitted_to_insurer_exposure"],0)
 
     @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
+    def test_method_code_text_pair_coverage_never_exports_values(self):
+        a,h=pair()
+        sample=h["features"]
+        sample[0]["properties"].update({
+            "quellebodenhoehe":0,"quellebodenhoehe_txt":"PRIVATE ground method text",
+            "quelledachhoehe":5,"quelledachhoehe_txt":"   ",
+            "quellelage":None,"quellelage_txt":"PRIVATE location method text",
+        })
+        sample[1]["properties"].update({
+            "quellebodenhoehe":None,"quellebodenhoehe_txt":None,
+            "quelledachhoehe":None,"quelledachhoehe_txt":None,
+            "quellelage":None,"quellelage_txt":None,
+        })
+        sample[2]["properties"].update({
+            "quellebodenhoehe":"METHOD-9","quellebodenhoehe_txt":"public scheme label",
+            "quelledachhoehe":12,"quelledachhoehe_txt":"roof source description",
+            "quellelage":1,"quellelage_txt":"location method",
+        })
+        report=evaluate(raw(a),raw(h))
+        cov=report["height_method_code_description_coverage"]
+        full=cov["all_height_features"]
+        self.assertEqual(full["quellebodenhoehe"],{
+            "code_and_description":2,"code_only":0,
+            "description_only":0,"both_absent":1,
+        })
+        self.assertEqual(full["quelledachhoehe"],{
+            "code_and_description":1,"code_only":1,
+            "description_only":0,"both_absent":1,
+        })
+        self.assertEqual(full["quellelage"],{
+            "code_and_description":1,"code_only":0,
+            "description_only":1,"both_absent":1,
+        })
+        self.assertEqual(cov["uniquely_matched_height_features"],full)
+        self.assertEqual(cov["duplicate_footprint_quarantined_height_features"][
+            "quellebodenhoehe"]["code_and_description"],0)
+        self.assertEqual(report["matched_source_height_admitted_to_insurer_exposure"],0)
+        self.assertFalse(report["height_method_labels_or_codes_exported"])
+        self.assertFalse(report["height_method_code_description_agreement_or_measurement_proven"])
+        self.assertFalse(report["model_input_admitted"])
+        for private in ("PRIVATE","METHOD-9","roof source description","location method"):
+            self.assertNotIn(private,str(report))
+
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
+    def test_method_coverage_respects_original_duplicate_quarantine(self):
+        a,h=pair()
+        for f in h["features"]:
+            f["properties"].update({
+                "quellebodenhoehe":0,
+                "quellebodenhoehe_txt":"some source description",
+            })
+        h["features"][1]["geometry"]=copy.deepcopy(h["features"][0]["geometry"])
+        report=evaluate(raw(a),raw(h))
+        cov=report["height_method_code_description_coverage"]
+        self.assertEqual(cov["all_height_features"]["quellebodenhoehe"]["code_and_description"],3)
+        self.assertEqual(cov["duplicate_footprint_quarantined_height_features"][
+            "quellebodenhoehe"]["code_and_description"],2)
+        self.assertEqual(cov["uniquely_matched_height_features"][
+            "quellebodenhoehe"]["code_and_description"],1)
+        self.assertEqual(report["unambiguous_one_to_one_footprints"],1)
+        self.assertFalse(report["model_input_admitted"])
+
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
+    def test_bad_method_text_shape_or_nonfinite_code_fails_closed(self):
+        a,h=pair()
+        for bad in ([], {"a":1}, True, float("inf")):
+            with self.subTest(type=type(bad).__name__):
+                aa,hh=copy.deepcopy(a),copy.deepcopy(h)
+                # JSON cannot serialize Inf as an RFC-compliant source;
+                # strict original parser rejects it or method parser rejects it.
+                hh["features"][0]["properties"]["quelledachhoehe_txt"]=bad
+                with self.assertRaises((CompleteBboxError,ValueError)):
+                    evaluate(raw(aa),raw(hh))
+        a,h=pair()
+        h["features"][0]["properties"]["quellebodenhoehe"]=False
+        with self.assertRaises(CompleteBboxError):
+            evaluate(raw(a),raw(h))
+
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
     def test_missing_or_unbounded_source_population_refused(self):
         a,h=pair()
         h["numberMatched"]=4

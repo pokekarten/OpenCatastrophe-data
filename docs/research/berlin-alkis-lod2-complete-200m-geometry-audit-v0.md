@@ -241,3 +241,29 @@ entities. Their height method, duplicate relations, 2022-versus-current
 vintage, rights and scientific uncertainty all remain explicit.
 No building ID, individual feature value or insurer CAT4 record
 has been added.
+
+## Method-code and descriptive-label coverage gate (research only)
+
+The Berlin [technical data dictionary](https://fbinter.stadt-berlin.de/fb_daten/beschreibung/umweltatlas/datenformatbeschreibung/Datenformatbeschreibung_06_10_1gebhoehen.html)
+explicitly pairs `quellebodenhoehe` with `quellebodenhoehe_txt`,
+`quelledachhoehe` with `quelledachhoehe_txt`, and
+`quellelage` with `quellelage_txt`. The code alone does **not**
+identify the physical measurement method unless the source code list
+is independently reviewed and corroborated.
+
+The new audit reports only aggregate **code-and-description presence**,
+**code-only**, **description-only**, or **both absent** counts for
+each of the three method fields across all LoD2 source features,
+the unambiguous six polygon matches, and duplicate-footprint source
+features quarantined from unique matches. Neither provider source
+codes nor description strings are logged, hashed or exported. A code
+value of zero counts as **present**, not missing. Unexpected nested
+objects or nonfinite method values fail closed.
+
+This is **not a correctness check of code↔description mapping**,
+not a measured-versus-imputed height classifier, and not a proof that
+all matched historical `Gebäudeteil` records are entire physical
+insured buildings. The publisher states LoD2 heights are automatically
+obtained using DOM/bDOM/DGM1 and may fall back to a 3m assumed height:
+<https://www.berlin.de/umweltatlas/nutzung/gebaeudehoehen/fortlaufend-aktualisiert/methode/>.
+No insurer, CAT4 or production height values are admitted.
