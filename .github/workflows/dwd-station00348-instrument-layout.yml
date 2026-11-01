@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: DWD station00348 original device and parameter native layout audit
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/dwd_station00348_instrument_layout_v0.py'
+      - 'tests/test_dwd_station00348_instrument_layout_v0.py'
+      - '.github/workflows/dwd-station00348-instrument-layout.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-second-station-layout-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Synthetic original SHA/member/headers and data-redaction checks
+        run: python -m unittest tests.test_dwd_station00348_instrument_layout_v0 -v
+
+  pinned-original-device-and-parameter-layout:
+    needs: offline-second-station-layout-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Read exact frozen official DWD 00348 metadata ZIP with no raw member publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          asset="$RUNNER_TEMP/Meta_Daten_zehn_min_fx_00348.zip"
+          trap 'rm -f "$asset"' EXIT
+          curl --fail --silent --show-error --noproxy '*' \
+            --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+            --max-time 90 --retry 0 --max-filesize 1048576 --output "$asset" \
+            'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/meta_data/Meta_Daten_zehn_min_fx_00348.zip'
+          python -m scripts.dwd_station00348_instrument_layout_v0 --metadata-zip "$asset"
+          # Original bytes and row values remain ephemeral and not admitted.
