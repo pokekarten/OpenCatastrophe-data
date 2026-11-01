@@ -22,7 +22,7 @@ The historical target is no longer an unspecified 2015/2016 archive. A public co
 
 This archive mirror is a **secondary hosting location**; authenticity against the official original provider bytes/checksum and exact 2016 product licence/attribution needs its own review. Do not assume the current product's Licence Ouverte 2.0 automatically resolves every old archive/reuse question.
 
-The canonical structured research metadata in `landscape/fr_bdtopo_d077_2016_archive_candidate_v0.json` pins a **verified mirror full-file SHA-256** while deliberately keeping `original_sha256=null`, `model_input_approved=false`. The initial IGN GetResource discovery endpoint returned HTTP 403; that failure is **not** evidence that this edition does not exist.
+The canonical structured research metadata in `landscape/fr_bdtopo_d077_2016_archive_candidate_v0.jsonl` pins a **verified mirror full-file SHA-256** while deliberately keeping `original_sha256=null`, `model_input_approved=false`. The initial IGN GetResource discovery endpoint returned HTTP 403; that failure is **not** evidence that this edition does not exist.
 
 ## Executable next operation
 
@@ -31,7 +31,7 @@ If a complete copy is lawfully downloaded into a **non-Git** local working direc
 ```bash
 python research_runners/fr_bdtopo_2016_d077_archive_receipt_v0.py \
   --archive /private/BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z \
-  --descriptor landscape/fr_bdtopo_d077_2016_archive_candidate_v0.json
+  --descriptor landscape/fr_bdtopo_d077_2016_archive_candidate_v0.jsonl
 ```
 
 The validator rejects the wrong country department, release, filename, symlink, wrong byte length or missing 7z signature. It **streams the entire local file** to produce a new SHA-256 and a legacy MD5 for possible comparison with a separately established original provider / mirror listing. **The mirror's complete-file SHA-256 was first captured in GitHub CI; subsequent runs now compare against that pinned digest, and mismatch fails closed. This still does NOT independently prove IGN original provider byte identity.** It never extracts archive contents, performs API requests, modifies Neon, or approves CAT model use.
