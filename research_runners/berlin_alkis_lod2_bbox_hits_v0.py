@@ -77,15 +77,14 @@ def parse_hits(raw: bytes) -> dict[str, Any]:
     count=int(value)
     if count>MAX_MATCHED:
         raise WfsCountError("unreasonably high source result count")
-    if returned not in ("0",None):
-        raise WfsCountError("hits-only response unexpectedly returned individual features")
-    # A failed server implementation might send individual gml features
-    # even when it claims numberReturned=0: reject any element member.
-    if any(e.tag.rsplit("}",1)[-1] in ("member","featureMember","featureMembers")
-           for e in root.iter()):
-        raise WfsCountError("hits-only source leaks actual feature objects")
-    if len(list(root.iter()))>200:
-        raise WfsCountError("unbounded WFS metadata content")
+    if returned != "0":
+        raise WfsCountError("hits-only source must explicitly report numberReturned=0")
+    # The WFS2 hits collection has no members. A member-name blacklist
+    # misses unrecognized geometry/attribute elements; reject ALL child
+    # content or non-whitespace text before promising that no source data
+    # was received.
+    if len(root) != 0 or (root.text is not None and root.text.strip()):
+        raise WfsCountError("hits-only source must contain no feature content")
     return {
         "numberMatched":count,
         "numberReturned":0,
