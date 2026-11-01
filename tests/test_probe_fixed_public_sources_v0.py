@@ -83,6 +83,20 @@ class FixedSourceProbesTests(unittest.TestCase):
                 self.assertGreater(limit, 0)
                 self.assertEqual(timeout, 30)
 
+    def test_checked_in_contracts_match_each_reviewed_live_probe(self):
+        """Check the actual source contracts, not only synthetic fixture copies.
+
+        The paired PR workflow exercises the exact reviewed anonymous endpoints;
+        this regression prevents contract/allowlist drift before network access.
+        """
+        repo_root = Path(__file__).resolve().parents[1]
+        for source in PROBES:
+            with self.subTest(source=source):
+                url, operation, max_bytes, timeout = reviewed_probe(source, repo_root)
+                self.assertEqual((url, operation), PROBES[source])
+                self.assertLessEqual(max_bytes, 4 * 1024 * 1024)
+                self.assertLessEqual(timeout, 60)
+
     def test_reject_credentials_and_rights_changes(self):
         source = "gfz.geomagnetic-kp"
         for mutate in (
