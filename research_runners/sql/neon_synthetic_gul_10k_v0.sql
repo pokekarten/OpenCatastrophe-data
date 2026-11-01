@@ -1,3 +1,5 @@
+-- SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+-- SPDX-License-Identifier: Apache-2.0
 -- OpenCatastrophe synthetic validation-only GUL pilot, v0.
 -- READ-ONLY. Run ONLY against Neon insurance-risk-core / insurance / validation-schema-20261031.
 -- Does NOT run OpenCatastrophe's native producer, NextGen, OpenQuake or Oasis.
