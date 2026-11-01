@@ -25,6 +25,7 @@ from scripts.dwd_equipment_layout_evidence_v0 import (
 from scripts.probe_dwd_station00348_original_v0 import (
     METADATA_FILE, PINNED_METADATA_SHA256, MAX_METADATA_ZIP,
     MAX_METADATA_EXPANDED, STATION, _snapshot, _zip_open,
+    SecondStationBlocked,
 )
 
 DEVICE_RE = re.compile(
@@ -89,7 +90,8 @@ def inspect(path: Path, *, expected_sha256: str = PINNED_METADATA_SHA256) -> dic
                 with archive.open(name) as fh:
                     while fh.read(65_536):
                         pass
-    except (EquipmentBlocked, OSError, RuntimeError, zipfile.BadZipFile) as exc:
+    except (EquipmentBlocked, SecondStationBlocked, OSError,
+            RuntimeError, zipfile.BadZipFile) as exc:
         raise SecondStationLayoutBlocked("original DWD member not safely readable") from exc
     if parameter is None:
         raise SecondStationLayoutBlocked("original DWD parameter table missing")
