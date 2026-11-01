@@ -53,6 +53,15 @@ class WorldCoverHeadTests(unittest.TestCase):
         self.assertNotIn("untrusted-transmission-etag", str(receipt))
         self.assertEqual(len(receipt["request_sha256"]), 64)
 
+    def test_s3_generic_binary_mime_is_transport_only(self):
+        response = Response({"Content-Type": "binary/octet-stream",
+                             "Content-Length": "25000000"})
+        result = wc.probe(open_request=lambda req, timeout: response)
+        self.assertEqual(result["media_type"], "binary/octet-stream")
+        self.assertEqual(result["source_raster_bytes_downloaded"], 0)
+        self.assertFalse(result["raster_header_inspected"])
+        self.assertFalse(result["cog_structure_validated"])
+
     def test_rejects_wrong_media_size_redirect_status(self):
         bad = [
             Response({"Content-Type": "text/html", "Content-Length": "12"}),
