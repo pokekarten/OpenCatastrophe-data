@@ -5,8 +5,8 @@
 
 NOT a source of truth, NOT original provider data, NOT a model-input allowlist.
 Existing landscape, access and manifest JSON and the linkage audit stay canonical.
-This deliberately uses CAT3, distinct from CAT1 geographic and CAT2 spatial
-crosswalk SQLite files. It never overwrites an existing database.
+This deliberately uses CAT4, distinct from CAT1 geographic, CAT2 spatial
+crosswalk and separately merged CAT3 provisional DEU NUTS2021 SQLite files. It never overwrites an existing database.
 """
 from __future__ import annotations
 
@@ -32,43 +32,43 @@ else:
     from source_linkage_audit_v0 import build_audit
 
 
-CAT3_APP_ID = 0x43415433
-CAT3_VERSION = 1
-PROFILE = "opencatastrophe-cat3-derived-source-research-v0"
+CAT4_APP_ID = 0x43415434
+CAT4_VERSION = 1
+PROFILE = "opencatastrophe-cat4-derived-source-research-v0"
 
 
-class CAT3Error(ValueError):
+class CAT4Error(ValueError):
     """Unsafe destination or inconsistent source/access/linkage research state."""
 
 
 def _validate_report(report: dict) -> None:
     if report.get("profile") != "opencatastrophe-source-access-linkage-research-v0":
-        raise CAT3Error("unexpected source research report profile")
+        raise CAT4Error("unexpected source research report profile")
     for flag in ("external_provider_data_downloaded", "permission_for_automated_source_join",
                  "new_rights_or_admission_granted", "this_report_is_a_model_input_allowlist"):
         if report.get(flag) is not False:
-            raise CAT3Error("research authority boundary violated")
+            raise CAT4Error("research authority boundary violated")
     candidates = report.get("candidates")
     manifests = report.get("existing_manifests_separate")
     if not isinstance(candidates, list) or not isinstance(manifests, list):
-        raise CAT3Error("missing research rows")
+        raise CAT4Error("missing research rows")
     if len(candidates) != report.get("candidate_count") or len(manifests) != report.get("manifest_count"):
-        raise CAT3Error("source counts do not match rows")
+        raise CAT4Error("source counts do not match rows")
     seen, recipes = set(), {}
     recipe_members: dict[str, set[str]] = defaultdict(set)
     expected_recipe_members: dict[str, set[str]] = {}
     for row in candidates:
         ident = row.get("source_id")
         if not isinstance(ident, str) or not ident or ident in seen:
-            raise CAT3Error("invalid or duplicate candidate identity")
+            raise CAT4Error("invalid or duplicate candidate identity")
         seen.add(ident)
         for flag in ("access_proven_by_this_report", "source_bytes_verified_by_this_report",
                      "scientific_join_verified_by_this_report", "model_input_admitted_by_this_report",
                      "scientific_independence_proven", "same_page_proves_identical_source_bytes"):
             if row.get(flag) is not False:
-                raise CAT3Error("candidate research authority boundary violated")
+                raise CAT4Error("candidate research authority boundary violated")
         if row.get("no_reviewed_access_contract") is not (not bool(row.get("access_contract_ids"))):
-            raise CAT3Error("candidate reviewed-contract count inconsistent")
+            raise CAT4Error("candidate reviewed-contract count inconsistent")
         # These fields must come from the reviewed source-access inventory;
         # missing or malformed metadata must not silently erase licence flags.
         for field in ("categories", "potential_roles", "access_contract_ids",
@@ -77,35 +77,35 @@ def _validate_report(report: dict) -> None:
             if (type(values) is not list
                     or any(type(value) is not str or not value.strip() for value in values)
                     or len(values) != len(set(values))):
-                raise CAT3Error(f"missing or invalid CAT3 reviewed field: {field}")
+                raise CAT4Error(f"missing or invalid CAT4 reviewed field: {field}")
         if not row["access_contract_ids"] and row["access_contract_statuses"]:
-            raise CAT3Error("orphan access-contract status with no contract")
+            raise CAT4Error("orphan access-contract status with no contract")
         for field in ("operational_readiness", "rights_posture", "automation_decision",
                       "access_next_action"):
             value = row.get(field)
             if value is not None and (type(value) is not str or not value.strip()):
-                raise CAT3Error(f"invalid CAT3 source evidence: {field}")
+                raise CAT4Error(f"invalid CAT4 source evidence: {field}")
         for link in row.get("candidate_join_hypotheses", []):
             rid = link.get("recipe_id")
             if not isinstance(rid, str) or not rid:
-                raise CAT3Error("missing linkage recipe ID")
+                raise CAT4Error("missing linkage recipe ID")
             if link.get("automatic_join_allowed") is not False or link.get("scientific_independence_proven") is not False:
-                raise CAT3Error("unreviewed scientific linkage promoted")
+                raise CAT4Error("unreviewed scientific linkage promoted")
             fingerprint = (
                 link.get("relationship"), link.get("required_join_evidence"),
                 link.get("unverified_prerequisites"), link.get("prohibited_inferences"),
             )
             if rid in recipes and recipes[rid] != fingerprint:
-                raise CAT3Error("conflicting same-ID linkage recipe")
+                raise CAT4Error("conflicting same-ID linkage recipe")
             if ident in recipe_members[rid]:
-                raise CAT3Error("duplicate source/linkage recipe edge")
+                raise CAT4Error("duplicate source/linkage recipe edge")
             recipe_members[rid].add(ident)
             endpoints = link.get("other_source_ids")
             if not isinstance(endpoints, list) or not endpoints:
-                raise CAT3Error("linkage recipe has no other endpoints")
+                raise CAT4Error("linkage recipe has no other endpoints")
             endpoint_set = {ident, *endpoints}
             if rid in expected_recipe_members and expected_recipe_members[rid] != endpoint_set:
-                raise CAT3Error("linkage recipe has inconsistent endpoint identities")
+                raise CAT4Error("linkage recipe has inconsistent endpoint identities")
             expected_recipe_members[rid] = endpoint_set
             recipes[rid] = fingerprint
     for row in candidates:
@@ -115,31 +115,31 @@ def _validate_report(report: dict) -> None:
             if (not isinstance(other, list) or not other
                     or any(not isinstance(x, str) or x not in seen or x == ident for x in other)
                     or len(other) != len(set(other))):
-                raise CAT3Error("dangling or self-joined linkage endpoint")
+                raise CAT4Error("dangling or self-joined linkage endpoint")
     if len(recipes) != report.get("manual_linkage_recipe_count"):
-        raise CAT3Error("linkage recipe count differs from source report")
+        raise CAT4Error("linkage recipe count differs from source report")
     for rid, expected in expected_recipe_members.items():
         if recipe_members[rid] != expected:
-            raise CAT3Error("linkage recipe missing reciprocal source endpoint")
+            raise CAT4Error("linkage recipe missing reciprocal source endpoint")
     if len({r.get("dataset_id") for r in manifests}) != len(manifests):
-        raise CAT3Error("duplicate manifest identity")
+        raise CAT4Error("duplicate manifest identity")
     for row in manifests:
         if (row.get("source_bytes_verified_by_this_report") is not False
                 or row.get("scientific_join_verified_by_this_report") is not False
                 or row.get("any_additional_model_authority_granted") is not False):
-            raise CAT3Error("manifest trust boundary violated")
+            raise CAT4Error("manifest trust boundary violated")
 
 
 def _destination(output: Path) -> Path:
     output = Path(output).expanduser()
     if not output.is_absolute() or not str(output).endswith(".cat.sqlite"):
-        raise CAT3Error("explicit absolute new .cat.sqlite output is required")
+        raise CAT4Error("explicit absolute new .cat.sqlite output is required")
     root = Path(__file__).resolve().parents[1]
     parent = output.parent.resolve(strict=True)
     if parent == root or root in parent.parents:
-        raise CAT3Error("do not write generated data inside Git checkout")
+        raise CAT4Error("do not write generated data inside Git checkout")
     if output.exists() or output.is_symlink():
-        raise CAT3Error("refusing to overwrite an existing file or symlink")
+        raise CAT4Error("refusing to overwrite an existing file or symlink")
     return parent / output.name
 
 
@@ -152,8 +152,8 @@ def export_crosswalk_sqlite(output: Path, report: dict) -> dict:
     try:
         with closing(sqlite3.connect(target)) as con, con:
             con.execute("PRAGMA foreign_keys=ON")
-            con.execute(f"PRAGMA application_id={CAT3_APP_ID}")
-            con.execute(f"PRAGMA user_version={CAT3_VERSION}")
+            con.execute(f"PRAGMA application_id={CAT4_APP_ID}")
+            con.execute(f"PRAGMA user_version={CAT4_VERSION}")
             con.executescript("""
 CREATE TABLE candidate (
   candidate_id TEXT PRIMARY KEY,
@@ -275,7 +275,7 @@ CREATE INDEX idx_endpoint_candidate ON recipe_endpoint(candidate_id);
                     ))
                 for recipe in sorted(all_recipes.values()):
                     if any(not isinstance(v, str) or not v for v in recipe):
-                        raise CAT3Error("missing scientific recipe proof fields")
+                        raise CAT4Error("missing scientific recipe proof fields")
                     con.execute("INSERT INTO source_link_recipe VALUES (?,?,?,?,?,0)", recipe)
                 for ident, r in sorted(by_id.items()):
                     for link in r["candidate_join_hypotheses"]:
@@ -283,11 +283,11 @@ CREATE INDEX idx_endpoint_candidate ON recipe_endpoint(candidate_id);
                                     (link["recipe_id"], ident))
                     for peer in r["same_authoritative_page_candidate_ids"]:
                         if peer not in by_id or by_id[peer]["authoritative_url"] != r["authoritative_url"]:
-                            raise CAT3Error("invalid shared provider page peer")
+                            raise CAT4Error("invalid shared provider page peer")
                         con.execute("INSERT INTO shared_provider_page VALUES (?,?,0)",
                                     (r["authoritative_url"], ident))
             if con.execute("PRAGMA foreign_key_check").fetchall():
-                raise CAT3Error("invalid crosswalk foreign keys")
+                raise CAT4Error("invalid crosswalk foreign keys")
             counts = {
                 "candidates": con.execute("SELECT count(*) FROM candidate").fetchone()[0],
                 "manifests": con.execute("SELECT count(*) FROM existing_manifest_separate").fetchone()[0],
@@ -302,12 +302,12 @@ CREATE INDEX idx_endpoint_candidate ON recipe_endpoint(candidate_id);
                     or counts["manifests"] != report["manifest_count"]
                     or counts["recipes"] != report["manual_linkage_recipe_count"]
                     or counts["uncontracted"] != report["candidate_without_access_contract_count"]):
-                raise CAT3Error("CAT3 counts disagree with derived source register")
+                raise CAT4Error("CAT4 counts disagree with derived source register")
             if con.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
-                raise CAT3Error("CAT3 SQLite integrity check failed")
+                raise CAT4Error("CAT4 SQLite integrity check failed")
         canon = json.dumps(report, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
         return {
-            "profile": PROFILE, "application_id": CAT3_APP_ID,
+            "profile": PROFILE, "application_id": CAT4_APP_ID,
             "report_sha256": hashlib.sha256(canon.encode("utf-8")).hexdigest(),
             **counts, "provider_bytes_persisted": False,
             "scientific_source_joins_executed": False,
@@ -325,7 +325,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         report = build_crosswalk(build_inventory(), build_audit(load_landscape_shards()))
         result = export_crosswalk_sqlite(args.out, report)
-    except (CAT3Error, CrosswalkError, ValueError, OSError, sqlite3.Error) as exc:
+    except (CAT4Error, CrosswalkError, ValueError, OSError, sqlite3.Error) as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         return 2
     print(json.dumps(result, sort_keys=True))
