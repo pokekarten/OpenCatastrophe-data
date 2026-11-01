@@ -77,6 +77,11 @@ def _polygon_in_local_pixels(ring):
             raise PolygonOverlapBlocked("invalid or nonfinite WGS84 coordinates")
         column=(lon-WEST)/SCALE - BLOCK_COLUMN*SIDE
         row=(NORTH-lat)/SCALE - BLOCK_ROW*SIDE
+        # WGS84 float roundtrips can create artificial micro-slivers along
+        # a mathematically exact integer pixel boundary. Snap ONLY within
+        # 1e-8 of a pixel; never move a genuine footprint across a grid cell.
+        column=float(round(column)) if abs(column-round(column))<=1e-8 else column
+        row=float(round(row)) if abs(row-round(row))<=1e-8 else row
         if not (0 <= column < SIDE and 0 <= row < SIDE):
             raise PolygonOverlapBlocked("polygon outside the only reviewed original raster block")
         points.append((column,row))
