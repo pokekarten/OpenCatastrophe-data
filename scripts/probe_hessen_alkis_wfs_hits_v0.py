@@ -99,11 +99,8 @@ def inspect_hits(raw: bytes) -> dict:
         "features_in_hits_response": 0,
         "number_returned_if_integer": reported_returned,
         "number_matched_if_integer": reported_matched,
-        "match_count_proven_positive": reported_matched is not None and reported_matched > 0,
-        "match_count_unknown": reported_matched is None,
-        "matches_one_feature_payload_count_header": (
-            reported_matched == 0 if reported_matched is not None else None
-        ),
+        "provider_claims_positive_matches": reported_matched is not None and reported_matched > 0,
+        "provider_match_count_unknown": reported_matched is None,
         "original_feature_payload_downloaded": False,
         "source_building_polygon_validated": False,
         "model_input_approved": False,
