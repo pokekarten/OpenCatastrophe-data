@@ -24,6 +24,15 @@ WFS_RESPONSE_SHA = "c4342109c0c13b31996d7cb9a5a16db56af3e536dc4910938a9fc72bab04
 BKG_URL = ("https://daten.gdz.bkg.bund.de/produkte/sonstige/starkregen/aktuell/"
            "be/maxdepth_kostra/s32790/starkregen_maxdepth_kostra_32790_5820_10_be.tif")
 BANDS = ((0, 1), (1, 3), (3, 5))
+# Independently observed exact original aggregate receipt, not recalculated
+# from a static masked TIFF. A changed input needs a new reviewed version,
+# not silent replacement of this pinned original run's numerical evidence.
+FROZEN_ORIGINAL_BANDS = (
+    (296.465049, 28.156356, 94.312623, 173.996069, 0.0),
+    (613.724262, 170.126378, 141.690844, 301.907040, 0.0),
+    (634.364187, 236.862675, 121.530717, 275.970795, 0.0),
+)
+FROZEN_INTERIOR = (683.311267, 2.752013, 14.434404, 666.124849, 0.0)
 
 
 class EvidenceBlocked(ValueError):
@@ -86,6 +95,13 @@ def _checked_areas(x: dict) -> tuple[float, list[dict]]:
     zero = _finite_number(x.get("original_building_valid_zero_area_m2"))
     positive = _finite_number(x.get("original_building_positive_raw_area_m2"))
     outside = _finite_number(x.get("original_building_outside_window_area_m2"))
+    if any(
+        not math.isclose(observed, pinned, rel_tol=0, abs_tol=2e-8)
+        for observed, pinned in zip(
+            (total, positive, zero, missing, outside), FROZEN_INTERIOR
+        )
+    ):
+        raise EvidenceBlocked("original pinned building-area measurements changed")
     if (not math.isclose(total, missing + zero + positive + outside, rel_tol=0, abs_tol=3e-6)
             or missing > total or x.get("original_buildings_all_area_valid") != 0
             or x.get("original_buildings_without_valid_codes") != 2
@@ -96,7 +112,7 @@ def _checked_areas(x: dict) -> tuple[float, list[dict]]:
     if not isinstance(bands, list) or len(bands) != len(BANDS):
         raise EvidenceBlocked("exterior band receipt is absent, missing or duplicated")
     output = []
-    for band, (lo, hi) in zip(bands, BANDS):
+    for band, (lo, hi), expected in zip(bands, BANDS, FROZEN_ORIGINAL_BANDS):
         if (not isinstance(band, dict)
                 or type(band.get("distance_min_m")) is not int
                 or type(band.get("distance_max_m")) is not int
@@ -108,6 +124,11 @@ def _checked_areas(x: dict) -> tuple[float, list[dict]]:
         n = _finite_number(band.get("source_nodata_area_m2"))
         o = _finite_number(band.get("outside_window_area_m2"))
         valid_fraction = _finite_number(band.get("valid_numeric_support_fraction"))
+        if any(
+            not math.isclose(observed, pinned, rel_tol=0, abs_tol=2e-8)
+            for observed, pinned in zip((area, p, z, n, o), expected)
+        ):
+            raise EvidenceBlocked("original pinned exterior-area measurements changed")
         if (not math.isclose(area, p+z+n+o, rel_tol=0, abs_tol=3e-6)
                 or valid_fraction > 1
                 or not math.isclose(valid_fraction, (p+z)/area,
