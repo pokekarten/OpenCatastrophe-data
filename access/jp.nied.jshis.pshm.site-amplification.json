@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "jp.nied.jshis.pshm.site-amplification",
+  "source_ids": [
+    "jp.nied.jshis.pshm.site-amplification"
+  ],
+  "provider": "National Research Institute for Earth Science and Disaster Resilience (NIED) / J-SHIS",
+  "interface_type": "web_portal",
+  "status": "restricted_by_terms",
+  "documentation_url": "https://www.j-shis.bosai.go.jp/en/downloads",
+  "service_root": "https://jmapweb6v.bosai.go.jp",
+  "api_version": null,
+  "access_scope": [
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "review_jshis_map_terms_manually"
+    ],
+    "path_templates": [
+      "/en/agreement",
+      "/map/JSHIS2/download.html"
+    ],
+    "parameter_rules": "Documentation only: no executable source-data GET, POST, download query, generated archive, web scraping, user-input URL, numerical map extraction, pagination or mirroring. Exact map release, reference date, hazard metric, mesh, usage terms and intended research/commercial scope must be resolved before any separate rights-reviewed work."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/html"
+    ],
+    "format": "Provider human-readable J-SHIS terms and seismic hazard download catalogue, not an approved downloadable asset.",
+    "scientific_semantics": "NIED J-SHIS probabilistic hazard maps specify a probability measure over a reference horizon and may include site amplification; these are modelled probabilistic outputs, not observed shaking, building damage, claims, insurer insured values, or independent validation of correlated upstream seismic models. Mesh vintages and horizon must be pinned before comparison."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 20,
+    "max_probe_bytes": 32768,
+    "max_sample_bytes": 65536,
+    "retry_policy": "none",
+    "rate_limit_notes": "Provider terms impose restrictions on raw duplication and distribution. No automated action is enabled. The documented byte limits are conservative design ceilings, not authorized provider requests.",
+    "mutability_notes": "The terms state they may change without notice. Freeze dated terms, individual citations for site amplification, exact hazard-map release/mesh/horizon and response identity only after an explicit approved original-source request."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "restricted",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://jmapweb6v.bosai.go.jp/en/agreement",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "restricted",
+    "notes": "Provider Article 5 allows processing and certain distribution of transformed results subject to restrictions, explicitly prohibits copying/distribution/transfer of original seismic hazard map data even in another format, and requires contact for proposed sale of processed results (application may be needed). Attribution and special references for amplification factors apply (Article 4). This is NOT blanket commercial/derived-data approval; no open Git redistribution or automation."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "do_not_automate",
+  "reviewed_at": "2026-11-01",
+  "evidence_urls": [
+    "https://jmapweb6v.bosai.go.jp/en/agreement",
+    "https://jmapweb6v.bosai.go.jp/map/JSHIS2/download.html?lang=en",
+    "https://www.j-shis.bosai.go.jp/en/downloads"
+  ],
+  "notes": "T0 official rights finding only. No HTTP source-data access, hash receipt, original asset acquisition, use-permission request, model-data admission, local map product, insurer exposure link, or automatic geospatial operation is authorized."
+}
