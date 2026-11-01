@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -14,6 +15,7 @@ from research_runners.luxembourg_axis_extent_audit_v0 import (
 )
 
 
+@unittest.skipIf(importlib.util.find_spec('pyproj') is None, 'Optional pinned spatial profile only')
 class TestLuxembourgAxisScreen(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
