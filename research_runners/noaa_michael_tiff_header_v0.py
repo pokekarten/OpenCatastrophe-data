@@ -12,13 +12,14 @@ from __future__ import annotations
 import hashlib
 import math
 import struct
+from datetime import datetime
 from typing import Any
 
 from research_runners.noaa_michael_stac_preflight_v0 import preflight as stac_preflight
 
 _HEADER_LEN = 4096
 _TYPE_SIZES = {2: 1, 3: 2, 4: 4, 12: 8}
-_REQUIRED = (256, 257, 258, 259, 262, 277, 284, 322, 323, 324, 325, 338, 33550, 33922, 34735)
+_REQUIRED = (256, 257, 258, 259, 262, 277, 284, 306, 322, 323, 324, 325, 338, 33550, 33922, 34735)
 _MAX_TAGS = 96
 
 
@@ -123,6 +124,19 @@ def preflight(header: Any, stac_item: Any) -> dict[str, Any]:
     if crs != [4326]:
         raise TIFFHeaderError("original TIFF geographic EPSG code not 4326")
 
+    stamp_type, stamp_count, stamp_offset, stamp_size = tags[306]
+    if stamp_type != 2 or stamp_count != 20 or stamp_size != 20:
+        raise TIFFHeaderError("TIFF DateTime must be source-native 20-character ASCII")
+    try:
+        raw_time = header[stamp_offset:stamp_offset + stamp_count].decode("ascii")
+        if not raw_time.endswith("\x00"):
+            raise ValueError("missing TIFF date terminator")
+        tiff_time = datetime.strptime(raw_time[:-1], "%Y:%m:%d %H:%M:%S")
+    except (ValueError, UnicodeDecodeError) as exc:
+        raise TIFFHeaderError("TIFF DateTime is malformed") from exc
+    if tiff_time.date().isoformat() != stac["declared_acquisition_day"]:
+        raise TIFFHeaderError("TIFF DateTime day differs from source STAC acquisition day")
+
     return {
         "profile": "noaa_michael_2018_4k_tiff_source_header_v0",
         "tile_id_from_stac_only": stac["tile_id"],
@@ -135,6 +149,9 @@ def preflight(header: Any, stac_item: Any) -> dict[str, Any]:
         "block_size_pixels": [tw, th],
         "tile_block_count": tiles,
         "declared_crs": "EPSG:4326",
+        "tiff_datetime_calendar_day": tiff_time.date().isoformat(),
+        "tiff_datetime_is_end_of_day_marker": tiff_time.strftime("%H:%M:%S") == "23:59:59",
+        "exact_flight_capture_time_verified": False,
         "original_full_file_hash_verified": False,
         "asset_identity_bound_by_full_hash": False,
         "image_alpha_coverage_measured": False,
