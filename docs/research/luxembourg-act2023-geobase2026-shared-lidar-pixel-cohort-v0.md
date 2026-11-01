@@ -116,3 +116,37 @@ python -m research_runners.luxembourg_act_geobase_lidar2024_paired_pixel_cohort_
 **Actual original results must be recorded after the original source workflow
 succeeds at the exact final PR head**, not asserted from the prior 12 spatial
 candidates. CI/rights checks must pass before merge.
+
+## Executed original-source result: strict 12 matched spatial candidates, 2026-11-01
+
+**Real source SHA-pinned provider workflow run:** [41319568325](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41319568325). All **13 synthetic** original geometry/quality/anti-leak tests passed, followed by actual downloads and whole-original SHA verification of **both** official ACT2023 roof and GeoBase2026 building GeoPackages. The official 2024 MNT and MNS raster URLs passed bounded HTTP206 headers and were read only in the fixed 100m research window. No full 40GB COG, original source GPKG, output per-object value or actual raw LiDAR pixels were saved to the repo, artifacts or Neon.
+
+The first trial matching after ROI cropping had a **false-positive IoU inflation risk**; this was explicitly corrected before the accepted result. A later intermediate full-source candidate pass used only IoU to detect competitors, missing contained 1:n roof components. The final method matches the repository canonical overlap rule: full **original** polygon IoU >=0.60 and competitor if >=20% of **either** original source object's area. The actual final run observed:
+
+| Actual evidence from official source files / 100m study | Value |
+| --- | ---: |
+| Exact-roi ACT2023 roof polygons | **54** (55 RTree candidates, 1 excluded) |
+| Exact-roi GeoBase2026 building polygons | **104** (107 RTree candidates, 3 excluded) |
+| Valid 0.5m MNT/MNS source raster cells in native bounding rectangle | **44,521** |
+| Full-original-source polygon pairs with IoU >=0.60 | **32** |
+| High-IoU pairs rejected due to source split/merge competitors | **20** |
+| **Uncontested unique 1:1 spatial candidate pairs** | **12** |
+| Pairs with >=8 valid unique source-mask and >=8 **shared** source pixels | **12** |
+| Pairs rejected for insufficient unique/shared pixels | **0** |
+| Pairs rejected due to negative source median | **0** |
+| Common source raster pixels uniquely attributed to both original polygons | **3,977** |
+| Pixels uniquely attributed on accepted ACT rooftop masks, summed | **4,325** |
+| Pixels uniquely attributed on accepted GeoBase2026 masks, summed | **4,108** |
+
+For the **12 candidate pairs**, the difference between each ACT rooftop-mask median DSM–DTM and its corresponding GeoBase2026 building-footprint-mask median DSM–DTM was:
+
+| Absolute difference between paired median **proxies** | Number of spatial candidates |
+| --- | ---: |
+| Below **0.5m** | **12** |
+| 0.5–below 2m | **0** |
+| 2–below 5m | **0** |
+| 5m or more | **0** |
+
+**Interpretation limited to this cohort:** On 12 strict source-geometric candidate pairs in one central urban 100m sample, the *median* 2024 DSM–DTM proxy is largely insensitive (absolute delta under 0.5m) to choice of ACT2023 vs GeoBase2026 polygon. The median for each source still uses its **own** uniquely owned raster-mask pixels, not literally an identical pixel subset; the 3,977 common raster pixels measure their overlap. No exact per-object match IDs or medians were saved, and no signed/independent surveyed building identities, representativeness, cross-vintage physical ground truth, complete source COG hashes, vegetation removal or commercial-source admission are asserted.
+
+**Scientific next priority:** repeat the same strict paired method across stratified city/village sites and test boundary insets/point cloud class 2 vs class 6 or independent height controls, before extrapolating to insurance exposure. Twelve clean spatial pairs do not validate the 42 ambiguous ACT roofs or 92 unpaired GeoBase objects in this 100m source cohort.
