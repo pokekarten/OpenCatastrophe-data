@@ -43,6 +43,12 @@ features. Separate count-only evidence is a prerequisite for
 defining a bounded **full-in-box** two-provider polygon analysis
 instead of comparing arbitrary first five records.
 
+The hits parser now requires an **explicit**
+`numberReturned="0"` and an entirely empty source
+`FeatureCollection` (no child objects, unknown feature elements or
+non-whitespace text). The service's count is rejected rather than
+silently accepting any unreviewed source-feature payload.
+
 The two catalogues list **Datenlizenz Deutschland – Zero 2.0**:
 - https://daten.berlin.de/datensaetze/alkis-berlin-gebaude-wfs-728b368a
 - https://daten.berlin.de/datensaetze/gebaudehohen-umweltatlas-wfs-d918088d
