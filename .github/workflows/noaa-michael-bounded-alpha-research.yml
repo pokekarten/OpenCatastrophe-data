@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: NOAA Michael bounded original alpha research
+on:
+  pull_request:
+    paths:
+      - 'research_runners/noaa_michael_exact_alpha_live_v0.py'
+      - 'tests/test_noaa_michael_exact_alpha_live_v0.py'
+      - 'research_runners/noaa_fema_exact_alpha_mask_v0.py'
+      - 'tests/test_noaa_fema_exact_alpha_mask_v0.py'
+      - '.github/workflows/noaa-michael-bounded-alpha-research.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  source-proof:
+    if: github.event.pull_request.number == 955
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # repository approved digest
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # repository approved digest
+        with:
+          python-version: '3.12'
+      - name: Validate bounded offline TIFF/HTTP contract
+        run: python -m unittest discover -s tests -p test_noaa_michael_exact_alpha_live_v0.py -v
+      - name: Audit exact NOAA original source blocks 324 and 344
+        run: python -m research_runners.noaa_michael_exact_alpha_live_v0
+      - name: Validate exact-alpha mask polygon synthetic raster rules
+        run: python -m unittest discover -s tests -p test_noaa_fema_exact_alpha_mask_v0.py -v
+      - name: Compare block 324 true source alpha-mask polygon to FEMA count-only API
+        run: python -m research_runners.noaa_fema_exact_alpha_mask_v0
