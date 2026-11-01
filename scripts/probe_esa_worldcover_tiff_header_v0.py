@@ -99,12 +99,59 @@ def inspect_tiff_header(raw: bytes) -> dict:
         if count > MAX_IFD_ENTRIES:
             raise HeaderBlocked("implausible TIFF IFD entry count in sampled prefix")
         in_range = first_offset + count_size + count * entry_size <= BYTES
+    # Parse only inline scalar metadata in the complete first IFD. Tag values
+    # held at offsets elsewhere in the TIFF are deliberately NOT dereferenced:
+    # their payload may not be present in the reviewed 4 KiB source sample.
+    scalar_tags = {256: "image_width", 257: "image_length",
+                   259: "compression", 277: "samples_per_pixel",
+                   322: "tile_width", 323: "tile_length"}
+    geo_tag_ids = {33550, 33922, 34264, 34735, 34736, 34737}
+    observed: dict[int, int] = {}
+    geo_tags: list[int] = []
+    if in_range:
+        seen: set[int] = set()
+        for index in range(count):
+            off = first_offset + count_size + index * entry_size
+            tag, dtype = struct.unpack_from(endian + "HH", raw, off)
+            if tag in seen:
+                raise HeaderBlocked("duplicate TIFF first-directory tag")
+            seen.add(tag)
+            if tag in geo_tag_ids:
+                geo_tags.append(tag)
+            if tag not in scalar_tags:
+                continue
+            # TIFF type SHORT = 3 (2 bytes), LONG = 4 (4 bytes),
+            # BigTIFF LONG8 = 16 (8 bytes); require exactly one inline item.
+            n = struct.unpack_from(endian + ("Q" if big else "I"), raw, off + 4)[0]
+            if n != 1:
+                continue
+            start = off + (12 if big else 8)
+            spec = {3: ("H", 2), 4: ("I", 4)}
+            if big:
+                spec[16] = ("Q", 8)
+            if dtype not in spec:
+                continue
+            fmt, width = spec[dtype]
+            if width > (8 if big else 4):
+                continue
+            value = struct.unpack_from(endian + fmt, raw, start)[0]
+            if value == 0 or value > 1_000_000:
+                raise HeaderBlocked("implausible TIFF inline scalar metadata")
+            observed[tag] = value
     return {
         "tiff_flavour": ifd_type,
         "byte_order": "little" if endian == "<" else "big",
         "first_ifd_offset": first_offset,
         "first_ifd_count_if_visible": count if in_range else None,
         "first_ifd_fully_within_sample": bool(in_range),
+        "image_width_if_inline": observed.get(256),
+        "image_length_if_inline": observed.get(257),
+        "compression_code_if_inline": observed.get(259),
+        "samples_per_pixel_if_inline": observed.get(277),
+        "tile_width_if_inline": observed.get(322),
+        "tile_length_if_inline": observed.get(323),
+        "geotiff_ifd_tag_ids_present": sorted(geo_tags),
+        "raster_dimensions_proven_by_header_only": 256 in observed and 257 in observed,
     }
 
 
