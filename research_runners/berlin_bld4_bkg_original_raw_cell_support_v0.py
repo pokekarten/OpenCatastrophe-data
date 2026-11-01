@@ -162,6 +162,11 @@ def audit(buildings: Path, original_tiff: Path, *, expected_sha=FULL_ORIGINAL_BK
     projected = [transform(transformer.transform, g.segmentize(1.0))
                  for g in clipped]
     box32 = pilot_projected_bounds(transformer=transformer)
+    # Exact transformed original pilot polygon, NOT its loose raster bbox.
+    pilot_utm32 = transform(transformer.transform, pilot.segmentize(1.0))
+    from research_runners.berlin_bld4_bkg_exterior_ring_raw_support_v0 import (
+        audit_disjoint_exterior_bands,
+    )
     with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="YES"):
         with rasterio.open(original_tiff, "r") as ds:
             a = ds.transform
@@ -194,6 +199,10 @@ def audit(buildings: Path, original_tiff: Path, *, expected_sha=FULL_ORIGINAL_BK
             if np.any((values == -9999) & ~missing):
                 raise RealSupportError("source -9999 escaped original mask")
             result = audit_cells(projected, values, missing, window_transform(window,a))
+            exterior = audit_disjoint_exterior_bands(
+                projected, pilot_utm32, values, missing,
+                window_transform(window,a),
+            )
     return {
         "profile": PROFILE,
         "source_bkg_original_tiff_sha256": actual_sha,
@@ -210,6 +219,7 @@ def audit(buildings: Path, original_tiff: Path, *, expected_sha=FULL_ORIGINAL_BK
         "cat_model_admitted": False,
         "any_property_ids_or_coordinates_written": False,
         **result,
+        "exterior_raw_code_support_research": exterior,
     }
 
 
