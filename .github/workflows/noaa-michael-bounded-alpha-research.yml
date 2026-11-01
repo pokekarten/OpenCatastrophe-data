@@ -7,6 +7,8 @@ on:
     paths:
       - 'research_runners/noaa_michael_exact_alpha_live_v0.py'
       - 'tests/test_noaa_michael_exact_alpha_live_v0.py'
+      - 'research_runners/noaa_fema_exact_alpha_mask_v0.py'
+      - 'tests/test_noaa_fema_exact_alpha_mask_v0.py'
       - '.github/workflows/noaa-michael-bounded-alpha-research.yml'
 
 permissions:
@@ -26,3 +28,7 @@ jobs:
         run: python -m unittest discover -s tests -p test_noaa_michael_exact_alpha_live_v0.py -v
       - name: Audit exact NOAA original source blocks 324 and 344
         run: python -m research_runners.noaa_michael_exact_alpha_live_v0
+      - name: Validate exact-alpha mask polygon synthetic raster rules
+        run: python -m unittest discover -s tests -p test_noaa_fema_exact_alpha_mask_v0.py -v
+      - name: Compare block 324 true source alpha-mask polygon to FEMA count-only API
+        run: python -m research_runners.noaa_fema_exact_alpha_mask_v0
