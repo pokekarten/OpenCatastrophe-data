@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+schema_version = "1.0.0"
+receipt_kind = "CEMS_EMSN028_INVALID_ORIGINAL_FLOOD_REPAIR_COMPARISON_V0"
+analysis_date = "2026-11-01"
+reproducible_run_url = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41349861341"
+original_archive_sha256 = "7ef43d0637447abae705728723c06d2f05415a21667fdee1f10e8fc25b5bf3c2"
+original_source_layer = "Flooded_area"
+original_epsg = 32631
+original_geometry_type = "MultiPolygon"
+original_geometry_valid = false
+original_invalid_reason = "Ring Self-intersection[485697.5986 5358841.9696]"
+original_coordinate_count = 59755
+original_invalid_area_used_as_ground_truth = false
+same_source_archive_verified_in_run = true
+
+method_names = ["make_valid_linework_keepcollapsed", "make_valid_structure_dropcollapsed", "buffer_zero"]
+candidate_geometry_types = ["MultiPolygon", "MultiPolygon", "MultiPolygon"]
+candidate_validity = [true, true, true]
+candidate_polygon_counts = [2075, 2075, 2075]
+candidate_coordinate_counts = [59770, 59770, 59770]
+candidate_areas_m2 = [12166174.82, 12166174.82, 12166174.82]
+linework_structure_symmetric_difference_m2_rounded_2dp = 0.0
+linework_structure_iou_rounded_10dp = 1.0
+linework_zero_buffer_symmetric_difference_m2_rounded_2dp = 0.0
+linework_zero_buffer_iou_rounded_10dp = 1.0
+comparison_precision_note = "Computed method-to-method deltas were rounded. These are not original invalid source area changes or scientific flood footprints."
+
+ponthierry_public_gauge_distance_to_each_repaired_mask_m = [335.15, 335.15, 335.15]
+ponthierry_public_gauge_inside_or_on_boundary = [false, false, false]
+public_gauge_point_context_only = true
+gauge_spatial_overlay_is_event_inundation_proof = false
+
+all_repaired_geometries_ephemeral = true
+aoi04_specific_observed_extent_validated = false
+provider_product_rights_cleared = false
+original_observation_precision_qualified = false
+historical_2016_building_exposure_verified = false
+insured_tiv_and_claims_verified = false
+model_input_admitted = false
