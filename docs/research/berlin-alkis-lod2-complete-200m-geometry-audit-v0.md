@@ -207,3 +207,37 @@ generic candidate spellings, not verified values from this publisher.
 Only small aggregate exact-token category counts may be emitted, never
 raw, unrecognized `role_txt` strings or other source attributes.
 
+
+## Source-proven exact `Gebäudeteil` label — 2026-11-01
+
+The official [two-source GitHub WFS run 41327637956](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41327637956)
+on main commit `9c3d0f304884b7151c591f624ab533a16e2154f8`
+passed **12 synthetic tests** and two original, fixed Berlin WFS calls,
+receipt UTC `2026-11-01T16:42:04.164830+00:00`. Its
+non-identifying exact-token source vocabulary checks found:
+
+| Original `role_txt` spelling | 27 LoD2 source features | Six unique polygon matches | Six quarantined duplicate-footprint source features |
+| --- | ---: | ---: | ---: |
+| `Gebäude` | 2 | 0 | 0 |
+| `Gebäudeteil` | **25** | **6** | **6** |
+| `Bauteil` | 0 | 0 | 0 |
+| Other/unrecognized terms | 0 | 0 | 0 |
+
+Independent original response SHA-256: ALKIS
+`5e1cfc47ecbdf82278d40a4c68bcd18be0ef3862577e0cff3481107a022ffc69`;
+LoD2 `5e3ddd89dd40481d1a9a9b891649a7e7dba9f700cf4a3a681ce4a38f18a5cfc2`.
+
+The former reported `unknown=25` was a **parser vocabulary
+limitation**, not missing source roles. The official
+[Berlin data dictionary](https://fbinter.stadt-berlin.de/fb_daten/beschreibung/umweltatlas/datenformatbeschreibung/Datenformatbeschreibung_06_10_1gebhoehen.html)
+describes the field as *Gebäude oder Bauteil*, but did not enumerate
+actual emitted labels. Now the verbatim `Gebäudeteil` source literal
+is separately recognized **without conflating it with the
+`Bauteil` term or treating it as `Gebäude`**.
+
+**All six IoU>=0.95 candidates are labelled building parts** in
+the historic source and must not become six insured building
+entities. Their height method, duplicate relations, 2022-versus-current
+vintage, rights and scientific uncertainty all remain explicit.
+No building ID, individual feature value or insurer CAT4 record
+has been added.
