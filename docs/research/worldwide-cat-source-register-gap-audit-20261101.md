@@ -68,7 +68,9 @@ The repository already has three separate validated tools: `scripts/build_source
 - sources sharing the **exact same authoritative provider page** as a separate potential-overlap review group (never assumed to contain the same bytes, never automatically deduplicated);
 - fail-closed check that candidate ID, provider, authoritative URL and canonical shard name agree between the independently generated access and linkage inventories (prevents silently attributing another provider's access contract to a similarly named source);
 - separate admitted manifest entries with no privilege inheritance if the same ID also appears in a discovery record;
-- aggregate counts for candidates with no reviewed concrete access contract and candidates with manual linkage hypotheses.
+- aggregate counts for candidates with no reviewed concrete access contract and candidates with manual linkage hypotheses;
+- research-only source `rights_posture`, known licence/terms flags and access-automation decision, without granting execution;
+- a **non-disjoint** breakdown of *uncontracted* discovery candidates by their existing source categories, so original providers and scientific model layers can be prioritised without claiming country/peril completeness.
 
 Run from a Git checkout after the normal dependency install:
 
