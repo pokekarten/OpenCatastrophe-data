@@ -173,6 +173,61 @@ Expected: boundary role catalogued, the other seven roles missing;
 **all eight original-byte QC roles remain unproven**. A successful JSON
 validation is not an authorization to run a model.
 
+## New additive missing-cell matrix for regional and peril coverage
+
+The single-cell preflight is intentionally not a global completeness claim.
+\`scripts/region_peril_coverage_matrix_v0.py\` now produces an **explicit
+cross-product** of exactly declared target administrative units and declared
+perils. A cell with no supplied research evidence appears in the output with
+all eight roles missing; it is **not** silently omitted or inferred from
+neighboring regions or other perils.
+
+Example: two separately code-identified Louisiana parish/county-equivalent
+targets and two named perils produce four separate rows. If a research
+catalogue receipt is supplied for one parish/flood pair, the other three
+cells remain empty. A municipal flood receipt cannot automatically prove
+another parish, another geographic vintage or another peril. These are
+illustrative synthetic test scopes, not original source-geometry evidence.
+
+Call the standalone tool with explicit, locally controlled JSON:
+
+\`\`\`json
+{
+  "schema_version": "OC_REGION_PERIL_MATRIX_V0",
+  "regions": [
+    {"country_iso3":"USA","admin_system":"US_CENSUS_TIGER_2026",
+     "admin_level":"ADM2","admin_id":"22071","boundary_year":2026},
+    {"country_iso3":"USA","admin_system":"US_CENSUS_TIGER_2026",
+     "admin_level":"ADM2","admin_id":"22073","boundary_year":2026}
+  ],
+  "perils": ["flood_river","windstorm"],
+  "evidence": []
+}
+\`\`\`
+
+Run:
+
+\`\`\`sh
+python -m unittest tests.test_region_peril_coverage_matrix_v0 -v
+python scripts/region_peril_coverage_matrix_v0.py /private/declaration.json
+\`\`\`
+
+The output includes each cell's requested perimeter, missing role lists,
+whether any evidence document was supplied, and whether original-source
+QC was *claimed*. Such claims are **not independently verified**. The
+matrix has strict bounded dimensions and disallows unknown cells,
+duplicate targets, cross-peril evidence or self-proclaimed admission.
+Even 8/8 claimed roles in all cells do **not** establish source rights,
+geometry completeness, calibrated damage, observed insured portfolios,
+reinsurance/retro or commercial model production.
+
+The independent OpenCatastrophe [regional synthetic aggregation PR #16]
+(https://github.com/pokekarten/OpenCatastrophe/pull/16) tackles a
+**different** layer: hierarchy-aware reconciliation of source-generated
+synthetic damage at explicit geographic keys. Do not confuse that
+calculation with this public **source evidence** matrix; there is no
+authorised native consumer of this data yet.
+
 ## Implementation ordering for worldwide CAT coverage
 
 - **Geographic backbone:** freeze release/version, ISO3, ADM0–5/official
