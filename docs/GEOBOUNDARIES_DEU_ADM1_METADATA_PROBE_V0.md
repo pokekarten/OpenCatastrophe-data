@@ -36,8 +36,12 @@ python scripts/probe_geoboundaries_deu_adm1_v0.py --live
 The second command opts into **exactly one** official HTTP GET.
 After merging the PR, a manual GitHub Actions invocation can run
 `.github/workflows/geoboundaries-deu-adm1-metadata-receipt.yml`.
-The workflow never executes on ordinary pushes or PRs; regular CI runs only
-the deterministic offline synthetic tests.
+The workflow executes on an explicit manual dispatch **or once when its own
+workflow definition changes on main**. It does not run on ordinary pushes to
+other repository paths, on PRs, or on a recurring schedule. Regular CI runs
+only deterministic offline synthetic tests. This small scoped one-shot main
+run supplies a genuine provider connectivity receipt after the workflow
+revision is merged, without checking in provider response bytes.
 
 The implementation rejects redirected/altered hosts, mutable identity drift,
 original licence changes, non-JSON, duplicate JSON keys, missing field
