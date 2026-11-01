@@ -122,6 +122,16 @@ class FX10CandidateJoinTests(unittest.TestCase):
         report = inspect(path, expected_sha256=sha)
         self.assertEqual(report["one_pair_days_with_non_matching_unit"], 365)
 
+    def test_quoted_original_metric_unit_is_normalized_not_falsely_rejected(self):
+        rows = default_parameters()
+        rows[1] = par("FX_10", "20100101", "20101231", unit='" m/s "')
+        path, sha = source(self.root, parameter_rows=rows)
+        report = inspect(path, expected_sha256=sha)
+        self.assertEqual(report["one_pair_days_with_non_matching_unit"], 0)
+        self.assertEqual(
+            report["original_parameter_unit_categories_by_candidate_days"],
+            {"verified_unit_m_per_s": 455})
+
     def test_invalid_candidate_mast_height_is_never_promoted(self):
         path, sha = source(self.root, eq_rows=[
             eq("19900101", "20091231"), eq("20100101", "20191231", height="-999")])
