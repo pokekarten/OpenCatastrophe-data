@@ -158,6 +158,7 @@ def audit_crosswalk(
         raise CrosswalkError("invalid or nonphysical projected source polygon")
 
     mapping = []
+    blocked_region_diagnostics = []
     for sid, geopol in shape_rows:
         intersections = []
         for code, nutspol in target_rows:
@@ -174,7 +175,16 @@ def audit_crosswalk(
         if (src_coverage < MIN_BIDIRECTIONAL_OVERLAP
             or ref_coverage < MIN_BIDIRECTIONAL_OVERLAP
             or runner_up >= primary_area * 0.10):
-            raise CrosswalkError("no unambiguous high-coverage NUTS1/ADM1 match")
+            # Collect every blocker, not only the first. No upstream private
+            # feature identifier or original coordinate goes into job logs.
+            blocked_region_diagnostics.append({
+                "best_nuts1": code,
+                "source_coverage": round(src_coverage, 6),
+                "nuts_coverage": round(ref_coverage, 6),
+                "runner_up_share_of_best": round(
+                    runner_up / primary_area if primary_area else 0.0, 6
+                ),
+            })
         mapping.append({
             "shape_id": sid,
             "nuts1_code": code,
@@ -184,6 +194,13 @@ def audit_crosswalk(
             "geo_coverage_fraction": src_coverage,
             "nuts_coverage_fraction": ref_coverage,
         })
+    if blocked_region_diagnostics:
+        raise CrosswalkError(
+            "real-source high-coverage polygon crosswalk NOT ADMITTED: "
+            + json.dumps(sorted(blocked_region_diagnostics,
+                                key=lambda row: row["best_nuts1"]),
+                         sort_keys=True, separators=(",", ":"))
+        )
     codes = [x["nuts1_code"] for x in mapping]
     if len(mapping) != EXPECTED_FEATURES or set(codes) != EXPECTED_NUTS:
         raise CrosswalkError("non-bijective polygon crosswalk: duplicate/missing NUTS1 region")
