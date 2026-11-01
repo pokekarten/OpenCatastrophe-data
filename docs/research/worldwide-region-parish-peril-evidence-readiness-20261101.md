@@ -221,8 +221,7 @@ Even 8/8 claimed roles in all cells do **not** establish source rights,
 geometry completeness, calibrated damage, observed insured portfolios,
 reinsurance/retro or commercial model production.
 
-The independent OpenCatastrophe [regional synthetic aggregation PR #16]
-(https://github.com/pokekarten/OpenCatastrophe/pull/16) tackles a
+The independent OpenCatastrophe [regional synthetic aggregation PR #16](https://github.com/pokekarten/OpenCatastrophe/pull/16) tackles a
 **different** layer: hierarchy-aware reconciliation of source-generated
 synthetic damage at explicit geographic keys. Do not confuse that
 calculation with this public **source evidence** matrix; there is no
