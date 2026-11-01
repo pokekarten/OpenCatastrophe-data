@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Berlin ALKIS official building WFS metadata receipt
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research_runners/berlin_alkis_gebaeude_wfs_capabilities_v0.py
+      - tests/test_berlin_alkis_gebaeude_wfs_capabilities_v0.py
+      - .github/workflows/berlin-alkis-gebaeude-wfs-metadata.yml
+  # One exact 4MiB-limited live official capabilities request after review.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/berlin-alkis-gebaeude-wfs-metadata.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: berlin-alkis-building-wfs-source-receipt-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    name: Official Berlin ALKIS WFS fixed GetCapabilities
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Checkout verified code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure reviewed Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Offline synthetic WFS security and metadata tests
+        run: python -m unittest tests.test_berlin_alkis_gebaeude_wfs_capabilities_v0 -v
+      - name: Execute one official anonymous WFS metadata operation, no feature bytes
+        if: github.event_name != 'pull_request'
+        run: python -m research_runners.berlin_alkis_gebaeude_wfs_capabilities_v0 --live
