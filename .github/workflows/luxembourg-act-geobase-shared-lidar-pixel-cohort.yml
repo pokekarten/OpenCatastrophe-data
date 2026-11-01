@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg paired original ACT2023 GeoBase2026 LiDAR2024 pixel cohort
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_act_geobase_lidar2024_paired_pixel_cohort_v0.py'
+      - 'tests/test_luxembourg_act_geobase_lidar2024_paired_pixel_cohort_v0.py'
+      - '.github/workflows/luxembourg-act-geobase-shared-lidar-pixel-cohort.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  actual-source-paired-pixels:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact reviewed original research code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned original geometry and COG window runtime
+        run: |
+          python -m pip install --disable-pip-version-check --no-input \
+            rasterio==1.5.0 numpy==2.3.5 pyproj==3.7.2 shapely==2.1.2
+          python -m pip check
+      - name: Run synthetic source pairing, false positives, double-count and data-leakage tests
+        run: python -m unittest tests.test_luxembourg_act_geobase_lidar2024_paired_pixel_cohort_v0 -v
+      - name: Check original ACT2023 and GeoBase2026 source SHA and compare fixed original LiDAR2024 pixel cohort
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          export ACT_ZIP="$RUNNER_TEMP/original-act2023-roof.zip"
+          export GEO_ZIP="$RUNNER_TEMP/original-geobase2026-buildings.zip"
+          export ACT_GPKG="$RUNNER_TEMP/original-act2023-roof.gpkg"
+          export GEO_GPKG="$RUNNER_TEMP/original-geobase2026-buildings.gpkg"
+          trap 'rm -f "$ACT_ZIP" "$GEO_ZIP" "$ACT_GPKG" "$GEO_GPKG"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 --retry 0 --max-filesize 115343360 \
+            --output "$ACT_ZIP" \
+            'https://download.data.public.lu/resources/base-de-donnees-nationale-des-batiments-3d-2023/20260317-160936/act2023v2-buildings3d-footprints.gpkg.zip'
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 --retry 0 --max-filesize 83886080 \
+            --output "$GEO_ZIP" \
+            'https://download.data.public.lu/resources/bd-l-geobase/20261001-010523/buildings-20261001.zip'
+          python scripts/luxembourg_gpkg_zip_preflight_v0.py --source-zip "$ACT_ZIP" \
+            --sha256 a271b1cbcc22ded018f9bab0c150e9f33efa6cb7ebca8cf4dc4bdb1f5d84859a > /dev/null
+          python -m research_runners.luxembourg_geobase_buildings_20261001_v0 \
+            --source-zip "$GEO_ZIP" > /dev/null
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import os,hashlib,shutil
+          original=(
+            ("ACT_ZIP","ACT_GPKG","9765b04eaeb9332aa606b8dca44031116588e285553aab061d61037938a002bf"),
+            ("GEO_ZIP","GEO_GPKG","ec70bd1175b6f67b6dceaf8ab39e0433bc871e1099ff308c3eb8323127aa5676"),
+          )
+          for z,out,expected in original:
+              with ZipFile(os.environ[z]) as archive:
+                  files=[m for m in archive.infolist()
+                         if m.filename.lower().endswith(".gpkg") and not m.is_dir()]
+                  if len(files)!=1 or not 0<files[0].file_size<=256*1024*1024:
+                      raise SystemExit("BLOCKED: unexpected source GeoPackage member or source size")
+                  with archive.open(files[0]) as source,Path(os.environ[out]).open("xb") as destination:
+                      shutil.copyfileobj(source,destination,length=1024*1024)
+              with Path(os.environ[out]).open("rb") as source:
+                  observed=hashlib.file_digest(source,"sha256").hexdigest()
+              if observed!=expected:
+                  raise SystemExit("BLOCKED: provider source SHA drift")
+          PY
+          python -m research_runners.luxembourg_act_geobase_lidar2024_paired_pixel_cohort_v0 \
+            --act2023-gpkg "$ACT_GPKG" --geobase2026-gpkg "$GEO_GPKG"
+          # No source original ZIP/GPKG, raw COG pixels, per-building values,
+          # coordinates or matched original IDs are saved or uploaded as artifacts.
