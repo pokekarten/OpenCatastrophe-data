@@ -99,9 +99,12 @@ Examples:
 - `USA:US_CENSUS_TIGER_2026:ADM2:22071:2026` plus `flood_river`
   (five-digit Census county-equivalent GEOID; 22071 is Orleans Parish,
   Louisiana).
-- `DEU:GEOB_GBOPEN_2021:ADM1:DEU-ADM1-10402087:2021` plus
-  `windstorm` (the value shown is a **layer** boundary ID, not a state
-  unit ID; scope-specific original shapeID must be reviewed separately).
+- For German federal states, a future example must use a verified
+  **per-feature** geoBoundaries `shapeID` or official code at the
+  source's reviewed year. `DEU-ADM1-10402087` identifies the whole
+  2021 boundary **layer**, so it must **not** be used as an individual
+  state's `admin_id`. A DEU ADM1 unit example remains deliberately
+  unpopulated until the geometry/official-code crosswalk is checked.
 - A country can use ADM0–5 where original administrative sublevels
   genuinely exist. Lack of a source-defined ADM4 is a documented gap,
   never an excuse to fabricate a polygon by joining names.
