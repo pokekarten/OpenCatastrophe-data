@@ -13,6 +13,8 @@ on:
       - tests/test_berlin_bld4_bkg_exterior_ring_raw_support_v0.py
       - research_runners/validate_berlin_bkg_exterior_original_receipt_v0.py
       - tests/test_validate_berlin_bkg_exterior_original_receipt_v0.py
+      - research_runners/probe_bkg_original_depth_unit_claims_v0.py
+      - tests/test_probe_bkg_original_depth_unit_claims_v0.py
       - .github/workflows/berlin-bld4-bkg-real-raw-support.yml
   push:
     branches: [main]
@@ -51,6 +53,7 @@ jobs:
           python -m unittest tests.test_berlin_bld4_bkg_original_raw_cell_support_v0 -v
           python -m unittest tests.test_berlin_bld4_bkg_exterior_ring_raw_support_v0 -v
           python -m unittest tests.test_validate_berlin_bkg_exterior_original_receipt_v0 -v
+          python -m unittest tests.test_probe_bkg_original_depth_unit_claims_v0 -v
           python -m unittest tests.test_berlin_bld4_synthetic_flood_cell_join_v0 -v
       - name: Strict original CAT1/CAT2 + one Berlin ALKIS WFS + one 47MB BKG TIFF
         if: github.event_name != 'pull_request'
@@ -107,4 +110,7 @@ jobs:
           # Only aggregate bands and provenance hashes are printed to Actions.
           python -m research_runners.validate_berlin_bkg_exterior_original_receipt_v0 \
             "$root/aggregate-source-receipt.json"
+          # No second download: inspect TIFF's native GDAL unit/scale claims.
+          # Missing or default unit/scale remains uncalibrated; never infer cm/m.
+          python -m research_runners.probe_bkg_original_depth_unit_claims_v0 "$tiff"
           # Provider TIFF, WFS polygons, source receipts and CAT1/CAT2 deleted by trap.
