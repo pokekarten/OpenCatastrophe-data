@@ -6,6 +6,7 @@ from __future__ import annotations
 import copy
 from datetime import datetime, timezone
 import io
+import importlib.util
 import json
 import unittest
 
@@ -13,6 +14,8 @@ from research_runners.berlin_alkis_lod2_complete_bbox_v0 import (
     COUNT_LIMIT, URLS, MIN_IOU, CompleteBboxError, evaluate, probe,
 )
 from tests.test_berlin_alkis_gebaeude_five_feature_join_v0 import fixture, raw
+
+HAS_SPATIAL = importlib.util.find_spec('shapely') is not None
 
 
 def pair():
@@ -53,6 +56,7 @@ class CompletenessAndMatchingTests(unittest.TestCase):
             self.assertIn("391700",url)
             self.assertIn("EPSG%3A25833",url)
 
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
     def test_realistic_bijective_geometry_must_not_map_by_id(self):
         a,h=pair()
         result=evaluate(raw(a),raw(h))
@@ -65,6 +69,7 @@ class CompletenessAndMatchingTests(unittest.TestCase):
         self.assertFalse(result["model_input_admitted"])
         self.assertNotIn("source-roof-class",str(result))
 
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
     def test_missing_or_unbounded_source_population_refused(self):
         a,h=pair()
         h["numberMatched"]=4
@@ -83,6 +88,7 @@ class CompletenessAndMatchingTests(unittest.TestCase):
         with self.assertRaises(CompleteBboxError):
             evaluate(raw(a),raw(h))
 
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
     def test_polygon_wrong_or_bbox_false_positives_rejected(self):
         a,h=pair()
         h["features"][0]["geometry"]["type"]="Point"
@@ -94,6 +100,7 @@ class CompletenessAndMatchingTests(unittest.TestCase):
         with self.assertRaises(CompleteBboxError):
             evaluate(raw(a),raw(h))
 
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
     def test_shifted_current_source_no_invented_matches(self):
         a,h=pair()
         # 50 metres shift inside reviewed 200m bbox.
@@ -104,6 +111,7 @@ class CompletenessAndMatchingTests(unittest.TestCase):
         self.assertEqual(report["unambiguous_one_to_one_footprints"],0)
         self.assertEqual(report["height_positive_numeric_count"],3)
 
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
     def test_two_exact_original_requests_and_no_serialized_source_values(self):
         a,h=pair()
         calls=[]
