@@ -31,7 +31,7 @@ rows still lack structured `lei` and `local_registration_id`.
 
 ## MAS (Singapore): 20/20 exact class-and-name matches
 
-All **20** currently unlinked observations in the FFBK MAS curated research
+All **20** currently unlinked observations in the MAS curated research
 feed appear as exact Unicode-normalised names in the **corresponding
 official MAS Financial Institutions Directory category**, rather than in
 an unfiltered collection.
