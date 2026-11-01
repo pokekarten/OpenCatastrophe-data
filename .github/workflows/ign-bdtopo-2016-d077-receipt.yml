@@ -71,6 +71,22 @@ jobs:
           if not any(n.lower().endswith(".shp") for n in shape):
               raise SystemExit("BLOCKED: no historic building shapefile found in full archive")
           PY
+      - name: Extract only three historic building geometry families outside Git
+        env:
+          ARCHIVE_NAME: BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ign-2016-bati"
+          7z e -bd -bso0 -y "-o$RUNNER_TEMP/ign-2016-bati" \
+            "$RUNNER_TEMP/$ARCHIVE_NAME" \
+            "BATI_INDIFFERENCIE.*" "BATI_INDUSTRIEL.*" "BATI_REMARQUABLE.*" -r
+          python -m pip install --no-input --disable-pip-version-check \
+            -r requirements-eu-flood-spatial.txt "pyshp==2.3.1"
+          python -m unittest tests.test_fr_bdtopo_2016_d077_bounded_buildings_v0 -v
+          python research_runners/fr_bdtopo_2016_d077_bounded_buildings_v0.py \
+            --extracted-building-shapefiles "$RUNNER_TEMP/ign-2016-bati"
       - name: Delete archive after receipt (no third-party artifact upload)
         if: always()
-        run: rm -f "$RUNNER_TEMP/BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z"
+        run: |
+          rm -f "$RUNNER_TEMP/BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z"
+          rm -rf "$RUNNER_TEMP/ign-2016-bati" "$RUNNER_TEMP/ign_2016_contents.txt"
