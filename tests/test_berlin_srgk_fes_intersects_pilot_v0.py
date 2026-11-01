@@ -76,10 +76,13 @@ class BerlinFesIntersectsSourceTests(unittest.TestCase):
             got=validate_original_schema(xsd())
             self.assertEqual(got["geometry_property_name_candidates"], ["geom"])
             self.assertFalse(got["filter_capabilities_and_server_bbox_behavior_proven"])
-            with self.assertRaisesRegex(FesBlocked, "source property"):
-                validate_original_schema(
-                    xsd().replace(b'name="geom"',b'name="other"')
-                )
+            tampered = xsd().replace(b'name="geom"',b'name="other"')
+            with patch(
+                "research_runners.berlin_srgk_fes_intersects_pilot_v0.SCHEMA_SHA256",
+                sha256(tampered).hexdigest(),
+            ):
+                with self.assertRaisesRegex(FesBlocked, "source property"):
+                    validate_original_schema(tampered)
 
     def test_valid_polygon_covered_area_but_no_flood_or_cat_admission(self):
         out=assess_feature(feature((391725,5819975,391740,5819990)))
