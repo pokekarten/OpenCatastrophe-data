@@ -39,3 +39,64 @@ Dedicated source job plus eight synthetic regression tests challenge true inters
 For scientific model validation, next stratify a bounded common-pixel cohort with adjudicated high-confidence 1:1 geometry and independently field-surveyed vertical controls. Only then compare methods quantitatively. Individual insurers, replacement cost, floor count and all CAT model-input admission remain absent.
 
 **No original source whole COG SHA verified, no feature or raw source redistribution rights conferred, no Neon write, no model input admission.**
+
+## Actual original-provider roof-mask result (2026-11-01)
+
+The dedicated SHA-pinned original-source run
+[41316674113](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41316674113)
+**succeeded**: the exact previously verified full original
+ACT2023v2 roof ZIP/GPKG was acquired, SHA-checked and masked in the
+same original 2024 MNT/MNS raster window as #957.
+All **eight synthetic overlap/privacy/quality tests** passed.
+All original roof and raster bytes and per-roof masked medians stayed
+ephemeral and were not published.
+
+| Same actual 100m research ROI, exact ACT2023 roof source | Count |
+| --- | ---: |
+| Source original full country roof population | **238,189** |
+| RTree native bbox source roof candidates | **55** |
+| Actual roofs with positive intersection in rotated ROI | **54** |
+| RTree false positive outside actual ROI | **1** |
+| ACT roofs with valid median MNS–MNT proxy | **52** |
+| ACT roofs with no unique raster pixel | **2** |
+| ACT roofs with insufficient coverage/valid pixels | **0** |
+| Coincident valid source MNT/MNS pixels | **44,521** |
+| Pixels uniquely assigned to ACT roof polygons | **25,881** |
+| Pixels assigned to overlapping ACT roofs | **0** |
+| Pixels outside sampled ACT rooftop polygons | **18,640** |
+
+The **52** eligible ACT roof *median-proxy* bins are:
+below 3m: **0**; 3–6m: **0**; 6–10m: **1**; 10–15m: **19**;
+15–25m: **32**; ≥25m: **0**. Conservation: **55−1=54** actual
+roofs, **52+2+0=54**, and **25,881+0+18,640=44,521** total
+raster pixels.
+
+## Same-window evidence comparison with GeoBase2026 #957
+
+| Same ACT LiDAR2024 MNT/MNS 2024 original data and area | ACT2023 *roof polygon* mask | GeoBase2026 *building object* mask |
+| --- | ---: | ---: |
+| Exact positive-area original source polygons | **54** | **104** |
+| Eligible aggregate per-polygon median proxies | **52** | **97** |
+| Median-proxy bin 6–10m | 1 | 5 |
+| Median-proxy bin 10–15m | 19 | 28 |
+| Median-proxy bin 15–25m | 32 | 62 |
+| Raster pixels eligible for one and only one original polygon | **25,881** | **23,293** |
+| Raster pixels excluded for multiply assigned polygons | **0** | **350** |
+
+**Scientific conclusion strictly bounded:** comparing source-geometry
+choices against the same observation raster **changes the sampled polygon
+cohort, masking and median-proxy class histogram**. Counts are not
+one-to-one source records and may reflect roof-vs-ground segmentation
+rather than different physical building heights. The source masks
+are not paired at original building ID or validated cross-vintage
+ground-truth identity. No independent holdout, per-roof survey,
+vertical datum or vegetation classification review is established.
+Therefore neither 32/52 nor 62/97 is a calibrated insured-building
+height distribution. Do not infer historical demolition, an asset
+count or insured replacement value from these counts.
+
+The next scientifically causal step is a small reviewed
+high-IoU 1:1 or manually adjudicated 1:n polygon crosswalk, masking
+the **same physical pixel cohort** for matched roof/ground objects,
+and independent LiDAR point classification, before quantifying
+geometry-induced bias. No source model admission.
