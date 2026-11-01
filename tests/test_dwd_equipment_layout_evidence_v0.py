@@ -77,7 +77,7 @@ class EquipmentLayoutTests(unittest.TestCase):
     def test_provider_header_field_names_only_without_rows(self):
         names = ["Stations_id", "von_datum", "bis_datum", "Gerat", "Parameter",
                  "Hohe", "Einheit", "Methode"]
-        data = (";".join(names) + "\\n" + "PRIVATE;20000101;20201231;SECRET;OTHER;A;B;C\\n").encode()
+        data = (";".join(names) + chr(10) + "PRIVATE;20000101;20201231;SECRET;OTHER;A;B;C" + chr(10)).encode()
         result = _txt_layout(data)
         self.assertTrue(result["header_candidate_recognized"])
         self.assertEqual(result["source_column_names"], names)
