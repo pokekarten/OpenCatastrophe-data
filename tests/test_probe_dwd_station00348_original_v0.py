@@ -82,6 +82,26 @@ class SecondStationOriginalTests(unittest.TestCase):
         with self.assertRaises(SecondStationBlocked):
             inspect(w, m)
 
+    def test_common_window_with_00003_counts_are_separate_from_full_00348(self):
+        w, m = fixture(self.root, wind_rows=[
+            WIND_ROWS[0],
+            WIND_ROWS[1],
+            "348;201109010000;3;30.0;1.0;3.0;200;eor\\r\\n",
+        ])
+        report = inspect(w, m)
+        shared = report["measurement"]["common_calendar_window_with_station00003"]
+        self.assertEqual(shared["original_10min_observations"], 2)
+        self.assertEqual(shared["fx_10_missing_sentinel_rows"], 1)
+        self.assertEqual(shared["max_fx_10_mps"], "14.4")
+        self.assertEqual(report["measurement"]["fx_10_max_mps"], "30.0")
+        self.assertFalse(shared["measurement_series_directly_correlated"])
+
+    def test_exact_provider_sha_cli_gate_rejects_synthetic_original(self):
+        from scripts.probe_dwd_station00348_original_v0 import main
+        w, m = fixture(self.root)
+        self.assertEqual(main(["--wind-zip", str(w),
+                               "--metadata-zip", str(m)]), 1)
+
     def test_source_digest_can_be_pinned_independently(self):
         w, m = fixture(self.root)
         report = inspect(w, m, expected_wind_sha256=hashlib.sha256(w.read_bytes()).hexdigest(),
