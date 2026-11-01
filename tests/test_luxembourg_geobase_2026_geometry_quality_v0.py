@@ -70,6 +70,8 @@ class LuxembourgGeoBaseFullGeometryTests(unittest.TestCase):
         )
         self.assertEqual(repair["nonpositive_nominal_invalid_polygon_area"], 1)
         self.assertEqual(repair["source_boundary_to_linework_boundary_comparable"], 1)
+        self.assertEqual(repair["source_boundary_vs_linework_boundary_topological_equal"], 1)
+        self.assertEqual(repair["source_boundary_vs_linework_boundary_topological_unequal"], 0)
         self.assertEqual(repair["source_boundary_to_linework_boundary_nonfinite_or_failed"], 0)
         self.assertEqual(repair["absolute_nominal_vs_repaired_area_change_sum_m2"], 2.0)
         self.assertTrue(repair["all_repaired_polygons_quarantined_for_manual_scientific_review"])
@@ -114,6 +116,8 @@ class LuxembourgGeoBaseFullGeometryTests(unittest.TestCase):
         self.assertEqual(report["absolute_nominal_vs_repaired_area_change_sum_m2"], 0)
         self.assertEqual(report["source_boundary_to_linework_boundary_comparable"], 1)
         self.assertEqual(report["source_boundary_to_linework_hausdorff_over_1m"], 1)
+        self.assertEqual(report["source_boundary_vs_linework_boundary_topological_equal"], 0)
+        self.assertEqual(report["source_boundary_vs_linework_boundary_topological_unequal"], 1)
         self.assertGreater(report["source_boundary_to_linework_hausdorff_max_projected_m"], 1)
         self.assertGreater(
             report["source_boundary_to_linework_boundary_length_change_sum_projected_m"], 0
