@@ -15,6 +15,7 @@ if __package__:
         SOURCE_URL, PUBLISHER_BYTES, inspect_hanze_region_geometry_zip,
     )
     from .hanze_2024_original_polygon_integrity_v0 import inspect_polygon_records
+    from .hanze_2024_independent_crs_geos_audit_v0 import audit_independent_crs_and_topology
     from .hanze_regions2024_geometry_code_coverage_v0 import (
         compare_hanze_geometry_native_glossary, survey_verified_event_region_geometry_coverage,
     )
@@ -32,6 +33,7 @@ else:
         SOURCE_URL, PUBLISHER_BYTES, inspect_hanze_region_geometry_zip,
     )
     from hanze_2024_original_polygon_integrity_v0 import inspect_polygon_records
+    from hanze_2024_independent_crs_geos_audit_v0 import audit_independent_crs_and_topology
     from hanze_regions2024_geometry_code_coverage_v0 import (
         compare_hanze_geometry_native_glossary, survey_verified_event_region_geometry_coverage,
     )
@@ -72,6 +74,8 @@ def main() -> None:
     zip_bytes = fetch_zip_publisher()
     result = inspect_hanze_region_geometry_zip(zip_bytes, expected_sha256=PINNED_ZIP_SHA256)
     result["original_polygon_record_integrity"] = inspect_polygon_records(
+        zip_bytes, expected_sha256=PINNED_ZIP_SHA256)
+    result["independent_crs_and_geos_validity"] = audit_independent_crs_and_topology(
         zip_bytes, expected_sha256=PINNED_ZIP_SHA256)
     s2 = fetch_versioned_hanze_regions()
     dfo = fetch_publisher_bytes()
