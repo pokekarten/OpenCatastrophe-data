@@ -63,8 +63,10 @@ class ZIPCentralDirectoryTests(unittest.TestCase):
 
     def test_trailing_comment_bytes_mismatch_rejected(self):
         _,tail=small_original()
+        edited=bytearray(tail)
+        struct.pack_into("<H",edited,len(tail)-2,1)  # declared ZIP comment no longer fits
         with self.assertRaisesRegex(ZipRangeError,"trailing"):
-            parse_eocd(tail[:-1]+b"X",full_size=CITY_ORIGINAL_BYTES)
+            parse_eocd(bytes(edited),full_size=CITY_ORIGINAL_BYTES)
 
     def test_encrypted_or_zip64_central_member_rejected(self):
         original,tail=small_original()
