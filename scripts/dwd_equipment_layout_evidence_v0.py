@@ -107,6 +107,21 @@ def _txt_layout(raw: bytes) -> dict:
     nonblank = [line for line in lines if line.strip()]
     if not nonblank:
         raise EquipmentBlocked("TXT metadata member is empty")
+    # The actual DWD native TXT headers have 11/12 semicolons. Output ONLY the
+    # very first line's structural column titles (never any source row).
+    # Strict token safeguards prevent a novel/data-like first line from being
+    # exported as a supposed original provider header.
+    raw_titles = [field.strip().strip('"') for field in nonblank[0].split(";")]
+    safe_titles = (
+        8 <= len(raw_titles) <= 20
+        and len(nonblank[0].encode("utf-8")) <= 512
+        and all(1 <= len(name) <= 90
+                and re.fullmatch(r"[\\w .(),:/%+\\-]+", name, re.UNICODE)
+                for name in raw_titles)
+        and len({name.casefold() for name in raw_titles}) == len(raw_titles)
+        and any("datum" in name.casefold() or "station" in name.casefold()
+                for name in raw_titles)
+    )
     # Never output original line contents. Character offsets refer only to date
     # CANDIDATES, not approved 'from'/'to' fields.
     signatures = []
@@ -134,6 +149,8 @@ def _txt_layout(raw: bytes) -> dict:
         "candidate_date_tokens": totals["date_tokens"],
         "valid_calendar_tokens": totals["valid_calendar_tokens"],
         "first_three_line_signatures": signatures[:3],
+        "source_column_names": raw_titles if safe_titles else [],
+        "header_candidate_recognized": bool(safe_titles),
         "authoritative_column_mapping_proven": False,
         "instrument_change_proven": False,
     }
