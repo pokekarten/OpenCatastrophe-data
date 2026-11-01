@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Synthetic OED 5.0.0 CSV export v0 — bounded interoperability experiment
 
-**Status:** synthetic research-only exporter; **not** certified by ODS_Tools; **not** a CAT model, insurer exposure, insured replacement value, financial model or approval for a real portfolio.
+**Status:** synthetic research-only exporter. Validated with pinned ODS Tools **5.0.8** in GitHub Actions on the draft PR; **not** a CAT model, insurer exposure, insured replacement value, financial model or approval for a real portfolio.
 
 ## Canonical source and rights boundary
 
@@ -34,7 +34,7 @@ Only `location.csv` (12 rows) and `account.csv` (1 row) are emitted. There are *
 
 1. In a read-only Postgres session for **branch ID `br-summer-sky-bawujqu8`**, DB `insurance`, run `research_runners/sql/synthetic_oed_snapshot_v0.sql` and save the JSON value of **one** returned column `synthetic_snapshot` into a local `snapshot.json` file. Recheck the target branch ID in Neon before executing; the SQL predicate is an additional guard, not independent proof of branch selection. Never run the fixture *creation* SQL again merely for export.
 2. From the repository root: `python research_runners/export_synthetic_oed_v0.py snapshot.json /tmp/oc-synthetic-oed-v5` (the output directory must not exist).
-3. Run `python -m unittest discover -s tests -p 'test_export_synthetic_oed_v0.py' -v` for offline positive and negative cases. OED 5.0.0 schema validation using a **pinned compatible** `ODS_Tools` package is an additional outstanding gate before any claim of OED compliance.
+3. Run `python -m unittest discover -s tests -p 'test_export_synthetic_oed_v0.py' -v` for offline positive and negative cases. Official compatibility validation uses **pinned** `ods-tools==5.0.8` and `python research_runners/validate_synthetic_oed_ods_tools_v0.py` from the dedicated `Synthetic Oasis OED 5.0 compatibility` GitHub workflow. It also checks that removing a mandatory `CountryCode` is rejected. This is an OED-format validation, **not** an OasisLMF model run.
 4. Confirm 12 location rows, exactly 1 fictitious account/policy, consistent account IDs/currency/perils, and sum of all four TIV components **EUR 3,150,000** (entirely invented). Do not read/rewrite any live Neon tables.
 
 ## Future real-data path (not implemented)
