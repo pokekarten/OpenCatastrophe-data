@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import tomllib
 from pathlib import Path
 import re
 from typing import Any
@@ -101,7 +102,7 @@ def main() -> int:
     p.add_argument("--descriptor", type=Path, required=True)
     args = p.parse_args()
     try:
-        d = json.loads(args.descriptor.read_text(encoding="utf-8"))
+        d = tomllib.loads(args.descriptor.read_text(encoding="utf-8"))
         result = inspect_archive(args.archive, d)
     except (ArchiveReceiptError, OSError, ValueError) as exc:
         print(json.dumps({"status": "BLOCKED", "reason": str(exc)}, sort_keys=True))
