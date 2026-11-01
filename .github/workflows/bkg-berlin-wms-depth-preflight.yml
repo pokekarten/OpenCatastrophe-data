@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: BKG Berlin original WMS depth metadata
+on:
+  pull_request:
+    paths:
+      - research_runners/probe_bkg_berlin_wms_depth_featureinfo_v0.py
+      - tests/test_probe_bkg_berlin_wms_depth_featureinfo_v0.py
+      - docs/research/bkg-berlin-wms-depth-featureinfo-preflight-v0.md
+      - .github/workflows/bkg-berlin-wms-depth-preflight.yml
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/bkg-berlin-wms-depth-preflight.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-provider-wms-metadata:
+    name: Exact official BKG Berlin WMS (metadata only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Checkout reviewed code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Challenge WMS identity, result cap and non-admission offline
+        run: python -m unittest tests.test_probe_bkg_berlin_wms_depth_featureinfo_v0 -v
+      - name: Review one original BKG WMS capabilities and optional one fixed point
+        if: github.event_name != 'pull_request'
+        run: python -m research_runners.probe_bkg_berlin_wms_depth_featureinfo_v0
