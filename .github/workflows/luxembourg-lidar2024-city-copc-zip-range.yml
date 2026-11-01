@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg official 2024 classified COPC city ZIP central-directory 206 range probe
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_lidar2024_city_copc_zip_directory_range_v0.py'
+      - 'tests/test_luxembourg_lidar2024_city_copc_zip_directory_range_v0.py'
+      - '.github/workflows/luxembourg-lidar2024-city-copc-zip-range.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-archive-zip-range:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout immutable reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Challenge ZIP64/encryption, fake HTTP200 and overreads on synthetic bytes
+        run: python -m unittest tests.test_luxembourg_lidar2024_city_copc_zip_directory_range_v0 -v
+      - name: Inspect only exact original publisher ZIP central directory through two byte ranges
+        run: python -m research_runners.luxembourg_lidar2024_city_copc_zip_directory_range_v0
+      # Zero full original ZIP/LAZ/COPC member payloads, point data or feature identities.
