@@ -70,10 +70,10 @@ def inspect_tiff_header(raw: bytes) -> dict:
     """Decode only file header and a bounded first-IFD prefix, never pixel data."""
     if type(raw) is not bytes or len(raw) != BYTES:
         raise HeaderBlocked("TIFF sample must be exactly 4096 source bytes")
-    if raw[:4] not in (b"II*\\x00", b"MM\\x00*", b"II+\\x00", b"MM\\x00+"):
+    if raw[:4] not in (b"II*\x00", b"MM\x00*", b"II+\x00", b"MM\x00+"):
         raise HeaderBlocked("provider original bytes do not start with TIFF/BigTIFF magic")
     endian = "<" if raw[:2] == b"II" else ">"
-    big = raw[2:4] in (b"+\\x00", b"\\x00+")
+    big = raw[2:4] in (b"+\x00", b"\x00+")
     if big:
         offset_size, reserved = struct.unpack_from(endian + "HH", raw, 4)
         if offset_size != 8 or reserved != 0:
