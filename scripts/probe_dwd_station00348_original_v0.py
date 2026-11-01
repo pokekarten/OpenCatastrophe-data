@@ -115,14 +115,33 @@ def _decimal(value: str, lower: int, upper: int) -> Decimal:
 
 def _wind_stats(raw: bytes) -> dict:
     with _zip_open(raw, max_expanded=MAX_WIND_EXPANDED) as z:
-        names = [x for x in z.infolist() if not x.is_dir()
-                 and PurePosixPath(x.filename).name.startswith("produkt_extrema_wind_")
-                 and x.filename.endswith(".txt")]
-        if len(names) != 1:
-            raise SecondStationBlocked("must find exactly one original extreme-wind product member")
-        member = names[0]
-        if STATION not in PurePosixPath(member.filename).name:
-            raise SecondStationBlocked("unexpected original product station identity")
+        # DWD original ZIP internal product names may vary by station/era.
+        # Identify the single product by its actual verified native header,
+        # NOT by copying station-00003's internal product filename.
+        matches = []
+        for info in z.infolist():
+            if info.is_dir() or not info.filename.endswith(".txt"):
+                continue
+            try:
+                with z.open(info) as probe:
+                    header_sample = probe.readline(MAX_LINE_BYTES + 1)
+                if len(header_sample) > MAX_LINE_BYTES:
+                    raise SecondStationBlocked("oversized original product candidate header")
+                fields = [x.strip().strip('"') for x in
+                          header_sample.decode("utf-8-sig").strip().split(";")]
+            except (UnicodeDecodeError, RuntimeError, zipfile.BadZipFile) as exc:
+                raise SecondStationBlocked("unreviewed original TXT header encoding or ZIP CRC") from exc
+            if len(fields) == len(set(fields)) and set(WIND_COLUMNS).issubset(fields):
+                matches.append(info)
+        if len(matches) != 1:
+            raise SecondStationBlocked(
+                "must identify exactly one original wind product by required field header"
+            )
+        member = matches[0]
+        embedded_ids = re.findall(r"(?<![0-9])[0-9]{5}(?![0-9])",
+                                  PurePosixPath(member.filename).name)
+        if embedded_ids and set(embedded_ids) != {STATION}:
+            raise SecondStationBlocked("original DWD product member filename station mismatch")
         try:
             with z.open(member) as reader:
                 header_raw = reader.readline(MAX_LINE_BYTES + 1)
@@ -206,6 +225,7 @@ def _wind_stats(raw: bytes) -> dict:
         "quality_level_distribution": dict(sorted(qn.items())),
         "missing_10minute_slots_between_first_and_last": missing_slots,
         "product_member_sha256": member_sha256,
+        "product_member": PurePosixPath(member.filename).name,
     }
 
 
