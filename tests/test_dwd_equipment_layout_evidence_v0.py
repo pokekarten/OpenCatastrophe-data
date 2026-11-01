@@ -85,6 +85,31 @@ class EquipmentLayoutTests(unittest.TestCase):
         self.assertNotIn("SECRET", str(result))
         self.assertFalse(result["authoritative_column_mapping_proven"])
 
+    def test_original_header_with_unnamed_trailing_field(self):
+        names = ["Stations_id", "Von_Datum", "Bis_Datum", "Geratehohe",
+                 "Instrument", "Beobachtung", "Methode", ""]
+        raw = (";".join(names) + chr(10)
+               + "00003;20100101;20110331;10;PRIVATEDEVICE;SECRET;METHOD;"
+               + chr(10)).encode()
+        result = _txt_layout(raw)
+        self.assertTrue(result["header_candidate_recognized"])
+        self.assertEqual(result["source_column_names"][-1], "unnamed_field_7")
+        self.assertEqual(result["source_header_diagnostics_only"]["header_empty_field_count"], 1)
+        self.assertNotIn("PRIVATEDEVICE", str(result))
+        self.assertNotIn("SECRET", str(result))
+
+    def test_date_bearing_first_row_never_recognized_as_header(self):
+        names = ["Stations_id", "Von_Datum", "Bis_Datum", "Geratehohe",
+                 "Instrument", "Beobachtung", "Methode", ""]
+        raw = (";".join(names) + chr(10)
+               + "00003;20100101;20110331;10;SECRET;PRIVATE;X;"
+               + chr(10)).encode()
+        line = raw.splitlines()[1]
+        forged = line + bytes([10]) + line
+        result = _txt_layout(forged)
+        self.assertFalse(result["header_candidate_recognized"])
+        self.assertEqual(result["source_column_names"], [])
+
     def test_cp1252_legacy_hint(self):
         r = _html_layout("<html>Geräte</html>".encode("cp1252"))
         self.assertEqual(r["encoding_hint"], "cp1252_heuristic")
