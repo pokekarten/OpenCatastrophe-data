@@ -131,6 +131,32 @@ class BerlinTiffBandSemanticsTests(unittest.TestCase):
         with self.assertRaisesRegex(TiffBandError, "duplicate"):
             inspect_tiff_band_declarations(bytes(raw))
 
+    def test_source_bound_zip_reader_emits_band_claims_without_pixel_admission(self):
+        from hashlib import sha256
+        from research_runners.berlin_srhk_zip_first_tiff_header_v0 import inspect_prefix
+        from tests.test_berlin_srhk_zip_first_tiff_header_v0 import synthetic_zip
+        for scenario in ("extreme", "extraordinary"):
+            with self.subTest(scenario=scenario):
+                source = synthetic_zip(scenario, member_content=original_like())
+                out = inspect_prefix(source, scenario=scenario,
+                                     expected_512_sha=sha256(source[:512]).hexdigest())
+                self.assertTrue(out["gdal_nodata_tag_present"])
+                self.assertEqual(out["gdal_nodata_declared"]["value"], -9999.0)
+                self.assertEqual(out["gdal_band_unit_label_declared"], "m")
+                self.assertFalse(out["water_depth_units_or_scale_scientifically_validated"])
+                self.assertFalse(out["hazard_raster_pixels_or_buildings_sampled"])
+
+    def test_source_bound_reader_blocks_corrupt_gdal_band_metadata(self):
+        from hashlib import sha256
+        from research_runners.berlin_srhk_zip_first_tiff_header_v0 import (
+            TiffHeaderError, inspect_prefix,
+        )
+        from tests.test_berlin_srhk_zip_first_tiff_header_v0 import synthetic_zip
+        source = synthetic_zip("extreme", member_content=original_like(scale="inf"))
+        with self.assertRaisesRegex(TiffHeaderError, "NoData/band metadata"):
+            inspect_prefix(source, scenario="extreme",
+                           expected_512_sha=sha256(source[:512]).hexdigest())
+
     def test_bad_out_of_bounds_gdal_metadata_does_not_infer_units(self):
         raw = bytearray(original_like())
         n = struct.unpack_from("<H", raw, 8)[0]
