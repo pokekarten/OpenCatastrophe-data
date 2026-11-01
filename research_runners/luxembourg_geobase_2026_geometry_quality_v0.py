@@ -11,6 +11,7 @@ are saved in Git/Neon; no CAT-model admission is implied.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import hashlib
 import json
 import math
@@ -22,6 +23,7 @@ import zipfile
 
 from shapely import wkb
 from shapely.errors import GEOSException
+from shapely.validation import explain_validity
 
 from research_runners.luxembourg_geobase_2026_id_quality_v0 import (
     audit as id_audit, EXPECTED_ZIP_SHA256, EXPECTED_GPKG_SHA256,
@@ -34,6 +36,19 @@ from research_runners.luxembourg_geobase_buildings_20261001_v0 import (
 MAX_GEOMETRY_BYTES = 2 * 1024 * 1024
 MAX_FEATURE_ROWS = 250000
 ENVELOPE_DOUBLES = {0: 0, 1: 4, 2: 6, 3: 6, 4: 8}
+TOPOLOGY_LABELS = frozenset({
+    "Ring Self-intersection", "Self-intersection", "Hole lies outside shell",
+    "Nested shells", "Nested holes", "Disconnected interior",
+    "Too few points in geometry component", "Invalid Coordinate",
+    "Repeated Point",
+})
+
+
+def _topology_class(geometry) -> str:
+    # GEOS may include original coordinates in brackets: NEVER leak them.
+    explanation = explain_validity(geometry).split("[", 1)[0].strip()
+    return explanation if explanation in TOPOLOGY_LABELS else "other_invalid_topology"
+
 
 
 def _decode_gpkg(blob: object):
@@ -84,6 +99,7 @@ def profile(connection: sqlite3.Connection, *, expected_rows: int = EXPECTED_FEA
 
     measured = []
     invalid_topology = 0
+    topology_classes: Counter[str] = Counter()
     empty = 0
     nonpositive_area = 0
     malformed = 0
@@ -101,6 +117,7 @@ def profile(connection: sqlite3.Connection, *, expected_rows: int = EXPECTED_FEA
             continue
         if not polygon.is_valid:
             invalid_topology += 1
+            topology_classes[_topology_class(polygon)] += 1
             continue
         area = polygon.area  # square metres in the declared projected source CRS
         if not math.isfinite(area) or area <= 0:
@@ -120,6 +137,7 @@ def profile(connection: sqlite3.Connection, *, expected_rows: int = EXPECTED_FEA
         "original_objects": n,
         "polygon_valid_positive_area": len(measured),
         "invalid_topology": invalid_topology,
+        "invalid_topology_classes_aggregate": dict(sorted(topology_classes.items())),
         "empty_geometry": empty,
         "nonpositive_or_nonfinite_area": nonpositive_area,
         "malformed_gpkg_geometry": malformed,
