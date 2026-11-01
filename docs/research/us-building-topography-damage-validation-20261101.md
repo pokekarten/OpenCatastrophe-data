@@ -30,6 +30,14 @@ Read `docs/research/fema-historical-geospatial-live-aggregate-receipt-20261101.m
 
 The specific `2018 Hurricane Michael` source event has three administrative `DIS_NUMBER` values and **25,848** remote-sensed wind damage assessments. A bounded candidate is `DR-4399` / `2018-10-10 UTC` / `RS` / `WI`, **23,682** assessments, **not** a ground-truth or insured loss sample. Preserve the disaster number in event keys; never silently aggregate all three into a single cohort.
 
+## NOAA Hurricane Michael original image access and licensing gate (verified)
+
+The provider is now verified beyond an imagery viewer: see `docs/research/noaa-hurricane-michael-stac-metadata-receipt-20261101.md`. The 2018 NOAA Digital Coast dataset (imagery ID `8883`) has a **real STAC item catalog**, original index ZIP, metadata XML and individual GeoTIFF tiles. Two actual item JSON records were fetched and parsed, but **no image bytes** were downloaded. The image set advertises around **85 GB** overall.
+
+NOAA InPort declares **CC0-1.0** while the inspected item metadata declares literal `NLPL`, whose meaning was **not** established. Rights remain blocked pending reconciliation. STAC `datetime` is 00:00:00 UTC and the collection uses a four-day interval: neither proves the exact flight exposure time. NOAA imagery was coordinated with FEMA and may have informed the same FEMA RS classes, so imagery-source independence is **not** established.
+
+`research_runners/noaa_michael_stac_preflight_v0.py` and the synthetic-only tests enforce URL, tile footprint, GeoTIFF metadata, collection date and STAC-license checks, with all rights, model and direct-building-join gates explicitly closed.
+
 ## One scientifically bounded experiment, not a bulk import
 
 1. Freeze one publicly documented U.S. disaster/area and event date, then enumerate actual provider availability *by exact tile or event ID*. Avoid implicit country-scale or provider-wide requests.
