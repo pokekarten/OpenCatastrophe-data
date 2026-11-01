@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Hessen official ALKIS building WGS84 5-feature bounded preflight
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/probe_hessen_alkis_building_bbox_v0.py'
+      - 'tests/test_probe_hessen_alkis_building_bbox_v0.py'
+      - '.github/workflows/hessen-alkis-building-bbox-v0.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hessen-alkis-2d-buildings-small-bbox-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-hessen-building-bbox:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact PR revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run synthetic no-source tests before provider contact
+        run: python -m unittest tests.test_probe_hessen_alkis_building_bbox_v0 -v
+      - name: Fetch one fixed five-feature GeoJSON BBOX from official Hessen OGC API
+        run: python -m scripts.probe_hessen_alkis_building_bbox_v0 --live
