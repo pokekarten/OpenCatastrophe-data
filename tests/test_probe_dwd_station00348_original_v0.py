@@ -86,7 +86,7 @@ class SecondStationOriginalTests(unittest.TestCase):
         w, m = fixture(self.root, wind_rows=[
             WIND_ROWS[0],
             WIND_ROWS[1],
-            "348;201109010000;3;30.0;1.0;3.0;200;eor\\r\\n",
+            "348;201109010000;3;30.0;1.0;3.0;200;eor\r\n",
         ])
         report = inspect(w, m)
         shared = report["measurement"]["common_calendar_window_with_station00003"]
