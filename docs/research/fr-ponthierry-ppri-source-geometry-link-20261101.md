@@ -103,6 +103,31 @@ ArcGIS per-layer rights remain explicitly
 valid, rounded, malformed, wrong-CRS and self-intersecting samples;
 their independent execution status should be read from GitHub CI.
 
+## Distinct 2016 event source identified
+
+The official [Copernicus EMSN028 2016 activation](https://mapping.emergency.copernicus.eu/activations/EMSN028/)
+lists **AOI04 Saint-Fargeau-Ponthierry** and three separate product types:
+**observed flood extent**, **modelled maximum flood extent/depth** and
+**derived flood-impact assessment**. These are not interchangeable.
+The official activation reports **17 areas / 51 products**. The Copernicus
+portal documents geospatial vector/raster ZIP deliverables and a public
+[Risk and Recovery activation API](https://mapping.emergency.copernicus.eu/about/how-to-harvest-cems-mapping-data/preparedness-and-recovery-data/),
+but access rights to exact historical provider geodata must be verified.
+
+CAT-only Neon `research.cems_emns028_aoi04_product_evidence_v0`
+already has **three** metadata rows with canonical stored activation
+code **`EMSN028`** (despite the legacy spelling `emns028` in the
+table name). No product-specific raw geodata-byte hash, independently
+verified polygon geometry, layer-name mapping or CAT model input is
+admitted. The existing risk/recovery metadata cannot be treated as
+three distinct independent 2016 physical observations.
+
+**Concrete priority:** acquire and independently inspect the **observed**
+AOI04 flood-extent polygon and exact product rights/time/CRS, alongside
+the unmodified **2016-vintage** building stock. Do not substitute the
+PPRI regulatory-zone result or the extrapolated **maximum** extent for
+observed floodwater, or a geospatial overlap for measured building damage.
+
 ## Next causal evidence needed
 
 Obtain exact complete source geometry bytes and rights record for the
