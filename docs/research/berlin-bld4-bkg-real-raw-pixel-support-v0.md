@@ -94,7 +94,71 @@ is inferred. BKG attribution under DL-DE/BY 2.0 must accompany
 future authorized derivative use; publisher's third-party
 sources and permitted model usage require separate review.
 
-**Original actual source building∩BKG pixel outcome:** pending
-successful source-specific GitHub Actions run after review and
-merge; do not substitute synthetic test statistics as real source
-measurements.
+## First actual original building-polygon × raster-cell area receipt
+
+**Verified real source proof, 2026-11-01**. The one-shot
+[GitHub Actions run 41349226673](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41349226673)
+completed successfully against reviewed main commit
+\`275a326cf5a1e5dfdd7815203d5eb1fc0247a768\`,
+with source report recorded at approximately
+2026-11-01 20:54:47 UTC. This is the **first true original
+WFS-derived building polygon × original BKG KOSTRA source raster
+pixel-area computation** in the 200×200 m Berlin pilot.
+
+| Verified original source proof | Aggregate result |
+| --- | ---: |
+| Original official ALKIS WFS response SHA-256, currently mutable | \`fe7f5e65823ac72430b677a63f0d1a33ed3c3f84bf0d45340650dceaa97c2460\` |
+| BKG original **full** TIFF SHA-256 | \`7e11fcf4cac2ce07fdefa3dc0fa4414b2cc248c516a373a12c14c33b30726a6f\` |
+| Original BKG TIFF bytes independently verified | **47,280,200** |
+| Original first-five ALKIS buildings with positive pilot intersection | **5** |
+| Raster cells scanned in fixed pilot window | **47,089** |
+| **Total clipped building area in reprojected raster CRS** | **683.311267 m²** |
+| Building area with original **positive raw integer** code | **2.752013 m²** |
+| Building area with original **valid raw zero** code | **14.434404 m²** |
+| Building area with original **NoData / missing** raster mask | **666.124849 m²** |
+| Building area outside inspected window | **0.000000 m²** |
+| Buildings with any positive raw code | **3** |
+| Buildings with entire pilot-clipped area valid numeric raster support | **0** |
+| Buildings with no valid numeric raster cells under footprint | **2** |
+| Area conservation (positive+valid zero+NoData+outside = clipped area) | **Passed** |
+
+All area metrics describe **polygon∩cell fractional overlap in
+EPSG:25832** after bounded, densified reprojection, **not** the
+unclipped full cadastral footprints nor the entire pilot's
+217×217-cell totals. Values are *aggregate-only*: no original
+feature IDs/coordinates, individual building values, addresses,
+original TIFF or source footprint bytes are exported. The 5
+cadastral source features are a *first-five WFS sample* and not
+a complete building inventory for the research box.
+
+**Very material scientific limitation:** Of 683.311267 m²
+original-derived pilot-clipped building area, **666.124849 m² are
+NoData**, not proven dry or safe and not zero simulated water depth.
+Although three building polygons touch a positive raw-code cell
+by nonzero area, that does **not** mean three buildings flooded,
+faced insured loss, or were physically assigned a verified depth.
+Source TIFF band-value units remain **unverified**; KOSTRA is a
+simulated design rainfall scenario, not an actual loss event.
+
+The original BKG site explicitly describes use of building
+geometry as a hydrodynamic model input, but whether that process
+causes this footprint NoData pattern is **not established** by
+the above spatial data. Before any exposure or loss conclusion,
+independently research provider NoData masks / buildings-as-obstacles,
+physical depth encoding and the geometry-date mismatch. NoData
+cannot be extrapolated from nearby ground cells without a
+separate scientifically defended building-perimeter method.
+
+### Next high-value causal task
+
+Create a separate bounded **outside-building ground/perimeter
+support** experiment: classify an independently defined narrow
+buffer ring in the original TIFF CRS, distinguish valid zero,
+positive raw codes and NoData, enforce disjoint adjacent rings,
+and report only **aggregate ring support** alongside—not in
+place of—the footprint support. A valid nearby ground pixel
+should not automatically become an assigned building-level
+water depth, entrance threshold or insured damage. Keep
+source-specific model rights and attribution review before
+CAT model admission.
+
