@@ -72,12 +72,13 @@ def synthetic_tiff() -> bytes:
         raw = values[0].encode("ascii") if typ == 2 else struct.pack(
             "<" + formats[typ] * len(values), *values
         )
+        count = len(raw) if typ == 2 else len(values)
         entry = 10 + i * 12
         if len(raw) <= 4:
-            buf[entry:entry + 8] = struct.pack("<HHI", tag, typ, len(values))
+            buf[entry:entry + 8] = struct.pack("<HHI", tag, typ, count)
             buf[entry + 8:entry + 12] = raw.ljust(4, b"\x00")
         else:
-            struct.pack_into("<HHII", buf, entry, tag, typ, len(values), offset)
+            struct.pack_into("<HHII", buf, entry, tag, typ, count, offset)
             if offset + len(raw) > len(buf):
                 raise AssertionError("synthetic evidence exceeds 4 KiB")
             buf[offset:offset + len(raw)] = raw
