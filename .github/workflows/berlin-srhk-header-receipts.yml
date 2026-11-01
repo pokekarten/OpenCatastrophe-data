@@ -6,14 +6,14 @@ name: Berlin SRHK original TIFF header research receipts
 on:
   pull_request:
     paths:
-      - docs/research/berlin-srhk-original-tiff-header-receipts-20261101.jsonl
+      - docs/research/berlin-srhk-original-tiff-header-receipts-20261101.toml
       - docs/research/berlin-srhk-original-tiff-header-receipts-20261101.md
       - tests/test_berlin_srhk_original_tiff_header_receipts_v0.py
       - .github/workflows/berlin-srhk-header-receipts.yml
   push:
     branches: [main]
     paths:
-      - docs/research/berlin-srhk-original-tiff-header-receipts-20261101.jsonl
+      - docs/research/berlin-srhk-original-tiff-header-receipts-20261101.toml
       - docs/research/berlin-srhk-original-tiff-header-receipts-20261101.md
       - tests/test_berlin_srhk_original_tiff_header_receipts_v0.py
       - .github/workflows/berlin-srhk-header-receipts.yml
