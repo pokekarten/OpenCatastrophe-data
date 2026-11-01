@@ -141,6 +141,8 @@ class FixedSourceProbesTests(unittest.TestCase):
         receipt = probe(source, root=self.root, opener=client)
         self.assertEqual(receipt["response_bytes"], len(body))
         self.assertEqual(len(receipt["response_sha256"]), 64)
+        self.assertEqual(len(receipt["probe_code_sha256"]), 64)
+        self.assertEqual(len(receipt["access_contract_sha256"]), 64)
         self.assertEqual(client.requests[0][1], "GET")
         self.assertEqual(client.requests[0][0], PROBES[source][0])
         self.assertNotIn("never-emit-this", json.dumps(receipt))
