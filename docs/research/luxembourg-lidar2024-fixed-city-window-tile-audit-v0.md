@@ -34,3 +34,20 @@ The workflow .github/workflows/luxembourg-lidar2024-city-tile-lookup.yml retriev
 After a successful source-index spatial lookup, manually review one exact public DownloadLink format and original provider endpoint/resource licence. The index's DownloadLink is publisher data, not automatically authorised network execution. Download just **one** objectively selected authorised source LAZ group into temporary storage with SHA256, compressed/expanded limits and LAS/COPC metadata validation. Align class codes and vertical datums; derive roof versus ground 2024 height using classification building=6 versus ground=2, avoiding vegetation. Compare with EUBUCCO height (observed/estimated groups) and ACT 2023 zmin under checked dates; use height bias/MAE and uncertainty. All results research-only until independent controls, upstream overlap and rights verified.
 
 **Do not claim:** building-construction year, precise insured location, property value/TIV, actual validated building height, scientifically independent accuracy, flooding depth, or source model admission.
+
+## Successful actual original-file RTree selection (2026-11-01)
+
+The exact-hosted source test completed successfully: [GitHub Actions run 41310714127](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41310714127). It used the previously SHA-pinned official LiDAR2024 tile GeoPackage and passed **8/8 synthetic regression tests**.
+
+| Audited original selection property | Actual outcome |
+| --- | ---: |
+| Full original LiDAR index rows | **10,905** |
+| Fixed city-center window | **250 × 250 m** from merged ACT/EUBUCCO pilot |
+| Spatial RTree bounding-box **candidate tiles** | **2** |
+| Candidate entries with HTTPS DownloadLink | **2** |
+| Source download-link hostname | **data.public.lu** (both) |
+| Actual tile polygon intersections checked | **NO** |
+| LAZ point clouds downloaded | **NO** |
+| Building heights measured | **NO** |
+
+This is a useful bounded original-source result. It does **not** assert that both provider polygons geometrically intersect the research window (RTree bounding-box checks only), nor that two separate downloadable archive files exist: links could share a grouped parent ZIP. Examine the actual source record's public DownloadLink and Fichier/Dossier mapping in a separate explicitly reviewed, limited source-acquisition step before fetching point-cloud bytes. The source index itself and per-tile identities were ephemeral and **not uploaded or committed**.
