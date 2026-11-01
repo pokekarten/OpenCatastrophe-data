@@ -44,6 +44,15 @@ PAR_HEADERS = (
     "eor", "unnamed_field_12",
 )
 KNOWN_MEASURED_CODES = frozenset(("FX_10", "FNX_10", "FMX_10", "DX_10"))
+# Exactly frozen source structural counts proved independently by #974:
+# 2 valid calendar tokens per native source record, no silent extra records.
+ORIGINAL_ROWS = {
+    PAIRS[0]: 1,
+    PAIRS[1]: 2,
+    PAIRS[2]: 1,
+    PAIRS[3]: 2,
+    PAIRS[4]: 8,
+}
 MAX_RECORDS_PER_TABLE = 64
 MAX_FOOTER_LINES = 6
 
@@ -62,7 +71,8 @@ def _date(value: str) -> date:
         raise InstrumentAuditBlocked("invalid original interval date") from exc
 
 
-def _rows(raw: bytes, expected_headers: tuple[str, ...], family: str = "unknown") -> tuple[list[dict], int]:
+def _rows(raw: bytes, expected_headers: tuple[str, ...], family: str = "unknown",
+          expected_source_records: int | None = None) -> tuple[list[dict], int]:
     try:
         layout = _txt_layout(raw)
     except EquipmentBlocked as exc:
@@ -79,9 +89,18 @@ def _rows(raw: bytes, expected_headers: tuple[str, ...], family: str = "unknown"
     for line_number, line in enumerate(lines[1:], start=2):
         if not line.strip():
             continue
-        if line.count(";") == 0:
-            if not table_rows:
-                raise InstrumentAuditBlocked("non-tabular footer before any source rows")
+        if line.count(";") <= 1:
+            # The actual original *parameter* TXT has a provider attribution
+            # footer with one semicolon on original line 10. The observed
+            # instrument TXT footers have no semicolons. Require all frozen
+            # source rows before accepting a footer, and never skip candidate
+            # date-bearing or station-bearing malformed data records.
+            if not table_rows or (expected_source_records is not None
+                    and len(table_rows) != expected_source_records):
+                raise InstrumentAuditBlocked("non-tabular footer before full original source table")
+            if (any(char.isdigit() for char in line[:8])
+                    or "00003" in line or len(line.encode("utf-8")) > 512):
+                raise InstrumentAuditBlocked("ambiguous date/station-bearing original footer")
             footer_started = True
             footer_lines += 1
             if footer_lines > MAX_FOOTER_LINES:
@@ -116,6 +135,8 @@ def _rows(raw: bytes, expected_headers: tuple[str, ...], family: str = "unknown"
             raise InstrumentAuditBlocked("too many original table data rows")
     if not table_rows:
         raise InstrumentAuditBlocked("no original equipment/parameter data records")
+    if expected_source_records is not None and len(table_rows) != expected_source_records:
+        raise InstrumentAuditBlocked("frozen original data-record count differs from #974")
     return table_rows, footer_lines
 
 
@@ -221,10 +242,10 @@ def analyze(path: Path, *, expected_sha256: str = evidence.EXPECTED_METADATA_SHA
                 if hashlib.sha256(raw).hexdigest() != sha_by_path[member]:
                     raise InstrumentAuditBlocked("TXT member SHA diverged from exact-source snapshot")
                 if stem.startswith("Metadaten_Geraete"):
-                    rows, footer_count = _rows(raw, EQ_HEADERS, stem)
+                    rows, footer_count = _rows(raw, EQ_HEADERS, stem, ORIGINAL_ROWS[stem])
                     summary[stem] = _summary(rows, footer_count)
                 else:
-                    rows, footer_count = _rows(raw, PAR_HEADERS, stem)
+                    rows, footer_count = _rows(raw, PAR_HEADERS, stem, ORIGINAL_ROWS[stem])
                     parameter_result = _parameter_summary(rows, footer_count)
     except (KeyError, OSError, zipfile.BadZipFile, RuntimeError) as exc:
         raise InstrumentAuditBlocked("source member inspection failed") from exc
