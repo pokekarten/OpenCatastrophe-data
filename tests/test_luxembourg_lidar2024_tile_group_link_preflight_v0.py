@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import sqlite3
@@ -50,6 +51,8 @@ class TileResourcePreflightTests(unittest.TestCase):
         self.path=Path(t.name)/"original.gpkg"
 
     def check(self,urls,*,probe_head=False):
+        if importlib.util.find_spec("pyproj") is None:
+            self.skipTest("Requires pinned optional PyProj spatial runtime")
         sha1,sha256=original_index(self.path,urls)
         def verified(source):
             return select_original_tiles(source,expected_sha1=sha1,expected_sha256=sha256)
