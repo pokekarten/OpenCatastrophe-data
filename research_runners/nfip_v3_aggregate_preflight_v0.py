@@ -64,7 +64,7 @@ def _read(path: Path, expected: str, key: str):
     if any(not isinstance(row, dict) for row in rows):
         raise SourceError("malformed source row")
     ids = [row.get("id") for row in rows]
-    if any(not isinstance(v, str) or not v for v in ids) or len(set(ids)) != len(ids):
+    if any(isinstance(v, bool) or not (isinstance(v, int) and v >= 0 or isinstance(v, str) and bool(v)) for v in ids) or len(set(map(str, ids))) != len(ids):
         raise SourceError("missing or duplicate provider row IDs")
     return rows, len(raw), actual
 
@@ -78,9 +78,21 @@ def _date(value):
 
 def _county(row):
     value = row.get("countyCode")
-    if not isinstance(value, str) or not COUNTY.fullmatch(value):
-        raise SourceError("countyCode must be five source digits; no geocoding")
-    return value
+    geoid = row.get("censusGeoid")
+    from_geoid = None
+    if geoid is not None:
+        if not isinstance(geoid, str) or not re.fullmatch(r"[0-9]{11,12}", geoid):
+            raise SourceError("censusGeoid must be 11/12 digit census geography")
+        from_geoid = geoid[:5]
+    if value is not None:
+        if not isinstance(value, str) or not COUNTY.fullmatch(value):
+            raise SourceError("countyCode must be five source digits; no geocoding")
+        if from_geoid is not None and value != from_geoid:
+            raise SourceError("countyCode conflicts with censusGeoid")
+        return value
+    if from_geoid is not None:
+        return from_geoid
+    raise SourceError("no usable source countyCode or censusGeoid")
 
 def _money(value):
     if value is None:
