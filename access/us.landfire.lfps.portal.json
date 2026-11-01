@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "us.landfire.lfps.portal",
+  "source_ids": [
+    "us.landfire.fuel-vegetation.2025"
+  ],
+  "provider": "LANDFIRE / U.S. Geological Survey and U.S. Forest Service",
+  "interface_type": "rest",
+  "status": "documented_only",
+  "documentation_url": "https://landfire.gov/faqs",
+  "service_root": "https://lfps.usgs.gov",
+  "api_version": "LANDFIRE Product Service (LFPS) with versioned 2025 data releases",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_lfps_documentation"
+    ],
+    "path_templates": [
+      "/"
+    ],
+    "parameter_rules": "Documentation-only record of official LFPS REST entry point. Do not create asynchronous layer export jobs, request raster assets, submit bounding boxes, arbitrary output projections, spatial selections or user-supplied URL/paths/headers. Only after an exact endpoint, source product (such as FBFM40), region, release, output resolution, upstream licence and bounded response envelope are reviewed may a separate active probe be defined."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/html"
+    ],
+    "format": "LANDFIRE LFPS service documentation/entry page only; not a raster or task response.",
+    "scientific_semantics": "LANDFIRE 2025 includes regional, product-specific fuel classes, vegetation characteristics, canopy data and disturbance layers released on a phased schedule. They are derived mapping products, not observed event footprints, ignition rates, building vulnerability or insured losses; preserve product name, edition, units, geography and epoch."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 524288,
+    "max_sample_bytes": 524288,
+    "retry_policy": "none",
+    "rate_limit_notes": "Provider documents LFPS REST with asynchronous exports; no requests or jobs are authorized here and provider concurrency/export limits remain unreviewed.",
+    "mutability_notes": "The 2025 releases are phased by area and product; availability may differ from other LANDFIRE years and exact source bytes must be versioned at future admission."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "USGS and Forest Service publication and public access do not by themselves establish exact release-specific terms, automated service quota, licensing for every derived layer or permission to rehost output. A separate rights and product review is required."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-01",
+  "evidence_urls": [
+    "https://landfire.gov/data",
+    "https://landfire.gov/faqs",
+    "https://lfps.usgs.gov/"
+  ],
+  "notes": "T0 documentation-only LFPS entry-point contract. No API endpoint for an individual product, no asynchronous job, no original raster or SHA-stamped sample receipt was acquired. Future CAT use requires exact product/version, scientific role and external data-byte provenance."
+}
