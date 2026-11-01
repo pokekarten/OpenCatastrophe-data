@@ -9,7 +9,7 @@ import zlib
 
 from research_runners.noaa_fema_exact_alpha_mask_v0 import (
     ExactAlphaMaskError, alpha_mask_from_deflate, polygonize_exact_positive_pixels,
-    _area2, MAX_VERTICES,
+    dilate_alpha_mask, _area2, MAX_VERTICES,
 )
 
 SIZE = 512
@@ -73,6 +73,28 @@ class ExactAlphaRasterGeometryTests(unittest.TestCase):
             with self.subTest(bad=repr(bad)):
                 with self.assertRaises(ExactAlphaMaskError):
                     polygonize_exact_positive_pixels(bad)
+
+    def test_two_pixel_sensitivity_expands_without_leaving_512_grid(self):
+        m=[b"\x00"*5 for _ in range(5)]
+        m[0]=b"\x01\x00\x00\x00\x00"
+        m[4]=b"\x00\x00\x00\x00\x01"
+        padded=dilate_alpha_mask(m)
+        self.assertEqual(sum(sum(row) for row in padded),18)
+        self.assertEqual(padded[0],b"\x01\x01\x01\x00\x00")
+        self.assertEqual(padded[4],b"\x00\x00\x01\x01\x01")
+        rings,n=polygonize_exact_positive_pixels(padded)
+        self.assertEqual(n,18)
+        self.assertEqual(sum(_area2(r) for r in rings),36)
+        with self.assertRaises(ExactAlphaMaskError):
+            dilate_alpha_mask(m,radius=1)
+
+    def test_dilation_respects_valid_image_edge_rows(self):
+        c=synth_deflate(lambda x,y:y==123 and x==0)
+        mask=alpha_mask_from_deflate(c,height=124)
+        padded=dilate_alpha_mask(mask)
+        self.assertEqual(len(padded),124)
+        self.assertEqual(sum(sum(row) for row in padded),9)
+        self.assertEqual(sum(padded[-1]),3)
 
     def test_tiff_predictor2_real_uncompressed_shape_and_census(self):
         compressed=synth_deflate(lambda x,y:(x<9 and y<11) or (x==20 and y==20))
