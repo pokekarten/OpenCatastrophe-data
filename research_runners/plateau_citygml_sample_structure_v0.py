@@ -169,7 +169,8 @@ def _screen_lod0(buildings: list[ET.Element], low: tuple, high: tuple) -> dict[s
     """Count only explicit inline rings in LOD0 footprint/roof-edge properties."""
     screened = {"lod0_footprint_inline_ring_screened_count": 0,
                 "lod0_roofedge_inline_ring_screened_count": 0,
-                "lod0_geometry_unresolved_property_count": 0}
+                "lod0_geometry_unresolved_property_count": 0,
+                "lod0_polygons_not_screened_due_to_budget": 0}
     polygon_count = 0
     for building in buildings:
         for prop, key in (
@@ -184,10 +185,15 @@ def _screen_lod0(buildings: list[ET.Element], low: tuple, high: tuple) -> dict[s
                 ):
                     screened["lod0_geometry_unresolved_property_count"] += 1
                     continue
-                polygon_count += len(polygons)
-                if polygon_count > MAX_LOD0_POLYGONS:
-                    raise CityGMLPreflightError("LOD0 polygon budget exceeded")
                 for polygon in polygons:
+                    # Screening is bounded, not a whole-file topology certification.
+                    # Past the ceiling, count as unreviewed instead of falsely
+                    # rejecting an otherwise valid, larger original tile.
+                    if polygon_count >= MAX_LOD0_POLYGONS:
+                        screened["lod0_polygons_not_screened_due_to_budget"] += 1
+                        screened["lod0_geometry_unresolved_property_count"] += 1
+                        continue
+                    polygon_count += 1
                     if _screen_lod0_polygon(polygon, low, high):
                         screened[key] += 1
                     else:
@@ -307,6 +313,9 @@ def inspect_gml_bytes(raw: bytes) -> dict[str, object]:
         "envelope_numeric_finite_and_ordered": True,
         "envelope_explicit_three_dimensional_declaration": True,
         "lod0_inline_ring_screen_only": True,
+        "lod0_polygon_screen_budget_exhausted": (
+            lod0_screened["lod0_polygons_not_screened_due_to_budget"] > 0
+        ),
         "geodesic_building_area_computed": False,
         "unreferenced_geometry_resolved": False,
         "gml_ids_unique_within_sample": True,
