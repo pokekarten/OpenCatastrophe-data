@@ -145,8 +145,12 @@ def _screen_lod0_polygon(polygon: ET.Element, low: tuple, high: tuple) -> bool:
     ring = [(lon, lat) for lat, lon, _ in positions]
     if len(set(ring[:-1])) != len(ring) - 1:
         raise CityGMLPreflightError("LOD0 ring repeats a non-terminal horizontal vertex")
+    # Translate before the shoelace calculation to avoid cancellation when
+    # longitude/latitude are ~100/35 degrees but a building is metres wide.
+    origin_x, origin_y = ring[0]
     signed_double_area = math.fsum(
-        ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1]
+        (ring[i][0] - origin_x) * (ring[i + 1][1] - origin_y)
+        - (ring[i + 1][0] - origin_x) * (ring[i][1] - origin_y)
         for i in range(len(ring) - 1)
     )
     if abs(signed_double_area) <= 1e-14:
