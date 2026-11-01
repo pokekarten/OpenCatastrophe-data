@@ -12,6 +12,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import re
 from pathlib import Path
 import ssl
 import sys
@@ -92,7 +93,8 @@ def probe(*, open_request=_open, contract_path: Path = CONTRACT_PATH) -> dict:
                 raise WorldCoverProbeBlocked("source returned unexpected URL or HTTP status")
             media = reply.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
             if media not in EXPECTED_MEDIA:
-                raise WorldCoverProbeBlocked("provider media type not reviewed")
+                safe_media = media if re.fullmatch(r"[a-z0-9.+-]+/[a-z0-9.+-]+", media) else "<invalid>"
+                raise WorldCoverProbeBlocked("provider media type not reviewed: " + safe_media)
             value = reply.headers.get("Content-Length", "")
             if not value.isdigit():
                 raise WorldCoverProbeBlocked("missing or invalid Content-Length")
