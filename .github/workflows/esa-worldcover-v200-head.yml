@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESA WorldCover 2021 v200 one-tile HEAD source check
+
+on:
+  pull_request:
+    paths:
+      - access/esa.worldcover.2021.v200.json
+      - access/esa.worldcover.2021.v200.md
+      - scripts/probe_esa_worldcover_tile_head_v0.py
+      - tests/test_probe_esa_worldcover_tile_head_v0.py
+      - .github/workflows/esa-worldcover-v200-head.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  worldcover-head-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate generated source access view
+        run: python scripts/render_public_views.py --check --scope access
+      - name: Negative tests - local fake responses only
+        run: python -m unittest tests.test_probe_esa_worldcover_tile_head_v0 -v
+      - name: One anonymous fixed HTTPS HEAD - metadata only no raster download
+        run: python -m scripts.probe_esa_worldcover_tile_head_v0 --live
