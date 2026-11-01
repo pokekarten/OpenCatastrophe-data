@@ -48,3 +48,18 @@ required. A successful online probe cannot be substituted for these gates.
 
 CI executes **offline synthetic-only** tests. It does not make a provider
 request, change any Neon database or require credentials.
+
+## One-shot provider receipt on a reviewed workflow revision
+
+The dedicated `.github/workflows/emsc-one-event-receipt.yml` workflow also
+runs **once when its own workflow definition is updated on `main`**. This is
+a narrow and intentional first-party live evidence check after source-specific
+tests have passed. Ordinary unrelated pushes and pull requests do not call
+the provider, and there is no schedule or bulk harvesting. Every subsequent
+workflow change remains subject to normal review before causing another
+single bounded provider request.
+
+A live run's result is authoritative only for its one request: record the
+exact workflow run URL, UTC, content SHA-256 and response size in this document
+after verification. A failed upstream request or changed response contract
+must remain a reported blocker, not be silently treated as success.

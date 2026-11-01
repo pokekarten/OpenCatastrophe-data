@@ -68,3 +68,29 @@ A successful metadata receipt only proves that an exact, reviewed
 metadata endpoint currently serves the expected response. It does not
 prove geometry acquisition, scientific readiness, model suitability or
 permission to publish provider bytes.
+
+## Exact first-party live acquisition receipt (2026-11-01)
+
+A single official metadata HTTP response passed the reviewed bounded probe in
+[GitHub Actions run 41312575287](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41312575287),
+job `Fixed geoBoundaries gbOpen DEU ADM1 metadata check`, commit
+`f3d047f6e67e8ac3140b295368325b8b5de4032d`.
+
+- UTC receipt timestamp: `2026-11-01T13:42:53.636994+00:00`
+- Frozen canonical request: `https://www.geoboundaries.org/api/current/gbOpen/DEU/ADM1/`
+- Response media type: `application/json`
+- Response size: **1,812 original provider response bytes**
+- Original response SHA-256:
+  `65af06f80e837028997c396d2c67d74fb1e1752d884e9a0638d5c736ee8c345a`
+- Trusted execution script SHA-256:
+  `69c168a8d72eff78f3d85c64e5be8f54b246f478d9387febf0ecf60afa01cd96`
+- Verified exact source identity: `DEU-ADM1-10402087`, 2021,
+  16 administrative units, commit-pinned provider asset links at `9469f09`.
+- Metadata bytes were **not persisted** and geometry was **not downloaded**.
+  No CAT-model admission or insured-exposure inference occurred.
+
+This receipt is immutable evidence for the **single request**; it is not a
+general uptime guarantee, a receipt for the asset files, or evidence that
+future `/current/` responses are identical. Re-run the same bounded
+request only after intentionally checking whether its source contract still
+matches the provider state.
