@@ -63,7 +63,7 @@ class HeightPairSyntheticTests(unittest.TestCase):
         # Just shift source polygons: same role & heights, no spatial truth.
         for f in h["features"]:
             for ring in f["geometry"]["coordinates"]:
-                for xy in ring:xy[0]+=120
+                for xy in ring:xy[0]+=50
         result=compare_samples(raw(a),raw(h))
         self.assertEqual(result["geometry_matches_iou_at_least_0_95"],0)
         self.assertEqual(result["height_numeric_positive_count"],2)
