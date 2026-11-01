@@ -121,3 +121,34 @@ the provider ignoring or not enforcing this BBOX, not authority to
 guess there is no detailed model covering the pilot. A further
 provider-specific `DescribeFeatureType` and FES spatial-filter
 review may be necessary before a new **bounded** geometry query.
+
+
+## Original XSD geometry-property identity and FES experiment
+
+The reviewed [official source DescribeFeatureType run
+41355903211](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41355903211)
+on merged commit `94f1e20aa4fbb187e7e5765327cfba2be3014f4a`
+returned original **1,389 XSD bytes**, SHA-256
+`8112bf8db14b7f3f1cb516717e128e0a450b643e645c29b1955e6c69bd57b87f`.
+Its unique, source-declared model polygon geometry field is:
+`geom`, type `gml:MultiSurfacePropertyType`.
+Seven synthetic schema tests and the original XSD check succeeded.
+No source model-area polygon, address, TIFF or original XSD body was stored.
+
+A new **separate** fixed-source FES 2.0 `Intersects` canary
+`research_runners/berlin_srgk_fes_model_area_pilot_v0.py`
+refers to this exact evidence, but **must not** claim official pilot
+coverage until its own source run succeeds. The operator explicitly
+filters `geom` against the frozen EPSG:25833 200×200 m envelope,
+rather than relying on the previous inconsistent WFS BBOX parameter.
+Both the one-feature control and exact FES-filtered response are
+independently parsed, checked for source CRS and truly intersecting
+polygons; only SHA-256s, sizes, aggregate overlap and negative
+model-admission flags may be logged.
+
+A positive overlapping polygon means at most one detailed-model
+**study area** touches the pilot, **not** water-depth raster availability,
+building hazard, event probability or insured loss.
+If the provider returns a non-overlapping polygon, the FES result
+is explicitly **BLOCKED**, and if it returns no model polygon, coverage
+remains **UNRESOLVED** rather than a claim that the buildings are dry.
