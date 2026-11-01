@@ -38,6 +38,38 @@ layout, EPSG:4326 georeferencing, pixels, 10 m resolution, the 11 WorldCover
 class meanings, or building/insurance asset identity. No source bytes are
 committed, logged or stored in Neon.
 
+## Additional IFD-only metadata validation — 2026-11-01 15:05 UTC
+
+The checked-in first-IFD decoder was extended, without widening the exact
+`bytes=0-4095` request, in
+[GitHub Actions run 41319346256](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41319346256).
+All **10** focused synthetic tests and the real provider request passed.
+
+The real 4,096-byte sample SHA-256 is unchanged:
+`a74fc1ff4733c3afff09328e014c0731eba2f1912f3f5cbc330ed0700f3f3529`.
+
+- ImageWidth: **36,000** pixels; ImageLength: **36,000** pixels.
+- TIFF TileWidth: **1,024** pixels; TileLength: **1,024** pixels.
+- SamplesPerPixel: **1**; TIFF compression code: **8**.
+- Actual IFD has 21 entries, starts at offset 192.
+- Geospatial/GeoTIFF tag IDs present: `33550` (ModelPixelScale),
+  `33922` (ModelTiepoint), `34735` (GeoKeyDirectory),
+  `34736` (GeoDoubleParams), `34737` (GeoAsciiParams).
+- Request UTC: `2026-11-01T15:05:00.022347+00:00`.
+- Updated parser code SHA-256:
+  `c13b3281bb2b8b09e969301972758054d3f711dc17185f31f7bb979e0de5c721`.
+- `raster_dimensions_proven_by_header_only=true` but
+  `crs_verified=false`, `cog_layout_verified=false`,
+  `raster_values_inspected=false`, `model_input_approved=false`.
+
+The GeoTIFF tags are **directory identities only**, not a decoding
+of coordinate transforms, EPSG codes, tile spatial bounds or pixels.
+A TIFF compression tag is not a verified decompression of underlying data.
+The actual 36,000 by 36,000 pixel grid is consistent with the target
+source raster format, but does not on its own establish spatial ground
+resolution, source-cell accuracy or the ability to link any insurance
+exposure to a particular pixel.
+
 ## Provider rights, reproducibility and narrow next step
 
 Official source: [ESA WorldCover data access](https://esa-worldcover.org/en/data-access);
