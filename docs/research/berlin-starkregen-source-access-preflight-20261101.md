@@ -337,3 +337,9 @@ after its reviewed workflow revision is merged on main.
 The original prefix outcome is **pending** until that workflow
 confirms actual provider bytes.
 
+
+**Research security invariant:** source ZIP prefix SHA-256 is a digest of exactly
+512 public provider bytes, never an archive-level or GeoTIFF-level digest.
+No tile names, full ZIP asset, production CAT database, or privately-held
+exposure is exported in this canary. The full repository public-surface
+CI must pass at the updated main merge base before any merge.
