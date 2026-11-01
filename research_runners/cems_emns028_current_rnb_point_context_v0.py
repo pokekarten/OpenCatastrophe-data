@@ -66,6 +66,12 @@ def compare_original_layers_to_current_points(gdb_path):
         empty_count = 0
         counts = [0 for _ in pts]
         best_distance = [float("inf") for _ in pts]
+        # Invalid source polygons are NOT silently dropped from the
+        # coverage conclusion. Bounds are safe conservative exclusions:
+        # a point outside an invalid shape's bounding box cannot be in
+        # that shape. Inside the box remains unknown, never a hit.
+        invalid_bbox_contains_point = [0 for _ in pts]
+        invalid_bbox_min_distance = [float("inf") for _ in pts]
         for feature in src:
             geo = feature.get("geometry")
             if geo is None:
@@ -77,6 +83,16 @@ def compare_original_layers_to_current_points(gdb_path):
                 continue
             if area.geom_type not in ("Polygon", "MultiPolygon") or not area.is_valid:
                 invalid_count += 1
+                # envelope() is a simple bounded convex rectangle even
+                # when the underlying source polygon is self-crossing.
+                # It cannot prove an actual inundation intersection.
+                box = area.envelope
+                for i, point in enumerate(pts):
+                    if box.covers(point):
+                        invalid_bbox_contains_point[i] += 1
+                    d = float(box.distance(point))
+                    if isfinite(d) and d < invalid_bbox_min_distance[i]:
+                        invalid_bbox_min_distance[i] = d
                 continue
             valid_count += 1
             for i, point in enumerate(pts):
@@ -105,6 +121,12 @@ def compare_original_layers_to_current_points(gdb_path):
             "source_rows": count,
             "source_polygons_valid": valid_count,
             "source_polygons_invalid_skipped": invalid_count,
+            "invalid_polygon_bbox_possible_point_hits": invalid_bbox_contains_point,
+            "min_distance_to_invalid_polygon_bbox_m": [
+                round(d, 2) if isfinite(d) else None
+                for d in invalid_bbox_min_distance
+            ],
+            "invalid_bbox_zero_requires_further_geometry_review": True,
             "source_polygons_null_or_empty_skipped": empty_count,
             "source_geometry_automatically_repaired": False,
             "per_point_number_of_valid_polygon_covers": counts,
