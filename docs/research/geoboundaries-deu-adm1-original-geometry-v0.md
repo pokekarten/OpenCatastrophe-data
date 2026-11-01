@@ -97,3 +97,34 @@ joining with EUBUCCO / GHSL / OSM / insurer exposures:
 The first real geometry audit's GitHub Actions URL, source hashes, and any
 observed original-source scientific blockers should be documented after the
 first run rather than assuming the source will pass.
+
+## Verified full original geometry, first-party live receipt — 2026-11-01
+
+The exact pinned **6,254,151-byte** original GeoJSON was downloaded from the
+reviewed commit and all implemented geometry/identity integrity checks passed
+in [GitHub Actions run 41313687185](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41313687185),
+main commit `2675046142011145bb6ed4426fce6b4c51c0535b`.
+This is a trusted execution receipt rather than synthetic test evidence.
+
+Observed original-source aggregate facts (not inferred from metadata alone):
+
+| Field | Verified result |
+| --- | --- |
+| Original SHA-256 | `56e069593595c5006e7044d46b023c2afc6b4a109a669b570ee229e758c00682` |
+| Original bytes | 6,254,151 |
+| Feature / unique ID / unique name counts | 16 / 16 / 16 |
+| OGC valid polygonal geometries | All 16 |
+| Total polygon coordinate positions | 143,969 |
+| Material inter-feature polygon overlap | None at the stated threshold |
+| WGS84 coordinate bbox (rounded to 0.001°) | [5.866, 47.270, 15.042, 55.059] |
+| CRS metadata | Present and accepted |
+| Source year | 2021 (reviewed source metadata; not re-dated) |
+| Provider bytes persisted to Git | No |
+| Geometry admitted to CAT model | No |
+
+The original 2021 data are real and checked, but a complete independent
+national administrative border coverage/completeness comparison and
+version-safe official NUTS crosswalk remain outstanding. The next adapter
+may build an explicit **isolated CAT-only staging index** for local spatial
+queries, retaining both source and collection attribution, without silently
+modifying a production or Pokémon-related database.
