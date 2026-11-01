@@ -8,8 +8,12 @@ from copy import deepcopy
 import re
 import struct
 import unittest
+import zlib
 
 from research_runners.noaa_michael_stac_preflight_v0 import STAC_ROOT
+from research_runners.noaa_michael_alpha_tile_probe_v0 import (
+    AlphaTileProofError, probe_zero_block,
+)
 from research_runners.noaa_michael_tiff_header_v0 import TIFFHeaderError, preflight
 
 
@@ -198,6 +202,95 @@ class NOAATIFFHeaderTests(unittest.TestCase):
         struct.pack_into("<H", b, 10, 999)
         with self.assertRaisesRegex(TIFFHeaderError, "required"):
             preflight(bytes(b), item())
+
+
+def header_with_tile_payload(tile_index: int, length: int, offset: int = 64665046) -> bytes:
+    """Patch only synthetic IFD tile offset/count cells for a source-sized block."""
+    data = bytearray(synthetic_tiff())
+    n = struct.unpack_from("<H", data, 8)[0]
+    pointers = {}
+    for i in range(n):
+        p = 10 + 12 * i
+        tag = struct.unpack_from("<H", data, p)[0]
+        if tag in (324, 325):
+            pointers[tag] = struct.unpack_from("<I", data, p + 8)[0]
+    if len(pointers) != 2:
+        raise AssertionError("synthetic array metadata absent")
+    struct.pack_into("<I", data, pointers[324] + 4 * tile_index, offset)
+    struct.pack_into("<I", data, pointers[325] + 4 * tile_index, length)
+    return bytes(data)
+
+
+class NOAAOriginalDeflateAlphaTileTests(unittest.TestCase):
+    def test_zero_block_exact_source_shape_is_proved_but_not_whole_image(self):
+        # The real NOAA center block had the same compressed SHA-256 as
+        # zlib.compress(1,048,576 zero bytes, level=6), without copying it.
+        comp = zlib.compress(bytes(512 * 512 * 4), level=6)
+        self.assertEqual(len(comp), 1039)
+        self.assertEqual(
+            __import__("hashlib").sha256(comp).hexdigest(),
+            "1e6d5d105f8ee78fd7a403adeac8aef4913dc356ac3f66d3ab300309a1ca8a66",
+        )
+        p = probe_zero_block(header_with_tile_payload(180, len(comp)), item(), 180, comp)
+        self.assertEqual(p["block_row"], 9)
+        self.assertEqual(p["block_column"], 9)
+        self.assertEqual(p["original_compressed_byte_offset"], 64665046)
+        self.assertEqual(p["original_compressed_byte_count"], 1039)
+        self.assertEqual(p["proven_transparent_pixels_in_this_block_only"], 512 * 512)
+        self.assertTrue(p["block_all_alpha_pixels_transparent_proven"])
+        for field in ("original_full_file_hash_verified", "other_raster_blocks_covered",
+                      "whole_image_alpha_coverage_measured",
+                      "source_image_fema_label_independence_proven",
+                      "fema_point_pixel_intersection_proven", "model_input_admitted"):
+            self.assertFalse(p[field])
+
+    def test_nonzero_block_not_auto_promoted_to_positive_alpha_pixels(self):
+        rgba = bytearray(512 * 512 * 4)
+        rgba[3] = 255
+        compressed = zlib.compress(rgba)
+        p = probe_zero_block(header_with_tile_payload(180, len(compressed)),
+                             item(), 180, compressed)
+        self.assertFalse(p["decoded_block_all_channels_zero"])
+        self.assertFalse(p["block_all_alpha_pixels_transparent_proven"])
+        self.assertEqual(p["proven_transparent_pixels_in_this_block_only"], 0)
+
+    def test_corrupt_header_compression_and_tile_index_fail(self):
+        comp = zlib.compress(bytes(512 * 512 * 4))
+        header = header_with_tile_payload(180, len(comp))
+        for bad in (True, -1, 361, 1.2, None):
+            with self.subTest(index=bad):
+                with self.assertRaises(AlphaTileProofError):
+                    probe_zero_block(header, item(), bad, comp)
+        with self.assertRaises(AlphaTileProofError):
+            probe_zero_block(b"II" + header[2:], item(), 180, comp)
+        with self.assertRaisesRegex(AlphaTileProofError, "byte count"):
+            probe_zero_block(header, item(), 180, comp[:-1])
+
+    def test_truncated_corrupt_and_bomb_bounded(self):
+        comp = zlib.compress(bytes(512 * 512 * 4))
+        broken = b"X" + comp[1:]
+        with self.assertRaisesRegex(AlphaTileProofError, "malformed"):
+            probe_zero_block(header_with_tile_payload(180, len(broken)),
+                             item(), 180, broken)
+        excessive = zlib.compress(bytes(512 * 512 * 4 + 1))
+        with self.assertRaisesRegex(AlphaTileProofError, "mis-sized"):
+            probe_zero_block(header_with_tile_payload(180, len(excessive)),
+                             item(), 180, excessive)
+        trailing = comp + b"extra"
+        with self.assertRaisesRegex(AlphaTileProofError, "excess"):
+            probe_zero_block(header_with_tile_payload(180, len(trailing)),
+                             item(), 180, trailing)
+
+    def test_tiff_header_does_not_prove_another_asset(self):
+        comp = zlib.compress(bytes(512 * 512 * 4))
+        wrong = item()
+        wrong["assets"][wrong["id"]]["proj:epsg"] = 3857
+        with self.assertRaisesRegex(AlphaTileProofError, "header"):
+            probe_zero_block(header_with_tile_payload(180, len(comp)),
+                             wrong, 180, comp)
+        with self.assertRaisesRegex(AlphaTileProofError, "compressed size"):
+            probe_zero_block(header_with_tile_payload(180, 1_000_001),
+                             item(), 180, comp)
 
 
 if __name__ == "__main__":
