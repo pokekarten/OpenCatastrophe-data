@@ -5,8 +5,24 @@ SPDX-License-Identifier: Apache-2.0
 
 # Original Berlin SRGK model area – FES 2.0 Intersects check (v0)
 
-**Research-only, source-readonly. The original FES geometric result is
-pending its reviewed first main run.** No building risk, flood depths
+**Research-only, source-readonly. Original FES run completed, but the
+model-area coverage remains unresolved.** The reviewed main
+[Actions run 41356416551](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41356416551)
+on commit 6dfecf2b12da1891e02dbde2ec01515aff6d788b
+successfully checked the original schema SHA and queried one fixed
+source FES Intersects filter on geom, but returned **zero features**.
+The original response was **147 bytes**, SHA-256
+e2c6d7478391162bb8f89e2fb0c877013bac02fd12ff83b6084e14019d2b71a4.
+This does **not** prove lack of model coverage or no flood risk:
+the independently recorded WFS BBOX hits probe returned one
+pilot hit and earlier GetFeature BBOX returned a nonintersecting polygon.
+
+The separate [source-linked TOML research receipt](berlin-srgk-original-wfs-hits-fes-disagreement-20261101.toml)
+locks both original independent runs and explicit no-coverage/no-risk
+nonadmission. They were not an atomic source snapshot. A future
+provider filter implementation must reconcile these results without
+silently changing the fixed BLD4 test bbox or bypassing the
+positive-area intersection gate. No building risk, flood depths
 or insurance CAT input are admitted.
 
 ## Why this is an independent check
