@@ -65,6 +65,17 @@ class PairedSourcePixelTests(unittest.TestCase):
         with self.assertRaisesRegex(PairedSourceError,"No uncontested"):
             self.probe([huge_left],[huge_right])
 
+    def test_small_roof_part_inside_larger_building_counts_as_split_competitor(self):
+        large=box(0,0,10,10)
+        small=box(0,0,2,2)
+        self.assertLess(small.area/large.area,0.2)
+        result=strict_spatial_pairs([large,small],[large])
+        self.assertEqual(result["high_iou_candidate_pairs"],1)
+        self.assertEqual(result["unique_uncontested_spatial_pairs"],0)
+        self.assertEqual(result["high_iou_pairs_rejected_as_ambiguous"],1)
+        with self.assertRaisesRegex(PairedSourceError,"No uncontested"):
+            self.probe([large,small],[large])
+
     def test_high_iou_but_split_merge_competitor_must_be_rejected(self):
         a=[box(0,0,6,10),box(3,0,9,10)]
         b=[box(0,0,6,10)]
