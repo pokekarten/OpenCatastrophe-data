@@ -8,6 +8,36 @@ SPDX-License-Identifier: Apache-2.0
 **Research-only. This is not a raw-TIFF-to-centimetre conversion, insurance
 exposure, property flood status or CAT model input.**
 
+## Original-source result — verified 2026-11-01
+
+The [reviewed main workflow #41354445114](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41354445114)
+executed the exact bounded WMS code on main SHA
+`a1a342ac8e41e9129928674d5c5e81cb7e5820ca`:
+
+- Actual original capabilities XML: **480,596 bytes**, SHA-256
+  `1f5050be9a560c4a2e2bce3f5e17c74ed4ff8973c62e63b975da5c5e5d07f75f`.
+- The exact Berlin `be_tiefe_agw` **KOSTRA depth layer existed and was
+  queryable**. The original provider advertised **application/json**
+  for the GetFeatureInfo response.
+- One fixed small original GetFeatureInfo was successful: **205 bytes**,
+  SHA-256 `6f6429b2def52bb12f9bdcd5f8092e88761e6d38e50023222bd26761c4a4f038`.
+  It yielded **no recognized explicit unit-field candidate** (m/cm/mm).
+- The original GDAL Int16 direct-download TIFF remains **physically
+  uncalibrated**, and no insurer or property-depth modelling is approved.
+
+The immutable **metadata-only** [original WMS receipt](bkg-berlin-original-wms-featureinfo-receipt-20261101.toml)
+stores the two hashes and source/run identity. It stores **no provider
+GetFeatureInfo JSON, raw code, individual building or source location**.
+The offline
+`tests.test_bkg_berlin_original_wms_featureinfo_receipt_v0` challenges
+unit fabrication, source drift and insurance CAT nonadmission.
+
+**Important:** the absence of an explicit unit in a single WMS feature-info
+response does **not** prove the service lacks any documented map-depth
+unit elsewhere. It does confirm that *this exact original request* did
+not supply a valid raw TIFF scaling rule. The BKG technical clarification
+is still required.
+
 ## Why this is a different original-source route
 
 The independently checked BKG original Berlin KOSTRA GeoTIFF file
