@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "purpose": "Discovery-only additional European building observations, national registers, energy certificates, heights, roof equipment, address IDs and cross-country links to enrich EUBUCCO; rights/science/admission never implied.",
+  "purpose": "Non-admission discovery-only additional European building observations, national registers, energy certificates, heights, roof equipment, address IDs and cross-country links to enrich EUBUCCO; rights/science/admission never implied.",
   "review_date": "2026-11-01",
   "entries": [
     {
