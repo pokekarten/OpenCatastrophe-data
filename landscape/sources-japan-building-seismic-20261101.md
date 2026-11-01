@@ -57,8 +57,8 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Temporal scope:** J-SHIS map products are released by version/scenario; preserve version, reference epoch, probability window and model assumptions  
 **Resolution / granularity:** Probabilistic shaking exceedance maps and curves (CSV/Shapefile/KML) and site amplification factors; grid and parameters differ by product  
 **Potential roles:** `seismic_hazard_grid_crosswalk`, `building_site_condition_prior`, `hazard_model_consistency_challenge`  
-**Access hint:** `public_download_page_terms_and_version_scoped_rights_review_before_file_acquisition`  
+**Access hint:** `jshis_public_download_portal_raw_redistribution_prohibited_derived_sale_permission_contact_no_automation`  
 **Authoritative source:** <https://www.j-shis.bosai.go.jp/en/downloads>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** A J-SHIS probability of exceedance over a specified period is not a recorded event intensity, building fragility, earthquake damage, or insured loss. Site amplification is a separate geophysical quantity with individual citation obligations. Rights, exact map release, hazard measure/unit, mesh CRS and possible shared source-model lineage need independent review.
+**Note:** NIED J-SHIS Terms Article 5 explicitly prohibits copying/distributing/transferring original seismic hazard maps even in a converted format; processed outputs may be distributed subject to restrictions, and commercial sale of results requires provider contact and possibly approval. Article 4 requires attribution and specific site-amplification citations. Source access stays restricted_by_terms/do_not_automate; never treat free download as licence for a public hazard raster mirror or commercial CAT model. A probability of exceedance over a specified period is not an observed event, damage, or insured loss. Exact map edition, hazard measure/horizon, mesh, data lineage and model rights still require review.
