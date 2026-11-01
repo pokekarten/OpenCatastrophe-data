@@ -84,8 +84,47 @@ one source's failure does not suppress the other's result.
   building geometry, customer/claim data or production DB rows
   are persisted by this metadata probe.
 
-## First original-source receipts
+## First original-source receipts — verified 2026-11-01
 
-Await exact source-specific main workflow execution after review.
-No successful capabilities, layers, CRS or real hazard pixel values
-are claimed before this original-run evidence is available.
+One source-specific push run successfully acquired both original official
+GetCapabilities XML responses separately, with SHA-256 of exact *full XML
+responses* (not source GeoTIFF pixels):
+[GitHub Actions 41326524953](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41326524953),
+source revision `407db39ca24929d7290b2c6030076ff46ab5904e`.
+
+| Original verified fact | Hinweiskarte `ua_srhk` | Gefahrenkarte `ua_srgk` |
+| --- | --- | --- |
+| Source UTC | 16:28:49.123060 | 16:28:48.061324 |
+| Exact XML bytes | **102,825** | **99,749** |
+| XML SHA256 | `973949ab86bcab676d6f707bb4cbd0c90e91bb30437612f645bd28c85f3309b5` | `f5d21c48864dca82692a08bdccce0fb42d04172682ab9a35688458be5d84a0d9` |
+| WFS protocol | 2.0.0 | 2.0.0 |
+| Feature types actually enumerated | **7** | **4** |
+| EPSG codes advertised | 25832, 25833, 3857, 4258, 4326 | 25832, 25833, 3857, 4258, 4326 |
+| Original GetFeature, XML storage, hazard pixels | None | None |
+
+**Original seven hint-map WFS layer names (public metadata):**
+`ua_srhk:bb_srhk_feuerwehreinsaetze`,
+`ua_srhk:ba_srhk_feuerwehreinsaetze_pkt`,
+`ua_srhk:ca_fr_aussergewoehnlich`,
+`ua_srhk:da_fr_extrem_max100mm`,
+`ua_srhk:fa_alkis_gebaeude`,
+`ua_srhk:a_srhk_starkregengefahrenkarten_vorhanden`,
+`ua_srhk:g_srhk_senken`.
+
+**Original four detailed-map WFS layer names (public metadata):**
+`ua_srgk:ca_fliessgeschwindigkeit_aussergewoehnlich`,
+`ua_srgk:da_fliessgeschwindigkeit_extrem`,
+`ua_srgk:ba_fliessgeschwindigkeit_selten`,
+`ua_srgk:a_modellgebiete`.
+
+**Important correction to source readiness:** neither observed WFS
+`FeatureTypeList` directly exposes a verified numerical GeoTIFF
+water-depth analysis band. Its layer names cannot establish WFS water
+depth coverage or unit semantics. For the indicative map, the official
+technical description separately documents Atom GeoTIFF products; their
+feed and exact ZIP object access must be independently tested. The
+detailed map WFS lists flow-speed layers and model-area footprint, so
+treat **partial model-area coverage** as a separate gating source.
+
+Only service metadata accessibility is verified. Provider response
+bytes were not persisted and no BLD4/insurer CAT model or DB modified.
