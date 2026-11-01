@@ -106,12 +106,28 @@ def inspect_building_geojson(raw: bytes) -> tuple[dict, list[tuple[float, float]
                                          always_xy=True, allow_ballpark=False,
                                          only_best=True)
     points = []
+    # WFS GetFeature count is a feature *limit*, not a guarantee of distinct
+    # physical buildings. Reject repeated source IDs and spatially identical
+    # geometries before reporting the sampled building count or CAT join.
+    # Five fixed features make topological equality checks safely bounded.
+    feature_ids: set[str | int] = set()
+    distinct_geometries = []
     total_polygon_area = 0.0
     for feature in features:
         if type(feature) is not dict or feature.get("type") != "Feature":
             raise BerlinBuildingSampleError("invalid source feature envelope")
         if type(feature.get("properties")) is not dict:
             raise BerlinBuildingSampleError("source properties missing")
+        feature_id = feature.get("id")
+        if feature_id is not None:
+            if ((type(feature_id) is not str or not feature_id.strip())
+                    and type(feature_id) is not int):
+                raise BerlinBuildingSampleError("invalid WFS building feature ID")
+            # A number 1 and a string "1" are distinct GeoJSON identities.
+            identity = (type(feature_id).__name__, feature_id)
+            if identity in feature_ids:
+                raise BerlinBuildingSampleError("duplicate WFS building feature ID")
+            feature_ids.add(identity)
         geometry = feature.get("geometry")
         if type(geometry) is not dict or geometry.get("type") not in ("Polygon", "MultiPolygon"):
             raise BerlinBuildingSampleError("source did not return a polygonal building")
@@ -121,6 +137,9 @@ def inspect_building_geojson(raw: bytes) -> tuple[dict, list[tuple[float, float]
             raise BerlinBuildingSampleError("invalid source feature polygon") from exc
         if geom.is_empty or not geom.is_valid or not 0 < geom.area < 1_000_000:
             raise BerlinBuildingSampleError("invalid, zero or improbable building footprint area")
+        if any(geom.equals(existing) for existing in distinct_geometries):
+            raise BerlinBuildingSampleError("duplicate physical building footprint in WFS sample")
+        distinct_geometries.append(geom)
         if not geom.intersects(query_box):
             raise BerlinBuildingSampleError("building feature is unrelated to exact source query box")
         if not all(math.isfinite(v) for v in geom.bounds):
@@ -135,6 +154,8 @@ def inspect_building_geojson(raw: bytes) -> tuple[dict, list[tuple[float, float]
         total_polygon_area += float(geom.area)
     return ({
         "sampled_feature_count": len(points),
+        "sampled_distinct_polygon_count": len(distinct_geometries),
+        "sampled_duplicate_ids_or_geometries_rejected": True,
         "all_feature_geometries_valid": True,
         "source_feature_geometry_type": "Polygon or MultiPolygon",
         "source_crs_requested": SOURCE_SRS,
