@@ -101,6 +101,32 @@ was tied to the documented original HTTPS source URL but **was not signed
 by EUBUCCO**, and the next run verifies reproducibility only, not a
 publisher-signed authenticity statement.
 
+**Second exact-byte retrieval and measurable attribute coverage**
+succeeded in [GitHub Actions run 41307901686](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41307901686).
+It independently checked the **pre-existing** 29,053,909-byte source SHA-256
+listed above. Original file and provider source identity are reproducible
+across both retrievals. The script now distinguishes the **presence** of
+actual attribute values from the provenance labels:
+
+| Building attribute value field | Non-null / nonblank / finite | Null | Blank | Nonfinite |
+| --- | ---: | ---: | ---: | ---: |
+| `construction_year` | **74** | **186,097** | 0 | 0 |
+| `height` | **186,171** | 0 | 0 | 0 |
+| `floors` | **186,171** | 0 | 0 | 0 |
+| `type` | **186,171** | 0 | 0 | 0 |
+| `subtype` | **186,171** | 0 | 0 | 0 |
+
+**Important distinction:** complete `height`, `floors`, `type` and
+`subtype` fields reflect significant provider modelling and imputation.
+The completeness of height and floor values does **not** demonstrate
+measured completeness or physical accuracy. The extremely limited
+construction-year availability is now established from the **actual
+values**, not merely missing `construction_year_source` provenance.
+This is a concrete reason to prioritise original documented construction
+years and independently observed building material/floor data when
+researching national registries; ACT rooftop footprint area, `zmin`
+or 2023 observation date are NOT substitutes for construction year.
+
 **Still not done:** country coverage adequacy, actual geometry CRS/axis
 accuracy, polygon IoU, ACT2023v2 ↔ EUBUCCO identity crosswalk,
 EUBUCCO Luxembourg original-cadastre metadata, attribute validity,
