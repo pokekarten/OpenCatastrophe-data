@@ -15,7 +15,7 @@ import hashlib
 import json
 from pathlib import Path
 
-MAX_METADATA_BYTES = 1_048_576
+MAX_METADATA_BYTES = 524_288
 LAYER_ID = 0
 LAYER_NAME = "POSTFIRE"
 MANDATORY_FIELDS = {
@@ -23,7 +23,14 @@ MANDATORY_FIELDS = {
     "GLOBALID": "esriFieldTypeGlobalID",
     "DAMAGE": "esriFieldTypeString",
     "STRUCTURETYPE": "esriFieldTypeString",
+    "INCIDENTNUM": "esriFieldTypeString",
+    "INCIDENTSTARTDATE": "esriFieldTypeDate",
 }
+DAMAGE_DOMAIN = frozenset({
+    "Destroyed (>50%)", "Major (25-50%)", "Minor (10-25%)",
+    "Affected (>0-10%)", "Inaccessible", "No Damage",
+})
+
 OPTIONAL_SCIENCE_FIELDS = frozenset(
     {"ROOFCONSTRUCTION", "EXTERIORSIDING", "FIRENAME", "YEARBUILT"}
 )
@@ -99,6 +106,19 @@ def preflight_metadata(raw: bytes) -> dict[str, object]:
     for name, required_type in MANDATORY_FIELDS.items():
         if types.get(name) != required_type:
             raise DinsMetadataError("required field missing or type drift: " + name)
+    layer_types = source.get("types")
+    if type(layer_types) is not list or not layer_types:
+        raise DinsMetadataError("DAMAGE type domain required")
+    damage_values: set[str] = set()
+    for item in layer_types:
+        if type(item) is not dict or type(item.get("id")) is not str:
+            raise DinsMetadataError("malformed DAMAGE domain member")
+        domain_label = item["id"]
+        if domain_label in damage_values:
+            raise DinsMetadataError("duplicate DAMAGE domain member")
+        damage_values.add(domain_label)
+    if damage_values != DAMAGE_DOMAIN:
+        raise DinsMetadataError("DAMAGE domain semantics differ from reviewed source")
     return {
         "contract": "CALFIRE-DINS-LAYER0-METADATA-PREFLIGHT-v0",
         "layer_id": LAYER_ID,
@@ -106,6 +126,9 @@ def preflight_metadata(raw: bytes) -> dict[str, object]:
         "metadata_bytes": len(raw),
         "metadata_sha256": hashlib.sha256(raw).hexdigest(),
         "declared_field_count": len(types),
+        "damage_states": sorted(damage_values),
+        "incident_time_field_type": types["INCIDENTSTARTDATE"],
+        "damage_states_are_insurance_loss_ratios": False,
         "science_fields_present": sorted(OPTIONAL_SCIENCE_FIELDS.intersection(types)),
         "sensitive_field_names_present": sorted(SENSITIVE_FIELDS.intersection(types)),
         "feature_rows_read": 0,
