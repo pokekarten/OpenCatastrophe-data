@@ -36,7 +36,7 @@ The provider is now verified beyond an imagery viewer: see `docs/research/noaa-h
 
 NOAA InPort declares **CC0-1.0** while the inspected item metadata declares literal **`NLPL` (SPDX: No Limit Public License)**. Both are permissive named licences; the difference alone is **not evidence of a restrictive licence**. Exact per-asset applicability still requires review; no automatic model input is admitted. STAC `datetime` is 00:00:00 UTC and the collection uses a four-day interval: neither proves the exact flight exposure time. NOAA imagery was coordinated with FEMA and may have informed the same FEMA RS classes, so imagery-source independence is **not** established.
 
-`research_runners/noaa_michael_stac_preflight_v0.py` and the synthetic-only tests enforce URL, tile footprint, GeoTIFF metadata, collection date and STAC-license checks, with all rights, model and direct-building-join gates explicitly closed.
+`research_runners/noaa_michael_stac_preflight_v0.py` validates STAC item metadata. A separate **actual original TIFF 4-KiB Range read** verified the source IFD/header shape, 512-pixel blocks and EPSG:4326 for a third specific tile. `research_runners/noaa_michael_tiff_header_v0.py` now checks source-shaped TIFF headers against STAC and has synthetic-only negative tests; see the detailed NOAA metadata receipt. No complete TIFF or image pixels were downloaded, and rights, alpha coverage, source lineage and any building join remain blocked.
 
 ## One scientifically bounded experiment, not a bulk import
 
