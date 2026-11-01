@@ -86,3 +86,41 @@ fictional annual event frequencies, intensities, locations and amounts.
 A real covered policy, Oasis financial module, CAT-XL, retro, calibrated
 hazard-vulnerability model and genuine 10k NextGen run remain absent.
 No source or database writes were made.
+
+## 2026-11-02: preserve exact synthetic exposure geometry and taxonomy
+
+The OED/GUL identity comparison in this branch previously pinned version,
+value, currency, unit count and SRID, but not the actual `location` coordinates
+or the selected building taxonomy. A valid but shifted coordinate or changed
+occupancy/construction code could therefore have produced the **same**
+10,000-year numerical toy loss output while masquerading as the original
+fixture. This is a research-lineage defect, not evidence of a real insurer risk.
+
+The read-only SQL now checks:
+- the exact fictional portfolio country, ordered peril/LoB scope, as-of
+  date, no-real-buildings metadata and fixed version;
+- the original `SYNTH-01..12` point grid in EPSG:4326 at the binary
+  PostGIS EWKB level (not only non-null point geometry / SRID);
+- each location's region/country, occupancy, construction and
+  single-building count against the canonical synthetic SQL recipe.
+
+All checks remain within the original 12-unit unfiltered fixture and the
+fail-closed division-by-zero gate; no raw source, real exposure or model
+admission is introduced.
+
+**Actual read-only Neon validation** on the explicit isolated branch
+`br-summer-sky-bawujqu8`, DB `insurance`:
+- Positive full 10,000-year SQL still returned exactly 12 assets,
+  EUR 3,150,000 invented values, 1,541 invented events and
+  EUR 285,494,000 aggregate invented annual losses (AAL EUR 28,549.40).
+- Negative **changed longitude by 0.01 degrees**: rejected with
+  `division by zero`.
+- Negative **as-of date 2026-11-02**: rejected with `division by zero`.
+- Negative **changed expected occupancy code**: rejected with
+  `division by zero`.
+
+These negative probes altered only the **read-only SQL's expected fixture**,
+not Neon data. The static offline test also asserts the new spatial/taxonomy
+gates are present. Exact-head GitHub CI must still independently pass before
+integration. This is deliberately not a native OpenCatastrophe/NextGen/Oasis/
+OpenQuake model or production model-input qualification.
