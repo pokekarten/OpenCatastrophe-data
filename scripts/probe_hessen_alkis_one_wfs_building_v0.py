@@ -100,7 +100,9 @@ def inspect_feature_xml(raw: bytes) -> dict:
             raise BuildingFeatureBlocked("WFS returned unexpected non-Building feature type")
     reported_returned = _positive_count(root.get("numberReturned"), "numberReturned")
     if reported_returned is not None and reported_returned != len(members):
-        raise BuildingFeatureBlocked("WFS returned-member count contradicts header")
+        raise BuildingFeatureBlocked(
+            f"WFS returned-member mismatch: reported={reported_returned}, parsed_members={len(members)}, root_children={len(root)}"
+        )
     reported_matched = _positive_count(root.get("numberMatched"), "numberMatched")
     if reported_matched is not None and reported_matched < len(members):
         raise BuildingFeatureBlocked("WFS matched count contradicts feature count")
