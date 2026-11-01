@@ -63,7 +63,7 @@ jobs:
           # Existing reviewed COG range gate verifies exact 4KiB headers;
           # full 40GB provider assets have NOT been SHA-verified. Rasterio
           # reads only the fixed 100m native-CRS envelope through HTTPS.
-          python -m research_runners.luxembourg_geobase_lidar2024_object_proxy_v0 \
+          python -m research_runners.luxembourg_lidar2024_footprint_inset_sensitivity_v0 \
             --geobase-gpkg "$SOURCE_GPKG"
           # No original provider GPKG, IDs, shapes, pixel arrays, measured
           # per-object values or source files are uploaded or saved.
