@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: DWD second original wind station 00348 pilot
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/probe_dwd_station00348_original_v0.py'
+      - 'tests/test_probe_dwd_station00348_original_v0.py'
+      - '.github/workflows/dwd-second-station00348-original.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-second-station-safety:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run second-station original-format and falsification tests
+        run: python -m unittest tests.test_probe_dwd_station00348_original_v0 -v
+
+  actual-dwd-original-station00348:
+    needs: synthetic-second-station-safety
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download only two exact station-00348 original official DWD ZIPs
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          wind="$RUNNER_TEMP/10minutenwerte_extrema_wind_00348_20100101_20110901_hist.zip"
+          meta="$RUNNER_TEMP/Meta_Daten_zehn_min_fx_00348.zip"
+          trap 'rm -f "$wind" "$meta"' EXIT
+          curl --fail --silent --show-error --noproxy '*' \
+            --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+            --max-time 100 --retry 0 --max-filesize 8388608 --output "$wind" \
+            'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/historical/10minutenwerte_extrema_wind_00348_20100101_20110901_hist.zip'
+          curl --fail --silent --show-error --noproxy '*' \
+            --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+            --max-time 60 --retry 0 --max-filesize 1048576 --output "$meta" \
+            'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/meta_data/Meta_Daten_zehn_min_fx_00348.zip'
+          python -m scripts.probe_dwd_station00348_original_v0 \
+            --wind-zip "$wind" --metadata-zip "$meta"
+          # No original weather files, station coordinates, or source rows archived.
