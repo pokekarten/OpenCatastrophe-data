@@ -11,6 +11,8 @@ crosswalk SQLite files. It never overwrites an existing database.
 from __future__ import annotations
 
 import argparse
+from collections import defaultdict
+from contextlib import closing
 import hashlib
 import json
 import os
@@ -53,6 +55,8 @@ def _validate_report(report: dict) -> None:
     if len(candidates) != report.get("candidate_count") or len(manifests) != report.get("manifest_count"):
         raise CAT3Error("source counts do not match rows")
     seen, recipes = set(), {}
+    recipe_members: dict[str, set[str]] = defaultdict(set)
+    expected_recipe_members: dict[str, set[str]] = {}
     for row in candidates:
         ident = row.get("source_id")
         if not isinstance(ident, str) or not ident or ident in seen:
@@ -77,6 +81,16 @@ def _validate_report(report: dict) -> None:
             )
             if rid in recipes and recipes[rid] != fingerprint:
                 raise CAT3Error("conflicting same-ID linkage recipe")
+            if ident in recipe_members[rid]:
+                raise CAT3Error("duplicate source/linkage recipe edge")
+            recipe_members[rid].add(ident)
+            endpoints = link.get("other_source_ids")
+            if not isinstance(endpoints, list) or not endpoints:
+                raise CAT3Error("linkage recipe has no other endpoints")
+            endpoint_set = {ident, *endpoints}
+            if rid in expected_recipe_members and expected_recipe_members[rid] != endpoint_set:
+                raise CAT3Error("linkage recipe has inconsistent endpoint identities")
+            expected_recipe_members[rid] = endpoint_set
             recipes[rid] = fingerprint
     for row in candidates:
         ident = row["source_id"]
@@ -88,6 +102,9 @@ def _validate_report(report: dict) -> None:
                 raise CAT3Error("dangling or self-joined linkage endpoint")
     if len(recipes) != report.get("manual_linkage_recipe_count"):
         raise CAT3Error("linkage recipe count differs from source report")
+    for rid, expected in expected_recipe_members.items():
+        if recipe_members[rid] != expected:
+            raise CAT3Error("linkage recipe missing reciprocal source endpoint")
     if len({r.get("dataset_id") for r in manifests}) != len(manifests):
         raise CAT3Error("duplicate manifest identity")
     for row in manifests:
@@ -117,7 +134,7 @@ def export_crosswalk_sqlite(output: Path, report: dict) -> dict:
     fd = os.open(target, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
     os.close(fd)
     try:
-        with sqlite3.connect(target) as con:
+        with closing(sqlite3.connect(target)) as con, con:
             con.execute("PRAGMA foreign_keys=ON")
             con.execute(f"PRAGMA application_id={CAT3_APP_ID}")
             con.execute(f"PRAGMA user_version={CAT3_VERSION}")
