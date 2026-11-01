@@ -1,14 +1,16 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-name: CEMS EMSN028 official ZIP HEAD receipt
+name: CEMS EMSN028 bounded ZIP access receipt
 
 on:
   push:
     branches: [main]
     paths:
       - "scripts/cems_emns028_zip_head_receipt_v0.py"
+      - "scripts/cems_emns028_zip_prefix_receipt_v0.py"
       - "tests/test_cems_emns028_zip_head_receipt_v0.py"
+      - "tests/test_cems_emns028_zip_prefix_receipt_v0.py"
       - ".github/workflows/cems-emns028-head-receipt.yml"
   pull_request:
     paths:
@@ -22,7 +24,7 @@ permissions:
 
 jobs:
   public-metadata:
-    name: Seven synthetic gates and one safe official HEAD
+    name: Offline gates and 4-byte source ZIP signature
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -36,6 +38,9 @@ jobs:
         with:
           python-version: "3.14"
       - name: Validate offline refusal and redirect constraints
-        run: python -m unittest tests.test_cems_emns028_zip_head_receipt_v0 -v
-      - name: Test HTTP HEAD only with 18-second deadline and no raw bytes
-        run: python -m scripts.cems_emns028_zip_head_receipt_v0 --live
+        run: >-
+          python -m unittest
+          tests.test_cems_emns028_zip_head_receipt_v0
+          tests.test_cems_emns028_zip_prefix_receipt_v0 -v
+      - name: Verify ZIP signature using at most 4 response bytes (no archive download)
+        run: python -m scripts.cems_emns028_zip_prefix_receipt_v0 --live
