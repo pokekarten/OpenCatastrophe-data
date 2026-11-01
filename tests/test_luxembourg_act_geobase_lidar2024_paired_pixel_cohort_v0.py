@@ -51,6 +51,20 @@ class PairedSourcePixelTests(unittest.TestCase):
         self.assertEqual(report["paired_source_geometry_height_proxy_pairs_eligible"],1)
         self.assertEqual(sum(report["absolute_paired_median_surface_minus_terrain_difference_bins"].values()),1)
 
+    def test_cropped_small_window_cannot_manufacture_full_polygon_identity(self):
+        # In this 10m ROI both clips would appear exactly equal (IoU=1),
+        # but the full source shapes mostly extend in opposite directions.
+        huge_left=box(-100,0,10,10)
+        huge_right=box(0,0,110,10)
+        self.assertAlmostEqual(
+            huge_left.intersection(self.region).intersection(
+                huge_right.intersection(self.region)).area
+            / huge_left.intersection(self.region).union(
+                huge_right.intersection(self.region)).area, 1.0
+        )
+        with self.assertRaisesRegex(PairedSourceError,"No uncontested"):
+            self.probe([huge_left],[huge_right])
+
     def test_high_iou_but_split_merge_competitor_must_be_rejected(self):
         a=[box(0,0,6,10),box(3,0,9,10)]
         b=[box(0,0,6,10)]
