@@ -69,6 +69,22 @@ def _validate_report(report: dict) -> None:
                 raise CAT3Error("candidate research authority boundary violated")
         if row.get("no_reviewed_access_contract") is not (not bool(row.get("access_contract_ids"))):
             raise CAT3Error("candidate reviewed-contract count inconsistent")
+        # These fields must come from the reviewed source-access inventory;
+        # missing or malformed metadata must not silently erase licence flags.
+        for field in ("categories", "potential_roles", "access_contract_ids",
+                      "access_contract_statuses", "license_or_terms_flags"):
+            values = row.get(field)
+            if (type(values) is not list
+                    or any(type(value) is not str or not value.strip() for value in values)
+                    or len(values) != len(set(values))):
+                raise CAT3Error(f"missing or invalid CAT3 reviewed field: {field}")
+        if not row["access_contract_ids"] and row["access_contract_statuses"]:
+            raise CAT3Error("orphan access-contract status with no contract")
+        for field in ("operational_readiness", "rights_posture", "automation_decision",
+                      "access_next_action"):
+            value = row.get(field)
+            if value is not None and (type(value) is not str or not value.strip()):
+                raise CAT3Error(f"invalid CAT3 source evidence: {field}")
         for link in row.get("candidate_join_hypotheses", []):
             rid = link.get("recipe_id")
             if not isinstance(rid, str) or not rid:
@@ -149,6 +165,7 @@ CREATE TABLE candidate (
   readiness TEXT,
   rights_posture TEXT,
   automation_decision TEXT,
+  access_next_action TEXT,
   has_concrete_access_contract INTEGER NOT NULL CHECK(has_concrete_access_contract IN(0,1)),
   join_proven INTEGER NOT NULL DEFAULT 0 CHECK(join_proven=0),
   model_admitted INTEGER NOT NULL DEFAULT 0 CHECK(model_admitted=0)
@@ -162,6 +179,21 @@ CREATE TABLE source_access_assignment (
   candidate_id TEXT NOT NULL REFERENCES candidate(candidate_id),
   access_id TEXT NOT NULL,
   PRIMARY KEY(candidate_id,access_id)
+);
+CREATE TABLE candidate_access_status (
+  candidate_id TEXT NOT NULL REFERENCES candidate(candidate_id),
+  contract_status TEXT NOT NULL,
+  PRIMARY KEY(candidate_id,contract_status)
+);
+CREATE TABLE candidate_rights_flag (
+  candidate_id TEXT NOT NULL REFERENCES candidate(candidate_id),
+  terms_flag TEXT NOT NULL,
+  PRIMARY KEY(candidate_id,terms_flag)
+);
+CREATE TABLE candidate_role (
+  candidate_id TEXT NOT NULL REFERENCES candidate(candidate_id),
+  potential_role TEXT NOT NULL,
+  PRIMARY KEY(candidate_id,potential_role)
 );
 CREATE TABLE source_link_recipe (
   recipe_id TEXT PRIMARY KEY,
@@ -191,6 +223,20 @@ CREATE TABLE existing_manifest_separate (
 CREATE VIEW uncontracted_candidates AS
   SELECT candidate_id, provider, canonical_shard, readiness, rights_posture
     FROM candidate WHERE has_concrete_access_contract=0;
+-- Category totals are NOT disjoint: one candidate can occupy multiple layers.
+CREATE VIEW uncontracted_by_category AS
+  SELECT cc.category, count(*) AS uncontracted_candidates
+    FROM candidate_category cc JOIN candidate c USING(candidate_id)
+    WHERE c.has_concrete_access_contract=0
+    GROUP BY cc.category;
+-- Explicitly review every source with any recorded rights concern. This
+-- does not infer permission if the source is not listed here.
+CREATE VIEW candidate_rights_review_queue AS
+  SELECT DISTINCT c.candidate_id, c.provider, c.rights_posture, c.automation_decision
+    FROM candidate c LEFT JOIN candidate_rights_flag f USING(candidate_id)
+    WHERE c.rights_posture IS NULL
+       OR c.rights_posture <> 'source_rights_verified'
+       OR f.terms_flag IS NOT NULL;
 CREATE INDEX idx_candidate_readiness ON candidate(readiness);
 CREATE INDEX idx_category ON candidate_category(category);
 CREATE INDEX idx_endpoint_candidate ON recipe_endpoint(candidate_id);
@@ -199,16 +245,24 @@ CREATE INDEX idx_endpoint_candidate ON recipe_endpoint(candidate_id);
                 by_id = {r["source_id"]: r for r in report["candidates"]}
                 all_recipes = {}
                 for ident, r in sorted(by_id.items()):
-                    con.execute("INSERT INTO candidate VALUES (?,?,?,?,?,?,?,?,?,?,0,0)", (
+                    con.execute("INSERT INTO candidate VALUES (?,?,?,?,?,?,?,?,?,?,?,0,0)", (
                         ident, r["provider"], r["authoritative_url"], r["canonical_source_path"],
                         r["spatial_scope"], r["temporal_scope"], r["operational_readiness"],
-                        r["rights_posture"], r["automation_decision"],
+                        r["rights_posture"], r["automation_decision"], r["access_next_action"],
                         int(bool(r["access_contract_ids"])),
                     ))
                     for category in sorted(set(r["categories"])):
                         con.execute("INSERT INTO candidate_category VALUES (?,?)", (ident, category))
-                    for access in sorted(set(r["access_contract_ids"])):
+                    for access in sorted(r["access_contract_ids"]):
                         con.execute("INSERT INTO source_access_assignment VALUES (?,?)", (ident, access))
+                    # Contract statuses are source-level aggregates, not a
+                    # fabricated one-to-one mapping to specific interface IDs.
+                    for status in sorted(r["access_contract_statuses"]):
+                        con.execute("INSERT INTO candidate_access_status VALUES (?,?)", (ident, status))
+                    for flag in sorted(r["license_or_terms_flags"]):
+                        con.execute("INSERT INTO candidate_rights_flag VALUES (?,?)", (ident, flag))
+                    for role in sorted(r["potential_roles"]):
+                        con.execute("INSERT INTO candidate_role VALUES (?,?)", (ident, role))
                     for link in r["candidate_join_hypotheses"]:
                         rid = link["recipe_id"]
                         all_recipes[rid] = (
@@ -240,6 +294,9 @@ CREATE INDEX idx_endpoint_candidate ON recipe_endpoint(candidate_id);
                 "recipes": con.execute("SELECT count(*) FROM source_link_recipe").fetchone()[0],
                 "uncontracted": con.execute("SELECT count(*) FROM uncontracted_candidates").fetchone()[0],
                 "recipe_endpoints": con.execute("SELECT count(*) FROM recipe_endpoint").fetchone()[0],
+                "role_assignments": con.execute("SELECT count(*) FROM candidate_role").fetchone()[0],
+                "rights_flags": con.execute("SELECT count(*) FROM candidate_rights_flag").fetchone()[0],
+                "reviewed_contract_status_assignments": con.execute("SELECT count(*) FROM candidate_access_status").fetchone()[0],
             }
             if (counts["candidates"] != report["candidate_count"]
                     or counts["manifests"] != report["manifest_count"]
