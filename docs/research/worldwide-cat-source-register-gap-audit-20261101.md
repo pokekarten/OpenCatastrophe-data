@@ -14,6 +14,19 @@ SPDX-License-Identifier: Apache-2.0
 - This PR proposes 6 genuinely different provider/product identities; if merged, the expected landscape inventory becomes 269 candidates in 35 shards, subject to the repository's duplicate-ID and projection checks.
 - Open pull requests at audit time included #937 (historical French BD TOPO original 2016 bytes), #935 (fully synthetic CAT-XL calculation), #907 (US market stock), #899 (international insurer directories), #898 (NFIP API), #894 (Natural Earth basemap), #891 (EIOPA source preflight). Keep these overlapping upstream access, legal and insurer efforts in their existing branches; this PR does not claim their work or duplicate their source entries.
 
+## Actual access-state breakdown (all 42 access JSON records on audited main)
+
+| Contract status | Count | Meaning for readiness |
+| --- | ---: | --- |
+| `documented_only` | **31** | Describes metadata/access and boundaries; no authorised enabled retrieval follows from this status. |
+| `probe_ready` | **6** | Bounded provider-specific probe contract defined, not a full source-data pipeline or model admission. |
+| `blocked_credentials` | **3** | Access may require a provider account/token; no credentials or backend secrets in Git. |
+| `restricted_by_terms` | **2** | Terms explicitly restrict automation; preserve `do_not_automate` rather than trying alternate hosts. |
+
+Of the 42 access contracts, original `rights_and_policy.dataset_rights_status` entries are **26 verified**, **12 not_reviewed**, **2 restricted**, **1 conflicting**, and **1 unknown**. "Verified" is the provider/dataset *rights-evidence review state*, **not** global permission for commercial use, all derived products or source-byte redistribution. A `probe_ready` contract is a bounded technical path, **not** proof of a successful live source retrieval.
+
+Current practical lead: `wsv.pegelonline.rest-v2.dresden` is `probe_ready` with `implementation_decision=build_adapter_now`; `geoboundaries.gbopen`, `dwd.cdc.extreme-wind.http-file`, `emsc.seismicportal.fdsn-event`, `gfz.geomagnetic-kp` and `noaa.swpc.real-time-solar-wind` are `probe_ready` with `build_later`. Prioritise source-specific bounded tests where the right to query and record evidence is clear. Note that `eubucco.buildings.v0.2` remains `documented_only` despite its detailed object-store specification.
+
 ## Registered already — do not create aliases
 
 | Data layer | Existing canonical candidates/admissions | Practical warning |
