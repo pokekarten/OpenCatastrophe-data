@@ -14,6 +14,10 @@ import math
 from typing import Any
 
 from research_runners.noaa_michael_stac_preflight_v0 import preflight as stac_preflight
+from research_runners.noaa_michael_alpha_tile_probe_v0 import (
+    AlphaTileProofError, probe_zero_block,
+)
+from research_runners.noaa_michael_tiff_header_v0 import _table, _vals
 
 SERVICE_ITEM = "e56e3d16fa144684bd532edbf298042c"
 FEMA_LAYER = (
@@ -62,6 +66,52 @@ def build_queries(item: Any) -> dict[str, Any]:
             ),
         ),
         "disaster_census": dict(base, where=EVENT_WHERE, returnCountOnly="true"),
+    }
+
+
+def build_proven_transparent_block_query(
+    item: Any, original_header: bytes, block_index: Any, compressed: bytes,
+) -> dict[str, Any]:
+    """Construct an exact geometry-free point census for a proven zero-alpha block.
+
+    Pixels/georeference are from the original TIFF header, not a guessed STAC
+    rectangle. No HTTP requests, individual source points or raster bytes
+    are included in the returned plan.
+    """
+    try:
+        proof = probe_zero_block(original_header, item, block_index, compressed)
+    except (AlphaTileProofError, ValueError, TypeError, KeyError) as exc:
+        raise EnvelopeOverlapError("original NOAA compressed raster block did not pass proof") from exc
+    if not proof["block_all_alpha_pixels_transparent_proven"]:
+        raise EnvelopeOverlapError("original raster block is not proven transparent")
+    try:
+        tags = _table(original_header)
+        scale = _vals(original_header, tags, 33550, 12)
+        tie = _vals(original_header, tags, 33922, 12)
+    except (ValueError, TypeError, KeyError) as exc:
+        raise EnvelopeOverlapError("original georeference could not be recovered") from exc
+    row, col = proof["block_row"], proof["block_column"]
+    width, height = item["assets"][item["id"]]["proj:shape"][1], item["assets"][item["id"]]["proj:shape"][0]
+    px0, py0 = col * 512, row * 512
+    px1, py1 = min(px0 + 512, width), min(py0 + 512, height)
+    west = tie[3] + px0 * scale[0]
+    east = tie[3] + px1 * scale[0]
+    north = tie[4] - py0 * scale[1]
+    south = tie[4] - py1 * scale[1]
+    if not (-180 < west < east < 180 and -90 < south < north < 90):
+        raise EnvelopeOverlapError("computed block envelope outside valid geographic coordinates")
+    query = dict(build_queries(item)["cohort_census"])
+    query["geometry"] = ",".join(format(v, ".17g") for v in (west, south, east, north))
+    return {
+        "profile": "noaa_fema_verified_zero_alpha_block_query_v0",
+        "endpoint": FEMA_LAYER,
+        "query": query,
+        "original_raster_block_index": block_index,
+        "original_deflate_block_sha256": proof["original_compressed_block_sha256"],
+        "block_fully_transparent_proven": True,
+        "no_source_image_or_fema_feature_bytes_returned": True,
+        "independent_fema_label_source_proven": False,
+        "model_input_admitted": False,
     }
 
 
