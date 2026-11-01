@@ -25,7 +25,7 @@ The receipt was first observed from the public HTTPS object and is not an indepe
 - apparent **same literal source label** vs different label vs `estimated` vs `missing`, each count constrained to sum to the original record count;
 - original source SHA, count, source partition and explicit scientific/non-admission flags.
 
-A matching source label does **not** prove equal upstream asset or independent ground truth; different labels do **not** prove scientific independence. In particular two government-labelled building records might both originate from an ACT or common cadastral source. The source workbook `input-datasets-metadata.xlsx` listed in the EUBUCCO documentation must still be inspected to resolve original Luxembourg government data name, access date, original licence and source crosswalk.
+A matching source label does **not** prove equal upstream asset or independent ground truth; different labels do **not** prove scientific independence. In particular two government-labelled building records might both originate from an ACT or common cadastral source. The official `input-datasets-metadata.xlsx` has now been inspected independently in merged #920: source `gov-luxembourg` points to ACT's **2013 Bâtiments 3D LoD1** dataset, CC0 (catalogue label), EPSG:2169. This is an older version of the same Luxembourg governmental source family as the separate **ACT2023v2** rooftop product, not source-independent validation. See the distinct scientific evidence guard in PR #923. Exact original per-feature reuse, geometry methodology, rights and survey-date equivalence are not proven.
 
 Official docs: https://docs.eubucco.com/v0.2/data-format/metadata/ and https://docs.eubucco.com/v0.2/data-format/schema/ .
 
@@ -69,3 +69,7 @@ The source geometry-family margins were **144,088 government-labelled, 23,928 OS
 One important cross-tab detail: all **144,088** government-labelled geometries also use a government-labelled **height** source within the original LU00 file. This is not evidence that the height comes from a different measured dataset or that ACT2023v2 independently corroborates it. The original source workbook, metadata version, height datum and ACT-vs-EUBUCCO lineage are still needed.
 
 **No individual building records, coordinates, source geometries, insurance sums or raw provider files** were published. Source rights and commercial-use suitability remain unreviewed, and `model_input_admitted=false`.
+
+## Original source identity update after merged #920
+
+The original EUBUCCO v0.2 source metadata (official provider workbook at https://s3.eubucco.com/eubucco/v0.2/additional/input-datasets-metadata.xlsx, SHA-256 `c505cdaa04a296a057f046ccc95c5cfdff277f6fb847f8b725fd85007cff2e0e`) identifies `gov-luxembourg` as **Administration du cadastre et de la topographie / Bâtiments 3D (LoD1), 2013**, catalogued CC0-1.0, EPSG:2169. The **2023** ACT2023v2 data are rooftop polygons; same producer does not imply that any specific two footprints are equal. Cross-label counts therefore must not be marketed as independent validation or as a same-year change detection result without source-version and manual geometry checks. Distinct PR #923 owns the canonical source-linkage rule; this document records only the consequence for the current cross-tab. Licence approval remains separate.
