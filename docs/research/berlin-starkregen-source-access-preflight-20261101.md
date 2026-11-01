@@ -466,3 +466,46 @@ NoData masking and Berlin sample footprint coverage remain source
 verification blockers. Next, if source metadata supports it,
 obtain a separately reviewed minimal exact GeoTIFF-header sample
 without persisting original provider ZIP data.
+
+
+## First genuine GeoTIFF-header research after one-member ZIP proof
+
+The original [EOCD source run 41332972926](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41332972926)
+found exactly **one TIFF-named ZIP member** in each water-depth
+scenario, and each directory fits entirely inside the already
+reviewed 65,557-byte ZIP tail.
+
+The next step is a separate, strictly bounded research-only
+\`research_runners/berlin_srhk_zip_first_tiff_header_v0.py\`.
+It requests **only ZIP bytes 0–65,535** of one exact pinned source
+at a time. It requires original HTTP **206**, the source total
+size from prior HEAD, source Last-Modified if provided,
+original ZIP local Deflate method 8, and the **identical original
+first-512-byte SHA-256** from run 41331185963. Only then does
+it decompress locally using a strict **1 MiB output cap**.
+No full source archive, TIFF pixel array or member tile is downloaded.
+
+The parser attempts to establish original TIFF byte order,
+classic TIFF versus BigTIFF magic, first-IFD offset, and, **only if
+actually present in the bounded decompressed prefix**, the
+GeoTIFF projected/geographic EPSG numeric key (34735).
+If TIFF IFD tags or their GeoKey payload lie outside the permitted
+prefix, values are reported as unavailable. A TIFF magic, or even
+one projected EPSG GeoKey, **does not** validate the full raster
+affine transform, depth units, NoData mask, coverage, source
+licence for CAT/insurance use, event/scenario semantics or
+any building overlap. The unresolved Atom/PDF
+EPSG:25833/EPSG:25832 conflict cannot be declared solved without
+real supporting GeoTIFF metadata.
+
+The dedicated workflow
+\`.github/workflows/berlin-srhk-tiff-header.yml\`
+runs synthetic-only ZIP/TIFF/HTTP abuse tests on pull requests.
+After review and merge of this workflow file, **one original
+65,536-byte GET for each scenario** may establish its first TIFF
+metadata without committing raw provider bytes. Any required
+larger byte range, internal block decoding or full-source
+hash requires a separate source-specific review.
+
+**First original TIFF-prefix outcome: pending successful main
+workflow source execution.**
