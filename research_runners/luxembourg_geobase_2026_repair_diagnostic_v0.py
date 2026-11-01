@@ -13,6 +13,7 @@ import math
 
 from shapely import make_valid
 from shapely.errors import GEOSException
+from shapely.ops import unary_union
 
 
 def _components(geometry) -> tuple[list, bool]:
@@ -48,6 +49,8 @@ class RepairDiagnostics:
         self.structure_unusable = 0
         self.structure_polygon_count_disagreements = 0
         self.structure_area_disagreements = 0
+        self.structure_topological_set_disagreements = 0
+        self.structure_symdiff_area_disagreements = 0
 
     def observe(self, original) -> None:
         """Evaluate a single invalid in-memory source polygon; aggregate only."""
@@ -88,10 +91,20 @@ class RepairDiagnostics:
                     if not math.isfinite(alt_area) or alt_area <= 0:
                         self.structure_unusable += 1
                     else:
+                        # Compare the *valid repaired polygon sets* rather than
+                        # just their total area. Polygon lines/points are ignored
+                        # for this set comparison but tracked separately above.
+                        a = unary_union(polygons)
+                        b = unary_union(alt_polygons)
+                        diff_area = a.symmetric_difference(b).area
+                        if not math.isfinite(diff_area):
+                            raise ValueError("Nonfinite geometric challenge")
+                        tolerance = max(1e-6, 1e-8 * max(alt_area, after))
                         self.structure_usable += 1
                         self.structure_polygon_count_disagreements += len(alt_polygons) != len(polygons)
-                        tolerance = max(1e-6, 1e-8 * max(alt_area, after))
                         self.structure_area_disagreements += abs(alt_area - after) > tolerance
+                        self.structure_topological_set_disagreements += not a.equals(b)
+                        self.structure_symdiff_area_disagreements += diff_area > tolerance
             except (GEOSException, ValueError, TypeError, OverflowError):
                 self.structure_unusable += 1
             delta = abs(after - before)
@@ -127,6 +140,8 @@ class RepairDiagnostics:
             "structure_challenge_unusable": self.structure_unusable,
             "structure_vs_linework_polygon_count_disagreements": self.structure_polygon_count_disagreements,
             "structure_vs_linework_area_disagreements_over_tolerance": self.structure_area_disagreements,
+            "structure_vs_linework_topological_set_disagreements": self.structure_topological_set_disagreements,
+            "structure_vs_linework_symmetric_difference_area_disagreements_over_tolerance": self.structure_symdiff_area_disagreements,
             "area_change_comparable_nonzero_nominal": self.relative_comparable,
             "nonpositive_nominal_invalid_polygon_area": self.nonpositive_nominal_area,
             "nonfinite_nominal_invalid_polygon_area": self.nonfinite_nominal_area,
