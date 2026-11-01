@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Hessen real ALKIS single-building ETRS89 to WorldCover CRS pilot
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/hessen_alkis_one_building_crs_geos_v0.py'
+      - 'tests/test_hessen_alkis_one_building_crs_geos_v0.py'
+      - '.github/workflows/hessen-one-building-crs-geos-v0.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hessen-original-one-building-crs-geos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  exact-original-one-building-crs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exactly tested code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Install existing pinned optional PyProj and Shapely
+        run: python -m pip install --disable-pip-version-check --no-input -r requirements-eu-flood-spatial.txt
+      - name: Assert mandatory real pinned geospatial dependencies
+        run: |
+          python -m pip check
+          python -c 'import pyproj, shapely; assert pyproj.__version__ == "3.7.2" and shapely.__version__ == "2.1.2"'
+      - name: Execute synthetic CRS, coordinate, geometry and HTTP negative tests
+        run: python -m unittest tests.test_hessen_alkis_one_building_crs_geos_v0 -v
+      - name: Exactly one original bounded ALKIS feature source and offline CRS audit
+        run: python -m research_runners.hessen_alkis_one_building_crs_geos_v0 --live
