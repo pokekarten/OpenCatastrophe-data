@@ -78,3 +78,46 @@ A source-specific original provider execution receipt and scientific
 outcome should be recorded only after the dedicated pinned PyProj/GEOS
 workflow passes. Until then the analysis is an implemented,
 unadmitted diagnostic, not a completed original coordinate validation.
+
+## Executed original-source result — 2026-11-01
+
+The [source-specific GitHub Actions run 41356160767](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41356160767)
+**succeeded** with the eight synthetic/negative tests and the one
+original 4,395-byte Hessen WFS GetFeature body. No additional feature,
+WFS layer, original raster block or PROJ grid was downloaded.
+
+- Source retrieval UTC: `2026-11-01T22:15:10.903066+00:00`.
+- Exact frozen source GET SHA-256:
+  `84582b7a6ef60abdf41fadcadaa83ec1b68daf9463f420fe9ea9a13bff385bc4`.
+- Original 4,395-byte WFS response SHA-256:
+  `6189e33dc4c24a8f2b5246e5dbd860c62efdf8570a3297b3f59b618bc02a41a6`.
+- Source diagnostic code SHA-256:
+  `efc32ee328e3ceccd5e13d537d174e6aad3c141cef386d9a238a89e155dafa2a`.
+- Real original: **one** Building GML polygon with **six** exterior
+  coordinate positions (including closure); independent GEOS validity
+  is **true** for source EPSG:4258 and transformed EPSG:4326 geometry.
+- PROJ selected an offline, **non-ballpark** 4258→4326 transformation
+  with explicitly declared **1.0 m** operation accuracy.
+- All transformed polygon vertices are inside WorldCover's originally
+  audited internal TIFF block 185 and more than the declared 1 m
+  operation uncertainty from **block boundaries**.
+- **Not all vertices are more than 1 m from the nearest WorldCover
+  raster-grid line.** This directly falsifies any implicit assumption
+  that vertex cell index assignment is robust to this datum-operation
+  accuracy for the original building. Exact fractional class assignments
+  require uncertainty-aware spatial sampling and original pixel reads.
+- Crucially **one** actual member is still paired with original
+  `numberReturned=0`; `wfs_count_discrepancy_still_blocked=true`.
+- No source coordinates, raw GML, building IDs, address, original raster
+  data or project files were emitted, committed or stored.
+
+This result is **not** a license to call ETRS89/WGS84 identical, claim
+survey-grade 1 m building accuracy, infer one insured address, or force
+land-cover class 50 onto the building. The source frame/epoch and
+observed building vintage remain unknown, and the validated 2021
+WorldCover tile was not fetched in this CRS-only source run.
+
+Next causal step: implement a bounded **synthetic** tolerance/sensitivity
+experiment for a one-pixel positional shift and multiple land-cover
+class cells, and require full topology/source-count resolution before
+any real building-pixel class or CAT exposure admission.
