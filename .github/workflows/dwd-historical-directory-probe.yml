@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: DWD historical extreme-wind source index receipt
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/probe_dwd_historical_directory_v0.py'
+      - 'tests/test_probe_dwd_historical_directory_v0.py'
+      - '.github/workflows/dwd-historical-directory-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-security-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Offline source-contract, response and HTML-negative tests
+        run: python -m unittest tests.test_probe_dwd_historical_directory_v0 -v
+
+  bounded-provider-index:
+    runs-on: ubuntu-24.04
+    needs: synthetic-security-tests
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: One fixed 1 MiB DWD directory GET; metadata receipt only
+        # Provider availability is diagnostic and NOT scientific model-readiness.
+        continue-on-error: true
+        run: python -m scripts.probe_dwd_historical_directory_v0
