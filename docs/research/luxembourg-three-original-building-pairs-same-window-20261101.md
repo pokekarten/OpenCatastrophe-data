@@ -43,3 +43,23 @@ Original source lineage caveats remain:
 - True EPSG2169 field axis order needs independent geodetic control point; current measurements are as-stored coordinate hypothesis.
 - A high pairwise IoU, or even three high IoUs, cannot prove the same physical building without a reviewed 1:1 / 1:n / n:1 adjudicated match record. The aggregate output does NOT contain the individual building relationships required to test transitivity.
 - All source redistribution/commercial rights, building asset survey dates, hazard intensity, occupancy, repair/replacement value, insurer coverage and CAT model approvals remain separate proof gates.
+
+## Executed original-source result: three pairs, same 100m window
+
+**Verified GitHub Actions run:** https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41313575476 . This passed all **ten synthetic consistency/privacy regression tests**, then downloaded all three previously SHA-pinned original sources, verified exact national source byte hashes, executed all three original polygon comparison scripts in the **same** 100m square, and passed the deterministic aggregate source reconciliation. No provider record, original matched building ID, raw WKB, geometry pair, source file or individual result was published as an artifact.
+
+| Same source population in all corresponding pairs | Actual count |
+| --- | ---: |
+| ACT2023 roof polygons | **55** |
+| GeoBase2026 building polygons | **107** |
+| EUBUCCO v0.2 footprints | **11** |
+
+| Observed pair in same 100m window | First-source polygons | Second-source polygons | Unique candidate IoU≥0.60 | Ambiguous first-source polygons | Weak unique | No substantial overlap | Spatial bbox pairs examined |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| ACT2023 ↔ EUBUCCO | 55 | 11 | **1** | **54** | 0 | 0 | 73 |
+| ACT2023 ↔ GeoBase2026 | 55 | 107 | **12** | **39** | 4 | 0 | 322 |
+| GeoBase2026 ↔ EUBUCCO | 107 | 11 | **1** | **104** | 0 | 2 | 139 |
+
+Each row's first-source classification conserves its first-source polygon count. This is the first *same-area* published aggregate three-pair comparison, but it **does not prove transitivity**: the single ACT–EUBUCCO match need not involve the same EUBUCCO polygon as the single GeoBase–EUBUCCO match. Inferring one triple-match, unique building count, independent validation, new/demolished buildings, or property-level insured exposure from the table is prohibited. Most EUBUCCO data in this sample cannot simply be mapped 1:1 to the more granular 2026 polygons. Segment definitions and source vintages remain under review.
+
+The **old 250m ACT2023/EUBUCCO result (149 vs 45)** remains a separate historical experiment and is not overwritten. The newly observed 100m ACT2023/EUBUCCO result is **55 vs 11**, with **1** high-IoU unique candidate and **54** ambiguous ACT roofs. No changes to Neon model-input admission, insurer risk values or source redistribution rights.
