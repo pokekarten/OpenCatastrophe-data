@@ -163,3 +163,7 @@ python scripts/check_all.py
 ```
 
 The source-linkage audit should report the six new candidates and six new conservative recipes after merging; it is not an evidence-bearing physical join. Before a wider global onboarding wave, validate the source landscape against primary provider metadata, then build bounded access contracts and parser checks one coherent provider/product at a time. Prioritize existing high-value but `documented_only` records rather than registering exact aliases as new achievements.
+
+## SQLite application identity separation (2026-11-01)
+
+The existing partial German ADM1↔NUTS2021 stage (#971) has reserved **CAT3** SQLite application ID `0x43415433` for provisional 14-region/2-withheld geographic evidence. The derived cross-domain **source-access/linkage research** exporter here must not share this `PRAGMA application_id`; it now uses its own **CAT4** ID `0x43415434`, separate source-research schema/profile and an explicit test asserting pairwise disjoint application IDs across CAT1, CAT2, CAT3 and CAT4. Neither SQL research stage is a canonical provider dataset, insurance exposure store or model-authorized join. Existing German CAT3 stays unchanged; no migration of its geographic source data occurs.
