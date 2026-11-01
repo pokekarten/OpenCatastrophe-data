@@ -116,7 +116,7 @@ class PilotCoverageTests(unittest.TestCase):
         with self.assertRaisesRegex(CoverageBlocked, "duplicate"):
             parse_features(bad, require_one=True)
         with self.assertRaisesRegex(CoverageBlocked, "nonfinite"):
-            parse_features(control().replace(b"391700", b"NaN"), require_one=True)
+            parse_features(control().replace(b"390000", b"NaN"), require_one=True)
         with self.assertRaises(CoverageBlocked):
             parse_features(b"x" * 786433, require_one=True)
 
