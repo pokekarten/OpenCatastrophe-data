@@ -8,11 +8,15 @@ import hashlib
 import importlib.util
 import io
 import json
+from pathlib import Path
+import sqlite3
+import tempfile
 import unittest
 
 from research_runners.berlin_alkis_gebaeude_five_feature_join_v0 import (
     BBOX, LAYER, MAX_BYTES, MAX_COUNT, TIMEOUT, URL,
-    BerlinBuildingSampleError, inspect_building_geojson, probe,
+    CAT4_APP_ID, BerlinBuildingSampleError, inspect_building_geojson,
+    probe, stage_derived_footprints,
 )
 
 HAS_SPATIAL = (
@@ -155,6 +159,56 @@ class StrictWfsConfigurationTests(unittest.TestCase):
         bad["features"][0]=feature(x=393000)
         with self.assertRaises(BerlinBuildingSampleError):
             inspect_building_geojson(raw(bad))
+
+    @unittest.skipUnless(HAS_SPATIAL,"Pinned Shapely/Pyproj needed")
+    def test_source_values_not_saved_to_separate_CAT4_derived_geometry(self):
+        source = raw(fixture(n=2))
+        with tempfile.TemporaryDirectory(prefix="oc-berlin-cat4-") as tmp:
+            stage = Path(tmp) / "berlin-buildings.cat.sqlite"
+            receipt = stage_derived_footprints(
+                source, ["DE3", "DE3"], stage,
+                receipt_utc="2026-11-01T15:06:41+00:00",
+            )
+            self.assertEqual(receipt["geometry_rows"], 2)
+            self.assertFalse(receipt["original_provider_properties_and_ids_saved"])
+            self.assertTrue(receipt["derived_geometry_local_staging_created"])
+            with sqlite3.connect(stage) as conn:
+                self.assertEqual(conn.execute("PRAGMA application_id").fetchone()[0],
+                                 CAT4_APP_ID)
+                self.assertEqual(conn.execute("SELECT count(*) FROM building_sample").fetchone()[0], 2)
+                self.assertEqual(conn.execute("SELECT count(*) FROM provenance").fetchone()[0], 1)
+                self.assertEqual(conn.execute("SELECT model_admitted FROM provenance").fetchone()[0], 0)
+                columns = {
+                    row[1] for row in conn.execute("PRAGMA table_info(building_sample)")
+                }
+                self.assertEqual(columns, {
+                    "ordinal", "projected_epsg25833_geometry_wkb",
+                    "footprint_area_m2", "nuts1_region",
+                })
+                records = conn.execute(
+                    "SELECT nuts1_region,footprint_area_m2 FROM building_sample"
+                ).fetchall()
+                self.assertEqual(records, [("DE3", 400.0), ("DE3", 400.0)])
+            # Even sample-level provider identifier or attribute values must
+            # be physically absent from derived CAT4 database file bytes.
+            self.assertNotIn(b"fictional", stage.read_bytes())
+            self.assertNotIn(b"not a real building", stage.read_bytes())
+            with self.assertRaises(Exception):
+                stage_derived_footprints(
+                    source, ["DE3", "DE3"], stage,
+                    receipt_utc="2026-11-01T15:06:42+00:00",
+                )
+
+    @unittest.skipUnless(HAS_SPATIAL,"Pinned Shapely/Pyproj needed")
+    def test_CAT4_requires_complete_known_region_assignments(self):
+        source = raw(fixture(n=2))
+        with tempfile.TemporaryDirectory(prefix="oc-berlin-cat4-") as tmp:
+            for codes in ([], ["DE3"], ["DE3", "DE2"]):
+                with self.subTest(codes=codes), self.assertRaises(BerlinBuildingSampleError):
+                    stage_derived_footprints(
+                        source, codes, Path(tmp) / "unexpected.cat.sqlite",
+                        receipt_utc="2026-11-01T15:06:41+00:00",
+                    )
 
     @unittest.skipUnless(HAS_SPATIAL,"Pinned Shapely/Pyproj needed")
     def test_live_receipt_does_not_accept_redirect_or_html(self):
