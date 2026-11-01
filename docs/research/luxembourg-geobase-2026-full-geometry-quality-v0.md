@@ -73,6 +73,14 @@ The report must keep all repaired candidates **quarantined**, including single-p
 
 The follow-up source workflow is the same `.github/workflows/luxembourg-geobase-2026-geometry-quality.yml`; synthetic tests include an invalid bow-tie source ring where `make_valid(linework)` yields multiple positive-area components and the invalid source's nominal area is zero. **Actual original repair outcomes must be read from the newest independently successful source workflow**, not inferred from this synthetic example.
 
+## Actual first linework-repair comparison (2026-11-01)
+
+The exact-source workflow [run 41354238423](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41354238423) completed **successfully** with Shapely 2.1.2 / GEOS `make_valid(method="linework")`. All 66 originally-invalid ACT2026 polygons yielded **one** valid positive-area polygon each; **0** produced multipart polygon repairs, **0** were unusable and **0** left nonpolygon line/point remnants. Among all 66 polygons with positive **nominal invalid-input** GEOS area, the sum and median of the absolute original-versus-repaired area differences rounded to **0.00 m²**, and none exceeded 1% of nominal area.
+
+**Do not interpret 0.00 m² as positional or shape equality**; a ring self-touch can be repaired by changing ring structure without changing computed area, and the invalid source's nominal area is not a validated surveyed footprint. The repair is not persisted or accepted for catastrophe-model inputs.
+
+A further independent diagnostic now challenges the same in-memory invalid polygons using `make_valid(method="structure", keep_collapsed=True)`. It reports only the counts of valid alternate repairs, polygon-component-count disagreements, and alternate area disagreements over `max(1e-6 m², 1e-8 × larger area)`. These are *algorithm-comparison metrics*, not an independent geodetic field survey or a scientific approval. **Actual challenger results must be read from the newest successful pinned-source GitHub workflow.**
+
 ### Integration boundary
 
 This research evidence may later support a **physical building source intake** with a separate scientific-quality review, source-specific CC0 terms/rights record, pinned artifact identity and verified coordinate-axis semantics. It must **not** populate `exposure.exposure_unit.insured_value`, `insurance.policy_v1`, `insurance.policy_tiv_component_v1`, or real insurer-specific portfolios: none of those can be inferred from official building footprints. Keep the raw geometry out of the CAT-only Neon metadata registry until an explicitly approved persistent storage and admission design exists.
