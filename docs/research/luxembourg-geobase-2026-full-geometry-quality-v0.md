@@ -43,6 +43,26 @@ python -m research_runners.luxembourg_geobase_2026_geometry_quality_v0 \
 
 The optional automatic GitHub original-byte test is `.github/workflows/luxembourg-geobase-2026-geometry-quality.yml`, limited to this exact source. It requires an exact immutable checksum match before the full scan; only aggregated results are printed. **Do not claim measured valid/invalid counts or median area until an actual original-source job completes successfully.**
 
+## Verified original-source outcome (1 November 2026)
+
+The full original-content workflow [GitHub Actions run 41353560374](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41353560374) **passed** after authenticating the same fixed ZIP and GeoPackage SHA-256 digests. All five synthetic regression tests passed. The scan processed **all 230,353 original polygon features**, without saving building IDs/geometries or writing to Neon.
+
+| Exact source-wide geometry metric | Observed aggregate |
+| --- | ---: |
+| Original GeoBase features scanned | 230,353 |
+| Valid topology with positive projected area | **230,287** |
+| Topologically invalid polygons | **66** |
+| Corrupt/unparseable original GeoPackage geometries | **0** |
+| Empty original geometries | **0** |
+| Nonpositive/nonfinite valid polygon area | **0** |
+| Median area of valid source polygons | 119.20 projected m² |
+| P95 area of valid source polygons | 521.73 projected m² |
+| Sum of valid source polygon areas | 47,489,787.71 projected m² |
+
+**Interpretation:** The 66 invalid geometries are topological failures, *not* missing source records or evidence of 66 destroyed buildings. They require quarantining, original-quality reporting, and a separate source-geometry-repair policy **before** performing spatial joins or area-based valuation. The observed area values are source projected-geometry measurements, not parcel areas, surveyed ground-floor areas, insurer building counts or TIV.
+
+A follow-up revision of the validator categorizes invalid geometry causes using a fixed allowlist of **coordinate-free topology labels**, while retaining the exact counts and no-original-geometry-output contract. No cross-source building identity or spatial accuracy claim is implied.
+
 ### Integration boundary
 
 This research evidence may later support a **physical building source intake** with a separate scientific-quality review, source-specific CC0 terms/rights record, pinned artifact identity and verified coordinate-axis semantics. It must **not** populate `exposure.exposure_unit.insured_value`, `insurance.policy_v1`, `insurance.policy_tiv_component_v1`, or real insurer-specific portfolios: none of those can be inferred from official building footprints. Keep the raw geometry out of the CAT-only Neon metadata registry until an explicitly approved persistent storage and admission design exists.
