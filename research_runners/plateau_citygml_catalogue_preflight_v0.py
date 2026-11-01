@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import ipaddress
 import json
 import re
 import sys
@@ -46,13 +47,47 @@ def _year(value: object, label: str) -> int:
 
 
 def _https_url_or_null(value: object, label: str) -> bool:
+    """Validate stored metadata links only; a valid URL is not permission to fetch."""
     if value is None:
         return False
-    if not isinstance(value, str):
-        raise CataloguePreflightError(f"{label} must be HTTPS or null")
+    if not isinstance(value, str) or len(value) > 2048:
+        raise CataloguePreflightError(f"{label} must be a bounded HTTPS URL or null")
+    if any(ch.isspace() or ord(ch) < 32 for ch in value):
+        raise CataloguePreflightError(f"{label} contains whitespace or control characters")
+    try:
+        parsed = urlsplit(value)
+        host = parsed.hostname
+        port = parsed.port
+    except ValueError as exc:
+        raise CataloguePreflightError(f"{label} has malformed URL authority") from exc
+    if (
+        parsed.scheme != "https" or not host or parsed.username is not None
+        or parsed.password is not None or parsed.query or parsed.fragment
+        or port not in (None, 443) or not parsed.path.startswith("/")
+    ):
+        raise CataloguePreflightError(f"{label} must be a public credential-free HTTPS URL without query or fragment")
+    if not re.fullmatch(r"[a-z0-9.-]+", host, re.ASCII):
+        raise CataloguePreflightError(f"{label} hostname is not canonical ASCII DNS")
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        address = None
+    if (address is not None and not address.is_global) or host in {"localhost", "localhost."} or host.endswith((".local", ".internal", ".localhost")):
+        raise CataloguePreflightError(f"{label} must not target a non-public hostname")
+    if any(part in (".", "..") for part in parsed.path.split("/")) or "\\" in parsed.path:
+        raise CataloguePreflightError(f"{label} URL path is not canonical")
+    return True
+
+
+def _fixed_composite_url(value: object) -> bool:
+    """PLATEAU's recommended stable-by-year path must never resolve a latest alias."""
+    if value is None:
+        return False
+    _https_url_or_null(value, "citygml.composite_url")
     parsed = urlsplit(value)
-    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
-        raise CataloguePreflightError(f"{label} must be a credential-free HTTPS URL")
+    expected = f"/datacatalog/citygml/{TARGET_CITY_CODE}-{TARGET_YEAR}/citygml.zip"
+    if parsed.hostname != "api.plateauview.mlit.go.jp" or parsed.path != expected:
+        raise CataloguePreflightError("target composite URL must pin the fixed municipality and fiscal year")
     return True
 
 
@@ -90,8 +125,10 @@ def _concrete_row(row: object) -> dict[str, object]:
     # Deliberately do not dereference, copy, download, persist or return any file URL.
     if not _https_url_or_null(row.get("url"), "citygml.url"):
         raise CataloguePreflightError("target original citygml.url is required")
-    if row.get("composite_url") is not None:
-        _https_url_or_null(row["composite_url"], "citygml.composite_url")
+    original_url = urlsplit(row["url"])
+    if original_url.hostname == "api.plateauview.mlit.go.jp" and "-latest/" in original_url.path:
+        raise CataloguePreflightError("an original source URL cannot be a mutable latest redirect")
+    fixed_composite = _fixed_composite_url(row.get("composite_url"))
     return {
         "city_code": code,
         "year": year,
@@ -100,6 +137,7 @@ def _concrete_row(row: object) -> dict[str, object]:
         "bldg_advertised": "bldg" in types,
         "provider_file_size_known": file_size is not None,
         "gspatial_catalogue_page_known": gspatial,
+        "fixed_year_composite_url_present": fixed_composite,
     }
 
 
@@ -152,6 +190,7 @@ def preflight_bytes(raw: bytes) -> dict[str, object]:
         "bldg_advertised": True,
         "provider_file_size_known": candidate["provider_file_size_known"],
         "gspatial_catalogue_page_known": candidate["gspatial_catalogue_page_known"],
+        "fixed_year_composite_url_present": candidate["fixed_year_composite_url_present"],
         "mutable_latest_alias_present_but_not_selected": mutable_latest_present,
         "input_byte_count": len(raw),
         "input_sha256": hashlib.sha256(raw).hexdigest(),
