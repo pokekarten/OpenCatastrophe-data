@@ -160,4 +160,31 @@ documented exact URL, rights review, hash, byte budget and
 decompression/CRS/nodata/units proof before any physically meaningful
 BLD4 building flood grid comparison.
 
-**Original Atom root result:** pending first reviewed source run.
+**Original Atom root result: VERIFIED metadata access on 2026-11-01.**
+The independent exact-source [GitHub Actions run 41326959147](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41326959147)
+on merge commit `703eb660cae29c26b7f9c100e0a64c07843bb264` executed
+one fixed root-only HTTPS GET, without redirects or child requests.
+Original response UTC: `2026-11-01T16:33:54.698388+00:00`.
+The original **3,276-byte** Atom 1.0 XML source response had SHA-256
+`cd99acadcdae8c448ccd1922498cbfc2ca1f9ec3defd4c27b920c702adf36300`.
+The exact execution script SHA-256 was
+`52ff5b03336b47bf1952b8a8fc9683852a023fbfa363b9391065b15a680a5797`.
+
+- XML root: valid Atom 1.0; **one entry**, **four links**.
+- Link relation counts: `alternate=1`, `describedby=2`, `self=1`.
+- Advertised MIME counts: `application/atom+xml=2`, `application/xml=2`.
+- **Direct ZIP URLs in the root = 0**. This does not contradict
+  the provider's downstream ZIP/GeoTIFF publication; the root
+  appears to link further Atom metadata, which was deliberately
+  **not followed** in this proof.
+- No original XML was stored; no child feed, ZIP, GeoTIFF, flood
+  depth pixel, source-building intersection or CAT model input
+  was accessed or approved.
+
+**Next bounded decision:** identify *which* exact same-provider Atom
+entry/child feed advertises the correct 2025 extraordinary/extreme
+Wasserstand analysis product, check its licence, CRS, download
+format, byte budget and original ZIP product identity, then independently
+approve a second fixed-source metadata query. Do not infer any depth
+unit, return period, dry pixel or sample coverage from the root.
+
