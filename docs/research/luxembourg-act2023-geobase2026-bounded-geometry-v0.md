@@ -91,3 +91,43 @@ an official ACT ID crosswalk if the publisher makes one available.
 The first exact-original job, https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41310830197, **correctly failed closed**: the initial 250m × 250m city-centre extraction produced **more than the permitted 400 RTree candidate rows** on at least one source. This is a genuine source-density bound, not a checksum or provenance failure. No sample was silently truncated or counted as a real comparison.
 
 The fixed one-time region was reduced to **100m × 100m** around the same public centre, without increasing the 400-object safety cap, changing source files or relaxing validity checks. The revised original-source workflow must independently pass before any aggregate comparison result is claimed.
+
+## Actual pinned-original research result (2026-11-01)
+
+**Successful source workflow:** https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41310996649
+
+The original two publisher ZIPs and extracted GeoPackages matched their
+pre-existing exact SHA pins. The fixed **100 m × 100 m** city-centre
+research square was compared in native EPSG:2169 and European EPSG:3035,
+using the same validated spatial pipeline. Only source-aggregate diagnostic
+counts were printed, not matched building IDs or source geometry.
+
+| Real source measure | Observed |
+| --- | ---: |
+| ACT2023 roof polygons intersecting the research square | **55** |
+| GeoBase2026 building polygons intersecting the square | **107** |
+| STRtree bounding-box candidate-pairs checked | **322** |
+| Unique ACT roof candidates with IoU ≥0.60 | **12** |
+| Ambiguous ACT roofs (1:n / n:1 candidate relations) | **39** |
+| Unique ACT roof candidate below IoU 0.60 | **4** |
+| ACT roofs without substantial overlap | **0** |
+| Median IoU among the 12 unique candidates | **0.879775** |
+
+The ACT-side counts conserve the sample (12+39+4+0 = 55).
+These numbers must **not** be interpreted as 55 physical buildings,
+107 different buildings, 39 source duplicates, 12 verified common
+building identities or an estimate of growth/removal. Distinct source
+segmentation is clearly material even with same-ACT-family origin.
+The prior full-national exact-ID test found **0 common text IDs**;
+the 12 spatial candidates are **not** an official ID crosswalk.
+
+The 100m research square was chosen as a safe narrowed region only after
+the 250m fixed window exceeded the predeclared source sample cap;
+it was **not** tuned to maximize IoU. No per-building source records,
+GEOS geometries, original ZIPs or database rows were persisted.
+
+**Next research action:** manually adjudicate preselected, versioned urban
+and rural footprint samples with independent control coordinates and
+source-object definitions, and compute per-source false-match rates by
+1:n/n:1 grouping. Only with such proof plus legal and scientific
+admission may an external source-aware crosswalk be considered.
