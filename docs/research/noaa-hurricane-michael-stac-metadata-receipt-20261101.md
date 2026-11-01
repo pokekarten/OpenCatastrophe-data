@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # NOAA Hurricane Michael: first live STAC item metadata and source-access receipt
 
-**Checked:** 2026-11-01. **Role:** research-only original provider metadata and a small source-shaped synthetic validation gate. No GeoTIFF, individual FEMA assessment, raw imagery, original flight file, imagery derivative, machine-learning labels or building/insurance data were acquired or committed.
+**Checked:** 2026-11-01. **Role:** research-only original provider metadata and a small source-shaped synthetic validation gate. No complete GeoTIFF, individual FEMA assessment, raster pixels, original flight file, imagery derivative, machine-learning labels or building/insurance data were acquired or committed. A single remote TIFF **4 KiB header byte range** was inspected transiently for provenance/geometry checks, but no image is stored in the repository.
 
 ## Official source and access paths
 
@@ -45,6 +45,31 @@ The item-level midnight `datetime` and 4-day collection-wide `start_datetime/end
 - The two inspected Digital Coast STAC **item** metadata files state literal `properties.license = "NLPL"`. This string is an **official SPDX identifier for the [No Limit Public License](https://spdx.org/licenses/NLPL.html)**, not "no licence provided", "unknown" or a noncommercial licence. The [STAC licensing specification](https://github.com/radiantearth/stac-spec/blob/master/commons/common-metadata.md) permits SPDX identifiers.
 - Both named instruments are *broadly permissive*, so different identifiers **do not by themselves prove a restrictive licence or infringement**. Their identity differs; the reason for the Digital Coast item-level assignment and exact applicability to rectified GeoTIFFs/derived assets has **not** been verified directly with NOAA. This is an asset-rights *mapping and provenance* question, not a proven noncommercial block.
 - Therefore keep `rights_review_status=not_reviewed`, `model_input_admitted=false` and `asset_specific_licensing_review_completed=false` until the exact asset origin, rights statement and permitted consumer scope are confirmed. No new licensing conclusion is granted to Mapbox/DigitalGlobe/OSM *before-event* imagery in NOAA's viewer; those are separately sourced.
+
+## Original GeoTIFF first-4KiB proof (single bounded remote HTTP Range)
+
+On **2026-11-01** the original NOAA Digital Coast GeoTIFF at
+`https://coastalimagery.blob.core.windows.net/digitalcoast/HurricaneMichael_2018_8883/20181011aC0844330w294330n.tif`
+was checked with a read-only HTTP `Range: bytes=0-4095` request. The response contained **4,096 bytes**, independently decoded as an original **little-endian classic TIFF** (`49 49 2A 00`), with its first IFD at offset **8** and **23** IFD entries. This is a **different, third exact example tile** from the two STAC-only examples above; its original STAC item
+`https://coastalimagery.blob.core.windows.net/digitalcoast/HurricaneMichael_2018_8883/stac/20181011aC0844330w294330n.json`
+was separately retrieved and parsed (published bounding box `[-84.7251,29.6999,-84.6999,29.7251]`, `EPSG:4326`, `NLPL`, 9340 × 9340 pixels).
+
+| Original TIFF tag(s) | Observed value from only the first 4KiB |
+| --- | --- |
+| `ImageWidth` / `ImageLength` (256/257) | **9340 × 9340** |
+| `BitsPerSample` (258) | `8,8,8,8` |
+| `Compression` (259) | `8` = Deflate |
+| `PhotometricInterpretation` (262), `SamplesPerPixel` (277), `ExtraSamples` (338) | `2` RGB, **4** channels, extra alpha **2** |
+| `TileWidth` / `TileLength` (322/323) | **512 × 512** pixels |
+| `TileOffsets` / `TileByteCounts` (324/325) | **361** entries each (19 × 19 blocks) |
+| `ModelPixelScaleTag` (33550) | approximately `(2.698072805139e-6, 2.698072805139e-6, 0)` degrees per pixel |
+| `ModelTiepointTag` (33922) | pixel `(0,0,0)` → `(-84.7250986509636,29.7250986509636,0)` |
+| `GeoKeyDirectoryTag` (34735) | `GeographicTypeGeoKey=4326` (WGS84) |
+| `GDAL_NODATA` (42113) | `0` |
+
+The original TIFF header and the separate NOAA STAC item **agree on key shape, grid placement and EPSG:4326** to the stated metadata precision. This does **not** prove that all 361 compressed blocks were retrieved, all pixels decode, the alpha channel covers any exact building, a NOAA image was used to produce a FEMA RS label, or the entire TIFF asset is authenticated. Only a 4-KiB byte range was read; **no full image download, complete asset SHA-256, rooftop pixel interpretation or private building metadata** was performed. No original TIFF bytes are committed to the repository.
+
+The new **offline** `research_runners/noaa_michael_tiff_header_v0.py` cross-checks an explicitly supplied 4,096-byte TIFF prefix against a provider STAC item and records an explicitly **partial-header SHA-256**. Its companion `tests/test_noaa_michael_tiff_header_v0.py` generates **entirely synthetic TIFF headers**, with negative tests for metadata drift, truncated buffers, bad tile counts, mismatched coordinates, untrusted STAC identifiers and wrong CRS. The synthetic fixture is **not** the original 4-KiB provider response.
 
 ## Lineage and spatial validation no-go
 
