@@ -25,7 +25,7 @@ def valid_payload() -> dict:
                 "year": 2024, "registration_year": 2025, "spec": "4.1",
                 "feature_types": ["bldg", "tran", "dem"],
                 "url": "https://example.org/synthetic-source.zip",
-                "composite_url": "https://example.org/synthetic-redirect.zip",
+                "composite_url": "https://api.plateauview.mlit.go.jp/datacatalog/citygml/13104-2024/citygml.zip",
                 "file_size": None, "gspatialjp_dataset_url": None,
                 "gspatialjp_files": [],
             },
@@ -120,6 +120,68 @@ class PlateauCataloguePreflightTests(unittest.TestCase):
     def test_required_source_url_rejected_when_null(self):
         data = valid_payload()
         data["citygml"][0]["url"] = None
+        with self.assertRaises(CataloguePreflightError):
+            check(data)
+
+    def test_frozen_composite_url_is_verified_as_year_specific(self):
+        self.assertTrue(check(valid_payload())["fixed_year_composite_url_present"])
+
+    def test_null_composite_is_explicitly_reported_as_unavailable(self):
+        data = valid_payload()
+        data["citygml"][0]["composite_url"] = None
+        self.assertFalse(check(data)["fixed_year_composite_url_present"])
+
+    def test_latest_composite_url_rejected_even_with_fixed_row_year(self):
+        data = valid_payload()
+        data["citygml"][0]["composite_url"] = (
+            "https://api.plateauview.mlit.go.jp/datacatalog/citygml/13104-latest/citygml.zip"
+        )
+        with self.assertRaisesRegex(CataloguePreflightError, "must pin"):
+            check(data)
+
+    def test_wrong_municipality_in_composite_url_rejected(self):
+        data = valid_payload()
+        data["citygml"][0]["composite_url"] = (
+            "https://api.plateauview.mlit.go.jp/datacatalog/citygml/13105-2024/citygml.zip"
+        )
+        with self.assertRaisesRegex(CataloguePreflightError, "must pin"):
+            check(data)
+
+    def test_wrong_year_in_composite_url_rejected(self):
+        data = valid_payload()
+        data["citygml"][0]["composite_url"] = (
+            "https://api.plateauview.mlit.go.jp/datacatalog/citygml/13104-2025/citygml.zip"
+        )
+        with self.assertRaisesRegex(CataloguePreflightError, "must pin"):
+            check(data)
+
+    def test_mutable_latest_original_url_rejected(self):
+        data = valid_payload()
+        data["citygml"][0]["url"] = (
+            "https://api.plateauview.mlit.go.jp/datacatalog/citygml/13104-latest/citygml.zip"
+        )
+        with self.assertRaisesRegex(CataloguePreflightError, "mutable latest"):
+            check(data)
+
+    def test_private_or_loopback_source_url_rejected(self):
+        for url in ("https://localhost/file.zip", "https://127.0.0.1/file.zip", "https://192.168.0.1/file.zip"):
+            with self.subTest(url=url):
+                data = valid_payload()
+                data["citygml"][0]["url"] = url
+                with self.assertRaises(CataloguePreflightError):
+                    check(data)
+
+    def test_signed_query_and_fragment_rejected(self):
+        for url in ("https://example.org/file.zip?token=secret", "https://example.org/file.zip#fragment"):
+            with self.subTest(url=url):
+                data = valid_payload()
+                data["citygml"][0]["url"] = url
+                with self.assertRaises(CataloguePreflightError):
+                    check(data)
+
+    def test_invalid_port_rejected(self):
+        data = valid_payload()
+        data["citygml"][0]["url"] = "https://example.org:65536/file.zip"
         with self.assertRaises(CataloguePreflightError):
             check(data)
 
