@@ -150,7 +150,7 @@ def inspect(path: Path, *, published_sha1: str = PUBLISHED_SHA1) -> dict:
             # No arbitrary source columns or individual address values are emitted.
             candidate_cols = [
                 name for name in columns
-                if re.search(r"(tile|kachel|laz|copc|file|fichier|zip|group|groupe|download|url|link|nom|name)", name, re.I)
+                if re.search(r"(tile|kachel|laz|copc|file|fichier|zip|group|groupe|dossier|download|url|link|nom|name)", name, re.I)
                 and IDENT.fullmatch(name)
             ][:8]
             columns_sql = ",".join(_id(c) for c in candidate_cols)
@@ -169,7 +169,7 @@ def inspect(path: Path, *, published_sha1: str = PUBLISHED_SHA1) -> dict:
                     raise LidarIndexGateError("Unexpected unbounded original tile table")
                 try:
                     polygon = wkb.loads(decode_gpkg_wkb(row[0], 2169))
-                except (ValueError, TypeError, Exception) as exc:
+                except Exception as exc:
                     raise LidarIndexGateError("Malformed original tile polygon WKB") from exc
                 if (polygon.is_empty or not polygon.is_valid or polygon.area <= 0
                         or polygon.geom_type not in ("Polygon", "MultiPolygon")):
