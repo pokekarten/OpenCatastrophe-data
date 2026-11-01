@@ -15,7 +15,9 @@ geodata or attribute catastrophe losses to insurers.
 from __future__ import annotations
 
 from collections import Counter
+import io
 import math
+import zipfile
 import re
 
 if __package__:
@@ -35,6 +37,7 @@ def validate_original_with_gdal_fiona(archive: bytes, *, expected_sha256: str) -
     try:
         import fiona
         from fiona.io import ZipMemoryFile
+        import shapefile
         import shapely
         from shapely.geometry import shape as shapely_shape
         from shapely.validation import explain_validity
@@ -43,7 +46,23 @@ def validate_original_with_gdal_fiona(archive: bytes, *, expected_sha256: str) -
     counts = Counter()
     invalid_reason_families = Counter()
     geo_types = Counter()
+    cross_reader = Counter()
     gdal_crs_available = False
+    with zipfile.ZipFile(io.BytesIO(archive)) as zip_reader:
+        comp = {}
+        for name in zip_reader.namelist():
+            ext = name.rsplit(".", 1)[-1].lower()
+            if ext in ("shp", "shx", "dbf"):
+                if ext in comp:
+                    raise RegionArchiveError("original shapefile component duplicated")
+                comp[ext] = zip_reader.read(name)
+    if set(comp) != {"shp", "shx", "dbf"}:
+        raise RegionArchiveError("original shape components incomplete")
+    alternate = shapefile.Reader(shp=io.BytesIO(comp["shp"]),
+                                 shx=io.BytesIO(comp["shx"]),
+                                 dbf=io.BytesIO(comp["dbf"]))
+    if len(alternate) != prior["polygon_records"] + prior["null_shape_records"]:
+        raise RegionArchiveError("alternate source record count differs")
     try:
         with ZipMemoryFile(archive) as zipped:
             with zipped.open() as source:
@@ -57,12 +76,27 @@ def validate_original_with_gdal_fiona(archive: bytes, *, expected_sha256: str) -
                 if not {"Code", "Name"} <= schema_fields:
                     raise RegionArchiveError("GDAL did not expose original region Code/Name fields")
                 for feature in source:
+                    index = counts["features"]
                     counts["features"] += 1
+                    if (str(feature.properties["Code"]).strip()
+                            != str(alternate.record(index)["Code"]).strip()):
+                        raise RegionArchiveError("original feature sequence differs between GDAL and pyshp")
                     raw_geom = feature.geometry
                     if raw_geom is None:
                         counts["null_geometries"] += 1
                         continue
                     geom = shapely_shape(raw_geom)
+                    alternative_geom = shapely_shape(alternate.shape(index).__geo_interface__)
+                    if geom.is_valid and alternative_geom.is_valid:
+                        cross_reader["both_valid"] += 1
+                    elif not geom.is_valid and not alternative_geom.is_valid:
+                        cross_reader["both_invalid"] += 1
+                    elif geom.is_valid:
+                        cross_reader["gdal_valid_pyshp_invalid"] += 1
+                    else:
+                        cross_reader["gdal_invalid_pyshp_valid"] += 1
+                    if geom.geom_type != alternative_geom.geom_type:
+                        cross_reader["geometry_types_disagree"] += 1
                     if geom.geom_type not in ("Polygon", "MultiPolygon"):
                         raise RegionArchiveError("GDAL interpreted non-polygon source geometry")
                     geo_types[geom.geom_type] += 1
@@ -81,6 +115,11 @@ def validate_original_with_gdal_fiona(archive: bytes, *, expected_sha256: str) -
         raise
     except (OSError, RuntimeError, ValueError, TypeError) as exc:
         raise RegionArchiveError("independent GDAL/Fiona source geometry read failed") from exc
+    alternate.close()
+    if sum(cross_reader[key] for key in (
+        "both_valid", "both_invalid",
+        "gdal_valid_pyshp_invalid", "gdal_invalid_pyshp_valid")) != n:
+        raise RegionArchiveError("per-feature geometry crossreader counts do not reconcile")
     if (counts["features"] != n
         or counts["geos_valid"]+counts["geos_invalid"]+counts["null_geometries"] != n):
         raise RegionArchiveError("GDAL original geometry coverage did not reconcile")
@@ -99,6 +138,14 @@ def validate_original_with_gdal_fiona(archive: bytes, *, expected_sha256: str) -
             "null_geometries", "nonpositive_area",
         )},
         "invalid_reason_family_counts": dict(sorted(invalid_reason_families.items())),
+        "cross_reader_per_feature_validity_counts": {
+            key: cross_reader[key] for key in (
+                "both_valid", "both_invalid",
+                "gdal_valid_pyshp_invalid", "gdal_invalid_pyshp_valid",
+                "geometry_types_disagree",
+            )
+        },
+        "original_feature_code_order_agrees_without_emitting_identifiers": True,
         "original_geometry_bytes_or_region_ids_exported": False,
         "automatic_geometry_makevalid_performed": False,
         "peril_hazard_footprints_observed": False,
