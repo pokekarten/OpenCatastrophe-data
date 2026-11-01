@@ -41,3 +41,18 @@ The narrowly scoped GitHub Action `.github/workflows/luxembourg-act2013-original
 5. Treat EUBUCCO aggregate ODbL obligations and possible upstream regional exceptions separately from this official ACT2013 CC0 product and the ACT2023v2 CC0 label. No raw external bytes or joins may enter Git or the CAT-only Neon metadata DB without bounded admission.
 
 This source receipt **does not establish** individual building identity, independent validation, measured building height uncertainty, insured TIV, weather hazard, vulnerability or CAT model readiness.
+
+## Real original-provider result (2026-11-01)
+
+The publisher-hosted **original 2013 LoD1 country-level ZIP** was successfully downloaded and fully decompressed for CRC checking in [GitHub Actions run 41308754811](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41308754811), with all eight synthetic security tests passing. Observed, not inferred:
+
+| Original source property | Verified |
+| --- | ---: |
+| ZIP bytes | **31,541,434** |
+| Original national source **SHA-1** | `83b9b4b3ff4f4f145ecd1322cfd7fd4ad9688652` (**matches publisher**) |
+| New original source **SHA-256** | `d60f0efd2d66f0a446cd2216be1b40e97ac4f15edfc5e3c8a3aaff390c326fa1` |
+| ZIP members | 2 total; one directory and **one .gml** regular file |
+| Expanded .gml bytes | **611,697,375** |
+| Complete decompression CRC checks | **PASS** |
+
+This is an **actual historical original-file source receipt** and an important provenance anchor for future `gov-luxembourg` reconciliation. It does not mean the 611 MB GML content has been parsed, its `gml:id` values reconciled with EUBUCCO, 2013 roof outlines made equivalent to 2023 roof extents or source usage rights admitted. The original ZIP and expanded GML existed only on the ephemeral workflow runner; neither was uploaded, committed or ingested in Neon.
