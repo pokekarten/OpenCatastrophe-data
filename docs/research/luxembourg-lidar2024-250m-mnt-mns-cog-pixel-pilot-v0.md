@@ -84,3 +84,56 @@ policy or claim is derived from this 250m proxy.
 The hosted exact-head workflow must independently pass all synthetic
 tests and the real original-source small-window execution before merging.
 No source data admitted.
+
+## Actually executed official-source window (2026-11-01)
+
+Original real-source GitHub Actions run
+[41314112544](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41314112544)
+**passed**, including all **11 synthetic regression tests** and actual
+partial Rasterio `/vsicurl/` windows from the two provider-hosted
+MNT and MNS BigTIFF datasets. No whole source object, LAZ, per-building
+geometry, pixel arrays, building identifiers or private location rows
+were uploaded/persisted.
+
+The official source COGs use an older **WKT1 LUREF/Luxembourg TM**
+coordinate definition without recognized outer EPSG authority code.
+Rasterio therefore returned `to_epsg()=None`, despite **matching the
+official EPSG:2169 geodetic datum, ellipsoid, prime meridian, Transverse
+Mercator method, all projection operation parameters and unit/axis
+families** under a strict scientific parameter comparison. The
+conversion was **NOT** silently overridden or checked only by name.
+Actual source axis order and survey vertical datum require independent
+field-control confirmation. Both original raster grids are native
+north-up, 0.5 m, one band, **114,617 × 163,687 pixels** with declared
+nodata, and the two sampled grids align.
+
+| Genuine provider sample statistic | Actual result |
+| --- | ---: |
+| Original MNT HTTP total source bytes (no full SHA) | 40,131,787,860 |
+| Original MNS HTTP total source bytes (no full SHA) | 42,849,815,758 |
+| Original partial-window valid coincident cells | **277,202** |
+| Joint valid pixel fraction | **100%** |
+| Surface minus terrain minimum | **0.00 m** |
+| Surface minus terrain median | **9.59 m** |
+| Surface minus terrain p90 | **19.57 m** |
+| Surface minus terrain maximum | **34.09 m** |
+| Valid sampled pixels >3 m above terrain | **58.4375%** |
+
+**Critical interpretation:** this is a source-level spatial elevation
+proxy on the **native bounding rectangle around the same 250m equal-area
+study polygon**, NOT a polygon-clipped sample, not an average building
+height, not independent building-height calibration, and not an insured
+CAT exposure. In this dense urban/vegetated study region, the 9.59 m
+median and 19.57 m p90 include tree canopies, street furniture and any
+other objects above bare earth. No independent EUBUCCO height comparison
+was made in this stage. This is **technical/physical evidence that a
+small raster window from official 40 GB COGs can be read efficiently
+using true HTTP ranges**, not a substitute for source admission.
+
+Next source-science step: combine approved roof footprints and
+per-building `height_source` provenance with a geometric
+roof-only mask, preserve one-to-many roof segmentation and observed
+pixels, distinguish LiDAR classes 2/6 from 3–5, and manually validate
+raster vertical datum/CRS and at least a bounded holdout before any
+building-height calibration. No full original provider SHA256 from 40GB
+data was established by the range reads.
