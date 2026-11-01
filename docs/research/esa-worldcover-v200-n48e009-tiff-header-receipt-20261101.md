@@ -70,6 +70,47 @@ source raster format, but does not on its own establish spatial ground
 resolution, source-cell accuracy or the ability to link any insurance
 exposure to a particular pixel.
 
+## GeoTIFF header-only EPSG:4326 grid validation — 2026-11-01 15:29 UTC
+
+The separate bounded decoder `scripts/parse_worldcover_geotiff_grid_v0.py`
+now parses ModelPixelScale (`33550`), ModelTiepoint (`33922`) and
+GeoKeyDirectory (`34735`) **only when all referenced source bytes remain
+within the existing 4,096-byte acquisition**.
+
+[GitHub Actions run 41321446759](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41321446759)
+executed the actual fixed provider response after **14** passing synthetic
+negative and positive tests. Original sample SHA-256 was unchanged:
+`a74fc1ff4733c3afff09328e014c0731eba2f1912f3f5cbc330ed0700f3f3529`.
+
+The real sampled header explicitly declares:
+
+- Geographic CRS key EPSG:**4326** (GeoKey `2048`); model type 2
+  (geographic), raster type 1 (PixelIsArea).
+- X and Y pixel scales: `0.00008333333333333333` geographic degrees
+  per pixel; this is a *degrees* scale, not uniform 10 metres on the ground.
+- A single georeference tiepoint `(i,j,k)=(0,0,0)` with
+  `(longitude,latitude,z)=(9,51,0)`.
+- Source dimensions 36,000 by 36,000; deriving the extent yields
+  `west=9°E, south=48°N, east=12°E, north=51°N`, matching
+  the ESA WorldCover v200 `N48E009` source tile.
+- `geo_grid_verified_from_prefix_only=true`;
+  `full_original_sha256_verified=false`,
+  `cog_layout_verified=false`, `crs_verified=false`,
+  `raster_values_inspected=false`, `model_input_approved=false`.
+- UTC `2026-11-01T15:29:39.892788+00:00`.
+- Parser code SHA-256:
+  `d35c15b32e7ba4f3943f8ac64826b0c44a874a3fd99448fa0eeaa3a0b64eaeaa`.
+
+**Precise claim boundary:** this independently verifies the source's
+*declared raster georeference inside the exact 4 KiB prefix* and the
+internally consistent geographic bounds. It does not constitute a
+full original-object, GeoTIFF-conformance/COG or land-cover-pixel
+validation, so the pre-existing full-artifact `crs_verified=false`
+flag is intentionally not promoted. All out-of-range TIFF references,
+nonfinite scale/tiepoint values and malformed key counts are rejected
+or treated as unknown rather than dereferenced. No geographic building
+lookup and no model exposure/loss record were created.
+
 ## Provider rights, reproducibility and narrow next step
 
 Official source: [ESA WorldCover data access](https://esa-worldcover.org/en/data-access);
