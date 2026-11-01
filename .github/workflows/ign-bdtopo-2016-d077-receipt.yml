@@ -77,9 +77,31 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/ign-2016-bati"
+          python - <<'PY' > "$RUNNER_TEMP/ign-2016-member-arguments.txt"
+          from pathlib import Path
+          import os
+          import re
+          source = Path(os.environ["RUNNER_TEMP"], "ign_2016_contents.txt").read_text(errors="replace")
+          found = []
+          for line in source.splitlines():
+              if not line.startswith("Path = "):
+                  continue
+              member = line.removeprefix("Path = ")
+              if re.search(
+                  r"/E_BATI/(BATI_INDIFFERENCIE|BATI_INDUSTRIEL|BATI_REMARQUABLE)[.](SHP|SHX|DBF|PRJ)$",
+                  member,
+              ):
+                  found.append(member)
+          if len(found) != 12 or len(set(found)) != 12:
+              raise SystemExit(f"BLOCKED: expected 12 exact buildings SHP components, saw {len(found)}")
+          for member in sorted(found):
+              print(member)
+          PY
+          mapfile -t historical_members < "$RUNNER_TEMP/ign-2016-member-arguments.txt"
           7z e -bd -bso0 -y "-o$RUNNER_TEMP/ign-2016-bati" \
-            "$RUNNER_TEMP/$ARCHIVE_NAME" \
-            "BATI_INDIFFERENCIE.*" "BATI_INDUSTRIEL.*" "BATI_REMARQUABLE.*" -r
+            "$RUNNER_TEMP/$ARCHIVE_NAME" "${historical_members[@]}"
+          echo "extracted_component_names:"
+          find "$RUNNER_TEMP/ign-2016-bati" -maxdepth 1 -type f -printf "%f\\n" | sort
           python -m pip install --no-input --disable-pip-version-check \
             -r requirements-eu-flood-spatial.txt "pyshp==2.3.1"
           python -m unittest tests.test_fr_bdtopo_2016_d077_bounded_buildings_v0 -v
@@ -89,4 +111,4 @@ jobs:
         if: always()
         run: |
           rm -f "$RUNNER_TEMP/BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z"
-          rm -rf "$RUNNER_TEMP/ign-2016-bati" "$RUNNER_TEMP/ign_2016_contents.txt"
+          rm -rf "$RUNNER_TEMP/ign-2016-bati" "$RUNNER_TEMP/ign_2016_contents.txt" "$RUNNER_TEMP/ign-2016-member-arguments.txt"
