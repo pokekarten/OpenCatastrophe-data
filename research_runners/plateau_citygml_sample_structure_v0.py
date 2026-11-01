@@ -18,10 +18,16 @@ import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from research_runners.plateau_citygml_catalogue_preflight_v0 import (
-    CataloguePreflightError,
-    read_local_metadata,
-)
+if __package__:
+    from .plateau_citygml_catalogue_preflight_v0 import (
+        CataloguePreflightError,
+        read_local_metadata,
+    )
+else:
+    from plateau_citygml_catalogue_preflight_v0 import (
+        CataloguePreflightError,
+        read_local_metadata,
+    )
 
 MAX_GML_BYTES = 4 * 1024 * 1024
 MAX_XML_ELEMENTS = 50_000
