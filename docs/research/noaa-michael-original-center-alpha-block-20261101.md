@@ -40,7 +40,7 @@ With the exact raster block envelope above and the same public FEMA layer `servi
 
 A previously executed **legacy ArcGIS `esriGeometryEnvelope`** query over the full STAC bbox returned **8** `AFF` assessments, with coarse west/east legacy envelope counts 8/0. This was **not a true geographic WGS84 polygon count**: a corrected closed-ring `esriGeometryPolygon` query returned **7** for the full tile, all `AFF`. FEMA's native CRS is EPSG:32616; overinclusive transformed envelopes can produce non-additive counts. The seven still have **no proven alpha-visible pixels**; never interpret the older eight as exact spatial overlap.
 
-The zero count over a proven all-transparent block is **consistent** with zero available assessments there. It does **not** demonstrate that the eight assessments elsewhere are covered by visible pixels, are independently labeled or correspond to unique buildings.
+The zero count over a proven all-transparent block is **consistent** with zero available assessments there. It does **not** demonstrate that the seven true-polygon assessments elsewhere are covered by visible pixels, independently labeled or correspond to unique buildings.
 
 ## Two additional byte-verified source blocks and measured minimum file extent
 
