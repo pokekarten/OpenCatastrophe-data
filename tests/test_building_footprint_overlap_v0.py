@@ -3,6 +3,7 @@
 """Offline synthetic-only building-footprint overlap regressions."""
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -10,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts.building_footprint_overlap_v0 import compare, FootprintError
 
@@ -117,6 +119,32 @@ class BuildingOverlapTests(unittest.TestCase):
         r = self.compare()
         self.assertEqual(r["counts"]["high_iou_unique_matches"], 0)
         self.assertEqual(r["counts"]["right_without_any_geometric_intersection"], 1)
+
+    def test_dense_geometry_candidate_budget_fails_closed(self):
+        # 142 x 142 = 20,164 bounding-box candidate pairs, over the 20k budget.
+        polygon = rect(4e6, 3e6, 4e6 + 20, 3e6 + 20)
+        write(self.a, [(f"A{i}", polygon) for i in range(142)])
+        write(self.b, [(f"B{i}", polygon) for i in range(142)])
+        with self.assertRaisesRegex(FootprintError, "candidate-pair budget"):
+            self.compare()
+
+    def test_hash_is_bound_to_exact_parsed_buffer_under_file_mutation(self):
+        polygon = rect(4e6, 3e6, 4e6 + 20, 3e6 + 20)
+        write(self.a, [("A", polygon)])
+        write(self.b, [("B", polygon)])
+        original_bytes = self.a.read_bytes()
+        original_reader = Path.read_bytes
+
+        def read_and_replace(path):
+            captured = original_reader(path)
+            if path == self.a:
+                path.write_text("mutated after read: not GeoJSON", encoding="utf-8")
+            return captured
+
+        with patch.object(Path, "read_bytes", read_and_replace):
+            result = self.compare()
+        self.assertEqual(result["left_sha256"], hashlib.sha256(original_bytes).hexdigest())
+        self.assertEqual(result["counts"]["high_iou_unique_matches"], 1)
 
     def test_cli_is_deterministic_and_has_no_raw_matches(self):
         write(self.a, [("A", rect(4e6, 3e6, 4e6 + 20, 3e6 + 20))])
