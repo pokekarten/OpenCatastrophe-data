@@ -40,6 +40,6 @@ jobs:
         run: python -m pip install --disable-pip-version-check --no-input -r requirements-eu-flood-spatial.txt
       - name: Offline source schema, feature count and 1:1 topology tests
         run: python -m unittest tests.test_berlin_alkis_lod2_complete_bbox_v0 -v
-      - name: Two reviewed complete original source populations with duplicate-footprint quarantine and matched-role QA
+      - name: Two fixed WFS source populations, duplicate quarantine and safe role-domain vocabulary receipt
         if: github.event_name != 'pull_request'
         run: python -m research_runners.berlin_alkis_lod2_complete_bbox_v0 --live
