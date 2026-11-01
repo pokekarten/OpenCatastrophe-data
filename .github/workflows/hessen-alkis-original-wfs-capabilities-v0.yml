@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Hessen direct original ALKIS Building WFS capabilities 2.0
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/probe_hessen_alkis_wfs_capabilities_v0.py'
+      - 'tests/test_probe_hessen_alkis_wfs_capabilities_v0.py'
+      - '.github/workflows/hessen-alkis-original-wfs-capabilities-v0.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hessen-alkis-direct-wfs-capabilities-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-wfs-capabilities:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact tested repository revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Offline bounded XML and source HTTP negative tests
+        run: python -m unittest tests.test_probe_hessen_alkis_wfs_capabilities_v0 -v
+      - name: One fixed direct Hessen WFS 2.0 original capabilities GET
+        run: python -m scripts.probe_hessen_alkis_wfs_capabilities_v0 --live
