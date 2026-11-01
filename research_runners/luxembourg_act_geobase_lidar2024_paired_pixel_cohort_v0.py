@@ -111,9 +111,12 @@ def paired_pixel_diagnostic(roof_polygons, building_polygons, terrain, surface,
         raise PairedSourceError("Invalid bounded pair / raster cohort dimensions")
     if not study.is_valid or study.is_empty or study.area<=0:
         raise PairedSourceError("Invalid equal-area study region")
+    # CRITICAL: source polygons must be matched in their full native shape.
+    # Clipping to 100m can artificially inflate IoU for nearby large,
+    # differently segmented objects and create false 1:1 candidates.
+    pairs=strict_spatial_pairs(roof_polygons,building_polygons)
     roofs=[g.intersection(study) for g in roof_polygons]
     buildings=[g.intersection(study) for g in building_polygons]
-    pairs=strict_spatial_pairs(roofs,buildings)
     if pairs["unique_uncontested_spatial_pairs"]<1:
         raise PairedSourceError("No uncontested high-IoU original source candidates")
 
