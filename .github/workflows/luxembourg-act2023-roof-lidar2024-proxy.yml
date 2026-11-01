@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg ACT2023 original roofs clipped LiDAR2024 source pixels
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_act2023_roof_lidar2024_proxy_v0.py'
+      - 'tests/test_luxembourg_act2023_roof_lidar2024_proxy_v0.py'
+      - '.github/workflows/luxembourg-act2023-roof-lidar2024-proxy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-act-roof-raster-proxy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout reviewed fixed original source gate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install fixed optional spatial research runtime
+        run: |
+          python -m pip install --disable-pip-version-check --no-input \
+            rasterio==1.5.0 numpy==2.3.5 pyproj==3.7.2 shapely==2.1.2
+          python -m pip check
+      - name: Run synthetic roof mask, overlap, and source quality tests
+        run: python -m unittest tests.test_luxembourg_act2023_roof_lidar2024_proxy_v0 -v
+      - name: Validate exact original ACT2023 roof GPKG and read only 100m LiDAR COG windows
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          zip="$RUNNER_TEMP/act2023v2-original-roof.zip"
+          gpkg="$RUNNER_TEMP/act2023v2-original-roof.gpkg"
+          export ZIP="$zip" GPKG="$gpkg"
+          trap 'rm -f "$zip" "$gpkg"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 --retry 0 \
+            --max-filesize 115343360 --output "$zip" \
+            'https://download.data.public.lu/resources/base-de-donnees-nationale-des-batiments-3d-2023/20260317-160936/act2023v2-buildings3d-footprints.gpkg.zip'
+          python scripts/luxembourg_gpkg_zip_preflight_v0.py \
+            --source-zip "$zip" \
+            --sha256 a271b1cbcc22ded018f9bab0c150e9f33efa6cb7ebca8cf4dc4bdb1f5d84859a > /dev/null
+          python - <<'PY'
+          import hashlib,os,shutil
+          from pathlib import Path
+          from zipfile import ZipFile
+          zipfile=Path(os.environ["ZIP"])
+          gpkg=Path(os.environ["GPKG"])
+          with ZipFile(zipfile) as archive:
+              members=[m for m in archive.infolist()
+                       if m.filename.lower().endswith(".gpkg") and not m.is_dir()]
+              if len(members)!=1 or not 0<members[0].file_size<=256*1024*1024:
+                  raise SystemExit("BLOCKED: unexpected ACT2023v2 original GeoPackage member")
+              with archive.open(members[0]) as inp,gpkg.open("xb") as out:
+                  shutil.copyfileobj(inp,out,length=1024*1024)
+          with gpkg.open("rb") as inp:
+              got=hashlib.file_digest(inp,"sha256").hexdigest()
+          if got!="9765b04eaeb9332aa606b8dca44031116588e285553aab061d61037938a002bf":
+              raise SystemExit("BLOCKED: source GPKG original byte digest drift")
+          PY
+          python -m research_runners.luxembourg_act2023_roof_lidar2024_proxy_v0 \
+            --act2023-gpkg "$gpkg"
+          # No original source, pixels, IDs, roof medians or geometry persisted in GitHub or Neon.
