@@ -89,6 +89,41 @@ class AccessSyncTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "expected a JSON array"):
             compare({"path": "access/x.json"}, [db()])
 
+    def test_duplicate_object_keys_fail_closed_at_cli_boundary(self):
+        """JSON parser must not silently replace a duplicated SHA or path."""
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            g = root / "github.json"
+            n = root / "neon.json"
+            n.write_text(json.dumps([db()]), encoding="utf-8")
+            args = ["--github-inventory", str(g), "--neon-export", str(n)]
+            # Two otherwise valid hashes with the same object key: last-wins is unsafe.
+            g.write_text(
+                '[{"type":"file","path":"access/example.source.json",'
+                '"sha":"' + SHA_A + '","sha":"' + SHA_B + '"}]',
+                encoding="utf-8",
+            )
+            self.assertEqual(main(args), 1)
+            g.write_text(json.dumps([git()]), encoding="utf-8")
+            n.write_text(
+                '[{"git_path":"access/example.source.json",'
+                '"git_blob_sha":"' + SHA_A + '","git_blob_sha":"' + SHA_B + '",'
+                '"classification":"access_contract",'
+                '"source_key":"access:example.source"}]',
+                encoding="utf-8",
+            )
+            self.assertEqual(main(args), 1)
+            # Reject nested ambiguous keys too; source metadata must be unambiguous.
+            n.write_text(
+                '[{"git_path":"access/example.source.json",'
+                '"git_blob_sha":"' + SHA_A + '",'
+                '"classification":"access_contract",'
+                '"source_key":"access:example.source",'
+                '"notes":{"status":"reviewed","status":"unreviewed"}}]',
+                encoding="utf-8",
+            )
+            self.assertEqual(main(args), 1)
+
     def test_cli_return_codes_without_network_or_sql(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
