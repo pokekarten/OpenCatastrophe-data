@@ -148,6 +148,67 @@ def complete_las_header(prefix:bytes, remainder:bytes, preliminary:dict) -> dict
     }
 
 
+MAX_PUBLIC_VLR_BYTES=32768
+
+
+def inspect_public_vlrs(content:bytes, *, declared_count:int,
+                        public_point_offset:int, las_header_size:int,
+                        selected_laz_size:int) -> dict:
+    """Read LAS public VLRs only: no source point records, class counts or coordinates."""
+    if (not isinstance(content,bytes) or not 0<len(content)<=MAX_PUBLIC_VLR_BYTES
+        or not 1<=declared_count<=512 or
+        len(content)!=public_point_offset-las_header_size):
+        raise LAZHeaderError("Unbounded/missing original public LAS VLR section")
+    pos=0
+    vlr_codes=[]
+    copc_info=None
+    for i in range(declared_count):
+        if pos+54>len(content):
+            raise LAZHeaderError("Truncated original LAS VLR header")
+        reserved,who,record_id,body_bytes,description=struct.unpack_from(
+            "<H16sHH32s",content,pos
+        )
+        try:
+            owner=who.split(b"\0",1)[0].decode("ascii")
+        except UnicodeError as exc:
+            raise LAZHeaderError("Unparseable original VLR type") from exc
+        end=pos+54+body_bytes
+        if end>len(content):
+            raise LAZHeaderError("VLR payload passes public point-data offset")
+        vlr_codes.append((owner,record_id))
+        if owner=="copc" and record_id==1:
+            if i!=0 or body_bytes!=160 or copc_info is not None:
+                raise LAZHeaderError("COPC info VLR is misplaced or wrong size")
+            data=content[pos+54:end]
+            nums=struct.unpack("<5d2Q2d11Q",data)
+            if (not all(__import__("math").isfinite(x) for x in (*nums[:5],*nums[7:9]))
+                or nums[3]<=0 or nums[4]<=0
+                or nums[5]<=public_point_offset
+                or not 32<=nums[6]<=MAX_PUBLIC_VLR_BYTES
+                or nums[5]+nums[6]>selected_laz_size
+                or any(nums[9:])
+                or nums[7]>nums[8]):
+                raise LAZHeaderError("COPC hierarchy location, extents or reserved bytes invalid")
+            copc_info={
+                "copc_info_vlr_first_and_160_bytes_verified":True,
+                "copc_root_hierarchy_offset_within_selected_laz":nums[5],
+                "copc_root_hierarchy_size_bytes":nums[6],
+                "root_hierarchy_page_downloaded":False,
+            }
+        pos=end
+    if pos<len(content) and any(content[pos:]):
+        raise LAZHeaderError("Unexpected nonzero public LAS VLR padding")
+    return {
+        "public_las_vlr_region_bytes_checked":len(content),
+        "actual_public_vlr_headers_checked":declared_count,
+        "copc_info_vlr_verified":bool(copc_info),
+        "copc_root_hierarchy_metadata":copc_info,
+        "copc_hierarchy_page_entries_read":False,
+        "actual_point_cloud_class_values_read":False,
+        "source_horizontal_or_vertical_epsg_verified":False,
+    }
+
+
 def inspect(opener=None):
     opener=opener or build_opener(NoRedirect())
     raw=read_http(opener,_request(OFFICIAL_API+CITY_RESOURCE_ID+"/"),
@@ -216,6 +277,19 @@ def inspect(opener=None):
         range_expected=(data_start+110,end,CITY_ORIGINAL_BYTES))
     base["las_header_verified"]=True
     base.update(complete_las_header(first,rem,preliminary))
+    public_bytes=preliminary["point_data_offset"]-preliminary["header_size"]
+    if not 0<public_bytes<=MAX_PUBLIC_VLR_BYTES:
+        raise LAZHeaderError("Original public LAS VLR region exceeds reviewed 32 KiB budget")
+    start_vlr=data_start+preliminary["header_size"]
+    end_vlr=start_vlr+public_bytes-1
+    vlrs=read_http(opener,_request(url,start=start_vlr,end=end_vlr),
+        status=206,limit=public_bytes,
+        range_expected=(start_vlr,end_vlr,CITY_ORIGINAL_BYTES))
+    base.update(inspect_public_vlrs(
+        vlrs,declared_count=preliminary["vlr_count"],
+        public_point_offset=preliminary["point_data_offset"],
+        las_header_size=preliminary["header_size"],
+        selected_laz_size=member["uncompressed"]))
     return base
 
 
