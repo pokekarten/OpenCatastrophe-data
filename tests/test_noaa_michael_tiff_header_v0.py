@@ -11,6 +11,9 @@ import unittest
 import zlib
 
 from research_runners.noaa_michael_stac_preflight_v0 import STAC_ROOT
+from research_runners.noaa_fema_envelope_overlap_v0 import (
+    EnvelopeOverlapError, build_proven_transparent_block_query,
+)
 from research_runners.noaa_michael_alpha_tile_probe_v0 import (
     AlphaTileProofError, probe_zero_block,
 )
@@ -280,6 +283,47 @@ class NOAAOriginalDeflateAlphaTileTests(unittest.TestCase):
         with self.assertRaisesRegex(AlphaTileProofError, "excess"):
             probe_zero_block(header_with_tile_payload(180, len(trailing)),
                              item(), 180, trailing)
+
+    def test_source_proven_transparent_tile_builds_only_count_query(self):
+        comp = zlib.compress(bytes(512 * 512 * 4), level=6)
+        header = header_with_tile_payload(180, len(comp))
+        q = build_proven_transparent_block_query(item(), header, 180, comp)
+        self.assertEqual(q["original_raster_block_index"], 180)
+        self.assertTrue(q["block_fully_transparent_proven"])
+        self.assertEqual(q["query"]["where"],
+                         "DIS_NUMBER = 'DR-4399' AND ASMT_TYPE = 'RS' AND DMG_TYPE = 'WI'")
+        self.assertEqual(q["query"]["inSR"], "4326")
+        self.assertEqual(q["query"]["returnCountOnly"], "true")
+        self.assertEqual(q["query"]["returnGeometry"], "false")
+        bbox = [float(v) for v in q["query"]["geometry"].split(",")]
+        source = item()["bbox"]
+        expected = [
+            source[0] + 4608 * (source[2] - source[0]) / 9340,
+            source[3] - 5120 * (source[3] - source[1]) / 9340,
+            source[0] + 5120 * (source[2] - source[0]) / 9340,
+            source[3] - 4608 * (source[3] - source[1]) / 9340,
+        ]
+        for a, b in zip(bbox, expected):
+            self.assertAlmostEqual(a, b, places=10)
+        self.assertFalse(q["independent_fema_label_source_proven"])
+        self.assertFalse(q["model_input_admitted"])
+        self.assertNotIn("image_bytes", q)
+        self.assertNotIn("features", q["query"])
+
+    def test_nonzero_block_cannot_build_proven_transparent_query(self):
+        rgba = bytearray(512 * 512 * 4)
+        rgba[3] = 1
+        compressed = zlib.compress(rgba)
+        header = header_with_tile_payload(180, len(compressed))
+        with self.assertRaisesRegex(EnvelopeOverlapError, "not proven transparent"):
+            build_proven_transparent_block_query(item(), header, 180, compressed)
+
+    def test_unmatched_tile_length_blocks_source_spatial_query(self):
+        comp = zlib.compress(bytes(512 * 512 * 4), level=6)
+        with self.assertRaisesRegex(EnvelopeOverlapError, "did not pass proof"):
+            build_proven_transparent_block_query(
+                item(), header_with_tile_payload(180, len(comp) + 1), 180, comp
+            )
 
     def test_tiff_header_does_not_prove_another_asset(self):
         comp = zlib.compress(bytes(512 * 512 * 4))
