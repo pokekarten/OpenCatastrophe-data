@@ -190,7 +190,7 @@ def evaluate(alkis_raw:bytes, height_raw:bytes)->dict:
     pairs=[(i,j) for i,j in candidates if ac[i]==1 and hc[j]==1]
     ambiguous=sum(count>1 for count in ac.values())+sum(count>1 for count in hc.values())
     non_null={field:0 for field in FIELDS}
-    roles={"Gebäude":0,"Bauteil":0,"unknown":0}
+    roles={"Gebäude":0,"Bauteil":0,"Gebäudeteil":0,"unknown":0}
     hpositive=0
     h3=0
     for p in hp:
@@ -203,6 +203,7 @@ def evaluate(alkis_raw:bytes, height_raw:bytes)->dict:
         role=p.get("role_txt")
         if type(role) is str and role.strip().casefold()=="gebäude":roles["Gebäude"]+=1
         elif type(role) is str and role.strip().casefold()=="bauteil":roles["Bauteil"]+=1
+        elif type(role) is str and role.strip().casefold()=="gebäudeteil":roles["Gebäudeteil"]+=1
         else:roles["unknown"]+=1
         v=p.get("hoehe")
         if type(v) in (int,float) and math.isfinite(v) and 0<v<1000:
@@ -212,7 +213,7 @@ def evaluate(alkis_raw:bytes, height_raw:bytes)->dict:
     # aggregate counts, never indexed building rows, source values, or IDs.
     # A near-identical 2022 roof source footprint is NOT an insured asset
     # and a positive height that differs from 3m is NOT measured ground truth.
-    matched_roles={"Gebäude":0,"Bauteil":0,"unknown":0}
+    matched_roles={"Gebäude":0,"Bauteil":0,"Gebäudeteil":0,"unknown":0}
     matched_height_positive=0
     matched_height_possible_3m=0
     matched_height_positive_not_3m=0
@@ -227,6 +228,9 @@ def evaluate(alkis_raw:bytes, height_raw:bytes)->dict:
             role="Gebäude"
         elif type(label) is str and label.strip().casefold()=="bauteil":
             role="Bauteil"
+        elif type(label) is str and label.strip().casefold()=="gebäudeteil":
+            # Source literal only: never equate a part to an insured building.
+            role="Gebäudeteil"
         else:
             role="unknown"
         matched_roles[role]+=1
@@ -256,6 +260,8 @@ def evaluate(alkis_raw:bytes, height_raw:bytes)->dict:
         "role_domain_candidate_terms_not_provider_approved":True,
         "unknown_role_terms_remain_unadmitted":True,
         "matched_height_source_role_counts":matched_roles,
+        "matched_source_gebaeudeteil_not_whole_building_count":matched_roles["Gebäudeteil"],
+        "source_role_label_not_equivalent_to_insured_building":True,
         "matched_positive_numeric_height_count":matched_height_positive,
         "matched_exact_3m_possible_placeholder_count":matched_height_possible_3m,
         "matched_positive_non3m_height_count_not_proven_measured":matched_height_positive_not_3m,
