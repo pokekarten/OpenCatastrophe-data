@@ -164,7 +164,8 @@ def _open(req: request.Request, timeout: int):
     return client.open(req, timeout=timeout)
 
 
-def probe(*, open_request=_open, contract_path: Path = CONTRACT_PATH) -> dict:
+def probe(*, open_request=_open, contract_path: Path = CONTRACT_PATH,
+          tile_table_preflight: bool = False) -> dict:
     timeout, contract_hash = reviewed_contract(contract_path)
     req = request.Request(
         URL, method="GET",
@@ -205,13 +206,15 @@ def probe(*, open_request=_open, contract_path: Path = CONTRACT_PATH) -> dict:
         )
     except GeoGridBlocked as exc:
         raise HeaderBlocked("malformed geospatial metadata within exact TIFF header") from exc
-    from scripts.inspect_worldcover_tile_table_preflight_v0 import (
-        TileTableBlocked, inspect_tile_table_locations,
-    )
-    try:
-        table_plan = inspect_tile_table_locations(raw, header=shape)
-    except TileTableBlocked as exc:
-        raise HeaderBlocked("TIFF tile-array metadata failed bounded preflight") from exc
+    table_plan = {}
+    if tile_table_preflight:
+        from scripts.inspect_worldcover_tile_table_preflight_v0 import (
+            TileTableBlocked, inspect_tile_table_locations,
+        )
+        try:
+            table_plan = inspect_tile_table_locations(raw, header=shape)
+        except TileTableBlocked as exc:
+            raise HeaderBlocked("TIFF tile-array metadata failed bounded preflight") from exc
     return {
         "profile": "oc-esa-worldcover-v200-tiff-header-v0",
         "source_id": SOURCE,
@@ -244,11 +247,14 @@ def probe(*, open_request=_open, contract_path: Path = CONTRACT_PATH) -> dict:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--live", action="store_true")
+    ap.add_argument("--tile-table-preflight", action="store_true",
+                    help="inspect only first IFD tile-array pointers in already fixed 4 KiB sample")
     args = ap.parse_args(argv)
     if not args.live:
         ap.error("network is disabled by default; explicitly specify --live")
     try:
-        print(json.dumps(probe(), sort_keys=True, allow_nan=False))
+        print(json.dumps(probe(tile_table_preflight=args.tile_table_preflight),
+                         sort_keys=True, allow_nan=False))
     except (HeaderBlocked, ValueError, OSError) as exc:
         print(json.dumps({"status": "BLOCKED", "reason": str(exc),
                           "model_input_approved": False}), file=sys.stderr)
