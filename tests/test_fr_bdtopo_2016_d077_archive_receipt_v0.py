@@ -3,6 +3,7 @@
 """Synthetic only: never fetch or store any original IGN third-party bytes."""
 import hashlib
 import json
+import tomllib
 from pathlib import Path
 import sys
 import tempfile
@@ -104,12 +105,12 @@ class ArchiveReceiptTests(unittest.TestCase):
             inspect_archive(self.path, self.meta)
 
     def test_provenance_descriptor_is_research_only(self):
-        meta_path = ROOT / "landscape" / "fr_bdtopo_d077_2016_archive_candidate_v0.jsonl"
-        source = json.loads(meta_path.read_text(encoding="utf-8"))
+        meta_path = ROOT / "landscape" / "fr_bdtopo_d077_2016_archive_candidate_v0.toml"
+        source = tomllib.loads(meta_path.read_text(encoding="utf-8"))
         self.assertEqual(source["mirror_listed_size_bytes"], 110738399)
         self.assertEqual(source["archive_filename"], NAME)
         self.assertFalse(source["model_input_approved"])
-        self.assertIsNone(source["original_sha256"])
+        self.assertIsNone(source.get("original_sha256"))
         self.assertTrue(source["full_archive_downloaded_or_original_bytes_hashed"])
         self.assertEqual(source["mirror_full_archive_sha256_verified_in_ci"], "ab3e1bab127d0e71e372d736572d80e6a8a9578131992475c23a1f0ee1871a06")
 
