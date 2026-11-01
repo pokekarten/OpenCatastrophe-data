@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg LiDAR2024 COG BigTIFF tiled metadata range-only
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_lidar2024_bigtiff_ifd_v0.py'
+      - 'tests/test_luxembourg_lidar2024_bigtiff_ifd_v0.py'
+      - '.github/workflows/luxembourg-lidar2024-bigtiff-ifd.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  original-cog-bigtiff-metadata:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Checkout reviewed immutable action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Fully synthetic bounded remote TIFF parsing tests
+        run: python -m unittest tests.test_luxembourg_lidar2024_bigtiff_ifd_v0 -v
+      - name: Fixed official MNT BigTIFF IFD source metadata with 64KiB cap
+        run: python -m research_runners.luxembourg_lidar2024_bigtiff_ifd_v0 --asset MNT
+      - name: Fixed official MNS BigTIFF IFD source metadata with 64KiB cap
+        run: python -m research_runners.luxembourg_lidar2024_bigtiff_ifd_v0 --asset MNS
+      # No GDAL, raw COG upload, extracted raster pixels, building IDs or model input.
