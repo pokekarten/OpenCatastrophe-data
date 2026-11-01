@@ -89,7 +89,7 @@ class HessenCapabilitiesTests(TestCase):
             b"<ExceptionReport/>",
             b"<WFS_Capabilities version='2.0.0'/>",
             fixture(version="1.1.0"),
-            b'<!DOCTYPE a [<!ENTITY x SYSTEM "file:///etc/passwd">]>'+fixture(),
+            b'<!DOCTYPE a [<!ENTITY x SYSTEM "https://example.invalid/entity.dtd">]>'+fixture(),
             b"<broken>",
             b"<x/>"*7,
             fixture().replace(b"bu-core2d:Building", b"../../unsafe"),
