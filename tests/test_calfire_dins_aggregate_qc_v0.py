@@ -24,6 +24,8 @@ def sample(year: int = 2022, n: int = 10) -> dict:
         "origin": "synthetic",
         "source_snapshot_sha256": None,
         "inspection_frame": "calfire_dins_inspected_structures",
+        "hazard_type": "Fire",
+        "event_year_basis": "INCIDENTSTARTDATE",
         "contains_feature_rows": False,
         "damage_counts": {state: n for state in DAMAGE_STATES},
     }
@@ -80,6 +82,18 @@ class DinsAggregateTests(unittest.TestCase):
     def test_reject_extra_address(self):
         obj = sample()
         obj["SITEADDRESS"] = "synthetic 1"
+        with self.assertRaises(DinsAggregateError):
+            parsed(obj)
+
+    def test_reject_non_fire_hazard(self):
+        obj = sample()
+        obj["hazard_type"] = "Flood"
+        with self.assertRaises(DinsAggregateError):
+            parsed(obj)
+
+    def test_reject_edit_time_as_event_year(self):
+        obj = sample()
+        obj["event_year_basis"] = "EDIT_DATE"
         with self.assertRaises(DinsAggregateError):
             parsed(obj)
 
