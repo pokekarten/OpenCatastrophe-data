@@ -46,9 +46,10 @@ jobs:
             --connect-timeout 20 --max-time 240 --retry 0 \
             --max-filesize 268435456 --output "$source_file" \
             'https://s3.eubucco.com/eubucco/v0.2/buildings/parquet/nuts_id=LU00/LU00.parquet'
-          # This digest is an INITIAL source-byte receipt, NOT independent
-          # provider authenticity verification or an original published hash.
-          original_sha256="$(sha256sum "$source_file" | cut -d' ' -f1)"
+          # Independently observed in the first successful exact-provider
+          # GitHub Actions receipt (run 41307603134). This is a frozen PRIOR
+          # empirical byte pin, not a publisher-signed/authenticated digest.
+          original_sha256="d1e554de9db0b1f747575426ebb950ef96bb8b2956657554b5ff2998a91abe8c"
           python research_runners/eubucco_lu00_lineage_preflight_v0.py \
             --original "$source_file" \
             --source-id eubucco.buildings.v0.2 \
