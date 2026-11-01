@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg LiDAR2024 bounded 250m original COG surface-terrain pilot
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_lidar2024_bounded_cog_window_v0.py'
+      - 'tests/test_luxembourg_lidar2024_bounded_cog_window_v0.py'
+      - '.github/workflows/luxembourg-lidar2024-bounded-cog-window.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-250m-original-cog:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout code at PR HEAD
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up source-science Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Install pinned optional small-COG reader
+        run: |
+          python -m pip install --disable-pip-version-check --no-input rasterio==1.5.0 numpy==2.3.5 pyproj==3.7.2
+          python -m pip check
+      - name: Run synthetic bounded local raster and masked-height tests
+        run: python -m unittest tests.test_luxembourg_lidar2024_bounded_cog_window_v0 -v
+      - name: Validate original HTTP range before bounded GDAL window
+        run: |
+          python -m research_runners.luxembourg_lidar2024_cog_range_capability_v0 --asset MNT
+          python -m research_runners.luxembourg_lidar2024_cog_range_capability_v0 --asset MNS
+      - name: Read only fixed 250m EPSG2169 source COG window and report aggregates
+        run: python -m research_runners.luxembourg_lidar2024_bounded_cog_window_v0 --fixed-luxembourg-window
+      # No full COG, LAZ/ZIP, source pixel grid, feature IDs, addresses or raw provider bytes uploaded.
