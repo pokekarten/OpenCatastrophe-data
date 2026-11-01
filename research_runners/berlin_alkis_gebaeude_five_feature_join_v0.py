@@ -149,10 +149,16 @@ def inspect_building_geojson(raw: bytes) -> tuple[dict, list[tuple[float, float]
         if any(geom.equals(existing) for existing in distinct_geometries):
             raise BerlinBuildingSampleError("duplicate physical building footprint in WFS sample")
         distinct_geometries.append(geom)
-        if not geom.intersects(query_box):
-            raise BerlinBuildingSampleError("building feature is unrelated to exact source query box")
+        # WFS bbox may include a footprint that only touches the query edge
+        # at a line or point. Such a record contributes zero covered area and
+        # must never count as an in-area building exposure candidate.
         if not all(math.isfinite(v) for v in geom.bounds):
             raise BerlinBuildingSampleError("non-finite building coordinates")
+        if not geom.intersects(query_box):
+            raise BerlinBuildingSampleError("building feature is unrelated to exact source query box")
+        in_box_area = float(geom.intersection(query_box).area)
+        if not math.isfinite(in_box_area) or in_box_area <= 0:
+            raise BerlinBuildingSampleError("building footprint has no positive-area overlap with exact source query box")
         x, y = geom.representative_point().coords[0]
         if not (300_000 < x < 500_000 and 5_700_000 < y < 5_950_000):
             raise BerlinBuildingSampleError("source coordinate axis/CRS mismatch")
