@@ -253,7 +253,7 @@ def _apply_contracts(
     result = dict(classification)
     result["contract_ids"] = [item["access_id"] for item in contracts]
     result["contract_statuses"] = sorted({item["status"] for item in contracts})
-    result["contract_probe_modes"] = sorted({item["probe_mode"] for item in contracts})
+    result["contract_probe_modes"] = sorted({item.get("probe_mode", "none") for item in contracts})
     # Repository contracts record reviewed intent, not a timestamped live
     # acquisition receipt or proof that source data are model-usable.
     result["live_data_availability_proven"] = False
