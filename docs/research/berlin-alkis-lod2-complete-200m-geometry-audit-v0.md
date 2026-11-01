@@ -267,3 +267,48 @@ insured buildings. The publisher states LoD2 heights are automatically
 obtained using DOM/bDOM/DGM1 and may fall back to a 3m assumed height:
 <https://www.berlin.de/umweltatlas/nutzung/gebaeudehoehen/fortlaufend-aktualisiert/methode/>.
 No insurer, CAT4 or production height values are admitted.
+
+## First real code-and-description method coverage — 2026-11-01
+
+The reviewed [first-party WFS run 41328878314](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41328878314)
+after [PR #1027](https://github.com/pokekarten/OpenCatastrophe-data/pull/1027)
+**succeeded** on exact merged main commit
+`a967f4cffc9a5484f0bbd00c15c70c0f3f9e8c23`.
+All **17 synthetic specialized tests** passed before the one fixed pair
+of original official WFS requests. UTC receipt
+`2026-11-01T16:56:46.632207+00:00`.
+
+The exact original-source response SHA-256s were:
+
+- ALKIS (18 features):
+  `47b3e6f538bc1f044869ec13a1c67747bf92275646afa3f046ba865d445269cf`.
+- LoD2 2022 (27 features):
+  `f4fd22d07cd7a38e8fbd808bb73de2cf7798a272edefefb5603094c0c0288fc7`.
+- Verified executed research script SHA-256:
+  `2a735bf4b5bc6cd96145c5d7f188cf9375e9d7d11bab4f5702ce09f33729e1d5`.
+
+| Original source method field | All 27 LoD2 records with code **and** description | Six uniquely matched `Gebäudeteil` footprints | Six quarantined LoD2 source records |
+| --- | ---: | ---: | ---: |
+| `quellebodenhoehe` + `quellebodenhoehe_txt` | **27/27** | **6/6** | **6/6** |
+| `quelledachhoehe` + `quelledachhoehe_txt` | **27/27** | **6/6** | **6/6** |
+| `quellelage` + `quellelage_txt` | **27/27** | **6/6** | **6/6** |
+
+Across all three fields and populations, **no** observations
+were classified code-only, description-only or both absent.
+The source polygon comparison remains 18 ALKIS vs 27 LoD2, with
+three quarantined exact-geometry groups (six original LoD2 records),
+six unambiguous geometry matches, all matched as `Gebäudeteil`.
+No source method values, height measurements, individual feature
+identifiers, address/geometry values or original response bytes
+were logged or written to the repository or insurer databases.
+
+**Scientific interpretation:** present method codes and explanatory
+labels are metadata **completeness**, not code↔label correctness,
+independent measurement, absence of default imputation, historic
+building identity or production suitability. In particular,
+`hoehe != 3` does not imply a direct sensor measurement.
+Before assigning calibrated uncertainty or a model-ready exposure,
+the official method-code domains must be independently understood,
+linked to DOM/bDOM/DGM1 methodology, rights reviewed and all
+`Gebäudeteil` source identities handled at the appropriate
+segmentation level. **CAT/model-admitted heights remain zero.**
