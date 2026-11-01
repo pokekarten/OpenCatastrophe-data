@@ -60,6 +60,11 @@ def _unit_class(value: str) -> str:
     canonical = value.strip().strip('"').strip().replace(" ", "").casefold()
     if canonical == "m/s":
         return "verified_unit_m_per_s"
+    if canonical == "m/sec":
+        # Exact source label in the pinned original DWD station metadata.
+        # 'sec' = second, so this is a unit spelling alias, NOT a scale
+        # conversion, and does not establish a device foreign key.
+        return "equivalent_unit_m_per_sec_provider_alias"
     # The provider unit itself is public, but do not emit arbitrary upstream
     # text into Action logs. Classify an explicitly small recognized alphabet.
     if len(value) <= 24 and re.fullmatch(r"[A-Za-z0-9/*.^_ -]+", value):
@@ -104,7 +109,10 @@ def _daily_pair_count(eq: list[dict], params: list[dict]) -> dict:
             ))
             unit_category = _unit_class(p0["Einheit"])
             unit_days[unit_category] += 1
-            if unit_category != "verified_unit_m_per_s":
+            if unit_category not in {
+                "verified_unit_m_per_s",
+                "equivalent_unit_m_per_sec_provider_alias",
+            }:
                 unrecognized_unit_days += 1
             if _positive_height(e0["Geberhoehe ueber Grund [m]"]):
                 plausible_sensor_height_days += 1
@@ -118,6 +126,8 @@ def _daily_pair_count(eq: list[dict], params: list[dict]) -> dict:
         "missing_candidate_pair_days": counts["none"],
         "multiple_candidate_pair_days": counts["multiple"],
         "one_pair_days_with_non_matching_unit": unrecognized_unit_days,
+        "one_pair_days_with_original_m_per_sec_alias":
+            unit_days["equivalent_unit_m_per_sec_provider_alias"],
         "original_parameter_unit_categories_by_candidate_days":
             dict(sorted(unit_days.items())),
         "one_pair_days_with_plausible_unverified_sensor_height": plausible_sensor_height_days,
