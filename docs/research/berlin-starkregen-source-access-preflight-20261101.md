@@ -507,5 +507,55 @@ metadata without committing raw provider bytes. Any required
 larger byte range, internal block decoding or full-source
 hash requires a separate source-specific review.
 
-**First original TIFF-prefix outcome: pending successful main
-workflow source execution.**
+**Original TIFF-source verification: SUCCESS, 2026-11-01.**
+Both exact original-source probes completed successfully in
+[GitHub Actions run 41333661217](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41333661217),
+merged source revision \`d6c06812ac82ff0f7516e66b8e62e10bd1c0545f\`
+and script SHA-256
+\`c2b65f4ff8c4ba10d4e27c1b36d46e615612715e0828159763e84b8d8de0a045\`.
+
+| Actual original TIFF evidence | Extreme | Extraordinary |
+| --- | --- | --- |
+| Original ZIP HTTP 206 source bytes read | **65,536** | **65,536** |
+| SHA-256 of those 65,536 ZIP bytes only | \`9b86b039e4c0915b76f4ea64bc13c201f43483a2585dcdd8f6650d6e1a70579f\` | \`ba22dae2169f3ffab268f9411099e98c5fc3a15cfd8094d6b486b6e9a0c32149\` |
+| Repeat first 512 bytes matched original pinned source receipt | **Yes** | **Yes** |
+| Bounded in-memory TIFF prefix after Deflate | 110,653 bytes | 111,074 bytes |
+| Local decompression 1 MiB cap reached | No | No |
+| Original internal format | Classic TIFF | Classic TIFF |
+| TIFF byte order | Little endian | Little endian |
+| TIFF first IFD offset | **8 bytes** | **8 bytes** |
+| First IFD fully read | Yes | Yes |
+| GeoKeyDirectoryTag and values read | **Yes** | **Yes** |
+| **Internal original TIFF projected EPSG GeoKey** | **25833** | **25833** |
+| Geographic EPSG key separately present | No | No |
+| UTC original source read | 17:52:36.768745 | 17:52:37.928586 |
+| Actual TIFF pixel values interpreted | **No** | **No** |
+| Original ZIP or TIFF data persisted | **No** | **No** |
+
+**CRS evidence resolution, with important scope:** The original
+TIFF's internal \`ProjectedCSTypeGeoKey\` (tag 34735, key 3072)
+explicitly declares **EPSG:25833 on both individual source assets**.
+This agrees with the exact provider Atom child label and conflicts
+with the technical PDF's generalized EPSG:25832 wording.
+For *these two frozen exact source objects*, internal original-file
+GeoKey evidence is stronger than a catalogue-level claim. This
+does **not** prove complete raster georeferencing or scientifically
+approve a spatial overlay: ModelPixelScaleTag (33550),
+ModelTiepointTag (33922), pixel grid bounds, NoData,
+water-depth **units and scale**, physical vertical reference and
+temporal scenario must be independently validated.
+
+The bounded memory read is **not** source TIFF completeness, full
+ZIP CRC/digest, correct pixel values, any historic inundation event,
+property exposure or insurance CAT-model approval. The
+original 2022-named ZIP products have 2025 provider Last-Modified
+headers and 2026 retrieval dates; do not conflate these times.
+Preserve original depth/velocity attribution to BKG, DL-DE-BY 2.0,
+pending product-specific licence review.
+
+**Next source gate:** Require exact original TIFF affine
+pixel scale/tiepoints and sample extent to determine whether
+the Berlin BLD4 study footprint can be geolocated without
+coercing NoData to dry; then independently review depth
+units and the scenario's temporal/vulnerability meaning.
+
