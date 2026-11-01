@@ -36,6 +36,9 @@ jobs:
           python -m pip check
       - name: Offline adversarial two-source metadata/geometry tests
         run: python -m unittest tests.test_berlin_srgk_model_area_pilot_coverage_v0 -v
+      # One reviewed main-only diagnostic retry: hash both original bounded
+      # WFS bodies if returned model polygons do not intersect fixed pilot.
+      # A negative or unfiltered provider response must remain a failed run.
       - name: Two fixed bounded original Berlin SRGK WFS requests
         if: github.event_name != 'pull_request'
         run: python -m research_runners.berlin_srgk_model_area_pilot_coverage_v0 --live

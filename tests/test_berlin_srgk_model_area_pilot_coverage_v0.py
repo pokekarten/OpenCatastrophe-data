@@ -1,8 +1,10 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 """Offline-only adversarial WFS model area coverage tests, no provider requests."""
+import io
 import json
 import unittest
+from contextlib import redirect_stderr
 from datetime import datetime, timezone
 
 from research_runners.berlin_srgk_model_area_pilot_coverage_v0 import (
@@ -119,6 +121,32 @@ class PilotCoverageTests(unittest.TestCase):
             parse_features(control().replace(b"390000", b"NaN"), require_one=True)
         with self.assertRaises(CoverageBlocked):
             parse_features(b"x" * 786433, require_one=True)
+
+    def test_untrusted_bbox_source_emits_hash_only_blocked_diagnostic(self):
+        # Simulate a provider ignoring BBOX and returning the first unrelated
+        # model polygon for BOTH the unfiltered control and pilot queries.
+        unrelated = encoded(document(polygon(370000, 5790000, 371000, 5791000)))
+        calls = []
+        def fake_open(req, timeout):
+            calls.append(req.full_url)
+            return FakeResponse(req.full_url, unrelated)
+
+        stream = io.StringIO()
+        with redirect_stderr(stream), self.assertRaisesRegex(
+            CoverageBlocked, "no positive pilot"
+        ):
+            probe(opener=fake_open)
+        self.assertEqual(calls, [CONTROL_URL, PILOT_URL])
+        receipt = json.loads(stream.getvalue().strip())
+        self.assertTrue(receipt["original_bodies_exactly_identical"])
+        self.assertEqual(receipt["source_diagnostic_status"],
+                         "BLOCKED_UNVERIFIED_SPATIAL_FILTER")
+        self.assertEqual(receipt["original_control_response_sha256"],
+                         receipt["original_pilot_response_sha256"])
+        self.assertFalse(receipt["pilots_have_verified_detailed_model_area"])
+        self.assertFalse(receipt["cat_model_input_approved"])
+        self.assertNotIn("private-source-123", stream.getvalue())
+        self.assertNotIn("370000", stream.getvalue())
 
     def test_no_geometry_leak_in_live_style_metadata_receipt(self):
         calls = []

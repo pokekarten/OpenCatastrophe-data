@@ -184,7 +184,25 @@ def probe(*, opener: Callable = _get,
           clock: Callable = lambda: datetime.now(timezone.utc)) -> dict:
     control = _fetch(CONTROL_URL, opener)
     pilot = _fetch(PILOT_URL, opener)
-    outcome = classify(control, pilot)
+    try:
+        outcome = classify(control, pilot)
+    except CoverageBlocked as exc:
+        # Preserve exact official request identity without leaking polygons or
+        # silently treating an ignored BBOX as real pilot model coverage.
+        print(json.dumps({
+            "profile": PROFILE,
+            "source_diagnostic_status": "BLOCKED_UNVERIFIED_SPATIAL_FILTER",
+            "block_reason": str(exc),
+            "original_control_response_sha256": sha256(control).hexdigest(),
+            "original_pilot_response_sha256": sha256(pilot).hexdigest(),
+            "original_control_bytes": len(control),
+            "original_pilot_bytes": len(pilot),
+            "original_bodies_exactly_identical": control == pilot,
+            "pilots_have_verified_detailed_model_area": False,
+            "water_depth_raster_or_insurer_loss_verified": False,
+            "cat_model_input_approved": False,
+        }, sort_keys=True), file=sys.stderr)
+        raise
     now = clock()
     if not isinstance(now, datetime) or now.utcoffset() is None:
         raise CoverageBlocked("receipt clock must have a timezone")
