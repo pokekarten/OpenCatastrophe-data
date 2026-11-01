@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: DWD original two-station gust lags and exceedance clusters
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/dwd_paired_lag_clusters_v0.py'
+      - 'tests/test_dwd_paired_lag_clusters_v0.py'
+      - '.github/workflows/dwd-paired-lag-clusters.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-lag-and-clusters:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test signed lags, exact pairing, exceedance clusters, quality subset
+        run: |
+          python -m unittest tests.test_dwd_paired_lag_clusters_v0 -v
+          python -m unittest tests.test_dwd_two_station_paired_gust_v0 -v
+
+  pinned-original-lag-analysis:
+    needs: synthetic-lag-and-clusters
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Bounded original two-ZIP verification, aggregate lag and threshold receipt only
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          first="$RUNNER_TEMP/10minutenwerte_extrema_wind_00003_20100101_20110331_hist.zip"
+          second="$RUNNER_TEMP/10minutenwerte_extrema_wind_00348_20100101_20110901_hist.zip"
+          trap 'rm -f "$first" "$second"' EXIT
+          curl --fail --silent --show-error --noproxy '*' \
+            --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+            --max-time 120 --retry 0 --max-filesize 8388608 --output "$first" \
+            'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/historical/10minutenwerte_extrema_wind_00003_20100101_20110331_hist.zip'
+          curl --fail --silent --show-error --noproxy '*' \
+            --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+            --max-time 120 --retry 0 --max-filesize 8388608 --output "$second" \
+            'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/historical/10minutenwerte_extrema_wind_00348_20100101_20110901_hist.zip'
+          python -m scripts.dwd_paired_lag_clusters_v0 \
+            --first-zip "$first" --second-zip "$second"
+          # No raw observations, event times or ZIPs emitted or persisted.
