@@ -102,6 +102,22 @@ jobs:
             "$RUNNER_TEMP/$ARCHIVE_NAME" "${historical_members[@]}"
           echo "extracted_component_names:"
           find "$RUNNER_TEMP/ign-2016-bati" -maxdepth 1 -type f -printf "%f\\n" | sort
+          # The official-era archive stores upper-case SHP/SHX/DBF/PRJ names.
+          # Normalize extensions ONLY in this ephemeral runner to satisfy
+          # the expected standard local .shp/.shx/.dbf/.prj file paths.
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          folder = Path(os.environ["RUNNER_TEMP"], "ign-2016-bati")
+          for family in ("BATI_INDIFFERENCIE", "BATI_INDUSTRIEL", "BATI_REMARQUABLE"):
+              for extension in ("SHP", "SHX", "DBF", "PRJ"):
+                  source = folder / f"{family}.{extension}"
+                  destination = folder / f"{family}.{extension.lower()}"
+                  if not source.is_file() or source.is_symlink() or destination.exists():
+                      raise SystemExit(f"BLOCKED: unexpected historical layer component {source.name}")
+                  source.rename(destination)
+          print("normalized_archived_uppercase_extension_components=12")
+          PY
           python -m pip install --no-input --disable-pip-version-check \
             -r requirements-eu-flood-spatial.txt "pyshp==2.3.1"
           python -m unittest tests.test_fr_bdtopo_2016_d077_bounded_buildings_v0 -v
