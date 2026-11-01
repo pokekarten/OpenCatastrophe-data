@@ -49,8 +49,13 @@ def inspect_tile_table_locations(raw: bytes, *, header: dict) -> dict:
         if type(header.get(field)) is not type(expected) or header[field] != expected:
             raise TileTableBlocked("unreviewed or inconsistent TIFF first-IFD parameters")
 
-    from scripts.probe_esa_worldcover_tiff_header_v0 import inspect_tiff_header
-    parsed = inspect_tiff_header(raw)
+    from scripts.probe_esa_worldcover_tiff_header_v0 import (
+        HeaderBlocked, inspect_tiff_header,
+    )
+    try:
+        parsed = inspect_tiff_header(raw)
+    except HeaderBlocked as exc:
+        raise TileTableBlocked("invalid or duplicate TIFF first-IFD metadata") from exc
     for field, expected in expected_fields.items():
         if parsed.get(field) != expected:
             raise TileTableBlocked("original TIFF bytes disagree with reviewed header semantics")
