@@ -77,6 +77,22 @@ class OneOriginalGmlTests(unittest.TestCase):
         self.assertFalse(result["model_input_approved"])
         self.assertNotIn("9.482",str(result))
 
+    def test_explicit_gml_pos_sequence_instead_of_poslist_is_supported_offline(self):
+        payload=fixture()
+        raw_points=(b"50.515 9.482 50.515 9.484 50.517 9.484 "
+                    b"50.517 9.482 50.515 9.482")
+        pos_tags=b"".join(
+            b"<gml:pos>"+b" ".join(raw_points.split()[i:i+2])+b"</gml:pos>"
+            for i in range(0,len(raw_points.split()),2)
+        )
+        replacement=b'<gml:posList srsDimension="2">'+raw_points+b'</gml:posList>'
+        self.assertIn(replacement,payload)
+        result=gml.inspect_gml_preflight(payload.replace(replacement,pos_tags))
+        self.assertEqual(result["gml_position_count"],5)
+        self.assertTrue(result["all_rings_closed_nondegenerate_and_non_crossing"])
+        self.assertTrue(result["provider_count_discrepancy_remains_blocked"])
+        self.assertFalse(result["model_input_approved"])
+
     def test_interior_ring_count_preserved_not_silently_dropped(self):
         result=gml.inspect_gml_preflight(fixture(hole=True))
         self.assertEqual(result["interior_ring_count"],1)
