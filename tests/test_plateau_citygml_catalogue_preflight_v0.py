@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import copy
 import json
-import re
 import unittest
 from pathlib import Path
 
@@ -351,12 +350,12 @@ class PlateauGraphqlMetadataPreflightTests(unittest.TestCase):
         contract_path = root / "access" / "jp.mlit.plateau.graphql.citygml-shinjuku2024.json"
         contract = json.loads(contract_path.read_text(encoding="utf-8"))
         rules = contract["request_contract"]["parameter_rules"]
-        match = re.search(
-            r"citygmlDatasets\\(input:\\s*\\{cityCodes:\\s*\\[\\\"13104\\\"\\],\\s*years:\\s*\\[2024\\]\\}\\)\\s*\\{([^}]*)\\}",
-            rules,
+        exact = (
+            'citygmlDatasets(input: {cityCodes: ["13104"], years: [2024]}) { '
+            + " ".join(GRAPHQL_CITYGML_FIELD_NAMES)
+            + " }"
         )
-        self.assertIsNotNone(match, "exact Shinjuku/2024 GraphQL query must be documented")
-        self.assertEqual(match.group(1).split(), list(GRAPHQL_CITYGML_FIELD_NAMES))
+        self.assertIn(exact, rules, "fixed Shinjuku 2024 query and selected fields must match")
         self.assertNotIn("fileSize", rules)
         self.assertEqual(contract["probe_contract"]["mode"], "none")
         self.assertEqual(contract["implementation_decision"], "document_only")
