@@ -29,7 +29,7 @@ WFS_LAYER = "alkis_gebaeude:gebaeude"
 RESEARCH_CAT4_APP = 0x43415434  # CAT4; derived non-admission source metadata
 BUILDING_BLD4_APP = 0x424C4434  # BLD4; source-derived, temporary polygons
 BUILDING_PROFILE = "berlin_alkis_five_derived_footprints_cat4_staging_v0"
-HEX_SHA256 = re.compile(r"[0-9a-f]{64}\\Z")
+HEX_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 
 class LineageError(ValueError):
