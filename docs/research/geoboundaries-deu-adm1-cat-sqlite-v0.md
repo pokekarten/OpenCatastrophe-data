@@ -71,3 +71,32 @@ The source's first isolated CAT SQLite run should be documented only after
 a real full-source GitHub Actions execution reports success. Scientific
 model admission still requires explicit data-governance and exposure-schema
 review.
+
+## Verified first-party full-source CAT index run — 2026-11-01
+
+The complete source-pinned original GeoJSON was used in a real GitHub Actions
+run [41314234471](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41314234471)
+at main commit `672f88c945c4352978427bf0dff881aee7b5b9a7`.
+Both reviewed spatial-regression and SQLite integration steps succeeded:
+**16 synthetic tests passed**, then an independently acquired **6,254,151-byte**
+original source was SHA-256 checked against
+`56e069593595c5006e7044d46b023c2afc6b4a109a669b570ee229e758c00682`.
+The original comprised 16 OGC-valid features and 143,969 coordinates.
+
+The first-party stage printed:
+
+- `separate_cat_staging_file_created=true`
+- `indexed_polygons=16`, `db_application_id=1128354865`
+- `represented_year=2021`
+- `source_sha256=56e069593595c5006e7044d46b023c2afc6b4a109a669b570ee229e758c00682`
+- `provider_bytes_committed_to_repository=false`
+- `model_input_admitted=false`
+
+The subsequent real-source spatial smoke test printed:
+`PASS: Munich and Berlin each resolve to distinct DEU ADM1 source polygons`.
+
+This confirms a *working local, ephemeral* 2021 Germany ADM1 CAT spatial
+staging construction and exact point join on original data. The SQLite
+file was deleted after the test and is **not** a persistent shared CAT
+database. No NUTS crosswalk, actual insurer exposure, or worldwide
+coverage is implied.
