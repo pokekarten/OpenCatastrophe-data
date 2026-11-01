@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # AdV PQS v2.4 candidate code lists: versioned historical building method reference
 
 **Official source:** AdV *Produkt- und Qualitätsstandard für 3D-Gebäudemodelle*,
