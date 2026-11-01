@@ -134,6 +134,34 @@ class PlateauLod0RingScreenTests(unittest.TestCase):
         self.assertEqual(r["lod0_geometry_unresolved_property_count"], 1)
         self.assertFalse(r["unreferenced_geometry_resolved"])
 
+    def test_more_than_400_real_style_polygons_are_partial_not_corrupt(self):
+        member = (
+            "<gml:surfaceMember><gml:Polygon>"
+            "<gml:exterior><gml:LinearRing><gml:posList>"
+            + RECT +
+            "</gml:posList></gml:LinearRing></gml:exterior>"
+            "</gml:Polygon></gml:surfaceMember>"
+        )
+        gml = (
+            "<bldg:lod0FootPrint><gml:MultiSurface>"
+            + member * 403 +
+            "</gml:MultiSurface></bldg:lod0FootPrint>"
+        )
+        r = inspect_gml_bytes(fixture(gml))
+        self.assertEqual(r["lod0_footprint_inline_ring_screened_count"], 400)
+        self.assertEqual(r["lod0_polygons_not_screened_due_to_budget"], 3)
+        self.assertEqual(r["lod0_geometry_unresolved_property_count"], 3)
+        self.assertTrue(r["lod0_polygon_screen_budget_exhausted"])
+        self.assertFalse(r["geometry_topology_validated"])
+        self.assertFalse(r["model_input_approved"])
+
+    def test_bad_polygon_in_first_400_remains_blocked(self):
+        valid = lod0(RECT)
+        invalid = lod0("35.66 139.66 20 35.66 139.67 20 "
+                       "35.67 139.67 20 35.66 139.66 20 35.66 139.66 20")
+        with self.assertRaises(CityGMLPreflightError):
+            inspect_gml_bytes(fixture(valid * 399 + invalid))
+
     def test_ring_vertex_limit(self):
         coords = ["35.660 139.660 20"] + [
             f"35.66 {139.660 + j * 0.0000001:.8f} 20"
