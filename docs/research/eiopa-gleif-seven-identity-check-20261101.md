@@ -58,3 +58,29 @@ national authority before changing `identity_resolution_status`.
 metrics, exposure or treaty eligibility. Source original-byte hashes from
 new GLEIF retrievals are not retroactive hashes for the prior EIOPA CSV.
 All CAT model-input gates remain closed.
+
+
+## Original GLEIF HTTP response SHA-256 evidence
+
+A public [GitHub Actions original-source test](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41327623712)
+successfully performed **7 of 7** explicitly bounded GLEIF API reads, following 10
+synthetic fail-closed regression tests. Each original response body was hashed
+**before** extracting the selected fields. The following are hashes of the
+individual GLEIF API responses retrieved on 2026-11-01, **not** hashes of
+EIOPA original CSV files or a permanent assertion that GLEIF records cannot
+change.
+
+| GLEIF LEI | Original response SHA-256 |
+| --- | --- |
+| `213800AEQ6JQDLCWQN31` | `71d4d2fac9f527ba43b104860dc91fa29adabdd5b9526433dc821141cef280be` |
+| `213800LXNGNQ5O1XBW47` | `f8b6668646feb1ce52a9e952e98b996d6c94e3e231ce4b4cc561271b5e144f8e` |
+| `259400VDTC20UW6M5D80` | `27ae892295f9bfe2e0c9dcf952efc42d811956d9779bd706d3f6a1127fb00301` |
+| `529900SURJXJXSY5O039` | `02f7712781985683f908a8b825b39fbcb5a291466f892fac9d1119a44f96c907` |
+| `63670018BQ5R7IKA8T76` | `e8423ea7b5445db25e8c0c40dc85665ee8e0a2c884e58a31d9a6a004776c1ffc` |
+| `7437008CXP8UX8KITQ76` | `8e6efcea65af000158ad526129bc5b1fd8396b0fbd9e675a3157038dc7d54c19` |
+| `95980020140005024486` | `c79fbd361182faa7f1d451342df3a1712a8bdd89300c524dc8b81d5077f4ce84` |
+
+The execution retained no original response bodies in GitHub artifacts.
+All seven reported the same statuses and name/registration review categories
+as above. The results can be replayed only as a new dated observation because
+the GLEIF API may publish newer data. No Neon writing was performed.
