@@ -195,6 +195,7 @@ def _wind_stats(raw: bytes) -> dict:
                         pass
         except (OSError, UnicodeDecodeError, RuntimeError, zipfile.BadZipFile) as exc:
             raise SecondStationBlocked("DWD wind product decompression or text decode failed") from exc
+        member_sha256 = hashlib.sha256(z.read(member)).hexdigest()
     return {
         "observation_rows": row_count,
         "first_observation_utc": first.strftime("%Y-%m-%dT%H:%MZ"),
@@ -204,7 +205,7 @@ def _wind_stats(raw: bytes) -> dict:
         "fx_10_max_mps": str(maximum_gust) if maximum_gust is not None else None,
         "quality_level_distribution": dict(sorted(qn.items())),
         "missing_10minute_slots_between_first_and_last": missing_slots,
-        "product_member_sha256": hashlib.sha256(z.open(member).read()).hexdigest(),
+        "product_member_sha256": member_sha256,
     }
 
 
