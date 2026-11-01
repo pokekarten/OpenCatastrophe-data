@@ -56,7 +56,11 @@ surface-minus-terrain proxy from the very same source raster pixel grid**.
    at the region edge. Admit only full-source IoU ≥0.60 with **no competing
    alternate polygon from either source** at full-source IoU ≥0.20. This yields
    at most one-to-one *spatial candidates*; even complete-source high IoU
-   does not certify the same physical building. Clip only the **raster masks**
+   does not certify the same physical building. Competing source objects are
+   detected when intersection is >=20% of **either** object's original
+   area, consistent with `scripts/building_footprint_overlap_v0.py`.
+   Thus a contained 2m roof fragment can veto a high-IoU building pair
+   despite very low fragment-vs-whole IoU. Clip only the **raster masks**
    after that independent candidate gate.
 3. Read exactly two matching MNT/MNS source raster windows, maximum 200k
    original pixels per raster and matching native source transform.
