@@ -97,6 +97,33 @@ jobs:
       - name: Challenge original Luxembourg EPSG2169 coordinate axis hypotheses with synthetic extents
         run: python -m unittest tests.test_luxembourg_axis_extent_audit_v0 -v
 
+  luxembourg-lidar-inset-spatial:
+    name: Luxembourg LiDAR inset spatial regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact workflow ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Install reviewed spatial and raster dependency profiles
+        run: >-
+          python -m pip install --disable-pip-version-check --no-input
+          -r requirements-eu-flood-spatial.txt
+          -r requirements-cems-geotiff-profile.txt
+          numpy==2.3.5
+      - name: Verify spatial dependencies and fail rather than skip
+        run: |
+          python -m pip check
+          python -c 'import numpy, rasterio, shapely, pyproj'
+      - name: Run all Luxembourg LiDAR inset sensitivity regression cases
+        run: python -m unittest tests.test_luxembourg_lidar2024_footprint_inset_sensitivity_v0 -v
+
   cems-geotiff-profile:
     name: CEMS GeoTIFF profile and support challenge
     runs-on: ubuntu-24.04
@@ -170,7 +197,7 @@ jobs:
   required:
     name: Required
     if: always()
-    needs: [check, glofas-acquisition, cems-geotiff-profile, reuse, dependency-review]
+    needs: [check, glofas-acquisition, luxembourg-lidar-inset-spatial, cems-geotiff-profile, reuse, dependency-review]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
@@ -179,11 +206,13 @@ jobs:
           CHECK_RESULT: ${{ needs.check.result }}
           GLOFAS_ACQUISITION_RESULT: ${{ needs.glofas-acquisition.result }}
           CEMS_GEOTIFF_PROFILE_RESULT: ${{ needs.cems-geotiff-profile.result }}
+          LUX_LIDAR_INSET_RESULT: ${{ needs.luxembourg-lidar-inset-spatial.result }}
           REUSE_RESULT: ${{ needs.reuse.result }}
           DEPENDENCY_REVIEW_RESULT: ${{ needs.dependency-review.result }}
         run: |
           test "$CHECK_RESULT" = "success"
           test "$GLOFAS_ACQUISITION_RESULT" = "success"
           test "$CEMS_GEOTIFF_PROFILE_RESULT" = "success"
+          test "$LUX_LIDAR_INSET_RESULT" = "success"
           test "$REUSE_RESULT" = "success"
           test "$DEPENDENCY_REVIEW_RESULT" = "success" || test "$DEPENDENCY_REVIEW_RESULT" = "skipped"
