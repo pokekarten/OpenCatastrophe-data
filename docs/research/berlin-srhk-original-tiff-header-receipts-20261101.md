@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 **Status: authenticated, limited original-source header observations only.**
 Machine-readable metadata-only research receipt:
-[berlin-srhk-original-tiff-header-receipts-20261101.jsonl](berlin-srhk-original-tiff-header-receipts-20261101.jsonl).
+[berlin-srhk-original-tiff-header-receipts-20261101.toml](berlin-srhk-original-tiff-header-receipts-20261101.toml).
 
 ## Exactly what was observed
 
