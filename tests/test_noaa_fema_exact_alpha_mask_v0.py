@@ -79,12 +79,12 @@ class ExactAlphaRasterGeometryTests(unittest.TestCase):
         m[0]=b"\x01\x00\x00\x00\x00"
         m[4]=b"\x00\x00\x00\x00\x01"
         padded=dilate_alpha_mask(m)
-        self.assertEqual(sum(sum(row) for row in padded),18)
+        self.assertEqual(sum(sum(row) for row in padded),17)
         self.assertEqual(padded[0],b"\x01\x01\x01\x00\x00")
         self.assertEqual(padded[4],b"\x00\x00\x01\x01\x01")
         rings,n=polygonize_exact_positive_pixels(padded)
-        self.assertEqual(n,18)
-        self.assertEqual(sum(_area2(r) for r in rings),36)
+        self.assertEqual(n,17)
+        self.assertEqual(sum(_area2(r) for r in rings),34)
         with self.assertRaises(ExactAlphaMaskError):
             dilate_alpha_mask(m,radius=1)
 
