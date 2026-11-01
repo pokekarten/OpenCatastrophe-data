@@ -32,6 +32,13 @@ from research_runners.luxembourg_lidar2024_building_interior_gradient_v0 import 
 )
 
 LON,LAT=6.1319,49.6116
+# Explicit fixed public settlement anchors; NOT a random or nationally
+# representative rural sample. The Berdorf village church is independently
+# geolocated by Visit Luxembourg: 49.820946 N, 6.348821 E.
+STUDY_SITES = {
+    "luxembourg-city": (LON,LAT),
+    "berdorf-village": (6.348821,49.820946),
+}
 HALFWIDTH_METRES=50.0
 MAX_POLYGONS=400
 MAX_RASTER_PIXELS=200_000
@@ -45,13 +52,16 @@ class BuildingProxyError(ValueError):
     """Original source or bounded spatial proxy not safely usable."""
 
 
-def original_window():
-    """Native CRS EPSG2169 four-corner polygon of predeclared equal-area 100m ROI."""
+def original_window(*, site="luxembourg-city"):
+    """Fixed EPSG2169 ROI: a named public site, never arbitrary addresses."""
     from pyproj import Transformer
     from shapely.geometry import Polygon
+    if site not in STUDY_SITES:
+        raise BuildingProxyError("unknown or unapproved study site")
+    lon,lat=STUDY_SITES[site]
     p=Transformer.from_crs(4326,3035,always_xy=True)
     t=Transformer.from_crs(3035,2169,always_xy=True)
-    x,y=p.transform(LON,LAT)
+    x,y=p.transform(lon,lat)
     corners=[t.transform(a,b) for a,b in (
         (x-HALFWIDTH_METRES,y-HALFWIDTH_METRES),
         (x+HALFWIDTH_METRES,y-HALFWIDTH_METRES),
@@ -186,11 +196,11 @@ def aggregate(polygons, dtm, dsm, affine, study_polygon):
     }
 
 
-def run(geobase_path:Path):
+def run(geobase_path:Path, *, site="luxembourg-city"):
     import numpy as np
     import rasterio
     from shapely.geometry import shape
-    roi=original_window()
+    roi=original_window(site=site)
     bbox=roi.bounds
     original,db=inspect_gpkg(geobase_path,expected_sha256=GEOBASE_SHA)
     try:
@@ -241,7 +251,12 @@ def run(geobase_path:Path):
         db.close()
     return {
         "schema_version":"lu-geobase2026-lidar2024-bounded-object-proxy-v0",
-        "study_window":"fixed public Luxembourg-city 100m x 100m equal-area",
+        "study_window":(
+            "fixed public Luxembourg-city 100m x 100m equal-area"
+            if site=="luxembourg-city" else
+            "fixed public Berdorf village-centre 100m x 100m equal-area"
+        ),
+        "study_site":site,
         "geobase_original_gpkg_sha256":GEOBASE_SHA,
         "lidar_source_http_range_prefix_verified":True,
         "full_source_lidar_tiff_sha256_verified":False,
@@ -269,9 +284,10 @@ def run(geobase_path:Path):
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("--geobase-gpkg",type=Path,required=True)
+    p.add_argument("--site",choices=tuple(STUDY_SITES),default="luxembourg-city")
     args=p.parse_args(argv)
     try:
-        report=run(args.geobase_gpkg)
+        report=run(args.geobase_gpkg,site=args.site)
     except (GeoPackageGateError,CogWindowError,BuildingProxyError,InteriorGradientError,
             OSError,ValueError) as exc:
         p.exit(2,"BLOCKED: "+str(exc)+"\n")
