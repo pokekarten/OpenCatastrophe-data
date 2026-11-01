@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry for FEMA NFIP county-level aggregate insurance-penetration benchmarks.",
+  "review_date": "2026-11-01",
+  "entries": [
+    {
+      "candidate_id": "fema.openfema.nfip-residential-penetration-rates.v1",
+      "name": "OpenFEMA NFIP Residential Penetration Rates v1",
+      "provider": "Federal Emergency Management Agency (FEMA) / National Flood Insurance Program",
+      "categories": [
+        "insurance",
+        "flood",
+        "coverage_gap",
+        "county",
+        "penetration_rate",
+        "exposure_benchmark"
+      ],
+      "spatial_scope": "United States; aggregate regional programme statistics (county/community coverage subject to original fields)",
+      "temporal_scope": "Official OpenFEMA catalogue lastDataSetRefresh 2026-08-04; published product snapshot, not a historical insurer-level series",
+      "resolution_or_granularity": "Official OpenFEMA v1 API dataset; 3159 provider-reported rows at 2026-10-31 catalogue snapshot; NFIP residential penetration derived against NSI 2022 structure stock",
+      "potential_roles": [
+        "nfip_county_coverage_benchmark",
+        "regional_flood_insurance_protection_gap",
+        "independent_national_programme_sanity_check",
+        "aggregate_nsi_crosscheck"
+      ],
+      "authoritative_url": "https://www.fema.gov/api/open/v1/NfipResidentialPenetrationRates",
+      "access_class_hint": "public_read_only_openfema_api_terms_and_exact_field_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Original official OpenFEMA catalogue records version 1, 3159 rows, no deprecation, and lastDataSetRefresh 2026-08-04. FEMA warns that the denominator draws on older NSI 2022 estimated structure stock, which can be incomplete; some calculated penetration rates exceed 100%. The metric excludes private flood insurance and is not an actual building, policyholder, claim, insurer portfolio or property-level exposure. API rights, exact fields, source bytes, version and regional coverage need separate review before any use. Do not treat as an independent check against NSI 2022 without recording shared lineage."
+    }
+  ]
+}
