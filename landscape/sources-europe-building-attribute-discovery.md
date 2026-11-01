@@ -14,7 +14,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Schema version:** `1.0.0`  
 **Review date:** `2026-11-01`  
-**Purpose:** Discovery-only additional European building observations, national registers, energy certificates, heights, roof equipment, address IDs and cross-country links to enrich EUBUCCO; rights/science/admission never implied.
+**Purpose:** Non-admission discovery-only additional European building observations, national registers, energy certificates, heights, roof equipment, address IDs and cross-country links to enrich EUBUCCO; rights/science/admission never implied.
 
 **Entries:** 16
 
