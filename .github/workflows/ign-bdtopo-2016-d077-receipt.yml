@@ -11,6 +11,8 @@ on:
       - "research_runners/fr_bdtopo_2016_d077_archive_receipt_v0.py"
       - "research_runners/fr_bdtopo_2016_rnb_polygon_bridge_v0.py"
       - "tests/test_fr_bdtopo_2016_rnb_polygon_bridge_v0.py"
+      - "research_runners/fr_bdtopo_2016_rnb_id_provenance_v0.py"
+      - "tests/test_fr_bdtopo_2016_rnb_id_provenance_v0.py"
       - "landscape/fr_bdtopo_d077_2016_archive_candidate_v0.toml"
 
 permissions:
@@ -129,6 +131,11 @@ jobs:
           # Print only 3x2 polygon metrics and source hashes, no source geometry.
           python -m unittest tests.test_fr_bdtopo_2016_rnb_polygon_bridge_v0 -v
           python -m research_runners.fr_bdtopo_2016_rnb_polygon_bridge_v0 \
+            --extracted-building-shapefiles "$RUNNER_TEMP/ign-2016-bati"
+          # Old v2.1 original DBF identities and computer dates vs 2023
+          # current RNB ext_ids; hash-only, no cross-version ID admission.
+          python -m unittest tests.test_fr_bdtopo_2016_rnb_id_provenance_v0 -v
+          python -m research_runners.fr_bdtopo_2016_rnb_id_provenance_v0 \
             --extracted-building-shapefiles "$RUNNER_TEMP/ign-2016-bati"
       - name: Delete archive after receipt (no third-party artifact upload)
         if: always()
