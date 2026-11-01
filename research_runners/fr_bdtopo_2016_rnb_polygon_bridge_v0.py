@@ -199,3 +199,29 @@ def compare(folder: Path, fetch=bounded_rnb_bytes) -> dict:
         "model_input_admitted": False,
         "original_shapefiles_and_rnb_responses_saved": False,
     }
+
+
+
+def main() -> int:
+    import argparse
+    from urllib.error import HTTPError, URLError
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--extracted-building-shapefiles", type=Path, required=True)
+    opts = p.parse_args()
+    try:
+        report = compare(opts.extracted_building_shapefiles)
+    except (BridgeError, BoundedBuildingError, OSError, ValueError,
+            HTTPError, URLError, shapefile.ShapefileException) as exc:
+        # Never expose provider payloads, addresses, coordinates, or query tokens.
+        print(json.dumps({
+            "receipt_kind": "FR_BDTOPO_D077_2016_RNB_2026_POLYGON_BRIDGE_V0",
+            "status": "BLOCKED", "error_type": type(exc).__name__,
+            "model_input_admitted": False
+        }, sort_keys=True))
+        return 2
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
