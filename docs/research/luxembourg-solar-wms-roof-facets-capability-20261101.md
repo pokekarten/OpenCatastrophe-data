@@ -34,6 +34,40 @@ Merged PR #951 observed the original 2025 **building SHP-linked DBF** metadata: 
 
 WMS is typically a **rendering and point-query service**, not a general open bulk geospatial data download contract. A source field described in a vendor PDF is not automatically accessible for independent per-building attribution. `HID` is vendor-local, not an ACT or EUBUCCO ID.
 
+## Real anonymous original-service result (2026-11-01)
+
+GitHub Actions original read:
+<https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41314633466>.
+
+- All **10 synthetic metadata/safety tests passed**.
+- The publisher-documented HTTPS endpoint
+  `https://mapproxy.tetraeder.solar/st_luxemburg_25/service?`,
+  queried exactly once with `SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.3.0`,
+  returned **HTTP 401 Unauthorized** without credentials.
+- Therefore **no actual capabilities XML, advertised layer names, WMS
+  GetFeatureInfo fields, roof-facet values or per-building records were read**.
+  The code distinguishes *passing metadata parser unit tests* from *actual
+  denied provider access*. A passing workflow run does NOT mean WMS is open.
+- This is consistent with the 2025 vendor PDF remark that WMS access uses
+  existing project credentials. No credential guessing, alternate endpoint
+  enumeration or unauthorised building enumeration was performed.
+
+**Decision:** Commercial reuse/licence status and the roof-facet WMS remain
+`not_reviewed` / `blocked_for_anonymous_access`. The right next
+action is an **authorised provider access and reuse request**, not a WMS
+scrape. The direct 2025 building SHP has none of `tilt/aspect/flat/area3d`
+(from the separate original DBF header test in #951), so its columns
+cannot be silently relabelled as roof-slope measurements.
+
+**Alternative independent physical path:** The existing ACT LiDAR2024
+MNT (terrain) / MNS (surface) geodata work (PR #950 on main) uses small
+original 2024 raster windows, not this restricted WMS. Its original
+surface/terrain heights could potentially support roof pitch/height
+**only after** identifying actual roof points and validating 3D
+definitions against geometry and independent references. The LiDAR
+workflow does not itself deliver roof material, exact construction age
+or installed photovoltaic equipment.
+
 ## Model-data boundary
 
 All rights continue to be `not_reviewed`. The solar cadastre dataset catalogue states **Other (Open)**, and the credentials remark on the WMS can imply additional provider access terms. Do not embed credentials, query identifiable household addresses, attempt to enumerate roofs via a map proxy, download large tiles, import original facets into the insurance Neon database, or claim model admission.
