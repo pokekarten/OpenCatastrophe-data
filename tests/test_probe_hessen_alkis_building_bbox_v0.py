@@ -85,6 +85,8 @@ class HessenAlkisBboxTests(unittest.TestCase):
         result=h.inspect_geojson(fixture(features=[]))
         self.assertEqual(result["returned_bounded_feature_count"],0)
         self.assertFalse(result["complete_building_inventory_proven"])
+        self.assertIsNone(result["returned_geometry_envelope_intersects_exact_bbox"])
+        self.assertFalse(result["geometry_available_in_this_sample"])
         self.assertFalse(result["real_building_worldcover_overlap_verified"])
 
     def test_reject_private_or_unsupported_geometries_and_bad_crs(self):
