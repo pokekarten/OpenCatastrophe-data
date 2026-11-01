@@ -39,11 +39,12 @@ Both are **rectified tile metadata**, not necessarily original flight-image meta
 
 The item-level midnight `datetime` and 4-day collection-wide `start_datetime/end_datetime` **do not establish exact capture time**. Preserve real flight or scene-level timestamp only after finding/validating it in the exact upstream source. Do not infer that a tile was flown at 00:00 UTC or that the same event-time stamp applies to all exposures.
 
-## Rights disagreement: fail closed
+## Verified SPDX licence meaning, unresolved per-asset mapping
 
-The current original NOAA InPort record says **CC0-1.0** for NOAA-origin imagery, no data access restrictions, appropriate source attribution and limitations. The directly inspected, separately generated Digital Coast STAC items instead declare a literal `properties.license = "NLPL"`.
-
-We have **not** verified the semantics of that STAC code, and must not silently replace it with the parent catalogue's license declaration or automatically label the image files/derivatives as admitted. A separate decision must determine whether `NLPL` is an automated STAC identifier with a different meaning, a catalogue conversion artifact, or a genuine asset-specific license condition. The source-specific rights decision remains `not_reviewed`; no commercial model training is approved by these discovery records. Any Mapbox/DigitalGlobe/OSM *before* image visible in NOAA's before/after viewer is **third-party imagery**, not automatically covered by NOAA's CC0 declaration.
+- The current original [NOAA InPort dataset record](https://www.fisheries.noaa.gov/inport/item/57759) explicitly states **CC0-1.0** and identifies NOAA as the imagery creator, with no access restriction; it also cautions against critical applications without understanding source limitations and against litigation use.
+- The two inspected Digital Coast STAC **item** metadata files state literal `properties.license = "NLPL"`. This string is an **official SPDX identifier for the [No Limit Public License](https://spdx.org/licenses/NLPL.html)**, not "no licence provided", "unknown" or a noncommercial licence. The [STAC licensing specification](https://github.com/radiantearth/stac-spec/blob/master/commons/common-metadata.md) permits SPDX identifiers.
+- Both named instruments are *broadly permissive*, so different identifiers **do not by themselves prove a restrictive licence or infringement**. Their identity differs; the reason for the Digital Coast item-level assignment and exact applicability to rectified GeoTIFFs/derived assets has **not** been verified directly with NOAA. This is an asset-rights *mapping and provenance* question, not a proven noncommercial block.
+- Therefore keep `rights_review_status=not_reviewed`, `model_input_admitted=false` and `asset_specific_licensing_review_completed=false` until the exact asset origin, rights statement and permitted consumer scope are confirmed. No new licensing conclusion is granted to Mapbox/DigitalGlobe/OSM *before-event* imagery in NOAA's viewer; those are separately sourced.
 
 ## Lineage and spatial validation no-go
 
@@ -57,6 +58,6 @@ We have **not** verified the semantics of that STAC code, and must not silently 
 
 The new code `research_runners/noaa_michael_stac_preflight_v0.py` accepts **one caller-supplied STAC item** and verifies source-native 2018 tile naming, WGS84 bbox/polygon consistency, declared UTC collection period, exact NOAA asset host/path, raster shape/grid affine envelope, RGB+alpha bands, and known source item license claim. The paired test file `tests/test_noaa_michael_stac_preflight_v0.py` uses **synthetic fixture values** with negative cases for incorrect source links, dates, rights, projection, pixel dimensions and coordinates.
 
-Output explicitly marks `exact_capture_time_verified=false`, `pixel_coverage_verified=false`, `independent_of_fema_rs_labels_proven=false`, `source_license_conflict_unresolved=true` and `commercial_model_input_admitted=false`.
+Output explicitly marks `exact_capture_time_verified=false`, `pixel_coverage_verified=false`, `independent_of_fema_rs_labels_proven=false`, `asset_specific_licensing_review_completed=false` and `commercial_model_input_admitted=false`, while recognizing SPDX `NLPL` without treating a licence-identifier difference as an independently proven restriction.
 
 **Next research gate:** select only a **single** exact NOAA tile and verify source image bytes, source license semantics, actual scene acquisition time and alpha coverage; then obtain the appropriate event-era independent building polygon/version and imagery provenance for a tiny rights-reviewed locality. No bulk image download, property join, event loss calibration or model admission until these are separately proved.
