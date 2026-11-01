@@ -5,14 +5,14 @@ import json
 import unittest
 
 from scripts.eiopa_gleif_seven_identity_receipt_v0 import (
-    EI0PA_LEI_CASES, IdentityReceiptError, MAX_BYTES, audit, inspect_gleif_bytes,
+    EIOPA_LEI_CASES, IdentityReceiptError, MAX_BYTES, audit, inspect_gleif_bytes,
 )
 from scripts.gleif_level1_insurer_identity_pilot import valid_lei
 
 
 def fixture(lei, *, legal_name=None, country=None, status="ACTIVE",
             lei_status="ISSUED", aliases=None, registered_as=None):
-    observed_country, observed_name, local_id = EI0PA_LEI_CASES[lei]
+    observed_country, observed_name, local_id = EIOPA_LEI_CASES[lei]
     return {
         "meta": {"goldenCopy": {"publishDate": "2026-11-01T12:00:00Z"}},
         "data": {
@@ -39,7 +39,7 @@ def blob(doc):
 
 class EIOPAGLEIFSevenIdentityTests(unittest.TestCase):
     def setUp(self):
-        self.leis = sorted(EI0PA_LEI_CASES)
+        self.leis = sorted(EIOPA_LEI_CASES)
         self.assertEqual(len(self.leis), 7)
 
     def test_all_expected_lei_checksums(self):
@@ -62,7 +62,7 @@ class EIOPAGLEIFSevenIdentityTests(unittest.TestCase):
     def test_transliteration_accepted_only_as_evidence_class(self):
         lei = "95980020140005024486"
         obj = fixture(lei, legal_name="MUTUALITAT DELS ENGINYERS MUTUALITAT DE PREVISIÓ SOCIAL",
-                      aliases=[{"name":EI0PA_LEI_CASES[lei][1]}],
+                      aliases=[{"name":EIOPA_LEI_CASES[lei][1]}],
                       registered_as="1000334867575")
         out = inspect_gleif_bytes(blob(obj), lei)
         self.assertEqual(out["eiopa_to_gleif_name_relation"], "gleif_ascii_transliteration_exact")
