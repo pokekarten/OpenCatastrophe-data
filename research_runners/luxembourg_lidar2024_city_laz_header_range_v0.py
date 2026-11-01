@@ -209,6 +209,56 @@ def inspect_public_vlrs(content:bytes, *, declared_count:int,
     }
 
 
+def inspect_copc_root_hierarchy(page:bytes, *, source_member_bytes:int,
+                                root_offset:int) -> dict:
+    """Bounded hierarchy-entry metadata; NO class, position or point payload read."""
+    if (not isinstance(page,bytes) or not 32<=len(page)<=32768
+        or len(page)%32 or root_offset<1000 or root_offset+len(page)>source_member_bytes):
+        raise LAZHeaderError("COPC root hierarchy byte range invalid")
+    counts={}
+    chunk_count=0
+    child_page_count=0
+    empty_count=0
+    declared_points=0
+    visited=set()
+    for i in range(0,len(page),32):
+        lvl,x,y,z,off,size,npoints=struct.unpack_from("<iiiiQii",page,i)
+        if (not 0<=lvl<=25 or not all(0<=axis<2**lvl for axis in (x,y,z))
+            or (lvl,x,y,z) in visited):
+            raise LAZHeaderError("Invalid COPC root hierarchy voxel keys")
+        visited.add((lvl,x,y,z))
+        if npoints==-1:
+            if (size<=0 or size%32 or off<1000
+                or off+size>source_member_bytes or size>32768):
+                raise LAZHeaderError("Invalid COPC referenced nested hierarchy page")
+            child_page_count+=1
+        elif npoints==0:
+            if size!=0:
+                raise LAZHeaderError("COPC empty voxel has unexpected source chunk length")
+            empty_count+=1
+        elif npoints>0:
+            if (size<=0 or off<1000 or off+size>source_member_bytes
+                or npoints>200000000):
+                raise LAZHeaderError("COPC hierarchy compressed point chunk outside source member")
+            chunk_count+=1
+            declared_points+=npoints
+        else:
+            raise LAZHeaderError("COPC unsupported negative hierarchy point count")
+        counts[lvl]=counts.get(lvl,0)+1
+    return {
+        "source_root_hierarchy_bytes_read_only":len(page),
+        "source_root_hierarchy_entries_validated":len(page)//32,
+        "root_hierarchy_entries_by_octree_level":dict(sorted(counts.items())),
+        "root_compressed_point_chunks_declared":chunk_count,
+        "root_nested_hierarchy_pages_declared":child_page_count,
+        "root_empty_octree_nodes":empty_count,
+        "root_entries_point_counts_sum_not_full_population":declared_points,
+        "root_hierarchy_leaf_xyz_voxel_keys_exported":False,
+        "root_compressed_point_chunk_bytes_read":False,
+        "per_point_xyz_classification_or_building_identity_exported":False,
+    }
+
+
 def inspect(opener=None):
     opener=opener or build_opener(NoRedirect())
     raw=read_http(opener,_request(OFFICIAL_API+CITY_RESOURCE_ID+"/"),
@@ -290,6 +340,18 @@ def inspect(opener=None):
         public_point_offset=preliminary["point_data_offset"],
         las_header_size=preliminary["header_size"],
         selected_laz_size=member["uncompressed"]))
+    if base["copc_info_vlr_verified"]:
+        hier=base["copc_root_hierarchy_metadata"]
+        root_start=data_start+hier["copc_root_hierarchy_offset_within_selected_laz"]
+        root_end=root_start+hier["copc_root_hierarchy_size_bytes"]-1
+        if root_end>=data_start+member["compressed"]:
+            raise LAZHeaderError("COPC hierarchy extends beyond source LAZ member")
+        page=read_http(opener,_request(url,start=root_start,end=root_end),
+            status=206,limit=hier["copc_root_hierarchy_size_bytes"],
+            range_expected=(root_start,root_end,CITY_ORIGINAL_BYTES))
+        base.update(inspect_copc_root_hierarchy(
+            page,source_member_bytes=member["uncompressed"],
+            root_offset=hier["copc_root_hierarchy_offset_within_selected_laz"]))
     return base
 
 
