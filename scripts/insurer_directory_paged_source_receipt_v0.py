@@ -13,6 +13,7 @@ import hashlib
 import json
 from pathlib import Path
 import urllib.request
+import time
 
 from scripts.insurer_directory_source_receipt_v0 import (
     EXPECTED_VERSION, SOURCE_URL, PROVIDER_STATES,
@@ -134,7 +135,11 @@ def audit_pages(read_page, *, total_count=TOTAL_COUNT, page_size=PAGE_SIZE,
 
 def read_live_page(page: int) -> bytes:
     url = page_url(page)
-    request = urllib.request.Request(url, headers={"Accept": "application/json"})
+    time.sleep(0.25)  # Publisher fair-use terms: keep request rates reasonable.
+    request = urllib.request.Request(url, headers={
+        "Accept": "application/json",
+        "User-Agent": "OpenCatastrophe-data-research/0.1 (+https://github.com/pokekarten/OpenCatastrophe-data; metadata-only)",
+    })
     with urllib.request.urlopen(request, timeout=15) as response:
         if response.geturl() != url or response.status != 200:
             raise PageReceiptError("redirected or failed original source request")
