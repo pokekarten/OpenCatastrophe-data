@@ -44,6 +44,14 @@ MAX_WIND_ROWS = 180_000
 MAX_MEMBER_BYTES = 50 * 1024 * 1024
 MAX_LINE_BYTES = 4096
 MAX_MEMBERS = 40
+# Independently established by official original DWD live-source receipt
+# GitHub Actions run 41322132794 (2026-11-01). Any future provider revision
+# must be a new explicit review, never silently accepted as equivalent bytes.
+PINNED_WIND_SHA256 = "9a854b621298ed0374677ce36796da2b4e628d45529c815351c8b988e62aaf0c"
+PINNED_METADATA_SHA256 = "041501a00b62502e961f612b43a0b28ce78a8c634d318ed595cc1f5a923cfb02"
+COMMON_START = date(2010, 1, 1)
+COMMON_END = date(2011, 3, 31)
+
 
 
 class SecondStationBlocked(ValueError):
@@ -157,6 +165,10 @@ def _wind_stats(raw: bytes) -> dict:
                 maximum_gust = None
                 first = last = None
                 missing_slots = 0
+                common_count = 0
+                common_missing = 0
+                common_max = None
+                common_qn = Counter()
                 for line in reader:
                     if not line.strip():
                         continue
@@ -200,6 +212,15 @@ def _wind_stats(raw: bytes) -> dict:
                         missing_fx += 1
                     elif maximum_gust is None or gust > maximum_gust:
                         maximum_gust = gust
+                    # Shared exact calendar window of frozen station 00003.
+                    # Aggregate only; never infer a meteorological correlation.
+                    if COMMON_START <= observation.date() <= COMMON_END:
+                        common_count += 1
+                        common_qn[quality] += 1
+                        if gust == Decimal(-999):
+                            common_missing += 1
+                        elif common_max is None or gust > common_max:
+                            common_max = gust
                     row_count += 1
                     if row_count > MAX_WIND_ROWS:
                         raise SecondStationBlocked("original wind archive exceeds pilot row bound")
@@ -226,6 +247,16 @@ def _wind_stats(raw: bytes) -> dict:
         "missing_10minute_slots_between_first_and_last": missing_slots,
         "product_member_sha256": member_sha256,
         "product_member": PurePosixPath(member.filename).name,
+        "common_calendar_window_with_station00003": {
+            "start_utc_date": COMMON_START.isoformat(),
+            "end_utc_date": COMMON_END.isoformat(),
+            "original_10min_observations": common_count,
+            "fx_10_missing_sentinel_rows": common_missing,
+            "fx_10_nonmissing_rows": common_count - common_missing,
+            "max_fx_10_mps": str(common_max) if common_max is not None else None,
+            "quality_level_distribution": dict(sorted(common_qn.items())),
+            "measurement_series_directly_correlated": False,
+        },
     }
 
 
@@ -326,7 +357,9 @@ def inspect(wind_path: Path, metadata_path: Path, *,
         "metadata_original_sha256": meta_sha,
         "wind_original_bytes": len(wind),
         "metadata_original_bytes": len(meta),
-        "original_source_hashes_approved_for_next_runs": False,
+        "original_source_hashes_approved_for_next_runs":
+            expected_wind_sha256 == PINNED_WIND_SHA256
+            and expected_metadata_sha256 == PINNED_METADATA_SHA256,
         "measurement": wind_evidence,
         "geography": geography,
         "source_archive_label_dates": {
@@ -345,7 +378,9 @@ def main(argv=None):
     p.add_argument("--metadata-zip", type=Path, required=True)
     args = p.parse_args(argv)
     try:
-        receipt = inspect(args.wind_zip, args.metadata_zip)
+        receipt = inspect(args.wind_zip, args.metadata_zip,
+                          expected_wind_sha256=PINNED_WIND_SHA256,
+                          expected_metadata_sha256=PINNED_METADATA_SHA256)
     except (SecondStationBlocked, OSError, ValueError) as exc:
         print(json.dumps({"status": "BLOCKED", "reason": str(exc),
                           "model_input_approved": False}), file=sys.stderr)
