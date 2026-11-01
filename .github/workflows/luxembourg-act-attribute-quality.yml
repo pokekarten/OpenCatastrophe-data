@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg ACT original attribute completeness receipt
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_act2023v2_attribute_quality_v0.py'
+      - 'tests/test_luxembourg_act2023v2_attribute_quality_v0.py'
+      - '.github/workflows/luxembourg-act-attribute-quality.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  original-attribute-quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - name: Checkout SHA-pinned action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Offline synthetic aggregate-only tests
+        run: python -m unittest tests.test_luxembourg_act2023v2_attribute_quality_v0 -v
+      - name: Pin exact provider ZIP; temporarily inspect extracted GPKG
+        shell: bash
+        run: |
+          set -euo pipefail
+          export SOURCE_ZIP="$RUNNER_TEMP/act2023v2-original.zip"
+          export EXTRACTED_GPKG="$RUNNER_TEMP/act2023v2-original.gpkg"
+          trap 'rm -f "$SOURCE_ZIP" "$EXTRACTED_GPKG"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 --retry 0 \
+            --max-filesize 115343360 --output "$SOURCE_ZIP" \
+            'https://download.data.public.lu/resources/base-de-donnees-nationale-des-batiments-3d-2023/20260317-160936/act2023v2-buildings3d-footprints.gpkg.zip'
+          python scripts/luxembourg_gpkg_zip_preflight_v0.py \
+            --source-zip "$SOURCE_ZIP" \
+            --sha256 a271b1cbcc22ded018f9bab0c150e9f33efa6cb7ebca8cf4dc4bdb1f5d84859a > /dev/null
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import shutil
+          from zipfile import ZipFile
+          with ZipFile(os.environ["SOURCE_ZIP"]) as z:
+              members = [x for x in z.infolist() if x.filename.lower().endswith(".gpkg")]
+              if len(members) != 1 or members[0].file_size > 1500 * 1024 * 1024:
+                  raise SystemExit("BLOCKED: missing or oversized original GeoPackage")
+              out = Path(os.environ["EXTRACTED_GPKG"])
+              with z.open(members[0]) as inp, out.open("xb") as dst:
+                  shutil.copyfileobj(inp, dst, length=1024 * 1024)
+          PY
+          python research_runners/luxembourg_act2023v2_attribute_quality_v0.py \
+            --gpkg "$EXTRACTED_GPKG" \
+            --expected-gpkg-sha256 9765b04eaeb9332aa606b8dca44031116588e285553aab061d61037938a002bf
+          # No original bytes, individual building IDs, geometry or sample records are uploaded.
