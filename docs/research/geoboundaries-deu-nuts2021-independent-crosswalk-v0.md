@@ -169,3 +169,50 @@ CAT2 mapping will remain local **unadmitted research staging**, not a
 NUTS2016↔NUTS2021 equivalence or building-value estimator. If 10M still
 fails the unchanged acceptance tests, retain the blocker and research
 higher-detail official geodata rather than manufacturing a mapping.
+
+## Verified real two-provider CAT1 ↔ CAT2 crosswalk — 2026-11-01
+
+The higher-resolution `10M` Eurostat NUTS1 2021 source passed all
+**unchanged** independent overlap and unambiguous one-to-one gates in
+[GitHub Actions run 41317779012](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41317779012),
+main commit `daaddfcb4f668c11366fa3c9c9fb46f31a5b6580`.
+
+The exact bytes fetched and SHA-256 checked were:
+
+- geoBoundaries DEU ADM1 original: **6,254,151 bytes**;
+  `56e069593595c5006e7044d46b023c2afc6b4a109a669b570ee229e758c00682`.
+- Eurostat Nuts2json official NUTS1 **2021 / EPSG4326 / 10M** original:
+  **371,684 bytes**;
+  `d3e02d4b23809db8e178483606e07a780103f49797f83d989b685fede2feee19`.
+- Both versions were source-bound to explicit immutable original commits,
+  and area comparisons used EPSG:3035.
+
+First-party **observed aggregate results**, not assumed from labels:
+
+| Metric | Verified |
+| --- | ---: |
+| Distinct source ADM1 ↔ NUTS1 bijective matches | 16 / 16 |
+| Minimum source-state overlap covered by its matched NUTS1 | **91.1213%** |
+| Minimum matched NUTS1 polygon covered by original state | **90.6928%** |
+| Repeated or missing independent NUTS1 matches | 0 |
+| Spatial acceptance and runner-up checks | All passed |
+| Temporary CAT2 crosswalk SQLite actually created | Yes |
+| Fixed München point NUTS1 classification | `DE2` |
+| Fixed Berlin point NUTS1 classification | `DE3` |
+| Original geometry or CAT SQLite committed to Git | No |
+| Production, Neon or Pokémon data store modified | No |
+
+**The original Eurostat 20M source continues to fail its stricter
+city-state runner-up test**, as verified above; a source code `DE3` or
+`DE5` is not enough to make those coarse polygons more accurate. The
+10M source succeeds while preserving the original thresholds. This is a
+reproducible **research-grade region mapping at 10M map simplification**,
+not exact official administrative-border equivalence, a guarantee for
+points within 2021 border differences, or proof of an EUBUCCO modified
+NUTS2016 partition join.
+
+The first workflow staged both independent 2021 originals and both local
+CAT databases in ephemeral secure job storage, deleting them at exit.
+For a persistent CAT staging deployment, an explicit destination, rights
+review and lifecycle/version plan are still required. There is no
+claim of live insured-property rows or loss model inputs here.
