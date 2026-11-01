@@ -30,7 +30,7 @@ REQUIRED_COLUMNS = {"id", "geom", "BU_BuildingID", "Source"}
 MAX_GPKG_BYTES = 150 * 1024 * 1024
 
 
-def profile(connection: sqlite3.Connection) -> dict:
+def profile(connection: sqlite3.Connection, *, expected_rows: int = EXPECTED_FEATURE_COUNT) -> dict:
     """Return aggregate cardinality/coverage from *only* fixed known columns."""
     tables = {x[0] for x in connection.execute(
         "SELECT name FROM sqlite_master WHERE type='table'")}
@@ -54,7 +54,7 @@ def profile(connection: sqlite3.Connection) -> dict:
         ).fetchone()
     except sqlite3.DatabaseError as exc:
         raise GeoBaseError("Aggregate original SQL could not be executed") from exc
-    if not row or row[0] != EXPECTED_FEATURE_COUNT:
+    if not row or row[0] != expected_rows:
         raise GeoBaseError("Original building feature count drifted")
     total, fid_unique, geometry_missing, id_missing, id_unique, source_missing, source_distinct = row
     if any(not isinstance(x, int) or x < 0 or x > total for x in (
