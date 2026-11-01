@@ -85,11 +85,59 @@ to **unique validated source relationships**, and keep all source
 versions in a separate CAT database. Do not infer replacement value
 from polygon area or roof height alone.
 
-## First real original source outcome
+## First real original source outcome — 2026-11-01: bounded negative match
 
-Pending successful source-specific live GitHub Actions execution.
-Do not claim measured roof heights, complete Berlin source coverage
-or positive 1:1 geometry matches from synthetic tests alone.
+The reviewed original-source [GitHub Actions run 41323489470](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41323489470)
+completed successfully on main commit
+`77ca0b24e85e0c606433dff5baa6258221884b7c`, UTC
+`2026-11-01T15:53:42.930923+00:00`. Six synthetic regression
+tests passed first. The official source returned:
+
+- Current ALKIS: **5** accepted source polygons, **5,412** response bytes,
+  SHA-256
+  `70bcc04acd6498dec52538f2d6edbc189dcab5e7004fafb0318069b8d6f7bce5`.
+  The combined source footprint area is **1,344.0 m²**, which is NOT
+  the inventory or total area within the bbox.
+- Historical height WFS: **5** accepted source polygons,
+  **7,874** response bytes, SHA-256
+  `385a42facd9713bdb185465e49a4cb929d98bd87b24c950caf96a9a89abbf859`.
+  All five sampled polygons had non-null source attributes for
+  `hoehe`, `dachart`, `geschosse`, `role_txt`,
+  `grundrissaktualitaet`, `quellebodenhoehe`,
+  `quelledachhoehe` and `quellelage`.
+- **5 of 5** recorded positive numeric height values; **0** exact
+  3 m values in this tiny sample. This is NOT evidence that all five
+  values were measured or that the height product never imputes values.
+- Aggregated `role_txt`: **2** explicitly classified as buildings,
+  **0** explicitly classified as parts, **3** unknown under the
+  conservative source-value classification. Do not recode unknown as
+  building or count 5 separate physical buildings from this product.
+- **0** unique pairs passed the research threshold **IoU ≥ 0.95**;
+  **0** ambiguous candidate incidences passed the same threshold.
+
+**Interpretation:** This is a validated **negative source-pair result
+for the two fixed first-five source samples**, not proof the products
+have no common physical buildings. WFS `count=5` is not a reproducible,
+complete inventory for the 200 × 200 m query box. It does not establish
+coverage, imputation prevalence, source independency, temporal drift,
+building ownership, insured values, or any model-input admission.
+Original responses, coordinates, feature IDs and actual height values
+were not saved.
+
+A subsequent fail-closed regression in
+[PR #1003](https://github.com/pokekarten/OpenCatastrophe-data/pull/1003)
+requires **explicit EPSG:25833 declarations in both provider replies**
+before such a two-source IoU comparison. That protection was added
+*after* the original source run and is not retroactive evidence of
+the exact 2026-11-01 response CRS flags. A future provider sample
+must independently pass this stricter gate.
+
+Next research must first review exact official WFS paging and stable
+ordering/whole-bbox coverage, use a source-approved bounded query or
+independent spatial selection, distinguish LoD2 building vs part and
+historical release dates, and quantify one-to-many polygon relations.
+Never force a match by using source names, original IDs, addresses or
+unreviewed coordinate assumptions.
 
 ## Verified two original sources — zero *first-five* matches, 2026-11-01
 
