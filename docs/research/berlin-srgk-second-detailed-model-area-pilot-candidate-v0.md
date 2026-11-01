@@ -79,3 +79,36 @@ This does **not** change
 a nationwide 1-m horizontal resolution is not a certified vertical
 water-depth conversion. The independent old BLD4 model is retained.
 No real CAT model input is admitted.
+
+## Original first-source candidate verified; independent filter pending
+
+The reviewed original [source-derived second pilot run
+41363179064](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41363179064),
+merged from [PR #1102](https://github.com/pokekarten/OpenCatastrophe-data/pull/1102),
+succeeded on main commit
+`45f637f8d381480c794fefba6c14605ae969a098`.
+The exact fixed original WFS `GetFeature count=1` response was
+**10,883 bytes**, full SHA-256
+`62d6c31ef5dd17227aad35afd740031eff9f7343f50bff99d941a0c822ff95d5`,
+observed `2026-11-01T23:39:48.617487+00:00`.
+
+One official polygon yielded a **new distinct** fixed
+EPSG:25833 200×200 m study bbox
+`[391860,5816840,392060,5817040]`, with **40,000 m²**
+independently measured local intersection. Only derived coordinates,
+source response hash, aggregate area and scientific nonadmission
+flags were logged; no original geometry or feature ID was stored.
+
+This is a **source-derived local geometry witness**, not yet
+independent server-side spatial-filter evidence. The next separate
+reviewed source test
+`research_runners/berlin_srgk_second_model_area_fes_proof_v0.py`
+will require (a) the original control polygon *still derives the same*
+new study box, and (b) a second fixed FES 2.0 `Intersects` on official
+`geom` returns a valid EPSG:25833 polygon genuinely overlapping it.
+
+Both response hashes and aggregate overlap area will be reported.
+An empty filtered answer remains **unresolved**, not proven absence
+of model coverage or rainwater depth; nonintersecting geometry blocks.
+A successful FES overlap is **model-area coverage only**, not
+actual depth pixels, physical units, insured buildings or CAT losses.
