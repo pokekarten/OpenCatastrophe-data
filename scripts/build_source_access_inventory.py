@@ -13,6 +13,7 @@ rights. Concrete reviewed interfaces live in ``access/*.json`` contracts.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 import re
 import sys
@@ -194,6 +195,7 @@ def _contract_index() -> tuple[dict[str, list[dict[str, str]]], list[str]]:
         interface_type = payload["interface_type"]
         implementation = payload["implementation_decision"]
         status = payload["status"]
+        probe_mode = payload["probe_contract"]["mode"]
         relative = path.relative_to(ROOT).as_posix()
         files.append(relative)
         for source_id in source_ids:
@@ -201,6 +203,7 @@ def _contract_index() -> tuple[dict[str, list[dict[str, str]]], list[str]]:
                 "access_id": access_id,
                 "interface_type": interface_type,
                 "status": status,
+                "probe_mode": probe_mode,
                 "implementation_decision": implementation,
             })
     for contracts in by_source.values():
@@ -239,9 +242,21 @@ def _apply_contracts(
     allow_contract_promotion: bool = False,
 ) -> dict[str, Any]:
     if not contracts:
-        return {**classification, "contract_ids": []}
+        return {
+            **classification,
+            "contract_ids": [],
+            "contract_statuses": [],
+            "contract_probe_modes": [],
+            "operational_readiness": "no_concrete_access_contract",
+            "live_data_availability_proven": False,
+        }
     result = dict(classification)
     result["contract_ids"] = [item["access_id"] for item in contracts]
+    result["contract_statuses"] = sorted({item["status"] for item in contracts})
+    result["contract_probe_modes"] = sorted({item.get("probe_mode", "none") for item in contracts})
+    # Repository contracts record reviewed intent, not a timestamped live
+    # acquisition receipt or proof that source data are model-usable.
+    result["live_data_availability_proven"] = False
 
     if len(contracts) > 1:
         # A source can legitimately expose multiple interfaces with different
@@ -250,6 +265,7 @@ def _apply_contracts(
         # and require the caller to choose/review an exact contract.
         result["api_status"] = "multiple_concrete_contracts_present"
         result["machine_access_class"] = "multiple_reviewed_interfaces"
+        result["operational_readiness"] = "select_exact_interface_before_execution"
         result["automation_decision"] = _more_restrictive_decision(
             result["automation_decision"], "document_only"
         )
@@ -264,6 +280,21 @@ def _apply_contracts(
     contract = contracts[0]
     result["api_status"] = "concrete_contract_present"
     result["machine_access_class"] = _interface_class(contract["interface_type"])
+    status = contract["status"]
+    readiness_by_status = {
+        "documented_only": "contract_documentation_only",
+        "probe_ready": "bounded_probe_defined_not_executed",
+        "verified_anonymous": "access_contract_verified_not_model_data",
+        "verified_authenticated": "access_contract_verified_not_model_data",
+        "blocked_registration": "registration_required",
+        "blocked_credentials": "credentials_required",
+        "restricted_by_terms": "restricted_by_terms",
+        "deprecated": "deprecated_source_interface",
+        "rejected": "rejected_source_interface",
+    }
+    if status not in readiness_by_status:
+        raise InventoryError(f"unrecognized reviewed access contract status: {status}")
+    result["operational_readiness"] = readiness_by_status[status]
     contract_decision = contract["implementation_decision"]
     if allow_contract_promotion:
         result["automation_decision"] = contract_decision
@@ -271,7 +302,18 @@ def _apply_contracts(
         result["automation_decision"] = _more_restrictive_decision(
             result["automation_decision"], contract_decision
         )
-    result["next_action"] = "Execute the reviewed contract verification ladder; do not infer rights, scientific fitness or admission from connectivity."
+    next_actions = {
+        "documented_only": "Resolve exact service terms and a bounded request; do not run this documentation-only contract.",
+        "probe_ready": "Run only the existing bounded probe in a reviewed network execution lane; record receipt SHA-256, response shape, UTC and errors before any source-data use.",
+        "verified_anonymous": "Review exact dataset identity, acquisition receipt, scope and scientific quality before considering model-input use.",
+        "verified_authenticated": "Review exact dataset identity, acquisition receipt, scope and scientific quality before considering model-input use.",
+        "blocked_registration": "Complete provider registration and any applicable dataset terms before attempting the bounded route.",
+        "blocked_credentials": "Provision credentials outside Git and confirm provider terms before running any bounded request.",
+        "restricted_by_terms": "Do not automate; request explicit suitable provider permission or find a cleared alternative.",
+        "deprecated": "Find the official successor and re-review rights/scientific comparability before changing the source contract.",
+        "rejected": "Do not execute this rejected interface; only reconsider with new authoritative evidence.",
+    }
+    result["next_action"] = next_actions[status]
     return result
 
 
@@ -441,6 +483,23 @@ def build_inventory() -> dict[str, Any]:
     }
 
 
+def summarize_operational_readiness(inventory: dict[str, Any]) -> dict[str, Any]:
+    """Summarize every record's contract stage without claiming live usability."""
+    entries = inventory["entries"]
+    return {
+        "source_records": inventory["entry_count"],
+        "landscape_candidates": inventory["landscape_entry_count"],
+        "admitted_manifests": inventory["manifest_entry_count"],
+        "reviewed_access_contracts": len(inventory["access_contract_files"]),
+        "operational_readiness_counts": dict(sorted(Counter(
+            entry["operational_readiness"] for entry in entries
+        ).items())),
+        "live_provider_data_availability_proven_by_this_report": False,
+        "model_input_approval_proven_by_this_report": False,
+        "purpose": "Repository contract work queue, not live connectivity, licensing clearance or CAT-model admission.",
+    }
+
+
 def canonical_bytes(payload: dict[str, Any]) -> bytes:
     return (json.dumps(payload, ensure_ascii=False, allow_nan=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
 
@@ -450,10 +509,14 @@ def main(argv: list[str] | None = None) -> int:
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--write", action="store_true", help=f"write {DEFAULT_OUTPUT.relative_to(ROOT)}")
     group.add_argument("--check", action="store_true", help="require checked-in inventory to equal deterministic output")
+    group.add_argument("--summary", action="store_true", help="print compact readiness counts for all known sources")
     args = parser.parse_args(argv)
     try:
         inventory = build_inventory()
         expected = canonical_bytes(inventory)
+        if args.summary:
+            print(json.dumps(summarize_operational_readiness(inventory), sort_keys=True, indent=2, allow_nan=False))
+            return 0
         if args.write:
             DEFAULT_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
             DEFAULT_OUTPUT.write_bytes(expected)
