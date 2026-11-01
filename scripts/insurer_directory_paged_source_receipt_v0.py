@@ -106,7 +106,7 @@ def inspect_page(raw: bytes, page: int, *, total_count=TOTAL_COUNT,
 
 def audit_pages(read_page, *, total_count=TOTAL_COUNT, page_size=PAGE_SIZE,
                 page_count=PAGE_COUNT) -> dict:
-    pages, seen = [], set()
+    pages, seen, identities = [], set(), []
     for index in range(1, page_count + 1):
         info, rows = inspect_page(read_page(index), index, total_count=total_count,
                                   page_size=page_size, page_count=page_count)
@@ -114,11 +114,31 @@ def audit_pages(read_page, *, total_count=TOTAL_COUNT, page_size=PAGE_SIZE,
             if row["slug"] in seen:
                 raise PageReceiptError("cross-page duplicate source slug")
             seen.add(row["slug"])
+            values = (
+                row["slug"], row["country"], row["name"],
+                row["classCode"], row["verification"],
+            )
+            if any(chr(30) in value or chr(31) in value for value in values):
+                raise PageReceiptError("source value contains reserved digest delimiter")
+            identities.append(values)
         pages.append(info)
     if len(seen) != total_count or sum(p["row_count"] for p in pages) != total_count:
         raise PageReceiptError("incomplete global original page enumeration")
+    # Stable UTF-8 field digest for direct equality against independently queried
+    # Neon columns. A matching digest is NOT a byte-identical original aggregate.
+    canonical = chr(30).join(
+        chr(31).join(fields)
+        for fields in sorted(identities, key=lambda fields: fields[0])
+    )
+    canonical_row_sha256 = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
     return {
         "schema_version": "oc-insurer-directory-paged-source-receipt-v0",
+        "canonical_field_digest_sha256": canonical_row_sha256,
+        "canonical_field_order": [
+            "slug", "country", "name", "classCode", "verification",
+        ],
+        "canonical_record_separator": "0x1e",
+        "canonical_field_separator": "0x1f",
         "source_index_url": SOURCE_URL,
         "source_version": EXPECTED_VERSION,
         "total_source_rows": total_count,
