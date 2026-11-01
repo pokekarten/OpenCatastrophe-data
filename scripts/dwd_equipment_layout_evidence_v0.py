@@ -116,7 +116,7 @@ def _txt_layout(raw: bytes) -> dict:
         8 <= len(raw_titles) <= 20
         and len(nonblank[0].encode("utf-8")) <= 512
         and all(1 <= len(name) <= 90
-                and re.fullmatch(r"[\\w .(),:/%+\\-]+", name, re.UNICODE)
+                and re.fullmatch(r"[\w .(),:/%+\-]+", name, re.UNICODE)
                 for name in raw_titles)
         and len({name.casefold() for name in raw_titles}) == len(raw_titles)
         and any("datum" in name.casefold() or "station" in name.casefold()
