@@ -59,6 +59,64 @@ synthetic fixtures and logs only the relevant source-metadata summary.
 No original XLSX, building geometry, individual IDs or insurance records
 are committed, uploaded or placed in insurance Neon.
 
+## Verified **original** EUBUCCO upstream metadata receipt, 2026-11-01
+
+First official retrieval succeeded in GitHub Actions:
+https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41308007003
+
+- Exact provider original workbook: **39,473 bytes**, SHA-256
+  `c505cdaa04a296a057f046ccc95c5cfdff277f6fb847f8b725fd85007cff2e0e`.
+- One XML worksheet contains **990 data/header rows**; one public source
+  metadata row explicitly matches Luxembourg, at worksheet row 51.
+- The original metadata source identifier (column A) is
+  **`gov-luxembourg`**, exactly the government-family source label implied
+  by EUBUCCO LU00's 144,088 government-labelled original geometries.
+- The named original upstream provider product (column E) is
+  **`Bâtiments 3D (LOD 1 – Level of Detail 1)`**.
+- Original upstream dataset year (column G) contains **2013**, while
+  the publisher historical description explicitly ties the survey to 2013
+  aerial/topographical measurements. Do not treat other Excel numeric date
+  serials in the original row as a known ISO date without header interpretation.
+- Original source URL in EUBUCCO metadata:
+  https://data.public.lu/en/datasets/batiments-3d-lod-1-level-of-detail-1-1/
+  (the portal has since introduced an explicit `2013` title in its
+  discoverable canonical page).
+- Original publisher: **Administration du cadastre et de la topographie
+  du Grand-Duché de Luxembourg**; source label **CC0-1.0**, declared
+  **EPSG:2169**, file format **GML**.
+- Independent current publisher catalogue:
+  https://data.public.lu/en/datasets/batiments-3d-2013-lod-1-level-of-detail-1/
+  confirms BD-TOPO-L / **2013** aerial-image photogrammetric origins,
+  coarse LOD1 building-block segmentation, EPSG:2169, CC0 and a
+  **2019-05-28** file publication. These are the source dataset's stated
+  properties, not proof that a particular original file revision was
+  ingested by EUBUCCO.
+- This EUBUCCO upstream original is **not ACT2023v2**; however both are
+  ACT-derived photogrammetry/topography family products. Their agreement
+  cannot serve as an independent geometry-validation holdout, and observed
+  differences cannot be classified as newly constructed/demolished buildings
+  until changes in vintages, roof-vs-block segmentation, spatial coverage,
+  and original identifier namespace are controlled.
+
+The first retrieval computed its SHA-256; **it was not pre-pinned**.
+The subsequent exact-URL workflow now requires this frozen SHA before it
+reproduces the same result. Both original workbook bytes and building
+geometries remain outside Git and Neon.
+
+### Practical implications
+
+1. Preserve `gov-luxembourg` as provenance family `ACT2013-LOD1`,
+   separately from the later `ACT2023v2-BATI3D` resource.
+2. Reconcile 2013 building-block LOD1 geometry to the 2023 *roof extent*
+   footprint **as a temporal/segmentation comparison**, not a one-to-one
+   independently confirmed building identity. A 2013 LOD1 block can
+   correspond to multiple newer roofs without true construction.
+3. Independently resolve both EPSG:2169 native coordinate order and
+   precise original EUBUCCO input revision; do not assume EUBUCCO and ACT
+   publication snapshots are contemporaneous.
+4. Never use these origin/coverage counts to invent 2013/2023 insurance
+   exposure or attribute a 2013/2023 difference to catastrophe event loss.
+
 ## Validation limits and next causal decision
 
 The workbook may describe several Luxembourg upstream sources or none
