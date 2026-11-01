@@ -9,6 +9,7 @@ on:
       - 'tests/test_luxembourg_geobase_lidar2024_object_proxy_v0.py'
       - 'research_runners/luxembourg_lidar2024_building_interior_gradient_v0.py'
       - 'tests/test_luxembourg_lidar2024_building_interior_gradient_v0.py'
+      - 'tests/test_luxembourg_geobase_lidar_rural_site_v0.py'
       - '.github/workflows/luxembourg-geobase-lidar-object-proxy.yml'
   workflow_dispatch:
 
@@ -33,7 +34,8 @@ jobs:
         run: >-
           python -m unittest
           tests.test_luxembourg_geobase_lidar2024_object_proxy_v0
-          tests.test_luxembourg_lidar2024_building_interior_gradient_v0 -v
+          tests.test_luxembourg_lidar2024_building_interior_gradient_v0
+          tests.test_luxembourg_geobase_lidar_rural_site_v0 -v
       - name: Verify original official GeoBase 2026 ZIP before any building sample
         shell: bash
         run: |
@@ -68,7 +70,13 @@ jobs:
           # Existing reviewed COG range gate verifies exact 4KiB headers;
           # full 40GB provider assets have NOT been SHA-verified. Rasterio
           # reads only the fixed 100m native-CRS envelope through HTTPS.
+          # First: exact frozen Luxembourg-city comparison; do not change its
+          # historical center, gates or source population.
           python -m research_runners.luxembourg_geobase_lidar2024_object_proxy_v0 \
-            --geobase-gpkg "$SOURCE_GPKG"
+            --geobase-gpkg "$SOURCE_GPKG" --site luxembourg-city
+          # Then: same already pinned original provider files, one predeclared
+          # public Berdorf village core. No adaptive address enumeration.
+          python -m research_runners.luxembourg_geobase_lidar2024_object_proxy_v0 \
+            --geobase-gpkg "$SOURCE_GPKG" --site berdorf-village
           # No original provider GPKG, IDs, shapes, pixel arrays, measured
           # per-object values or source files are uploaded or saved.
