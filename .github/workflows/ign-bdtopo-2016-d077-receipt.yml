@@ -9,7 +9,7 @@ on:
     paths:
       - ".github/workflows/ign-bdtopo-2016-d077-receipt.yml"
       - "research_runners/fr_bdtopo_2016_d077_archive_receipt_v0.py"
-      - "landscape/fr_bdtopo_d077_2016_archive_candidate_v0.jsonl"
+      - "landscape/fr_bdtopo_d077_2016_archive_candidate_v0.toml"
 
 permissions:
   contents: read
@@ -47,7 +47,7 @@ jobs:
             --output "$RUNNER_TEMP/$ARCHIVE_NAME" "$SOURCE_URL"
           python research_runners/fr_bdtopo_2016_d077_archive_receipt_v0.py \
             --archive "$RUNNER_TEMP/$ARCHIVE_NAME" \
-            --descriptor landscape/fr_bdtopo_d077_2016_archive_candidate_v0.jsonl
+            --descriptor landscape/fr_bdtopo_d077_2016_archive_candidate_v0.toml
       - name: Test 7z stream and enumerate historical building layer files
         env:
           ARCHIVE_NAME: BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z
