@@ -25,6 +25,17 @@ class FileGdbMetadataTests(unittest.TestCase):
         self.assertTrue(x["modeled_or_depth_name_hint"])
         self.assertFalse(x["observed_extent_name_hint"])
 
+    def test_actual_original_maximum_layer_must_never_be_observed(self):
+        x = classify_name("Estimated_Max_Flood_Extent", ["intrp", "act_id"])
+        self.assertTrue(x["modeled_or_depth_name_hint"])
+        self.assertFalse(x["observed_extent_name_hint"])
+        self.assertFalse(x["observed_aoi04_layer_proven"])
+
+    def test_actual_flooded_area_name_not_assumed_observed(self):
+        x = classify_name("Flooded_area", ["src_date", "act_id"])
+        self.assertFalse(x["observed_extent_name_hint"])
+        self.assertFalse(x["observed_aoi04_layer_proven"])
+
     def test_safe_single_gdb_extracted_without_other_files(self):
         with tempfile.TemporaryDirectory() as td:
             archive = Path(td) / "test.zip"
