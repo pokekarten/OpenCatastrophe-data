@@ -63,6 +63,16 @@ class PageReceiptTests(unittest.TestCase):
         self.assertEqual(result["pages"][0]["raw_page_sha256"],
                          hashlib.sha256(raw(fixture(1))).hexdigest())
         self.assertIsNone(result["source_aggregate_original_sha256"])
+        source_rows = [r for p in (1, 2, 3) for r in fixture(p)["data"]]
+        parts = []
+        for r in sorted(source_rows, key=lambda item: item["slug"]):
+            parts.append(chr(31).join([
+                r["slug"], r["country"], r["name"], r["classCode"], r["verification"]
+            ]))
+        independent_digest = hashlib.sha256(chr(30).join(parts).encode("utf-8")).hexdigest()
+        self.assertEqual(result["canonical_field_digest_sha256"], independent_digest)
+        self.assertEqual(result["canonical_record_separator"], "0x1e")
+        self.assertEqual(result["canonical_field_separator"], "0x1f")
         for key in ("model_input_approved", "regulator_identity_verified",
                     "neon_database_written", "original_page_bytes_committed_to_git"):
             self.assertFalse(result[key])
@@ -136,6 +146,23 @@ class PageReceiptTests(unittest.TestCase):
         for value in (b'', b'\xff', b' ' * 300001):
             with self.subTest(size=len(value)), self.assertRaises(PageReceiptError):
                 inspect_page(value, 1, total_count=5, page_size=2, page_count=3)
+
+    def test_source_delimiter_attack_rejected(self):
+        for separator in (chr(30), chr(31)):
+            with self.subTest(separator=ord(separator)):
+                def mutate(obj, page):
+                    if page == 2:
+                        obj["data"][0]["name"] += separator + "another-row"
+                with self.assertRaisesRegex(PageReceiptError, "reserved digest delimiter"):
+                    audit(synthetic_read(mutate))
+
+    def test_digest_changes_when_original_name_changes(self):
+        before = audit(synthetic_read())["canonical_field_digest_sha256"]
+        def mutate(obj, page):
+            if page == 2:
+                obj["data"][0]["name"] += " A"
+        after = audit(synthetic_read(mutate))["canonical_field_digest_sha256"]
+        self.assertNotEqual(before, after)
 
     def test_fixed_page_url_rejects_noninteger_and_out_of_bounds(self):
         for value in (0, -1, PAGE_COUNT + 1, True, 1.0):
