@@ -38,3 +38,28 @@ Additional synthetic tests ensure the two geographically distinct public centre 
 - Prior pair research #976: https://github.com/pokekarten/OpenCatastrophe-data/pull/976 .
 
 **The Berdorf match count and difference bins must be read from the new exact-head hosted official workflow, never guessed from the city counts. If no acceptable village pair is found, report the negative result and retain the fail-closed gate rather than changing site selection to get a favourable outcome.**
+
+## Executed original-provider result: city baseline and Berdorf held-out predeclared site
+
+**Source workflow:** https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41320503803 (2026-11-01). Both actual official-source runs succeeded, including **16 synthetic** field-bound/source-privacy regressions. A single controlled acquisition of **two whole SHA256-checked original building GPKGs** was followed by small-range original 2024 MNT and MNS raster samples for each fixed study site. No raw source data, personally identifying information, per-building IDs, per-polygon medians, individual point locations or original rasters were persisted in Git/Neon.
+
+| Actual same-method evidence | City-control 100m | Berdorf village-control 100m |
+| --- | ---: | ---: |
+| ACT2023 roof actual-intersection polygons | **54** | **16** |
+| GeoBase2026 actual-intersection polygons | **104** | **16** |
+| Full-source polygon IoU≥0.60 high candidates | **32** | **15** |
+| Split/merge high candidates rejected (>=20% overlap of either source polygon) | **20** | **1** |
+| Uncontested unique original spatial candidates | **12** | **14** |
+| Paired candidates with enough valid unique original MNT/MNS pixels | **12** | **14** |
+| Paired unique/shared source raster pixels | **3,977** | **14,675** |
+| Source-MNT/MNS joint valid pixels in fixed window | **44,521** | **44,521** |
+| Paired median DSM–DTM proxy absolute differences <0.5m | **12** | **14** |
+| Paired differences 0.5–<2m | **0** | **0** |
+| Paired differences 2–<5m | **0** | **0** |
+| Paired differences ≥5m | **0** | **0** |
+
+City control reproduced the existing #976 baseline exactly. For Berdorf the GPKG RTree returned **18 candidate rows** for each source, of which **2** from each failed the positive-area intersection with the exact rotated 100m research square, leaving **16** source roof polygons and **16** source building polygons. All **14** strict accepted geometric candidates had >=8 uniquely and jointly valid original 2024 LiDAR raster cells; no pair failed insufficient pixels, negative median or source grid checks. The 14 pairs together had **14,675** shared valid cells, **14,996** uniquely owned roof-mask cells and **14,702** uniquely owned building-mask cells.
+
+**Interpretation:** in two very small predeclared test locations, conditional on conservative high-IoU matchability, alternate ACT2023 rooftop versus GeoBase2026 building-geometry masks produced similar *median surface-minus-terrain proxies*. This is a useful **source-definition consistency check**, not two independently measured roof heights, not a sampling-design proof of rural/urban generalization, and not evidence that all original unmatched objects are duplicate/incorrect/insured. Upstream ACT survey/processing dependence, acquisition-year differences, vegetation and source axis/vertical datum controls remain unverified. No approved CAT model/exposure units created.
+
+**Next scientifically causal work:** label/classify LiDAR point cloud as building versus ground versus tree on a bounded sample (classified COPC index located in #975), or manually survey a small independent holdout, then stress-test matched-pair medians on additional predeclared sites, including fail-fast source quality gates. Do not describe matching to a common original LiDAR raster as external ground truth.
