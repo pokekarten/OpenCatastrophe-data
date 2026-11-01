@@ -44,6 +44,10 @@ class RepairDiagnostics:
         self.relative_delta_gt_5pct = 0
         self.relative_delta_gt_20pct = 0
         self.absolute_deltas = []
+        self.structure_usable = 0
+        self.structure_unusable = 0
+        self.structure_polygon_count_disagreements = 0
+        self.structure_area_disagreements = 0
 
     def observe(self, original) -> None:
         """Evaluate a single invalid in-memory source polygon; aggregate only."""
@@ -70,6 +74,26 @@ class RepairDiagnostics:
             self.outcomes["single_polygon" if len(polygons) == 1 else "multiple_polygons"] += 1
             if debris:
                 self.with_nonpolygon_debris += 1
+            # Independent GEOS repair strategy challenge, also ephemeral only.
+            # Same numerical area is not evidence of an accurate building boundary.
+            try:
+                challenger = make_valid(original, method="structure", keep_collapsed=True)
+                alt_polygons, _ = _components(challenger)
+                if (not challenger.is_valid or not alt_polygons
+                        or any(not p.is_valid or p.is_empty or not math.isfinite(p.area)
+                               or p.area <= 0 for p in alt_polygons)):
+                    self.structure_unusable += 1
+                else:
+                    alt_area = math.fsum(p.area for p in alt_polygons)
+                    if not math.isfinite(alt_area) or alt_area <= 0:
+                        self.structure_unusable += 1
+                    else:
+                        self.structure_usable += 1
+                        self.structure_polygon_count_disagreements += len(alt_polygons) != len(polygons)
+                        tolerance = max(1e-6, 1e-8 * max(alt_area, after))
+                        self.structure_area_disagreements += abs(alt_area - after) > tolerance
+            except (GEOSException, ValueError, TypeError, OverflowError):
+                self.structure_unusable += 1
             delta = abs(after - before)
             self.absolute_deltas.append(delta)
             if before <= 0:
@@ -96,6 +120,10 @@ class RepairDiagnostics:
             "repair_multiple_polygons": self.outcomes["multiple_polygons"],
             "repair_unusable_or_not_polygonal": self.outcomes["unusable_or_not_polygonal"],
             "repair_with_nonpolygon_debris": self.with_nonpolygon_debris,
+            "structure_challenge_usable": self.structure_usable,
+            "structure_challenge_unusable": self.structure_unusable,
+            "structure_vs_linework_polygon_count_disagreements": self.structure_polygon_count_disagreements,
+            "structure_vs_linework_area_disagreements_over_tolerance": self.structure_area_disagreements,
             "area_change_comparable_nonzero_nominal": self.relative_comparable,
             "nonpositive_nominal_invalid_polygon_area": self.nonpositive_nominal_area,
             "nonfinite_nominal_invalid_polygon_area": self.nonfinite_nominal_area,
