@@ -96,3 +96,31 @@ scale/dimensions alone is insufficient to prove matching pixel origins.
 scale is horizontal CRS units, not a vertical accuracy or an insured
 building height. A full-raster SHA-256 and ground-controlled axis order
 remain unavailable.
+
+## Verified declared MNT/MNS raster grid equivalence
+
+The amended original provider workflow
+[41314251647](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41314251647)
+succeeded for **both** fixed original source URLs, including **12 synthetic
+regressions**. In addition to the first IFD attributes above:
+
+- `sample_format_code = 3` for both MNT and MNS (**IEEE floating point**);
+  combined with 64 bits/sample, source pixels are represented as IEEE
+  64-bit floating point, although no actual pixel was read.
+- SHA-256 of the canonical **declared raster grid** (dimensions,
+  PixelScale, ModelTiepoint and projected EPSG) is identical for both:
+  `a95a2dfc078d31fbe6c7531cef19e39fb5e57d6656e7beb4f0045a0b77cec5ca`.
+- Each original source required **one strict 4,096-byte range request**,
+  with matching prior first-page fragment checksum, correct HTTP
+  206 Content-Range and unchanged declared full-file total size.
+- The source-level CRS **EPSG:2169**, **128×128 TIFF blocks**, horizontal
+  **0.5m pixel scale**, **1,145,984** internal block index entries and
+  **TIFF LZW compression code 5** are shared by both.
+
+**Conclusion:** MNT/MNS first-IFD source grid metadata are *congruent*
+(important for a future pixel-aligned DSM–DTM method). This is stronger
+than equal image dimensions alone, but still does **not** independently
+certify axis order, geodetic control, vertical units/datum, no-data
+masking, classified roofs or ground truth. Reading a real bounded
+compressed raster block requires a separately audited byte-offset,
+byte-count and decompression gate with a strict transfer cap.
