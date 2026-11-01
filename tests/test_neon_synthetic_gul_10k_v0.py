@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
 """Independent reproducibility oracle for SQL synthetic GUL pilot.
 
 All values, peril rates and vulnerabilities are INVENTED. No native CAT,
