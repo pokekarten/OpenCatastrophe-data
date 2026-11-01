@@ -120,8 +120,8 @@ class FrozenGustTests(unittest.TestCase):
     def test_other_quality_levels_remain_outside_qn_two_three_subset(self):
         """Unknown QN levels must never enter the reviewed high-quality gust subset."""
         rows = [
-            "3;201001010000;0;12.0;1.0;2.0;180;eor\\r\\n",
-            "3;201001010010;4;25.0;2.0;4.0;190;eor\\r\\n",
+            "3;201001010000;0;12.0;1.0;2.0;180;eor\r\n",
+            "3;201001010010;4;25.0;2.0;4.0;190;eor\r\n",
             ROWS[-1],
         ]
         path, digest = zip_source(self.root, rows)
