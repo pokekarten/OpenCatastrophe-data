@@ -104,10 +104,16 @@ def inspect_priority_layers(gdb: Path) -> dict:
                 "all_features_sampled": count <= len(samples),
                 "source_geometry_stored_in_public_repo": False,
             }
+    from research_runners.cems_emns028_current_rnb_point_context_v0 import (
+        compare_original_layers_to_current_points,
+    )
+    current_rnb_point_context = compare_original_layers_to_current_points(gdb)
+
     return {
         "gauge_control_easting_northing_epsg32631":
             [round(gauge.x, 2), round(gauge.y, 2)],
         "semantic_layer_receipts": summary,
+        "current_rnb_point_context": current_rnb_point_context,
         "observed_aoi04_flood_layer_scientifically_validated": False,
         "observed_extent_versus_maximum_automatically_conflated": False,
         "historical_2016_building_stock_validated": False,
