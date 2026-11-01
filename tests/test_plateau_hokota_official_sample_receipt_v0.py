@@ -95,6 +95,35 @@ class OfficialHokotaOfflineReceiptTests(unittest.TestCase):
         self.assertEqual(result["samples"][0]["structure_screen"], "blocked")
         self.assertFalse(result["cat_model_input_admitted"])
 
+    def test_bounded_lod0_screen_is_partial_not_admitted(self):
+        coords = (
+            "36.11 140.51 10 36.11 140.52 10 "
+            "36.12 140.52 10 36.12 140.51 10 "
+            "36.11 140.51 10"
+        )
+        polygon = (
+            "<gml:surfaceMember><gml:Polygon>"
+            "<gml:exterior><gml:LinearRing><gml:posList>"
+            + coords +
+            "</gml:posList></gml:LinearRing></gml:exterior>"
+            "</gml:Polygon></gml:surfaceMember>"
+        )
+        geometry = (
+            "<bldg:lod0FootPrint><gml:MultiSurface>"
+            + polygon * 2 +
+            "</gml:MultiSurface></bldg:lod0FootPrint>"
+        ).encode()
+        gml = SYNTHETIC_GML.replace(b"</bldg:Building>", geometry + b"</bldg:Building>")
+        with patch(
+            "research_runners.plateau_citygml_sample_structure_v0.MAX_LOD0_POLYGONS", 1
+        ):
+            result = self.run_pinned(zip_data(gml=gml))
+        self.assertEqual(result["samples"][0]["structure_screen"], "partial")
+        self.assertEqual(result["samples"][0]["lod0_ground_ring_screened_count"], 1)
+        self.assertEqual(result["samples"][0]["lod0_polygons_not_screened_due_to_budget"], 1)
+        self.assertFalse(result["samples"][0]["model_input_admitted"])
+        self.assertFalse(result["all_building_geometries_checked"])
+
     def test_missing_input_cli_redacts_path_and_returns_error(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "unavailable-provider-original.zip"
