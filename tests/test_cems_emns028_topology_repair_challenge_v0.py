@@ -26,6 +26,8 @@ class RepairChallengeTests(unittest.TestCase):
         self.assertFalse(result["building_or_insurer_overlay_authorized"])
         self.assertFalse(result["model_input_admitted"])
         self.assertFalse(result["derived_repair_polygons_stored"])
+        self.assertFalse(result["zero_buffer_challenge"]["candidate_is_model_admitted"])
+        self.assertFalse(result["zero_buffer_challenge"]["candidate_is_stored"])
         for c in result["candidates"]:
             self.assertFalse(c["candidate_is_model_admitted"])
             self.assertFalse(c["candidate_is_stored"])
