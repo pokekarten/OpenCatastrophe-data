@@ -26,6 +26,9 @@ SUPPLEMENT_REQUIRED = (
 )
 RECORD_KINDS = frozenset(("building", "dwelling", "address", "parcel", "certificate"))
 OBSERVATION_KINDS = frozenset(("measured", "official_record", "modelled", "statistical_estimate"))
+# This pilot is a bounded *sample diagnostic*, not a national bulk ETL runner.
+MAX_INPUT_BYTES = 50 * 1024 * 1024
+MAX_INPUT_ROWS = 100_000
 
 
 class BuildingEnrichmentError(ValueError):
@@ -34,6 +37,10 @@ class BuildingEnrichmentError(ValueError):
 
 def _read_csv(path: Path, required: tuple[str, ...]) -> list[dict[str, str]]:
     try:
+        if path.is_symlink() or not path.is_file():
+            raise BuildingEnrichmentError("CSV source must be a regular, non-symlink file")
+        if path.stat().st_size > MAX_INPUT_BYTES:
+            raise BuildingEnrichmentError("CSV input exceeds bounded sample byte limit")
         with path.open(encoding="utf-8-sig", newline="") as handle:
             reader = csv.DictReader(handle, restkey="_unexpected")
             header = reader.fieldnames
@@ -47,6 +54,8 @@ def _read_csv(path: Path, required: tuple[str, ...]) -> list[dict[str, str]]:
                     raise BuildingEnrichmentError(f"CSV row {row_no}: malformed field count")
                 if any(not isinstance(row[col], str) for col in required):
                     raise BuildingEnrichmentError(f"CSV row {row_no}: missing CSV value")
+                if len(result) >= MAX_INPUT_ROWS:
+                    raise BuildingEnrichmentError("CSV input exceeds bounded sample row limit")
                 result.append(row)
             return result
     except (OSError, UnicodeError, csv.Error) as exc:
@@ -218,13 +227,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, help="Optional JSON diagnostics file (never raw rows)")
     args = parser.parse_args(argv)
     try:
+        if args.out is not None:
+            # Never overwrite source bytes, including a hardlink alias or output symlink.
+            if args.out.is_symlink():
+                raise BuildingEnrichmentError("Output symlinks are not permitted")
+            if (args.out.resolve() in (args.base.resolve(), args.supplement.resolve())
+                    or (args.out.exists() and (
+                        args.out.samefile(args.base) or args.out.samefile(args.supplement)))):
+                raise BuildingEnrichmentError("Output would overwrite an original CSV input")
         report = build_report(
             args.base, args.supplement,
             base_source_id=args.base_source_id,
             supplement_source_id=args.supplement_source_id,
             rights_state=args.rights_state,
         )
-    except BuildingEnrichmentError as exc:
+    except (BuildingEnrichmentError, OSError) as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         return 2
     rendered = json.dumps(report, indent=2, ensure_ascii=False, allow_nan=False,
