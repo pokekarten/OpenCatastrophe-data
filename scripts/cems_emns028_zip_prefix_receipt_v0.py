@@ -23,8 +23,10 @@ def probe_prefix(opener=None) -> dict:
         host = assert_expected_destination(response.geturl())
         status = response.status
         cr = response.headers.get("Content-Range", "")
-        ranged = status == 206 and bool(re.fullmatch(
-            r"bytes 0-3/[1-9][0-9]*|bytes 0-3/\*", cr))
+        parsed_range = re.fullmatch(r"bytes 0-3/([1-9][0-9]*|\*)", cr)
+        ranged = status == 206 and parsed_range is not None
+        archive_size = (int(parsed_range.group(1))
+                        if ranged and parsed_range.group(1) != "*" else None)
         data = response.read(4)  # hard cap: 4 bytes, then close connection
         looks_zip = data == b"PK\x03\x04"
         return {
@@ -33,6 +35,7 @@ def probe_prefix(opener=None) -> dict:
             "final_host": host, "http_status": status,
             "content_type": response.headers.get("Content-Type"),
             "range_honored": ranged,
+            "archive_size_bytes_from_range": archive_size,
             "prefix_bytes_received": len(data),
             "zip_local_file_magic_verified": looks_zip,
             "source_zip_available_for_further_rights_review":
