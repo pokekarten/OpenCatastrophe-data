@@ -40,6 +40,7 @@ class DinsAggregateTests(unittest.TestCase):
         out = parsed(sample())
         self.assertFalse(out["counts_suppressed"])
         self.assertEqual(out["inspected_record_count_not_exposure_denominator"], 60)
+        self.assertEqual(len(out["input_sha256"]), 64)
         self.assertFalse(out["financial_loss_inferred"])
         self.assertFalse(out["vulnerability_probability_inferred"])
         self.assertTrue(out["selection_bias_unresolved"])
@@ -67,6 +68,7 @@ class DinsAggregateTests(unittest.TestCase):
         self.assertTrue(out["counts_suppressed"])
         self.assertNotIn("damage_counts_within_inspected_frame", out)
         self.assertNotIn("inspected_record_count_not_exposure_denominator", out)
+        self.assertNotIn("input_sha256", out)
 
     def test_suppress_small_total(self):
         obj = sample(n=0)
@@ -74,6 +76,26 @@ class DinsAggregateTests(unittest.TestCase):
         out = parsed(obj)
         self.assertTrue(out["counts_suppressed"])
         self.assertNotIn("damage_counts_within_inspected_frame", out)
+        self.assertNotIn("input_sha256", out)
+
+    def test_suppressed_receipt_does_not_expose_low_entropy_digest(self):
+        x = sample(n=0)
+        x["damage_counts"]["Destroyed (>50%)"] = 1
+        y = sample(n=0)
+        y["damage_counts"]["Destroyed (>50%)"] = 2
+        left, right = parsed(x), parsed(y)
+        self.assertTrue(left["counts_suppressed"])
+        self.assertTrue(right["counts_suppressed"])
+        # Identical low-information receipts reveal neither 1 vs 2 nor
+        # a brute-forceable SHA256 of either original small cohort.
+        self.assertEqual(left, right)
+        self.assertNotIn("input_sha256", left)
+
+    def test_hash_remains_available_for_unsuppressed_data(self):
+        x = sample()
+        out = parsed(x)
+        self.assertIn("input_sha256", out)
+        self.assertFalse(out["counts_suppressed"])
 
     def test_reject_zero_total(self):
         with self.assertRaises(DinsAggregateError):
