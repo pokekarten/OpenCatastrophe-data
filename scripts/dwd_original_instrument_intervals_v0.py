@@ -62,7 +62,7 @@ def _date(value: str) -> date:
         raise InstrumentAuditBlocked("invalid original interval date") from exc
 
 
-def _rows(raw: bytes, expected_headers: tuple[str, ...]) -> tuple[list[dict], int]:
+def _rows(raw: bytes, expected_headers: tuple[str, ...], family: str = "unknown") -> tuple[list[dict], int]:
     try:
         layout = _txt_layout(raw)
     except EquipmentBlocked as exc:
@@ -76,7 +76,7 @@ def _rows(raw: bytes, expected_headers: tuple[str, ...]) -> tuple[list[dict], in
     table_rows = []
     footer_lines = 0
     footer_started = False
-    for line in lines[1:]:
+    for line_number, line in enumerate(lines[1:], start=2):
         if not line.strip():
             continue
         if line.count(";") == 0:
@@ -94,7 +94,11 @@ def _rows(raw: bytes, expected_headers: tuple[str, ...]) -> tuple[list[dict], in
         # Count exact delimiters and preserve every original column, including
         # its intentionally blank final field; never collapse quoted segments.
         if line.count(";") != len(expected_headers) - 1:
-            raise InstrumentAuditBlocked("source semicolon field-count drift")
+            raise InstrumentAuditBlocked(
+                f"source semicolon field-count drift family={family} "
+                f"line={line_number} observed={line.count(';')} "
+                f"expected={len(expected_headers) - 1}"
+            )
         fields = line.split(";")
         if len(fields) != len(expected_headers):
             raise InstrumentAuditBlocked("source positional field-count drift")
@@ -217,10 +221,10 @@ def analyze(path: Path, *, expected_sha256: str = evidence.EXPECTED_METADATA_SHA
                 if hashlib.sha256(raw).hexdigest() != sha_by_path[member]:
                     raise InstrumentAuditBlocked("TXT member SHA diverged from exact-source snapshot")
                 if stem.startswith("Metadaten_Geraete"):
-                    rows, footer_count = _rows(raw, EQ_HEADERS)
+                    rows, footer_count = _rows(raw, EQ_HEADERS, stem)
                     summary[stem] = _summary(rows, footer_count)
                 else:
-                    rows, footer_count = _rows(raw, PAR_HEADERS)
+                    rows, footer_count = _rows(raw, PAR_HEADERS, stem)
                     parameter_result = _parameter_summary(rows, footer_count)
     except (KeyError, OSError, zipfile.BadZipFile, RuntimeError) as exc:
         raise InstrumentAuditBlocked("source member inspection failed") from exc
