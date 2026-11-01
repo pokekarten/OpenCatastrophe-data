@@ -60,6 +60,52 @@ deleted by a shell trap. No raw source bytes, geometry, individual IDs or
 insurer records are uploaded, merged into Git or written into the independent
 `insurance-risk-core` Neon metadata registry.
 
+## Measured original-byte receipt (GitHub Actions, 2026-11-01)
+
+The **actual**, not synthetic, EUBUCCO v0.2 `LU00` public original
+Parquet was successfully retrieved and analysed in
+<https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41307603134>.
+
+| Observed source property | Measured value |
+| --- | ---: |
+| Original exact Parquet bytes | **29,053,909** |
+| Original Parquet SHA-256 | `d1e554de9db0b1f747575426ebb950ef96bb8b2956657554b5ff2998a91abe8c` |
+| Parquet row groups | **19** |
+| Verified distinct EUBUCCO `id` rows in LU000 | **186,171** |
+| `geometry_source`: government-labelled, upstream not checked | **144,088** |
+| `geometry_source`: OSM | **23,928** |
+| `geometry_source`: Microsoft | **18,155** |
+| Construction-year source: no provenance supplied | **186,097** |
+| Construction-year source: OSM | **74** |
+| Floors source: model-estimated | **181,134** |
+| Floors source: OSM | **5,037** |
+| Height source: government-labelled (not independent evidence) | **144,088** |
+| Height source: model-estimated | **40,519** |
+| Height source: Microsoft | **1,504** |
+| Height source: OSM | **60** |
+| Type source: model-estimated / OSM | **109,847 / 76,324** |
+| Subtype source: model-estimated / OSM | **161,439 / 24,732** |
+
+These numbers are **provenance field counts**, not proof that all values
+are accurate, not direct counts of measured physical heights, not the
+population of insured property, and not the count of missing Luxembourg
+buildings. A source provenance cell marked `missing` is not a general
+assertion about every related value. 144,088 records with government-
+labelled geometry **may already originate from older ACT or other related
+national sources**; independent source validation must not count their
+spatial coincidence as two observations.
+
+The newly observed SHA-256 is now a pre-existing, exact byte pin in the
+GitHub workflow; subsequent retrieval must match. The initial observation
+was tied to the documented original HTTPS source URL but **was not signed
+by EUBUCCO**, and the next run verifies reproducibility only, not a
+publisher-signed authenticity statement.
+
+**Still not done:** country coverage adequacy, actual geometry CRS/axis
+accuracy, polygon IoU, ACT2023v2 ↔ EUBUCCO identity crosswalk,
+EUBUCCO Luxembourg original-cadastre metadata, attribute validity,
+source-specific commercial right-to-use, and insurance loss admission.
+
 ## Next matching evidence gate, not yet completed
 
 1. Independently confirm exact LU00 original Parquet checksum and actual
