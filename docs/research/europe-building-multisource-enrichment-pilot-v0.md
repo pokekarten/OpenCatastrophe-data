@@ -83,3 +83,61 @@ For a reliable CAT model, the relevant success metric is not raw number of rows.
 - For individual LiDAR tiles only, use permitted file-level downloads after scientific and legal checks; a 1km² French tile may be 0.5–2GB, too large for Neon registry storage. Keep bytes in authorised separate object storage.
 - EPC certificates commonly describe a dwelling, not a whole building, and often encode renovation/certification rather than original construction.
 - A research page, publicly accessible PDF or service API is not proof of open bulk rights, scientific admissibility, commercial rights or insurance policy exposure.
+
+
+## Offline executable diagnostic (implemented in this PR)
+
+The script \`scripts/building_id_enrichment_v0.py\` and synthetic regression tests
+\`tests/test_building_id_enrichment_v0.py\` implement the **strict building-ID**
+part of the pilot. This is intentionally not a cadastral geometry join and not
+an external-data loader.
+
+Minimal *synthetic* input contract:
+
+\`\`\`text
+base.csv: building_id,construction_year,roof_type,floors_above_ground
+supplement.csv: source_record_id,building_id,record_kind,observation_kind,construction_year,roof_type,floors_above_ground
+\`\`\`
+
+\`record_kind\` is one of \`building|dwelling|address|parcel|certificate\`. Only
+\`building\` can participate. \`observation_kind\` is
+\`measured|official_record|modelled|statistical_estimate\`. A \`statistical_estimate\`
+for an individual building is **blocked** as an observed fill, and a modelled
+attribute is counted separately. Missing is the empty CSV cell, not a fabricated
+zero, "N/A" or an imputed date.
+
+After creating your own **synthetic-only or independently rights-cleared** local
+CSV fixtures, run:
+
+\`\`\`bash
+python scripts/building_id_enrichment_v0.py \
+  --base /tmp/building-base.csv \
+  --supplement /tmp/building-supplement.csv \
+  --base-source-id synthetic.eubucco \
+  --supplement-source-id synthetic.ehr \
+  --rights-state not_reviewed \
+  --out /tmp/building-id-diagnostic.json
+
+python -m unittest -v tests.test_building_id_enrichment_v0
+\`\`\`
+
+The diagnostic JSON contains *aggregate counts and file SHA-256*, not per-building
+identifiers, source-row contents, buildings' original attribute values, or a
+candidate asset export. Existing values are **never overwritten**. It records
+per-attribute agreements/conflicts and proposed observed/modelled fills; ambiguous
+multiple building matches are excluded, rather than arbitrarily choosing the
+first. Source and rights statuses are assertions about a *local diagnostic only*:
+the script **never promotes data to admitted model input**, even when
+\`--rights-state reviewed_for_local_analysis\` is supplied. It cannot prove legal
+rights or that identically spelled IDs belong to the same ID namespace.
+
+If EHR-to-EUBUCCO has **no documented shared building identifier**, **do not
+run this strict-ID comparator as though it were a spatial match**. First build a
+separate reviewed geometry/official crosswalk with assessed match quality and
+versioned source receipts. Only afterwards use the common canonical building
+identifier in this diagnostic. France RNB↔BD TOPO official relation and
+Netherlands BAG↔3DBAG can be stronger identity-control candidates.
+
+The next real-data gate remains exact per-asset rights, version, SHA-256, source
+granularity/CRS and a small manually adjudicated polygon sample. No raw supplier
+bytes or private addresses belong in the repository.
