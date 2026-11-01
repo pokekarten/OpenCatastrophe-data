@@ -12,6 +12,9 @@ on:
       - "tests/test_hanze_regions2024_geometry_zip_audit_v0.py"
       - "research_runners/hanze_regions2024_geometry_code_coverage_v0.py"
       - "tests/test_hanze_regions2024_geometry_code_coverage_v0.py"
+      - "research_runners/hanze_2024_original_polygon_integrity_v0.py"
+      - "tests/test_hanze_2024_original_polygon_integrity_v0.py"
+      - "research_runners/hanze_2024_polygon_integrity_source_receipt_v0.py"
       - "research_runners/hanze_regions2024_geometry_source_receipt_v0.py"
   workflow_dispatch:
 
@@ -38,7 +41,7 @@ jobs:
         with:
           python-version: "3.14"
       - name: Test fail-closed archive byte/header contract on synthetic fixtures
-        run: python -m unittest tests.test_hanze_regions2024_geometry_zip_audit_v0 tests.test_hanze_regions2024_geometry_code_coverage_v0 -v
+        run: python -m unittest tests.test_hanze_regions2024_geometry_zip_audit_v0 tests.test_hanze_regions2024_geometry_code_coverage_v0 tests.test_hanze_2024_original_polygon_integrity_v0 -v
       - name: Download and inspect original provider archive (nothing persisted to Git)
         run: |
           python research_runners/hanze_regions2024_zip_original_receipt_v0.py --out "$RUNNER_TEMP/hanze-regions2024-zip-metadata.json"
@@ -49,3 +52,9 @@ jobs:
       - name: Compare exact verified original ZIP source profile with frozen research receipt
         run: |
           python -c 'import json,os,pathlib; from research_runners.hanze_regions2024_geometry_source_receipt_v0 import HANZE_NATIVE_REGION_GEOMETRY_RECEIPT_V0 as e; a=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-regions2024-zip-metadata.json").read_text()); s=a["native_glossary_geometry_id_comparison"]; d=a["candidate_region_geometry_id_coverage"]; g=s["original_geometry"]; assert a["observed_sha256"]==e["source_archive_observed_sha256"] and a["archive_member_count"]==e["zip_member_count"] and g["dbf_distinct_canonical_code_count"]==e["dbf_distinct_valid_code_count"] and g["dbf_repeated_code_surplus_features"]==e["dbf_repeated_code_surplus"] and s["glossary_codes_also_in_geometry"]==e["in_both_original_s2_and_dbf_code_counts"] and s["geometry_codes_not_in_glossary"]==e["in_dbf_not_s2_code_count"] and s["glossary_codes_not_in_geometry"]==e["in_s2_not_dbf_code_count"] and d["fully_dbf_code_covered_original_candidate_lists"]==e["candidate_original_hanze_region_lists_fully_present_in_dbf"] and d["region_token_occurrences"]==e["original_hanze_region_token_occurrences_all_in_dbf"] and not e["model_source_admitted"]; print("PASS: original HANZE polygons ID coverage 1449 / source S2 1442 / 1382 common / 67 + 60 source-only / 150 source event tokens all in shapes")'
+      - name: Show original polygon record structure and reported projection metadata only
+        run: |
+          python -c 'import json,os,pathlib; r=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-regions2024-zip-metadata.json").read_text()); p=r["original_polygon_record_integrity"]; assert p["original_zip_sha256_verified"] and p["polygon_records"]+p["null_shape_records"]==1449 and p["shp_shx_record_count_exactly_reconciled"] and p["all_declared_bounds_contain_finite_vertices"] and not p["historical_hazard_footprint_observed"] and not p["model_source_admitted"]; print("HANZE 2024 original Polygon/PRJ evidence (not actual inundation):",json.dumps(p,sort_keys=True))'
+      - name: Compare all original Polygon and PRJ metadata to frozen source evidence
+        run: |
+          python -c 'import json,os,pathlib; from research_runners.hanze_2024_polygon_integrity_source_receipt_v0 import HANZE_2024_POLYGON_INTEGRITY_RECEIPT_V0 as e; a=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-regions2024-zip-metadata.json").read_text()); p=a["original_polygon_record_integrity"]; w=p["projection_declaration"]; assert a["observed_sha256"] == e["original_zip_sha256"] and p["polygon_records"] == e["polygon_records"] and p["null_shape_records"] == e["null_shape_records"] and p["polygon_rings"] == e["polygon_rings"] and p["polygon_vertices"] == e["polygon_vertices"] and p["exactly_closed_ring_count"] == e["exactly_closed_rings"] and p["open_ring_count"] == e["open_rings"] and w["declared_crs_name_unverified"] == e["projection_declared_name"] and w["declared_projection_method_unverified"] == e["projection_declared_method"] and w["declared_unit_names_unverified"] == e["projection_declared_unit_names"] and w["wkt_authority_epsg_codes_reported"] == e["projection_source_explicit_epsg_authorities"] and not e["model_source_admitted"]; print("PASS: exact original 1449 polygons, 15712 closed rings, 397659 points; publisher declares ETRS_1989_LAEA without EPSG ID")'

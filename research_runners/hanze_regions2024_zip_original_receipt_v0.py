@@ -14,6 +14,7 @@ if __package__:
     from .hanze_regions2024_geometry_zip_audit_v0 import (
         SOURCE_URL, PUBLISHER_BYTES, inspect_hanze_region_geometry_zip,
     )
+    from .hanze_2024_original_polygon_integrity_v0 import inspect_polygon_records
     from .hanze_regions2024_geometry_code_coverage_v0 import (
         compare_hanze_geometry_native_glossary, survey_verified_event_region_geometry_coverage,
     )
@@ -30,6 +31,7 @@ else:
     from hanze_regions2024_geometry_zip_audit_v0 import (
         SOURCE_URL, PUBLISHER_BYTES, inspect_hanze_region_geometry_zip,
     )
+    from hanze_2024_original_polygon_integrity_v0 import inspect_polygon_records
     from hanze_regions2024_geometry_code_coverage_v0 import (
         compare_hanze_geometry_native_glossary, survey_verified_event_region_geometry_coverage,
     )
@@ -69,6 +71,8 @@ def main() -> None:
         raise ValueError("original HANZE 2024 region geometry archive SHA cannot be overridden")
     zip_bytes = fetch_zip_publisher()
     result = inspect_hanze_region_geometry_zip(zip_bytes, expected_sha256=PINNED_ZIP_SHA256)
+    result["original_polygon_record_integrity"] = inspect_polygon_records(
+        zip_bytes, expected_sha256=PINNED_ZIP_SHA256)
     s2 = fetch_versioned_hanze_regions()
     dfo = fetch_publisher_bytes()
     hanze = fetch_hanze_pinned()
