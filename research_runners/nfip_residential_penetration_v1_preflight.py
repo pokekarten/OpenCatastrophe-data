@@ -107,13 +107,14 @@ def validate_original(raw, expected_sha256):
         if not isinstance(fips, str) or FIPS.fullmatch(fips) is None:
             raise NFIPPenetrationError("invalid 5-digit original county FIPS")
         date_text = row.get("asOfDate")
-        if not isinstance(date_text, str) or re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_text) is None:
+        if not isinstance(date_text, str) or re.fullmatch(r"\d{4}-\d{2}-\d{2}(?:T00:00:00(?:\.000)?Z)?", date_text) is None:
             raise NFIPPenetrationError("invalid asOfDate format")
         try:
-            date.fromisoformat(date_text)
+            date.fromisoformat(date_text[:10])
         except ValueError as exc:
             raise NFIPPenetrationError("invalid asOfDate") from exc
-        key = (fips, date_text)
+        period = date_text[:10]
+        key = (fips, period)
         if key in geographic_dates:
             raise NFIPPenetrationError("duplicate county and asOfDate")
         geographic_dates.add(key)
@@ -142,7 +143,7 @@ def validate_original(raw, expected_sha256):
                 missing_structures[suffix] += 1
             elif structures == 0:
                 zero_structures[suffix] += 1
-        periods[date_text] += 1
+        periods[period] += 1
     return {
         "profile": "openfema-nfip-residential-penetration-v1-research-preflight",
         "source_identity": ENTITY,
