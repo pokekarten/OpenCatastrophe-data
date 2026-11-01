@@ -77,8 +77,20 @@ def preflight(item: Any) -> dict[str, Any]:
     geometry = item["geometry"]
     if type(geometry) is not dict or geometry.get("type") != "Polygon":
         raise STACPreflightError("expected polygon spatial tile metadata")
-    if type(geometry.get("coordinates")) is not list:
-        raise STACPreflightError("polygon coordinates absent")
+    rings = geometry.get("coordinates")
+    if type(rings) is not list or len(rings) != 1:
+        raise STACPreflightError("polygon coordinates absent or unexpectedly complex")
+    ring = rings[0]
+    if type(ring) is not list or len(ring) != 5 or ring[0] != ring[-1]:
+        raise STACPreflightError("tile polygon must be a closed rectangle")
+    if any(type(p) is not list or len(p) != 2 for p in ring):
+        raise STACPreflightError("tile ring must contain coordinate pairs")
+    xs = [_positive_number(p[0], "polygon coordinate") for p in ring]
+    ys = [_positive_number(p[1], "polygon coordinate") for p in ring]
+    if any(abs(v - x) > 1e-5 for v, x in zip(
+        (min(xs), min(ys), max(xs), max(ys)), (west, south, east, north)
+    )):
+        raise STACPreflightError("tile geometry envelope disagrees with bbox")
     prop = item["properties"]
     if type(prop) is not dict:
         raise STACPreflightError("missing STAC temporal and rights properties")
