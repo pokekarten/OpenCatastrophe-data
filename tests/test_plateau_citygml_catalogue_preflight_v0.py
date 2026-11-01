@@ -90,6 +90,9 @@ class PlateauCataloguePreflightTests(unittest.TestCase):
     def test_other_year_cannot_substitute_for_frozen_year(self):
         data = valid_payload()
         data["citygml"][0]["year"] = 2025
+        data["citygml"][0]["composite_url"] = (
+            "https://api.plateauview.mlit.go.jp/datacatalog/citygml/13104-2025/citygml.zip"
+        )
         with self.assertRaisesRegex(CataloguePreflightError, "exactly one"):
             check(data)
 
