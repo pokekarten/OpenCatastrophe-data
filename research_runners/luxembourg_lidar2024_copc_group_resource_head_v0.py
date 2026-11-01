@@ -67,7 +67,12 @@ def _only_publisher_url(url: str, expected_slug: str) -> str:
     if not p.path.startswith("/resources/") or not p.path.lower().endswith(".zip"):
         raise ArchiveReceiptError("Source path not a direct publisher ZIP")
     if expected_slug.lower() not in p.path.lower():
-        raise ArchiveReceiptError("Source ZIP name mismatches published tile index group")
+        # A stable, public, sanitized *basename* (never URL/query) is enough
+        # to diagnose differences between ACT ZIP names and tile groups.
+        basename=p.path.rsplit("/",1)[-1]
+        if not re.fullmatch(r"[A-Za-z0-9_.-]{1,150}",basename):
+            raise ArchiveReceiptError("Source ZIP name mismatches official tile group (unsafe basename)")
+        raise ArchiveReceiptError("Official ZIP public basename differs from tile group: "+basename)
     return url
 
 
