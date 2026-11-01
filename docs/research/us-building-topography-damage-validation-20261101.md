@@ -24,6 +24,12 @@ Official provider/documentation references:
 - FEMA exact public layer and schema: https://services.arcgis.com/XG15cJAlne2vxtgt/arcgis/rest/services/FEMA_Historical_Geospatial_Damage_Assessment_Database/FeatureServer/0
 - xBD original entry: https://xview2.org/dataset ; CMU project documentation: https://www.sei.cmu.edu/projects/xview-2-challenge/
 
+## Directly verified FEMA source limitation (live aggregate receipt)
+
+Read `docs/research/fema-historical-geospatial-live-aggregate-receipt-20261101.md` before designing any real test. On **2026-11-01**, the public FEMA layer returned **930,839** assessment records across `MOD=664,294` and `RS=266,545`, with **no `FA` provider group**. Its last reported data edit is **2021-06-22**. **NO-GO** for a field-verified independent ground-truth holdout from this layer; synthetic tests containing `FA` demonstrate software behavior only, not the existence of actual `FA` rows.
+
+The specific `2018 Hurricane Michael` source event has three administrative `DIS_NUMBER` values and **25,848** remote-sensed wind damage assessments. A bounded candidate is `DR-4399` / `2018-10-10 UTC` / `RS` / `WI`, **23,682** assessments, **not** a ground-truth or insured loss sample. Preserve the disaster number in event keys; never silently aggregate all three into a single cohort.
+
 ## One scientifically bounded experiment, not a bulk import
 
 1. Freeze one publicly documented U.S. disaster/area and event date, then enumerate actual provider availability *by exact tile or event ID*. Avoid implicit country-scale or provider-wide requests.
