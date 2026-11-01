@@ -112,6 +112,61 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "noaa.ngs.hurricane-michael-2018-emergency-imagery",
+      "name": "2018 NOAA NGS Emergency Response Imagery: Hurricane Michael",
+      "provider": "NOAA National Geodetic Survey / Remote Sensing Division",
+      "categories": [
+        "aerial_imagery",
+        "post_event_observation",
+        "building_damage",
+        "wind",
+        "united_states"
+      ],
+      "spatial_scope": "Selected coastal and inland areas of the Florida Panhandle and adjacent southeast United States; published bounding extent is not an image-coverage mask",
+      "temporal_scope": "Post-landfall image collection 2018-10-11 to 2018-10-14, with individual flight/scene timestamps requiring retrieval and verification",
+      "resolution_or_granularity": "9,580 aerial images across approximately 10,756 square kilometres; approximate 15-30 cm image sample spacing and location accuracy not independently certified",
+      "potential_roles": [
+        "independent_imagery_source_candidate",
+        "fema_remote_sensing_label_challenge",
+        "event_timing_and_coverage_review"
+      ],
+      "authoritative_url": "https://www.fisheries.noaa.gov/inport/item/57759",
+      "access_class_hint": "noaa_public_emergency_imagery_browse_and_selective_download_exact_tile_rights_review",
+      "note": "NOAA provider metadata reports no access restriction, warns against critical-use and legal-use reliance, documents partial coverage, clouds and estimated positional accuracy; exact derivative/commercial scope and attribution for a selected image still need review. Source NOAA photographs are direct event observations, but FEMA RS annotations might have USED NOAA imagery: audit image/label lineage before claiming an independent visual test. Record original scene ID/time/footprint, flight mission, ortho/oblique geometry and source byte identity. A photo alone is NOT a verified building-loss label or financially insured loss.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "florida.dep.hurricane-michael-2018-coastal-structural-damage",
+      "name": "Florida DEP Hurricane Michael field-assessed coastal structural damage report (2019)",
+      "provider": "Florida Department of Environmental Protection, Coastal Engineering and Geology",
+      "categories": [
+        "field_assessment",
+        "observed_structural_damage",
+        "coastal_buildings",
+        "wind",
+        "storm_surge",
+        "united_states"
+      ],
+      "spatial_scope": "Northwest Florida coastal building zone, specifically selected surveyed coastlines in Bay, Gulf, Franklin and Wakulla counties; not an inland or complete statewide census",
+      "temporal_scope": "Field surveys immediately after 2018-10-10 landfall; final report and revisions published 2019",
+      "resolution_or_granularity": "Expert-compiled report, field observations, photos and area/type summary counts; no independently verified openly downloadable building-level machine table confirmed",
+      "potential_roles": [
+        "independent_field_damage_report_candidate",
+        "coastal_damage_definition_comparison",
+        "external_validation_scope_limit"
+      ],
+      "authoritative_url": "https://floridadep.gov/rcp/coastal-engineering-geology/documents/hurricane-michael-post-storm-beach-conditions-and-coastal",
+      "access_class_hint": "public_government_report_pdf_and_photos_no_machine_readable_microdata_admission",
+      "note": "Florida DEP explicitly documents damage-assessment team field observations in Bay, Gulf, Franklin and Wakulla counties, with NOAA imagery also used. The report concerns coastal structures and erosion, not all FEMA DR-4399 structures or purely wind damage: surge, wave and erosion mechanisms must be disentangled. Its report totals and methods could offer a bounded independent challenge only after geography, damage definitions, survey selection, lineage and precise reuse rights are verified. Do NOT divide FEMA RS point counts by coastal field survey totals, infer parcel-level matches, claim an independent label at every location, or redistribute report imagery as unrestricted model training data.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
     }
   ]
 }
