@@ -96,6 +96,7 @@ def audit(path: Path, expected_sha256: str) -> dict:
         if set(COLUMNS) - set(parquet.schema_arrow.names):
             raise CrossSourceError("mandatory geometry/attribute lineage columns absent")
         total = 0
+        seen_ids = set()
         geometry_families = Counter()
         matrices = {column: Counter() for column in PROVENANCE}
         relationships = {column: Counter() for column in PROVENANCE}
@@ -106,8 +107,9 @@ def audit(path: Path, expected_sha256: str) -> dict:
                 if values["region_id"][idx] != "LU000":
                     raise CrossSourceError("unexpected regional code in LU00")
                 ident = values["id"][idx]
-                if not isinstance(ident, str) or not ident or len(ident) > 256:
-                    raise CrossSourceError("invalid source ID")
+                if not isinstance(ident, str) or not ident or len(ident) > 256 or ident in seen_ids:
+                    raise CrossSourceError("invalid or duplicate source ID")
+                seen_ids.add(ident)
                 gf = family(geom)
                 geometry_families[gf] += 1
                 for attr in PROVENANCE:
