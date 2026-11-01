@@ -104,10 +104,21 @@ class DwdDirectoryTests(unittest.TestCase):
         ]
         for filename in bad:
             with self.subTest(filename=filename):
-                with self.assertRaises(DirectoryBlocked):
-                    inspect_index(html(FROZEN_ARCHIVE, filename))
-        with self.assertRaises(DirectoryBlocked):
-            inspect_index(html(FROZEN_ARCHIVE, FROZEN_ARCHIVE))
+                result = inspect_index(html(FROZEN_ARCHIVE, filename))
+                self.assertEqual(result["historical_archive_link_count"], 1)
+                self.assertEqual(result["quarantined_link_count"], 1)
+                self.assertTrue(result["existing_station_00003_archive_found"])
+        result = inspect_index(html(FROZEN_ARCHIVE, FROZEN_ARCHIVE))
+        self.assertEqual(result["historical_archive_link_count"], 1)
+        self.assertEqual(result["quarantined_link_reasons"]["duplicate_archive_identity"], 1)
+
+    def test_valid_archive_kept_while_bad_interval_quarantined(self):
+        reversed_date = "10minutenwerte_extrema_wind_01234_20250101_20200101_hist.zip"
+        result = inspect_index(html(FROZEN_ARCHIVE, SECOND, reversed_date, FROZEN_ARCHIVE))
+        self.assertEqual(result["historical_archive_link_count"], 2)
+        self.assertEqual(result["quarantined_link_reasons"]["reversed_date_interval"], 1)
+        self.assertEqual(result["quarantined_link_reasons"]["duplicate_archive_identity"], 1)
+        self.assertEqual(result["archive_links_examined"], 4)
 
     def test_random_links_do_not_become_archive_candidates(self):
         result = inspect_index(html(FROZEN_ARCHIVE, "../", "?C=N;O=D", "description.txt"))
