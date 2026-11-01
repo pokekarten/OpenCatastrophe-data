@@ -171,8 +171,12 @@ def inspect(opener=None):
         raise ZipRangeError("Official source metadata not an object")
     if isinstance(data.get("data"),dict):
         data=data["data"]
-    if data.get("id")!=CITY_RESOURCE_ID or data.get("size")!=CITY_ORIGINAL_BYTES:
-        raise ZipRangeError("Official city resource UUID / archive size differs from frozen receipt")
+    # uData exposes the numeric source ZIP size as `filesize`;
+    # `size` can be a display-oriented field. Use the identical official
+    # original metadata contract already verified in merged #987.
+    source_size=data.get("filesize") or data.get("size")
+    if data.get("id")!=CITY_RESOURCE_ID or source_size!=CITY_ORIGINAL_BYTES:
+        raise ZipRangeError("Official city resource UUID / archive filesize differs from frozen receipt")
     published=_source_digest_from_metadata(data)
     if published.get("sha1")!=CITY_PUBLISHER_SHA1:
         raise ZipRangeError("Publisher-provided original city archive SHA1 metadata changed")
