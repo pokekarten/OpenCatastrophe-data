@@ -188,3 +188,64 @@ format, byte budget and original ZIP product identity, then independently
 approve a second fixed-source metadata query. Do not infer any depth
 unit, return period, dry pixel or sample coverage from the root.
 
+
+
+## Named Atom child and five exact ZIP candidates — research verification
+
+The previously verified original Atom root metadata [run
+41326959147](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41326959147)
+identified only an Atom child, **not** a direct ZIP download. The fixed
+child is https://gdi.berlin.de/data/ua_srhk/atom/0.atom. Its public
+metadata names five **distinct** ZIP objects. Exact URIs are under
+the fixed prefix https://gdi.berlin.de/data/ua_srhk/atom/ :
+
+| Official Atom ZIP filename | Scientific label in the Atom metadata |
+| --- | --- |
+| \`wasserstand_extrem2022.zip\` | Water depth, extreme scenario |
+| \`wasserstand_aussergewoehnliches_ereignis2022.zip\` | Water depth, extraordinary scenario |
+| \`fliessgeschw_extrem2022.zip\` | Flow speed, extreme scenario |
+| \`fliessgeschw_aussergewoehnliches_ereignis2022.zip\` | Flow speed, extraordinary scenario |
+| \`vulnerabilitaetsanalyse.zip\` | Separate persons/vehicles vulnerability product |
+
+These are **links**, not inspected original ZIP or GeoTIFF contents.
+The official Atom entry labels links \`type=image/tiff\` even though
+their URLs end in \`.zip\`; this is *not* the actual ZIP transport
+Content-Type or proof of a valid internal raster.
+
+**Important source conflict:** The Atom child entry describes the
+bundle as **EPSG:25833**, including an Atom category \`EPSG/0/25833\`,
+whereas the Berlin 2025 official technical
+[PDF](https://gdi.berlin.de/data/ua_srhk/docs/Datenformatbeschreibung_SRHK_2025.pdf)
+explicitly describes the GeoTIFF files as **EPSG:25832**. The difference
+is material for one-metre depth values and metre-scale building
+alignment. The real ZIP's GeoTIFF internal GeoKeys / affine georeference
+must settle this independently; **do not reproject, join, or assign
+depth pixels** based solely on either catalogue label.
+
+The original child combines public parent feed attribution
+\`Datenlizenz Deutschland Namensnennung 2.0\`, an entry-level
+\`Zero 2.0\` statement for some datasets, and a specific BKG
+\`Namensnennung 2.0\` clause for water depth, speed and direction.
+The source-by-source licence attribution is **not homogeneous**.
+Preserve BKG attribution and source lineage for any water-depth raster;
+neither this XML parse nor the provider catalogue automatically
+admits a CAT model input.
+
+\`research_runners/berlin_srhk_atom_child_preflight_v0.py\`
+performs exactly one fixed child URL metadata GET; 64 KiB cap,
+35s timeout, TLS, no redirects/proxies, strict Atom XML identity,
+rights gate, exactly five source-specific ZIP paths and duplicate
+rejection. It never follows links, downloads ZIPs, decodes TIFFs,
+or writes a database. Unit tests only generate synthetic Atom XML;
+the reviewed GitHub workflow
+\`.github/workflows/berlin-srhk-atom-child.yml\` runs one official
+metadata GET **after** the workflow change merges into main,
+never on a PR. Record actual original response byte count, SHA,
+source version and observed links only after that run succeeds.
+
+**Remaining:** independently review a bounded **HEAD** of one exact
+water-depth ZIP for size, MIME, redirects and modification metadata
+before any original-byte or raster-window acquisition. The hazards
+are simulation **scenarios**, not claims, observed events or a
+stochastic catalogue. No source zip contents, pixel depth/NoData,
+real building intersection, or synthetic-to-real admission is proven.

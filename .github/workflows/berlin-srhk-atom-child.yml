@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Berlin SRHK 2025 Atom child exact ZIP metadata
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research_runners/berlin_srhk_atom_child_preflight_v0.py
+      - tests/test_berlin_srhk_atom_child_preflight_v0.py
+      - .github/workflows/berlin-srhk-atom-child.yml
+  # A reviewed workflow change must merge before one real source GET.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/berlin-srhk-atom-child.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: berlin-srhk-atom-child-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  fixed-child:
+    name: Bounded original Berlin SRHK Atom child XML
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Synthetic malicious XML and source identity tests
+        run: python -m unittest tests.test_berlin_srhk_atom_child_preflight_v0 -v
+      - name: Exactly one original Atom child metadata GET, no ZIP
+        if: github.event_name != 'pull_request'
+        run: python -m research_runners.berlin_srhk_atom_child_preflight_v0 --live
