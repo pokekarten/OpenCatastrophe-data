@@ -418,9 +418,47 @@ The bounded local parser:
 On a reviewed main-workflow change, two independently bounded runs are
 scheduled by \`.github/workflows/berlin-srhk-depth-zip-eocd.yml\`.
 PR checks use only synthetic local ZIPs / hostile HTTP fakes, including
-a central directory too large for the suffix. The original official
-EOCD outcome remains **unverified until the actual push-run logs**
-are checked.
+a central directory too large for the suffix. The **actual original Berlin source result succeeded on 2026-11-01**:
+[GitHub Actions run 41332972926](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41332972926),
+main commit \`fd7c2d79d48b0f385b80ab47f14d3557c10e394a\`.
+
+| Exact original-source ZIP EOCD check | Extreme water depth | Extraordinary water depth |
+| --- | ---: | ---: |
+| Full source ZIP size from prior HEAD | 619,211,977 B | 563,115,763 B |
+| Original 206 tail bytes fetched | **65,557** | **65,557** |
+| Tail-only original SHA-256 | \`77d39ace530fd0e57e6588e278591e4bf864ddbd9236e27bf77b34bbaa711396\` | \`24b2b2dd85d552fedb13890776bfe15c2be216656f1dac674b07292cc18c9339\` |
+| Classic single-disk ZIP EOCD | **Yes** | **Yes** |
+| ZIP central directory offset | 619,211,835 | 563,115,620 |
+| ZIP central directory byte length | **120** | **121** |
+| ZIP declared member count | **1** | **1** |
+| TIFF-suffixed member names in original directory | **1** | **1** |
+| Unparsed other members | 0 | 0 |
+| Archive comment length | 0 | 0 |
+| Original UTC | 17:44:14.573418 | 17:44:15.345161 |
+| Actual ZIP member payload read | **No** | **No** |
+
+The one ZIP directory record for each source **fit inside the same
+65,557-byte tail**. No second central-directory request was needed.
+The two ZIPs therefore contain one TIFF-named archive member each,
+**not** an independently established tiling of many ZIP members.
+The actual TIFF may still be internally tiled.
+
+The source read fetched **131,114 bytes** total, not 1.18 GB.
+The ZIP data entry, source CRS, TIFF GeoKeys, internal raster tile
+locations, water-depth unit, NoData and actual building overlap
+remain unexamined. TIFF file suffix alone does not prove the
+internal GeoTIFF scientific format, byte order, coordinate system,
+coverage, or decompressibility. The two full archive SHA-256
+values and member CRC-32 checks are *not* validated by this metadata
+probe. Both source samples are research-only, not admitted CAT inputs.
+
+**Next bounded source gate:** Read the source-pinned ZIP local member
+header plus a tiny Deflate-stream prefix and limit decompression
+separately, to inspect TIFF magic, IFD/GeoKey metadata and declared
+CRS without downloading the complete archive. Preserve original
+product lineage, the unresolved 25832-vs-25833 conflict, field
+vintage, pixel NoData, and BKG attribution terms.
+
 
 This is **not** yet a real building-hazard join: EPSG:25832 versus
 EPSG:25833, 2022/2025 product naming/vintage, true raster units,
