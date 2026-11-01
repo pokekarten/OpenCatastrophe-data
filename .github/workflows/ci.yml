@@ -89,6 +89,7 @@ jobs:
           python -m unittest
           tests.test_eurostat_nuts2_3035_adapter_v0
           tests.test_regional_wind_footprint_overlay_v0
+          tests.test_building_polygon_crosswalk_v0
           -v
 
   cems-geotiff-profile:
