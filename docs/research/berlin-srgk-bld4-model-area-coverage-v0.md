@@ -86,3 +86,38 @@ into main** (or explicit reviewed manual dispatch).
 
 No original flood depth or geometry data are saved. No CAT model,
 insurer portfolio, TIV, vulnerability or loss is approved here.
+
+
+## First original WFS evidence: spatial filter failed closed
+
+The reviewed original main workflow
+[41354987880](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41354987880),
+on merged commit `0836a963651d8f251ff675e9d4221244a0bf03db`,
+completed all **seven synthetic tests**, but its live official
+`GetFeature` pilot request **failed**:
+
+```text
+BLOCKED: returned BBOX feature has no positive pilot intersection
+```
+
+This means a polygon was returned for the exact
+`EPSG:25833` BBOX, but its actual validated EPSG:25833 geometry
+did **not** overlap the fixed 200 × 200 m study box. This is neither
+a positive detailed-model-area coverage proof nor a verified absence
+of detailed models in the area. The WFS could ignore the BBOX, use
+different spatial filtering conventions, or exhibit a service bug;
+the original run does **not** establish the mechanism.
+
+The current follow-up appends **no broader source query**. It records
+only the SHA-256 and byte counts of the two existing fixed original
+WFS responses, plus whether they are exactly byte-identical, whenever
+the spatial filter is untrusted. The strict **nonzero/fail-closed**
+scientific result is unchanged. Original feature names, geometries,
+addresses, IDs and raw response bytes are never exported.
+
+Next: review the new original provenance-only diagnostic receipt.
+If both bodies are byte-identical, that is evidence consistent with
+the provider ignoring or not enforcing this BBOX, not authority to
+guess there is no detailed model covering the pilot. A further
+provider-specific `DescribeFeatureType` and FES spatial-filter
+review may be necessary before a new **bounded** geometry query.
