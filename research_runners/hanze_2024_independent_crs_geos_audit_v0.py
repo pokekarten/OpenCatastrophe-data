@@ -80,6 +80,23 @@ def audit_independent_crs_and_topology(
         # not guessed from the name 'ETRS_1989_LAEA'.
         identified = original_crs.to_epsg(min_confidence=70)
         matches_reference = bool(original_crs.equals(official, ignore_axis_order=True))
+        # Legacy ESRI WKT1 may use a named ETRS89 datum whereas modern
+        # EPSG:3035 uses a datum ensemble. A strict full-object CRS.equals
+        # can be False even if PROJ independently identifies EPSG:3035.
+        # Match the original projection method, numerical parameters,
+        # GRS80 ellipsoid and axis units against the official CRS.
+        def parameter_signature(crs):
+            op = crs.coordinate_operation
+            return (
+                op.method_name,
+                tuple(sorted((p.name, round(float(p.value), 8), p.unit_name.lower())
+                             for p in op.params)),
+                round(float(crs.ellipsoid.semi_major_metre), 7),
+                round(float(crs.ellipsoid.inverse_flattening), 9),
+                tuple(x.unit_name.lower() for x in crs.axis_info),
+            )
+        epsg3035_parameter_ellipsoid_match = (
+            parameter_signature(original_crs) == parameter_signature(official))
         axes = [info.unit_name for info in original_crs.axis_info]
     except (ValueError, UnicodeError, RuntimeError) as exc:
         raise RegionArchiveError("independent source CRS cannot be parsed") from exc
@@ -140,6 +157,10 @@ def audit_independent_crs_and_topology(
         "source_projected_crs": bool(original_crs.is_projected),
         "epsg_code_identified_by_pyproj": identified,
         "equals_official_epsg3035_ignoring_axis_order": matches_reference,
+        "epsg3035_projection_parameters_ellipsoid_axes_match":
+            epsg3035_parameter_ellipsoid_match,
+        "legacy_wkt_datum_and_modern_epsg_ensemble_equivalence_not_proven":
+            not matches_reference,
         "coordinate_axis_unit_names": axes,
         "source_feature_count": feature_count,
         "validity": {
