@@ -41,6 +41,12 @@ PROBES = {
         "70272185-b2b3-4178-96b8-43bea330dcae.json?includeTimeseries=true",
         "resolve_station_metadata",
     ),
+    "emsc.seismicportal.fdsn-event": (
+        "https://www.seismicportal.eu/fdsnws/event/1/query"
+        "?format=json&limit=1&orderby=time&nodata=204"
+        "&includeallorigins=false&includearrivals=false",
+        "latest_event_json",
+    ),
 }
 
 
@@ -99,6 +105,16 @@ def reviewed_probe(source: str, root: Path = ROOT):
             "/stations/70272185-b2b3-4178-96b8-43bea330dcae.json"
             and request.query == "includeTimeseries=true"
         )
+    elif source == "emsc.seismicportal.fdsn-event":
+        # Reuse the independent strict FDSN service review. The one-event
+        # query is a fixed contract, never a caller-selected catalogue search.
+        from scripts.probe_emsc_fdsn_event_v0 import PROBE_URL, verify_frozen_contract
+        verify_frozen_contract(contract_path)
+        path_authorized = (
+            request.path in reviewed_paths and url == PROBE_URL
+            and request.query == "format=json&limit=1&orderby=time&nodata=204"
+            "&includeallorigins=false&includearrivals=false"
+        )
     else:
         path_authorized = request.path in reviewed_paths
     if (request.scheme != "https" or root_url.scheme != "https"
@@ -143,6 +159,18 @@ def verify_response(source: str, raw: bytes) -> dict:
         if not isinstance(payload, (list, dict)) or not payload:
             raise ProbeBlocked("NOAA response is not a nonempty JSON collection")
         return {"verified_shape": "json_collection_only", "sensor_lineage_verified": False}
+    if source == "emsc.seismicportal.fdsn-event":
+        from scripts.probe_emsc_fdsn_event_v0 import EMSCProbeError, inspect_json_bytes
+        try:
+            shape = inspect_json_bytes(raw)
+        except EMSCProbeError as exc:
+            raise ProbeBlocked("EMSC fixed one-event GeoJSON semantics drift") from exc
+        # No raw earthquake feature, coordinates, source ID or magnitude escapes.
+        return {
+            "verified_shape": "one_earthquake_event_geojson",
+            **shape,
+            "scientific_event_parameters_verified": False,
+        }
     if source == "wsv.pegelonline.rest-v2.dresden":
         from scripts.parse_pegelonline_metadata import (
             PegelonlineMetadataError, parse_pegelonline_metadata_bytes,
