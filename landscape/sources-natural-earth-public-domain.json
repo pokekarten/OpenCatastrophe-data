@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.1.0",
-  "purpose": "Research permissive global geographic basemap alternative; not geodata admission",
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery: research permissive global geographic basemap alternative; not geodata admission",
   "review_date": "2026-11-01",
   "entries": [
     {
