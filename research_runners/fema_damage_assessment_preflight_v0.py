@@ -103,6 +103,8 @@ def preflight(payload: Any) -> dict[str, Any]:
     missing_image_date = 0
     image_before_event = 0
     production_before_event = 0
+    missing_production_date = 0
+    image_after_production = 0
 
     for feature in features:
         if type(feature) is not dict or set(feature) != {"attributes"}:
@@ -138,12 +140,20 @@ def preflight(payload: Any) -> dict[str, Any]:
             missing_image_date += 1
         elif img_date < target_day:
             image_before_event += 1
-        if prod_date is not None and prod_date < target_day:
+        if prod_date is None:
+            missing_production_date += 1
+        elif prod_date < target_day:
             production_before_event += 1
+        if img_date is not None and prod_date is not None and img_date > prod_date:
+            image_after_production += 1
         if bucket == "FA":
             if level == "UNK":
                 field_unknown_damage += 1
-            elif prod_date is None or prod_date >= target_day:
+            elif (
+                prod_date is not None
+                and prod_date >= target_day
+                and (img_date is None or target_day <= img_date <= prod_date)
+            ):
                 recognized_field_candidates += 1
 
     methods = ("FA", "RS", "MOD", "OTHER_OR_UNKNOWN")
@@ -167,6 +177,8 @@ def preflight(payload: Any) -> dict[str, Any]:
         "missing_imagery_date_count": missing_image_date,
         "imagery_before_event_count": image_before_event,
         "production_before_event_count": production_before_event,
+        "missing_production_date_count": missing_production_date,
+        "imagery_after_production_count": image_after_production,
         "scientific_independence_proven": False,
         "automatic_building_join_allowed": False,
         "model_input_admitted": False,
