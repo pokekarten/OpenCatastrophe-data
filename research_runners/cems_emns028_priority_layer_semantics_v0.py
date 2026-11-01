@@ -48,6 +48,8 @@ def inspect_priority_layers(gdb: Path) -> dict:
     import fiona
     from fiona.transform import transform
     from shapely.geometry import Point, shape
+    from shapely.validation import explain_validity
+    from shapely import get_num_coordinates
 
     east, north = transform("EPSG:4326", "EPSG:32631",
                             [GAUGE_LON_LAT[0]], [GAUGE_LON_LAT[1]])
@@ -82,6 +84,9 @@ def inspect_priority_layers(gdb: Path) -> dict:
                     "source_attributes": source_property_summary(dict(feature["properties"])),
                     "geometry_type": polygon.geom_type,
                     "geometry_valid": valid,
+                    "geometry_validation_reason": explain_validity(polygon)[:160],
+                    "geometry_vertex_coordinate_count": int(get_num_coordinates(polygon)),
+                    "overlay_rejected_until_manual_topology_review": not valid,
                     "geometry_area_square_metres": round(float(polygon.area), 2)
                     if valid else None,
                     "geometry_intersects_ponthierry_gauge_control": at_gauge,
