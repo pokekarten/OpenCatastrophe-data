@@ -89,7 +89,7 @@ class HessenAlkisBboxTests(unittest.TestCase):
         calls=[]
         def fake(req,timeout):
             calls.append((req.full_url,req.get_method(),timeout))
-            return Reply(raw=city)
+            return Reply(raw=city,url=h.HOSENFELD_URL)
         receipt=h.probe(open_request=fake,hosenfeld=True)
         self.assertEqual(calls,[(h.HOSENFELD_URL,"GET",h.TIMEOUT_SECONDS)])
         self.assertIn("hosenfeld",receipt["profile"])
