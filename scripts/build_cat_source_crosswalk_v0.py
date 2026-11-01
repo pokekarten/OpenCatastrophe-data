@@ -113,7 +113,10 @@ def build_crosswalk(access_inventory: dict[str, Any], linkage_audit: dict[str, A
     # only, never proof of duplicate source bytes or authority to conflate IDs.
     page_index: dict[str, list[str]] = defaultdict(list)
     for source_id, source in discovery.items():
-        page_index[source["authoritative_url"]].append(source_id)
+        url = source.get("authoritative_url")
+        if not isinstance(url, str) or not url.strip():
+            raise CrosswalkError("source identity/provenance mismatch across derived registers")
+        page_index[url].append(source_id)
     url_groups = [
         {"authoritative_url": url, "candidate_ids": sorted(ids),
          "source_bytes_identical_proven": False,
