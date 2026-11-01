@@ -29,12 +29,14 @@ class HistoricalDbfIdTests(unittest.TestCase):
             with shapefile.Writer(str(self.folder/family),shapeType=shapefile.POLYGON) as w:
                 w.field("ID","C",size=35)
                 w.field("DATE_CREAT","C",size=16)
+                w.field("ORIGIN_BAT","C",size=20)
+                w.field("HAUTEUR","N",size=8,decimal=1)
                 if family=="BATI_INDIFFERENCIE":
                     for i,(x,y) in enumerate(self.points):
                         # Proper clockwise ESRI outer ring; no real data.
                         w.poly([[(x-5,y-5),(x-5,y+5),(x+5,y+5),
                                  (x+5,y-5),(x-5,y-5)]])
-                        w.record("SYNTHETIC-2016-{}".format(i),"2016-03-24")
+                        w.record("SYNTHETIC-2016-{}".format(i),"2016-03-24","CADASTRE",9.5)
             (self.folder/(family+".prj")).write_text(
                 CRS.from_epsg(2154).to_wkt(),encoding="utf8")
 
@@ -61,6 +63,11 @@ class HistoricalDbfIdTests(unittest.TestCase):
         self.assertEqual(items[0]["original_id_sha256_by_field"]["ID"]["sha256"],
                          hashlib.sha256(b"SYNTHETIC-2016-0").hexdigest())
         self.assertNotIn("SYNTHETIC-2016-0",json.dumps(items))
+        quality=items[0]["original_source_quality_attributes"]
+        self.assertEqual(quality["original_origin_bat_category"],"CADASTRE")
+        self.assertEqual(
+            quality["historic_numeric_fields_as_stored_not_verified_exposure"]["HAUTEUR"],9.5)
+        self.assertTrue(quality["fields_are_not_2016_construction_or_insured_values"])
 
     def test_cross_version_literal_id_hash_is_not_identity(self):
         receipt=research_id_crosscheck(self.folder,fetch=self.payload)
