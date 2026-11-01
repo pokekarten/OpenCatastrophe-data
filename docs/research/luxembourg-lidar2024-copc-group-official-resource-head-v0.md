@@ -83,3 +83,46 @@ persisted in GitHub, Neon or project artifacts.
 
 No GPKG, LAZ, class point, vertical datum, source copyright approval, insurer
 exposure/TIV or CAT model-input admission is established by this metadata gate.
+
+## Live original publisher metadata + HTTPS HEAD (2026-11-01)
+
+GitHub Actions original provider run
+[41321264386](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41321264386)
+**succeeded**: all **11/11 synthetic tests** plus six actual publisher
+requests, specifically three JSON resource metadata `GET` (no archive
+payload) and three exact official archive `HEAD`. No ZIP, COPC or LAZ
+payload bytes were downloaded, and no individual classified point was
+observed. The source metadata explicitly includes publisher-provided
+**SHA-1 values**; these remain **unverified publisher metadata** until
+a separately authorised full-original download with cryptographic digest.
+
+| Fixed predeclared site | Publisher group (index uses underscores; ZIP filenames use hyphens) | Official resource ZIP declared bytes; API/HEAD consistent | SHA-1 publisher value only |
+| --- | --- | ---: | --- |
+| Luxembourg city | `Lidar2024_C020_R013` → `lidar2024-c020-r013.zip` | **1,700,086,212** | `f8650c5eee38d941921199a0c6e1f64b985c9b34` |
+| Berdorf south | `Lidar2024_C030_R028` → `lidar2024-c030-r028.zip` | **1,701,393,927** | `45d154470b4a06f99f569b6294a2773bab504ec9` |
+| Berdorf north | `Lidar2024_C030_R029` → `lidar2024-c030-r029.zip` | **1,736,263,124** | `773f6a2375e03d821149addcc5717903e54166f1` |
+| **Total** | **3 publicly reachable original group ZIP resources** | **5,137,743,263** | **No original ZIP digest verified** |
+
+The first real provider check initially failed a **source-naming format**
+gate: the public tile GeoPackage indexes `Lidar2024_C020_R013` with
+underscores, but the official resource API exposes
+`lidar2024-c020-r013.zip` with hyphens. The source proof preserved
+the original resource UUID gate and restricted the filename
+normalization to this **exact observed underscore→hyphen pattern**;
+fuzzy names and arbitrary redirects are still rejected. The official
+resolutions were all `https://download.data.public.lu/resources/...`
+and each final HEAD response was HTTP 200 with matching numeric
+Content-Length. These facts are confirmed through **real server
+metadata**, not a model guess or a full original source byte SHA.
+
+**Efficiency decision:** all three original archives together require
+over **5.13GB** just for these two 100m pilots, so a country-scale
+archive downloader is not proportionate to the present research goal.
+Next investigate bounded HTTP Range tail/central-directory access on
+only a fixed, already verified archive, with strict 206, exact
+Content-Range, size caps and no large-body fallback. If the ZIP is
+range-addressable and central directory references the required
+500m LAZ tile, assess whether tile-specific byte ranges (possibly
+ZIP64) are feasible. Any source archive member counts/actual classes
+remain **unknown until such a proof succeeds**, and any future
+per-building model-input use requires independent rights/science review.
