@@ -59,3 +59,12 @@ Two complete JSON index pages were retrieved from the publisher and compared wit
 No mismatches in exact slug, country, name, class code or publisher verification claim in these 580 records. The SHA-256 implementation was checked with the standard `abc` test vector. No database rows were changed.
 
 **Limits:** Only 580/18,180 records have been compared this way. The full `names.json` file was not acquired completely and has no established original-byte SHA-256. The above hashes belong to individual pages, not to the historical database import or every source row. The staging URL/hash gaps and independent regulator verification remain unresolved; model admission is blocked. Next step: verify all 46 pages and preserve per-page provenance before any permitted metadata repair.
+
+
+## Complete original-page receipt runner
+
+`scripts/insurer_directory_paged_source_receipt_v0.py` implements a strict 46-page enumeration of the public index. It checks source version, navigation, declared and actual counts, publication metadata, duplicates within/across pages, exact HTTPS origin and per-page SHA-256. It outputs only metadata and hashes, without raw names or database writes. Validation has synthetic offline tests in `tests/test_insurer_directory_paged_source_receipt_v0.py`.
+
+Run with `python -m scripts.insurer_directory_paged_source_receipt_v0 --page-dir /path/to/private/pages` for existing local pages named `page-001.json` through `page-046.json`. The alternative `python -m scripts.insurer_directory_paged_source_receipt_v0 --live` explicitly enables bounded public HTTP requests. There is no implicit network access. Store any command output outside Git until its scope is reviewed.
+
+The chat-side original-byte extraction interface truncated some pages beyond approximately 59 KB, so the full 46-page receipt was **not completed here**. Do not confuse the executable runner with an executed full-source proof. The connected remote Mac was offline during this check.
