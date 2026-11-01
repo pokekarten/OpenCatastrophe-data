@@ -82,7 +82,7 @@ class BkgExteriorRingTests(unittest.TestCase):
             self.assertAlmostEqual(band["unique_exterior_ring_area_m2"],a+z+n+o,5)
 
     def test_exact_pilot_clip_blocks_outer_unknown_inference(self):
-        small_pilot=self.box(0,0,11,24)
+        small_pilot=self.box(0,-40,11,60)  # 1100 m2, clips ring on right
         out=audit_disjoint_exterior_bands(
             [self.building],small_pilot,self.values,self.mask,self.affine)
         self.assertLess(out["bands"][0]["unique_exterior_ring_area_m2"],8)
