@@ -26,6 +26,7 @@ jobs:
       - name: Synthetic offline GLEIF identity and non-admission regressions
         run: python -m unittest tests.test_eiopa_gleif_seven_identity_receipt_v0 -v
       - name: Read exactly seven public original GLEIF legal-entity records
+        if: github.event_name == 'workflow_dispatch'
         id: live_identity
         continue-on-error: true
         shell: bash
