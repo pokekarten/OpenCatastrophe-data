@@ -137,7 +137,7 @@ class CityGmlSampleStructureTests(unittest.TestCase):
 
     def test_inverted_or_zero_extent_envelope_blocked(self):
         for corner in (
-            "35.80 139.77 100", "35.65 139.65 12.0"
+            "35.60 139.77 100", "35.65 139.65 12.0"
         ):
             with self.subTest(corner=corner):
                 raw = sample_xml().replace(
