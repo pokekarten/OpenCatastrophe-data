@@ -39,14 +39,6 @@ def _no_duplicates(pairs):
     return result
 
 
-def _sha256(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for part in iter(lambda: f.read(1024 * 1024), b""):
-            h.update(part)
-    return h.hexdigest()
-
-
 def _crs(text: str):
     if CRS is None:
         raise FootprintError("pyproj and shapely spatial dependencies are not installed")
@@ -65,8 +57,11 @@ def _read(path: Path, source_crs: str, *, max_features: int):
     if not path.is_file() or path.stat().st_size > 5_000_000:
         raise FootprintError("Input must be a local GeoJSON file of at most 5 MB")
     try:
+        source_bytes = path.read_bytes()
+        if len(source_bytes) > 5_000_000:
+            raise FootprintError("Input exceeds 5 MB byte budget")
         payload = json.loads(
-            path.read_text(encoding="utf-8"),
+            source_bytes.decode("utf-8"),
             object_pairs_hook=_no_duplicates,
             parse_constant=lambda value: (_ for _ in ()).throw(FootprintError("Nonfinite GeoJSON number")),
         )
@@ -109,7 +104,7 @@ def _read(path: Path, source_crs: str, *, max_features: int):
         polygons.append(projected)
     if len(set(ids)) != len(ids):
         raise FootprintError("Duplicate building IDs in a single input")
-    return polygons
+    return polygons, hashlib.sha256(source_bytes).hexdigest()
 
 
 def compare(left_path: Path, right_path: Path, *, left_crs: str, right_crs: str,
@@ -122,14 +117,19 @@ def compare(left_path: Path, right_path: Path, *, left_crs: str, right_crs: str,
         raise FootprintError("Overlap and IoU thresholds must be in (0, 1]")
     if not 1 <= max_features <= 10000:
         raise FootprintError("Invalid local feature cap")
-    a = _read(left_path, left_crs, max_features=max_features)
-    b = _read(right_path, right_crs, max_features=max_features)
+    a, left_sha256 = _read(left_path, left_crs, max_features=max_features)
+    b, right_sha256 = _read(right_path, right_crs, max_features=max_features)
     index = STRtree(b)
     left_edges: dict[int, list[tuple[int, float]]] = defaultdict(list)
     right_edges: dict[int, list[int]] = defaultdict(list)
     touched_right = set()
+    candidate_pairs_checked = 0
+    max_candidate_pairs = 20_000  # Bounded GEOS work even for dense overlap.
     for i, g in enumerate(a):
         for j0 in index.query(g):
+            candidate_pairs_checked += 1
+            if candidate_pairs_checked > max_candidate_pairs:
+                raise FootprintError("Bounded spatial candidate-pair budget exceeded")
             j = int(j0)
             other = b[j]
             intersection = g.intersection(other).area
@@ -159,11 +159,12 @@ def compare(left_path: Path, right_path: Path, *, left_crs: str, right_crs: str,
     return {
         "schema_version": "building-footprint-overlap-diagnostic-v0",
         "left_source": left_source, "right_source": right_source,
-        "left_sha256": _sha256(left_path), "right_sha256": _sha256(right_path),
+        "left_sha256": left_sha256, "right_sha256": right_sha256,
         "left_declared_crs": left_crs, "right_declared_crs": right_crs,
         "comparison_crs": "EPSG:3035", "iou_threshold": min_iou,
         "overlap_warning_fraction": overlap_warning_fraction,
         "counts": {"left_features": len(a), "right_features": len(b),
+                   "spatial_candidate_pairs_checked": candidate_pairs_checked,
                    "right_without_any_geometric_intersection": len(b) - len(touched_right),
                    **count},
         "matched_iou_median": round(statistics.median(ious), 6) if ious else None,
