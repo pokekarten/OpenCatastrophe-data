@@ -25,7 +25,7 @@ from scripts.acquire_dwd_extreme_wind_receipt import FILENAME as FIRST_FILE
 from scripts.dwd_frozen_gust_qc_v0 import PINNED_SHA256 as FIRST_SHA
 from scripts.probe_dwd_station00348_original_v0 import (
     WIND_FILE as SECOND_FILE, PINNED_WIND_SHA256 as SECOND_SHA,
-    _snapshot, _zip_open, MAX_WIND_EXPANDED,
+    _snapshot, _zip_open, MAX_WIND_EXPANDED, SecondStationBlocked,
 )
 
 SITES = (("00003", FIRST_FILE, FIRST_SHA),
@@ -127,7 +127,8 @@ def _extract(path: Path, *, station: str, filename: str, digest: str,
                 with z.open(info) as member:
                     while member.read(65_536):
                         pass
-    except (OSError, UnicodeError, RuntimeError, zipfile.BadZipFile) as exc:
+    except (OSError, UnicodeError, RuntimeError, zipfile.BadZipFile,
+            SecondStationBlocked) as exc:
         raise PairedWindBlocked("original source ZIP text or CRC check failed") from exc
     if all_rows != expected_full_count or not samples:
         raise PairedWindBlocked("original DWD row count or shared period is incomplete")
