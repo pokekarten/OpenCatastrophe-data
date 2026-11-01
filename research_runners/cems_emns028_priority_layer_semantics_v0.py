@@ -95,7 +95,7 @@ def inspect_priority_layers(gdb: Path) -> dict:
                 })
                 if name == "Flooded_area" and not valid:
                     samples[-1]["repair_method_sensitivity_research"] = (
-                        compare_repair_methods(polygon)
+                        compare_repair_methods(polygon, gauge_control=gauge)
                     )
             summary[name] = {
                 "feature_count_total_layer": count,
