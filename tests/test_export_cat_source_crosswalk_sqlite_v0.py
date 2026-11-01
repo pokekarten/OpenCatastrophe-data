@@ -142,6 +142,24 @@ class CAT3ExportTests(unittest.TestCase):
                 export_crosswalk_sqlite(target, report)
             self.assertFalse(target.exists())
 
+    def test_missing_reciprocal_endpoint_is_never_accepted(self):
+        report = synthetic_report()
+        report["candidates"][1]["candidate_join_hypotheses"] = []
+        with tempfile.TemporaryDirectory() as td:
+            target = Path(td) / "missing-edge.cat.sqlite"
+            with self.assertRaisesRegex(CAT3Error, "missing reciprocal"):
+                export_crosswalk_sqlite(target, report)
+            self.assertFalse(target.exists())
+
+    def test_inconsistent_recipe_endpoint_sets_fail_closed(self):
+        report = synthetic_report()
+        report["candidates"][1]["candidate_join_hypotheses"][0]["other_source_ids"] = ["synthetic.c"]
+        with tempfile.TemporaryDirectory() as td:
+            target = Path(td) / "mismatch.cat.sqlite"
+            with self.assertRaisesRegex(CAT3Error, "inconsistent endpoint"):
+                export_crosswalk_sqlite(target, report)
+            self.assertFalse(target.exists())
+
     def test_real_discovery_registry_is_queryable_without_provider_data(self):
         report = build_crosswalk(build_inventory(), build_audit(load_landscape_shards()))
         with tempfile.TemporaryDirectory() as td:
