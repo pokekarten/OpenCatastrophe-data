@@ -162,8 +162,9 @@ def inspect_zip_file(
 
     return {
         "source_id": "jp.mlit.plateau.citygml.3d-city-models",
-        "target_municipality_code": "13104",
-        "target_release_fiscal_year": 2024,
+        # The ZIP's actual municipality and vintage are NOT authenticated
+        # from member names, even if a caller has pinned a catalogue row.
+        "municipality_and_year_in_archive_verified": False,
         "local_zip_byte_count": actual,
         "local_zip_sha256": hexdigest,
         "expected_sha256_supplied": expected_sha256 is not None,
@@ -173,7 +174,6 @@ def inspect_zip_file(
         "upstream_provider_authenticated": False,
         "zip_member_contents_crc_verified": False,
         "building_geometry_parsed": False,
-        "municipality_and_year_in_archive_verified": False,
         "crs_and_vertical_datum_verified": False,
         "exact_dataset_licence_reviewed": False,
         "model_input_approved": False,
