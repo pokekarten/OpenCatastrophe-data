@@ -5,8 +5,12 @@
 from __future__ import annotations
 
 import copy
+import io
 import json
+import os
+import tempfile
 import unittest
+from contextlib import redirect_stdout, redirect_stderr
 from pathlib import Path
 
 from research_runners.plateau_citygml_catalogue_preflight_v0 import (
@@ -14,8 +18,10 @@ from research_runners.plateau_citygml_catalogue_preflight_v0 import (
     GRAPHQL_MAX_INPUT_BYTES,
     GRAPHQL_CITYGML_FIELD_NAMES,
     MAX_INPUT_BYTES,
+    main,
     preflight_bytes,
     preflight_graphql_bytes,
+    read_local_metadata,
 )
 
 
@@ -457,6 +463,68 @@ class PlateauGraphqlMetadataPreflightTests(unittest.TestCase):
             preflight_graphql_bytes(b"x" * (GRAPHQL_MAX_INPUT_BYTES + 1))
         with self.assertRaises(CataloguePreflightError):
             preflight_graphql_bytes(b'{"data":{"citygmlDatasets":[]}, "data":{}}')
+
+
+class PlateauOfflineLocalInputTests(unittest.TestCase):
+    def test_regular_synthetic_rest_file_reads_exact_bytes(self):
+        raw = json.dumps(valid_payload()).encode("utf-8")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "synthetic.json"
+            path.write_bytes(raw)
+            self.assertEqual(read_local_metadata(path, MAX_INPUT_BYTES), raw)
+            self.assertEqual(preflight_bytes(read_local_metadata(path, MAX_INPUT_BYTES))["target_fiscal_year"], 2024)
+
+    def test_regular_synthetic_graphql_cli_does_not_expose_file_path_or_urls(self):
+        raw = json.dumps(valid_graphql_payload()).encode("utf-8")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "synthetic.json"
+            path.write_bytes(raw)
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with redirect_stdout(stdout), redirect_stderr(stderr):
+                status = main(["--format", "graphql", "--input", str(path)])
+            self.assertEqual(status, 0)
+            self.assertEqual(stderr.getvalue(), "")
+            receipt = json.loads(stdout.getvalue())
+            self.assertEqual(receipt["input_byte_count"], len(raw))
+            self.assertFalse(receipt["provider_network_access"])
+            self.assertNotIn(str(path), stdout.getvalue())
+            self.assertNotIn("example.org", stdout.getvalue())
+
+    def test_oversize_and_empty_local_files_fail_before_parsing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "synthetic.json"
+            for raw in (b"", b"x" * (GRAPHQL_MAX_INPUT_BYTES + 1)):
+                with self.subTest(size=len(raw)):
+                    path.write_bytes(raw)
+                    with self.assertRaises(CataloguePreflightError):
+                        read_local_metadata(path, GRAPHQL_MAX_INPUT_BYTES)
+
+    @unittest.skipUnless(hasattr(os, "O_NOFOLLOW"), "O_NOFOLLOW is required")
+    def test_symlink_final_component_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "synthetic.json"
+            alias = Path(directory) / "synthetic-alias.json"
+            target.write_text(json.dumps(valid_payload()), encoding="utf-8")
+            alias.symlink_to(target)
+            with self.assertRaises(CataloguePreflightError):
+                read_local_metadata(alias, MAX_INPUT_BYTES)
+
+    @unittest.skipUnless(hasattr(os, "mkfifo") and hasattr(os, "O_NONBLOCK"), "requires POSIX FIFO")
+    def test_fifo_is_rejected_without_waiting_for_a_writer(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fifo = Path(directory) / "synthetic-pipe"
+            os.mkfifo(fifo)
+            with self.assertRaises(CataloguePreflightError):
+                read_local_metadata(fifo, MAX_INPUT_BYTES)
+
+    def test_input_read_failure_never_prints_raw_path_or_contents(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "not-present.json"
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                self.assertEqual(main(["--input", str(path)]), 2)
+            self.assertIn("BLOCKED", stderr.getvalue())
+            self.assertNotIn(str(path), stderr.getvalue())
 
 
 if __name__ == "__main__":
