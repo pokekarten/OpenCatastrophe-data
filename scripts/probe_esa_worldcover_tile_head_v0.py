@@ -29,7 +29,7 @@ SERVICE_ROOT = "https://esa-worldcover.s3.eu-central-1.amazonaws.com"
 URL = SERVICE_ROOT + OBJECT_PATH
 OPERATION = "probe_exact_v200_tile_head"
 MAX_DECLARED_OBJECT_BYTES = 4 * 1024 * 1024 * 1024
-EXPECTED_MEDIA = {"image/tiff", "application/octet-stream"}
+EXPECTED_MEDIA = {"image/tiff", "application/octet-stream", "binary/octet-stream"}
 
 
 class WorldCoverProbeBlocked(ValueError):
@@ -60,7 +60,7 @@ def validate_reviewed_contract(path: Path = CONTRACT_PATH) -> tuple[int, str]:
         or contract["rights_and_policy"]["api_terms_status"] != "separate_reviewed"
         or contract["rights_and_policy"]["commercial_automation_status"] != "allowed"
         or contract["response_contract"]["expected_media_types"] !=
-           ["image/tiff", "application/octet-stream"]
+           ["image/tiff", "application/octet-stream", "binary/octet-stream"]
         or parsed.scheme != "https" or parsed.netloc != urlsplit(SERVICE_ROOT).netloc
         or parsed.path != OBJECT_PATH or parsed.query or parsed.fragment
     ):
