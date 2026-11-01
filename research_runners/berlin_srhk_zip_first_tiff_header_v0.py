@@ -30,6 +30,10 @@ from research_runners.berlin_srhk_tiff_grid_affine_v0 import (
     BerlinTiffGridError, inspect_berlin_tiff_header_grid,
 )
 
+from research_runners.berlin_srhk_tiff_band_semantics_v0 import (
+    TiffBandError, inspect_tiff_band_declarations,
+)
+
 READ_BYTES = 65_536
 MAX_DECOMPRESSED_PREFIX = 1_048_576
 TIMEOUT = 40
@@ -158,6 +162,10 @@ def inspect_prefix(raw: bytes, *, scenario: str, expected_512_sha: str) -> dict:
         projected_grid = inspect_berlin_tiff_header_grid(decoded)
     except BerlinTiffGridError as exc:
         raise TiffHeaderError("unsafe original GeoTIFF affine-grid metadata") from exc
+    try:
+        band_claims = inspect_tiff_band_declarations(decoded)
+    except TiffBandError as exc:
+        raise TiffHeaderError("unsafe original GeoTIFF NoData/band metadata") from exc
     return {
         "exact_source_scenario": scenario,
         "original_zip_prefix_http_bytes": READ_BYTES,
@@ -176,6 +184,7 @@ def inspect_prefix(raw: bytes, *, scenario: str, expected_512_sha: str) -> dict:
         "source_rights_and_cat_model_admission_pending": True,
         **metadata,
         **projected_grid,
+        **band_claims,
     }
 
 
