@@ -25,5 +25,24 @@
   "mirror_full_archive_md5_legacy_comparison_only": "fe3523aea6b72fb6643f2cda91dccbd2",
   "mirror_full_archive_receipt_ci_url": "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41311142370",
   "mirror_full_archive_receipt_checked_at_utc": "2026-11-01T13:25:10Z",
-  "original_provider_full_archive_checksum_confirmed": false
+  "original_provider_full_archive_checksum_confirmed": false,
+  "full_7z_archive_crc_validation_passed": true,
+  "full_archive_member_count": 321,
+  "extracted_building_shapefile_components": 12,
+  "bounded_pilot_aoi_wgs84": [
+    2.5465,
+    48.536,
+    2.549,
+    48.538
+  ],
+  "bounded_historic_building_footprint_count": 3,
+  "bounded_historic_building_class_counts": {
+    "BATI_INDIFFERENCIE": 3,
+    "BATI_INDUSTRIEL": 0,
+    "BATI_REMARQUABLE": 0
+  },
+  "bounded_spatial_crs_verified": "EPSG:2154",
+  "bounded_building_profile_ci_url": "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41312069291",
+  "historical_building_identity_matched_to_current_rnb": false,
+  "observed_2016_flood_inundation_intersection": false
 }
