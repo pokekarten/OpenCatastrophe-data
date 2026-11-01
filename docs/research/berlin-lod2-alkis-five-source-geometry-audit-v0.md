@@ -86,3 +86,41 @@ from polygon area or roof height alone.
 Pending successful source-specific live GitHub Actions execution.
 Do not claim measured roof heights, complete Berlin source coverage
 or positive 1:1 geometry matches from synthetic tests alone.
+
+## Verified two original sources — zero *first-five* matches, 2026-11-01
+
+First-party GitHub Actions
+[run 41323489470](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41323489470),
+main commit `77ca0b24e85e0c606433dff5baa6258221884b7c`,
+verified both *official fixed* independent source requests,
+geometry and source attributes at
+`2026-11-01T15:53:42.930923+00:00`.
+
+| Evidence | Real observed source |
+| --- | --- |
+| 2026 ALKIS five polygons | 5, source response 5,412 bytes |
+| ALKIS response SHA-256 | `70bcc04acd6498dec52538f2d6edbc189dcab5e7004fafb0318069b8d6f7bce5` |
+| 2022 LoD2 height source five polygons | 5, source response 7,874 bytes |
+| LoD2 response SHA-256 | `385a42facd9713bdb185465e49a4cb929d98bd87b24c950caf96a9a89abbf859` |
+| Height values `hoehe` positive numeric | 5 |
+| Source `role_txt` = recognised Gebäude | 2 |
+| Recognised Bauteil | 0 |
+| Unrecognised/missing role labels | 3 |
+| `dachart`, `geschosse`, `grundrissaktualitaet`, `quellebodenhoehe`, `quelledachhoehe`, `quellelage` populated | 5 each |
+| Exact height = 3m possible placeholder | 0 in this five-feature sample |
+| Unambiguous ALKIS ↔ LoD2 polygons at IoU≥0.95 | **0** |
+| Ambiguous individual candidates at IoU≥0.95 | 0 |
+| Original feature bytes or properties committed/persisted | No |
+
+**Critical:** This does not demonstrate non-coverage or physical misalignment
+of the underlying 2022/2026 Berlin building layers. Both query
+parameters apply **count=5 independently**; different first-five
+ordering/populations can lead to zero shared records even with perfect
+alignment on complete geographic data. The correct next proof is to query
+**counts-only GetFeature `resultType=hits`** for the same tiny fixed box,
+then, if count fits a reviewed response budget, acquire the complete
+in-box source populations with bounded pagination and explicit duplicate
+and one-to-one topology controls. Never solve this by weakening the
+IoU threshold, name/address joins, or imputing roof height into CAT4.
+The three unknown role labels also require checking actual source
+classification semantics, not inventing a building/part count.
