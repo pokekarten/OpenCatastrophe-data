@@ -74,6 +74,8 @@ class CATCrosswalkTests(unittest.TestCase):
         self.assertEqual(report["manifest_count"], 1)
         self.assertEqual(report["candidate_with_access_contract_count"], 1)
         self.assertEqual(report["candidate_without_access_contract_count"], 1)
+        self.assertEqual(report["missing_contract_candidate_category_counts"], {"flood": 1})
+        self.assertTrue(report["category_counts_are_not_disjoint"])
         self.assertEqual(report["candidate_with_manual_link_hypothesis_count"], 2)
         self.assertFalse(report["new_rights_or_admission_granted"])
         self.assertFalse(report["permission_for_automated_source_join"])
@@ -88,6 +90,8 @@ class CATCrosswalkTests(unittest.TestCase):
         self.assertEqual(first["candidate_join_hypotheses"][0]["other_source_ids"], ["synthetic.b"])
         self.assertFalse(first["scientific_independence_proven"])
         self.assertFalse(second["scientific_independence_proven"])
+        self.assertEqual(first["license_or_terms_flags"], [])
+        self.assertEqual(second["rights_posture"], None)
         self.assertEqual(report["existing_manifests_separate"][0]["dataset_id"], "synthetic.a")
         self.assertFalse(report["existing_manifests_separate"][0]["any_additional_model_authority_granted"])
 
@@ -194,6 +198,11 @@ class CATCrosswalkTests(unittest.TestCase):
         self.assertEqual(compact["manual_linkage_recipe_count"], report["manual_linkage_recipe_count"])
         self.assertNotIn("candidates", compact)
         self.assertNotIn("existing_manifests_separate", compact)
+        self.assertEqual(
+            compact["missing_contract_candidate_category_counts"],
+            report["missing_contract_candidate_category_counts"],
+        )
+        self.assertTrue(compact["category_counts_are_not_disjoint"])
 
 
 if __name__ == "__main__":
