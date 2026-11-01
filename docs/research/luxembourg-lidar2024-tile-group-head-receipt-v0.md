@@ -94,3 +94,41 @@ python -m research_runners.luxembourg_lidar2024_tile_group_link_preflight_v0 \
 
 **Safety boundary:** No automatic CAT model input, no insurer exposures,
 and no PostgreSQL/Neon database writes in this PR.
+
+## Verified real-source result: large grouped archive, no point data fetched
+
+On **2026-11-01**, the actual, exact-sha-pinned source index and official
+public URL HEAD-only workflow passed, including **11 synthetic tests**:
+https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41312731059 .
+
+| Actual fixed-source observation | Verified |
+| --- | ---: |
+| Original national LiDAR index | 10,905 records, SHA-256 `3db50821b582b9247d97d6d8bba41d9f15cd45ff0356b180322521346ef04cc8` |
+| 250m × 250m city RTree candidate tile rows | **2** |
+| Distinct allowlisted provider public resource links | **1** |
+| First HEAD, public resource endpoint | **302** |
+| Strictly validated redirect target | Official `download.data.public.lu` tile ZIP group |
+| Second HEAD, direct resource | **200** |
+| Direct ZIP resource **declared Content-Length** | **1,700,086,212 bytes** (about 1.70 GB or 1.58 GiB) |
+| Full ZIP or LAZ bytes read | **0** |
+| Actual point heights measured | **0** |
+
+**Important distinction:** the initial first-hop response advertised
+`Content-Length: 457`, which was the **302 redirect response**, not a
+457-byte LiDAR archive. The corrected second **HEAD-only** request to the
+strictly allowlisted publisher ZIP endpoint reports the **1.7 GB** archive
+size. Both source rows point to the *same* original group resource; avoid
+counting them as two downloadable ZIPs.
+
+**Operational decision: NO 1.7 GB automatic download for a 250m research
+window.** The measured HTTP response headers are strong metadata evidence
+of transfer cost, but they do **not** constitute a downloaded archive
+checksum or verification of compressed point-cloud content.
+
+The next causal investigation is whether a **bounded spatial Cloud
+Optimized GeoTIFF HTTP Range window** from the same official 2024 MNS/DSM
+and MNT/DTM assets, or an ACT public profile-LiDAR service, can provide a
+small, independently reproducible height sample. Validate server byte-range
+behaviour, both raster CRSs, vertical reference, no-data masking, file
+licences and source acquisition date; never infer physical buildings from
+unfiltered DSM minus DTM without roofs/vegetation exclusion.
