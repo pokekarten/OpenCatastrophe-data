@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Isolated CAT3 SQLite is a derived queryable source research view, never model input."""
+"""Isolated CAT4 SQLite is a derived queryable source research view, never model input."""
 from __future__ import annotations
 
 from copy import deepcopy
@@ -14,7 +14,7 @@ from scripts.build_source_access_inventory import build_inventory
 from scripts.source_landscape_contract import load_landscape_shards
 from scripts.source_linkage_audit_v0 import build_audit
 from scripts.export_cat_source_crosswalk_sqlite_v0 import (
-    CAT3_APP_ID, CAT3_VERSION, CAT3Error, export_crosswalk_sqlite,
+    CAT4_APP_ID, CAT4_VERSION, CAT4Error, export_crosswalk_sqlite,
 )
 
 
@@ -68,13 +68,21 @@ def synthetic_report():
     return build_crosswalk(accesses, audits)
 
 
-class CAT3ExportTests(unittest.TestCase):
+class CAT4ExportTests(unittest.TestCase):
+    def test_application_id_separate_from_geographic_cat1_cat2_cat3(self):
+        from research_runners.geoboundaries_deu_adm1_cat_sqlite_v0 import CAT_APP_ID
+        from research_runners.geoboundaries_deu_adm1_nuts2021_crosswalk_v0 import CROSSWALK_APP_ID
+        from research_runners.geoboundaries_deu_nuts2021_partial_cat3_v0 import CAT3_ID
+        self.assertEqual(CAT4_APP_ID, 0x43415434)
+        self.assertEqual(len({CAT_APP_ID, CROSSWALK_APP_ID, CAT3_ID, CAT4_APP_ID}), 4)
+
+
     def test_sqlite_schema_references_and_non_admission(self):
         report = synthetic_report()
         with tempfile.TemporaryDirectory() as td:
-            target = Path(td) / "cat3-research.cat.sqlite"
+            target = Path(td) / "cat4-research.cat.sqlite"
             receipt = export_crosswalk_sqlite(target, report)
-            self.assertEqual(receipt["profile"], "opencatastrophe-cat3-derived-source-research-v0")
+            self.assertEqual(receipt["profile"], "opencatastrophe-cat4-derived-source-research-v0")
             self.assertEqual(receipt["candidates"], 2)
             self.assertEqual(receipt["manifests"], 1)
             self.assertEqual(receipt["recipes"], 1)
@@ -87,8 +95,8 @@ class CAT3ExportTests(unittest.TestCase):
             self.assertFalse(receipt["scientific_source_joins_executed"])
             self.assertFalse(receipt["model_inputs_admitted"])
             with sqlite3.connect(target) as con:
-                self.assertEqual(con.execute("PRAGMA application_id").fetchone()[0], CAT3_APP_ID)
-                self.assertEqual(con.execute("PRAGMA user_version").fetchone()[0], CAT3_VERSION)
+                self.assertEqual(con.execute("PRAGMA application_id").fetchone()[0], CAT4_APP_ID)
+                self.assertEqual(con.execute("PRAGMA user_version").fetchone()[0], CAT4_VERSION)
                 self.assertEqual(con.execute("PRAGMA integrity_check").fetchone()[0], "ok")
                 self.assertEqual(con.execute("PRAGMA foreign_key_check").fetchall(), [])
                 self.assertEqual(con.execute("SELECT count(*) FROM candidate").fetchone()[0], 2)
@@ -109,12 +117,12 @@ class CAT3ExportTests(unittest.TestCase):
     def test_no_overwrite_and_no_mutation_of_other_cat_db(self):
         report = synthetic_report()
         with tempfile.TemporaryDirectory() as td:
-            path = Path(td) / "cat3.cat.sqlite"
+            path = Path(td) / "cat4.cat.sqlite"
             with sqlite3.connect(path) as con:
                 con.execute("PRAGMA application_id=1128354865")  # CAT1
                 con.execute("CREATE TABLE guard(original TEXT)")
                 con.execute("INSERT INTO guard VALUES ('untouched')")
-            with self.assertRaisesRegex(CAT3Error, "overwrite"):
+            with self.assertRaisesRegex(CAT4Error, "overwrite"):
                 export_crosswalk_sqlite(path, report)
             with sqlite3.connect(path) as con:
                 self.assertEqual(con.execute("PRAGMA application_id").fetchone()[0], 1128354865)
@@ -123,13 +131,13 @@ class CAT3ExportTests(unittest.TestCase):
     def test_requires_new_absolute_outside_repo_destination(self):
         report = synthetic_report()
         with tempfile.TemporaryDirectory() as td:
-            with self.assertRaisesRegex(CAT3Error, "explicit absolute"):
+            with self.assertRaisesRegex(CAT4Error, "explicit absolute"):
                 export_crosswalk_sqlite(Path("cat.cat.sqlite"), report)
-            with self.assertRaisesRegex(CAT3Error, "explicit absolute"):
+            with self.assertRaisesRegex(CAT4Error, "explicit absolute"):
                 export_crosswalk_sqlite(Path(td) / "cat.db", report)
             target = Path(td) / "existing.cat.sqlite"
             target.symlink_to(Path(td) / "missing")
-            with self.assertRaisesRegex(CAT3Error, "overwrite"):
+            with self.assertRaisesRegex(CAT4Error, "overwrite"):
                 export_crosswalk_sqlite(target, report)
 
     def test_fail_closed_on_report_mutation_before_file_creation(self):
@@ -138,7 +146,7 @@ class CAT3ExportTests(unittest.TestCase):
             report[field] = True
             with tempfile.TemporaryDirectory() as td:
                 target = Path(td) / "bad.cat.sqlite"
-                with self.assertRaisesRegex(CAT3Error, "authority boundary"):
+                with self.assertRaisesRegex(CAT4Error, "authority boundary"):
                     export_crosswalk_sqlite(target, report)
                 self.assertFalse(target.exists())
 
@@ -146,7 +154,7 @@ class CAT3ExportTests(unittest.TestCase):
         report["candidates"][0]["candidate_join_hypotheses"][0]["automatic_join_allowed"] = True
         with tempfile.TemporaryDirectory() as td:
             target = Path(td) / "bad.cat.sqlite"
-            with self.assertRaisesRegex(CAT3Error, "scientific linkage promoted"):
+            with self.assertRaisesRegex(CAT4Error, "scientific linkage promoted"):
                 export_crosswalk_sqlite(target, report)
             self.assertFalse(target.exists())
 
@@ -162,7 +170,7 @@ class CAT3ExportTests(unittest.TestCase):
                 report["candidates"][0][field] = bad
                 with tempfile.TemporaryDirectory() as td:
                     target = Path(td) / "invalid.cat.sqlite"
-                    with self.assertRaisesRegex(CAT3Error, "missing or invalid"):
+                    with self.assertRaisesRegex(CAT4Error, "missing or invalid"):
                         export_crosswalk_sqlite(target, report)
                     self.assertFalse(target.exists())
 
@@ -170,7 +178,7 @@ class CAT3ExportTests(unittest.TestCase):
         report["candidates"][1]["access_contract_statuses"] = ["probe_ready"]
         with tempfile.TemporaryDirectory() as td:
             target = Path(td) / "orphan.cat.sqlite"
-            with self.assertRaisesRegex(CAT3Error, "orphan access-contract status"):
+            with self.assertRaisesRegex(CAT4Error, "orphan access-contract status"):
                 export_crosswalk_sqlite(target, report)
             self.assertFalse(target.exists())
 
@@ -192,7 +200,7 @@ class CAT3ExportTests(unittest.TestCase):
         report["candidates"][1]["candidate_join_hypotheses"] = []
         with tempfile.TemporaryDirectory() as td:
             target = Path(td) / "missing-edge.cat.sqlite"
-            with self.assertRaisesRegex(CAT3Error, "missing reciprocal"):
+            with self.assertRaisesRegex(CAT4Error, "missing reciprocal"):
                 export_crosswalk_sqlite(target, report)
             self.assertFalse(target.exists())
 
@@ -201,7 +209,7 @@ class CAT3ExportTests(unittest.TestCase):
         report["candidates"][1]["candidate_join_hypotheses"][0]["other_source_ids"] = ["synthetic.c"]
         with tempfile.TemporaryDirectory() as td:
             target = Path(td) / "mismatch.cat.sqlite"
-            with self.assertRaisesRegex(CAT3Error, "inconsistent endpoint"):
+            with self.assertRaisesRegex(CAT4Error, "inconsistent endpoint"):
                 export_crosswalk_sqlite(target, report)
             self.assertFalse(target.exists())
 
