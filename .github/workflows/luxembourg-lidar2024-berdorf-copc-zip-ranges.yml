@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg Berdorf original classified COPC ZIP central directories by 206 range
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_lidar2024_berdorf_copc_zip_directory_range_v0.py'
+      - 'tests/test_luxembourg_lidar2024_berdorf_copc_zip_directory_range_v0.py'
+      - '.github/workflows/luxembourg-lidar2024-berdorf-copc-zip-ranges.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  official-berdorf-two-source-zip-range:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact reviewed code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Challenge two source UUIDs, ZIP paths and range budgets on synthetic files
+        run: python -m unittest tests.test_luxembourg_lidar2024_berdorf_copc_zip_directory_range_v0 -v
+      - name: Read only two real bounded ZIP end-of-directory ranges per original source
+        run: python -m research_runners.luxembourg_lidar2024_berdorf_copc_zip_directory_range_v0
+      # No 1.7GB original ZIP, LAZ, classified LiDAR points or original private geometry stored.
