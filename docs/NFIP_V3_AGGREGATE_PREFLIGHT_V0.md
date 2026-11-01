@@ -107,6 +107,54 @@ python -m unittest tests.test_nfip_v3_aggregate_preflight_v0 -v
 No input path is printed. Do not commit downloaded source JSON, model
 portfolios, credentials, secret URLs, or results containing personal records.
 
+## Independent original FEMA field catalogue and terms check (2026-11-01)
+
+A subsequent live read of FEMA's official `OpenFemaDataSetFields` API confirmed:
+
+| Product | Version | Published field definitions | Exact fields relevant to the current parser |
+| --- | --- | ---: | --- |
+| `NfipClaims` | v3 | 84 | `id: bigint`, `countyCode: text`, `censusGeoid: text`, `yearOfLoss: smallint`, `amountPaidOnBuildingClaim: decimal(12,2)`, `amountPaidOnContentsClaim: decimal(12,2)` |
+| `NfipPolicies` | v3 | 87 | `id: bigint`, `censusGeoid: text`, `policyEffectiveDate: date`, `policyTerminationDate: date`, `totalBuildingInsuranceCoverage: integer`, `policyCount: smallint` |
+| `NfipResidentialPenetrationRates` | v1 | 11 | `id: text`, `fipsCode: text`, `asOfDate: date`, `resContractsInForce: integer`, `totalResStructures: integer`, `resPenetrationRate: decimal(7,4)`, plus SFHA counterparts |
+
+The first two products were also checked through one *read-only, selected-field*
+single-record API response apiece. All selected fields were present, with
+provider `id` values returned as JSON numbers, financial measures as JSON
+numbers, and policy dates as strings; the original individual record values
+were **not** retained or copied into this repository. This is an exact schema
+probe, **not a full source-byte receipt or broad-use licence**.
+
+FEMA terms were read directly:
+https://www.fema.gov/about/openfema/terms-conditions .
+They permit use of OpenFEMA datasets **solely for statistical research or
+reporting**, bar attempts to reidentify individuals or disclose identifying
+facts, and prohibit using datasets to determine an individual's rights or
+benefit eligibility. The site reserves the right to revoke access and request
+destruction of copies. Consequently, this code does not license or authorize
+individual property insurance underwriting, claims matching, commercial
+risk-location scoring or public redistributions of sensitive records.
+Source-specific reuse and intended end use remain separate review gates.
+
+Source-field metadata request format:
+`https://www.fema.gov/api/open/v1/OpenFemaDataSetFields?$filter=openFemaDataSet%20eq%20%27NfipClaims%27%20and%20datasetVersion%20eq%203&$select=name,type&$top=100`
+(with product/version substituted explicitly for the other two sources).
+
+**Additional v1 implementation:** `research_runners/nfip_residential_penetration_v1_preflight.py`
+reads only a locally acquired, exact-hash-verified official v1 API response.
+It validates 5-digit county FIPS, snapshot dates, ephemeral record IDs,
+structure and contract counts, and published rates without rejecting the
+provider's known >100% cases. It emits **only source-level non-geographic
+profile counts**, never raw county rows. Its source denominator is NSI 2022
+modelled residential structures, and the numerator is **NFIP contracts in
+force**, not the entire public/private flood insurance market.
+
+```bash
+python research_runners/nfip_residential_penetration_v1_preflight.py \
+  --source-json /private/original-penetration-v1-response.json \
+  --sha256 EXPECTED_64_HEX_SHA256
+python -m unittest tests.test_nfip_residential_penetration_v1_preflight -v
+```
+
 ## Advancement gates
 
 1. Refresh the **official** OpenFEMA v3 catalogue receipt near acquisition;
