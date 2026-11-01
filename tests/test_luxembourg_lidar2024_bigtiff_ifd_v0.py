@@ -106,6 +106,16 @@ class OriginalBigTIFFMetadataTests(unittest.TestCase):
         with self.assertRaisesRegex(mod.MetadataBlockError,'SHA-256 drift'):
             mod.inspect('MNS',opener=FakeOpener(synthetic_tiff()),expected_first_sha='0'*64)
 
+    def test_declared_grid_fingerprint_detects_tiepoint_shift(self):
+        first,_=self.run_fixture()
+        shifted=bytearray(synthetic_tiff())
+        shifted[784:792]=struct.pack('<d',74002.)
+        second,_=self.run_fixture(bytes(shifted))
+        self.assertEqual(len(first['declared_georeference_grid_sha256_only']),64)
+        self.assertNotEqual(first['declared_georeference_grid_sha256_only'],
+                            second['declared_georeference_grid_sha256_only'])
+        self.assertFalse(second['coordinate_axis_and_vertical_datum_certified'])
+
     def test_wrong_epsg_fails_closed(self):
         with self.assertRaisesRegex(mod.MetadataBlockError,'EPSG:2169'):
             self.run_fixture(synthetic_tiff(geo_epsg=3857))
