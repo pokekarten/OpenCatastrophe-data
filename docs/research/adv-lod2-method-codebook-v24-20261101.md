@@ -46,3 +46,52 @@ edition and actual source-to-AdV field mappings, then verify method
 semantics with permitted source evidence. Candidate membership
 alone does not authorize a real-world measurement classification,
 insured-building mapping, or risk/vulnerability/model admission.
+
+
+## First original WFS code-list membership receipt — 2026-11-01
+
+The official [original-source GitHub run 41331804324](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41331804324),
+on merged main commit `aa9d467ad8613bebfedf4c4358ff25dba6076da8`,
+completed successfully with **26 synthetic safeguarding tests** and
+two official, original, fixed 200 m Berlin WFS requests.
+Receipt timestamp `2026-11-01T17:30:35.563137+00:00`.
+
+| Field | 27 original historic LoD2 polygons: codes contained in 2023 PQS v2.4 list | Six uniquely matched historic `Gebäudeteil` footprints | Six source polygons excluded by duplicate quarantine |
+| --- | ---: | ---: | ---: |
+| `quellebodenhoehe` | **27/27** | **6/6** | **6/6** |
+| `quelledachhoehe` | **27/27** | **6/6** | **6/6** |
+| `quellelage` | **27/27** | **6/6** | **6/6** |
+
+For all three fields and populations, neither *unlisted/malformed*
+nor *missing* candidate-code buckets occurred. This says only
+that the observed **2022 data source codes belong to the numeric
+sets in the 2023 AdV reference**. It does not determine which specific
+one code appears, whether Berlin used the same semantic interpretation
+in 2022, whether roof heights were independently measured or inferred
+from DOM/bDOM, or whether any building part is a whole insured building.
+
+Exact original response SHA-256s:
+
+- Current ALKIS polygon WFS:
+  `1c539c4ffd5507f9b9b8d8a8504997126f703c7131d92eb858515df4758bfe09`.
+- Historical LoD2 2022 height WFS:
+  `cbc063a0650376e7f79aa4328edc3984a18bb96e639d69d3bbbfcf959cc043ae`.
+- Exact executed research script:
+  `cd094fad0df5ba2a240dc84e484187de43b1551b13709e7fab98bffbc04b24b3`.
+
+The Berlin [publisher's original data-basis note](https://www.berlin.de/umweltatlas/nutzung/gebaeudehoehen/fortlaufend-aktualisiert/datengrundlage/)
+states that the underlying ALKIS footprints were current as of
+**2022-04-07**, while our ALKIS WFS query retrieves the present-day
+service. The AdV [2022 quality verification plan](https://www.adv-online.de/AdV-Produkte/Standards-und-Produktblaetter/ZSHH/binarywriterservlet?imgUid=54d40ca8-b795-9291-5dd8-f761533daed3&uBasVariant=11111111-1111-1111-1111-111111111111)
+describes a version **3.0.0, dated 2022-03-10**, but is **not**
+identified here as the exact historic Berlin product-standard
+edition or a validated producer code↔text crosswalk. Do not
+silently substitute that verification-plan version for the PQS
+reference version.
+
+The next required scientific lane is official producer confirmation
+of the historical 2022 field mapping and release/version,
+independent original samples with **multiple method categories**,
+and documented license and measurement uncertainty review.
+No CAT4 insurance exposure or individual roof-height record is
+admitted.
