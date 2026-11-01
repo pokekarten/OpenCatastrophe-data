@@ -62,6 +62,12 @@ def _asset(value: Any, expected_id: str, data_type: str) -> dict[str, Any]:
         label = value[field]
         if type(label) is not str or not REF.fullmatch(label) or label.casefold() in {"unknown", "none", "na", "unspecified"}:
             raise MetadataError(f"{field} must be explicit and source-verified")
+    if expected_id == S1M_ID and (
+        value["horizontal_crs"] != "EPSG:6350"
+        or value["vertical_datum"] != "NAVD88"
+        or value["geoid_model"] != "GEOID18"
+    ):
+        raise MetadataError("official S1M requires EPSG:6350, NAVD88 and GEOID18")
     if value["elevation_unit"] != "metre":
         raise MetadataError("elevation_unit must be declared as metre; no silent conversions")
     first = _day(value["source_vintage_start"], "source_vintage_start")
@@ -91,13 +97,14 @@ def preflight(payload: Any) -> dict[str, Any]:
         if dem[field] != lidar[field]:
             raise MetadataError(f"{field} differs; audited coordinate transformation required")
     common = set(dem["source_lidar_workunit_ids"]) & set(lidar["source_lidar_workunit_ids"])
-    lineage = "shared_lidar_workunit" if common else "not_proven_independent"
+    lineage = "reported_shared_lidar_workunit_unverified" if common else "not_proven_independent"
     # Not a numerical height join: spatial overlap, age and local source
     # quality remain outside this strictly metadata-only contract.
     return {
         "profile": "usgs_3dep_s1m_lidar_metadata_preflight_v0",
         "input_artifact_count": 2,
-        "artifact_original_byte_hashes_recorded": True,
+        "claimed_sha256_formats_valid_not_byte_verified": True,
+        "provider_artifacts_verified": False,
         "horizontal_and_vertical_metadata_exact_match": True,
         "upstream_relationship": lineage,
         "shared_lidar_workunit_count": len(common),
