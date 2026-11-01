@@ -275,6 +275,62 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "us.fl.bay-county.building-footprints-current",
+      "name": "Bay County Florida hosted Building Footprints polygons with roof and height fields (live nonversioned)",
+      "provider": "Bay County, Florida GIS and GIS service",
+      "categories": [
+        "building_footprints",
+        "roof_type",
+        "building_height",
+        "event_validation",
+        "florida",
+        "temporal_leakage"
+      ],
+      "spatial_scope": "Bay County, Florida, current county-hosted local-building-basemap service; original features not downloaded",
+      "temporal_scope": "Live service checked 2026-11-01; provider does not expose historicMoment or versioned data; source building capture dates unknown; no 2018-10-10 freeze",
+      "resolution_or_granularity": "Original ArcGIS Hosted/FC_BuildingFootprints FeatureServer layer 22, polygon CRS EPSG:2238, 117,646 feature count-only; roof_type, bldgheight, numstories, lastupdate and create_date fields",
+      "potential_roles": [
+        "modern_building_geometry_schema_candidate",
+        "roof_height_field_definition_research",
+        "negative_test_for_false_2018_building_snapshot"
+      ],
+      "authoritative_url": "https://gis.baycountyfl.gov/arcgis/rest/services/Hosted/FC_BuildingFootprints/FeatureServer/22",
+      "access_class_hint": "official_count_only_and_metadata_verified_no_historic_moment_no_original_polygon_acquisition",
+      "note": "Original public Bay County GIS Hosted/FC_BuildingFootprints/FeatureServer/22 layer itemId 6b68c1a8d4354fc3b6f38cf41f46b754, native Florida StatePlane EPSG:2238 (latestWkid), esriGeometryPolygon. Live count-only 2026-11-01 gave 117,646 features; lastupdate IS NULL=117,500, IS NOT NULL=146, earlier than 2018-10-10=146; create_date earlier than 2018-10-10=0. Hosted service isDataVersioned=false and supportsQueryWithHistoricMoment=false. Dates in a few individual database fields CANNOT reconstruct historical roof shape or prove the other 117,500 features' historical state; create_date is a data-edit timestamp, not roof age. The field schema includes roof_type, bldgheight, numstories, not measured insured values. No feature geometry, addresses, IDs or exact vintage captured; source reuse and license not reviewed; not admitted. See docs/research/bay-county-microsoft-2018-building-snapshot-lineage-20261101.md.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "microsoft.usbuildingfootprints.2018-florida-v1-1",
+      "name": "Microsoft US Building Footprints original pre-Hurricane-Michael GitHub catalog, Florida V1.1",
+      "provider": "Microsoft Bing Maps (original 2018 building extraction)",
+      "categories": [
+        "historical_building_footprints",
+        "computer_vision",
+        "building_geometry",
+        "florida",
+        "pre_event_release",
+        "rights_conflict"
+      ],
+      "spatial_scope": "Statewide Florida originally reported; exact Bay County polygon subset not acquired or validated",
+      "temporal_scope": "Public June 28, 2018 Microsoft original release; pinned original repo commit c9fb49b5f7475102b2923ae2c7fc455412c7f0e8 (2018-10-09 21:48:57 UTC) predates hurricane on 2018-10-10; source Bing image composite captures are not per-building date-verified",
+      "resolution_or_granularity": "Historical README's Florida V1.1 ZIP reports 6,903,772 automatically inferred building polygons in GeoJSON; original V1.1 ZIP byte identity, availability and SHA-256 currently unverified",
+      "potential_roles": [
+        "candidate_pre_event_published_roof_geometry",
+        "historical_building_detection_completeness_benchmark",
+        "satellite_imagery_age_leakage_diagnostic"
+      ],
+      "authoritative_url": "https://github.com/microsoft/USBuildingFootprints/blob/c9fb49b5f7475102b2923ae2c7fc455412c7f0e8/README.md",
+      "access_class_hint": "original_2018_github_commit_pinned_fl_v1_1_zip_not_retrieved_exact_archive_rights_conflict",
+      "note": "Original Microsoft repo commit 2018-10-09 c9fb49b5f7475102b2923ae2c7fc455412c7f0e8 specifically links Florida V1.1 original https://usbuildingdata.blob.core.windows.net/usbuildings-v1-1/Florida.zip and reports 6,903,772 polygons. A targeted range access check for that original ZIP failed (WEBSITE_ACCESS_ERROR); no source ZIP bytes, immutable identity/hash, county subset or import verified. README calls the 2018 data Open Database License ODbL, while the SAME historical repo commit's LICENSE file contains CC BY 4.0 legal text: licensing scope is conflicting and requires legal/maintainer review rather than optimistic commercial use. Microsoft 2018 README warns Bing aerial imagery is a multi-vintage composite, individual image dates unknowable; June release and Oct pinned commit DO NOT prove each Florida building existed as roof on 2018-10-09. No counts from updated v2 dataset substitute for original V1.1. Research-only, not training/model admitted. See docs/research/bay-county-microsoft-2018-building-snapshot-lineage-20261101.md.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
     }
   ]
 }
