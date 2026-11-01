@@ -57,6 +57,15 @@ cell has that value. Neither original file exposes a reviewed GDAL
 `UNITTYPE`, `SCALE` or `OFFSET` in the inspected prefix; **do not assume
 metres**, centimetres, or a specific physical scaling for source pixels.
 
+**Independent official map labelling, not a raster-unit proof:** The
+[Berlin Umweltatlas official Starkregen map explanation](https://www.berlin.de/umweltatlas/wasser/starkregen/fortlaufend-aktualisiert/kartenbeschreibung/)
+labels the *cartographic water-depth layer* in centimetres (Wasserstand
+über Geländeoberfläche [cm]). Neither source TIFF contains an explicit
+GDAL `UNITTYPE`/`SCALE`/`OFFSET` declaration in the checked header.
+The map legend must not be used to convert arbitrary raw TIFF float
+values to centimetres or metres without a separately reviewed exact
+raster product specification or valid original pixel/class comparison.
+
 "2022" in source object names is not a verified event or modelling vintage:
 ZIP HTTP Last-Modified evidence was 2025 and these source reads took place
 2026-11-01 UTC. Provider scenario semantics, source rights, complete CRC,
