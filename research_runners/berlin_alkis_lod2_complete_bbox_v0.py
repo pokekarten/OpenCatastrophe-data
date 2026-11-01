@@ -66,11 +66,12 @@ def _decode(raw:bytes, source:str)->tuple[list[Any],list[dict],dict]:
     if type(doc) is not dict or doc.get("type")!="FeatureCollection":
         raise CompleteBboxError("not official WFS GeoJSON FeatureCollection")
     crs=doc.get("crs")
-    if crs is not None:
-        if (type(crs) is not dict or crs.get("type")!="name"
-            or type(crs.get("properties")) is not dict
-            or crs["properties"].get("name") not in CRS):
-            raise CompleteBboxError("not the reviewed projected source EPSG:25833")
+    # Full-population IoU cannot silently infer the response CRS from
+    # srsName in a request; RFC 7946 CRS-less GeoJSON uses WGS84 degrees.
+    if (type(crs) is not dict or crs.get("type")!="name"
+        or type(crs.get("properties")) is not dict
+        or crs["properties"].get("name") not in CRS):
+        raise CompleteBboxError("source must explicitly declare EPSG:25833 CRS")
     fs=doc.get("features")
     if type(fs) is not list or not 1<=len(fs)<=COUNT_LIMIT:
         raise CompleteBboxError("source returned empty/over-limit geometry")
@@ -116,6 +117,11 @@ def _decode(raw:bytes, source:str)->tuple[list[Any],list[dict],dict]:
         vertices+=len(get_coordinates(g))
         if vertices>25000:
             raise CompleteBboxError("total source polygon vertex budget exceeded")
+        # Unique feature IDs do not imply unique source geometry. Duplicated
+        # footprints can masquerade as different buildings or inflate
+        # candidate ambiguity and unmatched totals.
+        if any(g.equals(previous) for previous in polygons):
+            raise CompleteBboxError("duplicate original source footprint geometry")
         polygons.append(g);props.append(fields)
     return polygons,props,{
         "features_verified_complete":len(polygons),
