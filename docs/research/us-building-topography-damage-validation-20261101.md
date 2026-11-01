@@ -40,7 +40,8 @@ Official provider/documentation references:
 - Reject/no-data/ambiguous elevation and any unreviewed vertical CRS/datum rather than assuming metres above mean sea level or floor height.
 - The FEMA service's published edit timestamp is historical; confirm current endpoint, fields and actual available event vintages before a future probe.
 - The xBD image/annotation rights require authoritative source-specific confirmation; the reported noncommercial restriction is a block for commercial model input.
-- Next causal PR: synthetic-only bounded source receipt/selection and negative tests for FEMA assessment type plus 3DEP source-lineage/vertical-datum rejection; do not request real source bytes until scope/rights are separately reviewed.
+- Added research-only `research_runners/fema_damage_assessment_preflight_v0.py` with nine synthetic negative/positive unit tests in `tests/test_fema_damage_assessment_preflight_v0.py`: bounds one-event projected geometry-free FeatureServer attributes, validates ArcGIS UTC epoch milliseconds, unique `OBJECTID`, FEMA `DMG_LEVEL` codes, finite nonnegative `IN_DEPTH` in **feet**, records dates and assessment codes without promoting modeled/unknown methods to observed truth; outputs aggregate counts only. Source observation-independence, commercial rights and any model use remain **not admitted**.
+- Next causal PR: prove source-specific FEMA rights/currentness and a fixed source-event receipt; separately implement synthetic-only 3DEP source-lineage/vertical-datum rejection. Do not request real source bytes until exact acquisition scope and rights are reviewed.
 
 ## Source overlaps checked
 
