@@ -103,9 +103,10 @@ class TileTablePreflightTests(unittest.TestCase):
             alter(normal, 324, ptr=94_851_934),
             alter(normal, 325, ptr=17001),
         ]
+        reviewed_header = inspect_tiff_header(normal)
         for i, raw in enumerate(cases):
             with self.subTest(case=i), self.assertRaises(TileTableBlocked):
-                inspect_tile_table_locations(raw, header=inspect_tiff_header(raw))
+                inspect_tile_table_locations(raw, header=reviewed_header)
 
     def test_header_mismatch_and_bad_size_fail_closed(self):
         normal = fake_first_ifd()
