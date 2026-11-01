@@ -121,6 +121,14 @@ RECIPES = (
         "Never treat a non-overlapping year, missing pixel or data gap as proof of model error.",
     ),
     (
+        "luxembourg-act2013-eubucco-versus-act2023v2-rooflineage",
+        ("eubucco.buildings.v0.2", "lu.act.bd-l-bati3d-2023"),
+        "same_provider_family_different_vintages_independence_unproven",
+        "Luxembourg EUBUCCO LU00/NUTS2016 source code gov-luxembourg and upstream ACT 2013 Bâtiments 3D LoD1 metadata; ACT2023v2 original buildingid/gml_id and 2023 roof extent; versioned provider SHA256, geometry-source family, CRS EPSG3035 versus EPSG2169, observed date and crosswalk/match uncertainty",
+        "Provider-hosted EUBUCCO v0.2 original metadata workbook identifies gov-luxembourg as Administration du cadastre et de la topographie Bâtiments 3D (LoD1), 2013, CC0, EPSG2169. Its harmonised LU00 Parquet includes 144088 government-labelled geometry records of 186171 total. ACT2023v2 has 238189 roof-derived polygons from 2023 surveys. Confirm exact historical raw ACT LoD1 source and common geometry lineage, EUBUCCO ODbL downstream obligations, native coordinate axis via independent controls, observation-vintage and roof-vs-ground segmentation. Source-family relationship is verified; individual building equivalence or shared source bytes are NOT verified.",
+        "Do not treat EUBUCCO gov-luxembourg geometries and ACT2023v2 as independent observations, equate older ground/LoD1 polygons with newer roof extents, subtract counts as missing buildings, infer stable building identity from nearest overlap, or promote either to insurer exposure, insured TIV, vulnerability or validation holdout without separate reviews.",
+    ),
+    (
         "europe-wind-building-context",
         ("climk.winds.storm-footprints.v2", "eubucco.buildings.v0.2"),
         "spatial_exposure_proxy_only",
