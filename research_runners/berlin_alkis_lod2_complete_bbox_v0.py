@@ -81,6 +81,38 @@ class CompleteBboxError(ValueError):
     """Source count/geometry mismatch: cannot claim complete matched set."""
 
 
+METHOD_FIELDS=("quellebodenhoehe","quelledachhoehe","quellelage")
+METHOD_PRESENCE_STATES=(
+    "code_and_description","code_only","description_only","both_absent",
+)
+
+
+def _method_present(value:Any)->bool:
+    """Never export provider method code/text; reject complex or nonfinite payloads."""
+    if value is None:
+        return False
+    if type(value) is str:
+        return bool(value.strip())
+    if type(value) in (int,float) and math.isfinite(value):
+        return True  # 0 is a present source code, not missingness.
+    raise CompleteBboxError("unexpected source method field type or nonfinite value")
+
+
+def _height_method_coverage(records:list[dict])->dict[str,dict[str,int]]:
+    """Source-only pair-completeness; neither code nor label proves measurement."""
+    result={field:{state:0 for state in METHOD_PRESENCE_STATES}
+            for field in METHOD_FIELDS}
+    for props in records:
+        for field in METHOD_FIELDS:
+            code=_method_present(props.get(field))
+            description=_method_present(props.get(field+"_txt"))
+            key=("code_and_description" if code and description
+                 else "code_only" if code else
+                 "description_only" if description else "both_absent")
+            result[field][key]+=1
+    return result
+
+
 def _decode(raw:bytes, source:str)->tuple[list[Any],list[dict],dict,set[int]]:
     if type(raw) is not bytes or not 0<len(raw)<=MAX_BYTES:
         raise CompleteBboxError("source original bytes are empty/oversized")
@@ -248,6 +280,17 @@ def evaluate(alkis_raw:bytes, height_raw:bytes)->dict:
                     matched_building_role_positive_not_3m+=1
 
     return {
+        "height_method_code_description_coverage":{
+            "all_height_features":_height_method_coverage(hp),
+            "uniquely_matched_height_features":_height_method_coverage(
+                [hp[j] for _,j in pairs]
+            ),
+            "duplicate_footprint_quarantined_height_features":_height_method_coverage(
+                [hp[j] for j in sorted(h_quarantine)]
+            ),
+        },
+        "height_method_labels_or_codes_exported":False,
+        "height_method_code_description_agreement_or_measurement_proven":False,
         "height_role_literal_domain_probe_counts":{
             "all_height_features":_role_domain_counts(hp),
             "uniquely_matched_height_features":_role_domain_counts(
