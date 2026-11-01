@@ -35,3 +35,14 @@ Dedicated `.github/workflows/geoboundaries-deu-nuts2021-partial-cat3.yml` fetche
 Before exact-head tests and original-source run **succeed**, the 14-state database is only an implementation proposal, not a proven finished staging artifact. Even a successful 14-region CAT3 research join cannot establish an authorised **production NUTS mapping**. Such use needs proper Eurostat geography licensing/attribution, comparisons with sufficiently detailed original NUTS polygons (not only simplified 20M generalisation), independent survey control at difficult borders, EUBUCCO NUTS2016 mapping validation, and manual regional legal provenance.
 
 A future independent source-quality fix may address the two withheld regions, but **must not use approximate names or silently assign NUTS2021 codes**. Do not treat two admitted sample city points as independently surveyed parcel boundaries.
+
+## Verified original-source 14/2 staging and fixed point proof (2026-11-01)
+
+**Successful original GitHub workflow:** https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41317970802 . All **12 synthetic regression tests** passed first. The job then re-downloaded the **two exact pinned original providers**, verified the full 6,254,151-byte geoBoundaries SHA-256 and 194,955-byte Eurostat SHA-256, reprojected all 16 DEU regions using EPSG3035, and created the **research-only CAT3** database.
+
+- **14 provisional geometry-supported NUTS2021 candidates:** `DE1, DE2, DE4, DE6, DE7, DE8, DE9, DEA, DEB, DEC, DED, DEE, DEF, DEG`.
+- **2 withheld:** `DE3 Berlin` (source coverage 0.898923; NUTS coverage 0.908861; runner-up 0.112443) and `DE5 Bremen` (source coverage 0.825459; NUTS coverage 0.901874; runner-up 0.176251). Both exceed the **unchanged** permitted 10% competing polygon share.
+- **Fixed original CAT1-exact-point → CAT3 lookup passed:** Munich gets provisional `DE2`, Stuttgart gets provisional `DE1`, Berlin and Bremen are explicitly **blocked** and have **NULL provisional NUTS code**. These are preselected public research points, not insured building coordinates.
+- **No 16-region CAT2 crosswalk created or legal equivalence claimed.** No original coordinates, provider feature shape IDs, source geometries or derived CAT3 files uploaded; all test files were ephemeral. Source reuse rights and EUBUCCO NUTS2016 mapping remain unapproved.
+
+This verifies safe partial *technical staging*, not authorised region coding of physical building or insurer exposures. Any changed source or third ambiguous region causes hard failure instead of falling back to a name-based guess.
