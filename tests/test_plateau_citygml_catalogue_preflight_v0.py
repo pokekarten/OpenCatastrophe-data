@@ -33,6 +33,7 @@ def valid_payload() -> dict:
                 "composite_url": "https://api.plateauview.mlit.go.jp/datacatalog/citygml/13104-2024/citygml.zip",
                 "gspatialjp_dataset_url": None,
                 "gspatialjp_files": [],
+                "file_size": None,
             },
         ],
         "latest_citygml": [
@@ -142,6 +143,28 @@ class PlateauCataloguePreflightTests(unittest.TestCase):
         data["citygml"][0]["pref_code"] = "01"
         with self.assertRaises(CataloguePreflightError):
             check(data)
+
+    def test_rest_optional_cms_zip_size_is_distinct_from_gspatial_zip(self):
+        data = valid_payload()
+        data["citygml"][0]["file_size"] = 333333
+        data["citygml"][0]["gspatialjp_files"] = [{
+            "kind": "citygml", "name": "Synthetic G-Spatial archive",
+            "url": "https://example.org/synthetic-gspatial.zip", "file_size": 111111,
+        }]
+        result = check(data)
+        self.assertTrue(result["cms_original_size_metadata_known"])
+        self.assertEqual(result["gspatial_citygml_file_count"], 1)
+        self.assertTrue(result["gspatial_citygml_file_sizes_all_known"])
+        self.assertNotIn("333333", json.dumps(result))
+        self.assertNotIn("111111", json.dumps(result))
+
+    def test_rest_invalid_cms_zip_size_is_blocked(self):
+        for value in (-1, 0, True, "100"):
+            with self.subTest(value=value):
+                data = valid_payload()
+                data["citygml"][0]["file_size"] = value
+                with self.assertRaisesRegex(CataloguePreflightError, "REST CMS file_size"):
+                    check(data)
 
     def test_negative_nested_zip_size_rejected(self):
         data = valid_payload()
@@ -349,12 +372,12 @@ class PlateauGraphqlMetadataPreflightTests(unittest.TestCase):
         self.assertNotIn("synthetic-native-record", json.dumps(result))
         self.assertNotIn("example.org", json.dumps(result))
 
-    def test_graphql_cms_original_size_is_not_available_in_documented_schema(self):
+    def test_graphql_cms_size_not_selected_in_minimal_query(self):
         result = check_graphql(valid_graphql_payload())
         self.assertFalse(result["cms_original_size_metadata_known"])
         self.assertEqual(result["metadata_zip_link_count"], 0)
 
-    def test_undocumented_file_size_field_is_rejected(self):
+    def test_file_size_absent_from_our_exact_graphql_selection(self):
         payload = valid_graphql_payload()
         payload["data"]["citygmlDatasets"][0]["fileSize"] = 123456
         with self.assertRaisesRegex(CataloguePreflightError, "unsupported fields"):
