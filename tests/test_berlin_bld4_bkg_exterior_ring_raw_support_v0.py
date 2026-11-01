@@ -23,7 +23,7 @@ class BkgExteriorRingTests(unittest.TestCase):
         self.box = box
         self.np = np
         self.affine = Affine(1,0,0,0,-1,24)
-        self.pilot = box(0,0,24,24)
+        self.pilot = box(0,0,40,40)  # 1600 m2 valid synthetic pilot
         self.values = np.ones((24,24), dtype=np.int16)
         self.mask = np.zeros((24,24), dtype=bool)
         self.building = box(10,10,11,11)
