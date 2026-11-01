@@ -57,6 +57,27 @@ Current practical lead: `wsv.pegelonline.rest-v2.dresden` is `probe_ready` with 
 - [EuroFlood](https://github.com/cisgroup/euroflood): promising event index/access adapter for the new JRC European flood-depth product; it is not a new independent observation provider.
 - [Oasis Open Data Standards](https://github.com/OasisLMF/OpenDataStandards) and [RDLS](https://github.com/GFDRR/rdl-standard): candidate **projections** of native data and evidence, not permission to dilute native lineage/admission. Versions and lossiness must be pinned.
 
+## Executable cross-registry research view (this PR)
+
+The repository already has three separate validated tools: `scripts/build_source_access_inventory.py` (discovery/admissions/access), `scripts/source_linkage_audit_v0.py` (manual candidate-to-candidate scientific hypotheses), and `scripts/export_cat_source_registry_sqlite.py` (isolated CAT-only **discovery metadata** projection). They must **not** be replaced by a second independently maintained canonical register.
+
+`scripts/build_cat_source_crosswalk_v0.py` now joins the two *read-only derived research views by exact source ID* and adds source-by-source inspection fields:
+
+- canonical discovery shard; provider and scope; existing access contract IDs/status; bounded next access step;
+- explicit linked candidate IDs, relationship hypothesis, missing proof requirements and prohibited inferences;
+- separate admitted manifest entries with no privilege inheritance if the same ID also appears in a discovery record;
+- aggregate counts for candidates with no reviewed concrete access contract and candidates with manual linkage hypotheses.
+
+Run from a Git checkout after the normal dependency install:
+
+```bash
+python scripts/build_cat_source_crosswalk_v0.py --summary
+python scripts/build_cat_source_crosswalk_v0.py --out /tmp/cat-source-crosswalk.json
+python -m unittest tests.test_cat_source_crosswalk_v0 -v
+```
+
+The output is a **deterministic transient report**, not an approved warehouse schema and not an import queue that may execute requests. An unlinked source does not imply scientific independence: this script marks `scientific_independence_proven=false` even for candidates with no currently authored relationship hypothesis. A `probe_ready` source is still not proven downloaded or model-ready. All joins into original source bytes require source-specific evidence and separate admission.
+
 ## Highest-impact error/risk classes found in the existing workflow
 
 1. **Metadata completeness mistaken for usable data:** 263 candidates are not 263 downloaded or licenced assets; 42 access contracts are not 42 authorized running importers. Gate by actual provider bytes, SHA256, deterministic parser receipt and explicit rights/model role.
