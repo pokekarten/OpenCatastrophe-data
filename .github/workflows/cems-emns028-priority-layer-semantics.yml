@@ -9,8 +9,10 @@ on:
     paths:
       - "research_runners/cems_emns028_priority_layer_semantics_v0.py"
       - "research_runners/cems_emns028_topology_repair_challenge_v0.py"
+      - "research_runners/cems_emns028_current_rnb_point_context_v0.py"
       - "tests/test_cems_emns028_priority_layer_semantics_v0.py"
       - "tests/test_cems_emns028_topology_repair_challenge_v0.py"
+      - "tests/test_cems_emns028_current_rnb_point_context_v0.py"
       - ".github/workflows/cems-emns028-priority-layer-semantics.yml"
   workflow_dispatch:
 
@@ -41,6 +43,7 @@ jobs:
         run: >-
           python -m unittest
           tests.test_cems_emns028_priority_layer_semantics_v0
-          tests.test_cems_emns028_topology_repair_challenge_v0 -v
+          tests.test_cems_emns028_topology_repair_challenge_v0
+          tests.test_cems_emns028_current_rnb_point_context_v0 -v
       - name: Reacquire pinned source, inspect only 4 features, delete all bytes
         run: python -m research_runners.cems_emns028_priority_layer_semantics_v0 --live
