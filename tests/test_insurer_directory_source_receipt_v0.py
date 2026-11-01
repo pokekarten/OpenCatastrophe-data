@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
 """Offline tests with independently synthetic source data only."""
 
 import json
