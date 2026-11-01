@@ -108,6 +108,23 @@ def build_crosswalk(access_inventory: dict[str, Any], linkage_audit: dict[str, A
     if len(link_ids) != linkage_audit.get("linkage_recipe_count"):
         raise CrosswalkError("linkage recipe count mismatch")
 
+    # A provider landing page can legitimately describe multiple distinct
+    # dataset products. Exact shared page URLs are therefore review candidates
+    # only, never proof of duplicate source bytes or authority to conflate IDs.
+    page_index: dict[str, list[str]] = defaultdict(list)
+    for source_id, source in discovery.items():
+        page_index[source["authoritative_url"]].append(source_id)
+    url_groups = [
+        {"authoritative_url": url, "candidate_ids": sorted(ids),
+         "source_bytes_identical_proven": False,
+         "automatic_deduplication_allowed": False}
+        for url, ids in sorted(page_index.items()) if len(ids) > 1
+    ]
+    page_peers = {
+        source_id: sorted(x for x in ids if x != source_id)
+        for _url, ids in page_index.items() if len(ids) > 1 for source_id in ids
+    }
+
     candidates = []
     for source_id in sorted(discovery):
         source = discovery[source_id]
@@ -140,6 +157,8 @@ def build_crosswalk(access_inventory: dict[str, Any], linkage_audit: dict[str, A
             "access_contract_statuses": access.get("contract_statuses", []),
             "operational_readiness": access.get("operational_readiness"),
             "access_next_action": access.get("next_action"),
+            "same_authoritative_page_candidate_ids": page_peers.get(source_id, []),
+            "same_page_proves_identical_source_bytes": False,
             "candidate_join_hypotheses": link_rows,
             "join_hypothesis_count": len(link_rows),
             "scientific_independence_proven": False,
@@ -177,6 +196,8 @@ def build_crosswalk(access_inventory: dict[str, Any], linkage_audit: dict[str, A
         "candidate_without_access_contract_count": sum(not row["access_contract_ids"] for row in candidates),
         "candidate_with_manual_link_hypothesis_count": sum(bool(row["candidate_join_hypotheses"]) for row in candidates),
         "manual_linkage_recipe_count": len(link_ids),
+        "shared_authoritative_page_group_count": len(url_groups),
+        "shared_authoritative_page_review_groups": url_groups,
         "candidate_readiness_counts": readiness_counts,
         "candidates": candidates,
         "existing_manifests_separate": manifest_rows,
