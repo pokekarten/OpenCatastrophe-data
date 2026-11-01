@@ -13,6 +13,10 @@ WITH p AS (
 ), u AS (
     SELECT e.* FROM exposure.exposure_unit e
     JOIN v ON e.portfolio_version_id = v.portfolio_version_id
+), c AS (
+    SELECT k.* FROM insurance.contract k
+    JOIN insurance.portfolio_contract pc ON pc.contract_id = k.contract_id
+    JOIN v ON v.portfolio_version_id = pc.portfolio_version_id
 ), checks AS (
     SELECT 'single_portfolio' AS check_name, (SELECT count(*) = 1 FROM p) AS passed
     UNION ALL SELECT 'fictional_insurer_unlinked', (SELECT count(*) = 1 FROM p WHERE organization_id IS NULL)
@@ -31,6 +35,9 @@ WITH p AS (
     UNION ALL SELECT 'all_eur', (SELECT count(*) = 12 FROM u WHERE insured_value_currency = 'EUR')
     UNION ALL SELECT 'arbitrary_value_conservation', (SELECT coalesce(sum(insured_value),0) = 3150000 FROM u)
     UNION ALL SELECT 'all_values_nonnegative', (SELECT count(*) = 12 FROM u WHERE insured_value >= 0)
-    UNION ALL SELECT 'no_real_model_runs', (SELECT count(*) = 0 FROM model.simulation_run)
+    UNION ALL SELECT 'one_fictional_catxl_link', (SELECT count(*) = 1 FROM c WHERE is_synthetic AND contract_type = 'cat_xl' AND cedent_id IS NULL AND counterparty_id IS NULL)
+    UNION ALL SELECT 'illustrative_layer_only', (SELECT count(*) = 1 FROM c WHERE currency_code = 'EUR' AND attachment_amount = 200000 AND limit_amount = 500000 AND reinstatement_count = 1)
+    UNION ALL SELECT 'treaty_not_model_approved', (SELECT count(*) = 1 FROM c WHERE source_key IS NULL AND contract_terms ->> 'model_input_approved' = 'false' AND contract_terms ->> 'reinstatement_premium' = 'unspecified_not_zero')
+    UNION ALL SELECT 'no_model_runs_for_fixture', (SELECT count(*) = 0 FROM model.simulation_run WHERE portfolio_version_id IN (SELECT portfolio_version_id FROM v))
 )
 SELECT check_name, passed FROM checks ORDER BY check_name;
