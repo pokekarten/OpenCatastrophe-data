@@ -7,6 +7,12 @@ SPDX-License-Identifier: Apache-2.0
 
 **Reviewed 2026-11-01. Research-only.** The exact NOAA TIFF alpha mask in `docs/research/noaa-michael-seven-fema-alpha-mask-final-20261101.md` excludes visible-image validation for the **seven** corrected `DR-4399/RS/WI` FEMA point counts in one original NOAA tile. That does NOT invalidate FEMA's remote-sensing labels; it redirects the research to **the actual source imagery, temporal building context and independent measured damage**. No owner/address rows, parcel geometries, scene files, claims or buildings were downloaded/ingested in this branch.
 
+## 2026 source-access correction: both former FGDL parcel ZIP editions removed
+
+The historic FGDL 2017/2018 pages below document **metadata and source dates only**. A later original University of Florida GeoPlan notice dated **2025-10-08** explicitly confirms the **State GIS Office requested withdrawal of ALL historic and current FGDL parcel dataset files**. The public archive no longer lists `parcels_2017` or `parcels_2018` ZIPs. Thus the earlier tentative idea of a direct archived FGDL ZIP is superseded: those original source files are **not available from the present official FGDL distribution**, despite the preserved metadata.
+
+GeoPlan directs users instead to the **different official 2025-labeled Florida DOR statewide cadastral FeatureServer**, whose *live geometry-free count-only* `where=1=1` returned **10,950,670 parcel polygon records** on 2026-11-01. It is not a historical 2017 pre-event dataset. Its layer holds personal owner/address fields and has a different current update history. Only its service metadata and aggregate count were checked, not parcel features. Complete official withdrawal, current state source identity and strict access gate are documented in `docs/research/florida-michael-2018-official-parcel-access-withdrawal-20261101.md`.
+
 ## Three original upstream sources distinguished and checked
 
 | Exact source | Provider evidence | Valid scientific role | No-go / unresolved |
