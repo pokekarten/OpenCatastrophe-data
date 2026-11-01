@@ -74,7 +74,11 @@ def strict_spatial_pairs(left, right, *, min_iou=MIN_IOU,
             if union<=0:
                 raise PairedSourceError("Invalid geometry union")
             iou=overlap/union
-            if iou>=conflict_iou:
+            # Use the established source-overlap diagnostic from
+            # scripts/building_footprint_overlap_v0.py: a competitor may
+            # occupy >=20% of EITHER polygon even when IoU is small because
+            # it is a tiny roof part inside a large building object.
+            if max(overlap/a.area,overlap/b.area)>=conflict_iou:
                 left_conflicts[i]+=1
                 right_conflicts[j]+=1
             if iou>=min_iou:
