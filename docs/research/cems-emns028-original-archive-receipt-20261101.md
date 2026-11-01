@@ -114,3 +114,36 @@ these checks.
    independently quantify alignment and 2016 flood overlap.
 4. Obtain insured sums and policies, vulnerability assumptions and
    validated claims/loss evidence before a real CAT simulation.
+
+
+## Completed one-time original-source check (2026-11-01)
+
+The [GitHub Actions run 41336175575](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41336175575)
+**completed successfully**. The bounded downloader obtained and checked
+the **complete original archive** without committing or redistributing
+any downloaded provider data. It wrote only metadata to the public log.
+
+| Field | Verified value |
+| --- | --- |
+| Complete official archive length | **155,898,548** bytes |
+| Locally computed original ZIP SHA-256 | **7ef43d0637447abae705728723c06d2f05415a21667fdee1f10e8fc25b5bf3c2** |
+| ZIP members | **173** |
+| Declared uncompressed size | **297,718,220** bytes |
+| FileGDB folders | **1** |
+| \`.gdbtable\` / \`.gdbtablx\` | **30 / 30** |
+| ESRI \`.lyr\` style files | **18** |
+| Filenames loosely containing “04” or “ponthierry” | **13** (only name hints) |
+
+The exact receipt is saved as
+[\`cems-emns028-original-archive-receipt-20261101.json\`](cems-emns028-original-archive-receipt-20261101.json).
+The ZIP was automatically deleted from temporary runner storage;
+no private asset, credentials or original geodata is stored here.
+
+**New stage:** \`ORIGINAL_ARCHIVE_SHA256_OBSERVED\`. This is stronger than
+a discoverable website link, but it is **not** \`AOI04_OBSERVED_FLOOD_GEOMETRY_VERIFIED\`.
+The package needs a real FileGDB layer-name and CRS/content review before
+spatial analysis. The source archive checksum is calculated from one
+download; an independent publisher-provided signature is not claimed.
+Copernicus restricted-activation and third-party rights must still be
+confirmed before reuse or distribution. All CAT model admission remains
+blocked.
