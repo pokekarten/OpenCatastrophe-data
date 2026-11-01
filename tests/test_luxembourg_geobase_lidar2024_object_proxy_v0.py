@@ -58,7 +58,8 @@ class ObjectSurfaceTerrainTests(unittest.TestCase):
         self.ground.mask=np.zeros((5,5),dtype=bool)
         self.ground.mask[:,0]=True
         out=aggregate(self.polys,self.ground,self.surface,self.t,self.study)
-        self.assertEqual(out["objects_with_bounded_raster_proxy"],2)
+        self.assertEqual(out["objects_with_bounded_raster_proxy"],1)
+        self.assertEqual(out["objects_with_insufficient_unique_valid_pixels"],1)
         self.assertEqual(out["joint_source_valid_pixels"],20)
 
     def test_below_per_polygon_unique_pixel_quota_is_explicit(self):
