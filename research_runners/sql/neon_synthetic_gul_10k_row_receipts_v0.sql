@@ -1,8 +1,6 @@
 -- SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 -- SPDX-License-Identifier: Apache-2.0
 -- OpenCatastrophe synthetic validation-only GUL pilot, v0.
--- Four exact ordered row-series MD5 receipts for independent Python parity;
--- not cryptographic authenticity and not insured-loss or physical calibration.
 -- READ-ONLY. Run ONLY against Neon insurance-risk-core / insurance / validation-schema-20261031.
 -- Does NOT run OpenCatastrophe's native producer, NextGen, OpenQuake or Oasis.
 -- Uses 12 wholly fictional positions and their equally fictional insured values
@@ -12,15 +10,35 @@
 -- Physical hazard frequency, vulnerability, original policy terms,
 -- CAT-XL/reinstatement and retro are NOT calibrated or computed.
 
-WITH assets AS (
-  SELECT e.external_unit_id, e.insured_value::numeric AS proxy_value_eur
-  FROM exposure.exposure_unit e
-  JOIN exposure.portfolio_version pv ON pv.portfolio_version_id=e.portfolio_version_id
-  JOIN exposure.portfolio p ON p.portfolio_id=pv.portfolio_id
+WITH selected_versions AS (
+  -- Pin the exact synthetic OED v0 source. Do not infer identity from only
+  -- twelve matching unit IDs and an aggregate synthetic EUR amount.
+  SELECT pv.portfolio_version_id
+  FROM exposure.portfolio p
+  JOIN exposure.portfolio_version pv USING (portfolio_id)
   WHERE p.portfolio_key='oc-synthetic-exposure-smoke-v0'
     AND p.portfolio_type='synthetic' AND p.organization_id IS NULL
-    AND e.unit_type='asset' AND e.assumption_status='synthetic'
+    AND pv.version_label='v0' AND pv.seed=20261101
+    AND pv.generation_method='deterministic_independent_synthetic_sql_v0'
+    AND pv.source_key IS NULL
+    AND pv.assumption_metadata ->> 'synthetic'='true'
+    AND pv.assumption_metadata ->> 'model_input_approved'='false'
+    AND pv.assumption_metadata ->> 'real_insurer'='false'
+    AND pv.assumption_metadata ->> 'external_source_rows_used'='0'
+),
+raw_assets AS (
+  SELECT e.*
+  FROM exposure.exposure_unit e
+  JOIN selected_versions sv ON sv.portfolio_version_id=e.portfolio_version_id
+),
+assets AS (
+  SELECT e.external_unit_id, e.insured_value::numeric AS proxy_value_eur
+  FROM raw_assets e
+  WHERE e.unit_type='asset' AND e.assumption_status='synthetic'
     AND e.source_key IS NULL AND e.location IS NOT NULL
+    AND ST_SRID(e.location)=4326
+    AND e.insured_value_currency='EUR'
+    AND e.value_basis='invented_smoke_test_value_not_insured_observation'
 ),
 expected_assets AS (
   SELECT 'SYNTH-' || lpad(i::text,2,'0') AS external_unit_id,
@@ -28,7 +46,12 @@ expected_assets AS (
   FROM generate_series(1,12) AS s(i)
 ),
 gate_checks AS (
-  SELECT COUNT(*) AS n, SUM(a.proxy_value_eur) AS proxy_total,
+  SELECT (SELECT COUNT(*) FROM selected_versions) AS selected_version_count,
+         (SELECT COUNT(*) FROM exposure.portfolio_version v
+           JOIN exposure.portfolio p USING (portfolio_id)
+          WHERE p.portfolio_key='oc-synthetic-exposure-smoke-v0') AS all_version_count,
+         (SELECT COUNT(*) FROM raw_assets) AS all_unit_count,
+         COUNT(*) AS n, SUM(a.proxy_value_eur) AS proxy_total,
          COUNT(DISTINCT a.external_unit_id) AS unique_ids,
          COUNT(*) FILTER (
            WHERE a.external_unit_id IS NULL
@@ -41,7 +64,8 @@ gate AS (
   -- Unlike HAVING, this errors on missing/mutated fixtures instead of
   -- silently returning zero annual worlds and misleading NULL statistics.
   SELECT n, proxy_total, unique_ids,
-         1 / (CASE WHEN n=12 AND unique_ids=12
+         1 / (CASE WHEN selected_version_count=1 AND all_version_count=1
+                      AND all_unit_count=12 AND n=12 AND unique_ids=12
                       AND proxy_total=3150000 AND mismatches=0
                    THEN 1 ELSE 0 END) AS asserted_fixture
   FROM gate_checks
