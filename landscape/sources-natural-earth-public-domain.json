@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery: research permissive global geographic basemap alternative; not geodata admission",
+  "review_date": "2026-11-01",
+  "entries": [
+    {
+      "candidate_id": "naturalearth.public-domain.admin-geography",
+      "name": "Natural Earth global administrative geography, public-domain vector datasets",
+      "provider": "Natural Earth / NACIS contributors",
+      "categories": [
+        "administrative_boundaries",
+        "global_geography",
+        "research_baseline",
+        "country_reporting"
+      ],
+      "spatial_scope": "Global countries, borderlines and major administrative units in generalized map geometries",
+      "temporal_scope": "Publisher-maintained current datasets; reproducibility requires exact selected release/file and coordinate vintage",
+      "resolution_or_granularity": "1:10m, 1:50m and 1:110m generalized vector data, not cadastral addresses or event footprints",
+      "potential_roles": [
+        "country_regional_aggregation",
+        "global_map_baseline",
+        "noncommercial_gisco_alternative_research",
+        "synthetic_portfolio_reporting"
+      ],
+      "authoritative_url": "https://www.naturalearthdata.com/downloads/",
+      "access_class_hint": "Publisher states public-domain, including commercial use; verify selected exact release and file",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Publisher terms https://www.naturalearthdata.com/about/terms-of-use/ say public domain. The geometry is cartographically generalized, not the Eurostat 2024 NUTS code system, an exact historical municipal boundary, a building footprint, flood polygon, insured sum or geocoded claim. Use versioned files and explicit country/disputed-border policies; do not mis-join HANZE NUTS-like codes to Natural Earth administrative names by text alone."
+    }
+  ]
+}
