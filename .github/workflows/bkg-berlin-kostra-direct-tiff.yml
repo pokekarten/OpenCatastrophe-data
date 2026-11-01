@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: BKG Berlin KOSTRA one direct TIFF sample
+
+on:
+  pull_request:
+    paths:
+      - research_runners/probe_bkg_berlin_kostra_direct_tiff_v0.py
+      - tests/test_probe_bkg_berlin_kostra_direct_tiff_v0.py
+      - .github/workflows/bkg-berlin-kostra-direct-tiff.yml
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/bkg-berlin-kostra-direct-tiff.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-one-source:
+    name: One official BKG tile, research-only
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install reviewed raster window dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-input rasterio==1.5.0 pyproj==3.7.2
+          python -m pip check
+      - name: Synthetic source-identity, byte-limit and raster-mask challenge
+        run: |
+          python -c "import rasterio, pyproj; print('Spatial window dependencies available')"
+          python -m unittest tests.test_probe_bkg_berlin_kostra_direct_tiff_v0 -v
+      - name: One original fixed BKG Berlin KOSTRA tile, max 70 MiB temporary storage
+        if: github.event_name != 'pull_request'
+        run: python -m research_runners.probe_bkg_berlin_kostra_direct_tiff_v0 --live
