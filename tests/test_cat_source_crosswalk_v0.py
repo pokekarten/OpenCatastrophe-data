@@ -108,6 +108,29 @@ class CATCrosswalkTests(unittest.TestCase):
         with self.assertRaisesRegex(CrosswalkError, "discovery/access inventories disagree"):
             build_crosswalk(a, l)
 
+    def test_same_provider_page_is_review_only_not_source_identity(self):
+        a, l = fixture()
+        report = build_crosswalk(a, l)
+        self.assertEqual(report["shared_authoritative_page_group_count"], 1)
+        group = report["shared_authoritative_page_review_groups"][0]
+        self.assertEqual(group["candidate_ids"], ["synthetic.a", "synthetic.b"])
+        self.assertFalse(group["automatic_deduplication_allowed"])
+        self.assertFalse(group["source_bytes_identical_proven"])
+        self.assertEqual(
+            report["candidates"][0]["same_authoritative_page_candidate_ids"],
+            ["synthetic.b"],
+        )
+        self.assertFalse(report["candidates"][0]["same_page_proves_identical_source_bytes"])
+
+        # Once the product URLs differ the duplicate-page review flag disappears,
+        # but no model-input or scientific independence assertion follows.
+        a, l = fixture()
+        a["entries"][1]["authoritative_url"] = "https://example.org/second-product"
+        l["source_inventory"][1]["authoritative_url"] = "https://example.org/second-product"
+        report = build_crosswalk(a, l)
+        self.assertEqual(report["shared_authoritative_page_group_count"], 0)
+        self.assertTrue(all(not c["scientific_independence_proven"] for c in report["candidates"]))
+
     def test_same_candidate_id_with_different_origins_fails_closed(self):
         for kind in ("provider", "authoritative_url", "source_registry_path"):
             with self.subTest(kind=kind):
