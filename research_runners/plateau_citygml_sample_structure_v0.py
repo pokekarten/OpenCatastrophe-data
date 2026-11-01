@@ -33,6 +33,8 @@ MAX_GML_BYTES = 4 * 1024 * 1024
 MAX_XML_ELEMENTS = 50_000
 MAX_XML_DEPTH = 64
 MAX_BUILDINGS = 5_000
+MAX_LOD0_POLYGONS = 400
+MAX_RING_POSITIONS = 128
 GML = "http://www.opengis.net/gml"
 CORE = "http://www.opengis.net/citygml/2.0"
 BLDG = "http://www.opengis.net/citygml/building/2.0"
@@ -73,6 +75,120 @@ def _corner(node: ET.Element | None) -> tuple[float, float, float]:
     if not (-90 <= lat <= 90 and -180 <= lon <= 180 and -10000 <= alt <= 10000):
         raise CityGMLPreflightError("GML bounding envelope corner is out of plausible range")
     return lat, lon, alt
+
+
+
+def _segments_intersect(a, b, c, d) -> bool:
+    """Conservative planar crossing test on small unprojected lon/lat rings.
+
+    This only rejects an obvious local self-crossing, not a full topology check.
+    """
+    def orientation(p, q, r):
+        return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+
+    ab_c = orientation(a, b, c)
+    ab_d = orientation(a, b, d)
+    cd_a = orientation(c, d, a)
+    cd_b = orientation(c, d, b)
+    # Collinear/touching non-adjacent segments are conservatively unresolved.
+    if abs(ab_c) < 1e-20 or abs(ab_d) < 1e-20 or abs(cd_a) < 1e-20 or abs(cd_b) < 1e-20:
+        def within(p, q, r):
+            return min(p[0], q[0]) <= r[0] <= max(p[0], q[0]) and min(p[1], q[1]) <= r[1] <= max(p[1], q[1])
+        return (
+            abs(ab_c) < 1e-20 and within(a, b, c)
+            or abs(ab_d) < 1e-20 and within(a, b, d)
+            or abs(cd_a) < 1e-20 and within(c, d, a)
+            or abs(cd_b) < 1e-20 and within(c, d, b)
+        )
+    return (ab_c > 0) != (ab_d > 0) and (cd_a > 0) != (cd_b > 0)
+
+
+def _screen_lod0_polygon(polygon: ET.Element, low: tuple, high: tuple) -> bool:
+    """Screen one *inline* GML exterior posList; never calculate exposure area.
+
+    Returns False for polygons using unsupported references/interior rings.
+    Invalid inline exterior rings fail closed; unresolved geometry is not passed.
+    """
+    xlink = "{http://www.w3.org/1999/xlink}href"
+    if any(xlink in node.attrib for node in polygon.iter()):
+        return False
+    if polygon.find(_tag(GML, "interior")) is not None:
+        return False
+    exteriors = polygon.findall(_tag(GML, "exterior"))
+    if len(exteriors) != 1:
+        raise CityGMLPreflightError("LOD0 polygon requires exactly one inline exterior")
+    rings = exteriors[0].findall(_tag(GML, "LinearRing"))
+    if len(rings) != 1:
+        return False  # gml:Ring or other supported CityGML form: not checked
+    poslists = rings[0].findall(_tag(GML, "posList"))
+    if len(poslists) != 1 or not poslists[0].text:
+        return False  # gml:pos encoding or referenced coordinates: unsupported
+    tokens = poslists[0].text.split()
+    if len(tokens) % 3 or not 12 <= len(tokens) <= (MAX_RING_POSITIONS + 1) * 3:
+        raise CityGMLPreflightError("LOD0 3D exterior ring has invalid vertex budget/dimension")
+    positions = [
+        tuple(_finite_number(value) for value in tokens[i:i + 3])
+        for i in range(0, len(tokens), 3)
+    ]
+    if positions[0] != positions[-1]:
+        raise CityGMLPreflightError("LOD0 exterior ring is not closed in 3D")
+    if len(set(positions[:-1])) < 3:
+        raise CityGMLPreflightError("LOD0 exterior ring has fewer than three distinct positions")
+    for lat, lon, alt in positions:
+        if (
+            not low[0] - 1e-8 <= lat <= high[0] + 1e-8
+            or not low[1] - 1e-8 <= lon <= high[1] + 1e-8
+            or not low[2] - 0.01 <= alt <= high[2] + 0.01
+        ):
+            raise CityGMLPreflightError("LOD0 position falls outside the root GML envelope")
+    # Use horizontal lon/lat solely for nondegeneracy and crossing screening.
+    ring = [(lon, lat) for lat, lon, _ in positions]
+    if len(set(ring[:-1])) != len(ring) - 1:
+        raise CityGMLPreflightError("LOD0 ring repeats a non-terminal horizontal vertex")
+    signed_double_area = math.fsum(
+        ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1]
+        for i in range(len(ring) - 1)
+    )
+    if abs(signed_double_area) <= 1e-14:
+        raise CityGMLPreflightError("LOD0 ring is horizontally degenerate")
+    n = len(ring) - 1
+    for i in range(n):
+        for j in range(i + 1, n):
+            if j == i + 1 or (i == 0 and j == n - 1):
+                continue
+            if _segments_intersect(ring[i], ring[i + 1], ring[j], ring[j + 1]):
+                raise CityGMLPreflightError("LOD0 ring has a non-adjacent edge crossing")
+    return True
+
+
+def _screen_lod0(buildings: list[ET.Element], low: tuple, high: tuple) -> dict[str, int]:
+    """Count only explicit inline rings in LOD0 footprint/roof-edge properties."""
+    screened = {"lod0_footprint_inline_ring_screened_count": 0,
+                "lod0_roofedge_inline_ring_screened_count": 0,
+                "lod0_geometry_unresolved_property_count": 0}
+    polygon_count = 0
+    for building in buildings:
+        for prop, key in (
+            ("lod0FootPrint", "lod0_footprint_inline_ring_screened_count"),
+            ("lod0RoofEdge", "lod0_roofedge_inline_ring_screened_count"),
+        ):
+            for geom in building.findall(_tag(BLDG, prop)):
+                polygons = list(geom.iter(_tag(GML, "Polygon")))
+                if not polygons or any(
+                    "{http://www.w3.org/1999/xlink}href" in n.attrib
+                    for n in geom.iter()
+                ):
+                    screened["lod0_geometry_unresolved_property_count"] += 1
+                    continue
+                polygon_count += len(polygons)
+                if polygon_count > MAX_LOD0_POLYGONS:
+                    raise CityGMLPreflightError("LOD0 polygon budget exceeded")
+                for polygon in polygons:
+                    if _screen_lod0_polygon(polygon, low, high):
+                        screened[key] += 1
+                    else:
+                        screened["lod0_geometry_unresolved_property_count"] += 1
+    return screened
 
 
 def inspect_gml_bytes(raw: bytes) -> dict[str, object]:
@@ -116,10 +232,20 @@ def inspect_gml_bytes(raw: bytes) -> dict[str, object]:
     if len(bounds) != 1:
         raise CityGMLPreflightError("GML must contain exactly one root CRS envelope")
     envelope = bounds[0]
-    if envelope.get("srsName") != EPSG6697 or envelope.get("srsDimension") != "3":
+    lower_node = envelope.find(_tag(GML, "lowerCorner"))
+    upper_node = envelope.find(_tag(GML, "upperCorner"))
+    dimension_on_envelope = envelope.get("srsDimension") == "3"
+    dimension_on_both_corners = (
+        lower_node is not None and upper_node is not None
+        and lower_node.get("srsDimension") == "3"
+        and upper_node.get("srsDimension") == "3"
+    )
+    if envelope.get("srsName") != EPSG6697 or not (
+        dimension_on_envelope or dimension_on_both_corners
+    ):
         raise CityGMLPreflightError("GML envelope must explicitly use EPSG:6697 in 3D")
-    low = _corner(envelope.find(_tag(GML, "lowerCorner")))
-    high = _corner(envelope.find(_tag(GML, "upperCorner")))
+    low = _corner(lower_node)
+    high = _corner(upper_node)
     if any(a > b for a, b in zip(low, high)):
         raise CityGMLPreflightError("GML bounding envelope corner order is inverted")
     if low[:2] == high[:2]:
@@ -155,7 +281,9 @@ def inspect_gml_bytes(raw: bytes) -> dict[str, object]:
             if child_names & names:
                 lod_count[lod] += 1
 
+    lod0_screened = _screen_lod0(buildings, low, high)
     return {
+        **lod0_screened,
         "source_id": "jp.mlit.plateau.citygml.3d-city-models",
         "local_gml_sha256": hashlib.sha256(raw).hexdigest(),
         "local_gml_byte_count": len(raw),
@@ -173,6 +301,10 @@ def inspect_gml_bytes(raw: bytes) -> dict[str, object]:
         "root_envelope_crs": "EPSG:6697",
         "root_envelope_srs_dimension": 3,
         "envelope_numeric_finite_and_ordered": True,
+        "envelope_explicit_three_dimensional_declaration": True,
+        "lod0_inline_ring_screen_only": True,
+        "geodesic_building_area_computed": False,
+        "unreferenced_geometry_resolved": False,
         "gml_ids_unique_within_sample": True,
         "evidence": "offline_user_supplied_small_gml_structure_only",
         "vertical_datum_independently_verified": False,
