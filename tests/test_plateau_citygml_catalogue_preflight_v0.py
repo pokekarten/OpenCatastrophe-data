@@ -6,11 +6,14 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 import unittest
+from pathlib import Path
 
 from research_runners.plateau_citygml_catalogue_preflight_v0 import (
     CataloguePreflightError,
     GRAPHQL_MAX_INPUT_BYTES,
+    GRAPHQL_CITYGML_FIELD_NAMES,
     MAX_INPUT_BYTES,
     preflight_bytes,
     preflight_graphql_bytes,
@@ -320,6 +323,21 @@ def check_graphql(payload: dict) -> dict:
 
 
 class PlateauGraphqlMetadataPreflightTests(unittest.TestCase):
+    def test_access_contract_exact_query_fields_match_offline_validator(self):
+        root = Path(__file__).resolve().parents[1]
+        contract_path = root / "access" / "jp.mlit.plateau.graphql.citygml-shinjuku2024.json"
+        contract = json.loads(contract_path.read_text(encoding="utf-8"))
+        rules = contract["request_contract"]["parameter_rules"]
+        match = re.search(
+            r"citygmlDatasets\\(input:\\s*\\{cityCodes:\\s*\\[\\\"13104\\\"\\],\\s*years:\\s*\\[2024\\]\\}\\)\\s*\\{([^}]*)\\}",
+            rules,
+        )
+        self.assertIsNotNone(match, "exact Shinjuku/2024 GraphQL query must be documented")
+        self.assertEqual(match.group(1).split(), list(GRAPHQL_CITYGML_FIELD_NAMES))
+        self.assertNotIn("fileSize", rules)
+        self.assertEqual(contract["probe_contract"]["mode"], "none")
+        self.assertEqual(contract["implementation_decision"], "document_only")
+
     def test_one_fixed_record_passes_without_network_or_source_admission(self):
         result = check_graphql(valid_graphql_payload())
         self.assertEqual(result["target_fiscal_year"], 2024)
