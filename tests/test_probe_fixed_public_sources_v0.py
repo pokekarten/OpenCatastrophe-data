@@ -49,7 +49,7 @@ def contract(source):
     return {
         "access_id": source,
         "status": "probe_ready",
-        "service_root": uri.scheme + "://" + uri.netloc,
+        "service_root": uri.scheme + "://" + uri.netloc + ("/webservices/rest-api/v2" if source == "wsv.pegelonline.rest-v2.dresden" else ""),
         "authentication": {"mode": "none"},
         "probe_contract": {"mode": "provider_specific",
                            "operation": operation, "requires_credentials": False},
