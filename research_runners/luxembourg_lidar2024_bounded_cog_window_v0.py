@@ -106,6 +106,50 @@ def compute_proxy(dtm, dsm) -> dict:
     }
 
 
+
+def inspect_source_crs_metadata() -> dict:
+    """Read only source TIFF metadata; no raster pixels or building locations."""
+    try:
+        import rasterio
+    except ImportError as exc:
+        raise CogWindowError("Pinned Rasterio required for provider CRS review") from exc
+    # Exact official 4KiB source gates already verified in merged #945.
+    receipts={name:read_header_range(name) for name in ("MNT","MNS")}
+    result={}
+    with rasterio.Env(
+        GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR",
+        CPL_VSIL_CURL_ALLOWED_EXTENSIONS=".tif",
+        CPL_VSIL_CURL_CHUNK_SIZE="65536",
+        CPL_VSIL_CURL_CACHE_SIZE="1048576",
+        GDAL_HTTP_MAX_RETRY="0",
+        GDAL_HTTP_TIMEOUT="20",
+        GDAL_CACHEMAX=8,
+        VSI_CACHE="FALSE",
+    ):
+        for name in ("MNT","MNS"):
+            with rasterio.open("/vsicurl/"+OFFICIAL_BASE+FILES[name]) as src:
+                epsg=src.crs.to_epsg() if src.crs is not None else None
+                label=src.crs.to_string() if src.crs is not None else None
+                result[name]={
+                    "rasterio_crs_epsg":epsg,
+                    "rasterio_crs_label_truncated":label[:260] if label else None,
+                    "has_crs":src.crs is not None,
+                    "single_band":src.count==1,
+                    "width_pixels":src.width,
+                    "height_pixels":src.height,
+                    "declared_pixel_resolution_metres_rounded_3dp":[round(float(v),3) for v in src.res],
+                    "north_up":src.transform.b==0 and src.transform.d==0,
+                    "source_declared_bytes_http":receipts[name]["original_entire_file_bytes_declared_by_http"],
+                    "source_raster_pixels_read":False,
+                }
+    return {
+        "profile":"luxembourg-lidar2024-cog-original-raster-crs-metadata-only-v0",
+        "original_source_crs_probe":result,
+        "source_raster_pixels_read":False,
+        "source_raster_full_file_sha256_verified":False,
+        "model_input_admitted":False,
+    }
+
 def run_live() -> dict:
     try:
         import rasterio
@@ -171,10 +215,14 @@ def run_live() -> dict:
 
 def main(argv=None) -> int:
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--fixed-luxembourg-window",action="store_true",required=True)
-    parser.parse_args(argv)
+    parser.add_argument("--fixed-luxembourg-window",action="store_true")
+    parser.add_argument("--metadata-only",action="store_true")
+    args=parser.parse_args(argv)
+    if args.fixed_luxembourg_window == args.metadata_only:
+        parser.error("Select exactly one fixed spatial operation or metadata-only probe")
     try:
-        print(json.dumps(run_live(),sort_keys=True,indent=2,allow_nan=False))
+        report=inspect_source_crs_metadata() if args.metadata_only else run_live()
+        print(json.dumps(report,sort_keys=True,indent=2,allow_nan=False))
     except (CogWindowError,OSError,ValueError) as exc:
         parser.exit(2,"BLOCKED: "+str(exc)+"\n")
     return 0
