@@ -2,4 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # CI/local validation only. This is not a runtime or acquisition dependency.
+# The repository-wide unittest discovery includes mandatory PPRI polygon
+# topology tests; use the already-reviewed EU flood spatial Shapely pin.
 PyYAML==6.0.3
+shapely==2.1.2
