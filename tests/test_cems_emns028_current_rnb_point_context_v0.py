@@ -62,6 +62,13 @@ class ContextTests(unittest.TestCase):
         self.assertGreaterEqual(
             r["original_estimated_maximum_layer"]["invalid_polygon_bbox_possible_point_hits"][0], 1
         )
+        challenge = r["original_estimated_maximum_layer"]["invalid_bbox_candidate_repair_challenges"]
+        self.assertEqual(len(challenge), 1)
+        self.assertFalse(challenge[0]["cat_model_admitted"])
+        self.assertFalse(challenge[0]["repaired_geodata_persisted"])
+        self.assertEqual([c["method"] for c in challenge[0]["repair_candidates"]],
+                         ["linework", "structure"])
+        self.assertTrue(challenge[0]["candidate_intersections_not_physical_inundation_proof"])
         self.assertTrue(r["original_estimated_maximum_layer"]["invalid_bbox_zero_requires_further_geometry_review"])
         self.assertFalse(r["cat_model_admitted"])
         self.assertFalse(r["event_time_and_building_vintage_aligned"])
