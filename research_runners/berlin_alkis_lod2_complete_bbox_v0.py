@@ -22,6 +22,9 @@ import sys
 from typing import Any, Callable
 from urllib import parse, request, error
 
+from research_runners.adv_lod2_method_codes_v24 import (
+    candidate_membership_counts,
+)
 from research_runners.berlin_alkis_gebaeude_five_feature_join_v0 import (
     BBOX, _object, _reject_constant,
 )
@@ -326,6 +329,18 @@ def evaluate(alkis_raw:bytes, height_raw:bytes)->dict:
                     matched_building_role_positive_not_3m+=1
 
     return {
+        "height_method_adv_pqs24_candidate_membership":{
+            "all_height_features":candidate_membership_counts(hp),
+            "uniquely_matched_height_features":candidate_membership_counts(
+                [hp[j] for _,j in pairs]
+            ),
+            "duplicate_footprint_quarantined_height_features":candidate_membership_counts(
+                [hp[j] for j in sorted(h_quarantine)]
+            ),
+        },
+        "adv_pqs24_2023_historical_berlin_2022_crosswalk_confirmed":False,
+        "adv_candidate_codes_or_source_method_values_exported":False,
+        "adv_code_membership_is_not_measurement_or_insured_exposure_proof":True,
         "height_method_empirical_code_text_concordance":{
             "all_height_features":_height_method_internal_concordance(hp),
             "uniquely_matched_height_features":_height_method_internal_concordance(
