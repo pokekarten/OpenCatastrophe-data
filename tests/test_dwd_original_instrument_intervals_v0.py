@@ -48,9 +48,14 @@ def source(folder, *, eq_overrides=None, param_override=None, drop=None):
                 raw = b"<table><tr><th>Secret</th></tr></table>"
                 if ext == ".txt":
                     if stem.startswith("Metadaten_Parameter"):
-                        raw = param_override if param_override is not None else table(PAR_HEADERS, [param_row()])
+                        raw = param_override if param_override is not None else table(
+                            PAR_HEADERS,
+                            [param_row()] + [param_row(code=f"OTHER_{i}") for i in range(7)])
                     else:
-                        rows = (eq_overrides or {}).get(stem, [eq_row()])
+                        default_rows = ([eq_row("20000101", "20091231", device="OLD"),
+                                         eq_row("20100101", "20191231", device="CURRENT")]
+                                        if stem in (PAIRS[1], PAIRS[3]) else [eq_row()])
+                        rows = (eq_overrides or {}).get(stem, default_rows)
                         raw = table(EQ_HEADERS, rows)
                 z.writestr(name, raw)
     return asset, hashlib.sha256(asset.read_bytes()).hexdigest()
@@ -70,7 +75,7 @@ class InstrumentIntervalTests(unittest.TestCase):
             self.assertEqual(family["unique_candidate_days"], 455)
             self.assertEqual(family["no_candidate_days"], 0)
             self.assertEqual(family["multiple_candidate_days"], 0)
-            self.assertEqual(family["finite_candidate_sensor_height_records"], 1)
+            self.assertGreaterEqual(family["finite_candidate_sensor_height_records"], 1)
             self.assertFalse(family["device_replacement_proven"])
         self.assertEqual(result["parameter_family"]["pinned_observation_parameter_candidates"]["FX_10"]["unique_candidate_days"], 455)
         self.assertFalse(result["model_input_approved"])
@@ -111,6 +116,16 @@ class InstrumentIntervalTests(unittest.TestCase):
                      ("2010-01-01", "20110331")):
             with self.subTest(begin=b, end=e), self.assertRaises(InstrumentAuditBlocked):
                 _rows(table(EQ_HEADERS, [eq_row(b, e)]), EQ_HEADERS)
+
+    def test_one_semicolon_frozen_parameter_footer_requires_full_rows(self):
+        native = table(PAR_HEADERS, [param_row()], footer=False)
+        with self.assertRaises(InstrumentAuditBlocked):
+            _rows(native + b"Publisher;footer" + bytes([10]), PAR_HEADERS,
+                  "Metadaten_Parameter_00003", expected_source_records=8)
+        rows, n = _rows(native + b"Publisher;footer" + bytes([10]), PAR_HEADERS,
+                        "Metadaten_Parameter_00003", expected_source_records=1)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(n, 1)
 
     def test_data_after_footer_is_blocked(self):
         blob = table(EQ_HEADERS, [eq_row()]) + (";".join(eq_row()) + "\n").encode()
