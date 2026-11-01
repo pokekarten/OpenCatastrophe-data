@@ -1,0 +1,87 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: DEU ADM1 vs independent Eurostat NUTS1 2021 geometry
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research_runners/geoboundaries_deu_adm1_nuts2021_crosswalk_v0.py
+      - tests/test_geoboundaries_deu_adm1_nuts2021_crosswalk_v0.py
+      - .github/workflows/geoboundaries-deu-adm1-nuts2021-crosswalk.yml
+  # One bounded exact-source original comparison on this workflow revision.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/geoboundaries-deu-adm1-nuts2021-crosswalk.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: geo-deu-adm1-nuts2021-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  independent-geometry:
+    name: Eurostat NUTS 2021 independent 16-region polygon crosswalk
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact source and code reference
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Install reviewed precise-area geometry libraries
+        run: python -m pip install --disable-pip-version-check --no-input -r requirements-eu-flood-spatial.txt
+      - name: Synthetic independent source, mismatch and isolated CAT2 SQLite regression tests
+        run: python -m unittest tests.test_geoboundaries_deu_adm1_nuts2021_crosswalk_v0 -v
+      - name: Read two exact independent original sources, create CAT1 and CAT2 and assign fixed states
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          geofile="$RUNNER_TEMP/geoboundaries-DEU-ADM1-9469f09.geojson"
+          nutsfile="$RUNNER_TEMP/eurostat-nuts2021-4326-20M-nutsrg_1.json"
+          geodb="$RUNNER_TEMP/geoboundaries-2021.cat.sqlite"
+          nutsdb="$RUNNER_TEMP/nuts2021-crosswalk.cat.sqlite"
+          export GEO_CAT_DB="$geodb" NUTS_CAT_DB="$nutsdb"
+          trap 'rm -f "$geofile" "$nutsfile" "$geodb" "$nutsdb"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 120 --retry 0 \
+            --max-filesize 7340032 --output "$geofile" \
+            'https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/DEU/ADM1/geoBoundaries-DEU-ADM1.geojson'
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 90 --retry 0 \
+            --max-filesize 300000 --output "$nutsfile" \
+            'https://raw.githubusercontent.com/eurostat/Nuts2json/8186be451525164ea24b43560cb943fda7c5520c/pub/v2/2021/4326/20M/nutsrg_1.json'
+          python -m research_runners.geoboundaries_deu_adm1_cat_sqlite_v0 \
+            --original-geojson "$geofile" --output "$geodb" > /dev/null
+          python -m research_runners.geoboundaries_deu_adm1_nuts2021_crosswalk_v0 \
+            --geo-original "$geofile" \
+            --nuts2021-original "$nutsfile" \
+            --output "$nutsdb"
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from research_runners.geoboundaries_deu_adm1_nuts2021_crosswalk_v0 import (
+              resolve_nuts1_for_point,
+          )
+          geo, nuts = Path(os.environ["GEO_CAT_DB"]), Path(os.environ["NUTS_CAT_DB"])
+          checks = ((11.576, 48.137, "DE2"), (13.405, 52.52, "DE3"))
+          for lon, lat, expected in checks:
+              row = resolve_nuts1_for_point(geo, nuts, lon, lat)
+              if not row or row["nuts1_code"] != expected:
+                  raise SystemExit("BLOCKED: independent exact-source NUTS1 point crosswalk failed")
+          print("PASS: two independent real-source points resolve to DE2/DE3 NUTS2021")
+          PY
+          # Both original sources and both derived CAT SQLite files remain ephemeral.
+          # No persistent dataset or insurance DB writes, no provider geometry uploads.
