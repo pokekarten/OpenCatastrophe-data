@@ -46,6 +46,31 @@ class OriginalHANZEIndependentEngineTests(unittest.TestCase):
         self.assertEqual(_invalid_family("Ring Self-intersection[100 200]"),
                          "Ring Self-intersection")
 
+    def test_original_source_geos_distribution_frozen_and_never_automatically_repaired(self):
+        from research_runners.hanze_2024_independent_geometry_source_receipt_v0 import (
+            HANZE_2024_INDEPENDENT_GEOMETRY_RECEIPT_V0 as e,
+        )
+        from research_runners.hanze_regions2024_zip_original_receipt_v0 import PINNED_ZIP_SHA256
+        self.assertEqual(e["original_region_zip_sha256"], PINNED_ZIP_SHA256)
+        self.assertEqual(e["identified_epsg_by_proj"], 3035)
+        self.assertTrue(e["epsg3035_projection_parameters_ellipsoid_axes_match"])
+        self.assertFalse(e["strict_source_to_modern_epsg_crs_equals"])
+        self.assertEqual(e["source_feature_count"], 1449)
+        self.assertEqual(e["geos_valid_geometries"], 555)
+        self.assertEqual(e["geos_invalid_geometries"], 894)
+        self.assertEqual(sum(e["invalid_reason_families"].values()), 894)
+        self.assertEqual(e["interpreted_feature_types"]["polygon"] +
+                         e["interpreted_feature_types"]["multipolygon"], 1449)
+        for key in ("independent_gdal_ogr_geometry_interpretation_verified",
+                    "invalidity_is_conclusive_source_geometry_defect",
+                    "geometry_auto_repair_or_topology_simplification_performed",
+                    "cross_feature_overlap_and_gap_validation_complete",
+                    "original_geometry_or_feature_id_reproduced",
+                    "underlying_geographic_commercial_rights_approved",
+                    "all_geometry_features_eligible_for_model_input",
+                    "model_input_admitted"):
+            self.assertFalse(e[key])
+
     @unittest.skipUnless(HAS_ENGINE, "pyproj/shapely/pyshp only in geo-source CI")
     def test_official_epsg3035_reference_equal_projected_and_simple_valid_polygon(self):
         blob = shapefile_fixture(records=[polygon_record([CLOCKWISE])],
