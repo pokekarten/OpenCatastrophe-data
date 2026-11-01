@@ -45,7 +45,7 @@ class ContextTests(unittest.TestCase):
             for idx, (layer, shapes) in enumerate([
                 ("Flooded_area", [MultiPolygon([bowtie])]),
                 ("Estimated_Max_Flood_Extent",
-                 [MultiPolygon([near]), MultiPolygon([far])]),
+                 [MultiPolygon([near]), MultiPolygon([far]), MultiPolygon([bowtie])]),
             ]):
                 with fiona.open(
                     str(dataset), mode="w", driver="GPKG", layer=layer,
@@ -57,7 +57,12 @@ class ContextTests(unittest.TestCase):
             r = compare_original_layers_to_current_points(dataset)
         self.assertEqual(r["original_observed_layer"]["source_rows"], 1)
         self.assertTrue(r["original_observed_layer"]["research_only_linework_repair_used"])
-        self.assertEqual(r["original_estimated_maximum_layer"]["source_rows"], 2)
+        self.assertEqual(r["original_estimated_maximum_layer"]["source_rows"], 3)
+        self.assertEqual(r["original_estimated_maximum_layer"]["source_polygons_invalid_skipped"], 1)
+        self.assertGreaterEqual(
+            r["original_estimated_maximum_layer"]["invalid_polygon_bbox_possible_point_hits"][0], 1
+        )
+        self.assertTrue(r["original_estimated_maximum_layer"]["invalid_bbox_zero_requires_further_geometry_review"])
         self.assertFalse(r["cat_model_admitted"])
         self.assertFalse(r["event_time_and_building_vintage_aligned"])
         self.assertFalse(r["aoi04_specific_original_polygon_verified"])
