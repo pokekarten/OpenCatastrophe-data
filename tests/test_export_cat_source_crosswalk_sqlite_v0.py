@@ -80,6 +80,9 @@ class CAT3ExportTests(unittest.TestCase):
             self.assertEqual(receipt["recipes"], 1)
             self.assertEqual(receipt["uncontracted"], 1)
             self.assertEqual(receipt["recipe_endpoints"], 2)
+            self.assertEqual(receipt["role_assignments"], 2)
+            self.assertEqual(receipt["rights_flags"], 2)
+            self.assertEqual(receipt["reviewed_contract_status_assignments"], 1)
             self.assertFalse(receipt["provider_bytes_persisted"])
             self.assertFalse(receipt["scientific_source_joins_executed"])
             self.assertFalse(receipt["model_inputs_admitted"])
@@ -91,6 +94,11 @@ class CAT3ExportTests(unittest.TestCase):
                 self.assertEqual(con.execute("SELECT count(*) FROM candidate").fetchone()[0], 2)
                 self.assertEqual(con.execute("SELECT count(*) FROM candidate_category").fetchone()[0], 4)
                 self.assertEqual(con.execute("SELECT count(*) FROM source_access_assignment").fetchone()[0], 1)
+                self.assertEqual(con.execute("SELECT contract_status FROM candidate_access_status").fetchone()[0], "documented_only")
+                self.assertEqual(con.execute("SELECT count(*) FROM candidate_rights_flag").fetchone()[0], 2)
+                self.assertEqual(con.execute("SELECT count(*) FROM candidate_role").fetchone()[0], 2)
+                self.assertEqual(con.execute("SELECT count(*) FROM candidate_rights_review_queue").fetchone()[0], 2)
+                self.assertEqual(con.execute("SELECT category, uncontracted_candidates FROM uncontracted_by_category ORDER BY category").fetchall(), [("building", 1), ("risk", 1)])
                 self.assertEqual(con.execute("SELECT count(*) FROM shared_provider_page").fetchone()[0], 2)
                 self.assertEqual(con.execute("SELECT count(*) FROM recipe_endpoint").fetchone()[0], 2)
                 self.assertEqual(con.execute("SELECT count(*) FROM uncontracted_candidates").fetchone()[0], 1)
@@ -141,6 +149,43 @@ class CAT3ExportTests(unittest.TestCase):
             with self.assertRaisesRegex(CAT3Error, "scientific linkage promoted"):
                 export_crosswalk_sqlite(target, report)
             self.assertFalse(target.exists())
+
+    def test_missing_rights_or_ambiguous_contract_status_fails_before_write(self):
+        for field, bad in (
+            ("license_or_terms_flags", None),
+            ("license_or_terms_flags", ["ok", "ok"]),
+            ("potential_roles", ["test", "test"]),
+            ("access_contract_statuses", ["probe_ready", "probe_ready"]),
+        ):
+            with self.subTest(field=field, bad=bad):
+                report = synthetic_report()
+                report["candidates"][0][field] = bad
+                with tempfile.TemporaryDirectory() as td:
+                    target = Path(td) / "invalid.cat.sqlite"
+                    with self.assertRaisesRegex(CAT3Error, "missing or invalid"):
+                        export_crosswalk_sqlite(target, report)
+                    self.assertFalse(target.exists())
+
+        report = synthetic_report()
+        report["candidates"][1]["access_contract_statuses"] = ["probe_ready"]
+        with tempfile.TemporaryDirectory() as td:
+            target = Path(td) / "orphan.cat.sqlite"
+            with self.assertRaisesRegex(CAT3Error, "orphan access-contract status"):
+                export_crosswalk_sqlite(target, report)
+            self.assertFalse(target.exists())
+
+    def test_licence_flags_are_not_inferred_as_approved(self):
+        report = synthetic_report()
+        report["candidates"][0]["rights_posture"] = "source_rights_verified"
+        report["candidates"][0]["license_or_terms_flags"] = ["redistribution_restricted"]
+        with tempfile.TemporaryDirectory() as td:
+            db = Path(td) / "terms.cat.sqlite"
+            export_crosswalk_sqlite(db, report)
+            with sqlite3.connect(db) as con:
+                queue = con.execute("SELECT candidate_id FROM candidate_rights_review_queue ORDER BY candidate_id").fetchall()
+                self.assertEqual(queue, [("synthetic.a",), ("synthetic.b",)])
+                self.assertEqual(con.execute("SELECT terms_flag FROM candidate_rights_flag WHERE candidate_id='synthetic.a'").fetchone()[0], "redistribution_restricted")
+                self.assertEqual(con.execute("SELECT sum(model_admitted) FROM candidate").fetchone()[0], 0)
 
     def test_missing_reciprocal_endpoint_is_never_accepted(self):
         report = synthetic_report()
