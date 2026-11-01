@@ -86,6 +86,13 @@ class DirectoryLinks(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.files: dict[str, tuple[str, date, date]] = {}
+        self.quarantined: dict[str, int] = {
+            "unrecognized_archive_link": 0,
+            "invalid_calendar_date": 0,
+            "reversed_date_interval": 0,
+            "duplicate_archive_identity": 0,
+        }
+        self.candidate_links_examined = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         if tag.lower() != "a":
@@ -96,9 +103,14 @@ class DirectoryLinks(HTMLParser):
         name = hrefs[0]
         if not name.startswith("10minutenwerte_extrema_wind_"):
             return
+        self.candidate_links_examined += 1
+        if self.candidate_links_examined > MAX_ARCHIVE_LINKS:
+            raise DirectoryBlocked("provider historical archive list exceeds reviewed cap")
         match = FILENAME_RE.fullmatch(name)
         if match is None:
-            raise DirectoryBlocked("provider archive link has unexpected identity/URL syntax")
+            # Quarantine suspicious links, never convert them into file handles.
+            self.quarantined["unrecognized_archive_link"] += 1
+            return
         try:
             begin = date.fromisoformat(
                 match.group(2)[:4] + "-" + match.group(2)[4:6] + "-" + match.group(2)[6:]
@@ -106,13 +118,16 @@ class DirectoryLinks(HTMLParser):
             end = date.fromisoformat(
                 match.group(3)[:4] + "-" + match.group(3)[4:6] + "-" + match.group(3)[6:]
             )
-        except ValueError as exc:
-            raise DirectoryBlocked("provider archive contains invalid calendar date") from exc
-        if begin > end or name in self.files:
-            raise DirectoryBlocked("provider archive link dates or identity duplicated")
+        except ValueError:
+            self.quarantined["invalid_calendar_date"] += 1
+            return
+        if begin > end:
+            self.quarantined["reversed_date_interval"] += 1
+            return
+        if name in self.files:
+            self.quarantined["duplicate_archive_identity"] += 1
+            return
         self.files[name] = (match.group(1), begin, end)
-        if len(self.files) > MAX_ARCHIVE_LINKS:
-            raise DirectoryBlocked("provider historical archive list exceeds reviewed cap")
 
 
 def inspect_index(raw: bytes) -> dict:
@@ -133,6 +148,10 @@ def inspect_index(raw: bytes) -> dict:
         "unique_station_ids": len({x[0] for x in spans}),
         "earliest_filename_coverage_start": min(x[1] for x in spans).isoformat(),
         "latest_filename_coverage_end": max(x[2] for x in spans).isoformat(),
+        "archive_links_examined": parser.candidate_links_examined,
+        "quarantined_link_reasons": dict(parser.quarantined),
+        "quarantined_link_count": sum(parser.quarantined.values()),
+        "index_coverage_claim": "valid_directory_filename_identities_only",
         "existing_station_00003_archive_found": True,
         "existing_archive_filename": FROZEN_EXISTING_ARCHIVE,
     }
