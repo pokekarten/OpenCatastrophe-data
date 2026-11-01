@@ -96,13 +96,19 @@ class OneOriginalGmlTests(unittest.TestCase):
                                 b"50.517",b"NaN"),
             fixture().replace(b"EPSG::4258",b"EPSG::25832"),
             fixture() + b"x",
-            fixture(returned=3),
             fixture().replace(b"srsDimension=\"2\"",b"srsDimension=\"3\""),
             b"x"*(gml.MAX_BYTES+1),
         ]
         for i,raw in enumerate(cases):
             with self.subTest(i=i),self.assertRaises(gml.RingBlocked):
                 gml.inspect_gml_preflight(raw)
+
+    def test_contradictory_nonzero_source_member_count_is_flagged_not_admitted(self):
+        result=gml.inspect_gml_preflight(fixture(returned=3))
+        self.assertTrue(result["provider_count_discrepancy_remains_blocked"])
+        self.assertEqual(result["source_reported_number_returned"],3)
+        self.assertEqual(result["parsed_original_building_members"],1)
+        self.assertFalse(result["model_input_approved"])
 
     def test_crossing_polygon_detected_and_blocked_from_use(self):
         result=gml.inspect_gml_preflight(fixture(points=[
