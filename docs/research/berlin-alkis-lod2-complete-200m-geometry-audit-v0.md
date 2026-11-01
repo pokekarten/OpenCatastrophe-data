@@ -67,6 +67,15 @@ feature values are logged, saved, committed or transferred into
 CAT/Neon/Pokémon databases. In particular no heights are admitted to
 an insurer model by this research code.
 
+For *only the uniquely matched polygon pairs*, the new non-admission
+quality gate additionally reports aggregate known/unknown building/part
+roles, positive numeric heights, exact 3m **possible placeholders**,
+non-3m heights **not proven measured**, and the presence of source-method
+codes. Even a recognized building role with non-3m height is only a
+research-triage candidate: its identity, height method, source 2022/2026
+vintage, scientific uncertainty and rights remain independently gated.
+No individual height or provider source ID is printed.
+
 The dedicated `.github/workflows/berlin-alkis-lod2-complete-bbox.yml`
 runs source-free synthetic tests on PR; a reviewed workflow-file
 change triggers **one** bounded real two-source experiment on main.

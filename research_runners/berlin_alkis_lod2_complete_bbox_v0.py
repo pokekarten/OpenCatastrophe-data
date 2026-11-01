@@ -168,7 +168,49 @@ def evaluate(alkis_raw:bytes, height_raw:bytes)->dict:
         if type(v) in (int,float) and math.isfinite(v) and 0<v<1000:
             hpositive+=1
             if math.isclose(v,3.0,rel_tol=0,abs_tol=1e-9):h3+=1
+    # Per-match attribute triage stays internal and is only published as
+    # aggregate counts, never indexed building rows, source values, or IDs.
+    # A near-identical 2022 roof source footprint is NOT an insured asset
+    # and a positive height that differs from 3m is NOT measured ground truth.
+    matched_roles={"Gebäude":0,"Bauteil":0,"unknown":0}
+    matched_height_positive=0
+    matched_height_possible_3m=0
+    matched_height_positive_not_3m=0
+    matched_building_role_positive_not_3m=0
+    matched_source_method_fields={k:0 for k in (
+        "quellebodenhoehe","quelledachhoehe","quellelage"
+    )}
+    for _alkis_index, height_index in pairs:
+        p=hp[height_index]
+        label=p.get("role_txt")
+        if type(label) is str and label.strip().casefold()=="gebäude":
+            role="Gebäude"
+        elif type(label) is str and label.strip().casefold()=="bauteil":
+            role="Bauteil"
+        else:
+            role="unknown"
+        matched_roles[role]+=1
+        for key in matched_source_method_fields:
+            if p.get(key) is not None and p[key]!="":
+                matched_source_method_fields[key]+=1
+        value=p.get("hoehe")
+        if type(value) in (int,float) and math.isfinite(value) and 0<value<1000:
+            matched_height_positive+=1
+            if math.isclose(value,3.0,rel_tol=0,abs_tol=1e-9):
+                matched_height_possible_3m+=1
+            else:
+                matched_height_positive_not_3m+=1
+                if role=="Gebäude":
+                    matched_building_role_positive_not_3m+=1
+
     return {
+        "matched_height_source_role_counts":matched_roles,
+        "matched_positive_numeric_height_count":matched_height_positive,
+        "matched_exact_3m_possible_placeholder_count":matched_height_possible_3m,
+        "matched_positive_non3m_height_count_not_proven_measured":matched_height_positive_not_3m,
+        "matched_recognized_building_role_positive_non3m_count_research_only":matched_building_role_positive_not_3m,
+        "matched_source_method_field_non_null_counts":matched_source_method_fields,
+        "matched_source_height_admitted_to_insurer_exposure":0,
         "alkis_in_bbox":aa["features_verified_complete"],
         "loD2_2022_in_bbox":hh["features_verified_complete"],
         "source_complete_feature_counts_verified":True,

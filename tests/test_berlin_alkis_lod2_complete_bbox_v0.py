@@ -66,8 +66,34 @@ class CompletenessAndMatchingTests(unittest.TestCase):
         self.assertEqual(result["height_positive_numeric_count"],3)
         self.assertEqual(result["three_metre_possible_placeholder_count"],1)
         self.assertEqual(result["height_role_text_counts"]["Bauteil"],1)
+        self.assertEqual(result["matched_height_source_role_counts"],{
+            "Gebäude":2,"Bauteil":1,"unknown":0,
+        })
+        self.assertEqual(result["matched_positive_numeric_height_count"],3)
+        self.assertEqual(result["matched_exact_3m_possible_placeholder_count"],1)
+        self.assertEqual(result["matched_positive_non3m_height_count_not_proven_measured"],2)
+        self.assertEqual(result["matched_recognized_building_role_positive_non3m_count_research_only"],1)
+        self.assertEqual(result["matched_source_method_field_non_null_counts"],{
+            "quellebodenhoehe":0,"quelledachhoehe":0,"quellelage":0,
+        })
+        self.assertEqual(result["matched_source_height_admitted_to_insurer_exposure"],0)
         self.assertFalse(result["model_input_admitted"])
         self.assertNotIn("source-roof-class",str(result))
+
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
+    def test_unknown_role_and_missing_matched_height_remain_unadmitted(self):
+        a,h=pair()
+        h["features"][1]["properties"]["role_txt"]="unreviewed provider role"
+        h["features"][1]["properties"]["hoehe"]=None
+        report=evaluate(raw(a),raw(h))
+        self.assertEqual(report["unambiguous_one_to_one_footprints"],3)
+        self.assertEqual(report["matched_height_source_role_counts"]["unknown"],1)
+        self.assertEqual(report["matched_positive_numeric_height_count"],2)
+        self.assertEqual(report["matched_exact_3m_possible_placeholder_count"],1)
+        self.assertEqual(report["matched_positive_non3m_height_count_not_proven_measured"],1)
+        self.assertEqual(report["matched_recognized_building_role_positive_non3m_count_research_only"],0)
+        self.assertEqual(report["matched_source_height_admitted_to_insurer_exposure"],0)
+        self.assertNotIn("unreviewed provider role",str(report))
 
     @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
     def test_missing_or_unbounded_source_population_refused(self):
