@@ -60,6 +60,29 @@ validates typed source identities, and emits receipt hashes with
 **Do not count these five successes as five fully admitted CAT sources.**
 They establish a bounded, reproducible access capability for each exact request.
 
+## New original-provider ZIP acquisition and scientific QC
+
+The exact frozen [DWD station 00003 original ZIP](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41316105378)
+was fetched afresh under a bounded HTTPS 50 MiB source-byte cap in temporary
+GitHub runner storage. The existing verified original ZIP SHA-256 was
+`8b4cf7e26efc8ddde431ca2cfc5251ef7588c9566b41e5490fa372ffa42689a4`;
+the original archive integrity and native gust schema gates passed.
+
+The 2010-01-01 to 2011-03-31 station product contains **65,520**
+ten-minute observations with **zero** observed unfilled 10-minute slots,
+zero `FX_10` missing sentinels, and only DWD quality levels `QN=2` and
+`QN=3` in the observed records. Monthly maxima were parsed from the
+real source. The largest monthly maximum in this fixed slice is
+**33.7 m/s in February 2010**; it is **one station's measured gust maximum**,
+not a regional weather footprint, event catalogue, vulnerability calibration,
+annual exceedance probability or insurer loss.
+
+Only the aggregate QC receipt was emitted. Raw source observations were not
+committed or imported into the insurance database. Exact station geography
+and scientific model-input approval are both still false. The new synthetic
+negative test confirms that other QN levels cannot silently enter the
+`QN=2/3` calibration subset.
+
 ## Other already executed original-source workflows (separate from this checkpoint)
 
 - [Luxembourg ACT2023v2 vs EUBUCCO original polygon overlap 41308584880](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41308584880): 149 ACT roof polygons and 45 EUBUCCO polygons in a 250m square; only nine illustrative unique high-IoU candidates; no building identity accepted.
