@@ -25,13 +25,14 @@
       "list_v200_map_prefix",
       "fetch_exact_v200_tile",
       "probe_exact_v200_tile_head",
-      "sample_exact_v200_tile_header_4096"
+      "sample_exact_v200_tile_header_4096",
+      "sample_exact_v200_tile_tables_10368"
     ],
     "path_templates": [
       "/v200/2021/map/",
       "/v200/2021/map/ESA_WorldCover_10m_2021_v200_N48E009_Map.tif"
     ],
-    "parameter_rules": "Only these two exact operations are executable after separate review: (a) one fixed HEAD probe_exact_v200_tile_head, and (b) one fixed 4,096-byte GET with Range: bytes=0-4095 under sample_exact_v200_tile_header_4096, to the same N48E009 WorldCover 2021 v200 Map tile URL. No second range, retry, no full-object GET, no unsigned broad S3 list, no sync, no caller-supplied URL/path, object key, headers, redirects or product substitution. Existing list_v200_map_prefix and fetch_exact_v200_tile operation names remain documentation-only. Range 206, Content-Range bytes 0-4095/<original total>, strict response length, same frozen public object identity and TIFF magic are mandatory. Sample bytes stay ephemeral and never enter Git or the CAT database; a sample SHA-256 MUST NOT be represented as full-object SHA-256."
+    "parameter_rules": "Only three frozen operations are executable for the single N48E009 WorldCover 2021 v200 Map tile: one HEAD, one GET Range bytes=0-4095 (verified TIFF header), and one separately reviewed GET Range bytes=13644-24011 containing the complete adjacent LONG32 TileOffsets and TileByteCounts tables, declared by the actual original first IFD (1,296 elements each). The source URI, product, year, tile and each range are constant, with no caller-supplied host, query, parameter, header, object, date or range; no redirects, retries, sync, arbitrary S3 listings, full object GET or additional tile block fetches. Existing list_v200_map_prefix and fetch_exact_v200_tile names remain documentation only. For the new 10,368-byte response require HTTP 206, exact Content-Range bytes 13644-24011/94851935, strict Content-Length, identity coding, array bounds, non-overlapping compressed block addresses and no source-byte persistence. This is not permission to download actual raster pixels or infer a source-wide SHA-256."
   },
   "response_contract": {
     "expected_media_types": [
@@ -47,8 +48,8 @@
     "max_probe_bytes": 65536,
     "max_sample_bytes": 52428800,
     "retry_policy": "none",
-    "rate_limit_notes": "The official ESA public S3 distribution documents anonymous programmatic no-sign access. The reviewed narrow execution operations are one HEAD canary or one exact 4096-byte GET Range=0-4095 sample against the single named N48E009 tile; no bulk collection, crawling, retries, polling, alternate source or paid entitlement assumed.",
-    "mutability_notes": "One full-object HEAD from 2026-11-01 observed a 94,851,935-byte object with generic binary/octet-stream transport MIME. A later range request must return HTTP 206 with exact bytes 0-4095 and matching total object length, and can fingerprint those sampled 4096 bytes. This DOES NOT verify entire 94.85MB TIFF SHA-256, COG spatial index, EPSG:4326, land-cover codes or scientific fitness; full-byte and geospatial validation remain distinct."
+    "rate_limit_notes": "ESA WorldCover data-access officially permits public no-sign S3 programmatic access. One exact source-header 4 KiB GET and independently one exact 10,368-byte table-directory GET are reviewed research canaries, plus existing one HEAD metadata request. No bulk, recurring monitoring, retries, source synchronization or caller-selected ranges authorized.",
+    "mutability_notes": "The actual 2026-11-01 first 4096 source bytes (SHA256 a74fc1ff4733c3afff09328e014c0731eba2f1912f3f5cbc330ed0700f3f3529) identified TileOffsets LONG[1296] at original bytes 13644–18827 and TileByteCounts LONG[1296] at 18828–24011, each length 5184. The next 10368-byte GET verifies only those tables. Frozen source object total length 94851935; changes to TIFF header/table layout require a separate review. Individual compressed pixels, decoded raster classes, full-object SHA256 and COG structure stay unverified."
   },
   "rights_and_policy": {
     "dataset_rights_status": "verified",
@@ -56,7 +57,7 @@
     "terms_url": "https://esa-worldcover.org/en/data-access",
     "commercial_automation_status": "allowed",
     "redistribution_status": "allowed",
-    "notes": "ESA's documented WorldCover 2021 v200 CC BY 4.0 product rights and anonymous S3 data access permit an independently reviewed, strictly bounded 4096-byte original TIFF header sample with no persistence, in addition to the previous exact HEAD metadata check. Source sample and identity receipts are research evidence only. No image pixels, bulk sampling, raw file publication or insurer asset admission is approved."
+    "notes": "ESA WorldCover 2021 v200 CC BY 4.0 permits reviewed public distribution and attributed downstream use; official data-access documentation permits no-sign programmatic S3. Research now reviews a single exact 10,368-byte TIFF offset/count directory GET against the previously fixed 2021 v200 N48E009 Map tile, in addition to earlier HEAD and 4KiB header probes. No provider raw bytes retained and no pixel block download or raster publication/model admission approved. Specific future block downloads require independent validation and review."
   },
   "probe_contract": {
     "mode": "head",
@@ -80,5 +81,5 @@
     "https://github.com/ESA-WorldCover/esa-worldcover-datasets",
     "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/docs/WorldCover_PUM_V2.0.pdf"
   ],
-  "notes": "T1 fixed HEAD has succeeded; research T3 preliminary proof now authorizes at most one exact source 4096-byte HTTP Range GET with Content-Range and TIFF/BigTIFF magic inspection on the same N48E009 v200 Map tile. The sample is ephemeral, source-wide hash/COG metadata/CRS remain unverified, and no other operation or original bytes are accepted as CAT model input."
+  "notes": "The exact 2026-11-01 original 4096-byte TIFF header proves two adjacent 1296-element LONG32 tile directory locations; a new one-shot, no-persistence 10368-byte Range GET may read only those original tables. Table-derived offset/bytecounts must be scientifically treated as source data until checked and frozen. No pixel retrieval, full file download or production CAT use admitted."
 }
