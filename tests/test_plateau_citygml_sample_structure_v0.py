@@ -186,7 +186,7 @@ class CityGmlSampleStructureTests(unittest.TestCase):
 
     def test_dtd_and_entities_rejected_without_resolution(self):
         for insertion in (b'<!DOCTYPE core:CityModel [<!ENTITY x "expanded">]>',
-                          b'<!DOCTYPE core:CityModel SYSTEM "file:///etc/passwd">'):
+                          b'<!DOCTYPE core:CityModel SYSTEM "synthetic_external.dtd">'):
             with self.subTest(insertion=insertion[:20]):
                 raw = b'<?xml version="1.0"?>' + insertion + sample_xml()
                 with self.assertRaisesRegex(CityGMLPreflightError, "DTD"):
