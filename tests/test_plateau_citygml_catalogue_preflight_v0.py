@@ -301,10 +301,11 @@ def valid_graphql_payload() -> dict:
             "citygmlDatasets": [{
                 "id": "synthetic-native-record-2024",
                 "cityCode": "13104",
+                "prefectureCode": "13",
                 "year": 2024,
                 "registrationYear": 2025,
                 "url": "https://example.org/synthetic-cms.zip",
-                "fileSize": None,
+                "metadataZipUrls": [],
                 "compositeUrl": (
                     "https://api.plateauview.mlit.go.jp/datacatalog/citygml/13104-2024/citygml.zip"
                 ),
@@ -330,10 +331,47 @@ class PlateauGraphqlMetadataPreflightTests(unittest.TestCase):
         self.assertNotIn("synthetic-native-record", json.dumps(result))
         self.assertNotIn("example.org", json.dumps(result))
 
-    def test_cms_file_size_is_separate_from_gspatial_archive_metadata(self):
+    def test_graphql_cms_original_size_is_not_available_in_documented_schema(self):
+        result = check_graphql(valid_graphql_payload())
+        self.assertFalse(result["cms_original_size_metadata_known"])
+        self.assertEqual(result["metadata_zip_link_count"], 0)
+
+    def test_undocumented_file_size_field_is_rejected(self):
         payload = valid_graphql_payload()
         payload["data"]["citygmlDatasets"][0]["fileSize"] = 123456
-        self.assertTrue(check_graphql(payload)["cms_original_size_metadata_known"])
+        with self.assertRaisesRegex(CataloguePreflightError, "unsupported fields"):
+            check_graphql(payload)
+
+    def test_metadata_zip_links_are_distinct_from_citygml_original_url(self):
+        payload = valid_graphql_payload()
+        payload["data"]["citygmlDatasets"][0]["metadataZipUrls"] = [
+            "https://example.org/synthetic-meta-a.zip",
+            "https://example.org/synthetic-meta-b.zip",
+        ]
+        result = check_graphql(payload)
+        self.assertEqual(result["metadata_zip_link_count"], 2)
+        self.assertFalse(result["cms_original_size_metadata_known"])
+        self.assertNotIn("example.org", json.dumps(result))
+
+    def test_invalid_metadata_zip_url_or_array_is_rejected(self):
+        for value in ("not-an-array", [None], ["ftp://example.org/file.zip"]):
+            with self.subTest(value=value):
+                payload = valid_graphql_payload()
+                payload["data"]["citygmlDatasets"][0]["metadataZipUrls"] = value
+                with self.assertRaises(CataloguePreflightError):
+                    check_graphql(payload)
+
+    def test_mismatched_prefecture_code_is_rejected(self):
+        payload = valid_graphql_payload()
+        payload["data"]["citygmlDatasets"][0]["prefectureCode"] = "14"
+        with self.assertRaises(CataloguePreflightError):
+            check_graphql(payload)
+
+    def test_missing_documented_projection_field_is_rejected(self):
+        payload = valid_graphql_payload()
+        del payload["data"]["citygmlDatasets"][0]["metadataZipUrls"]
+        with self.assertRaisesRegex(CataloguePreflightError, "missing documented fields"):
+            check_graphql(payload)
 
     def test_unfiltered_or_duplicate_results_are_not_promoted(self):
         payload = valid_graphql_payload()
@@ -373,14 +411,6 @@ class PlateauGraphqlMetadataPreflightTests(unittest.TestCase):
         payload["data"]["citygmlDatasets"][0]["featureTypes"] = ["tran"]
         with self.assertRaises(CataloguePreflightError):
             check_graphql(payload)
-
-    def test_invalid_cms_file_size_rejected(self):
-        for invalid in (0, -1, True, "123"):
-            with self.subTest(invalid=invalid):
-                payload = valid_graphql_payload()
-                payload["data"]["citygmlDatasets"][0]["fileSize"] = invalid
-                with self.assertRaises(CataloguePreflightError):
-                    check_graphql(payload)
 
     def test_oversized_or_malformed_graphql_rejected(self):
         with self.assertRaises(CataloguePreflightError):
