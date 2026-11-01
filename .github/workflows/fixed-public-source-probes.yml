@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Fixed public source contract capability probes
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/probe_fixed_public_sources_v0.py'
+      - 'tests/test_probe_fixed_public_sources_v0.py'
+      - '.github/workflows/fixed-public-source-probes.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-contract-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate fixed-source probe bounds and synthetic negative cases
+        run: python -m unittest tests.test_probe_fixed_public_sources_v0 -v
+
+  one-request-per-source:
+    needs: offline-contract-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    strategy:
+      fail-fast: false
+      matrix:
+        source:
+          - geoboundaries.gbopen
+          - gfz.geomagnetic-kp
+          - noaa.swpc.real-time-solar-wind
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Single fixed HTTPS read; receipt only, no provider bytes retained
+        # Transient provider availability is a diagnostic, not a CI-scientific gate.
+        # A failed probe remains visible as a failed step; no provider response is logged.
+        continue-on-error: true
+        run: python -m scripts.probe_fixed_public_sources_v0 --source ${{ matrix.source }}
