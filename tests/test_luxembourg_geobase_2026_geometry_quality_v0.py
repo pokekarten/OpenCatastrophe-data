@@ -12,6 +12,7 @@ import unittest
 
 from shapely.geometry import Polygon, MultiPolygon
 from shapely import wkb
+from research_runners.luxembourg_geobase_2026_repair_diagnostic_v0 import RepairDiagnostics
 
 from research_runners.luxembourg_geobase_2026_geometry_quality_v0 import (
     _decode_gpkg, profile, audit, GeoBaseError
@@ -55,6 +56,14 @@ class LuxembourgGeoBaseFullGeometryTests(unittest.TestCase):
         self.assertEqual(result["original_objects"], 4)
         self.assertEqual(result["polygon_valid_positive_area"], 2)
         self.assertEqual(result["invalid_topology"], 1)
+        repair = result["invalid_polygon_repair_diagnostic"]
+        self.assertEqual(repair["invalid_original_polygons_assessed"], 1)
+        self.assertEqual(repair["repair_multiple_polygons"], 1)
+        self.assertEqual(repair["repair_single_polygon"], 0)
+        self.assertEqual(repair["repair_unusable_or_not_polygonal"], 0)
+        self.assertEqual(repair["nonpositive_nominal_invalid_polygon_area"], 1)
+        self.assertEqual(repair["absolute_nominal_vs_repaired_area_change_sum_m2"], 2.0)
+        self.assertTrue(repair["all_repaired_polygons_quarantined_for_manual_scientific_review"])
         self.assertEqual(sum(result["invalid_topology_classes_aggregate"].values()), 1)
         self.assertNotIn("[", json.dumps(result["invalid_topology_classes_aggregate"]))
         self.assertEqual(result["malformed_gpkg_geometry"], 1)
@@ -64,6 +73,24 @@ class LuxembourgGeoBaseFullGeometryTests(unittest.TestCase):
         self.assertFalse(result["all_source_geometries_parseable"])
         self.assertNotIn("B-01", json.dumps(result))
         self.assertNotIn("official", json.dumps(result))
+
+    def test_repair_aggregates_reject_original_valid_polygons_and_never_expose_geometry(self):
+        valid = Polygon([(0, 0), (3, 0), (3, 3), (0, 3)])
+        invalid = Polygon([(0, 0), (3, 3), (0, 3), (3, 0)])
+        diagnostics = RepairDiagnostics()
+        with self.assertRaisesRegex(ValueError, "Only nonempty invalid"):
+            diagnostics.observe(valid)
+        with self.assertRaisesRegex(ValueError, "conserve"):
+            diagnostics.summary(1)
+        diagnostics.observe(invalid)
+        report = diagnostics.summary(1)
+        self.assertEqual(report["repair_multiple_polygons"], 1)
+        self.assertEqual(report["repair_unusable_or_not_polygonal"], 0)
+        self.assertEqual(report["relative_delta_over_1pct_of_nonzero_nominal"], 0)
+        self.assertFalse(report["automatically_repaired_source_geometries_persisted"])
+        self.assertNotIn("3 3", json.dumps(report))
+        self.assertNotIn("POLYGON", json.dumps(report))
+        self.assertNotIn("SYNTH-ACC", json.dumps(report))
 
     def test_untrusted_geom_flags_srs_and_size_fail(self):
         geom = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
