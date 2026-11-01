@@ -38,7 +38,8 @@ gate_checks AS (
 gate AS (
   -- Unlike HAVING, this errors on missing/mutated fixtures instead of
   -- silently returning zero annual worlds and misleading NULL statistics.
-  SELECT 1 / (CASE WHEN n=12 AND unique_ids=12
+  SELECT n, proxy_total, unique_ids,
+         1 / (CASE WHEN n=12 AND unique_ids=12
                       AND proxy_total=3150000 AND mismatches=0
                    THEN 1 ELSE 0 END) AS asserted_fixture
   FROM gate_checks
