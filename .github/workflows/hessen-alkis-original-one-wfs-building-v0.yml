@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Hessen original ALKIS WFS single Building feature ETRS89
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/probe_hessen_alkis_one_wfs_building_v0.py'
+      - 'tests/test_probe_hessen_alkis_one_wfs_building_v0.py'
+      - '.github/workflows/hessen-alkis-original-one-wfs-building-v0.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hessen-alkis-direct-original-one-building-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-one-feature:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact tested source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Offline one-feature GML XML and HTTP security tests
+        run: python -m unittest tests.test_probe_hessen_alkis_one_wfs_building_v0 -v
+      - name: Direct WFS 2.0 one-count GetFeature EPSG 4258 fixed Hosenfeld bbox
+        run: python -m scripts.probe_hessen_alkis_one_wfs_building_v0 --live
