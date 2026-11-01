@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts.building_id_enrichment_v0 import BuildingEnrichmentError, build_report
 
@@ -155,6 +156,68 @@ class BuildingIdEnrichmentTests(unittest.TestCase):
         for forbidden in ("PRIVATE-BASE-REF-123", "PRIVATE-SOURCE-REF-456", "special roofing"):
             self.assertNotIn(forbidden, s)
         self.assertEqual(len(first["base_sha256"]), 64)
+
+    def test_bounded_row_limit_refuses_oversized_sample(self):
+        write_csv(self.base, BASE_COLS, [
+            ["B-1", "", "", ""], ["B-2", "", "", ""],
+        ])
+        write_csv(self.supp, SUP_COLS, [])
+        with patch("scripts.building_id_enrichment_v0.MAX_INPUT_ROWS", 1):
+            with self.assertRaisesRegex(BuildingEnrichmentError, "row limit"):
+                self.report()
+
+    def test_bounded_byte_limit_refuses_large_input_without_reading(self):
+        write_csv(self.base, BASE_COLS, [["B-1", "", "", ""]])
+        write_csv(self.supp, SUP_COLS, [])
+        with patch("scripts.building_id_enrichment_v0.MAX_INPUT_BYTES", 2):
+            with self.assertRaisesRegex(BuildingEnrichmentError, "byte limit"):
+                self.report()
+
+    def test_cli_never_overwrites_source_csv_even_via_hardlink(self):
+        write_csv(self.base, BASE_COLS, [["B-1", "", "", ""]])
+        write_csv(self.supp, SUP_COLS, [
+            ["S-1", "B-1", "building", "official_record", "1980", "flat", "2"],
+        ])
+        original = self.base.read_bytes()
+        for output in (self.base, self.supp):
+            process = subprocess.run([
+                sys.executable, "scripts/building_id_enrichment_v0.py",
+                "--base", str(self.base), "--supplement", str(self.supp),
+                "--base-source-id", "synthetic.base",
+                "--supplement-source-id", "synthetic.extra",
+                "--out", str(output),
+            ], cwd=ROOT, capture_output=True, text=True, timeout=20)
+            self.assertEqual(process.returncode, 2)
+            self.assertIn("overwrite", process.stderr)
+            self.assertEqual(self.base.read_bytes(), original)
+        alias = Path(self.tmp.name) / "alias.csv"
+        try:
+            import os
+            os.link(self.base, alias)
+        except OSError:
+            return
+        process = subprocess.run([
+            sys.executable, "scripts/building_id_enrichment_v0.py",
+            "--base", str(self.base), "--supplement", str(self.supp),
+            "--base-source-id", "synthetic.base",
+            "--supplement-source-id", "synthetic.extra",
+            "--out", str(alias),
+        ], cwd=ROOT, capture_output=True, text=True, timeout=20)
+        self.assertEqual(process.returncode, 2)
+        self.assertEqual(self.base.read_bytes(), original)
+
+    def test_csv_symlink_input_rejected(self):
+        write_csv(self.base, BASE_COLS, [["B-1", "", "", ""]])
+        write_csv(self.supp, SUP_COLS, [])
+        alias = Path(self.tmp.name) / "base-alias.csv"
+        try:
+            alias.symlink_to(self.base)
+        except OSError:
+            return
+        with self.assertRaisesRegex(BuildingEnrichmentError, "non-symlink"):
+            build_report(alias, self.supp,
+                         base_source_id="synthetic.base",
+                         supplement_source_id="synthetic.extra")
 
     def test_cli_runs_offline_and_returns_diagnostics(self):
         write_csv(self.base, BASE_COLS, [["B-1", "", "", ""]])
