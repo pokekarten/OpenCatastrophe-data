@@ -352,6 +352,11 @@ def inspect(opener=None):
         base.update(inspect_copc_root_hierarchy(
             page,source_member_bytes=member["uncompressed"],
             root_offset=hier["copc_root_hierarchy_offset_within_selected_laz"]))
+        # Positive evidence flags are set only AFTER a fully parsed original
+        # 206 page. Do not preserve obsolete preflight false values here.
+        base["copc_vlr_verified"]=True
+        base["copc_hierarchy_page_entries_read"]=True
+        base["copc_root_hierarchy_metadata"]["root_hierarchy_page_downloaded"]=True
     return base
 
 
