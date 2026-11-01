@@ -72,7 +72,13 @@ class LuxembourgOriginalOverlapResearchTests(unittest.TestCase):
 
     def test_invalid_original_source_pin_fails_closed(self):
         with self.assertRaisesRegex(OverlapPilotError, "Original source"):
-            self.compare(act_sha256="bad")  # duplicated keyword supplied below intentionally forbidden
+            run_pilot(
+                self.gpkg, self.parquet,
+                longitude=self.lon, latitude=self.lat,
+                half_width_m=30, max_features=5,
+                act_sha256="0" * 64, eubucco_sha256=self.parquet_hash,
+                act_layer="buildings", act_id_field="building_ref",
+            )
 
     def test_geographic_window_limits_fail_closed(self):
         with self.assertRaisesRegex(OverlapPilotError, "outside Luxembourg"):
