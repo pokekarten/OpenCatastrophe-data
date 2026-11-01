@@ -81,6 +81,22 @@ class SourceLinkageAuditTests(unittest.TestCase):
         self.assertFalse(rule["automatic_source_join_allowed"])
         self.assertFalse(rule["model_input_admitted"])
 
+    def test_calfire_dins_frap_relationship_not_automatic_join(self):
+        links = {x["recipe_id"]: x for x in self.audit["linkage_hypotheses"]}
+        rule = links["calfire-dins-frap-incident-identity-candidate"]
+        self.assertEqual(
+            rule["source_candidate_ids"],
+            ["us.calfire.dins.structure-damage", "us.calfire.frap.historical-fire-perimeters.firep25-1"],
+        )
+        self.assertIn("IRWINID", rule["required_join_evidence"])
+        self.assertIn("INCIDENTNUM", rule["required_join_evidence"])
+        self.assertIn("INC_NUM", rule["required_join_evidence"])
+        self.assertIn("duplicate", rule["unverified_prerequisites"])
+        self.assertIn("insured loss", rule["prohibited_inferences"])
+        self.assertFalse(rule["automatic_source_join_allowed"])
+        self.assertFalse(rule["model_input_admitted"])
+        self.assertFalse(rule["scientific_independence_proven"])
+
     def test_unknown_endpoint_or_duplicate_recipe_fails_closed(self):
         fixture = [{
             "candidate_id": "synthetic.a", "provider": "test",
