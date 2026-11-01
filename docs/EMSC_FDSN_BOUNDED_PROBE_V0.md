@@ -39,15 +39,20 @@ script SHA-256. Coordinates, magnitudes and event identifiers are not printed
 or saved; the response bytes remain in memory during this invocation.
 
 An HTTP success proves only that this one response met the expected
-contract. No live probe result has been checked in, no original external
-dataset bytes have been persisted, and there is no CAT modelling admission,
-long-term event coverage, event-vintage freeze or scientific accuracy proof.
+contract. Recorded run receipts below are retained as documentation, but
+original external dataset bytes are not persisted; there is no CAT modelling
+admission, long-term event coverage, event-vintage freeze or scientific
+accuracy proof.
 For scientific usage a separate bounded time/space/event identity, original
 byte receipt, event update/version handling, rights and quality review are
 required. A successful online probe cannot be substituted for these gates.
 
-CI executes **offline synthetic-only** tests. It does not make a provider
-request, change any Neon database or require credentials.
+The *dedicated EMSC one-event workflow* does not run provider requests
+on unrelated CI pushes; its network run requires a reviewed workflow change
+or manual dispatch. As separately documented below, the shared
+`fixed-public-source-probes.yml` matrix now also makes one bounded,
+anonymous EMSC request on relevant pull requests. Neither route changes
+a Neon database or requires credentials.
 
 ## One-shot provider receipt on a reviewed workflow revision
 
