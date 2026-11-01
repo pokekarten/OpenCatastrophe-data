@@ -48,7 +48,7 @@ jobs:
           set -euo pipefail
           umask 077
           geofile="$RUNNER_TEMP/geoboundaries-DEU-ADM1-9469f09.geojson"
-          nutsfile="$RUNNER_TEMP/eurostat-nuts2021-4326-20M-nutsrg_1.json"
+          nutsfile="$RUNNER_TEMP/eurostat-nuts2021-4326-10M-nutsrg_1.json"
           geodb="$RUNNER_TEMP/geoboundaries-2021.cat.sqlite"
           nutsdb="$RUNNER_TEMP/nuts2021-crosswalk.cat.sqlite"
           export GEO_CAT_DB="$geodb" NUTS_CAT_DB="$nutsdb"
@@ -61,15 +61,17 @@ jobs:
           curl --fail --location --silent --show-error \
             --proto '=https' --proto-redir '=https' \
             --connect-timeout 20 --max-time 90 --retry 0 \
-            --max-filesize 300000 --output "$nutsfile" \
-            'https://raw.githubusercontent.com/eurostat/Nuts2json/8186be451525164ea24b43560cb943fda7c5520c/pub/v2/2021/4326/20M/nutsrg_1.json'
+            --max-filesize 500000 --output "$nutsfile" \
+            'https://raw.githubusercontent.com/eurostat/Nuts2json/8186be451525164ea24b43560cb943fda7c5520c/pub/v2/2021/4326/10M/nutsrg_1.json'
           python -m research_runners.geoboundaries_deu_adm1_cat_sqlite_v0 \
             --original-geojson "$geofile" --output "$geodb" > /dev/null
+          # 10M source: more detailed official geometry than blocked 20M.
           # If independent sources disagree, print NUTS-code-only overlap
           # diagnostics and fail; do NOT lower the safety threshold.
           python -m research_runners.geoboundaries_deu_adm1_nuts2021_crosswalk_v0 \
             --geo-original "$geofile" \
             --nuts2021-original "$nutsfile" \
+            --nuts-scale 10M \
             --output "$nutsdb"
           python - <<'PY'
           import os
