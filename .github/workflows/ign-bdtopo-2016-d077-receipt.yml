@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: IGN 2016 D077 full archive research receipt
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/ign-bdtopo-2016-d077-receipt.yml"
+      - "research_runners/fr_bdtopo_2016_d077_archive_receipt_v0.py"
+      - "landscape/fr_bdtopo_d077_2016_archive_candidate_v0.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ign-d077-2016-receipt-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  historical-archive:
+    name: Full 2016 D077 mirror-byte preflight (not model admission)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact proposed source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Verify synthetic tests before acquiring outside Git
+        run: python -m unittest tests.test_fr_bdtopo_2016_d077_archive_receipt_v0 -v
+      - name: Download bounded public archived source into temporary runner space
+        env:
+          ARCHIVE_NAME: BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z
+          SOURCE_URL: https://files.opendatarchives.fr/professionnels.ign.fr/bdtopo/BDTOPO_2-1_2016-03-24/BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z
+        run: |
+          set -euo pipefail
+          umask 077
+          curl --fail --location --silent --show-error --retry 1 \
+            --connect-timeout 20 --max-time 170 --max-filesize 120000000 \
+            --output "$RUNNER_TEMP/$ARCHIVE_NAME" "$SOURCE_URL"
+          python research_runners/fr_bdtopo_2016_d077_archive_receipt_v0.py \
+            --archive "$RUNNER_TEMP/$ARCHIVE_NAME" \
+            --descriptor landscape/fr_bdtopo_d077_2016_archive_candidate_v0.json
+      - name: Delete archive after receipt (no third-party artifact upload)
+        if: always()
+        run: rm -f "$RUNNER_TEMP/BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z"
