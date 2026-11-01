@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: DWD station00348 FX10 Maxwind original candidate chronology
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/dwd_station00348_fx10_candidate_timeline_v0.py'
+      - 'tests/test_dwd_station00348_fx10_candidate_timeline_v0.py'
+      - 'scripts/dwd_original_instrument_intervals_v0.py'
+      - '.github/workflows/dwd-station00348-fx10-timeline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-second-station-temporal-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test original station IDs, source SHA, unit aliases, interval gaps and ambiguity
+        run: |
+          python -m unittest tests.test_dwd_station00348_fx10_candidate_timeline_v0 -v
+          python -m unittest tests.test_dwd_original_instrument_intervals_v0 -v
+
+  pinned-original-station00348-candidate-audit:
+    needs: synthetic-second-station-temporal-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check exact frozen DWD 00348 original parameter/Maxwind interval evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          asset="$RUNNER_TEMP/Meta_Daten_zehn_min_fx_00348.zip"
+          trap 'rm -f "$asset"' EXIT
+          curl --fail --silent --show-error --noproxy '*' \
+            --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+            --max-time 90 --retry 0 --max-filesize 1048576 --output "$asset" \
+            'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/meta_data/Meta_Daten_zehn_min_fx_00348.zip'
+          python -m scripts.dwd_station00348_fx10_candidate_timeline_v0 --metadata-zip "$asset"
+          # Original device values and station coordinates never logged or archived.
