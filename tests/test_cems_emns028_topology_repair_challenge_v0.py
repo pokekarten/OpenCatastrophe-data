@@ -32,6 +32,18 @@ class RepairChallengeTests(unittest.TestCase):
             self.assertFalse(c["candidate_is_model_admitted"])
             self.assertFalse(c["candidate_is_stored"])
 
+    def test_public_gauge_point_is_context_not_flood_or_claims(self):
+        result = compare_repair_methods(self.source(), gauge_control=Point(3, 3.8))
+        context = result["gauge_control_repaired_method_context"]
+        self.assertEqual(len(context["comparisons"]), 3)
+        self.assertFalse(context["point_overlay_is_historical_inundation_proof"])
+        self.assertFalse(context["point_overlay_is_claims_or_insured_loss"])
+        self.assertFalse(result["model_input_admitted"])
+
+    def test_reject_nonpoint_context(self):
+        with self.assertRaisesRegex(ValueError, "one nonempty point"):
+            compare_repair_methods(self.source(), gauge_control=self.source())
+
     def test_reject_valid_polygon(self):
         with self.assertRaisesRegex(ValueError, "pinned invalid original"):
             compare_repair_methods(Polygon([
