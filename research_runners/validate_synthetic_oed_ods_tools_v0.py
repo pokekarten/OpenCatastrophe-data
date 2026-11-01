@@ -17,7 +17,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 from research_runners.export_synthetic_oed_v0 import export  # noqa: E402
+from research_runners.export_relational_synthetic_oed_v1 import export_relational  # noqa: E402
 from test_export_synthetic_oed_v0 import fixture  # noqa: E402
+from test_export_relational_synthetic_oed_v1 import fixture as relational_fixture  # noqa: E402
 
 
 def main() -> int:
@@ -32,6 +34,16 @@ def main() -> int:
         # Constructor validation deliberately uses the library API: in some
         # versions the CLI check catches and logs OdsException.
         OedExposure(location=str(location), account=str(account), check_oed=True)
+
+        relational_location, relational_account = export_relational(
+            relational_fixture(), Path(root) / "relational_oed"
+        )
+        OedExposure(location=str(relational_location),
+                    account=str(relational_account), check_oed=True)
+        if location.read_bytes() != relational_location.read_bytes():
+            raise RuntimeError("Relational OED location differs from baseline")
+        if account.read_bytes() != relational_account.read_bytes():
+            raise RuntimeError("Relational OED account differs from baseline")
 
         # Negative challenge: CountryCode is required. Verify the API raises;
         # some CLI versions only log errors but return success.
@@ -68,7 +80,7 @@ def main() -> int:
         )
         assert tiv == Decimal("3150000")
         assert all(row["OEDVersion"] == "5.0.0" for row in locations)
-    print("PASS: pinned ods-tools 5.0.8 validated 12 invented OED 5.0 locations and one invented account; invalid schema rejected; EUR 3,150,000 conserved")
+    print("PASS: pinned ods-tools 5.0.8 validated 12 invented OED 5.0 locations and one invented account; normalized relational CSV parity; invalid schema rejected; EUR 3,150,000 conserved")
     return 0
 
 
