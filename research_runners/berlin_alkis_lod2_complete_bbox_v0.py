@@ -113,6 +113,52 @@ def _height_method_coverage(records:list[dict])->dict[str,dict[str,int]]:
     return result
 
 
+def _height_method_internal_concordance(records:list[dict])->dict[str,dict[str,int]]:
+    """Empirical code↔description consistency, NEVER validate producer semantics.
+
+    Code and labels stay process-local; no provider value or stable hash is
+    included in the report. Distinct numeric/string representations are
+    conservatively kept separate pending a producer type specification.
+    """
+    result={}
+    for field in METHOD_FIELDS:
+        code_to_text={}
+        text_to_code={}
+        observations=[]
+        for props in records:
+            code=props.get(field)
+            label=props.get(field+"_txt")
+            code_present=_method_present(code)
+            text_present=_method_present(label)
+            if not (code_present and text_present):
+                continue
+            # Both methods validated as scalar. Descriptive field must be
+            # text; accepting numeric "descriptions" invents semantics.
+            if type(label) is not str:
+                raise CompleteBboxError("source method description must be text")
+            canonical_code=(type(code).__name__,code.strip() if type(code) is str else code)
+            canonical_text=" ".join(label.split()).casefold()
+            code_to_text.setdefault(canonical_code,set()).add(canonical_text)
+            text_to_code.setdefault(canonical_text,set()).add(canonical_code)
+            observations.append((canonical_code,canonical_text))
+        conflicting_codes={key for key,labels in code_to_text.items() if len(labels)>1}
+        conflicting_texts={text for text,codes in text_to_code.items() if len(codes)>1}
+        result[field]={
+            "paired_records":len(observations),
+            "distinct_code_groups":len(code_to_text),
+            "distinct_description_groups":len(text_to_code),
+            "codes_with_multiple_descriptions":len(conflicting_codes),
+            "descriptions_with_multiple_codes":len(conflicting_texts),
+            "records_in_multi_description_code_groups":sum(
+                code in conflicting_codes for code,_label in observations
+            ),
+            "records_in_multi_code_description_groups":sum(
+                label in conflicting_texts for _code,label in observations
+            ),
+        }
+    return result
+
+
 def _decode(raw:bytes, source:str)->tuple[list[Any],list[dict],dict,set[int]]:
     if type(raw) is not bytes or not 0<len(raw)<=MAX_BYTES:
         raise CompleteBboxError("source original bytes are empty/oversized")
@@ -280,6 +326,18 @@ def evaluate(alkis_raw:bytes, height_raw:bytes)->dict:
                     matched_building_role_positive_not_3m+=1
 
     return {
+        "height_method_empirical_code_text_concordance":{
+            "all_height_features":_height_method_internal_concordance(hp),
+            "uniquely_matched_height_features":_height_method_internal_concordance(
+                [hp[j] for _,j in pairs]
+            ),
+            "duplicate_footprint_quarantined_height_features":_height_method_internal_concordance(
+                [hp[j] for j in sorted(h_quarantine)]
+            ),
+        },
+        "height_method_code_text_semantics_validated":False,
+        "method_code_or_description_values_exported":False,
+        "method_code_text_empirical_consistency_not_authoritative":True,
         "height_method_code_description_coverage":{
             "all_height_features":_height_method_coverage(hp),
             "uniquely_matched_height_features":_height_method_coverage(
