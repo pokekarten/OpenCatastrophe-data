@@ -7,7 +7,7 @@
 -- No real building/policy/location bytes are created, copied or exposed.
 -- Read-only consumers must honor exact GitHub source lineage.
 
-CREATE VIEW research.building_source_shortlist_v0 AS
+CREATE OR REPLACE VIEW research.building_source_shortlist_v0 AS
 SELECT
     c.candidate_id,
     c.name AS candidate_name,
