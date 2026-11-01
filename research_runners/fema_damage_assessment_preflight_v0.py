@@ -26,6 +26,10 @@ REQUIRED_ATTRIBUTES = frozenset({
 })
 DAMAGE_CODES = ("NOD", "AFF", "MIN", "MAJ", "DES", "UNK")
 OBSERVATION_METHODS = ("FA", "RS", "MOD")
+# Provider domain codes verified against the public FEMA ArcGIS FeatureServer.
+# Unknown codes indicate upstream drift, never observed evidence.
+PROVIDER_ASSESSMENT_CODES = frozenset(("MOD", "RS", "FA", "OTH", "UNK"))
+PROVIDER_DAMAGE_TYPE_CODES = frozenset(("UNK", "EQ", "FI", "FL", "WI", "IS", "MUL", "OTH"))
 MAX_RECORDS = 2000  # Service advertises a 2,000-record maximum per query.
 
 
@@ -123,7 +127,11 @@ def preflight(payload: Any) -> dict[str, Any]:
 
         method = _code(a["ASMT_TYPE"], "ASMT_TYPE")
         level = _code(a["DMG_LEVEL"], "DMG_LEVEL")
-        _code(a["DMG_TYPE"], "DMG_TYPE")
+        damage_type = _code(a["DMG_TYPE"], "DMG_TYPE")
+        if method not in PROVIDER_ASSESSMENT_CODES:
+            raise PreflightError("unrecognized provider ASMT_TYPE")
+        if damage_type not in PROVIDER_DAMAGE_TYPE_CODES:
+            raise PreflightError("unrecognized provider DMG_TYPE")
         if level not in DAMAGE_CODES:
             raise PreflightError("unrecognized DMG_LEVEL")
         img_date = _arcgis_day(a["IMG_DATE"], "IMG_DATE")
