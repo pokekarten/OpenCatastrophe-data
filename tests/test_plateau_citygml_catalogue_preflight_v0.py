@@ -57,6 +57,30 @@ class PlateauCataloguePreflightTests(unittest.TestCase):
         data["latest_citygml"] = []
         self.assertFalse(check(data)["mutable_latest_alias_present_but_not_selected"])
 
+    def test_multiple_fiscal_years_for_same_city_are_valid(self):
+        data = valid_payload()
+        previous = copy.deepcopy(data["citygml"][0])
+        previous["year"] = 2023
+        previous["registration_year"] = 2024
+        previous["composite_url"] = (
+            "https://api.plateauview.mlit.go.jp/datacatalog/citygml/13104-2023/citygml.zip"
+        )
+        data["citygml"].append(previous)
+        result = check(data)
+        self.assertEqual(result["target_fiscal_year"], 2024)
+        self.assertTrue(result["fixed_year_composite_url_present"])
+
+    def test_non_target_city_fiscal_year_mismatch_is_blocked(self):
+        data = valid_payload()
+        other = copy.deepcopy(data["citygml"][0])
+        other["year"] = 2023
+        other["composite_url"] = (
+            "https://api.plateauview.mlit.go.jp/datacatalog/citygml/13104-2025/citygml.zip"
+        )
+        data["citygml"].append(other)
+        with self.assertRaisesRegex(CataloguePreflightError, "must pin"):
+            check(data)
+
     def test_duplicate_target_city_year_rejected(self):
         data = valid_payload()
         data["citygml"].append(copy.deepcopy(data["citygml"][0]))
