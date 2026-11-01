@@ -38,3 +38,26 @@ The original source run is **not** yet asserted successful until hosted exact-he
 ## Next before insurance model admission
 
 Manually adjudicate preselected, spatially stratified urban and rural examples; audit ID-vintage and source-specific rights; calibrate false-positive one-to-one / split / merge rates and per-source uncertainty; obtain independent dates/occupancy/use and replacement cost evidence; establish exact exposure portfolio and peril hazard event uncertainty.
+
+## Verified real original-source result (2026-11-01)
+
+**GitHub Actions original-source run:** https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41312729390
+
+The run passed five optional spatial/Parquet synthetic tests and independently re-downloaded the frozen public ACT GeoBase2026 Buildings ZIP and EUBUCCO LU00 Parquet. Their extracted exact original file SHA-256 receipts matched the predeclared previous hashes, and the same spatial filter was executed on both. The original 100m×100m fixed area gave:
+
+| Aggregate original source diagnostic | Measured |
+| --- | ---: |
+| GeoBase2026 building polygons in fixed window | **107** |
+| EUBUCCO v0.2 polygons in fixed window | **11** |
+| Spatial bounding-box candidate pairs examined | **139** |
+| Unique GeoBase candidate with IoU≥0.60 | **1** |
+| GeoBase polygon classifications with ambiguous candidate relations | **104** |
+| Weak unique GeoBase polygons below IoU 0.60 | **0** |
+| GeoBase polygons without substantial overlap | **2** |
+| Median candidate IoU among the unique high-IoU candidates | **0.642198** |
+
+**Conservation:** 1 + 104 + 0 + 2 = 107 original GeoBase-side polygons. These counts are consistent with the small local overlap; they are not true-positive/false-positive rates, and the 11 EUBUCCO records are not a census of all 107 modern GeoBase objects. The 2013 ACT LoD1 / EUBUCCO, 2023 ACT roof and 2026 ACT GeoBase use different segmentation and survey semantics. A one-pair high-IoU candidate is NOT a certified stable physical identity or independent source control.
+
+For a same-window comparison, the separately completed ACT2023 roof vs GeoBase2026 audit found **55** ACT roof shapes and **107** GeoBase2026 shapes, **12** unique high-IoU candidates, **39** ambiguous and **4** below threshold. The original ACT2023 roof vs EUBUCCO v0.2 pilot used a *larger 250m square* and cannot be pooled without a new same-window rerun.
+
+No provider original bytes, individual IDs, coordinates, match pairs, coverage estimates, estimated insurance values, 2013/2026 demolition claims or third-party dataset licences were admitted to the production insurance database. The next meaningful evidence is an independently sourced manually adjudicated control sample and a consistent three-way same-window evaluation with explicit 1:n/n:1 policies.
