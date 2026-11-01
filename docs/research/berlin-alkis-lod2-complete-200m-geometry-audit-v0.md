@@ -37,9 +37,13 @@ invalid/duplicate original feature identity, nonpolygon geometry,
 nonfinite/invalid coordinates, unreasonable areas and out-of-scope
 polygons. **Both original GeoJSON sources must explicitly declare
 EPSG:25833**; the WFS request parameter alone is not proof of response
-coordinate semantics. Source geometries are also required to be
-topologically distinct even when their feature IDs differ, preventing
-duplicate-footprint inflation of the matching statistics.
+coordinate semantics. Topologically identical source footprints with different IDs may
+represent actual building/part segmentation rather than invalid provider
+records. They are therefore **counted as duplicate footprint groups and
+quarantined together from all unambiguous one-to-one match candidates**,
+rather than first-wins deduplicated or silently assigned a roof height.
+Total source feature counts remain original, so duplicates are not
+misrepresented as a reduced census.
 Most importantly, it **requires source-provided integer
 `numberMatched` and `numberReturned` to be equal to the actual
 number of features returned**, with at most 50 features per source.
@@ -140,3 +144,26 @@ exist for future controlled research; **none** have been admitted to
 CAT4 or insurer portfolios. The next investigation should inspect
 the official role/height-source domain semantics in aggregate, and
 quantify coverage/splits before integrating any height attributes.
+
+
+## Source-proven geometry duplicate blocker — 2026-11-01
+
+After PR #1009 required topologically unique source footprints and
+PR #1011 added matched-subset role/height QA, the dedicated original
+[source run 41325287758](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41325287758)
+**failed closed** at UTC `2026-11-01T16:14:44Z` with
+`duplicate original source footprint geometry`. The previous
+6 matching pairs were observed with an earlier code version, and
+**must not be treated as revalidated under this stricter source gate**.
+
+A source feature can legitimately be a building or its overlapping
+part, or several features can share a complete 2D footprint. The
+research now counts exact-geometry duplicate groups per source and
+**quarantines all their members** from candidate 1:1 matches; it
+neither deletes source features nor assigns those ambiguous roof
+heights to an insured asset. The independent source population
+totals remain 18 and 27 only as observed on the original receipt;
+later real replies may differ. The first original rerun of this new
+quarantine logic must independently verify the exact counts, source
+CRS, duplicate groups and revised 1:1 matches before any updated
+number is reported.

@@ -55,7 +55,7 @@ class CompleteBboxError(ValueError):
     """Source count/geometry mismatch: cannot claim complete matched set."""
 
 
-def _decode(raw:bytes, source:str)->tuple[list[Any],list[dict],dict]:
+def _decode(raw:bytes, source:str)->tuple[list[Any],list[dict],dict,set[int]]:
     if type(raw) is not bytes or not 0<len(raw)<=MAX_BYTES:
         raise CompleteBboxError("source original bytes are empty/oversized")
     try:
@@ -117,27 +117,41 @@ def _decode(raw:bytes, source:str)->tuple[list[Any],list[dict],dict]:
         vertices+=len(get_coordinates(g))
         if vertices>25000:
             raise CompleteBboxError("total source polygon vertex budget exceeded")
-        # Unique feature IDs do not imply unique source geometry. Duplicated
-        # footprints can masquerade as different buildings or inflate
-        # candidate ambiguity and unmatched totals.
-        if any(g.equals(previous) for previous in polygons):
-            raise CompleteBboxError("duplicate original source footprint geometry")
         polygons.append(g);props.append(fields)
+    # A building and its source-defined subpart may legitimately have an
+    # identical 2D footprint, so a duplicate is NOT automatically a bad
+    # source record. Quarantine ALL members of such exact topology groups
+    # from unique 1:1 research matches, not just whichever arrived second.
+    groups:list[list[int]]=[]
+    for index,g in enumerate(polygons):
+        for group in groups:
+            if g.equals(polygons[group[0]]):
+                group.append(index)
+                break
+        else:
+            groups.append([index])
+    quarantined={index for group in groups if len(group)>1 for index in group}
     return polygons,props,{
         "features_verified_complete":len(polygons),
         "count_matches_returned_features":True,
         "source_name":source,
         "source_geometry_valid":True,
+        "duplicate_footprint_group_count":sum(len(group)>1 for group in groups),
+        "duplicate_footprint_source_feature_count":len(quarantined),
         "original_feature_values_logged":False,
-    }
+    },quarantined
 
 
 def evaluate(alkis_raw:bytes, height_raw:bytes)->dict:
-    a,ap,aa=_decode(alkis_raw,"alkis")
-    h,hp,hh=_decode(height_raw,"loD2_2022")
+    a,ap,aa,a_quarantine=_decode(alkis_raw,"alkis")
+    h,hp,hh,h_quarantine=_decode(height_raw,"loD2_2022")
     candidates=[]
     for i,one in enumerate(a):
+        if i in a_quarantine:
+            continue
         for j,two in enumerate(h):
+            if j in h_quarantine:
+                continue
             if not one.intersects(two):continue
             inter=float(one.intersection(two).area)
             union=float(one.union(two).area)
@@ -213,6 +227,15 @@ def evaluate(alkis_raw:bytes, height_raw:bytes)->dict:
         "matched_source_height_admitted_to_insurer_exposure":0,
         "alkis_in_bbox":aa["features_verified_complete"],
         "loD2_2022_in_bbox":hh["features_verified_complete"],
+        "duplicate_footprints_quarantined":True,
+        "duplicate_footprint_groups_by_source":{
+            "alkis":aa["duplicate_footprint_group_count"],
+            "loD2_2022":hh["duplicate_footprint_group_count"],
+        },
+        "duplicate_source_features_quarantined_by_source":{
+            "alkis":aa["duplicate_footprint_source_feature_count"],
+            "loD2_2022":hh["duplicate_footprint_source_feature_count"],
+        },
         "source_complete_feature_counts_verified":True,
         "overlap_iou_minimum":MIN_IOU,
         "unambiguous_one_to_one_footprints":len(pairs),
