@@ -303,6 +303,44 @@ class CompletenessAndMatchingTests(unittest.TestCase):
             evaluate(raw(aa),raw(hh))
 
     @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
+    def test_2023_adv_code_list_candidates_not_producer_confirmed_2022_crosswalk(self):
+        a,h=pair()
+        props=[x["properties"] for x in h["features"]]
+        props[0].update({"quelledachhoehe":1000,"quellebodenhoehe":"1100","quellelage":1000})
+        props[1].update({"quelledachhoehe":9999,"quellebodenhoehe":"invalid","quellelage":None})
+        props[2].update({"quelledachhoehe":1000.0,"quellebodenhoehe":None,"quellelage":"2000"})
+        result=evaluate(raw(a),raw(h))
+        all_rows=result["height_method_adv_pqs24_candidate_membership"]["all_height_features"]
+        self.assertEqual(all_rows["quelledachhoehe"],{
+            "ad_v24_candidate":1,"unlisted_or_malformed":2,"missing":0
+        })
+        self.assertEqual(all_rows["quellebodenhoehe"],{
+            "ad_v24_candidate":1,"unlisted_or_malformed":1,"missing":1
+        })
+        self.assertEqual(all_rows["quellelage"],{
+            "ad_v24_candidate":2,"unlisted_or_malformed":0,"missing":1
+        })
+        self.assertFalse(result["adv_pqs24_2023_historical_berlin_2022_crosswalk_confirmed"])
+        self.assertFalse(result["adv_candidate_codes_or_source_method_values_exported"])
+        self.assertFalse(result["model_input_admitted"])
+
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
+    def test_2023_code_candidate_counts_exclude_quarantined_source_parts(self):
+        a,h=pair()
+        for feat in h["features"]:
+            feat["properties"]["quelledachhoehe"]="1000"
+        h["features"][1]["geometry"]=copy.deepcopy(h["features"][0]["geometry"])
+        r=evaluate(raw(a),raw(h))
+        x=r["height_method_adv_pqs24_candidate_membership"]
+        self.assertEqual(x["all_height_features"]["quelledachhoehe"]["ad_v24_candidate"],3)
+        self.assertEqual(x["duplicate_footprint_quarantined_height_features"][
+            "quelledachhoehe"]["ad_v24_candidate"],2)
+        self.assertEqual(x["uniquely_matched_height_features"][
+            "quelledachhoehe"]["ad_v24_candidate"],1)
+        self.assertEqual(r["matched_source_height_admitted_to_insurer_exposure"],0)
+        self.assertFalse(r["model_input_admitted"])
+
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
     def test_missing_or_unbounded_source_population_refused(self):
         a,h=pair()
         h["numberMatched"]=4
