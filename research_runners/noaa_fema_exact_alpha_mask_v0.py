@@ -25,7 +25,7 @@ from research_runners.noaa_michael_tiff_header_v0 import (
     TIFFHeaderError, _table, _vals, preflight as tiff_header_preflight,
 )
 from research_runners.noaa_fema_envelope_overlap_v0 import (
-    COHORT_WHERE, FEMA_LAYER,
+    COHORT_WHERE, FEMA_LAYER, _polygon_from_bbox,
 )
 
 BLOCK = 324
@@ -232,6 +232,115 @@ def build_alpha_mask_query(header: bytes, stac: dict[str, Any],
         raise ExactAlphaMaskError("original source TIFF/STAC metadata failed") from exc
 
 
+def dilate_alpha_mask(mask: list[bytes], *, radius: int = 2) -> list[bytes]:
+    """Expand mask by exactly two source pixels in all directions.
+
+    This conservative query retains the same raster boundary, never leaves
+    the single verified TIFF block, and tolerates pixel rounding on edges.
+    It does not prove equality of remote-sensing and flight georeferencing.
+    """
+    if radius != 2 or not mask:
+        raise ExactAlphaMaskError("only the fixed 2-pixel sensitivity test is supported")
+    height,width=len(mask),len(mask[0])
+    padded=[bytearray(width) for _ in range(height)]
+    for y,row in enumerate(mask):
+        for x,alpha in enumerate(row):
+            if alpha:
+                for yy in range(max(0,y-radius),min(height,y+radius+1)):
+                    padded[yy][max(0,x-radius):min(width,x+radius+1)]=(
+                        b"\x01"*(
+                            min(width,x+radius+1)-max(0,x-radius)
+                        )
+                    )
+    return [bytes(row) for row in padded]
+
+
+def _rect_query(bbox: list[float]) -> dict[str, str]:
+    return {
+        "where":COHORT_WHERE,
+        "geometry":_polygon_from_bbox(bbox),
+        "geometryType":"esriGeometryPolygon",
+        "inSR":"4326",
+        "spatialRel":"esriSpatialRelIntersects",
+        "returnCountOnly":"true",
+        "returnGeometry":"false",
+        "f":"json",
+    }
+
+
+def positive_control_queries(header: bytes, original_block: bytes) -> dict[str, dict[str,str]]:
+    """Generate simple correct-source WGS84 positive controls and 2px mask.
+
+    Neither the controls nor the exact mask coordinates are emitted into
+    logs, the data register, the test fixtures, or any original image file.
+    """
+    tags=_table(header)
+    sx,sy,sz=_vals(header,tags,33550,12)
+    px,py,pz,geo_x,geo_y,gz=_vals(header,tags,33922,12)
+    audit=measure_alpha(original_block)
+    alpha_bbox=audit["nonzero_alpha_pixel_extent_xy_in_block"]
+    if alpha_bbox is None:
+        raise ExactAlphaMaskError("source alpha-positive pixel mask unexpectedly empty")
+    row,col=divmod(BLOCK,19)
+
+    def bbox_for_grid(x0:int,y0:int,x1:int,y1:int)->list[float]:
+        return [
+            geo_x+(col*SIZE+x0)*sx,
+            geo_y-(row*SIZE+y1)*sy,
+            geo_x+(col*SIZE+x1)*sx,
+            geo_y-(row*SIZE+y0)*sy,
+        ]
+
+    x0,y0,xmax,ymax=alpha_bbox
+    mask=alpha_mask_from_deflate(original_block)
+    dilated=dilate_alpha_mask(mask)
+    rings,count=polygonize_exact_positive_pixels(dilated)
+    if count<audit["alpha_nonzero_pixels"]:
+        raise ExactAlphaMaskError("source dilated alpha mask lost original covered pixels")
+    geo_rings=[]
+    for ring in rings:
+        geo_rings.append([
+            [round(geo_x+(col*SIZE+x)*sx,12),
+             round(geo_y-(row*SIZE+y)*sy,12)]
+            for x,y in ring
+        ])
+    geo=json.dumps({"rings":geo_rings,"spatialReference":{"wkid":4326}},
+                   separators=(",",":"),allow_nan=False)
+    if len(geo.encode("utf-8"))>MAX_GEOMETRY_BYTES:
+        raise ExactAlphaMaskError("2px sensitivity mask too complex")
+    dilated_query=_rect_query(bbox_for_grid(0,0,512,512))
+    dilated_query["geometry"]=geo
+    return {
+        "full_raster_block":_rect_query(bbox_for_grid(0,0,512,512)),
+        "all_positive_alpha_bbox":_rect_query(bbox_for_grid(x0,y0,xmax+1,ymax+1)),
+        "dilated_alpha_mask_2px":dilated_query,
+    }
+
+
+def _public_count_only_post(query: dict[str,str]) -> int:
+    """Exactly one source-provider aggregate-only HTTP POST."""
+    body=urlencode(query).encode("utf-8")
+    if len(body)>MAX_GEOMETRY_BYTES+3000:
+        raise ExactAlphaMaskError("FEMA aggregate POST body exceeds bounded size")
+    request=Request(FEMA_LAYER,data=body,method="POST",headers={
+        "Content-Type":"application/x-www-form-urlencoded",
+        "Accept":"application/json",
+        "User-Agent":"OpenCatastropheData-SourceResearch/0.1",
+    })
+    with urlopen(request,timeout=30) as response:
+        if response.getcode()!=200 or response.geturl()!=FEMA_LAYER:
+            raise ExactAlphaMaskError("FEMA original aggregate URI/status drift")
+        raw=response.read(MAX_REPLY_BYTES+1)
+    if len(raw)>MAX_REPLY_BYTES:
+        raise ExactAlphaMaskError("untrusted oversized FEMA response")
+    result=json.loads(raw)
+    if (type(result) is not dict or set(result)!={"count"} or
+        type(result["count"]) is not int or
+        not 0<=result["count"]<=1):
+        raise ExactAlphaMaskError("unexpected FEMΑ public aggregate response")
+    return result["count"]
+
+
 def run_live_once() -> dict[str, Any]:
     """Opt-in original NOAA source fetch plus one small aggregate FEMA POST."""
     import urllib.request
@@ -253,31 +362,29 @@ def run_live_once() -> dict[str, Any]:
             raise ExactAlphaMaskError("NOAA source object version/length drift")
         result=build_alpha_mask_query(header,stac,block)
         receipt=result["receipt"]
-        body=urlencode(result["query"]).encode("utf-8")
-        if len(body)>MAX_GEOMETRY_BYTES+3000:
-            raise ExactAlphaMaskError("FEMA public count-only POST body too large")
-        request=urllib.request.Request(
-            FEMA_LAYER,data=body,method="POST",headers={
-                "Content-Type":"application/x-www-form-urlencoded",
-                "Accept":"application/json",
-                "User-Agent":"OpenCatastropheData-SourceResearch/0.1",
-            })
-        with urlopen(request,timeout=30) as r:
-            if r.getcode()!=200 or r.geturl()!=FEMA_LAYER:
-                raise ExactAlphaMaskError("FEMA public response origin/status drift")
-            response=r.read(MAX_REPLY_BYTES+1)
-        if len(response)>MAX_REPLY_BYTES:
-            raise ExactAlphaMaskError("unexpected oversized FEMA aggregate response")
-        counts=json.loads(response)
-        if (type(counts) is not dict or set(counts)!={"count"} or
-            type(counts["count"]) is not int or not 0 <= counts["count"] <= 1):
-            raise ExactAlphaMaskError("FEMA source responded with unexpected count or fields")
+        # Two independent positive controls must prove the spatial service
+        # still returns the one known original FEMA source point for both the
+        # original block and the larger alpha-bounding rectangle. They guard
+        # against a false zero from wrong source/CRS, permissions or epoch.
+        controls=positive_control_queries(header,block)
+        original_parent=_public_count_only_post(controls["full_raster_block"])
+        bbox_parent=_public_count_only_post(controls["all_positive_alpha_bbox"])
+        exact_count=_public_count_only_post(result["query"])
+        padded_count=_public_count_only_post(controls["dilated_alpha_mask_2px"])
+        if original_parent != 1 or bbox_parent != 1:
+            raise ExactAlphaMaskError("positive source polygon controls did not return 1/1")
+        if not 0<=exact_count<=padded_count<=bbox_parent:
+            raise ExactAlphaMaskError("source mask/bbox/FEMA count hierarchy failed")
         return {
             "profile":"noaa_michael_real_pixel_alpha_polygon_fema_count_v0",
             **receipt,
             "source_original_http206_file_total_bytes":total,
-            "exact_alpha_positive_mask_fema_count":counts["count"],
-            "fema_point_on_visible_raster_polygon_candidate":counts["count"]>0,
+            "full_block_fema_positive_control_count":original_parent,
+            "alpha_bbox_fema_positive_control_count":bbox_parent,
+            "exact_alpha_positive_mask_fema_count":exact_count,
+            "two_pixel_dilated_alpha_mask_fema_count":padded_count,
+            "conservative_alpha_sensitivity_radius_pixels":2,
+            "fema_point_on_visible_raster_polygon_candidate":exact_count>0,
             "fema_georeferencing_precision_fully_verified":False,
             "independent_damage_assessment_proven":False,
             "model_input_admitted":False,
