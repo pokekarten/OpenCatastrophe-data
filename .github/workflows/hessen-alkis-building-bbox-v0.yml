@@ -29,5 +29,5 @@ jobs:
           persist-credentials: false
       - name: Run synthetic no-source tests before provider contact
         run: python -m unittest tests.test_probe_hessen_alkis_building_bbox_v0 -v
-      - name: Fetch one fixed five-feature GeoJSON BBOX from official Hessen OGC API
-        run: python -m scripts.probe_hessen_alkis_building_bbox_v0 --live
+      - name: Fetch one reviewed Hosenfeld town-center BBOX (at most five ALKIS features)
+        run: python -m scripts.probe_hessen_alkis_building_bbox_v0 --live --hosenfeld

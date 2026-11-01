@@ -28,6 +28,9 @@ BBOX = (9.427, 50.489, 9.511, 50.573)
 LIMIT = 5
 QUERY = "f=json&limit=5&bbox=9.427,50.489,9.511,50.573"
 URL = HOST + PATH + "?" + QUERY
+HOSENFELD_BBOX = (9.479, 50.512, 9.487, 50.521)
+HOSENFELD_QUERY = "f=json&limit=5&bbox=9.479,50.512,9.487,50.521"
+HOSENFELD_URL = HOST + PATH + "?" + HOSENFELD_QUERY
 MAX_BYTES = 262_144
 MAX_COORDINATE_PAIRS = 10_000
 TIMEOUT_SECONDS = 60
@@ -55,6 +58,9 @@ def validate_exact_review():
             or parsed.path!=PATH or parsed.query!=QUERY or parsed.fragment
             or COLLECTION!="bu-core2d:Building" or LIMIT!=5
             or BBOX!=(9.427,50.489,9.511,50.573)
+            or HOSENFELD_BBOX!=(9.479,50.512,9.487,50.521)
+            or HOSENFELD_QUERY!="f=json&limit=5&bbox=9.479,50.512,9.487,50.521"
+            or HOSENFELD_URL!=HOST+PATH+"?"+HOSENFELD_QUERY
             or not (9+5*1024/12000 < BBOX[0] < BBOX[2] < 9+6*1024/12000)
             or not (51-6*1024/12000 < BBOX[1] < BBOX[3] < 51-5*1024/12000)):
         raise HessenSourceBlocked("unreviewed service URL, region, collection or limit")
@@ -100,7 +106,9 @@ def _coordinates(geometry):
     return pairs, geom_type
 
 
-def inspect_geojson(raw: bytes) -> dict:
+def inspect_geojson(raw: bytes, *, query_bbox=BBOX) -> dict:
+    if query_bbox not in (BBOX,HOSENFELD_BBOX):
+        raise HessenSourceBlocked("unreviewed bbox used for GeoJSON validation")
     if type(raw) is not bytes or not 0<len(raw)<=MAX_BYTES:
         raise HessenSourceBlocked("original bounded GeoJSON byte cap exceeded")
     try:
@@ -133,7 +141,7 @@ def inspect_geojson(raw: bytes) -> dict:
         count_geoms[typ]+=1
         xs=[p[0] for p in pairs]
         ys=[p[1] for p in pairs]
-        if min(xs)<=BBOX[2] and max(xs)>=BBOX[0] and min(ys)<=BBOX[3] and max(ys)>=BBOX[1]:
+        if min(xs)<=query_bbox[2] and max(xs)>=query_bbox[0] and min(ys)<=query_bbox[3] and max(ys)>=query_bbox[1]:
             bboxes_matching+=1
     if bboxes_matching!=len(features):
         raise HessenSourceBlocked("source returned feature envelope outside reviewed BBOX")
@@ -170,17 +178,21 @@ def _open(req, timeout):
     return client.open(req, timeout=timeout)
 
 
-def probe(*, open_request=_open) -> dict:
+def probe(*, open_request=_open, hosenfeld: bool = False) -> dict:
     validate_exact_review()
+    if type(hosenfeld) is not bool:
+        raise HessenSourceBlocked("only the two reviewed explicit bbox profiles are allowed")
+    url=HOSENFELD_URL if hosenfeld else URL
+    query_bbox=HOSENFELD_BBOX if hosenfeld else BBOX
     req=request.Request(
-        URL,method="GET",
+        url,method="GET",
         headers={"Accept":"application/geo+json,application/json",
                  "Accept-Encoding":"identity",
                  "User-Agent":"OpenCatastrophe-Hessen-ALKIS-5-Features/0.1"},
     )
     try:
         with open_request(req,TIMEOUT_SECONDS) as response:
-            if response.status!=200 or response.geturl()!=URL:
+            if response.status!=200 or response.geturl()!=url:
                 raise HessenSourceBlocked("original exact API URL/status drift")
             mime=response.headers.get("Content-Type","").split(";",1)[0].lower().strip()
             if mime not in ("application/geo+json","application/json"):
@@ -195,9 +207,11 @@ def probe(*, open_request=_open) -> dict:
         raise
     except (error.HTTPError,error.URLError,OSError,TimeoutError) as exc:
         raise HessenSourceBlocked("official Hessen ALKIS bounded API unavailable") from exc
-    data=inspect_geojson(raw)
+    data=inspect_geojson(raw,query_bbox=query_bbox)
     return {
-        "profile":"oc-hessen-alkis-2d-building-5-features-original-bbox-v0",
+        "profile":("oc-hessen-alkis-2d-building-5-features-hosenfeld-bbox-v0"
+                   if hosenfeld else
+                   "oc-hessen-alkis-2d-building-5-features-original-bbox-v0"),
         "source_id":SOURCE,
         "official_catalogue":RIGHTS_URL,
         "upstream_operation":"OGC_API_Features_5_2D_buildings_one_fixed_bbox",
@@ -206,7 +220,7 @@ def probe(*, open_request=_open) -> dict:
         "http_status":200,
         "source_original_response_bytes":len(raw),
         "source_response_sha256":hashlib.sha256(raw).hexdigest(),
-        "fixed_request_sha256":hashlib.sha256(("GET "+URL).encode("ascii")).hexdigest(),
+        "fixed_request_sha256":hashlib.sha256(("GET "+url).encode("ascii")).hexdigest(),
         "execution_code_sha256":hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "provider_catalogue_license_label":"dl-de-zero-2.0",
         "source_raw_geometry_or_attributes_persisted":False,
@@ -218,11 +232,13 @@ def probe(*, open_request=_open) -> dict:
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("--live",action="store_true")
+    p.add_argument("--hosenfeld",action="store_true",
+                   help="reviewed second fixed town-centre BBOX, at most five geometries")
     args=p.parse_args(argv)
     if not args.live:
         p.error("official provider request disabled unless --live explicitly supplied")
     try:
-        print(json.dumps(probe(),sort_keys=True,allow_nan=False))
+        print(json.dumps(probe(hosenfeld=args.hosenfeld),sort_keys=True,allow_nan=False))
     except (HessenSourceBlocked,ValueError,OSError) as exc:
         print(json.dumps({"status":"BLOCKED","reason":str(exc),
                           "model_input_approved":False}),file=sys.stderr)

@@ -81,6 +81,26 @@ class HessenAlkisBboxTests(unittest.TestCase):
         self.assertEqual(len(observed["source_response_sha256"]),64)
         self.assertNotIn("secret",json.dumps(observed))
 
+    def test_second_exact_hosenfeld_profile_and_true_bbox_envelope(self):
+        city=fixture(features=[feature(x=9.483,y=50.516)])
+        result=h.inspect_geojson(city,query_bbox=h.HOSENFELD_BBOX)
+        self.assertEqual(result["returned_bounded_feature_count"],1)
+        self.assertTrue(result["geometry_available_in_this_sample"])
+        calls=[]
+        def fake(req,timeout):
+            calls.append((req.full_url,req.get_method(),timeout))
+            return Reply(raw=city,url=h.HOSENFELD_URL)
+        receipt=h.probe(open_request=fake,hosenfeld=True)
+        self.assertEqual(calls,[(h.HOSENFELD_URL,"GET",h.TIMEOUT_SECONDS)])
+        self.assertIn("hosenfeld",receipt["profile"])
+        self.assertFalse(receipt["real_building_worldcover_overlap_verified"])
+        self.assertFalse(receipt["source_raw_geometry_or_attributes_persisted"])
+        outside_town=fixture(features=[feature(x=9.495,y=50.51)])
+        with self.assertRaises(h.HessenSourceBlocked):
+            h.inspect_geojson(outside_town,query_bbox=h.HOSENFELD_BBOX)
+        with self.assertRaises(h.HessenSourceBlocked):
+            h.probe(open_request=fake,hosenfeld="caller-provided")
+
     def test_empty_page_is_not_misrepresented_as_hessen_completeness(self):
         result=h.inspect_geojson(fixture(features=[]))
         self.assertEqual(result["returned_bounded_feature_count"],0)
