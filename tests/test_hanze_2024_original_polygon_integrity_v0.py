@@ -139,6 +139,30 @@ class OriginalPolygonIntegrityTests(unittest.TestCase):
         with self.assertRaisesRegex(RegionArchiveError,"parts or point structure"):
             verified(shapefile_fixture(records=[polygon_record([short])]))
 
+    def test_frozen_original_polygon_record_and_projection_evidence(self):
+        from research_runners.hanze_2024_polygon_integrity_source_receipt_v0 import (
+            HANZE_2024_POLYGON_INTEGRITY_RECEIPT_V0 as rec,
+        )
+        from research_runners.hanze_regions2024_zip_original_receipt_v0 import PINNED_ZIP_SHA256
+        self.assertEqual(rec["original_zip_sha256"], PINNED_ZIP_SHA256)
+        self.assertEqual(rec["polygon_records"], 1449)
+        self.assertEqual(rec["polygon_rings"], 15712)
+        self.assertEqual(rec["polygon_vertices"], 397659)
+        self.assertEqual(rec["exactly_closed_rings"], rec["polygon_rings"])
+        self.assertEqual(rec["open_rings"], 0)
+        self.assertEqual(rec["projection_declared_name"], "ETRS_1989_LAEA")
+        self.assertEqual(rec["projection_declared_method"], "Lambert_Azimuthal_Equal_Area")
+        self.assertEqual(rec["projection_source_explicit_epsg_authorities"], [])
+        for k in ("projection_epsg_code_independently_confirmed",
+                  "wkt_parsed_by_authoritative_crs_engine",
+                  "polygon_self_intersections_and_topology_validated",
+                  "flood_inundation_polygon_verified",
+                  "polygon_coordinate_arrays_or_raw_original_wkt_redistributed",
+                  "actual_insurer_exposure_or_loss_joined",
+                  "underlying_geometry_commercial_rights_reviewed",
+                  "model_source_admitted"):
+            self.assertFalse(rec[k])
+
     def test_untrusted_zip_member_record_offset_and_trailing_data_rejected(self):
         base=polygon_record([RING])
         tampered=bytearray(base)
