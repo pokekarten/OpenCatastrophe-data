@@ -13,7 +13,7 @@ from scripts.dwd_two_station_lag_holdout_v0 import (
     DWDHoldoutBlocked, PERIODS, HOLDOUT_MONTHS, _slice_window,
     _fixed_lag_score, _evaluate_split, study, main,
 )
-from scripts.dwd_two_station_paired_gust_v0 import START, END
+from scripts.dwd_two_station_paired_gust_v0 import START, END, PairedWindBlocked
 
 
 def value(i: int) -> float:
@@ -129,7 +129,7 @@ class DWDSeasonalHoldoutTests(unittest.TestCase):
     def test_missing_original_timestamps_in_input_blocks_study(self):
         first, second = make_source_pair()
         del second["shared_samples"][START]
-        with self.assertRaises(Exception):
+        with self.assertRaises(PairedWindBlocked):
             study(first, second)
 
     def test_synthetic_archive_cli_is_denied_by_sha(self):
