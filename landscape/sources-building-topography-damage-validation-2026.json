@@ -1,0 +1,117 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery of source-specific high-resolution terrain, LiDAR and observed-versus-modelled building damage evidence for bounded catastrophe exposure and vulnerability validation. No external data bytes, model approval or redistribution rights are conferred.",
+  "review_date": "2026-11-01",
+  "entries": [
+    {
+      "candidate_id": "usgs.3dep.seamless-1m-dem",
+      "name": "USGS 3DEP seamless 1-meter bare-earth digital elevation model (S1M)",
+      "provider": "U.S. Geological Survey / The National Map",
+      "categories": [
+        "terrain",
+        "high_resolution_dem",
+        "flood",
+        "exposure_context",
+        "united_states"
+      ],
+      "spatial_scope": "United States and territories where S1M tiles have been produced; tile availability is incomplete and expands over time",
+      "temporal_scope": "S1M production since mid-2025; underlying LiDAR acquisition years differ by project and tile",
+      "resolution_or_granularity": "1-meter ground spacing; cloud-optimized GeoTIFF tiles of approximately 10 km by 10 km, incorporating project-source metadata",
+      "potential_roles": [
+        "ground_elevation_reference",
+        "terrain_control_for_flood_model_validation",
+        "building_elevation_context"
+      ],
+      "authoritative_url": "https://www.usgs.gov/3d-elevation-program/about-3dep-products-services",
+      "access_class_hint": "official_public_domain_tile_catalog_metadata_only_no_acquisition",
+      "note": "S1M is bare-earth elevation, not roof/building height and not a parcel flood-water-depth surface. Freeze exact tile/product URL, byte SHA-256, acquisition/production date, CRS, vertical reference/datum, source LiDAR quality, no-data rules and pixel footprint before any use. Do not infer building-first-floor or insured-value data; compare modelled flood depths only with matched elevation datums. USGS publishes 3DEP as free and unrestricted, but exact artifact/use scope and scientific suitability are not yet reviewed in this repository.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "usgs.3dep.lidar-point-cloud",
+      "name": "USGS 3DEP original lidar point-cloud (LPC) collection",
+      "provider": "U.S. Geological Survey / The National Map",
+      "categories": [
+        "lidar",
+        "point_cloud",
+        "building_geometry",
+        "terrain",
+        "united_states"
+      ],
+      "spatial_scope": "United States and territories, by individual acquired lidar project and available coverage",
+      "temporal_scope": "Acquisition vintages from 2004 onward vary by project; selected source work-unit must be pinned",
+      "resolution_or_granularity": "Project-native 3D point clouds in lossless LAZ/LAS with acquisition metadata, classification and variable quality levels",
+      "potential_roles": [
+        "independent_roof_terrain_height_test",
+        "observed_building_geometry_context",
+        "lidar_to_dem_lineage_audit"
+      ],
+      "authoritative_url": "https://data.usgs.gov/datacatalog/data/USGS%3Ab7e353d2-325f-4fc6-8d95-01254705638a",
+      "access_class_hint": "official_public_domain_per_project_metadata_only_no_acquisition",
+      "note": "LPC is an underlying source family of 3DEP DEMs, so LPC-vs-S1M agreement is NOT independent replication. Required checks: exact work-unit, source date, LAZ/LAS classifications, coordinates/units, vertical datum, quality level, point density, building-versus-vegetation confusion and alignment to a footprint observation date. Dataset is not a ready-made building-footprint, building-material or insurance exposure file. Public-domain publisher statements do not substitute for exact-file identification.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "us.fema.historical-geospatial-damage-assessments",
+      "name": "FEMA Historical Geospatial Damage Assessment Database public feature layer",
+      "provider": "U.S. Federal Emergency Management Agency (FEMA)",
+      "categories": [
+        "observed_impacts",
+        "building_damage",
+        "event_validation",
+        "flood",
+        "wind",
+        "earthquake",
+        "united_states"
+      ],
+      "spatial_scope": "United States historical disaster-event coverage limited to events assessed and published in the FEMA layer; not a complete national census",
+      "temporal_scope": "Past FEMA event assessments; service metadata reports last content edit 2021-06-22; feature EVENT_DATE, IMG_DATE and PROD_DATE determine per-record vintages",
+      "resolution_or_granularity": "Point features with DMG_LEVEL, DMG_TYPE, ASMT_TYPE, IN_DEPTH in feet, disaster ID and event dates; ArcGIS layer supports JSON/GeoJSON; max record count 2000",
+      "potential_roles": [
+        "field_observed_damage_holdout_candidates",
+        "remote_sensed_damage_comparison",
+        "modelled_damage_leakage_detection"
+      ],
+      "authoritative_url": "https://services.arcgis.com/XG15cJAlne2vxtgt/arcgis/rest/services/FEMA_Historical_Geospatial_Damage_Assessment_Database/FeatureServer/0",
+      "access_class_hint": "public_arcgis_feature_service_exact_export_reuse_and_currentness_review",
+      "note": "Crucial provenance boundary: ASMT_TYPE=FA is field-assessed; RS is remote-sensing classification; MOD and other methods are model predictions and cannot serve as independent measured damage truth against the same model. Inundation depth can itself be modelled and its unit is feet, not metres. Event_name, disaster number, date and feature ID require exact-snapshot identity and deduplication; point location alone does not prove a building identity or insured claim. Old service edit date requires freshness check. 'Public use' on the feature layer has not been promoted to source-specific commercial or redistribution approval.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "xview2.xbd.building-damage",
+      "name": "xBD / xView2 pre-post disaster building-damage annotation dataset",
+      "provider": "Defense Innovation Unit / xView2 challenge and Carnegie Mellon Software Engineering Institute",
+      "categories": [
+        "remote_sensing",
+        "building_damage",
+        "damage_labels",
+        "vulnerability_validation",
+        "global_events"
+      ],
+      "spatial_scope": "Selected disaster-affected image scenes worldwide; highly nonrandom coverage rather than global building census",
+      "temporal_scope": "Event-specific pre- and post-disaster satellite image acquisitions in published xBD training and evaluation splits; freeze exact download release",
+      "resolution_or_granularity": "Very-high-resolution paired imagery, building outlines and ordinal damage classes (no damage, minor, major, destroyed)",
+      "potential_roles": [
+        "noncommercial_research_benchmark_candidate",
+        "damage_classification_quality_assessment",
+        "event_holdout_leakage_audit"
+      ],
+      "authoritative_url": "https://xview2.org/dataset",
+      "access_class_hint": "registration_and_provider_license_noncommercial_restriction_must_be_verified",
+      "note": "The project is documented as CC BY-NC-SA 4.0/noncommercial in dataset catalogues; exact xView2 provider terms and image/subset rights must be checked independently before any use, especially commercial CAT or model training. Labels describe visible damage rather than loss ratios or paid insurance claims; pre/post scenes, event overlap and geographic splits can leak between training and validation. This is research discovery only: do not download, redistribute, train or publish source imagery/labels under the current record.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    }
+  ]
+}
