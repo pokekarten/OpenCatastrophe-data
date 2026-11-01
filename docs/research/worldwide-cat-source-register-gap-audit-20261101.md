@@ -82,9 +82,9 @@ python -m unittest tests.test_cat_source_crosswalk_v0 -v
 
 The output is a **deterministic transient report**, not an approved warehouse schema and not an import queue that may execute requests. An unlinked source does not imply scientific independence: this script marks `scientific_independence_proven=false` even for candidates with no currently authored relationship hypothesis. A `probe_ready` source is still not proven downloaded or model-ready. All joins into original source bytes require source-specific evidence and separate admission.
 
-## Optional isolated CAT3 SQLite source/access/linkage research index
+## Optional isolated CAT4 SQLite source/access/linkage research index
 
-A validated JSON crosswalk is also exposed as a **new, separate, queryable CAT-only research database**, without modifying the already existing `CAT1` geographic SQLite, `CAT2` NUTS crosswalk SQLite or existing `scripts/export_cat_source_registry_sqlite.py` export. The new script `scripts/export_cat_source_crosswalk_sqlite_v0.py` builds SQLite **application ID 0x43415433 (CAT3)** and schema version 1 from the existing crosswalk report. It requires a *new*, absolute `*.cat.sqlite` path **outside** the Git checkout, will not overwrite or follow an existing output symlink, and performs integrity/foreign-key checks.
+A validated JSON crosswalk is also exposed as a **new, separate, queryable CAT-only research database**, without modifying the already existing `CAT1` geographic SQLite, `CAT2` NUTS crosswalk SQLite, `CAT3` provisional 14/2 German geometry staging or existing `scripts/export_cat_source_registry_sqlite.py` export. The new script `scripts/export_cat_source_crosswalk_sqlite_v0.py` builds SQLite **application ID 0x43415434 (CAT4)** and schema version 1 from the existing crosswalk report. It requires a *new*, absolute `*.cat.sqlite` path **outside** the Git checkout, will not overwrite or follow an existing output symlink, and performs integrity/foreign-key checks.
 
 ```bash
 mkdir -p /secure/cat-data/staging
