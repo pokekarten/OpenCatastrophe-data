@@ -56,7 +56,13 @@ Its output says so. Source evidence remains a separate admission gate.
 
 The helper emits all six counts only if the inspected count is at least
 10 **and every nonzero class count is at least 10**. Otherwise the entire
-count distribution and total are omitted. This is a conservative
+count distribution, total **and deterministic raw-input SHA-256** are omitted.
+A hash of a low-entropy suppressed table can be brute-forced by enumerating
+plausible counts and therefore undermine small-cell suppression. For a
+published unsuppressed table the input SHA-256 remains available as a
+reproducibility marker. An external source snapshot hash, when supplied in
+the input, is checked only for syntax and is not emitted by this program.
+This is a conservative
 small-cell **suppression heuristic**, **not formal disclosure control**:
 it does not eliminate cross-query differencing, reidentification or
 source-specific privacy assessment. Never repeatedly publish overlapping
@@ -74,9 +80,10 @@ The output reports 60 *inspected records in that synthetic cohort*, **not**
 
 ## Tests and evidence boundary
 
-`tests/test_calfire_dins_aggregate_qc_v0.py` contains 22 offline
+`tests/test_calfire_dins_aggregate_qc_v0.py` contains 24 offline
 synthetic tests: verified schema, historic 2013/2017/2018 break, full-table
-small-cell suppression, null/invalid source SHA semantics, boolean and
+small-cell suppression **including digest non-disclosure** and synthetic
+small-cell equivalence, null/invalid source SHA semantics, boolean and
 negative/fractional count traps, extra address fields, duplicate JSON keys,
 zero total, and raw-feature-payload rejection.
 

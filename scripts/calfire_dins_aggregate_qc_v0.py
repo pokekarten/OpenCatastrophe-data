@@ -113,7 +113,6 @@ def evaluate_aggregate(raw: bytes) -> dict[str, Any]:
         "inspection_frame": FRAME,
         "hazard_type": "Fire",
         "event_year_basis": "INCIDENTSTARTDATE",
-        "input_sha256": hashlib.sha256(raw).hexdigest(),
         "source_snapshot_hash_supplied_but_not_verified": origin != "synthetic",
         "counts_suppressed": suppressed,
         "pre_2018_non_damage_records_not_collected": year < 2018,
@@ -124,6 +123,11 @@ def evaluate_aggregate(raw: bytes) -> dict[str, Any]:
         "model_data_admitted": False,
     }
     if not suppressed:
+        # A raw deterministic digest can reveal suppressed small-cell counts
+        # through a cheap dictionary search over low-cardinality inputs.
+        # Record an audit hash only for the already disclosed count table;
+        # leave suppressed output without any digest of private raw input.
+        result["input_sha256"] = hashlib.sha256(raw).hexdigest()
         result["inspected_record_count_not_exposure_denominator"] = count
         result["damage_counts_within_inspected_frame"] = {
             key: counts[key] for key in sorted(DAMAGE_STATES)
