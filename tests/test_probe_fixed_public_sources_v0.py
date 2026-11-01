@@ -84,7 +84,7 @@ class FixedSourceProbesTests(unittest.TestCase):
                 self.assertEqual(timeout, 30)
 
     def test_reject_credentials_and_rights_changes(self):
-        source = "emsc.seismicportal.fdsn-event"
+        source = "gfz.geomagnetic-kp"
         for mutate in (
             lambda d: d["authentication"].update(mode="bearer"),
             lambda d: d["rights_and_policy"].update(commercial_automation_status="unknown"),
@@ -122,14 +122,6 @@ class FixedSourceProbesTests(unittest.TestCase):
         with self.assertRaises(ProbeBlocked):
             verify_response(source, json.dumps(payload).encode())
 
-    def test_emsc_one_event_only(self):
-        source = "emsc.seismicportal.fdsn-event"
-        event = {"properties": {"mag": 3.7}, "geometry": None}
-        self.assertEqual(verify_response(source, json.dumps({"features": [event]}).encode())["records_inspected"], 1)
-        for body in ({"features": []}, {"features": [event, event]}, {"features": [{"properties": None}]}):
-            with self.assertRaises(ProbeBlocked):
-                verify_response(source, json.dumps(body).encode())
-
     def test_gfz_noaa_structural_only(self):
         a = verify_response("gfz.geomagnetic-kp", b'{"Kp":[1.0]}')
         self.assertIs(a["scientific_values_verified"], False)
@@ -142,9 +134,9 @@ class FixedSourceProbesTests(unittest.TestCase):
                 verify_response("gfz.geomagnetic-kp", raw)
 
     def test_probe_receipt_has_no_provider_values(self):
-        source = "emsc.seismicportal.fdsn-event"
+        source = "gfz.geomagnetic-kp"
         self.write(source)
-        body = b'{"features":[{"properties":{"secret":"never-emit-this"}}]}'
+        body = b'{"Kp":[1.0],"secret":"never-emit-this"}'
         client = Client(Reply(body))
         receipt = probe(source, root=self.root, opener=client)
         self.assertEqual(receipt["response_bytes"], len(body))
