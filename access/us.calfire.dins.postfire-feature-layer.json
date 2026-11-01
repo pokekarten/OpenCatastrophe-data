@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "us.calfire.dins.postfire-feature-layer",
+  "source_ids": [
+    "us.calfire.dins.structure-damage"
+  ],
+  "provider": "California Department of Forestry and Fire Protection (CAL FIRE)",
+  "interface_type": "arcgis_rest",
+  "status": "documented_only",
+  "documentation_url": "https://publish.data.ca.gov/dataset/cal-fire-damage-inspection-dins-data",
+  "service_root": "https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/arcgis/rest/services/POSTFIRE_MASTER_DATA_SHARE/FeatureServer",
+  "api_version": "ArcGIS FeatureServer layer 0, live schema subject to updates",
+  "access_scope": [
+    "metadata"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_layer_metadata"
+    ],
+    "path_templates": [
+      "/0"
+    ],
+    "parameter_rules": "Documentation-only description of one official CAL FIRE POSTFIRE layer (layer 0, service item 994d3dc4569640caadbbc3198d5a3da1). Any future metadata-only request must be limited to the fixed layer path and f=pjson; no feature /query, spatial, field, pagination, geometry, SQL, edits, arbitrary URL, headers or redirects may be supplied by users. This contract intentionally does not authorize any network probe or feature export."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "ArcGIS FeatureServer layer metadata only (fields, type, geometryType, objectIdField, service metadata). No features array or feature rows.",
+    "scientific_semantics": "The POSTFIRE layer declares point geometry, damage-code domains, structure type, roof/siding and other inspection attributes. These are inspection observations from a selected damaged-area frame, not independently sampled insured losses or a full census of structures. Provider descriptions say digital damaged-structure records start in 2013 and no-damage structures were collected from 2018; earlier damage state denominators cannot be reconstructed naively. Field names for addresses, parcel APN and coordinates are sensitive enrichment context and remain outside any public import."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 524288,
+    "max_sample_bytes": 524288,
+    "retry_policy": "none",
+    "rate_limit_notes": "This documented_only contract prohibits automated provider requests until exact ArcGIS service/API terms and privacy-safe extraction policy are separately approved. Never paginate or bulk download under this record.",
+    "mutability_notes": "CAL FIRE portal lists an irregular update schedule and the upstream ArcGIS layer is mutable. Future permissible metadata receipts must freeze request identity, UTC, response byte count and SHA-256; later data receipts must freeze event/inspection time and source version."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Official California portal labels this dataset Creative Commons Attribution and public access with no general public-use restrictions; exact layer/service terms, attribution, commercial automated retrieval and privacy-safe redistribution have NOT received a source-specific acceptance review. Do not infer that the CC license authorizes unrestricted API activity, public export of address/APN fields or model-input admission."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-01",
+  "evidence_urls": [
+    "https://publish.data.ca.gov/dataset/cal-fire-damage-inspection-dins-data",
+    "https://catalog.data.gov/dataset/cal-fire-damage-inspection-dins-data",
+    "https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/arcgis/rest/services/POSTFIRE_MASTER_DATA_SHARE/FeatureServer/0"
+  ],
+  "notes": "T0 reviewed provider documentation; official catalogue identifies service item 994d3dc4569640caadbbc3198d5a3da1 and layer 0. No raw data, feature records, schema bytes, SHA-stamped live probe, personal fields, or vulnerability coefficient has been acquired or committed. Separately review service terms, field redaction, selection bias and a bounded one-event non-sensitive aggregate recipe before enabling T1/T3."
+}
