@@ -24,11 +24,19 @@ def synthetic_layer() -> dict:
         "objectIdField": "OBJECTID",
         "globalIdField": "GLOBALID",
         "typeIdField": "DAMAGE",
+        "types": [
+            {"id": value} for value in (
+                "Destroyed (>50%)", "Major (25-50%)", "Minor (10-25%)",
+                "Affected (>0-10%)", "Inaccessible", "No Damage",
+            )
+        ],
         "fields": [
             {"name": "OBJECTID", "type": "esriFieldTypeOID"},
             {"name": "GLOBALID", "type": "esriFieldTypeGlobalID"},
             {"name": "DAMAGE", "type": "esriFieldTypeString"},
             {"name": "STRUCTURETYPE", "type": "esriFieldTypeString"},
+            {"name": "INCIDENTNUM", "type": "esriFieldTypeString"},
+            {"name": "INCIDENTSTARTDATE", "type": "esriFieldTypeDate"},
             {"name": "ROOFCONSTRUCTION", "type": "esriFieldTypeString"},
             {"name": "APN", "type": "esriFieldTypeString"},
             {"name": "SITEADDRESS", "type": "esriFieldTypeString"},
@@ -44,6 +52,9 @@ class DinsMetadataPreflightTests(unittest.TestCase):
         self.assertEqual(receipt["layer_name"], "POSTFIRE")
         self.assertEqual(receipt["science_fields_present"], ["ROOFCONSTRUCTION"])
         self.assertIn("APN", receipt["sensitive_field_names_present"])
+        self.assertFalse(receipt["damage_states_are_insurance_loss_ratios"])
+        self.assertEqual(receipt["incident_time_field_type"], "esriFieldTypeDate")
+        self.assertEqual(len(receipt["damage_states"]), 6)
         self.assertNotIn("SITEADDRESS value", json.dumps(receipt))
 
     def test_rejects_feature_rows(self):
@@ -85,6 +96,24 @@ class DinsMetadataPreflightTests(unittest.TestCase):
     def test_rejects_plain_feature_collection(self):
         with self.assertRaises(DinsMetadataError):
             preflight_metadata(b'{"features":[]}')
+
+    def test_rejects_unexpected_damage_class(self):
+        obj = synthetic_layer()
+        obj["types"][1]["id"] = "Insured loss 25-50%"
+        with self.assertRaises(DinsMetadataError):
+            preflight_metadata(json.dumps(obj).encode())
+
+    def test_rejects_missing_incident_date(self):
+        obj = synthetic_layer()
+        obj["fields"] = [f for f in obj["fields"] if f["name"] != "INCIDENTSTARTDATE"]
+        with self.assertRaises(DinsMetadataError):
+            preflight_metadata(json.dumps(obj).encode())
+
+    def test_rejects_duplicate_damage_class(self):
+        obj = synthetic_layer()
+        obj["types"][0]["id"] = obj["types"][1]["id"]
+        with self.assertRaises(DinsMetadataError):
+            preflight_metadata(json.dumps(obj).encode())
 
     def test_rejects_false_integer_id(self):
         obj = synthetic_layer()
