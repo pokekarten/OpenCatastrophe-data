@@ -205,6 +205,13 @@ def probe(*, open_request=_open, contract_path: Path = CONTRACT_PATH) -> dict:
         )
     except GeoGridBlocked as exc:
         raise HeaderBlocked("malformed geospatial metadata within exact TIFF header") from exc
+    from scripts.inspect_worldcover_tile_table_preflight_v0 import (
+        TileTableBlocked, inspect_tile_table_locations,
+    )
+    try:
+        table_plan = inspect_tile_table_locations(raw, header=shape)
+    except TileTableBlocked as exc:
+        raise HeaderBlocked("TIFF tile-array metadata failed bounded preflight") from exc
     return {
         "profile": "oc-esa-worldcover-v200-tiff-header-v0",
         "source_id": SOURCE,
@@ -224,6 +231,7 @@ def probe(*, open_request=_open, contract_path: Path = CONTRACT_PATH) -> dict:
         "code_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         **shape,
         **geo,
+        **table_plan,
         "full_original_sha256_verified": False,
         "cog_layout_verified": False,
         "crs_verified": False,
