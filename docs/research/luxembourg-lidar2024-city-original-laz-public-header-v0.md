@@ -50,11 +50,18 @@ No URL, coordinate, source package or tile selection input is accepted.
   compressed point nodes, XYZ positions or class values.
   Specification: <https://copc.io/copc-specification-1.0.pdf>.
 - `COPC` capability is **not** established by the `.laz` extension
-  or by the LAS point format; original LAS VLR/EVLR metadata must
-  be separately read and validated first.
+  or by the LAS point format; it requires a real COPC info VLR and a
+  verified hierarchy. The actual city first-VLR proof has succeeded
+  and identified a **12,608-byte root hierarchy page** at local LAZ
+  member offset **179,952,913**. A final, capped HTTP206 request checks
+  that hierarchy page (exact **32 bytes per octree entry**), verifies
+  source point chunk offset bounds, counts embedded/nested page references
+  and records only an **aggregate level histogram**. It does **not**
+  expose individual octree XYZ keys or fetch compressed point chunks.
+  A root page does not necessarily contain the whole hierarchy.
 
 The original-source GitHub workflow triggers one read-only acquisition,
-without files or artifacts, and includes **23 synthetic format/safety tests**
+without files or artifacts, and includes **29 synthetic format/safety tests**
 for the original ZIP/LAS headers and COPC info VLR.
 Strict HTTP206 and `Content-Range` validation abort before touching
 a potentially huge HTTP200 body. No arbitrary source or network redirects.
