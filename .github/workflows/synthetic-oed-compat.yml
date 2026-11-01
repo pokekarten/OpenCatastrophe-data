@@ -8,9 +8,14 @@ on:
     paths:
       - ".github/workflows/synthetic-oed-compat.yml"
       - "research_runners/export_synthetic_oed_v0.py"
+      - "research_runners/export_relational_synthetic_oed_v1.py"
+      - "research_runners/sql/oed_synthetic_relational_schema_v1.sql"
+      - "research_runners/sql/oed_synthetic_relational_fixture_v1.sql"
+      - "research_runners/sql/oed_synthetic_relational_snapshot_v1.sql"
       - "research_runners/validate_synthetic_oed_ods_tools_v0.py"
       - "research_runners/sql/synthetic_oed_snapshot_v0.sql"
       - "tests/test_export_synthetic_oed_v0.py"
+      - "tests/test_export_relational_synthetic_oed_v1.py"
   workflow_dispatch:
 
 permissions:
@@ -35,6 +40,8 @@ jobs:
           python -m pip install --disable-pip-version-check --no-input ods-tools==5.0.8
           python -m pip check
       - name: Run standard-library synthetic fixture tests
-        run: python -m unittest discover -s tests -p test_export_synthetic_oed_v0.py -v
+        run: |
+          python -m unittest discover -s tests -p test_export_synthetic_oed_v0.py -v
+          python -m unittest discover -s tests -p test_export_relational_synthetic_oed_v1.py -v
       - name: Validate synthetic exposure with official ODS Tools
         run: python research_runners/validate_synthetic_oed_ods_tools_v0.py
