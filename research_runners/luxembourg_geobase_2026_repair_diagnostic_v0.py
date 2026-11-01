@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections import Counter
 import math
 
-from shapely import make_valid
+from shapely import make_valid, hausdorff_distance
 from shapely.errors import GEOSException
 from shapely.ops import unary_union
 
@@ -51,6 +51,15 @@ class RepairDiagnostics:
         self.structure_area_disagreements = 0
         self.structure_topological_set_disagreements = 0
         self.structure_symdiff_area_disagreements = 0
+        # Original-invalid-ring to valid-output boundary diagnostics.
+        # Source EPSG:2169 metre units are NOT field positional accuracy.
+        self.boundary_hausdorff_m = []
+        self.boundary_length_abs_delta_m = []
+        self.boundary_hausdorff_over_001m = 0
+        self.boundary_hausdorff_over_01m = 0
+        self.boundary_hausdorff_over_1m = 0
+        self.boundary_hausdorff_nonfinite = 0
+        self.boundary_metrics_comparable = 0
 
     def observe(self, original) -> None:
         """Evaluate a single invalid in-memory source polygon; aggregate only."""
@@ -77,6 +86,27 @@ class RepairDiagnostics:
             self.outcomes["single_polygon" if len(polygons) == 1 else "multiple_polygons"] += 1
             if debris:
                 self.with_nonpolygon_debris += 1
+            # Compare original INVALID ring linework against repaired area
+            # boundaries. The discrete Hausdorff distance with densification
+            # is an approximation, not an external GNSS/field control.
+            try:
+                source_boundary = original.boundary
+                repaired_boundary = unary_union(polygons).boundary
+                distance = float(hausdorff_distance(
+                    source_boundary, repaired_boundary, densify=0.25))
+                length_difference = abs(source_boundary.length - repaired_boundary.length)
+                if (math.isfinite(distance) and distance >= 0
+                        and math.isfinite(length_difference)):
+                    self.boundary_metrics_comparable += 1
+                    self.boundary_hausdorff_m.append(distance)
+                    self.boundary_length_abs_delta_m.append(length_difference)
+                    self.boundary_hausdorff_over_001m += distance > 0.01
+                    self.boundary_hausdorff_over_01m += distance > 0.1
+                    self.boundary_hausdorff_over_1m += distance > 1.0
+                else:
+                    self.boundary_hausdorff_nonfinite += 1
+            except (GEOSException, ValueError, TypeError, OverflowError):
+                self.boundary_hausdorff_nonfinite += 1
             # Independent GEOS repair strategy challenge, also ephemeral only.
             # Same numerical area is not evidence of an accurate building boundary.
             try:
@@ -126,6 +156,9 @@ class RepairDiagnostics:
         if (self.structure_usable + self.structure_unusable !=
                 self.outcomes["single_polygon"] + self.outcomes["multiple_polygons"]):
             raise ValueError("Independent repair challenger does not conserve usable linework cases")
+        if (self.boundary_metrics_comparable + self.boundary_hausdorff_nonfinite !=
+                self.outcomes["single_polygon"] + self.outcomes["multiple_polygons"]):
+            raise ValueError("Boundary comparison did not conserve usable linework cases")
         changes = sorted(self.absolute_deltas)
         mid = (len(changes) - 1) // 2
         p95 = math.ceil(len(changes) * 0.95) - 1
@@ -141,6 +174,21 @@ class RepairDiagnostics:
             "structure_vs_linework_polygon_count_disagreements": self.structure_polygon_count_disagreements,
             "structure_vs_linework_area_disagreements_over_tolerance": self.structure_area_disagreements,
             "structure_vs_linework_topological_set_disagreements": self.structure_topological_set_disagreements,
+            "boundary_discrete_hausdorff_densify_fraction": 0.25,
+            "source_boundary_to_linework_boundary_comparable": self.boundary_metrics_comparable,
+            "source_boundary_to_linework_boundary_nonfinite_or_failed": self.boundary_hausdorff_nonfinite,
+            "source_boundary_to_linework_hausdorff_max_projected_m": (
+                round(max(self.boundary_hausdorff_m), 4)
+                if self.boundary_hausdorff_m else None),
+            "source_boundary_to_linework_hausdorff_median_projected_m": (
+                round(sorted(self.boundary_hausdorff_m)[(len(self.boundary_hausdorff_m)-1)//2], 4)
+                if self.boundary_hausdorff_m else None),
+            "source_boundary_to_linework_boundary_length_change_sum_projected_m": (
+                round(math.fsum(self.boundary_length_abs_delta_m), 4)),
+            "source_boundary_to_linework_hausdorff_over_1cm": self.boundary_hausdorff_over_001m,
+            "source_boundary_to_linework_hausdorff_over_10cm": self.boundary_hausdorff_over_01m,
+            "source_boundary_to_linework_hausdorff_over_1m": self.boundary_hausdorff_over_1m,
+            "source_boundary_position_accuracy_ground_control_verified": False,
             "structure_vs_linework_symmetric_difference_area_disagreements_over_tolerance": self.structure_symdiff_area_disagreements,
             "area_change_comparable_nonzero_nominal": self.relative_comparable,
             "nonpositive_nominal_invalid_polygon_area": self.nonpositive_nominal_area,
