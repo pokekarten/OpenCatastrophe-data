@@ -57,6 +57,43 @@ A source-side GitHub workflow pins the provider URLs and SHA receipts,
 extracts the two GeoPackages only to temporary runner storage, executes
 six synthetic safety tests and then the source comparison.
 
+## Original full-source result: exact ID join is **not available**
+
+The actual exact-source GitHub Actions job passed, including its synthetic
+tests, both independently pre-observed source ZIP/GPKG digests and the two
+full national identifier populations:
+
+https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41310404396
+
+| Observed measure | ACT2023v2 `buildingid` | GeoBase20261001 `BU_BuildingID` |
+| --- | ---: | ---: |
+| Original features | **238,189** | **230,353** |
+| Distinct nonblank full-text IDs | **238,189** | **230,353** |
+| Blank/null ID rows | 0 | 0 |
+| Duplicate nonblank ID rows | 0 | 0 |
+| SQLite-stored text ID rows | **238,189** | **230,353** |
+| SQLite-stored integer ID rows | 0 | 0 |
+
+**Exact literal text intersection between the complete two original ID
+sets: zero.** All **238,189** ACT roof IDs and **230,353** GeoBase building
+IDs are therefore unique to their respective source namespace in this
+exact-value test. No crosswalk or per-building IDs were exported.
+
+**Scientific interpretation:** This directly rules out a simple raw
+`buildingid = BU_BuildingID` equality join between these two specific
+pinned product releases. It does **not** rule out a documented official
+ID translation, stable common physical buildings, or geometric overlap.
+It also does **not** measure construction/demolition, true exposure, value,
+historical change or dataset completeness. These are two different product
+entity definitions and dates, both from the same ACT family.
+
+The next useful technical comparison is a **small native-CRS candidate
+geometry overlay** of ACT2023 roof polygons versus ACT2026 GeoBase polygons,
+with explicit 1:n and n:1 ambiguity/coverage metrics. In parallel search
+the official ACT schema/model for an authoritative crosswalk linking
+`buildingid`, `BU_BuildingID`, CityGML/GeoBase identifiers; never guess
+a string manipulation that makes IDs equal.
+
 ## Interpretation guardrails
 
 - A common text value across `buildingid` and `BU_BuildingID` is
