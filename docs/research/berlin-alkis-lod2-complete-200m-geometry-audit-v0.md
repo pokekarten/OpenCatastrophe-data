@@ -167,3 +167,43 @@ later real replies may differ. The first original rerun of this new
 quarantine logic must independently verify the exact counts, source
 CRS, duplicate groups and revised 1:1 matches before any updated
 number is reported.
+
+## Verified original duplicate quarantine, matched-subset height and role — 2026-11-01
+
+The official [WFS source run 41326537234](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41326537234)
+on merged source commit `fc9ee78a853b9ffb7aa56174ef0b2e00c22d9736`
+**passed** 10 synthetic tests and two original fixed Berlin WFS requests.
+UTC source receipt `2026-11-01T16:29:05.448330+00:00`.
+
+| First-party evidence | Actual bounded result |
+| --- | --- |
+| Source feature records | 18 ALKIS / 27 LoD2 |
+| Source SHA-256, ALKIS | `3d8230fae323a454794558e93cc1bef3086ad3d1a4cda418875f6c02071172c2` |
+| Source SHA-256, LoD2 | `5fa491c87072031f0e2803cfa5129da2586b60a96cd21817a8fdd6fe3510a763` |
+| Distinct duplicate-footprint groups (LoD2) | **3 groups** |
+| Total LoD2 source features quarantined | **6** |
+| ALKIS duplicates / quarantined | 0 / 0 |
+| Unique unambiguous source-polygon pairs after quarantine | **6** |
+| Valid positive numeric heights on those six pairs | **6** |
+| Exactly 3m values on six matched polygons | **0** |
+| Recognized source role on six matched polygons | **0** (`unknown`: **6**) |
+| Non-null source-method fields on six pairs | **6 of 6** each |
+| Model-admitted / insured height assignments | **0** |
+
+These figures concern **source polygon feature records**, not unique
+physical buildings; no original feature attributes/coordinates were
+persisted. Field presence is **not** proof that the underlying height
+method was physical measurement rather than algorithmic LoD2 estimation.
+The official technical guide labels `role_txt` as *Gebäude oder Bauteil*
+but does not publish an exhaustive spelling/code vocabulary:
+<https://fbinter.stadt-berlin.de/fb_daten/beschreibung/umweltatlas/datenformatbeschreibung/Datenformatbeschreibung_06_10_1gebhoehen.html>.
+The publisher's method uses LoD2, ALKIS and a possible 3m fallback:
+<https://www.berlin.de/umweltatlas/nutzung/gebaeudehoehen/fortlaufend-aktualisiert/methode/>.
+
+The next research lane is therefore a **bounded, non-identifying
+vocabulary hypothesis check**, not changing unknown role assignments
+to actual building/part classes. `CityGML` schema type names are
+generic candidate spellings, not verified values from this publisher.
+Only small aggregate exact-token category counts may be emitted, never
+raw, unrecognized `role_txt` strings or other source attributes.
+
