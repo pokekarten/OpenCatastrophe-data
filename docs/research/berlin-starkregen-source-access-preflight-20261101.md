@@ -379,3 +379,52 @@ against verified building polygons only under separate model admission.
 No tile names, full ZIP asset, production CAT database, or privately-held
 exposure is exported in this canary. The full repository public-surface
 CI must pass at the updated main merge base before any merge.
+
+
+## Original Berlin water-depth ZIP central-directory EOCD: bounded source gate
+
+The two original 512-byte ZIP prefix ranges and frozen HEAD byte counts
+are already verified in
+[GitHub Actions 41331185963](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41331185963).
+We can safely inspect the *end-of-central-directory* of both
+large ZIPs independently rather than downloading their combined
+1.18 GB payload.
+
+\`research_runners/berlin_srhk_depth_zip_eocd_tail_v0.py\` makes
+**exactly one** full-URL-pinned, no-redirect HTTP GET per
+explicit scenario, requesting the last **65,557 bytes** with
+\`Range\`. It pins the original HEAD source-object sizes
+(**619,211,977 / 563,115,763 bytes**) and the publisher's
+earlier Last-Modified timestamp via \`If-Range\`. A non-206,
+changed Content-Range, source version, MIME or payload byte length
+blocks the operation *before* any unbounded body read.
+
+The bounded local parser:
+- Requires one unambiguous classic ZIP EOCD at the true original EOF;
+  checks single disk, archive comment length, declared member count,
+  exact central-directory end offset and a 1 MiB metadata budget.
+  ZIP64, encryption or changed source structures require separate review.
+- If the complete central directory **already fits inside the tail**,
+  parses central-directory records locally and reports only **counts**
+  of TIFF-suffixed and other archive members. It rejects unsafe paths,
+  repeated filenames, invalid record lengths, unsupported compression
+  and ZIP64 member sentinels. No internal member names/paths are printed.
+- If the directory is larger than the bytes already retrieved, reports
+  exactly its location and size and **does not** fetch the directory
+  or pretend the members were examined.
+- Reports SHA-256 of the **65,557-byte suffix only**; not original full
+  ZIP archive SHA-256, member CRC, GeoTIFF bytes or physical flood depth.
+
+On a reviewed main-workflow change, two independently bounded runs are
+scheduled by \`.github/workflows/berlin-srhk-depth-zip-eocd.yml\`.
+PR checks use only synthetic local ZIPs / hostile HTTP fakes, including
+a central directory too large for the suffix. The original official
+EOCD outcome remains **unverified until the actual push-run logs**
+are checked.
+
+This is **not** yet a real building-hazard join: EPSG:25832 versus
+EPSG:25833, 2022/2025 product naming/vintage, true raster units,
+NoData masking and Berlin sample footprint coverage remain source
+verification blockers. Next, if source metadata supports it,
+obtain a separately reviewed minimal exact GeoTIFF-header sample
+without persisting original provider ZIP data.
