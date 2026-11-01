@@ -27,6 +27,9 @@ from research_runners.luxembourg_lidar2024_bounded_cog_window_v0 import (
 from research_runners.luxembourg_lidar2024_cog_range_capability_v0 import (
     FILES, OFFICIAL_BASE, read_header_range,
 )
+from research_runners.luxembourg_lidar2024_building_interior_gradient_v0 import (
+    InteriorGradientError, local_gradients,
+)
 
 LON,LAT=6.1319,49.6116
 HALFWIDTH_METRES=50.0
@@ -233,6 +236,7 @@ def run(geobase_path:Path):
                     for a,b in zip(ta,tb))):
                     raise BuildingProxyError("source grids not aligned")
                 counts=aggregate(polygons,dtm,dsm,ta,roi)
+                gradients=local_gradients(polygons,dtm,dsm,ta,roi)
     finally:
         db.close()
     return {
@@ -253,6 +257,7 @@ def run(geobase_path:Path):
         "vertical_datum_independently_checked":False,
         "insured_exposure_or_tiv_inferred":False,
         **counts,
+        "building_mask_interior_surface_gradient_research":gradients,
         "warning":(
             "Research-only object-clipped MNS-MNT median proxies. These can "
             "include vegetation and roof/surface artifacts, and 2024/2026 "
@@ -267,7 +272,7 @@ def main(argv=None):
     args=p.parse_args(argv)
     try:
         report=run(args.geobase_gpkg)
-    except (GeoPackageGateError,CogWindowError,BuildingProxyError,
+    except (GeoPackageGateError,CogWindowError,BuildingProxyError,InteriorGradientError,
             OSError,ValueError) as exc:
         p.exit(2,"BLOCKED: "+str(exc)+"\n")
     print(json.dumps(report,indent=2,sort_keys=True,allow_nan=False))
