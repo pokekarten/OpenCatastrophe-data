@@ -9,7 +9,7 @@ import unittest
 
 from research_runners.luxembourg_lidar2024_city_laz_header_range_v0 import (
     city_member, local_file_data_offset, las_prefix_info,
-    complete_las_header, LAZHeaderError,
+    complete_las_header, inspect_public_vlrs, LAZHeaderError,
 )
 
 
@@ -48,6 +48,18 @@ def las_header(minor=4, points=234567, point_format=0x86):
     if minor==4:
         struct.pack_into("<Q",out,247,points)
     return bytes(out)
+
+
+def vlr(owner, rid, body):
+    return struct.pack("<H16sHH32s", 0, owner.encode("ascii"), rid, len(body), b"research") + body
+
+
+def copc_body(root_offset=100000, root_size=64, reserved=None):
+    if reserved is None:
+        reserved=[0]*11
+    return struct.pack("<5d2Q2d11Q",
+                       75000.0,80000.0,300.0,250.0,0.5,
+                       root_offset,root_size,100.0,200.0,*reserved)
 
 
 class LAZHeaderRangeTests(unittest.TestCase):
@@ -134,6 +146,56 @@ class LAZHeaderRangeTests(unittest.TestCase):
         pre=las_prefix_info(b[:110],member_size=1000000)
         with self.assertRaisesRegex(LAZHeaderError,"Unbounded"):
             complete_las_header(b[:110],b[110:],pre)
+
+
+    def vlr_report(self, body):
+        return inspect_public_vlrs(body,declared_count=1,
+            public_point_offset=375+len(body),
+            las_header_size=375,selected_laz_size=1000000)
+
+    def test_actual_copc_info_first_vlr_confirmed(self):
+        r=self.vlr_report(vlr("copc",1,copc_body()))
+        self.assertTrue(r["copc_info_vlr_verified"])
+        self.assertEqual(r["copc_root_hierarchy_metadata"]["copc_root_hierarchy_size_bytes"],64)
+        self.assertFalse(r["actual_point_cloud_class_values_read"])
+        self.assertFalse(r["source_horizontal_or_vertical_epsg_verified"])
+
+    def test_non_copc_las_not_mislabeled_as_copc(self):
+        r=self.vlr_report(vlr("laszip encoded",22204,b"\0"*46))
+        self.assertFalse(r["copc_info_vlr_verified"])
+        self.assertIsNone(r["copc_root_hierarchy_metadata"])
+
+    def test_copc_info_must_be_first_vlr(self):
+        raw=vlr("LASF_Projection",2112,b"\0"*10)+vlr("copc",1,copc_body())
+        with self.assertRaisesRegex(LAZHeaderError,"misplaced"):
+            inspect_public_vlrs(raw,declared_count=2,
+                public_point_offset=375+len(raw),las_header_size=375,
+                selected_laz_size=1000000)
+
+    def test_copc_reserved_words_zero_required(self):
+        bad=copc_body(reserved=[1]+[0]*10)
+        with self.assertRaisesRegex(LAZHeaderError,"reserved"):
+            self.vlr_report(vlr("copc",1,bad))
+
+    def test_copc_root_hierarchy_out_of_selected_source_blocks(self):
+        with self.assertRaisesRegex(LAZHeaderError,"hierarchy"):
+            self.vlr_report(vlr("copc",1,copc_body(root_offset=999990,root_size=64)))
+
+    def test_vlr_bytes_must_match_public_point_offset(self):
+        with self.assertRaisesRegex(LAZHeaderError,"Unbounded"):
+            inspect_public_vlrs(vlr("copc",1,copc_body()),
+                declared_count=1,public_point_offset=9999,
+                las_header_size=375,selected_laz_size=1000000)
+
+    def test_vlr_truncation_rejected(self):
+        data=vlr("copc",1,copc_body())[:-2]
+        with self.assertRaisesRegex(LAZHeaderError,"passes public"):
+            self.vlr_report(data)
+
+    def test_vlr_unknown_nonzero_padding_blocks(self):
+        data=vlr("laszip encoded",22204,b"\0"*46)+b"trailing"
+        with self.assertRaisesRegex(LAZHeaderError,"nonzero public"):
+            self.vlr_report(data)
 
     def test_no_source_point_positions_or_classes_in_results(self):
         b=las_header()
