@@ -66,9 +66,9 @@ def validate_current_state_source(
         raise ParcelAccessError("unreviewed source ObjectID field")
     fields = layer_metadata["fields"]
     if (type(fields) is not list or
+        any(type(f) is not str for f in fields) or
         len(fields) != len(set(fields)) or
-        set(fields) != {"OBJECTID", "CO_NO", "ASMNT_YR", "OWN_NAME"} or
-        any(type(f) is not str for f in fields)):
+        set(fields) != {"OBJECTID", "CO_NO", "ASMNT_YR", "OWN_NAME"}):
         raise ParcelAccessError("incomplete or unexpected source metadata field set")
     if type(count_only_reply) is not dict or set(count_only_reply) != {"count"}:
         raise ParcelAccessError("provider must return only an aggregate count")
