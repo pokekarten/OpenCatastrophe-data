@@ -48,3 +48,14 @@ The pinned, narrowly scoped GitHub Actions workflow runs the same diagnostic on 
 ## Remaining hard decision
 
 Use **multiple independently identified control points/footprints with verified Luxembourg geodetic coordinates** to confirm actual stored order, including both X/Y directions and projected control residuals. Freeze that decision in source review *before* creating real-area samples or transforming to EUBUCCO EPSG:3035. Next, review EUBUCCO v0.2 LU00 source lineage, licence, release date and per-building uncertainty; do not equate ACT's 2023 roof footprint count with the EUBUCCO building count. No insurer portfolio, building replacement cost, claims or policy identities are established by this check.
+
+## Executed original-provider result (2026-11-01)
+
+The fixed-authority, byte-pinned **real source workflow succeeded** for the ACT2023v2 ZIP on GitHub Actions run [41307590729](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41307590729). It exercised the archive validator, native GeoPackage metadata reader, and this *aggregate-only* projection challenge without exporting a single source record.
+
+- GeoPackage original aggregate extent EPSG:2169, rounded metres: **49,113 / 57,196 / 105,258 / 138,730**.
+- **As-stored X/Y** projected WGS84 envelope: **5.7357°E–6.5218°E; 49.4488°N–50.1821°N**. Inside the conservative buffered published Luxembourg area-of-use box.
+- **Swapped X/Y** projected WGS84 envelope: **5.8508°E–6.9852°E; 49.3740°N–49.8812°N**. Fails the same buffered area-of-use check, with eastern exceedance.
+- Diagnostic conclusion: `native_only_plausible`.
+
+This is strong **aggregate consistency evidence** for using the raw stored XY with `Transformer.from_crs(2169, 4326, always_xy=True)`. It is **not proof of individual feature coordinates**, 2D roof-vs-ground outline matching, nor a licence to automatically transform and join all polygons. Confirm independently located ACT survey control points or known site coordinates before setting `coordinate_order_verified=true`. Never use the swapped envelope to infer where a property, insured asset or individual building actually is.
