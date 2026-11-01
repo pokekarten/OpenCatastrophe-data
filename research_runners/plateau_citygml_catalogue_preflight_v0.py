@@ -255,11 +255,21 @@ def preflight_graphql_bytes(raw: bytes) -> dict[str, object]:
     if not isinstance(rows, list) or len(rows) != 1 or not isinstance(rows[0], dict):
         raise CataloguePreflightError("GraphQL query must return exactly one CityGML row")
     row = rows[0]
-    native_id = row.get("id")
+    # Keep this projection exactly in sync with the documented
+    # CityGMLDataset GraphQL type. Notably it has no fileSize field.
+    required_fields = {
+        "id", "cityCode", "prefectureCode", "year", "registrationYear",
+        "url", "compositeUrl", "featureTypes", "metadataZipUrls",
+    }
+    if set(row) != required_fields:
+        raise CataloguePreflightError("GraphQL CityGML selection is missing documented fields or includes unsupported fields")
+    native_id = row["id"]
     if not isinstance(native_id, str) or not native_id.strip() or len(native_id) > 160:
         raise CataloguePreflightError("GraphQL native dataset ID is missing")
-    if row.get("cityCode") != TARGET_CITY_CODE:
+    if row["cityCode"] != TARGET_CITY_CODE:
         raise CataloguePreflightError("GraphQL cityCode differs from the pinned municipality")
+    if row["prefectureCode"] != TARGET_CITY_CODE[:2]:
+        raise CataloguePreflightError("GraphQL prefectureCode differs from the pinned municipality")
     if _year(row.get("year"), "GraphQL year") != TARGET_YEAR:
         raise CataloguePreflightError("GraphQL fiscal year differs from pinned 2024")
     registered_year = _year(row.get("registrationYear"), "GraphQL registrationYear")
@@ -273,19 +283,21 @@ def preflight_graphql_bytes(raw: bytes) -> dict[str, object]:
         raise CataloguePreflightError("GraphQL original CMS URL must be HTTPS")
     if "-latest/" in urlsplit(row["url"]).path:
         raise CataloguePreflightError("GraphQL original URL must not be a latest alias")
-    fixed_composite = _fixed_composite_url(row.get("compositeUrl"), fiscal_year=TARGET_YEAR)
-    file_size = row.get("fileSize")
-    if file_size is not None and (
-        type(file_size) is not int or file_size <= 0 or file_size > 2**63 - 1
-    ):
-        raise CataloguePreflightError("GraphQL CMS fileSize must be a positive int64 or null")
+    fixed_composite = _fixed_composite_url(row["compositeUrl"], fiscal_year=TARGET_YEAR)
+    metadata_zips = row["metadataZipUrls"]
+    if not isinstance(metadata_zips, list) or len(metadata_zips) > 100:
+        raise CataloguePreflightError("GraphQL metadataZipUrls must be a bounded list")
+    for metadata_url in metadata_zips:
+        if not _https_url_or_null(metadata_url, "GraphQL metadataZipUrls item"):
+            raise CataloguePreflightError("GraphQL metadata zip URL must be HTTPS")
     return {
         "source_id": "jp.mlit.plateau.citygml.3d-city-models",
         "target_city_code": TARGET_CITY_CODE,
         "target_fiscal_year": TARGET_YEAR,
         "registration_year": registered_year,
         "bldg_advertised": True,
-        "cms_original_size_metadata_known": file_size is not None,
+        "cms_original_size_metadata_known": False,
+        "metadata_zip_link_count": len(metadata_zips),
         "fixed_year_composite_url_present": fixed_composite,
         "input_byte_count": len(raw),
         "input_sha256": hashlib.sha256(raw).hexdigest(),
