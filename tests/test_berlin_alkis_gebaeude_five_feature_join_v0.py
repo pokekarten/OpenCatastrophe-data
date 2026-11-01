@@ -23,7 +23,7 @@ HAS_SPATIAL = (
 
 def feature(*, x=391780, y=5820060, geometry_type="Polygon"):
     ring = [[x,y],[x+20,y],[x+20,y+20],[x,y+20],[x,y]]
-    return {"type":"Feature","id":"fictional",
+    return {"type":"Feature","id":f"fictional-{x}-{y}",
             "properties":{"fixture":"not a real building"},
             "geometry":{"type":geometry_type,"coordinates":[ring]}}
 
@@ -63,6 +63,8 @@ class StrictWfsConfigurationTests(unittest.TestCase):
     def test_exact_synthetic_building_polygon_and_injected_source(self):
         row, points = inspect_building_geojson(raw(fixture(n=2)))
         self.assertEqual(row["sampled_feature_count"], 2)
+        self.assertEqual(row["sampled_distinct_polygon_count"], 2)
+        self.assertTrue(row["sampled_duplicate_ids_or_geometries_rejected"])
         self.assertEqual(len(points), 2)
         self.assertGreater(points[0][0], 13.0)
         self.assertLess(points[0][0], 13.8)
@@ -100,6 +102,45 @@ class StrictWfsConfigurationTests(unittest.TestCase):
         bad["numberReturned"]=4
         with self.assertRaises(BerlinBuildingSampleError):
             inspect_building_geojson(raw(bad))
+
+    @unittest.skipUnless(HAS_SPATIAL,"Pinned Shapely/Pyproj needed")
+    def test_rejects_duplicate_ids_even_when_polygons_differ(self):
+        doc = fixture(n=2)
+        doc["features"][1]["id"] = doc["features"][0]["id"]
+        with self.assertRaisesRegex(BerlinBuildingSampleError, "duplicate WFS building feature ID"):
+            inspect_building_geojson(raw(doc))
+
+    @unittest.skipUnless(HAS_SPATIAL,"Pinned Shapely/Pyproj needed")
+    def test_rejects_geometrically_equal_polygons_even_with_distinct_ids(self):
+        doc = fixture(n=2)
+        doc["features"][1]["geometry"] = doc["features"][0]["geometry"]
+        with self.assertRaisesRegex(BerlinBuildingSampleError, "duplicate physical building footprint"):
+            inspect_building_geojson(raw(doc))
+
+        # Reordering ring vertices is also an identical footprint; byte-
+        # comparison cannot detect it but topological equality must.
+        doc = fixture(n=2)
+        coords = doc["features"][0]["geometry"]["coordinates"][0]
+        doc["features"][1]["geometry"]["coordinates"][0] = coords[2:-1] + coords[:3]
+        with self.assertRaisesRegex(BerlinBuildingSampleError, "duplicate physical building footprint"):
+            inspect_building_geojson(raw(doc))
+
+    @unittest.skipUnless(HAS_SPATIAL,"Pinned Shapely/Pyproj needed")
+    def test_rejects_malformed_optional_feature_id_without_guessing(self):
+        for bad_id in ("", "  ", True, [], {}):
+            with self.subTest(id=bad_id):
+                doc = fixture()
+                doc["features"][0]["id"] = bad_id
+                with self.assertRaisesRegex(BerlinBuildingSampleError, "invalid WFS building feature ID"):
+                    inspect_building_geojson(raw(doc))
+        # GeoJSON Feature.id is optional. Source-provided unique geometry
+        # remains the fallback; no ID or guessed building identity is output.
+        doc = fixture()
+        doc["features"][0].pop("id")
+        stats, points = inspect_building_geojson(raw(doc))
+        self.assertEqual(stats["sampled_distinct_polygon_count"], 1)
+        self.assertTrue(stats["sampled_duplicate_ids_or_geometries_rejected"])
+        self.assertEqual(len(points), 1)
 
     @unittest.skipUnless(HAS_SPATIAL,"Pinned Shapely/Pyproj needed")
     def test_malformed_polygon_and_unrelated_bbox_fail(self):
