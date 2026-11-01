@@ -72,7 +72,8 @@ def _date(value: str) -> date:
 
 
 def _rows(raw: bytes, expected_headers: tuple[str, ...], family: str = "unknown",
-          expected_source_records: int | None = None) -> tuple[list[dict], int]:
+          expected_source_records: int | None = None,
+          station_id: str = "00003") -> tuple[list[dict], int]:
     try:
         layout = _txt_layout(raw)
     except EquipmentBlocked as exc:
@@ -122,7 +123,7 @@ def _rows(raw: bytes, expected_headers: tuple[str, ...], family: str = "unknown"
         if len(fields) != len(expected_headers):
             raise InstrumentAuditBlocked("source positional field-count drift")
         row = dict(zip(expected_headers, (x.strip() for x in fields)))
-        if row["Stations_ID"].zfill(5) != evidence.EXPECTED_STATION_ID:
+        if row["Stations_ID"].zfill(5) != station_id:
             raise InstrumentAuditBlocked("DWD source row station identity differs")
         first = _date(row["Von_Datum"])
         last = _date(row["Bis_Datum"])
