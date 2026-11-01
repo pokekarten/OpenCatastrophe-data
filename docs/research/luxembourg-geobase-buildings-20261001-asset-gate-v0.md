@@ -83,3 +83,21 @@ pinned for follow-up work. Any source file or schema drift fails closed.
 asset-level refinement, **not a duplicate discovery candidate**. Rights
 approval, science, origin feature lineage, and CAT model admission require
 separate review. Do not add unapproved data to model inputs.
+
+## Actual official-source result (2026-11-01)
+
+The exact October 2026 ACT Buildings thematic ZIP was successfully retrieved and inspected read-only in [GitHub Actions run 41309562978](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41309562978). All synthetic safety tests passed.
+
+| Exact original evidence | Observed value |
+| --- | --- |
+| ZIP bytes | **39,209,946** |
+| Publisher catalogue MD5 | `f414154f993128a63f539aae2644c75a` (**matches**) |
+| Original ZIP SHA-256 | `6630f217b39edde5f20f1078bef8a3d6eb4a09337af48394975f45f208bcfed3` |
+| GeoPackage uncompressed bytes | **86,003,712** |
+| GeoPackage SHA-256 | `ec70bd1175b6f67b6dceaf8ab39e0433bc871e1099ff308c3eb8323127aa5676` |
+| Exact original GPKG layer | `Buildings_BU_Building` |
+| Feature rows | **230,353** |
+| Declared source CRS / geometry | **EPSG:2169 MULTIPOLYGON** |
+| Exact column names | `id`, `geom`, `BU_BuildingID`, `Source` |
+
+This gives a **fourth real original-data evidence layer** beside ACT2013 LoD1, EUBUCCO LU00 and ACT2023v2. The field `BU_BuildingID` is a candidate stable crosswalk handle and `Source` potentially contains lineage information; the actual contents, uniqueness, nullness, source codes and correspondence to ACT2023v2 `buildingid` remain **UNVERIFIED**. Different counts, 230,353 versus 238,189, cannot be called missing/added buildings without scientifically controlled segmentations and vintage. No original per-building rows were printed and no source objects were saved or admitted.
