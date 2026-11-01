@@ -88,6 +88,21 @@ class ArchiveReceiptTests(unittest.TestCase):
         with self.assertRaisesRegex(ArchiveReceiptError, "exact-name"):
             inspect_archive(other, self.meta)
 
+    def test_pinned_full_mirror_sha256_match(self):
+        self.meta["mirror_full_archive_sha256_verified_in_ci"] = hashlib.sha256(self.raw).hexdigest()
+        r = inspect_archive(self.path, self.meta)
+        self.assertTrue(r["pinned_mirror_sha256_matched"])
+
+    def test_pinned_full_mirror_sha256_mismatch_blocks(self):
+        self.meta["mirror_full_archive_sha256_verified_in_ci"] = "a" * 64
+        with self.assertRaisesRegex(ArchiveReceiptError, "differs from pinned"):
+            inspect_archive(self.path, self.meta)
+
+    def test_invalid_pinned_hash_blocks(self):
+        self.meta["mirror_full_archive_sha256_verified_in_ci"] = "fake-hex"
+        with self.assertRaisesRegex(ArchiveReceiptError, "invalid pinned"):
+            inspect_archive(self.path, self.meta)
+
     def test_provenance_descriptor_is_research_only(self):
         meta_path = ROOT / "landscape" / "fr_bdtopo_d077_2016_archive_candidate_v0.json"
         source = json.loads(meta_path.read_text(encoding="utf-8"))
@@ -95,7 +110,8 @@ class ArchiveReceiptTests(unittest.TestCase):
         self.assertEqual(source["archive_filename"], NAME)
         self.assertFalse(source["model_input_approved"])
         self.assertIsNone(source["original_sha256"])
-        self.assertFalse(source["full_archive_downloaded_or_original_bytes_hashed"])
+        self.assertTrue(source["full_archive_downloaded_or_original_bytes_hashed"])
+        self.assertEqual(source["mirror_full_archive_sha256_verified_in_ci"], "ab3e1bab127d0e71e372d736572d80e6a8a9578131992475c23a1f0ee1871a06")
 
 
 if __name__ == "__main__":
