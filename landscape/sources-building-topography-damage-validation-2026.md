@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-01`  
 **Purpose:** Non-admission discovery of source-specific high-resolution terrain, LiDAR and observed-versus-modelled building damage evidence for bounded catastrophe exposure and vulnerability validation. No external data bytes, model approval or redistribution rights are conferred.
 
-**Entries:** 4
+**Entries:** 6
 
 ## USGS 3DEP seamless 1-meter bare-earth digital elevation model (S1M)
 
@@ -77,3 +77,33 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** The project is documented as CC BY-NC-SA 4.0/noncommercial in dataset catalogues; exact xView2 provider terms and image/subset rights must be checked independently before any use, especially commercial CAT or model training. Labels describe visible damage rather than loss ratios or paid insurance claims; pre/post scenes, event overlap and geographic splits can leak between training and validation. This is research discovery only: do not download, redistribute, train or publish source imagery/labels under the current record.
+
+## 2018 NOAA NGS Emergency Response Imagery: Hurricane Michael
+
+**Candidate ID:** `noaa.ngs.hurricane-michael-2018-emergency-imagery`  
+**Provider:** NOAA National Geodetic Survey / Remote Sensing Division  
+**Categories:** `aerial_imagery`, `post_event_observation`, `building_damage`, `wind`, `united_states`  
+**Spatial scope:** Selected coastal and inland areas of the Florida Panhandle and adjacent southeast United States; published bounding extent is not an image-coverage mask  
+**Temporal scope:** Post-landfall image collection 2018-10-11 to 2018-10-14, with individual flight/scene timestamps requiring retrieval and verification  
+**Resolution / granularity:** 9,580 aerial images across approximately 10,756 square kilometres; approximate 15-30 cm image sample spacing and location accuracy not independently certified  
+**Potential roles:** `independent_imagery_source_candidate`, `fema_remote_sensing_label_challenge`, `event_timing_and_coverage_review`  
+**Access hint:** `noaa_public_emergency_imagery_browse_and_selective_download_exact_tile_rights_review`  
+**Authoritative source:** <https://www.fisheries.noaa.gov/inport/item/57759>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** NOAA provider metadata reports no access restriction, warns against critical-use and legal-use reliance, documents partial coverage, clouds and estimated positional accuracy; exact derivative/commercial scope and attribution for a selected image still need review. Source NOAA photographs are direct event observations, but FEMA RS annotations might have USED NOAA imagery: audit image/label lineage before claiming an independent visual test. Record original scene ID/time/footprint, flight mission, ortho/oblique geometry and source byte identity. A photo alone is NOT a verified building-loss label or financially insured loss.
+
+## Florida DEP Hurricane Michael field-assessed coastal structural damage report (2019)
+
+**Candidate ID:** `florida.dep.hurricane-michael-2018-coastal-structural-damage`  
+**Provider:** Florida Department of Environmental Protection, Coastal Engineering and Geology  
+**Categories:** `field_assessment`, `observed_structural_damage`, `coastal_buildings`, `wind`, `storm_surge`, `united_states`  
+**Spatial scope:** Northwest Florida coastal building zone, specifically selected surveyed coastlines in Bay, Gulf, Franklin and Wakulla counties; not an inland or complete statewide census  
+**Temporal scope:** Field surveys immediately after 2018-10-10 landfall; final report and revisions published 2019  
+**Resolution / granularity:** Expert-compiled report, field observations, photos and area/type summary counts; no independently verified openly downloadable building-level machine table confirmed  
+**Potential roles:** `independent_field_damage_report_candidate`, `coastal_damage_definition_comparison`, `external_validation_scope_limit`  
+**Access hint:** `public_government_report_pdf_and_photos_no_machine_readable_microdata_admission`  
+**Authoritative source:** <https://floridadep.gov/rcp/coastal-engineering-geology/documents/hurricane-michael-post-storm-beach-conditions-and-coastal>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Florida DEP explicitly documents damage-assessment team field observations in Bay, Gulf, Franklin and Wakulla counties, with NOAA imagery also used. The report concerns coastal structures and erosion, not all FEMA DR-4399 structures or purely wind damage: surge, wave and erosion mechanisms must be disentangled. Its report totals and methods could offer a bounded independent challenge only after geography, damage definitions, survey selection, lineage and precise reuse rights are verified. Do NOT divide FEMA RS point counts by coastal field survey totals, infer parcel-level matches, claim an independent label at every location, or redistribute report imagery as unrestricted model training data.
