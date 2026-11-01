@@ -23,7 +23,7 @@ MAX_BYTES = 120000
 
 # EIOPA research *observations* read from insurance-risk-core/main on 2026-11-01.
 # No new legal entity or EIOPA original-byte assertion is created from this map.
-EI0PA_LEI_CASES = {
+EIOPA_LEI_CASES = {
     "259400VDTC20UW6M5D80": ("LV", '"Baltijas Apdrošināšanas Nams" apdrošināšanas akciju sabiedrība', "049"),
     "63670018BQ5R7IKA8T76": ("DK", '"danmark" Erhverv, Skadesforsikringsaktieselskab', "53118"),
     "213800AEQ6JQDLCWQN31": ("ES", "A.M.A., AGRUPACIÓN MUTUAL ASEGURADORA, MUTUA DE SEGUROS A PRIMA FIJA", "M0328"),
@@ -52,7 +52,7 @@ def reject_constant(value):
 
 
 def inspect_gleif_bytes(blob: bytes, lei: str) -> dict:
-    if lei not in EI0PA_LEI_CASES or not valid_lei(lei):
+    if lei not in EIOPA_LEI_CASES or not valid_lei(lei):
         raise IdentityReceiptError("unexpected EIOPA LEI")
     if type(blob) is not bytes or not 0 < len(blob) <= MAX_BYTES:
         raise IdentityReceiptError("GLEIF bytes empty, wrong type or too large")
@@ -71,7 +71,7 @@ def inspect_gleif_bytes(blob: bytes, lei: str) -> dict:
     entity, reg = attr.get("entity"), attr.get("registration")
     if type(entity) is not dict or type(reg) is not dict:
         raise IdentityReceiptError("missing GLEIF legal entity fields")
-    expected_country, expected_name, expected_local = EI0PA_LEI_CASES[lei]
+    expected_country, expected_name, expected_local = EIOPA_LEI_CASES[lei]
     address = entity.get("legalAddress")
     legal_name = entity.get("legalName")
     if type(address) is not dict or type(legal_name) is not dict:
@@ -118,7 +118,7 @@ def inspect_gleif_bytes(blob: bytes, lei: str) -> dict:
 
 
 def fetch_live(lei: str) -> bytes:
-    if lei not in EI0PA_LEI_CASES:
+    if lei not in EIOPA_LEI_CASES:
         raise IdentityReceiptError("only pinned public EIOPA LEIs may be fetched")
     url = API + lei
     time.sleep(0.3)
@@ -137,7 +137,7 @@ def fetch_live(lei: str) -> bytes:
 
 def audit(read_bytes) -> dict:
     receipts = []
-    for lei in sorted(EI0PA_LEI_CASES):
+    for lei in sorted(EIOPA_LEI_CASES):
         receipts.append(inspect_gleif_bytes(read_bytes(lei), lei))
     if len(receipts) != 7 or len({r["lei"] for r in receipts}) != 7:
         raise IdentityReceiptError("incomplete fixed GLEIF identity batch")
