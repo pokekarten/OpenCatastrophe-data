@@ -37,14 +37,12 @@ class OriginalSameACTGeometryTests(unittest.TestCase):
               patch.object(mod, "GEOBASE_GPKG_SHA", h2),
               patch.object(mod, "ACT_COUNT", 3),
               patch.object(mod, "GEOBASE_COUNT", 3)):
-            return mod.research(
-                self.a, self.b, lon=self.lon, lat=self.lat,
-                halfwidth=30, max_features=5,
-                act_sha=h1, geobase_sha=h2,
-                act_layer="buildings", geobase_layer="buildings",
-                act_id="building_ref", geobase_id="building_ref",
-                **kwargs,
-            )
+            options = dict(lon=self.lon, lat=self.lat, halfwidth=30,
+                           max_features=5, act_sha=h1, geobase_sha=h2,
+                           act_layer="buildings", geobase_layer="buildings",
+                           act_id="building_ref", geobase_id="building_ref")
+            options.update(kwargs)
+            return mod.research(self.a, self.b, **options)
 
     def test_identical_geom_candidate_is_not_a_validated_building_identity(self):
         r = self.probe()
