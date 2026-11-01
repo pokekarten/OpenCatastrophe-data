@@ -17,7 +17,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PATH = ROOT / "docs/research/berlin-srhk-original-tiff-header-receipts-20261101.json"
+PATH = ROOT / "docs/research/berlin-srhk-original-tiff-header-receipts-20261101.jsonl"
 PREFIX_HASHES = {
     "extreme": "9b86b039e4c0915b76f4ea64bc13c201f43483a2585dcdd8f6650d6e1a70579f",
     "extraordinary": "ba22dae2169f3ffab268f9411099e98c5fc3a15cfd8094d6b486b6e9a0c32149",
