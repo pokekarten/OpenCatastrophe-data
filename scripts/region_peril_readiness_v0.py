@@ -23,9 +23,9 @@ SCOPE_KEYS = {"country_iso3", "admin_system", "admin_level",
               "admin_id", "boundary_year", "peril"}
 RECEIPT_KEYS = {"role", "source_id", "source_sha256",
                 "region_key", "peril", "evidence_level"}
-HEX256 = re.compile(r"[0-9a-f]{64}\\Z")
-IDENTITY = re.compile(r"[A-Za-z0-9][A-Za-z0-9:._-]{0,80}\\Z")
-PERIL = re.compile(r"[a-z][a-z0-9_]{1,50}\\Z")
+HEX256 = re.compile(r"[0-9a-f]{64}\Z")
+IDENTITY = re.compile(r"[A-Za-z0-9][A-Za-z0-9:._-]{0,80}\Z")
+PERIL = re.compile(r"[a-z][a-z0-9_]{1,50}\Z")
 
 
 class RegionPerilError(ValueError):
