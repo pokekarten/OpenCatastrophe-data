@@ -180,9 +180,12 @@ def tiff_sample_coding(header: bytes) -> dict[str, int]:
             "sample_format": sample_format, "planar": planar}
 
 
-def decode_original_block(raw: bytes, *, predictor: int) -> dict:
+def decode_original_block(raw: bytes, *, predictor: int,
+                          expected_compressed_bytes: int = BLOCK_RANGE[1]-BLOCK_RANGE[0]+1) -> dict:
     """Bounded DEFLATE decompress plus optional TIFF horizontal predictor undo."""
-    if type(raw) is not bytes or len(raw) != BLOCK_RANGE[1]-BLOCK_RANGE[0]+1:
+    if (type(raw) is not bytes or type(expected_compressed_bytes) is not int
+            or not 0 < expected_compressed_bytes <= 65536
+            or len(raw) != expected_compressed_bytes):
         raise PixelBlockBlocked("wrong compressed source block identity or length")
     if predictor not in (1, 2):
         raise PixelBlockBlocked("unexpected TIFF predictor")
