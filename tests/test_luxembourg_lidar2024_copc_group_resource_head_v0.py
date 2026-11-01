@@ -51,7 +51,7 @@ class COPCGroupTests(unittest.TestCase):
     def setUp(self):
         self.o=FakeOpener()
         for name,(rid,slug) in RESOURCES.items():
-            url="https://download.data.public.lu/resources/lidar-2024/"+slug.lower()+".zip"
+            url="https://download.data.public.lu/resources/lidar-2024/"+slug.replace("_","-").lower()+".zip"
             self.o.records[rid]={"id":rid,"url":url,"size":1700000000,
                                  "checksum":{"type":"sha1","value":"a"*40}}
             self.o.headers[url]={"Content-Length":"1700000000"}
