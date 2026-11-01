@@ -18,20 +18,20 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Entries:** 3
 
-## UCAD global architectural and construction-material typologies v3
+## UCAD global architectural and construction-material typologies v5
 
-**Candidate ID:** `cnrm.ucad.architectural-typologies.v3`  
+**Candidate ID:** `cnrm.ucad.architectural-typologies.v5`  
 **Provider:** CNRM / Météo-France / CNRS and UCAD collaborators  
 **Categories:** `buildings`, `construction_materials`, `building_typologies`, `vulnerability_covariates`  
 **Spatial scope:** Country-level residential architectural archetypes worldwide; generic non-residential typologies  
-**Temporal scope:** Zenodo v3 publication 2025-07-23; original surveys and imputed attributes span nonuniform vintages  
+**Temporal scope:** Zenodo v5 published 2026-09-09, correcting mid-rise Norway wall material compared with earlier releases; heterogeneous original survey vintages  
 **Resolution / granularity:** Residential typology CSV tables and GeoPackage, global non-residential CSV, survey methodology and imputation/correction evidence; wall, roof, window, HVAC and infiltration attributes  
 **Potential roles:** `construction_material_prior`, `fragility_typology_research`, `building_attribute_imputation_challenge`  
 **Access hint:** `public_versioned_zenodo_csv_gpkg_download_cc_by_4_0_record_file_rights_recheck`  
-**Authoritative source:** <https://zenodo.org/records/16375288>  
+**Authoritative source:** <https://zenodo.org/records/22674166>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Publisher Zenodo record declares CC BY 4.0, but confirm exact asset scope and citation in admission review. Typology-level country distributions and imputed architecture are NOT a verified material field of an individual EUBUCCO/Overture building. Join by country, occupancy, survey/typology class only as an explicitly uncertain prior, preserving source/imputation flags and avoiding false parcel-level certainty.
+**Note:** Publisher Zenodo v5 record (DOI 10.5281/zenodo.22674166) declares CC BY 4.0; exact file scope and attribution still require source-specific rights admission. v5 explicitly corrects Norway mid-rise wall material compared with previous versions, so v3 must not be silently combined with v5. Country/typology-level surveys and imputed attributes are NOT verified material facts for individual EUBUCCO/Overture footprints; preserve survey/imputation flags and source versions when deriving uncertain vulnerability priors.
 
 ## METEOR Level 1 modelled exposure and Oasis OED sample files
 
