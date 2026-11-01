@@ -96,6 +96,42 @@ class CompletenessAndMatchingTests(unittest.TestCase):
         self.assertNotIn("unreviewed provider role",str(report))
 
     @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
+    def test_role_vocabulary_hypotheses_never_reclassify_unknown_source_roles(self):
+        a,h=pair()
+        h["features"][0]["properties"]["role_txt"]="Building"
+        h["features"][1]["properties"]["role_txt"]="BuildingPart"
+        h["features"][2]["properties"]["role_txt"]="UNKNOWN-PRIVATE@example.org / 123"
+        result=evaluate(raw(a),raw(h))
+        self.assertEqual(result["matched_height_source_role_counts"]["unknown"],3)
+        self.assertTrue(result["role_domain_candidate_terms_not_provider_approved"])
+        vocab=result["height_role_literal_domain_probe_counts"]
+        self.assertEqual(vocab["all_height_features"]["citygml_building_literal_hypothesis"],1)
+        self.assertEqual(vocab["all_height_features"]["citygml_buildingpart_literal_hypothesis"],1)
+        self.assertEqual(vocab["all_height_features"]["unrecognized_not_echoed"],1)
+        self.assertEqual(vocab["uniquely_matched_height_features"]["unrecognized_not_echoed"],1)
+        self.assertFalse(result["model_input_admitted"])
+        self.assertEqual(result["matched_source_height_admitted_to_insurer_exposure"],0)
+        self.assertNotIn("UNKNOWN-PRIVATE",str(result))
+        self.assertNotIn("example.org",str(result))
+        self.assertNotIn("BuildingPart",str(result))
+
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
+    def test_duplicate_quarantine_role_domain_count_never_enters_matched_subset(self):
+        a,h=pair()
+        h["features"][1]["geometry"]=copy.deepcopy(h["features"][0]["geometry"])
+        h["features"][1]["properties"]["role_txt"]="BuildingPart"
+        result=evaluate(raw(a),raw(h))
+        domains=result["height_role_literal_domain_probe_counts"]
+        self.assertEqual(result["unambiguous_one_to_one_footprints"],1)
+        self.assertEqual(domains["duplicate_footprint_quarantined_height_features"]["citygml_buildingpart_literal_hypothesis"],1)
+        self.assertEqual(sum(domains["uniquely_matched_height_features"].values()),1)
+        self.assertEqual(sum(domains["all_height_features"].values()),3)
+        self.assertEqual(result["matched_height_source_role_counts"],{
+            "Gebäude":0,"Bauteil":1,"unknown":0
+        })
+        self.assertFalse(result["model_input_admitted"])
+
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
     def test_missing_or_unbounded_source_population_refused(self):
         a,h=pair()
         h["numberMatched"]=4

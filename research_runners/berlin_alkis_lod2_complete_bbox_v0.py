@@ -51,6 +51,32 @@ CRS=frozenset(("EPSG:25833","urn:ogc:def:crs:EPSG::25833",
                "urn:ogc:def:crs:EPSG:6.9:25833"))
 
 
+# Candidate-only vocabulary: exact generic schema-class spellings, never
+# a provider-approved translation and never production exposure labels.
+# Do not echo arbitrary attribute strings (which may contain personal data).
+_ROLE_DOMAIN_HINTS = {
+    "gebäude":"publisher_german_gebaeude_literal",
+    "bauteil":"publisher_german_bauteil_literal",
+    "building":"citygml_building_literal_hypothesis",
+    "buildingpart":"citygml_buildingpart_literal_hypothesis",
+    "gebäudeteil":"german_gebaeudeteil_literal_hypothesis",
+}
+_ROLE_DOMAIN_OTHER = "unrecognized_not_echoed"
+
+
+def _role_domain_counts(source_properties:list[dict])->dict[str,int]:
+    """Safe aggregated vocabulary observations, not semantic approvals."""
+    groups = {name:0 for name in _ROLE_DOMAIN_HINTS.values()}
+    groups[_ROLE_DOMAIN_OTHER]=0
+    for record in source_properties:
+        role=record.get("role_txt")
+        # Unknown values, including malicious personal/data-bearing strings,
+        # are counted WITHOUT logging, hashing or serializing source text.
+        key=role.strip().casefold() if type(role) is str else ""
+        groups[_ROLE_DOMAIN_HINTS.get(key,_ROLE_DOMAIN_OTHER)]+=1
+    return groups
+
+
 class CompleteBboxError(ValueError):
     """Source count/geometry mismatch: cannot claim complete matched set."""
 
@@ -218,6 +244,17 @@ def evaluate(alkis_raw:bytes, height_raw:bytes)->dict:
                     matched_building_role_positive_not_3m+=1
 
     return {
+        "height_role_literal_domain_probe_counts":{
+            "all_height_features":_role_domain_counts(hp),
+            "uniquely_matched_height_features":_role_domain_counts(
+                [hp[j] for _,j in pairs]
+            ),
+            "duplicate_footprint_quarantined_height_features":_role_domain_counts(
+                [hp[j] for j in sorted(h_quarantine)]
+            ),
+        },
+        "role_domain_candidate_terms_not_provider_approved":True,
+        "unknown_role_terms_remain_unadmitted":True,
         "matched_height_source_role_counts":matched_roles,
         "matched_positive_numeric_height_count":matched_height_positive,
         "matched_exact_3m_possible_placeholder_count":matched_height_possible_3m,
