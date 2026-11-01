@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: EUBUCCO v0.2 original input metadata Luxembourg source audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'research_runners/eubucco_lu_original_metadata_xlsx_v0.py'
+      - 'tests/test_eubucco_lu_original_metadata_xlsx_v0.py'
+      - '.github/workflows/eubucco-lu-source-metadata-original.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  original-eubucco-source-metadata:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout immutable reviewed action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Offline synthetic source-metadata XML regression tests
+        run: python -m unittest tests.test_eubucco_lu_original_metadata_xlsx_v0 -v
+      - name: Bounded official v0.2 input-datasets-metadata.xlsx source-lineage audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          original="$RUNNER_TEMP/eubucco-v02-input-datasets-metadata.xlsx"
+          trap 'rm -f "$original"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 15 --max-time 90 --retry 0 \
+            --max-filesize 5242880 --output "$original" \
+            'https://s3.eubucco.com/eubucco/v0.2/additional/input-datasets-metadata.xlsx'
+          python -m research_runners.eubucco_lu_original_metadata_xlsx_v0 \
+            --original-xlsx "$original"
+          # Emits only publisher source-metadata rows that mention Luxembourg.
+          # Does NOT upload original workbook, individual buildings or extracted data.
