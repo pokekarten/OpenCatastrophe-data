@@ -61,7 +61,10 @@ def _decimal(value: str, lo: str, hi: str, field: str) -> Decimal:
 
 
 def _parse_geography(raw: bytes) -> list[tuple[date, date, tuple[Decimal, Decimal, Decimal]]]:
-    shape = _table_shape(raw)
+    try:
+        shape = _table_shape(raw)
+    except MetadataShapeBlocked as exc:
+        raise GeographyBlocked("original geography member size or encoding invalid") from exc
     if (not shape["header_recognized"]
             or shape["shape_status"] != "syntactically_consistent_unreviewed_columns"
             or shape["delimiter"] != "semicolon"
