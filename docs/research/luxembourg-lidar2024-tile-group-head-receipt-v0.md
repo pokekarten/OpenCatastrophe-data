@@ -40,7 +40,7 @@ provider resource patterns:
   public, explicitly scoped original group ZIP.
 
 Only for these reviewed patterns, the optional network step performs
-**one HEAD request per distinct group URL**, without following redirects
+**one HEAD request per distinct group URL**, with at most one separately allowlisted, HEAD-only provider redirect
 and without reading any HTTP response body or ZIP/LAZ bytes.
 
 Outputs are only: source-index prior SHA, number of spatial candidate rows,
@@ -62,9 +62,9 @@ and prior observed SHA-256
 
 `.github/workflows/luxembourg-lidar2024-tile-head-preflight.yml`
 is triggered on PR paths or manual dispatch. Uses source-exact HTTPS
-index retrieval, pinned PyProj 3.7.2, eight isolated synthetic tests,
+index retrieval, pinned PyProj 3.7.2, eleven isolated synthetic tests,
 read-only GitHub permissions and HEAD-only tightly scoped official
-resource metadata requests, with a short timeout and no redirect
+resource metadata requests (at most one verified provider redirect), with a short timeout and no redirect
 following. No original provider tile/point-cloud data are downloaded,
 committed, uploaded to artifacts or loaded into Neon.
 
