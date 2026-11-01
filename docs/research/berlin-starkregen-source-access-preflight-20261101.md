@@ -249,3 +249,50 @@ before any original-byte or raster-window acquisition. The hazards
 are simulation **scenarios**, not claims, observed events or a
 stochastic catalogue. No source zip contents, pixel depth/NoData,
 real building intersection, or synthetic-to-real admission is proven.
+
+
+## Original official Atom child receipt — 2026-11-01
+
+The single fixed official source-child metadata GET succeeded in
+[Actions run 41329862158](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41329862158)
+on main commit \`c21c81e9e6a062468924c2e472f2d0f5f23e8206\`.
+Response UTC: \`2026-11-01T17:08:21.600038+00:00\`.
+Full original **3,527 XML bytes**, SHA-256
+\`51a58076f8880e407888c5de75d087037a3db0e99e2526421266c5014c474e37\`.
+Execution code SHA-256
+\`318a76a6aee0a3e74270e4e8a800ddeaf0d019b63d7c9b703190594929a191d7\`.
+
+Exact five expected URL/role pairs passed, with two water depth,
+two flow speed and separate vulnerability ZIP links. The original
+Atom category/title explicitly declared EPSG:25833; the reviewed
+2025 technical PDF declares EPSG:25832 for its original analysis
+GeoTIFFs, so the **true original pixel CRS remains unverified**.
+The original Atom links were labelled image/tiff but pointed to ZIP
+objects; source MIME is not yet proven. No ZIP content was requested,
+no model inputs were admitted, and no production database modified.
+
+## Exact source ZIP HEAD preflight (metadata only)
+
+The next reviewed source operation checks **only two exact HTTPS HEAD
+requests** at the original same-host Atom prefix:
+
+- \`wasserstand_extrem2022.zip\` — extreme scenario water-depth ZIP.
+- \`wasserstand_aussergewoehnliches_ereignis2022.zip\` —
+  extraordinary scenario water-depth ZIP.
+
+\`research_runners/berlin_srhk_water_depth_zip_head_v0.py\`
+uses immutable exact URLs, a 40s timeout, no redirects/proxy,
+one request per source, no GET/body read, explicit identity encoding,
+a declared content-length cap of **20 GiB**, and a narrow set of
+ZIP/binary HTTP content types. It records only claimed size, binary
+media, last-modified date, whether ETag is present, and whether
+Accept-Ranges: bytes is *advertised*. It cannot verify a byte-range
+GET, full-object SHA, ZIP magic, internal tiled GeoTIFF metadata,
+depth units, NoData, CRS, product vintage or source-rights admission.
+Any failed/redirected/missing-Length HEAD remains a **source access
+blocker**, never interpreted as zero flood risk.
+
+The isolated workflow \`.github/workflows/berlin-srhk-depth-zip-head.yml\`
+runs its synthetic HTTP tests on PR, and real HEAD requests only
+after a reviewed workflow revision lands on main. Original outcome:
+**pending the first exact main workflow run**.
