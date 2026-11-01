@@ -48,6 +48,9 @@ class WfsHitsTests(unittest.TestCase):
             b'<ows:ExceptionReport xmlns:ows="http://www.opengis.net/ows"/>',
             b"",b"x"*(MAX_BYTES+1),
             hits("3").replace(b'/>',b'><wfs:member/></wfs:FeatureCollection>'),
+            hits("3").replace(b' numberReturned="0"',b''),
+            hits("3").replace(b'/>',b'><gml:Polygon xmlns:gml="http://www.opengis.net/gml/3.2"/></wfs:FeatureCollection>'),
+            hits("3").replace(b'/>',b'>private source attribute text</wfs:FeatureCollection>'),
         ):
             with self.subTest(payload=raw[:60]),self.assertRaises(WfsCountError):
                 parse_hits(raw)
