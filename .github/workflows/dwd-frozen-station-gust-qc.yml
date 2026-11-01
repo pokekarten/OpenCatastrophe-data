@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Frozen DWD station 00003 gust original-byte research QC
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/dwd_frozen_gust_qc_v0.py'
+      - 'tests/test_dwd_frozen_gust_qc_v0.py'
+      - '.github/workflows/dwd-frozen-station-gust-qc.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-source-qc-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Synthetic ZIP safety, QN/sentinel and original-time-window tests
+        run: python -m unittest tests.test_dwd_frozen_gust_qc_v0 -v
+
+  exact-provider-original-research:
+    needs: synthetic-source-qc-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Research only - acquire one bounded exact DWD historical ZIP in private temp
+        # If DWD publishes an annually revised source, SHA drift must be
+        # reviewed; do not silently promote altered bytes to CAT model input.
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          source_file="$RUNNER_TEMP/dwd-frozen-00003-20100101-20110331.zip"
+          trap 'rm -f "$source_file"' EXIT
+          curl --fail --silent --show-error --noproxy '*' \
+            --proto '=https' --connect-timeout 20 --max-time 100 --retry 0 \
+            --max-filesize 52428800 --output "$source_file" \
+            'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/extreme_wind/historical/10minutenwerte_extrema_wind_00003_20100101_20110331_hist.zip'
+          python -m scripts.dwd_frozen_gust_qc_v0 --source-zip "$source_file"
+          # Only aggregate receipt goes to workflow logs; no raw source artifacts.
