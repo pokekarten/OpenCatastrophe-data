@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Insurance and catastrophe-source research import — 2026-11-01
 
 **Scope:** Separate CAT-only Neon project `insurance-risk-core`, database `insurance`, default branch `main`. This is a research inventory, **not** certified CAT model input.
