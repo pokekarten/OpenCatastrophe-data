@@ -38,6 +38,8 @@ MAX_ELEMENTS = 30_000
 TIMEOUT_SECONDS = 45
 WFS_NS = "http://www.opengis.net/wfs/2.0"
 GML_NS = "http://www.opengis.net/gml/3.2"
+# INSPIRE Buildings Core 2D v4.0: compare expanded XML QName, not local name.
+BUILDING_NS = "http://inspire.ec.europa.eu/schemas/bu-core2d/4.0"
 REQUESTED_CRS = "urn:ogc:def:crs:EPSG::4258"
 SOURCE_CAPABILITIES_SAMPLE_SHA256 = (
     "abb7ae137eca6ffe31682b41751a258cd09e84a7445a686ca033c500cf76f2bf"
@@ -97,8 +99,8 @@ def inspect_feature_xml(raw: bytes, *, diagnostic_only: bool = False) -> dict:
     for member in members:
         if len(member) != 1:
             raise BuildingFeatureBlocked("WFS building member missing exactly one feature")
-        tag = member[0].tag
-        if not (tag == "Building" or tag.endswith("}Building")):
+        # A different XML namespace with local name Building is not this WFS layer.
+        if member[0].tag != f"{{{BUILDING_NS}}}Building":
             raise BuildingFeatureBlocked("WFS returned unexpected non-Building feature type")
     reported_returned = _positive_count(root.get("numberReturned"), "numberReturned")
     reported_matched = _positive_count(root.get("numberMatched"), "numberMatched")
