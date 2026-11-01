@@ -90,3 +90,49 @@ part, test building heights/vintages and maintain an explicit
 uncertainty label for measured vs derived attributes. Inferred floors
 multiplied by footprint are *not observed gross floor area* and
 are not automatically insured values.
+
+## First official live XSD plus original five-feature evidence — 2026-11-01
+
+First-party GitHub Actions run:
+https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41322277959,
+merged commit `c3ddc55bd76de28e69f82b4a755b8420c2dcef29`.
+
+The official `DescribeFeatureType` succeeded: **7,439 XML bytes**, SHA-256
+`2098ab329b36369587c76c436da6d53d28a14724795a1310987bc3bd2683cdc7`;
+**27** named XSD elements. All **13** source-documented allowlisted
+fields are declared. The fixed five-feature original `GetFeature`
+also succeeded: **5,412 bytes**, SHA-256
+`225e90a0e1a583fcc38a5ccdf0502614107409359c028bfa6376ec642163e399`,
+UTC `2026-11-01T15:39:04.182805+00:00`.
+Five validated polygon features total **1,344.0 m²** footprint area.
+
+**Observed original attributes, counts of nonempty scalar values out
+of the five returned provider features:**
+
+| Field | Official meaning | Populated / 5 |
+| --- | --- | ---: |
+| `aog` | Upper storeys | **3** |
+| `bat` | Construction type code | **5** |
+| `bezbat` | Construction type description | **5** |
+| `aug` | Basement storeys | **0** |
+| `gfk`, `bezgfk` | Building use code/description | **0 / 0** |
+| `baw`, `bezbaw` | Building arrangement | **0 / 0** |
+| `zus`, `bezzus` | Building condition | **0 / 0** |
+| `hoh` | High-rise indicator | **0** |
+| `ofl`, `bezofl` | Ground position | **0 / 0** |
+
+All these fields are technically **present on all five feature
+objects**, but many contain null or empty values. The separate
+`bja`, `hoehe`, `role_txt`, `dachart`, `geschosse` research
+candidates are **absent on all five original ALKIS features and
+absent from its XSD**. This is evidence of namespace separation,
+**not** proof that age/height are unknown in another Berlin source.
+No original field values, addresses, feature identifiers, or original
+geometry were published. No persistent CAT database was changed.
+
+A sample of five is small and geographically concentrated, not
+representative of all Berlin. Its missing-value pattern should
+guide **separate source enrichment**, not a region-wide missingness
+estimate or automatic imputation. In particular `bat` is a published
+construction-type classification and not automatically a defensible
+building material or vulnerability-class assignment.
