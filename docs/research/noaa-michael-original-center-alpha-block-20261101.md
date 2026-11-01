@@ -61,6 +61,10 @@ The HTML display is **incompatible** with these same source header bytes even af
 
 `research_runners/noaa_michael_tiff_header_v0.py` now reports the **minimum byte extent derived from its source IFD**, and `compare_provider_directory_size()` challenges a rounded directory MB claim against that lower bound. Its report explicitly leaves HTTP Content-Length and full-file identity **unverified**, even if a directory-size comparison happens to pass.
 
+## Subsequent relevant-block alpha exclusion
+
+Additional byte-range checks now selected the **original source raster blocks containing actual positive FEMA aggregate counts**, not just the earlier demonstration blocks in the center and upper/right edge. Four complete source Deflate streams at block indices **305,306,325,326** are byte-for-byte identical to the previously verified 1,039-byte all-zero reference compressed stream. The original WGS84 polygon-only FEMA counts across these four blocks total **5** of the correctly reconciled parent **7**. The other **2** are in blocks **324** and **344** with unresolved alpha; these are **not** asserted visible. See `docs/research/noaa-fema-michael-seven-count-alpha-negative-blocks-20261101.md` for exact source HTTP byte ranges, the 12-block aggregate partition and strict science/no-admission limits. The original observed full-file size, `ETag` and SHA-256 remain unknown.
+
 ## Reproducible scientific gate
 
 `research_runners/noaa_michael_alpha_tile_probe_v0.py` accepts **caller-supplied**, strictly bounded *original* TIFF first-4KiB metadata plus exactly one compressed tile. It validates the underlying TIFF/STAC metadata, original block offset and byte-count fields, bounded Deflate decoding (maximum 1,048,576 bytes), and the fully zero **RGBA** result. It produces a block-specific SHA-256 and transparent-pixel count **only** for a fully all-zero block. It does not infer positive visible-alpha coverage from arbitrary nonzero DEFLATE output because TIFF predictor interpretation is not yet reviewed. Tests use regenerated **synthetic** TIFF/Deflate data and malicious/truncated blocks, never committed copyrighted original image bytes.
