@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-name: Luxembourg paired original ACT2023 GeoBase2026 LiDAR2024 pixel cohort
+name: Luxembourg city and Berdorf paired ACT2023 GeoBase2026 LiDAR2024 cohort
 
 on:
   pull_request:
@@ -74,7 +74,13 @@ jobs:
               if observed!=expected:
                   raise SystemExit("BLOCKED: provider source SHA drift")
           PY
+          # Retain exact existing Luxembourg-city baseline and require the
+          # independently predeclared Berdorf church village sample as holdout.
           python -m research_runners.luxembourg_act_geobase_lidar2024_paired_pixel_cohort_v0 \
-            --act2023-gpkg "$ACT_GPKG" --geobase2026-gpkg "$GEO_GPKG"
+            --act2023-gpkg "$ACT_GPKG" --geobase2026-gpkg "$GEO_GPKG" \
+            --site luxembourg-city
+          python -m research_runners.luxembourg_act_geobase_lidar2024_paired_pixel_cohort_v0 \
+            --act2023-gpkg "$ACT_GPKG" --geobase2026-gpkg "$GEO_GPKG" \
+            --site berdorf-village
           # No source original ZIP/GPKG, raw COG pixels, per-building values,
           # coordinates or matched original IDs are saved or uploaded as artifacts.
