@@ -226,6 +226,12 @@ def preflight_bytes(raw: bytes) -> dict[str, object]:
 
 
 GRAPHQL_MAX_INPUT_BYTES = 64 * 1024
+# Exact documented selection from the provider's CityGMLDataset GraphQL type.
+# Keep in sync with the non-executable access contract; there is no fileSize.
+GRAPHQL_CITYGML_FIELD_NAMES = (
+    "id", "cityCode", "prefectureCode", "year", "registrationYear",
+    "url", "compositeUrl", "featureTypes", "metadataZipUrls",
+)
 
 
 def preflight_graphql_bytes(raw: bytes) -> dict[str, object]:
@@ -257,10 +263,7 @@ def preflight_graphql_bytes(raw: bytes) -> dict[str, object]:
     row = rows[0]
     # Keep this projection exactly in sync with the documented
     # CityGMLDataset GraphQL type. Notably it has no fileSize field.
-    required_fields = {
-        "id", "cityCode", "prefectureCode", "year", "registrationYear",
-        "url", "compositeUrl", "featureTypes", "metadataZipUrls",
-    }
+    required_fields = set(GRAPHQL_CITYGML_FIELD_NAMES)
     if set(row) != required_fields:
         raise CataloguePreflightError("GraphQL CityGML selection is missing documented fields or includes unsupported fields")
     native_id = row["id"]
