@@ -101,7 +101,13 @@ class TestSyntheticNeonGul10k(unittest.TestCase):
                / 'research_runners/sql/neon_synthetic_gul_10k_v0.sql').read_text(encoding='utf-8')
         self.assertIn('FULL JOIN expected_assets', sql)
         self.assertIn('mismatches=0', sql)
-        self.assertIn('1 / (CASE WHEN n=12', sql)
+        # The hardened guard intentionally checks the complete version and
+        # unfiltered unit counts before validating the original 12-unit sum.
+        self.assertIn(
+            '1 / (CASE WHEN selected_version_count=1 AND all_version_count=1',
+            sql,
+        )
+        self.assertIn('all_unit_count=12 AND n=12 AND unique_ids=12', sql)
         self.assertNotIn('HAVING COUNT(*)=12', sql)
 
     def test_sql_pins_same_exposure_version_as_synthetic_oed(self):
