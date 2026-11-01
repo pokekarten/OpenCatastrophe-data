@@ -17,7 +17,7 @@ from pathlib import Path
 import sys
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 ROOT = Path(__file__).resolve().parents[1]
 # Exact routes taken from existing reviewed access/*.json probe contracts.
@@ -133,7 +133,7 @@ def probe(source: str, *, root: Path = ROOT, opener=None) -> dict:
     url, operation, max_bytes, timeout = reviewed_probe(source, root)
     # No caller supplied path/headers/query, no redirect or retry. No response is
     # written to disk. Keep response values out of the log/receipt.
-    client = opener if opener is not None else build_opener(NoRedirect())
+    client = opener if opener is not None else build_opener(NoRedirect(), ProxyHandler({}))
     request = Request(url, headers={"Accept": "application/json",
                                    "User-Agent": "OpenCatastrophe-public-probe/0.1"},
                       method="GET")
@@ -164,6 +164,8 @@ def probe(source: str, *, root: Path = ROOT, opener=None) -> dict:
         "operation": operation,
         "retrieval_utc": datetime.now(timezone.utc).isoformat(),
         "request_sha256": hashlib.sha256(url.encode("ascii")).hexdigest(),
+        "probe_code_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "access_contract_sha256": hashlib.sha256((root / "access" / (source + ".json")).read_bytes()).hexdigest(),
         "response_sha256": hashlib.sha256(raw).hexdigest(),
         "response_bytes": len(raw),
         "content_type": content_type,
