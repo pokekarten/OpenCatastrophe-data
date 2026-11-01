@@ -61,7 +61,7 @@ The full original-content workflow [GitHub Actions run 41353560374](https://gith
 
 **Interpretation:** The 66 invalid geometries are topological failures, *not* missing source records or evidence of 66 destroyed buildings. They require quarantining, original-quality reporting, and a separate source-geometry-repair policy **before** performing spatial joins or area-based valuation. The observed area values are source projected-geometry measurements, not parcel areas, surveyed ground-floor areas, insurer building counts or TIV.
 
-A follow-up revision of the validator categorizes invalid geometry causes using a fixed allowlist of **coordinate-free topology labels**, while retaining the exact counts and no-original-geometry-output contract. No cross-source building identity or spatial accuracy claim is implied.
+The follow-up exact-original source run [41353703644](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41353703644) **passed** and classified **all 66 invalid polygons as `Ring Self-intersection`** using coordinate-free GEOS reason categories. No feature identifier or offending coordinate was emitted. This is an actual reproducible source-quality signal: repair or quarantine must distinguish topological invalidity from a missing building, and any geometry repair requires separate before/after area and identity audits. No cross-source building identity or spatial accuracy claim is implied.
 
 ### Integration boundary
 
