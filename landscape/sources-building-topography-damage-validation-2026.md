@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-01`  
 **Purpose:** Non-admission discovery of source-specific high-resolution terrain, LiDAR and observed-versus-modelled building damage evidence for bounded catastrophe exposure and vulnerability validation. No external data bytes, model approval or redistribution rights are conferred.
 
-**Entries:** 6
+**Entries:** 9
 
 ## USGS 3DEP seamless 1-meter bare-earth digital elevation model (S1M)
 
@@ -107,3 +107,48 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Florida DEP explicitly documents damage-assessment team field observations in Bay, Gulf, Franklin and Wakulla counties, with NOAA imagery also used. The report concerns coastal structures and erosion, not all FEMA DR-4399 structures or purely wind damage: surge, wave and erosion mechanisms must be disentangled. Its report totals and methods could offer a bounded independent challenge only after geography, damage definitions, survey selection, lineage and precise reuse rights are verified. Do NOT divide FEMA RS point counts by coastal field survey totals, infer parcel-level matches, claim an independent label at every location, or redistribute report imagery as unrestricted model training data.
+
+## Florida Geographic Data Library statewide parcel polygons — 2017 edition
+
+**Candidate ID:** `florida.fgdl.parcels-2017`  
+**Provider:** University of Florida GeoPlan Center / Florida Department of Revenue / County Property Appraisers  
+**Categories:** `historical_parcels`, `exposure_context`, `building_attributes`, `florida`, `pre_event`  
+**Spatial scope:** Florida statewide parcel coverage; cannot assume any particular parcel is a unique building footprint or has exact 2018 geometry  
+**Temporal scope:** Provider content dates 2017-09-26 through 2017-12-22; publication 2018-01-19, prior to Hurricane Michael on 2018-10-10  
+**Resolution / granularity:** 10,086,830 parcel polygon records statewide (not houses/buildings) with tax fields such as ACTYRBLT, TOTLVGAREA, NOBULDNG, DORUC and owner/address personal information  
+**Potential roles:** `pre_event_parcel_context_candidate`, `construction_year_metadata_research`, `parcel_to_building_identity_leakage_control`  
+**Access hint:** `official_historical_metadata_html_verified_archived_full_zip_not_downloaded`  
+**Authoritative source:** <https://fgdl.org/zips/metadata/htm/parcels_2017.htm>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Official FGDL PARCELS_2017 metadata confirms 10,086,830 statewide parcel polygons, content 2017-09-26–2017-12-22 and publication 2018-01-19. This is a genuine pre-Hurricane Michael source-vintage candidate, but no original geodatabase/ZIP bytes, current archive download URL, source-specific reuse terms or county subset are verified. Parcel geometry is NOT an observed building/roof footprint. The metadata lists owner names, owner mailing/site addresses, parcel IDs, property values and building attributes; DO NOT retrieve owner/address or identifiable parcel records into this research register or infer an insured location. A 2017 polygon cannot prove that a structure survived, existed in 2018, or matched a FEMA RS assessment. Requires privacy, accuracy, CRS, geometry, archival acquisition, licensing, split/merge and building-identity checks. See docs/research/florida-michael-2018-historical-parcel-and-imagery-lineage-20261101.md.
+
+## Florida Geographic Data Library statewide parcel polygons — 2018 edition (mixed event vintage)
+
+**Candidate ID:** `florida.fgdl.parcels-2018`  
+**Provider:** University of Florida GeoPlan Center / Florida Department of Revenue / County Property Appraisers  
+**Categories:** `historical_parcels`, `exposure_context`, `building_attributes`, `florida`, `temporal_leakage`  
+**Spatial scope:** Florida statewide parcel coverage; publication does not prove a consistent pre-event spatial snapshot  
+**Temporal scope:** Provider content dates 2018-07-24 through 2018-12-28, spanning Hurricane Michael 2018-10-10; publication 2019-03-12  
+**Resolution / granularity:** 10,261,260 statewide parcel polygons (not building footprints) with mixed-date source inputs and tax-roll attributes  
+**Potential roles:** `post_event_temporal_contamination_check`, `parcel_change_and_renumbering_diagnostics`, `historical_taxroll_lineage`  
+**Access hint:** `official_historical_metadata_html_verified_2018_content_crosses_event_full_zip_not_downloaded`  
+**Authoritative source:** <https://fgdl.org/zips/metadata/htm/parcels_2018.htm>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** FGDL PARCELS_2018 metadata directly states publication 2019-03-12 and content window 2018-07-24 to 2018-12-28; it combines summer GIS geometry acquisition with late-December tax roll information. It must NOT be called an entirely pre-event 2018 building inventory or used to validate damage labels without per-record pre-event lineage. It contains private owner/address fields; research does not ingest rows. Comparing its 10,261,260 parcel records with 2017's 10,086,830 records does not yield building growth, loss or damage counts; differences can reflect splits, duplicates, scope and update conventions. Exact file source license, archived ZIP byte identity, event-era spatial geometry, county-level snapshots and building roofs remain unverified. See docs/research/florida-michael-2018-historical-parcel-and-imagery-lineage-20261101.md.
+
+## NICB Geospatial Intelligence Center post-Hurricane Michael 2018 aerial imagery
+
+**Candidate ID:** `nicb.gic.hurricane-michael-2018-imagery`  
+**Provider:** National Insurance Crime Bureau / Geospatial Intelligence Center (GIC) / Vexcel Imaging  
+**Categories:** `aerial_imagery`, `post_event_observation`, `building_damage`, `florida`, `imagery_provenance`  
+**Spatial scope:** Reported hurricane-response flyovers after Michael in affected U.S. regions; exact image/scene and pilot tile overlap unverified  
+**Temporal scope:** NICB's 2018-11-05 announcement confirms post-Michael image collection, not a specific pilot image acquisition time or coverage  
+**Resolution / granularity:** High-resolution commercial airborne imagery, dates and access rights per collection and scene unknown for the target NOAA/FEMA tile  
+**Potential roles:** `alternate_post_event_imagery_source_candidate`, `fema_imagery_lineage_hypothesis`, `source_independence_leakage_challenge`  
+**Access hint:** `official_public_news_evidence_only_scene_access_and_redistribution_not_verified`  
+**Authoritative source:** <https://www.nicb.com/news/news-releases/video-shows-how-gic-imagery-transforming-catastrophe-response>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** NICB announced on 2018-11-05 that GIC/Vexcel aircraft collected imagery after Hurricanes Florence and Michael, shared with emergency personnel, insurers and members. The NOAA National Geodetic Survey 2022 presentation shows separate 'NCIB Imagery' and 'NOAA Imagery' layer names on a FEMA Michael damage dashboard; whether that NCIB label corresponds to this NICB/GIC source is a plausible but NOT independently verified spelling/identity mapping. The source visualization does NOT prove which image or imagery family produced individual FEMA DR-4399 RS labels. No scene URL, flight timestamp, spatial extent, pixel/orthophoto bytes or rights were acquired. Public viewing or insurer access must never be mistaken for open commercial redistribution or independent scientific ground truth. See docs/research/florida-michael-2018-historical-parcel-and-imagery-lineage-20261101.md.
