@@ -34,7 +34,7 @@ class SameFamilyOverlapError(ValueError):
 
 
 def research(act: Path, geobase: Path, *, lon: float = 6.1319,
-             lat: float = 49.6116, halfwidth: float = 125,
+             lat: float = 49.6116, halfwidth: float = 50,
              max_features: int = MAX_FEATURES,
              act_sha: str = ACT_GPKG_SHA,
              geobase_sha: str = GEOBASE_GPKG_SHA,
