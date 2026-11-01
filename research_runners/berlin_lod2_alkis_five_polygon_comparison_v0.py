@@ -75,11 +75,13 @@ def _parse_height(raw: bytes) -> tuple[list[Any], list[dict]]:
     if type(obj) is not dict or obj.get("type") != "FeatureCollection":
         raise HeightPairError("not a height FeatureCollection")
     crs=obj.get("crs")
-    if crs is not None:
-        if (type(crs) is not dict or crs.get("type")!="name"
-            or type(crs.get("properties")) is not dict
-            or crs["properties"].get("name") not in SOURCE_CRS):
-            raise HeightPairError("height source CRS differs from EPSG:25833")
+    # Two-source polygon IoU must not infer EPSG:25833 from a request
+    # parameter alone. RFC 7946 GeoJSON without explicit CRS would
+    # otherwise default to WGS84, with incompatible coordinate units.
+    if (type(crs) is not dict or crs.get("type")!="name"
+        or type(crs.get("properties")) is not dict
+        or crs["properties"].get("name") not in SOURCE_CRS):
+        raise HeightPairError("height source must explicitly declare EPSG:25833 CRS")
     features=obj.get("features")
     if type(features) is not list or not 1<=len(features)<=MAX_FEATURES:
         raise HeightPairError("one-to-five exact source height features required")
@@ -130,6 +132,8 @@ def compare_samples(alkis_raw: bytes, height_raw: bytes) -> dict:
     # The original ALKIS checker verifies five-or-fewer polygons, source
     # feature uniqueness, bbox overlap, WGS84 axis and finite coordinate values.
     alkis_report,_=inspect_building_geojson(alkis_raw)
+    if not alkis_report["source_crs_explicitly_declared_in_response"]:
+        raise HeightPairError("ALKIS source must explicitly declare EPSG:25833 CRS")
     a=json.loads(alkis_raw.decode("utf-8"))
     from shapely.geometry import shape
     alkis=[shape(feat["geometry"]) for feat in a["features"]]
