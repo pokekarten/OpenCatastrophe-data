@@ -25,6 +25,8 @@ from shapely import wkb
 from shapely.errors import GEOSException
 from shapely.validation import explain_validity
 
+from research_runners.luxembourg_geobase_2026_repair_diagnostic_v0 import RepairDiagnostics
+
 from research_runners.luxembourg_geobase_2026_id_quality_v0 import (
     audit as id_audit, EXPECTED_ZIP_SHA256, EXPECTED_GPKG_SHA256,
     EXPECTED_FEATURE_COUNT, EXPECTED_LAYER, MAX_GPKG_BYTES,
@@ -100,6 +102,7 @@ def profile(connection: sqlite3.Connection, *, expected_rows: int = EXPECTED_FEA
     measured = []
     invalid_topology = 0
     topology_classes: Counter[str] = Counter()
+    repairs = RepairDiagnostics()
     empty = 0
     nonpositive_area = 0
     malformed = 0
@@ -118,6 +121,7 @@ def profile(connection: sqlite3.Connection, *, expected_rows: int = EXPECTED_FEA
         if not polygon.is_valid:
             invalid_topology += 1
             topology_classes[_topology_class(polygon)] += 1
+            repairs.observe(polygon)
             continue
         area = polygon.area  # square metres in the declared projected source CRS
         if not math.isfinite(area) or area <= 0:
@@ -138,6 +142,7 @@ def profile(connection: sqlite3.Connection, *, expected_rows: int = EXPECTED_FEA
         "polygon_valid_positive_area": len(measured),
         "invalid_topology": invalid_topology,
         "invalid_topology_classes_aggregate": dict(sorted(topology_classes.items())),
+        "invalid_polygon_repair_diagnostic": repairs.summary(invalid_topology),
         "empty_geometry": empty,
         "nonpositive_or_nonfinite_area": nonpositive_area,
         "malformed_gpkg_geometry": malformed,
