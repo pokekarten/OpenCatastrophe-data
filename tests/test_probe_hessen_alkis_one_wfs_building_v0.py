@@ -76,6 +76,33 @@ class HessenOneBuildingWfsTests(TestCase):
         self.assertNotIn("secret",str(result))
         self.assertNotIn("50.516",str(result))
 
+    def test_building_feature_requires_exact_inspire_xml_qname(self):
+        """The prefix is arbitrary; the expanded INSPIRE namespace is not."""
+        source = fixture()
+        alias = source.replace(b"bu:Building", b"alt:Building").replace(
+            b"xmlns:bu=", b"xmlns:alt="
+        )
+        for data in (source, alias):
+            with self.subTest(valid=data is alias):
+                result = wfs.inspect_feature_xml(data)
+                self.assertEqual(result["original_feature_members_parsed_not_admitted"], 1)
+                self.assertFalse(result["model_input_approved"])
+
+        wrong_namespace = source.replace(
+            b"http://inspire.ec.europa.eu/schemas/bu-core2d/4.0",
+            b"https://unrelated.invalid/forged-buildings",
+        )
+        unqualified = source.replace(
+            b'<bu:Building xmlns:bu="http://inspire.ec.europa.eu/schemas/bu-core2d/4.0">',
+            b"<Building>",
+        ).replace(b"</bu:Building>", b"</Building>")
+        for data in (wrong_namespace, unqualified):
+            with self.subTest(case=data[:140]):
+                with self.assertRaisesRegex(
+                    wfs.BuildingFeatureBlocked, "unexpected non-Building feature type"
+                ):
+                    wfs.inspect_feature_xml(data)
+
     def test_empty_page_cannot_confirm_absent_buildings(self):
         result=wfs.inspect_feature_xml(fixture(members=0,returned=0,matched=0))
         self.assertEqual(result["original_feature_members_parsed_not_admitted"],0)
