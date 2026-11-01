@@ -39,7 +39,7 @@ Offline use after permitted original-file acquisition:
 
 ```bash
 python -m pip install -r requirements-eu-flood-spatial.txt
-python research_runners/luxembourg_axis_extent_audit_v0.py \
+python -m research_runners.luxembourg_axis_extent_audit_v0 \
   --source-zip /private/act2023v2-buildings3d-footprints.gpkg.zip
 ```
 
