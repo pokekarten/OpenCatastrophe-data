@@ -24,8 +24,7 @@ if SPATIAL:
 def synthetic_source(path: Path, *, srs=2169, missing_site=None, bad_geo=False,
                      include_tile_fields=True):
     with sqlite3.connect(path) as db:
-        db.execute("PRAGMA application_id = 1196437808")  # 0x47504B50? reset below
-        db.execute("PRAGMA application_id = 1196436295")  # 0x47504B47
+        db.execute("PRAGMA application_id = 1196444487")  # 0x47504B47
         db.execute("CREATE TABLE gpkg_contents(table_name TEXT,data_type TEXT,identifier TEXT,srs_id INTEGER)")
         db.execute("CREATE TABLE gpkg_geometry_columns(table_name TEXT,column_name TEXT,geometry_type_name TEXT,srs_id INTEGER)")
         db.execute("CREATE TABLE gpkg_spatial_ref_sys(srs_id INTEGER,organization TEXT,organization_coordsys_id INTEGER)")
