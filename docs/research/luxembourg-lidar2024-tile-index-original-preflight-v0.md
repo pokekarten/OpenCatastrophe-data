@@ -46,3 +46,20 @@ A dedicated GitHub Actions source runner downloads only that **specific** 3.4 MB
 - ACT GeoBase October 2026: original Buildings GPKG SHA256 `ec70bd1175b6f67b6dceaf8ab39e0433bc871e1099ff308c3eb8323127aa5676` (merged #926).
 
 This stage **does not** prove tile download capability, independently observed building height, EUBUCCO geometry identity, construction year, insurer-specific TIV or measured hazard/loss.
+
+## Actual original-file receipt (2026-11-01)
+
+The narrow official-data GitHub Actions run [41310189592](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41310189592) succeeded with **all 10 synthetic safety tests** and the true publisher-hosted original GeoPackage. Exact observed evidence:
+
+| Original property | Verified |
+| --- | ---: |
+| Original GeoPackage bytes | **3,518,464** |
+| Original publisher SHA-1 | `3269aecb189271e7c3f86127c0e96f4e213557c9` (**match**) |
+| Newly computed original SHA-256 | `3db50821b582b9247d97d6d8bba41d9f15cd45ff0356b180322521346ef04cc8` |
+| GeoPackage feature layer | **`TableauAssemblage`** |
+| Exact index feature rows | **10,905** |
+| Source geometry/CRS | **POLYGON / EPSG:2169** |
+| Original field names | `fid`, `geom`, `Fichier`, `Dossier`, `DownloadLink` |
+| Spatial RTree index | **present** |
+
+This is a strong practical result: the exact original index contains **a real spatial index and a provider URL field**, making a narrowly bounded one-tile original LiDAR download feasible in a separately controlled follow-on experiment. The 10,905 rows are index records, not measured buildings or independent building height values. Provider entry URLs and individual tile geometry have not yet been read in this stage. The source file was never uploaded to Git, Neon or artifacts.
