@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "jp.mlit.plateau.graphql.citygml-shinjuku2024",
+  "source_ids": [
+    "jp.mlit.plateau.citygml.3d-city-models"
+  ],
+  "provider": "Japan Ministry of Land, Infrastructure, Transport and Tourism (MLIT) / PLATEAU experimental catalogue",
+  "interface_type": "other_documented_machine_interface",
+  "status": "documented_only",
+  "documentation_url": "https://docs.plateauview.mlit.go.jp/api/graphql/schema/",
+  "service_root": "https://api.plateauview.mlit.go.jp",
+  "api_version": null,
+  "access_scope": [
+    "catalogue",
+    "metadata"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "document_one_fixed_city_year_graphql_metadata_projection"
+    ],
+    "path_templates": [
+      "/datacatalog/graphql"
+    ],
+    "parameter_rules": "DOCUMENTATION ONLY; NO live GraphQL POST is authorized. Future separate rights-reviewed call would have a single fixed read-only GraphQL operation: query OcShinjuku2024 { citygmlDatasets(input: {cityCodes: [\"13104\"], years: [2024]}) { id cityCode year registrationYear url fileSize compositeUrl featureTypes } }. Require exact submitted query identity, exact municipality/year, no variables, arbitrary fields, aliases, introspection, mutations, pagination, retries, dynamic query injection, credentialed access or ZIP URL following. Provider schema is experimental and may change. An offline synthetic response preflight is available; this is not a request runner."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json"
+    ],
+    "format": "GraphQL JSON data.citygmlDatasets array for one fixed CityGML dataset, or provider errors (fail closed). Only source metadata, not geometry, ZIP bytes or individual building attributes.",
+    "scientific_semantics": "The exact 2024 fiscal-year city model catalogue record is a release candidate only; cityCode is 13104 (Shinjuku). The native GraphQL ID is independent of the municipal code. fileSize describes CMS ZIP metadata when available, not a verified file receipt. compositeUrl must pin city/year, never latest. Building feature presence alone does not prove coverage, geometry quality, height availability, vulnerability, insured values or commercial reuse rights."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 15,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 65536,
+    "retry_policy": "none",
+    "rate_limit_notes": "GraphQL query complexity limits and response size apply. If separately authorized, enforce an exact static query body, fixed host/DNS and response-size cap before parsing; do not use this T0 contract as request permission.",
+    "mutability_notes": "Experimental schema is subject to changes without notice or SLA. Pin query bytes/code SHA and response bytes SHA-256, UTC, fiscal-year record and CMS original identity in a separately reviewed T1 receipt; do not equate stable redirect URL with immutable original bytes."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": "https://www.mlit.go.jp/plateau/faq/",
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "Public technical API documentation and general PLATEAU open-data principles do not establish endpoint-specific automation rights or municipality/version-level source redistribution. This contract records a potential bounded metadata query only. No model/data/raw distribution permission is conferred."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-01",
+  "evidence_urls": [
+    "https://docs.plateauview.mlit.go.jp/api/graphql/",
+    "https://docs.plateauview.mlit.go.jp/api/graphql/schema/",
+    "https://docs.plateauview.mlit.go.jp/api/"
+  ],
+  "notes": "Non-executable documented access candidate for a single filtered municipality/year GraphQL read. No provider POST, network byte receipt, provider file read, extraction, enrolment, admission or model execution."
+}
