@@ -168,15 +168,15 @@ class WorldCoverRangeTests(unittest.TestCase):
                          [3/36000, 3/36000])
 
     def test_wrong_crs_or_grid_extent_is_not_promoted(self):
-        for raw in (geo_sample(epsg=3857), geo_sample(srcx=11.0),
-                    geo_sample(srcy=50.0), geo_sample(scale=0.1),
-                    geo_sample(out_of_range=True)):
-            with self.subTest(sha=hash(raw)), self.assertFalse(
-                inspect_geotiff_grid(raw, width=36000, height=36000)[
-                    "geo_grid_verified_from_prefix_only"
-                ]
-            ):
-                pass
+        for case, raw in enumerate((
+            geo_sample(epsg=3857), geo_sample(srcx=11.0),
+            geo_sample(srcy=50.0), geo_sample(scale=0.1),
+            geo_sample(out_of_range=True),
+        )):
+            with self.subTest(case=case):
+                result = inspect_geotiff_grid(raw, width=36000, height=36000)
+                self.assertFalse(result["geo_grid_verified_from_prefix_only"])
+                self.assertIsNone(result["header_tile_bounds_lonlat_if_verified"])
         self.assertFalse(inspect_geotiff_grid(
             geo_sample(), width=35999, height=36000
         )["geo_grid_verified_from_prefix_only"])
