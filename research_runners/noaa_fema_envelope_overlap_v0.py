@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Geometry-free, read-only FEMA × NOAA Michael STAC envelope count gate.
+"""Geometry-free, read-only FEMA × NOAA Michael STAC polygon count gate.
 
 No feature-level FEMA rows, geometry, image pixels or user/policy data.
 Provider API replies are *caller supplied*, not independently authenticated.
@@ -10,6 +10,7 @@ same property identity nor scientific independence is established.
 
 from __future__ import annotations
 
+import json
 import math
 from typing import Any
 
@@ -34,6 +35,26 @@ class EnvelopeOverlapError(ValueError):
     """Provider counts, query scope or STAC source metadata are inconsistent."""
 
 
+def _polygon_from_bbox(bounds: Any) -> str:
+    """Use actual WGS84 polygon edges, not reprojected envelope bounds.
+
+    A transformed EPSG:4326 envelope can become a larger bounding envelope
+    in EPSG:32616 and cause non-additive FEMA counts. An explicit polygon
+    preserves the original four sides through coordinate transformation.
+    """
+    if (type(bounds) is not list or len(bounds) != 4 or any(
+        type(x) not in (float, int) or not math.isfinite(x) for x in bounds
+    )):
+        raise EnvelopeOverlapError("invalid WGS84 source bbox")
+    w, s, e, n = bounds
+    if not (-180 < w < e < 180 and -90 < s < n < 90):
+        raise EnvelopeOverlapError("invalid source geographic ring")
+    return json.dumps({
+        "rings": [[[w, s], [e, s], [e, n], [w, n], [w, s]]],
+        "spatialReference": {"wkid": 4326},
+    }, separators=(",", ":"), allow_nan=False)
+
+
 def build_queries(item: Any) -> dict[str, Any]:
     """Return exact query parameters; NEVER fetch or export feature geometry."""
     try:
@@ -45,10 +66,10 @@ def build_queries(item: Any) -> dict[str, Any]:
         type(x) in (float, int) and math.isfinite(x) for x in bbox
     )):
         raise EnvelopeOverlapError("invalid source tile bbox")
-    geom = ",".join(str(x) for x in bbox)
+    geom = _polygon_from_bbox(bbox)
     base = {
         "geometry": geom,
-        "geometryType": "esriGeometryEnvelope",
+        "geometryType": "esriGeometryPolygon",
         "inSR": "4326",
         "spatialRel": "esriSpatialRelIntersects",
         "returnGeometry": "false",
@@ -101,7 +122,7 @@ def build_proven_transparent_block_query(
     if not (-180 < west < east < 180 and -90 < south < north < 90):
         raise EnvelopeOverlapError("computed block envelope outside valid geographic coordinates")
     query = dict(build_queries(item)["cohort_census"])
-    query["geometry"] = ",".join(format(v, ".17g") for v in (west, south, east, north))
+    query["geometry"] = _polygon_from_bbox([west, south, east, north])
     return {
         "profile": "noaa_fema_verified_zero_alpha_block_query_v0",
         "endpoint": FEMA_LAYER,
@@ -148,16 +169,17 @@ def reconcile(item: Any, cohort_count: Any, damage_level_groups: Any,
     # No per-structure data or source bbox is echoed; counts cannot identify
     # any overlap with alpha-covered pixels or assign a unique building.
     return {
-        "profile": "noaa_fema_michael_envelope_overlap_v0",
+        "profile": "noaa_fema_michael_true_polygon_overlap_v0",
         "noaa_stac_tile_id": plan["source_tile_id"],
         "fema_public_layer_service_item_id": SERVICE_ITEM,
         "exact_disaster_number": "DR-4399",
         "assessment_type": "RS",
         "damage_type": "WI",
-        "damage_points_in_tile_envelope": subset,
-        "all_disaster_points_in_tile_envelope": all_disaster,
+        "damage_points_in_tile_polygon": subset,
+        "all_disaster_points_in_tile_polygon": all_disaster,
         "damage_level_counts": {k: levels.get(k, 0) for k in ("NOD", "AFF", "MIN", "MAJ", "DES", "UNK")},
-        "candidate_envelope_contains_assessment_point": subset > 0,
+        "candidate_polygon_contains_assessment_point": subset > 0,
+        "legacy_projected_envelope_count_may_be_overinclusive": True,
         "source_api_replies_authenticated": False,
         "original_raster_alpha_coverage_verified": False,
         "same_building_identity_proven": False,
