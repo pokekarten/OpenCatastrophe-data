@@ -23,12 +23,6 @@ ROOT = Path(__file__).resolve().parents[1]
 # Exact routes taken from existing reviewed access/*.json probe contracts.
 # Do not expand queries without updating the corresponding source contract.
 PROBES = {
-    "emsc.seismicportal.fdsn-event": (
-        "https://www.seismicportal.eu/fdsnws/event/1/query?"
-        "format=json&limit=1&orderby=time&nodata=204&"
-        "includeallorigins=false&includearrivals=false",
-        "latest_event_json",
-    ),
     "geoboundaries.gbopen": (
         "https://www.geoboundaries.org/api/current/gbOpen/DEU/ADM1/",
         "deu_adm1_metadata",
@@ -123,14 +117,6 @@ def verify_response(source: str, raw: bytes) -> dict:
             raise ProbeBlocked("geoBoundaries frozen canary identity/license drift")
         # Returned download links are intentionally not followed.
         return {"verified_shape": "deu_adm1_metadata", "frozen_id": payload["boundaryID"]}
-    if source == "emsc.seismicportal.fdsn-event":
-        if (not isinstance(payload, dict) or not isinstance(payload.get("features"), list)
-                or not 0 < len(payload["features"]) <= 1):
-            raise ProbeBlocked("EMSC result must contain at most one, nonempty event")
-        event = payload["features"][0]
-        if not isinstance(event, dict) or not isinstance(event.get("properties"), dict):
-            raise ProbeBlocked("invalid EMSC event structure")
-        return {"verified_shape": "one_event_catalogue", "records_inspected": 1}
     if source == "gfz.geomagnetic-kp":
         if not isinstance(payload, dict) or not payload:
             raise ProbeBlocked("GFZ response is not a nonempty JSON object")
