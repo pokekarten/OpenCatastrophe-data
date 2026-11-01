@@ -24,7 +24,7 @@ def row(i, **overrides):
         "fipsCode": f"{1000 + i:05d}",
         "state": "Synthetic State",
         "county": "Synthetic County",
-        "asOfDate": "2026-08-04",
+        "asOfDate": "2026-08-04T00:00:00.000Z",
         "resContractsInForce": 110,
         "totalResStructures": 100,
         "resPenetrationRate": 1.1,
@@ -83,7 +83,8 @@ class NFIPPenetrationTests(unittest.TestCase):
             row(1, totalResStructures=-1),
             row(1, resPenetrationRate="-Infinity"),
             row(1, resPenetrationRate=-0.1),
-            row(1, asOfDate="2026-02-30"),
+            row(1, asOfDate="2026-02-30T00:00:00.000Z"),
+            row(1, asOfDate="2026-08-04T12:00:00.000Z"),
         ]
         for v in variants:
             with self.subTest(v=v):
