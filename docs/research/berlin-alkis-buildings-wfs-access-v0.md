@@ -223,3 +223,41 @@ source is not a 2021 historical snapshot. Sampling proves spatial access
 and coding, not insured portfolio coverage, value, secondary uncertainty,
 or vulnerability calibration. Persistent CAT database ingestion needs
 separate governance and storage credentials.
+
+## Verified CAT4 isolated derived building geometry stage — 2026-11-01
+
+The first complete source-to-local-database execution passed in
+[GitHub Actions run 41320072699](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41320072699),
+main commit `2f7dd8a516899d0b441211784fbfeef3bde01221`.
+
+- Provider receipt UTC: `2026-11-01T15:13:12.846819+00:00`.
+- WFS 2.0.0 official 5-building fixed bbox actual response:
+  **5,412 bytes** / SHA-256
+  `347536364aef4e108c9e9f69536073297e453ccf69c303d804011322519cbfd1`.
+  The SHA differs from the earlier five-feature receipt, proving the
+  mutable WFS representation should **never** be implicitly treated as
+  a version-frozen historic snapshot, even if its aggregate spatial
+  sample values are unchanged.
+- Actual feature validation: **5 of 5** geometries accepted;
+  five distinct polygons in the capped sample; **1,344.0 m²**
+  combined sampled footprint area.
+- Source-original projected coordinates transformed, privately and
+  per-feature checked against original source-pinned CAT1/CAT2:
+  **five of five resolved as Berlin `DE3` (NUTS 2021 / 10M)**.
+- New separate `CAT4` SQLite file was **actually constructed**,
+  `app_id=1112294452`, verified five rows with only `DE3`,
+  provenance, no original feature IDs/properties, and `model_admitted=0`.
+  The job printed
+  `PASS: bounded official Berlin buildings staged as source-derived CAT4 polygons in DE3`.
+- No shared production CAT/Neon database was altered; raw WFS reply was
+  not persisted and the derived CAT4 staging file was deleted after
+  the job. This was a real, **ephemeral** data-staging test, not a
+  durable deployment or claim that five features represent the whole box.
+
+This establishes an executable **official real building → geometry →
+source-vintage-aware NUTS1 → isolated CAT SQLite** path, which previously
+did not exist. Next decisions should prioritize a separate CAT storage
+destination, exact source snapshot governance, WFS paging/limit validation,
+building-vs-building-part segmentation, per-attribute completeness,
+and date-appropriate join versions before expanding coverage or using
+any result as an insured-building portfolio.
