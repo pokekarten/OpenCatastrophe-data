@@ -11,6 +11,8 @@ on:
       - tests/test_berlin_bld4_bkg_original_raw_cell_support_v0.py
       - research_runners/berlin_bld4_bkg_exterior_ring_raw_support_v0.py
       - tests/test_berlin_bld4_bkg_exterior_ring_raw_support_v0.py
+      - research_runners/validate_berlin_bkg_exterior_original_receipt_v0.py
+      - tests/test_validate_berlin_bkg_exterior_original_receipt_v0.py
       - .github/workflows/berlin-bld4-bkg-real-raw-support.yml
   push:
     branches: [main]
@@ -48,6 +50,7 @@ jobs:
         run: |
           python -m unittest tests.test_berlin_bld4_bkg_original_raw_cell_support_v0 -v
           python -m unittest tests.test_berlin_bld4_bkg_exterior_ring_raw_support_v0 -v
+          python -m unittest tests.test_validate_berlin_bkg_exterior_original_receipt_v0 -v
           python -m unittest tests.test_berlin_bld4_synthetic_flood_cell_join_v0 -v
       - name: Strict original CAT1/CAT2 + one Berlin ALKIS WFS + one 47MB BKG TIFF
         if: github.event_name != 'pull_request'
@@ -97,5 +100,11 @@ jobs:
           print("PASS: exact original BKG TIFF full SHA and size independently matched")
           PY
           python -m research_runners.berlin_bld4_bkg_original_raw_cell_support_v0 \
-            --buildings "$bld" --original-bkg-tiff "$tiff"
-          # Provider TIFF, BLD4 polygons and CAT1/CAT2 sources deleted by trap.
+            --buildings "$bld" --original-bkg-tiff "$tiff" \
+            > "$root/aggregate-source-receipt.json"
+          # Fail closed on original full source SHA, exact 5-building provenance,
+          # 3 exterior distance bands, polygon-area conservation and no approval.
+          # Only aggregate bands and provenance hashes are printed to Actions.
+          python -m research_runners.validate_berlin_bkg_exterior_original_receipt_v0 \
+            "$root/aggregate-source-receipt.json"
+          # Provider TIFF, WFS polygons, source receipts and CAT1/CAT2 deleted by trap.
