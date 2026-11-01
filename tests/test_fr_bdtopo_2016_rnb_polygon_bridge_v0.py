@@ -65,6 +65,10 @@ class HistoricalRnbBridgeTests(unittest.TestCase):
         )
         self.assertTrue(report["historic_current_pairwise_polygon_matrix"][0]
                         ["current_polygon_comparisons"][0]["polygon_intersects"])
+        pair = report["historic_current_pairwise_polygon_matrix"][0]["current_polygon_comparisons"][0]
+        self.assertIn("symmetric_difference_area_m2", pair)
+        self.assertIn("hausdorff_distance_m", pair)
+        self.assertFalse(pair["same_physical_building_identity_proven"])
         self.assertFalse(report["historic_to_modern_identity_automatically_assigned"])
         self.assertFalse(report["source_independence_proven"])
         self.assertFalse(report["model_input_admitted"])
