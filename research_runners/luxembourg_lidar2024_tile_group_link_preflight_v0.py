@@ -62,7 +62,8 @@ class _NoRedirect(HTTPRedirectHandler):
         return None
 
 
-def head_source(url: str, *, timeout: int = 12) -> dict:
+def _head_once(url: str, *, timeout: int) -> tuple[int | None, object | None]:
+    """A single HEAD to a pre-allowlisted public provider URL, no redirects."""
     if classify_link(url) not in (
         "provider_catalogue_resource", "provider_direct_tile_group_zip"
     ):
@@ -71,34 +72,50 @@ def head_source(url: str, *, timeout: int = 12) -> dict:
     opener = build_opener(_NoRedirect())
     try:
         with opener.open(req, timeout=timeout) as response:
-            status = response.status
-            headers = response.headers
+            return response.status, response.headers
     except HTTPError as exc:
-        status, headers = exc.code, exc.headers
-    except (URLError, TimeoutError, OSError) as exc:
-        return {"head_request_reachable": False, "http_status": None,
-                "declared_content_length_bytes": None, "destination_host_class": None}
-    length = headers.get("Content-Length")
-    try:
-        nbytes = int(length) if length is not None and length.isdecimal() else None
-    except (TypeError, ValueError):
-        nbytes = None
-    if nbytes is not None and nbytes < 0:
-        nbytes = None
-    target = headers.get("Location")
-    redirect_class = classify_link(target) if target else None
-    # URLs, queries, host paths and response-body bytes are never emitted.
-    return {
-        "head_request_reachable": True,
-        "http_status": status,
-        "declared_content_length_bytes": nbytes,
-        "destination_host_class": redirect_class,
-        "potential_future_download_below_100_mib": (
-            nbytes is not None and 0 < nbytes <= 100 * 1024 * 1024 and
-            status == 200
-        ),
-    }
+        return exc.code, exc.headers
+    except (URLError, TimeoutError, OSError):
+        return None, None
 
+
+def head_source(url: str, *, timeout: int = 12) -> dict:
+    """Probe only provider HEAD and at most one verified provider HEAD redirect.
+
+    HTTP 302/Content-Length is the redirect response body length, never the
+    underlying public ZIP size. Reject any non-provider or second redirect.
+    """
+    if classify_link(url) not in (
+        "provider_catalogue_resource", "provider_direct_tile_group_zip"
+    ):
+        raise LidarLinkError("Refuse unallowlisted original tile-group endpoint")
+    origin_status, headers = _head_once(url, timeout=timeout)
+    followed = False
+    status = origin_status
+    if headers is not None and status in (301, 302, 303, 307, 308):
+        destination = headers.get("Location")
+        if (classify_link(url) == "provider_catalogue_resource"
+                and classify_link(destination) == "provider_direct_tile_group_zip"):
+            followed = True
+            status, headers = _head_once(destination, timeout=timeout)
+    nbytes = None
+    if headers is not None and status == 200:
+        length = headers.get("Content-Length")
+        if isinstance(length, str) and length.isdecimal():
+            nbytes = int(length)
+    # HEAD 302 response Content-Length is just the redirect text, never ZIP.
+    return {
+        "head_request_reachable": origin_status is not None,
+        "origin_http_status": origin_status,
+        "http_status": status,
+        "redirect_followed_for_head_only": followed,
+        "declared_zip_content_length_bytes": nbytes,
+        "potential_future_download_below_100_mib": (
+            nbytes is not None and 0 < nbytes <= 100 * 1024 * 1024
+            and status == 200
+        ),
+        "actual_zip_content_verified": False,
+    }
 
 def inspect(file: Path, *, probe_head: bool = False) -> dict:
     base = select_original_tiles(file)
