@@ -58,7 +58,8 @@ def probe_zero_block(header: Any, item: Any, tile_index: Any,
         try:
             dec = zlib.decompressobj()
             decoded = dec.decompress(compressed, DECODED_BLOCK_BYTES + 1)
-            decoded += dec.flush()
+            # A completed zlib stream needs no unbounded flush. A stream
+            # exceeding the cap must fail without expanding remaining bytes.
         except zlib.error as exc:
             raise AlphaTileProofError("malformed original Deflate raster tile") from exc
         if (len(decoded) != DECODED_BLOCK_BYTES or not dec.eof
