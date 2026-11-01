@@ -75,7 +75,8 @@ class SameWindowTests(unittest.TestCase):
         self.assertFalse(result["triple_source_per_building_match_generated"])
         self.assertFalse(result["manual_precision_recall_measured"])
         self.assertFalse(result["cat_model_input_admitted"])
-        self.assertNotIn("building_id",json.dumps(result))
+        self.assertFalse(result["original_geometry_or_building_id_exported"])
+        self.assertNotIn("building_matches",result)
         self.assertEqual(len(result["pairwise_aggregate_candidate_diagnostics"]),3)
 
     def test_incomparable_250m_window_blocks_pooled_diagnostics(self):
