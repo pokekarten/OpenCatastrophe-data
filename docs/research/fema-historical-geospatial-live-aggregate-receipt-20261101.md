@@ -89,6 +89,12 @@ Both are tracked as **non-admitted** candidates in `landscape/sources-building-t
 
 The existing synthetic-only code `research_runners/fema_damage_assessment_preflight_v0.py` now enforces the provider's exact assessment/damage-type code domains in addition to explicit event/date/geometry guards. This does **not** claim that locally synthetic `FA` examples exist in the real database.
 
+## Executable offline aggregate consistency check
+
+`research_runners/fema_aggregate_reconciliation_v0.py` now provides a **pure, offline and synthetic-testable** gate named `reconcile()` for future locally constructed copies of four mutually comparable **aggregate** results: one exact FEMA service item/disaster/method/peril cohort census, `DMG_LEVEL` groups, `STATE/COUNTY/DMG_LEVEL` groups, and the same event's date-group counts. All are bound to **one source-native `DR-####` disaster number**, explicitly `RS` and `WI`, and the exact UTC date. The gate checks counts, source codes, duplicates, missing/incorrect fields and temporal metadata, and returns only summary counts and quality warnings, without per-feature IDs/coordinates or county label disclosure in the result.
+
+Negative tests under `tests/test_fema_aggregate_reconciliation_v0.py` ensure a wrong event/source, a mismatch across group totals, a duplicate county cell, an unreviewed label or raw coordinates fails closed. This logic uses **synthetic** examples and cannot by itself authenticate provider aggregates, establish NOAA/Florida-DEP independence, prove image dates, approve rights, admit model inputs or replace exact source release/hash receipts.
+
 ## Next bounded evidence gates
 
 1. Before any real per-feature retrieval, review rights, service freshness, query limits, stable source-version evidence and justified record/geometry retention (do not commit feature bytes).
