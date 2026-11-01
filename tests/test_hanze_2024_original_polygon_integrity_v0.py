@@ -103,7 +103,9 @@ class OriginalPolygonIntegrityTests(unittest.TestCase):
                     "model_source_admitted"):
             self.assertFalse(out[key])
         self.assertNotIn("region.shp",str(out))
-        self.assertNotIn("WGS 84",str(out))
+        self.assertEqual(out["projection_declaration"]["declared_crs_name_unverified"],"WGS 84")
+        self.assertIn("degree",out["projection_declaration"]["declared_unit_names_unverified"])
+        self.assertNotIn("DATUM",str(out))
 
     def test_source_sha_and_wkt_syntax_fail_closed(self):
         blob=shapefile_fixture()
