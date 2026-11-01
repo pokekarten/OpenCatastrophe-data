@@ -65,9 +65,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - application/json
 
-**Format:** GraphQL JSON data.citygmlDatasets array for the exact documented nine-field CityGMLDataset projection: id, cityCode, prefectureCode, year, registrationYear, url, compositeUrl, featureTypes and metadataZipUrls. There is NO GraphQL fileSize field in the official CityGMLDataset type; source ZIP byte size is unknown until a separate, rights-reviewed original receipt. Any provider errors fail closed.
+**Format:** GraphQL JSON data.citygmlDatasets containing exactly our nine-field, fixed city/year query selection: id, cityCode, prefectureCode, year, registrationYear, url, compositeUrl, featureTypes, metadataZipUrls. The query deliberately DOES NOT SELECT optional fileSize because the provider's schema reference and CityGML guide disagree about its availability. Response fields not selected in this fixed query are rejected by the offline preflight; GraphQL provider errors fail closed.
 
-**Scientific semantics:** The exact 2024 fiscal-year city model catalogue record is a release candidate only; cityCode is 13104 (Shinjuku). The native GraphQL ID is independent of the municipality code, and prefectureCode must be 13. CityGMLDataset has NO fileSize field: do not infer CMS original ZIP bytes from REST G-Spatial archives or metadataZipUrls. compositeUrl must pin city/year, never latest. Building feature presence alone does not prove coverage, height availability, vulnerability, insured values, independent origin or commercial reuse rights.
+**Scientific semantics:** Exact Shinjuku 2024 metadata is a release candidate only. GraphQL native ID is independent of municipality code; prefectureCode must be 13. The PLATEAU CityGML guide advertises optional CMS ZIP size via GraphQL fileSize, whereas the current static GraphQL schema reference display omits it; therefore the minimal fixed query omits that disputed field and reports CMS size as unknown. The separate REST catalogue documents optional row-level file_size, and nested G-Spatial archive file_size is NOT the CMS source ZIP. compositeUrl pins year, not immutable bytes or publication rights; buildings are not insured assets.
 
 ## Operational constraints
 
@@ -119,4 +119,4 @@ _Empty array._
 - <https://docs.plateauview.mlit.go.jp/api/graphql/schema/>
 - <https://docs.plateauview.mlit.go.jp/api/>
 
-**Notes:** Official GraphQL schema rechecked 2026-11-01: unsupported fileSize removed from exact query, replaced by documented prefectureCode and metadataZipUrls. Non-executable documented candidate for one filtered municipality/year. No GraphQL POST, network receipt, provider source-file read, extraction, enrolment, data admission or model execution.
+**Notes:** Source docs reviewed 2026-11-01: live GraphQL schema reference display and CityGML guide disagree on optional fileSize. Exact nine-field query deliberately selects only mutually documented fields; static GraphQL query neither executes nor asserts that the provider lacks other fields. The parser rejects extra fields in its OWN fixed selection, not as invalid GraphQL schema fields. No source bytes, HTTP POST, commercial rights or CAT model inputs.
