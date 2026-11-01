@@ -72,6 +72,12 @@ The original TIFF header and the separate NOAA STAC item **agree on key shape, g
 
 The new **offline** `research_runners/noaa_michael_tiff_header_v0.py` cross-checks an explicitly supplied 4,096-byte TIFF prefix against a provider STAC item and records an explicitly **partial-header SHA-256**. Its companion `tests/test_noaa_michael_tiff_header_v0.py` generates **entirely synthetic TIFF headers**, with negative tests for metadata drift, truncated buffers, bad tile counts, mismatched coordinates, untrusted STAC identifiers and wrong CRS. The synthetic fixture is **not** the original 4-KiB provider response.
 
+## First actual NOAA × FEMA rectangle-only spatial counts
+
+See `docs/research/noaa-fema-michael-2018-three-tile-spatial-receipt-20261101.md` for the exact original API query contract, independent count checks and scientific boundaries. Three exact STAC tile bboxes yielded **0, 8 and 0** FEMA `DR-4399` remote-sensing wind-damage assessment points. The **eight-point** candidate is tile `20181011aC0853300w302100n` (not the separate four-KiB-header proof tile above), with eight provider `AFF` classifications and eight total event points in the same envelope. Its **own original TIFF** first 4,096 bytes were also fetched and structurally inspected; its original `TIFF DateTime` is **`2018:10:11 23:59:59`**, not proven flight capture time. Full asset bytes, SHA-256 and alpha-pixel coverage remain unverified. The spatial result is **point inside bounding rectangle only**, not pixel coverage, unique structure identification, actual damage validation or an insurance-property join.
+
+The new `research_runners/noaa_fema_envelope_overlap_v0.py` and synthetic tests implement a strict query contract and reject inconsistent geometry-free FEMA aggregates. No original FEMA feature rows or their point coordinates have been retrieved.
+
 ## Lineage and spatial validation no-go
 
 - FEMA historical damage public layer `DR-4399`, `ASMT_TYPE=RS`, `DMG_TYPE=WI` contains **23,682** remote-sensing classifications. **All lack `IMG_DATE` and `PROD_DATE`** in provider aggregate queries. Original interpreter/source imagery is therefore **unidentified**.
