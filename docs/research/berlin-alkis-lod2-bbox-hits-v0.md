@@ -60,3 +60,31 @@ CAT/Neon/Pokémon DB is touched and no model data admitted.
 Pending verified original-source WFS2.0 run. Do not substitute the
 `count=5` source limit for `numberMatched` or claim that the
 two products have the same exact geographic content.
+
+## Verified original official WFS count-only evidence — 2026-11-01
+
+Source-side first-party
+[GitHub Actions run 41323901716](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41323901716),
+merged main commit `4d32687473d1bcab49cab998ab86cb2f48e056a8`,
+source UTC `2026-11-01T15:58:41.623712+00:00`:
+
+| Source WFS2.0, same fixed EPSG:25833 200m bbox | Official numberMatched | numberReturned | XML bytes | Original SHA-256 |
+| --- | ---: | ---: | ---: | --- |
+| Current ALKIS `alkis_gebaeude:gebaeude` | **18** | 0 | 837 | `509c38e02796fb1e69e8ba53c5eb3eafd6412b4a7f410ad7d1921cb4a146461f` |
+| Umweltatlas LoD2 2022 `ua_gebaeudehoehen:gebaeudehoehen` | **27** | 0 | 849 | `29530fdf528f78555c18a91be385998fe4260faae320ef134e21e3003c318405` |
+
+This is definitive first-party proof that both **first-five** source
+responses from the preceding IoU study were incomplete: the official
+services report **18 and 27** candidate source *features* in the same
+window. This does not establish the number of physical buildings,
+whether parts/roof facets appear, or whether individual 2022 features
+still exist in 2026.
+
+A narrowly scoped next original-data challenge may now fetch at most
+50 features per source in the same frozen bbox, require that each
+returned FeatureCollection reports complete `numberMatched` and
+`numberReturned` exactly equal to its returned feature count,
+and run actual one-to-one projected IoU matching against both
+source populations. Both source releases remain mutable; their count
+may drift after this timestamp and should never be rewritten silently
+to force a successful check.
