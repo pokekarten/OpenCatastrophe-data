@@ -9,7 +9,7 @@ constraints. It deliberately performs no HTTP or ZIP/TIFF data retrieval.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-import json
+import tomllib
 import math
 from pathlib import Path
 import re
@@ -17,7 +17,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PATH = ROOT / "docs/research/berlin-srhk-original-tiff-header-receipts-20261101.jsonl"
+PATH = ROOT / "docs/research/berlin-srhk-original-tiff-header-receipts-20261101.toml"
 PREFIX_HASHES = {
     "extreme": "9b86b039e4c0915b76f4ea64bc13c201f43483a2585dcdd8f6650d6e1a70579f",
     "extraordinary": "ba22dae2169f3ffab268f9411099e98c5fc3a15cfd8094d6b486b6e9a0c32149",
@@ -31,25 +31,21 @@ PILOT_BBOX = [391700, 5819950, 391900, 5820150]
 PINNED_CODE_SHA = "4f162912e975ca16818dc7389ea39bf010b858c742ccb482e0624946897dc5cb"
 
 
-def _unique_pairs(pairs):
-    out = {}
-    for key, value in pairs:
-        if key in out:
-            raise ValueError("duplicate key in source receipt: " + key)
-        out[key] = value
-    return out
-
-
-def _nonfinite(value):
-    raise ValueError("nonfinite JSON in source receipt: " + value)
+def _reject_nonfinite(value):
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError("nonfinite float in source receipt")
+    if isinstance(value, dict):
+        for item in value.values():
+            _reject_nonfinite(item)
+    if isinstance(value, list):
+        for item in value:
+            _reject_nonfinite(item)
 
 
 def _load(path=PATH):
-    return json.loads(
-        path.read_text(encoding="utf-8"),
-        object_pairs_hook=_unique_pairs,
-        parse_constant=_nonfinite,
-    )
+    result = tomllib.loads(path.read_text(encoding="utf-8"))
+    _reject_nonfinite(result)
+    return result
 
 
 class BerlinVerifiedHeaderReceiptsTests(unittest.TestCase):
@@ -136,7 +132,7 @@ class BerlinVerifiedHeaderReceiptsTests(unittest.TestCase):
             self.assertIs(info["gdal_metadata_tag_present"], False)
             for key in ("gdal_unit_declared", "gdal_scale_declared",
                         "gdal_offset_declared"):
-                self.assertIsNone(info[key])
+                self.assertIsNone(info.get(key))
             for key in (
                 "original_pixel_values_read", "nodata_mask_validated",
                 "scientific_water_depth_units_validated",
@@ -158,11 +154,11 @@ class BerlinVerifiedHeaderReceiptsTests(unittest.TestCase):
         ):
             self.assertIs(access[key], False)
 
-    def test_invalid_json_duplicate_keys_and_nan_fail_closed(self):
-        with self.assertRaisesRegex(ValueError, "duplicate"):
-            json.loads('{"source":1,"source":2}', object_pairs_hook=_unique_pairs)
+    def test_invalid_toml_duplicate_keys_and_nan_fail_closed(self):
+        with self.assertRaises(tomllib.TOMLDecodeError):
+            tomllib.loads("source = 1\nsource = 2")
         with self.assertRaisesRegex(ValueError, "nonfinite"):
-            json.loads('{"depth":NaN}', parse_constant=_nonfinite)
+            _reject_nonfinite(tomllib.loads("depth = nan"))
 
 
 if __name__ == "__main__":
