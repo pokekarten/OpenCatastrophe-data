@@ -20,14 +20,31 @@ WITH assets AS (
     AND e.unit_type='asset' AND e.assumption_status='synthetic'
     AND e.source_key IS NULL AND e.location IS NOT NULL
 ),
-gate AS (
-  SELECT COUNT(*) AS n, SUM(proxy_value_eur) AS proxy_total,
-         COUNT(DISTINCT external_unit_id) AS unique_ids
-  FROM assets
-  HAVING COUNT(*)=12 AND COUNT(DISTINCT external_unit_id)=12
-     AND SUM(proxy_value_eur)=3150000
+expected_assets AS (
+  SELECT 'SYNTH-' || lpad(i::text,2,'0') AS external_unit_id,
+         (100000 + 25000*i)::numeric AS expected_value_eur
+  FROM generate_series(1,12) AS s(i)
 ),
-years AS (SELECT generate_series(0,9999)::int AS yr FROM gate),
+gate_checks AS (
+  SELECT COUNT(*) AS n, SUM(a.proxy_value_eur) AS proxy_total,
+         COUNT(DISTINCT a.external_unit_id) AS unique_ids,
+         COUNT(*) FILTER (
+           WHERE a.external_unit_id IS NULL
+              OR e.external_unit_id IS NULL
+              OR a.proxy_value_eur IS DISTINCT FROM e.expected_value_eur
+         ) AS mismatches
+  FROM assets a FULL JOIN expected_assets e USING (external_unit_id)
+),
+gate AS (
+  -- Unlike HAVING, this errors on missing/mutated fixtures instead of
+  -- silently returning zero annual worlds and misleading NULL statistics.
+  SELECT 1 / (CASE WHEN n=12 AND unique_ids=12
+                      AND proxy_total=3150000 AND mismatches=0
+                   THEN 1 ELSE 0 END) AS asserted_fixture
+  FROM gate_checks
+),
+years AS (SELECT generate_series(0,9999)::int AS yr
+          FROM gate WHERE asserted_fixture=1),
 -- The 8-bit thresholds of 26/256 wind and 13/256 flood are arbitrary.
 perils(peril,threshold) AS (VALUES ('windstorm',26),('flood',13)),
 candidate_events AS (
