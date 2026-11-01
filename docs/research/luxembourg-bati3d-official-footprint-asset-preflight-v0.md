@@ -45,3 +45,15 @@ The direct official URL was identified, but download from the current analysis e
 ## Stewardship
 
 Source discovery catalogue candidate: `lu.act.bd-l-bati3d-2023` (formerly PR #901, now main). It stays `not_admitted`, `not_reviewed` for rights and science. The research SQL view `research.building_source_shortlist_v0` in the separate Neon insurance DB is metadata-only and can be queried for canonical GitHub blob and commit identity. No raw provider asset is in Git or Neon.
+
+## Offline executable archive gate (proposed)
+
+The research-only `research_runners/luxembourg_bati3d_zip_preflight_v0.py` validates one **already downloaded** official ACT2023v2 2D GeoPackage ZIP against a predeclared, lowercase 64-character original ZIP SHA-256. It checks that the archive is bounded (maximum 128 MiB), has safe and unique names, contains exactly one unencrypted, non-symlink GeoPackage member, stays below expanded-size/compression limits, decompresses the GeoPackage through its full CRC verification, and has an initial SQLite file signature. It returns aggregate metadata and SHA-256 of the inner GeoPackage without writing/extracting either input.
+
+```bash
+python research_runners/luxembourg_bati3d_zip_preflight_v0.py \
+  --archive /path/to/authorised/act2023v2-buildings3d-footprints.gpkg.zip \
+  --expected-sha256 <predeclared-full-sha256-of-original-zip>
+```
+
+An SHA computed from the same archive is a **reproducibility receipt**, not independent proof of authenticity or legal rights. The publisher's multipart-like `md5` catalogue field does not supply this SHA-256. The script does **not** verify the GeoPackage's SQLite schema, feature count, building IDs, EPSG:2169, observation date or licence and does not promote a source to model input. This remains a next separate provider- and scientific-review stage. Nine offline synthetic negative/positive tests exercise the validator; passing synthetic tests does not mean the original provider file was successfully acquired or inspected.
