@@ -52,7 +52,7 @@ jobs:
               with z.open(members[0]) as inp, out.open("xb") as dst:
                   shutil.copyfileobj(inp, dst, length=1024 * 1024)
           PY
-          python research_runners/luxembourg_act2023v2_attribute_quality_v0.py \
+          python -m research_runners.luxembourg_act2023v2_attribute_quality_v0 \
             --gpkg "$EXTRACTED_GPKG" \
             --expected-gpkg-sha256 9765b04eaeb9332aa606b8dca44031116588e285553aab061d61037938a002bf
           # No original bytes, individual building IDs, geometry or sample records are uploaded.
