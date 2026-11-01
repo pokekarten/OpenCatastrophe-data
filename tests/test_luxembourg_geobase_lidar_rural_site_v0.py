@@ -10,7 +10,7 @@ HAS=all(importlib.util.find_spec(x) is not None for x in ("shapely","pyproj"))
 if HAS:
     from pyproj import Transformer
     from research_runners.luxembourg_geobase_lidar2024_object_proxy_v0 import (
-        BuildingProxyError, LON, LAT, HALF_WIDTH_METRES, STUDY_SITES,
+        BuildingProxyError, LON, LAT, HALFWIDTH_METRES, STUDY_SITES,
         original_window,
     )
 
@@ -20,7 +20,7 @@ class RuralWindowTests(unittest.TestCase):
     def test_city_stays_the_frozen_baseline(self):
         self.assertEqual(STUDY_SITES["luxembourg-city"], (LON,LAT))
         self.assertEqual(original_window().wkb,original_window(site="luxembourg-city").wkb)
-        self.assertEqual(HALF_WIDTH_METRES,50.0)
+        self.assertEqual(HALFWIDTH_METRES,50.0)
 
     def test_berdorf_is_second_fixed_public_village_study(self):
         self.assertEqual(STUDY_SITES["berdorf-village"],(6.348821,49.820946))
