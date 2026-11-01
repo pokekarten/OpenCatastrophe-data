@@ -124,7 +124,7 @@ def run_live() -> dict:
         CPL_VSIL_CURL_CACHE_SIZE="1048576",
         GDAL_HTTP_MAX_RETRY="0",
         GDAL_HTTP_TIMEOUT="20",
-        GDAL_CACHEMAX="8",
+        GDAL_CACHEMAX=8,
         VSI_CACHE="FALSE",
     ):
         results={}
