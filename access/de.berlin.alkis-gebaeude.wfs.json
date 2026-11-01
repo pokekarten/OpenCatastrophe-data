@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "de.berlin.alkis-gebaeude.wfs",
+  "source_ids": [
+    "de.berlin.alkis-gebaeude.wfs"
+  ],
+  "provider": "Senatsverwaltung für Stadtentwicklung, Bauen und Wohnen Berlin",
+  "interface_type": "wfs",
+  "status": "documented_only",
+  "documentation_url": "https://daten.berlin.de/datensaetze/alkis-berlin-gebaude-wfs-728b368a",
+  "service_root": "https://gdi.berlin.de",
+  "api_version": "OGC WFS 2.0.0 (provider also lists 1.0.0 and 1.1.0)",
+  "access_scope": [
+    "metadata",
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "get_capabilities",
+      "get_bounded_features"
+    ],
+    "path_templates": [
+      "/services/wfs/alkis_gebaeude"
+    ],
+    "parameter_rules": "Documentation-only identity for the official Berlin ALKIS building and building-part WFS. This contract does not authorize sending either operation. A future provider-specific worker must freeze WFS version, exact GetCapabilities parameters, feature type(s) from the original capabilities/schema, a predeclared 200m x 200m EPSG:25833 Berlin research bounding box, response CRS, page/feature cap, content-type and byte limit; reject any caller-selected host, arbitrary query, redirects, unbounded feature traversal or whole-Berlin extraction. The existing five-feature source receipt does not turn this generic interface into an executable access contract."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/xml",
+      "text/xml",
+      "application/gml+xml"
+    ],
+    "format": "Official ALKIS Berlin Gebäude WFS service capabilities and building/building-part vector features; authoritative service metadata indicate OGC WFS 1.0.0, 1.1.0 and 2.0.0, CRS EPSG:25833.",
+    "scientific_semantics": "Official mutable cadastral building and building-part geometry; updated monthly. An individual ALKIS feature may represent a building or building part rather than one insured asset. Original EPSG:25833 feature identity, date/vintage, geometry type and provenance must survive ingestion. Do not infer building age, insured location, replacement value, TIV, construction type or hazard vulnerability. A separately produced 2022 LoD2 building-height layer derives from ALKIS footprints and height surfaces and is not geometrically independent of this WFS. Historical 2021 building stock cannot be inferred from a current 2026 feature alone."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 1048576,
+    "max_sample_bytes": 5242880,
+    "retry_policy": "none",
+    "rate_limit_notes": "The official Berlin Geoportal identifies anonymous web feature access but no approved automated request rate or bulk-download quota was established in this contract. No new request is enabled by this documentation; future operations require a bounded site-specific worker and current official service terms review.",
+    "mutability_notes": "Provider describes monthly ALKIS updates; catalogue metadata show 2026 publication/update dates. Bind every later source read to exact UTC retrieval time, service response SHA-256, feature schema/CRS, requested bbox and dataset vintage; never silently substitute current geometry for the 2021 stock or 2022 LoD2 baseline."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "allowed",
+    "notes": "The official Berlin Open Data catalogue and government spatial metadata identify Datenlizenz Deutschland – Zero – Version 2.0 for the ALKIS buildings layer, without access restrictions. This validates the published layer license, not a numeric provider automation quota, personal-attribute reuse, independent model-input science or all possible derivative publications. Separate WFS service/request conditions have not been reviewed; status therefore remains documented_only and execution disabled."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-01",
+  "evidence_urls": [
+    "https://daten.berlin.de/datensaetze/alkis-berlin-gebaude-wfs-728b368a",
+    "https://www.berlin.de/sen/stadt/stadtdaten/geoinformation/liegenschaftskataster/geobasisdaten-online/datenbereitstellung/",
+    "https://www.geoportal.de/info/78d98821-42e2-3c82-a0f7-1baad959b74e",
+    "https://www.berlin.de/umweltatlas/nutzung/gebaeudehoehen/fortlaufend-aktualisiert/datengrundlage/",
+    "https://www.govdata.de/dl-de/zero-2-0"
+  ],
+  "notes": "New contract documents a previously inventoried Berlin source and the official endpoint. This is not a network probe or original feature retrieval. Prior five-feature work is independent evidence recorded elsewhere in the repo; do not promote its science or rights status by implication. No new CAT4 data, insured values, building identities or model inputs are admitted here."
+}
