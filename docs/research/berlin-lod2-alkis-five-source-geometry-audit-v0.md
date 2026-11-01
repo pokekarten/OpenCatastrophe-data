@@ -43,6 +43,10 @@ proxy, arbitrary IDs, filter, bbox, host or full-country pagination.
   Polygon/MultiPolygon intersecting the selected query box by
   **positive area**, with plausible Berlin projected axes. Repeated
   source feature IDs/geometries and malformed/unknown CRS fail.
+  **Both original GeoJSON replies must explicitly declare EPSG:25833**:
+  the WFS `srsName` request alone does not prove the reply's native
+  coordinate semantics, and silent conversion from CRS-less GeoJSON
+  into metre-space could fabricate source geometry matches.
 - Compare up to 5 ALKIS and 5 independent-height polygons **in
   EPSG:25833 metric geometry**. Count pairings only where projected
   original footprint intersection-over-union **IoU >=0.95**.

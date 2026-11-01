@@ -95,6 +95,27 @@ class HeightPairSyntheticTests(unittest.TestCase):
         with self.assertRaises(HeightPairError):compare_samples(raw(a),raw(h))
 
     @unittest.skipUnless(HAS_SPATIAL,"Shapely and pyproj required")
+    def test_missing_or_ambiguous_geojson_crs_never_matches_across_sources(self):
+        a,h=samples()
+        # GeoJSON without a CRS must not be silently reinterpreted as
+        # projected EPSG:25833 from the WFS request's srsName parameter.
+        h.pop("crs")
+        with self.assertRaisesRegex(HeightPairError,"explicitly declare EPSG:25833"):
+            compare_samples(raw(a),raw(h))
+        a,h=samples()
+        a.pop("crs")
+        with self.assertRaisesRegex(HeightPairError,"explicitly declare EPSG:25833"):
+            compare_samples(raw(a),raw(h))
+        a,h=samples()
+        h["crs"] = {"type":"name","properties":{"name":"EPSG:4326"}}
+        with self.assertRaisesRegex(HeightPairError,"explicitly declare EPSG:25833"):
+            compare_samples(raw(a),raw(h))
+        a,h=samples()
+        h["crs"] = {"type":"name","properties":{}}
+        with self.assertRaisesRegex(HeightPairError,"explicitly declare EPSG:25833"):
+            compare_samples(raw(a),raw(h))
+
+    @unittest.skipUnless(HAS_SPATIAL,"Shapely and pyproj required")
     def test_exactly_two_fixed_requests_and_no_persistence(self):
         a,h=samples()
         calls=[]
