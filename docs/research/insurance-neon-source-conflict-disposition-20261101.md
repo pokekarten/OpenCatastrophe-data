@@ -37,7 +37,7 @@ The 11-item landscape file's recorded Git ref is
 `2c9cfeeec62c81609e63e58465f7882622054b7e`; the 13-item revision
 is `98c6391a05af0b5d622487aca3ff214a14d00695`.
 USGS and Florida source Git blobs were independently retrieved at **both**
-recorded branch-specific FFBK commit references and matched byte-identical
+recorded branch-specific historical source-commit references and matched byte-identical
 Git blob IDs.
 
 ### External publisher rules (checked)
