@@ -94,7 +94,7 @@ The fixed one-time region was reduced to **100m × 100m** around the same public
 
 ## Actual pinned-original research result (2026-11-01)
 
-**Successful source workflow:** https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41310996649
+**Successful source workflow:** https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41310953460
 
 The original two publisher ZIPs and extracted GeoPackages matched their
 pre-existing exact SHA pins. The fixed **100 m × 100 m** city-centre
