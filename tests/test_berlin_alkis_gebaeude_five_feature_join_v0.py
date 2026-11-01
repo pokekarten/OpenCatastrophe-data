@@ -162,6 +162,32 @@ class StrictWfsConfigurationTests(unittest.TestCase):
             inspect_building_geojson(raw(bad))
 
     @unittest.skipUnless(HAS_SPATIAL,"Pinned Shapely/Pyproj needed")
+    def test_query_bbox_touch_only_never_counts_as_building_exposure(self):
+        # Shapely.intersects() is true for pure edge/corner contact, even
+        # though zero source footprint area lies inside the fixed WFS bbox.
+        cases = (
+            (BBOX[2], BBOX[1] + 20),   # west edge of polygon on east bbox edge
+            (BBOX[0] + 20, BBOX[3]),   # south edge on north bbox edge
+            (BBOX[2], BBOX[3]),        # corner-only intersection
+        )
+        for x, y in cases:
+            with self.subTest(x=x, y=y):
+                bad = fixture()
+                bad["features"][0] = feature(x=x, y=y)
+                with self.assertRaisesRegex(
+                    BerlinBuildingSampleError, "positive-area overlap"
+                ):
+                    inspect_building_geojson(raw(bad))
+
+        # A boundary-crossing footprint with nonzero common area is valid;
+        # never silently restrict WFS to wholly contained polygons.
+        valid = fixture()
+        valid["features"][0] = feature(x=BBOX[2] - 10, y=BBOX[3] - 10)
+        report, coords = inspect_building_geojson(raw(valid))
+        self.assertEqual(report["sampled_distinct_polygon_count"], 1)
+        self.assertEqual(len(coords), 1)
+
+    @unittest.skipUnless(HAS_SPATIAL,"Pinned Shapely/Pyproj needed")
     def test_source_values_not_saved_to_separate_CAT4_derived_geometry(self):
         source = raw(fixture(n=2))
         with tempfile.TemporaryDirectory(prefix="oc-berlin-cat4-") as tmp:
