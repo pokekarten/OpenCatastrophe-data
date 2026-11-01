@@ -66,13 +66,21 @@ def inspect_archive(path: Path, descriptor: dict[str, Any]) -> dict[str, Any]:
             md5.update(block)
     if n != expected_size:
         raise ArchiveReceiptError("source file changed during read")
+    observed_sha256 = sha.hexdigest()
+    pinned_mirror_sha256 = descriptor.get("mirror_full_archive_sha256_verified_in_ci")
+    if pinned_mirror_sha256 is not None:
+        if not isinstance(pinned_mirror_sha256, str) or not re.fullmatch(r"[0-9a-f]{64}", pinned_mirror_sha256):
+            raise ArchiveReceiptError("invalid pinned full mirror SHA-256")
+        if observed_sha256 != pinned_mirror_sha256:
+            raise ArchiveReceiptError("full archive SHA-256 differs from pinned mirror receipt")
     return {
         "schema": "fr-bdtopo-d077-2016-mirror-complete-archive-receipt-v0",
         "archive_filename": name,
         "source_release_date": "2016-03-24",
         "department": "D077",
         "compressed_archive_bytes": n,
-        "full_archive_sha256_local": sha.hexdigest(),
+        "full_archive_sha256_local": observed_sha256,
+        "pinned_mirror_sha256_matched": pinned_mirror_sha256 is not None,
         "full_archive_md5_legacy_comparison_only": md5.hexdigest(),
         "mirror_listed_size_matches": True,
         "7z_file_signature_verified": True,
