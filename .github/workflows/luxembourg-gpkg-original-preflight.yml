@@ -43,7 +43,7 @@ jobs:
           python scripts/luxembourg_gpkg_zip_preflight_v0.py --source-zip "$file" \
             --sha256 a271b1cbcc22ded018f9bab0c150e9f33efa6cb7ebca8cf4dc4bdb1f5d84859a
           python -m pip install --disable-pip-version-check --no-input -r requirements-eu-flood-spatial.txt
-          python research_runners/luxembourg_axis_extent_audit_v0.py --source-zip "$file"
+          python -m research_runners.luxembourg_axis_extent_audit_v0 --source-zip "$file"
           # The ZIP preflight above establishes one safe GPKG member and its
           # exact full archive receipt; extract to ephemeral disk only after it.
           python - "$file" "$gpkg" <<'PY'
