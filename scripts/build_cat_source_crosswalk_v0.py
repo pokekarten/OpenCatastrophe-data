@@ -156,6 +156,9 @@ def build_crosswalk(access_inventory: dict[str, Any], linkage_audit: dict[str, A
             "access_contract_ids": sorted(contracts),
             "access_contract_statuses": access.get("contract_statuses", []),
             "operational_readiness": access.get("operational_readiness"),
+            "rights_posture": access.get("rights_posture"),
+            "license_or_terms_flags": access.get("license_or_terms_flags", []),
+            "automation_decision": access.get("automation_decision"),
             "access_next_action": access.get("next_action"),
             "same_authoritative_page_candidate_ids": page_peers.get(source_id, []),
             "same_page_proves_identical_source_bytes": False,
@@ -187,6 +190,14 @@ def build_crosswalk(access_inventory: dict[str, Any], linkage_audit: dict[str, A
     } for source_id, item in sorted(manifests.items())]
 
     readiness_counts = dict(sorted(Counter(row["operational_readiness"] for row in candidates).items()))
+    # Category totals overlap: one uncontracted dataset may serve multiple
+    # hazards, geographies or scientific roles. These are research-queue
+    # counts, not mutually exclusive dataset counts or coverage statistics.
+    missing_contract_category_counts = dict(sorted(Counter(
+        category
+        for row in candidates if row["no_reviewed_access_contract"]
+        for category in set(row["categories"])
+    ).items()))
     return {
         "profile": "opencatastrophe-source-access-linkage-research-v0",
         "scope": "Non-admission source discovery plus separately reported existing manifests; no provider retrieval, source-byte validation or executable join",
@@ -199,6 +210,8 @@ def build_crosswalk(access_inventory: dict[str, Any], linkage_audit: dict[str, A
         "shared_authoritative_page_group_count": len(url_groups),
         "shared_authoritative_page_review_groups": url_groups,
         "candidate_readiness_counts": readiness_counts,
+        "missing_contract_candidate_category_counts": missing_contract_category_counts,
+        "category_counts_are_not_disjoint": True,
         "candidates": candidates,
         "existing_manifests_separate": manifest_rows,
         "external_provider_data_downloaded": False,
