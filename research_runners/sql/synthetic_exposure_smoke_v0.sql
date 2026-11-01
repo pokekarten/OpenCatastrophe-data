@@ -13,6 +13,7 @@ DO $synthetic_exposure_smoke_v0$
 DECLARE
     portfolio_uuid uuid;
     version_uuid uuid;
+    contract_uuid uuid;
     n_units integer;
     n_distinct_locations integer;
     n_bad integer;
@@ -117,6 +118,50 @@ BEGIN
        OR tiv_sum <> 3150000 OR n_bad <> 0 THEN
         RAISE EXCEPTION 'Synthetic smoke fixture failed conservation/guard checks: units %, places %, value %, invalid %',
             n_units, n_distinct_locations, tiv_sum, n_bad;
+    END IF;
+
+    -- Illustrative, synthetic CAT-XL treaty with no real cedent or reinsurer.
+    -- The monetary amounts and reinstatement count are NOT actual contract terms.
+    INSERT INTO insurance.contract (
+        contract_key, cedent_id, counterparty_id, contract_type,
+        is_synthetic, effective_from, effective_to, currency_code,
+        attachment_amount, limit_amount, quota_share, reinstatement_count,
+        covered_perils, contract_terms, source_key
+    ) VALUES (
+        'oc-synthetic-cat-xl-smoke-v0', NULL, NULL, 'cat_xl',
+        true, DATE '2026-01-01', DATE '2026-12-31', 'EUR',
+        200000, 500000, NULL, 1,
+        ARRAY['windstorm', 'flood']::text[],
+        jsonb_build_object(
+            'synthetic', true,
+            'actual_insurer_contract', false,
+            'model_input_approved', false,
+            'reinstatement_premium', 'unspecified_not_zero',
+            'loss_ordering', 'not_specified',
+            'purpose', 'relational_contract_link_smoke_test_only'
+        ), NULL
+    ) ON CONFLICT (contract_key) DO NOTHING;
+
+    SELECT c.contract_id INTO contract_uuid
+    FROM insurance.contract c
+    WHERE c.contract_key = 'oc-synthetic-cat-xl-smoke-v0'
+      AND c.is_synthetic = true AND c.contract_type = 'cat_xl'
+      AND c.cedent_id IS NULL AND c.counterparty_id IS NULL
+      AND c.currency_code = 'EUR'
+      AND c.attachment_amount = 200000 AND c.limit_amount = 500000
+      AND c.reinstatement_count = 1 AND c.source_key IS NULL
+      AND c.contract_terms ->> 'model_input_approved' = 'false';
+    IF contract_uuid IS NULL THEN
+        RAISE EXCEPTION 'Existing contract conflicts with illustrative synthetic CAT-XL terms';
+    END IF;
+
+    INSERT INTO insurance.portfolio_contract (portfolio_version_id, contract_id, contract_order)
+    VALUES (version_uuid, contract_uuid, 1)
+    ON CONFLICT (portfolio_version_id, contract_id) DO NOTHING;
+
+    IF (SELECT count(*) FROM insurance.portfolio_contract pc
+        WHERE pc.portfolio_version_id = version_uuid) <> 1 THEN
+        RAISE EXCEPTION 'Synthetic demo version must link to exactly one fictional treaty';
     END IF;
 END;
 $synthetic_exposure_smoke_v0$;
