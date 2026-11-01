@@ -46,3 +46,16 @@ Both research tables enforce `model_input_approved=false` / `model_admitted=fals
 5. Version-pinned reproducible multi-insurer 10,000-year runs and independent holdouts.
 
 Keep the separate pre-existing Neon validation branch's Florida/Texas/NAIC research data until tested reconciliation; do not overwrite it or claim that it is already merged into production.
+
+## Paged source equality spot-check (2026-11-01)
+
+Two complete JSON index pages were retrieved from the publisher and compared with the CAT-only Neon research table in read-only queries. Both report version `2026-09-08+97f331e66662`, aggregate count 18,180 and page count 46.
+
+| Public names index page | Original bytes | SHA-256 of page response | Exact Neon matches |
+| --- | ---: | --- | ---: |
+| `https://insurers.global/api/v1/insurers/names/pages/1.json` | 55,474 | `e926e1377a4a6e6d1f62a087ff1908619baedfb3bec5d867e69af8d0209cd92e` | 400/400 |
+| `https://insurers.global/api/v1/insurers/names/pages/46.json` | 31,743 | `2f961b423a9b11b6ff662c15579c233ea7ccac8a9c325f076d9754563806f9de` | 180/180 |
+
+No mismatches in exact slug, country, name, class code or publisher verification claim in these 580 records. The SHA-256 implementation was checked with the standard `abc` test vector. No database rows were changed.
+
+**Limits:** Only 580/18,180 records have been compared this way. The full `names.json` file was not acquired completely and has no established original-byte SHA-256. The above hashes belong to individual pages, not to the historical database import or every source row. The staging URL/hash gaps and independent regulator verification remain unresolved; model admission is blocked. Next step: verify all 46 pages and preserve per-page provenance before any permitted metadata repair.
