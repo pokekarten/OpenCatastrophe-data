@@ -168,6 +168,55 @@ RECIPES = (
         "Cross-hazard causal link requires hydrology and lag analysis; HANZE impact region is not a CatRaRE storm footprint.",
         "Do not assert one-to-one events or infer causality from date/country proximity.",
     ),
+
+    (
+        "jrc-flood-depth-versus-gfm-shared-source",
+        ("ec.jrc.satellite-flood-depth-europe.2015-2024", "copernicus.cems.gfm.v4.1.1"),
+        "same_sentinel1_extent_lineage_derived_depth",
+        "Event identity/date window, Sentinel-1 scene and acquisition, footprint, valid pixel mask, depth centimetres, original GFM extent and exact product release",
+        "JRC depth reconstruction uses GFM-derived extents and a topographic adjustment; official JRC catalogue currently documents 2015-2024 while third-party EuroFlood reports later archive coverage. Check 9999 water-body mask, changes in year coverage, resampling, and original artifact hashes before a comparison.",
+        "Do not claim independent flood observations, treat centimetres as metres, read dummy 9999 as a valid depth, or infer insured losses from derived water depths.",
+    ),
+    (
+        "openbuildingmap-overture-ghsl-common-upstream",
+        ("gfz.openbuildingmap.global.2025", "overture.maps.buildings", "ec-jrc.ghsl.ghs-obat.r2024a"),
+        "partly_shared_footprints_and_ghsl_derived_attributes",
+        "Exact OSM/Google/Microsoft/Overture release and tile identity, original geometry source family, Overture GERS or documented original building ID, CRS and polygon overlap with adjudicated splits",
+        "OpenBuildingMap conflates OSM, Google and Microsoft footprints; Overture has potentially overlapping building origins and GHS-OBAT carries Overture-linked GHSL-derived attributes. Verify each lineage path and per-field source; no independent validation from a second ML-derived height.",
+        "Do not sum input and derivative footprint counts, assume shared OSM IDs survive conflation, infer property-level insured TIV or treat modelled height as observed surveying.",
+    ),
+    (
+        "aqueduct-v2-versus-jrc-flood-hazard",
+        ("wri.aqueduct-flood-hazard.v2.2020", "ec-jrc.cems.global-river-flood-hazard-maps.2026"),
+        "distinct_modelled_return_period_surface_challenge",
+        "Hazard mechanism riverine only, matching return period, climate epoch, defended/undefended assumption, depth metres, grid/CRS, shoreline and exact model release",
+        "WRI Aqueduct 2020 river maps were bias-corrected in October 2020 and omit flood defence; JRC 2026 has different basins, models and spatial gaps. Use a frozen intersection sample, with observed high-quality events only as separate holdout.",
+        "Do not treat return-period rasters as historical event loss observations, sum modelled flood occurrences, or assume separate hazards have independent underlying model assumptions.",
+    ),
+    (
+        "gem-global-seismic-exposure-vulnerability",
+        ("gem.global-seismic-hazard-map.v2026.1", "gem.global-exposure-model.v2026.0.0", "gem.global-vulnerability-model.v2026.0.0"),
+        "three_component_hazard_exposure_vulnerability_model_dependency",
+        "Hazard PGA in g on Vs30 800m/s reference rock at 10% exceedance in 50y, exposure replacement cost and GEM taxonomy, vulnerability intensity measure, regional release and model mapping",
+        "A single exceedance probability map is not a complete stochastic event set and cannot directly produce AAL or exceedance curves. Map soil conditions and taxonomy with uncertainty, freeze separate product rights and avoid circular validation of a GEM model with another GEM derivative.",
+        "Do not equate replacement cost with insured values, interpret a map exceedance value as an event loss, or redistribute NC-SA data for commercial CAT services without a licence.",
+    ),
+    (
+        "iris-ibtracs-storm-dependence",
+        ("imperial.iris.synthetic-tropical-cyclones.2024", "noaa.ncei.ibtracs.v04r01", "noaa.ncei.hursat-b1.v06"),
+        "synthetic_tracks_share_observational_input_family",
+        "IRIS input IBTrACS v04r00 1980-2021, independent current v04r01 identity, storm and basin/year labels, 3-hour track timestamps, wind averaging period and record inclusion rules",
+        "IRIS fits post-maximum-intensity storms using IBTrACS and ERA5; HURSAT is also storm-centred on IBTrACS. Validate different vintages and TC life-cycle coverage and compare STORM v4 only after matched basin/year/wind definitions.",
+        "Do not mistake independent simulated years for interannual temporal dependence, treat synthetic IRIS events as observed, or call reprocessed IBTrACS products independent ground truth.",
+    ),
+    (
+        "aqueduct-water-risk-versus-aqueduct-floods",
+        ("wri.aqueduct.water-risk-atlas.v4.0", "wri.aqueduct-flood-hazard.v2.2020"),
+        "same_provider_distinct_product_not_direct_event_join",
+        "WRI product/version, hydrologic basin topology, climate horizon, indicator name and units versus flood GeoTIFF return-period and coastal/riverine parametrization",
+        "Aqueduct 4.0 Water Risk Atlas indicators and Aqueduct Floods v2 raster hazard are separate methods, scales and eras. Review any shared upstream hydrological models and explicit spatial crosswalk before using one as a covariate for the other.",
+        "Do not substitute water-stress indices for flood depths, use country rankings as site measurements, or assume WRI 4.0 labels update Aqueduct Floods v2 data.",
+    ),
 )
 
 
