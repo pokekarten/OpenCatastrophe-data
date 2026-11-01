@@ -13,8 +13,8 @@ The historical target is no longer an unspecified 2015/2016 archive. A public co
 
 - Archived directory: https://files.opendatarchives.fr/professionnels.ign.fr/bdtopo/BDTOPO_2-1_2016-03-24/
 - **Exactly listed file:** `BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z`
-- Listed file size: **110,738,399 compressed bytes** (not a measured successful full transfer).
-- The 64-byte HTTP range preflight from the publicly linked mirror responded with MIME `application/x-7z-compressed` and the standard 7z signature hex `377abcaf271c`. **This does not prove the remaining bytes are intact.**
+- Listed file size: **110,738,399 compressed bytes**. A real ephemeral GitHub Actions download on **2026-11-01 13:25 UTC** now independently confirmed exactly this full byte count.
+- The 64-byte HTTP range preflight from the publicly linked mirror responded with MIME `application/x-7z-compressed` and the standard 7z signature hex `377abcaf271c`. The later **full archive** download and SHA-256 receipt extends this header-only preflight.
 - Edition/product semantics from filename: BD TOPO **2.1**, all themes, Shapefile, Lambert-93 (expected EPSG:2154, validate original .prj), department `D077`, release **2016-03-24**. An edition date is not necessarily an observation / construction date for every feature.
 - Historic IGN download catalogue: https://geoservices.ign.fr/telechargement-api/BDTOPO
 - Current provider dataset description and posted licence: https://www.data.gouv.fr/datasets/bd-topo-r
@@ -22,7 +22,7 @@ The historical target is no longer an unspecified 2015/2016 archive. A public co
 
 This archive mirror is a **secondary hosting location**; authenticity against the official original provider bytes/checksum and exact 2016 product licence/attribution needs its own review. Do not assume the current product's Licence Ouverte 2.0 automatically resolves every old archive/reuse question.
 
-The canonical structured research metadata in `landscape/fr_bdtopo_d077_2016_archive_candidate_v0.json` deliberately keeps `original_sha256=null`, `model_input_approved=false`. The initial IGN GetResource discovery endpoint returned HTTP 403; that failure is **not** evidence that this edition does not exist.
+The canonical structured research metadata in `landscape/fr_bdtopo_d077_2016_archive_candidate_v0.json` pins a **verified mirror full-file SHA-256** while deliberately keeping `original_sha256=null`, `model_input_approved=false`. The initial IGN GetResource discovery endpoint returned HTTP 403; that failure is **not** evidence that this edition does not exist.
 
 ## Executable next operation
 
@@ -34,9 +34,9 @@ python research_runners/fr_bdtopo_2016_d077_archive_receipt_v0.py \
   --descriptor landscape/fr_bdtopo_d077_2016_archive_candidate_v0.json
 ```
 
-The validator rejects the wrong country department, release, filename, symlink, wrong byte length or missing 7z signature. It **streams the entire local file** to produce a new SHA-256 and a legacy MD5 for possible comparison with a separately established original provider / mirror listing. **Local SHA-256 alone is not provider verification**. It never extracts archive contents, performs API requests, modifies Neon, or approves CAT model use.
+The validator rejects the wrong country department, release, filename, symlink, wrong byte length or missing 7z signature. It **streams the entire local file** to produce a new SHA-256 and a legacy MD5 for possible comparison with a separately established original provider / mirror listing. **The mirror's complete-file SHA-256 was first captured in GitHub CI; subsequent runs now compare against that pinned digest, and mismatch fails closed. This still does NOT independently prove IGN original provider byte identity.** It never extracts archive contents, performs API requests, modifies Neon, or approves CAT model use.
 
-Synthetic tests: `python -m unittest tests.test_fr_bdtopo_2016_d077_archive_receipt_v0 -v` (**11 locally tested**). CI will check the repository when the PR opens.
+Synthetic tests: `python -m unittest tests.test_fr_bdtopo_2016_d077_archive_receipt_v0 -v` (**11 tests initially executed locally, then expanded to 14 for pinned-hash verification**). CI exercises the synthetic tests on each PR update; a dedicated bounded original-byte mirror job also executes outside Git.
 
 After a complete archive receipt, and only after independently reviewing exact rights and original file integrity, inspect the compressed entry listing with a safely configured archive tool, validate each building shapefile's `.shp/.shx/.dbf/.prj`, resolve path and CRS, and extract only a **bounded polygon near Ponthierry**, not an entire national footprint into model tables. Use the existing `scripts/building_footprint_overlap_v0.py` for **research-only** modern-to-2016 geometry comparison; splits/merges and absent/changed identifiers require human review. The current RNB/IGN source shares upstream BD TOPO lineage, so equal polygons do not establish independent accuracy.
 
@@ -44,8 +44,8 @@ A historical geometry matched to a modern building still supplies **no** reliabl
 
 ## Reality check
 
-**Done:** unique historic edition named, mirror index and 7z header independently probed, original-archive receipt validator and tests authored.
+**Done:** exact historical edition named, mirror filename and 7z header independently probed, **all 110,738,399 compressed bytes downloaded and SHA-256 hashed in an ephemeral GitHub runner**, validator and regression tests authored. Verified full-file mirror SHA-256: `ab3e1bab127d0e71e372d736572d80e6a8a9578131992475c23a1f0ee1871a06`; legacy MD5 for comparing a historical original listing: `fe3523aea6b72fb6643f2cda91dccbd2`. Live evidence: https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41311142370. This is a full mirror receipt, **not** an independent IGN provider checksum.
 
-**Not done:** full 110.7-MB archive download/hash/decompression, provider original checksum comparison, validated historical Ponthierry building footprint extraction, rights and historical insured CAT exposure admission.
+**Not done:** extracting and checking the archive's inner Shapefiles/CRS, **independent IGN original checksum** comparison, validated historical Ponthierry building footprint extraction, exact-source rights and historical insured CAT exposure admission.
 
 This source is a credible research target, **not yet 2016 building exposure admitted to a model**.
