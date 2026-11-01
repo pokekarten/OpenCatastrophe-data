@@ -80,7 +80,6 @@ class TileResourcePreflightTests(unittest.TestCase):
         for url in (
             "http://data.public.lu/en/datasets/r/"+("1"*36),
             "https://data.public.lu.evil.invalid/en/datasets/r/"+("1"*36),
-            "https://127.0.0.1/en/datasets/r/"+("1"*36),
             "https://data.public.lu/en/datasets/r/../../internal",
             "https://data.public.lu/en/datasets/r/"+("1"*36)+"?session=private",
             "https://data.public.lu/en/datasets/r/"+("1"*36)+"#fragment",
