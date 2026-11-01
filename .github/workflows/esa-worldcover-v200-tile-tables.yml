@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ESA WorldCover exact original TIFF tile tables 10368-byte audit
+
+on:
+  pull_request:
+    paths:
+      - 'access/esa.worldcover.2021.v200.json'
+      - 'access/esa.worldcover.2021.v200.md'
+      - 'scripts/probe_esa_worldcover_tile_tables_v0.py'
+      - 'tests/test_probe_esa_worldcover_tile_tables_v0.py'
+      - '.github/workflows/esa-worldcover-v200-tile-tables.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: worldcover-original-tile-tables-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reviewed-tile-tables:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Checkout exact PR source revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check generated reviewed source-access contract view
+        run: python scripts/render_public_views.py --check --scope access
+      - name: Run deterministic synthetic security and TIFF layout tests
+        run: python -m unittest tests.test_probe_esa_worldcover_tile_tables_v0 -v
+      - name: Retrieve only reviewed 10368 original TIFF table bytes then discard
+        run: python -m scripts.probe_esa_worldcover_tile_tables_v0 --live
