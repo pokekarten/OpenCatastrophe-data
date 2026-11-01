@@ -50,3 +50,40 @@ python -m research_runners.luxembourg_geobase_lidar2024_object_proxy_v0 \
 Dedicated workflow `.github/workflows/luxembourg-geobase-lidar-object-proxy.yml` downloads **only the previously pinned official GeoBase ZIP**, extracts an exact previously SHA-verified GeoPackage and ranges the two official fixed COG URLs. Per-object results are not logged. Before a hosted exact-head original-source workflow succeeds, **no actual object-level proxy distribution is claimed**.
 
 The follow-up after this stage is point-cloud semantic classification / independently surveyed roof and ground controls and manually adjudicated building cohort; these must be validated before an insurance-specific hazard/vulnerability input can be created.
+
+## Actual pinned-source spatial execution (2026-11-01)
+
+**Successful exact-head original-source job:** https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41315305678 . The original GeoBase2026 ZIP/GPKG matched its previously observed publisher MD5 and exact original GPKG SHA-256, while both official MNT/MNS national COGs passed the reviewed 4KiB HTTP206 source-prefix checks and read **only the fixed 100m native-envelope raster window**. All twelve synthetic tests passed before the original-source read.
+
+| Observed original research metric | Count |
+| --- | ---: |
+| Original GeoBase RTree bounding-rectangle candidates | **107** |
+| Of these, excluded after exact rotated 100m ROI polygon check | **3** |
+| Distinct source footprint polygons with positive-area intersection | **104** |
+| Footprint polygons with eligible ≥8 unique, valid raster pixels | **97** |
+| Footprint polygons with insufficient raster pixels/coverage | **4** |
+| Footprint polygons with no uniquely assigned raster pixel | **3** |
+| Valid MNT and MNS pixels in 100m raster bounding envelope | **44,521** |
+| Raster pixels covered by exactly one clipped polygon | **23,293** |
+| Raster pixels covered by multiple polygons, NOT assigned as building proxy | **350** |
+| Raster pixels outside any sampled footprint | **20,878** |
+
+Two independent sanity checks hold: **107−3=104** exact-area footprints, **97+4+3=104** sample polygons and **23,293+350+20,878=44,521** raster pixels. The reported occupancy is an **in-memory temporary raster proxy** only; pixel arrays, individual footprint IDs, actual height medians, geometries and source raster bytes were not exported.
+
+The 97 potentially useful **within-footprint MNS–MNT *proxy median*** aggregates were:
+
+| Source proxy median band | Number of footprint polygons |
+| --- | ---: |
+| Below 3m | 0 |
+| 3m to below 6m | 2 |
+| 6m to below 10m | 5 |
+| 10m to below 15m | 28 |
+| 15m to below 25m | 62 |
+| 25m and above | 0 |
+| **Total** | **97** |
+
+These bins are **not insured building-height distributions**: there is no canopy removal, object-level independent height or storey verification, survey-age harmonisation, original full-COG SHA, certified as-stored horizontal-axis and vertical-datum control, source commercial-rights admission, vulnerability calibration or model/portfolio admission.
+
+The 3 RTree rectangle false positives initially caused a correct fail-closed run; the reader now excludes them **before** polygon-median calculation, explicitly logs the excluded count and continues only on positive-area intersections with the exact fixed rotated area. The original-source rerun then passed.
+
+**Scientifically next:** obtain bounded LiDAR point-cloud ground-vs-building classification and/or independently verified roof heights for a stratified urban/rural control sample; inspect actual source access rights. Only then evaluate footprint-specific height-proxy bias and whether to introduce optional weighted building attributes into a **research** table.
