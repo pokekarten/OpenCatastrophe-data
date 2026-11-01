@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: PLATEAU official Hokota sample source-receipt smoke
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/plateau-hokota-original-sample.yml
+      - research_runners/plateau_hokota_official_sample_receipt_v0.py
+      - research_runners/plateau_citygml_original_zip_inventory_v0.py
+      - research_runners/plateau_citygml_sample_structure_v0.py
+      - tests/test_plateau_hokota_official_sample_receipt_v0.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-original:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download only the pinned official 2020 Hokota sample ZIP
+        shell: bash
+        env:
+          SAMPLE_URL: https://raw.githubusercontent.com/Project-PLATEAU/SkylinesPLATEAU/1f58887e1aaf050ac824b7fec55235550d0db1a7/SampleData/08234_hokota-shi_2020_citygml_4_op_sample_area.zip
+        run: |
+          set -euo pipefail
+          umask 077
+          curl --fail --silent --show-error --location \
+            --connect-timeout 20 --max-time 180 --retry 2 \
+            --max-filesize 45000000 --proto '=https' --proto-redir '=https' \
+            --output "$RUNNER_TEMP/pinned-hokota-original.zip" "$SAMPLE_URL"
+          actual_size="$(wc -c < "$RUNNER_TEMP/pinned-hokota-original.zip")"
+          test "$actual_size" -eq 40347627
+      - name: Verify Git blob identity, SHA256 and selected building GML CRC/structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python research_runners/plateau_hokota_official_sample_receipt_v0.py \
+            --input "$RUNNER_TEMP/pinned-hokota-original.zip"
+      - name: Erase local source ZIP (never upload or commit)
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/pinned-hokota-original.zip"
