@@ -7,6 +7,8 @@ on:
     paths:
       - 'research_runners/luxembourg_geobase_lidar2024_object_proxy_v0.py'
       - 'tests/test_luxembourg_geobase_lidar2024_object_proxy_v0.py'
+      - 'research_runners/luxembourg_lidar2024_building_interior_gradient_v0.py'
+      - 'tests/test_luxembourg_lidar2024_building_interior_gradient_v0.py'
       - '.github/workflows/luxembourg-geobase-lidar-object-proxy.yml'
   workflow_dispatch:
 
@@ -28,7 +30,10 @@ jobs:
             rasterio==1.5.0 numpy==2.3.5 pyproj==3.7.2 shapely==2.1.2
           python -m pip check
       - name: Run synthetic source/footprint/height proxy invariant tests
-        run: python -m unittest tests.test_luxembourg_geobase_lidar2024_object_proxy_v0 -v
+        run: >-
+          python -m unittest
+          tests.test_luxembourg_geobase_lidar2024_object_proxy_v0
+          tests.test_luxembourg_lidar2024_building_interior_gradient_v0 -v
       - name: Verify original official GeoBase 2026 ZIP before any building sample
         shell: bash
         run: |
