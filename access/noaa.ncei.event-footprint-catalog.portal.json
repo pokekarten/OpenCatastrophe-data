@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "noaa.ncei.event-footprint-catalog.portal",
+  "source_ids": [
+    "noaa.ncei.event-footprint-catalog.2026"
+  ],
+  "provider": "NOAA National Centers for Environmental Information (NCEI)",
+  "interface_type": "web_portal",
+  "status": "documented_only",
+  "documentation_url": "https://www.ncei.noaa.gov/products/event-footprint-catalog",
+  "service_root": "https://www.ncei.noaa.gov",
+  "api_version": "Event Footprint Catalog v1.0 (2026)",
+  "access_scope": [
+    "catalogue",
+    "metadata"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "review_catalogue_and_bulk_documentation"
+    ],
+    "path_templates": [
+      "/products/event-footprint-catalog"
+    ],
+    "parameter_rules": "Documentation-only portal description. NOAA publishes individual and bulk tornado/hail GeoJSON/CSV but no stable reviewed programmatic directory path or query API is yet frozen. Do not scrape a map UI, enumerate data folders, guess file patterns, send arbitrary URL/headers, or execute downloads with this contract. A distinct verified exact asset/download route and automated service terms review are required before any future request."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/html"
+    ],
+    "format": "Human-readable NOAA EFC product documentation; not an event GeoJSON or CSV response.",
+    "scientific_semantics": "EFC 2026 combines damage assessments and Storm Events Database for tornadoes, MRMS radar for hail. Tornado 2010+ and hail 2020+ coverage differ; derived polygons are not independent of their DAT/SED/MRMS ancestors, certified storm records or insured losses."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 524288,
+    "max_sample_bytes": 524288,
+    "retry_policy": "none",
+    "rate_limit_notes": "No automated portal scrape or bulk download authorized by this metadata-only access contract.",
+    "mutability_notes": "NOAA says catalog updates about every 24 hours, does not preserve prior footprint update versions, and incorporates upstream revisions. Any future exact file must be frozen with receipt UTC, filename, date range, hazard type, hash and provenance."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "NOAA data.gov lists EFC as public and CC0, while NCEI requests a source/subset/access-date citation; the exact bulk asset and service automation/reuse terms remain source-specific review items. No repository admission or unrestricted application API use follows."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-01",
+  "evidence_urls": [
+    "https://www.ncei.noaa.gov/products/event-footprint-catalog",
+    "https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.ncei%3AC01773",
+    "https://catalog.data.gov/dataset/event-footprint-catalog"
+  ],
+  "notes": "T0 documented product/portal only. Official public download options were identified; no exact approved API route, source data bytes, response hash, credential, or live probe receipt is claimed."
+}
