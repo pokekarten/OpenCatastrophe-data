@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg GeoBase 2026 original building identifier quality
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_geobase_2026_id_quality_v0.py'
+      - 'tests/test_luxembourg_geobase_2026_id_quality_v0.py'
+      - '.github/workflows/luxembourg-geobase-2026-id-quality.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-id-quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - name: Checkout reviewed implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Execute offline synthetic ID/source QA
+        run: python -m unittest tests.test_luxembourg_geobase_2026_id_quality_v0 -v
+      - name: Verify exact previously pinned official source and aggregate ID quality
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_zip="$RUNNER_TEMP/lu-geobase-20261001.zip"
+          umask 077
+          trap 'rm -f "$source_zip"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 --retry 0 \
+            --max-filesize 83886080 --output "$source_zip" \
+            'https://download.data.public.lu/resources/bd-l-geobase/20261001-010523/buildings-20261001.zip'
+          python -m research_runners.luxembourg_geobase_2026_id_quality_v0 \
+            --source-zip "$source_zip"
+          # Only aggregate cardinalities and original fingerprints are logged.
+          # No original data, geometry, IDs, ZIP or GeoPackage uploaded.
