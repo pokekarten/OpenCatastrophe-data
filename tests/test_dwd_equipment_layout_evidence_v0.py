@@ -74,6 +74,17 @@ class EquipmentLayoutTests(unittest.TestCase):
         self.assertEqual(r["candidate_date_tokens"], 2)
         self.assertEqual(r["valid_calendar_tokens"], 1)
 
+    def test_provider_header_field_names_only_without_rows(self):
+        names = ["Stations_id", "von_datum", "bis_datum", "Gerat", "Parameter",
+                 "Hohe", "Einheit", "Methode"]
+        data = (";".join(names) + "\\n" + "PRIVATE;20000101;20201231;SECRET;OTHER;A;B;C\\n").encode()
+        result = _txt_layout(data)
+        self.assertTrue(result["header_candidate_recognized"])
+        self.assertEqual(result["source_column_names"], names)
+        self.assertNotIn("PRIVATE", str(result))
+        self.assertNotIn("SECRET", str(result))
+        self.assertFalse(result["authoritative_column_mapping_proven"])
+
     def test_cp1252_legacy_hint(self):
         r = _html_layout("<html>Geräte</html>".encode("cp1252"))
         self.assertEqual(r["encoding_hint"], "cp1252_heuristic")
