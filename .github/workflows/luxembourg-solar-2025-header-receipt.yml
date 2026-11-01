@@ -1,0 +1,92 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg solar 2025 SHP header-only original receipt
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/luxembourg-solar-2025-header-receipt.yml'
+      - 'research_runners/lu_solar_shapefile_header_v0.py'
+      - 'tests/test_lu_solar_shapefile_header_v0.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  solar-shapefile-header-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout pinned source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run offline synthetic original format validation
+        run: python -m unittest -v tests.test_lu_solar_shapefile_header_v0
+      - name: HTTP byte-range header-only audit (no per-building records)
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          temp="$RUNNER_TEMP/lu-solar-metadata"
+          mkdir "$temp"
+          trap 'rm -rf "$temp"' EXIT
+          root='https://download.data.public.lu/resources/potentiel-solaire-au-luxembourg'
+          # Requests require 206, or abort. The large original files are never
+          # intentionally downloaded to the runner or anywhere else.
+          for ext in shp shx dbf; do
+            case "$ext" in
+              shp) sub='20251003-115311'; last='99' ;;
+              shx) sub='20251003-115312'; last='99' ;;
+              dbf) sub='20251003-115311'; last='8191' ;;
+            esac
+            name="20250902-0721-st-luxemburg-25-buildings-export.$ext"
+            code="$(curl --fail --location --silent --show-error \
+              --proto '=https' --proto-redir '=https' \
+              --connect-timeout 15 --max-time 60 --retry 0 \
+              --range "0-$last" --max-filesize 8192 \
+              --dump-header "$temp/$ext.headers" \
+              --output "$temp/$ext.prefix" \
+              --write-out '%{http_code}' \
+              "$root/$sub/$name")"
+            if [ "$code" != '206' ]; then
+              echo "BLOCKED: original provider did not honour requested 206 byte range for $ext" >&2
+              exit 2
+            fi
+            python - "$temp/$ext.headers" "$temp/$ext.prefix" "$last" <<'PY'
+          from pathlib import Path
+          import re, sys
+          text=Path(sys.argv[1]).read_text(encoding='latin1')
+          prefix=Path(sys.argv[2])
+          end=int(sys.argv[3])
+          spans=list(re.finditer(r'^content-range:\s*bytes\s+0-(\d+)/(\d+)\s*$',text,re.I|re.M))
+          if not spans or int(spans[-1].group(1))!=end or int(spans[-1].group(2))<=end:
+              raise SystemExit('BLOCKED: wrong/missing original RFC byte range')
+          if prefix.stat().st_size!=end+1:
+              raise SystemExit('BLOCKED: incorrect prefix body size')
+          print(f'Verified small original {sys.argv[2].split("/")[-1]} prefix: {end+1} bytes (no rows)')
+          PY
+          done
+          python -m research_runners.lu_solar_shapefile_header_v0 \
+            --shp-prefix "$temp/shp.prefix" \
+            --shx-prefix "$temp/shx.prefix" \
+            --dbf-prefix "$temp/dbf.prefix" > "$temp/report.json"
+          python - "$temp" <<'PY'
+          import json, re, sys
+          from pathlib import Path
+          p=Path(sys.argv[1]);report=json.loads((p/'report.json').read_text())
+          for ext in ('shp','shx'):
+              s=(p/(ext+'.headers')).read_text(encoding='latin1')
+              spans=re.findall(r'^content-range:\s*bytes\s+0-\d+/(\d+)\s*$',s,re.I|re.M)
+              if not spans or int(spans[-1])!=report[ext+'_header']['declared_file_bytes']:
+                  raise SystemExit('BLOCKED: provider length differs from Shapefile header')
+          size_text=(p/'dbf.headers').read_text(encoding='latin1')
+          totals=re.findall(r'^content-range:\s*bytes\s+0-\d+/(\d+)\s*$',size_text,re.I|re.M)
+          info=report['dbf_header']
+          minimum=info['header_length'] + info['record_count']*info['record_length']
+          if not totals or int(totals[-1])<minimum:
+              raise SystemExit('BLOCKED: source DBF smaller than declared records')
+          print(json.dumps(report,indent=2,ensure_ascii=False,sort_keys=True))
+          PY
+          # No source rows, polygons, rooftop addresses or files are uploaded.
