@@ -104,7 +104,7 @@ class ArchiveReceiptTests(unittest.TestCase):
             inspect_archive(self.path, self.meta)
 
     def test_provenance_descriptor_is_research_only(self):
-        meta_path = ROOT / "landscape" / "fr_bdtopo_d077_2016_archive_candidate_v0.json"
+        meta_path = ROOT / "landscape" / "fr_bdtopo_d077_2016_archive_candidate_v0.jsonl"
         source = json.loads(meta_path.read_text(encoding="utf-8"))
         self.assertEqual(source["mirror_listed_size_bytes"], 110738399)
         self.assertEqual(source["archive_filename"], NAME)
