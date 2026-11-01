@@ -104,6 +104,39 @@ class TestSyntheticNeonGul10k(unittest.TestCase):
         self.assertIn('1 / (CASE WHEN n=12', sql)
         self.assertNotIn('HAVING COUNT(*)=12', sql)
 
+    def test_sql_pins_same_exposure_version_as_synthetic_oed(self):
+        from pathlib import Path
+        sql = (Path(__file__).resolve().parents[1]
+               / 'research_runners/sql/neon_synthetic_gul_10k_v0.sql').read_text(encoding='utf-8')
+        for required in (
+            "pv.version_label='v0'", "pv.seed=20261101",
+            "pv.generation_method='deterministic_independent_synthetic_sql_v0'",
+            "pv.source_key IS NULL",
+            "pv.assumption_metadata ->> 'synthetic'='true'",
+            "pv.assumption_metadata ->> 'model_input_approved'='false'",
+            "pv.assumption_metadata ->> 'real_insurer'='false'",
+            "pv.assumption_metadata ->> 'external_source_rows_used'='0'",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, sql)
+
+    def test_sql_fails_closed_on_extra_versions_and_unfiltered_units(self):
+        from pathlib import Path
+        sql = (Path(__file__).resolve().parents[1]
+               / 'research_runners/sql/neon_synthetic_gul_10k_v0.sql').read_text(encoding='utf-8')
+        for required in (
+            'COUNT(*) FROM selected_versions',
+            'COUNT(*) FROM exposure.portfolio_version v',
+            'COUNT(*) FROM raw_assets',
+            'selected_version_count=1 AND all_version_count=1',
+            'all_unit_count=12 AND n=12 AND unique_ids=12',
+            "e.insured_value_currency='EUR'",
+            "e.value_basis='invented_smoke_test_value_not_insured_observation'",
+            'ST_SRID(e.location)=4326',
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, sql)
+
     def test_rejects_non_synthetic_inputs(self):
         with self.assertRaises(ValueError):
             compute(ASSETS, synthetic=False)
