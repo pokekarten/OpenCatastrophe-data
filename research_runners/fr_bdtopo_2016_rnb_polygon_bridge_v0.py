@@ -169,7 +169,14 @@ def compare(folder: Path, fetch=bounded_rnb_bytes) -> dict:
             row["current_polygon_comparisons"].append({
                 "rnb_id": rnb_id,
                 "intersection_area_m2": round(intersection, 2),
-                "iou": round(intersection / union, 6) if union > 0 else None,
+                "iou": round(intersection / union, 10) if union > 0 else None,
+                "topologically_equal_not_proof_of_identity": bool(historic.equals(now)),
+                "symmetric_difference_area_m2": round(
+                    float(historic.symmetric_difference(now).area), 6
+                ),
+                "hausdorff_distance_m": round(
+                    float(historic.hausdorff_distance(now)), 6
+                ),
                 "2016_polygon_covered_ratio": round(
                     intersection / historic.area, 6),
                 "current_polygon_covered_ratio": round(
