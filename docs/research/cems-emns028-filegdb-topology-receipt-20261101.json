@@ -1,0 +1,86 @@
+{
+  "schema_version": "1.0.0",
+  "receipt_kind": "CEMS_EMSN028_ORIGINAL_FILEGDB_LAYER_AND_TOPOLOGY_V0",
+  "activation_id": "EMSN028",
+  "original_archive_url": "https://mapping.emergency.copernicus.eu/download/EMSN028/EMNS028_AOI_FRANCE_utm31n.gdb.zip",
+  "full_original_archive_sha256": "7ef43d0637447abae705728723c06d2f05415a21667fdee1f10e8fc25b5bf3c2",
+  "original_archive_size_bytes": 155898548,
+  "evidence_run_layer_inventory": "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41347769305",
+  "evidence_run_source_semantics": "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41348300755",
+  "readers": {
+    "fiona": "1.10.1",
+    "shapely": "2.1.2",
+    "target_crs_epsg": 32631
+  },
+  "total_layers": 18,
+  "opened_layers": 18,
+  "selected_layers": [
+    {
+      "layer": "aoi",
+      "source_features": 1,
+      "geometry_type": "MultiPolygon",
+      "source_geometry_valid": true,
+      "footprint_area_m2": 2279749070.82,
+      "ponthierry_gauge_control_intersects": true,
+      "verified_aoi04_specific": false
+    },
+    {
+      "layer": "Buildings",
+      "source_features": 647276,
+      "geometry_type": "MultiPolygon",
+      "historical_2016_building_state_verified": false,
+      "insured_buildings_verified": false
+    },
+    {
+      "layer": "Flooded_area",
+      "source_features": 1,
+      "geometry_type": "MultiPolygon",
+      "source_geometry_valid": false,
+      "source_original_geometry_coordinate_count": 59755,
+      "source_geometry_topology_reason": "Ring Self-intersection[485697.5986 5358841.9696]",
+      "source_date": "2016-06-02",
+      "source_ext_date": "2016-08-03",
+      "source_attribution_excerpt": "Radar & optical satellite data 50cm to 15m",
+      "exact_aoi04_flood_extent_verified": false,
+      "full_spatial_overlay_authorized": false
+    },
+    {
+      "layer": "Estimated_Max_Flood_Extent",
+      "source_features": 1237,
+      "geometry_type": "MultiPolygon",
+      "modelled_maximum_not_observed": true,
+      "first_two_samples_valid": true,
+      "full_layer_geometry_validity_tested": false
+    }
+  ],
+  "other_layer_feature_counts": {
+    "Administrative_Boundary": 9,
+    "Populated_Place": 332,
+    "Hydrology_area": 7551,
+    "Hydrology_line": 876,
+    "Industry_Utilities": 106,
+    "Contour_lines_and_elevation": 1939,
+    "Spot_elevation_point": 100,
+    "BuiltUp_Area": 865,
+    "Point_of_Interest": 68,
+    "Transportation_line": 58107,
+    "Transportation_point": 108,
+    "LandUse": 33364,
+    "Seveso_sites": 2,
+    "Hydrographical_Station": 12
+  },
+  "scientific_and_rights_gates": {
+    "ephemeral_original_bytes_deleted": true,
+    "publisher_signed_checksum_independently_verified": false,
+    "specific_archived_product_rights_reviewed": false,
+    "public_map_restricted_use_notice_needs_scope_review": true,
+    "precise_aoi04_observed_polygon_proven": false,
+    "original_flooded_area_geometry_valid": false,
+    "overlay_approved": false,
+    "historical_building_2016_vintage_verified": false,
+    "insurer_tiv_and_claims_verified": false,
+    "cat_model_input_approved": false
+  },
+  "rights_caution": "Official EMSN028 overview PDF states RESTRICTED USE; no inferred permission for commercial redistribution of FileGDB or embedded licensed imagery/IGN vector content.",
+  "original_2016_pdf_rights_note_url": "https://mapping.emergency.copernicus.eu/download/EMSN028/EMSN028_00SOUTHPARIS_02MAXFLOODEXTENT_OVERVIEW_v1_100dpi.pdf"
+}
