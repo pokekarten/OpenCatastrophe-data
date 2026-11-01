@@ -17,6 +17,7 @@ on:
       - "research_runners/hanze_2024_polygon_integrity_source_receipt_v0.py"
       - "research_runners/hanze_2024_independent_crs_geos_audit_v0.py"
       - "tests/test_hanze_2024_independent_crs_geos_audit_v0.py"
+      - "research_runners/hanze_2024_independent_geometry_source_receipt_v0.py"
       - "research_runners/hanze_regions2024_geometry_source_receipt_v0.py"
   workflow_dispatch:
 
@@ -65,3 +66,6 @@ jobs:
       - name: Verify independent original CRS matching and GEOS validity counts, metadata only
         run: |
           python -c 'import json,os,pathlib; d=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-regions2024-zip-metadata.json").read_text()); g=d["independent_crs_and_geos_validity"]; assert g["original_source_sha256_verified"] and g["source_feature_count"]==1449 and sum(g["validity"][k] for k in ("geos_valid_geometries","geos_invalid_geometries","null_shapes"))==1449 and not g["original_coordinates_or_region_id_exported"] and not g["model_input_admitted"]; print("Independent source CRS and GEOS geometry validity aggregate (not inundation):",json.dumps(g,sort_keys=True))'
+      - name: Reproduce original CRS/GEOS source finding and enforce no CAT admission
+        run: |
+          python -c 'import json,os,pathlib; from research_runners.hanze_2024_independent_geometry_source_receipt_v0 import HANZE_2024_INDEPENDENT_GEOMETRY_RECEIPT_V0 as e; g=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-regions2024-zip-metadata.json").read_text())["independent_crs_and_geos_validity"]; v=g["validity"]; assert g["epsg_code_identified_by_pyproj"]==e["identified_epsg_by_proj"]==3035 and g["epsg3035_projection_parameters_ellipsoid_axes_match"] and g["equals_official_epsg3035_ignoring_axis_order"] is False and v["geos_valid_geometries"]==e["geos_valid_geometries"] and v["geos_invalid_geometries"]==e["geos_invalid_geometries"] and v["polygons"]==e["interpreted_feature_types"]["polygon"] and v["multipolygons"]==e["interpreted_feature_types"]["multipolygon"] and g["invalid_reason_family_counts"]==e["invalid_reason_families"] and g["versions"]==e["libraries"] and not e["all_geometry_features_eligible_for_model_input"] and not e["model_input_admitted"]; print("PASS: independent source EPSG3035 projection match, 555 GEOS-valid vs 894 GEOS-flagged source geometries, rights/model admission blocked")'
