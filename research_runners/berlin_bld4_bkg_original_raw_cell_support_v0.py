@@ -203,7 +203,7 @@ def audit(buildings: Path, original_tiff: Path, *, expected_sha=FULL_ORIGINAL_BK
         "source_bld4_buildings_mutable_date_not_historic": True,
         "source_hazard_bkg_kostra_design_scenario": True,
         "source_products_temporal_alignment_proven": False,
-        "original_bkg_full_tiff_pixels_used": True,
+        "original_bkg_bounded_real_pixel_window_used": True,
         "pilot_window_cells_examined": h*w,
         "building_coverage_from_real_bkg_raw_codes_not_depth": True,
         "real_water_depth_units_verified": False,
