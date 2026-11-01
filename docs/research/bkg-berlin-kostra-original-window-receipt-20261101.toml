@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+receipt_schema = "bkg-berlin-kostra-original-pilot-window-v0"
+provenance_level = "verified_real_original_pixel_sample"
+research_only = true
+provider = "Bundesamt fuer Kartographie und Geodaesie"
+source_url = "https://daten.gdz.bkg.bund.de/produkte/sonstige/starkregen/aktuell/be/maxdepth_kostra/s32790/starkregen_maxdepth_kostra_32790_5820_10_be.tif"
+source_scenario = "BKG HWK_SRG KOSTRA exceptional (original BKG direct TIFF)"
+observed_at_utc = "2026-11-01T20:42:43.867304+00:00"
+original_github_run_id = 41348217549
+original_github_run_url = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41348217549"
+original_execution_main_commit = "4ce081f8a6427d7ff674c9c8d3e1b6676f61b55d"
+source_bytes = 47280200
+source_full_tiff_sha256 = "7e11fcf4cac2ce07fdefa3dc0fa4414b2cc248c516a373a12c14c33b30726a6f"
+source_http_content_length_verified = true
+source_crs = "EPSG:25832"
+source_raster_dimensions_pixels = [10000, 10000]
+source_pixel_scale_metres = [1.0, 1.0]
+source_raw_dtype = "int16"
+source_band_count = 1
+source_declared_nodata = -9999.0
+frozen_berlin_pilot_bbox_epsg25833_m = [391700.0, 5819950.0, 391900.0, 5820150.0]
+source_pilot_bbox_epsg25832_m = [798727.2708227294, 5827871.458055575, 798943.3961922952, 5828087.583425137]
+source_window_shape_pixels = [217, 217]
+original_raw_cells_examined = 47089
+original_source_masked_nodata_cells = 4746
+original_finite_unmasked_cells = 42343
+original_finite_unmasked_zeros = 4503
+original_finite_unmasked_positives = 37840
+original_finite_unmasked_negatives = 0
+original_raw_min_if_valid = 0.0
+original_raw_max_if_valid = 108.0
+original_source_bytes_persisted = false
+source_is_different_from_berlin_2022_named_zip = true
+actual_pixel_mask_sample_verified = true
+raw_pixel_physical_depth_units_verified = false
+raw_pixel_depth_scale_or_offset_verified = false
+scenario_equivalence_to_berlin_2022_zip_verified = false
+individual_building_hazard_join_verified = false
+insurer_exposure_or_cat_model_admitted = false
+allowed_interpretation = "One original BKG 2024-2025 KOSTRA-source raster pilot-window with direct pixel and mask counts, not a water-depth-unit or insured-building measurement. Raw positive int16 values must not be interpreted as centimetres/metres, flood occurrence, exposed insured TIV or CAT loss without separate product calibration, temporal alignment, geospatial polygon joins, rights and vulnerability review."
+source_licence_attribution = "BKG (2025) dl-de/by-2-0; consult product's complete data-provider attribution before external use"
