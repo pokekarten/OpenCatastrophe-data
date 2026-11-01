@@ -1,0 +1,78 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg ACT2023 roof vs GeoBase2026 native polygon research
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_act2023_geobase2026_geometry_v0.py'
+      - 'tests/test_luxembourg_act2023_geobase2026_geometry_v0.py'
+      - '.github/workflows/luxembourg-act-geobase-geometry-original.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  original-act-geobase-geometry:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout SHA-pinned code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install reviewed spatial environment
+        run: python -m pip install --disable-pip-version-check --no-input -r requirements-eu-flood-spatial.txt
+      - name: Synthetic-only same ACT geometry tests
+        run: python -m unittest tests.test_luxembourg_act2023_geobase2026_geometry_v0 -v
+      - name: Fixed official ACT2023 and GeoBase2026 original polygon research
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          export ACT_ZIP="$RUNNER_TEMP/act2023.zip"
+          export GEO_ZIP="$RUNNER_TEMP/geobase2026.zip"
+          export ACT_GPKG="$RUNNER_TEMP/act2023.gpkg"
+          export GEO_GPKG="$RUNNER_TEMP/geobase2026.gpkg"
+          trap 'rm -f "$ACT_ZIP" "$GEO_ZIP" "$ACT_GPKG" "$GEO_GPKG"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+            --max-time 180 --retry 0 --max-filesize 115343360 \
+            --output "$ACT_ZIP" \
+            'https://download.data.public.lu/resources/base-de-donnees-nationale-des-batiments-3d-2023/20260317-160936/act2023v2-buildings3d-footprints.gpkg.zip'
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+            --max-time 180 --retry 0 --max-filesize 83886080 \
+            --output "$GEO_ZIP" \
+            'https://download.data.public.lu/resources/bd-l-geobase/20261001-010523/buildings-20261001.zip'
+          python scripts/luxembourg_gpkg_zip_preflight_v0.py \
+            --source-zip "$ACT_ZIP" \
+            --sha256 a271b1cbcc22ded018f9bab0c150e9f33efa6cb7ebca8cf4dc4bdb1f5d84859a > /dev/null
+          python -m research_runners.luxembourg_geobase_buildings_20261001_v0 \
+            --source-zip "$GEO_ZIP" > /dev/null
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from zipfile import ZipFile
+          import shutil
+          import hashlib
+          checks = (
+              ("ACT_ZIP", "ACT_GPKG", "9765b04eaeb9332aa606b8dca44031116588e285553aab061d61037938a002bf"),
+              ("GEO_ZIP", "GEO_GPKG", "ec70bd1175b6f67b6dceaf8ab39e0433bc871e1099ff308c3eb8323127aa5676"),
+          )
+          for original, output, expected in checks:
+              with ZipFile(os.environ[original]) as z:
+                  members = [x for x in z.infolist() if x.filename.lower().endswith(".gpkg")]
+                  if len(members) != 1 or not 0 < members[0].file_size <= 1500 * 1024 * 1024:
+                      raise SystemExit("BLOCKED: source member count or size changed")
+                  with z.open(members[0]) as src, Path(os.environ[output]).open("xb") as dst:
+                      shutil.copyfileobj(src, dst, length=1024 * 1024)
+              with open(os.environ[output], "rb") as stream:
+                  actual = hashlib.file_digest(stream, "sha256").hexdigest()
+              if actual != expected:
+                  raise SystemExit("BLOCKED: extracted source original SHA changed")
+          PY
+          python -m research_runners.luxembourg_act2023_geobase2026_geometry_v0 \
+            --act-gpkg "$ACT_GPKG" --geobase-gpkg "$GEO_GPKG"
+          # Original source bytes, individual IDs, geometries and matches are ephemeral.
