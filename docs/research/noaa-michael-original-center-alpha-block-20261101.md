@@ -38,7 +38,7 @@ With the exact raster block envelope above and the same public FEMA layer `servi
 
 **Actual source response: `{"count":0}`** for block 180's geographic rectangle.
 
-A separate previously verified query over the **entire NOAA item STAC bbox** returned **8** FEMA damage-class `AFF` assessments. A coarse **west-half** source bbox count also returned **8**, while the **east-half** returned **0**. These query rectangles use STAC bounds (not an exact alpha mask) and may include a boundary edge; they cannot yet establish where the eight assessments sit relative to any alpha-visible block.
+A previously executed **legacy ArcGIS `esriGeometryEnvelope`** query over the full STAC bbox returned **8** `AFF` assessments, with coarse west/east legacy envelope counts 8/0. This was **not a true geographic WGS84 polygon count**: a corrected closed-ring `esriGeometryPolygon` query returned **7** for the full tile, all `AFF`. FEMA's native CRS is EPSG:32616; overinclusive transformed envelopes can produce non-additive counts. The seven still have **no proven alpha-visible pixels**; never interpret the older eight as exact spatial overlap.
 
 The zero count over a proven all-transparent block is **consistent** with zero available assessments there. It does **not** demonstrate that the eight assessments elsewhere are covered by visible pixels, are independently labeled or correspond to unique buildings.
 
