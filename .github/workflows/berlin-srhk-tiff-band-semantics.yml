@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Berlin SRHK strict TIFF band-NoData semantics
+
+on:
+  pull_request:
+    paths:
+      - research_runners/berlin_srhk_tiff_band_semantics_v0.py
+      - tests/test_berlin_srhk_tiff_band_semantics_v0.py
+      - .github/workflows/berlin-srhk-tiff-band-semantics.yml
+  push:
+    branches: [main]
+    paths:
+      - research_runners/berlin_srhk_tiff_band_semantics_v0.py
+      - tests/test_berlin_srhk_tiff_band_semantics_v0.py
+      - .github/workflows/berlin-srhk-tiff-band-semantics.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-band-metadata:
+    name: Synthetic only - TIFF/NoData/GDAL units fail closed
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout reviewed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Fail-closed source-band metadata tests, no providers
+        run: python -m unittest tests.test_berlin_srhk_tiff_band_semantics_v0 -v
