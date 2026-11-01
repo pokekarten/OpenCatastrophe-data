@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: CEMS EMSN028 original priority flood layer semantics
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "research_runners/cems_emns028_priority_layer_semantics_v0.py"
+      - "tests/test_cems_emns028_priority_layer_semantics_v0.py"
+      - ".github/workflows/cems-emns028-priority-layer-semantics.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  independently-pinned-original:
+    name: Flooded vs estimated original source semantic sample
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install pinned source geometry readers
+        run: |
+          python -m pip install --disable-pip-version-check --no-input fiona==1.10.1 shapely==2.1.2
+          python -m pip check
+          python -c "import fiona, shapely; assert fiona.__version__ == '1.10.1'; assert shapely.__version__ == '2.1.2'"
+      - name: Synthetic field redaction and product distinction
+        run: python -m unittest tests.test_cems_emns028_priority_layer_semantics_v0 -v
+      - name: Reacquire pinned source, inspect only 4 features, delete all bytes
+        run: python -m research_runners.cems_emns028_priority_layer_semantics_v0 --live
