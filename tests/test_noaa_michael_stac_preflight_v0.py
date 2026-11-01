@@ -63,7 +63,11 @@ class NOAAHurricaneMichaelSTACTests(unittest.TestCase):
         self.assertEqual(output["declared_acquisition_day"], "2018-10-11")
         self.assertEqual(output["inport_dataset_license_claim"], "CC0-1.0")
         self.assertEqual(output["stac_item_license_claim"], "NLPL")
-        self.assertTrue(output["source_license_conflict_unresolved"])
+        self.assertEqual(output["stac_license_spdx_full_name"], "No Limit Public License")
+        self.assertTrue(output["stac_license_spdx_identifier_recognized"])
+        self.assertTrue(output["source_license_identifiers_differ"])
+        self.assertFalse(output["license_difference_is_proven_restriction"])
+        self.assertFalse(output["asset_specific_licensing_review_completed"])
         for prop in ("exact_capture_time_verified", "pixel_coverage_verified",
                      "independent_of_fema_rs_labels_proven",
                      "source_image_bytes_downloaded_or_verified",
@@ -90,7 +94,7 @@ class NOAAHurricaneMichaelSTACTests(unittest.TestCase):
                 with self.assertRaises(STACPreflightError):
                     preflight(p)
 
-    def test_declared_licence_contradiction_is_never_auto_resolved(self):
+    def test_provider_license_identifier_change_is_not_silently_accepted(self):
         p = fixture()
         p["properties"]["license"] = "CC0-1.0"
         with self.assertRaisesRegex(STACPreflightError, "license"):
