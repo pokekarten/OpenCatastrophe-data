@@ -56,13 +56,14 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - probe_exact_v200_tile_head
 - sample_exact_v200_tile_header_4096
 - sample_exact_v200_tile_tables_10368
+- sample_exact_v200_block185_56442
 
 ### Path templates
 
 - /v200/2021/map/
 - /v200/2021/map/ESA_WorldCover_10m_2021_v200_N48E009_Map.tif
 
-**Parameter rules:** Only three frozen operations are executable for the single N48E009 WorldCover 2021 v200 Map tile: one HEAD, one GET Range bytes=0-4095 (verified TIFF header), and one separately reviewed GET Range bytes=13644-24011 containing the complete adjacent LONG32 TileOffsets and TileByteCounts tables, declared by the actual original first IFD (1,296 elements each). The source URI, product, year, tile and each range are constant, with no caller-supplied host, query, parameter, header, object, date or range; no redirects, retries, sync, arbitrary S3 listings, full object GET or additional tile block fetches. Existing list_v200_map_prefix and fetch_exact_v200_tile names remain documentation only. For the new 10,368-byte response require HTTP 206, exact Content-Range bytes 13644-24011/94851935, strict Content-Length, identity coding, array bounds, non-overlapping compressed block addresses and no source-byte persistence. This is not permission to download actual raster pixels or infer a source-wide SHA-256.
+**Parameter rules:** Only these source-owned fixed operations are reviewed for the single N48E009 WorldCover 2021 v200 Map TIFF: HEAD, GET Range bytes=0-4095 (header), GET Range bytes=13644-24011 (both contiguous offset/bytecount arrays), and a separately scoped single compressed block GET Range bytes=43278196-43334637 (56,442 bytes), TIFF block index 185 (internal grid row 5 column 5), strictly preceded by rechecking the two exact header/table sample SHA-256 values from independent successful source runs. The pinned 4,096-byte header SHA256 is a74fc1ff4733c3afff09328e014c0731eba2f1912f3f5cbc330ed0700f3f3529 and 10,368-byte table sample SHA256 is 7de08710b64cad350b81da83a81fcfc0c74f5285e20e28b0a3e42d19151885ba. Require HTTP 206, exact Content-Range and size per request, no redirects/retries, bounded strict TIFF compression/predictor type and at most 1,048,576 decoded uint8 values. Only the predeclared source block and reviewed class codes 0,10,20,30,40,50,60,70,80,90,95,100 may be counted. Provider raw bytes/pixels not committed or imported into a database, only digest, source identity and aggregate class counts logged. No caller-supplied URL, range, another tile, object, host, credentials, different date, S3 listing, full raster download, arbitrary block or synthetic insurer data. Existing list_v200_map_prefix and fetch_exact_v200_tile remain documentation only.
 
 ## Response contract
 
@@ -86,9 +87,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** none
 
-**Rate limit notes:** ESA WorldCover data-access officially permits public no-sign S3 programmatic access. One exact source-header 4 KiB GET and independently one exact 10,368-byte table-directory GET are reviewed research canaries, plus existing one HEAD metadata request. No bulk, recurring monitoring, retries, source synchronization or caller-selected ranges authorized.
+**Rate limit notes:** A single explicitly reviewed one-block scientific canary may make at most three sequential fixed public HTTPS GET requests: the known 4 KiB TIFF header, the known 10,368-byte tile-array tables, then the known 56,442-byte compressed source TIFF block. All are constant URLs and ranges; no retries, pagination, scheduling, bulk acquisition or source object sync. Data handled transiently by unprivileged CI.
 
-**Mutability notes:** The actual 2026-11-01 first 4096 source bytes (SHA256 a74fc1ff4733c3afff09328e014c0731eba2f1912f3f5cbc330ed0700f3f3529) identified TileOffsets LONG\[1296\] at original bytes 13644–18827 and TileByteCounts LONG\[1296\] at 18828–24011, each length 5184. The next 10368-byte GET verifies only those tables. Frozen source object total length 94851935; changes to TIFF header/table layout require a separate review. Individual compressed pixels, decoded raster classes, full-object SHA256 and COG structure stay unverified.
+**Mutability notes:** The 4KiB header and 10368-byte tile-array byte digests and source total 94851935 are frozen from real 2026-11-01 receipts. The exact block185 original compressed byte range is 43278196–43334637 (56442 bytes). The three one-shot response digests are checked per live run; original source wider than these samples is not hashed or vouched. A changed upstream file/header/table fails closed. TIFF compression/predictor and 11 WorldCover classes are independently validated; this does NOT certify original full-file, spatial pixel truth, insured assets, COG validity or application readiness.
 
 ## Rights and policy
 
@@ -102,7 +103,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Redistribution status:** allowed
 
-**Notes:** ESA WorldCover 2021 v200 CC BY 4.0 permits reviewed public distribution and attributed downstream use; official data-access documentation permits no-sign programmatic S3. Research now reviews a single exact 10,368-byte TIFF offset/count directory GET against the previously fixed 2021 v200 N48E009 Map tile, in addition to earlier HEAD and 4KiB header probes. No provider raw bytes retained and no pixel block download or raster publication/model admission approved. Specific future block downloads require independent validation and review.
+**Notes:** ESA WorldCover 2021 v200 public CC BY 4.0 Map TIFF; official ESA data access permits anonymous programmatic S3 use with attribution. The new reviewed read-only, exact single-block sample is research-only and must be traceable to previously verified TIFF header/table identities. At most 56442 compressed source bytes of one fixed block plus its two original metadata ranges are inspected transiently and discarded. Output is permitted only as hash, aggregate class counts and one predeclared synthetic-grid-point class. No original raster redistribution, bulk collection, private buildings or insurance model ingestion authorized.
 
 ## Probe contract
 
@@ -133,4 +134,4 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - <https://github.com/ESA-WorldCover/esa-worldcover-datasets>
 - <https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/docs/WorldCover_PUM_V2.0.pdf>
 
-**Notes:** The exact 2026-11-01 original 4096-byte TIFF header proves two adjacent 1296-element LONG32 tile directory locations; a new one-shot, no-persistence 10368-byte Range GET may read only those original tables. Table-derived offset/bytecounts must be scientifically treated as source data until checked and frozen. No pixel retrieval, full file download or production CAT use admitted.
+**Notes:** This bounded original-block test uses one fixed TIFF block index185 (internal block row5, col5), with exact verified byte range and source-range checksum evidence; strict 1MiB decompressed limit and WorldCover official 2021 class whitelist. Synthetic position 9.5E 50.5N is not an actual insured location or validated roof. No complete COG/CRS scientific admission.
