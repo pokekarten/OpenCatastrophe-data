@@ -106,8 +106,8 @@ class OneOriginalGmlTests(unittest.TestCase):
 
     def test_crossing_polygon_detected_and_blocked_from_use(self):
         result=gml.inspect_gml_preflight(fixture(points=[
-            (50.515,9.482),(50.517,9.484),(50.517,9.482),
-            (50.515,9.484),(50.515,9.482)
+            (50.515,9.482),(50.517,9.484),(50.515,9.484),
+            (50.517,9.482),(50.516,9.481),(50.515,9.482)
         ]))
         self.assertFalse(result["all_rings_closed_nondegenerate_and_non_crossing"])
         self.assertEqual(result["diagnostic_status"],"BLOCKED_GML_RING_CROSSING_OR_BLOCK_EXTENT")
