@@ -8,7 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 **Status: source bytes pinned; 18 geospatial layers read; original flood mask
 topologically invalid; AOI04-specific product/rights and model admission BLOCKED.**
 
-This supplements the original [155,898,548-byte ZIP receipt](cems-emns028-original-archive-receipt-20261101.json).
+This supplements the original [155,898,548-byte ZIP receipt](cems-emns028-original-archive-receipt-20261101.toml).
 No original provider bytes, per-building properties, polygon coordinates or
 policy-level information are committed. The source archive is downloaded
 into a temporary GitHub Actions workspace and deleted after each run.
@@ -84,7 +84,7 @@ No model-use permission has been established.
 Code:
 - [Original full layer enumeration](../../research_runners/cems_emns028_filegdb_layer_inventory_v0.py)
 - [Original priority-layer sample](../../research_runners/cems_emns028_priority_layer_semantics_v0.py)
-- [Machine-readable evidence](cems-emns028-filegdb-topology-receipt-20261101.json)
+- [Machine-readable evidence](cems-emns028-filegdb-topology-receipt-20261101.toml)
 
 To progress safely, resolve **both** independent gates before any
 flood-to-building join: (a) approve an explicit, traceable topology
