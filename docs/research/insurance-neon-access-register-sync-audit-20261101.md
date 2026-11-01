@@ -99,3 +99,54 @@ The existing `validation-schema-20261031` branch has materially
 different source and exposure records. Do **not** force-merge it into Neon
 `main` during this synchronization. A clean technical access register
 is not an admitted hazard catalogue, insurer TIV or a calibrated CAT model.
+
+
+## Later pinned read-only audit: 52 GitHub contracts / 42 Neon (2026-11-01)
+
+A separate live comparison against **public GitHub main commit**
+`5b6169fa33ceaefc27d63c4e1fbea1124f6951fe` and the CAT-only
+`insurance-risk-core / insurance / main` SQL registry found:
+
+| Evidence at this pinned snapshot | Count |
+| --- | ---: |
+| Canonical `access/*.json` GitHub files | **52** |
+| Canonical paths in Neon `registry.source_record` | **42** |
+| Exact shared-path Git blob matches | **41** |
+| Missing metadata paths in Neon | **10** |
+| Shared path with differing Git blob SHA | **1** |
+| Separate noncanonical research receipts classed as `access_contract` | **6** |
+
+This **supersedes the 51/9 numbers only for the new pinned snapshot**;
+it does not invalidate the earlier historical read-only comparison.
+The tenth missing path is
+`access/us.calfire.dins.ckan-package-catalogue.json`
+(Git blob `84d5394547ca2cd57a2e58400c6b9050f9e96bba`).
+The existing nine missing paths listed above remain missing at this snapshot.
+
+### ESA WorldCover: substantive contract revision, not just a changed file hash
+
+Read both exact Git objects for `access/esa.worldcover.2021.v200.json`:
+
+- Neon-pinned historical commit
+  `2c9cfeeec62c81609e63e58465f7882622054b7e`,
+  blob `830fff1705d6b29d8c88dc423a27c7254608ca50`.
+- Current reviewed GitHub file at pinned main commit
+  `5b6169fa33ceaefc27d63c4e1fbea1124f6951fe`,
+  blob `2884e2f50b495eee3b399f55c08d43cfa100b602`.
+
+The comparison found **16 changed JSON fields**. In particular, source
+access status was upgraded from `documented_only` to `probe_ready`;
+the operations changed from two documentation-only operations to
+six including narrowly bounded original TIFF header, table and block
+samples. The fixed N48E009 tile, sample ranges, digests, evidence dates,
+rate limits and official rights references were also updated.
+The new contract still does **not** authorize CAT-model input, a full
+raster import or insured portfolio inference.
+
+**Required resolution:** review the exact source-specific evidence,
+allowed network operations and changed terms before recording a
+versioned new Neon metadata receipt. This is **not** a harmless hash
+refresh: updating the old SQL row in place would destroy the distinction
+between its former `documented_only` content and new `probe_ready`
+contract. Preserve both immutable commit/blob identities and source
+approval flags. No DB writes or source-data imports were performed.
