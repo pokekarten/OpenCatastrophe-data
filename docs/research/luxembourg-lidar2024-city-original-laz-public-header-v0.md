@@ -39,12 +39,23 @@ No URL, coordinate, source package or tile selection input is accepted.
   not coordinates or source point records.
 - A point *format* with a classification field does **not**
   establish which class values (e.g. 5 or 6) actually occur.
+- The initial original file identified **LAS 1.4, format 7 and four public
+  Variable Length Records (VLRs)**. The source metadata preflight now also
+  requests the exact VLR region between the **375-byte public LAS header**
+  and declared **point data offset**, capped at 32KiB and HTTP206-verified.
+  Its strict metadata parser checks the COPC specification's mandatory
+  **first `copc` info VLR with record ID 1**, **160-byte payload**,
+  zero reserved fields and root-hierarchy offset/size bounds inside
+  the selected LAZ member. It does **not** fetch the hierarchy page,
+  compressed point nodes, XYZ positions or class values.
+  Specification: <https://copc.io/copc-specification-1.0.pdf>.
 - `COPC` capability is **not** established by the `.laz` extension
   or by the LAS point format; original LAS VLR/EVLR metadata must
   be separately read and validated first.
 
 The original-source GitHub workflow triggers one read-only acquisition,
-without files or artifacts, and includes 15 synthetic format/safety tests.
+without files or artifacts, and includes **23 synthetic format/safety tests**
+for the original ZIP/LAS headers and COPC info VLR.
 Strict HTTP206 and `Content-Range` validation abort before touching
 a potentially huge HTTP200 body. No arbitrary source or network redirects.
 
