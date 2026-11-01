@@ -32,7 +32,6 @@ jobs:
       fail-fast: false
       matrix:
         source:
-          - emsc.seismicportal.fdsn-event
           - geoboundaries.gbopen
           - gfz.geomagnetic-kp
           - noaa.swpc.real-time-solar-wind
