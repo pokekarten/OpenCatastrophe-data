@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
 """Validate a LOCAL Insurers Global name-index snapshot; emit metadata-only evidence.
 
 No downloading, database access, publication of third-party rows, or model admission.
