@@ -12,6 +12,7 @@ import argparse
 from collections import Counter
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 import sys
@@ -27,6 +28,8 @@ OPTIONAL_PROVENANCE = (
     "type_source", "subtype_source", "height_source",
     "floors_source", "construction_year_source",
 )
+OPTIONAL_ATTRIBUTES = ("type", "subtype", "height", "floors", "construction_year")
+AVAILABILITY_CATEGORIES = ("present", "null", "blank", "nonfinite")
 
 
 class EubuccoPreflightError(ValueError):
@@ -89,9 +92,10 @@ def inspect(path: Path, expected_sha256: str, *, source_id: str = EXPECTED_SOURC
 
         selected = ["id", "region_id", "geometry_source"] + [
             name for name in OPTIONAL_PROVENANCE if name in names
-        ]
+        ] + [name for name in OPTIONAL_ATTRIBUTES if name in names]
         geometry_sources = Counter()
         provenance_counts = {name: Counter() for name in OPTIONAL_PROVENANCE if name in names}
+        attribute_counts = {name: Counter() for name in OPTIONAL_ATTRIBUTES if name in names}
         seen_ids = set()
         processed = 0
         for batch in file.iter_batches(batch_size=4096, columns=selected):
@@ -107,6 +111,16 @@ def inspect(path: Path, expected_sha256: str, *, source_id: str = EXPECTED_SOURC
                 geometry_sources[_field_bucket(entry["geometry_source"])] += 1
                 for name, count in provenance_counts.items():
                     count[_field_bucket(entry[name])] += 1
+                for name, count in attribute_counts.items():
+                    value = entry[name]
+                    if value is None:
+                        count["null"] += 1
+                    elif isinstance(value, str) and not value.strip():
+                        count["blank"] += 1
+                    elif isinstance(value, float) and not math.isfinite(value):
+                        count["nonfinite"] += 1
+                    else:
+                        count["present"] += 1
                 processed += 1
         if processed != meta.num_rows:
             raise EubuccoPreflightError("Parquet metadata/decoded row count mismatch")
@@ -131,6 +145,11 @@ def inspect(path: Path, expected_sha256: str, *, source_id: str = EXPECTED_SOURC
         "missing_attribute_provenance_columns": sorted(
             set(OPTIONAL_PROVENANCE) - set(provenance_counts)
         ),
+        "attribute_value_availability": {
+            name: {state: counts[state] for state in AVAILABILITY_CATEGORIES}
+            for name, counts in sorted(attribute_counts.items())
+        },
+        "missing_attribute_value_columns": sorted(set(OPTIONAL_ATTRIBUTES) - set(attribute_counts)),
         "crs_according_to_provider_documentation_only": "EPSG:3035",
         "wkb_geometries_scientifically_validated": False,
         "source_vintage_and_original_government_lineage_verified": False,
@@ -143,8 +162,8 @@ def inspect(path: Path, expected_sha256: str, *, source_id: str = EXPECTED_SOURC
             "Offline LU00 original-byte and provenance-category preflight only. "
             "Caller-declared original SHA-256 does not establish provider authenticity. "
             "Government, OSM and Microsoft lineage may overlap Luxembourg ACT data; "
-            "no independent ground truth, original vintage, geometries, property IDs, "
-            "source licensing, 2D-versus-roof footprint equivalence or CAT exposure established."
+            "attribute presence is not attribute accuracy or evidence of observed values; "
+            "no independent ground truth, original vintage, geometries, property IDs, "            "source licensing, 2D-versus-roof footprint equivalence or CAT exposure established."
         ),
     }
 

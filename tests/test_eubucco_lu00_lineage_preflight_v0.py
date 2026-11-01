@@ -41,7 +41,11 @@ class LuxembourgEubuccoTests(unittest.TestCase):
 
     def write(self):
         table = pa.table({
-            key: pa.array(value, type=pa.binary() if key == "geometry" else pa.string())
+            key: pa.array(value, type=(
+                pa.binary() if key == "geometry" else
+                pa.float64() if key == "height" else
+                pa.int64() if key in ("floors", "construction_year") else pa.string()
+            ))
             for key, value in self.fields.items()
         })
         pq.write_table(table, self.path, compression="NONE")
@@ -63,6 +67,39 @@ class LuxembourgEubuccoTests(unittest.TestCase):
         self.assertFalse(report["model_input_admitted"])
         self.assertFalse(report["independence_from_luxembourg_act2023_established"])
         self.assertNotIn("SYN-LU-A", json.dumps(report))
+
+    def test_actual_value_presence_is_separate_from_provenance(self):
+        self.fields.update({
+            "type": ["residential", "", None],
+            "subtype": ["apartment", "industrial", " "],
+            "height": [7.5, None, float("nan")],
+            "floors": [3, 0, None],
+            "construction_year": [None, 1970, None],
+        })
+        report = self.report()
+        stats = report["attribute_value_availability"]
+        self.assertEqual(stats["type"], {
+            "present": 1, "null": 1, "blank": 1, "nonfinite": 0
+        })
+        self.assertEqual(stats["subtype"]["present"], 2)
+        self.assertEqual(stats["subtype"]["blank"], 1)
+        self.assertEqual(stats["height"]["present"], 1)
+        self.assertEqual(stats["height"]["null"], 1)
+        self.assertEqual(stats["height"]["nonfinite"], 1)
+        self.assertEqual(stats["floors"]["present"], 2)
+        self.assertEqual(stats["construction_year"]["present"], 1)
+        self.assertEqual(stats["construction_year"]["null"], 2)
+        self.assertEqual(report["missing_attribute_value_columns"], [])
+        self.assertEqual(report["total_buildings"], 3)
+        self.assertFalse(report["model_input_admitted"])
+        self.assertNotIn("SYN-LU-A", json.dumps(report))
+
+    def test_missing_optional_values_only_reported_not_filled(self):
+        report = self.report()
+        self.assertEqual(report["attribute_value_availability"], {})
+        self.assertEqual(sorted(report["missing_attribute_value_columns"]), [
+            "construction_year", "floors", "height", "subtype", "type"
+        ])
 
     def test_pinned_original_digest_mismatch_fails(self):
         digest = self.write()
