@@ -64,6 +64,10 @@ class LuxembourgGeoBaseFullGeometryTests(unittest.TestCase):
         self.assertEqual(repair["structure_challenge_usable"], 1)
         self.assertEqual(repair["structure_vs_linework_polygon_count_disagreements"], 0)
         self.assertEqual(repair["structure_vs_linework_area_disagreements_over_tolerance"], 0)
+        self.assertEqual(repair["structure_vs_linework_topological_set_disagreements"], 0)
+        self.assertEqual(
+            repair["structure_vs_linework_symmetric_difference_area_disagreements_over_tolerance"], 0
+        )
         self.assertEqual(repair["nonpositive_nominal_invalid_polygon_area"], 1)
         self.assertEqual(repair["absolute_nominal_vs_repaired_area_change_sum_m2"], 2.0)
         self.assertTrue(repair["all_repaired_polygons_quarantined_for_manual_scientific_review"])
