@@ -35,6 +35,35 @@ MAX_DB_FIELDS = 200
 MAX_FIELD_NAME_LEN = 40
 
 
+def bounded_2016_building_source_quality(raw: dict, keys: dict) -> dict:
+    """Small selected non-identifying source metadata; no unit inference."""
+    from math import isfinite
+    out={
+        "original_origin_bat_category":None,
+        "historic_numeric_fields_as_stored_not_verified_exposure":{},
+        "fields_are_not_2016_construction_or_insured_values":True,
+    }
+    if "ORIGIN_BAT" in keys and raw[keys["ORIGIN_BAT"]] is not None:
+        origin=str(raw[keys["ORIGIN_BAT"]]).strip()
+        if re.fullmatch(r"[A-Za-z0-9 _./-]{1,50}",origin):
+            out["original_origin_bat_category"]=origin
+        elif origin:
+            out["original_origin_bat_category"]="[REDACTED_UNRECOGNIZED_CATEGORY]"
+    for key in ("HAUTEUR","PREC_PLANI","PREC_ALTI","Z_MIN","Z_MAX"):
+        if key not in keys:
+            continue
+        val=raw.get(keys[key])
+        if val is None or isinstance(val,bool):
+            continue
+        try:
+            number=float(val)
+        except (ValueError,TypeError):
+            continue
+        if isfinite(number) and -10_000 <= number <= 100_000:
+            out["historic_numeric_fields_as_stored_not_verified_exposure"][key]=round(number,3)
+    return out
+
+
 def bounded_historical_attribute_receipts(folder: Path) -> tuple[list[dict], dict]:
     if folder.is_symlink() or not folder.is_dir():
         raise BridgeError("expected non-symlink local historical extraction")
@@ -102,6 +131,7 @@ def bounded_historical_attribute_receipts(folder: Path) -> tuple[list[dict], dic
                     "historic_area_m2": round(float(geom.area),2),
                     "original_id_sha256_by_field": id_hash,
                     "original_temporal_field_values": dates,
+                    "original_source_quality_attributes": bounded_2016_building_source_quality(raw, keys),
                     "original_historic_id_verified_for_cross_version_identity": False,
                 })
     if len(records) != 3:
