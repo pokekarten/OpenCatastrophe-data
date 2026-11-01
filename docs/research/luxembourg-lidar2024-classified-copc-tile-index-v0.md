@@ -73,6 +73,53 @@ rather than guessed from the filename or national tile count.
 Reject unsupported index schema and avoid blindly downloading a >1GB
 archive from a guessed tile/group identifier.
 
+## Actual original-source index receipt — successful 2026-11-01 test
+
+Original provider-download GitHub Actions run:
+<https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41319076447>.
+**All ten synthetic tests passed**, and actual ACT source bytes were
+successfully acquired, SHA-1 validated against the **original publisher
+catalogue**, read as read-only GeoPackage and intersected with the
+two predeclared fixed public 100m research polygons.
+
+| Verified property | Original measured result |
+| --- | --- |
+| Source index GeoPackage full bytes | **3,518,464** |
+| ACT-published SHA-1, independently matched | `3269aecb189271e7c3f86127c0e96f4e213557c9` |
+| Independently computed whole-index SHA-256 | `3db50821b582b9247d97d6d8bba41d9f15cd45ff0356b180322521346ef04cc8` |
+| Actual table | `TableauAssemblage` |
+| Geometry / CRS | `geom` Polygon, **EPSG:2169** |
+| Original source tile-index rows | **10,905** |
+| Actual columns | `fid, geom, Fichier, Dossier, DownloadLink` |
+| Original tile polygons overlapping fixed Luxembourg-city ROI | **1** |
+| Original tile polygons overlapping fixed Berdorf village ROI | **4** |
+| Original point-cloud/LAS/LAZ record values read | **0** |
+
+**City Luxembourg:** official tile `77000_75500`, original package
+permalink <https://data.public.lu/fr/datasets/r/9bc4df35-4c5a-4d79-8a05-a2faadd6dab1>.
+
+**Berdorf village:** original tiles
+`92500_98500` and `93000_98500` share source package
+<https://data.public.lu/fr/datasets/r/1e68ff5f-9182-42a4-8222-7496f3b689d7>;
+`92500_99000` and `93000_99000` share
+<https://data.public.lu/fr/datasets/r/ff8e2bac-b1aa-441a-82a6-9af4221a1fab>.
+
+Thus **five 500m×500m tiles** located in **three source group-archive
+resources** are sufficient to geographically cover the two preselected
+100m×100m research windows. These source IDs are **real original tile
+directory references**, not guessed archives. The two separate groups
+near Berdorf meet at a 500m tile-grid boundary, but a tile polygon
+overlap is not evidence the full source LAZ points have been obtained,
+classified accurately, or approved as model inputs.
+
+No 2024 classified point records have yet been downloaded. The
+original SHA-1 integrity success applies to the **tile index only**, not
+to any of the three ZIP archives or their internal COPC/LAZ tiles.
+Original ZIP sizes, declared hashes and actual LAS point-class
+histograms remain to be verified independently. Scientific
+independence, class-6 rooftop accuracy and the vertical datum remain
+unproven.
+
 ## Next stage, only after the index validates
 
 Choose precisely one publisher-original group archive covering the
