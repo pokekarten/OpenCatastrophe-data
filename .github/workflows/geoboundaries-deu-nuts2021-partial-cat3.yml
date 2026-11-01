@@ -1,0 +1,78 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: DEU independent NUTS2021 partial 14 CAT3 review gate
+
+on:
+  pull_request:
+    paths:
+      - research_runners/geoboundaries_deu_nuts2021_partial_cat3_v0.py
+      - tests/test_geoboundaries_deu_nuts2021_partial_cat3_v0.py
+      - .github/workflows/geoboundaries-deu-nuts2021-partial-cat3.yml
+      - docs/research/geoboundaries-deu-nuts2021-partial-cat3-v0.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  strict-partial-14-and-blocked-2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact reviewed study
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install reviewed spatial runtime
+        run: |
+          python -m pip install --disable-pip-version-check --no-input \
+            -r requirements-eu-flood-spatial.txt
+          python -m pip check
+      - name: Run synthetic only independent region rejection tests
+        run: python -m unittest tests.test_geoboundaries_deu_nuts2021_partial_cat3_v0 -v
+      - name: Download two SHA-pinned independent originals and stage only provisional 14
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          GB="$RUNNER_TEMP/geoBoundaries-2021-DEU-ADM1.geojson"
+          EU="$RUNNER_TEMP/Eurostat-NUTS2021-20M.json"
+          export CAT1="$RUNNER_TEMP/deu-gb-cat1.cat.sqlite"
+          export CAT3="$RUNNER_TEMP/deu-partial-nuts-cat3.cat.sqlite"
+          trap 'rm -f "$GB" "$EU" "$CAT1" "$CAT3"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 120 --retry 0 \
+            --max-filesize 7340032 --output "$GB" \
+            'https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/DEU/ADM1/geoBoundaries-DEU-ADM1.geojson'
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 90 --retry 0 \
+            --max-filesize 300000 --output "$EU" \
+            'https://raw.githubusercontent.com/eurostat/Nuts2json/8186be451525164ea24b43560cb943fda7c5520c/pub/v2/2021/4326/20M/nutsrg_1.json'
+          python -m research_runners.geoboundaries_deu_adm1_cat_sqlite_v0 \
+            --original-geojson "$GB" --output "$CAT1" > /dev/null
+          python -m research_runners.geoboundaries_deu_nuts2021_partial_cat3_v0 \
+            --gb-original "$GB" \
+            --nuts2021-original "$EU" \
+            --output "$CAT3"
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from research_runners.geoboundaries_deu_nuts2021_partial_cat3_v0 import resolve_cat3_point
+
+          cat1,cat3=Path(os.environ["CAT1"]),Path(os.environ["CAT3"])
+          checks=(
+              (11.576,48.137,"DE2","provisional_polygon_supported_not_model_admitted"),
+              (9.179,48.775,"DE1","provisional_polygon_supported_not_model_admitted"),
+              (13.405,52.52,None,"blocked_independent_geometry_review"),
+              (8.801,53.079,None,"blocked_independent_geometry_review"),
+          )
+          for lon,lat,expected,status in checks:
+              result=resolve_cat3_point(cat1,cat3,lon,lat)
+              if not result or result["status"]!=status or result["candidate_nuts2021_code"]!=expected:
+                  raise SystemExit("BLOCKED: partial spatial match or withheld-city safety proof failed")
+          print("PASS: fixed Munich/Stuttgart provisional, Berlin/Bremen withheld; CAT model input remains blocked")
+          PY
+          # Both provider files, CAT1, CAT3 source IDs and regional geometries
+          # are strictly runner-ephemeral, never attached or persisted.
