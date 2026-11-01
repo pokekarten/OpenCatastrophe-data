@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
-import csv
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 import hashlib
@@ -90,12 +89,15 @@ def _rows(raw: bytes, expected_headers: tuple[str, ...]) -> tuple[list[dict], in
             continue
         if footer_started:
             raise InstrumentAuditBlocked("DWD data rows appear after non-tabular footer")
-        try:
-            fields = next(csv.reader([line], delimiter=";", strict=True))
-        except csv.Error as exc:
-            raise InstrumentAuditBlocked("invalid original CSV row") from exc
+        # DWD's original metadata TXT is a provider-specific semicolon
+        # POSITIONAL format, not safely equivalent to generic CSV quoting.
+        # Count exact delimiters and preserve every original column, including
+        # its intentionally blank final field; never collapse quoted segments.
+        if line.count(";") != len(expected_headers) - 1:
+            raise InstrumentAuditBlocked("source semicolon field-count drift")
+        fields = line.split(";")
         if len(fields) != len(expected_headers):
-            raise InstrumentAuditBlocked("source CSV field count differs from actual header")
+            raise InstrumentAuditBlocked("source positional field-count drift")
         row = dict(zip(expected_headers, (x.strip() for x in fields)))
         if row["Stations_ID"].zfill(5) != evidence.EXPECTED_STATION_ID:
             raise InstrumentAuditBlocked("DWD source row station identity differs")
