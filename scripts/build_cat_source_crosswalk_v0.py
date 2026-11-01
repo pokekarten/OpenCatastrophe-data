@@ -114,6 +114,14 @@ def build_crosswalk(access_inventory: dict[str, Any], linkage_audit: dict[str, A
         access = access_candidates[source_id]
         if access.get("source_registry_path") is None:
             raise CrosswalkError("access source lacks canonical registry path")
+        # Both derived views must describe the same *original* source record.
+        # Matching an ID alone is insufficient when one view is stale or
+        # internally inconsistent: it could silently attach a source's access
+        # contract or scientific-link hypotheses to a different provider.
+        if (access.get("provider") != source.get("provider")
+                or access.get("authoritative_url") != source.get("authoritative_url")
+                or Path(access["source_registry_path"]).name != source.get("landscape_shard")):
+            raise CrosswalkError("source identity/provenance mismatch across derived registers")
         link_rows = sorted(links[source_id], key=lambda r: r["recipe_id"])
         contracts = access.get("contract_ids")
         if not isinstance(contracts, list) or len(set(contracts)) != len(contracts):
@@ -136,7 +144,8 @@ def build_crosswalk(access_inventory: dict[str, Any], linkage_audit: dict[str, A
             "join_hypothesis_count": len(link_rows),
             "scientific_independence_proven": False,
             "manual_lineage_review_required": bool(link_rows),
-            "needs_bounded_technical_access_review": not bool(contracts),
+            "needs_bounded_technical_access_review": True,
+            "no_reviewed_access_contract": not bool(contracts),
             "access_proven_by_this_report": False,
             "source_bytes_verified_by_this_report": False,
             "scientific_join_verified_by_this_report": False,
