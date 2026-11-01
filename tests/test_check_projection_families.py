@@ -18,6 +18,7 @@ class ProjectionFamilyGuardTests(unittest.TestCase):
         (root / "scripts").mkdir()
         (root / "scripts/render_public_views.py").write_text("pass\n", encoding="utf-8")
         (root / "scripts/schema_reference.py").write_text("pass\n", encoding="utf-8")
+        (root / "scripts/insurer_directory_receipt_projection.py").write_text("pass\n", encoding="utf-8")
         return root
 
     def _pair(self, root: Path, relative_json: str) -> None:
@@ -38,9 +39,10 @@ class ProjectionFamilyGuardTests(unittest.TestCase):
             self._pair(root, "manifests/example.json")
             self._pair(root, "landscape/sources-example.json")
             self._pair(root, "schemas/example.schema.json")
+            self._pair(root, "docs/research/insurer-directory-original-page-receipt-20261101.json")
             errors, count = guard.check_inventory(root)
             self.assertEqual(errors, [])
-            self.assertEqual(count, 4)
+            self.assertEqual(count, 5)
 
     def test_unknown_family_fails_even_with_handwritten_markdown(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -86,6 +88,7 @@ class ProjectionFamilyGuardTests(unittest.TestCase):
             (
                 ("scripts/render_public_views.py", "--check"),
                 ("scripts/schema_reference.py", "--check"),
+                ("scripts/insurer_directory_receipt_projection.py", "--check"),
             ),
         )
 
