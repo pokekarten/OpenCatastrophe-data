@@ -60,6 +60,8 @@ class RepairDiagnostics:
         self.boundary_hausdorff_over_1m = 0
         self.boundary_hausdorff_nonfinite = 0
         self.boundary_metrics_comparable = 0
+        self.source_vs_linework_boundary_topological_equal = 0
+        self.source_vs_linework_boundary_topological_unequal = 0
 
     def observe(self, original) -> None:
         """Evaluate a single invalid in-memory source polygon; aggregate only."""
@@ -97,6 +99,11 @@ class RepairDiagnostics:
                 length_difference = abs(source_boundary.length - repaired_boundary.length)
                 if (math.isfinite(distance) and distance >= 0
                         and math.isfinite(length_difference)):
+                    # GEOS topological equality checks the complete lineal
+                    # point set, not just discrete sampled vertices.
+                    same_boundary = bool(source_boundary.equals(repaired_boundary))
+                    self.source_vs_linework_boundary_topological_equal += same_boundary
+                    self.source_vs_linework_boundary_topological_unequal += not same_boundary
                     self.boundary_metrics_comparable += 1
                     self.boundary_hausdorff_m.append(distance)
                     self.boundary_length_abs_delta_m.append(length_difference)
@@ -159,6 +166,10 @@ class RepairDiagnostics:
         if (self.boundary_metrics_comparable + self.boundary_hausdorff_nonfinite !=
                 self.outcomes["single_polygon"] + self.outcomes["multiple_polygons"]):
             raise ValueError("Boundary comparison did not conserve usable linework cases")
+        if (self.source_vs_linework_boundary_topological_equal +
+                self.source_vs_linework_boundary_topological_unequal !=
+                self.boundary_metrics_comparable):
+            raise ValueError("Boundary lineal-set equality does not conserve comparisons")
         changes = sorted(self.absolute_deltas)
         mid = (len(changes) - 1) // 2
         p95 = math.ceil(len(changes) * 0.95) - 1
@@ -176,6 +187,10 @@ class RepairDiagnostics:
             "structure_vs_linework_topological_set_disagreements": self.structure_topological_set_disagreements,
             "boundary_discrete_hausdorff_densify_fraction": 0.25,
             "source_boundary_to_linework_boundary_comparable": self.boundary_metrics_comparable,
+            "source_boundary_vs_linework_boundary_topological_equal": (
+                self.source_vs_linework_boundary_topological_equal),
+            "source_boundary_vs_linework_boundary_topological_unequal": (
+                self.source_vs_linework_boundary_topological_unequal),
             "source_boundary_to_linework_boundary_nonfinite_or_failed": self.boundary_hausdorff_nonfinite,
             "source_boundary_to_linework_hausdorff_max_projected_m": (
                 round(max(self.boundary_hausdorff_m), 4)
