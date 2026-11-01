@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Berlin SRHK two exact water depth ZIP HEAD canaries
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research_runners/berlin_srhk_water_depth_zip_head_v0.py
+      - tests/test_berlin_srhk_water_depth_zip_head_v0.py
+      - .github/workflows/berlin-srhk-depth-zip-head.yml
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/berlin-srhk-depth-zip-head.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: berlin-srhk-depth-head-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  original-head:
+    name: Bounded no-download depth ZIP HEAD - ${{ matrix.source }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        source: [extraordinary, extreme]
+    steps:
+      - name: Checkout exact reviewed GitHub revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Synthetic HTTP header abuse, original fixed URLs and zero GET
+        run: python -m unittest tests.test_berlin_srhk_water_depth_zip_head_v0 -v
+      - name: One official HTTPS HEAD per fixed depth file, no download
+        if: github.event_name != 'pull_request'
+        run: python -m research_runners.berlin_srhk_water_depth_zip_head_v0 --source ${{ matrix.source }} --live
