@@ -27,6 +27,20 @@ The third archived candidate (ordinal 0, ~1,480.23 m²) has **no** matching `bdt
 
 For the two matching pairs, both the literal ID match and independent-vintage **mapping-representation** similarity are strongly corroborating evidence that the old 2016 BD TOPO mapped features were carried through to the 2023 reference used by the current RNB. They are **not two independent surveys**: RNB inherits BD TOPO geometry lineage.
 
+## Original v2.1 cadastral provenance and building QA attributes
+
+The successful [original-byte and historical-attribute run 41356007529](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41356007529) read the actual March 2016 building DBF fields for the three selected source polygons, not inferred current-day records.
+
+| Historic bounded-selected ordinal | `ORIGIN_BAT` | `HAUTEUR` | `PREC_PLANI` | `PREC_ALTI` | `Z_MIN` / `Z_MAX` |
+| --- | --- | ---: | ---: | ---: | --- |
+| 0 — 1,480 m² separate mapped footprint | Cadastre | 9 | 2.5 | 20 | 49.3 / 49.3 |
+| 1 — matches RNB TCHNNF59Y27V (ID + footprint) | Cadastre | 7 | 2.5 | 20 | 46.5 / 46.5 |
+| 2 — matches RNB 5TR6PNH2YQPT (ID + footprint) | Cadastre | 10 | 2.5 | 20 | 49.7 / 49.7 |
+
+These are source values *as stored*: not independently verified physical building heights, storey counts, survey accuracy, water depths, or insured replacement costs. All three have **`Z_MIN = Z_MAX`** despite distinct nonzero `HAUTEUR` values. Do not interpret this as zero building height, physically uniform roof elevation, or flood intensity. The exact historical v2.1 field specifications and units still require formal sign-off.
+
+The common `ORIGIN_BAT=Cadastre` value is important provenance: the historic 2016 building polygons were cadastral-origin mappings, and later RNB/BD TOPO geometry is not an independent field survey. Exact IDs and high IoU corroborate *mapping lineage* for the two observed pairs, not independent surveying, proof of construction/occupancy in 2016, insured TIV, or model authorization.
+
 ## Historic-ID caveat and admission rules
 
 IGN's [current BD TOPO product description](https://www.data.gouv.fr/datasets/bd-topo-r) explicitly describes uniquely stable object IDs **since version 3.0**. Our archived input is **v2.1**. Therefore, the directly proven ID continuity concerns **only these two exact observed old→modern records**; it must not be generalized to all archived v2.1 entries or used as a universal migration contract.
