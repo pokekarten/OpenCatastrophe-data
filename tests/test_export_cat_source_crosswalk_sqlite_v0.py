@@ -72,9 +72,13 @@ class CAT4ExportTests(unittest.TestCase):
     def test_application_id_separate_from_geographic_cat1_cat2_cat3(self):
         from research_runners.geoboundaries_deu_adm1_cat_sqlite_v0 import CAT_APP_ID
         from research_runners.geoboundaries_deu_adm1_nuts2021_crosswalk_v0 import CROSSWALK_APP_ID
-        from research_runners.geoboundaries_deu_nuts2021_partial_cat3_v0 import CAT3_ID
+        # CAT3 is already reserved on main for partial German NUTS2021
+        # staging (PR #971). This branch may predate that module, so assert
+        # the documented immutable application ID without importing a newer
+        # main-only file during PR checkout.
+        GERMAN_CAT3_ID = 0x43415433
         self.assertEqual(CAT4_APP_ID, 0x43415434)
-        self.assertEqual(len({CAT_APP_ID, CROSSWALK_APP_ID, CAT3_ID, CAT4_APP_ID}), 4)
+        self.assertEqual(len({CAT_APP_ID, CROSSWALK_APP_ID, GERMAN_CAT3_ID, CAT4_APP_ID}), 4)
 
 
     def test_sqlite_schema_references_and_non_admission(self):
