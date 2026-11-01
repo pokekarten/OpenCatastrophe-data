@@ -116,3 +116,22 @@ local original feature IDs are printed in routine public logs.
 The real original-source workflow URL, quantitative overlap minima and
 unexpected scientific differences must be entered only after the
 live validation, not predicted from the synthetic fixtures.
+
+## First real original-source outcome: blocked (2026-11-01)
+
+The first strictly pinned two-provider workflow executed on
+[GitHub Actions run 41317067892](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41317067892).
+Both download steps and initial geoboundaries CAT1 stage succeeded; the
+independent two-way overlap gate **rejected at least one German NUTS1
+candidate**, emitting
+`BLOCKED: no unambiguous high-coverage NUTS1/ADM1 match`.
+No CAT2 crosswalk was created. Crucially, **a 16-code match is NOT yet
+verified by real source overlay**, despite 16 synthetic offline tests in
+the neighboring geoBoundaries job and 7 synthetic crosswalk tests here.
+
+The research must inspect **per-code projected overlap fractions** before
+any decision. Do not silently lower the 75% threshold, use state-name
+correspondence as proof, or represent the full 16-region crosswalk as
+production-usable. A second one-shot bounded live workflow will report
+only suspect NUTS code(s) and numeric overlap fractions (no provider
+feature identifiers or coordinates) and keep the same fail-closed cutoff.
