@@ -28,11 +28,12 @@ GEOGRAPHY_HEADER = (
 GEOGRAPHY_ROW = "348;300;48.0;10.0;19990101;20191231;SECRET_PLACE\r\n"
 
 
-def fixture(folder: Path, *, wind_rows=None, geo_rows=None, member=None):
+def fixture(folder: Path, *, wind_rows=None, geo_rows=None, member=None,
+            product_name="produkt_extrema_wind_00348_20100101_20110901.txt"):
     wind_file = folder / WIND_FILE
     meta_file = folder / METADATA_FILE
     with ZipFile(wind_file, "w", ZIP_DEFLATED) as z:
-        z.writestr("produkt_extrema_wind_00348_20100101_20110901.txt",
+        z.writestr(product_name,
                    WIND_HEADER + "".join(WIND_ROWS if wind_rows is None else wind_rows))
         if member is not None:
             z.writestr(member, b"other")
@@ -67,6 +68,19 @@ class SecondStationOriginalTests(unittest.TestCase):
         self.assertFalse(r["model_input_approved"])
         self.assertFalse(r["external_original_bytes_persisted"])
         self.assertNotIn("SECRET_PLACE", str(r))
+
+    def test_native_product_filename_can_differ_but_header_and_station_must_match(self):
+        w, m = fixture(self.root,
+            product_name="produkt_zehn_min_fx_00348_20100101_20110901.txt")
+        result = inspect(w, m)
+        self.assertEqual(result["measurement"]["product_member"],
+                         "produkt_zehn_min_fx_00348_20100101_20110901.txt")
+
+    def test_native_member_station_mismatch_rejected(self):
+        w, m = fixture(self.root,
+            product_name="produkt_zehn_min_fx_00349_20100101_20110901.txt")
+        with self.assertRaises(SecondStationBlocked):
+            inspect(w, m)
 
     def test_source_digest_can_be_pinned_independently(self):
         w, m = fixture(self.root)
