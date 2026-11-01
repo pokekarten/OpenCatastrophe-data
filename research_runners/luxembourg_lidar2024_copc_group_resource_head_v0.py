@@ -66,10 +66,13 @@ def _only_publisher_url(url: str, expected_slug: str) -> str:
         raise ArchiveReceiptError("Publisher ZIP source origin not independently allowlisted")
     if not p.path.startswith("/resources/") or not p.path.lower().endswith(".zip"):
         raise ArchiveReceiptError("Source path not a direct publisher ZIP")
-    if expected_slug.lower() not in p.path.lower():
-        # A stable, public, sanitized *basename* (never URL/query) is enough
-        # to diagnose differences between ACT ZIP names and tile groups.
-        basename=p.path.rsplit("/",1)[-1]
+    # Actual publisher archive filename transforms original index group
+    # `Lidar2024_C020_R013` to `lidar2024-c020-r013.zip`, verified
+    # through the portal's official resource JSON in the original probe.
+    # This precise, single transformation is allowed; fuzzy prefixes are not.
+    basename=p.path.rsplit("/",1)[-1]
+    expected_name=expected_slug.replace("_","-").lower()+".zip"
+    if basename.lower()!=expected_name:
         if not re.fullmatch(r"[A-Za-z0-9_.-]{1,150}",basename):
             raise ArchiveReceiptError("Source ZIP name mismatches official tile group (unsafe basename)")
         raise ArchiveReceiptError("Official ZIP public basename differs from tile group: "+basename)
