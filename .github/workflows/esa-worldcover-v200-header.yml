@@ -9,6 +9,8 @@ on:
       - 'access/esa.worldcover.2021.v200.json'
       - 'access/esa.worldcover.2021.v200.md'
       - 'scripts/probe_esa_worldcover_tiff_header_v0.py'
+      - 'scripts/inspect_worldcover_tile_table_preflight_v0.py'
+      - 'tests/test_worldcover_tile_table_preflight_v0.py'
       - 'scripts/parse_worldcover_geotiff_grid_v0.py'
       - 'tests/test_probe_esa_worldcover_tiff_header_v0.py'
       - '.github/workflows/esa-worldcover-v200-header.yml'
@@ -34,5 +36,7 @@ jobs:
         run: python scripts/render_public_views.py --check --scope access
       - name: Exercise only synthetic source-header and network security tests
         run: python -m unittest tests.test_probe_esa_worldcover_tiff_header_v0 -v
-      - name: Obtain exactly 4096 original bytes via one approved S3 Range request
-        run: python -m scripts.probe_esa_worldcover_tiff_header_v0 --live
+      - name: Offline synthetic negative tests for reviewed TIFF tile-array pointers
+        run: python -m unittest tests.test_worldcover_tile_table_preflight_v0 -v
+      - name: Obtain only the reviewed 4096-byte header and preflight source TIFF tile-array metadata
+        run: python -m scripts.probe_esa_worldcover_tiff_header_v0 --live --tile-table-preflight
