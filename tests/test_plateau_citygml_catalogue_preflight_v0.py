@@ -10,8 +10,10 @@ import unittest
 
 from research_runners.plateau_citygml_catalogue_preflight_v0 import (
     CataloguePreflightError,
+    GRAPHQL_MAX_INPUT_BYTES,
     MAX_INPUT_BYTES,
     preflight_bytes,
+    preflight_graphql_bytes,
 )
 
 
@@ -291,6 +293,100 @@ class PlateauCataloguePreflightTests(unittest.TestCase):
         result = check(data)
         self.assertTrue(result["gspatial_catalogue_page_known"])
         self.assertNotIn("example.org", json.dumps(result))
+
+
+def valid_graphql_payload() -> dict:
+    return {
+        "data": {
+            "citygmlDatasets": [{
+                "id": "synthetic-native-record-2024",
+                "cityCode": "13104",
+                "year": 2024,
+                "registrationYear": 2025,
+                "url": "https://example.org/synthetic-cms.zip",
+                "fileSize": None,
+                "compositeUrl": (
+                    "https://api.plateauview.mlit.go.jp/datacatalog/citygml/13104-2024/citygml.zip"
+                ),
+                "featureTypes": ["bldg", "tran"],
+            }],
+        },
+    }
+
+
+def check_graphql(payload: dict) -> dict:
+    return preflight_graphql_bytes(json.dumps(payload).encode("utf-8"))
+
+
+class PlateauGraphqlMetadataPreflightTests(unittest.TestCase):
+    def test_one_fixed_record_passes_without_network_or_source_admission(self):
+        result = check_graphql(valid_graphql_payload())
+        self.assertEqual(result["target_fiscal_year"], 2024)
+        self.assertEqual(result["target_city_code"], "13104")
+        self.assertTrue(result["fixed_year_composite_url_present"])
+        self.assertFalse(result["cms_original_size_metadata_known"])
+        self.assertFalse(result["provider_network_access"])
+        self.assertFalse(result["model_input_approved"])
+        self.assertNotIn("synthetic-native-record", json.dumps(result))
+        self.assertNotIn("example.org", json.dumps(result))
+
+    def test_cms_file_size_is_separate_from_gspatial_archive_metadata(self):
+        payload = valid_graphql_payload()
+        payload["data"]["citygmlDatasets"][0]["fileSize"] = 123456
+        self.assertTrue(check_graphql(payload)["cms_original_size_metadata_known"])
+
+    def test_unfiltered_or_duplicate_results_are_not_promoted(self):
+        payload = valid_graphql_payload()
+        payload["data"]["citygmlDatasets"].append(copy.deepcopy(payload["data"]["citygmlDatasets"][0]))
+        with self.assertRaisesRegex(CataloguePreflightError, "exactly one"):
+            check_graphql(payload)
+
+    def test_graphql_errors_rejected_even_when_data_is_present(self):
+        payload = valid_graphql_payload()
+        payload["errors"] = [{"message": "synthetic incomplete result"}]
+        with self.assertRaisesRegex(CataloguePreflightError, "errors"):
+            check_graphql(payload)
+
+    def test_wrong_city_or_year_rejected(self):
+        for key, value in (("cityCode", "13105"), ("year", 2023), ("year", "2024")):
+            with self.subTest(key=key, value=value):
+                payload = valid_graphql_payload()
+                payload["data"]["citygmlDatasets"][0][key] = value
+                with self.assertRaises(CataloguePreflightError):
+                    check_graphql(payload)
+
+    def test_latest_composite_redirect_is_rejected(self):
+        payload = valid_graphql_payload()
+        payload["data"]["citygmlDatasets"][0]["compositeUrl"] = (
+            "https://api.plateauview.mlit.go.jp/datacatalog/citygml/13104-latest/citygml.zip"
+        )
+        with self.assertRaises(CataloguePreflightError):
+            check_graphql(payload)
+
+    def test_nullable_composite_is_recorded_as_absent(self):
+        payload = valid_graphql_payload()
+        payload["data"]["citygmlDatasets"][0]["compositeUrl"] = None
+        self.assertFalse(check_graphql(payload)["fixed_year_composite_url_present"])
+
+    def test_missing_bldg_feature_rejected(self):
+        payload = valid_graphql_payload()
+        payload["data"]["citygmlDatasets"][0]["featureTypes"] = ["tran"]
+        with self.assertRaises(CataloguePreflightError):
+            check_graphql(payload)
+
+    def test_invalid_cms_file_size_rejected(self):
+        for invalid in (0, -1, True, "123"):
+            with self.subTest(invalid=invalid):
+                payload = valid_graphql_payload()
+                payload["data"]["citygmlDatasets"][0]["fileSize"] = invalid
+                with self.assertRaises(CataloguePreflightError):
+                    check_graphql(payload)
+
+    def test_oversized_or_malformed_graphql_rejected(self):
+        with self.assertRaises(CataloguePreflightError):
+            preflight_graphql_bytes(b"x" * (GRAPHQL_MAX_INPUT_BYTES + 1))
+        with self.assertRaises(CataloguePreflightError):
+            preflight_graphql_bytes(b'{"data":{"citygmlDatasets":[]}, "data":{}}')
 
 
 if __name__ == "__main__":
