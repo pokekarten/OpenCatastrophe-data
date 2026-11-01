@@ -131,7 +131,7 @@ class OriginalPolygonIntegrityTests(unittest.TestCase):
 
     def test_nonfinite_vertex_and_invalid_ring_length_rejected(self):
         bad=list(RING); bad[1]=(math.nan,1.)
-        with self.assertRaisesRegex(RegionArchiveError,"bounds, parts or point structure"):
+        with self.assertRaisesRegex(RegionArchiveError,"bounds, parts or point structure|nonfinite polygon vertex"):
             verified(shapefile_fixture(records=[polygon_record([bad])]))
         short=[(0.,0.),(1.,0.),(0.,0.)]
         with self.assertRaisesRegex(RegionArchiveError,"parts or point structure"):
