@@ -28,7 +28,7 @@ def claim(i, **extra):
     return row
 
 def policy(i, **extra):
-    row = {"id": "POLICY_" + str(i), "countyCode": "01001",
+    row = {"id": i + 100000, "censusGeoid": "010010123456",
            "policyEffectiveDate": "2024-01-01",
            "policyTerminationDate": "2025-01-01",
            "totalBuildingInsuranceCoverage": "250000",
@@ -42,6 +42,7 @@ class NFIPV3PreflightTests(unittest.TestCase):
                            [policy(i) for i in range(10)], date(2024, 6, 1))
         self.assertEqual(result["claims_by_county_loss_year"][0]["recorded_paid_building_and_contents_usd"], "1060.00")
         self.assertEqual(result["policies_in_force_by_county"][0]["recorded_building_coverage_usd"], "2500000")
+        self.assertEqual(result["policies_in_force_by_county"][0]["county_code"], "01001")
         self.assertFalse(result["model_input_admitted"])
         self.assertTrue(result["no_individual_join"])
         serialized = json.dumps(result)
@@ -87,6 +88,8 @@ class NFIPV3PreflightTests(unittest.TestCase):
                     summarize([mutant], [], date(2024, 6, 1))
         with self.assertRaises(SourceError):
             summarize([], [policy(1, policyTerminationDate="2024-01-01")], date(2024, 6, 1))
+        with self.assertRaisesRegex(SourceError, "conflicts"):
+            summarize([], [policy(1, countyCode="02001")], date(2024, 6, 1))
 
     def test_exact_sha_envelope_and_unique_provider_ids(self):
         with TemporaryDirectory() as tmp:
