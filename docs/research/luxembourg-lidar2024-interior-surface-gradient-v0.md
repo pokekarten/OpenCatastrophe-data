@@ -29,6 +29,48 @@ This PR builds on the **same exact original sources and same already-reviewed sm
 
 **Important scientific distinction:** MNS gradients may be driven by dormers, parapets, vegetation, cranes, aerial sampling, mixed elevations, façade inclusion and edge artifacts. A *surface-steepness proxy within a polygon* **does not measure true roof facet slope**, and angle/sun orientation are not inferred. Using a 3m above-terrain filter does not prove all retained cells represent roofs. The 2024 LiDAR and 2026 GeoBase vintages may contain newly built/demolished buildings, and the original CRS axis direction, vertical datum, complete 40GB COG SHA and independent ground truth remain unchecked.
 
+## Verified actual original-data execution (2026-11-01)
+
+**Successful source run:** <https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41316598979>.
+All **24** synthetic source/mask/gradient tests passed and the pinned
+real-source 2026 GeoBase and 2024 MNT/MNS original-data window executed. The
+same **104** original GeoBase polygons / 44,521 valid raster pixels from
+merged #957 were used. The original 2026 GeoBase GPKG SHA remained
+`ec70bd1175b6f67b6dceaf8ab39e0433bc871e1099ff308c3eb8323127aa5676`.
+Only existing MNT/MNS official 4KiB HTTP206 headers and small windows were
+accessed; no complete ~40GB COG SHA was established.
+
+| Bounded original 100×100m result | Count |
+| --- | ---: |
+| Original source polygons with exact positive-area ROI intersection | **104** |
+| With ≥12 screened same-polygon five-cell interior stencils | **83** |
+| Without sufficient screened interior stencils | **21** |
+| Valid five-cell stencils before steepness exclusion | **16,390** |
+| Cells excluded because local gradient was ≥70° | **767** |
+| Raster pixels shared by ≥2 source polygons (never used for gradient) | **350** |
+
+Histogram of **per-polygon median local MNS surface steepness** from the
+83 provisional research objects:
+
+| Proxy local surface steepness, NOT roof pitch | Polygons |
+| --- | ---: |
+| 0° to <5° | **10** |
+| 5° to <15° | **14** |
+| 15° to <30° | **17** |
+| 30° to <50° | **30** |
+| 50° to <70° | **12** |
+| **Total** | **83** |
+
+Two conservation checks: **83+21=104**; **10+14+17+30+12=83**.
+The 21 exclusions are not 'flat roofs', missing buildings or evidence of
+any specific structural class. The 767 screened cells are NOT a count
+of façades or errors proven by annotation; they are a **threshold-based**
+data-quality exclusion. Median MNS gradient can reflect mixed pitches,
+vegetation, dormers, rooftop equipment, sampling resolution and registration
+errors. This is **not an original facet roof pitch dataset**, and should
+not be imputed into EUBUCCO, original ACT roofs, insured reinstatement
+values or vulnerability classes.
+
 ## Original source read and acceptance
 
 The existing dedicated `.github/workflows/luxembourg-geobase-lidar-object-proxy.yml` now exercises both the previous 13 synthetic mask tests and the new gradient tests in a pinned spatial environment, then runs the original GeoBase ZIP/GPKG SHA check and **the same original remote 100m MNT/MNS bounded-read job**. No original building records, dense rasters, per-object gradients, private residential addresses or photogrammetric models enter GitHub artifacts or the independent Neon insurance database.
