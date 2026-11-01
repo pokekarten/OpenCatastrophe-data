@@ -21,6 +21,65 @@ CURRENT_RNB_CENTROIDS = (
 MAX_ESTIMATED_LAYER = 5000
 
 
+
+def challenge_invalid_bbox_candidate(source_polygon, point_geometries, ordinal):
+    """Diagnose an ambiguous source polygon without admitting a repaired map.
+
+    A positive point in an invalid polygon's envelope is only a reason
+    to inspect the *two* GEOS interpretations. Underlying polygons never
+    leave process memory; no coordinate arrays are logged.
+    """
+    from shapely import make_valid, get_num_coordinates
+    from shapely.validation import explain_validity
+
+    if source_polygon.is_valid or source_polygon.is_empty:
+        raise ValueError("source must be a nonempty invalid polygon")
+    if source_polygon.geom_type not in ("Polygon", "MultiPolygon"):
+        raise ValueError("unknown candidate geometry type")
+    if get_num_coordinates(source_polygon) > 100_000:
+        raise ValueError("candidate exceeds geometry safety bound")
+    receipts = []
+    recovered = []
+    for method, keep_collapsed in (("linework", True), ("structure", False)):
+        geom = make_valid(source_polygon, method=method,
+                          keep_collapsed=keep_collapsed)
+        usable = (geom.is_valid and not geom.is_empty and
+                  geom.geom_type in ("Polygon", "MultiPolygon"))
+        if get_num_coordinates(geom) > 250_000:
+            raise ValueError("repair expansion exceeds safety bound")
+        receipts.append({
+            "method": method,
+            "usable_polygonal_repair": bool(usable),
+            "repair_output_type": geom.geom_type,
+            "point_covered": [
+                bool(geom.covers(p)) if usable else None
+                for p in point_geometries
+            ],
+            "distance_to_point_m": [
+                round(float(geom.distance(p)), 2) if usable else None
+                for p in point_geometries
+            ],
+            "recovered_geometry_persisted": False,
+        })
+        recovered.append(geom if usable else None)
+
+    both_usable = all(g is not None for g in recovered)
+    delta_m2 = None
+    if both_usable:
+        delta_m2 = round(float(
+            recovered[0].symmetric_difference(recovered[1]).area), 2)
+    return {
+        "source_feature_ordinal_zero_based_not_global_id": ordinal,
+        "original_topology_reason": explain_validity(source_polygon)[:130],
+        "repair_candidates": receipts,
+        "both_repair_methods_valid_polygonal": both_usable,
+        "between_repair_methods_symmetric_difference_area_m2": delta_m2,
+        "candidate_intersections_not_physical_inundation_proof": True,
+        "repaired_geodata_persisted": False,
+        "cat_model_admitted": False,
+    }
+
+
 def compare_original_layers_to_current_points(gdb_path):
     import fiona
     from fiona.transform import transform
@@ -72,7 +131,8 @@ def compare_original_layers_to_current_points(gdb_path):
         # that shape. Inside the box remains unknown, never a hit.
         invalid_bbox_contains_point = [0 for _ in pts]
         invalid_bbox_min_distance = [float("inf") for _ in pts]
-        for feature in src:
+        invalid_bbox_repair_challenges = []
+        for source_ordinal, feature in enumerate(src):
             geo = feature.get("geometry")
             if geo is None:
                 empty_count += 1
@@ -93,6 +153,12 @@ def compare_original_layers_to_current_points(gdb_path):
                     d = float(box.distance(point))
                     if isfinite(d) and d < invalid_bbox_min_distance[i]:
                         invalid_bbox_min_distance[i] = d
+                if any(box.covers(point) for point in pts):
+                    if len(invalid_bbox_repair_challenges) >= 5:
+                        raise ValueError("too many ambiguous source polygons")
+                    invalid_bbox_repair_challenges.append(
+                        challenge_invalid_bbox_candidate(area, pts, source_ordinal)
+                    )
                 continue
             valid_count += 1
             for i, point in enumerate(pts):
@@ -127,6 +193,10 @@ def compare_original_layers_to_current_points(gdb_path):
                 for d in invalid_bbox_min_distance
             ],
             "invalid_bbox_zero_requires_further_geometry_review": True,
+            "invalid_bbox_candidate_repair_challenges": invalid_bbox_repair_challenges,
+            "invalid_source_polygons_without_point_bbox_hit_unrepaired": (
+                invalid_count - len(invalid_bbox_repair_challenges)
+            ),
             "source_polygons_null_or_empty_skipped": empty_count,
             "source_geometry_automatically_repaired": False,
             "per_point_number_of_valid_polygon_covers": counts,
