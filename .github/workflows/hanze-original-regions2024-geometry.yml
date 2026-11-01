@@ -17,6 +17,9 @@ on:
       - "research_runners/hanze_2024_polygon_integrity_source_receipt_v0.py"
       - "research_runners/hanze_2024_independent_crs_geos_audit_v0.py"
       - "tests/test_hanze_2024_independent_crs_geos_audit_v0.py"
+      - "research_runners/hanze_2024_gdal_fiona_geometry_review_v0.py"
+      - "tests/test_hanze_2024_gdal_fiona_geometry_review_v0.py"
+      - "research_runners/hanze_2024_cross_reader_source_receipt_v0.py"
       - "research_runners/hanze_2024_independent_geometry_source_receipt_v0.py"
       - "research_runners/hanze_regions2024_geometry_source_receipt_v0.py"
   workflow_dispatch:
@@ -44,9 +47,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install isolated pinned geospatial validation wheels
-        run: python -m pip install --disable-pip-version-check --no-cache-dir "pyproj==3.7.2" "shapely==2.1.2" "pyshp==2.3.1"
+        run: python -m pip install --disable-pip-version-check --no-cache-dir "pyproj==3.7.2" "shapely==2.1.2" "pyshp==2.3.1" "fiona==1.10.1"
       - name: Test fail-closed archive byte/header contract on synthetic fixtures
-        run: python -m unittest tests.test_hanze_regions2024_geometry_zip_audit_v0 tests.test_hanze_regions2024_geometry_code_coverage_v0 tests.test_hanze_2024_original_polygon_integrity_v0 tests.test_hanze_2024_independent_crs_geos_audit_v0 -v
+        run: python -m unittest tests.test_hanze_regions2024_geometry_zip_audit_v0 tests.test_hanze_regions2024_geometry_code_coverage_v0 tests.test_hanze_2024_original_polygon_integrity_v0 tests.test_hanze_2024_independent_crs_geos_audit_v0 tests.test_hanze_2024_gdal_fiona_geometry_review_v0 -v
       - name: Download and inspect original provider archive (nothing persisted to Git)
         run: |
           python research_runners/hanze_regions2024_zip_original_receipt_v0.py --out "$RUNNER_TEMP/hanze-regions2024-zip-metadata.json"
@@ -69,3 +72,9 @@ jobs:
       - name: Reproduce original CRS/GEOS source finding and enforce no CAT admission
         run: |
           python -c 'import json,os,pathlib; from research_runners.hanze_2024_independent_geometry_source_receipt_v0 import HANZE_2024_INDEPENDENT_GEOMETRY_RECEIPT_V0 as e; g=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-regions2024-zip-metadata.json").read_text())["independent_crs_and_geos_validity"]; v=g["validity"]; assert g["epsg_code_identified_by_pyproj"]==e["identified_epsg_by_proj"]==3035 and g["epsg3035_projection_parameters_ellipsoid_axes_match"] and g["equals_official_epsg3035_ignoring_axis_order"] is False and v["geos_valid_geometries"]==e["geos_valid_geometries"] and v["geos_invalid_geometries"]==e["geos_invalid_geometries"] and v["polygons"]==e["interpreted_feature_types"]["polygon"] and v["multipolygons"]==e["interpreted_feature_types"]["multipolygon"] and g["invalid_reason_family_counts"]==e["invalid_reason_families"] and g["versions"]==e["libraries"] and not e["all_geometry_features_eligible_for_model_input"] and not e["model_input_admitted"]; print("PASS: independent source EPSG3035 projection match, 555 GEOS-valid vs 894 GEOS-flagged source geometries, rights/model admission blocked")'
+      - name: Compare original regions from alternate GDAL/Fiona shapefile interpretation
+        run: |
+          python -c 'import json,os,pathlib; r=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-regions2024-zip-metadata.json").read_text()); g=r["independent_gdal_fiona_geometry_validity"]; v=g["validity_counts"]; assert g["original_zip_sha256_verified"] and g["read_feature_count"]==1449 and v["geos_valid"]+v["geos_invalid"]+v["null_geometries"]==1449 and not g["original_geometry_bytes_or_region_ids_exported"] and not g["automatic_geometry_makevalid_performed"] and not g["model_input_admitted"]; print("Independent GDAL/Fiona original shapes vs GEOS aggregate (no source features):",json.dumps(g,sort_keys=True))'
+      - name: Pin exact original feature-by-feature reader agreement against frozen source evidence
+        run: |
+          python -c 'import json,os,pathlib; from research_runners.hanze_2024_cross_reader_source_receipt_v0 import HANZE_GDAL_PYSHP_ORIGINAL_CROSSCHECK_V0 as e; g=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-regions2024-zip-metadata.json").read_text())["independent_gdal_fiona_geometry_validity"]; c=g["cross_reader_per_feature_validity_counts"]; assert g["read_feature_count"]==e["original_geometries"] and c["both_valid"]==e["both_readers_valid"] and c["both_invalid"]==e["both_readers_flagged_invalid"] and c["gdal_valid_pyshp_invalid"]==e["gdal_valid_pyshp_invalid"] and c["gdal_invalid_pyshp_valid"]==e["gdal_invalid_pyshp_valid"] and c["geometry_types_disagree"]==e["geometric_type_disagreements"] and g["invalid_reason_family_counts"]==e["identified_invalid_family_counts"] and g["original_feature_code_order_agrees_without_emitting_identifiers"] and not e["model_data_admitted"]; print("PASS: GDAL and pyshp same original features: 555 jointly valid, 894 jointly flagged, zero individual disagreements; model excluded")'
