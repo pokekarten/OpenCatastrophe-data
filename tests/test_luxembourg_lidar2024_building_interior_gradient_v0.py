@@ -66,7 +66,7 @@ class InteriorGradientTests(unittest.TestCase):
 
     def test_full_mask_and_low_coverage_are_blocked(self):
         self.terrain.mask = np.ones((10,10), dtype=bool)
-        with self.assertRaisesRegex(InteriorGradientError, "coverage"):
+        with self.assertRaisesRegex(InteriorGradientError, "Insufficient joint finite"):
             self.run_proxy()
 
     def test_source_grid_shape_difference_is_blocked(self):
