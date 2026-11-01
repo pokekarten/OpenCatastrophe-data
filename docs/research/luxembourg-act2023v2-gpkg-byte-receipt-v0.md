@@ -55,10 +55,45 @@ not verification against a previously known independent source hash; check
 `verified_against_independent_prior_sha256`. An unreachable publisher URL
 must fail rather than substitute a different vintage.
 
+## Original provider receipt (GitHub Actions; 2026-11-01)
+
+**An actual original-file acquisition and bounded metadata inspection has now
+succeeded** in the source workflow, not merely a synthetic test:
+https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41306520956
+
+| Evidence field | Original observed value |
+| --- | --- |
+| Provider resource | `d62942ec-0dc8-40e2-9fa4-27841e6e1ac1` |
+| Exact archive bytes | `63246093` |
+| Archive SHA-256 | `a271b1cbcc22ded018f9bab0c150e9f33efa6cb7ebca8cf4dc4bdb1f5d84859a` |
+| Extracted GeoPackage bytes | `157261824` |
+| GeoPackage SHA-256 | `9765b04eaeb9332aa606b8dca44031116588e285553aab061d61037938a002bf` |
+| Feature table | `ACT2023v2_Buildings3d_Footprints` |
+| Declared geometry and EPSG | `MULTIPOLYGON`, `2169` |
+| Feature rows | **238189** |
+| Declared geometry column | `geom` |
+
+Publisher field names (names only, no actual attribute values):
+`id`, `geom`, `buildingid`, `gml_id`, `commune`, `lau2`,
+`modelmodificationdate`, `area`, `zmin`.
+
+The first workflow acquired and independently **computed** the original ZIP
+hash; it did **not** compare against a pre-existing pin. A follow-up exact-URL
+workflow now requires the above observed archive SHA **as its prior pin** and
+must fail if the provider revises bytes. The file was read in GitHub's
+temporary runner only; no raw geometry, feature IDs or personal data were
+uploaded to Git or Neon.
+
+This evidence establishes an actual downloadable Luxembourg building source,
+its schema and record count. It does **not** prove geometrical validity,
+country-by-country coverage, real building identity, CRS axis order,
+source survey vintage, EUBUCCO licence, or CAT admission.
+
 ## Critical remaining work
 
-1. Confirm a real official ZIP download and record actual byte counts, SHA and
-   original layers; a successful synthetic test does **not** prove provider access.
+1. Recheck the exact prior ZIP SHA-256 on a second official retrieval and
+   preserve a separate immutable checksum/dated provenance receipt when the
+   provider updates the source.
 2. Independently inspect original SRS WKT / coordinate samples to resolve
    EPSG:2169 axis semantics. This preflight does **not** validate polygon
    geometry topology, survey dates, 2D-vs-roof segmentation or source ID
