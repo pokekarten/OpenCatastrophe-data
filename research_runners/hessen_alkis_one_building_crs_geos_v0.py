@@ -71,7 +71,10 @@ def _reviewed_transformer():
 
 
 def _source_polygon(raw: bytes):
-    source=gml.inspect_gml_preflight(raw)
+    try:
+        source=gml.inspect_gml_preflight(raw)
+    except gml.RingBlocked as exc:
+        raise CRSBlocked("original one-building GML preflight rejected source geometry") from exc
     if (source["polygon_surface_count"]!=1
             or source["exterior_ring_count"]!=1
             or source["interior_ring_count"]!=0
