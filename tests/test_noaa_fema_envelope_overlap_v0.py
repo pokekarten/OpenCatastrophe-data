@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Offline synthetic NOAA/FEMA envelope counts and leakage rejection tests."""
+"""Offline synthetic NOAA/FEMA true-polygon counts and leakage tests."""
 
 from __future__ import annotations
 
@@ -54,8 +54,15 @@ class EnvelopeOverlapTests(unittest.TestCase):
         q = build_queries(source_item())
         self.assertTrue(q["endpoint"].endswith("/FeatureServer/0/query"))
         self.assertEqual(q["cohort_census"]["where"], COHORT_WHERE)
-        self.assertEqual(q["cohort_census"]["geometry"],
-                         "-85.5501,30.3249,-85.5249,30.3501")
+        ring = json.loads(q["cohort_census"]["geometry"])
+        self.assertEqual(
+            ring["rings"][0],
+            [[-85.5501, 30.3249], [-85.5249, 30.3249],
+             [-85.5249, 30.3501], [-85.5501, 30.3501],
+             [-85.5501, 30.3249]],
+        )
+        self.assertEqual(ring["spatialReference"]["wkid"], 4326)
+        self.assertEqual(q["cohort_census"]["geometryType"], "esriGeometryPolygon")
         self.assertEqual(q["cohort_census"]["inSR"], "4326")
         self.assertEqual(q["cohort_census"]["returnGeometry"], "false")
         self.assertEqual(q["damage_level_groups"]["groupByFieldsForStatistics"], "DMG_LEVEL")
@@ -67,9 +74,10 @@ class EnvelopeOverlapTests(unittest.TestCase):
 
     def test_nonzero_cohort_aggregate_never_claims_observed_roof_or_independence(self):
         x = reconcile(source_item(), {"count": 8}, [{"DMG_LEVEL": "AFF", "n": 8}], {"count": 8})
-        self.assertEqual(x["damage_points_in_tile_envelope"], 8)
+        self.assertEqual(x["damage_points_in_tile_polygon"], 8)
         self.assertEqual(x["damage_level_counts"]["AFF"], 8)
-        self.assertTrue(x["candidate_envelope_contains_assessment_point"])
+        self.assertTrue(x["candidate_polygon_contains_assessment_point"])
+        self.assertTrue(x["legacy_projected_envelope_count_may_be_overinclusive"])
         for field in ("source_api_replies_authenticated",
                       "original_raster_alpha_coverage_verified",
                       "same_building_identity_proven",
@@ -81,7 +89,7 @@ class EnvelopeOverlapTests(unittest.TestCase):
 
     def test_zero_count_not_promoted_to_spatial_overlap(self):
         x = reconcile(source_item(), {"count": 0}, [], {"count": 0})
-        self.assertFalse(x["candidate_envelope_contains_assessment_point"])
+        self.assertFalse(x["candidate_polygon_contains_assessment_point"])
         self.assertEqual(sum(x["damage_level_counts"].values()), 0)
 
     def test_group_order_and_stac_keys_do_not_affect_counts(self):
