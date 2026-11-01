@@ -56,8 +56,8 @@ def read_http(opener,req,*,status:int,limit:int=0,range_expected=None):
                     raise ZipRangeError("Original ZIP HTTP range Content-Length mismatch")
             if limit:
                 fragment=r.read(limit+1)
-                if len(fragment)!=limit:
-                    raise ZipRangeError("Original ZIP range response truncated or oversized")
+                if len(fragment)>limit or (range_expected is not None and len(fragment)!=limit):
+                    raise ZipRangeError("Original metadata/range response oversized or byte-range truncated")
                 return fragment
             return None
     except (HTTPError,URLError,OSError,ValueError) as exc:
