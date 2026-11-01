@@ -59,7 +59,7 @@ def _slice_window(x: list[float], y: list[float], first: datetime,
         raise DWDHoldoutBlocked("holdout dates do not align with 10-minute UTC grid")
     start_step = int((first - START).total_seconds() // 600)
     end_step = int((last - START).total_seconds() // 600) + 1
-    if end_step - start_step != expected_count or len(x) != len(y) != 65520:
+    if end_step - start_step != expected_count or len(x) != len(y) or len(x) != 65520:
         raise DWDHoldoutBlocked("fixed holdout calendar sample count drifted")
     result = (x[start_step:end_step], y[start_step:end_step])
     if any(len(v) != expected_count for v in result):
@@ -116,7 +116,6 @@ def _evaluate_split(train: tuple[list[float], list[float]],
         holdout_zero["pearson_r_unadjusted"], 6)
     monthly = []
     for name, begin, end, count in HOLDOUT_MONTHS:
-        mx, my, qx, qy = _slice_window(hx, hy, begin, end, count, hqx, hqy) if False else (None, None, None, None)
         # The holdout arrays are already Jan-Mar only, so indexing here uses
         # calendar offsets relative to fixed Jan-1 holdout, never raw events.
         offset = int((begin - PERIODS["holdout_2011_q1"][0]).total_seconds() // 600)
