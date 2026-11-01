@@ -116,6 +116,46 @@ class DirectOriginalTiffAccessTests(unittest.TestCase):
             self.assertFalse(receipt["insured_exposure_or_cat_model_admitted"])
 
     @unittest.skipUnless(SPATIAL_AVAILABLE, "spatial dependencies tested in dedicated pinned CI")
+    def test_all_nodata_pilot_cells_cannot_be_interpreted_as_dry(self):
+        import numpy as np
+        import rasterio
+        from rasterio.transform import from_origin
+        l, b, r, t = pilot_projected_bounds()
+        width, height = math.ceil(r-l) + 120, math.ceil(t-b) + 120
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "synthetic-all-missing.tif"
+            with rasterio.open(path, "w", driver="GTiff", width=width, height=height,
+                               count=1, dtype="float32", crs="EPSG:25832",
+                               transform=from_origin(l-60, t+60, 1, 1),
+                               nodata=-9999) as ds:
+                ds.write(np.full((height, width), -9999, dtype=np.float32), 1)
+            out = inspect_bkg_tile(path)
+            self.assertEqual(out["original_raw_cells_examined"], out["original_masked_cells"])
+            self.assertEqual(out["original_finite_unmasked_cells"], 0)
+            self.assertEqual(out["original_unmasked_numeric_zeros"], 0)
+            self.assertIsNone(out["original_raw_min_if_valid"])
+            self.assertIsNone(out["original_raw_max_if_valid"])
+            self.assertFalse(out["individual_building_hazard_join_verified"])
+
+    @unittest.skipUnless(SPATIAL_AVAILABLE, "spatial dependencies tested in dedicated pinned CI")
+    def test_unmasked_nan_pixel_blocks_raw_hazard_quality_receipt(self):
+        import numpy as np
+        import rasterio
+        from rasterio.transform import from_origin
+        l, b, r, t = pilot_projected_bounds()
+        width, height = math.ceil(r-l) + 120, math.ceil(t-b) + 120
+        values = np.zeros((height, width), dtype=np.float32)
+        values[65, 65] = np.nan
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "synthetic-unmasked-nan.tif"
+            with rasterio.open(path, "w", driver="GTiff", width=width, height=height,
+                               count=1, dtype="float32", crs="EPSG:25832",
+                               transform=from_origin(l-60, t+60, 1, 1)) as ds:
+                ds.write(values, 1)
+            with self.assertRaisesRegex(BkgTileBlocked, "nonfinite unmasked"):
+                inspect_bkg_tile(path)
+
+    @unittest.skipUnless(SPATIAL_AVAILABLE, "spatial dependencies tested in dedicated pinned CI")
     def test_wrong_crs_does_not_silently_reproject_or_admit_pixels(self):
         import numpy as np
         import rasterio
