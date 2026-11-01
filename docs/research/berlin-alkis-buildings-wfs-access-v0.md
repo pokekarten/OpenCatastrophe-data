@@ -173,3 +173,53 @@ the older polygon boundaries proves that these exact buildings existed
 in 2021. This **does not** establish any insured replacement value,
 peril vulnerability, construction-year, complete Berlin inventory or
 source-licensed nationwide data admission.
+
+## CAT4 isolated original-derived building polygon staging v0
+
+The verified official ALKIS building sample can now also generate a **new,
+isolated CAT4 SQLite file** using the identical in-memory WFS response.
+This keeps derived polygons usable for approved local comparison and quality
+checks rather than retaining source IDs, raw original feature bytes,
+addresses or property values. The caller explicitly chooses an existing
+secure parent directory outside the Git checkout; no production or
+Pokémon repository database is opened or overwritten.
+
+Opt-in command (the reviewed sample's two pinned CAT databases must exist):
+
+```bash
+python -m research_runners.berlin_alkis_gebaeude_five_feature_join_v0 \\
+  --live \\
+  --cat1 /secure/cat-data/staging/deu-adm1-2021.cat.sqlite \\
+  --cat2 /secure/cat-data/staging/deu-adm1-nuts2021.cat.sqlite \\
+  --cat4-output /secure/cat-data/staging/berlin-5-buildings.cat.sqlite
+```
+
+Output-only tables:
+
+- `provenance`: official WFS source and feature type, exact response
+  SHA-256/UTC, provider licence `dl-de-zero-2.0`, **unknown feature
+  construction/vintage**, administrative geometry vintage 2021, and
+  `model_admitted=0`.
+- `building_sample`: local 1..5 index, source polygon **EPSG:25833
+  WKB geometry** after validity check, footprint area in m², verified
+  administrative 2021 NUTS1 code `DE3`. No original feature IDs,
+  original property values, names, addresses, occupants, valuation or
+  loss values; no fake buildings are synthesized.
+- SQLite uses distinct application ID `BLD4` (hex `424C4434`),
+  fresh-only `*.cat.sqlite` destination outside Git and atomic
+  no-overwrite link. Its data are a local research snapshot, not a
+  shared system-of-record migration.
+
+A dedicated amended workflow rechecks the two original source-pinned CAT1
+and CAT2 input datasets, executes **one** original official WFS request,
+builds CAT4 and verifies row count, region and explicit non-admission,
+then deletes all temporary original and derived files. The first real
+CAT4 execution receipt must be recorded after verification.
+
+**Caveats:** Sample cap 5 is not a complete census for the bounded
+WFS box, and a cadastral building feature may represent segments or
+construction parts rather than a unique insured property. The live 2026
+source is not a 2021 historical snapshot. Sampling proves spatial access
+and coding, not insured portfolio coverage, value, secondary uncertainty,
+or vulnerability calibration. Persistent CAT database ingestion needs
+separate governance and storage credentials.
