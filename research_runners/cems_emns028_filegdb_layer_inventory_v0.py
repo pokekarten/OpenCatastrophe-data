@@ -100,7 +100,7 @@ def classify_name(name: str, schema_fields: list[str]) -> dict:
         "obsflood", "observed", "floodextent", "flood_extent",
     ))
     modeled_hint = any(s in lowered for s in (
-        "maxflood", "maximum", "depth", "modeled", "modelled",
+        "maxflood", "max_flood", "maximum", "estimated", "depth", "modeled", "modelled",
     ))
     return {
         "aoi04_name_hint": aoi_hint,
