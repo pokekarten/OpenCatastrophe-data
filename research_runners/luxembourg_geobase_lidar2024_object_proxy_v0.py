@@ -185,9 +185,17 @@ def run(geobase_path:Path):
                 limit=MAX_POLYGONS,output=local,
             )
             sample=json.loads(local.read_text(encoding="utf-8"))
-            polygons=[shape(x["geometry"]) for x in sample["features"]]
-            if len(polygons)!=original_count:
+            rtree_candidates=[shape(x["geometry"]) for x in sample["features"]]
+            if len(rtree_candidates)!=original_count:
                 raise BuildingProxyError("sample length drift")
+            # RTree searches the bounding rectangle of the projected 100m square.
+            # A candidate intersecting only this bbox is NOT inside the study.
+            # Clip against the exact study polygon before making height proxies.
+            polygons=[g for g in rtree_candidates
+                      if g.intersects(roi) and g.intersection(roi).area>0]
+            if not polygons:
+                raise BuildingProxyError("no positive-area building intersection in study")
+            bbox_false_candidates=original_count-len(polygons)
             receipts={name:read_header_range(name) for name in ("MNT","MNS")}
             with rasterio.Env(
                 GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR",
@@ -223,6 +231,8 @@ def run(geobase_path:Path):
             name:receipts[name]["original_entire_file_bytes_declared_by_http"]
             for name in ("MNT","MNS")
         },
+        "geobase_rtree_bbox_candidates":original_count,
+        "geobase_bbox_candidates_outside_exact_roi":bbox_false_candidates,
         "geobase_upstream_family":"Luxembourg ACT 2026",
         "lidar_provider_same_family_as_geobase":True,
         "native_axis_ground_control_verified":False,
