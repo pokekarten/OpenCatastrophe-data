@@ -100,7 +100,7 @@ def _rows(raw: bytes, expected_headers: tuple[str, ...], family: str = "unknown"
                     and len(table_rows) != expected_source_records):
                 raise InstrumentAuditBlocked("non-tabular footer before full original source table")
             if (any(char.isdigit() for char in line[:8])
-                    or "00003" in line or len(line.encode("utf-8")) > 512):
+                    or station_id in line or len(line.encode("utf-8")) > 512):
                 raise InstrumentAuditBlocked("ambiguous date/station-bearing original footer")
             footer_started = True
             footer_lines += 1
