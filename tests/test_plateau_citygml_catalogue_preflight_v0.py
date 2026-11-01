@@ -26,7 +26,7 @@ def valid_payload() -> dict:
                 "feature_types": ["bldg", "tran", "dem"],
                 "url": "https://example.org/synthetic-source.zip",
                 "composite_url": "https://api.plateauview.mlit.go.jp/datacatalog/citygml/13104-2024/citygml.zip",
-                "file_size": None, "gspatialjp_dataset_url": None,
+                "gspatialjp_dataset_url": None,
                 "gspatialjp_files": [],
             },
         ],
@@ -138,11 +138,68 @@ class PlateauCataloguePreflightTests(unittest.TestCase):
         with self.assertRaises(CataloguePreflightError):
             check(data)
 
-    def test_negative_zip_size_rejected(self):
+    def test_negative_nested_zip_size_rejected(self):
         data = valid_payload()
-        data["citygml"][0]["file_size"] = -1
+        data["citygml"][0]["gspatialjp_files"] = [{
+            "kind": "citygml", "name": "Synthetic CityGML",
+            "url": "https://example.org/synthetic.zip", "file_size": -1,
+        }]
         with self.assertRaises(CataloguePreflightError):
             check(data)
+
+    def test_gspatial_archive_metadata_is_separate_from_cms_zip(self):
+        data = valid_payload()
+        data["citygml"][0]["gspatialjp_files"] = [{
+            "kind": "citygml", "name": "Synthetic CityGML",
+            "url": "https://example.org/synthetic-gspatial.zip", "file_size": 100000,
+        }, {
+            "kind": "related", "name": "Synthetic related map",
+            "url": "https://example.org/synthetic-other.zip",
+        }]
+        result = check(data)
+        self.assertEqual(result["gspatial_citygml_file_count"], 1)
+        self.assertTrue(result["gspatial_citygml_file_sizes_all_known"])
+        self.assertNotIn("synthetic-gspatial", json.dumps(result))
+        self.assertNotIn("provider_file_size_known", result)
+
+    def test_gspatial_citygml_count_can_be_zero_without_claiming_source_size(self):
+        result = check(valid_payload())
+        self.assertEqual(result["gspatial_citygml_file_count"], 0)
+        self.assertFalse(result["gspatial_citygml_file_sizes_all_known"])
+
+    def test_gspatial_citygml_size_unknown_is_not_reported_as_known(self):
+        data = valid_payload()
+        data["citygml"][0]["gspatialjp_files"] = [{
+            "kind": "citygml", "name": "Synthetic CityGML",
+            "url": "https://example.org/synthetic-gspatial.zip",
+        }]
+        result = check(data)
+        self.assertEqual(result["gspatial_citygml_file_count"], 1)
+        self.assertFalse(result["gspatial_citygml_file_sizes_all_known"])
+
+    def test_gspatial_file_schema_rejects_missing_url(self):
+        data = valid_payload()
+        data["citygml"][0]["gspatialjp_files"] = [{
+            "kind": "citygml", "name": "Synthetic CityGML", "file_size": 12345,
+        }]
+        with self.assertRaises(CataloguePreflightError):
+            check(data)
+
+    def test_gspatial_unknown_file_kind_rejected(self):
+        data = valid_payload()
+        data["citygml"][0]["gspatialjp_files"] = [{
+            "kind": "secret", "name": "Synthetic other",
+            "url": "https://example.org/synthetic-other.zip",
+        }]
+        with self.assertRaises(CataloguePreflightError):
+            check(data)
+
+    def test_offline_catalogue_larger_than_two_megabytes_is_supported(self):
+        data = valid_payload()
+        data["extra_provider_metadata"] = "x" * (2 * 1024 * 1024)
+        result = check(data)
+        self.assertGreater(result["input_byte_count"], 2 * 1024 * 1024)
+        self.assertFalse(result["provider_network_access"])
 
     def test_required_source_url_rejected_when_null(self):
         data = valid_payload()
