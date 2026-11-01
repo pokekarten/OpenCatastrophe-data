@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg LiDAR2024 exact original tile polygon intersections
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_lidar2024_true_tile_intersections_v0.py'
+      - 'tests/test_luxembourg_lidar2024_true_tile_intersections_v0.py'
+      - '.github/workflows/luxembourg-lidar2024-exact-tile-intersection.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-source-tile-intersection:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout reviewed exact source commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned optional spatial source parser
+        run: |
+          python -m pip install --disable-pip-version-check --no-input -r requirements-eu-flood-spatial.txt
+          python -m pip check
+      - name: Challenge geometry parsing, exact intersection and source URL privacy on synthetic bytes
+        run: python -m unittest tests.test_luxembourg_lidar2024_true_tile_intersections_v0 -v
+      - name: Run exactly one original SHA256-pinned LiDAR index spatial geometry audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          index="$RUNNER_TEMP/act-lidar2024-ta.gpkg"
+          trap 'rm -f "$index"' EXIT
+          umask 077
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 90 --retry 0 \
+            --max-filesize 10485760 --output "$index" \
+            'https://download.data.public.lu/resources/lidar-2024-releve-3d-du-territoire-luxembourgeois/20250117-095958/lidar2024-ta.gpkg'
+          python -m research_runners.luxembourg_lidar2024_true_tile_intersections_v0 \
+            --original-gpkg "$index"
+          # Never fetch provider tile links, export source tile IDs or upload original geometry.
