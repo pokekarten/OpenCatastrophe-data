@@ -17,7 +17,7 @@ from research_runners.noaa_fema_envelope_overlap_v0 import (
 from research_runners.noaa_michael_alpha_tile_probe_v0 import (
     AlphaTileProofError, probe_zero_block,
 )
-from research_runners.noaa_michael_tiff_header_v0 import TIFFHeaderError, preflight
+from research_runners.noaa_michael_tiff_header_v0 import TIFFHeaderError, preflight, compare_provider_directory_size
 
 
 def item() -> dict:
@@ -131,6 +131,29 @@ class NOAATIFFHeaderTests(unittest.TestCase):
     def test_header_determinism(self):
         x = synthetic_tiff()
         self.assertEqual(preflight(x, item()), preflight(bytes(bytearray(x)), deepcopy(item())))
+
+    def test_original_tiff_main_ifd_can_disprove_directory_size_claim(self):
+        # Synthetic IFD with the exact public source block endpoint:
+        # current IFD requires at least 67,126,397 bytes while the NOAA
+        # public HTML index displays 18.94 MB for this filename.
+        h = header_with_tile_payload(360, 1039, offset=67125358)
+        report = compare_provider_directory_size(h, item(), 18.94)
+        self.assertEqual(report["main_tiff_ifd_minimum_bytes"], 67126397)
+        self.assertTrue(report["directory_html_size_insufficient_for_main_ifd"])
+        self.assertFalse(report["exact_http_content_length_verified"])
+        self.assertFalse(report["original_full_file_sha256_verified"])
+        self.assertFalse(report["model_input_admitted"])
+        self.assertFalse(report["asset_byte_identity_admitted"])
+        self.assertNotIn("source_bytes", report)
+        for invalid in (float("nan"), float("inf"), 0, -1, True, "18.94"):
+            with self.subTest(value=str(invalid)):
+                with self.assertRaises(TIFFHeaderError):
+                    compare_provider_directory_size(h, item(), invalid)
+        # A *consistent* larger directory claim cannot itself authenticate
+        # original bytes, file length or producer identity.
+        large = compare_provider_directory_size(h, item(), 70.0)
+        self.assertFalse(large["directory_html_size_insufficient_for_main_ifd"])
+        self.assertFalse(large["exact_http_content_length_verified"])
 
     def test_reject_wrong_signature_short_or_big_header(self):
         good = synthetic_tiff()
