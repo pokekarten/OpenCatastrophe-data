@@ -79,13 +79,13 @@ def _https_url_or_null(value: object, label: str) -> bool:
     return True
 
 
-def _fixed_composite_url(value: object) -> bool:
+def _fixed_composite_url(value: object, *, fiscal_year: int) -> bool:
     """PLATEAU's recommended stable-by-year path must never resolve a latest alias."""
     if value is None:
         return False
     _https_url_or_null(value, "citygml.composite_url")
     parsed = urlsplit(value)
-    expected = f"/datacatalog/citygml/{TARGET_CITY_CODE}-{TARGET_YEAR}/citygml.zip"
+    expected = f"/datacatalog/citygml/{TARGET_CITY_CODE}-{fiscal_year}/citygml.zip"
     if parsed.hostname != "api.plateauview.mlit.go.jp" or parsed.path != expected:
         raise CataloguePreflightError("target composite URL must pin the fixed municipality and fiscal year")
     return True
@@ -128,7 +128,7 @@ def _concrete_row(row: object) -> dict[str, object]:
     original_url = urlsplit(row["url"])
     if original_url.hostname == "api.plateauview.mlit.go.jp" and "-latest/" in original_url.path:
         raise CataloguePreflightError("an original source URL cannot be a mutable latest redirect")
-    fixed_composite = _fixed_composite_url(row.get("composite_url"))
+    fixed_composite = _fixed_composite_url(row.get("composite_url"), fiscal_year=year)
     return {
         "city_code": code,
         "year": year,
