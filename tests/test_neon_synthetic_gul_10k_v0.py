@@ -154,5 +154,28 @@ class TestSyntheticNeonGul10k(unittest.TestCase):
                          EXPECTED['events'])
 
 
+    def test_sql_pins_full_synthetic_fixture_geography_and_taxonomy(self):
+        from pathlib import Path
+        sql = (Path(__file__).resolve().parents[1]
+               / 'research_runners/sql/neon_synthetic_gul_10k_v0.sql').read_text(encoding='utf-8')
+        for required in (
+            "p.country_code='DE'",
+            "p.peril_scope=ARRAY['windstorm','flood']::text[]",
+            "p.business_line_scope=ARRAY['synthetic_property']::text[]",
+            "pv.as_of_date=DATE '2026-11-01'",
+            "pv.assumption_metadata ->> 'real_buildings'='false'",
+            "'arbitrary_coordinate_grid_not_real_properties'",
+            "a.country_code IS DISTINCT FROM 'DE'",
+            "a.region_code IS DISTINCT FROM 'SYNTHETIC-DE-REGION'",
+            "a.building_count IS DISTINCT FROM 1",
+            "a.occupancy_code IS DISTINCT FROM e.expected_occupancy",
+            "a.construction_code IS DISTINCT FROM e.expected_construction",
+            "ST_AsEWKB(a.location) IS DISTINCT FROM ST_AsEWKB(e.expected_location)",
+            "9.9 + (i % 4)*0.1",
+            "50.0 + ((i - 1)/4)*0.1",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, sql)
+
 if __name__ == '__main__':
     unittest.main()
