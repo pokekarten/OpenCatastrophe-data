@@ -86,3 +86,23 @@ fictional annual event frequencies, intensities, locations and amounts.
 A real covered policy, Oasis financial module, CAT-XL, retro, calibrated
 hazard-vulnerability model and genuine 10k NextGen run remain absent.
 No source or database writes were made.
+
+## 2026-11-02: stacked PR collision safely consolidated
+
+Draft PR #1089 was correctly based on this research branch but duplicated three
+tracked files, triggering the repo-wide PR file collision check. The exact
+three Git blobs from #1089 have been incorporated into this parent Draft PR:
+
+- `research_runners/sql/neon_synthetic_gul_10k_v0.sql`: `157f9615cbce5a28d1dbd28608ca7f451c3b19aa`
+- `tests/test_neon_synthetic_gul_10k_v0.py`: `9a89515f2aacffe3dfec1108bc9d2a528333afcd`
+- This research report before adding this consolidation note: `70000fb570498d61e1f2adc985115230a45a02ce`
+
+The original strict read-only SQL was re-executed on the isolated Neon
+validation branch `br-summer-sky-bawujqu8` and exactly reproduced the
+10,000-year / 1,541-event toy GUL output, including annual average EUR
+28,549.40 and 99.5% annual loss quantile EUR 366,250. PR #1089 was marked
+superseded and **closed without a merge** after exact source-preservation
+verification; its branch and Git history remain auditable. No CI protection
+was disabled or bypassed. CI must be judged against this latest source HEAD.
+
+**Scope remains synthetic-only; no production or real insurance model runs.**
