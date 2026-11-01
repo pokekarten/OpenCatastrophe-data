@@ -15,6 +15,9 @@ from research_runners.noaa_michael_stac_preflight_v0 import STAC_ROOT
 from research_runners.noaa_fema_alpha_negative_blocks_v0 import (
     BlockCoverageEvidenceError, REVIEWED_BLOCKS, reconcile_block_mask,
 )
+from research_runners.noaa_fema_alpha_visible_bbox_v0 import (
+    AlphaPolygonError, original_alpha_enclosing_polygon_query, reconcile_counts,
+)
 from research_runners.noaa_fema_envelope_overlap_v0 import (
     EnvelopeOverlapError, build_proven_transparent_block_query,
 )
@@ -530,6 +533,91 @@ class NOAAOriginalAlphaFEMABlockEvidenceTests(unittest.TestCase):
         self.assertEqual(x["fema_aggregate_count_in_verified_transparent_blocks"], 4)
         self.assertEqual(x["fema_aggregate_count_in_not_proven_transparent_blocks"], 3)
         self.assertFalse(x["verified_nontransparent_alpha_under_any_fema_point"])
+
+
+def synthetic_alpha_block(alpha_fn):
+    """Four-band synthetic TIFF Predictor=2 source block, no original pixels."""
+    rgba = bytearray(512 * 512 * 4)
+    for y in range(512):
+        for x in range(512):
+            rgba[(y * 512 + x) * 4 + 3] = alpha_fn(x, y)
+    for y in range(512):
+        for x in range(511, 0, -1):
+            at = (y * 512 + x) * 4 + 3
+            rgba[at] = (rgba[at] - rgba[at - 4]) & 255
+    return zlib.compress(rgba)
+
+
+def header_with_exact_source_block_length(index, length):
+    h = bytearray(pilot_ifd())
+    for i in range(struct.unpack_from("<H", h, 8)[0]):
+        off = 10 + i * 12
+        if struct.unpack_from("<H", h, off)[0] == 325:
+            base = struct.unpack_from("<I", h, off + 8)[0]
+            struct.pack_into("<I", h, base + index * 4, length)
+            return bytes(h)
+    raise AssertionError("synthetic TIFF missing source TileByteCounts")
+
+
+class NOAAConservativeVisibleAlphaBBoxTests(unittest.TestCase):
+    def test_block344_alpha_bbox_is_conservative_not_exact_visible_pixel_mask(self):
+        c = synthetic_alpha_block(lambda x, y: 255 if x < 192 and 40 <= y < 124 else 0)
+        q = original_alpha_enclosing_polygon_query(
+            pilot_item(), header_with_exact_source_block_length(344, len(c)), 344, c
+        )
+        self.assertEqual(q["source_block_index"], 344)
+        self.assertEqual(q["source_alpha_pixel_bbox"], [0, 40, 191, 123])
+        self.assertEqual(q["source_alpha_positive_pixels"], 192 * 84)
+        self.assertEqual(q["fema_count_query"]["geometryType"], "esriGeometryPolygon")
+        self.assertEqual(q["fema_count_query"]["returnGeometry"], "false")
+        self.assertEqual(q["fema_count_query"]["returnCountOnly"], "true")
+        self.assertEqual(json.loads(q["fema_count_query"]["geometry"])["spatialReference"]["wkid"], 4326)
+        self.assertTrue(q["polygon_encloses_all_visible_pixels_not_exact_mask"])
+        self.assertFalse(q["positive_count_proves_pixel_visible"])
+        self.assertFalse(q["model_input_admitted"])
+        self.assertNotIn("original_compressed_bytes", q)
+        verdict = reconcile_counts({"count": 1}, {"count": 0})
+        self.assertEqual(verdict["counts_outside_alpha_enclosing_bbox"], 1)
+        self.assertFalse(verdict["model_input_admitted"])
+
+    def test_block324_nonzero_alpha_envelope_does_not_certify_fema_point(self):
+        c = synthetic_alpha_block(lambda x, y: 255 if x < 416 and 328 <= y < 512 else 0)
+        q = original_alpha_enclosing_polygon_query(
+            pilot_item(), header_with_exact_source_block_length(324, len(c)), 324, c
+        )
+        self.assertEqual(q["source_alpha_pixel_bbox"], [0, 328, 415, 511])
+        self.assertEqual(q["source_alpha_positive_pixels"], 416 * 184)
+        verdict = reconcile_counts({"count": 1}, {"count": 1})
+        self.assertEqual(verdict["counts_outside_alpha_enclosing_bbox"], 0)
+        self.assertTrue(verdict["candidate_count_does_not_establish_pixel_visible"])
+
+    def test_negative_source_id_wrong_bytes_and_wholly_transparent_alpha_fail(self):
+        c = synthetic_alpha_block(lambda x, y: 255 if x < 192 else 0)
+        header = header_with_exact_source_block_length(344, len(c))
+        for invalid in (343, True, -1, 361):
+            with self.subTest(block=invalid):
+                with self.assertRaises(AlphaPolygonError):
+                    original_alpha_enclosing_polygon_query(pilot_item(), header, invalid, c)
+        with self.assertRaises(AlphaPolygonError):
+            original_alpha_enclosing_polygon_query(item(), synthetic_tiff(), 344, c)
+        with self.assertRaisesRegex(AlphaPolygonError, "byte count"):
+            original_alpha_enclosing_polygon_query(pilot_item(), header, 344, c[:-1])
+        zero = zlib.compress(bytes(512 * 512 * 4))
+        with self.assertRaisesRegex(AlphaPolygonError, "no alpha-positive"):
+            original_alpha_enclosing_polygon_query(
+                pilot_item(), header_with_exact_source_block_length(344, len(zero)),
+                344, zero
+            )
+
+    def test_count_bboxes_fail_closed_on_invalid_or_unexpected_replies(self):
+        for bad in (-1, True, None, 1.5, "1", {"features": []}):
+            with self.subTest(bad=str(bad)):
+                with self.assertRaises(AlphaPolygonError):
+                    reconcile_counts({"count": 1}, {"count": bad})
+        with self.assertRaisesRegex(AlphaPolygonError, "cannot exceed"):
+            reconcile_counts({"count": 1}, {"count": 2})
+        with self.assertRaises(AlphaPolygonError):
+            reconcile_counts({"count": 1, "OBJECTID": 33}, {"count": 0})
 
 
 if __name__ == "__main__":
