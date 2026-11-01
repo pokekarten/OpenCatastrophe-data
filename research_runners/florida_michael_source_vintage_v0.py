@@ -81,20 +81,23 @@ def assess_source_metadata(source: Any) -> dict[str, Any]:
         raise MichaelSourceVintageError("inconsistent content acquisition interval")
     if role == "parcel_polygon" and (start is None or published is None):
         raise MichaelSourceVintageError("parcel vintage requires dated content and publication")
-    if role == "post_event_imagery" and (start is None or start <= EVENT_DAY):
-        raise MichaelSourceVintageError("post-event image vintage must begin after event")
+    if role == "post_event_imagery" and start is not None and start <= EVENT_DAY:
+        raise MichaelSourceVintageError("known post-event image vintage must begin after event")
     if role == "remote_sensing_assessment" and (
         start is not None or end is not None
     ):
         raise MichaelSourceVintageError("FEMA damage IMG_DATE is unknown, not event day")
-    if source["building_footprint_version_verified"] and role != "parcel_polygon":
-        raise MichaelSourceVintageError("cannot claim building footprint version for non-parcel source")
+    if source["building_footprint_version_verified"]:
+        raise MichaelSourceVintageError("none of these source families proves 2018 roof-footprint identity")
+    if source["fema_image_lineage_verified"]:
+        raise MichaelSourceVintageError("exact FEMA original classification image is unverified")
     # Even a caller's asserted boolean cannot convert *parcel* polygons to
     # roof polygons; identity/geometry requires a separately scoped product.
     temporal = (
         "pre_event_content_interval" if end is not None and end < EVENT_DAY
         else "post_event_content_interval" if start is not None and start > EVENT_DAY
         else "content_interval_crosses_event" if start is not None
+        else "image_acquisition_date_unverified" if role == "post_event_imagery"
         else "imagery_date_missing_in_public_fema_cohort"
     )
     is_pre_event_candidate = role == "parcel_polygon" and temporal == "pre_event_content_interval"
