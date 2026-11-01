@@ -22,7 +22,7 @@ from test_export_synthetic_oed_v0 import fixture  # noqa: E402
 
 def main() -> int:
     from ods_tools import __version__ as tools_version
-    from ods_tools.oed import OedExposure
+    from ods_tools.oed import OedExposure, OdsException
 
     if tools_version != "5.0.8":
         raise RuntimeError(f"ODS Tools 5.0.8 required; found {tools_version}")
@@ -32,6 +32,27 @@ def main() -> int:
         # Constructor validation deliberately uses the library API: in some
         # versions the CLI check catches and logs OdsException.
         OedExposure(location=str(location), account=str(account), check_oed=True)
+
+        # Negative challenge: CountryCode is required. Verify the API raises;
+        # some CLI versions only log errors but return success.
+        missing_country = Path(root) / "invalid_location.csv"
+        with location.open(newline="", encoding="utf-8") as file:
+            reader = csv.DictReader(file)
+            source_rows = list(reader)
+            source_fields = list(reader.fieldnames or ())
+        fields = [field for field in source_fields if field != "CountryCode"]
+        with missing_country.open("w", newline="", encoding="utf-8") as file:
+            writer = csv.DictWriter(file, fieldnames=fields, extrasaction="ignore",
+                                    lineterminator="\n")
+            writer.writeheader()
+            writer.writerows(source_rows)
+        try:
+            OedExposure(location=str(missing_country), account=str(account),
+                        check_oed=True)
+        except OdsException:
+            pass
+        else:
+            raise RuntimeError("ODS Tools accepted a missing CountryCode")
 
         with location.open(newline="", encoding="utf-8") as file:
             locations = list(csv.DictReader(file))
@@ -47,7 +68,7 @@ def main() -> int:
         )
         assert tiv == Decimal("3150000")
         assert all(row["OEDVersion"] == "5.0.0" for row in locations)
-    print("PASS: pinned ods-tools 5.0.8 validated 12 invented OED 5.0 locations and one invented account; EUR 3,150,000 conserved")
+    print("PASS: pinned ods-tools 5.0.8 validated 12 invented OED 5.0 locations and one invented account; invalid schema rejected; EUR 3,150,000 conserved")
     return 0
 
 
