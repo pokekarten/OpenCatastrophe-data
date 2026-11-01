@@ -77,8 +77,46 @@ class WorldCoverRangeTests(unittest.TestCase):
         self.assertFalse(rec["raster_values_inspected"])
         self.assertFalse(rec["external_bytes_persisted"])
         self.assertFalse(rec["model_input_approved"])
-        self.assertNotIn("34560", json.dumps(rec))
+        self.assertEqual(rec["image_width_if_inline"], 34560)
+        self.assertIsNone(rec["image_length_if_inline"])
+        self.assertFalse(rec["raster_dimensions_proven_by_header_only"])
         self.assertEqual(len(rec["sample_sha256"]), 64)
+
+    def test_dimensions_and_geotiff_tag_id_presence_are_read_from_ifd_only(self):
+        raw = bytearray(tiff_bytes())
+        tags = [
+            (256, 4, 1, 34560),  # image width, LONG
+            (257, 4, 1, 34560),  # image height, LONG
+            (259, 3, 1, 8),  # compression, SHORT
+            (277, 3, 1, 1),  # samples per pixel, SHORT
+            (322, 4, 1, 512),  # tile width
+            (323, 4, 1, 512),  # tile height
+            (34735, 3, 4, 5000),  # GeoKeyDirectoryTag offset OUTSIDE sample
+        ]
+        struct.pack_into("<H", raw, 8, len(tags))
+        for index, tag in enumerate(tags):
+            struct.pack_into("<HHII", raw, 10 + 12 * index, *tag)
+        result = wc.inspect_tiff_header(bytes(raw))
+        self.assertEqual(result["image_width_if_inline"], 34560)
+        self.assertEqual(result["image_length_if_inline"], 34560)
+        self.assertEqual(result["compression_code_if_inline"], 8)
+        self.assertEqual(result["samples_per_pixel_if_inline"], 1)
+        self.assertEqual(result["tile_width_if_inline"], 512)
+        self.assertEqual(result["tile_length_if_inline"], 512)
+        self.assertEqual(result["geotiff_ifd_tag_ids_present"], [34735])
+        self.assertTrue(result["raster_dimensions_proven_by_header_only"])
+        self.assertNotIn("EPSG", json.dumps(result))
+
+    def test_duplicate_inline_tags_or_zero_width_are_rejected(self):
+        raw = bytearray(tiff_bytes())
+        struct.pack_into("<H", raw, 8, 2)
+        struct.pack_into("<HHII", raw, 22, 256, 4, 1, 12345)
+        with self.assertRaisesRegex(wc.HeaderBlocked, "duplicate"):
+            wc.inspect_tiff_header(bytes(raw))
+        raw = bytearray(tiff_bytes())
+        struct.pack_into("<HHII", raw, 10, 256, 4, 1, 0)
+        with self.assertRaisesRegex(wc.HeaderBlocked, "implausible"):
+            wc.inspect_tiff_header(bytes(raw))
 
     def test_big_tiff_magic_and_ifd_range(self):
         sample = wc.inspect_tiff_header(big_tiff_bytes())
