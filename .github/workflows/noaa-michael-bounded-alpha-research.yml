@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: NOAA Michael bounded original alpha research
+on:
+  pull_request:
+    paths:
+      - 'research_runners/noaa_michael_exact_alpha_live_v0.py'
+      - 'tests/test_noaa_michael_exact_alpha_live_v0.py'
+      - '.github/workflows/noaa-michael-bounded-alpha-research.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  source-proof:
+    if: github.event.pull_request.number == 955
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate bounded offline TIFF/HTTP contract
+        run: python -m unittest discover -s tests -p test_noaa_michael_exact_alpha_live_v0.py -v
+      - name: Audit exact NOAA original source blocks 324 and 344
+        run: python -m research_runners.noaa_michael_exact_alpha_live_v0
