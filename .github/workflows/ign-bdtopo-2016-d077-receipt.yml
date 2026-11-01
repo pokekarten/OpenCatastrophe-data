@@ -48,6 +48,29 @@ jobs:
           python research_runners/fr_bdtopo_2016_d077_archive_receipt_v0.py \
             --archive "$RUNNER_TEMP/$ARCHIVE_NAME" \
             --descriptor landscape/fr_bdtopo_d077_2016_archive_candidate_v0.json
+      - name: Test 7z stream and enumerate historical building layer files
+        env:
+          ARCHIVE_NAME: BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z
+        run: |
+          set -euo pipefail
+          command -v 7z
+          7z t -bd -bso0 "$RUNNER_TEMP/$ARCHIVE_NAME"
+          7z l -slt "$RUNNER_TEMP/$ARCHIVE_NAME" > "$RUNNER_TEMP/ign_2016_contents.txt"
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+          listing = Path(os.environ["RUNNER_TEMP"], "ign_2016_contents.txt").read_text(errors="replace")
+          names = re.findall(r"(?m)^Path = (.+)$", listing)
+          shape = [n for n in names if re.search(r"(?i)(batiment|b[aâ]ti).*[.](shp|shx|dbf|prj)$", n)]
+          print("verified_7z_archive_test=true")
+          print("archive_member_count=", len(names))
+          print("candidate_building_components=", len(shape))
+          for item in shape[:22]:
+              print("building_component=", item)
+          if not any(n.lower().endswith(".shp") for n in shape):
+              raise SystemExit("BLOCKED: no historic building shapefile found in full archive")
+          PY
       - name: Delete archive after receipt (no third-party artifact upload)
         if: always()
         run: rm -f "$RUNNER_TEMP/BDTOPO_2-1_TOUSTHEMES_SHP_LAMB93_D077_2016-03-24.7z"
