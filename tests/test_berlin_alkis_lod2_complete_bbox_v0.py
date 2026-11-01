@@ -67,7 +67,7 @@ class CompletenessAndMatchingTests(unittest.TestCase):
         self.assertEqual(result["three_metre_possible_placeholder_count"],1)
         self.assertEqual(result["height_role_text_counts"]["Bauteil"],1)
         self.assertEqual(result["matched_height_source_role_counts"],{
-            "Gebäude":2,"Bauteil":1,"unknown":0,
+            "Gebäude":2,"Bauteil":1,"Gebäudeteil":0,"unknown":0,
         })
         self.assertEqual(result["matched_positive_numeric_height_count"],3)
         self.assertEqual(result["matched_exact_3m_possible_placeholder_count"],1)
@@ -127,9 +127,36 @@ class CompletenessAndMatchingTests(unittest.TestCase):
         self.assertEqual(sum(domains["uniquely_matched_height_features"].values()),1)
         self.assertEqual(sum(domains["all_height_features"].values()),3)
         self.assertEqual(result["matched_height_source_role_counts"],{
-            "Gebäude":0,"Bauteil":1,"unknown":0
+            "Gebäude":0,"Bauteil":1,"Gebäudeteil":0,"unknown":0
         })
         self.assertFalse(result["model_input_admitted"])
+
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
+    def test_original_gebaeudeteil_is_a_distinct_non_insured_literal(self):
+        a,h=pair()
+        for item in h["features"]:
+            item["properties"]["role_txt"]="Gebäudeteil"
+        report=evaluate(raw(a),raw(h))
+        self.assertEqual(report["height_role_text_counts"]["Gebäudeteil"],3)
+        self.assertEqual(report["height_role_text_counts"]["unknown"],0)
+        self.assertEqual(report["matched_height_source_role_counts"]["Gebäudeteil"],3)
+        self.assertEqual(report["matched_source_gebaeudeteil_not_whole_building_count"],3)
+        self.assertEqual(report["matched_recognized_building_role_positive_non3m_count_research_only"],0)
+        self.assertTrue(report["source_role_label_not_equivalent_to_insured_building"])
+        self.assertFalse(report["model_input_admitted"])
+
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
+    def test_gebaeudeteil_in_duplicate_group_is_never_a_matched_unit(self):
+        a,h=pair()
+        for item in h["features"]:
+            item["properties"]["role_txt"]="Gebäudeteil"
+        h["features"][1]["geometry"]=copy.deepcopy(h["features"][0]["geometry"])
+        report=evaluate(raw(a),raw(h))
+        self.assertEqual(report["height_role_text_counts"]["Gebäudeteil"],3)
+        self.assertEqual(report["matched_source_gebaeudeteil_not_whole_building_count"],1)
+        self.assertEqual(report["duplicate_source_features_quarantined_by_source"]["loD2_2022"],2)
+        self.assertEqual(report["unambiguous_one_to_one_footprints"],1)
+        self.assertEqual(report["matched_source_height_admitted_to_insurer_exposure"],0)
 
     @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
     def test_missing_or_unbounded_source_population_refused(self):
