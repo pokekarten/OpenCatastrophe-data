@@ -1,0 +1,413 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Discovery-only additional European building observations, national registers, energy certificates, heights, roof equipment, address IDs and cross-country links to enrich EUBUCCO; rights/science/admission never implied.",
+  "review_date": "2026-11-01",
+  "entries": [
+    {
+      "candidate_id": "tum.globalbuildingatlas.odbl-polygons",
+      "name": "TUM GlobalBuildingAtlas ODbL building polygon subset",
+      "provider": "Technical University of Munich / Zhu Lab",
+      "categories": [
+        "building_footprints",
+        "geometry",
+        "global"
+      ],
+      "spatial_scope": "Worldwide, quality and completeness geographically variable",
+      "temporal_scope": "GlobalBuildingAtlas 2025 release; upstream source vintage varies",
+      "resolution_or_granularity": "Part GBA.ODbLPolygon only: building footprints from ODbL-licensed sources, separate from commercial-restricted 3D height products; building geometry stored as EPSG:3857 per publisher",
+      "potential_roles": [
+        "eubucco_completeness_screen",
+        "candidate_building_footprint_match",
+        "cross_source_lineage_audit"
+      ],
+      "authoritative_url": "https://huggingface.co/datasets/zhu-xlab/GBA.ODbLPolygon",
+      "access_class_hint": "odbl_subcollection_strict_rights_and_redistribution_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Important: the separate GBA.Polygon, GBA.LoD1 and GBA.Height datasets are CC BY-NC 4.0. Publisher warns some files appear tagged EPSG:4326 but should be interpreted as EPSG:3857. Check per-file CRS and OSM/Microsoft shared lineage; this polygon subset is not independently observed or an all-building census."
+    },
+    {
+      "candidate_id": "tum.globalbuildingatlas.lod1-nc",
+      "name": "TUM GlobalBuildingAtlas LoD1 and height model (noncommercial)",
+      "provider": "Technical University of Munich / Zhu Lab",
+      "categories": [
+        "building_3d",
+        "height",
+        "global"
+      ],
+      "spatial_scope": "Worldwide, spatially variable height quality and missing features",
+      "temporal_scope": "2025 public science release",
+      "resolution_or_granularity": "Level-of-detail-1 building volumes and GBA.Height data, derived by ML and footprint fusion",
+      "potential_roles": [
+        "noncommercial_height_research_reference",
+        "3d_model_uncertainty_benchmark"
+      ],
+      "authoritative_url": "https://github.com/zhu-xlab/GlobalBuildingAtlas",
+      "access_class_hint": "cc_by_nc_4_0_restricted_commercial_use_block_until_rights_decision",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Separate from ODbL polygons because GBA.LoD1/GBA.Height are CC BY-NC 4.0. Research evaluation alone does not authorize incorporation into operational commercial (re)insurance CAT models, nor redistribute derived 3D features. No provider web-viewer automation or feature streaming per explicit terms."
+    },
+    {
+      "candidate_id": "zenodo.3d-globfp.europe-heights.v1",
+      "name": "3D-GloBFP Europe building footprints with heights v1",
+      "provider": "Che, Li, Liu and collaborators / Zenodo",
+      "categories": [
+        "building_height",
+        "building_geometry",
+        "europe"
+      ],
+      "spatial_scope": "European countries including non-EU Europe in country bundles",
+      "temporal_scope": "Version v1 released May 2024",
+      "resolution_or_granularity": "Country-group RAR bundles of vector shapefiles with individual polygon height attributes (~20.8GB total)",
+      "potential_roles": [
+        "height_candidate_crosswalk",
+        "eubucco_height_missingness_reduction",
+        "model_disagreement_challenge"
+      ],
+      "authoritative_url": "https://zenodo.org/records/11391077",
+      "access_class_hint": "zenodo_cc_by_4_0_original_files_model_lineage_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Publisher declares CC BY 4.0; release bundles are large and height estimates model-derived, not direct LiDAR field measurements. Select small bounded country/area after documenting RAR extraction, height units, CRS, matching, height uncertainty and possible overlapping model inputs."
+    },
+    {
+      "candidate_id": "ee.ehr.public-building-register",
+      "name": "Estonia Ehitisregister (EHR) open building register, geometries and certificates",
+      "provider": "Estonian e-Construction platform / Land and Spatial Development Board",
+      "categories": [
+        "building_attributes",
+        "building_ids",
+        "energy_certificates",
+        "estonia"
+      ],
+      "spatial_scope": "Estonia, nationwide public building register",
+      "temporal_scope": "Daily updated public extraction, historical records from 1994",
+      "resolution_or_granularity": "Building objects and use categories, entrances, permits, occupancy, technical construction attributes, energy certificates and cadastral links",
+      "potential_roles": [
+        "building_id_attribute_enrichment",
+        "construction_year_roof_material_research",
+        "registry_change_detection"
+      ],
+      "authoritative_url": "https://swaggerui.ehr.ee/avaandmete_api",
+      "access_class_hint": "public_openapi_report_exports_exact_field_reuse_and_privacy_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Verified data descriptions via University of Tartu open-data overview. Distinguish buildings from apartment units and entrances, current/completed from planned/demolished. Check original source open-data license, coordinate CRS, exact IDs/geometry and personal/address fields before any import; use the official API instead of scraping site pages."
+    },
+    {
+      "candidate_id": "ee.taltech.apartment-archetypes.2026",
+      "name": "TalTech expert-validated Estonian apartment archetype and materials data",
+      "provider": "TalTech / Iliste & Viskus",
+      "categories": [
+        "material_types",
+        "building_archetypes",
+        "building_samples",
+        "estonia"
+      ],
+      "spatial_scope": "Estonian Soviet-era mass apartment housing sample",
+      "temporal_scope": "Released September 2026, ~1,868 expert-labelled buildings",
+      "resolution_or_granularity": "EHR-coded apartment buildings with year, roof, wall, storeys, staircase and floor-area properties; archetype material intensities and panel counts",
+      "potential_roles": [
+        "construction_material_validation_holdout",
+        "european_prefab_typology_prior",
+        "damage_repair_component_model"
+      ],
+      "authoritative_url": "https://data.taltech.ee/records/k7019-pm060",
+      "access_class_hint": "public_research_release_license_and_field_privacy_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Highly useful small expert-labelled reference. Not a nationwide random building sample; Soviet mass-housing focus creates strong selection bias. Keep EHR_code only when lawful and nonidentifying; verify actual source of each reported value. Material intensities derive from archival standard-design passports, not destructive material surveys of each building."
+    },
+    {
+      "candidate_id": "eu.geoe3.buildings2d.ogc-api",
+      "name": "GeoE3 cross-border Buildings 2D OGC API collections",
+      "provider": "GeoE3 European location-services consortium / National Land Survey Finland",
+      "categories": [
+        "buildings",
+        "interoperability",
+        "ogc_api",
+        "europe"
+      ],
+      "spatial_scope": "Multi-country API collections: Estonia, Finland, Netherlands, Norway, Spain, France, Slovenia",
+      "temporal_scope": "Service snapshots and member feeds are mutable",
+      "resolution_or_granularity": "OGC API Features harmonised access to national building polygon/reference collections",
+      "potential_roles": [
+        "cross_country_schema_probe",
+        "building_id_translation_contract",
+        "spatial_reference_consistency"
+      ],
+      "authoritative_url": "https://locationeurope.eu/geoe3/api/buildings/collections",
+      "access_class_hint": "public_metadata_ogc_api_and_provider_rights_individual_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Gateway republishes national authorities' information and is NOT an independent building-survey source. Each collection requires its own service terms, access limits, country-specific content/version and original license; do not confuse harmonised schema with harmonised rights."
+    },
+    {
+      "candidate_id": "fr.ign.lidar-hd.classified",
+      "name": "France IGN LiDAR HD classified point-cloud tiles",
+      "provider": "Institut national de l'information géographique et forestière",
+      "categories": [
+        "lidar",
+        "building_height",
+        "roof_geometry",
+        "france"
+      ],
+      "spatial_scope": "Metropolitan France and listed overseas regions as acquisition progresses; map availability per tile",
+      "temporal_scope": "2026 source update; survey dates vary across acquisition blocks",
+      "resolution_or_granularity": "Classified LAZ 1.4 or COPC tiles with ground/building/vegetation classes, 1km² tiles often 0.5–2GB; >=10 laser shots/m² typical under 3200m",
+      "potential_roles": [
+        "independent_building_height_check",
+        "roof_shape_geometry_extraction",
+        "ground_floor_elevation_proxy"
+      ],
+      "authoritative_url": "https://www.data.gouv.fr/datasets/nuages-de-points-lidar-hd",
+      "access_class_hint": "fr_open_licence_v2_tile_download_rights_and_coverage_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official French data portal states Licence Ouverte v2.0, but check exact tile and attribution. Cloud acquisition may precede latest footprint; huge tile volumes. Convert vertical reference before height comparison; do not mistake roof altitude for ground-relative building height. Coverage expected by 2026 is not guaranteed complete on 2026-11-01."
+    },
+    {
+      "candidate_id": "de.nrw.geobasis.3d-lidar",
+      "name": "Germany NRW Geobasis 3D laser measurement point clouds (3DM)",
+      "provider": "Bezirksregierung Köln / Geobasis NRW",
+      "categories": [
+        "lidar",
+        "terrain",
+        "building_height",
+        "germany"
+      ],
+      "spatial_scope": "North Rhine-Westphalia, Germany statewide",
+      "temporal_scope": "Continuous regional acquisition with heterogeneous campaigns; planned increased density end-2026 onward",
+      "resolution_or_granularity": "LAS/LAZ airborne point clouds with return class, intensity, GPS timestamp and ground/surface distinction",
+      "potential_roles": [
+        "building_height_lidar_holdout",
+        "roof_obstruction_validation",
+        "flood_ground_elevation_support"
+      ],
+      "authoritative_url": "https://www.bezreg-koeln.nrw.de/geobasis-nrw/produkte-und-dienste/hoehenmodelle/3d-messdaten",
+      "access_class_hint": "state_open_geobasis_tile_license_version_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Capture exact acquisition tile, original CRS/horizontal and vertical reference, point density and measurement date. Not direct construction year or material. Do not assume planned 2027 enhanced point density exists in current historical tiles."
+    },
+    {
+      "candidate_id": "ch.swisstopo.swisssurface3d-lidar",
+      "name": "Switzerland swissSURFACE3D national LiDAR classified point cloud",
+      "provider": "Swiss Federal Office of Topography swisstopo",
+      "categories": [
+        "lidar",
+        "building_height",
+        "surface_models",
+        "switzerland"
+      ],
+      "spatial_scope": "Switzerland and Liechtenstein, nationally available since 2024",
+      "temporal_scope": "Mixed acquisition years; new COPC/LAZ types since 2024",
+      "resolution_or_granularity": "Georeferenced classified XYZ points for buildings, bare earth and vegetation, generally 1 km² tiles",
+      "potential_roles": [
+        "building_height_ground_truth_candidate",
+        "terrain_elevation_link",
+        "3d_building_roof_validation"
+      ],
+      "authoritative_url": "https://www.swisstopo.admin.ch/de/hoehenmodell-swisssurface3d",
+      "access_class_hint": "official_open_geodata_tile_terms_crs_and_attribution_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Distinct raw observation layer versus already catalogued swissBUILDINGS3D 3.0 derived model; may share raw LiDAR processing and is not independent of the derived model. Swiss vertical datum and EGID building linkage need review."
+    },
+    {
+      "candidate_id": "si.gurs.realestate-cadastre-buildings",
+      "name": "Slovenia official real estate cadastre building layer INSPIRE WFS",
+      "provider": "Surveying and Mapping Authority of the Republic of Slovenia (GURS)",
+      "categories": [
+        "cadastral_buildings",
+        "official_ids",
+        "slovenia"
+      ],
+      "spatial_scope": "Slovenia nationwide",
+      "temporal_scope": "Maintained real estate cadastre, metadata from 2022 and updates thereafter",
+      "resolution_or_granularity": "Building polygons and cadastral parcels in national D96/TM (EPSG:3794) via WFS/WMS and cadastral records",
+      "potential_roles": [
+        "official_building_footprint_benchmark",
+        "national_building_identifier_crosswalk"
+      ],
+      "authoritative_url": "https://eprostor.gov.si/imps/srv/api/records/9a8fd241-9162-407c-94e7-c98e05766881/formatters/xsl-view?portalLink=&view=inspire",
+      "access_class_hint": "public_inspire_wfs_service_terms_and_original_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "INSPIRE building polygons are not automatically freely bulk redistributable; examine specific WFS schema/terms and cadastral identification separately. Map provider feature identifiers to durable local IDs with type/geometry and snapshot preservation."
+    },
+    {
+      "candidate_id": "es.madrid.energy-certificates",
+      "name": "Madrid Autonomous Community Energy Efficiency Certificate Register (CEEE)",
+      "provider": "Comunidad de Madrid Open Data",
+      "categories": [
+        "epc",
+        "building_technical",
+        "spain"
+      ],
+      "spatial_scope": "Madrid autonomous region, certified residential and other buildings",
+      "temporal_scope": "Year-scoped public CSV downloads, monthly current-year updates incl 2026",
+      "resolution_or_granularity": "Certificates with heating/cooling, energy rating, date and selected building construction/system characteristics",
+      "potential_roles": [
+        "construction_class_enrichment",
+        "certificate_era_calibration",
+        "roof_wall_thermal_feature_prior"
+      ],
+      "authoritative_url": "https://datos.comunidad.madrid/dataset/registro_certificados_eficiencia_energetica",
+      "access_class_hint": "regional_csv_open_data_licence_address_fields_privacy_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Certificate scope may be a dwelling or building, many vintages per real property, missing exact cadastral IDs; do not treat as exhaustive housing stock or a direct structural material survey. Avoid over-linking raw addresses to individuals; check original source licence and matched spatial precision."
+    },
+    {
+      "candidate_id": "it.lombardia.cened-plus2",
+      "name": "Lombardy regional CENED+2.0 Energy Performance Certificates",
+      "provider": "Lombardia / ARIA CENED",
+      "categories": [
+        "epc",
+        "building_attributes",
+        "italy"
+      ],
+      "spatial_scope": "Lombardy, Italy; certified premises",
+      "temporal_scope": "Rolling certification data; published version varies by dataset",
+      "resolution_or_granularity": "Public datasets with building location context, energy rating, geometric characteristics, systems and renewable-energy use",
+      "potential_roles": [
+        "building_geometry_energy_crosswalk",
+        "construction_use_enrichment",
+        "heating_equipment_context"
+      ],
+      "authoritative_url": "https://www.cened.it/opendata-cened-2.0",
+      "access_class_hint": "public_socrata_csv_original_licence_qa_and_privacy_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "APE certificate is a property/dwelling observation, not necessarily whole-building identity. Multiple certificates across time create duplicated buildings. Preserve valid year, status, cadastral/address match and source entity granularity; do not infer structural vulnerability from energy performance alone."
+    },
+    {
+      "candidate_id": "de.bnetza.mastr.public-solar",
+      "name": "Germany Marktstammdatenregister public rooftop solar unit inventory",
+      "provider": "Bundesnetzagentur / Marktstammdatenregister",
+      "categories": [
+        "rooftop_pv",
+        "equipment",
+        "building_assets",
+        "germany"
+      ],
+      "spatial_scope": "Germany nationwide with privacy-restricted site precision",
+      "temporal_scope": "Daily public XML full extract and dated snapshots; new export structure October 2025",
+      "resolution_or_granularity": "Public registered solar units by commissioning time, capacity and site fields subject to data protection",
+      "potential_roles": [
+        "rooftop_equipment_exposure_prior",
+        "pv_hail_wind_vulnerability_scope",
+        "technology_growth_validation"
+      ],
+      "authoritative_url": "https://www.marktstammdatenregister.de/MaStR/Datendownload",
+      "access_class_hint": "public_xml_bulk_dlde_by_2_and_localisation_privacy_restriction_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official register withholds street/house number and geocoordinates of solar installations <=30kWp and other natural-person details. It MUST NOT be reverse-geocoded to individual homes via external datasets. Match only lawful published precise sites or aggregate by geography; do not treat PV capacity as insured replacement amount. Full XML extract ~3GB zipped as of 2026-11-01."
+    },
+    {
+      "candidate_id": "fr.ban.national-addresses",
+      "name": "France Base Adresse Nationale (BAN) official geocoded address dataset",
+      "provider": "French national reference addresses / IGN and local authorities",
+      "categories": [
+        "addresses",
+        "geocoding",
+        "building_links",
+        "france"
+      ],
+      "spatial_scope": "France national, department-sliced releases",
+      "temporal_scope": "Daily per-department published files; latest directory updated October 2026",
+      "resolution_or_granularity": "Addresses with stable BAN identifiers and geocoded representative points in CSV, national reference service",
+      "potential_roles": [
+        "rnb_bdtopo_address_crosswalk",
+        "geocoding_confidence_assessment",
+        "certificate_building_linkage"
+      ],
+      "authoritative_url": "https://adresse.data.gouv.fr/outils/telechargements",
+      "access_class_hint": "public_open_license_exact_download_original_data_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "An address point is NOT a building centroid, and a building can contain many addresses; do not create false one-to-one building IDs or retain owner/occupant details. Legacy api-adresse.data.gouv.fr endpoint deprecated, use modern Geoplateforme or official downloadable files, version and coordinate CRS."
+    },
+    {
+      "candidate_id": "eu.hotmaps.heat-demand-100m",
+      "name": "Hotmaps EU heat demand and gross floor area density raster references",
+      "provider": "Hotmaps EU research consortium",
+      "categories": [
+        "floor_area",
+        "heat_demand",
+        "building_stock_aggregates",
+        "europe"
+      ],
+      "spatial_scope": "EU28 and selected neighbouring countries incl Switzerland Norway Iceland",
+      "temporal_scope": "2015 heat/floor reference, legacy 2017–2019 modeling papers",
+      "resolution_or_granularity": "100m x 100m heat-density/finished floor-area and housing-category raster datasets, plus downloadable model data repositories",
+      "potential_roles": [
+        "residential_floor_area_aggregate_validation",
+        "building_storeys_urban_prior",
+        "heated_occupancy_class_prior"
+      ],
+      "authoritative_url": "https://wiki.hotmaps.eu/en/Hotmaps-open-data-repositories",
+      "access_class_hint": "public_open_research_raster_version_and_licence_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Heat demand and floor area are modelled from stock data, not individual building records. 2015 data are temporally stale; avoid exact building assignment. Use only aggregated catchment/grid validation, accounting for source duplication with Eurostat national building statistics."
+    },
+    {
+      "candidate_id": "uk.os-ngd.roofs.2025",
+      "name": "Ordnance Survey NGD roof geometry/attributes (restricted product)",
+      "provider": "Ordnance Survey Great Britain",
+      "categories": [
+        "roof_shapes",
+        "building_3d",
+        "uk"
+      ],
+      "spatial_scope": "Great Britain; provider reports coverage of more than 40 million roofs",
+      "temporal_scope": "New roof theme launched March 2025",
+      "resolution_or_granularity": "Detailed roof mapping products in OS National Geographic Database intended for commercial/geospatial workflows",
+      "potential_roles": [
+        "roof_form_wind_hail_model_reference",
+        "commercial_dataset_cost_benchmark"
+      ],
+      "authoritative_url": "https://www.ordnancesurvey.co.uk/news/new-roof-data-for-over-40-million-buildings",
+      "access_class_hint": "proprietary_os_ngd_licensed_access_not_open_source",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Keep discovery only: OS NGD roof attributes should not be confused with free OS OpenMap Local and OS Open UPRN. Before any use, purchase/contract/rights and data licensing review; do not claim free download or derive user-facing roof models from proprietary source."
+    }
+  ]
+}
