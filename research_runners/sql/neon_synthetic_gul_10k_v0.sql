@@ -18,13 +18,19 @@ WITH selected_versions AS (
   JOIN exposure.portfolio_version pv USING (portfolio_id)
   WHERE p.portfolio_key='oc-synthetic-exposure-smoke-v0'
     AND p.portfolio_type='synthetic' AND p.organization_id IS NULL
-    AND pv.version_label='v0' AND pv.seed=20261101
+    AND p.country_code='DE'
+    AND p.peril_scope=ARRAY['windstorm','flood']::text[]
+    AND p.business_line_scope=ARRAY['synthetic_property']::text[]
+    AND pv.version_label='v0'
+    AND pv.as_of_date=DATE '2026-11-01' AND pv.seed=20261101
     AND pv.generation_method='deterministic_independent_synthetic_sql_v0'
     AND pv.source_key IS NULL
     AND pv.assumption_metadata ->> 'synthetic'='true'
     AND pv.assumption_metadata ->> 'model_input_approved'='false'
     AND pv.assumption_metadata ->> 'real_insurer'='false'
+    AND pv.assumption_metadata ->> 'real_buildings'='false'
     AND pv.assumption_metadata ->> 'external_source_rows_used'='0'
+    AND pv.assumption_metadata ->> 'location_semantics'='arbitrary_coordinate_grid_not_real_properties'
 ),
 raw_assets AS (
   SELECT e.*
@@ -32,7 +38,9 @@ raw_assets AS (
   JOIN selected_versions sv ON sv.portfolio_version_id=e.portfolio_version_id
 ),
 assets AS (
-  SELECT e.external_unit_id, e.insured_value::numeric AS proxy_value_eur
+  SELECT e.external_unit_id, e.insured_value::numeric AS proxy_value_eur,
+         e.location, e.country_code, e.region_code, e.building_count,
+         e.occupancy_code, e.construction_code
   FROM raw_assets e
   WHERE e.unit_type='asset' AND e.assumption_status='synthetic'
     AND e.source_key IS NULL AND e.location IS NOT NULL
@@ -42,7 +50,13 @@ assets AS (
 ),
 expected_assets AS (
   SELECT 'SYNTH-' || lpad(i::text,2,'0') AS external_unit_id,
-         (100000 + 25000*i)::numeric AS expected_value_eur
+         (100000 + 25000*i)::numeric AS expected_value_eur,
+         ST_SetSRID(ST_MakePoint(9.9 + (i % 4)*0.1,
+            50.0 + ((i - 1)/4)*0.1),4326) AS expected_location,
+         CASE WHEN i % 3=0 THEN 'SYNTHETIC_COMMERCIAL'
+              ELSE 'SYNTHETIC_RESIDENTIAL' END AS expected_occupancy,
+         CASE WHEN i % 2=0 THEN 'SYNTHETIC_CONCRETE'
+              ELSE 'SYNTHETIC_MASONRY' END AS expected_construction
   FROM generate_series(1,12) AS s(i)
 ),
 gate_checks AS (
@@ -57,6 +71,12 @@ gate_checks AS (
            WHERE a.external_unit_id IS NULL
               OR e.external_unit_id IS NULL
               OR a.proxy_value_eur IS DISTINCT FROM e.expected_value_eur
+              OR a.country_code IS DISTINCT FROM 'DE'
+              OR a.region_code IS DISTINCT FROM 'SYNTHETIC-DE-REGION'
+              OR a.building_count IS DISTINCT FROM 1
+              OR a.occupancy_code IS DISTINCT FROM e.expected_occupancy
+              OR a.construction_code IS DISTINCT FROM e.expected_construction
+              OR ST_AsEWKB(a.location) IS DISTINCT FROM ST_AsEWKB(e.expected_location)
          ) AS mismatches
   FROM assets a FULL JOIN expected_assets e USING (external_unit_id)
 ),
