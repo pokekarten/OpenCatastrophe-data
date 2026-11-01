@@ -131,6 +131,11 @@ class InstrumentIntervalTests(unittest.TestCase):
         self.assertEqual(s["finite_candidate_sensor_height_records"], 0)
         self.assertEqual(s["unparsed_or_out_of_range_height_records"], 1)
 
+    def test_quoted_embedded_semicolon_must_not_change_native_positions(self):
+        row = eq_row(device='"DEVICE;UNREVIEWED"')
+        with self.assertRaises(InstrumentAuditBlocked):
+            _rows(table(EQ_HEADERS, [row]), EQ_HEADERS)
+
     def test_original_member_set_missing_fails(self):
         path, sha = source(self.root, drop=PAIRS[0] + ".html")
         with self.assertRaises(InstrumentAuditBlocked):
