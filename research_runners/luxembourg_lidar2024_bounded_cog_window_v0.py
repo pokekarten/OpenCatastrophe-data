@@ -47,12 +47,25 @@ def native_bbox():
     return min(x for x,y in points), min(y for x,y in points), max(x for x,y in points), max(y for x,y in points)
 
 
+def source_crs_is_epsg2169(source) -> bool:
+    """Require true CRS semantic equivalence; WKT may omit EPSG root authority."""
+    try:
+        from pyproj import CRS
+        if source.crs is None:
+            return False
+        source_proj=CRS.from_wkt(source.crs.to_wkt())
+        verified=CRS.from_epsg(EXPECTED_EPSG)
+        return bool(source_proj.equals(verified, ignore_axis_order=True))
+    except (ValueError, TypeError):
+        return False
+
+
 def bounded_window_from_source(source, bbox):
     """Return a strict <=1M-pixel original COG read window."""
     import rasterio
     from rasterio.windows import from_bounds
-    if source.crs is None or source.crs.to_epsg() != EXPECTED_EPSG:
-        raise CogWindowError("Official source raster CRS differs from declared EPSG2169")
+    if not source_crs_is_epsg2169(source):
+        raise CogWindowError("Original source raster CRS not semantically equivalent to EPSG2169")
     if source.count != 1 or source.transform.b != 0 or source.transform.d != 0:
         raise CogWindowError("Unexpected non-north-up/non-singleband raster")
     xsize,ysize=source.res
@@ -132,6 +145,7 @@ def inspect_source_crs_metadata() -> dict:
                 label=src.crs.to_string() if src.crs is not None else None
                 result[name]={
                     "rasterio_crs_epsg":epsg,
+                    "full_wkt_semantically_equals_epsg2169":source_crs_is_epsg2169(src),
                     "rasterio_crs_label_truncated":label[:260] if label else None,
                     "has_crs":src.crs is not None,
                     "single_band":src.count==1,
