@@ -77,3 +77,51 @@ scientifically independent** of 2024 MNS: an external manual holdout
 is needed before claiming an accurately measured building height or
 accepting it into insurer exposures. No original pixels, points,
 insured TIV or CAT model-input rows are admitted by this audit.
+
+## Actual original publisher ZIP result — successful 2026-11-01
+
+Actual GitHub Actions exact original-source run:
+[41322016521](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41322016521).
+All **11 synthetic fail-closed HTTP/ZIP tests** passed, followed by the
+real official source-byte range experiment on only the fixed city group.
+
+| Verified against real official original grouped archive | Actual result |
+| --- | ---: |
+| Official source total ZIP bytes from exact JSON/HEAD | **1,700,086,212** |
+| Fixed official resource ID | `9bc4df35-4c5a-4d79-8a05-a2faadd6dab1` |
+| Original group name | `Lidar2024_C020_R013` |
+| Official original ZIP tail fetched | **65,557 bytes**, HTTP206 |
+| Original standard ZIP central directory fetched | **549 bytes**, HTTP206 |
+| **Original ZIP member count** | **9** |
+| Original members with `.laz` suffix | **9** |
+| Original members explicitly suffixed `.copc.laz` | **0** |
+| Original members explicitly suffixed `.las` | **0** |
+| Fixed city study tile `77000_75500` member name found | **YES, one member** |
+| Original sum of 9 member compressed payload sizes (ZIP metadata, no payload read) | **1,700,085,236 bytes** |
+| Actual ZIP/LAZ data payload obtained | **0 bytes** |
+| Actual LAS header, COPC VLR, classes 2/5/6 observed | **NO** |
+
+Only **66,106 actual original ZIP bytes** were retrieved instead
+of the whole **1.70GB** source archive; access to the central directory
+is now verified through two exact original HTTP206 ranges. Original
+member names/offsets were parsed transiently but **not exported** in
+the source report. The same small original source check confirms that
+the single required city tile is really an internal LAZ archive member.
+
+**Important limitation:** the publisher describes classified COPC data,
+but these member *filenames* end in `.laz`, **not** `.copc.laz`.
+Neither ordinary/CO PC LAS format, presence of individual class-6 points,
+coordinate accuracy, class histogram nor scientific classification
+accuracy can be inferred from ZIP metadata. Do not convert the
+suffix into a classification fact. The publisher SHA1 is still metadata,
+not an independently rehashed archive digest. The real next stage is a
+*single member* ZIP local-header range-read with compression-method and
+size gates and **bounded decompression** (or raw member first bytes for a
+STORED entry) to inspect only the LAS/COPC header and classification
+schema. A member may be >100 MB, so never proceed to full member
+retrieval without a separate capped budget and rights review.
+
+The failed first provider attempt was due to querying uData's
+display-oriented `size` rather than its numeric `filesize`
+field. It was corrected to reuse the already validated #987
+provider metadata contract; the final exact-source run succeeded.
