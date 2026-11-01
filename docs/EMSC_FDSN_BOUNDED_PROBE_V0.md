@@ -63,3 +63,27 @@ A live run's result is authoritative only for its one request: record the
 exact workflow run URL, UTC, content SHA-256 and response size in this document
 after verification. A failed upstream request or changed response contract
 must remain a reported blocker, not be silently treated as success.
+
+## Verified live one-event source receipt (2026-11-01)
+
+The exact reviewed anonymous FDSN JSON probe completed successfully in
+[GitHub Actions run 41312906117](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41312906117),
+job `EMSC fixed anonymous one-event probe`, main commit
+`074d79c27818dc78a7ab109625b2beadde261e1e`.
+
+- Retrieval: `2026-11-01T13:47:00.516426+00:00`
+- HTTP: `200`, response media type `application/json`
+- Exact frozen request:
+  `https://www.seismicportal.eu/fdsnws/event/1/query?format=json&limit=1&orderby=time&nodata=204&includeallorigins=false&includearrivals=false`
+- Original response: **618 bytes**, one GeoJSON Point event feature
+- Original response SHA-256:
+  `683213de4a7cbabc5c38b248e0a00e484cbd8448d38f7fb873a3673c1d87efad`
+- Trusted execution script SHA-256:
+  `916eee391c9b0b52d9d26637eab64d65b8c063b08307ee765392715ee5a238f3`
+- Original event details were *not* saved/logged; no model-input admission.
+
+This is a single-request availability and response-compatibility proof. It
+does not establish all-event catalogue coverage, independent scientific
+quality, event stability, or a licensed and reproducible earthquake hazard
+dataset. Follow-on research must freeze a distinct exact event/time-window
+product and independently review the resulting data version and quality.
