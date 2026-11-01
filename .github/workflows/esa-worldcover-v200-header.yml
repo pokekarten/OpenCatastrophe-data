@@ -9,6 +9,7 @@ on:
       - 'access/esa.worldcover.2021.v200.json'
       - 'access/esa.worldcover.2021.v200.md'
       - 'scripts/probe_esa_worldcover_tiff_header_v0.py'
+      - 'scripts/parse_worldcover_geotiff_grid_v0.py'
       - 'tests/test_probe_esa_worldcover_tiff_header_v0.py'
       - '.github/workflows/esa-worldcover-v200-header.yml'
   workflow_dispatch:

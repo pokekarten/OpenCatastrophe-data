@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch
 
 from scripts import probe_esa_worldcover_tiff_header_v0 as wc
+from scripts.parse_worldcover_geotiff_grid_v0 import GeoGridBlocked, inspect_geotiff_grid
 
 
 def tiff_bytes() -> bytes:
@@ -48,6 +49,29 @@ class Response(io.BytesIO):
     def read(self, n=-1):
         self.bytes_requested.append(n)
         return super().read(n)
+
+
+def geo_sample(*, epsg=4326, srcx=9.0, srcy=51.0, scale=None,
+               key_location=0, out_of_range=False) -> bytes:
+    """Synthetic, explicit 3x3 degree GeoTIFF metadata; no provider data."""
+    raw = bytearray(tiff_bytes())
+    # width, height, pixel scale, model tiepoint, GeoKey directory
+    entries = [
+        (256, 4, 1, 36000), (257, 4, 1, 36000),
+        (33550, 12, 3, 800),
+        (33922, 12, 6, 840),
+        (34735, 3, 16, 900 if not out_of_range else 100000),
+    ]
+    struct.pack_into("<H", raw, 8, len(entries))
+    for idx, item in enumerate(entries):
+        struct.pack_into("<HHII", raw, 10 + idx * 12, *item)
+    pix = 3 / 36000 if scale is None else scale
+    struct.pack_into("<3d", raw, 800, pix, pix, 0.0)
+    struct.pack_into("<6d", raw, 840, 0., 0., 0., srcx, srcy, 0.)
+    keys = (1, 1, 0, 3, 1024, 0, 1, 2, 1025, 0, 1, 1,
+            2048, key_location, 1, epsg)
+    struct.pack_into("<16H", raw, 900, *keys)
+    return bytes(raw)
 
 
 class WorldCoverRangeTests(unittest.TestCase):
@@ -130,6 +154,56 @@ class WorldCoverRangeTests(unittest.TestCase):
         sample = wc.inspect_tiff_header(bytes(raw))
         self.assertFalse(sample["first_ifd_fully_within_sample"])
         self.assertIsNone(sample["first_ifd_count_if_visible"])
+
+    def test_geotiff_grid_exact_header_epsg4326_and_coordinates(self):
+        raw = geo_sample()
+        result = inspect_geotiff_grid(raw, width=36000, height=36000)
+        self.assertEqual(result["geokey_geographic_crs_if_complete"], 4326)
+        self.assertEqual(result["geokey_model_type_if_complete"], 2)
+        self.assertEqual(result["geokey_raster_type_if_complete"], 1)
+        self.assertEqual(result["header_tile_bounds_lonlat_if_verified"],
+                         [9.0, 48.0, 12.0, 51.0])
+        self.assertTrue(result["geo_grid_verified_from_prefix_only"])
+        self.assertEqual(result["pixel_scale_degrees_if_complete"],
+                         [3/36000, 3/36000])
+
+    def test_wrong_crs_or_grid_extent_is_not_promoted(self):
+        for case, raw in enumerate((
+            geo_sample(epsg=3857), geo_sample(srcx=11.0),
+            geo_sample(srcy=50.0), geo_sample(scale=0.1),
+            geo_sample(out_of_range=True),
+        )):
+            with self.subTest(case=case):
+                result = inspect_geotiff_grid(raw, width=36000, height=36000)
+                self.assertFalse(result["geo_grid_verified_from_prefix_only"])
+                self.assertIsNone(result["header_tile_bounds_lonlat_if_verified"])
+        self.assertFalse(inspect_geotiff_grid(
+            geo_sample(), width=35999, height=36000
+        )["geo_grid_verified_from_prefix_only"])
+
+    def test_geotiff_bad_references_and_nonfinite_block(self):
+        with self.assertRaisesRegex(GeoGridBlocked, "not directly encoded"):
+            inspect_geotiff_grid(geo_sample(key_location=34735),
+                                 width=36000, height=36000)
+        raw = bytearray(geo_sample())
+        struct.pack_into("<d", raw, 800, float("nan"))
+        with self.assertRaisesRegex(GeoGridBlocked, "invalid GeoTIFF pixel"):
+            inspect_geotiff_grid(bytes(raw), width=36000, height=36000)
+        raw = bytearray(geo_sample())
+        # Add a second ModelPixelScale entry, as a provider ambiguity.
+        struct.pack_into("<H", raw, 8, 6)
+        struct.pack_into("<HHII", raw, 70, 33550, 12, 3, 800)
+        with self.assertRaisesRegex(GeoGridBlocked, "duplicate GeoTIFF"):
+            inspect_geotiff_grid(bytes(raw), width=36000, height=36000)
+
+    def test_real_probe_receipt_will_not_certify_full_raster(self):
+        response = Response(data=geo_sample())
+        receipt = wc.probe(open_request=lambda req, timeout: response)
+        self.assertTrue(receipt["geo_grid_verified_from_prefix_only"])
+        self.assertFalse(receipt["crs_verified"])
+        self.assertFalse(receipt["full_original_sha256_verified"])
+        self.assertFalse(receipt["cog_layout_verified"])
+        self.assertFalse(receipt["model_input_approved"])
 
     def test_reject_response_status_length_range_media_and_redirect(self):
         normal = {"Content-Type": "binary/octet-stream",
