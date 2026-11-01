@@ -49,3 +49,22 @@ A historical geometry matched to a modern building still supplies **no** reliabl
 **Not done:** extracting and checking the archive's inner Shapefiles/CRS, **independent IGN original checksum** comparison, validated historical Ponthierry building footprint extraction, exact-source rights and historical insured CAT exposure admission.
 
 This source is a credible research target, **not yet 2016 building exposure admitted to a model**.
+
+## Verified historic Ponthierry AOI building polygons (2026-11-01 13:36 UTC)
+
+An ephemeral GitHub Actions worker successfully verified the full 2016 D077 compressed archive using `7z t`, then enumerated **321** archive members. The exact **12** `SHP/SHX/DBF/PRJ` components for three source building layer families were extracted *outside the Git checkout*. Historical Shapefile filenames use uppercase extensions; the workflow explicitly normalizes those extensions in the temporary staging directory before reading. This correction is deliberately local to ephemeral extraction.
+
+Original `.prj` contents were verified as equivalent to **EPSG:2154** (Lambert-93). Using `pyshp` bbox filtering and `shapely` polygon intersection within **WGS84 (2.5465,48.5360,2.5490,48.5380)** returned:
+
+| Original 2016 archived layer | Intersecting footprint candidates |
+| --- | ---: |
+| `BATI_INDIFFERENCIE` | **3** |
+| `BATI_INDUSTRIEL` | 0 |
+| `BATI_REMARQUABLE` | 0 |
+| **Total** | **3** |
+
+CI evidence: https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41312069291. All five synthetic spatial tests passed; the executable real-data source check passed after enforcing exact source-component completeness. All external data were deleted from the ephemeral workspace. No raw building polygon, private insurer exposure or source archive entered Git or Neon.
+
+This count describes **three distinct historical mapped footprint candidates overlapping a tiny bounding box**. It is not yet a confirmed one-to-one historical building identity count, does not imply three individually insured risks, and **must not** be added to the current two RNB/IGN entities. Current-vs-historic polygons are still unlinked; distinct geometry releases may split/merge, reclassify or remap structures. Moreover the raw archive has been verified only against the public mirror SHA-256, **not** independently against an authenticated original IGN file checksum.
+
+Next causal operation: run the existing `scripts/building_footprint_overlap_v0.py` in a bounded research-only comparison once a rights-reviewed historical subset is made available alongside the two contemporary RNB/IGN polygons, then preserve ambiguous split/merge cases; obtain actual licensed 2016 event footprint before claiming flood damage.
