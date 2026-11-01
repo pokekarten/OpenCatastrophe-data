@@ -12,6 +12,9 @@ import unittest
 import zlib
 
 from research_runners.noaa_michael_stac_preflight_v0 import STAC_ROOT
+from research_runners.noaa_fema_alpha_negative_blocks_v0 import (
+    BlockCoverageEvidenceError, REVIEWED_BLOCKS, reconcile_block_mask,
+)
 from research_runners.noaa_fema_envelope_overlap_v0 import (
     EnvelopeOverlapError, build_proven_transparent_block_query,
 )
@@ -391,6 +394,142 @@ class NOAAOriginalDeflateAlphaTileTests(unittest.TestCase):
         with self.assertRaisesRegex(AlphaTileProofError, "compressed size"):
             probe_zero_block(header_with_tile_payload(180, 1_000_001),
                              item(), 180, comp)
+
+
+def pilot_item() -> dict:
+    """Synthetic metadata shaped like the specific positive FEMA polygon tile."""
+    p = item()
+    old = p["id"]
+    tile = "20181011aC0853300w302100n"
+    west, south, east, north = -85.5501, 30.3249, -85.5249, 30.3501
+    p["id"] = tile
+    p["bbox"] = [west, south, east, north]
+    p["geometry"]["coordinates"] = [[
+        [west, south], [west, north], [east, north],
+        [east, south], [west, south],
+    ]]
+    a = p["assets"].pop(old)
+    a["href"] = STAC_ROOT + tile + ".tif"
+    a["proj:transform"] = [
+        west, (east - west) / 9340, 0,
+        north, 0, -(north - south) / 9340,
+    ]
+    p["assets"][tile] = a
+    p["links"][0]["href"] = STAC_ROOT + "stac/" + tile + ".json"
+    return p
+
+
+def pilot_ifd() -> bytes:
+    """Rebuild synthetic original IFD grid with correct positive tile geometry."""
+    p = pilot_item()
+    bb = p["bbox"]
+    h = bytearray(synthetic_tiff())
+    tag_count = struct.unpack_from("<H", h, 8)[0]
+    pointers = {}
+    for i in range(tag_count):
+        entry = 10 + i * 12
+        tag = struct.unpack_from("<H", h, entry)[0]
+        if tag in (324, 325, 33550, 33922):
+            pointers[tag] = struct.unpack_from("<I", h, entry + 8)[0]
+    dx, dy = (bb[2] - bb[0]) / 9340, (bb[3] - bb[1]) / 9340
+    struct.pack_into("<3d", h, pointers[33550], dx, dy, 0.0)
+    struct.pack_into("<6d", h, pointers[33922], 0.0, 0.0, 0.0, bb[0], bb[3], 0.0)
+    for block, offset in ((305, 66442350), (306, 66443389),
+                          (325, 66776266), (326, 66777305)):
+        struct.pack_into("<I", h, pointers[324] + block * 4, offset)
+        struct.pack_into("<I", h, pointers[325] + block * 4, 1039)
+    return bytes(h)
+
+
+def scoped_counts() -> dict[int, dict]:
+    counts = {i: {"count": 0} for i in REVIEWED_BLOCKS}
+    for i, n in {305: 1, 306: 2, 324: 1, 325: 1, 326: 1, 344: 1}.items():
+        counts[i] = {"count": n}
+    return counts
+
+
+class NOAAOriginalAlphaFEMABlockEvidenceTests(unittest.TestCase):
+    def setUp(self):
+        self.p = pilot_item()
+        self.h = pilot_ifd()
+        self.counts = scoped_counts()
+        zero = zlib.compress(bytes(512 * 512 * 4), level=6)
+        self.proven = {i: zero for i in (305, 306, 325, 326)}
+
+    def test_five_aggregate_hits_in_four_proven_all_transparent_source_blocks(self):
+        x = reconcile_block_mask(self.p, self.h, {"count": 7}, self.counts, self.proven)
+        self.assertEqual(x["source_parent_polygon_aggregate_count"], 7)
+        self.assertEqual(x["source_12_block_polygon_count_sum"], 7)
+        self.assertEqual(x["verified_fully_transparent_block_indices"], [305, 306, 325, 326])
+        self.assertEqual(x["fema_aggregate_count_in_verified_transparent_blocks"], 5)
+        self.assertEqual(x["fema_aggregate_count_in_not_proven_transparent_blocks"], 2)
+        for key in ("verified_nontransparent_alpha_under_any_fema_point",
+                    "feature_boundary_ownership_verified", "fema_count_responses_authenticated",
+                    "image_full_file_sha256_verified", "fema_source_label_independence_verified",
+                    "unique_building_identity_verified", "model_input_admitted"):
+            self.assertFalse(x[key])
+        self.assertNotIn("coordinates", json.dumps(x))
+        self.assertNotIn("fema_feature", json.dumps(x))
+
+    def test_no_source_pixels_means_no_alpha_exclusion(self):
+        x = reconcile_block_mask(self.p, self.h, {"count": 7}, self.counts, {})
+        self.assertEqual(x["fema_aggregate_count_in_verified_transparent_blocks"], 0)
+        self.assertEqual(x["fema_aggregate_count_in_not_proven_transparent_blocks"], 7)
+
+    def test_wrong_pilot_item_cannot_inherit_original_block_certification(self):
+        with self.assertRaisesRegex(BlockCoverageEvidenceError, "differs"):
+            reconcile_block_mask(item(), synthetic_tiff(),
+                                 {"count": 7}, self.counts, {})
+
+    def test_missing_group_duplicate_or_inconsistent_parent_fails(self):
+        bad = dict(self.counts)
+        bad.pop(345)
+        with self.assertRaisesRegex(BlockCoverageEvidenceError, "twelve"):
+            reconcile_block_mask(self.p, self.h, {"count": 7}, bad, self.proven)
+        with self.assertRaisesRegex(BlockCoverageEvidenceError, "disagree"):
+            reconcile_block_mask(self.p, self.h, {"count": 8}, self.counts, self.proven)
+        with self.assertRaisesRegex(BlockCoverageEvidenceError, "outside"):
+            reconcile_block_mask(self.p, self.h, {"count": 7}, self.counts, {180: b"bad"})
+
+    def test_source_row_data_leak_and_bad_count_types_fail(self):
+        for invalid in (None, True, -1, 1.0, "1"):
+            bad = dict(self.counts)
+            bad[305] = {"count": invalid}
+            with self.subTest(invalid=str(invalid)):
+                with self.assertRaises(BlockCoverageEvidenceError):
+                    reconcile_block_mask(self.p, self.h, {"count": 7}, bad, {})
+        bad = dict(self.counts)
+        bad[305] = {"count": 1, "OBJECTID": 42}
+        with self.assertRaisesRegex(BlockCoverageEvidenceError, "only source-style"):
+            reconcile_block_mask(self.p, self.h, {"count": 7}, bad, {})
+
+    def test_bad_original_compressed_bytes_are_not_promoted(self):
+        wrong = dict(self.proven)
+        wrong[305] = b"Z" + wrong[305][1:]
+        with self.assertRaisesRegex(BlockCoverageEvidenceError, "failed"):
+            reconcile_block_mask(self.p, self.h, {"count": 7}, self.counts, wrong)
+        wrong = dict(self.proven)
+        wrong[305] = wrong[305][:-1]
+        with self.assertRaisesRegex(BlockCoverageEvidenceError, "failed"):
+            reconcile_block_mask(self.p, self.h, {"count": 7}, self.counts, wrong)
+
+    def test_nonzero_deflate_is_not_positive_visible_pixel_proof(self):
+        positive = bytearray(512 * 512 * 4)
+        positive[3] = 255
+        compressed = zlib.compress(positive)
+        h = bytearray(self.h)
+        for i in range(struct.unpack_from("<H", h, 8)[0]):
+            off = 10 + i * 12
+            if struct.unpack_from("<H", h, off)[0] == 325:
+                ptr = struct.unpack_from("<I", h, off + 8)[0]
+                struct.pack_into("<I", h, ptr + 305 * 4, len(compressed))
+                break
+        proven = dict(self.proven)
+        proven[305] = compressed
+        x = reconcile_block_mask(self.p, bytes(h), {"count": 7}, self.counts, proven)
+        self.assertEqual(x["fema_aggregate_count_in_verified_transparent_blocks"], 4)
+        self.assertEqual(x["fema_aggregate_count_in_not_proven_transparent_blocks"], 3)
+        self.assertFalse(x["verified_nontransparent_alpha_under_any_fema_point"])
 
 
 if __name__ == "__main__":
