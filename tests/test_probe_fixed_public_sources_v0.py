@@ -49,12 +49,13 @@ def contract(source):
     return {
         "access_id": source,
         "status": "probe_ready",
-        "service_root": uri.scheme + "://" + uri.netloc,
+        "service_root": uri.scheme + "://" + uri.netloc + ("/webservices/rest-api/v2" if source == "wsv.pegelonline.rest-v2.dresden" else ""),
         "authentication": {"mode": "none"},
         "probe_contract": {"mode": "provider_specific",
                            "operation": operation, "requires_credentials": False},
         "request_contract": {"allowed_operations": [operation],
-                             "path_templates": [uri.path]},
+                             "path_templates": ["/stations/{station_uuid}.json"]
+                             if source == "wsv.pegelonline.rest-v2.dresden" else [uri.path]},
         "rights_and_policy": {"commercial_automation_status": "allowed"},
         "operational_constraints": {"timeout_seconds": 30, "max_probe_bytes": 4194304},
     }
@@ -82,6 +83,20 @@ class FixedSourceProbesTests(unittest.TestCase):
                 self.assertEqual((url, op), PROBES[source])
                 self.assertGreater(limit, 0)
                 self.assertEqual(timeout, 30)
+
+    def test_checked_in_contracts_match_each_reviewed_live_probe(self):
+        """Check the actual source contracts, not only synthetic fixture copies.
+
+        The paired PR workflow exercises the exact reviewed anonymous endpoints;
+        this regression prevents contract/allowlist drift before network access.
+        """
+        repo_root = Path(__file__).resolve().parents[1]
+        for source in PROBES:
+            with self.subTest(source=source):
+                url, operation, max_bytes, timeout = reviewed_probe(source, repo_root)
+                self.assertEqual((url, operation), PROBES[source])
+                self.assertLessEqual(max_bytes, 4 * 1024 * 1024)
+                self.assertLessEqual(timeout, 60)
 
     def test_reject_credentials_and_rights_changes(self):
         source = "gfz.geomagnetic-kp"
@@ -127,6 +142,37 @@ class FixedSourceProbesTests(unittest.TestCase):
         self.assertIs(a["scientific_values_verified"], False)
         b = verify_response("noaa.swpc.real-time-solar-wind", b'[{"satellite": "x"}]')
         self.assertIs(b["sensor_lineage_verified"], False)
+
+    def test_dresden_pegelonline_strict_metadata_only(self):
+        source = "wsv.pegelonline.rest-v2.dresden"
+        self.write(source)
+        url, operation, _, _ = reviewed_probe(source, self.root)
+        self.assertEqual((url, operation), PROBES[source])
+        payload = {
+            "uuid": "70272185-b2b3-4178-96b8-43bea330dcae",
+            "number": "501060", "shortname": "DRESDEN",
+            "latitude": 51.054460, "longitude": 13.738832,
+            "water": {"shortname": "ELBE"},
+            "timeseries": [
+                {"shortname": "Q", "longname": "ABFLUSS_ROHDATEN",
+                 "unit": "m³/s", "equidistance": 15},
+            ],
+        }
+        result = verify_response(source, json.dumps(payload).encode("utf-8"))
+        self.assertEqual(result["verified_shape"], "dresden_station_q_metadata")
+        self.assertEqual(result["q_sampling_interval_seconds"], 900)
+        self.assertFalse(result["measurement_values_retrieved"])
+        payload["timeseries"][0]["currentMeasurement"] = {"value": 1.0}
+        with self.assertRaisesRegex(ProbeBlocked, "contract drift"):
+            verify_response(source, json.dumps(payload).encode("utf-8"))
+
+    def test_dresden_contract_must_not_allow_arbitrary_stations(self):
+        source = "wsv.pegelonline.rest-v2.dresden"
+        self.write(source, change=lambda d: d["request_contract"].update(
+            path_templates=["/stations/{arbitrary_station_uuid}.json"]
+        ))
+        with self.assertRaises(ProbeBlocked):
+            reviewed_probe(source, self.root)
 
     def test_reject_nonfinite_and_duplicate_json_fields(self):
         for raw in (b'{"foo":NaN}', b'{"foo":1,"foo":2}', b'{"foo":Infinity}', b'not json'):

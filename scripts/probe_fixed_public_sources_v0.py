@@ -36,6 +36,11 @@ PROBES = {
         "https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json",
         "rtsw_mag_1m_json",
     ),
+    "wsv.pegelonline.rest-v2.dresden": (
+        "https://pegelonline.wsv.de/webservices/rest-api/v2/stations/"
+        "70272185-b2b3-4178-96b8-43bea330dcae.json?includeTimeseries=true",
+        "resolve_station_metadata",
+    ),
 }
 
 
@@ -84,10 +89,22 @@ def reviewed_probe(source: str, root: Path = ROOT):
         raise ProbeBlocked("reviewed probe, authentication or rights scope changed")
     request = urlsplit(url)
     root_url = urlsplit(contract.get("service_root", ""))
+    reviewed_paths = contract.get("request_contract", {}).get("path_templates", [])
+    if source == "wsv.pegelonline.rest-v2.dresden":
+        # This one reviewed contract describes a fixed UUID using a path template;
+        # never generalize to a caller-selected station or measurement route.
+        path_authorized = (
+            "/stations/{station_uuid}.json" in reviewed_paths
+            and request.path == root_url.path.rstrip("/") +
+            "/stations/70272185-b2b3-4178-96b8-43bea330dcae.json"
+            and request.query == "includeTimeseries=true"
+        )
+    else:
+        path_authorized = request.path in reviewed_paths
     if (request.scheme != "https" or root_url.scheme != "https"
             or request.netloc != root_url.netloc or request.username or request.password
             or request.fragment or root_url.query or root_url.fragment
-            or request.path not in contract.get("request_contract", {}).get("path_templates", [])):
+            or not path_authorized):
         raise ProbeBlocked("fixed endpoint diverges from source contract")
     max_bytes = contract.get("operational_constraints", {}).get("max_probe_bytes")
     timeout = contract.get("operational_constraints", {}).get("timeout_seconds")
@@ -126,6 +143,21 @@ def verify_response(source: str, raw: bytes) -> dict:
         if not isinstance(payload, (list, dict)) or not payload:
             raise ProbeBlocked("NOAA response is not a nonempty JSON collection")
         return {"verified_shape": "json_collection_only", "sensor_lineage_verified": False}
+    if source == "wsv.pegelonline.rest-v2.dresden":
+        from scripts.parse_pegelonline_metadata import (
+            PegelonlineMetadataError, parse_pegelonline_metadata_bytes,
+        )
+        try:
+            metadata = parse_pegelonline_metadata_bytes(raw)
+        except PegelonlineMetadataError as exc:
+            raise ProbeBlocked("frozen Dresden Q station metadata contract drift") from exc
+        # Metadata only; no currentMeasurement or target Q values are requested.
+        return {
+            "verified_shape": "dresden_station_q_metadata",
+            "frozen_station_uuid": metadata["station_uuid"],
+            "q_sampling_interval_seconds": metadata["q_sampling_interval_seconds"],
+            "measurement_values_retrieved": False,
+        }
     raise ProbeBlocked("unknown source")
 
 

@@ -117,6 +117,21 @@ class FrozenGustTests(unittest.TestCase):
         with self.assertRaises(GustQCBlocked):
             _decode_row(b"3;201001010000;2;2.2\n", ix, 8)
 
+    def test_other_quality_levels_remain_outside_qn_two_three_subset(self):
+        """Unknown QN levels must never enter the reviewed high-quality gust subset."""
+        rows = [
+            "3;201001010000;0;12.0;1.0;2.0;180;eor\r\n",
+            "3;201001010010;4;25.0;2.0;4.0;190;eor\r\n",
+            ROWS[-1],
+        ]
+        path, digest = zip_source(self.root, rows)
+        result = summarize(path, expected_sha256=digest)
+        jan = result["months"][0]
+        self.assertEqual(jan["quality_level_counts"], {"0": 1, "4": 1})
+        self.assertEqual(jan["max_fx_10_mps_all_quality"], "25.0")
+        self.assertIsNone(jan["max_fx_10_mps_qn_2_3"])
+        self.assertEqual(jan["qn_2_3_fx_10_nonmissing"], 0)
+
     def test_no_untrusted_qn1_promoted_to_quality_subset(self):
         path, digest = zip_source(self.root, [ROWS[0], "3;201001010010;1;-999;0;0;0;eor\r\n", ROWS[-1]])
         result = summarize(path, expected_sha256=digest)
