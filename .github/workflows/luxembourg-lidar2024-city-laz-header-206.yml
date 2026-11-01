@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg official 2024 fixed city LAZ original public header 206 probe
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_lidar2024_city_laz_header_range_v0.py'
+      - 'tests/test_luxembourg_lidar2024_city_laz_header_range_v0.py'
+      - '.github/workflows/luxembourg-lidar2024-city-laz-header-206.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-city-las-header:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout pinned repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run synthetic ZIP member plus LAS header safety tests
+        run: python -m unittest -v tests.test_luxembourg_lidar2024_city_laz_header_range_v0
+      - name: Read only original LAS public header of the one verified study city tile
+        run: python -m research_runners.luxembourg_lidar2024_city_laz_header_range_v0
+      # No whole ZIP, original LAZ/COPC point payload or source geometry exported.
