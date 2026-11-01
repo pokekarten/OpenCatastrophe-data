@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: WorldCover pinned public access contract revision proof
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit_access_contract_revisions_v0.py'
+      - 'tests/test_audit_access_contract_revisions_v0.py'
+      - 'docs/research/esa-worldcover-access-revision-gate-20261101.md'
+      - '.github/workflows/access-contract-revision-git-proof.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-immutable-contract-diff:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Checkout full public metadata Git history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Offline synthetic audit unit tests
+        run: python3 -m unittest tests.test_audit_access_contract_revisions_v0 -v
+      - name: Compare original pinned public WorldCover access contract Git blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          git show '2c9cfeeec62c81609e63e58465f7882622054b7e:access/esa.worldcover.2021.v200.json' > "$work/old.json"
+          git show '4f34c21eb257d5e6fccba742d4c1081cfdc0d078:access/esa.worldcover.2021.v200.json' > "$work/new.json"
+          set +e
+          python3 -m scripts.audit_access_contract_revisions_v0 \
+            --old "$work/old.json" --new "$work/new.json" \
+            --old-blob-sha 830fff1705d6b29d8c88dc423a27c7254608ca50 \
+            --new-blob-sha 2884e2f50b495eee3b399f55c08d43cfa100b602 \
+            > "$work/receipt.json"
+          code=$?
+          set -e
+          if [ "$code" -ne 2 ]; then
+            echo "Expected fail-closed manual-revision status 2, observed $code" >&2
+            exit 1
+          fi
+          python3 - "$work/receipt.json" <<'PY'
+          import json
+          import sys
+          with open(sys.argv[1], encoding='utf-8') as inp:
+              evidence = json.load(inp)
+          assert evidence['access_id'] == 'esa.worldcover.2021.v200'
+          assert evidence['old_status'] == 'documented_only'
+          assert evidence['new_status'] == 'probe_ready'
+          assert evidence['changed_field_count'] == 16
+          assert 'request_contract.allowed_operations' in evidence['changed_field_paths']
+          assert 'status' in evidence['changed_field_paths']
+          assert evidence['version_review_required'] is True
+          assert evidence['overwrite_prior_record_authorized'] is False
+          assert evidence['automated_provider_access_authorized'] is False
+          assert evidence['raw_import_authorized'] is False
+          assert evidence['model_input_approved'] is False
+          print('PASS: two immutable Git blobs, 16 changed metadata paths, all admission gates closed')
+          PY
