@@ -130,7 +130,7 @@ class FrozenGustTests(unittest.TestCase):
         self.assertEqual(jan["quality_level_counts"], {"0": 1, "4": 1})
         self.assertEqual(jan["max_fx_10_mps_all_quality"], "25.0")
         self.assertIsNone(jan["max_fx_10_mps_qn_2_3"])
-        self.assertEqual(jan["qn_2_3_fx_10"], 0)
+        self.assertEqual(jan["qn_2_3_fx_10_nonmissing"], 0)
 
     def test_no_untrusted_qn1_promoted_to_quality_subset(self):
         path, digest = zip_source(self.root, [ROWS[0], "3;201001010010;1;-999;0;0;0;eor\r\n", ROWS[-1]])
