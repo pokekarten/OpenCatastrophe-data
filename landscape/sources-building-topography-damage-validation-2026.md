@@ -1,0 +1,79 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+
+GENERATED FILE — DO NOT EDIT DIRECTLY
+Canonical source: landscape/sources-building-topography-damage-validation-2026.json
+Renderer: scripts/render_public_views.py
+Change the canonical JSON and run `python scripts/render_public_views.py --write`.
+-->
+
+# Source landscape: `sources-building-topography-damage-validation-2026.json`
+
+> This Markdown file is a deterministic human-readable projection of the canonical JSON file named above. It does not create a second source of truth or change admission, rights or scientific-review state.
+
+**Schema version:** `1.0.0`  
+**Review date:** `2026-11-01`  
+**Purpose:** Non-admission discovery of source-specific high-resolution terrain, LiDAR and observed-versus-modelled building damage evidence for bounded catastrophe exposure and vulnerability validation. No external data bytes, model approval or redistribution rights are conferred.
+
+**Entries:** 4
+
+## USGS 3DEP seamless 1-meter bare-earth digital elevation model (S1M)
+
+**Candidate ID:** `usgs.3dep.seamless-1m-dem`  
+**Provider:** U.S. Geological Survey / The National Map  
+**Categories:** `terrain`, `high_resolution_dem`, `flood`, `exposure_context`, `united_states`  
+**Spatial scope:** United States and territories where S1M tiles have been produced; tile availability is incomplete and expands over time  
+**Temporal scope:** S1M production since mid-2025; underlying LiDAR acquisition years differ by project and tile  
+**Resolution / granularity:** 1-meter ground spacing; cloud-optimized GeoTIFF tiles of approximately 10 km by 10 km, incorporating project-source metadata  
+**Potential roles:** `ground_elevation_reference`, `terrain_control_for_flood_model_validation`, `building_elevation_context`  
+**Access hint:** `official_public_domain_tile_catalog_metadata_only_no_acquisition`  
+**Authoritative source:** <https://www.usgs.gov/3d-elevation-program/about-3dep-products-services>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** S1M is bare-earth elevation, not roof/building height and not a parcel flood-water-depth surface. Freeze exact tile/product URL, byte SHA-256, acquisition/production date, CRS, vertical reference/datum, source LiDAR quality, no-data rules and pixel footprint before any use. Do not infer building-first-floor or insured-value data; compare modelled flood depths only with matched elevation datums. USGS publishes 3DEP as free and unrestricted, but exact artifact/use scope and scientific suitability are not yet reviewed in this repository.
+
+## USGS 3DEP original lidar point-cloud (LPC) collection
+
+**Candidate ID:** `usgs.3dep.lidar-point-cloud`  
+**Provider:** U.S. Geological Survey / The National Map  
+**Categories:** `lidar`, `point_cloud`, `building_geometry`, `terrain`, `united_states`  
+**Spatial scope:** United States and territories, by individual acquired lidar project and available coverage  
+**Temporal scope:** Acquisition vintages from 2004 onward vary by project; selected source work-unit must be pinned  
+**Resolution / granularity:** Project-native 3D point clouds in lossless LAZ/LAS with acquisition metadata, classification and variable quality levels  
+**Potential roles:** `independent_roof_terrain_height_test`, `observed_building_geometry_context`, `lidar_to_dem_lineage_audit`  
+**Access hint:** `official_public_domain_per_project_metadata_only_no_acquisition`  
+**Authoritative source:** <https://data.usgs.gov/datacatalog/data/USGS%3Ab7e353d2-325f-4fc6-8d95-01254705638a>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** LPC is an underlying source family of 3DEP DEMs, so LPC-vs-S1M agreement is NOT independent replication. Required checks: exact work-unit, source date, LAZ/LAS classifications, coordinates/units, vertical datum, quality level, point density, building-versus-vegetation confusion and alignment to a footprint observation date. Dataset is not a ready-made building-footprint, building-material or insurance exposure file. Public-domain publisher statements do not substitute for exact-file identification.
+
+## FEMA Historical Geospatial Damage Assessment Database public feature layer
+
+**Candidate ID:** `us.fema.historical-geospatial-damage-assessments`  
+**Provider:** U.S. Federal Emergency Management Agency (FEMA)  
+**Categories:** `observed_impacts`, `building_damage`, `event_validation`, `flood`, `wind`, `earthquake`, `united_states`  
+**Spatial scope:** United States historical disaster-event coverage limited to events assessed and published in the FEMA layer; not a complete national census  
+**Temporal scope:** Past FEMA event assessments; service metadata reports last content edit 2021-06-22; feature EVENT_DATE, IMG_DATE and PROD_DATE determine per-record vintages  
+**Resolution / granularity:** Point features with DMG_LEVEL, DMG_TYPE, ASMT_TYPE, IN_DEPTH in feet, disaster ID and event dates; ArcGIS layer supports JSON/GeoJSON; max record count 2000  
+**Potential roles:** `field_observed_damage_holdout_candidates`, `remote_sensed_damage_comparison`, `modelled_damage_leakage_detection`  
+**Access hint:** `public_arcgis_feature_service_exact_export_reuse_and_currentness_review`  
+**Authoritative source:** <https://services.arcgis.com/XG15cJAlne2vxtgt/arcgis/rest/services/FEMA_Historical_Geospatial_Damage_Assessment_Database/FeatureServer/0>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Crucial provenance boundary: ASMT_TYPE=FA is field-assessed; RS is remote-sensing classification; MOD and other methods are model predictions and cannot serve as independent measured damage truth against the same model. Inundation depth can itself be modelled and its unit is feet, not metres. Event_name, disaster number, date and feature ID require exact-snapshot identity and deduplication; point location alone does not prove a building identity or insured claim. Old service edit date requires freshness check. 'Public use' on the feature layer has not been promoted to source-specific commercial or redistribution approval.
+
+## xBD / xView2 pre-post disaster building-damage annotation dataset
+
+**Candidate ID:** `xview2.xbd.building-damage`  
+**Provider:** Defense Innovation Unit / xView2 challenge and Carnegie Mellon Software Engineering Institute  
+**Categories:** `remote_sensing`, `building_damage`, `damage_labels`, `vulnerability_validation`, `global_events`  
+**Spatial scope:** Selected disaster-affected image scenes worldwide; highly nonrandom coverage rather than global building census  
+**Temporal scope:** Event-specific pre- and post-disaster satellite image acquisitions in published xBD training and evaluation splits; freeze exact download release  
+**Resolution / granularity:** Very-high-resolution paired imagery, building outlines and ordinal damage classes (no damage, minor, major, destroyed)  
+**Potential roles:** `noncommercial_research_benchmark_candidate`, `damage_classification_quality_assessment`, `event_holdout_leakage_audit`  
+**Access hint:** `registration_and_provider_license_noncommercial_restriction_must_be_verified`  
+**Authoritative source:** <https://xview2.org/dataset>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** The project is documented as CC BY-NC-SA 4.0/noncommercial in dataset catalogues; exact xView2 provider terms and image/subset rights must be checked independently before any use, especially commercial CAT or model training. Labels describe visible damage rather than loss ratios or paid insurance claims; pre/post scenes, event overlap and geographic splits can leak between training and validation. This is research discovery only: do not download, redistribute, train or publish source imagery/labels under the current record.
