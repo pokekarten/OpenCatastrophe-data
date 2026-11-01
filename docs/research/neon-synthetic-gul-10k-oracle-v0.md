@@ -49,3 +49,40 @@ Latest independent Python suite: **7/7 PASS**, including checks for fixture-valu
 2. Perform provider-authenticated OpenQuake or Oasis hazard, exposure, vulnerability and asset-by-event exports, separately reviewed under existing rights/scientific admission controls. An accepted model needs an actual model version, calibrated physical event catalogue and source-reproducible run evidence.
 3. Supply original coverage, attachment, limit, occurrence/hours, reinstatement and retro terms **independently** of exposure values before producing insured/ceded/net or capital results.
 4. Only after these prerequisites, create registered `model.simulation_run` and loss artifacts on a separately reviewed branch. Do not promote synthetic toy outcomes to production.
+
+## 2026-11-01: same-source identity gate for the synthetic Oasis OED fixture
+
+The initial 10k SQL accepted 12 synthetic asset IDs and exact EUR 3.15m,
+but did **not** pin the same portfolio-version identity and valuation metadata
+used by the separate Oasis OED snapshot in PR #1070. A different version or
+non-EUR value with identical numeric EUR amount could otherwise be mistaken for
+the intended proxy input. This is a **research-fixture provenance** defect,
+not evidence that a real portfolio was present.
+
+The guarded query now additionally requires:
+- Exactly one version for the named synthetic portfolio, the original
+  `version_label=v0`, seed `20261101`, generation method, and no source key.
+- Explicit `synthetic=true`, `real_insurer=false`,
+  `model_input_approved=false`, and `external_source_rows_used=0`.
+- Exactly 12 **total** exposure-unit rows in that version, not just 12
+  filtered valid ones; each of the 12 IDs must have its exact amount,
+  synthetic assumption status, EUR currency, the original invented-value
+  basis, and a non-null EPSG:4326 location.
+- The existing fail-closed division-by-zero condition; invalid input must
+  raise an error, not silently emit NULL or zero loss quantiles.
+
+**Direct live read-only Neon PG17 validation on the isolated branch
+`br-summer-sky-bawujqu8`, database `insurance`:**
+- Positive amended SQL: PASS, unchanged exact 10,000-world, 12-asset,
+  EUR 3.15m result; loss total EUR 285,494,000, AAL EUR 28,549.40,
+  99.5% AEP EUR 366,250, wind/flood 1,008/533 events.
+- Negative swapped `pv.seed=20261102`: expected `division by zero` PASS.
+- Negative forced `insured_value_currency=USD`: expected `division by zero` PASS.
+- Two additional offline SQL structural regression tests added to ensure the
+  source-version, raw-unit count and valuation guards stay pinned.
+
+**Scientific nonclaim:** This is still a deliberately invented GUL proxy with
+fictional annual event frequencies, intensities, locations and amounts.
+A real covered policy, Oasis financial module, CAT-XL, retro, calibrated
+hazard-vulnerability model and genuine 10k NextGen run remain absent.
+No source or database writes were made.
