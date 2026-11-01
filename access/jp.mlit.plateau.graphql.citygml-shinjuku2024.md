@@ -57,7 +57,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - /datacatalog/graphql
 
-**Parameter rules:** DOCUMENTATION ONLY; NO live GraphQL POST is authorized. Future separate rights-reviewed call would have a single fixed read-only GraphQL operation: query OcShinjuku2024 \{ citygmlDatasets(input: \{cityCodes: \["13104"\], years: \[2024\]\}) \{ id cityCode year registrationYear url fileSize compositeUrl featureTypes \} \}. Require exact submitted query identity, exact municipality/year, no variables, arbitrary fields, aliases, introspection, mutations, pagination, retries, dynamic query injection, credentialed access or ZIP URL following. Provider schema is experimental and may change. An offline synthetic response preflight is available; this is not a request runner.
+**Parameter rules:** DOCUMENTATION ONLY; NO live GraphQL POST is authorized. Future separate rights-reviewed call would have a single fixed read-only GraphQL operation: query OcShinjuku2024 \{ citygmlDatasets(input: \{cityCodes: \["13104"\], years: \[2024\]\}) \{ id cityCode prefectureCode year registrationYear url compositeUrl featureTypes metadataZipUrls \} \}. Require exact submitted query identity, exact municipality/year, no variables, arbitrary fields, aliases, introspection, mutations, pagination, retries, dynamic query injection, credentialed access or ZIP URL following. Provider schema is experimental and may change. An offline synthetic response preflight is available; this is not a request runner.
 
 ## Response contract
 
@@ -65,9 +65,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - application/json
 
-**Format:** GraphQL JSON data.citygmlDatasets array for one fixed CityGML dataset, or provider errors (fail closed). Only source metadata, not geometry, ZIP bytes or individual building attributes.
+**Format:** GraphQL JSON data.citygmlDatasets array for the exact documented nine-field CityGMLDataset projection: id, cityCode, prefectureCode, year, registrationYear, url, compositeUrl, featureTypes and metadataZipUrls. There is NO GraphQL fileSize field in the official CityGMLDataset type; source ZIP byte size is unknown until a separate, rights-reviewed original receipt. Any provider errors fail closed.
 
-**Scientific semantics:** The exact 2024 fiscal-year city model catalogue record is a release candidate only; cityCode is 13104 (Shinjuku). The native GraphQL ID is independent of the municipal code. fileSize describes CMS ZIP metadata when available, not a verified file receipt. compositeUrl must pin city/year, never latest. Building feature presence alone does not prove coverage, geometry quality, height availability, vulnerability, insured values or commercial reuse rights.
+**Scientific semantics:** The exact 2024 fiscal-year city model catalogue record is a release candidate only; cityCode is 13104 (Shinjuku). The native GraphQL ID is independent of the municipality code, and prefectureCode must be 13. CityGMLDataset has NO fileSize field: do not infer CMS original ZIP bytes from REST G-Spatial archives or metadataZipUrls. compositeUrl must pin city/year, never latest. Building feature presence alone does not prove coverage, height availability, vulnerability, insured values, independent origin or commercial reuse rights.
 
 ## Operational constraints
 
@@ -119,4 +119,4 @@ _Empty array._
 - <https://docs.plateauview.mlit.go.jp/api/graphql/schema/>
 - <https://docs.plateauview.mlit.go.jp/api/>
 
-**Notes:** Non-executable documented access candidate for a single filtered municipality/year GraphQL read. No provider POST, network byte receipt, provider file read, extraction, enrolment, admission or model execution.
+**Notes:** Official GraphQL schema rechecked 2026-11-01: unsupported fileSize removed from exact query, replaced by documented prefectureCode and metadataZipUrls. Non-executable documented candidate for one filtered municipality/year. No GraphQL POST, network receipt, provider source-file read, extraction, enrolment, data admission or model execution.
