@@ -104,3 +104,29 @@ legal entity-to-establishment model schema, then explicitly approved
 branch-to-parent crosswalk rows. CAT exposures, group insurance shares,
 reinsurance treaties and financial contracts remain unknown. No Neon
 writes or model admission were performed.
+
+
+## Reproducible original GLEIF relationship preflight
+
+A bounded, independent, Python-stdlib-only preflight is available as
+`scripts/mas_agcs_gleif_branch_proof_v0.py`. It performs **zero**
+network requests by default and requires explicit `--live` for only
+**three** fixed public GLEIF HTTPS GETs:
+
+```bash
+python -m unittest tests.test_mas_agcs_gleif_branch_proof_v0 -v
+python -m unittest tests.test_mas_three_verified_lei_branch_review_v0 -v
+python -m scripts.mas_agcs_gleif_branch_proof_v0 --live
+```
+
+The original API responses are bounded to 100 KB each, checked for
+duplicate JSON keys, exact LEIs, entity categories, jurisdictions,
+local ACRA ID, parent German trade-registration ID, directional
+`IS_INTERNATIONAL_BRANCH_OF` evidence, and **three distinct**
+registration/relationship statuses. Output contains a SHA-256 digest
+of the original response bytes, evidence-only metadata and explicit
+`model_input_approved=false`; it publishes no original provider
+records and never opens a database connection. A changed status
+blocks instead of being silently reinterpreted as licence renewal.
+The initial review of those public records was completed on
+2026-11-01; future runs must be treated as separately dated evidence.
