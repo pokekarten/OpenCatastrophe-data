@@ -37,6 +37,13 @@ class ProjectionFamily:
                 and parts[0] == "schemas"
                 and relative.name.endswith(".schema.json")
             )
+        if self.name == "research_receipts":
+            return (
+                len(parts) == 3
+                and parts[0] == "docs"
+                and parts[1] == "research"
+                and relative.name == "insurer-directory-original-page-receipt-20261101.json"
+            )
         raise RuntimeError(f"unknown projection-family implementation: {self.name}")
 
 
@@ -45,6 +52,7 @@ FAMILIES = (
     ProjectionFamily("manifests", ("scripts/render_public_views.py", "--check")),
     ProjectionFamily("landscape", ("scripts/render_public_views.py", "--check")),
     ProjectionFamily("schemas", ("scripts/schema_reference.py", "--check")),
+    ProjectionFamily("research_receipts", ("scripts/insurer_directory_receipt_projection.py", "--check")),
 )
 
 
