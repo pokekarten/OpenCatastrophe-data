@@ -60,6 +60,23 @@ water_depth_units_or_scale_scientifically_validated=false and
 building_hazard_or_cat_loss_admitted=false. No raw XML,
 personal data or per-building location is exported.
 
+## Original source-read integration — pending reviewed main workflow
+
+With #1057 affine work and #1062 standalone band parser merged, the
+original `research_runners/berlin_srhk_zip_first_tiff_header_v0.py`
+now invokes the new NoData/units parser on **the same already
+source-authenticated and bounded in-memory TIFF prefix**.
+It does not change the original 65,536-byte per-source network budget,
+the pinned first-512 SHA-256, original ZIP size/Last-Modified,
+HTTP 206 requirement, Deflate cap or non-admission policy.
+
+The dedicated existing workflow
+`.github/workflows/berlin-srhk-tiff-header.yml` invokes
+both original scenarios only after review and merge of the workflow
+revision to main. PR checks are synthetic only.
+**No original band NoData, unit, scale or offset result is
+claimed until the actual post-merge provider run is inspected.**
+
 ## Tests and next source boundary
 
 Synthetic tests prove missing/unknown versus zero, NaN NoData
@@ -68,11 +85,9 @@ duplicate TIFF/UNITTYPE entries, oversized or inaccessible TIFF
 metadata and non-admission flags.
 
 The isolated GitHub Actions workflow runs **only these synthetic
-tests** with no source network call. Once the noncolliding affine
-work in #1057 is merged, a separately reviewed extension can
-reuse the already authenticated two original 65,536-byte ZIP-range
-prefixes, derive the bounded TIFF prefix and invoke this parser.
-This source execution should report the actual original GDAL
-metadata **without claiming it proves depth units or valid cells**.
+tests** with no source network call. The source-bound extension now reuses those original ZIP source
+byte-range contracts and is pending real-provider main workflow proof.
+Source declarations must still be independently reviewed against
+physical units, NoData masks and pixel blocks before model admission.
 The next scientific step remains pixel-block validation plus rights,
 NoData mask, meaningful scenario and water-depth physical scale.
