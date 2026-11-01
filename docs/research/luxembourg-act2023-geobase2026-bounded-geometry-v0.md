@@ -45,7 +45,7 @@ identifiers.
 `research_runners/luxembourg_act2023_geobase2026_geometry_v0.py`
 uses already tested exact-file source-GPKG and RTree validators. It
 selects one fixed central Luxembourg research square of
-**250m × 250m** around 6.1319°E, 49.6116°N. It reads at most
+**100m × 100m** around 6.1319°E, 49.6116°N. It reads at most
 **400** ACT roof and **400** GeoBase building polygons, via the two
 original GeoPackage RTree spatial indices, into automatically removed
 private temporary GeoJSON files with declared native EPSG:2169.
@@ -85,3 +85,9 @@ extracting any comparison window.
 Next: stratify urban/rural manually adjudicated windows with independently
 verified coordinate controls, survey date and dimensional semantics; consider
 an official ACT ID crosswalk if the publisher makes one available.
+
+## Fixed-window adjustment after real source run
+
+The first exact-original job, https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41310830197, **correctly failed closed**: the initial 250m × 250m city-centre extraction produced **more than the permitted 400 RTree candidate rows** on at least one source. This is a genuine source-density bound, not a checksum or provenance failure. No sample was silently truncated or counted as a real comparison.
+
+The fixed one-time region was reduced to **100m × 100m** around the same public centre, without increasing the 400-object safety cap, changing source files or relaxing validity checks. The revised original-source workflow must independently pass before any aggregate comparison result is claimed.
