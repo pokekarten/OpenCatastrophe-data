@@ -7,6 +7,7 @@ research_only = true
 provider = "Bundesamt fuer Kartographie und Geodaesie"
 source_url = "https://daten.gdz.bkg.bund.de/produkte/sonstige/starkregen/aktuell/be/maxdepth_kostra/s32790/starkregen_maxdepth_kostra_32790_5820_10_be.tif"
 source_scenario = "BKG HWK_SRG KOSTRA exceptional (original BKG direct TIFF)"
+source_catalogue_file_listing_label = "18-Aug-2025 09:43 (official BKG directory; timezone unspecified)"
 observed_at_utc = "2026-11-01T20:42:43.867304+00:00"
 original_github_run_id = 41348217549
 original_github_run_url = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41348217549"
