@@ -35,7 +35,7 @@ def body(geom):
 
 
 def control():
-    return body(polygon(390000,5816000,394000,5818000))
+    return body(polygon(390000,5816000,393920,5817880))
 
 
 def filtered():
