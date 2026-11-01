@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - 'research_runners/luxembourg_geobase_2026_geometry_quality_v0.py'
+      - 'research_runners/luxembourg_geobase_2026_repair_diagnostic_v0.py'
       - 'tests/test_luxembourg_geobase_2026_geometry_quality_v0.py'
       - '.github/workflows/luxembourg-geobase-2026-geometry-quality.yml'
   workflow_dispatch:
