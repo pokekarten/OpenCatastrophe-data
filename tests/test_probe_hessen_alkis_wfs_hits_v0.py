@@ -60,6 +60,14 @@ class HessenWfsHitsTests(TestCase):
         self.assertFalse(evidence["source_building_polygon_validated"])
         self.assertFalse(evidence["model_input_approved"])
 
+    def test_real_provider_reported_29_is_only_a_claim_not_an_admitted_inventory(self):
+        sample=hits.inspect_hits(xml(matched="29",returned="0"))
+        self.assertEqual(sample["number_matched_if_integer"],29)
+        self.assertTrue(sample["provider_claims_positive_matches"])
+        self.assertEqual(sample["features_in_hits_response"],0)
+        self.assertFalse(sample["source_building_polygon_validated"])
+        self.assertFalse(sample["model_input_approved"])
+
     def test_zero_and_unknown_are_not_inferred_no_buildings(self):
         empty=hits.inspect_hits(xml(matched="0"))
         unknown=hits.inspect_hits(xml(matched="unknown"))
