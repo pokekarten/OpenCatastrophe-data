@@ -9,7 +9,7 @@ import unittest
 
 from research_runners.luxembourg_lidar2024_city_laz_header_range_v0 import (
     city_member, local_file_data_offset, las_prefix_info,
-    complete_las_header, inspect_public_vlrs, LAZHeaderError,
+    complete_las_header, inspect_public_vlrs, inspect_copc_root_hierarchy, LAZHeaderError,
 )
 
 
@@ -196,6 +196,48 @@ class LAZHeaderRangeTests(unittest.TestCase):
         data=vlr("laszip encoded",22204,b"\0"*46)+b"trailing"
         with self.assertRaisesRegex(LAZHeaderError,"nonzero public"):
             self.vlr_report(data)
+
+
+    def test_actual_hierarchy_metadata_counts_only(self):
+        page=b"".join((
+            struct.pack("<iiiiQii",0,0,0,0,1800,500,1000),
+            struct.pack("<iiiiQii",1,0,0,0,2500,400,500),
+            struct.pack("<iiiiQii",1,1,0,0,3500,32,-1),
+            struct.pack("<iiiiQii",1,0,1,0,0,0,0),
+        ))
+        report=inspect_copc_root_hierarchy(page,source_member_bytes=100000,root_offset=95000)
+        self.assertEqual(report["source_root_hierarchy_entries_validated"],4)
+        self.assertEqual(report["root_nested_hierarchy_pages_declared"],1)
+        self.assertEqual(report["root_compressed_point_chunks_declared"],2)
+        self.assertEqual(report["root_empty_octree_nodes"],1)
+        self.assertEqual(report["root_entries_point_counts_sum_not_full_population"],1500)
+        self.assertFalse(report["root_compressed_point_chunk_bytes_read"])
+        self.assertFalse(report["per_point_xyz_classification_or_building_identity_exported"])
+
+    def test_duplicate_octree_keys_rejected(self):
+        node=struct.pack("<iiiiQii",0,0,0,0,1800,500,1000)
+        with self.assertRaisesRegex(LAZHeaderError,"voxel"):
+            inspect_copc_root_hierarchy(node*2,source_member_bytes=100000,root_offset=95000)
+
+    def test_hierarchy_out_of_bounds_fails(self):
+        node=struct.pack("<iiiiQii",0,0,0,0,99990,500,1000)
+        with self.assertRaisesRegex(LAZHeaderError,"outside source"):
+            inspect_copc_root_hierarchy(node,source_member_bytes=100000,root_offset=95000)
+
+    def test_invalid_voxel_octree_coordinates_rejected(self):
+        node=struct.pack("<iiiiQii",1,5,0,0,1800,500,1000)
+        with self.assertRaisesRegex(LAZHeaderError,"voxel"):
+            inspect_copc_root_hierarchy(node,source_member_bytes=100000,root_offset=95000)
+
+    def test_unbounded_nested_page_rejected(self):
+        node=struct.pack("<iiiiQii",1,0,0,0,99999,32,-1)
+        with self.assertRaisesRegex(LAZHeaderError,"nested"):
+            inspect_copc_root_hierarchy(node,source_member_bytes=100000,root_offset=95000)
+
+    def test_root_hierarchy_must_be_32_byte_aligned(self):
+        node=struct.pack("<iiiiQii",0,0,0,0,1800,500,1000)
+        with self.assertRaisesRegex(LAZHeaderError,"byte range"):
+            inspect_copc_root_hierarchy(node+b"x",source_member_bytes=100000,root_offset=95000)
 
     def test_no_source_point_positions_or_classes_in_results(self):
         b=las_header()
