@@ -26,12 +26,23 @@ successor candidate routes are:
 - Official machine-readable catalogue: `https://www.fema.gov/api/open/v1/OpenFemaDataSets`
 - Official field registry: `https://www.fema.gov/api/open/v1/OpenFemaDataSetFields`
 
-**Current routes are research pointers, not a verified live provider receipt
-or a grant to automate**. Before acquiring records, query the official
-OpenFEMA metadata/field catalogue for the *exact* product, version, latest
-refresh, deprecation state, source field names and API/service terms; then
-obtain separately reviewed bounded original responses and byte-level receipts.
-Do not fall back silently to `FimaNfipClaims` or `FimaNfipPolicies`.
+**First-party catalogue verified 2026-11-01:** FEMA's live
+`OpenFemaDataSets` catalogue lists `NfipClaims` v3 (2,725,989 records)
+and `NfipPolicies` v3 (74,739,461 records), both at the exact routes above,
+with `depDate=null` and `lastDataSetRefresh` on 2026-09-09.
+These are **provider-reported global counts**, not counts ingested here.
+The metadata response was inspected without importing source records. A
+separate one-row policy response established that provider v3 row `id` may
+be an integer and `censusGeoid` rather than `countyCode` can carry
+the county FIPS prefix. The script now checks this format conservatively.
+The source-fields catalogue still requires a separately bound version/field
+review; no live claims data were acquired for this PR.
+
+First-party discovery does **not** grant unrestricted API automation, source
+publication or model admission. Before importing records, independently
+review the current exact product/version/terms and obtain bounded original
+response bytes with checksum evidence. Do not fall back silently to older
+`FimaNfipClaims` or `FimaNfipPolicies` names.
 
 Authoritative semantics and privacy warnings:
 - https://agents.floodsmart.gov/flood-maps-and-data/faqs-about-nfip-data
@@ -55,7 +66,7 @@ insurer, event, policy, or calibrated loss probability.
 It reads exactly two previously acquired, rights-cleared **bounded API JSON
 pages** (each at most 20 MB / 20,000 records). It requires independently
 recorded exact SHA-256 for both original responses, the modern v3 envelopes,
-unique source row IDs, five-digit county codes, valid dates, and finite
+unique source row IDs (string or integer), consistent five-digit county codes\n(explicit `countyCode` or a validated 11/12-digit `censusGeoid` prefix), valid dates, and finite
 Decimal financial fields.
 
 It reports separate:
@@ -98,10 +109,10 @@ portfolios, credentials, secret URLs, or results containing personal records.
 
 ## Advancement gates
 
-1. Independently confirm `NfipClaims` / `NfipPolicies` v3 with the **official
-   current** OpenFEMA dataset and field catalogues (including deprecation and
-   exact data refresh dates), then review provider API terms and U.S.
-   government/third-party data rights for the precise intended use.
+1. Refresh the **official** OpenFEMA v3 catalogue receipt near acquisition;
+   check the source field dictionary, exact live provider version, deprecation,
+   data refresh and pagination rules, then independently review API terms and
+   U.S. government/third-party rights for the precise intended use.
 2. Produce a trusted acquisition receipt for a **single bounded page** per
    product: fixed allowlisted request, UTC retrieval, exact bytes+SHA, response
    fields, content type and absence of secrets; run the offline parser on real
