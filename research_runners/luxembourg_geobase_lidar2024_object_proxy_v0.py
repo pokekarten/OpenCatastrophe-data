@@ -63,6 +63,23 @@ def original_window():
     return geom
 
 
+def exact_area_candidates(rtree_candidates, study_polygon):
+    """Reject RTree bbox-only hits; require positive exact source area."""
+    if (not isinstance(rtree_candidates,list) or not 1<=len(rtree_candidates)<=MAX_POLYGONS
+        or not study_polygon.is_valid or study_polygon.area<=0):
+        raise BuildingProxyError("invalid exact-study source candidates")
+    result=[]
+    for geom in rtree_candidates:
+        if (geom.geom_type not in ("Polygon","MultiPolygon") or not geom.is_valid
+            or geom.is_empty or geom.area<=0):
+            raise BuildingProxyError("invalid RTree source candidate geometry")
+        if geom.intersects(study_polygon) and geom.intersection(study_polygon).area>0:
+            result.append(geom)
+    if not result:
+        raise BuildingProxyError("no positive-area building intersection in study")
+    return result
+
+
 def aggregate(polygons, dtm, dsm, affine, study_polygon):
     """Two-pass raster masks exclude shared pixels before building-level medians.
 
@@ -191,10 +208,7 @@ def run(geobase_path:Path):
             # RTree searches the bounding rectangle of the projected 100m square.
             # A candidate intersecting only this bbox is NOT inside the study.
             # Clip against the exact study polygon before making height proxies.
-            polygons=[g for g in rtree_candidates
-                      if g.intersects(roi) and g.intersection(roi).area>0]
-            if not polygons:
-                raise BuildingProxyError("no positive-area building intersection in study")
+            polygons=exact_area_candidates(rtree_candidates,roi)
             bbox_false_candidates=original_count-len(polygons)
             receipts={name:read_header_range(name) for name in ("MNT","MNS")}
             with rasterio.Env(
