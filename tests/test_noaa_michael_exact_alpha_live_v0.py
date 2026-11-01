@@ -135,7 +135,7 @@ class NOAAOriginalAlphaLiveOfflineTests(unittest.TestCase):
                 with self.assertRaises(SourceAlphaProbeError):
                     fetch_range(start, size, opener=lambda **k: None)
         def opener(req, *, timeout):
-            return FakeResponse(b"tiny", start=0)
+            return FakeResponse(b"tiny", start=0, content_range="bytes 0-9/100000")
         with self.assertRaisesRegex(SourceAlphaProbeError, "byte size mismatch"):
             fetch_range(0, 10, opener=opener)
 
