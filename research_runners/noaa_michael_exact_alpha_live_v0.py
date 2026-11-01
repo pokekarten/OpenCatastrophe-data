@@ -108,7 +108,11 @@ def fetch_range(
         "Accept-Encoding": "identity",
     }
     if if_match is not None:
-        if type(if_match) is not str or not re.fullmatch(r'(W/)?"[^"]{1,200}"', if_match):
+        # The original Azure CDN sometimes returns an opaque ASCII ETag
+        # token without quotes. Preserve exact origin bytes; reject controls,
+        # spaces, delimiters and any possibility of HTTP-header injection.
+        if (type(if_match) is not str or not
+            re.fullmatch(r'[A-Za-z0-9_./:"-]{1,200}', if_match)):
             raise SourceAlphaProbeError("untrusted source ETag")
         headers["If-Match"] = if_match
     request = urllib.request.Request(TIFF_URL, headers=headers, method="GET")
