@@ -135,3 +135,41 @@ that an EUBUCCO modified-NUTS2016 partition is represented.
 The first real original-feature receipt must be appended after the
 run, including the true response hash, number of successfully validated
 polygons, sample-area aggregate and whether all joins passed.
+
+## First actual official building polygons to NUTS2021: PASS — 2026-11-01
+
+A single fixed bounded **live** GetFeature request succeeded in
+[GitHub Actions run 41319506268](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41319506268),
+main commit `c5a252567bcd182a4f2bc89894ff640dfca340a4`.
+
+- UTC receipt: `2026-11-01T15:06:41.876233+00:00`
+- Original source: Berlin ALKIS WFS 2.0.0,
+  `typeNames=alkis_gebaeude:gebaeude`, `count=5`,
+  `outputFormat=application/json`, fixed 200m × 200m
+  EPSG:25833 query box.
+- **Five** real original provider feature polygons returned,
+  all five accepted as valid source building geometries.
+- Original provider response **5,412 bytes**, SHA-256:
+  `6359a9ea2a5ca81b7d6c8281db465b9f1e7f1a7f680bf8381d94cc9acc7b304b`.
+- Trusted executing script SHA-256:
+  `167edf3f1c318599001fe661cd52a7d70c8551e8ffa87c2818985584148ebd69`.
+- Total sampled source footprint area: **1,344.0 m²**.
+  The sampling cap does **not** make this the total number/area of
+  buildings in the query box; original provider building versus
+  building-part segmentation also remains a research caveat.
+- Each original polygon's privately computed EPSG:25833 representative
+  point was transformed to WGS84 and checked against the independent
+  original CAT1 (2021 geoBoundaries) and CAT2 (2021 Eurostat NUTS1 10M)
+  SQLite mapping: **5 of 5 accepted as NUTS2021 `DE3` Berlin**.
+- No provider addresses, individual coordinates, original provider
+  feature IDs, raw feature bytes or CAT staging databases were
+  exported, committed to the public repository or persisted to
+  production/Neon/Pokémon storage.
+
+**Scientific result:** real official current-source building
+polygon-to-2021-region attribution now works on a bounded five-feature
+sample. Since Berlin WFS is updated regularly, neither this test nor
+the older polygon boundaries proves that these exact buildings existed
+in 2021. This **does not** establish any insured replacement value,
+peril vulnerability, construction-year, complete Berlin inventory or
+source-licensed nationwide data admission.
