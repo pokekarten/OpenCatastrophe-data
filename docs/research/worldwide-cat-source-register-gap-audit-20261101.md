@@ -65,6 +65,8 @@ The repository already has three separate validated tools: `scripts/build_source
 
 - canonical discovery shard; provider and scope; existing access contract IDs/status; bounded next access step;
 - explicit linked candidate IDs, relationship hypothesis, missing proof requirements and prohibited inferences;
+- sources sharing the **exact same authoritative provider page** as a separate potential-overlap review group (never assumed to contain the same bytes, never automatically deduplicated);
+- fail-closed check that candidate ID, provider, authoritative URL and canonical shard name agree between the independently generated access and linkage inventories (prevents silently attributing another provider's access contract to a similarly named source);
 - separate admitted manifest entries with no privilege inheritance if the same ID also appears in a discovery record;
 - aggregate counts for candidates with no reviewed concrete access contract and candidates with manual linkage hypotheses.
 
