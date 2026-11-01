@@ -67,6 +67,73 @@ Original GPKG, individual building identities, coordinates, per-object
 heights, gradients or source raster samples are **never** emitted or
 saved into the insurance Neon database or GitHub artifacts.
 
+## Actual two-source-region experiment (GitHub Actions 2026-11-01)
+
+**Verified real-source execution:** <https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41317490206>.
+All **28 synthetic tests** passed; city reference and Berdorf village fixed
+windows completed. Both queried the same already-pinned official
+`2026-10-01` GeoBase Buildings original GeoPackage (entire file
+SHA-256 `ec70bd1175b6f67b6dceaf8ab39e0433bc871e1099ff308c3eb8323127aa5676`)
+and the original official 2024 MNT/MNS half-metre COGs through bounded
+read windows only. No full 40GB COG hash was verified, and no original
+geometries, raster values or building identifiers were persisted.
+
+| Measured bounded diagnostic | Frozen Luxembourg-city | Fixed Berdorf village |
+| --- | ---: | ---: |
+| GeoBase RTree envelope candidates | **107** | **18** |
+| Candidates outside exact rotated ROI | **3** | **2** |
+| Original polygons intersecting 100 m × 100 m ROI | **104** | **16** |
+| Valid within-footprint LiDAR height **proxies** | **97** | **16** |
+| Valid interior local surface-steepness **proxies** | **83** | **16** |
+| Unassigned original raster pixel cells | 20,878 | 27,625 |
+| Uniquely assigned original pixel cells | 23,293 | 16,896 |
+| Multiply assigned source pixel cells (excluded) | **350** | **0** |
+| Steep (≥70°) interior gradient candidate centers excluded | 767 | 182 |
+| Valid five-cell gradient centers before steep-screen | 16,390 | 13,407 |
+
+All counts conserve: city 107−3=104 and 83+21=104;
+Berdorf 18−2=16, 16+0=16,
+and **27,625 + 16,896 + 0 = 44,521** village raster cells.
+
+### Provisional within-footprint height-proxy bands, not actual heights
+
+| MNS2024−MNT2024 per-object median band | City (97 eligible) | Berdorf (16 eligible) |
+| --- | ---: | ---: |
+| Below 3 m | 0 | **1** |
+| 3–<6 m | 2 | **5** |
+| 6–<10 m | 5 | **8** |
+| 10–<15 m | 28 | **2** |
+| 15–<25 m | 62 | **0** |
+| ≥25 m | 0 | **0** |
+
+### Provisional median **MNS surface-gradient**, NOT roof-pitch bands
+
+| MNS surface-steepness band | City (83 eligible) | Berdorf (16 eligible) |
+| --- | ---: | ---: |
+| 0–<5° | 10 | **1** |
+| 5–<15° | 14 | **1** |
+| 15–<30° | 17 | **4** |
+| 30–<50° | 30 | **10** |
+| 50–<70° | 12 | **0** |
+
+**Interpretation:** in this one selected town-centre village site, all
+16 source polygons have enough valid, unambiguously assigned source
+pixels for both proxy calculations; no sample polygon overlap pixels
+were shared, compared to 350 excluded overlapping cells in city.
+But low counts and purposive selection (including a public church in
+Berdorf) prevent any statement that rural Luxembourg buildings are
+generally smaller, lower, steeper, less ambiguous or better measured.
+The 2024 LiDAR and 2026 building GIS share the government data
+family, aren't independent source truth, and may have 2024–2026 change.
+
+**Model admission stays false.** The source MNS gradient is not
+validated rooftop tilt, regardless of apparent regional differences.
+No building-year, material, occupancy, insured value, roof-facing
+azimuth or actual solar equipment has been inferred. Next scientific
+step: choose a *predeclared stratified suite of sites* and independent
+control roof/vegetation-labelled ground-truth features, not a
+post-hoc region selected to optimise apparent data quality.
+
 ## Acceptance / interpretation
 
 Require **all** synthetic tests, exact original-source checks, repeated
