@@ -270,6 +270,30 @@ class NOAAOriginalDeflateAlphaTileTests(unittest.TestCase):
                       "fema_point_pixel_intersection_proven", "model_input_admitted"):
             self.assertFalse(p[field])
 
+    def test_two_source_edge_blocks_are_clipped_not_full_pixel_squares(self):
+        # Real NOAA byte-range checks showed original source blocks 18 and
+        # 360 match the fully-zero Deflate stream of block 180 byte-for-byte.
+        # Synthetic bytes are generated here; no provider pixels committed.
+        comp = zlib.compress(bytes(512 * 512 * 4), level=6)
+        samples = (
+            (18, 26029152, 124 * 512),
+            (360, 67125358, 124 * 124),
+        )
+        counts = []
+        for index, offset, expected_visible_extent in samples:
+            with self.subTest(index=index):
+                h = header_with_tile_payload(index, len(comp), offset=offset)
+                report = probe_zero_block(h, item(), index, comp)
+                self.assertTrue(report["block_all_alpha_pixels_transparent_proven"])
+                self.assertEqual(
+                    report["proven_transparent_pixels_in_this_block_only"],
+                    expected_visible_extent,
+                )
+                self.assertEqual(report["original_compressed_byte_offset"], offset)
+                self.assertFalse(report["whole_image_alpha_coverage_measured"])
+                counts.append(report["proven_transparent_pixels_in_this_block_only"])
+        self.assertEqual(sum(counts) + 512 * 512, 341008)
+
     def test_nonzero_block_not_auto_promoted_to_positive_alpha_pixels(self):
         rgba = bytearray(512 * 512 * 4)
         rgba[3] = 255
