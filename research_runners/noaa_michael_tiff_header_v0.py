@@ -167,3 +167,41 @@ def preflight(header: Any, stac_item: Any) -> dict[str, Any]:
         "independent_fema_damage_validation_proven": False,
         "model_input_admitted": False,
     }
+
+
+def compare_provider_directory_size(header: Any, stac_item: Any,
+                                    directory_mb_display: Any) -> dict[str, Any]:
+    """Challenge a rounded *HTML display* size against the source TIFF IFD.
+
+    NOAA's public index uses a two-decimal 'MB' listing, but neither the
+    listing's byte unit nor its update epoch is independently guaranteed.
+    Test both decimal and binary megabytes with a 0.005 MB display tolerance;
+    exceeding the more generous bound conclusively prevents using the HTML
+    display as the current source-file byte identity. This does NOT prove
+    byte corruption or establish a provider Content-Length.
+    """
+    try:
+        report = preflight(header, stac_item)
+    except (TIFFHeaderError, ValueError, TypeError, KeyError) as exc:
+        raise TIFFHeaderError("source TIFF metadata must pass before size claims") from exc
+    if (type(directory_mb_display) not in (float, int)
+        or not math.isfinite(directory_mb_display)
+        or not 0 < directory_mb_display <= 10_000):
+        raise TIFFHeaderError("directory size must be a bounded finite MB number")
+    required = report["minimum_original_file_bytes_from_main_ifd"]
+    conservative_html_upper_bound = math.ceil(
+        (directory_mb_display + 0.005) * 1024 * 1024
+    )
+    mismatch = required > conservative_html_upper_bound
+    return {
+        "profile": "noaa_michael_original_ifd_directory_size_crosswalk_v0",
+        "tile_id": report["tile_id_from_stac_only"],
+        "provider_directory_display_megabytes": directory_mb_display,
+        "main_tiff_ifd_minimum_bytes": required,
+        "directory_html_size_insufficient_for_main_ifd": mismatch,
+        "directory_html_mb_definition_verified": False,
+        "exact_http_content_length_verified": False,
+        "original_full_file_sha256_verified": False,
+        "asset_byte_identity_admitted": False,
+        "model_input_admitted": False,
+    }
