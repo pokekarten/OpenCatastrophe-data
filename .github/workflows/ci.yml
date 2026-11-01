@@ -92,6 +92,8 @@ jobs:
           -v
       - name: Exercise bounded synthetic building geometry matching
         run: python -m unittest tests.test_building_footprint_overlap_v0 -v
+      - name: Verify official Luxembourg GPKG schema and bounded window with synthetic bytes
+        run: python -m unittest tests.test_luxembourg_gpkg_schema_window_v0 -v
 
   cems-geotiff-profile:
     name: CEMS GeoTIFF profile and support challenge
