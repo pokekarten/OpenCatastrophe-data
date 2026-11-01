@@ -174,7 +174,12 @@ def audit_crosswalk(
         if (src_coverage < MIN_BIDIRECTIONAL_OVERLAP
             or ref_coverage < MIN_BIDIRECTIONAL_OVERLAP
             or runner_up >= primary_area * 0.10):
-            raise CrosswalkError("no unambiguous high-coverage NUTS1/ADM1 match")
+            raise CrosswalkError(
+                "no unambiguous high-coverage NUTS1/ADM1 match; " +
+                f"best_nuts1={code} geo_fraction={src_coverage:.6f} " +
+                f"nuts_fraction={ref_coverage:.6f} " +
+                f"runner_up_share_of_best={runner_up / primary_area if primary_area else 0.0:.6f}"
+            )
         mapping.append({
             "shape_id": sid,
             "nuts1_code": code,
