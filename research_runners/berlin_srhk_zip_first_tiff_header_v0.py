@@ -26,6 +26,10 @@ from research_runners.berlin_srhk_depth_zip_eocd_tail_v0 import (
     OBJECTS, ROOT, LAST_MODIFIED, MIME,
 )
 
+from research_runners.berlin_srhk_tiff_grid_affine_v0 import (
+    BerlinTiffGridError, inspect_berlin_tiff_header_grid,
+)
+
 READ_BYTES = 65_536
 MAX_DECOMPRESSED_PREFIX = 1_048_576
 TIMEOUT = 40
@@ -150,6 +154,10 @@ def inspect_prefix(raw: bytes, *, scenario: str, expected_512_sha: str) -> dict:
     if len(decoded) < 16:
         raise TiffHeaderError("source TIFF prefix too short after bounded Deflate")
     metadata = decode_tiff_metadata(decoded)
+    try:
+        projected_grid = inspect_berlin_tiff_header_grid(decoded)
+    except BerlinTiffGridError as exc:
+        raise TiffHeaderError("unsafe original GeoTIFF affine-grid metadata") from exc
     return {
         "exact_source_scenario": scenario,
         "original_zip_prefix_http_bytes": READ_BYTES,
@@ -167,6 +175,7 @@ def inspect_prefix(raw: bytes, *, scenario: str, expected_512_sha: str) -> dict:
         "original_scenario_not_historical_insurance_event": True,
         "source_rights_and_cat_model_admission_pending": True,
         **metadata,
+        **projected_grid,
     }
 
 
