@@ -348,3 +348,51 @@ Neither a coherent code/description relationship nor positive
 `hoehe` can establish the source method's precision or automatically
 turn historical **Gebäudeteil** polygons into insured buildings.
 CAT model admission remains false.
+
+## First-party empirical method-code concordance — 2026-11-01
+
+The reviewed post-merge [GitHub source run 41330142633](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41330142633)
+on main commit `d98286d41ad0bae60ff0b08a17c2d13bd9bfe4c3`
+**succeeded**. The fixed two-WFS source run followed **20 passing
+source-specific regression tests** and issued no expanded geographic
+request or extra provider call. UTC receipt:
+`2026-11-01T17:11:07.111298+00:00`.
+
+| Observed field, exact 200m pilot | All 27 original LoD2 objects: paired observations | Distinct code groups | Distinct description groups | Code→many texts / text→many codes |
+| --- | ---: | ---: | ---: | ---: |
+| `quellebodenhoehe` | **27** | **1** | **1** | **0 / 0** |
+| `quelledachhoehe` | **27** | **1** | **1** | **0 / 0** |
+| `quellelage` | **27** | **1** | **1** | **0 / 0** |
+
+The identical **one-code / one-description / zero-divergence**
+result also holds for each field separately among the **six**
+uniquely matched LoD2 `Gebäudeteil` polygon records and the **six**
+source-feature records in the three quarantined duplicate-footprint
+groups. The original WFS populations remain 18 ALKIS vs 27 LoD2
+sources; **six** unambiguous source-polygon matches; none admitted
+as a whole insured building.
+
+Original source receipt SHA-256s:
+
+- ALKIS response:
+  `665813ba53b71ea87babd29bcdffa44b8153ab382e7e9f7ee5ffa9f95a186235`.
+- LoD2 2022 response:
+  `6865a21f0aaf7e47fcdab53e09e1e11963190cfefe50d753c799ee89a708d6a0`.
+- Research script:
+  `f054bec71882588070bce37953b577370959bdf32439371014e1d1fc7c018684`.
+
+**Limit of inference:** The lack of observed contradictions is not
+strong validation of the dictionary: only *one method code per field*
+was observed. Therefore multiple-code distinctions, imputed/estimated
+versus measured categories and the correctness of any one code/label
+pair remain **unverified**. Do not interpret one consistent method
+label as a provider-approved source classification.
+
+Next scientific gate: pin the exact version of the German AdV
+**Produkt- und Qualitätsstandard 3D-Gebäudemodelle** code lists,
+review the producer's field mapping to that standard and the Berlin
+historic export, test code/text associations across independently
+selected permitted sample regions, and distinguish measured, DOM/bDOM
+derived, DGM-intersected and missing/imputed methods. No original
+source code values or descriptions have been exported, stored or
+logged; no CAT4/insurer portfolio height has been admitted.
