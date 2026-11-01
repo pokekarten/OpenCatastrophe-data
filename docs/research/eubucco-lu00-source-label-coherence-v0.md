@@ -47,3 +47,25 @@ The dedicated GitHub workflow runs both synthetic cases and one narrowly bounded
 - Independent native ACT EPSG:2169 axis validation (separate PR #918) and exact EUBUCCO EPSG:3035 semantics.
 - A stratified, manually checked one-to-one/split/merge geometry comparison. ACT 2023 rooftop extents and EUBUCCO ground footprints have different geometric definitions.
 - Independent survey-based building age, repair/replacement value, occupancy, insurer coverage/insurance sums, vulnerability and hazard depth. None is inferred from the source-label coherence matrix.
+
+
+## Verified original-file run (2026-11-01)
+
+Actual source-only GitHub Actions run: https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41308236889 . The temporary original Luxembourg LU00 Parquet was retrieved a second time over HTTPS, exactly **29,053,909 bytes** and exactly the earlier SHA-256
+`d1e554de9db0b1f747575426ebb950ef96bb8b2956657554b5ff2998a91abe8c`. The specialized synthetic tests and original-file cross-tab both passed. There are **186,171** unique decoded source IDs in the LU000 partition.
+
+Source-label relations in the exact original, one mutually exclusive category per attribute per building:
+
+| Attribute source column | Same literal label as geometry | Different label (not proven independent) | Estimated | Missing | Row sum |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| height_source | 145,652 | 0 | 40,519 | 0 | 186,171 |
+| floors_source | 639 | 4,398 | 181,134 | 0 | 186,171 |
+| type_source | 9,333 | 66,991 | 109,847 | 0 | 186,171 |
+| subtype_source | 5,450 | 19,282 | 161,439 | 0 | 186,171 |
+| construction_year_source | 20 | 54 | 0 | 186,097 | 186,171 |
+
+The source geometry-family margins were **144,088 government-labelled, 23,928 OSM and 18,155 Microsoft**. Every attribute row adds up to exactly 186,171; these are **provenance-label counts, not verified non-null values, surveyed heights, usable replacement values or new independent buildings**.
+
+One important cross-tab detail: all **144,088** government-labelled geometries also use a government-labelled **height** source within the original LU00 file. This is not evidence that the height comes from a different measured dataset or that ACT2023v2 independently corroborates it. The original source workbook, metadata version, height datum and ACT-vs-EUBUCCO lineage are still needed.
+
+**No individual building records, coordinates, source geometries, insurance sums or raw provider files** were published. Source rights and commercial-use suitability remain unreviewed, and `model_input_admitted=false`.
