@@ -48,16 +48,46 @@ def native_bbox():
 
 
 def source_crs_is_epsg2169(source) -> bool:
-    """Require true CRS semantic equivalence; WKT may omit EPSG root authority."""
+    """Require independently testable mathematical CRS equivalence.
+
+    Older official GeoTIFF WKT1 may omit its top-level EPSG authority and
+    serialize the planar axes as Easting/Northing, while canonical EPSG2169
+    advertises Northing/Easting. Strictly match the geodetic frame, ellipsoid,
+    projection method, all numeric operation parameters and axis units.
+    Coordinate-order field controls remain explicitly UNVERIFIED.
+    """
     try:
         from pyproj import CRS
         if source.crs is None:
             return False
-        source_proj=CRS.from_wkt(source.crs.to_wkt())
-        verified=CRS.from_epsg(EXPECTED_EPSG)
-        return bool(source_proj.equals(verified, ignore_axis_order=True))
-    except (ValueError, TypeError):
+        observed=CRS.from_wkt(source.crs.to_wkt())
+        official=CRS.from_epsg(EXPECTED_EPSG)
+        if observed.equals(official,ignore_axis_order=True):
+            return True
+        if not (observed.is_projected and official.is_projected):
+            return False
+        if (observed.datum.name != official.datum.name
+                or observed.ellipsoid.name != official.ellipsoid.name
+                or observed.prime_meridian.name != official.prime_meridian.name
+                or observed.coordinate_operation.method_name != official.coordinate_operation.method_name):
+            return False
+        axis_a=sorted((x.direction.lower(),x.unit_name.lower()) for x in observed.coordinate_system.axis_list)
+        axis_b=sorted((x.direction.lower(),x.unit_name.lower()) for x in official.coordinate_system.axis_list)
+        if axis_a != axis_b or len(axis_a) != 2:
+            return False
+        lhs=observed.coordinate_operation.params
+        rhs=official.coordinate_operation.params
+        if len(lhs)!=len(rhs):
+            return False
+        for a,b in zip(lhs,rhs):
+            if (a.name!=b.name or a.unit_name!=b.unit_name
+                    or not math.isfinite(float(a.value)) or not math.isfinite(float(b.value))
+                    or not math.isclose(float(a.value),float(b.value),rel_tol=0,abs_tol=1e-9)):
+                return False
+        return True
+    except (ValueError,TypeError,AttributeError):
         return False
+
 
 
 def bounded_window_from_source(source, bbox):
@@ -145,7 +175,7 @@ def inspect_source_crs_metadata() -> dict:
                 label=src.crs.to_string() if src.crs is not None else None
                 result[name]={
                     "rasterio_crs_epsg":epsg,
-                    "full_wkt_semantically_equals_epsg2169":source_crs_is_epsg2169(src),
+                    "projected_parameters_match_reviewed_epsg2169_without_native_axis_proof":source_crs_is_epsg2169(src),
                     "rasterio_crs_label_truncated":label[:260] if label else None,
                     "has_crs":src.crs is not None,
                     "single_band":src.count==1,
