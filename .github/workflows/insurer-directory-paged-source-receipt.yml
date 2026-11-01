@@ -49,12 +49,18 @@ jobs:
               raise SystemExit("BLOCKED: original source pages not complete")
           if receipt["unique_source_slugs"] != 18180 or receipt["model_input_approved"]:
               raise SystemExit("BLOCKED: original source identities or admissions differ")
+          import re
+          original_digest = receipt["canonical_field_digest_sha256"]
+          if not re.fullmatch(r"[0-9a-f]{64}", original_digest):
+              raise SystemExit("BLOCKED: invalid original field digest")
+          print("CANONICAL_SOURCE_FIELD_SHA256=" + original_digest)
           for p in receipt["pages"]:
               print(f"PAGE {p['page']:02d} rows={p['row_count']} bytes={p['raw_page_bytes']} sha256={p['raw_page_sha256']}")
           summary = (
               "PASS: original pages 46/46; original source rows 18180; "
               "unique source slugs 18180; provider page SHA-256 listed in job log. "
-              "Original aggregate SHA unavailable. No DB writes; not model-approved."
+              "Original aggregate SHA unavailable. No DB writes; not model-approved. "
+              "Original canonical five-field digest: " + original_digest + "."
           )
           print(summary)
           with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as f:
