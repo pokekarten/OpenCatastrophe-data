@@ -73,7 +73,7 @@ def audit(raw: bytes, query_url: str, objectid: int) -> dict:
         "topology_valid": valid,
         "topology_validation_reason": explain_validity(geom),
         "geometry_request_simplified_or_rounded": simplified,
-        "exact_original_geometry_topology_proven": valid and not simplified,
+        "unsimplified_requested_geometry_topology_valid": valid and not simplified,
         "safe_for_precise_spatial_overlay": valid and not simplified,
         "licence_reviewed": False,
         "historical_2016_flood_footprint": False,
