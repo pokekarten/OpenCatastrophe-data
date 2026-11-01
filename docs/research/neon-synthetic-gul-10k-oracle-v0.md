@@ -28,6 +28,21 @@
 
 The independent `tests/test_neon_synthetic_gul_10k_v0.py` was executed locally: **4/4 PASS**. It replays the 10,000 worlds without database access, checks numeric parity with the live SQL output, rejects changed synthetic exposure amounts, rejects any non-synthetic input flag, and checks sum/event conservation. Local CPython proves only this bounded mathematical equivalence. GitHub CI/full `scripts/check_all.py` and native producer/consumer suite are not claimed as executed here.
 
+## 2026-11-01 exact-branch follow-up: CI and fixture-gate hardening
+
+The initial PR-head GitHub workflow run 41352241351 failed **only** because the newly authored SQL and Python test lacked SPDX headers. In the Python 3.11 run, the repository executed **4,620 tests: OK (298 skipped)** before its own licence metadata gate rejected the two files. Both files now have Apache-2.0 SPDX headers; the later CI check must be judged against the **latest** PR head, not that obsolete run.
+
+The original `gate HAVING` silently returned no annual rows when the fixture was missing. Replaced with an identity-specific expected table (all 12 expected `external_unit_id` → EUR values), FULL JOIN mismatch count and a **division-by-zero fail-closed guard**. This is intentionally a SQL error, not an empty/NULL statistical receipt.
+
+Live **read-only PostgreSQL 17** validation on explicit Neon branch `br-summer-sky-bawujqu8`:
+- Positive original database SQL: unchanged 10,000-world results and all numeric outputs.
+- Positive all-12 synthetic VALUES fixture: 1 valid gate.
+- Negative missing 12th location: rejected `division by zero`.
+- Negative no locations: rejected `division by zero`.
+- Negative same aggregate EUR 3,150,000 with two asset identities' values swapped: rejected `division by zero`.
+
+Latest independent Python suite: **7/7 PASS**, including checks for fixture-value swaps, empty/missing synthetic data and SQL guard source structure. Both local tested files were compared using Git blob hashes with the exact GitHub versions. This is **not** a signed native CAT receipt or a live Neon mutation/rollback test; all queries are read-only.
+
 ## Next required tests and admission
 
 1. In an exact-HEAD checkout execute the native OpenCatastrophe synthetic producer → existing NextGen importer → 10,000-world financial prototype, with event/world/asset source hashes, explicit simulated terms and no double-counted multi-peril event components.
