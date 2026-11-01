@@ -103,8 +103,9 @@ def preflight(item: Any) -> dict[str, Any]:
         or period_end.date().isoformat() != "2018-10-14"):
         raise STACPreflightError("unverified acquisition date or source collection interval")
     if prop.get("license") != "NLPL":
-        # Current STAC item says NLPL, InPort says CC0-1.0. This is a
-        # *source contradiction*, never evidence for commercial admission.
+        # The actual source STAC item says NLPL (SPDX: No Limit Public License);
+        # NOAA InPort records CC0-1.0. Both are permissive identifiers,
+        # but the exact source asset's governing terms remain unreviewed.
         raise STACPreflightError("reviewed STAC item license value changed: verify provider")
     assets = item["assets"]
     if type(assets) is not dict or tile_id not in assets:
@@ -168,7 +169,11 @@ def preflight(item: Any) -> dict[str, Any]:
         "independent_of_fema_rs_labels_proven": False,
         "inport_dataset_license_claim": "CC0-1.0",
         "stac_item_license_claim": "NLPL",
-        "source_license_conflict_unresolved": True,
+        "stac_license_spdx_full_name": "No Limit Public License",
+        "stac_license_spdx_identifier_recognized": True,
+        "source_license_identifiers_differ": True,
+        "license_difference_is_proven_restriction": False,
+        "asset_specific_licensing_review_completed": False,
         "source_image_bytes_downloaded_or_verified": False,
         "automatic_fema_building_join_allowed": False,
         "commercial_model_input_admitted": False,
