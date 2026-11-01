@@ -94,11 +94,24 @@ def compare(github_contents, neon_rows):
     }
 
 
+def _reject_duplicate_object_keys(pairs):
+    """Reject ambiguous JSON records instead of silently using last-wins keys."""
+    record = {}
+    for key, value in pairs:
+        if key in record:
+            raise ValueError(f"duplicate JSON object key: {key}")
+        record[key] = value
+    return record
+
+
 def load(path):
     file = Path(path)
     if file.stat().st_size > MAX_BYTES:
         raise ValueError("JSON inventory exceeds 3 MB")
-    return json.loads(file.read_text(encoding="utf-8"))
+    return json.loads(
+        file.read_text(encoding="utf-8"),
+        object_pairs_hook=_reject_duplicate_object_keys,
+    )
 
 
 def main(argv=None):
