@@ -50,6 +50,7 @@ def inspect_priority_layers(gdb: Path) -> dict:
     from shapely.geometry import Point, shape
     from shapely.validation import explain_validity
     from shapely import get_num_coordinates
+    from research_runners.cems_emns028_topology_repair_challenge_v0 import compare_repair_methods
 
     east, north = transform("EPSG:4326", "EPSG:32631",
                             [GAUGE_LON_LAT[0]], [GAUGE_LON_LAT[1]])
@@ -92,6 +93,10 @@ def inspect_priority_layers(gdb: Path) -> dict:
                     "geometry_intersects_ponthierry_gauge_control": at_gauge,
                     "gauge_intersection_is_not_insured_loss": True,
                 })
+                if name == "Flooded_area" and not valid:
+                    samples[-1]["repair_method_sensitivity_research"] = (
+                        compare_repair_methods(polygon)
+                    )
             summary[name] = {
                 "feature_count_total_layer": count,
                 "source_crs_epsg": epsg,
