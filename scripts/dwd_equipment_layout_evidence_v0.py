@@ -151,6 +151,17 @@ def _txt_layout(raw: bytes) -> dict:
         "first_three_line_signatures": signatures[:3],
         "source_column_names": raw_titles if safe_titles else [],
         "header_candidate_recognized": bool(safe_titles),
+        "source_header_diagnostics_only": {
+            "field_count": len(raw_titles),
+            "all_nonblank_and_bounded": all(1 <= len(name) <= 90 for name in raw_titles),
+            "all_within_restricted_character_set": all(
+                bool(re.fullmatch(r"[\w .(),:/%+\-]+", name, re.UNICODE))
+                for name in raw_titles),
+            "unique_casefolded": len({name.casefold() for name in raw_titles}) == len(raw_titles),
+            "station_or_datum_marker_found": any(
+                "datum" in name.casefold() or "station" in name.casefold()
+                for name in raw_titles),
+        },
         "authoritative_column_mapping_proven": False,
         "instrument_change_proven": False,
     }
