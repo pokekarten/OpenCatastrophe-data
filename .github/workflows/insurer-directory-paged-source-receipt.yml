@@ -28,6 +28,7 @@ jobs:
       - name: Synthetic offline fail-closed page contract tests
         run: python -m unittest tests.test_insurer_directory_paged_source_receipt_v0 -v
       - name: Explicit live original provider receipt (diagnostic, not model admission)
+        if: github.event_name == 'workflow_dispatch'
         id: provider
         continue-on-error: true
         shell: bash
