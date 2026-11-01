@@ -114,7 +114,7 @@ class BerlinOriginalWfsSchemaHitsTests(unittest.TestCase):
         for kwargs in ({"status": 206}, {"media": "image/png"}, {"encoding": "gzip"}):
             with self.subTest(kwargs=kwargs), self.assertRaises(MetadataBlocked):
                 _fetch(url, opener=lambda req: Fake(req.full_url, xsd(), **kwargs))
-        with self.assertRaisesRegex(MetadataBlocked, "exceeds cap"):
+        with self.assertRaisesRegex(MetadataBlocked, "declared response too large|exceeds cap"):
             _fetch(CONTROL_HITS_URL, opener=lambda req:
                    Fake(req.full_url, b"x"*17000))
 
