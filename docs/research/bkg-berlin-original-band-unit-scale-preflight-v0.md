@@ -5,7 +5,25 @@ SPDX-License-Identifier: Apache-2.0
 
 # BKG original Berlin depth raster – native band unit/scale preflight
 
-**Research-only. Actual results PENDING post-merge source workflow.**
+**Original TIFF band unit/scale evidence observed; physical depth units
+remain UNKNOWN.** The actual original source check ran successfully on
+[GitHub Actions #41353177132](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41353177132),
+main commit `84638de4e07b887b7f5658abf87a070b0d167c82`.
+The checker independently enforced the 47,280,200-byte original file
+and SHA-256 `7e11fcf4cac2ce07fdefa3dc0fa4414b2cc248c516a373a12c14c33b30726a6f`.
+It found **no band unit, no recognized unit candidate, no band description,
+and no explicit GDAL scale/offset tag**; runtime GDAL reported scale
+`1.0` and offset `0.0`. Both can be **implicit defaults**, not
+a provider's physical calibration.
+
+The original run's **metadata-only** report is preserved as
+[bkg-berlin-original-native-tiff-unit-receipt-20261101.toml](bkg-berlin-original-native-tiff-unit-receipt-20261101.toml),
+with a separate eight-test integrity suite. The read-only
+`research_runners.bkg_berlin_source_readiness_gate_v0` now
+**requires both** independent original-source receipts before
+producing a geometry-coverage screening diagnostic.
+Neither run authorizes cm/metre conversion, a building flood depth,
+an insurer portfolio risk score or a CAT loss.
 
 The five-building Berlin BLD4 pilot now has verified *original*
 signed-Int16 BKG KOSTRA raw-code support both inside footprints and

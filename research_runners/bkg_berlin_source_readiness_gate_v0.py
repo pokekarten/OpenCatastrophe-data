@@ -23,6 +23,10 @@ BKG_TIFF_SHA = "7e11fcf4cac2ce07fdefa3dc0fa4414b2cc248c516a373a12c14c33b30726a6f
 WFS_RESPONSE_SHA = "c4342109c0c13b31996d7cb9a5a16db56af3e536dc4910938a9fc72bab049bba"
 BKG_URL = ("https://daten.gdz.bkg.bund.de/produkte/sonstige/starkregen/aktuell/"
            "be/maxdepth_kostra/s32790/starkregen_maxdepth_kostra_32790_5820_10_be.tif")
+NATIVE_UNIT_RECEIPT = (ROOT / "docs/research" /
+    "bkg-berlin-original-native-tiff-unit-receipt-20261101.toml")
+NATIVE_UNIT_RUN_ID = 41353177132
+NATIVE_UNIT_MAIN_SHA = "84638de4e07b887b7f5658abf87a070b0d167c82"
 BANDS = ((0, 1), (1, 3), (3, 5))
 # Independently observed exact original aggregate receipt, not recalculated
 # from a static masked TIFF. A changed input needs a new reviewed version,
@@ -181,9 +185,75 @@ def assess_receipt(receipt: dict) -> dict:
     }
 
 
+def assess_native_unit_claims(receipt: dict) -> dict:
+    """Independently pin original GDAL scalar defaults, not depth conversion."""
+    if not isinstance(receipt, dict):
+        raise EvidenceBlocked("BKG native TIFF unit receipt must be a table")
+    expected = {
+        "receipt_schema": "bkg-berlin-kostra-original-int16-native-unit-metadata-v0",
+        "original_github_actions_run_id": NATIVE_UNIT_RUN_ID,
+        "original_main_commit": NATIVE_UNIT_MAIN_SHA,
+        "original_bkg_source_url": BKG_URL,
+        "original_bkg_tiff_sha256": BKG_TIFF_SHA,
+        "original_bkg_tiff_bytes": 47_280_200,
+        "original_raster_crs": "EPSG:25832",
+        "original_raster_dtype": "int16",
+        "original_raster_dimensions_pixels": [10000, 10000],
+        "original_band_count": 1,
+        "original_int16_nodata": -9999,
+        "unit_metadata_present": False,
+        "recognized_unit_candidate_present": False,
+        "unit_metadata_unrecognized_or_ambiguous": False,
+        "unit_source_fields_with_claims": [],
+        "band_description_present": False,
+        "explicit_scale_or_offset_tag_keys_present": False,
+        "runtime_gdal_band_scale": 1.0,
+        "runtime_gdal_band_offset": 0.0,
+        "gdal_scale_and_offset_may_be_implicit_defaults": True,
+        "source_units_and_scale_physically_calibrated": False,
+        "raw_int16_values_not_imputed_as_m_or_cm": True,
+        "source_nodata_not_interpreted_as_dry": True,
+        "no_original_pixel_values_or_building_geometry_reported": True,
+        "original_tiff_bytes_persisted_in_repository": False,
+        "model_input_approved": False,
+    }
+    for field, canonical in expected.items():
+        current = receipt.get(field)
+        if type(current) is not type(canonical) or current != canonical:
+            raise EvidenceBlocked("original native BKG scalar metadata changed: " + field)
+    if receipt.get("original_github_actions_run_url") != (
+        "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/"
+        + str(NATIVE_UNIT_RUN_ID)
+    ):
+        raise EvidenceBlocked("native scalar source workflow link changed")
+    return {
+        "original_native_tiff_band_metadata_run_id": NATIVE_UNIT_RUN_ID,
+        "source_sha_crosschecked_between_independent_runs": True,
+        "explicit_unit_metadata_found": False,
+        "explicit_source_scale_offset_tag_found": False,
+        "gdal_scalar_values_are_possible_implicit_defaults": True,
+        "raw_int16_to_physical_water_depth_calibration_authorized": False,
+    }
+
+
+def assess_both_receipts(spatial: dict, native_unit: dict) -> dict:
+    """Screen immutable original geometry and original native scalar evidence.
+
+    Outputs metadata coverage only, never inferred depths or insured risk.
+    """
+    base = assess_receipt(spatial)
+    base["native_tiff_unit_evidence"] = assess_native_unit_claims(native_unit)
+    base["original_source_workflow_run_ids"] = [
+        base["source_evidence_run_id"], NATIVE_UNIT_RUN_ID,
+    ]
+    return base
+
+
 def main():
-    doc = tomllib.loads(RECEIPT.read_text(encoding="utf-8"))
-    print(json.dumps(assess_receipt(doc), sort_keys=True, allow_nan=False))
+    spatial = tomllib.loads(RECEIPT.read_text(encoding="utf-8"))
+    native = tomllib.loads(NATIVE_UNIT_RECEIPT.read_text(encoding="utf-8"))
+    print(json.dumps(assess_both_receipts(spatial, native),
+                     sort_keys=True, allow_nan=False))
 
 
 if __name__ == "__main__":
