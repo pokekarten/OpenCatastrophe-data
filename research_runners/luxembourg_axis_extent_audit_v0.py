@@ -18,8 +18,6 @@ import sqlite3
 import tempfile
 import zipfile
 
-from pyproj import Transformer
-
 from scripts.luxembourg_gpkg_zip_preflight_v0 import preflight, OriginalPreflightError
 
 SOURCE_ZIP_SHA256 = "a271b1cbcc22ded018f9bab0c150e9f33efa6cb7ebca8cf4dc4bdb1f5d84859a"
@@ -49,6 +47,10 @@ def geographic_screen(extent: tuple[float, float, float, float]) -> dict:
     xmin, ymin, xmax, ymax = extent
     if not (xmin < xmax and ymin < ymax and all(0 <= v <= 500000 for v in extent)):
         raise AxisAuditError("Unexpected EPSG:2169 projected envelope")
+    try:
+        from pyproj import Transformer
+    except ImportError as exc:
+        raise AxisAuditError("Pinned optional PyProj spatial runtime required") from exc
     transformer = Transformer.from_crs(2169, 4326, always_xy=True)
     east_west = (EPSG_LU_WGS84[0] - BUFFER_DEG, EPSG_LU_WGS84[2] + BUFFER_DEG)
     south_north = (EPSG_LU_WGS84[1] - BUFFER_DEG, EPSG_LU_WGS84[3] + BUFFER_DEG)
