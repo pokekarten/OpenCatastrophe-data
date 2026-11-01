@@ -50,3 +50,29 @@ Executed live against CAT-only Neon main on 2026-11-01:
 5. Keep the 2016 hydrological event research and current building register separate until all temporal, spatial, provenance, rights and insured-value gates pass.
 
 No external source raw bytes or private insurance information are committed, and no model simulation, original event footprint or insured risk is created by this diagnostic.
+
+## 2026-11-01 source-discovery correction: 2008–2023 older regular BD TOPO editions
+
+IGN's official *BD TOPO Historique v1* technical note (March 2024, section 2.4, p. 6) explicitly **distinguishes** the narrowly scoped 1993–2009 historic product from **older editions of the regular BD TOPO product dated 2008–2023**, which it directs users to retrieve via the official Geoservices BD TOPO download interface:
+
+- Primary IGN note: https://geoservices.ign.fr/sites/default/files/2024-03/Note_BDTOPO_1-0.pdf
+- Current dataset discovery: https://cartes.gouv.fr/rechercher-une-donnee/dataset/IGNF_BD-TOPO
+- Official API guide (modified 2026-05-27): https://cartes.gouv.fr/aide/fr/guides-utilisateur/utiliser-les-services-de-la-geoplateforme/telechargement/
+
+This corrects the possible inference that *no* 2015/2016 BD TOPO edition can exist just because the **separately labelled** BD TOPO Historique product ends around 2009. However, the *particular* 2015/2016 Seine-et-Marne `D077` product archive, as-of semantics, raw file availability and licence have **not** yet been verified or imported. A direct tool-mediated official GetResource query returned HTTP 403 on 2026-11-01; **403 must never be interpreted as zero historical datasets**.
+
+The official Gepoplateforme download API documents Atom RFC 4287, paging via `page` / `limit` (max 50) and distinct GetCapabilities, GetResource and Download methods. Recommended bounded manual discovery query (not a confirmed product list):
+
+```text
+https://data.geopf.fr/telechargement/resource/BD-TOPO?zone=D077&editionDateFrom=2015-01-01&editionDateTo=2016-12-31&page=1&limit=50&lang=fre
+```
+
+`research_runners/ign_bdtopo_historic_atom_catalogue_v0.py` now provides a **metadata-only, offline** pagination and source-identity preflight using *locally saved official XML responses*. Example:
+
+```sh
+python research_runners/ign_bdtopo_historic_atom_catalogue_v0.py \
+  --page /private/ign_bdtopo_d077_2015_2016_page1.xml \
+  --page /private/ign_bdtopo_d077_2015_2016_page2.xml
+```
+
+The source XML is never committed. The validator hashes each supplied metadata page, requires consistent `totalentries`, unique Atom IDs, contiguous full preceding pages and capped page sizes; it labels file-title years **candidates only**, never accepted edition dates. Even a complete catalogue is **not** proof of an obtainable official source archive, georeferenced buildings in 2016, independent identity, licence or insurer TIV. Synthetic-only `tests/test_ign_bdtopo_historic_atom_catalogue_v0.py` covers pagination, duplicate/malformed metadata, 403 HTML responses and unsafe scope. Do not copy provider archive download bytes or provider-only data into the public Git repository before the normal admission review.
