@@ -74,7 +74,9 @@ def _positive_count(raw: str | None, key: str) -> int | None:
     return int(raw)
 
 
-def inspect_feature_xml(raw: bytes) -> dict:
+def inspect_feature_xml(raw: bytes, *, diagnostic_only: bool = False) -> dict:
+    if type(diagnostic_only) is not bool:
+        raise BuildingFeatureBlocked("original WFS diagnostic mode must be explicitly boolean")
     if type(raw) is not bytes or not 0 < len(raw) <= MAX_BYTES:
         raise BuildingFeatureBlocked("unsupported WFS original XML byte size")
     up = raw.upper()
@@ -99,13 +101,16 @@ def inspect_feature_xml(raw: bytes) -> dict:
         if not (tag == "Building" or tag.endswith("}Building")):
             raise BuildingFeatureBlocked("WFS returned unexpected non-Building feature type")
     reported_returned = _positive_count(root.get("numberReturned"), "numberReturned")
-    if reported_returned is not None and reported_returned != len(members):
-        raise BuildingFeatureBlocked(
-            f"WFS returned-member mismatch: reported={reported_returned}, parsed_members={len(members)}, root_children={len(root)}"
-        )
     reported_matched = _positive_count(root.get("numberMatched"), "numberMatched")
-    if reported_matched is not None and reported_matched < len(members):
-        raise BuildingFeatureBlocked("WFS matched count contradicts feature count")
+    count_inconsistent = (
+        (reported_returned is not None and reported_returned != len(members))
+        or (reported_matched is not None and reported_matched < len(members))
+    )
+    if count_inconsistent and not diagnostic_only:
+        raise BuildingFeatureBlocked(
+            f"WFS count mismatch: numberReturned={reported_returned}, numberMatched={reported_matched}, "
+            f"parsed_members={len(members)}, root_children={len(root)}"
+        )
 
     srs_names = set()
     geometry_markup = False
@@ -132,7 +137,12 @@ def inspect_feature_xml(raw: bytes) -> dict:
     )
     # Do not emit observed geometry IDs or coordinate values.
     return {
-        "original_feature_members_returned": len(members),
+        "source_validation_status": (
+            "BLOCKED_CONTRADICTORY_WFS_COUNTS" if count_inconsistent
+            else "MEMBER_COUNTS_CONSISTENT_NOT_ADMITTED"
+        ),
+        "original_feature_members_parsed_not_admitted": len(members),
+        "reported_member_count_consistent": not count_inconsistent,
         "reported_number_returned_if_integer": reported_returned,
         "reported_number_matched_if_integer": reported_matched,
         "source_geometry_markup_present": geometry_markup,
@@ -155,7 +165,7 @@ def _open(req: request.Request, timeout: int):
     return client.open(req, timeout=timeout)
 
 
-def probe(*, open_request=_open) -> dict:
+def probe(*, open_request=_open, diagnostic_only: bool = False) -> dict:
     validate_frozen_getfeature()
     req = request.Request(
         URL, method="GET",
@@ -187,7 +197,7 @@ def probe(*, open_request=_open) -> dict:
         raise
     except (error.HTTPError, error.URLError, TimeoutError, OSError) as exc:
         raise BuildingFeatureBlocked("bounded original WFS GetFeature unavailable") from exc
-    details = inspect_feature_xml(raw)
+    details = inspect_feature_xml(raw, diagnostic_only=diagnostic_only)
     return {
         "profile": "oc-hessen-alkis-building-one-original-wfs-feature-v0",
         "source_id": SOURCE,
@@ -211,11 +221,14 @@ def probe(*, open_request=_open) -> dict:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--live", action="store_true")
+    parser.add_argument("--diagnostic-only", action="store_true",
+                        help="record blocked member/header count mismatch as metadata only")
     args = parser.parse_args(argv)
     if not args.live:
         parser.error("one original WFS GetFeature requires --live")
     try:
-        print(json.dumps(probe(), sort_keys=True, allow_nan=False))
+        print(json.dumps(probe(diagnostic_only=args.diagnostic_only),
+                         sort_keys=True, allow_nan=False))
     except (BuildingFeatureBlocked, CapabilityBlocked, OSError, ValueError) as exc:
         print(json.dumps({"status": "BLOCKED", "reason": str(exc),
                           "model_input_approved": False}), file=sys.stderr)
