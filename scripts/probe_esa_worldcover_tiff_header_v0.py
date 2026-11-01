@@ -194,6 +194,17 @@ def probe(*, open_request=_open, contract_path: Path = CONTRACT_PATH) -> dict:
     except (error.HTTPError, error.URLError, OSError, TimeoutError) as exc:
         raise HeaderBlocked("reviewed WorldCover 4096-byte Range request unavailable") from exc
     shape = inspect_tiff_header(raw)
+    from scripts.parse_worldcover_geotiff_grid_v0 import (
+        GeoGridBlocked, inspect_geotiff_grid,
+    )
+    try:
+        geo = inspect_geotiff_grid(
+            raw,
+            width=shape["image_width_if_inline"],
+            height=shape["image_length_if_inline"],
+        )
+    except GeoGridBlocked as exc:
+        raise HeaderBlocked("malformed geospatial metadata within exact TIFF header") from exc
     return {
         "profile": "oc-esa-worldcover-v200-tiff-header-v0",
         "source_id": SOURCE,
@@ -212,6 +223,7 @@ def probe(*, open_request=_open, contract_path: Path = CONTRACT_PATH) -> dict:
         "access_contract_sha256": contract_hash,
         "code_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         **shape,
+        **geo,
         "full_original_sha256_verified": False,
         "cog_layout_verified": False,
         "crs_verified": False,
