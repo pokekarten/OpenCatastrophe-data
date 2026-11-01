@@ -108,6 +108,30 @@ class FEMAObservationGateTests(unittest.TestCase):
         self.assertEqual(x["production_before_event_count"], 1)
         self.assertEqual(x["potential_field_observed_holdout_count"], 0)
 
+    def test_pre_event_imagery_never_enters_field_holdout(self):
+        data = fixture()
+        data["features"] = [record(1, "FA", "MAJ")]
+        data["features"][0]["attributes"]["IMG_DATE"] = epoch("2020-08-24T00:00:00")
+        x = preflight(data)
+        self.assertEqual(x["imagery_before_event_count"], 1)
+        self.assertEqual(x["potential_field_observed_holdout_count"], 0)
+
+    def test_missing_production_date_is_not_proof_of_field_observation(self):
+        data = fixture()
+        data["features"] = [record(1, "FA", "MAJ")]
+        data["features"][0]["attributes"]["PROD_DATE"] = None
+        x = preflight(data)
+        self.assertEqual(x["missing_production_date_count"], 1)
+        self.assertEqual(x["potential_field_observed_holdout_count"], 0)
+
+    def test_imagery_after_production_not_holdout(self):
+        data = fixture()
+        data["features"] = [record(1, "FA", "MAJ")]
+        data["features"][0]["attributes"]["IMG_DATE"] = epoch("2020-08-28T00:00:00")
+        x = preflight(data)
+        self.assertEqual(x["imagery_after_production_count"], 1)
+        self.assertEqual(x["potential_field_observed_holdout_count"], 0)
+
     def test_reject_unknown_damage_or_invalid_depth(self):
         data = fixture()
         data["features"][0]["attributes"]["DMG_LEVEL"] = "ZZZ"
