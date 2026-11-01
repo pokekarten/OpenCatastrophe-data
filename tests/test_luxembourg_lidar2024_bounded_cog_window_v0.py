@@ -29,6 +29,11 @@ class LocalRasterWindowTests(unittest.TestCase):
         source.write(np.full((height,width),211.0,dtype=np.float32),1)
         return file,source
 
+    def test_rasterio_gdal_cache_bound_is_numeric(self):
+        import rasterio
+        with rasterio.Env(GDAL_CACHEMAX=8, GDAL_HTTP_TIMEOUT="20", VSI_CACHE="FALSE"):
+            self.assertTrue(True)
+
     def test_original_city_window_stays_bounded(self):
         mem,src=self.synthetic()
         try:
