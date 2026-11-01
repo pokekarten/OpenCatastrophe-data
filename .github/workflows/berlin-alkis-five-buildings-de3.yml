@@ -51,7 +51,9 @@ jobs:
           nutsfile="$RUNNER_TEMP/deu-nuts2021-10M.json"
           geodb="$RUNNER_TEMP/berlin-geography.cat.sqlite"
           nutsdb="$RUNNER_TEMP/berlin-nuts2021.cat.sqlite"
-          trap 'rm -f "$geofile" "$nutsfile" "$geodb" "$nutsdb"' EXIT
+          buildingdb="$RUNNER_TEMP/berlin-5-official-buildings.cat.sqlite"
+          export BERLIN_CAT4="$buildingdb"
+          trap 'rm -f "$geofile" "$nutsfile" "$geodb" "$nutsdb" "$buildingdb"' EXIT
           curl --fail --location --silent --show-error \
             --proto '=https' --proto-redir '=https' --connect-timeout 20 \
             --max-time 120 --retry 0 --max-filesize 7340032 \
@@ -68,6 +70,24 @@ jobs:
             --geo-original "$geofile" --nuts2021-original "$nutsfile" \
             --nuts-scale 10M --output "$nutsdb" > /dev/null
           python -m research_runners.berlin_alkis_gebaeude_five_feature_join_v0 \
-            --live --cat1 "$geodb" --cat2 "$nutsdb"
-          # Official original WFS feature data are never written to filesystem;
-          # provider original boundary assets and CAT SQLite stages deleted.
+            --live --cat1 "$geodb" --cat2 "$nutsdb" \
+            --cat4-output "$buildingdb"
+          python - <<'PY'
+          import os
+          import sqlite3
+          from pathlib import Path
+          from research_runners.berlin_alkis_gebaeude_five_feature_join_v0 import CAT4_APP_ID
+          db = Path(os.environ["BERLIN_CAT4"])
+          with sqlite3.connect(db) as conn:
+              if conn.execute("PRAGMA application_id").fetchone()[0] != CAT4_APP_ID:
+                  raise SystemExit("BLOCKED: wrong CAT4 building database format")
+              n = conn.execute("SELECT COUNT(*) FROM building_sample").fetchone()[0]
+              codes = conn.execute("SELECT DISTINCT nuts1_region FROM building_sample").fetchall()
+              if not 1 <= n <= 5 or codes != [("DE3",)]:
+                  raise SystemExit("BLOCKED: derived real building CAT stage invalid")
+              if conn.execute("SELECT model_admitted FROM provenance").fetchone()[0] != 0:
+                  raise SystemExit("BLOCKED: model admission cannot be implied by staging")
+          print("PASS: bounded official Berlin buildings staged as source-derived CAT4 polygons in DE3")
+          PY
+          # WFS original response and unfiltered attributes are never written.
+          # Derived CAT4 geometry is temporary only; CAT1/CAT2/CAT4 deleted.
