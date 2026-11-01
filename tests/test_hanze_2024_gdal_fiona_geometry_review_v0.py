@@ -56,6 +56,32 @@ def verify_zip(blob):
 
 
 class HANZEGDALFionaValidationTests(unittest.TestCase):
+    def test_real_original_crossreader_receipt_and_cat_admission_gate(self):
+        from research_runners.hanze_2024_cross_reader_source_receipt_v0 import (
+            HANZE_GDAL_PYSHP_ORIGINAL_CROSSCHECK_V0 as e,
+        )
+        from research_runners.hanze_regions2024_zip_original_receipt_v0 import PINNED_ZIP_SHA256
+        self.assertEqual(e["source_zip_original_sha256"], PINNED_ZIP_SHA256)
+        self.assertEqual(e["original_geometries"], 1449)
+        self.assertEqual(e["both_readers_valid"], 555)
+        self.assertEqual(e["both_readers_flagged_invalid"], 894)
+        self.assertEqual(e["both_readers_valid"] + e["both_readers_flagged_invalid"],
+                         e["original_geometries"])
+        self.assertEqual(e["gdal_valid_pyshp_invalid"], 0)
+        self.assertEqual(e["gdal_invalid_pyshp_valid"], 0)
+        self.assertEqual(e["geometric_type_disagreements"], 0)
+        self.assertEqual(e["identified_invalid_family_counts"]["Ring Self-intersection"], 894)
+        self.assertTrue(e["dbf_code_order_consistent_without_export"])
+        self.assertTrue(e["same_geos_topological_validity_algorithm_both_readers"])
+        for key in ("third_independent_topology_engine_or_manual_region_review_completed",
+                    "source_originals_automatically_fixed",
+                    "original_geometries_or_region_ids_exported",
+                    "historical_hazard_extent_or_insured_loss_proven",
+                    "commercial_geometry_use_rights_reviewed",
+                    "all_source_regions_model_eligible",
+                    "model_data_admitted"):
+            self.assertFalse(e[key])
+
     @unittest.skipUnless(HAS_ENGINE,"Fiona/GDAL/Shapely installed only in source CI")
     def test_original_like_polygon_read_via_gdal_is_valid(self):
         out=verify_zip(original_like_zip([REGULAR_RING]))
