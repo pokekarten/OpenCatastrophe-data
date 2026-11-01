@@ -67,6 +67,14 @@ def compare_repair_methods(source) -> dict:
         describe_candidate(line, "shapely_make_valid_linework_keepcollapsed"),
         describe_candidate(structure, "shapely_make_valid_structure_dropcollapsed"),
     ]
+    # A common legacy GEOS approach is zero-width buffer. Challenge it
+    # independently; it may discard overlapping/lower-dimensional parts.
+    # Its output is not an endorsement or a physical ground truth.
+    buffer_zero = source.buffer(0)
+    buffer_zero_meta = describe_candidate(buffer_zero, "shapely_buffer_zero")
+    if buffer_zero_meta["coordinates"] > MAX_OUTPUT_COORDINATES:
+        raise ValueError("unbounded zero-buffer geometry expansion")
+
     for c in candidates:
         if c["coordinates"] > MAX_OUTPUT_COORDINATES:
             raise ValueError("unbounded geometry repair expansion")
@@ -87,6 +95,22 @@ def compare_repair_methods(source) -> dict:
         symmetric = _round(sym, 2)
         iou = _round((uni - sym) / uni, 10) if uni > 0 else None
 
+    buffer_comparable = (
+        buffer_zero_meta["topology_valid"] and not buffer_zero_meta["empty"]
+        and buffer_zero_meta["geometry_type"] in POLYGON_TYPES
+        and candidates[0]["topology_valid"]
+        and candidates[0]["geometry_type"] in POLYGON_TYPES
+    )
+    buffer_area_delta = buffer_sym = buffer_iou = None
+    if buffer_comparable:
+        # Valid method A vs valid method C; NEVER invalid original area.
+        buffer_area_delta = _round(abs(float(buffer_zero.area) - float(line.area)), 2)
+        buffer_sym = _round(float(line.symmetric_difference(buffer_zero).area), 2)
+        union_area = float(line.union(buffer_zero).area)
+        buffer_iou = (_round((union_area - float(
+            line.symmetric_difference(buffer_zero).area)) / union_area, 10)
+            if union_area > 0 else None)
+
     return {
         "receipt_kind": "CEMS_EMSN028_INVALID_FLOOD_TOPOLOGY_REPAIR_CHALLENGE_V0",
         "source_geometry_type": source.geom_type,
@@ -100,6 +124,11 @@ def compare_repair_methods(source) -> dict:
         "candidate_area_absolute_delta_m2": area_delta,
         "candidate_symmetric_difference_area_m2": symmetric,
         "candidate_intersection_over_union": iou,
+        "zero_buffer_challenge": buffer_zero_meta,
+        "zero_buffer_polygonal_and_comparable_to_linework": buffer_comparable,
+        "zero_buffer_vs_linework_area_delta_m2": buffer_area_delta,
+        "zero_buffer_vs_linework_symmetric_difference_m2": buffer_sym,
+        "zero_buffer_vs_linework_intersection_over_union": buffer_iou,
         "methods_have_independent_physical_validation": False,
         "aoi04_specific_original_polygon_verified": False,
         "source_rights_approved": False,
