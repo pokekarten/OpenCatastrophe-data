@@ -31,6 +31,20 @@ The Python runner:
 
 The outcome is **observed original-source QA**, not data admission. The ZIP central-directory scan alone does not validate all member CRCs, municipality 08234 vintage, precise polygon topology, 3D source vertical datum, model completeness, licensability or loss-model use.
 
+## Observed original-byte evidence (GitHub Actions, 2026-11-01)
+
+This is a real public GitHub-source receipt, **not** a synthetic fixture or a downloaded asset committed to our repository. The [exact original-source Actions run](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41330508159/job/124919409502) fetched the pinned 40,347,627-byte official Hokota sample, verified the pinned Git blob SHA-1 above and independently calculated original ZIP SHA-256 **`d8e3423388b41a639e9f814cdfbff090bd5c0bb5a99083f97d143fdd6ff56151`**. The ZIP had **233 entries**, **9 building GML** members, **5** under the 4-MiB small-file inspection limit, and **3** deterministically sampled GML members; the other 6 building GML files were not XML-screened.
+
+| Selected original GML (content SHA-256 prefix) | Byte count | Building elements | Measured-height fields | LOD0 footprint rings screened | Unresolved LOD0 cases | Outcome |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `b36a08bf5bb7` | 636,070 | 107 | 83 | 107 | 0 | Structural screen pass |
+| `1ee3d4de8ccd` | 2,376,027 | 346 | 239 | 346 | 0 | Structural screen pass |
+| `eb923f034182` | 3,244,963 | 474 | 373 | 399 | 75 | **Partial** (74 beyond explicit 400-polygon budget; one additional unresolved case) |
+
+Across the three *distinct* sampled GML members, the results total **927 parsed building elements**, **695 present measured-height fields**, **852 screened LOD0 footprint rings**, and **75 unresolved LOD0 cases**. These counts are restricted to **three of nine building GML files in a deliberately limited regional subset**, not Hokota-wide building totals, unique across all other source releases, insured buildings, or valid footprints. The 400-polygon screening budget is unchanged: a large authentic file is reported **partial** with every overflowed polygon explicitly unresolved, not silently upgraded to a fully validated GML or discarded as corrupt. This diagnostic reveals the *limitation of our preflight policy*, rather than evidence of invalid original geometry.
+
+The two earliest sample members passed their **limited XML/CRS/ring structure** screens; none have passed independent polygon topology, source completeness, vertical-datum, provenance beyond the Git pin, data-specific rights review, municipal registration or CAT model admission. Member reads exercised the ZIP CRC verification for these three chosen GML members **only**. The remaining archive entries' CRCs and all building-geometry comprehensiveness remain unverified. No original bytes or confidential assets were published or stored in Git.
+
 ## Independent scientific follow-up
 
 First use the exact-source receipt to determine whether the historic sample can actually be screened with the modern CityGML validator. The sample is a different municipality/year from the frozen Shinjuku 2024 GraphQL metadata contract. Any CRS differences, legacy schema or geometry encoding differences must be reported rather than reinterpreted silently. An appropriate next independent scientific test is a bounded geometry/CRS verification against a separately sourced reference with clearly disjoint provenance and matching vintage. No provider-service API requests are authorized by the public GitHub sample workflow.
