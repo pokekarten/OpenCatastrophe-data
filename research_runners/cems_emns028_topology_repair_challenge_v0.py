@@ -52,7 +52,7 @@ def describe_candidate(geom, method: str) -> dict:
     }
 
 
-def compare_repair_methods(source) -> dict:
+def compare_repair_methods(source, gauge_control=None) -> dict:
     if source.geom_type not in POLYGON_TYPES:
         raise ValueError("expected a source polygon or multipolygon")
     if source.is_empty or source.is_valid:
@@ -111,6 +111,38 @@ def compare_repair_methods(source) -> dict:
             line.symmetric_difference(buffer_zero).area)) / union_area, 10)
             if union_area > 0 else None)
 
+    # The historic Ponthierry gauge control is a public point, NOT a
+    # building, insured property or observed water depth. Source CRS must
+    # match the existing EPSG:32631 FileGDB metadata before this call.
+    gauge_readout = None
+    if gauge_control is not None:
+        if gauge_control.geom_type != "Point" or gauge_control.is_empty:
+            raise ValueError("gauge control must be one nonempty point")
+        reports = []
+        for method, geom in (
+            ("linework", line),
+            ("structure", structure),
+            ("buffer_zero", buffer_zero),
+        ):
+            valid_poly = (
+                geom.is_valid and not geom.is_empty and
+                geom.geom_type in POLYGON_TYPES
+            )
+            reports.append({
+                "repair_method": method,
+                "point_inside_or_on_boundary": bool(geom.covers(gauge_control))
+                if valid_poly else None,
+                "distance_to_repaired_extent_m": _round(
+                    geom.distance(gauge_control), 2) if valid_poly else None,
+            })
+        gauge_readout = {
+            "context_point_kind": "PONTHIERRY_PUBLIC_GAUGE_CONTROL_NOT_INSURED_ASSET",
+            "crs_epsg": 32631,
+            "comparisons": reports,
+            "point_overlay_is_historical_inundation_proof": False,
+            "point_overlay_is_claims_or_insured_loss": False,
+        }
+
     return {
         "receipt_kind": "CEMS_EMSN028_INVALID_FLOOD_TOPOLOGY_REPAIR_CHALLENGE_V0",
         "source_geometry_type": source.geom_type,
@@ -129,6 +161,7 @@ def compare_repair_methods(source) -> dict:
         "zero_buffer_vs_linework_area_delta_m2": buffer_area_delta,
         "zero_buffer_vs_linework_symmetric_difference_m2": buffer_sym,
         "zero_buffer_vs_linework_intersection_over_union": buffer_iou,
+        "gauge_control_repaired_method_context": gauge_readout,
         "methods_have_independent_physical_validation": False,
         "aoi04_specific_original_polygon_verified": False,
         "source_rights_approved": False,
