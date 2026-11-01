@@ -63,6 +63,16 @@ The full original-content workflow [GitHub Actions run 41353560374](https://gith
 
 The follow-up exact-original source run [41353703644](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41353703644) **passed** and classified **all 66 invalid polygons as `Ring Self-intersection`** using coordinate-free GEOS reason categories. No feature identifier or offending coordinate was emitted. This is an actual reproducible source-quality signal: repair or quarantine must distinguish topological invalidity from a missing building, and any geometry repair requires separate before/after area and identity audits. No cross-source building identity or spatial accuracy claim is implied.
 
+## Quarantined repair comparison of the 66 invalid original polygons
+
+The follow-up module `research_runners/luxembourg_geobase_2026_repair_diagnostic_v0.py` examines **only geometries already rejected for invalid source topology**, in the same fixed-source temporary process as the original full scan. The method is `Shapely 2.1.2 / GEOS make_valid(method="linework")`. It is intentionally a diagnostic, **not** a source correction or an automatic model input.
+
+For every invalid input, it checks that the GEOS repair output is topologically valid and has at least one positive-area polygonal component. It separately counts outcomes that remain unusable, split into multiple polygonal components, or contain lower-dimensional line/point debris. It computes only anonymous aggregate absolute/relative changes between the invalid original's **nominal GEOS area** and the repaired polygonal area. The original's area is ambiguous for a self-intersecting ring and **is not physical ground truth**; a percentage of that nominal area cannot validate a footprint.
+
+The report must keep all repaired candidates **quarantined**, including single-polygon repairs with small numeric area deltas. No original ID, coordinates, per-object area, repaired WKB, new geometry or candidate footprint is written to files, stdout, Git, Neon, insurer portfolios or Oasis exposure. Any repairs later used in a hazard overlay would require independent source-axis/geodetic control, source-specific rights and survey-vintage review, split/merge identity review, manual sample adjudication and a separately accepted repair algorithm.
+
+The follow-up source workflow is the same `.github/workflows/luxembourg-geobase-2026-geometry-quality.yml`; synthetic tests include an invalid bow-tie source ring where `make_valid(linework)` yields multiple positive-area components and the invalid source's nominal area is zero. **Actual original repair outcomes must be read from the newest independently successful source workflow**, not inferred from this synthetic example.
+
 ### Integration boundary
 
 This research evidence may later support a **physical building source intake** with a separate scientific-quality review, source-specific CC0 terms/rights record, pinned artifact identity and verified coordinate-axis semantics. It must **not** populate `exposure.exposure_unit.insured_value`, `insurance.policy_v1`, `insurance.policy_tiv_component_v1`, or real insurer-specific portfolios: none of those can be inferred from official building footprints. Keep the raw geometry out of the CAT-only Neon metadata registry until an explicitly approved persistent storage and admission design exists.
