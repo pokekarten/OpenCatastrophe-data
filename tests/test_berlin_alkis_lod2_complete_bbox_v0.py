@@ -156,13 +156,35 @@ class CompletenessAndMatchingTests(unittest.TestCase):
         a,h=pair()
         h["features"][1]["geometry"]=copy.deepcopy(h["features"][0]["geometry"])
         h["features"][1]["id"]="different-source-id-same-footprint"
-        with self.assertRaisesRegex(CompleteBboxError,"duplicate original source footprint"):
-            evaluate(raw(a),raw(h))
+        result=evaluate(raw(a),raw(h))
+        self.assertTrue(result["duplicate_footprints_quarantined"])
+        self.assertEqual(result["duplicate_footprint_groups_by_source"]["loD2_2022"],1)
+        self.assertEqual(result["duplicate_source_features_quarantined_by_source"]["loD2_2022"],2)
+        self.assertEqual(result["unambiguous_one_to_one_footprints"],1)
+        self.assertEqual(result["unmatched_height_product_count"],2)
+        self.assertEqual(result["matched_positive_numeric_height_count"],1)
+        self.assertEqual(result["confirmed_height_values_assigned_to_CAT4"],0)
         a,h=pair()
         a["features"][1]["geometry"]=copy.deepcopy(a["features"][0]["geometry"])
         a["features"][1]["id"]="different-alkis-id-same-footprint"
-        with self.assertRaisesRegex(CompleteBboxError,"duplicate original source footprint"):
-            evaluate(raw(a),raw(h))
+        result=evaluate(raw(a),raw(h))
+        self.assertEqual(result["duplicate_footprint_groups_by_source"]["alkis"],1)
+        self.assertEqual(result["duplicate_source_features_quarantined_by_source"]["alkis"],2)
+        self.assertEqual(result["unambiguous_one_to_one_footprints"],1)
+        self.assertFalse(result["model_input_admitted"])
+
+    @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
+    def test_three_identical_polygon_members_all_quarantined_independent_of_ids(self):
+        a,h=pair()
+        for i in (1,2):
+            h["features"][i]["geometry"]=copy.deepcopy(h["features"][0]["geometry"])
+        r=evaluate(raw(a),raw(h))
+        self.assertEqual(r["duplicate_source_features_quarantined_by_source"]["loD2_2022"],3)
+        self.assertEqual(r["duplicate_footprint_groups_by_source"]["loD2_2022"],1)
+        self.assertEqual(r["unambiguous_one_to_one_footprints"],0)
+        self.assertEqual(r["loD2_2022_in_bbox"],3)
+        self.assertEqual(r["matched_positive_numeric_height_count"],0)
+        self.assertFalse(r["model_input_admitted"])
 
     @unittest.skipUnless(HAS_SPATIAL, "Reviewed Shapely spatial job required")
     def test_two_exact_original_requests_and_no_serialized_source_values(self):
