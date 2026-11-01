@@ -196,7 +196,7 @@ def audit_crosswalk(
         })
     if blocked_region_diagnostics:
         raise CrosswalkError(
-            "real-source polygon crosswalk NOT ADMITTED: "
+            "real-source high-coverage polygon crosswalk NOT ADMITTED: "
             + json.dumps(sorted(blocked_region_diagnostics,
                                 key=lambda row: row["best_nuts1"]),
                          sort_keys=True, separators=(",", ":"))
