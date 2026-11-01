@@ -9,6 +9,8 @@ on:
       - 'access/esa.worldcover.2021.v200.json'
       - 'access/esa.worldcover.2021.v200.md'
       - 'scripts/probe_esa_worldcover_classified_block185_v0.py'
+      - 'scripts/worldcover_synthetic_polygon_overlap_v0.py'
+      - 'tests/test_worldcover_synthetic_polygon_overlap_v0.py'
       - 'tests/test_probe_esa_worldcover_classified_block185_v0.py'
       - '.github/workflows/esa-worldcover-one-classified-block185.yml'
   workflow_dispatch:
@@ -33,5 +35,7 @@ jobs:
         run: python scripts/render_public_views.py --check --scope access
       - name: Synthetic class-code, TIFF compression, size and security negative tests
         run: python -m unittest tests.test_probe_esa_worldcover_classified_block185_v0 -v
-      - name: Exactly one fixed 4KiB header, 10368B table and 56442B block; aggregate counts only
-        run: python -m scripts.probe_esa_worldcover_classified_block185_v0 --live
+      - name: Synthetic polygon geometry, weighted area, and centroid-bias tests
+        run: python -m unittest tests.test_worldcover_synthetic_polygon_overlap_v0 -v
+      - name: Original 4KiB header, 10368B table, 56442B block plus synthetic polygon overlap
+        run: python -m scripts.probe_esa_worldcover_classified_block185_v0 --live --synthetic-polygon
