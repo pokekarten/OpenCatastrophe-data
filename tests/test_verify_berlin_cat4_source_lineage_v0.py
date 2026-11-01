@@ -82,6 +82,17 @@ class BerlinResearchLineageTests(unittest.TestCase):
         self.assertEqual(before, tuple(hashlib.sha256(p.read_bytes()).hexdigest()
                                        for p in (self.registry, self.building)))
 
+    def rejected_mutation(self, path: Path, statement: str, expected: str, params=()):
+        # A separate read-only SQLite connection must see committed mutations.
+        original = path.read_bytes()
+        try:
+            self.change(path, statement, params)
+            with self.assertRaisesRegex(LineageError, expected):
+                verify(self.registry, self.building)
+        finally:
+            # Synthetic standalone fixture only. Restore before next case.
+            path.write_bytes(original)
+
     def test_candidate_missing_or_swapped_provider_rejected(self):
         for statement in (
             "UPDATE candidate SET provider='Fake'",
@@ -92,19 +103,14 @@ class BerlinResearchLineageTests(unittest.TestCase):
             "DELETE FROM candidate",
         ):
             with self.subTest(sql=statement):
-                with closing(sqlite3.connect(self.registry)) as db:
-                    db.execute("SAVEPOINT test")
-                    db.execute(statement)
-                    with self.assertRaisesRegex(LineageError, "identity/admission"):
-                        verify(self.registry, self.building)
-                    db.execute("ROLLBACK TO test")
+                self.rejected_mutation(self.registry, statement, "identity/admission")
 
     def test_research_db_cannot_be_confused_with_building_db(self):
         with self.assertRaisesRegex(LineageError, "distinct"):
             verify(self.registry, self.registry)
         with self.assertRaisesRegex(LineageError, "application identity"):
             verify(self.building, self.registry)
-        with self.assertRaisesRegex(LineageError, "application identity"):
+        with self.assertRaisesRegex(LineageError, "unsymlinked"):
             verify(self.registry, self.registry.with_name("other.cat.sqlite"))
 
     def test_provenance_mutations_fail_closed(self):
@@ -120,28 +126,24 @@ class BerlinResearchLineageTests(unittest.TestCase):
         ]
         for key, bad in mutations:
             with self.subTest(field=key):
-                with closing(sqlite3.connect(self.building)) as db:
-                    db.execute("SAVEPOINT test")
-                    db.execute(f"UPDATE provenance SET {key}=?", (bad,))
-                    with self.assertRaisesRegex(LineageError, "source/vintage/rights"):
-                        verify(self.registry, self.building)
-                    db.execute("ROLLBACK TO test")
+                self.rejected_mutation(
+                    self.building, f"UPDATE provenance SET {key}=?",
+                    "source/vintage/rights", (bad,),
+                )
 
     def test_bad_sha_and_untrusted_time_rejected(self):
         for bad in ("xyz", "Z"*64, ""):
-            with self.subTest(sha=bad), closing(sqlite3.connect(self.building)) as db:
-                db.execute("SAVEPOINT test")
-                db.execute("UPDATE provenance SET source_response_sha256=?", (bad,))
-                with self.assertRaisesRegex(LineageError, "SHA-256"):
-                    verify(self.registry, self.building)
-                db.execute("ROLLBACK TO test")
+            with self.subTest(sha=bad):
+                self.rejected_mutation(
+                    self.building, "UPDATE provenance SET source_response_sha256=?",
+                    "SHA-256", (bad,),
+                )
         for bad in ("2026-11-01T15:06:41", "2026-11-01T16:06:41+01:00", "not-a-date"):
-            with self.subTest(time=bad), closing(sqlite3.connect(self.building)) as db:
-                db.execute("SAVEPOINT test")
-                db.execute("UPDATE provenance SET retrieved_at_utc=?", (bad,))
-                with self.assertRaisesRegex(LineageError, "UTC timestamp|not UTC"):
-                    verify(self.registry, self.building)
-                db.execute("ROLLBACK TO test")
+            with self.subTest(time=bad):
+                self.rejected_mutation(
+                    self.building, "UPDATE provenance SET retrieved_at_utc=?",
+                    "UTC timestamp|not UTC", (bad,),
+                )
 
     def test_unbounded_rows_or_wrong_region_not_represented_as_exposure(self):
         self.change(self.building, "UPDATE building_sample SET nuts1_region='DE2'")
