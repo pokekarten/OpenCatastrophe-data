@@ -49,6 +49,12 @@ def inspect_tile_table_locations(raw: bytes, *, header: dict) -> dict:
         if type(header.get(field)) is not type(expected) or header[field] != expected:
             raise TileTableBlocked("unreviewed or inconsistent TIFF first-IFD parameters")
 
+    from scripts.probe_esa_worldcover_tiff_header_v0 import inspect_tiff_header
+    parsed = inspect_tiff_header(raw)
+    for field, expected in expected_fields.items():
+        if parsed.get(field) != expected:
+            raise TileTableBlocked("original TIFF bytes disagree with reviewed header semantics")
+
     first_ifd = struct.unpack_from("<I", raw, 4)[0]
     if first_ifd != 192:
         raise TileTableBlocked("TIFF first-directory offset drift")
@@ -58,6 +64,7 @@ def inspect_tile_table_locations(raw: bytes, *, header: dict) -> dict:
     if first_ifd + ENTRY_COUNT_BYTES + count * IFD_ENTRY_BYTES + 4 > len(raw):
         raise TileTableBlocked("first TIFF directory incomplete in fixed sample")
 
+    min_data_ptr = first_ifd + ENTRY_COUNT_BYTES + count * IFD_ENTRY_BYTES + 4
     locations = {}
     for i in range(count):
         entry = first_ifd + ENTRY_COUNT_BYTES + i * IFD_ENTRY_BYTES
@@ -68,8 +75,8 @@ def inspect_tile_table_locations(raw: bytes, *, header: dict) -> dict:
             raise TileTableBlocked("duplicate tile offsets or bytecounts TIFF tag")
         if dtype != 4 or n != EXPECTED_BLOCKS:
             raise TileTableBlocked("tile table is not reviewed 1296-element LONG array")
-        if not SOURCE_PREFIX_BYTES <= ptr <= ORIGINAL_OBJECT_BYTES - TABLE_BYTES:
-            raise TileTableBlocked("tile-array address is unsafe or not a separate header range")
+        if not min_data_ptr <= ptr <= ORIGINAL_OBJECT_BYTES - TABLE_BYTES:
+            raise TileTableBlocked("tile-array address is unsafe or overlaps the source TIFF directory")
         if ptr % 2:
             raise TileTableBlocked("misaligned TIFF tile-array address")
         locations[tag] = (ptr, ptr + TABLE_BYTES - 1)
