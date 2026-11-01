@@ -64,3 +64,22 @@ sample. The same ACT provider lineage is not independent by default.
 No building replacement cost or insurer TIV may be inferred automatically.
 
 No model_input or insurance exposure is admitted by this research receipt.
+
+## Executed original-provider result (2026-11-01)
+
+The actual source workflow [41312647943](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41312647943) successfully executed **all eight synthetic tests** and read exactly the previously checksum-verified original LiDAR index in a temporary runner.
+
+| Verified original pilot property | Actual result |
+| --- | ---: |
+| Original full LiDAR2024 tile index rows | **10,905** |
+| Fixed equal-area public Luxembourg city window | **250 × 250 m** |
+| RTree bbox candidates | **2** |
+| Decoded and valid source tile geometries | **2** |
+| Positive-area intersections with real study polygon | **2** |
+| Exact union coverage of study polygon | **100.0%** |
+| Distinct `DownloadLink` full URL values | **1** |
+| Distinct `Dossier` groups | **1** |
+| Official HTTPS hostname for both rows | **data.public.lu** |
+| Actual original LAZ files fetched, heights measured | **NO** |
+
+**Important practical discovery:** the **two genuinely intersecting physical tile polygons share one original source download link**. Naively downloading a ZIP for every tile row could perform duplicate downloads. Treat one link as a candidate grouped resource only; the link destination, server response, package contents and licence still require separate verification. The source polygons, link strings and tile identifiers were neither included in reports nor admitted to CAT model/exposure tables.
