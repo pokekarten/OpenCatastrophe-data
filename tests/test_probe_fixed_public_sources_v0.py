@@ -78,8 +78,14 @@ class FixedSourceProbesTests(unittest.TestCase):
     def test_each_source_matches_fixed_reviewed_contract(self):
         for source in PROBES:
             with self.subTest(source=source):
-                self.write(source)
-                url, op, limit, timeout = reviewed_probe(source, self.root)
+                if source == "emsc.seismicportal.fdsn-event":
+                    # EMSC already has an independently validated full schema
+                    # contract; a sparse synthetic stub must never bypass it.
+                    root = Path(__file__).resolve().parents[1]
+                else:
+                    self.write(source)
+                    root = self.root
+                url, op, limit, timeout = reviewed_probe(source, root)
                 self.assertEqual((url, op), PROBES[source])
                 self.assertGreater(limit, 0)
                 self.assertEqual(timeout, 30)
@@ -173,6 +179,36 @@ class FixedSourceProbesTests(unittest.TestCase):
         ))
         with self.assertRaises(ProbeBlocked):
             reviewed_probe(source, self.root)
+
+    def test_emsc_real_contract_and_one_event_only(self):
+        source = "emsc.seismicportal.fdsn-event"
+        repo_root = Path(__file__).resolve().parents[1]
+        url, operation, max_bytes, timeout = reviewed_probe(source, repo_root)
+        self.assertEqual((url, operation), PROBES[source])
+        self.assertEqual((max_bytes, timeout), (1_048_576, 30))
+        event = {
+            "type": "FeatureCollection",
+            "features": [{
+                "type": "Feature", "id": "synthetic-not-real",
+                "geometry": {"type": "Point", "coordinates": [12.5, 45.0, 11.0]},
+                "properties": {"source_id": "synthetic-source", "mag": 5.2},
+            }],
+        }
+        payload = json.dumps(event).encode("utf-8")
+        verified = verify_response(source, payload)
+        self.assertEqual(verified["verified_shape"], "one_earthquake_event_geojson")
+        self.assertEqual(verified["event_count"], 1)
+        self.assertFalse(verified["scientific_event_parameters_verified"])
+        client = Client(Reply(payload))
+        receipt = probe(source, root=repo_root, opener=client)
+        self.assertEqual(receipt["response_bytes"], len(payload))
+        self.assertFalse(receipt["model_input_approved"])
+        self.assertFalse(receipt["provider_bytes_persisted"])
+        self.assertNotIn("synthetic-source", json.dumps(receipt))
+        self.assertNotIn("coordinates", json.dumps(receipt))
+        event["features"].append(event["features"][0])
+        with self.assertRaisesRegex(ProbeBlocked, "semantics drift"):
+            verify_response(source, json.dumps(event).encode("utf-8"))
 
     def test_reject_nonfinite_and_duplicate_json_fields(self):
         for raw in (b'{"foo":NaN}', b'{"foo":1,"foo":2}', b'{"foo":Infinity}', b'not json'):
