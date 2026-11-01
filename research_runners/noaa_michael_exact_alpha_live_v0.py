@@ -160,7 +160,9 @@ def run_bounded_original_probe() -> dict[str, Any]:
     tags = _table(header)
     if _vals(header, tags, 317, 3) != (2,) or _vals(header, tags, 338, 3) != (2,):
         raise SourceAlphaProbeError("TIFF predictor/straight-alpha sample profile drift")
-    if identity["raster_dimensions"] != [CANONICAL_HEIGHT, CANONICAL_WIDTH]:
+    if [identity["raster_height_pixels"], identity["raster_width_pixels"]] != [
+        CANONICAL_HEIGHT, CANONICAL_WIDTH,
+    ]:
         raise SourceAlphaProbeError("original source tile shape drift")
     offsets, lengths = _vals(header, tags, 324, 4), _vals(header, tags, 325, 4)
     if total < identity["minimum_original_file_bytes_from_main_ifd"]:
