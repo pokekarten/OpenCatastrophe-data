@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Berlin ALKIS 5 real buildings to CAT geography source proof
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research_runners/berlin_alkis_gebaeude_five_feature_join_v0.py
+      - tests/test_berlin_alkis_gebaeude_five_feature_join_v0.py
+      - .github/workflows/berlin-alkis-five-buildings-de3.yml
+  # One fixed, 5-feature-only provider request on workflow revision merge.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/berlin-alkis-five-buildings-de3.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: berlin-alkis-five-buildings-to-cat-2021-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  official-building-geometry:
+    name: One bounded real building sample and DE3 original-source linkage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Checkout reviewed source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Install reviewed projected spatial libraries
+        run: python -m pip install --disable-pip-version-check --no-input -r requirements-eu-flood-spatial.txt
+      - name: Synthetic source and geometry security regressions
+        run: python -m unittest tests.test_berlin_alkis_gebaeude_five_feature_join_v0 -v
+      - name: Exact two pinned boundary sources and five live building polygon join
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          geofile="$RUNNER_TEMP/deu-adm1-geoBoundaries.geojson"
+          nutsfile="$RUNNER_TEMP/deu-nuts2021-10M.json"
+          geodb="$RUNNER_TEMP/berlin-geography.cat.sqlite"
+          nutsdb="$RUNNER_TEMP/berlin-nuts2021.cat.sqlite"
+          trap 'rm -f "$geofile" "$nutsfile" "$geodb" "$nutsdb"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+            --max-time 120 --retry 0 --max-filesize 7340032 \
+            --output "$geofile" \
+            'https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/DEU/ADM1/geoBoundaries-DEU-ADM1.geojson'
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+            --max-time 90 --retry 0 --max-filesize 500000 \
+            --output "$nutsfile" \
+            'https://raw.githubusercontent.com/eurostat/Nuts2json/8186be451525164ea24b43560cb943fda7c5520c/pub/v2/2021/4326/10M/nutsrg_1.json'
+          python -m research_runners.geoboundaries_deu_adm1_cat_sqlite_v0 \
+            --original-geojson "$geofile" --output "$geodb" > /dev/null
+          python -m research_runners.geoboundaries_deu_adm1_nuts2021_crosswalk_v0 \
+            --geo-original "$geofile" --nuts2021-original "$nutsfile" \
+            --nuts-scale 10M --output "$nutsdb" > /dev/null
+          python -m research_runners.berlin_alkis_gebaeude_five_feature_join_v0 \
+            --live --cat1 "$geodb" --cat2 "$nutsdb"
+          # Official original WFS feature data are never written to filesystem;
+          # provider original boundary assets and CAT SQLite stages deleted.
