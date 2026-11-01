@@ -28,7 +28,7 @@ MAX_TOTAL_UNCOMPRESSED = 256 * 1024 ** 3
 MAX_COMPRESSION_RATIO = 1000
 CHUNK_BYTES = 1024 * 1024
 ACCEPTED_COMPRESSION = {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED}
-SHA256_RE = re.compile(r"[a-f0-9]{64}\\Z", re.ASCII)
+SHA256_RE = re.compile(r"[a-f0-9]{64}\Z", re.ASCII)
 
 
 def _file_identity(info: os.stat_result) -> tuple[int, ...]:
@@ -38,7 +38,7 @@ def _file_identity(info: os.stat_result) -> tuple[int, ...]:
 def _safe_member_name(name: str) -> list[str]:
     if not name or len(name) > 1024:
         raise ZipPreflightError("ZIP entry name is missing or over budget")
-    if name.startswith("/") or "\\\\" in name or "\x00" in name or "//" in name:
+    if name.startswith("/") or "\\" in name or "\x00" in name or "//" in name:
         raise ZipPreflightError("ZIP entry path is noncanonical or unsafe")
     if any(ord(ch) < 32 or ord(ch) == 127 for ch in name):
         raise ZipPreflightError("ZIP entry path has control characters")
