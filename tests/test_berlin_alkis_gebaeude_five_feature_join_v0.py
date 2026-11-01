@@ -12,6 +12,7 @@ from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from research_runners.berlin_alkis_gebaeude_five_feature_join_v0 import (
     BBOX, LAYER, MAX_BYTES, MAX_COUNT, TIMEOUT, URL,
@@ -165,10 +166,20 @@ class StrictWfsConfigurationTests(unittest.TestCase):
         source = raw(fixture(n=2))
         with tempfile.TemporaryDirectory(prefix="oc-berlin-cat4-") as tmp:
             stage = Path(tmp) / "berlin-buildings.cat.sqlite"
-            receipt = stage_derived_footprints(
-                source, ["DE3", "DE3"], stage,
-                receipt_utc="2026-11-01T15:06:41+00:00",
-            )
+            cat1, cat2 = Path(tmp) / "synthetic-cat1.sqlite", Path(tmp) / "synthetic-cat2.sqlite"
+            # Synthetic offline tests stub the source-pinned lookup only.
+            # The real pipeline must use independently validated CAT DBs.
+            verified = {"nuts1_code": "DE3", "nuts_version": 2021,
+                        "nuts_cartographic_scale": "10M"}
+            with patch("research_runners.berlin_alkis_gebaeude_five_feature_join_v0.resolve_nuts1_for_point",
+                       return_value=verified) as locate:
+                receipt = stage_derived_footprints(
+                    source, ["DE3", "DE3"], stage,
+                    receipt_utc="2026-11-01T15:06:41+00:00",
+                    cat1=cat1, cat2=cat2,
+                )
+                self.assertEqual(locate.call_count, 2)
+                self.assertEqual(locate.call_args_list[0].args[:2], (cat1, cat2))
             self.assertEqual(receipt["geometry_rows"], 2)
             self.assertFalse(receipt["original_provider_properties_and_ids_saved"])
             self.assertTrue(receipt["derived_geometry_local_staging_created"])
@@ -197,6 +208,7 @@ class StrictWfsConfigurationTests(unittest.TestCase):
                 stage_derived_footprints(
                     source, ["DE3", "DE3"], stage,
                     receipt_utc="2026-11-01T15:06:42+00:00",
+                    cat1=cat1, cat2=cat2,
                 )
 
     @unittest.skipUnless(HAS_SPATIAL,"Pinned Shapely/Pyproj needed")
@@ -208,7 +220,50 @@ class StrictWfsConfigurationTests(unittest.TestCase):
                     stage_derived_footprints(
                         source, codes, Path(tmp) / "unexpected.cat.sqlite",
                         receipt_utc="2026-11-01T15:06:41+00:00",
+                        cat1=Path(tmp) / "cat1", cat2=Path(tmp) / "cat2",
                     )
+
+    @unittest.skipUnless(HAS_SPATIAL,"Pinned Shapely/Pyproj needed")
+    def test_direct_staging_rejects_forged_de3_or_wrong_geographic_vintage(self):
+        source = raw(fixture(n=2))
+        with tempfile.TemporaryDirectory(prefix="oc-berlin-verify-") as td:
+            out = Path(td) / "must-not-exist.cat.sqlite"
+            cat1, cat2 = Path(td) / "cat1.sqlite", Path(td) / "cat2.sqlite"
+            for result in (
+                None,
+                {"nuts1_code": "DE2", "nuts_version": 2021,
+                 "nuts_cartographic_scale": "10M"},
+                {"nuts1_code": "DE3", "nuts_version": 2016,
+                 "nuts_cartographic_scale": "10M"},
+                {"nuts1_code": "DE3", "nuts_version": 2021,
+                 "nuts_cartographic_scale": "20M"},
+            ):
+                with self.subTest(actual_region=result):
+                    with patch(
+                        "research_runners.berlin_alkis_gebaeude_five_feature_join_v0.resolve_nuts1_for_point",
+                        return_value=result,
+                    ) as lookup:
+                        with self.assertRaisesRegex(BerlinBuildingSampleError, "not verified"):
+                            stage_derived_footprints(
+                                source, ["DE3", "DE3"], out,
+                                receipt_utc="2026-11-01T15:06:41+00:00",
+                                cat1=cat1, cat2=cat2,
+                            )
+                        self.assertEqual(lookup.call_count, 1)
+                    self.assertFalse(out.exists())
+
+    @unittest.skipUnless(HAS_SPATIAL,"Pinned Shapely/Pyproj needed")
+    def test_direct_staging_requires_two_pinned_cat_paths(self):
+        source = raw(fixture(n=1))
+        with tempfile.TemporaryDirectory(prefix="oc-berlin-verify-") as td:
+            out = Path(td) / "must-not-exist.cat.sqlite"
+            with self.assertRaisesRegex(BerlinBuildingSampleError, "both original"):
+                stage_derived_footprints(
+                    source, ["DE3"], out,
+                    receipt_utc="2026-11-01T15:06:41+00:00",
+                    cat1=None, cat2=Path(td) / "cat2.sqlite",
+                )
+            self.assertFalse(out.exists())
 
     @unittest.skipUnless(HAS_SPATIAL,"Pinned Shapely/Pyproj needed")
     def test_live_receipt_does_not_accept_redirect_or_html(self):
