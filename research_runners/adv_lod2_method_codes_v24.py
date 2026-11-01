@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-VERSION="AdV-PQS-3D-Geabudemodelle-2.4"
+VERSION="AdV-PQS-3D-Gebaeudemodelle-2.4"
 VERSION_DATE="2023-03-23"
 HISTORIC_BERLIN_SOURCE_YEAR=2022
 REFERENCE_URL=("https://sgx.geodatenzentrum.de/web_public/gdz/dokumentation/"
