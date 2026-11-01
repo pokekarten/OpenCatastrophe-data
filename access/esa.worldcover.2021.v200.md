@@ -54,13 +54,14 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - list_v200_map_prefix
 - fetch_exact_v200_tile
 - probe_exact_v200_tile_head
+- sample_exact_v200_tile_header_4096
 
 ### Path templates
 
 - /v200/2021/map/
 - /v200/2021/map/ESA_WorldCover_10m_2021_v200_N48E009_Map.tif
 
-**Parameter rules:** This source-specific T1 probe freezes exactly one HEAD request for the candidate 3x3-degree N48E009 WorldCover 2021 v200 Map GeoTIFF under the documented ESA public S3 prefix. The object key is constructed from the published tile naming/3-degree grid scheme, and its actual existence must be independently established by the HEAD response. Only the fixed HTTPS HEAD request is executable. Historical list_v200_map_prefix and fetch_exact_v200_tile operation names remain documentation-only and MUST NOT be executed under this probe. No GET, Range, S3 list/sync, arbitrary host, redirect, caller-supplied key, variant, product year, other geographic tile, credential or private endpoint is allowed. The DOI 10.5281/zenodo.7254221 anchors the release identity, not this individual object hash.
+**Parameter rules:** Only these two exact operations are executable after separate review: (a) one fixed HEAD probe_exact_v200_tile_head, and (b) one fixed 4,096-byte GET with Range: bytes=0-4095 under sample_exact_v200_tile_header_4096, to the same N48E009 WorldCover 2021 v200 Map tile URL. No second range, retry, no full-object GET, no unsigned broad S3 list, no sync, no caller-supplied URL/path, object key, headers, redirects or product substitution. Existing list_v200_map_prefix and fetch_exact_v200_tile operation names remain documentation-only. Range 206, Content-Range bytes 0-4095/&lt;original total&gt;, strict response length, same frozen public object identity and TIFF magic are mandatory. Sample bytes stay ephemeral and never enter Git or the CAT database; a sample SHA-256 MUST NOT be represented as full-object SHA-256.
 
 ## Response contract
 
@@ -84,9 +85,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** none
 
-**Rate limit notes:** ESA documents anonymous programmatic no-sign AWS access for the versioned S3 product. This contract permits only one fixed HEAD request when an explicitly reviewed test workflow executes. No ongoing polling, bulk listing, download or paid quota assumption is authorized.
+**Rate limit notes:** The official ESA public S3 distribution documents anonymous programmatic no-sign access. The reviewed narrow execution operations are one HEAD canary or one exact 4096-byte GET Range=0-4095 sample against the single named N48E009 tile; no bulk collection, crawling, retries, polling, alternate source or paid entitlement assumed.
 
-**Mutability notes:** The 2021 v200 product identity and ESA DOI are stable reference labels; this HEAD probe checks whether the candidate exact N48E009 Map object exists and obtains its HTTP content length, ETag metadata and media type. A mutable S3 ETag is NOT an independent SHA-256 of source bytes, nor a provenance receipt sufficient for CAT model admission. Exact source hash, COG georeference/grid, class values, licence, scientific year and derived-use scope require a distinct source-byte workflow.
+**Mutability notes:** One full-object HEAD from 2026-11-01 observed a 94,851,935-byte object with generic binary/octet-stream transport MIME. A later range request must return HTTP 206 with exact bytes 0-4095 and matching total object length, and can fingerprint those sampled 4096 bytes. This DOES NOT verify entire 94.85MB TIFF SHA-256, COG spatial index, EPSG:4326, land-cover codes or scientific fitness; full-byte and geospatial validation remain distinct.
 
 ## Rights and policy
 
@@ -100,7 +101,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Redistribution status:** allowed
 
-**Notes:** ESA officially permits CC BY 4.0 WorldCover dataset reuse with attribution and documents anonymous programmatic AWS access. This T1 contract authorizes only a single fixed anonymous HEAD against one candidate 2021 v200 map tile. It does not authorize downloading/reproducing pixels, bulk collection, secondary redistribution by this repository, or accepting land-cover classes as insured physical buildings.
+**Notes:** ESA's documented WorldCover 2021 v200 CC BY 4.0 product rights and anonymous S3 data access permit an independently reviewed, strictly bounded 4096-byte original TIFF header sample with no persistence, in addition to the previous exact HEAD metadata check. Source sample and identity receipts are research evidence only. No image pixels, bulk sampling, raw file publication or insurer asset admission is approved.
 
 ## Probe contract
 
@@ -131,4 +132,4 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - <https://github.com/ESA-WorldCover/esa-worldcover-datasets>
 - <https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/docs/WorldCover_PUM_V2.0.pdf>
 
-**Notes:** T1 anonymous HEAD-only candidate tile availability check for a single ESA WorldCover 2021 v200 3x3-degree map object near southern Germany, with pinned host, product/year/tile identity and no source-byte download. Tile existence and service Content-Type must be proven live; GeoTIFF pixels, scientific input fitness and distribution approval remain separate. No other paths or previously documented list/fetch operations become executable.
+**Notes:** T1 fixed HEAD has succeeded; research T3 preliminary proof now authorizes at most one exact source 4096-byte HTTP Range GET with Content-Range and TIFF/BigTIFF magic inspection on the same N48E009 v200 Map tile. The sample is ephemeral, source-wide hash/COG metadata/CRS remain unverified, and no other operation or original bytes are accepted as CAT model input.
