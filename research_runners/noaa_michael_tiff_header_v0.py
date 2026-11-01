@@ -97,6 +97,12 @@ def preflight(header: Any, stac_item: Any) -> dict[str, Any]:
     offsets, sizes = _vals(header, tags, 324, 4), _vals(header, tags, 325, 4)
     if len(offsets) != tiles or len(sizes) != tiles or any(x < _HEADER_LEN for x in offsets) or any(x <= 0 for x in sizes):
         raise TIFFHeaderError("original TIFF offset/byte-count array does not match its tile grid")
+    # The largest TIFF IFD tile endpoint is a hard minimum for the file
+    # containing this IFD. It is NOT the full asset Content-Length and
+    # cannot authenticate the full image or any overviews.
+    min_file_bytes = max(start + count for start, count in zip(offsets, sizes))
+    if min_file_bytes > 4_294_967_295:
+        raise TIFFHeaderError("TIFF block byte extent exceeds classic TIFF limits")
     sx, sy, sz = _vals(header, tags, 33550, 12)
     px, py, pz, gx, gy, gz = _vals(header, tags, 33922, 12)
     if (not all(math.isfinite(v) for v in (sx, sy, sz, px, py, pz, gx, gy, gz))
@@ -148,6 +154,9 @@ def preflight(header: Any, stac_item: Any) -> dict[str, Any]:
         "raster_height_pixels": height,
         "block_size_pixels": [tw, th],
         "tile_block_count": tiles,
+        "minimum_original_file_bytes_from_main_ifd": min_file_bytes,
+        "complete_original_content_length_verified": False,
+        "directory_advertised_size_verified": False,
         "declared_crs": "EPSG:4326",
         "tiff_datetime_calendar_day": tiff_time.date().isoformat(),
         "tiff_datetime_is_end_of_day_marker": tiff_time.strftime("%H:%M:%S") == "23:59:59",
