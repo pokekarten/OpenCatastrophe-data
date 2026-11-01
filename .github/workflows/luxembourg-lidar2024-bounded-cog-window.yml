@@ -36,6 +36,8 @@ jobs:
         run: |
           python -m research_runners.luxembourg_lidar2024_cog_range_capability_v0 --asset MNT
           python -m research_runners.luxembourg_lidar2024_cog_range_capability_v0 --asset MNS
+      - name: Inspect official original COG CRS metadata without reading raster pixels
+        run: python -m research_runners.luxembourg_lidar2024_bounded_cog_window_v0 --metadata-only
       - name: Read only fixed 250m EPSG2169 source COG window and report aggregates
         run: python -m research_runners.luxembourg_lidar2024_bounded_cog_window_v0 --fixed-luxembourg-window
       # No full COG, LAZ/ZIP, source pixel grid, feature IDs, addresses or raw provider bytes uploaded.
