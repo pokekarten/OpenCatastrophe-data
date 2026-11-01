@@ -224,15 +224,93 @@ def preflight_bytes(raw: bytes) -> dict[str, object]:
     }
 
 
+
+GRAPHQL_MAX_INPUT_BYTES = 64 * 1024
+
+
+def preflight_graphql_bytes(raw: bytes) -> dict[str, object]:
+    """Inspect a previously supplied, single-city/year GraphQL metadata response.
+
+    No network request or rights assessment is made. The GraphQL native record
+    ID is not assumed to equal the city's five-digit administrative code.
+    """
+    if not 0 < len(raw) <= GRAPHQL_MAX_INPUT_BYTES:
+        raise CataloguePreflightError("GraphQL metadata exceeds 64 KiB or is empty")
+    try:
+        payload = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_strict_pairs,
+            parse_constant=_reject_nonfinite,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise CataloguePreflightError("invalid UTF-8 or GraphQL JSON") from exc
+    if not isinstance(payload, dict):
+        raise CataloguePreflightError("GraphQL response must be an object")
+    if payload.get("errors"):
+        raise CataloguePreflightError("GraphQL errors must not be promoted as source metadata")
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        raise CataloguePreflightError("GraphQL response data must be an object")
+    rows = data.get("citygmlDatasets")
+    if not isinstance(rows, list) or len(rows) != 1 or not isinstance(rows[0], dict):
+        raise CataloguePreflightError("GraphQL query must return exactly one CityGML row")
+    row = rows[0]
+    native_id = row.get("id")
+    if not isinstance(native_id, str) or not native_id.strip() or len(native_id) > 160:
+        raise CataloguePreflightError("GraphQL native dataset ID is missing")
+    if row.get("cityCode") != TARGET_CITY_CODE:
+        raise CataloguePreflightError("GraphQL cityCode differs from the pinned municipality")
+    if _year(row.get("year"), "GraphQL year") != TARGET_YEAR:
+        raise CataloguePreflightError("GraphQL fiscal year differs from pinned 2024")
+    registered_year = _year(row.get("registrationYear"), "GraphQL registrationYear")
+    types = row.get("featureTypes")
+    if not isinstance(types, list) or not types or any(
+        not isinstance(v, str) or not re.fullmatch(r"[a-z0-9_]{2,32}", v)
+        for v in types
+    ) or len(types) != len(set(types)) or "bldg" not in types:
+        raise CataloguePreflightError("GraphQL record must advertise unambiguous bldg features")
+    if not _https_url_or_null(row.get("url"), "GraphQL url"):
+        raise CataloguePreflightError("GraphQL original CMS URL must be HTTPS")
+    if "-latest/" in urlsplit(row["url"]).path:
+        raise CataloguePreflightError("GraphQL original URL must not be a latest alias")
+    fixed_composite = _fixed_composite_url(row.get("compositeUrl"), fiscal_year=TARGET_YEAR)
+    file_size = row.get("fileSize")
+    if file_size is not None and (
+        type(file_size) is not int or file_size <= 0 or file_size > 2**63 - 1
+    ):
+        raise CataloguePreflightError("GraphQL CMS fileSize must be a positive int64 or null")
+    return {
+        "source_id": "jp.mlit.plateau.citygml.3d-city-models",
+        "target_city_code": TARGET_CITY_CODE,
+        "target_fiscal_year": TARGET_YEAR,
+        "registration_year": registered_year,
+        "bldg_advertised": True,
+        "cms_original_size_metadata_known": file_size is not None,
+        "fixed_year_composite_url_present": fixed_composite,
+        "input_byte_count": len(raw),
+        "input_sha256": hashlib.sha256(raw).hexdigest(),
+        "evidence": "offline_user_supplied_graphql_structure_only",
+        "provider_network_access": False,
+        "provider_original_bytes_verified": False,
+        "model_input_approved": False,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True, help="local catalogue JSON supplied separately")
+    parser.add_argument(
+        "--format", choices=("rest", "graphql"), default="rest",
+        help="input metadata format (both use offline-only preflight)",
+    )
     args = parser.parse_args(argv)
     try:
         size = args.input.stat().st_size
-        if not 0 < size <= MAX_INPUT_BYTES:
+        max_bytes = GRAPHQL_MAX_INPUT_BYTES if args.format == "graphql" else MAX_INPUT_BYTES
+        if not 0 < size <= max_bytes:
             raise CataloguePreflightError("input byte bound exceeded")
-        result = preflight_bytes(args.input.read_bytes())
+        raw = args.input.read_bytes()
+        result = preflight_graphql_bytes(raw) if args.format == "graphql" else preflight_bytes(raw)
     except (OSError, CataloguePreflightError) as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         return 2
