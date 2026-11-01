@@ -41,6 +41,27 @@ The existing `insurance.contract` table covers treaty concepts such as `cat_xl`,
 - Keep `reins_info` / `reins_scope` a **separate export stage**. The current invented CAT-XL treaty lacks complete financial semantics (reinstatement premium and event ordering); no valid reinsurance contract export follows from an OED 5.0 account/location pass.
 - Use the official pinned ODS Tools validation in CI and an independently checked consumer read under a pinned compatible OasisLMF release; a format-valid CSV alone does not produce a CAT simulation.
 
+## Live read-only readiness audit (2026-11-01)
+
+A new **read-only, cross-branch** query at `research_runners/sql/oed_real_exposure_readiness_audit_v0.sql` computes exposure and source-register readiness without joining aggregates down to artificial insurer policies or changing any table. It always returns `real_oed_model_input_approved=false` because an external, separately reviewed model/rights/privacy decision is required; absence of each prerequisite is also returned in `model_input_blockers`.
+
+The live Neon result:
+
+| Metric | Production main | Isolated validation branch |
+| --- | ---: | ---: |
+| Registry source records (all classifications) | 114 | 93 |
+| Landscape-only candidates | 41 | 23 |
+| Approved metadata-only manifests | 14 | 14 |
+| Admitted manifest records permitting raw import | **0** | **0** |
+| Real insurer portfolios | **0** | **0** |
+| Real asset values with source links | **0** | **0** |
+| Synthetic portfolios / units | 0 / 0 | 1 / 12 |
+| Production model-input approved | **No** | **No** |
+
+**Interpretation:** counts of provider references are **not** counts of downloaded or usable insured location records. Branch inventories are different snapshots and must not be silently combined. On neither branch is there permission or evidence to fabricate per-insurer, per-policy insured values. Metadata-only or restricted-source rights cannot be promoted by an OED format check. The existing synthetic account/policy/TIV fixtures prove software plumbing, not real insured exposure or a CAT model.
+
+This readiness SQL has been executed **read-only** against both explicit Neon branch IDs (`br-late-recipe-ba1cr8hc` main and `br-summer-sky-bawujqu8` validation). The report was not persisted to registry tables. Future upgrades must include a real source/rights decision and a separate policy-level insurance-evidence contract; never relax this check merely to make a candidate source appear usable.
+
 ## Source prioritization
 
 First: preserve the existing 12-row wholly synthetic fixture and **test** normalized account/policy/TIV inserts, with no claim of real insurance coverage. Second: obtain exact legal/scientific admission and reproducible building/valuation inputs for one named, bounded regional exposure pilot. EUBUCCO/Microsoft/Overture/official cadastres inform **physical building geometry**; EFEHR/METEOR modelled values are **proxies** with their own rights and vintage limits; EIOPA/Florida/Texas aggregates provide *aggregate* calibration checks, not property-level insurer policies. No external source is auto-promoted by an OED projection.
