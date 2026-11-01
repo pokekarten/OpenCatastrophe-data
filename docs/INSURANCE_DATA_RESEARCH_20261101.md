@@ -19,7 +19,7 @@ The [Insurers Global name-index](https://insurers.global/api/v1/insurers/names.j
 
 USGS [ComCat FDSN Event API](https://earthquake.usgs.gov/fdsnws/event/1/) supplied ten annual GeoJSON requests for 2016–2025 with `minmagnitude=6`. Stored event IDs, UTC timestamps, coordinates, magnitude, depth, status and provider URLs. These are **event-origin observations**, not physical hazard intensities or insurer claims.
 
-Both research tables enforce `model_input_approved=false` / `model_admitted=false`. The original raw HTTP byte stream and SHA256 were not captured through this tool-mediated acquisition: do **not** label source original bytes verified. No original third-party data is published in this repository.
+Both research tables enforce `model_input_approved=false` / `model_admitted=false`. The initial database import did **not** preserve the exact aggregate original HTTP response bytes or its SHA-256. We have since independently verified all 46 original public names-index page bodies and their hashes, as detailed below. Those page hashes do **not** recreate the original aggregate `names.json` file hash or establish regulatory approval. No original third-party rows are published in this repository.
 
 ## Reproducible source receipt
 
@@ -68,3 +68,49 @@ No mismatches in exact slug, country, name, class code or publisher verification
 Run with `python -m scripts.insurer_directory_paged_source_receipt_v0 --page-dir /path/to/private/pages` for existing local pages named `page-001.json` through `page-046.json`. The alternative `python -m scripts.insurer_directory_paged_source_receipt_v0 --live` explicitly enables bounded public HTTP requests. There is no implicit network access. Store any command output outside Git until its scope is reviewed.
 
 The chat-side original-byte extraction interface truncated some pages beyond approximately 59 KB, so the full 46-page receipt was **not completed here**. Do not confuse the executable runner with an executed full-source proof. The connected remote Mac was offline during this check.
+
+
+## Completed 46-page original provider verification and exact Neon five-field comparison
+
+The complete evidence is pinned in the **canonical metadata-only machine receipt**
+[`docs/research/insurer-directory-original-page-receipt-20261101.json`](research/insurer-directory-original-page-receipt-20261101.json).
+The verified [GitHub Actions source run](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41325317453)
+successfully retrieved **46 of 46** exact public page URLs, totaling **2,995,068 original
+bytes** and **18,180 distinct source slugs**, with full page lengths, version,
+count, pagination, cross-page duplicate rejection and individual **SHA-256 hashes**.
+A publisher-identifying user agent and bounded request cadence were necessary:
+the initial unlabelled GitHub-runner API request returned HTTP 403. The final
+audited retrieval complied with the provider's documented fair-use requirements.
+
+An independently executed read-only Neon query in
+[`research_runners/sql/insurer_directory_field_digest_readonly_v0.sql`](../research_runners/sql/insurer_directory_field_digest_readonly_v0.sql)
+computed the sorted UTF-8 SHA-256 digest of `source_slug`, `country_slug`,
+`display_name`, `class_code`, `provider_verification_claim` across the
+**18,180** Neon research entries. The original provider's corresponding
+fields across all 46 pages produced **the exact same digest**:
+`4bc5f71de226e5e19f1ece179754c440546e808beed46f9f8e55509ba05b8178`.
+The Neon hash query reports **0** missing required fields, **0** reserved
+delimiter collisions and **0** CAT model-input approvals. This is
+complete **five-field parity**, not original aggregate byte-equivalence,
+independent regulator licensing, unique legal-entity identification or
+insured CAT exposure.
+
+A separate read-only identity ambiguity audit
+[`research_runners/sql/insurer_directory_identity_ambiguity_v0.sql`](../research_runners/sql/insurer_directory_identity_ambiguity_v0.sql)
+confirms **18,180 distinct slugs but only 17,784 distinct global
+case-normalized name strings**. There are **two** repeated
+market/name groups comprising four excess same-market rows, and **31**
+lexical matches to **19 of 22** existing verified organizations (only 20
+matches in their explicitly mapped DE, FR or SG home market). This lexical
+comparison creates **no new identity links**. Another **45 of 58** official
+licence observations remain unlinked; **four** regulator crosswalk entries
+lack independently verified LEI-to-registration evidence.
+
+The aggregate `names.json` original byte hash remains **unknown** and the
+previous `source_dataset_url` placeholders and `raw_provider_sha256` nulls
+in Neon remain **unmodified**. Repairing provenance requires an exact reviewed
+row-to-paginated-source lineage, not copying any page hash into the wrong
+field. Publisher data must be attributed to KAFS North America,
+[insurers.global](https://insurers.global), under CC BY 4.0. All modelling
+admission, licence verification, group identification and synthetic exposure
+gates remain closed until their own supporting evidence exists.
