@@ -80,6 +80,8 @@ def audit_independent_crs_and_topology(
         # not guessed from the name 'ETRS_1989_LAEA'.
         identified = original_crs.to_epsg(min_confidence=70)
         matches_reference = bool(original_crs.equals(official, ignore_axis_order=True))
+        if not original_crs.is_projected:
+            raise RegionArchiveError("original regional coordinate system is not projected")
         # Legacy ESRI WKT1 may use a named ETRS89 datum whereas modern
         # EPSG:3035 uses a datum ensemble. A strict full-object CRS.equals
         # can be False even if PROJ independently identifies EPSG:3035.
@@ -98,6 +100,8 @@ def audit_independent_crs_and_topology(
         epsg3035_parameter_ellipsoid_match = (
             parameter_signature(original_crs) == parameter_signature(official))
         axes = [info.unit_name for info in original_crs.axis_info]
+    except RegionArchiveError:
+        raise
     except (ValueError, UnicodeError, RuntimeError) as exc:
         raise RegionArchiveError("independent source CRS cannot be parsed") from exc
     if not original_crs.is_projected or not axes:
