@@ -55,6 +55,13 @@ single constrained original request:
   coordinate pairs **0**; `numberMatched` not provided as a
   nonnegative integer; no next-page link was followed.
 
+The original metadata-only receipt initially used a vacuous Boolean
+`returned_geometry_envelope_intersects_exact_bbox=true` even when
+the response contained **zero** features. This is deliberately corrected
+in the source probe to return `null` (no geometry checked) and
+`geometry_available_in_this_sample=false`. There is no observed
+geometry or validated location within this particular sample.
+
 **Do not interpret zero results as confirmed no buildings** within the
 bbox, city, region or state, and do not infer the current population,
 land use, insurance risk or WorldCover classification from this response.
