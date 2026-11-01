@@ -95,13 +95,13 @@ two predeclared fixed public 100m research polygons.
 | Original tile polygons overlapping fixed Berdorf village ROI | **4** |
 | Original point-cloud/LAS/LAZ record values read | **0** |
 
-**City Luxembourg:** official tile `77000_75500`, original package
+**City Luxembourg:** official tile `77000_75500` in archive **`Lidar2024_C020_R013`**, original package
 permalink <https://data.public.lu/fr/datasets/r/9bc4df35-4c5a-4d79-8a05-a2faadd6dab1>.
 
 **Berdorf village:** original tiles
-`92500_98500` and `93000_98500` share source package
+`92500_98500` and `93000_98500` share source package **`Lidar2024_C030_R028`**
 <https://data.public.lu/fr/datasets/r/1e68ff5f-9182-42a4-8222-7496f3b689d7>;
-`92500_99000` and `93000_99000` share
+`92500_99000` and `93000_99000` share archive **`Lidar2024_C030_R029`**
 <https://data.public.lu/fr/datasets/r/ff8e2bac-b1aa-441a-82a6-9af4221a1fab>.
 
 Thus **five 500m×500m tiles** located in **three source group-archive
