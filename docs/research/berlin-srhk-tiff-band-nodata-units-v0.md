@@ -91,3 +91,76 @@ Source declarations must still be independently reviewed against
 physical units, NoData masks and pixel blocks before model admission.
 The next scientific step remains pixel-block validation plus rights,
 NoData mask, meaningful scenario and water-depth physical scale.
+
+
+## Actual original Berlin source-band result — independently verified
+
+The reviewed original-source workflow
+[GitHub Actions 41335440273](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41335440273)
+ran the merged #1063 data path (main merge commit
+\`383ab39fb6f7612660476b7b5992b9df76c012c3\`).
+It reused **exactly 65,536 original HTTP206 ZIP-prefix bytes per
+source**, with fixed source identity, previously observed first-512
+SHA-256 and the original Last-Modified unchanged. The actual
+execution code SHA-256 was
+\`4f162912e975ca16818dc7389ea39bf010b858c742ccb482e0624946897dc5cb\`.
+
+| Independently read original TIFF declaration | Extreme | Extraordinary |
+| --- | --- | --- |
+| First-IFD band fields available | Yes | Yes |
+| SampleFormat code | **3 = IEEE floating-point** | **3 = IEEE floating-point** |
+| BitsPerSample | **32** | **32** |
+| SamplesPerPixel | **1** | **1** |
+| TIFF compression method | **5 = LZW** | **5 = LZW** |
+| GDAL_NODATA tag 42113 | **present** | **present** |
+| **Source-declared NoData numeric sentinel** | **−9999.0** | **−9999.0** |
+| GDAL_METADATA tag 42112 | absent | absent |
+| Explicit GDAL UNITTYPE declared | **no** | **no** |
+| Explicit GDAL SCALE/OFFSET declared | **no/no** | **no/no** |
+| Prior TIFF internal projected EPSG GeoKey | 25833 | 25833 |
+| 1-m TIFF affine header & pilot bbox fully covered | yes/yes | yes/yes |
+| Exact source ZIP-prefix-only SHA-256 | \`9b86b039e4c0915b76f4ea64bc13c201f43483a2585dcdd8f6650d6e1a70579f\` | \`ba22dae2169f3ffab268f9411099e98c5fc3a15cfd8094d6b486b6e9a0c32149\` |
+| Source UTC read | 2026-11-01 18:13:03 UTC | 2026-11-01 18:13:03 UTC |
+| Original raster pixel/NoData-mask sample read | **No** | **No** |
+| Physical water-depth unit independently verified | **No** | **No** |
+
+This is direct **original IFD metadata evidence**, not a claim
+that any water-depth pixels, masking convention or physical unit
+is validated. A pixel value of −9999 must never be interpreted
+as a negative water depth; it is the source-declared NoData
+sentinel. However, observed NoData **cells**, valid 0-depth
+pixels, physical water-depth unit, unit scaling, coverage
+within the 200×200 m building pilot and insurer losses remain
+unverified. Absence of explicit UNITTYPE or SCALE does **not**
+prove a default unit of metres or scale factor of 1.
+
+### Next source access engineering constraint
+
+There are **two compression layers**, independently observed:
+the original ZIP member uses **Deflate (ZIP method 8)** and the
+contained TIFF raster reports **LZW (TIFF compression 5)**.
+The ZIP has only one TIFF member, with original large source objects
+619,211,977 B and 563,115,763 B. Ordinary byte-range access to
+the outer ZIP does **not** directly permit arbitrary GeoTIFF tile
+access inside its Deflate stream: random access generally requires
+prior sequential decompression or a separately built, verified
+Deflate seek index. The inner TIFF's LZW tiles cannot be sampled
+by assuming their compressed offsets equal original ZIP HTTP
+offsets.
+
+Before real building × flood support:
+1. Review a rights-compatible, controlled one-time streaming
+   original-source ingest into **isolated CAT temporary storage**,
+   with fixed full ZIP SHA-256, bounded expanded bytes, zip-bomb
+   controls and per-member CRC, or find an authoritative
+   **independently verified raster subset service** with equivalent
+   depth-mask and scenario semantics.
+2. Open a **small original TIFF pixel window** in a controlled
+   raster runtime after verified decompression, confirming actual
+   32-bit samples, −9999 NoData masks, depth physical units,
+   and any extra mask/scale behavior.
+3. Only then overlay georeferenced valid cells with the
+   original-derived BLD4 building polygons, including provider
+   rights, temporal mismatch and vulnerability/insurance
+   restrictions. No insurer exposure/TIV or CAT loss is
+   admitted by the present header-only proof.
