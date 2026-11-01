@@ -13,7 +13,9 @@ import argparse
 import hashlib
 import ipaddress
 import json
+import os
 import re
+import stat
 import sys
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -320,6 +322,39 @@ def preflight_graphql_bytes(raw: bytes) -> dict[str, object]:
     }
 
 
+def read_local_metadata(path: Path, max_bytes: int) -> bytes:
+    """Read a bounded, stable regular file; never follow a final symlink.
+
+    In particular, reject FIFOs, directories and mutable source contents;
+    a local successful read is still not provider provenance or data admission.
+    """
+    if max_bytes < 1:
+        raise CataloguePreflightError("metadata read budget is not positive")
+    flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(path, flags)
+    except OSError as exc:
+        raise CataloguePreflightError("local metadata input is not a safe readable file") from exc
+    try:
+        with os.fdopen(fd, "rb") as source:
+            before = os.fstat(source.fileno())
+            if not stat.S_ISREG(before.st_mode):
+                raise CataloguePreflightError("local metadata input must be a regular file")
+            if not 0 < before.st_size <= max_bytes:
+                raise CataloguePreflightError("local metadata input byte budget exceeded or file empty")
+            raw = source.read(max_bytes + 1)
+            after = os.fstat(source.fileno())
+            identity = lambda x: (
+                x.st_dev, x.st_ino, x.st_size, x.st_mtime_ns, x.st_ctime_ns
+            )
+            if len(raw) != before.st_size or identity(before) != identity(after):
+                raise CataloguePreflightError("local metadata input changed while reading")
+            return raw
+    except OSError as exc:
+        raise CataloguePreflightError("local metadata file read failed") from exc
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True, help="local catalogue JSON supplied separately")
@@ -329,13 +364,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     try:
-        size = args.input.stat().st_size
         max_bytes = GRAPHQL_MAX_INPUT_BYTES if args.format == "graphql" else MAX_INPUT_BYTES
-        if not 0 < size <= max_bytes:
-            raise CataloguePreflightError("input byte bound exceeded")
-        raw = args.input.read_bytes()
+        raw = read_local_metadata(args.input, max_bytes)
         result = preflight_graphql_bytes(raw) if args.format == "graphql" else preflight_bytes(raw)
-    except (OSError, CataloguePreflightError) as exc:
+    except CataloguePreflightError as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         return 2
     print(json.dumps(result, indent=2, sort_keys=True))
