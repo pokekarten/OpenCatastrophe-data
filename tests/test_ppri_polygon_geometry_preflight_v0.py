@@ -2,9 +2,15 @@
 # SPDX-License-Identifier: Apache-2.0
 import json
 import unittest
+import importlib.util
 from urllib.parse import urlencode
 
-from research_runners.ppri_polygon_geometry_preflight_v0 import audit
+# The general CI intentionally installs only PyYAML. A separate mandatory
+# spatial workflow installs exact Shapely and asserts availability, then runs
+# this complete suite; generic unittest discovery may skip this optional lane.
+HAS_SHAPELY = importlib.util.find_spec("shapely") is not None
+if HAS_SHAPELY:
+    from research_runners.ppri_polygon_geometry_preflight_v0 import audit
 
 ROOT = "https://sig.seinegrandslacs.fr/arcgis/rest/services/Gestion_Eaux_Inondations_GP/MapServer/17/query"
 
@@ -24,6 +30,7 @@ def source(coords, kind="Polygon", objectid=574):
     ]}).encode()
 
 
+@unittest.skipUnless(HAS_SHAPELY, 'Shapely suite runs in the dedicated spatial CI job')
 class TopologyReceiptTests(unittest.TestCase):
     def test_valid_original_polygon_is_topologically_usable_but_never_admitted(self):
         raw = source([[[2.5, 48.5], [2.6, 48.5], [2.6, 48.6],
