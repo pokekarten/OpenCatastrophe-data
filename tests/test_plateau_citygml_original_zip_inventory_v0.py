@@ -70,6 +70,18 @@ class PlateauOriginalZipInventoryTests(unittest.TestCase):
         self.assertNotIn("synthetic.zip", json.dumps(outcome))
         self.assertNotIn("CityModel", json.dumps(outcome))
 
+    def test_zip_name_cannot_falsely_assert_shinjuku_municipality_or_vintage(self):
+        # This is explicitly a 2020 Hokota-like archive, not Shinjuku 2024.
+        raw = synthetic_zip([
+            ("08234_hokota-shi_2020_citygml/udx/bldg/synthetic.gml", b"<CityModel/>"),
+        ])
+        receipt = run_zip(raw)
+        self.assertFalse(receipt["municipality_and_year_in_archive_verified"])
+        self.assertNotIn("target_municipality_code", receipt)
+        self.assertNotIn("target_release_fiscal_year", receipt)
+        self.assertNotIn("13104", json.dumps(receipt))
+        self.assertNotIn("08234", json.dumps(receipt))
+
     def test_explicit_matching_expectations_are_recorded_without_licence_claim(self):
         raw = synthetic_zip()
         outcome = run_zip(
