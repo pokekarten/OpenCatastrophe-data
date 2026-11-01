@@ -112,16 +112,39 @@ def _txt_layout(raw: bytes) -> dict:
     # Strict token safeguards prevent a novel/data-like first line from being
     # exported as a supposed original provider header.
     raw_titles = [field.strip().strip('"') for field in nonblank[0].split(";")]
+    # An original DWD provider header can contain unnamed delimiter cells.
+    # Never transform a real observation or station value row into a header:
+    # first line has ZERO valid date tokens; a same-width second line has at
+    # least two real calendar dates. This is a format hypothesis, not meaning.
+    header_dates = _valid_calendar_candidates(nonblank[0])[1]
+    second_dates = (_valid_calendar_candidates(nonblank[1])[1]
+                    if len(nonblank) > 1 else 0)
+    same_delimiters = (
+        len(nonblank) > 1
+        and nonblank[0].count(";") == nonblank[1].count(";")
+    )
+    populated = [label for label in raw_titles if label]
+    blanks = len(raw_titles) - len(populated)
     safe_titles = (
         8 <= len(raw_titles) <= 20
         and len(nonblank[0].encode("utf-8")) <= 512
-        and all(1 <= len(name) <= 90
-                and re.fullmatch(r"[\w .(),:/%+\-]+", name, re.UNICODE)
-                for name in raw_titles)
-        and len({name.casefold() for name in raw_titles}) == len(raw_titles)
-        and any("datum" in name.casefold() or "station" in name.casefold()
-                for name in raw_titles)
+        and same_delimiters and header_dates == 0 and second_dates >= 2
+        and blanks <= 2
+        and all(len(label) <= 90 and any(ch.isalpha() for ch in label)
+                and not any(ord(ch) < 32 for ch in label)
+                for label in populated)
+        and len({label.casefold() for label in populated}) == len(populated)
+        and any("datum" in label.casefold() or "station" in label.casefold()
+                for label in populated)
     )
+    # Only emitted when strong provider-header shape evidence holds; unknown
+    # punctuation is replaced, blanks explicitly numbered, and no TXT rows
+    # are returned. Original header labels are discovery, NOT approved fields.
+    source_labels = [
+        ("".join(ch if (ch.isalnum() or ch in " _-.(),:/%+[]")
+                 else "_" for ch in label) if label else f"unnamed_field_{i}")
+        for i, label in enumerate(raw_titles)
+    ]
     # Never output original line contents. Character offsets refer only to date
     # CANDIDATES, not approved 'from'/'to' fields.
     signatures = []
@@ -149,9 +172,13 @@ def _txt_layout(raw: bytes) -> dict:
         "candidate_date_tokens": totals["date_tokens"],
         "valid_calendar_tokens": totals["valid_calendar_tokens"],
         "first_three_line_signatures": signatures[:3],
-        "source_column_names": raw_titles if safe_titles else [],
+        "source_column_names": source_labels if safe_titles else [],
         "header_candidate_recognized": bool(safe_titles),
         "source_header_diagnostics_only": {
+            "header_empty_field_count": blanks,
+            "two_line_delimiter_width_consistent": bool(same_delimiters),
+            "first_line_valid_calendar_tokens": header_dates,
+            "second_line_valid_calendar_tokens": second_dates,
             "field_count": len(raw_titles),
             "all_nonblank_and_bounded": all(1 <= len(name) <= 90 for name in raw_titles),
             "all_within_restricted_character_set": all(
