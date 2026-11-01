@@ -82,6 +82,28 @@ class TestSyntheticNeonGul10k(unittest.TestCase):
         with self.assertRaises(ValueError):
             compute(tuple(bad))
 
+    def test_rejects_same_total_swapped_asset_values(self):
+        swapped = list(ASSETS)
+        swapped[0], swapped[1] = (swapped[0][0], swapped[1][1]), (swapped[1][0], swapped[0][1])
+        self.assertEqual(sum(amount for _, amount in swapped), 3150000)
+        with self.assertRaises(ValueError):
+            compute(tuple(swapped))
+
+    def test_rejects_missing_or_empty_assets(self):
+        for malformed in ((), ASSETS[:-1]):
+            with self.subTest(malformed_count=len(malformed)):
+                with self.assertRaises(ValueError):
+                    compute(malformed)
+
+    def test_sql_guard_does_not_silently_drop_bad_fixtures(self):
+        from pathlib import Path
+        sql = (Path(__file__).resolve().parents[1]
+               / 'research_runners/sql/neon_synthetic_gul_10k_v0.sql').read_text(encoding='utf-8')
+        self.assertIn('FULL JOIN expected_assets', sql)
+        self.assertIn('mismatches=0', sql)
+        self.assertIn('1 / (CASE WHEN n=12', sql)
+        self.assertNotIn('HAVING COUNT(*)=12', sql)
+
     def test_rejects_non_synthetic_inputs(self):
         with self.assertRaises(ValueError):
             compute(ASSETS, synthetic=False)
