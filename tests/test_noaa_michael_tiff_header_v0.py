@@ -265,7 +265,7 @@ class NOAAOriginalDeflateAlphaTileTests(unittest.TestCase):
                 with self.assertRaises(AlphaTileProofError):
                     probe_zero_block(header, item(), bad, comp)
         with self.assertRaises(AlphaTileProofError):
-            probe_zero_block(b"II" + header[2:], item(), 180, comp)
+            probe_zero_block(b"MM" + header[2:], item(), 180, comp)
         with self.assertRaisesRegex(AlphaTileProofError, "byte count"):
             probe_zero_block(header, item(), 180, comp[:-1])
 
