@@ -65,7 +65,7 @@ class HessenOneBuildingWfsTests(TestCase):
 
     def test_one_original_gml_feature_does_not_expose_id_or_coordinates(self):
         result=wfs.inspect_feature_xml(fixture())
-        self.assertEqual(result["original_feature_members_returned"],1)
+        self.assertEqual(result["original_feature_members_parsed_not_admitted"],1)
         self.assertEqual(result["reported_number_returned_if_integer"],1)
         self.assertIsNone(result["reported_number_matched_if_integer"])
         self.assertTrue(result["source_geometry_markup_present"])
@@ -78,7 +78,7 @@ class HessenOneBuildingWfsTests(TestCase):
 
     def test_empty_page_cannot_confirm_absent_buildings(self):
         result=wfs.inspect_feature_xml(fixture(members=0,returned=0,matched=0))
-        self.assertEqual(result["original_feature_members_returned"],0)
+        self.assertEqual(result["original_feature_members_parsed_not_admitted"],0)
         self.assertFalse(result["source_geometry_markup_present"])
         self.assertIsNone(result["geometry_crs_declared_and_matches_requested"])
         self.assertTrue(result["not_a_complete_building_inventory"])
@@ -102,6 +102,22 @@ class HessenOneBuildingWfsTests(TestCase):
             with self.subTest(n=n),self.assertRaises(wfs.BuildingFeatureBlocked):
                 wfs.inspect_feature_xml(raw)
 
+    def test_provider_header_count_mismatch_is_blocked_but_can_be_safely_diagnosed(self):
+        payload=fixture(members=1,returned=0)
+        with self.assertRaisesRegex(wfs.BuildingFeatureBlocked,"WFS count mismatch"):
+            wfs.inspect_feature_xml(payload)
+        result=wfs.inspect_feature_xml(payload,diagnostic_only=True)
+        self.assertEqual(result["source_validation_status"],
+                         "BLOCKED_CONTRADICTORY_WFS_COUNTS")
+        self.assertEqual(result["original_feature_members_parsed_not_admitted"],1)
+        self.assertEqual(result["reported_number_returned_if_integer"],0)
+        self.assertFalse(result["reported_member_count_consistent"])
+        self.assertFalse(result["actual_building_worldcover_overlap_verified"])
+        self.assertFalse(result["model_input_approved"])
+        self.assertNotIn("secret",str(result))
+        with self.assertRaises(wfs.BuildingFeatureBlocked):
+            wfs.inspect_feature_xml(payload,diagnostic_only="unsafe")
+
     def test_unexpected_crs_is_explicitly_not_verified(self):
         result=wfs.inspect_feature_xml(fixture(srs="EPSG:25832"))
         self.assertFalse(result["geometry_crs_declared_and_matches_requested"])
@@ -118,7 +134,7 @@ class HessenOneBuildingWfsTests(TestCase):
         evidence=wfs.probe(open_request=fake)
         self.assertEqual(calls,[(wfs.URL,"GET","identity",wfs.TIMEOUT_SECONDS)])
         self.assertEqual(response.read_sizes,[wfs.MAX_BYTES+1])
-        self.assertEqual(evidence["original_feature_members_returned"],1)
+        self.assertEqual(evidence["original_feature_members_parsed_not_admitted"],1)
         self.assertFalse(evidence["source_raw_features_or_gml_persisted"])
         self.assertFalse(evidence["feature_identifiers_addresses_or_coordinates_emitted"])
         self.assertNotIn("50.516",str(evidence))
