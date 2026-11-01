@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg LiDAR2024 pinned original bounded city tile lookup
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_lidar2024_fixed_tile_candidates_v0.py'
+      - 'tests/test_luxembourg_lidar2024_fixed_tile_candidates_v0.py'
+      - '.github/workflows/luxembourg-lidar2024-city-tile-lookup.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-lidar2024-city-tile-candidates:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout review-pinned workflow code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned coordinate transformation runtime
+        run: |
+          python -m pip install --disable-pip-version-check --no-input pyproj==3.7.2
+          python -m pip check
+      - name: Test synthetic original byte pins and spatial RTree candidate bounds
+        run: python -m unittest tests.test_luxembourg_lidar2024_fixed_tile_candidates_v0 -v
+      - name: Resolve only the previous 250m original ACT/EUBUCCO city research window
+        shell: bash
+        run: |
+          set -euo pipefail
+          original="$RUNNER_TEMP/lidar2024-ta.gpkg"
+          trap 'rm -f "$original"' EXIT
+          umask 077
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 90 --retry 0 \
+            --max-filesize 10485760 --output "$original" \
+            'https://download.data.public.lu/resources/lidar-2024-releve-3d-du-territoire-luxembourgeois/20250117-095958/lidar2024-ta.gpkg'
+          python -m research_runners.luxembourg_lidar2024_fixed_tile_candidates_v0 \
+            --original-gpkg "$original"
+          # Report only aggregate tile count, URL host counts and false admission flags.
+          # Original index, spatial rows, URLs, LAZ/COG or building identities are not saved.
