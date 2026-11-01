@@ -5,6 +5,11 @@ name: geoBoundaries DEU ADM1 metadata receipt
 
 on:
   workflow_dispatch:
+  # One bounded proof on merge of this workflow revision; no recurring schedule.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/geoboundaries-deu-adm1-metadata-receipt.yml
 
 permissions:
   contents: read
