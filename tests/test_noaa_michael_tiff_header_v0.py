@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import json
 import re
 import struct
 import unittest
@@ -342,7 +343,15 @@ class NOAAOriginalDeflateAlphaTileTests(unittest.TestCase):
         self.assertEqual(q["query"]["inSR"], "4326")
         self.assertEqual(q["query"]["returnCountOnly"], "true")
         self.assertEqual(q["query"]["returnGeometry"], "false")
-        bbox = [float(v) for v in q["query"]["geometry"].split(",")]
+        self.assertEqual(q["query"]["geometryType"], "esriGeometryPolygon")
+        polygon = json.loads(q["query"]["geometry"])
+        self.assertEqual(polygon["spatialReference"]["wkid"], 4326)
+        bbox = [
+            min(v[0] for v in polygon["rings"][0]),
+            min(v[1] for v in polygon["rings"][0]),
+            max(v[0] for v in polygon["rings"][0]),
+            max(v[1] for v in polygon["rings"][0]),
+        ]
         source = item()["bbox"]
         expected = [
             source[0] + 4608 * (source[2] - source[0]) / 9340,
