@@ -73,7 +73,7 @@ jobs:
           python research_runners/eubucco_lu00_lineage_preflight_v0.py \
             --original "$EUBUCCO" \
             --expected-sha256 d1e554de9db0b1f747575426ebb950ef96bb8b2956657554b5ff2998a91abe8c > /dev/null
-          python research_runners/luxembourg_act_eubucco_bounded_overlap_v0.py \
+          python -m research_runners.luxembourg_act_eubucco_bounded_overlap_v0 \
             --act-gpkg "$ACT_GPKG" --eubucco-lu00 "$EUBUCCO" \
             --center-lon 6.1319 --center-lat 49.6116 \
             --half-width-m 125 --cap 500
