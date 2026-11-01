@@ -14,6 +14,7 @@ on:
       - "tests/test_hanze_regions2024_geometry_code_coverage_v0.py"
       - "research_runners/hanze_2024_original_polygon_integrity_v0.py"
       - "tests/test_hanze_2024_original_polygon_integrity_v0.py"
+      - "research_runners/hanze_2024_polygon_integrity_source_receipt_v0.py"
       - "research_runners/hanze_regions2024_geometry_source_receipt_v0.py"
   workflow_dispatch:
 
@@ -54,3 +55,6 @@ jobs:
       - name: Show original polygon record structure and reported projection metadata only
         run: |
           python -c 'import json,os,pathlib; r=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-regions2024-zip-metadata.json").read_text()); p=r["original_polygon_record_integrity"]; assert p["original_zip_sha256_verified"] and p["polygon_records"]+p["null_shape_records"]==1449 and p["shp_shx_record_count_exactly_reconciled"] and p["all_declared_bounds_contain_finite_vertices"] and not p["historical_hazard_footprint_observed"] and not p["model_source_admitted"]; print("HANZE 2024 original Polygon/PRJ evidence (not actual inundation):",json.dumps(p,sort_keys=True))'
+      - name: Compare all original Polygon and PRJ metadata to frozen source evidence
+        run: |
+          python -c 'import json,os,pathlib; from research_runners.hanze_2024_polygon_integrity_source_receipt_v0 import HANZE_2024_POLYGON_INTEGRITY_RECEIPT_V0 as e; a=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"hanze-regions2024-zip-metadata.json").read_text()); p=a["original_polygon_record_integrity"]; w=p["projection_declaration"]; assert a["observed_sha256"] == e["original_zip_sha256"] and p["polygon_records"] == e["polygon_records"] and p["null_shape_records"] == e["null_shape_records"] and p["polygon_rings"] == e["polygon_rings"] and p["polygon_vertices"] == e["polygon_vertices"] and p["exactly_closed_ring_count"] == e["exactly_closed_rings"] and p["open_ring_count"] == e["open_rings"] and w["declared_crs_name_unverified"] == e["projection_declared_name"] and w["declared_projection_method_unverified"] == e["projection_declared_method"] and w["declared_unit_names_unverified"] == e["projection_declared_unit_names"] and w["wkt_authority_epsg_codes_reported"] == e["projection_source_explicit_epsg_authorities"] and not e["model_source_admitted"]; print("PASS: exact original 1449 polygons, 15712 closed rings, 397659 points; publisher declares ETRS_1989_LAEA without EPSG ID")'
