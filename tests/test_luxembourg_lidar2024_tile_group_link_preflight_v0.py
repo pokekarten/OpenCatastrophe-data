@@ -112,6 +112,51 @@ class TileResourcePreflightTests(unittest.TestCase):
         self.assertEqual(result["head_probe_per_group_without_original_url"][0]["http_status"],302)
         self.assertNotIn(U1,json.dumps(result))
 
+    def test_redirect_head_uses_real_zip_response_size_not_302_body(self):
+        direct=("https://download.data.public.lu/resources/"
+                "bd-l-lidar2024-releve-3d-du-territoire-luxembourgeois/"
+                "20241129-132357/lidar2024-c001-r027.zip")
+        with patch.object(mod,"_head_once",side_effect=[
+            (302, {"Location":direct,"Content-Length":"457"}),
+            (200, {"Content-Length":"300000000"}),
+        ]) as mock:
+            result=mod.head_source(U1)
+        self.assertEqual(mock.call_count,2)
+        self.assertEqual(mock.call_args_list[0].args[0],U1)
+        self.assertEqual(mock.call_args_list[1].args[0],direct)
+        self.assertEqual(result["origin_http_status"],302)
+        self.assertEqual(result["http_status"],200)
+        self.assertTrue(result["redirect_followed_for_head_only"])
+        self.assertEqual(result["declared_zip_content_length_bytes"],300000000)
+        self.assertFalse(result["potential_future_download_below_100_mib"])
+        self.assertFalse(result["actual_zip_content_verified"])
+        self.assertNotIn(direct,str(result))
+
+    def test_reject_redirect_to_third_party_without_secondary_request(self):
+        with patch.object(mod,"_head_once",return_value=(
+            302,{"Location":"https://internal.example.invalid/private.zip",
+                 "Content-Length":"457"})) as mock:
+            result=mod.head_source(U1)
+        self.assertEqual(mock.call_count,1)
+        self.assertFalse(result["redirect_followed_for_head_only"])
+        self.assertIsNone(result["declared_zip_content_length_bytes"])
+        self.assertEqual(result["http_status"],302)
+
+    def test_official_second_redirect_does_not_follow_twice(self):
+        direct=("https://download.data.public.lu/resources/"
+                "bd-l-lidar2024-releve-3d-du-territoire-luxembourgeois/"
+                "20241129-132357/lidar2024-c001-r027.zip")
+        with patch.object(mod,"_head_once",side_effect=[
+            (302,{"Location":direct,"Content-Length":"457"}),
+            (302,{"Location":"https://s3.eu-central-1.amazonaws.com/bucket/data.zip",
+                  "Content-Length":"244"}),
+        ]) as mock:
+            result=mod.head_source(U1)
+        self.assertEqual(mock.call_count,2)
+        self.assertTrue(result["redirect_followed_for_head_only"])
+        self.assertEqual(result["http_status"],302)
+        self.assertIsNone(result["declared_zip_content_length_bytes"])
+
     def test_invalid_head_target_fails_before_network(self):
         with self.assertRaisesRegex(mod.LidarLinkError,"Refuse"):
             mod.head_source("https://evil.invalid/private.zip")
