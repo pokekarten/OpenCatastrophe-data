@@ -55,6 +55,8 @@ class LuxembourgGeoBaseFullGeometryTests(unittest.TestCase):
         self.assertEqual(result["original_objects"], 4)
         self.assertEqual(result["polygon_valid_positive_area"], 2)
         self.assertEqual(result["invalid_topology"], 1)
+        self.assertEqual(sum(result["invalid_topology_classes_aggregate"].values()), 1)
+        self.assertNotIn("[", json.dumps(result["invalid_topology_classes_aggregate"]))
         self.assertEqual(result["malformed_gpkg_geometry"], 1)
         self.assertEqual(result["valid_polygon_area_sum_projected_m2"], 200)
         self.assertTrue(result["source_rows_conserved"])
