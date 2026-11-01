@@ -80,3 +80,58 @@ This preflight does not modify Neon, Pokémon storage, any persistent CAT
 database, or release provider object geometries. Do not mark Germany
 building datasets as ingested until real feature bytes have passed their
 own fixed access/rights/science gates.
+
+## First verified official WFS capabilities response — 2026-11-01
+
+The dedicated [GitHub Actions run 41318893338](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41318893338)
+succeeded on main commit `6e1e0cbe1858e64633ce11d8857e9ac5fd7c444f`.
+
+- UTC retrieval: `2026-11-01T15:00:06.479342+00:00`
+- Original WFS response: **95,453 bytes**, SHA-256
+  `c464d67da3b4b35637ba48fd375c1cb4579268536404a36cd80d478df7f78584`
+- Official WFS version: **2.0.0**
+- Advertised feature types: **1**, exact
+  `alkis_gebaeude:gebaeude`.
+- Advertised CRS: EPSG **25832**, **25833**, **3857**, **4258**, **4326**.
+- No building data/feature geometries were acquired in this metadata-only check.
+- Provider XML original bytes were not retained, no model inputs approved.
+
+This now authorizes a separate, source-specific *reviewed pilot*, not an
+unlimited GetFeature adapter or retrospective parcel/building evidence.
+
+## Fixed bounded original feature sample and CAT1/CAT2 linkage v0
+
+The optional source-specific research runner
+`research_runners/berlin_alkis_gebaeude_five_feature_join_v0.py`
+asks **one** anonymous WFS 2.0.0 `GetFeature`, exact feature name
+`alkis_gebaeude:gebaeude`, `count=5`, fixed EPSG:25833
+200m × 200m bbox `391700,5819950,391900,5820150`, and
+`outputFormat=application/json`. There are no user-supplied arbitrary
+query/BBOX/host/filter options. The WFS reply is bounded at 512 KiB.
+
+The sample must consist of 1 to 5 structurally valid Berlin building
+Polygon/MultiPolygon features in the fixed bounding box, plausible source
+EPSG:25833 numeric axes and valid metric areas. Features, source
+identifiers, source addresses, individual building coordinates and
+private attributes are neither logged nor saved. Polygon representative
+points are transformed from EPSG:25833 to WGS84 *in memory*, then
+assigned through source-pinned local CAT1 geoBoundaries / CAT2 Eurostat
+NUTS2021-10M. Every sampled building must resolve to `DE3` Berlin.
+Failures preserve the source error rather than fabricate locations.
+
+The dedicated GitHub Actions workflow
+`.github/workflows/berlin-alkis-five-buildings-de3.yml` executes only
+synthetic tests on PRs; one exact live request is permitted after
+reviewed merge of the workflow revision, with the 6.25MB/0.37MB
+reference geometry inputs verified and held in temporary storage.
+All original and derived CAT bytes are deleted after the run. A pass
+would demonstrate only successful regional assignment of at most five
+*current provider WFS* building footprints to **2021 boundary regions**.
+Because the provider WFS is live and monthly updated, no claim is made
+that the individual buildings themselves existed in 2021, that geometry
+has not changed since then, that a building equals an insured risk or
+that an EUBUCCO modified-NUTS2016 partition is represented.
+
+The first real original-feature receipt must be appended after the
+run, including the true response hash, number of successfully validated
+polygons, sample-area aggregate and whether all joins passed.
