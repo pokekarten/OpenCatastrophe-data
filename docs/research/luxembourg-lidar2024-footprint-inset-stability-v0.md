@@ -35,3 +35,29 @@ python -m research_runners.luxembourg_lidar2024_footprint_inset_sensitivity_v0 \
 The specialized workflow `.github/workflows/luxembourg-lidar-footprint-inset-sensitivity.yml` (pinned Rasterio 1.5.0, NumPy 2.3.5, PyProj 3.7.2 and Shapely 2.1.2) repeats synthetic testing and one original-source data pilot. All source bytes, transient ID-bearing GeoJSON and per-building temporary calculated medians are confined to a runner and deleted. No geospatial per-record source data, building heights or CAT model inputs go to Git or the insurance Neon DB.
 
 **Do not report actual 1m-inset measurements until the exact-head original workflow has passed.** Results and workflow run ID can be appended after completion. Next scientific validation should collect independently surveyed building-specific roof controls and compare a stratified test cohort, taking care not to assume external datasets are independent simply because they have distinct product labels.
+
+## Verified original-source 1 m inward-mask result (2026-11-01)
+
+**Authoritative hosted original source workflow:** https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41316435696 . The workflow first passed all **13** synthetic pixel-mask tests, then repeated the exact earlier 2026 GeoBase original GPKG SHA256 and official MNT/MNS 2024 cloud-optimized raster bounded source reads. This run executed the **new inward sensitivity command**, not the old PR #957 baseline command.
+
+| Population/quality | Original-data result |
+| --- | ---: |
+| Original GeoBase footprints with positive intersection in frozen 100m study | **104** |
+| Original PR #957 in-footprint proxies passing unique valid-pixel gate | **97** |
+| Still eligible after 1m inward polygon erosion | **73** |
+| Previously eligible but excluded after erosion | **24** |
+| Original missing/ineligible newly counted after erosion | **0** |
+| 1m erosion generated no remaining polygon geometry | **20** of 104 |
+| Shared pixels excluded from BOTH baseline and inward cohorts | **350** |
+| Of 73 eligible both times, median shift ≤0.5m | **57** |
+| Of 73 eligible both times, >0.5m through 1m | **14** |
+| Of 73 eligible both times, >1m through 2m | **2** |
+| Of 73 eligible both times, >2m | **0** |
+| Of 73 eligible both times, remained in same categorical proxy band | **68** |
+| Of 73 eligible both times, crossed proxy band boundary | **5** |
+
+Source/pixel conservation: **97 − 24 = 73**, **57+14+2+0 = 73**, **68+5 = 73**. Original source masks have 350 multiply assigned pixels that remain excluded in both cohorts; never promote overlap pixels based on erosion alone.
+
+The **73** inward-cohort source MNS-minus-MNT median proxy **categories**, for scientific diagnostic only, are: **3** (3–6m), **3** (6–10m), **17** (10–15m), **50** (15–25m), **0** outside those bands. The *comparison-conditioned 68/73 stable proxy bands* do not establish actual independent roof height, measurement bias, construction vintage or building-to-building identity; the 24 lost sample members could systematically differ in size and building type (selection bias). Vegetation/cloud surface, MNT ambiguity, horizontal and vertical CRS control, source rights and 2024/2026 age mismatch remain unverified.
+
+**Scientific decision:** This demonstrates *limited edge sensitivity in the retained cohort* but **not** validated building heights. A future model should represent 24 dropped buildings as missing/low-confidence instead of estimating their values from the retained 73. No insurer insured values, countrywide roof height product, original source rows or CAT model input were admitted.
