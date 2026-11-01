@@ -201,6 +201,17 @@ def inspect(asset: str, *, opener=None, expected_first_sha=PIN_FIRST_PAGE_SHA256
         raise MetadataBlockError("Original COG CRS is not declared EPSG:2169")
     if not 0 < expected_tiles <= 20000000:
         raise MetadataBlockError("Excessive raster tile population")
+    # Fingerprint the *georeferencing grid* rather than exposing source tiepoint
+    # coordinates. Equal digests across MNT/MNS indicate equal DECLARED grids
+    # in the first IFD, not validated ground control or pixel-level heights.
+    grid_sha256 = hashlib.sha256(json.dumps({
+        "width": width, "height": height,
+        "pixel_scale": scale, "tiepoint": tiepoint, "epsg": epsg,
+    }, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+    sample_format = (_scalar(reader, tags, 339)
+                     if 339 in tags else None)
+    if sample_format not in (None, 1, 2, 3):
+        raise MetadataBlockError("Unreviewed sample format")
     return {
         "profile": "lu-lidar2024-cog-bigtiff-metadata-v0",
         "asset": asset, "source_full_bytes_from_http": reader.total,
@@ -209,6 +220,8 @@ def inspect(asset: str, *, opener=None, expected_first_sha=PIN_FIRST_PAGE_SHA256
         "internal_tile_width_pixels": tile_w, "internal_tile_height_pixels": tile_h,
         "internal_tile_count": expected_tiles,
         "bits_per_sample": bits, "tiff_compression_code": compression,
+        "sample_format_code": sample_format,
+        "declared_georeference_grid_sha256_only": grid_sha256,
         "declared_projected_epsg": epsg,
         "pixel_size_x_units": scale[0], "pixel_size_y_units": scale[1],
         "source_metadata_range_requests": len(reader.pages),
