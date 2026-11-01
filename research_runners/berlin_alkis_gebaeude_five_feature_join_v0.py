@@ -16,6 +16,9 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import math
+import os
+import sqlite3
+import tempfile
 from pathlib import Path
 import ssl
 import sys
@@ -24,6 +27,9 @@ from urllib import parse, request, error
 
 from research_runners.geoboundaries_deu_adm1_nuts2021_crosswalk_v0 import (
     resolve_nuts1_for_point,
+)
+from research_runners.geoboundaries_deu_adm1_cat_sqlite_v0 import (
+    _check_destination,
 )
 
 ROOT = "https://gdi.berlin.de/services/wfs/alkis_gebaeude"
@@ -37,6 +43,9 @@ MAX_COUNT = 5
 MAX_BYTES = 524_288
 TIMEOUT = 35
 PROFILE = "oc-berlin-alkis-fixed-bbox-five-buildings-de3-v0"
+CAT4_APP_ID = 0x424C4434  # BLD4, separate from CAT1 / CAT2 / CAT3
+CAT4_SCHEMA_VERSION = 1
+CAT4_SCHEMA = "berlin_alkis_five_derived_footprints_cat4_staging_v0"
 PARAMS = [
     ("service", "WFS"),
     ("version", "2.0.0"),
@@ -148,6 +157,93 @@ def inspect_building_geojson(raw: bytes) -> tuple[dict, list[tuple[float, float]
     }, points)
 
 
+def stage_derived_footprints(
+    raw: bytes, region_codes: list[str], output: Path, *,
+    receipt_utc: str,
+) -> dict:
+    """Create NEW local CAT4 file containing derived geometry, no private fields.
+
+    Caller already passed exact WFS source validation and independently
+    source-pinned CAT1/CAT2 point joins. Revalidate the exact same bytes here,
+    never issue a second provider request. Only local polygon WKB/areas and
+    verified administrative NUTS code are staged. No source feature IDs,
+    names, addresses, tags, or monetary attributes survive into the DB.
+    """
+    stats, _ = inspect_building_geojson(raw)
+    if len(region_codes) != stats["sampled_feature_count"] or any(
+        code != "DE3" for code in region_codes
+    ):
+        raise BerlinBuildingSampleError("all sample polygons require independent DE3 attribution")
+    target = _check_destination(output)
+    from shapely.geometry import shape
+
+    # Source body is bounded and validated; intentionally drop all properties,
+    # addresses, and original feature identifiers at the parsing boundary.
+    features = json.loads(raw.decode("utf-8"))["features"]
+    fd, temp_name = tempfile.mkstemp(
+        prefix=".berlin-alkis-cat4-", suffix=".sqlite", dir=target.parent,
+    )
+    os.close(fd)
+    try:
+        with closing(sqlite3.connect(temp_name)) as db:
+            db.execute(f"PRAGMA application_id={CAT4_APP_ID}")
+            db.execute(f"PRAGMA user_version={CAT4_SCHEMA_VERSION}")
+            db.executescript("""
+                CREATE TABLE provenance (
+                    singleton INTEGER PRIMARY KEY CHECK(singleton=1),
+                    schema_id TEXT NOT NULL,
+                    source_service TEXT NOT NULL,
+                    source_feature_type TEXT NOT NULL,
+                    source_response_sha256 TEXT NOT NULL,
+                    retrieved_at_utc TEXT NOT NULL,
+                    source_rights TEXT NOT NULL,
+                    building_vintage TEXT NOT NULL CHECK(building_vintage='current_mutable_unknown_feature_date'),
+                    boundary_vintage INTEGER NOT NULL CHECK(boundary_vintage=2021),
+                    region_source TEXT NOT NULL,
+                    model_admitted INTEGER NOT NULL CHECK(model_admitted=0)
+                );
+                CREATE TABLE building_sample (
+                    ordinal INTEGER PRIMARY KEY,
+                    projected_epsg25833_geometry_wkb BLOB NOT NULL,
+                    footprint_area_m2 REAL NOT NULL CHECK(footprint_area_m2>0),
+                    nuts1_region TEXT NOT NULL CHECK(nuts1_region='DE3')
+                );
+            """)
+            with db:
+                db.execute(
+                    "INSERT INTO provenance VALUES (1, ?, ?, ?, ?, ?, 'dl-de-zero-2.0', "
+                    "'current_mutable_unknown_feature_date', 2021, "
+                    "'geoBoundaries 2021 + Eurostat NUTS2021 10M independently verified', 0)",
+                    (CAT4_SCHEMA, ROOT, LAYER, hashlib.sha256(raw).hexdigest(),
+                     receipt_utc),
+                )
+                for idx, (feature, code) in enumerate(zip(features, region_codes), 1):
+                    g = shape(feature["geometry"])
+                    db.execute(
+                        "INSERT INTO building_sample VALUES (?, ?, ?, ?)",
+                        (idx, g.wkb, float(g.area), code),
+                    )
+            if db.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+                raise BerlinBuildingSampleError("CAT4 integrity check failed")
+            if db.execute("SELECT count(*) FROM building_sample").fetchone()[0] != len(features):
+                raise BerlinBuildingSampleError("CAT4 building sample row count mismatch")
+        # Atomic no-overwrite commit. A pre-existing user SQLite remains intact.
+        os.link(temp_name, target)
+    except (sqlite3.Error, OSError, ValueError) as exc:
+        raise BerlinBuildingSampleError("bounded CAT4 geometry staging failed") from exc
+    finally:
+        Path(temp_name).unlink(missing_ok=True)
+    return {
+        "schema": CAT4_SCHEMA, "app_id": CAT4_APP_ID,
+        "derived_geometry_local_staging_created": True,
+        "geometry_rows": len(features),
+        "all_rows_region": "DE3",
+        "original_provider_properties_and_ids_saved": False,
+        "source_original_response_bytes_saved": False,
+        "model_input_admitted": False,
+    }
+
+
 class NoRedirect(request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         raise BerlinBuildingSampleError("fixed provider request redirected")
@@ -165,6 +261,7 @@ def probe(
     clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
     cat1: Path | None = None,
     cat2: Path | None = None,
+    cat4_output: Path | None = None,
 ) -> dict:
     req = request.Request(URL, method="GET",
                           headers={"Accept": "application/json"})
@@ -186,6 +283,9 @@ def probe(
     stats, points = inspect_building_geojson(raw)
 
     joined = None
+    joined_per_feature: list[str] = []
+    if cat4_output is not None and (cat1 is None or cat2 is None):
+        raise BerlinBuildingSampleError('CAT4 requires both source-pinned CAT1 and CAT2')
     if cat1 is not None or cat2 is not None:
         if cat1 is None or cat2 is None:
             raise BerlinBuildingSampleError("both pinned CAT1 and CAT2 databases required")
@@ -195,7 +295,15 @@ def probe(
             if hit is None or hit["nuts1_code"] != "DE3" or hit["nuts_version"] != 2021 or hit["nuts_cartographic_scale"] != "10M":
                 raise BerlinBuildingSampleError("real building cannot be assigned to the verified Berlin DE3 2021 crosswalk")
             counts[hit["nuts1_code"]] += 1
+            joined_per_feature.append(hit["nuts1_code"])
         joined = dict(counts)
+
+    derived_stage = None
+    if cat4_output is not None:
+        derived_stage = stage_derived_footprints(
+            raw, joined_per_feature, cat4_output,
+            receipt_utc=checked.astimezone(timezone.utc).isoformat(),
+        )
 
     return {
         "profile": PROFILE,
@@ -213,6 +321,7 @@ def probe(
         "geoboundaries_year_used_for_join": 2021 if joined is not None else None,
         "nuts2021_10m_join_region_counts": joined,
         "source_original_bytes_saved": False,
+        "cat4_derived_geometry_stage": derived_stage,
         "persistent_cat_db_updated": False,
         "building_assets_or_insured_values_inferred": False,
         "model_input_admitted": False,
@@ -225,11 +334,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--live", action="store_true")
     p.add_argument("--cat1", type=Path, required=True)
     p.add_argument("--cat2", type=Path, required=True)
+    p.add_argument("--cat4-output", type=Path, required=False,
+                   help="new absolute *.cat.sqlite file, outside repository")
     args = p.parse_args(argv)
     if not args.live:
         p.error("one live fixed source request must be explicitly selected")
     try:
-        print(json.dumps(probe(cat1=args.cat1, cat2=args.cat2),
+        print(json.dumps(probe(cat1=args.cat1, cat2=args.cat2,
+                               cat4_output=args.cat4_output),
                          indent=2, sort_keys=True, allow_nan=False))
     except (BerlinBuildingSampleError, ValueError, OSError) as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
