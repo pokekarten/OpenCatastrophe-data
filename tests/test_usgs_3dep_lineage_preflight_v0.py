@@ -13,7 +13,7 @@ from research_runners.usgs_3dep_lineage_preflight_v0 import MetadataError, prefl
 
 def fixture() -> dict:
     common = {
-        "horizontal_crs": "EPSG:26915",
+        "horizontal_crs": "EPSG:6350",
         "vertical_datum": "NAVD88",
         "vertical_realization": "NAVD88_2009",
         "geoid_model": "GEOID18",
@@ -36,7 +36,7 @@ def fixture() -> dict:
 class ThreeDEPLineagePreflightTests(unittest.TestCase):
     def test_shared_upstream_provenance_is_not_independent(self):
         report = preflight(fixture())
-        self.assertEqual(report["upstream_relationship"], "shared_lidar_workunit")
+        self.assertEqual(report["upstream_relationship"], "reported_shared_lidar_workunit_unverified")
         self.assertEqual(report["shared_lidar_workunit_count"], 1)
         self.assertTrue(report["horizontal_and_vertical_metadata_exact_match"])
         for name in ("scientific_independence_proven", "spatial_alignment_proven",
@@ -46,7 +46,19 @@ class ThreeDEPLineagePreflightTests(unittest.TestCase):
         payload = json.dumps(report)
         self.assertNotIn("synthetic_tile", payload)
         self.assertNotIn("work.B", payload)
-        self.assertNotIn("EPSG:26915", payload)
+        self.assertNotIn("EPSG:6350", payload)
+        self.assertFalse(report["provider_artifacts_verified"])
+
+    def test_s1m_source_specific_projection_and_geoid(self):
+        for field, value in (("horizontal_crs", "EPSG:26915"),
+                             ("vertical_datum", "NGVD29"),
+                             ("geoid_model", "GEOID12B")):
+            with self.subTest(field=field):
+                payload = fixture()
+                payload["s1m"][field] = value
+                payload["lidar"][field] = value
+                with self.assertRaisesRegex(MetadataError, "official S1M"):
+                    preflight(payload)
 
     def test_disjoint_work_units_do_not_prove_independent_sampling(self):
         p = fixture()
