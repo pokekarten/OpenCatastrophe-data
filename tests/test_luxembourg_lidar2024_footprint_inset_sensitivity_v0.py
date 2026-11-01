@@ -104,7 +104,7 @@ class FootprintInsetResearchTests(unittest.TestCase):
             self.analyze()
 
     def test_no_buildings_and_nonpolygon_geometry_rejected(self):
-        with self.assertRaisesRegex(BuildingProxyError,"size"):
+        with self.assertRaisesRegex(BuildingProxyError,"inputs"):
             sensitivity([],self.dtm,self.dsm,self.affine,self.study)
         from shapely.geometry import Point
         self.polygons=[Point(1,1)]

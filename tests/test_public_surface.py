@@ -175,10 +175,21 @@ class PublicSurfaceTests(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
         self.assertIn("permissions:\n  contents: read", workflow)
         self.assertIn("name: Required", workflow)
-        self.assertIn(
-            "needs: [check, glofas-acquisition, cems-geotiff-profile, reuse, dependency-review]",
-            workflow,
+        parsed = yaml.load(workflow, Loader=StrictWorkflowLoader)
+        jobs = parsed["jobs"]
+        expected = {
+            "check", "glofas-acquisition", "luxembourg-lidar-inset-spatial",
+            "cems-geotiff-profile", "reuse", "dependency-review",
+        }
+        self.assertEqual(set(jobs["required"]["needs"]), expected)
+        self.assertTrue(expected.issubset(jobs))
+        self.assertEqual(jobs["required"]["if"], "always()")
+        required_step = jobs["required"]["steps"][0]
+        self.assertEqual(
+            required_step["env"]["LUX_LIDAR_INSET_RESULT"],
+            "${{ needs.luxembourg-lidar-inset-spatial.result }}",
         )
+        self.assertIn('test "$LUX_LIDAR_INSET_RESULT" = "success"', required_step["run"])
         self.assertIn("GLOFAS_ACQUISITION_RESULT", workflow)
         self.assertIn("CEMS_GEOTIFF_PROFILE_RESULT", workflow)
         self.assertNotIn("PR_FILE_COLLISIONS_RESULT", workflow)
