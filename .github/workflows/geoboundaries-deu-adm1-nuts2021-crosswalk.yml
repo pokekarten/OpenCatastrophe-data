@@ -65,6 +65,8 @@ jobs:
             'https://raw.githubusercontent.com/eurostat/Nuts2json/8186be451525164ea24b43560cb943fda7c5520c/pub/v2/2021/4326/20M/nutsrg_1.json'
           python -m research_runners.geoboundaries_deu_adm1_cat_sqlite_v0 \
             --original-geojson "$geofile" --output "$geodb" > /dev/null
+          # If independent sources disagree, print NUTS-code-only overlap
+          # diagnostics and fail; do NOT lower the safety threshold.
           python -m research_runners.geoboundaries_deu_adm1_nuts2021_crosswalk_v0 \
             --geo-original "$geofile" \
             --nuts2021-original "$nutsfile" \
