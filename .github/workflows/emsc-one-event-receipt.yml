@@ -5,6 +5,11 @@ name: EMSC bounded one-event connectivity receipt
 
 on:
   workflow_dispatch:
+  # One exact provider check when this workflow revision lands on main.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/emsc-one-event-receipt.yml
 
 permissions:
   contents: read
