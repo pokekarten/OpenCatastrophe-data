@@ -73,7 +73,7 @@ def render_receipt(obj: dict) -> str:
     lines = [
         "<!--",
         "SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors",
-        "SPDX-License-Identifier: Apache-2.0",
+        "SPDX-" + "License-Identifier: Apache-2.0",
         "-->",
         "",
         "<!-- GENERATED FILE — DO NOT EDIT DIRECTLY; canonical JSON: " + REL + " -->",
