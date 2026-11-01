@@ -22,11 +22,15 @@ def fixture():
         "entries": [
             {"source_id": "synthetic.a", "record_type": "landscape_candidate",
              "source_registry_path": "landscape/sources-synthetic.json",
+             "provider": "Synthetic Example",
+             "authoritative_url": "https://example.org/provider",
              "contract_ids": ["a.get"], "contract_statuses": ["probe_ready"],
              "operational_readiness": "bounded_probe_defined_not_executed",
              "next_action": "Review exact source access"},
             {"source_id": "synthetic.b", "record_type": "landscape_candidate",
              "source_registry_path": "landscape/sources-synthetic.json",
+             "provider": "Synthetic Example",
+             "authoritative_url": "https://example.org/provider",
              "contract_ids": [], "contract_statuses": [],
              "operational_readiness": "no_concrete_access_contract",
              "next_action": "Study source access"},
@@ -38,7 +42,8 @@ def fixture():
     }
     def source(i):
         return {
-            "candidate_id": i, "provider": "Synthetic Example", 
+            "candidate_id": i, "provider": "Synthetic Example",
+            "landscape_shard": "sources-synthetic.json", 
             "authoritative_url": "https://example.org/provider",
             "spatial_scope": "synthetic", "temporal_scope": "synthetic",
             "categories": ["flood"], "potential_roles": ["validation"],
@@ -76,6 +81,10 @@ class CATCrosswalkTests(unittest.TestCase):
         first, second = report["candidates"]
         self.assertEqual(first["source_id"], "synthetic.a")
         self.assertEqual(first["access_contract_ids"], ["a.get"])
+        self.assertTrue(first["needs_bounded_technical_access_review"])
+        self.assertFalse(first["no_reviewed_access_contract"])
+        self.assertTrue(second["needs_bounded_technical_access_review"])
+        self.assertTrue(second["no_reviewed_access_contract"])
         self.assertEqual(first["candidate_join_hypotheses"][0]["other_source_ids"], ["synthetic.b"])
         self.assertFalse(first["scientific_independence_proven"])
         self.assertFalse(second["scientific_independence_proven"])
@@ -98,6 +107,25 @@ class CATCrosswalkTests(unittest.TestCase):
         l["source_count"] -= 1
         with self.assertRaisesRegex(CrosswalkError, "discovery/access inventories disagree"):
             build_crosswalk(a, l)
+
+    def test_same_candidate_id_with_different_origins_fails_closed(self):
+        for kind in ("provider", "authoritative_url", "source_registry_path"):
+            with self.subTest(kind=kind):
+                a, l = fixture()
+                if kind == "source_registry_path":
+                    a["entries"][0][kind] = "landscape/sources-other.json"
+                else:
+                    a["entries"][0][kind] = "https://wrong.example.org" if kind == "authoritative_url" else "Impostor Provider"
+                with self.assertRaisesRegex(CrosswalkError, "identity/provenance mismatch"):
+                    build_crosswalk(a, l)
+
+    def test_missing_original_shard_or_provider_fails_closed(self):
+        for field in ("landscape_shard", "provider", "authoritative_url"):
+            with self.subTest(field=field):
+                a, l = fixture()
+                del l["source_inventory"][0][field]
+                with self.assertRaisesRegex(CrosswalkError, "identity/provenance mismatch"):
+                    build_crosswalk(a, l)
 
     def test_authority_uplift_rejected(self):
         a, l = fixture()
