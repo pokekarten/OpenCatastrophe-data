@@ -110,6 +110,9 @@ class RepairDiagnostics:
     def summary(self, expected: int) -> dict:
         if self.cases != expected or sum(self.outcomes.values()) != expected:
             raise ValueError("Repair diagnosis does not conserve invalid source population")
+        if (self.structure_usable + self.structure_unusable !=
+                self.outcomes["single_polygon"] + self.outcomes["multiple_polygons"]):
+            raise ValueError("Independent repair challenger does not conserve usable linework cases")
         changes = sorted(self.absolute_deltas)
         mid = (len(changes) - 1) // 2
         p95 = math.ceil(len(changes) * 0.95) - 1
