@@ -117,6 +117,12 @@ class PlateauCataloguePreflightTests(unittest.TestCase):
         with self.assertRaises(CataloguePreflightError):
             check(data)
 
+    def test_required_source_url_rejected_when_null(self):
+        data = valid_payload()
+        data["citygml"][0]["url"] = None
+        with self.assertRaises(CataloguePreflightError):
+            check(data)
+
     def test_credentialed_catalogue_url_rejected(self):
         data = valid_payload()
         data["citygml"][0]["url"] = "https://user:secret@example.org/file.zip"
