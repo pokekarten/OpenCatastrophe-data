@@ -14,7 +14,7 @@ if HAS:
     from rasterio.transform import from_origin
     from shapely.geometry import box,Point
     from research_runners.luxembourg_geobase_lidar2024_object_proxy_v0 import (
-        BuildingProxyError,aggregate,
+        BuildingProxyError,aggregate,exact_area_candidates,
     )
 
 
@@ -32,6 +32,13 @@ class ObjectSurfaceTerrainTests(unittest.TestCase):
             [205,205,212,212,212],
         ],dtype=float),mask=False)
         self.polys=[box(0,0,3,5),box(2,0,5,5)]
+
+    def test_rtree_bbox_corner_hit_excluded_from_exact_rotated_roi(self):
+        from shapely.geometry import Polygon
+        triangle=Polygon([(0,0),(10,0),(0,10)])
+        retained=exact_area_candidates([box(1,1,2,2),box(9,9,10,10)],triangle)
+        self.assertEqual(len(retained),1)
+        self.assertEqual(retained[0].bounds,(1.0,1.0,2.0,2.0))
 
     def test_two_nonoverlap_pixel_medians_and_shared_pixel_exclusion(self):
         out=aggregate(self.polys,self.ground,self.surface,self.t,self.study)
