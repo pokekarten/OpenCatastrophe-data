@@ -135,7 +135,7 @@ any downloaded provider data. It wrote only metadata to the public log.
 | Filenames loosely containing “04” or “ponthierry” | **13** (only name hints) |
 
 The exact receipt is saved as
-[\`cems-emns028-original-archive-receipt-20261101.json\`](cems-emns028-original-archive-receipt-20261101.json).
+[\`cems-emns028-original-archive-receipt-20261101.toml\`](cems-emns028-original-archive-receipt-20261101.toml).
 The ZIP was automatically deleted from temporary runner storage;
 no private asset, credentials or original geodata is stored here.
 
