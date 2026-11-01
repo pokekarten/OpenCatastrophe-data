@@ -97,6 +97,21 @@ class FEMAObservationGateTests(unittest.TestCase):
         with self.assertRaisesRegex(PreflightError, "Gregorian"):
             preflight(data)
 
+    def test_exact_provider_codes_reject_schema_drift(self):
+        for field, unknown in (("ASMT_TYPE", "XYZ"), ("DMG_TYPE", "ZZ")):
+            with self.subTest(field=field):
+                data = fixture()
+                data["features"][0]["attributes"][field] = unknown
+                with self.assertRaisesRegex(PreflightError, "unrecognized provider"):
+                    preflight(data)
+
+    def test_source_known_other_and_unknown_never_promote(self):
+        data = fixture()
+        data["features"] = [record(1, "OTH", "NOD"), record(2, "UNK", "MIN")]
+        x = preflight(data)
+        self.assertEqual(x["assessment_counts"]["OTHER_OR_UNKNOWN"], 2)
+        self.assertEqual(x["potential_field_observed_holdout_count"], 0)
+
     def test_missing_and_predisaster_images_are_diagnostic_only(self):
         data = fixture()
         data["features"][1]["attributes"]["IMG_DATE"] = None
@@ -156,7 +171,7 @@ class FEMAObservationGateTests(unittest.TestCase):
 
     def test_nonobserved_types_never_become_ground_truth(self):
         data = fixture()
-        data["features"] = [record(1, "MOD", "DES"), record(2, "RS", "MIN"), record(3, "XYZ", "MAJ")]
+        data["features"] = [record(1, "MOD", "DES"), record(2, "RS", "MIN"), record(3, "OTH", "MAJ")]
         x = preflight(data)
         self.assertEqual(x["potential_field_observed_holdout_count"], 0)
         self.assertEqual(x["assessment_counts"]["MOD"], 1)
