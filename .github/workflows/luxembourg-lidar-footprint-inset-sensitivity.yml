@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg original LiDAR 2024 building inset sensitivity
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_lidar2024_footprint_inset_sensitivity_v0.py'
+      - 'tests/test_luxembourg_lidar2024_footprint_inset_sensitivity_v0.py'
+      - '.github/workflows/luxembourg-lidar-footprint-inset-sensitivity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-inset-source-challenge:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout reviewed original source gate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install isolated pinned research raster/geometry runtime
+        run: |
+          python -m pip install --disable-pip-version-check --no-input \
+            rasterio==1.5.0 numpy==2.3.5 pyproj==3.7.2 shapely==2.1.2
+          python -m pip check
+      - name: Run synthetic inset and baseline-cohort conservation tests
+        run: python -m unittest tests.test_luxembourg_geobase_lidar2024_object_proxy_v0 -v
+      - name: Verify original source and run 1m inward footprint sensitivity
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          export SOURCE_ZIP="$RUNNER_TEMP/lu-geobase2026.zip"
+          export SOURCE_GPKG="$RUNNER_TEMP/lu-geobase2026.gpkg"
+          trap 'rm -f "$SOURCE_ZIP" "$SOURCE_GPKG"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 --retry 0 \
+            --max-filesize 83886080 --output "$SOURCE_ZIP" \
+            'https://download.data.public.lu/resources/bd-l-geobase/20261001-010523/buildings-20261001.zip'
+          python -m research_runners.luxembourg_geobase_buildings_20261001_v0 \
+            --source-zip "$SOURCE_ZIP" > /dev/null
+          python - <<'PY'
+          import hashlib,os,shutil
+          from pathlib import Path
+          from zipfile import ZipFile
+          with ZipFile(os.environ["SOURCE_ZIP"]) as archive:
+              members=[m for m in archive.infolist()
+                       if m.filename.lower().endswith(".gpkg") and not m.is_dir()]
+              if len(members)!=1 or not 0<members[0].file_size<=150*1024*1024:
+                  raise SystemExit("BLOCKED: original GeoPackage count or size changed")
+              with archive.open(members[0]) as inp,Path(os.environ["SOURCE_GPKG"]).open("xb") as out:
+                  shutil.copyfileobj(inp,out,length=1024*1024)
+          with Path(os.environ["SOURCE_GPKG"]).open("rb") as source:
+              digest=hashlib.file_digest(source,"sha256").hexdigest()
+          if digest!="ec70bd1175b6f67b6dceaf8ab39e0433bc871e1099ff308c3eb8323127aa5676":
+              raise SystemExit("BLOCKED: original GeoBase 2026 extracted SHA mismatch")
+          PY
+          # Existing reviewed COG range gate verifies exact 4KiB headers;
+          # full 40GB provider assets have NOT been SHA-verified. Rasterio
+          # reads only the fixed 100m native-CRS envelope through HTTPS.
+          python -m research_runners.luxembourg_geobase_lidar2024_object_proxy_v0 \
+            --geobase-gpkg "$SOURCE_GPKG"
+          # No original provider GPKG, IDs, shapes, pixel arrays, measured
+          # per-object values or source files are uploaded or saved.
