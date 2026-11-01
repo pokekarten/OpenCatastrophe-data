@@ -155,6 +155,25 @@ python research_runners/nfip_residential_penetration_v1_preflight.py \
 python -m unittest tests.test_nfip_residential_penetration_v1_preflight -v
 ```
 
+### Real, bounded FEMA v1 response inspection
+
+On 2026-11-01 UTC, the official provider responded to a single read-only,
+non-paginated `$top=50` request at
+`https://www.fema.gov/api/open/v1/NfipResidentialPenetrationRates?$top=50`.
+The **complete 15,795-byte** JSON response was inspected ephemerally,
+with **50** reported rows, provider `entityname=NfipResidentialPenetrationRates`,
+`version=v1` and `top=50`. All 50 had string IDs, 5-digit FIPS,
+`YYYY-MM-DDT00:00:00.000Z` as-of timestamps, integer contract counts and
+no duplicate FIPS/as-of pairs. Zero of those 50 had a published penetration
+ratio over 1; **that does not contradict** FEMA's broader warning that
+>100% cases occur elsewhere. No original county rows or original response
+bytes were saved to Git. This was **a first-page, unpinned-source schema
+probe**, not a complete-snapshot audit, real execution of the Python
+preflight, admissible source-byte identity or scientific validation.
+The original `asOfDate` timestamp form is now accepted and explicitly
+normalised to the calendar date only in the offline preflight; no
+timezone/date is invented from another source.
+
 ## Advancement gates
 
 1. Refresh the **official** OpenFEMA v3 catalogue receipt near acquisition;
