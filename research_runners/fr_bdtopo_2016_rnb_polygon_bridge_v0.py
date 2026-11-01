@@ -19,7 +19,7 @@ from shapely.geometry import box, shape
 from shapely.ops import transform
 import shapefile
 
-from fr_bdtopo_2016_d077_bounded_buildings_v0 import (
+from research_runners.fr_bdtopo_2016_d077_bounded_buildings_v0 import (
     BoundedBuildingError, EXPECTED_CRS, FAMILIES,
     MAX_CANDIDATES, PONTHIERRY_LONLAT_BBOX,
 )
