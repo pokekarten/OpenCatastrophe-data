@@ -35,9 +35,10 @@
   "response_contract": {
     "expected_media_types": [
       "image/tiff",
-      "application/octet-stream"
+      "application/octet-stream",
+      "binary/octet-stream"
     ],
-    "format": "WorldCover 2021 v200 map data are distributed as 3 by 3 degree Cloud-Optimized GeoTIFF tiles in EPSG:4326. The analytical map layer and InputQuality layer are distinct products; WMS/WMTS RGB visualizations are cartographic views and must not be treated as analysis rasters.",
+    "format": "WorldCover 2021 v200 map data are distributed as 3 by 3 degree Cloud-Optimized GeoTIFF tiles in EPSG:4326. The analytical map layer and InputQuality layer are distinct products; WMS/WMTS RGB visualizations are cartographic views and must not be treated as analysis rasters. The exact public S3 object may be served with generic binary/octet-stream transport metadata; that MIME alone does not verify the GeoTIFF payload, COG layout, EPSG:4326 or land-cover classes.",
     "scientific_semantics": "WorldCover 2021 v200 is a 10 m global land-cover map with 11 classes and a 2021 reference year. The official product-level independent validation reports 76.7% overall accuracy for v200; this is not a per-pixel correctness guarantee. WorldCover 2020 uses algorithm v100 while 2021 uses v200, so differences between the two maps contain both real land-cover change and algorithm effects and must not be interpreted as a pure change layer. Land-cover class is contextual exposure/vulnerability information, not asset count, insured value, hazard intensity, damage or loss."
   },
   "operational_constraints": {
