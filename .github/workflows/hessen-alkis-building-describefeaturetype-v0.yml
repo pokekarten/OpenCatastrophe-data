@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Hessen original ALKIS WFS Building DescribeFeatureType
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/probe_hessen_alkis_building_describefeaturetype_v0.py'
+      - 'tests/test_probe_hessen_alkis_building_describefeaturetype_v0.py'
+      - '.github/workflows/hessen-alkis-building-describefeaturetype-v0.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hessen-wfs-building-describefeaturetype-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-building-xsd:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact PR version
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Offline synthetic XSD and unsafe source response tests
+        run: python -m unittest tests.test_probe_hessen_alkis_building_describefeaturetype_v0 -v
+      - name: One bounded original WFS Building DescribeFeatureType request
+        run: python -m scripts.probe_hessen_alkis_building_describefeaturetype_v0 --live
