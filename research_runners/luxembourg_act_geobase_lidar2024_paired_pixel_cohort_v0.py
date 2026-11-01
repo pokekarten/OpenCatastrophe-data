@@ -27,7 +27,7 @@ from research_runners.luxembourg_gpkg_schema_window_v0 import (
 )
 from research_runners.luxembourg_geobase_lidar2024_object_proxy_v0 import (
     BuildingProxyError, MAX_POLYGONS, MAX_RASTER_PIXELS, original_window,
-    exact_area_candidates,
+    exact_area_candidates, STUDY_SITES,
 )
 from research_runners.luxembourg_lidar2024_bounded_cog_window_v0 import (
     CogWindowError, bounded_window_from_source,
@@ -243,9 +243,9 @@ def _read_source_geometries(original:Path,*,sha256:str,layer_name:str,
         db.close()
 
 
-def run(act2023:Path,geobase2026:Path)->dict:
+def run(act2023:Path,geobase2026:Path,*,site="luxembourg-city")->dict:
     import rasterio
-    roi=original_window()
+    roi=original_window(site=site)
     roofs,acount=_read_source_geometries(
         act2023,sha256=ACT_GPKG_SHA,layer_name=ACT_LAYER,
         id_field="buildingid",expected_rows=ACT_COUNT,roi=roi)
@@ -280,7 +280,8 @@ def run(act2023:Path,geobase2026:Path)->dict:
         result=paired_pixel_diagnostic(roofs,buildings,terrain,surface,transform,roi)
     return {
         "schema_version":"lu-act2023-geobase2026-lidar2024-shared-pixel-geometry-cohort-v0",
-        "study_area":"same fixed Luxembourg city 100mx100m EPSG3035 square; native 2169 research hypothesis",
+        "study_area":"fixed public "+site+" 100mx100m EPSG3035 square; native 2169 research hypothesis",
+        "study_site":site,
         "act2023_original_gpkg_sha256":ACT_GPKG_SHA,
         "geobase2026_original_gpkg_sha256":GEOBASE_GPKG_SHA,
         "source_original_counts":{"act2023":ACT_COUNT,"geobase2026":GEOBASE_COUNT},
@@ -300,9 +301,10 @@ def main(argv=None)->int:
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--act2023-gpkg",type=Path,required=True)
     parser.add_argument("--geobase2026-gpkg",type=Path,required=True)
+    parser.add_argument("--site",choices=tuple(STUDY_SITES),default="luxembourg-city")
     args=parser.parse_args(argv)
     try:
-        report=run(args.act2023_gpkg,args.geobase2026_gpkg)
+        report=run(args.act2023_gpkg,args.geobase2026_gpkg,site=args.site)
     except (GeoPackageGateError,CogWindowError,PairedSourceError,
             BuildingProxyError,OSError,ValueError) as exc:
         parser.exit(2,"BLOCKED: "+str(exc)+"\n")

@@ -14,7 +14,10 @@ if HAS_SPATIAL:
     from rasterio.transform import from_origin
     from shapely.geometry import box
     from research_runners.luxembourg_act_geobase_lidar2024_paired_pixel_cohort_v0 import (
-        PairedSourceError, paired_pixel_diagnostic, strict_spatial_pairs,
+        PairedSourceError, paired_pixel_diagnostic, strict_spatial_pairs, run,
+    )
+    from research_runners.luxembourg_geobase_lidar2024_object_proxy_v0 import (
+        original_window,STUDY_SITES,
     )
 
 
@@ -28,6 +31,29 @@ class PairedSourcePixelTests(unittest.TestCase):
 
     def probe(self,a,b):
         return paired_pixel_diagnostic(a,b,self.dtm,self.dsm,self.affine,self.region)
+
+    def test_two_fixed_original_sites_have_distinct_bounded_roi(self):
+        city=original_window(site="luxembourg-city")
+        village=original_window(site="berdorf-village")
+        self.assertEqual(tuple(STUDY_SITES),("luxembourg-city","berdorf-village"))
+        self.assertTrue(city.is_valid and village.is_valid)
+        self.assertFalse(city.intersects(village))
+        self.assertGreater(city.area,9000)
+        self.assertLess(city.area,11000)
+        self.assertGreater(village.area,9000)
+        self.assertLess(village.area,11000)
+
+    def test_arbitrary_site_or_private_address_not_supported(self):
+        from research_runners.luxembourg_geobase_lidar2024_object_proxy_v0 import BuildingProxyError
+        for site in ("private-home", "berdorf-village;https://evil.invalid", "", "BERDORF"):
+            with self.subTest(site=site),self.assertRaisesRegex(BuildingProxyError,"unknown"):
+                original_window(site=site)
+
+    def test_site_is_validated_before_opening_source_files(self):
+        from research_runners.luxembourg_geobase_lidar2024_object_proxy_v0 import BuildingProxyError
+        from pathlib import Path
+        with self.assertRaisesRegex(BuildingProxyError,"unknown"):
+            run(Path("/definitely/missing1.gpkg"),Path("/definitely/missing2.gpkg"),site="private-home")
 
     def test_identical_cohort_zero_median_delta_not_physical_identity(self):
         a=[box(0,0,5,10),box(5,0,10,10)]
