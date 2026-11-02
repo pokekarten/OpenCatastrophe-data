@@ -66,6 +66,26 @@ The archive contains **one shapefile group**, with exactly one each of `.shp`, `
 
 Source bytes, geometry and attributes were never logged, committed, uploaded to an artifact or written to Neon. `model_input_admitted=false`.
 
+## Actual full original SHP record structure (2 November 2026)
+
+The second fixed-original [GitHub workflow 41408573653](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41408573653) **passed** after verifying the same exact SHA-1, SHA-256 and ZIP CRC receipts. The enhanced standard-library source reader scans *only structural SHP record metadata*, validates record byte conservation, rejects impossible part-index sequences and skips the raw coordinate bytes without decoding or exporting them.
+
+**Measured from the actual provider polygon source:**
+
+| Original source measurement | Full source result |
+| --- | ---: |
+| SHP record count | **1** |
+| DBF record count | **1** (matches SHP) |
+| ESRI polygon shape type | **5** |
+| Ring/part offsets in that one record | **6,379** |
+| Polygon coordinate pairs skipped without decoding | **1,336,393** |
+| Shape bytes declared and verified | **21,407,956** |
+| Source attribute field for flood water depth | **none** |
+
+**Interpretation:** this is one **very large multipart polygon record** with 6,379 declared parts. The count of parts is neither an independently validated count of connected floodplain regions nor a count of rivers, buildings, claims or flood events; polygon validity, hole/shell semantics and geographic CRS are not yet approved. The format can support an *extent-only* spatial screening only after a bounded actual geometry integrity/CRS gate. The ZIP's `Shape_Area` field is geometry area, **not simulated water depth**, and must never be reinterpreted as intensity.
+
+The newly added source regression must reject malformed SHP record lengths/part offsets, source checksum drift, unsafe archive members, nonpolygon shapes, and SHP-vs-DBF population mismatches. No original coordinates or hazard values were persisted or printed.
+
 ## Next scientific steps
 
 - Verify the original actual file format, complete record and field counts,
