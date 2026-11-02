@@ -64,6 +64,25 @@ class OriginalACTOvertureComparisonTests(unittest.TestCase):
         self.assertEqual(result["act_features_with_ambiguous_many_to_many_candidates"], 2)
         self.assertEqual(result["reciprocal_one_to_one_geometric_candidates"], 0)
 
+    def test_reciprocal_candidate_source_family_is_aggregated(self):
+        result = geometric_candidates([square()], [square()],
+            overture_source_families=["OpenStreetMap"])
+        self.assertEqual(
+            result["reciprocal_candidate_overture_source_family_counts"]["OpenStreetMap"], 1)
+        self.assertEqual(
+            result["reciprocal_candidate_overture_source_family_counts"]["Microsoft ML Buildings"], 0)
+
+    def test_microsoft_label_can_be_attributed_without_source_ids(self):
+        result = geometric_candidates([square()], [square()],
+            overture_source_families=["Microsoft ML Buildings"])
+        self.assertEqual(
+            result["reciprocal_candidate_overture_source_family_counts"]["Microsoft ML Buildings"], 1)
+        self.assertNotIn("record_id", str(result))
+
+    def test_missing_parallel_source_family_is_rejected(self):
+        with self.assertRaises(GeoBaseError):
+            geometric_candidates([square()], [square()], overture_source_families=[])
+
     def test_boundary_touch_does_not_match(self):
         result = geometric_candidates([square()], [square(77250)])
         self.assertEqual(result["overlap_pairs_above_iou_0_75"], 0)
