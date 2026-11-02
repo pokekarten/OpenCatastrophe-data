@@ -11,7 +11,8 @@ import unittest
 
 from scripts.probe_ghcnd_ncei_us_station_gzip_v0 import (
     MAX_COMPRESSED, NCEIStationError, NODD_SHA256, URL,
-    inflate_validated_gzip_members, probe, verify_contract,
+    inflate_validated_gzip_members, validation_view_for_original_csv,
+    probe, verify_contract,
 )
 
 
@@ -95,6 +96,36 @@ class NCEIGzipSourceTests(unittest.TestCase):
         self.assertFalse(result["model_input_admitted"])
         self.assertFalse(result["commercial_global_ghcnd_rights_inferred"])
         self.assertNotIn("DATA_VALUE", json.dumps(result))
+
+    def test_real_ncei_style_headerless_eight_field_csv(self):
+        raw_no_header = self.raw.split(b"\n", 1)[1]
+        validation_raw, had_header = validation_view_for_original_csv(raw_no_header)
+        self.assertFalse(had_header)
+        self.assertEqual(validation_raw, self.raw)
+        receipt = probe(
+            open_request=lambda req, timeout: Response(
+                gzip.compress(raw_no_header, mtime=0)
+            )
+        )
+        self.assertFalse(receipt["original_provider_csv_header_present"])
+        self.assertTrue(receipt["transient_header_added_only_for_validation"])
+        self.assertEqual(receipt["complete_original_rows_checked"], 41000)
+        self.assertNotEqual(
+            receipt["inflated_original_csv_sha256"],
+            receipt["comparison_csv_sha256_after_header_only_normalization"],
+        )
+        self.assertFalse(receipt["model_input_admitted"])
+
+    def test_non_ghcn_headerless_source_is_blocked(self):
+        original = self.raw.split(b"\n", 1)[1]
+        bad = original.replace(
+            b"USW00094728,18690101,TMAX,0,,,Z,2400\n",
+            b"USW00094729,18690101,TMAX,0,,,Z,2400\n", 1
+        )
+        with self.assertRaises(NCEIStationError):
+            validation_view_for_original_csv(bad)
+        with self.assertRaises(NCEIStationError):
+            validation_view_for_original_csv(b"x,y,z\n" + original)
 
     def test_fails_closed_on_modified_original(self):
         truncated = self.gzip_raw[:-3]
