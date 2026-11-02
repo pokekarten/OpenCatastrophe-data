@@ -84,6 +84,8 @@ BEGIN
     WHERE source_key='access:esa.worldcover.2021.v200'
       AND git_commit_sha='45f637f8d381480c794fefba6c14605ae969a098'
       AND git_blob_sha='2884e2f50b495eee3b399f55c08d43cfa100b602'
+      AND git_path='access/esa.worldcover.2021.v200.json'
+      AND contract_record='{"access_id":"esa.worldcover.2021.v200","status":"probe_ready","provider":"ESA WorldCover / VITO","source":"pinned_original_github_json","raw_data_import":"prohibited","model_admission":"prohibited","bounded_one_block_canary":true}'::jsonb
       AND contract_status='probe_ready'
       AND receipt_kind='github_pinned_review'
       AND raw_import_allowed IS FALSE AND model_input_approved IS FALSE
