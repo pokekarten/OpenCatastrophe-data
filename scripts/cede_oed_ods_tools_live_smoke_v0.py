@@ -37,10 +37,12 @@ LOCATION_MAP = {
     "LocationID": "LocNumber", "CountryISO": "CountryCode",
     "Currency": "LocCurrency", "BuildingValue": "BuildingTIV",
     "ContentsValue": "ContentsTIV", "Latitude": "Latitude", "Longitude": "Longitude",
+    "LocPerils": "LocPerilsCovered", "OtherValue": "OtherTIV",
+    "TimeElementValue": "BITIV",
 }
 LAYER_MAP = {
     "ExposureSetName": "PortNumber", "ContractID": "AccNumber",
-    "LayerID": "PolNumber", "Currency": "AccCurrency",
+    "LayerID": "PolNumber", "Currency": "AccCurrency", "Perils": "PolPerilsCovered",
 }
 
 
@@ -115,8 +117,15 @@ def execute(command: str = "ods_tools") -> dict[str, object]:
         loc_in, layer_in = root / "loc_input.csv", root / "layer_input.csv"
         loc_out, layer_out = root / "loc_oed.csv", root / "layer_oed.csv"
         exposure_json, layers_json = root / "exposure.json", root / "layers.json"
-        _write_csv(loc_in, SOURCE_LOC)
-        _write_csv(layer_in, SOURCE_LAYERS)
+        # These extra fields are invented solely to satisfy published minimum
+        # OED exposure requirements; they do not represent CEDE-v13 fields.
+        synthetic_location_csv = [
+            {**row, "LocPerils": "WEC", "OtherValue": "0", "TimeElementValue": "0"}
+            for row in SOURCE_LOC
+        ]
+        synthetic_layer_csv = [{**row, "Perils": "WEC"} for row in SOURCE_LAYERS]
+        _write_csv(loc_in, synthetic_location_csv)
+        _write_csv(layer_in, synthetic_layer_csv)
         exposure_json.write_text(json.dumps({
             "source_format": "CEDE", "source_version": "10.0.0",
             "target_format": "OED", "target_version": "3.0.2",
@@ -126,7 +135,7 @@ def execute(command: str = "ods_tools") -> dict[str, object]:
             "source_version": "10.0.0", "target_version": "3.0.2",
             "synthetic_only": True, "layers": SOURCE_LAYERS,
         }), encoding="utf-8")
-        loc_types = {name: ("float" if name in {"BuildingValue", "ContentsValue", "Latitude", "Longitude"} else "string")
+        loc_types = {name: ("float" if name in {"BuildingValue", "ContentsValue", "OtherValue", "TimeElementValue", "Latitude", "Longitude"} else "string")
                      for name in LOCATION_MAP}
         layer_types = {name: "string" for name in LAYER_MAP}
         for label, inp, out, fields, ty in (
@@ -155,7 +164,7 @@ def execute(command: str = "ods_tools") -> dict[str, object]:
             raise SmokeError("synthetic layer integrity check failed")
         return {
             "profile": "cede-oed-ods-tools-direct-fields-smoke-v0",
-            "mapping_scope": "original_minimal_direct_fields_only",
+            "mapping_scope": "original_minimal_direct_fields_plus_oed_required_perils_and_values",
             "source_version": "10.0.0", "target_version": "3.0.2",
             "source_location_count": checked["source_location_count"],
             "oed_location_count": checked["oed_location_count"],
