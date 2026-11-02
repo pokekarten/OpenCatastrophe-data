@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-02`  
 **Purpose:** Non-admission discovery registry for Verisk AIR CAT-model data, open exposure interchange, restricted events, output interoperability, and public benchmark evidence.
 
-**Entries:** 9
+**Entries:** 10
 
 ## CEDE 13.0 schema and AIRExposure, AIRReference and AIRReinsurance samples
 
@@ -31,7 +31,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Authoritative source:** <https://risksolutions.verisk.com/data-standards/cede-database-2025/>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** CEDE is an open exposure schema, NOT an open AIR hazard/vulnerability model. Publisher offers sample .bak backups and separate CEDE License v1.0. Exact asset rights, sample bytes, retrieval, SHA256, and restore have not been checked. No admission or Neon import.
+**Note:** CEDE is an open exposure schema, NOT an open AIR hazard/vulnerability model. Publisher offers sample .bak backups and separate CEDE License v1.0. Exact asset rights, sample bytes, retrieval, SHA256, and restore have not been checked. No admission or Neon import. CEDE 13.0 docs explicitly specify tLocation fields such as ISOBIN, LocationID, ReplacementValueA-D, AIROccupancyCode and AIRConstructionCodeA; 2025 changes add AverageHazardLevel/AverageHazardUserID and renewable-energy classifications. Use public schema for field mapping, not as evidence of source exposure observations; premium geocode export restrictions require separate review.
 
 ## CEDE 12.0 legacy schema and sample backups
 
@@ -152,3 +152,18 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** These are Verisk simulations for global insured industry, not company-specific losses, location-level exposure, stochastic events, or a prediction for 2026. AAL/EP cannot by themselves calibrate hazard/vulnerability. Preserve report date, global insured scope, currency and model vintage.
+
+## Verisk Underwriting AIR Catastrophe Hazard Hurricane location API
+
+**Candidate ID:** `verisk.gateway.air-hurricane-hazard.v1`  
+**Provider:** Verisk Analytics, Inc.  
+**Categories:** `hazard`, `hurricane`, `underwriting`, `api`, `location_risk`  
+**Spatial scope:** Location-based U.S. hurricane underwriting service; service coverage requires contract confirmation  
+**Temporal scope:** API v1 documentation checked 2026-11-02; live service/version status not verified  
+**Resolution / granularity:** HTTP POST request with address or geocode; JSON/XML report response description; authenticated by service token  
+**Potential roles:** `licensed_site_hurricane_hazard_enrichment`, `air_hazard_api_contract_discovery`  
+**Access hint:** `public_api_docs_private_token_and_org_entitlement_required_no_live_probe`  
+**Authoritative source:** <https://gateway.verisk.com/docs/AIR-Catastrophe-Hazard-Hurricane-PL.ashx>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Official gateway documents a hurricane location hazard report with address or geocode POST and bearer authentication. The documentation is not evidence of a free data API, licensed access, open event loss catalogue, or permission to store/export replies. Do not copy example access tokens from public documentation into code or logs. No credential, request or response tested.
