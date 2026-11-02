@@ -231,8 +231,16 @@ separately examines the **64 official Louisiana parishes**
 ([state primary source](https://www.louisiana.gov/local-louisiana/))
 using original `STATEFP=22`, source GEOIDs and individually
 reconstructed topology for all 64 boundaries, plus 2,016 inter-parish
-pairs. Its real-source result must be checked separately; the
-three-parish success cannot justify a 64/64 quality claim.
+pairs. Its **original-source run has now succeeded**:
+[GitHub Actions 41414916847](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41414916847).
+The pinned exact Census ZIP yielded **64/64 valid original parish
+geometries**, **198,708 source polygon positions**, **67 exterior shells**,
+zero interior holes, **2,016 tested geographic region pairs**, and
+**zero material or subthreshold area-overlap pairs**. The dedicated job
+also passed **28/28 synthetic source/geometry/administrative negative
+tests**. Both public original-source polygon QC and original SHA validation
+were executed in the same job. Counts are strictly source-scope results,
+not full territorial coverage validation.
 
 Even a complete 64-parish source-topology pass would **not**
 demonstrate independent coverage versus an official state polygon,
