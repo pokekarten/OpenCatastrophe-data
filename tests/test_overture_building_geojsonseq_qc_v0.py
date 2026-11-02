@@ -153,5 +153,29 @@ class QualityTests(unittest.TestCase):
         with self.assertRaises(GeometryQCError):run(f)
 
 
+    def test_wgs84_area_varies_with_latitude(self):
+        low = run(feature(x=6.13, y=5.0))['geodesic_area_m2_median']
+        high = run(feature(x=6.13, y=75.0))['geodesic_area_m2_median']
+        self.assertGreater(low, high * 3)
+
+    def test_polygon_hole_subtracts_geodesic_area(self):
+        outer = feature()
+        holed = feature()
+        ring = [[6.13002, 49.61002], [6.13008, 49.61002],
+                [6.13008, 49.61008], [6.13002, 49.61008], [6.13002, 49.61002]]
+        holed['geometry']['coordinates'].append(ring)
+        self.assertLess(run(holed)['geodesic_area_m2_max'],
+                        run(outer)['geodesic_area_m2_max'])
+
+    def test_multipolygon_geodesic_area(self):
+        f = feature()
+        first = f['geometry']['coordinates']
+        second = feature(x=6.131)['geometry']['coordinates']
+        f['geometry'] = {'type': 'MultiPolygon', 'coordinates': [first, second]}
+        del f['properties']['bbox']
+        self.assertGreater(run(f)['geodesic_area_m2_min'],
+                           run(feature())['geodesic_area_m2_min'] * 1.9)
+
+
 if __name__ == '__main__':
     unittest.main()
