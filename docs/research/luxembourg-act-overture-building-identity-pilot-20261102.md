@@ -234,6 +234,66 @@ survey or clearance for redistribution of combined geographic/insured
 data. No automatic geometry persistence, GERS identity acceptance,
 commercial-rights flag change or CAT model admission follows.
 
+## Executed original-source IoU threshold-sensitivity challenge (2026-11-02)
+
+**Real, exactly pinned original-provider research execution:**
+[GitHub Actions run 41528081725](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41528081725)
+**SUCCESS**, including **22/22** offline synthetic regression tests (three
+new threshold/ambiguity tests) and the actual bounded ACT original ZIP ×
+Overture original Parquet row-group 182 geometry overlay. The workflow
+read provider records in temporary scratch only, retaining no per-building
+WKB/coordinates, identifiers or insurer data.
+
+The same **139 original ACT** and **69 original Overture** candidate
+polygons yield **282** pairs with positive intersecting area (using the
+0.01 m² sliver-exclusion gate). The exact *reciprocal 1:1 geometric
+candidate graph* is recomputed independently at each IoU threshold:
+
+| Projected planar IoU threshold | Overlap pairs above threshold | Reciprocal geometric candidates | ACT footprints without above-threshold match | Ambiguous ACT links |
+| --- | ---: | ---: | ---: | ---: |
+| 0.50 — sensitivity-only relaxation | 24 | **24** | 115/139 | 0 |
+| 0.75 — frozen reference gate | 5 | **5** | 134/139 | 0 |
+| 0.90 — sensitivity-only tightening | 2 | **2** | 137/139 | 0 |
+
+**Finding:** the original five at IoU≥0.75 are sensitive to the arbitrary
+75% cutoff: only **2/5** remain above 90%, while 24 could be paired at
+50%. The 50/90% screens are **diagnostics, not proposed production
+thresholds**; the 75% original candidate count and all admission blocks
+are unchanged. Zero ambiguity applies *only within this bounded,
+possibly incomplete city-source sample* and graph at these three cutoffs.
+It is not proof of unique physical-building identity, independent
+ground-truth measurements, a calibrated confidence score, source
+completeness, demolished/renovated state or insurance relevance.
+Particularly, the five strict Overture candidates all report upstream
+OpenStreetMap lineage; correlated ACT/OSM geometry is possible.
+
+## ACT primary publication: exact 2026 building-only acquisition candidate
+
+The **publisher's own** [BD-L-GeoBase open-data record](https://data.public.lu/en/datasets/bd-l-geobase/)
+lists the **2026-10-01** product under **Creative Commons Zero (CC0)**,
+with ACT as the producing agency, and an separately packaged
+[Buildings-only GPKG release](https://data.public.lu/en/datasets/r/e93c27f8-1908-442b-9dc4-d10a117cf315)
+(`buildings-20261001.zip`, **about 37.4 MB**, published MD5
+`f414154f993128a63f539aae2644c75a`). This is a promising
+much-smaller original-source acquisition compared with the nearly
+956 MB all-themes archive used in the already authenticated ACT pilot.
+Neither the complete Buildings-only file's independent local SHA-256
+nor byte-/row-/ID-/geometry-equivalence against the **already pinned**
+all-themes source has been established yet. **Do not substitute it into
+the validated pipeline until those checks pass.**
+
+The official [GeoBase product specification](https://data.public.lu/en/datasets/r/3c5d312b-624c-4201-b60d-7908b0c90519)
+documents a **`Source`** property, including cadastral plan
+(`PCN`), ACT 3D buildings (`Bati3DACT`), City of Luxembourg 3D
+buildings (`Bati3DVDL`), official survey (`MO`) and orthophotos
+(`Ortho`). These are **potential causal lineage categories** to
+compare against the five Overture/OSM candidate polygons, not yet
+independently observed source-family counts for the five matches.
+The ACT dataset's official CC0 label is materially distinct from the
+**Overture Buildings ODbL** downstream licensing obligations. Exact
+scope, appropriate attribution and any third-party rights still require
+independent review for combined insurance publication/reuse.
+
 ## What the new joined-screen code does
 
 The offline script research_runners/luxembourg_act_overture_identity_preflight_v0.py
