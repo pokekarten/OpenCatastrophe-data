@@ -14,6 +14,8 @@ on:
       - 'research_runners/luxembourg_age_hq2021_sibling_source_receipts_v0.py'
       - 'research_runners/luxembourg_age_hq2021_sibling_full_geometry_quality_v0.py'
       - 'research_runners/luxembourg_age_hq2021_ring_hierarchy_challenge_v0.py'
+      - 'research_runners/luxembourg_age_hq2021_pyshp_interpretation_v0.py'
+      - 'tests/test_luxembourg_age_hq2021_pyshp_interpretation_v0.py'
       - 'tests/test_luxembourg_age_hq2021_ring_hierarchy_challenge_v0.py'
       - 'tests/test_luxembourg_age_hq2021_sibling_full_geometry_quality_v0.py'
       - 'tests/test_luxembourg_age_hq2021_sibling_source_receipts_v0.py'
@@ -51,12 +53,14 @@ jobs:
         run: python -m unittest tests.test_luxembourg_age_hq2021_sibling_source_receipts_v0 -v
       - name: Install pinned source coordinate metadata parser
         run: |
-          python -m pip install --disable-pip-version-check --no-input pyproj==3.7.2 shapely==2.1.2
+          python -m pip install --disable-pip-version-check --no-input pyproj==3.7.2 shapely==2.1.2 pyshp==2.3.1
           python -m pip check
       - name: Synthetic original polygon ring hierarchy containment and quarantine
         run: python -m unittest tests.test_luxembourg_age_hq2021_ring_hierarchy_challenge_v0 -v
       - name: Synthetic full HQ10 and HQext original geometry conservation gates
         run: python -m unittest tests.test_luxembourg_age_hq2021_sibling_full_geometry_quality_v0 -v
+      - name: Synthetic independent original polygon importer and source-record conservation
+        run: python -m unittest tests.test_luxembourg_age_hq2021_pyshp_interpretation_v0 -v
       - name: Synthetic original-PRJ WKT and geometry admission negative tests
         run: python -m unittest tests.test_luxembourg_age_hq100_2021_prj_crs_screen_v0 -v
       - name: Exercise synthetic original ZIP, DBF, SHP and unsafe-archive cases
@@ -89,6 +93,8 @@ jobs:
             --scenario hq100 --source-zip "$original"
           python -m research_runners.luxembourg_age_hq2021_ring_hierarchy_challenge_v0 \
             --scenario hq100 --source-zip "$original" --reverse-orientation
+          python -m research_runners.luxembourg_age_hq2021_pyshp_interpretation_v0 \
+            --scenario hq100 --source-zip "$original"
           curl --fail --location --silent --show-error \
             --proto '=https' --proto-redir '=https' \
             --connect-timeout 20 --max-time 120 --retry 0 \
@@ -102,6 +108,8 @@ jobs:
             --scenario hq10 --source-zip "$hq10"
           python -m research_runners.luxembourg_age_hq2021_ring_hierarchy_challenge_v0 \
             --scenario hq10 --source-zip "$hq10" --reverse-orientation
+          python -m research_runners.luxembourg_age_hq2021_pyshp_interpretation_v0 \
+            --scenario hq10 --source-zip "$hq10"
           curl --fail --location --silent --show-error \
             --proto '=https' --proto-redir '=https' \
             --connect-timeout 20 --max-time 120 --retry 0 \
@@ -115,6 +123,8 @@ jobs:
             --scenario hqext --source-zip "$hqext"
           python -m research_runners.luxembourg_age_hq2021_ring_hierarchy_challenge_v0 \
             --scenario hqext --source-zip "$hqext" --reverse-orientation
+          python -m research_runners.luxembourg_age_hq2021_pyshp_interpretation_v0 \
+            --scenario hqext --source-zip "$hqext"
           rm -f "$hq10" "$hqext"
           # Original XY is read only transiently to compute anonymous aggregate QA.
           # No feature, ring coordinates or numeric depth observations are exported.
