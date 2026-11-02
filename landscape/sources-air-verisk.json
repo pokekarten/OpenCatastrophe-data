@@ -27,7 +27,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "CEDE is an open exposure schema, NOT an open AIR hazard/vulnerability model. Publisher offers sample .bak backups and separate CEDE License v1.0. Exact asset rights, sample bytes, retrieval, SHA256, and restore have not been checked. No admission or Neon import."
+      "note": "CEDE is an open exposure schema, NOT an open AIR hazard/vulnerability model. Publisher offers sample .bak backups and separate CEDE License v1.0. Exact asset rights, sample bytes, retrieval, SHA256, and restore have not been checked. No admission or Neon import. CEDE 13.0 docs explicitly specify tLocation fields such as ISOBIN, LocationID, ReplacementValueA-D, AIROccupancyCode and AIRConstructionCodeA; 2025 changes add AverageHazardLevel/AverageHazardUserID and renewable-energy classifications. Use public schema for field mapping, not as evidence of source exposure observations; premium geocode export restrictions require separate review."
     },
     {
       "candidate_id": "verisk.cede.12-0.legacy",
@@ -231,6 +231,32 @@
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
       "note": "These are Verisk simulations for global insured industry, not company-specific losses, location-level exposure, stochastic events, or a prediction for 2026. AAL/EP cannot by themselves calibrate hazard/vulnerability. Preserve report date, global insured scope, currency and model vintage."
+    },
+    {
+      "candidate_id": "verisk.gateway.air-hurricane-hazard.v1",
+      "name": "Verisk Underwriting AIR Catastrophe Hazard Hurricane location API",
+      "provider": "Verisk Analytics, Inc.",
+      "categories": [
+        "hazard",
+        "hurricane",
+        "underwriting",
+        "api",
+        "location_risk"
+      ],
+      "spatial_scope": "Location-based U.S. hurricane underwriting service; service coverage requires contract confirmation",
+      "temporal_scope": "API v1 documentation checked 2026-11-02; live service/version status not verified",
+      "resolution_or_granularity": "HTTP POST request with address or geocode; JSON/XML report response description; authenticated by service token",
+      "potential_roles": [
+        "licensed_site_hurricane_hazard_enrichment",
+        "air_hazard_api_contract_discovery"
+      ],
+      "authoritative_url": "https://gateway.verisk.com/docs/AIR-Catastrophe-Hazard-Hurricane-PL.ashx",
+      "access_class_hint": "public_api_docs_private_token_and_org_entitlement_required_no_live_probe",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official gateway documents a hurricane location hazard report with address or geocode POST and bearer authentication. The documentation is not evidence of a free data API, licensed access, open event loss catalogue, or permission to store/export replies. Do not copy example access tokens from public documentation into code or logs. No credential, request or response tested."
     }
   ]
 }
