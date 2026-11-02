@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+"""Original-source independent offline synthetic ACT/Overture IoU tests."""
+import struct
+import unittest
+from shapely.geometry import box
+from research_runners.luxembourg_act_overture_original_city_pair_v0 import (
+    _gpkg_polygon, geometric_candidates, GeoBaseError, main
+)
+
+
+def square(x=77240, y=75040, size=10):
+    return box(x, y, x+size, y+size)
+
+
+def gpkg(geom):
+    return b"GP" + bytes([0, 1]) + struct.pack("<i", 2169) + geom.wkb
+
+
+class OriginalACTOvertureComparisonTests(unittest.TestCase):
+    def test_original_gpkg_polygon_header(self):
+        self.assertEqual(_gpkg_polygon(gpkg(square())).area, 100)
+
+    def test_bad_original_crs_rejected(self):
+        b = b"GP" + bytes([0, 1]) + struct.pack("<i", 4326) + square().wkb
+        with self.assertRaises(GeoBaseError):
+            _gpkg_polygon(b)
+
+    def test_invalid_gpkg_magic_rejected(self):
+        with self.assertRaises(GeoBaseError):
+            _gpkg_polygon(b"ZZ" + gpkg(square())[2:])
+
+    def test_equal_source_polygons_one_candidate(self):
+        result = geometric_candidates([square()], [square()])
+        self.assertEqual(result["reciprocal_one_to_one_geometric_candidates"], 1)
+        self.assertEqual(result["overlap_pairs_above_iou_0_75"], 1)
+        self.assertNotIn("77240", str(result))
+
+    def test_40percent_geometric_shift_is_not_a_match(self):
+        result = geometric_candidates([square()], [square(77244)])
+        self.assertEqual(result["reciprocal_one_to_one_geometric_candidates"], 0)
+
+    def test_two_overture_same_act_is_quarantined(self):
+        result = geometric_candidates([square()], [square(), square()])
+        self.assertEqual(result["act_features_with_ambiguous_many_to_many_candidates"], 1)
+        self.assertEqual(result["reciprocal_one_to_one_geometric_candidates"], 0)
+
+    def test_two_act_same_overture_is_quarantined(self):
+        result = geometric_candidates([square(), square()], [square()])
+        self.assertEqual(result["act_features_with_ambiguous_many_to_many_candidates"], 2)
+        self.assertEqual(result["reciprocal_one_to_one_geometric_candidates"], 0)
+
+    def test_boundary_touch_does_not_match(self):
+        result = geometric_candidates([square()], [square(77250)])
+        self.assertEqual(result["overlap_pairs_above_iou_0_75"], 0)
+
+    def test_no_pair_on_empty_slices(self):
+        result = geometric_candidates([], [])
+        self.assertEqual(result["overlap_pairs_above_iou_0_75"], 0)
+
+    def test_large_batch_fails_closed(self):
+        with self.assertRaises(GeoBaseError):
+            geometric_candidates([square()]*501, [square()])
+
+    def test_default_has_no_source_access(self):
+        self.assertEqual(main(["--source-zip", "/tmp/nonexistent-act-original.zip"]), 2)
+
+
+if __name__ == "__main__":
+    unittest.main()
