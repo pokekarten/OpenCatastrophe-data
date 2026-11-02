@@ -17,13 +17,19 @@ import re
 import sys
 from uuid import UUID
 
-from shapely.geometry import shape
+from shapely.geometry import GeometryCollection, MultiPolygon, Polygon, shape
+from shapely.ops import orient
+from shapely.errors import GEOSException
+from pyproj import Geod
 
 SCHEMA = "opencatastrophe-overture-building-crosswalk-preflight-v0"
 MAX_INPUT_BYTES = 1_000_000
 MAX_BUILDINGS_PER_SIDE = 100
 MAX_COORDINATE_PAIRS = 4000
 MIN_IOU = 0.75
+GEOD = Geod(ellps="WGS84")
+MIN_BUILDING_AREA_M2 = 0.01
+MAX_BUILDING_AREA_M2 = 100_000_000
 RELEASE_PATTERN = re.compile(r"(\d{4}-\d{2}-\d{2})\.(\d+)\Z")
 
 
@@ -77,6 +83,17 @@ def _text(value, name):
     return value
 
 
+def _polygon_area_m2(geometry):
+    """WGS84 ellipsoidal surface area of polygonal parts; line contacts = 0."""
+    if geometry.is_empty:
+        return 0.0
+    if isinstance(geometry, Polygon):
+        return abs(GEOD.geometry_area_perimeter(orient(geometry, sign=1.0))[0])
+    if isinstance(geometry, (MultiPolygon, GeometryCollection)):
+        return sum(_polygon_area_m2(part) for part in geometry.geoms)
+    return 0.0
+
+
 def _polygon_geometry(raw, name):
     _keys(raw, {"type", "coordinates"}, name)
     kind = raw["type"]
@@ -103,12 +120,18 @@ def _polygon_geometry(raw, name):
                 count += 1
                 if count > MAX_COORDINATE_PAIRS:
                     raise CrosswalkError(f"{name}: too many vertices")
-    geom = shape(raw)
-    if geom.is_empty or not geom.is_valid or geom.area <= 0:
-        raise CrosswalkError(f"{name}: invalid or zero-area building geometry")
-    xmin, ymin, xmax, ymax = geom.bounds
-    if xmax - xmin > .2 or ymax - ymin > .2:
-        raise CrosswalkError(f"{name}: oversized building or antimeridian geometry")
+    try:
+        geom = shape(raw)
+        if geom.is_empty or not geom.is_valid or geom.area <= 0:
+            raise CrosswalkError(f"{name}: invalid or zero-area building geometry")
+        xmin, ymin, xmax, ymax = geom.bounds
+        if xmax - xmin > .2 or ymax - ymin > .2:
+            raise CrosswalkError(f"{name}: oversized building or antimeridian geometry")
+        physical_area = _polygon_area_m2(geom)
+    except (GEOSException, OverflowError) as exc:
+        raise CrosswalkError(f"{name}: invalid polygon processing") from exc
+    if not MIN_BUILDING_AREA_M2 <= physical_area <= MAX_BUILDING_AREA_M2:
+        raise CrosswalkError(f"{name}: implausible ellipsoidal building area")
     return geom
 
 
@@ -129,10 +152,10 @@ def _buildings(rows, kind):
             sources = row["source_families"]
             if type(sources) is not list or not sources or len(sources) > 12:
                 raise CrosswalkError("missing bounded upstream source families")
-            if len(set(sources)) != len(sources):
-                raise CrosswalkError("duplicate upstream source family")
             for source in sources:
                 _text(source, "source family")
+            if len(set(sources)) != len(sources):
+                raise CrosswalkError("duplicate upstream source family")
         else:
             _date(row["source_vintage"], "local source vintage")
         if identifier in out:
@@ -159,9 +182,19 @@ def crosswalk(payload, *, expected_release):
         for overture_id, (_, og) in overtures.items():
             if not lg.intersects(og):
                 continue
-            i_area = lg.intersection(og).area
-            u_area = lg.union(og).area
-            score = i_area / u_area
+            try:
+                i_area = _polygon_area_m2(lg.intersection(og))
+                if i_area <= 0:
+                    continue
+                u_area = _polygon_area_m2(lg.union(og))
+                if not math.isfinite(u_area) or u_area <= 0:
+                    raise CrosswalkError("invalid geodesic union footprint area")
+                score = i_area / u_area
+                if not math.isfinite(score) or score > 1.000001:
+                    raise CrosswalkError("invalid geodesic overlap score")
+                score = min(score, 1.0)
+            except (GEOSException, OverflowError) as exc:
+                raise CrosswalkError("failed geodesic intersection analysis") from exc
             if score >= MIN_IOU:
                 by_local[local_id].append((overture_id, score))
                 by_overture[overture_id].append(local_id)
@@ -181,14 +214,15 @@ def crosswalk(payload, *, expected_release):
                              "shared_upstream_possible": local_source in overture_row["source_families"]})
     return {"schema": SCHEMA, "overture_release": expected_release,
             "local_source": local_source, "local_count": len(locals_), "overture_count": len(overtures),
-            "one_to_one_geometric_candidates": accepted, "ambiguous_local_ids": ambiguous,
+            "one_to_one_geometric_candidates": accepted, "overlap_area_method": "wgs84_ellipsoidal",
+            "ambiguous_local_ids": ambiguous,
             "unmatched_local_ids": unmatched, "candidate_only": True,
             "gers_registry_membership_verified": False,
             "geometry_crs_evidence_verified": False,
             "independent_validation_approved": False,
             "raw_data_import_authorized": False, "insured_value_estimated": False,
             "model_input_approved": False,
-            "note": "Polygon overlap is a geometric proxy; verify upstream IDs, rights, CRS evidence, source lineage and original bytes independently."}
+            "note": "Overlap uses WGS84 ellipsoidal polygonal area, but is only a research identity candidate; verify source IDs, rights, CRS, lineage and original bytes independently."}
 
 
 def main(argv=None):
