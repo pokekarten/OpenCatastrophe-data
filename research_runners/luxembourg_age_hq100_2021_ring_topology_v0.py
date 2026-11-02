@@ -22,6 +22,9 @@ from research_runners.luxembourg_age_hq100_2021_original_preflight_v0 import (
 from research_runners.luxembourg_age_hq100_2021_ring_coordinate_quality_v0 import (
     check_shp, HQ100GeometryError, EXPECTED_SHA256,
 )
+from research_runners.luxembourg_age_hq100_2021_invalid_ring_repair_challenge_v0 import (
+    InvalidRingRepairChallenger,
+)
 
 MAX_RING_VERTEX_COMPLEXITY = 2_000_000
 SAFE_REASONS = {
@@ -33,11 +36,12 @@ SAFE_REASONS = {
 
 
 class RingTopologyCounter:
-    def __init__(self, *, max_ring_vertices=MAX_RING_VERTEX_COMPLEXITY):
+    def __init__(self, *, max_ring_vertices=MAX_RING_VERTEX_COMPLEXITY, repair_challenger=None):
         if (not isinstance(max_ring_vertices, int) or isinstance(max_ring_vertices, bool)
                 or not 4 <= max_ring_vertices <= MAX_RING_VERTEX_COMPLEXITY):
             raise ValueError("Unbounded ring complexity limit")
         self.max_ring_vertices = max_ring_vertices
+        self.repair_challenger = repair_challenger
         self.seen = 0
         self.valid = 0
         self.invalid = 0
@@ -59,6 +63,8 @@ class RingTopologyCounter:
                 self.valid += 1
             else:
                 self.invalid += 1
+                if self.repair_challenger is not None:
+                    self.repair_challenger.observe(geom, len(points))
                 # Never log GEOS invalidity's embedded coordinate values.
                 reason = explain_validity(geom).split("[", 1)[0].strip()
                 self.invalid_reasons[
@@ -91,7 +97,8 @@ def audit(original_zip: Path) -> dict:
     receipt = inspect(original_zip)
     if receipt["original_zip_sha256_observed"] != EXPECTED_SHA256:
         raise HQ100GeometryError("Original provider SHA256 drift")
-    collector = RingTopologyCounter()
+    challenger = InvalidRingRepairChallenger()
+    collector = RingTopologyCounter(repair_challenger=challenger)
     with zipfile.ZipFile(original_zip) as z:
         items = [x for x in z.infolist() if x.filename.lower().endswith(".shp")]
         if len(items) != 1:
@@ -105,6 +112,7 @@ def audit(original_zip: Path) -> dict:
         "original_source_coordinate_pair_count": source["original_coordinate_pairs_read_and_aggregated"],
         "source_ring_population": source["source_polygon_ring_parts"],
         **collector.summary(source["source_polygon_ring_parts"]),
+        "invalid_ring_repair_sensitivity_diagnostic": challenger.summary(expected_invalid=collector.invalid),
     }
 
 
