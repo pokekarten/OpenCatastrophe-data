@@ -104,3 +104,46 @@ test an explicit consumer importer. This source-only event-loss adapter does
 not itself establish those prerequisites.
 
 No writes to CAT Neon production or validation branch were performed.
+
+## Independent consumer-side validation (same PR)
+
+New offline program:
+[`validate_oq313_event_loss_handoff_v0.py`](../../scripts/validate_oq313_event_loss_handoff_v0.py).
+
+Before accepting the loss-only JSONL in any downstream component, the
+consumer must supply **two independent, previously pinned commitments**:
+the handoff manifest SHA-256 and the original source receipt SHA-256.
+The validator checks canonical bytes, strict schema and typed source fields,
+exact OQ3.13 engine and original numerical-quantity semantics, all
+non-admission flags, file-byte and row hashes, exact float32 validity,
+strictly increasing unique event IDs and row completeness. The composite
+row identity is (source receipt digest, event ID) and cannot be inferred
+from the bare event ID.
+
+Run on reviewed local artifacts only:
+
+~~~bash
+python scripts/validate_oq313_event_loss_handoff_v0.py \
+  --jsonl /secure/local/events.jsonl \
+  --manifest /secure/local/events.manifest.json \
+  --expected-manifest-sha256 <independently-authenticated-manifest-sha256> \
+  --expected-source-receipt-sha256 <independently-authenticated-receipt-sha256> \
+  --source-receipt /secure/local/receipt.json
+~~~
+
+The optional `--source-receipt` **materially strengthens** the check: it
+revalidates the complete original OpenQuake numerical receipt and recreates
+the canonical export to require a **byte-for-byte identical** JSONL and
+manifest. The output flag `canonical_source_rows_reconciled` is true only
+in this mode. Without that full source, a malicious actor could forge a
+self-consistent pair of source claims/JSONL/manifest if the claimed pins
+were never authenticated outside the transfer; therefore the verifier
+explicitly reports no origin authentication in *either* mode.
+
+The validator writes **nothing** and never promotes event records to insurer
+portfolio loss, annualized AAL/AEP/OEP or Oasis/NextGen. Synthetic negative
+tests cover independently pinned manifest tampering, wrong source identity,
+loss/variance corruption, duplicate/reordered events, policy/authority
+spoofing, canonicalization drift, symlink inputs and fabricated-but-self-
+consistent losses. The latter are rejected **only when** the full source
+receipt is supplied, as required by the actual trust boundary.
