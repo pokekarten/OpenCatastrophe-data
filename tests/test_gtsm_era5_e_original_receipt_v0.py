@@ -75,6 +75,7 @@ class GtsmReceiptTests(unittest.TestCase):
     def test_fixed_publisher_target(self):
         self.assertEqual(mod.SOURCE_BYTES, 9_652_424)
         self.assertEqual(mod.SOURCE_MD5, "0f2b7071c6ec3585768be6cf427e6eab")
+        self.assertEqual(mod.PINNED_SHA256, "e366c79683438d03a48b23764f1159d5ed88845a459f625eeb787dff78cbd767")
         self.assertEqual(mod.SOURCE_DOWNLOAD_URL, (
             "https://zenodo.org/records/14671593/files/"
             "ds_GTSM-ERA5-E_1950-2024_stats.nc?download=1"
@@ -115,6 +116,21 @@ class GtsmReceiptTests(unittest.TestCase):
         with patch.object(mod, "build_opener", return_value=Opener()):
             with self.assertRaises(GtsmReceiptError):
                 mod.fetch_verified_original()
+
+
+    def test_wrong_sha256_rejected_even_with_matching_mock_publisher_md5(self):
+        data = self.fixture()
+        valid_structure = self.verify_fixture(data)
+        with patch.object(mod, "_file_receipt", return_value=valid_structure):
+            with self.assertRaisesRegex(GtsmReceiptError, "SHA-256"):
+                verify_original(self.path)
+
+    def test_scientific_header_cannot_precede_exact_original_sha(self):
+        self.fixture()
+        with patch.object(mod, "inspect_scientific_header") as reader:
+            with self.assertRaises(GtsmReceiptError):
+                verify_original(self.path, inspect_header=True)
+            reader.assert_not_called()
 
     def test_no_original_file_rejected(self):
         with self.assertRaises(GtsmReceiptError):
