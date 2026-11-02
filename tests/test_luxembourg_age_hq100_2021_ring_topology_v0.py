@@ -42,8 +42,8 @@ class HQ100OriginalRingTopologyTests(unittest.TestCase):
         self.assertEqual(collector.summary(1)["individually_valid_nonzero_area_rings"], 1)
 
     def test_complex_rings_quarantined_without_geos_attempt(self):
-        collector = RingTopologyCounter()
-        collector.observe([(0., 0.)] * 250_001)
+        collector = RingTopologyCounter(max_ring_vertices=4)
+        collector.observe([(0., 0.)] * 5)
         report = collector.summary(1)
         self.assertEqual(report["complex_ring_geometry_test_skipped"], 1)
         self.assertEqual(report["individually_valid_nonzero_area_rings"], 0)
