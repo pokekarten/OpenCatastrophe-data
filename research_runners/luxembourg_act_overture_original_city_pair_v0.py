@@ -197,10 +197,33 @@ def original_overture_city():
     return outlines, TARGET_ROW_COUNT, invalid, original_source_families
 
 
+def _require_valid_projected_footprints(footprints, *, label):
+    """Refuse untrusted non-polygon, invalid or numerically unstable geometry.
+
+    A best-IoU comparison is meaningful only on valid, finite-area planar
+    geometries. Invalid input must be blocked, not silently omitted or repaired:
+    omission can make an ambiguous many-to-one relationship appear reciprocal.
+    """
+    for geometry in footprints:
+        try:
+            if geometry.geom_type not in ("Polygon", "MultiPolygon"):
+                raise GeoBaseError(f"{label} source has non-polygon geometry")
+            if geometry.is_empty or not geometry.is_valid:
+                raise GeoBaseError(f"{label} source has invalid geometry")
+            if (not math.isfinite(geometry.area) or geometry.area <= 0
+                    or len(geometry.bounds) != 4
+                    or not all(math.isfinite(v) for v in geometry.bounds)):
+                raise GeoBaseError(f"{label} source has non-finite projected geometry")
+        except (GEOSException, ValueError, TypeError, AttributeError, OverflowError) as exc:
+            raise GeoBaseError(f"{label} source geometry cannot be safely checked") from exc
+
+
 def geometric_candidates(act, overture, *, overture_source_families=None):
     """Reciprocal geometric candidates with only aggregate upstream lineage."""
     if len(act) > 500 or len(overture) > 500:
         raise GeoBaseError("excessive local city-pilot source candidates")
+    _require_valid_projected_footprints(act, label="ACT")
+    _require_valid_projected_footprints(overture, label="Overture")
     if overture_source_families is not None and (
             type(overture_source_families) is not list
             or len(overture_source_families) != len(overture)
@@ -215,9 +238,9 @@ def geometric_candidates(act, overture, *, overture_source_families=None):
     best_overture = [0.0] * len(overture)
     for ai, a in enumerate(act):
         for oi, b in enumerate(overture):
-            if not a.intersects(b):
-                continue
             try:
+                if not a.intersects(b):
+                    continue
                 area = a.intersection(b).area
                 if area < MIN_POSITIVE_OVERLAP_M2:
                     continue
