@@ -238,6 +238,9 @@ def geometric_candidates(act, overture, *, overture_source_families=None):
     overture_hits = [[] for _ in overture]
     qualifying_pairs = 0
     positive_area_pairs = 0
+    # Scores only; indices are ephemeral and never emitted or persisted.
+    # Sensitivity helps expose matches caused solely by a chosen IoU cutoff.
+    overlap_scores = []
     best_act = [0.0] * len(act)
     best_overture = [0.0] * len(overture)
     for ai, a in enumerate(act):
@@ -255,6 +258,9 @@ def geometric_candidates(act, overture, *, overture_source_families=None):
             except GEOSException as exc:
                 raise GeoBaseError("source overlay topology failure") from exc
             positive_area_pairs += 1
+            if not math.isfinite(ratio) or ratio <= 0 or ratio > 1:
+                raise GeoBaseError("invalid projected IoU ratio")
+            overlap_scores.append((ai, oi, ratio))
             best_act[ai] = max(best_act[ai], ratio)
             best_overture[oi] = max(best_overture[oi], ratio)
             if ratio < MIN_IOU:
@@ -279,8 +285,37 @@ def geometric_candidates(act, overture, *, overture_source_families=None):
                 bands["iou_at_least_0_75"] += 1
         return bands
 
+    # Diagnostic only: never use relaxed cutoffs as an identity admission.
+    # At each threshold, recompute reciprocal pairs and ambiguity from the
+    # *whole* candidate graph; best-IoU alone cannot detect split/merge cases.
+    sensitivity = {}
+    for name, threshold in (("iou_0_50", 0.50), ("iou_0_75", MIN_IOU),
+                            ("iou_0_90", 0.90)):
+        threshold_act = [[] for _ in act]
+        threshold_overture = [[] for _ in overture]
+        for ai, oi, ratio in overlap_scores:
+            if ratio >= threshold:
+                threshold_act[ai].append(oi)
+                threshold_overture[oi].append(ai)
+        sensitivity[name] = {
+            "overlap_pairs_at_or_above_threshold":
+                sum(len(hits) for hits in threshold_act),
+            "reciprocal_one_to_one_geometric_candidates":
+                sum(len(hits) == 1 and len(threshold_overture[hits[0]]) == 1
+                    for hits in threshold_act if hits),
+            "act_features_with_ambiguous_geometric_candidates":
+                sum(len(hits) > 1 or
+                    (len(hits) == 1 and len(threshold_overture[hits[0]]) > 1)
+                    for hits in threshold_act),
+            "act_features_without_above_threshold_match":
+                sum(not hits for hits in threshold_act),
+        }
     matched = sum(len(xs) == 1 and len(overture_hits[xs[0]]) == 1
                   for xs in act_hits if xs)
+    if (sensitivity["iou_0_75"]["reciprocal_one_to_one_geometric_candidates"]
+            != matched or sensitivity["iou_0_75"]["overlap_pairs_at_or_above_threshold"]
+            != qualifying_pairs):
+        raise GeoBaseError("threshold sensitivity does not reconcile with frozen IoU gate")
     ambiguous_act = sum(len(xs) > 1 or
                         (len(xs) == 1 and len(overture_hits[xs[0]]) > 1)
                         for xs in act_hits)
@@ -292,6 +327,8 @@ def geometric_candidates(act, overture, *, overture_source_families=None):
         "Overture_best_geometric_iou_distribution": histogram(best_overture),
         "overlap_pairs_above_iou_0_75": qualifying_pairs,
         "reciprocal_one_to_one_geometric_candidates": matched,
+        "geometric_threshold_sensitivity_research_only": sensitivity,
+        "threshold_sensitivity_is_identity_confidence": False,
         "act_features_with_ambiguous_many_to_many_candidates": ambiguous_act,
         "act_features_without_above_threshold_match": sum(not x for x in act_hits),
         "overture_features_without_above_threshold_match": sum(not x for x in overture_hits),
