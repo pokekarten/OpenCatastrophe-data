@@ -164,6 +164,22 @@ class GtsmReceiptTests(unittest.TestCase):
         with self.assertRaises(GtsmReceiptError):
             mod.validate_native_header(dims, fields)
 
+
+    def test_native_coordinate_packing_synthetic(self):
+        mod.validate_coordinate_packing({
+            "lon": dict(mod.EXPECTED_COORD_PACKING["lon"]),
+            "lat": dict(mod.EXPECTED_COORD_PACKING["lat"]),
+        })
+
+    def test_scaled_coordinates_must_not_drop_scale_or_fill_marker(self):
+        for field, bad_value in (("scale_factor", None), ("scale_factor", "1.0"),
+                                 ("_FillValue", "0"), ("add_offset", "1.0")):
+            with self.subTest(field=field, bad_value=bad_value):
+                packing = {name: dict(value) for name, value in mod.EXPECTED_COORD_PACKING.items()}
+                packing["lon"][field] = bad_value
+                with self.assertRaises(GtsmReceiptError):
+                    mod.validate_coordinate_packing(packing)
+
     def test_no_original_file_rejected(self):
         with self.assertRaises(GtsmReceiptError):
             _file_receipt(self.path, expected_size=10, expected_md5="0" * 32)
