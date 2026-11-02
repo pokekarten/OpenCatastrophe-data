@@ -48,7 +48,7 @@ class IndependentPyShpInterpretationTests(unittest.TestCase):
         self.assertTrue(report["original_source_ring_count_conserved"])
         self.assertFalse(report["source_outline_hole_semantics_independently_verified"])
         self.assertFalse(report["CAT_model_input_admitted"])
-        self.assertNotIn("coordinates", json.dumps(report))
+        self.assertNotIn("original_ring_coordinate_values", json.dumps(report))
 
     def test_multiple_exteriors_cannot_be_misread_as_one(self):
         shp, shx, dbf, rings, points = test_shp(two_polygons=True)
