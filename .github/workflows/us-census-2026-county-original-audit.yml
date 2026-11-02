@@ -59,9 +59,9 @@ jobs:
       - name: One fixed official original COUNTY archive, ephemeral data only
         # Full original data QC already succeeded twice at exact code/source
         # scope; never repeat 83 MB downloads on routine draft PR updates.
-        # One deliberately scoped PR#1100 execution for the new research
-        # crosswalk; temporary policy must be reverted after exact evidence.
-        if: github.event_name != 'pull_request' || github.event.pull_request.number == 1100
+        # Exact pinned original-source crosswalk passed on run 41492945818.
+        # Routine PR validations stay offline and do not redownload 83 MB.
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
