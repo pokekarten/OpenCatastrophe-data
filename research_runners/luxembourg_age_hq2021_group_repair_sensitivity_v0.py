@@ -15,7 +15,7 @@ from __future__ import annotations
 from collections import Counter
 import math
 
-MAX_REPAIR_GROUP_VERTICES = 50_000
+MAX_REPAIR_GROUP_VERTICES = 120_000
 
 
 class GroupRepairChallengeError(ValueError):
