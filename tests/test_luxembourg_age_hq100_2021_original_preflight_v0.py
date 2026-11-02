@@ -18,7 +18,7 @@ from research_runners.luxembourg_age_hq100_2021_original_preflight_v0 import (
 
 
 def shp_header(*, kind: int = 5, length: int = 100) -> bytes:
-    b = bytearray(length)
+    b = bytearray(100)
     struct.pack_into(">i", b, 0, 9994)
     struct.pack_into(">i", b, 24, length // 2)
     struct.pack_into("<ii", b, 28, 1000, kind)
