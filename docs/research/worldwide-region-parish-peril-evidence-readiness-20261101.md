@@ -248,6 +248,66 @@ source-data commercial rights, a historical policy/geolocation
 crosswalk, valid insurer exposure, catastrophe vulnerabilities or
 an admitted OpenCat/NextGen model input.
 
+## Verified synthetic point-to-parish spatial crosswalk (2026-11-02)
+
+The new `research_runners/us_census_2026_parish_point_crosswalk_v0.py`
+makes the boundary research materially useful for a *future*
+site-to-region model handoff without creating any fictional claim of
+real insured exposure.
+
+[Exact-source GitHub Actions run 41492945818](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41492945818)
+successfully retrieved the **83,378,454-byte** original 2026
+Census national COUNTY ZIP, rechecked the independently pinned
+SHA-256 `b527c9ba7aeb8f17ef118f026eae5e5a938aa1d00b873bc32342d0dce59321c0`,
+revalidated all **64 Louisiana parish polygons**, and exercised
+**40 passing** focused synthetically constructed source, geometry,
+identity, and crosswalk test methods.
+
+For every original Parish polygon, the runner creates a fresh,
+obviously **invented synthetic point** using the *same polygon's*
+`representative_point()`. It does **not** pretend that those 64
+points are measured buildings, real claims/policies, or statistically
+representative assets. Each point must land within exactly **one**
+strict polygon interior, not on a boundary or in two polygons.
+All **64/64** points matched unique parish GEOIDs on the genuine
+source geometries, with none unassigned or ambiguous.
+
+The output expresses the matching **as synthetic OpenCat
+`RegionAssignment`-style fields** (only three illustrative rows
+displayed; full list is deterministically hashed):
+
+```json
+{
+  "asset_id": "synthetic_sample_22071",
+  "country_code": "US",
+  "subdivisions": ["US-LA", "US-LA-22071"]
+}
+```
+
+The canonical **64-row synthetic assignment** hash is
+`1f54b0a387831fc7a20ba801632284142be685f03b0823ab6d72df60d8e4b57f`.
+The official geographic namespace is `US_CENSUS_TIGER_2026`,
+source year **2026**, ISO2 `US` / ISO3 `USA`, and
+the local official parish GEOID remains `22071`; the prefixed
+`US-LA-22071` is a **derived model hierarchy label**, not a
+different official Census identifier.
+
+The public reproducibility scope includes 12 synthetic crosswalk
+challenge methods rejecting wrong/hijacked asset IDs, non-finite
+locations, other countries' IDs, missing sites, different-region
+overlap, direct boundary points and nearest-parish fallbacks.
+
+**Limits:** Representative points are chosen *from the polygons
+being tested*, not independently observed exposure; this is a
+mechanical geospatial integration smoke test, not an independent
+verification of whether a human-addressed property is physically
+located where advertised. This PR emits **no** source coordinates
+or real asset information, no insured TIV, no claim, no hazard
+intensity, no science/licensing approval and no native OpenCat/NextGen
+loss model execution. The private [OpenCat subnational rollup PR #16](https://github.com/pokekarten/OpenCatastrophe/pull/16)
+needs separately assigned **loss-bearing** synthetic asset IDs,
+and must not treat these 64 fake samples as its source event portfolio.
+
 ## Versioned region x peril key and evidence preflight
 
 `scripts/region_peril_readiness_v0.py` accepts one explicit, locally
