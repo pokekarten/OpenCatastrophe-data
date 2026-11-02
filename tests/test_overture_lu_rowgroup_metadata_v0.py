@@ -82,6 +82,7 @@ class OvertureRowGroupMetadataTests(unittest.TestCase):
         out = screen(gs)
         self.assertEqual(out["row_group_count_by_status"]["candidate"], 1)
         self.assertEqual(out["row_group_count_by_status"]["excluded"], 255)
+        self.assertEqual(out["original_zero_based_rowgroup_indices_for_followup"], [15])
         self.assertEqual(sum(out["file_rows_in_groups_by_status"].values()), EXPECTED_ROWS)
         self.assertFalse(out["insurance_model_input_approved"])
 
