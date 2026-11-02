@@ -100,3 +100,85 @@ WHERE act_release='2026-10-01' AND overture_release='2026-10-21.0'
 -- Verified isolated Neon readback: 5 OSM-sourced shape candidates,
 -- 0 Microsoft ML-sourced and 0 unidentified. Source identity and insurance
 -- CAT model source use remain explicitly NOT approved.
+
+
+-- Exact original ACT per-feature Source provenance, aggregate only.
+-- [Original full ACT ZIP x Overture run 41538722511]:
+-- 26/26 synthetic tests PASS; publisher SHA-pinned ACT ZIP and GPKG; all 139
+-- sampled ACT city polygons are Bati3DVDL, including all five strict ACT
+-- geometry candidates; the five Overture candidate labels are OpenStreetMap.
+-- The official ACT value describes the source of *digitisation*, not
+-- independent survey or verified same-physical-building identity.
+-- Apply ONLY on isolated insurance Neon research branch br-bold-unit-baf2smqf.
+-- No geometry, IDs, source feature rows, policy records or insured TIV.
+ALTER TABLE research.lu_act_overture_original_city_pair_receipt_v0
+ ADD COLUMN IF NOT EXISTS act_city_digitizing_source_family_counts jsonb,
+ ADD COLUMN IF NOT EXISTS act_strict_candidate_digitizing_source_family_counts jsonb,
+ ADD COLUMN IF NOT EXISTS act_digitizing_source_original_run_url text;
+
+DO $act_original_source_precondition$
+BEGIN
+ IF (
+  SELECT count(*)
+  FROM research.lu_act_overture_original_city_pair_receipt_v0
+  WHERE act_release='2026-10-01'
+    AND overture_release='2026-10-21.0'
+    AND overture_source_row_group=182
+    AND act_original_zip_sha256='6630f217b39edde5f20f1078bef8a3d6eb4a09337af48394975f45f208bcfed3'
+    AND act_city_footprints=139
+    AND overture_city_footprints=69
+    AND positive_area_source_polygon_pairs=282
+    AND reciprocal_one_to_one_geometric_candidates=5
+    AND strict_candidate_overture_source_family_counts=
+      '{"OpenStreetMap":5,"Microsoft ML Buildings":0,"unknown_or_multiple":0}'::jsonb
+    AND original_provider_geometry_persisted IS FALSE
+    AND independent_physical_identity_verified IS FALSE
+    AND source_licensing_scientifically_approved IS FALSE
+    AND insured_TIV_inferred IS FALSE
+    AND insurance_CAT_model_input_approved IS FALSE
+    AND (act_city_digitizing_source_family_counts IS NULL
+         OR act_city_digitizing_source_family_counts=
+          '{"Bati3DACT":0,"Bati3DVDL":139,"PCN":0,"MO":0,"Ortho":0,"unknown_or_missing":0}'::jsonb)
+    AND (act_strict_candidate_digitizing_source_family_counts IS NULL
+         OR act_strict_candidate_digitizing_source_family_counts=
+          '{"Bati3DACT":0,"Bati3DVDL":5,"PCN":0,"MO":0,"Ortho":0,"unknown_or_missing":0}'::jsonb)
+    AND (act_digitizing_source_original_run_url IS NULL
+         OR act_digitizing_source_original_run_url=
+          'https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41538722511')
+ ) <> 1 THEN
+  RAISE EXCEPTION 'Pinned ACT city-source evidence drift; refuse aggregate receipt';
+ END IF;
+END;
+$act_original_source_precondition$;
+
+UPDATE research.lu_act_overture_original_city_pair_receipt_v0
+SET act_city_digitizing_source_family_counts=
+      '{"Bati3DACT":0,"Bati3DVDL":139,"PCN":0,"MO":0,"Ortho":0,"unknown_or_missing":0}'::jsonb,
+    act_strict_candidate_digitizing_source_family_counts=
+      '{"Bati3DACT":0,"Bati3DVDL":5,"PCN":0,"MO":0,"Ortho":0,"unknown_or_missing":0}'::jsonb,
+    act_digitizing_source_original_run_url=
+      'https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41538722511'
+WHERE act_release='2026-10-01'
+  AND overture_release='2026-10-21.0'
+  AND overture_source_row_group=182
+  AND original_provider_geometry_persisted IS FALSE
+  AND independent_physical_identity_verified IS FALSE
+  AND insurance_CAT_model_input_approved IS FALSE;
+
+DO $act_original_source_final$
+BEGIN
+ IF (SELECT count(*)
+     FROM research.lu_act_overture_original_city_pair_receipt_v0
+     WHERE act_city_digitizing_source_family_counts->>'Bati3DVDL'='139'
+       AND act_strict_candidate_digitizing_source_family_counts->>'Bati3DVDL'='5'
+       AND act_digitizing_source_original_run_url=
+         'https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41538722511'
+       AND independent_physical_identity_verified IS FALSE
+       AND source_licensing_scientifically_approved IS FALSE
+       AND insurance_CAT_model_input_approved IS FALSE
+       AND original_provider_geometry_persisted IS FALSE
+       AND insured_TIV_inferred IS FALSE) <> 1 THEN
+    RAISE EXCEPTION 'ACT original-source aggregate receipt failed strict readback';
+ END IF;
+END;
+$act_original_source_final$;
