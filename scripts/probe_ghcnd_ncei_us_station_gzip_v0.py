@@ -73,34 +73,52 @@ def verify_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
     return c
 
 
-def inflate_single_member(raw: bytes, *, max_csv: int = MAX_CSV) -> bytes:
+def inflate_validated_gzip_members(
+    raw: bytes, *, max_csv: int = MAX_CSV, max_members: int = 256
+) -> tuple[bytes, int]:
+    """RFC-1952 gzip permits concatenated members; validate every CRC and boundary.
+
+    Reject any non-gzip trailing bytes, incomplete member, excessive member
+    count or expanded data over the reviewed 24-MiB total, including across
+    member boundaries. No member is trusted solely from a gzip header.
+    """
     if type(raw) is not bytes or not 128 <= len(raw) <= MAX_COMPRESSED:
         raise NCEIStationError("gzip original empty or beyond fixed compressed size")
-    if not raw.startswith(b"\x1f\x8b\x08"):
-        raise NCEIStationError("original is not a gzip deflate member")
-    decoder = zlib.decompressobj(wbits=16 + zlib.MAX_WBITS)
-    parts: list[bytes] = []
+    pending = raw
+    members = 0
     size = 0
-    try:
-        for start in range(0, len(raw), CHUNK):
-            out = decoder.decompress(raw[start:start + CHUNK], max_csv - size + 1)
-            size += len(out)
-            if size > max_csv or decoder.unconsumed_tail:
-                raise NCEIStationError("inflated original is over the 24 MiB bound")
-            if decoder.unused_data:
-                raise NCEIStationError("trailing or concatenated gzip members forbidden")
-            parts.append(out)
-        if not decoder.eof:
-            raise NCEIStationError("incomplete gzip original or checksum failure")
-        extra = decoder.flush(max_csv - size + 1)
-        if extra:
+    parts: list[bytes] = []
+    while pending:
+        members += 1
+        if members > max_members:
+            raise NCEIStationError("too many original gzip members")
+        if not pending.startswith(b"\x1f\x8b\x08"):
+            raise NCEIStationError("trailing bytes are not a complete gzip member")
+        decoder = zlib.decompressobj(wbits=16 + zlib.MAX_WBITS)
+        consumed_to = 0
+        try:
+            for start in range(0, len(pending), CHUNK):
+                chunk = pending[start:start + CHUNK]
+                expanded = decoder.decompress(chunk, max_csv - size + 1)
+                size += len(expanded)
+                if size > max_csv or decoder.unconsumed_tail:
+                    raise NCEIStationError("inflated original exceeds bounded size")
+                parts.append(expanded)
+                if decoder.eof:
+                    consumed_to = start + CHUNK
+                    break
+            if not decoder.eof:
+                raise NCEIStationError("incomplete gzip member or invalid CRC")
+            extra = decoder.flush(max_csv - size + 1)
             size += len(extra)
             if size > max_csv:
-                raise NCEIStationError("inflated tail exceeds reviewed cap")
-            parts.append(extra)
-    except zlib.error as exc:
-        raise NCEIStationError("gzip CRC/stream invalid") from exc
-    return b"".join(parts)
+                raise NCEIStationError("inflated gzip trailer exceeds cap")
+            if extra:
+                parts.append(extra)
+        except zlib.error as exc:
+            raise NCEIStationError("gzip deflate/CRC original invalid") from exc
+        pending = decoder.unused_data + pending[consumed_to:]
+    return b"".join(parts), members
 
 
 class NoRedirect(request.HTTPRedirectHandler):
@@ -151,7 +169,7 @@ def probe(
     except (error.HTTPError, error.URLError, OSError, TimeoutError) as exc:
         raise NCEIStationError("fixed NCEI gzip request failed closed") from exc
 
-    csv_raw = inflate_single_member(raw)
+    csv_raw, gzip_members = inflate_validated_gzip_members(raw)
     shape = inspect_full_csv(csv_raw)
     now = utc_clock()
     if now.tzinfo is None or now.utcoffset() is None:
@@ -167,6 +185,7 @@ def probe(
         "compressed_original_bytes": len(raw),
         "compressed_original_sha256": hashlib.sha256(raw).hexdigest(),
         "inflated_original_csv_bytes": len(csv_raw),
+        "validated_gzip_members": gzip_members,
         "inflated_original_csv_sha256": hashlib.sha256(csv_raw).hexdigest(),
         "provider_etag": etag if ETAG.fullmatch(etag) else None,
         "provider_last_modified": modified if len(modified) <= 128 else None,

@@ -56,7 +56,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - /pub/data/ghcn/daily/by_station/USW00094728.csv.gz
 
-**Parameter rules:** Exactly one HTTPS GET without query/redirect/retry/caller-selected URL/path/range, fixed US GHCN station USW00094728; original response Content-Type application/gzip or reviewed gzip aliases. Maximum compressed original 12 MiB; maximum decompressed original CSV 24 MiB; strict single-member gzip, trailing data rejected. Require original station CSV schema, row-by-row element/day/flags validation and full hashes of both compressed original and inflated CSV. Compare latter with hash of verified NODD USW00094728.csv original obtained in workflow run 41501633985; report whether the exact original content is the same, dates and row counts. Never dump observation values or persist data to GitHub/Neon/model.
+**Parameter rules:** Exactly one HTTPS GET without query/redirect/retry/caller-selected URL/path/range, fixed US GHCN station USW00094728; original response Content-Type application/gzip or reviewed gzip aliases. Maximum compressed original 12 MiB; maximum decompressed original CSV 24 MiB; up to 256 fully CRC-validated concatenated gzip members, non-gzip trailing data and invalid/partial members rejected. Require original station CSV schema, row-by-row element/day/flags validation and full hashes of both compressed original and inflated CSV. Compare latter with hash of verified NODD USW00094728.csv original obtained in workflow run 41501633985; report whether the exact original content is the same, dates and row counts. Never dump observation values or persist data to GitHub/Neon/model.
 
 ## Response contract
 
@@ -67,7 +67,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - application/octet-stream
 - binary/octet-stream
 
-**Format:** One complete NCEI provider original gzip object containing the eight-column USW00094728.csv station history. Exact raw gzip bytes SHA256 and decompressed station CSV SHA256, with all original CSV rows validated and no transformed observations.
+**Format:** One complete NCEI provider original gzip object that may contain up to 256 concatenated RFC-1952 gzip members, each verified for stream integrity and CRC containing the eight-column USW00094728.csv station history. Exact raw gzip bytes SHA256 and decompressed station CSV SHA256, with all original CSV rows validated and no transformed observations.
 
 **Scientific semantics:** A single U.S. GHCN station is a technical research sample. Data can be revised without versioned snapshots; a more recent file date or later observation does not prove climatological homogeneity, completeness, scientific QA or worldwide model relevance. Original OBS_TIME 2400 remains a native non-normalized token. Source documentation may apply WMO Resolution 40 restrictions to data supplied by non-U.S. countries; this reviewed contract covers only the fixed U.S. Central Park object, and MUST NOT be generalized to non-U.S. stations or commercial cross-border reuse.
 
@@ -81,7 +81,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** none
 
-**Rate limit notes:** One anonymous bounded full object GET for fixed U.S. station after workflow review only; PR validation offline; no retries, discovery, pagination, bulk, mirrors, station IDs chosen by caller or scheduled ingestion. Generic source validator max_probe_bytes is 5 MiB; max_sample_bytes is an independent 12 MiB compressed source sample cap; 24 MiB decompressed cap is enforced by script.
+**Rate limit notes:** One anonymous bounded full object GET for fixed U.S. station after workflow review only; PR validation offline; no retries, discovery, pagination, bulk, mirrors, station IDs chosen by caller or scheduled ingestion. Generic source validator max_probe_bytes is 5 MiB; max_sample_bytes is an independent 12 MiB compressed source sample cap; 24 MiB decompressed cap is enforced by script. All members are validated individually and against a shared 24 MiB inflated cap; external junk remains rejected.
 
 **Mutability notes:** Rolling object: record exact retrieval UTC, compressed and uncompressed whole-byte SHA256, original compressed/uncompressed lengths, source Last-Modified/ETag where well-formed, first and last observation, nonempty source/measurement/quality flags, native 2400 count, comparison to fixed 2026-11-02 NODD research hash. No atomic station-to-version binding or publication timestamp beyond provider headers.
 
@@ -113,6 +113,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - Bounded streamed inflation to at most 24 MiB, original gzip and normalized CSV whole-body SHA-256, original byte lengths, U.S. station ID, all rows validated with NOAA M/Q/S flags.
 - First and last observation dates, row count, NODD 2026-11-02 historical verified 16,003,495-byte uncompressed-SHA comparison, explicit freshness gap rather than invented currency.
 - No raw bytes persisted, no per-observation values printed or Neon/model admission; no rights or scientific claims for global GHCN.
+- Original gzip member count (up to 256), every member checked for trailer CRC and valid deflate; concatenation is allowed only if every member is valid; arbitrary trailing bytes forbidden.
 
 **Implementation decision:** build_adapter_now
 
@@ -126,4 +127,4 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - <https://www.ncei.noaa.gov/pub/data/cdo/documentation/GHCND_documentation.pdf>
 - <https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41501633985>
 
-**Notes:** Exact NCEI 4 KiB original gzip HTTP range sample was externally reachable on 2026-11-02 with application/gzip MIME. It has not yet received the full-object script-and-byte proof until merged workflow executes. The NODD original compared against is a pinned prior observation and can be stale: comparison result never asserts absolute freshness or that NCEI is the latest scientific archive.
+**Notes:** Exact NCEI 4 KiB original gzip HTTP range sample was externally reachable on 2026-11-02 with application/gzip MIME. It has not yet received the full-object script-and-byte proof until merged workflow executes. The NODD original compared against is a pinned prior observation and can be stale: comparison result never asserts absolute freshness or that NCEI is the latest scientific archive. First live workflow on 2026-11-02, run 41503180775, failed closed because original gzip ended one validated member before full response end. The fix recognizes standards-compliant concatenated gzip members while preserving CRC, size, exact-source, original whole-body hash and model-admission gates.
