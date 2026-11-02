@@ -32,6 +32,10 @@ CHUNK = 65536
 HDF5_MAGIC = b"\x89HDF\r\n\x1a\n"
 CDF_MAGIC = (b"CDF\x01", b"CDF\x02", b"CDF\x05")
 EXPECTED_NATIVE_DIMS = {"quantile": 7, "return_period": 8, "stations": 38_957}
+EXPECTED_COORD_PACKING = {
+    "lon": {"scale_factor": "0.001", "add_offset": None, "_FillValue": "-999"},
+    "lat": {"scale_factor": "0.001", "add_offset": None, "_FillValue": "-999"},
+}
 EXPECTED_NATIVE_FIELDS = {
     "lon": (("stations",), "degrees_east", "int32"),
     "lat": (("stations",), "degrees_north", "int32"),
@@ -125,6 +129,12 @@ def validate_native_header(dims: dict[str, int], fields: list[dict[str, object]]
             raise GtsmReceiptError(f"native GTSM axes, units or numeric storage drift: {name}")
 
 
+def validate_coordinate_packing(packing: dict[str, dict[str, str | None]]) -> None:
+    """Reject silent 1000x geolocation scale drift from the pinned original."""
+    if packing != EXPECTED_COORD_PACKING:
+        raise GtsmReceiptError("native GTSM longitude/latitude scale, offset or fill value drift")
+
+
 def inspect_scientific_header(path: Path) -> dict[str, object]:
     """Read only structural NetCDF metadata after full pinned-byte verification.
 
@@ -176,9 +186,11 @@ def inspect_scientific_header(path: Path) -> dict[str, object]:
     except Exception as exc:
         raise GtsmReceiptError("unable to inspect pinned NetCDF scientific header") from exc
     validate_native_header(dims, fields)
+    validate_coordinate_packing(packing)
     return {
         "dimensions": dims, "variables": fields,
         "coordinate_packing_attributes": packing,
+        "coordinate_packing_schema_checked": True,
         "native_axes_units_and_dtypes_checked": True,
         "coordinate_unpacking_verified": False,
         "metadata_only": True, "variable_values_read": False,
