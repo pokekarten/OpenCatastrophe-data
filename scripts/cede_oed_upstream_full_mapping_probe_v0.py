@@ -66,7 +66,8 @@ def _write_config(path: Path, source: Path, output: Path, mapping: Path) -> None
 
 
 def probe(upstream: Path, command: str = "ods_tools") -> dict[str, object]:
-    mapping_dir = upstream / MAPPING_PATH
+    # ODTF is executed with cwd=temp; mapping paths must be absolute.
+    mapping_dir = upstream.resolve(strict=True) / MAPPING_PATH
     result: dict[str, object] = {
         "profile": "cede10-oed302-pinned-upstream-comprehensive-probe-v0",
         "upstream_commit": UPSTREAM_COMMIT,
