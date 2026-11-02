@@ -67,6 +67,6 @@ def compare_repair_supports(linework, structure, source_bounds: tuple) -> dict:
     return {
         "synthetic_probe_count": 3,
         "synthetic_intersection_area_disagreements": disagreements,
-        "synthetic_wet_presence_disagreements": presence_disagreements,
+        "synthetic_positive_area_overlap_presence_disagreements": presence_disagreements,
         "synthetic_absolute_intersection_area_delta_projected_m2": absolute_area_difference,
     }
