@@ -48,12 +48,12 @@
         "infrastructure_hazard_intersection"
       ],
       "authoritative_url": "https://dataportaal.pbl.nl/GRIP4",
-      "access_class_hint": "public_region_archive_direct_download_cc0_declared_but_upstream_lineage_review_required",
+      "access_class_hint": "public_http_archives_documented_rights_conflict_blocks_automated_access",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "The PBL source page states CC0 and provides separate regional shapefile/FGDB ZIP archives; original compilation contains OpenStreetMap and other sources. Record specific GRIP4 region, archive name and SHA-256 before research ingestion; test topology, road type harmonization, positional accuracy and outdated source vintages. This is physical road geometry or density, not road replacement value or insured assets. Regional upstream provenance and commercial redistribution obligations must be checked for the exact files."
+      "note": "PBL GRIP4 download page and original Zenodo publication state CC0, but GLOBIO's official Resources page states CC BY 4.0 and data.overheid.nl marks a SHAPE download CC BY 4.0 despite a CC0 dataset header; one third-party GIS republisher cites ODbL. Rights status therefore remains conflicting / unreviewed for exact assets and upstream OSM-derived contributions; do not automate commercial downloads or distribute GRIP4 bytes until authoritative scope is reconciled. The PBL portal exposes seven regional ZIPs (vector Shapefile and FGDB) plus global five-arcminute road-density rasters. Zenodo 6420961 publishes GRIP4_density_total.zip MD5 24d3ed5c079f7a898fbc4a5d68be337a: do not assume the PBL mirror has identical bytes; record exact publisher, URL, file name, timestamp, size and fresh SHA-256. This is historical road geometry/density, not present-day insured asset value. Road classes, source vintage, topology, data overlap and asset valuations require separate validation."
     },
     {
       "candidate_id": "geoglows.rfs.v2.global-discharge",
