@@ -1,0 +1,450 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery of World Monitor upstream sources potentially useful to OpenCatastrophe catastrophe event monitoring, secondary impacts, critical infrastructure and exposure context; not a claim of source admission or source dataset rights.",
+  "review_date": "2026-11-02",
+  "entries": [
+    {
+      "candidate_id": "nasa.eonet.events-api-v3",
+      "name": "NASA EONET Natural Events API v3",
+      "provider": "NASA Earth Observatory Natural Event Tracker",
+      "categories": [
+        "multi_hazard",
+        "event_catalogue",
+        "near_real_time"
+      ],
+      "spatial_scope": "global",
+      "temporal_scope": "near-real-time and historic event metadata, variable by event",
+      "resolution_or_granularity": "Event IDs, dates, categories, source links, point and polygon geometries",
+      "potential_roles": [
+        "event_detection",
+        "event_crosswalk",
+        "satellite_layer_discovery"
+      ],
+      "authoritative_url": "https://eonet.gsfc.nasa.gov/docs/v3",
+      "access_class_hint": "public_documented_api",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "EONET is curated event metadata, not a complete hazard footprint, surveyed damage or loss. Freeze original event ID, all geometry timestamps and underlying sources; a World Monitor dashboard may drop polygon detail. Discovery evidence: World Monitor source-attribution manifest host eonet.gsfc.nasa.gov, code scripts/seed-natural-events.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "ca.nrcan.cwfis-operational",
+      "name": "Canadian Wildland Fire Information System operational products",
+      "provider": "Natural Resources Canada CWFIS",
+      "categories": [
+        "wildfire",
+        "fire_weather",
+        "event_observation"
+      ],
+      "spatial_scope": "Canada",
+      "temporal_scope": "current and historical coverage, product dependent",
+      "resolution_or_granularity": "Fire locations, danger/weather indexes, burned area and linked spatial services",
+      "potential_roles": [
+        "wildfire_hazard_context",
+        "fire_event_crosswalk",
+        "burned_area_validation"
+      ],
+      "authoritative_url": "https://natural-resources.canada.ca/forests-forestry/wildland-fires/wildland-fire-monitoring-reporting-tools",
+      "access_class_hint": "public_mapping_datamart_product_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Current fire locations are not necessarily perimeters; satellite and agency reports may disagree. Product, layer, timestamp and regional authority must be frozen separately. Discovery evidence: World Monitor source-attribution manifest host geoserver.cwfif.nrcan.gc.ca, code scripts/wildfire/cwfis-wfs.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "ca.nrcan.earthquakes-canada",
+      "name": "Earthquakes Canada catalogue and significant events",
+      "provider": "Natural Resources Canada",
+      "categories": [
+        "earthquake",
+        "event_catalogue",
+        "seismology"
+      ],
+      "spatial_scope": "Canada and adjacent areas",
+      "temporal_scope": "recent and historical earthquakes, operational revisions",
+      "resolution_or_granularity": "Epicentres, magnitude, depth, event type and event identifiers",
+      "potential_roles": [
+        "earthquake_event_crosswalk",
+        "regional_seismic_validation"
+      ],
+      "authoritative_url": "https://www.earthquakescanada.nrcan.gc.ca/recent/index-en.php",
+      "access_class_hint": "public_catalogue_documented_feed_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "World Monitor uses an NRCan Atom adapter. Quarry blasts and mine-induced events may appear alongside tectonic events; preserve event type and catalogue version. Discovery evidence: World Monitor source-attribution manifest host www.earthquakescanada.nrcan.gc.ca, code scripts/seismology/nrcan-atom.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "noaa.nhc.current-tropical-cyclone-gis",
+      "name": "NOAA NHC operational tropical cyclone GIS products",
+      "provider": "NOAA National Hurricane Center",
+      "categories": [
+        "tropical_cyclone",
+        "storm_track",
+        "forecast",
+        "geospatial"
+      ],
+      "spatial_scope": "Atlantic and eastern North Pacific as product coverage permits",
+      "temporal_scope": "operational advisories with frequent revisions",
+      "resolution_or_granularity": "Forecast tracks, uncertainty cones, advisories and wind fields depending on layer",
+      "potential_roles": [
+        "cyclone_event_tracking",
+        "forecast_hazard_context",
+        "track_crosswalk"
+      ],
+      "authoritative_url": "https://www.nhc.noaa.gov/gis/",
+      "access_class_hint": "public_operational_gis_endpoints_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Forecast cones are not wind footprints or loss probabilities. Store storm ID, advisory number, issuance time, basin and layer; do not substitute forecasts for best track. Discovery evidence: World Monitor source-attribution manifest host mapservices.weather.noaa.gov, code scripts/seed-natural-events.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "us.nws.active-weather-alerts-cap",
+      "name": "US National Weather Service CAP alerts",
+      "provider": "NOAA National Weather Service",
+      "categories": [
+        "severe_weather",
+        "alerting",
+        "cap",
+        "geospatial"
+      ],
+      "spatial_scope": "United States and NWS coverage regions",
+      "temporal_scope": "operational active alerts; historical retention restricted",
+      "resolution_or_granularity": "CAP v1.2 alerts in XML and JSON-LD with event areas and validity windows",
+      "potential_roles": [
+        "regional_warning_trigger",
+        "alert_area_validation"
+      ],
+      "authoritative_url": "https://www.weather.gov/documentation/services-web-alerts",
+      "access_class_hint": "public_alert_api_rate_limits",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Operational alerts describe warned areas and uncertainty, not measured extreme-wind, hail or flood footprints; respect NWS rate limit and expiration. Discovery evidence: World Monitor source-attribution manifest host api.weather.gov, code scripts/_weather-alert-select.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "hk.hko.tropical-cyclone-public-bulletins",
+      "name": "Hong Kong Observatory public tropical cyclone and marine warnings",
+      "provider": "Hong Kong Observatory",
+      "categories": [
+        "tropical_cyclone",
+        "storm_surge",
+        "weather_alert"
+      ],
+      "spatial_scope": "Hong Kong and western North Pacific warning context",
+      "temporal_scope": "operational warning bulletins",
+      "resolution_or_granularity": "Regional storm tracks, warning signals and coastal conditions, field availability varies",
+      "potential_roles": [
+        "western_pacific_event_monitoring",
+        "coastal_warning_context"
+      ],
+      "authoritative_url": "https://www.hko.gov.hk/en/wxinfo/currwx/tc.htm",
+      "access_class_hint": "public_web_and_open_data_product_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Treat HKO warnings as official local alert context, not standardized loss footprints; pin issue time, basin, warning area and authoritative product. Discovery evidence: World Monitor source-attribution manifest host data.weather.gov.hk, code scripts/natural/western-pacific-cyclones.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "in.imd.coastal-marine-bulletins",
+      "name": "India Meteorological Department coastal and sea-area bulletins",
+      "provider": "India Meteorological Department",
+      "categories": [
+        "tropical_cyclone",
+        "storm_surge",
+        "coastal_weather",
+        "alerting"
+      ],
+      "spatial_scope": "Indian coastal waters and adjacent sea areas",
+      "temporal_scope": "operational area and port bulletins",
+      "resolution_or_granularity": "Warnings for wind, sea state, visibility, port signals and surge by coastal area",
+      "potential_roles": [
+        "north_indian_ocean_warning_context",
+        "coastal_event_trigger"
+      ],
+      "authoritative_url": "https://mausam.imd.gov.in/Forecast/coastal_bulletin_new.php",
+      "access_class_hint": "public_bulletin_reading_noncommercial_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "The upstream World Monitor documentation notes non-commercial RTI constraints for IMD; access and commercial rights require independent review. Pin bulletin area, valid interval and issuing office. Discovery evidence: World Monitor source-attribution manifest host mausam.imd.gov.in, code scripts/lib/imd-cyclone-marine.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "ca.eccc.operational-weather-alerts",
+      "name": "Environment and Climate Change Canada public weather alerts",
+      "provider": "Environment and Climate Change Canada",
+      "categories": [
+        "severe_weather",
+        "cap",
+        "alerting"
+      ],
+      "spatial_scope": "Canada",
+      "temporal_scope": "near-real-time warnings with issue and expiry windows",
+      "resolution_or_granularity": "Regional public watches, warnings and advisories",
+      "potential_roles": [
+        "severe_weather_alert_trigger",
+        "national_weather_crosscheck"
+      ],
+      "authoritative_url": "https://www.weather.gc.ca/",
+      "access_class_hint": "public_alert_feeds_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "An alert polygon or warning region is not an observed hazard footprint. Freeze product ID, issue time, language and validity window; assess reuse terms. Discovery evidence: World Monitor source-attribution manifest host api.weather.gc.ca, code scripts/_weather-alert-select.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "wmo.swic3.global-cap-warnings",
+      "name": "WMO Severe Weather Information Centre 3.0",
+      "provider": "World Meteorological Organization",
+      "categories": [
+        "severe_weather",
+        "tropical_cyclone",
+        "cap",
+        "multi_hazard"
+      ],
+      "spatial_scope": "multi-country worldwide member coverage, incomplete by member",
+      "temporal_scope": "operational member warnings",
+      "resolution_or_granularity": "CAP member advisories and tropical cyclone tracks with source agency identity",
+      "potential_roles": [
+        "global_warning_discovery",
+        "country_alert_crosswalk"
+      ],
+      "authoritative_url": "https://severeweather.wmo.int/",
+      "access_class_hint": "public_warning_portal_underlying_member_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "SWIC aggregates member warnings, with incomplete CAP availability; original national meteorological services are the authoritative issuers. Avoid interpreting absence as no warning. Discovery evidence: World Monitor source-attribution manifest host severeweather.wmo.int, code scripts/_weather-alert-select.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "unocha.reliefweb.disasters-api",
+      "name": "ReliefWeb disasters and situation reports API",
+      "provider": "UN OCHA ReliefWeb",
+      "categories": [
+        "disaster_impact",
+        "event_catalogue",
+        "humanitarian",
+        "api"
+      ],
+      "spatial_scope": "global",
+      "temporal_scope": "near-real-time reports and historical archive",
+      "resolution_or_granularity": "Disaster records, country associations, reports, original sources and update times",
+      "potential_roles": [
+        "impact_context",
+        "event_identity_crosswalk",
+        "humanitarian_validation"
+      ],
+      "authoritative_url": "https://apidoc.reliefweb.int/",
+      "access_class_hint": "approved_appname_required_provider_content_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official API requires approved appname. Report text and embedded content have independent publisher rights. Not insured losses or independent validation if sourced from the same agencies. Discovery evidence: World Monitor source-attribution manifest host api.reliefweb.int, code scripts/seed-climate-disasters.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "iom.dtm.displacement-api",
+      "name": "IOM Displacement Tracking Matrix aggregated displacement API",
+      "provider": "International Organization for Migration",
+      "categories": [
+        "population",
+        "displacement",
+        "humanitarian_impact"
+      ],
+      "spatial_scope": "country and subnational coverage where active",
+      "temporal_scope": "survey and assessment rounds, varies by operation",
+      "resolution_or_granularity": "Aggregated internally displaced population counts by administrative level",
+      "potential_roles": [
+        "post_event_displacement_validation",
+        "population_context"
+      ],
+      "authoritative_url": "https://dtm.iom.int/es/node/38776",
+      "access_class_hint": "public_aggregated_api_terms_and_scope_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "DTM aggregates at country/admin levels with sampling and coverage differences. Never equate displacement with insured loss or identify individual households. Discovery evidence: World Monitor source-attribution manifest host dtmapi.iom.int, code scripts/seed-dtm-displacement.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "unhcr.refugee-data-portal",
+      "name": "UNHCR Refugee Data Portal datasets and API",
+      "provider": "United Nations High Commissioner for Refugees",
+      "categories": [
+        "population",
+        "displacement",
+        "social_vulnerability"
+      ],
+      "spatial_scope": "global and country-specific series",
+      "temporal_scope": "periodic releases, country and indicator dependent",
+      "resolution_or_granularity": "Aggregated refugee and displacement indicators and metadata",
+      "potential_roles": [
+        "population_exposure_context",
+        "cross_border_movement_context"
+      ],
+      "authoritative_url": "https://refugeedata.unhcr.org/en/documentation/start-here/about/",
+      "access_class_hint": "public_portal_api_dataset_specific_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Not a catastrophe event feed or household exposure inventory. Preserve definitions and publication timing; avoid double counting IOM and UNHCR populations. Discovery evidence: World Monitor source-attribution manifest host data.unhcr.org, code scripts/seed-cross-border-arrivals.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "imf.portwatch-maritime-activity",
+      "name": "IMF PortWatch port activity and maritime trade monitoring",
+      "provider": "International Monetary Fund PortWatch",
+      "categories": [
+        "maritime",
+        "critical_infrastructure",
+        "supply_chain"
+      ],
+      "spatial_scope": "global maritime ports and shipping routes, product dependent",
+      "temporal_scope": "frequently updated maritime activity estimates",
+      "resolution_or_granularity": "Port calls, chokepoint activity and trade disruption indicators",
+      "potential_roles": [
+        "business_interruption_context",
+        "port_exposure_enrichment",
+        "trade_disruption_validation"
+      ],
+      "authoritative_url": "https://portwatch.imf.org/",
+      "access_class_hint": "public_portal_download_api_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Shipping data are operational proxies, not cargo value at risk or insured business interruption. Preserve port identifiers, coverage, aggregation and methodological changes. Discovery evidence: World Monitor source-attribution manifest host portwatch.imf.org, code scripts/build-chokepoint-transit-snapshot.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "globalenergymonitor.ggit-infrastructure",
+      "name": "Global Energy Monitor Global Gas Infrastructure Tracker",
+      "provider": "Global Energy Monitor",
+      "categories": [
+        "critical_infrastructure",
+        "gas_pipelines",
+        "lng",
+        "exposure"
+      ],
+      "spatial_scope": "global",
+      "temporal_scope": "periodically released asset inventory",
+      "resolution_or_granularity": "Pipelines, LNG terminals, project phases, capacity and approximate or mapped locations",
+      "potential_roles": [
+        "critical_infrastructure_exposure",
+        "natcat_business_interruption_context"
+      ],
+      "authoritative_url": "https://globalenergymonitor.org/projects/global-gas-infrastructure-tracker",
+      "access_class_hint": "public_download_requires_exact_release_and_attribution_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Pipeline routes may be approximate and proposed projects are not operating exposure. Preserve release, status, source geometry precision, and exact CC attribution conditions. Discovery evidence: World Monitor source-attribution manifest host globalenergymonitor.org, code scripts/import-gem-pipelines.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "entsoe.transparency-electricity",
+      "name": "ENTSO-E Transparency Platform electricity system data",
+      "provider": "European Network of Transmission System Operators for Electricity",
+      "categories": [
+        "electricity",
+        "infrastructure",
+        "business_interruption"
+      ],
+      "spatial_scope": "European electricity-market coverage",
+      "temporal_scope": "operational and historic system time series",
+      "resolution_or_granularity": "Generation, load, transmission flows and outages where available",
+      "potential_roles": [
+        "electricity_interruption_context",
+        "power_system_stress_validation"
+      ],
+      "authoritative_url": "https://transparency.entsoe.eu/",
+      "access_class_hint": "registration_api_token_and_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Grid time series are not property vulnerability or claim data. Freeze bidding zones, temporal resolution, revisions and licensing terms. Discovery evidence: World Monitor source-attribution manifest host web-api.tp.entsoe.eu, code scripts/seed-electricity-prices.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "openaq.global-air-quality-api",
+      "name": "OpenAQ global air-quality measurement API",
+      "provider": "OpenAQ",
+      "categories": [
+        "air_quality",
+        "wildfire_smoke",
+        "health_context"
+      ],
+      "spatial_scope": "global network coverage with large spatial gaps",
+      "temporal_scope": "measurement observations and updates, station dependent",
+      "resolution_or_granularity": "Station observations of particulate matter and other air pollutants",
+      "potential_roles": [
+        "wildfire_smoke_observation",
+        "secondary_impact_validation"
+      ],
+      "authoritative_url": "https://docs.openaq.org/",
+      "access_class_hint": "public_api_key_and_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Smoke particles are not fire perimeter or loss. Station and sensor biases and contributor-specific rights require separate verification. Discovery evidence: World Monitor source-attribution manifest host api.openaq.org, code scripts/seed-health-air-quality.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "nsidc.sea-ice-index-g02135",
+      "name": "NSIDC Sea Ice Index G02135",
+      "provider": "National Snow and Ice Data Center",
+      "categories": [
+        "sea_ice",
+        "climate",
+        "marine_navigation"
+      ],
+      "spatial_scope": "Arctic and Antarctic",
+      "temporal_scope": "daily and monthly historic series from 1978",
+      "resolution_or_granularity": "Extent and concentration reference products, time series and GIS files",
+      "potential_roles": [
+        "marine_climate_context",
+        "polar_navigation_risk_context"
+      ],
+      "authoritative_url": "https://nsidc.org/data/seaice_index/data-and-image-archive",
+      "access_class_hint": "public_data_archive_product_version_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Not a storm-loss input. Use as polar marine hazard conditioning with product version, quality flags and observation gaps. Discovery evidence: World Monitor source-attribution manifest host noaadata.apps.nsidc.org, code scripts/seed-climate-ocean-ice.mjs; independently verify direct provider terms and exact product before use."
+    },
+    {
+      "candidate_id": "worldbank.wdi-indicators-v2",
+      "name": "World Bank World Development Indicators API v2",
+      "provider": "World Bank",
+      "categories": [
+        "population",
+        "economics",
+        "exposure_context"
+      ],
+      "spatial_scope": "global national indicators",
+      "temporal_scope": "annual and other periodic indicators by series",
+      "resolution_or_granularity": "National population and economic indicators with methodology and vintage",
+      "potential_roles": [
+        "portfolio_macro_scaling",
+        "country_exposure_context"
+      ],
+      "authoritative_url": "https://datahelpdesk.worldbank.org/knowledgebase/articles/889392",
+      "access_class_hint": "public_indicators_api_dataset_license_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Country averages are not geolocated building exposure or insured values. Freeze indicator IDs, unit, country, release and missing-value semantics. Discovery evidence: World Monitor source-attribution manifest host api.worldbank.org, code scripts/_demographics-capability-source.mjs; independently verify direct provider terms and exact product before use."
+    }
+  ]
+}
