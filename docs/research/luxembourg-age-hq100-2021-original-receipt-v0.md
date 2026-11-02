@@ -184,6 +184,26 @@ The initial stricter audit with a 250,000-point per-ring limit was [run 41414976
 
 Important: each ring was evaluated **individually** as a polygon, so even the 6,305 valid rings do not establish that the original multipart hazard polygon is jointly topologically valid. No exterior/hole containment, between-ring intersections or actual hazard intensity were validated. No original polygon, ring, coordinate, record geometry or location was emitted or persisted. The source is not yet authorised for intersection with ACT buildings or insurer exposures.
 
+## Bounded 74-invalid-ring repair-method challenge — original result, 2 Nov 2026
+
+[Exact-original provider run 41435194967](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41435194967) **PASS** with all synthetic negative controls. The new `luxembourg_age_hq100_2021_invalid_ring_repair_challenge_v0.py` compares in memory Shapely/GEOS `make_valid(method="linework")` and `method="structure"` **only for ring geometries individually invalid under the original 2021 AGE source**. No original geometry or repair is written to the repository, artifacts or Neon.
+
+| Exact provider source diagnostic | Count |
+| --- | ---: |
+| Original rings classified invalid | **74** |
+| Bounded repair comparisons completed | **73** |
+| Originally invalid ring exceeding the strict 50,000-vertex repair cap | **1** |
+| Linework repair usable | **73** |
+| Result a single polygon / multiple polygons | **11 / 62** |
+| Both GEOS methods yield topologically equal polygon sets | **73** |
+| Original invalid ring boundary lineal point set unchanged | **73** |
+| Non-polygon debris in completed linework outputs | **0** |
+| Structure challenger failures or computed differences | **0** |
+
+The 73 challenged original rings have **6,890,737.09 m² aggregate nominal signed-input area**, the same rounded sum as their 73 repaired polygonal candidates. **This is *not* a measure of the union of inundated terrain or independently verified inundation area.** Rings may be holes, overlap or represent distinct and nested levels; raw source invalid-ring nominal area has no scientific ground-truth status. The maximum source-ring nominal area among these 73 was **1,543,891.58 m²**, without publishing the ring identity or coordinates.
+
+**Critical finding:** 62 of 73 technically recoverable rings result in **more than one polygon**. Treating each original invalid ring as a simple one-for-one recovered floodplain polygon would be wrong. The 74th unusually complex ring has **not been repaired or automatically approved**; source-wide full multipolygon assembly, shell/hole relationships and original hydraulic-mask lineage remain unverified. Even a repaired individual ring does not tell us which portion is permanently flooded or what depth to assign. All CAT-model/exposure admissions stay false.
+
 ## Next scientific steps
 
 - Verify the original actual file format, complete record and field counts,
