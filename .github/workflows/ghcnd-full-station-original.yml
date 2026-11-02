@@ -12,6 +12,7 @@ on:
       - '.github/workflows/ghcnd-full-station-original.yml'
   workflow_dispatch:
   # Reviewed one-shot full original source check; PRs use offline tests only.
+  # Replay once after provider-original native OBS_TIME=2400 source finding.
   push:
     branches: [main]
     paths:
