@@ -96,11 +96,31 @@ The matched counts describe provider query responses, not complete or independen
 
 **Action:** keep event point geometry separate from official observed flood footprint polygons and derived model buffers in the canonical event–hazard–exposure crosswalk. Until a surveyed or independently observed footprint with confirmed units, version, geometry and rights is identified, a flood **point** must never be used to intersect buildings as an inundation area.
 
+### Automated geometry-role preflight (synthetic-only regression)
+
+`research_runners/wfp_adam_flood_geometry_role_preflight_v0.py` validates an **independently SHA-pinned** original WFP `adam.adam_fl_events/items?limit=1` GeoJSON response. It enforces the exact collection ID, one feature and consistent `numberMatched`/`numberReturned`, finite WGS84 longitude/latitude, known Point/Polygon/MultiPolygon structures, closed non-degenerate polygon rings and a bounded response size. Its output is an **aggregate-only geometry role receipt**: no event IDs, lat/lon, polygons, names, `fl_popn` or `flood_area` provider bytes.
+
+- For a `Point` the geometry is classified as `EVENT_LOCATION_POINT_NOT_INUNDATION`.
+- For `Polygon` or `MultiPolygon`, classification remains `UNVERIFIED_SOURCE_POLYGON_NOT_OBSERVED_INUNDATION`. Structural closure does **not** prove geometry topology, physical flood extent, satellite acquisition provenance, depth or damage.
+- Every successful receipt sets `building_intersection_permitted=false` and `model_input_admitted=false`. A downstream building/insurance join requires independently reviewed observation/product lineage and source admission; this preflight **cannot grant those rights**.
+- Only synthetic test fixtures are committed. A one-feature provider response must be separately fetched by an authorised workflow and pinned; the script itself is **offline-only**.
+
+```bash
+python research_runners/wfp_adam_flood_geometry_role_preflight_v0.py \
+  /secure/provider-event/flood-event-one-feature.geojson \
+  --expected-sha256 PINNED_ORIGINAL_SOURCE_SHA256 \
+  --out /tmp/adam-flood-geometry-role.json
+python -m unittest discover -s tests -p 'test_wfp_adam_flood_geometry_role_preflight_v0.py'
+```
+
+This is not a global check of the full ADAM flood inventory, nor a promise that every ADAM event has Point geometry. It strictly prohibits the dangerous inference that the observed point is an inundation footprint.
+
 ## Offline regression / next acceptance gates
 
 ```bash
 python -m unittest discover -s tests -p 'test_jma_besttrack_source_preflight_v0.py'
 python -m unittest discover -s tests -p 'test_wfp_adam_collection_catalogue_preflight_v0.py'
+python -m unittest discover -s tests -p 'test_wfp_adam_flood_geometry_role_preflight_v0.py'
 python scripts/check_all.py
 ```
 
