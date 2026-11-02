@@ -83,7 +83,7 @@ def _parse_canonical(value: bytes, label: str) -> object:
     try:
         result = json.loads(value.decode("utf-8", errors="strict"))
         canonical = producer._canonical_json(result)
-    except (UnicodeDecodeError, ValueError, TypeError, OverflowError) as exc:
+    except (UnicodeDecodeError, ValueError, TypeError, OverflowError, RecursionError) as exc:
         raise EventLossHandoffValidationError(f"{label} is not canonical JSON") from exc
     if canonical != value:
         raise EventLossHandoffValidationError(f"{label} canonical bytes drifted")
