@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-02`  
 **Purpose:** Non-admission discovery of official insurance regulatory registers to expand worldwide insurance and reinsurance group, legal-entity and jurisdiction coverage without importing third-party raw records.
 
-**Entries:** 13
+**Entries:** 18
 
 ## IAIS register of Internationally Active Insurance Groups
 
@@ -212,3 +212,78 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Government portal source was found by search but direct browser returned HTTP 403. No official CSV downloaded or hashed in this pass. Preserve separate dataset vintage, insurer legal identity, licensed operation/branch and period; a financial statement row is not geolocated CAT exposure. Rights/automated extraction remain unreviewed.
+
+## Argentina SSN active insurance and reinsurance entities open CSV
+
+**Candidate ID:** `ar.ssn.active-insurer-reinsurer.202610`  
+**Provider:** Superintendencia de Seguros de la Nación (SSN), Argentina  
+**Categories:** `insurance`, `reinsurance`, `insurer_entity_registry`, `latin_america`, `public_csv`  
+**Spatial scope:** Argentina registered active insurers and reinsurers  
+**Temporal scope:** Government resource states as of October 2026; catalogue updated 2026-10-26  
+**Resolution / granularity:** Official CSV lists companies and reinsurers registered as active; attributes include entity class and national registration/tax identifiers depending on exact release  
+**Potential roles:** `argentina_insurer_legal_entity_discovery`, `latam_regulatory_id_crosswalk`, `reinsurer_census`  
+**Access hint:** `public_official_csv_catalogue_cc_by_4_reported_exact_asset_and_terms_pending`  
+**Authoritative source:** <https://datosabiertos.ssn.gob.ar/dataset/f74d96ca-094f-4b3c-be8f-890214c0df91>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** The official portal advertises Creative Commons Attribution 4.0, but this discovery is not a completed licence- or original-byte admission for a particular CSV release. Freeze version, file hash, regulator ID and entity status, and distinguish company, branch and reinsurer; no rows imported.
+
+## Nigeria NAICOM regulated insurance-operator categories
+
+**Candidate ID:** `ng.naicom.insurance-operators`  
+**Provider:** National Insurance Commission (NAICOM), Nigeria  
+**Categories:** `insurance`, `reinsurance`, `insurer_entity_registry`, `africa`, `license_class`  
+**Spatial scope:** Nigeria licensed life, general, composite, takaful, microinsurance and reinsurance carriers  
+**Temporal scope:** Live portal; snapshot date and class-specific update date must be frozen  
+**Resolution / granularity:** Official regulatory operator directories with insurance company name and licensed business/category; some lists have LIC code and operating address  
+**Potential roles:** `nigeria_licensed_insurer_discovery`, `africa_lob_license_crosswalk`, `reinsurer_registry`  
+**Access hint:** `public_web_operator_directories_category_and_rights_review_pending`  
+**Authoritative source:** <https://naicom.gov.ng/insurance-operators/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Carrier directories must be filtered by life/general/composite/micro/takaful/reinsurance classes. Brokers, web aggregators and loss adjusters are separate intermediaries and must not be counted as insurers. Page totals alone are not a verified census and names do not prove parent ownership.
+
+## Kenya IRA authorised insurance entities directory
+
+**Candidate ID:** `ke.ira.licensed-insurance-entities.2026`  
+**Provider:** Insurance Regulatory Authority (IRA), Kenya  
+**Categories:** `insurance`, `reinsurance`, `insurer_entity_registry`, `africa`, `licenses`  
+**Spatial scope:** Kenya licensed insurers and reinsurers and separately intermediaries  
+**Temporal scope:** Official registry lists 2026 licensed entities and document vintages, with related releases as at August 2026  
+**Resolution / granularity:** Licensed entity classes and annual licence records; separate downloadable statements/lists for insurers, reinsurers and intermediaries  
+**Potential roles:** `kenya_insurer_legal_entity_discovery`, `east_africa_reinsurer_crosscheck`, `licence_vintage_comparison`  
+**Access hint:** `public_regulator_directory_downloads_rights_and_file_formats_review_pending`  
+**Authoritative source:** <https://ira.go.ke/entities-registry/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** The official page includes brokers, agents, risk managers and medical insurance providers, which are not necessarily insurer risk carriers. Resolve precise 2026 insurer/reinsurer source documents and dates before counting; no original bytes or canonical legal IDs acquired in this pass.
+
+## Philippines Insurance Commission companies with valid authority
+
+**Candidate ID:** `ph.ic.authorized-life-nonlife.20260930`  
+**Provider:** Insurance Commission (Philippines)  
+**Categories:** `insurance`, `insurer_entity_registry`, `asia`, `life_nonlife`, `licensing`  
+**Spatial scope:** Philippines authorised life, nonlife and composite insurance companies  
+**Temporal scope:** Official page links list of valid and existing Certificate of Authority as of 2026-09-30  
+**Resolution / granularity:** Company names and regulatory Certificate of Authority/licence status from provider list; historical directory also linked  
+**Potential roles:** `philippines_insurer_discovery`, `life_nonlife_regulatory_status`, `asia_legal_entity_resolution`  
+**Access hint:** `public_official_regulator_document_download_rights_review_pending`  
+**Authoritative source:** <https://site.insurance.gov.ph/life-and-non-life-companies/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** The page links both 2025 and 2026 files. Do not count historical revoked/merged entities as active or conflate company name changes, certificates and group structures. Pin the September 2026 exact document version and SHA and preserve licence status; no files imported.
+
+## Indonesia OJK insurer directories and published annual/quarterly versions
+
+**Candidate ID:** `id.ojk.insurance-directory.2025q3`  
+**Provider:** Otoritas Jasa Keuangan (OJK), Indonesia  
+**Categories:** `insurance`, `reinsurance`, `insurer_entity_registry`, `asia`, `historical_registry`  
+**Spatial scope:** Indonesia domestic insurance and reinsurance companies; insurance intermediary lists are separate  
+**Temporal scope:** Official directory index visibly lists 2025 Q3 as latest item in source review; do not presume a published 2026 edition  
+**Resolution / granularity:** Historical published insurance directories describing insurer/reinsurer entities, business categories and company identity  
+**Potential roles:** `indonesia_insurer_legal_entity_discovery`, `asia_regional_coverage`, `historical_license_comparison`  
+**Access hint:** `public_ojk_directory_historical_links_terms_formats_review_pending`  
+**Authoritative source:** <https://ojk.go.id/id/kanal/iknb/data-dan-statistik/direktori/asuransi/default.aspx>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** OJK 2025 Q3 publication is an observable index item, not evidence of current 2026 insurer licence status. Check exact linked assets and original terms, distinguish insurance carriers from broker and support-service lists, do not infer corporate control or operating risk from directory addresses.
