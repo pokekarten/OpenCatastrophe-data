@@ -37,9 +37,11 @@ jobs:
           tests.test_us_census_2026_microsoft_louisiana_building_parish_join_v0
           -v
       - name: One explicitly narrow original Census ZIP plus original Microsoft HTTP range
-        # Source bytes are ephemeral. Permit ONLY scoped research PR #1100
-        # until one real-source receipt exists; then revert to manual only.
-        if: github.event_name != 'pull_request' || github.event.pull_request.number == 1100
+        # Original-source proof ran successfully on exact reviewed code:
+        # https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41499442235
+        # Routine PR checks are strictly OFFLINE; original acquisition is
+        # manual/after separately reviewed main workflow only.
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
