@@ -56,6 +56,16 @@ after its synthetic gate. **Actual file structure and observations must be
 taken from a successful real-original run, not inferred from the catalogue
 description.**
 
+## First actually verified original ZIP outcome (2 November 2026)
+
+Full exact-origin [GitHub workflow 41408171685](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41408171685) **passed**, including four synthetic archive-integrity regressions. The official ZIP matched publisher SHA-1 `41b58cb5e0c9509d39824919dce85702ceda0540`; its reproducibility SHA-256 is `a2b107c577a06ea2d6264ef916c954767e5d9b11899b9298f58d3c18b7e35571`. Original compressed size is **4,093,773 B**, eight ZIP members (seven regular members and one directory), with aggregate expanded bytes **21,408,941 B**.
+
+The archive contains **one shapefile group**, with exactly one each of `.shp`, `.shx`, `.dbf`, `.prj`, `.cpg`, `.sbn`, and `.sbx`. SHP main header declares **ESRI Polygon shape type 5** and its physical file size is **21,407,956 B**; the DBF header declares **exactly one row**, fields **OBJECTID (integer-like numeric), Shape_Leng (float), Shape_Area (float)**. The PRJ WKT currently has only a `LUXEMBOURG` keyword match; no source-specific CRS/axis has been independently approved.
+
+**Important content correction:** This actual official 3.9 MB ZIP contains **no DBF depth field at all**. Although the AGE dataset catalogue mentions modelled floodplain and water depths, this ZIP **does not provide a DBF numeric intensity attribute for depth**, so it cannot be used to produce building-specific flood depth, vulnerability or loss calculations. Its one DBF row suggests an aggregate spatial zone or multipart shape; the **actual SHP record count, number of rings and coordinates still require a separate bounded, checksum-pinned source-record structural scan**. Do not equate one DBF record with a single physical flood zone, property, gauge or event, or infer that the companion GeoJSON contains the same semantics without independently inspecting it.
+
+Source bytes, geometry and attributes were never logged, committed, uploaded to an artifact or written to Neon. `model_input_admitted=false`.
+
 ## Next scientific steps
 
 - Verify the original actual file format, complete record and field counts,
