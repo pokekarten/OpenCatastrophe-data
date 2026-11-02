@@ -162,10 +162,10 @@ class SourceRingHierarchy:
             "proposed_hole_candidate_rings": (
                 self.negative_winding if self.reverse_orientation else self.positive_winding),
             "zero_orientation_rings": self.zero_winding,
-            "geos_valid_clockwise_exterior_candidates": len(shells),
-            "geos_invalid_clockwise_exterior_candidates": len(bad_shells),
-            "geos_valid_counterclockwise_hole_candidates": len(self.valid_holes),
-            "geos_invalid_counterclockwise_hole_candidates": self.invalid_hole_count,
+            "geos_valid_proposed_exterior_candidates": len(shells),
+            "geos_invalid_proposed_exterior_candidates": len(bad_shells),
+            "geos_valid_proposed_hole_candidates": len(self.valid_holes),
+            "geos_invalid_proposed_hole_candidates": self.invalid_hole_count,
             "valid_holes_with_exactly_one_valid_shell_cover": exactly_one,
             "valid_holes_with_multiple_valid_shell_covers": multiple,
             "valid_holes_with_no_valid_shell_cover": uncovered,
@@ -218,8 +218,8 @@ def audit(path: Path, scenario: str, *, reverse_orientation=False) -> dict:
         result["source_hierarchy_contains_unresolved_geometry"] = True
     else:
         result["source_hierarchy_contains_unresolved_geometry"] = bool(
-            result["geos_invalid_clockwise_exterior_candidates"]
-            or result["geos_invalid_counterclockwise_hole_candidates"]
+            result["geos_invalid_proposed_exterior_candidates"]
+            or result["geos_invalid_proposed_hole_candidates"]
             or result["valid_holes_with_multiple_valid_shell_covers"]
             or result["valid_holes_with_no_valid_shell_cover"]
             or result["valid_holes_with_possible_invalid_shell_bbox_cover"])
