@@ -41,6 +41,55 @@ class EmscOneEventTests(unittest.TestCase):
                       'insured_loss_computed', 'original_event_completeness_verified']:
             self.assertIs(result[field], False)
 
+    def test_original_provider_event_identity_is_source_bound_not_admitted(self):
+        receipt = check()
+        self.assertEqual(receipt['provider_event_source_id'], 'synthetic-event-1')
+        self.assertEqual(receipt['provider_origin_time_utc'], '2025-10-01T12:00:00Z')
+        self.assertEqual(receipt['provider_longitude_deg'], 8.0)
+        self.assertEqual(receipt['provider_latitude_deg'], 50.0)
+        self.assertEqual(receipt['provider_magnitude'], 4.3)
+        self.assertEqual(len(receipt['response_sha256']), 64)
+        for flag in ('event_identity_frozen_for_science',
+                     'original_event_completeness_verified',
+                     'raw_data_admitted', 'hazard_model_admitted',
+                     'insurer_exposure_admitted'):
+            self.assertIs(receipt[flag], False)
+        self.assertNotIn('features', receipt)
+        self.assertNotIn('geometry', receipt)
+        self.assertNotIn('properties', receipt)
+
+    def test_event_revision_changes_raw_sha_and_observed_event_identity(self):
+        first = check()
+        later = valid()
+        later['features'][0]['properties']['source_id'] = 'synthetic-event-2'
+        changed_id = check(later)
+        self.assertNotEqual(first['response_sha256'], changed_id['response_sha256'])
+        self.assertEqual(changed_id['provider_event_source_id'], 'synthetic-event-2')
+        self.assertFalse(changed_id['event_identity_frozen_for_science'])
+        later['features'][0]['properties']['time'] = '2025-10-02T12:00:00Z'
+        changed_time = check(later)
+        self.assertNotEqual(changed_id['response_sha256'], changed_time['response_sha256'])
+        self.assertEqual(changed_time['provider_origin_time_utc'], '2025-10-02T12:00:00Z')
+        later['features'][0]['geometry']['coordinates'][0] = 9.0
+        changed_coordinates = check(later)
+        self.assertEqual(changed_coordinates['provider_longitude_deg'], 9.0)
+        self.assertNotEqual(changed_time['response_sha256'], changed_coordinates['response_sha256'])
+
+    def test_unreported_magnitude_remains_absent_not_inferred(self):
+        data = valid()
+        del data['features'][0]['properties']['mag']
+        result = check(data)
+        self.assertIsNone(result['provider_magnitude'])
+        self.assertFalse(result['has_declared_magnitude'])
+        self.assertFalse(result['hazard_model_admitted'])
+
+    def test_provider_alias_origin_time_is_unchanged_not_inferred(self):
+        data = valid()
+        properties = data['features'][0]['properties']
+        properties['Time'] = properties.pop('time')
+        receipt = check(data)
+        self.assertEqual(receipt['provider_origin_time_utc'], '2025-10-01T12:00:00Z')
+
     def test_provider_error_is_not_success(self):
         with self.assertRaises(ProbeBlocked):
             check({'error': {'message': 'unsupported'}})

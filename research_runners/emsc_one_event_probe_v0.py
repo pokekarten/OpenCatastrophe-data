@@ -119,6 +119,15 @@ def validate_response(raw: bytes, *, media_type: str, status: int = 200) -> dict
         'response_sha256': hashlib.sha256(raw).hexdigest(),
         'response_bytes': len(raw),
         'event_count': 1,
+        # These are the provider-native current origin attributes, not a
+        # frozen event/product version or a scientifically admitted catalogue.
+        # Recording them with the whole-response SHA permits later drift
+        # detection without logging the original FeatureCollection bytes.
+        'provider_event_source_id': source_id,
+        'provider_origin_time_utc': origin_time,
+        'provider_longitude_deg': coords[0],
+        'provider_latitude_deg': coords[1],
+        'provider_magnitude': magnitude,
         'epicentre_coordinate_order': 'longitude_latitude_optional_depth',
         'has_declared_magnitude': magnitude is not None,
         'response_schema_verified': True,
