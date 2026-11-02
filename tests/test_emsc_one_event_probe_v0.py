@@ -142,5 +142,45 @@ class EmscOneEventTests(unittest.TestCase):
             fetch_one(opener=client)
 
 
+    def test_time_must_have_explicit_utc_z(self):
+        for value in ['2025-10-01T12:00:00', '2025-10-01 12:00:00', '2025-10-01T12:00:00+01:00']:
+            d = valid()
+            d['features'][0]['properties']['time'] = value
+            with self.assertRaises(ProbeBlocked):
+                check(d)
+
+    def test_utc_capital_alias_supported_only_when_consistent(self):
+        d = valid()
+        props = d['features'][0]['properties']
+        props['Time'] = props.pop('time')
+        self.assertEqual(check(d)['event_count'], 1)
+        props['time'] = '2025-10-02T12:00:00Z'
+        with self.assertRaisesRegex(ProbeBlocked, 'conflicting'):
+            check(d)
+
+    def test_event_coordinates_must_match_geojson(self):
+        d = valid()
+        props = d['features'][0]['properties']
+        props['lon'] = 8.0
+        props['lat'] = 50.0
+        self.assertEqual(check(d)['event_count'], 1)
+        props['lon'] = 8.25
+        with self.assertRaisesRegex(ProbeBlocked, 'disagree'):
+            check(d)
+
+    def test_partial_or_nonnumeric_event_coordinates_rejected(self):
+        for key, value in [('lon', False), ('lat', 'bad'), ('lon', 181), ('lat', float('nan'))]:
+            d = valid()
+            props = d['features'][0]['properties']
+            props['lon'], props['lat'] = 8.0, 50.0
+            props[key] = value
+            with self.assertRaises(ProbeBlocked):
+                check(d)
+        d = valid()
+        d['features'][0]['properties']['lat'] = 50.0
+        with self.assertRaisesRegex(ProbeBlocked, 'incomplete'):
+            check(d)
+
+
 if __name__ == '__main__':
     unittest.main()
