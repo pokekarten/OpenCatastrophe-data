@@ -33,6 +33,21 @@ BASELINE = {
 ALLOWED_TYPES = {"int", "float", "string"}
 
 
+def duplicate_type_keys(mapping_text: str) -> list[str]:
+    """Report duplicate YAML type keys before the default loader discards them."""
+    if "\ntypes:\n" not in "\n" + mapping_text or "\nnull_values:\n" not in mapping_text:
+        raise ValueError("upstream YAML missing types/null_values boundary")
+    block = ("\n" + mapping_text).split("\ntypes:\n", 1)[1].split("\nnull_values:\n", 1)[0]
+    observed: set[str] = set()
+    repeated: set[str] = set()
+    for match in re.finditer(r"(?m)^  ([A-Za-z][A-Za-z0-9 ]*):\\s*$", block):
+        key = match.group(1)
+        if key in observed:
+            repeated.add(key)
+        observed.add(key)
+    return sorted(repeated)
+
+
 def _source_row(types: dict) -> dict[str, str]:
     row = {}
     for key, definition in types.items():
@@ -85,7 +100,9 @@ def probe(upstream: Path, command: str = "ods_tools") -> dict[str, object]:
             mapping = mapping_dir / filename
             if not mapping.is_file():
                 raise FileNotFoundError(f"pinned upstream {kind} mapping missing")
-            config = yaml.safe_load(mapping.read_text(encoding="utf-8"))
+            original_text = mapping.read_text(encoding="utf-8")
+            duplicate_keys = duplicate_type_keys(original_text)
+            config = yaml.safe_load(original_text)
             if not isinstance(config, dict) or not isinstance(config.get("types"), dict):
                 raise ValueError(f"pinned upstream {kind} mapping malformed")
             row = _source_row(config["types"])
@@ -110,6 +127,7 @@ def probe(upstream: Path, command: str = "ods_tools") -> dict[str, object]:
             generated = out.is_file() and out.stat().st_size > 0
             record = {
                 "mapping": kind, "declared_source_fields": len(row),
+                "duplicate_type_keys": duplicate_keys,
                 "declared_target_fields": len(config.get("transform", {})),
                 "transform_exit_code": exit_code,
                 "generated_csv": generated,
