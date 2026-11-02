@@ -36,7 +36,7 @@ python research_runners/wfp_adam_collection_catalogue_preflight_v0.py \
 
 The offline preflight enforces strict JSON, exact documented names/count, metadata limits, complete pagination and SHA-256 source identity; only an aggregate profile is emitted. A failed match means **review changed upstream catalogue**, never silently drop or invent a collection. It does not make API requests, download features, assess individual event provenance or grant rights.
 
-**Live status:** Provider site and public API endpoints are documented, but a bounded direct HTTP test from this execution environment was **blocked by local DNS resolution**; this is not evidence of an upstream outage or working ingestion. The documentation's "free" and public API status is **not** blanket third-party underlying data redistribution or commercial model permission. WFP source attributes and individual original-data terms need separate review.
+**Live status:** The local Linux runtime cannot resolve these provider hosts, but an external read-only retrieval successfully fetched the original provider responses. The source-byte details and catalogue drift are documented below. The documentation's "free" and public API status is **not** blanket third-party underlying data redistribution or commercial model permission. WFP source attributes and individual original-data terms need separate review.
 
 ## JMA — original best-track ASCII preflight
 
@@ -54,6 +54,33 @@ python research_runners/jma_besttrack_source_preflight_v0.py \
 ```
 
 Do not use `sha256sum(original_file)` from the same unverified input as proof of **independently** pinned original identity. Retain exact provider URL, retrieval date, version, original bytes and revision-history identity outside this repository under approved retention policy. Do not commit raw downloaded JMA text/ZIP without rights clearance.
+
+## Independently fetched live metadata/source-byte evidence — 2026-11-02
+
+Public original-provider HTTP responses were read through an external read-only web retrieval service. **These results validate access and response shape at that instant only**; a separately pinned original-byte receipt is required for any future downstream reuse, and raw provider bytes were **not committed**.
+
+| Direct original URL | Response evidence | Source-byte SHA-256 |
+| --- | --- | --- |
+| [WFP ADAM OGC collections](https://api.adam.geospatial.wfp.org/api/collections) | HTTP body as `application/json`; **18,704 bytes**, `numberMatched=12`, `numberReturned=12`, 12 collection objects, one `self` link, no `next` page | `dafb20f002df7af7ca3e97487416f7cc65be9c6da632eedbb4630eb6598e6ace` |
+| [JMA RSMC Tokyo bst2026.txt](https://www.jma.go.jp/jma/jma-eng/jma-center/rsmc-hp-pub-eg/Besttracks/bst2026.txt) | `text/plain` original CRLF ASCII, **44,034 bytes**; 537 lines, **13 header records and 524 analysis records**; 341 records with positive max-wind code; latest provider header revision `20261028` | `35c90ced9691fc9b4afffa09cb54ba3f2e0b0c786007a73e6b020acf6fca642f` |
+
+The byte digests were calculated over the returned original body (not a copied Markdown/web display). JMA source lines were independently inspected for the documented 72-column header, counts, date order, grade, latitude/longitude and pressure/wind bounds: **no structural violations observed**. This is an independent read-only check of an original-source response, **not** an execution of the checked-in Python runner against captured provider bytes.
+
+### Confirmed WFP ADAM documented-versus-live discrepancy
+
+The [official WFP reference](https://docs.adam.geospatial.wfp.org/developers/reference/collections/) describes **13** collections, but the original public endpoint returned **12** with internally consistent result counters. All documented IDs except `adam.adam_ts_disturbance_events` were present. That is one missing **disturbance event collection**, not proof that the cyclone module itself is unavailable; forecast tracks/buffers/nodes still appear. This is **not** a pagination omission, since `numberMatched` and `numberReturned` are both 12 and there is no `next` link.
+
+The offline strict validator remains fail-closed: `inspect_adam_catalogue_bytes` rejects this difference. The explicit `--diagnose-only` option records the 12/13 discrepancy and reports the absent ID, but exits with **status 3** and sets `source_admitted_for_model_use=false`. Do **not** silently change the reference to 12, invent a missing collection, or allow model use because a vendor API responds. Request provider clarification on intended retirement/visibility, retain both API and documentation identities, then consider a bounded catalogue-contract version.
+
+```bash
+python research_runners/wfp_adam_collection_catalogue_preflight_v0.py \
+  /secure/source-metadata/original-adam-collections.json \
+  --expected-sha256 dafb20f002df7af7ca3e97487416f7cc65be9c6da632eedbb4630eb6598e6ace \
+  --out /tmp/adam-drift-diagnostic.json --diagnose-only
+# Expected: nonzero (3) with explicit reference mismatch, if input matches receipt.
+```
+
+For JMA, the retrieved file is mutable; the provided source-byte digest identifies **only this particular 44,034-byte response**. Preserve source retrieval time, bytes, SHA and publisher revision metadata separately from the claim of current archive completeness. This research report must not serve as a dataset licence grant.
 
 ## Offline regression / next acceptance gates
 
