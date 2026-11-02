@@ -62,6 +62,13 @@ class LuxembourgGeoBaseFullGeometryTests(unittest.TestCase):
         repair = result["invalid_polygon_repair_diagnostic"]
         self.assertEqual(repair["invalid_original_polygons_assessed"], 1)
         self.assertEqual(repair["repair_multiple_polygons"], 1)
+        self.assertEqual(repair["repair_candidate_area_sum_projected_m2"], 2.0)
+        self.assertGreater(
+            result["repair_candidate_area_share_of_valid_plus_repaired_source_polygons_pct"], 0
+        )
+        self.assertLess(
+            result["repair_candidate_area_share_of_valid_plus_repaired_source_polygons_pct"], 2
+        )
         self.assertEqual(repair["synthetic_spatial_support_checked_repairs"], 1)
         self.assertEqual(repair["synthetic_spatial_support_probes"], 3)
         self.assertEqual(repair["synthetic_spatial_support_area_disagreements"], 0)
