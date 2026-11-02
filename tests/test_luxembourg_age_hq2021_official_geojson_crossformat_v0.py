@@ -39,8 +39,21 @@ class PublisherGeoJSONFormatTests(unittest.TestCase):
                 self.assertFalse(r["ring_count_matches_original_publisher_shapefile"])
                 self.assertFalse(r["insurer_CAT_model_input_admitted"])
                 self.assertFalse(r["GeoJSON_and_SHP_topological_sets_proven_equal"])
+                self.assertTrue(r["RFC7946_WGS84_longitude_latitude_domain_plausible"])
+                self.assertFalse(r["requires_explicit_projected_CRS_interpretation_before_spatial_use"])
                 self.assertNotIn("private-do-not-export",json.dumps(r))
                 self.assertNotIn("99",json.dumps(r))
+
+    def test_source_projected_coordinates_warn_against_implicit_wgs84(self):
+        f = fixture()
+        f["features"][0]["geometry"]["coordinates"] = [
+            [[50000., 80000.], [50000., 81000.], [51000., 81000.],
+             [51000., 80000.], [50000., 80000.]]
+        ]
+        r = profile_original_geojson(f, scenario="hq100")
+        self.assertFalse(r["RFC7946_WGS84_longitude_latitude_domain_plausible"])
+        self.assertTrue(r["requires_explicit_projected_CRS_interpretation_before_spatial_use"])
+        self.assertFalse(r["WGS84_to_LUREF_transform_ground_verified"])
 
     def test_multiple_polygons_counted_without_exterior_hole_invention(self):
         f=fixture()
