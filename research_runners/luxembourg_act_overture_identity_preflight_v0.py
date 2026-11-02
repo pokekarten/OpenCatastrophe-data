@@ -27,6 +27,13 @@ ACT_RELEASE = "2026-10-01"
 ACT_ZIP_SHA256 = "6630f217b39edde5f20f1078bef8a3d6eb4a09337af48394975f45f208bcfed3"
 ACT_GPKG_SHA256 = "ec70bd1175b6f67b6dceaf8ab39e0433bc871e1099ff308c3eb8323127aa5676"
 OVERTURE_RELEASE = "2026-10-21.0"
+# This exact part was independently identified through Overture's STAC item
+# 00226: geographic bbox includes the Luxembourg-city research window.
+LU_CITY_STAC_ITEM = "https://stac.overturemaps.org/2026-10-21.0/buildings/building/00226/00226.json"
+LU_CITY_OVERTURE_ORIGINAL_KEY = (
+    "release/2026-10-21.0/theme=buildings/type=building/"
+    "part-00226-f2e989f6-97e6-5afe-b3d2-cfd2e6228d37-c000.zstd.parquet"
+)
 SOURCE_KEY = re.compile(
     r"release/2026-10-21\.0/theme=buildings/type=building/part-\d{5}-"
     r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}-c\d{3}\.zstd\.parquet\Z"
@@ -163,7 +170,8 @@ def compare(data, *, local_sample_sha256):
     if (data["act_crs"] != "EPSG:2169" or data["overture_crs"] != "EPSG:4326"
             or data["overture_release"] != OVERTURE_RELEASE
             or type(data["overture_source_key"]) is not str
-            or not SOURCE_KEY.fullmatch(data["overture_source_key"])):
+            or not SOURCE_KEY.fullmatch(data["overture_source_key"])
+            or data["overture_source_key"] != LU_CITY_OVERTURE_ORIGINAL_KEY):
         raise CandidateError("wrong CRS or original Overture object reference")
     left = _source_rows(data["act_buildings"], local=True)
     right = _source_rows(data["overture_buildings"], local=False)
@@ -208,6 +216,7 @@ def compare(data, *, local_sample_sha256):
         "overture_features_without_above_threshold_match_in_slice":
             sum(not edges for edges in overture_hits),
         "area_overlap_method": "EPSG:2169_projected_planar_IoU",
+        "stac_candidate_original_key": LU_CITY_OVERTURE_ORIGINAL_KEY,
         "minimum_candidate_iou": MIN_IOU,
         "minimum_physical_positive_overlap_m2": MIN_OVERLAP_M2,
         "local_pair_sample_sha256": local_sample_sha256,
