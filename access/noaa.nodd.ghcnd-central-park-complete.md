@@ -75,13 +75,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Timeout seconds:** `60`
 
-**Max probe bytes:** `25165824`
+**Max probe bytes:** `5242880`
 
 **Max sample bytes:** `25165824`
 
 **Retry policy:** none
 
-**Rate limit notes:** Exactly one fixed, whole-file original source GET, no retry, indexing, mirrors, S3 listing, other station IDs, bulk requests or periodic acquisition. Only the reviewed main workflow runs the live source check; PRs are fully offline.
+**Rate limit notes:** The generic contract's diagnostic max_probe_bytes is 5 MiB; this fixed, independently reviewed full-file sample is governed by max_sample_bytes=25_165_824. Exactly one fixed full-object GET, no retry/mirrors/listing/other stations or scheduled collection; only reviewed main workflow runs the original sample.
 
 **Mutability notes:** Record exact retrieval UTC, full response SHA-256, body bytes, Content-Length, ETag if valid, Last-Modified if present, first/last date, element/flag counts, code SHA. The separately acquired GHCN version marker is NOT automatically a cryptographically bound station-version manifest. On source changes compare full-file hashes, and do not silently reuse scientific interpretations.
 
