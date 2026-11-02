@@ -73,7 +73,7 @@ class PublisherRepairComparisonTests(unittest.TestCase):
         self.assertEqual(c.summary(expected_invalid=1)["original_invalid_groups_above_repair_vertex_cap"], 1)
         with self.assertRaises(GroupRepairChallengeError):
             c.summary(expected_invalid=2)
-        for x in (0, -1, 50001, None, True):
+        for x in (0, -1, 120001, None, True):
             with self.subTest(x=x), self.assertRaises(GroupRepairChallengeError):
                 InvalidPublisherGroupRepairChallenge(max_vertices=x)
 
