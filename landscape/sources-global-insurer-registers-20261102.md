@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-02`  
 **Purpose:** Non-admission discovery of official insurance regulatory registers to expand worldwide insurance and reinsurance group, legal-entity and jurisdiction coverage without importing third-party raw records.
 
-**Entries:** 9
+**Entries:** 13
 
 ## IAIS register of Internationally Active Insurance Groups
 
@@ -152,3 +152,63 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Rating and its agency/date must remain distinct; missing or exempt ratings are not evidence of strength or weakness. Separate legal entity and ultimate group.
+
+## NAIC Insurance Group Lead State Report (2026 Q2)
+
+**Candidate ID:** `us.naic.insurance-group-lead-state.2026q2`  
+**Provider:** National Association of Insurance Commissioners (NAIC)  
+**Categories:** `insurance`, `insurer_group`, `regulation`, `group_code`, `united_states`  
+**Spatial scope:** United States insurance groups assigned NAIC group codes and supervisory lead states  
+**Temporal scope:** Published 2026 Quarter 2; freeze the quarter and capture date  
+**Resolution / granularity:** Group-name / NAIC numeric group-code / lead-state register, including smaller US groups outside IAIS international group cohort  
+**Potential roles:** `us_insurer_group_seed`, `naic_group_code_crosswalk`, `lead_state_supervisor_join`  
+**Access hint:** `public_naic_html_group_table_rights_and_automation_review_pending`  
+**Authoritative source:** <https://isiteplus.naic.org/lead-state/publeadstate/pubLSHtml>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** An NAIC group code is not a legal-company NAIC code or LEI and group name may differ from ultimate international parent. A lead state denotes insurance group supervision, not domicile of every subsidiary, underwriting risk location or market share. The official page identifies its reporting period as 2026 Q2. Check terms before any extraction.
+
+## FINMA authorised insurance groups and conglomerates
+
+**Candidate ID:** `ch.finma.authorised-insurance-groups.20261102`  
+**Provider:** Swiss Financial Market Supervisory Authority (FINMA)  
+**Categories:** `insurance`, `insurer_group`, `regulation`, `switzerland`, `conglomerate`  
+**Spatial scope:** Swiss-regulated insurance groups and insurance conglomerates; additional solo entities supervised separately  
+**Temporal scope:** FINMA published an updated linked list with date 2026-11-02 on its groups-and-conglomerates page  
+**Resolution / granularity:** Versioned official group list linked as a downloadable document; group regulation and consolidated supervision, not ultimate global ownership topology  
+**Potential roles:** `switzerland_insurer_group_seed`, `supervisory_group_crosswalk`, `legal_parent_review_queue`  
+**Access hint:** `public_html_with_linked_official_list_rights_review_pending`  
+**Authoritative source:** <https://www.finma.ch/en/supervision/insurers/groups-and-conglomerates/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Regulatory group designation differs from GLEIF direct/ultimate accounting consolidation and from independently authorised insurer legal entities. List version is 2026-11-02; acquire the exact linked original file, verify licence and cryptographic digest before using any rows. No group members inferred.
+
+## Japan FSA licensed insurance holding companies and insurers
+
+**Candidate ID:** `jp.fsa.insurance-holding-companies.20260601`  
+**Provider:** Financial Services Agency (Japan FSA)  
+**Categories:** `insurance`, `insurer_group`, `regulation`, `japan`, `holding_company`  
+**Spatial scope:** Japan licensed insurance holding companies with separate lists of life, nonlife, small-amount short-term insurers and related institutions  
+**Temporal scope:** Insurance holding company official list dated 2026-06-01 in this discovery pass; other classes may have independent versions  
+**Resolution / granularity:** Official multi-product register landing page with dedicated Excel/PDF holding-company list and separate direct insurer lists  
+**Potential roles:** `japan_insurance_holding_group_seed`, `life_nonlife_entity_discovery`, `group_legal_entity_crosswalk`  
+**Access hint:** `public_html_index_official_excel_pdf_rights_review_pending`  
+**Authoritative source:** <https://www.fsa.go.jp/en/regulated/licensed/index.html>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** 15 insurance holding companies reported in the dated holding-company PDF; verify exact original version separately. Do not treat the holding company list as all licensed insurer companies or all foreign groups operating in Japan. Subsidiary identity and shareholder control require independent LEI/corporate evidence.
+
+## Mexico CNSF supervised insurance institutions open dataset
+
+**Candidate ID:** `mx.cnsf.insurer-institutions.2026q1`  
+**Provider:** Comisión Nacional de Seguros y Fianzas (CNSF), datos.gob.mx  
+**Categories:** `insurance`, `insurer_entity_registry`, `regulation`, `mexico`, `public_csv`, `financial_statements`  
+**Spatial scope:** Mexico insurers and insurance mutuals supervised by CNSF, including insurance business classes  
+**Temporal scope:** Open government index shows 2026 Q1 lists and 2025 annual data; catalog last updated 2026-07-15 in discovery  
+**Resolution / granularity:** Public CSV downloads covering institution names and company types, authorised operations/lines and separate financial statements/statutory indicators  
+**Potential roles:** `mexico_insurer_registry`, `latam_legal_entity_crosswalk`, `financial_market_calibration`  
+**Access hint:** `public_catalogue_csv_downloads_website_403_observed_rights_review_pending`  
+**Authoritative source:** <https://www.datos.gob.mx/dataset/instituciones_sociedades_mutualistas>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Government portal source was found by search but direct browser returned HTTP 403. No official CSV downloaded or hashed in this pass. Preserve separate dataset vintage, insurer legal identity, licensed operation/branch and period; a financial statement row is not geolocated CAT exposure. Rights/automated extraction remain unreviewed.
