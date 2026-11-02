@@ -87,6 +87,8 @@ jobs:
             --source-zip "$original"
           python -m research_runners.luxembourg_age_hq2021_ring_hierarchy_challenge_v0 \
             --scenario hq100 --source-zip "$original"
+          python -m research_runners.luxembourg_age_hq2021_ring_hierarchy_challenge_v0 \
+            --scenario hq100 --source-zip "$original" --reverse-orientation
           curl --fail --location --silent --show-error \
             --proto '=https' --proto-redir '=https' \
             --connect-timeout 20 --max-time 120 --retry 0 \
@@ -98,6 +100,8 @@ jobs:
             --scenario hq10 --source-zip "$hq10"
           python -m research_runners.luxembourg_age_hq2021_ring_hierarchy_challenge_v0 \
             --scenario hq10 --source-zip "$hq10"
+          python -m research_runners.luxembourg_age_hq2021_ring_hierarchy_challenge_v0 \
+            --scenario hq10 --source-zip "$hq10" --reverse-orientation
           curl --fail --location --silent --show-error \
             --proto '=https' --proto-redir '=https' \
             --connect-timeout 20 --max-time 120 --retry 0 \
@@ -109,6 +113,8 @@ jobs:
             --scenario hqext --source-zip "$hqext"
           python -m research_runners.luxembourg_age_hq2021_ring_hierarchy_challenge_v0 \
             --scenario hqext --source-zip "$hqext"
+          python -m research_runners.luxembourg_age_hq2021_ring_hierarchy_challenge_v0 \
+            --scenario hqext --source-zip "$hqext" --reverse-orientation
           rm -f "$hq10" "$hqext"
           # Original XY is read only transiently to compute anonymous aggregate QA.
           # No feature, ring coordinates or numeric depth observations are exported.
