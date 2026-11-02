@@ -89,6 +89,67 @@ Do **not** equate the term parish with the hazard `peril`. A parish is
 an ADM2-like local reporting unit. Peril-specific CAT event/footprint
 scope and policy coverage apply *within* that geography.
 
+## Bounded original 2026 Census COUNTY archive integrity runner
+
+The official 2026 source catalogue and release date are not enough to
+certify the archive's original polygon bytes. This PR also adds:
+
+- \`research_runners/us_census_2026_county_zip_audit_v0.py\`: strictly
+  local, standard-library inspection of the original national COUNTY
+  ZIP. Supports one exact filename \`tl_2026_us_county.zip\` and only
+  known Shapefile members with small optional Census XML metadata
+  sidecars. Checks ZIP member safety, byte/expansion limits, member
+  CRC via extraction, Shapefile Polygon and DBF headers, SHX/SHP
+  index offsets, polygon record lengths/part/point layout and exact
+  DBF row/index count, unique \`STATEFP+COUNTYFP=GEOID\`, original
+  NAD83 geographic PRJ and observed Orleans Parish GEOID 22071.
+- \`tests/test_us_census_2026_county_zip_audit_v0.py\`: fully fictitious
+  tiny archives proving positive structure and adversarial mismatch
+  rejection (invalid hash, bad index, missing geometry, unsafe ZIP
+  member/path, malformed GEOID, bad CRS and more).
+- \`.github/workflows/us-census-2026-county-original-audit.yml\`:
+  on PRs, **offline synthetic tests only**. One exact ~80 MB
+  original source download occurs only after the reviewed workflow
+  file reaches \`main\` (or on a later explicitly manually dispatched
+  run). The original ZIP is temporarily stored and removed, with
+  a maximum 125 MB HTTP response, 210-second deadline, no retries,
+  one official HTTPS host and no uploaded provider geometry.
+
+The original ZIP's SHA-256 is **observed** by the validator unless
+an independently established SHA-256 is explicitly supplied; the
+original-authority hash is **not** guessed from catalogue text.
+Only a separately witnessed second acquisition/pin can establish
+repeatable original-byte identity. The original provider source
+may fail when checked, and failures must remain fail-closed rather
+than lowering the schema or adding ad-hoc unreviewed hosts.
+
+The result is an **archive structure/source identity receipt only**.
+It is not proof of complete US county polygon topology or all
+parish boundaries, a licence to redistribute Census files,
+a spatially resolved historical/event-year model, or a validated
+OpenCat/NextGen country-to-parish exposure join. A later dedicated
+topology/spatial completeness pass must use a reviewed GIS
+backend and source vintage before modelling.
+
+Run offline:
+
+\`\`\`sh
+python -m unittest tests.test_us_census_2026_county_zip_audit_v0 -v
+\`\`\`
+
+Inspect a *separately, lawfully obtained* original archive:
+
+\`\`\`sh
+python -m research_runners.us_census_2026_county_zip_audit_v0 \
+  --source-zip /private/tl_2026_us_county.zip
+\`\`\`
+
+Authoritative Census pages:
+[2026 TIGER/Line release](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.2026.html),
+[official national COUNTY archive](https://www2.census.gov/geo/tiger/TIGER2026/COUNTY/).
+No raw ZIP, individual polygon coordinates or source-derived parcel
+assets belong in this public Git repository or production Neon.
+
 ## Versioned region x peril key and evidence preflight
 
 `scripts/region_peril_readiness_v0.py` accepts one explicit, locally
