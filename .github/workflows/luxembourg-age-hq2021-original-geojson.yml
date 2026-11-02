@@ -55,6 +55,11 @@ jobs:
               --max-filesize 100663296 --output "$original" "$url"
             python -m research_runners.luxembourg_age_hq2021_official_geojson_crossformat_v0 \
               --scenario "$scenario" --source-geojson "$original" --review-polygon-groups
+            if [ "$scenario" = "hq100" ]; then
+              # One bounded original HQ100 giant 964k-point publisher group OGC challenge.
+              # Passing is not automatic scientific approval of the entire flood mask.
+              timeout --signal=TERM --kill-after=20s 420s python -m research_runners.luxembourg_age_hq2021_official_geojson_crossformat_v0 --scenario hq100 --source-geojson "$original" --review-polygon-groups --review-mega-group
+            fi
             rm -f "$original"
           done
           # No original publisher feature coordinates, geometry, IDs or
