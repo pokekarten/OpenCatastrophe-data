@@ -31,6 +31,8 @@ else:
 PLACEHOLDER = "  Cede Field:\n    type: ODTF Data Type\n"
 UNSAFE_WHEN = "      when: ExposureSetName\n"
 BOOLEAN_WHEN = "      when: ExposureSetName is not in ['', 'NULL']\n"
+VERSION_OLD = "  OEDVersion:\n    - transformation: \"302\"\n"
+VERSION_VALID = "  OEDVersion:\n    - transformation: \"'3.0.2'\"\n"
 
 
 def _diagnose_synthetic_oed_findings(location: Path, account: Path) -> list[dict[str, str]]:
@@ -84,6 +86,10 @@ def probe(upstream: Path) -> dict[str, object]:
                     raise ValueError("upstream untyped Cede Field placeholder changed")
                 patched = patched.replace(PLACEHOLDER, "")
                 patches.append("remove_undeclared_odtf_data_type_placeholder")
+                if patched.count(VERSION_OLD) != 1:
+                    raise ValueError("upstream OEDVersion 302 expression changed")
+                patched = patched.replace(VERSION_OLD, VERSION_VALID)
+                patches.append("emit_dotted_oed_3_0_2_version_literal")
             parsed = yaml.safe_load(patched)
             if not isinstance(parsed, dict) or not isinstance(parsed.get("types"), dict):
                 raise ValueError("patched research fixture cannot be parsed")
