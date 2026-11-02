@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: US Census 2026 COUNTY original source integrity gate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research_runners/us_census_2026_county_zip_audit_v0.py
+      - tests/test_us_census_2026_county_zip_audit_v0.py
+      - .github/workflows/us-census-2026-county-original-audit.yml
+  # One bounded original-source run only when first reviewed workflow merges.
+  # Other main commits do not generate repeated 80 MB provider downloads.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/us-census-2026-county-original-audit.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: us-census-2026-county-audit
+  cancel-in-progress: false
+
+jobs:
+  source-quality:
+    name: Exact Census 2026 COUNTY/Parish source inspection
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout immutable workflow ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up supported Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Strict synthetic-only archive, DBF and polygon-index tests
+        run: python -m unittest tests.test_us_census_2026_county_zip_audit_v0 -v
+      - name: One fixed official original COUNTY archive, ephemeral data only
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          original="$RUNNER_TEMP/tl_2026_us_county.zip"
+          trap 'rm -f "$original"' EXIT
+          curl --fail --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 210 --retry 0 \
+            --max-filesize 125000000 \
+            --output "$original" \
+            'https://www2.census.gov/geo/tiger/TIGER2026/COUNTY/tl_2026_us_county.zip'
+          python -m research_runners.us_census_2026_county_zip_audit_v0 \
+            --source-zip "$original"
+          # This emits an OBSERVED ZIP SHA, not a pre-verified immutable
+          # publisher hash; a separate comparison pins repeat acquisition.
+          # No raw polygons, asset values or insurance data leave temp storage.
