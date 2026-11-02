@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery registry of reusable Oasis CEDE-to-OED exposure interoperability tools and explicit source/target version boundaries.",
+  "review_date": "2026-11-02",
+  "entries": [
+    {
+      "candidate_id": "oasis.odstools.cede-oed.transform.2026",
+      "name": "ODS Tools ODTF CEDE-to-OED location and account mapping examples",
+      "provider": "Oasis Loss Modelling Framework (OasisLMF)",
+      "categories": [
+        "interoperability",
+        "exposure",
+        "oed",
+        "cede",
+        "open_source",
+        "transformation"
+      ],
+      "spatial_scope": "Format translation across geographic markets; example mappings contain regional code assumptions",
+      "temporal_scope": "public ODS Tools main inspected 2026-11-02; embedded mapping headers state CEDE v10.0.0 to OED v3.0.2",
+      "resolution_or_granularity": "YAML location mapping (80,867 characters) and account mapping (8,195 characters); associated CSV and MS SQL Server example configurations",
+      "potential_roles": [
+        "cede10_oed302_reference_mapping",
+        "transformation_gap_analysis",
+        "synthetic_interop_validation"
+      ],
+      "authoritative_url": "https://github.com/OasisLMF/ODS_Tools/tree/main/ods_tools/odtf/examples/oed-cede",
+      "access_class_hint": "public_bsd3_code_example_version_gapped_for_cede13",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Current mapping header explicitly specifies AIR CEDE database v10.0.0 and OED v3.0.2, NOT CEDE 13.0. Location mapping SHA b5433d6bc7f5ecd926fba4899dc12245d9b1e64a and account mapping SHA 81a0f2e0aab4d140e8dd403f16ebd12d42d804c8 at observation. Requires explicit semantic version gate, compatibility diff and lossiness audit before CEDE 13 output claims. No actual insurance data is provided or admitted."
+    },
+    {
+      "candidate_id": "oasis.opendatatransform.air-oed.legacy",
+      "name": "OpenDataTransform AIR CEDE-to-OED transformation framework (legacy reference)",
+      "provider": "Oasis Loss Modelling Framework (OasisLMF)",
+      "categories": [
+        "interoperability",
+        "exposure",
+        "oed",
+        "cede",
+        "open_source",
+        "legacy"
+      ],
+      "spatial_scope": "Exposure format conversion; supported location and code scopes depend on individual mapping files",
+      "temporal_scope": "public project inspected 2026-11-02; documented AIR mapping refers to older CEDE v8",
+      "resolution_or_granularity": "BSD-3-Clause Python transformation framework with AIR/OED location and modifier mappings; earlier converter lineage",
+      "potential_roles": [
+        "historical_cede_mapping_provenance",
+        "odi_mapping_validation_reference",
+        "version_migration_research"
+      ],
+      "authoritative_url": "https://github.com/OasisLMF/OpenDataTransform",
+      "access_class_hint": "public_open_source_conversion_code_not_vendor_model_data",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "README identifies AIR↔OED transformation as partially developed, with CEDE v8 model reference. Newer ODS Tools embeds CEDE v10/OED v3.0.2 examples. Do not infer CEDE v13 mapping completeness from this legacy status or confuse conversion code with rights to proprietary AIR model/event datasets."
+    }
+  ]
+}
