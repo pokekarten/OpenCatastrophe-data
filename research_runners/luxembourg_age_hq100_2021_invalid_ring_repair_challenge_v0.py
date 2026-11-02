@@ -79,14 +79,15 @@ class InvalidRingRepairChallenger:
             if not math.isfinite(repaired) or repaired <= 0:
                 self.failed += 1
                 return
+            same_boundary = ring.boundary.equals(assembled.boundary)
             self.usable += 1
             self.linework_nondebris += not has_debris
             self.linework_parts["single" if len(parts) == 1 else "multiple"] += 1
             self.invalid_nominal_area_sum += nominal
             self.candidate_area_sum += repaired
             self.max_nominal_invalid_ring_area = max(self.max_nominal_invalid_ring_area, nominal)
-            self.original_boundary_same += ring.boundary.equals(assembled.boundary)
-            self.original_boundary_different += not ring.boundary.equals(assembled.boundary)
+            self.original_boundary_same += same_boundary
+            self.original_boundary_different += not same_boundary
             if nominal > 0:
                 self.nominal_area_comparable += 1
                 self.nominal_area_delta_over_1pct += abs(repaired - nominal) / nominal > 0.01
@@ -105,11 +106,8 @@ class InvalidRingRepairChallenger:
                         self.different_repair_polygon_set += 1
             except (GEOSException, ValueError, TypeError, OverflowError):
                 self.structure_failed += 1
-        except (Exception) as exc:
-            # Do not echo original GEOS coordinate-bearing exception text.
-            # OOM is not an ordinary Exception and will propagate.
-            if isinstance(exc, (KeyboardInterrupt, SystemExit)):
-                raise
+        except (GEOSException, ValueError, TypeError, OverflowError):
+            # GEOS errors sometimes contain original coordinates; aggregate only.
             self.failed += 1
 
     def summary(self, *, expected_invalid: int) -> dict:
