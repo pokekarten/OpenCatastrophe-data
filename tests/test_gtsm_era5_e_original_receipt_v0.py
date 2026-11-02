@@ -132,6 +132,38 @@ class GtsmReceiptTests(unittest.TestCase):
                 verify_original(self.path, inspect_header=True)
             reader.assert_not_called()
 
+
+    def native_header_example(self):
+        dims = dict(mod.EXPECTED_NATIVE_DIMS)
+        fields = [
+            {"name": name, "dimensions": list(axes),
+             "shape": [dims[axis] for axis in axes], "units": units, "dtype": dtype}
+            for name, (axes, units, dtype) in mod.EXPECTED_NATIVE_FIELDS.items()
+        ]
+        return dims, fields
+
+    def test_original_observed_header_contract_synthetic(self):
+        dims, fields = self.native_header_example()
+        mod.validate_native_header(dims, fields)
+
+    def test_native_header_rejects_missing_station(self):
+        dims, fields = self.native_header_example()
+        dims["stations"] -= 1
+        with self.assertRaises(GtsmReceiptError):
+            mod.validate_native_header(dims, fields)
+
+    def test_native_header_rejects_metre_to_centimetre_drift(self):
+        dims, fields = self.native_header_example()
+        next(x for x in fields if x["name"] == "wl_extreme_bestfit")["units"] = "cm"
+        with self.assertRaisesRegex(GtsmReceiptError, "units"):
+            mod.validate_native_header(dims, fields)
+
+    def test_native_header_rejects_native_coordinate_type_drift(self):
+        dims, fields = self.native_header_example()
+        next(x for x in fields if x["name"] == "lon")["dtype"] = "float64"
+        with self.assertRaises(GtsmReceiptError):
+            mod.validate_native_header(dims, fields)
+
     def test_no_original_file_rejected(self):
         with self.assertRaises(GtsmReceiptError):
             _file_receipt(self.path, expected_size=10, expected_md5="0" * 32)
