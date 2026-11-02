@@ -8,6 +8,9 @@
 -- 0 raw/model approvals. DO NOT use on tcgp2p-core.
 -- GitHub tree pinned: 45f637f8d381480c794fefba6c14605ae969a098.
 -- WorldCover blob pinned: 2884e2f50b495eee3b399f55c08d43cfa100b602.
+-- Keep snapshot checks and both inserts atomic: a failed evidence guard
+-- must not leave half-staged rows on a database with autocommit enabled.
+BEGIN;
 -- Fail closed if the historical registry has drifted from the
 -- exact 114-row snapshot independently reviewed for this staging step.
 DO $snapshot_guard$
@@ -93,6 +96,7 @@ BEGIN
   END IF;
 END;
 $revision_guard$;
+COMMIT;
 -- Verification gates (read-only after staging):
 -- SELECT count(*) AS revisions,count(DISTINCT source_key) AS sources,
 --   count(*) FILTER (WHERE raw_import_allowed OR model_input_approved) AS unsafe
