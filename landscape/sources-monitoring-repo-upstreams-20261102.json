@@ -309,6 +309,285 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "wfp.adam.ogc-global-disaster-impact",
+      "name": "WFP ADAM OGC global disaster impact and alert layers",
+      "provider": "World Food Programme Geospatial",
+      "categories": [
+        "multi_hazard",
+        "event_catalogue",
+        "rapid_impact_estimate",
+        "ogc_api"
+      ],
+      "spatial_scope": "global event coverage dependent on module",
+      "temporal_scope": "near-real-time; public API layers with model-dependent event history",
+      "resolution_or_granularity": "OGC API Features/GeoJSON and vector tiles; hazard and estimated population/cropland/infrastructure impacts",
+      "potential_roles": [
+        "post_event_impact_crosscheck",
+        "disaster_event_crosswalk",
+        "preliminary_exposure_overlay"
+      ],
+      "authoritative_url": "https://docs.adam.geospatial.wfp.org/developers/",
+      "access_class_hint": "public_documented_readonly_ogc_api_collection_level_rights_review",
+      "note": "MapAction disaster-impact described old WFP ADAM scraping as blocked; the current provider developer docs describe a public no-auth OGC API. This is an apparent access evolution, not a successful endpoint probe. ADAM derives from GDACS, USGS ShakeMap, GloFAS, FloodScan and other inputs: outputs are NOT independent ground truth or insured damages; preserve collection, event, timestamp and lineage.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "jp.jma.rsmc-tokyo.best-track",
+      "name": "JMA RSMC Tokyo historical tropical cyclone best track",
+      "provider": "Japan Meteorological Agency RSMC Tokyo",
+      "categories": [
+        "tropical_cyclone",
+        "storm_track",
+        "historical_observation"
+      ],
+      "spatial_scope": "western North Pacific and South China Sea per RSMC Tokyo area",
+      "temporal_scope": "historic best-track text archive from 1951 through 2026 with published revisions",
+      "resolution_or_granularity": "storm identifier, time, center coordinates, central pressure, wind metrics and categorical intensities",
+      "potential_roles": [
+        "cyclone_track_holdout",
+        "storm_event_identity",
+        "regional_windstorm_validation"
+      ],
+      "authoritative_url": "https://www.jma.go.jp/jma/jma-eng/jma-center/rsmc-hp-pub-eg/besttrack.html",
+      "access_class_hint": "official_public_archives_version_and_reuse_terms_review",
+      "note": "Discovered from World Monitor western Pacific cyclones and Crisis Compass JMA-model context. Historic best track is a retrospective agency analysis, unlike operational advisory and forecast tracks. Preserve issue/revision history, UTC convention, unit conversion and basin; tracks are not a wind-speed footprint.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "noaa.nws.tsunami-warning-centers.atom",
+      "name": "NOAA NTWC/PTWC official tsunami warning Atom feeds",
+      "provider": "NOAA National Weather Service U.S. Tsunami Warning Centers",
+      "categories": [
+        "tsunami",
+        "operational_alert",
+        "coastal_hazard"
+      ],
+      "spatial_scope": "NTWC continental US/Alaska/Canada; PTWC Hawaii, US Pacific and Caribbean territories plus international advisories",
+      "temporal_scope": "current operational notices and product update stream; archive/retention unknown",
+      "resolution_or_granularity": "NTWC PAAQAtom.xml and PTWC PHEBAtom.xml entries with product identifiers and issue time",
+      "potential_roles": [
+        "tsunami_event_trigger",
+        "coastal_warning_context",
+        "warning_revision_tracking"
+      ],
+      "authoritative_url": "https://www.tsunami.gov/?page=productRetrieval",
+      "access_class_hint": "public_atom_feeds_bulletin_scope_terms_review_required",
+      "note": "Source code in GlobeWatch uses both Atom URLs; NOAA officially lists both. Message regions do not prove inundation, wave height at any location or physical damage; combine with NOAA tsunami historical and coastal observations already in OpenCatastrophe only after model/data independence review.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "usgs.vhp.hans-volcano-alerts",
+      "name": "USGS Volcano Hazards Program HANS notices and VONA API",
+      "provider": "United States Geological Survey Volcano Hazards Program",
+      "categories": [
+        "volcano",
+        "ashfall",
+        "operational_alert",
+        "aviation_disruption"
+      ],
+      "spatial_scope": "US volcanoes monitored by USGS observatories, notice-specific",
+      "temporal_scope": "current and selected historical notices; provider warns endpoint stability is not guaranteed",
+      "resolution_or_granularity": "Volcano IDs, alert levels, timestamps, VONA aviation notices, observatory and CAP alert metadata",
+      "potential_roles": [
+        "volcano_event_crosswalk",
+        "ash_aviation_disruption_trigger",
+        "eruption_warning_context"
+      ],
+      "authoritative_url": "https://volcanoes.usgs.gov/hans-public/api/volcano/default",
+      "access_class_hint": "public_documented_usgs_utility_api_no_continuity_guarantee",
+      "note": "WorldMirror lists USGS volcano notices. Official USGS HANS API returns current alerts for elevated volcanoes, monitored volcano status and individual notices. An alert level is not an ash plume, depth or loss footprint. Preserve notice lifecycle and provider service-version availability.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "gdelt.v2.events-news-geocoded",
+      "name": "GDELT 2.0 Event database and associated mentions",
+      "provider": "The GDELT Project",
+      "categories": [
+        "global_news",
+        "geopolitical_events",
+        "disaster_mention_context",
+        "osint"
+      ],
+      "spatial_scope": "global multilingual news where monitored publishers cover events",
+      "temporal_scope": "machine-updated 15-minute global event/mentions stream with heterogeneous historic coverage",
+      "resolution_or_granularity": "CAMEO event and article mention tables; approximate geo references, textual themes and media attention",
+      "potential_roles": [
+        "disaster_mention_discovery",
+        "event_coverage_bias_measurement",
+        "early_reporting_context"
+      ],
+      "authoritative_url": "https://www.gdeltproject.org/data.html",
+      "access_class_hint": "public_raw_data_available_reuse_terms_publication_rights_and_bias_review",
+      "note": "Found in World Monitor, GlobeWatch, Terra Watch, WorldMirror and FIRESTORM. Multiple dashboards reading GDELT are one underlying source; never count articles as independent perils or insured loss. Media attention, language, geocoding and event type create systematic bias. GEO 2.0 query endpoint should not be assumed operational from older repo code.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "cloudflare.radar.internet-outage-annotations",
+      "name": "Cloudflare Radar internet outage and anomaly API",
+      "provider": "Cloudflare Radar",
+      "categories": [
+        "critical_infrastructure",
+        "network_outage",
+        "business_interruption_proxy"
+      ],
+      "spatial_scope": "global countries and AS networks with Cloudflare signal coverage",
+      "temporal_scope": "time-bounded current and historic annotations; provider API specific history",
+      "resolution_or_granularity": "Start/end outage timestamps, affected geographies, ASNs, descriptions and outage cause",
+      "potential_roles": [
+        "post_event_infrastructure_disruption_crosscheck",
+        "indirect_business_interruption_context"
+      ],
+      "authoritative_url": "https://developers.cloudflare.com/api/resources/radar/",
+      "access_class_hint": "api_token_required_cc_by_nc_4_0_noncommercial_reuse_restricted",
+      "note": "Found in World Monitor infrastructure monitor. Cloudflare states Radar API material is CC BY-NC 4.0; insurance/commercial usage requires separate rights clearance. Geographic coverage and inferred causes can be incomplete. A network outage does not directly measure physical facility damage or insured business interruption.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "epoch.ai.global-ai-data-centers.2026",
+      "name": "Epoch AI global data-center locations and power estimates",
+      "provider": "Epoch AI",
+      "categories": [
+        "critical_infrastructure",
+        "exposure",
+        "energy",
+        "datacenter"
+      ],
+      "spatial_scope": "largest AI compute data centers worldwide; knowingly incomplete",
+      "temporal_scope": "revised downloadable dataset with changeable coverage and site records",
+      "resolution_or_granularity": "Site location, build phase, modelled electricity capacity, facility attributes and estimated hardware",
+      "potential_roles": [
+        "large_facility_exposure_context",
+        "power_dependency_network",
+        "post_event_bi_context"
+      ],
+      "authoritative_url": "https://epoch.ai/data/data-centers-documentation",
+      "access_class_hint": "public_csv_zip_cc_by_attribution_dataset_version_and_source_review",
+      "note": "World Monitor mentions Epoch data centers. Provider supplies CSV/ZIP and CC-BY attribution, but sources are satellite/permits and estimates, not insured values or exhaustive datacenter stock. Freeze exact release, status, lat/lon precision, observed vs estimated variables and attribution.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "fi.fintraffic.digitraffic.marine",
+      "name": "Fintraffic Digitraffic marine AIS, port call, sea-state and ice navigation API",
+      "provider": "Fintraffic / Finnish Transport Infrastructure Agency",
+      "categories": [
+        "maritime",
+        "port_infrastructure",
+        "ais",
+        "coastal_hazard"
+      ],
+      "spatial_scope": "Finnish maritime region; vessel routes and call data as covered by Finland feeds",
+      "temporal_scope": "frequently updated observational/operational services; historical retention varies",
+      "resolution_or_granularity": "AIS location GeoJSON/JSON, vessel and port-call metadata, buoy sea state, winter navigation and AtoN faults",
+      "potential_roles": [
+        "port_business_interruption_context",
+        "vessel_exposure_proxy",
+        "coastal_event_validation"
+      ],
+      "authoritative_url": "https://www.digitraffic.fi/en/marine-traffic/",
+      "access_class_hint": "public_openapi_own_terms_api_fair_use_reuse_review",
+      "note": "GlobeWatch code calls meri.digitraffic.fi AIS endpoints. Official Digitraffic docs show port calls, sea state and winter navigation as extra datasets. Geographic coverage is NOT global; ship position and AIS visibility are not complete ship exposure or insured cargo values.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "us.nifc.inciweb.active-fire-incident-reports",
+      "name": "InciWeb / NIFC official wildfire incident updates",
+      "provider": "National Interagency Fire Center and participating incident management teams",
+      "categories": [
+        "wildfire",
+        "incident_reports",
+        "post_event_damage_context"
+      ],
+      "spatial_scope": "United States reported major incidents and participating response teams",
+      "temporal_scope": "operational incident reports and maps; updates vary by incident and archive policy",
+      "resolution_or_granularity": "Incident names, agency updates, containment, affected community and linked maps",
+      "potential_roles": [
+        "wildfire_event_crosswalk",
+        "incident_timeline_enrichment",
+        "perimeter_discovery"
+      ],
+      "authoritative_url": "https://www.nifc.gov/fire-information",
+      "access_class_hint": "official_incident_web_portal_no_guaranteed_bulk_api_provider_terms_review",
+      "note": "FIRESTORM consumes InciWeb RSS. NIFC identifies InciWeb as current incident-specific information, but an openly documented, stable public machine API has not been confirmed. Manual discovery only pending official feed/API review. Containment or reported acreage does not equal physical damage polygon or insured loss.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "copernicus.s5p.tropomi.no2.l2",
+      "name": "Copernicus Sentinel-5P TROPOMI Level-2 NO2 columns",
+      "provider": "Copernicus Data Space Ecosystem / ESA",
+      "categories": [
+        "atmospheric_chemistry",
+        "air_quality",
+        "indirect_economic_activity",
+        "satellite_observation"
+      ],
+      "spatial_scope": "global with cloud/algorithm coverage constraints",
+      "temporal_scope": "2018-present archives; separate near-real-time and non-time-critical processing",
+      "resolution_or_granularity": "Tropospheric nitrogen dioxide column products, product QA and L2 pixels or openEO/Sentinel Hub aggregation",
+      "potential_roles": [
+        "industrial_disruption_proxy",
+        "post_event_activity_context",
+        "atmospheric_quality_validation"
+      ],
+      "authoritative_url": "https://dataspace.copernicus.eu/news/2026-9-17-new-sentinel-5p-level-2-collections-available-openeo-cdse",
+      "access_class_hint": "public_cdse_accounts_quotas_version_processor_and_data_rights_review",
+      "note": "World Monitor uses Sentinel-5P TROPOMI NO2 as an industrial activity proxy. This is distinct from the existing Sentinel-5P SO2 volcano entry. September 2026 CDSE openEO adds collection SENTINEL5P_L2_NO2. NO2 reflects emissions, weather, chemistry, seasonality and clouds; it is never direct site production, asset damage or insured loss.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "aer.floodscan.flood-observation",
+      "name": "FloodScan near-real-time and historical flood mapping",
+      "provider": "Atmospheric and Environmental Research (AER)",
+      "categories": [
+        "flood",
+        "satellite_observation",
+        "modelled_inundation"
+      ],
+      "spatial_scope": "global coverage stated in WFP ADAM, product-specific",
+      "temporal_scope": "near-real-time and historical flood estimates; precise span/version to be checked",
+      "resolution_or_granularity": "flood extent / surface-water presence layers and associated quality/processing metadata",
+      "potential_roles": [
+        "event_flood_extent_crosscheck",
+        "remote_sensing_inundation_context"
+      ],
+      "authoritative_url": "https://www.aer.com/weather-risk-management/floodscan-near-real-time-and-historical-flood-mapping/",
+      "access_class_hint": "third_party_commercial_product_access_licence_unknown_no_download",
+      "note": "WFP ADAM documents FloodScan as a flood observatory upstream. Whether OpenCatastrophe can obtain the exact FloodScan product commercially or redistribute results is unknown; fail closed. ADAM-derived features reuse FloodScan and cannot serve as independent holdout against original FloodScan.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
     }
   ]
 }
