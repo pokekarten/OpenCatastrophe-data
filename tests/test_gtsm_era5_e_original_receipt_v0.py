@@ -7,6 +7,10 @@ import hashlib
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
+from urllib.request import Request
+
+from scripts import gtsm_era5_e_original_receipt_v0 as mod
 
 from scripts.gtsm_era5_e_original_receipt_v0 import (
     GtsmReceiptError, HDF5_MAGIC, _file_receipt, verify_original,
@@ -66,6 +70,51 @@ class GtsmReceiptTests(unittest.TestCase):
         self.fixture()
         with self.assertRaises(GtsmReceiptError):
             verify_original(self.path)
+
+
+    def test_fixed_publisher_target(self):
+        self.assertEqual(mod.SOURCE_BYTES, 9_652_424)
+        self.assertEqual(mod.SOURCE_MD5, "0f2b7071c6ec3585768be6cf427e6eab")
+        self.assertEqual(mod.SOURCE_DOWNLOAD_URL, (
+            "https://zenodo.org/records/14671593/files/"
+            "ds_GTSM-ERA5-E_1950-2024_stats.nc?download=1"
+        ))
+
+    def test_non_publisher_redirect_rejected(self):
+        handler = mod._ZenodoOnlyRedirect()
+        for url in ("https://example.org/fake.nc", "http://zenodo.org/fake.nc"):
+            with self.subTest(url=url):
+                with self.assertRaises(GtsmReceiptError):
+                    handler.redirect_request(Request(mod.SOURCE_DOWNLOAD_URL), None, 302,
+                                             "Found", {}, url)
+
+    def test_fetch_denies_unexpected_final_host(self):
+        class FakeResponse:
+            status = 200
+            headers = {"Content-Length": str(mod.SOURCE_BYTES)}
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+            def geturl(self): return "https://example.org/changed"
+            def read(self, n): raise AssertionError("unexpected source read")
+        class Opener:
+            def open(self, *args, **kwargs): return FakeResponse()
+        with patch.object(mod, "build_opener", return_value=Opener()):
+            with self.assertRaises(GtsmReceiptError):
+                mod.fetch_verified_original()
+
+    def test_fetch_denies_incorrect_header_before_read(self):
+        class FakeResponse:
+            status = 200
+            headers = {"Content-Length": "3"}
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+            def geturl(self): return mod.SOURCE_DOWNLOAD_URL
+            def read(self, n): raise AssertionError("unexpected source read")
+        class Opener:
+            def open(self, *args, **kwargs): return FakeResponse()
+        with patch.object(mod, "build_opener", return_value=Opener()):
+            with self.assertRaises(GtsmReceiptError):
+                mod.fetch_verified_original()
 
     def test_no_original_file_rejected(self):
         with self.assertRaises(GtsmReceiptError):
