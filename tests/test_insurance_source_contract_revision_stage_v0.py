@@ -25,11 +25,24 @@ class SourceRevisionStageContractTests(unittest.TestCase):
         self.assertEqual(sql.count("COMMIT;"), 1)
         self.assertLess(sql.index("BEGIN;"), sql.index("DO $snapshot_guard$"))
         self.assertLess(sql.index("DO $snapshot_guard$"), sql.index("CREATE TABLE"))
-        self.assertLess(sql.index("CREATE TABLE"), sql.index("INSERT INTO"))
+        self.assertLess(sql.index("CREATE TABLE"), sql.index("DO $schema_guard$"))
+        self.assertLess(sql.index("DO $schema_guard$"), sql.index("INSERT INTO"))
         self.assertLess(sql.rindex("INSERT INTO"), sql.index("DO $revision_guard$"))
         self.assertLess(sql.index("DO $revision_guard$"), sql.index("COMMIT;"))
         self.assertIn("RAISE EXCEPTION 'Pinned source-registry snapshot drift", sql)
         self.assertIn("RAISE EXCEPTION 'Source revision evidence conflicts", sql)
+
+    def test_preexisting_permissive_schema_is_rejected_before_any_insert(self):
+        sql = self.sql
+        guard = sql.split("DO $schema_guard$", 1)[1].split("$schema_guard$;", 1)[0]
+        self.assertIn("pg_catalog.pg_constraint", guard)
+        self.assertIn("pg_catalog.pg_get_constraintdef", guard)
+        self.assertIn("source_contract_revision_v0_pkey", guard)
+        self.assertIn("source_contract_revision_v0_source_key_fkey", guard)
+        self.assertIn("source_contract_revision_v0_raw_import_allowed_check", guard)
+        self.assertIn("source_contract_revision_v0_model_input_approved_check", guard)
+        self.assertIn("a.attnotnull IS TRUE", guard)
+        self.assertIn("RAISE EXCEPTION 'Source revision table lacks", guard)
 
     def test_pinned_worldcover_metadata_compared_exactly_not_just_status(self):
         # SQL literals are self-authored evidence metadata, never provider data.
