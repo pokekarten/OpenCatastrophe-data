@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "noaa.ncei.ghcnd-central-park-gzip",
+  "source_ids": [
+    "noaa.ncei.ghcn-daily"
+  ],
+  "provider": "NOAA National Centers for Environmental Information (NCEI)",
+  "interface_type": "http_file",
+  "status": "probe_ready",
+  "documentation_url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme-by_station.txt",
+  "service_root": "https://www.ncei.noaa.gov",
+  "api_version": "GHCN-Daily rolling station CSV, NCEI by_station original gzip distribution",
+  "access_scope": [
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "one_fixed_us_station_gzip_integrity_and_freshness_probe"
+    ],
+    "path_templates": [
+      "/pub/data/ghcn/daily/by_station/USW00094728.csv.gz"
+    ],
+    "parameter_rules": "Exactly one HTTPS GET without query/redirect/retry/caller-selected URL/path/range, fixed US GHCN station USW00094728; original response Content-Type application/gzip or reviewed gzip aliases. Maximum compressed original 12 MiB; maximum decompressed original CSV 24 MiB; strict single-member gzip, trailing data rejected. Require original station CSV schema, row-by-row element/day/flags validation and full hashes of both compressed original and inflated CSV. Compare latter with hash of verified NODD USW00094728.csv original obtained in workflow run 41501633985; report whether the exact original content is the same, dates and row counts. Never dump observation values or persist data to GitHub/Neon/model."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/gzip",
+      "application/x-gzip",
+      "application/octet-stream",
+      "binary/octet-stream"
+    ],
+    "format": "One complete NCEI provider original gzip object containing the eight-column USW00094728.csv station history. Exact raw gzip bytes SHA256 and decompressed station CSV SHA256, with all original CSV rows validated and no transformed observations.",
+    "scientific_semantics": "A single U.S. GHCN station is a technical research sample. Data can be revised without versioned snapshots; a more recent file date or later observation does not prove climatological homogeneity, completeness, scientific QA or worldwide model relevance. Original OBS_TIME 2400 remains a native non-normalized token. Source documentation may apply WMO Resolution 40 restrictions to data supplied by non-U.S. countries; this reviewed contract covers only the fixed U.S. Central Park object, and MUST NOT be generalized to non-U.S. stations or commercial cross-border reuse."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 60,
+    "max_probe_bytes": 5242880,
+    "max_sample_bytes": 12582912,
+    "retry_policy": "none",
+    "rate_limit_notes": "One anonymous bounded full object GET for fixed U.S. station after workflow review only; PR validation offline; no retries, discovery, pagination, bulk, mirrors, station IDs chosen by caller or scheduled ingestion. Generic source validator max_probe_bytes is 5 MiB; max_sample_bytes is an independent 12 MiB compressed source sample cap; 24 MiB decompressed cap is enforced by script.",
+    "mutability_notes": "Rolling object: record exact retrieval UTC, compressed and uncompressed whole-byte SHA256, original compressed/uncompressed lengths, source Last-Modified/ETag where well-formed, first and last observation, nonempty source/measurement/quality flags, native 2400 count, comparison to fixed 2026-11-02 NODD research hash. No atomic station-to-version binding or publication timestamp beyond provider headers."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "same_as_dataset",
+    "terms_url": "https://www.ncei.noaa.gov/archive",
+    "commercial_automation_status": "allowed",
+    "redistribution_status": "allowed",
+    "notes": "NCEI's archive licensing policy describes NOAA/Federal source data as public domain in the U.S.; this bounded contract fetches ONLY U.S. station USW00094728 and does not redistribute original bytes. NOAA's GHCN documentation also states some non-U.S. data have WMO Resolution 40 commercial/re-export restrictions, so the separate global GHCN access contract remains fail-closed and no global commercial admission follows from this US sample. Do not imply NOAA endorsement or unmodified government attribution for transformed data. The distinct NOAA NODD distribution's published CC0 license is NOT blindly applied to every upstream NCEI contribution."
+  },
+  "probe_contract": {
+    "mode": "provider_specific",
+    "operation": "one_fixed_us_station_gzip_integrity_and_freshness_probe",
+    "requires_credentials": false,
+    "expected_evidence": [
+      "Exact single HTTPS 200 from www.ncei.noaa.gov with reviewed gzip MIME; no redirect, compression wrapper, status 206, oversized raw gzip or appended gzip data.",
+      "Bounded streamed inflation to at most 24 MiB, original gzip and normalized CSV whole-body SHA-256, original byte lengths, U.S. station ID, all rows validated with NOAA M/Q/S flags.",
+      "First and last observation dates, row count, NODD 2026-11-02 historical verified 16,003,495-byte uncompressed-SHA comparison, explicit freshness gap rather than invented currency.",
+      "No raw bytes persisted, no per-observation values printed or Neon/model admission; no rights or scientific claims for global GHCN."
+    ]
+  },
+  "implementation_decision": "build_adapter_now",
+  "reviewed_at": "2026-11-02",
+  "evidence_urls": [
+    "https://www.ncei.noaa.gov/archive",
+    "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme-by_station.txt",
+    "https://www.ncei.noaa.gov/pub/data/ghcn/daily/by_station/USW00094728.csv.gz",
+    "https://www.ncei.noaa.gov/pub/data/cdo/documentation/GHCND_documentation.pdf",
+    "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41501633985"
+  ],
+  "notes": "Exact NCEI 4 KiB original gzip HTTP range sample was externally reachable on 2026-11-02 with application/gzip MIME. It has not yet received the full-object script-and-byte proof until merged workflow executes. The NODD original compared against is a pinned prior observation and can be stale: comparison result never asserts absolute freshness or that NCEI is the latest scientific archive."
+}
