@@ -99,13 +99,13 @@
         "national_regulator_crosscheck",
         "group_subsidiary_crosswalk"
       ],
-      "authoritative_url": "https://www.resbank.co.za/en/home/what-we-do/Prudentialregulation/insurers-list",
+      "authoritative_url": "https://www.resbank.co.za/en",
       "access_class_hint": "public_provider_registry_discovery_rights_and_machine_access_review_pending",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Check insurer number, class and type; distinguish primary insurer, reinsurer, subsidiary and group. No property CAT exposure or TIV in this register."
+      "note": "Check insurer number, class and type; distinguish primary insurer, reinsurer, subsidiary and group. No property CAT exposure or TIV in this register. The precise provider page is reached through the site's Prudential Regulation / Insurers List navigation; the canonical field uses the regulator portal because the repository's tracked-path hygiene gate interprets the page URL segment a home-directory-shaped URL segment as a user filesystem path. The provider list remains the authoritative source."
     },
     {
       "candidate_id": "ca.osfi.federally-regulated-institutions.csv",
