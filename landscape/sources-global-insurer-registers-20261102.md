@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-02`  
 **Purpose:** Non-admission discovery of official insurance regulatory registers to expand worldwide insurance and reinsurance group, legal-entity and jurisdiction coverage without importing third-party raw records.
 
-**Entries:** 18
+**Entries:** 19
 
 ## IAIS register of Internationally Active Insurance Groups
 
@@ -287,3 +287,18 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** OJK 2025 Q3 publication is an observable index item, not evidence of current 2026 insurer licence status. Check exact linked assets and original terms, distinguish insurance carriers from broker and support-service lists, do not infer corporate control or operating risk from directory addresses.
+
+## NAIC Listing of Companies Summary: group and member-company code listings
+
+**Candidate ID:** `us.naic.group-company-memberships.2025`  
+**Provider:** National Association of Insurance Commissioners (NAIC)  
+**Categories:** `insurance`, `reinsurance`, `insurer_group`, `insurer_entity_registry`, `united_states`, `group_company_crosswalk`  
+**Spatial scope:** United States domestic insurance companies and NAIC-registered groups; alien entries separately classified  
+**Temporal scope:** Data year 2025; publication dated December 2025; do not confuse with the 2026 Q2 group lead-state report  
+**Resolution / granularity:** Explicit group-code to member-company-code and insurer-name relationships, statement type, status, domiciled state, plus standalone insurer and alien-company sections  
+**Potential roles:** `us_regulatory_group_to_company_code_bridge`, `naic_group_code_crosswalk`, `legal_entity_company_code_research`  
+**Access hint:** `public_2025_naic_pdf_copyright_all_rights_reserved_republication_prohibited_without_written_permission`  
+**Authoritative source:** <https://content.naic.org/sites/default/files/publication-loc-zu-listing-companies-summary.pdf>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Official PDF explicitly states copyright 2025 NAIC, all rights reserved, and prohibits reprinting/distributing without written permission. No copying bulk records or publishing derived tables and no automatic sync to Neon unless rights reviewed and authorized. Its group-membership and company-code sections are a potential direct authoritative US group-to-company bridge, but refer to data year 2025 rather than the 2026 Q2 lead-state report. A cross-year join must flag membership changes, as-of period and active status. NAIC company codes are not LEIs, nor proof of an ultimate global legal parent.
