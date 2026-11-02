@@ -60,8 +60,10 @@ jobs:
         run: |
           set -euo pipefail
           original="$RUNNER_TEMP/lu-age-hq100-2021-source.zip"
+          hq10="$RUNNER_TEMP/lu-age-hq10-2021.zip"
+          hqext="$RUNNER_TEMP/lu-age-hqext-2021.zip"
           umask 077
-          trap 'rm -f "$original"' EXIT
+          trap 'rm -f "$original" "$hq10" "$hqext"' EXIT
           curl --fail --location --silent --show-error \
             --proto '=https' --proto-redir '=https' \
             --connect-timeout 20 --max-time 120 --retry 0 \
@@ -75,8 +77,6 @@ jobs:
             --source-zip "$original"
           python -m research_runners.luxembourg_age_hq100_2021_ring_topology_v0 \
             --source-zip "$original"
-          hq10="$RUNNER_TEMP/lu-age-hq10-2021.zip"
-          hqext="$RUNNER_TEMP/lu-age-hqext-2021.zip"
           curl --fail --location --silent --show-error \
             --proto '=https' --proto-redir '=https' \
             --connect-timeout 20 --max-time 120 --retry 0 \
