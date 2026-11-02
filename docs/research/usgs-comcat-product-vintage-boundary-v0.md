@@ -79,7 +79,8 @@ This demonstrates **an information-leakage class**, not that archived
 2023 USGS availability has already been proven.
 
 After rights, original-byte and independent availability checks,
-feed the *same narrowly validated as-of product-vintage envelope* into
-FFBK's `cat_event_lifecycle_vintage_probe.py` (PR #1794) and compare a
-three-cut loss pathway with a clearly labelled synthetic portfolio.
+compare the *same narrowly validated as-of product-vintage envelope* in a
+separate downstream catastrophe-event lifecycle research consumer using
+three clearly labelled synthetic observation cuts and portfolio scenarios.
+A downstream consumer is not part of this repository's validated surface.
 All source and model-readiness states remain fail-closed until then.
