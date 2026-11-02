@@ -63,6 +63,26 @@ class PublisherGeoJSONGroupOGCTests(unittest.TestCase):
             with self.subTest(invalid=invalid), self.assertRaises(GroupTopologyError):
                 challenge_publisher_groups(source([[ring]]),max_group_vertices=invalid)
 
+    def test_explicit_megagroup_mode_overrides_default_only_with_strict_ceiling(self):
+        from research_runners.luxembourg_age_hq2021_geojson_group_ogc_v0 import (
+            MAX_GEOS_POLYGON_GROUP_VERTICES, MAX_OPTIONAL_MEGA_GROUP_VERTICES,
+        )
+        ring = [[0.,0.],[0.,10.],[10.,10.],[10.,0.],[0.,0.]]
+        source_group = source([[ring]])
+        standard = challenge_publisher_groups(source_group, max_group_vertices=4)
+        self.assertEqual(standard["publisher_groups_over_vertex_complexity_budget"], 1)
+        self.assertEqual(standard["quarantined_publisher_polygon_group_point_total"], 5)
+        advanced = challenge_publisher_groups(source_group,
+                                              max_group_vertices=MAX_OPTIONAL_MEGA_GROUP_VERTICES)
+        self.assertEqual(advanced["individually_geos_valid_publisher_polygon_groups"], 1)
+        self.assertEqual(advanced["publisher_groups_over_vertex_complexity_budget"], 0)
+        self.assertFalse(advanced["whole_original_publisher_multipolygon_OGC_validity_verified"])
+        self.assertFalse(advanced["CAT_loss_input_admitted"])
+        self.assertEqual(MAX_GEOS_POLYGON_GROUP_VERTICES, 120000)
+        with self.assertRaises(GroupTopologyError):
+            challenge_publisher_groups(source_group,
+                                       max_group_vertices=MAX_OPTIONAL_MEGA_GROUP_VERTICES + 1)
+
     def test_reject_nonpolygon_sources(self):
         with self.assertRaises(GroupTopologyError):
             challenge_publisher_groups({"type":"Point","coordinates":[0,0]})
