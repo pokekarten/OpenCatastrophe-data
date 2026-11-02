@@ -21,10 +21,12 @@ if __package__:
     from .cede_oed_upstream_full_mapping_probe_v0 import (
         UPSTREAM_COMMIT, MAPPING_PATH, _source_row, _write_csv, _write_config
     )
+    from .cede_oed_ods_tools_live_smoke_v0 import _probe_oed_v302
 else:
     from cede_oed_upstream_full_mapping_probe_v0 import (
         UPSTREAM_COMMIT, MAPPING_PATH, _source_row, _write_csv, _write_config
     )
+    from cede_oed_ods_tools_live_smoke_v0 import _probe_oed_v302
 
 PLACEHOLDER = "  Cede Field:\n    type: ODTF Data Type\n"
 UNSAFE_WHEN = "      when: ExposureSetName\n"
@@ -35,6 +37,7 @@ def probe(upstream: Path) -> dict[str, object]:
     mapping_dir = upstream.resolve(strict=True) / MAPPING_PATH
     results = []
     with tempfile.TemporaryDirectory(prefix="oc-ce10-workaround-") as tmp:
+        outputs: dict[str, Path] = {}
         root = Path(tmp)
         for kind, filename in (
             ("location", "mapping_loc_Cede-OED.yaml"),
@@ -74,6 +77,8 @@ def probe(upstream: Path) -> dict[str, object]:
                 code = -1
                 error = type(exc).__name__
             generated = output_file.is_file() and output_file.stat().st_size > 0
+            if generated:
+                outputs[kind] = output_file
             observation = {
                 "kind": kind, "temporary_research_patches": patches,
                 "input_field_count": len(source), "upstream_target_field_count": len(parsed["transform"]),
@@ -86,13 +91,20 @@ def probe(upstream: Path) -> dict[str, object]:
                     observation["output_rows"] = sum(1 for _ in reader)
                     observation["output_fields"] = len(reader.fieldnames or [])
             results.append(observation)
+        official_probe = (
+            _probe_oed_v302(outputs["location"], outputs["account"])
+            if set(outputs) == {"location", "account"}
+            else {"attempted": False, "passed": False, "blocked_reason": "missing_output"}
+        )
     return {
         "profile": "cede10-oed302-temporary-upstream-example-workaround-probe-v0",
         "upstream_commit": UPSTREAM_COMMIT, "synthetic_only": True,
         "temporary_patches_never_committed": True, "source_version": "10.0.0",
         "target_version": "3.0.2", "observations": results,
         "both_generated": all(x["generated_csv"] and x.get("output_rows") == 1 for x in results),
-        "full_mapping_approved": False, "oed_schema_validated": False,
+        "full_mapping_approved": False,
+        "oed_schema_probe": official_probe,
+        "oed_schema_validated": official_probe["passed"],
         "cede13_compatible": False, "rights_approved": False, "model_input_admitted": False,
     }
 
