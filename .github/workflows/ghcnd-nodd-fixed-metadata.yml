@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: NOAA GHCN-Daily NODD tiny original metadata receipt
+
+on:
+  pull_request:
+    paths:
+      - 'access/noaa.nodd.ghcnd-version-country.json'
+      - 'access/noaa.nodd.ghcnd-version-country.md'
+      - 'scripts/probe_ghcnd_nodd_version_country_v0.py'
+      - 'tests/test_probe_ghcnd_nodd_version_country_v0.py'
+      - '.github/workflows/ghcnd-nodd-fixed-metadata.yml'
+  workflow_dispatch:
+  # A reviewed first merge of this workflow performs precisely one
+  # two-object metadata check. PRs run only synthetic, offline tests.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ghcnd-nodd-fixed-metadata.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ghcnd-nodd-metadata-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bounded-metadata:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact revision without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Validate exact access contract
+        run: python scripts/validate_source_access.py access/noaa.nodd.ghcnd-version-country.json
+      - name: Check all generated access contract projections
+        run: python scripts/render_public_views.py --check --scope access
+      - name: Run synthetic offline negative and positive tests
+        run: python -m unittest tests.test_probe_ghcnd_nodd_version_country_v0 -v
+      - name: Record revision and executable SHA-256
+        run: |
+          git rev-parse HEAD
+          sha256sum scripts/probe_ghcnd_nodd_version_country_v0.py
+      - name: Read exactly two tiny NOAA source metadata objects
+        if: github.event_name != 'pull_request'
+        run: python scripts/probe_ghcnd_nodd_version_country_v0.py --live
