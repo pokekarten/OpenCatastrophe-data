@@ -88,3 +88,14 @@ Review the original-file `quantile` axis separately: the paper describes nine pe
 The official 2026 GTSM paper enumerates nine percentile levels (1, 5, 10, 25, 50, 75, 90, 95, 99), but the pinned Zenodo v2 statistical NetCDF has only seven `quantile` coordinate entries. The next original-file reader now retrieves only these seven native scalar labels and the eight scalar `return_period` year labels. It runs after the published MD5, independently pinned SHA-256 and exact native header validation. It compares observed period years against the paper (1, 2, 5, 10, 25, 50, 75, 100) without reading `wl_quantiles`, storm events or individual water-level values.
 
 The quantile encoding is only tentatively interpreted as fraction or percent based on observed scalar ranges, and the paper-level discrepancy is retained as a *research unresolved* field until a scientific review confirms exact semantics. The script never interpolates or invents missing quantiles. Run the fixed-source GitHub workflow again before treating the new axis label evidence as verified.
+
+## Actual original quantile and return-year coordinate labels (2026-11-02)
+
+The successful exact-head GitHub runner [41528816768](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41528816768), job `125563439416`, repeated the publisher MD5 and independently pinned SHA-256 verification and passed **42** synthetic offline tests. Without reading `wl_quantiles`, any water-level extreme or any individual station locations, it read the pinned original's two native scalar coordinate axes:
+
+- Native `quantile` values: `[0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95]` (fraction-scale *candidate* metadata encoding, i.e. candidate 5, 10, 25, 50, 75, 90 and 95th percentiles).
+- Native `return_period` values, units years: `[1, 2, 5, 10, 25, 50, 75, 100]` (exactly matching the publication).
+- Official paper describes nine percentile levels: `[1, 5, 10, 25, 50, 75, 90, 95, 99]`. This source asset includes seven, omitting **1st and 99th**. Do **not** interpolate, fabricate or claim them in native asset exports. The reason for the paper/file mismatch needs a provider- or scientific-review explanation.
+
+The original source also again reported **38,957** valid, in-geographic-range unique longitude/latitude coordinate pairs, no missing or duplicate pairs, and no (0,0) locations. The audit does not establish coastline proximity, local inundation depths, vertical datum compatibility, probability calibration, annual stochastic event independence, reuse permission or insurer-level losses. All admission flags remain false; no provider grids, site coordinates or source bytes were written to Git or Neon.
+
