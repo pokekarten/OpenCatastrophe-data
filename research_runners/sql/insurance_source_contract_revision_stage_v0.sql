@@ -16,6 +16,21 @@ BEGIN;
 DO $snapshot_guard$
 BEGIN
   IF (SELECT count(*) FROM registry.source_record) <> 114
+     -- Deterministic exact metadata snapshot from the live 114-row registry.
+     -- Built-in PostgreSQL SHA-256: no pgcrypto extension or secret required.
+     OR (
+       SELECT encode(sha256(convert_to(
+         string_agg(jsonb_build_object(
+           'source_key', source_key,
+           'git_commit_sha', git_commit_sha,
+           'git_blob_sha', git_blob_sha,
+           'git_path', git_path,
+           'raw_metadata', raw_metadata,
+           'review_status', review_status
+         )::text, E'\n' ORDER BY source_key), 'UTF8')), 'hex')
+       FROM registry.source_record
+     ) IS DISTINCT FROM
+       'dce4e12c3aa9385c4a5b6805b1ad13682e2f7f91969eb1b7ed302c14c78fa822'
      OR EXISTS (
        SELECT 1 FROM registry.source_record
        WHERE git_blob_sha !~ '^[0-9a-f]{40}$'
