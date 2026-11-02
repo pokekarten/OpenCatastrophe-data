@@ -108,7 +108,7 @@ class OriginalZipIndexTests(unittest.TestCase):
         data=bytearray(archive())
         pos=len(data)-22
         self.assertEqual(data[pos:pos+4],b"PK\x05\x06")
-        struct.pack_into("<H",data,pos+10,0xFFFF)
+        struct.pack_into("<HH",data,pos+8,0xFFFF,0xFFFF)
         with self.assertRaisesRegex(m.ZipIndexBlocked,"ZIP64"):
             m.locate_eocd(bytes(data),len(data))
         data=bytearray(archive())
