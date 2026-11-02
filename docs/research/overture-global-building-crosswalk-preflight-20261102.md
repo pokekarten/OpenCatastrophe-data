@@ -101,6 +101,28 @@ The output keeps `gers_registry_membership_verified=false`, `source_file_origina
 
 For an actual ingestion chain, first pin and verify original Parquet byte hashes and the correct provider/dataset semantics, then validate a bounded source sample, then verify GERS registry membership and candidate geometry against the national original. Keep unrelated commercial source rights separate. Do not import any original source rows or inferred insured exposure into Neon without review.
 
+## Original public OSM bridge Parquet access receipt (2026-11-02)
+
+This receipt records a **live original-provider HTTP metadata and range verification**, not acquired source records. The official [2026-10-21 Overture release notes](https://docs.overturemaps.org/blog/2026/10/21/release-notes/) pin the release and AWS/Azure bridge prefixes.
+
+On 2026-11-02, the public AWS S3 ListObjectsV2 endpoint at `https://overturemaps-us-west-2.s3.us-west-2.amazonaws.com/` was queried with `list-type=2`, the exact `prefix=bridgefiles/2026-10-21.0/provider=osm/theme=buildings/type=building/` and `max-keys=2`. Original XML confirmed **IsTruncated=true** and these first two provider keys:
+
+| First two original objects | Size, bytes | LastModified UTC | Parquet footer metadata size |
+| --- | ---: | --- | ---: |
+| `part-00000-5eacc0d5-7529-4a0a-85fa-1c7fe4b343e0.c000.snappy.parquet` | 390230643 | 2026-10-21T17:36:57Z | 4281 |
+| `part-00001-5eacc0d5-7529-4a0a-85fa-1c7fe4b343e0.c000.snappy.parquet` | 390145222 | 2026-10-21T17:38:14Z | 4282 |
+
+For **each** exact key, the separate original `Range: bytes=0-3` returned the four ASCII bytes `PAR1`, and the separate `Range: bytes=-8` returned a little-endian footer-metadata length plus final `PAR1`. Thus 12 original byte-range body bytes per file (24 total) were inspected, not their contents. The listing also reported multipart ETags: these are **not** whole-file MD5/SHA256 checksums and do not establish original content identity for model admission.
+
+Reproduce using the explicitly opt-in, hardcoded, bounded original-source script:
+
+    python -m research_runners.overture_osm_bridge_original_probe_v0 --live
+    python -m unittest tests.test_overture_osm_bridge_original_probe_v0 -v
+
+The read-only script caps listing XML at 32768 bytes, checks exactly the first one or two partition keys, and requests exactly 4+8 bytes per listed object. It validates `Content-Range`, response status `206`, source ETag consistency, original file size, Parquet boundary magic and a bounded footer-size integer. No credentials, caller-chosen endpoint, listing pagination, full provider file or original row acquisition are used. Only explicit `--live` enables networking; the CI tests are 100% offline and mocked.
+
+**Result:** public cloud object metadata and bounded Parquet-format boundaries verified, but **original GeoParquet source rows NOT inspected, SHA256 not validated, source-record rights NOT approved, GERS membership NOT verified, model input NOT admitted, and no Neon database write**. Before any rows are stored, independently verify the relevant complete source, attribution, licence and scientific bridge; this receipt is not a completed provider-data import.
+
 ## Path to real insurer CAT models
 
 1. Freeze an original source object identity, schema version, byte hashes and attribution/rights before a bounded cloud retrieval. Document authoritative GERS ID registry/bridge checks separately.
