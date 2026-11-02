@@ -76,9 +76,10 @@ def _osm_record_id(value):
 
 def bridge_osm_buildings(payload, *, expected_release):
     """Return reciprocal one-to-one candidate links; no false global completeness."""
-    _fields(payload, {"schema", "release", "bridge_provider", "bridge_dataset",
-                      "local_records", "bridge_rows"}, "input")
-    if payload["schema"] != SCHEMA or payload["bridge_provider"] != "osm":
+    _fields(payload, {"schema", "release", "bridge_provider", "bridge_theme", "bridge_type",
+                      "bridge_dataset", "local_records", "bridge_rows"}, "input")
+    if (payload["schema"] != SCHEMA or payload["bridge_provider"] != "osm"
+            or payload["bridge_theme"] != "buildings" or payload["bridge_type"] != "building"):
         raise BridgeError("not the OSM building bridge contract")
     if payload["bridge_dataset"] != "OpenStreetMap":
         raise BridgeError("source dataset must be explicitly OpenStreetMap")
@@ -106,10 +107,9 @@ def bridge_osm_buildings(payload, *, expected_release):
     bridge_pairs = set()
     bridge_by_record = {}
     for row in bridges_raw:
-        _fields(row, {"id", "record_id", "dataset", "provider", "theme", "type"}, "bridge row")
-        if (row["provider"], row["theme"], row["type"], row["dataset"]) != (
-                "osm", "buildings", "building", "OpenStreetMap"):
-            raise BridgeError("foreign partition, theme, feature type or dataset")
+        _fields(row, {"id", "record_id", "dataset"}, "projected bridge row")
+        if row["dataset"] != "OpenStreetMap":
+            raise BridgeError("foreign source dataset")
         record_id = _osm_record_id(row["record_id"])
         gers = _gers_id(row["id"])
         pair = (record_id, gers)
