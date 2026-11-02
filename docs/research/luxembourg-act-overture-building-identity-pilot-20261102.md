@@ -200,6 +200,40 @@ This is a causal **source attribution observation**, not proof that OpenStreetMa
 
 Only the aggregate counts and the original run URL were added to the existing **isolated** Neon CAT research receipt, where `insurance_CAT_model_input_approved = false` is constrained and confirmed. Neither provider features nor original WKB, IDs, coordinates, or OSM record IDs were committed or stored.
 
+## Exact buildings-theme rights boundary: official Overture and OSM sources
+
+**Publisher-grounded interpretation (checked 2026-11-02; not a legal sign-off).**
+[Overture's own Buildings guide](https://docs.overturemaps.org/guides/buildings/)
+identifies the **Buildings theme as ODbL 1.0**, with OpenStreetMap
+assigned the highest conflation priority. The
+[theme-specific attribution and licensing register](https://docs.overturemaps.org/attribution/)
+independently lists **Buildings: ODbL**, together with upstream OSM,
+Microsoft ML footprints, Esri and other contributor attribution.
+Do **not** apply Overture's general CDLA-Permissive default for other
+themes to this complete combined Buildings product.
+
+The [OpenStreetMap Foundation's licensing summary](https://www.openstreetmap.org/copyright)
+permits copying, adapting and commercial uses subject to ODbL conditions,
+including attribution and applicable derivative-database share-alike.
+The [OSMF attribution guidelines](https://osmfoundation.org/wiki/Attribution_Guidelines)
+distinguish public produced-work attribution from purely internal use,
+but expressly defer to the actual licence text. Consequently neither
+the five OSM-sourced **geometric candidates** nor the 69 mixed-source
+pilot polygons may be categorically called *commercially prohibited*;
+equally, their public or customer-facing integration with proprietary
+insured asset databases cannot be treated as unconditionally permitted.
+
+**Specific unresolved downstream questions:** classify whether a proposed
+OpenCat/NextGen building-ID crosswalk, insurer exposure overlay, published
+portfolio extract or risk-map output is a derivative database, collective
+database or produced work; define how ODbL attribution, source notices and
+possible downstream share-alike would apply; check separate ACT terms
+and original Overture release provenance. The five reciprocal matches all
+carry OSM lineage **as reported by Overture**; this is not an independent
+survey or clearance for redistribution of combined geographic/insured
+data. No automatic geometry persistence, GERS identity acceptance,
+commercial-rights flag change or CAT model admission follows.
+
 ## What the new joined-screen code does
 
 The offline script research_runners/luxembourg_act_overture_identity_preflight_v0.py
