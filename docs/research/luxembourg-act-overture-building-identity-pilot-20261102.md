@@ -66,6 +66,30 @@ any actual per-row geometry overlaps the region. A reviewed bounded original
 feature sample, verified original file SHA256, geodetic frame review, GERS
 registry evidence, and source-specific reuse rights remain outstanding.
 
+## Isolated insurance Neon metadata readback
+
+The exact newly discovered part-00226 original source-file receipt was inserted
+**only** into the existing nonproduction Neon branch
+overture-buildings-metadata-pilot-20261102 (ID br-bold-unit-baf2smqf),
+table research.overture_original_building_file_probe_v0.
+The independent original S3 ListObjectsV2 receipt reports
+LastModified **2026-10-21T17:46:03Z**, original size **609,459,333 bytes** and
+multipart ETag **a4a0d16d3ca5f460b2626facb71daae5-10** (not a SHA-256).
+
+Live isolated-branch SQL verification now returns **three** metadata source
+receipts in total (worldwide parts 00000, 00001 and the Luxembourg-city
+candidate part 00226), with **15,059,017 provider-reported file rows** in
+those three objects and **zero** source-rights, actual-row-import,
+insurer-exposure or CAT-input approvals. The number is the sum of original
+**file rows**, not country building count or deduplicated insured structures.
+
+The production insurance branch does **not** have the experimental receipt
+table, and still has **zero** admitted original raw files and real insured
+exposure units. The Pokémon project was not accessed. The idempotent,
+nonproduction-only reproduction SQL is versioned at
+research_runners/sql/overture_buildings_metadata_receipts_v0.sql.
+This STAC/S3 audit does not admit geometry into a loss model.
+
 ## What the new joined-screen code does
 
 The offline script research_runners/luxembourg_act_overture_identity_preflight_v0.py
