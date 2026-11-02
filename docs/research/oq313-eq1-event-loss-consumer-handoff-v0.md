@@ -147,3 +147,26 @@ loss/variance corruption, duplicate/reordered events, policy/authority
 spoofing, canonicalization drift, symlink inputs and fabricated-but-self-
 consistent losses. The latter are rejected **only when** the full source
 receipt is supplied, as required by the actual trust boundary.
+
+## Reproducible 220,619-row scale proof
+
+The new `tests/test_oq313_event_loss_handoff_scale_v0.py` is an
+end-to-end **fully synthetic** stress regression deliberately sized to
+**220,619 rows**, matching the cardinality disclosed by the earlier Kosovo
+OpenQuake terminal without requiring or fabricating its missing original bytes.
+
+It constructs a canonical synthetic source receipt with constant invented
+1-EUR structural binary32 losses and zero variances, projects loss-only JSONL
+with the original source receipt digest, verifies the entire manifest and
+per-row preservation, then makes the independent consumer validate every row
+first without and then *with* the full original **synthetic** receipt. This
+also challenges the 64-MiB source and 96-MiB JSONL budgets, execution cost,
+consumer row ordering and two-SHA transport binding at realistic row count.
+
+This proves only that the adapter can process a synthetic sample at the
+historical receipt's **row count**, not that the original 220,619 Kosovo
+loss values are available, reproduced or admitted. It does not prove
+NextGen can calculate annual/treaty losses. NextGen's already existing
+OpenQuake 3.23 loss tables require independent source **physical events,
+realization weights and a complete world/year catalogue**. The EQ1 3.13
+loss-only source has none of those and must not be used as though it did.
