@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 Source: https://zenodo.org/records/14671593; DOI 10.5281/zenodo.14671593; published 2025-02-25, v2.
 Exact asset: `ds_GTSM-ERA5-E_1950-2024_stats.nc`, original HTTP content length **9,652,424 bytes**, publisher-listed **MD5 0f2b7071c6ec3585768be6cf427e6eab**.
-Those are provider metadata, **not** evidence that repository authors downloaded the complete file or that the publisher signed a SHA-256.
+Publisher metadata was independently verified by GitHub Actions exact-head run [41507598794](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41507598794), 2026-11-02 19:12:57 UTC: full 9,652,424 bytes, publisher-listed MD5 matched, NetCDF4/HDF5 signature confirmed. Independently observed source **SHA-256 `e366c79683438d03a48b23764f1159d5ed88845a459f625eeb787dff78cbd767`** is now an additional fixed reject-on-drift source gate. SHA-256 was independently computed, not published by the provider. No source bytes committed or persisted to Neon.
 
 ## Executable research step
 
@@ -18,12 +18,12 @@ For a separately lawfully acquired original file, use the offline check:
 
 To verify exactly one public provider file on an internet-enabled runner, run:
 
-    python scripts/gtsm_era5_e_original_receipt_v0.py --fetch
+    python scripts/gtsm_era5_e_original_receipt_v0.py --fetch --inspect-header
 
 The fixed PR workflow `.github/workflows/gtsm-era5-e-original-receipt.yml` runs the offline tests followed by this exact one-file HTTPS download (only same-repository PRs). The fetch mode has no caller-selectable URL; refuses non-Zenodo redirects, unexpected size, HTTP failures and MD5 mismatch; only a metadata receipt reaches CI logs. Provider bytes are held only in an ephemeral temporary file during verification and deleted immediately. No source file or raw array is uploaded as an artifact.
 
 
-The verifier performs local read-only streaming over the full regular non-symlink source file, checks exact published length and MD5, validates a recognizable HDF5/NetCDF signature, then emits computed SHA-256 **as an observed receipt only**. Offline mode never fetches; online mode uses only an ephemeral temporary file and deletes it before returning. Neither mode retains provider bytes in the repository, derives losses, or publishes raw values. The production-facing CLI has no hash/size override; synthetic unit tests exercise the internal receipt function with independently invented fixtures.
+The verifier performs local read-only streaming over the full regular non-symlink source file, checks exact published length and MD5, validates a recognizable HDF5/NetCDF signature, then **rejects any drift from the SHA-256 observed in successful original-source run 41507598794**. With `--inspect-header` it inventories dimensions, variable names, types, shape, units and short descriptive attributes without reading variable values; source-native science/vertical-datum validity is not inferred. Offline mode never fetches; online mode uses only an ephemeral temporary file and deletes it before returning. Neither mode retains provider bytes in the repository, derives losses, or publishes raw values. The production-facing CLI has no hash/size override; synthetic unit tests exercise the internal receipt function with independently invented fixtures.
 
 ## Scientific and licence barriers
 
@@ -35,4 +35,4 @@ The verifier performs local read-only streaming over the full regular non-symlin
 
 ## Execution evidence
 
-Initial eight synthetic tests passed offline and the earlier exact-head repository CI passed. This revision adds fixed-provider bounded download mode, four additional regression tests and a scoped original-byte workflow. The ChatGPT container has no outbound DNS; a reproducible real SHA-256 claim requires inspecting the result from the new exact-head GitHub Action. This documentation is not evidence that any provider bytes were acquired or scientifically approved.
+The complete real-source receipt of 2026-11-02 is verified from exact-head runner logs (run #41507598794, job #125490753179); 12 synthetic boundary tests and Python 3.11–3.14 matrix passed. The follow-on revision pins independently observed SHA-256 and adds metadata-only NetCDF inspection and tests. Its own exact-head CI and real NetCDF header output must be checked separately before any variable-level assertions. The earlier receipt did not inspect the NetCDF variables. No model admission, permission for commercial reuse, raw file retention or event generation is implied.
