@@ -180,6 +180,21 @@ class GtsmReceiptTests(unittest.TestCase):
                 with self.assertRaises(GtsmReceiptError):
                     mod.validate_coordinate_packing(packing)
 
+
+    def test_coordinate_audit_requires_validated_header(self):
+        self.fixture()
+        with patch.object(mod, "_file_receipt") as receipt:
+            with self.assertRaises(GtsmReceiptError):
+                verify_original(self.path, audit_coordinates=True)
+            receipt.assert_not_called()
+
+    def test_coordinate_audit_requires_exact_source_sha(self):
+        self.fixture()
+        with patch.object(mod, "audit_original_coordinates") as location_reader:
+            with self.assertRaises(GtsmReceiptError):
+                verify_original(self.path, inspect_header=True, audit_coordinates=True)
+            location_reader.assert_not_called()
+
     def test_no_original_file_rejected(self):
         with self.assertRaises(GtsmReceiptError):
             _file_receipt(self.path, expected_size=10, expected_md5="0" * 32)
