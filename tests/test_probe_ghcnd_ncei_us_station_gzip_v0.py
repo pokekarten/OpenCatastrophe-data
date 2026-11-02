@@ -11,7 +11,7 @@ import unittest
 
 from scripts.probe_ghcnd_ncei_us_station_gzip_v0 import (
     MAX_COMPRESSED, NCEIStationError, NODD_SHA256, URL,
-    inflate_single_member, probe, verify_contract,
+    inflate_validated_gzip_members, probe, verify_contract,
 )
 
 
@@ -70,7 +70,7 @@ class NCEIGzipSourceTests(unittest.TestCase):
         self.assertIn("non-U.S.", c["response_contract"]["scientific_semantics"])
 
     def test_single_original_gzip_inflated_exact(self):
-        self.assertEqual(inflate_single_member(self.gzip_raw), self.raw)
+        self.assertEqual(inflate_validated_gzip_members(self.gzip_raw), (self.raw, 1))
 
     def test_exact_source_get_and_receipt_no_neon_or_model(self):
         seen = []
@@ -85,6 +85,7 @@ class NCEIGzipSourceTests(unittest.TestCase):
         self.assertEqual(result["complete_original_rows_checked"], 41000)
         self.assertEqual(result["inflated_original_csv_bytes"], len(self.raw))
         self.assertEqual(result["compressed_original_bytes"], len(self.gzip_raw))
+        self.assertEqual(result["validated_gzip_members"], 1)
         self.assertEqual(result["provider_native_2400_observation_time_rows"], 8200)
         self.assertEqual(len(result["compressed_original_sha256"]), 64)
         self.assertFalse(result["same_csv_bytes_as_pinned_nodd_20261102"])
@@ -98,23 +99,38 @@ class NCEIGzipSourceTests(unittest.TestCase):
     def test_fails_closed_on_modified_original(self):
         truncated = self.gzip_raw[:-3]
         with self.assertRaises(NCEIStationError):
-            inflate_single_member(truncated)
+            inflate_validated_gzip_members(truncated)
 
-    def test_rejects_trailing_members_or_garbage(self):
-        for raw in (self.gzip_raw + self.gzip_raw,
-                    self.gzip_raw + b"\n",
-                    b"NOPE" + self.gzip_raw):
+    def test_accepts_two_individually_validated_gzip_members(self):
+        left = gzip.compress(self.raw[:700000], mtime=0)
+        right = gzip.compress(self.raw[700000:], mtime=0)
+        self.assertEqual(
+            inflate_validated_gzip_members(left + right), (self.raw, 2)
+        )
+        result = probe(open_request=lambda req, timeout: Response(left + right))
+        self.assertEqual(result["validated_gzip_members"], 2)
+        self.assertEqual(result["complete_original_rows_checked"], 41000)
+
+    def test_rejects_non_gzip_appendage_truncated_extra_member(self):
+        for raw in (self.gzip_raw + b"\n",
+                    b"NOPE" + self.gzip_raw,
+                    self.gzip_raw + self.gzip_raw[:-4]):
             with self.subTest(size=len(raw)), self.assertRaises(NCEIStationError):
-                inflate_single_member(raw)
+                inflate_validated_gzip_members(raw)
+
+    def test_member_count_bound(self):
+        many = gzip.compress(self.raw[:200], mtime=0) * 3
+        with self.assertRaises(NCEIStationError):
+            inflate_validated_gzip_members(many, max_members=2)
 
     def test_bounded_inflation_for_bomb_prevention(self):
         with self.assertRaises(NCEIStationError):
-            inflate_single_member(self.gzip_raw, max_csv=2048)
+            inflate_validated_gzip_members(self.gzip_raw, max_csv=2048)
 
     def test_bad_crc_fails(self):
         corrupt = self.gzip_raw[:-8] + bytes([self.gzip_raw[-8] ^ 255]) + self.gzip_raw[-7:]
         with self.assertRaises(NCEIStationError):
-            inflate_single_member(corrupt)
+            inflate_validated_gzip_members(corrupt)
 
     def test_bad_provider_data_fails(self):
         malformed = self.raw.replace(
