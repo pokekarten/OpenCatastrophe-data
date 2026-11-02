@@ -13,6 +13,7 @@ on:
   workflow_dispatch:
   # PR review uses only synthetic fixtures. One 64-KiB original-prefix read
   # runs on the reviewed workflow's first merge or explicit manual dispatch.
+  # One-shot replay after the provider's binary/octet-stream S3 media-type fix.
   push:
     branches: [main]
     paths:

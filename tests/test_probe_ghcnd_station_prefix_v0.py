@@ -89,6 +89,16 @@ class GHCNDOriginalStationTests(unittest.TestCase):
         self.assertFalse(receipt["raw_observations_persisted"])
         self.assertFalse(receipt["model_input_admitted"])
 
+    def test_accepts_exact_provider_observed_binary_octet_stream(self):
+        # NOAA S3 returns the original CSV object as binary/octet-stream.
+        receipt = probe(
+            open_request=lambda req, timeout: Response(
+                sample(), media="binary/octet-stream"
+            )
+        )
+        self.assertEqual(receipt["media_type"], "binary/octet-stream")
+        self.assertGreater(receipt["complete_original_rows_checked"], 1000)
+
     def test_rejects_other_station(self):
         with self.assertRaises(GHCNDStationProbeError):
             inspect_station_prefix(sample(alter=lambda row: row.__setitem__(0, "USW00094729")))
