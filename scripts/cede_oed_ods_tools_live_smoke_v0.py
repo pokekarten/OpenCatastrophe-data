@@ -161,6 +161,25 @@ def execute(command: str = "ods_tools") -> dict[str, object]:
                 raise SmokeError(f"ODS Tools {label} produced no CSV output")
         checked = reconcile_layers(exposure_json, layers_json, loc_out, layer_out)
         oed_validation = _probe_oed_v302(loc_out, layer_out)
+        if not oed_validation["passed"]:
+            raise SmokeError(
+                "Official Oasis OED 3.0.2 validation did not pass: "
+                + str(oed_validation.get("blocked_reason") or "nonzero_findings")
+            )
+        # Falsification control: the same official validator must reject a
+        # synthetically corrupted account LayerNumber. The original file
+        # remains untouched, and no customer data ever enters this runner.
+        with layer_out.open("r", encoding="utf-8", newline="") as stream:
+            reader = csv.DictReader(stream)
+            invalid_rows = list(reader)
+        if not invalid_rows or "LayerNumber" not in invalid_rows[0]:
+            raise SmokeError("OED negative challenge lacks LayerNumber")
+        invalid_rows[0]["LayerNumber"] = "NOT_AN_INTEGER"
+        invalid_account = root / "invalid_layer_oed.csv"
+        _write_csv(invalid_account, invalid_rows)
+        negative_probe = _probe_oed_v302(loc_out, invalid_account)
+        if negative_probe["passed"]:
+            raise SmokeError("Official OED schema check accepted invalid synthetic LayerNumber")
         if not checked["layer_identity_consistent"]:
             raise SmokeError("synthetic layer integrity check failed")
         return {
@@ -174,7 +193,9 @@ def execute(command: str = "ods_tools") -> dict[str, object]:
             "executed_ods_tools": True, "minimal_field_mapping_reconciled": True,
             "upstream_comprehensive_mapping_executed": False,
             "oed_schema_validated": oed_validation["passed"],
-            "oed_schema_probe": oed_validation, "cede_13_compatible": False,
+            "oed_schema_probe": oed_validation,
+            "oed_negative_falsifier_rejected": True,
+            "cede_13_compatible": False,
             "financial_terms_validated": False, "rights_approved": False,
             "model_input_admitted": False,
         }
