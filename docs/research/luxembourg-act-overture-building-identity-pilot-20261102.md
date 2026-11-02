@@ -303,6 +303,49 @@ source-family distribution for the five Overture/OSM geometric candidates,
 with the source row labels restricted to those publisher values and no
 building IDs, source geometries or coordinates emitted.
 
+## Independently executed ACT digitizing-source attribution for original city pairs (2026-11-02)
+
+**Actual source execution:** [original ACT ZIP × Overture group 182
+GitHub Actions run 41538722511](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41538722511)
+**SUCCESS**, with **26/26** deterministic source-free regression tests and
+re-download/revalidation of the exact ACT original building-only ZIP
+SHA-256 `6630f217b39edde5f20f1078bef8a3d6eb4a09337af48394975f45f208bcfed3`
+and embedded GPKG SHA-256
+`ec70bd1175b6f67b6dceaf8ab39e0433bc871e1099ff308c3eb8323127aa5676`.
+
+The new source script reads only original **ACT `Source`** alongside
+the already permitted temporary building `geom`, inside the exact
+verified and read-only GPKG. Only the five exact publisher-listed
+categories `PCN`, `Bati3DACT`, `Bati3DVDL`, `MO`, `Ortho`
+can be reported; any unexpected raw label is safely aggregated into
+`unknown_or_missing`. Original source rows/IDs, source label strings,
+geometry WKB, coordinates and pair-level association are not exported
+or stored in Neon/Git; only fixed-category counts are returned.
+
+| Scope | ACT: Bati3DVDL | ACT: all other / unknown | Overture upstream OpenStreetMap |
+| --- | ---: | ---: | ---: |
+| 139 ACT original city-window candidate footprints | **139** | **0** | Not applicable |
+| Five reciprocal IoU ≥ 0.75 ACT × Overture geometric candidates | **5** | **0** | **5** |
+
+**Causal meaning:** the ACT publisher labels every one of the 139
+city-window building polygons as sourced from the *City of Luxembourg
+3D building database* (`Bati3DVDL`), and all five strict ACT-side
+candidate polygons retain that label. The corresponding Overture
+candidate polygons are all labelled *OpenStreetMap* by Overture. This
+narrows the question of potential cross-source dependence, **but does
+not prove independent original surveying**: OSM features may have
+been traced from common public maps or independently surveyed, and
+we have not verified this history, OSM editor provenance, polygon
+construction date or native ACT/OSM source IDs. A spatial join remains
+shape-based research only, not official GERS equivalence, policyholder
+exposure, insured TIV or flood damage/loss admission.
+
+The same exact-original run reproduces **24/5/2 reciprocal IoU**
+candidates at **50/75/90%** and unchanged 139 ACT, 69 Overture,
+282 positive-area overlap pairs. All model and licensing approval flags
+remain false; the source-run workflow saves no original feature bytes
+or source identifiers and writes nothing to insurance Neon production.
+
 ## What the new joined-screen code does
 
 The offline script research_runners/luxembourg_act_overture_identity_preflight_v0.py
