@@ -19,6 +19,10 @@ import stat
 import struct
 import zipfile
 
+from research_runners.luxembourg_age_hq100_2021_shp_structure_v0 import (
+    inspect_polygon_structure, HQ100ShapeStructureError,
+)
+
 SOURCE_URL = ("https://download.data.public.lu/resources/flood-hazard-maps-100-year-flood/"
               "20220613-154804/hwgk2021-hq100.zip")
 CATALOGUE_URL = "https://data.public.lu/en/datasets/flood-hazard-maps-100-year-flood/"
@@ -153,6 +157,13 @@ def inspect(source: Path, *, expected_sha1: str = CATALOGUE_SHA1) -> dict:
                         metadata = _dbf_header(stream, member.file_size)
                     elif suffix == ".shp":
                         metadata = _shp_header(stream, member.file_size)
+                        try:
+                            metadata.update(inspect_polygon_structure(
+                                stream, declared_shp_bytes=member.file_size,
+                                declared_shape_type=metadata["shp_shape_type_code"],
+                            ))
+                        except HQ100ShapeStructureError as exc:
+                            raise HQ100OriginalError("Polygon SHP structural scan blocked") from exc
                     elif suffix == ".prj":
                         metadata = _prj_hint(stream, member.file_size)
                     # Read the rest to verify all ZIP member CRCs.
@@ -164,7 +175,14 @@ def inspect(source: Path, *, expected_sha1: str = CATALOGUE_SHA1) -> dict:
     except (zipfile.BadZipFile, zipfile.LargeZipFile, OSError, EOFError,
             RuntimeError, NotImplementedError) as exc:
         raise HQ100OriginalError("Source archive/member CRC or read failure") from exc
+    shp = [a for a in files if a["format"] == ".shp"]
+    dbf = [a for a in files if a["format"] == ".dbf"]
+    if len(shp) != 1 or len(dbf) != 1:
+        raise HQ100OriginalError("Expected a single matching source SHP and DBF")
+    if shp[0]["shp_polygon_record_count"] != dbf[0]["dbf_declared_records"]:
+        raise HQ100OriginalError("SHP record count differs from DBF header population")
     return {
+        "shp_records_match_dbf_records": True,
         "schema_version": "lu-age-hq100-2021-original-format-preflight-v0",
         "publisher_catalogue_url": CATALOGUE_URL,
         "publisher_original_url": SOURCE_URL,
