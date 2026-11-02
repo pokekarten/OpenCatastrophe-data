@@ -57,7 +57,10 @@ jobs:
             --output "$original" \
             'https://www2.census.gov/geo/tiger/TIGER2026/COUNTY/tl_2026_us_county.zip'
           python -m research_runners.us_census_2026_county_zip_audit_v0 \
-            --source-zip "$original"
-          # This emits an OBSERVED ZIP SHA, not a pre-verified immutable
-          # publisher hash; a separate comparison pins repeat acquisition.
+            --source-zip "$original" \
+            --independent-sha256 'b527c9ba7aeb8f17ef118f026eae5e5a938aa1d00b873bc32342d0dce59321c0'
+          # Compared with the independently observed first original-source
+          # GitHub Actions acquisition receipt 41409919889 (2026-11-02).
+          # This proves repeat bytes, not immutable publisher hosting,
+          # complete spatial topology or model-input licence/admission.
           # No raw polygons, asset values or insurance data leave temp storage.
