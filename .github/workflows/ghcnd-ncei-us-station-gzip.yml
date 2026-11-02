@@ -13,6 +13,7 @@ on:
   workflow_dispatch:
   # After reviewed first workflow merge, verify exactly one provider original.
   # One exact-source replay after observed NCEI multi-member gzip repair.
+  # One reviewed replay after NCEI headerless original CSV shape was observed.
   # PR verification uses only synthetic offline fixtures.
   push:
     branches: [main]
