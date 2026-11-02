@@ -25,7 +25,7 @@ from research_runners.fr_bdtopo_2016_d077_bounded_buildings_v0 import (
 )
 from research_runners.fr_bdtopo_2016_rnb_polygon_bridge_v0 import (
     BridgeError, RNB_IDS, RNB_PILOT_GUARD,
-    bounded_rnb_bytes, current_rnb_shape,
+    bounded_rnb_bytes, current_rnb_shape, _strict_rnb_json,
 )
 
 ID_FIELDS = frozenset(("ID", "ID_SOURCE", "ID_BDTOPO", "ID_BAT"))
@@ -142,10 +142,7 @@ def bounded_historical_attribute_receipts(folder: Path) -> tuple[list[dict], dic
 def rnb_external_id_receipts(payload: bytes, requested_id: str) -> tuple[list[dict],list[str]]:
     # Retain exact original strings locally for a hash-equality-only crosscheck.
     current_rnb_shape(requested_id,payload)
-    try:
-        record=json.loads(payload)
-    except (UnicodeError,ValueError) as exc:
-        raise BridgeError("malformed RNB source JSON") from exc
+    record=_strict_rnb_json(payload)
     ext_ids=record.get("ext_ids") or []
     if not isinstance(ext_ids,list) or len(ext_ids)>30:
         raise BridgeError("unexpected RNB external IDs shape")
