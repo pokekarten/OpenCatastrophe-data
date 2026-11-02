@@ -85,3 +85,18 @@ probe fails closed rather than silently downloading a full ZIP.
    legally reviewed CAT model. The [synthetic OpenCat
    rollup](https://github.com/pokekarten/OpenCatastrophe/pull/16) is not
    automatically an insured loss engine.
+
+## Executed official Microsoft archive proof — 2 November 2026
+
+[Exact public GitHub run 41495629417](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41495629417) ran the reviewed fixed-source tool against Microsoft's original Azure endpoint. **9/9 offline falsifier tests passed** and the original HEAD + tail/central-byte ranges succeeded:
+
+- **Original ZIP byte length:** `83,974,949` bytes; original HTTP ETag `"0x8DCFF4D6A6BD59D"` (source server metadata, **not** cryptographic SHA-256).
+- **One original member:** `Louisiana.geojson`, ZIP central directory **87 bytes**, compressed payload **83,974,765** bytes, uncompressed member **629,872,164** bytes.
+- The first public live run failed because the HEAD `Content-Length` was wrongly checked against the **zero HEAD response-body bytes**. That source-gate bug was corrected in source and the exact second workflow then passed. The correction did not change source rights or infer original GeoJSON features.
+- **Not established:** the README's advertised **2,173,567** actual buildings, completeness/validity, imagery year, geolocations or insurer exposure; **no original content records or full archive SHA-256** were read.
+
+## Bounded first-original-building prefix (separate source row screen)
+
+The additive `research_runners/microsoft_louisiana_original_building_sample_v0.py` performs this strictly restricted research step on the same source: it checks the previous exact HTTP metadata receipt, requests **only** compressed ZIP bytes 0–65,535, validates local member header and ZIP identity, inflates at most **1 MiB** of original text, and screens at most **20 fully decoded initial source GeoJSON features** with pinned Shapely for polygon validity and coarse Louisiana geographic bounds. The original *first* records are neither random nor a representative statewide sample. No IDs, source coordinates, footprint polygons, private insurance input or source payload are logged or persisted, and any unsupported provider format fails closed. The full source content/SHA-256, historical imagery vintage, rights and parish crosswalk remain separate gates.
+
+A dedicated CI job executes synthetic negative tests before the opt-in bounded original-provider prefix screen. Exact live result must be checked from its completed workflow receipt, not assumed from the authored code.
