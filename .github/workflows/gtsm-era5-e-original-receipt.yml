@@ -9,6 +9,8 @@ on:
       - ".github/workflows/gtsm-era5-e-original-receipt.yml"
       - "scripts/gtsm_era5_e_original_receipt_v0.py"
       - "tests/test_gtsm_era5_e_original_receipt_v0.py"
+      - "scripts/gtsm_era5_e_coordinate_audit_v0.py"
+      - "tests/test_gtsm_era5_e_coordinate_audit_v0.py"
 
 permissions:
   contents: read
@@ -38,6 +40,6 @@ jobs:
           python -m pip install --no-input --disable-pip-version-check -r requirements-glofas-acquisition.txt
           python -m pip check
       - name: Offline source-boundary tests (synthetic only)
-        run: python -m unittest tests.test_gtsm_era5_e_original_receipt_v0 -v
+        run: python -m unittest tests.test_gtsm_era5_e_original_receipt_v0 tests.test_gtsm_era5_e_coordinate_audit_v0 -v
       - name: Reproduce publisher original byte-size, MD5 and observed SHA-256
-        run: python scripts/gtsm_era5_e_original_receipt_v0.py --fetch --inspect-header
+        run: python scripts/gtsm_era5_e_original_receipt_v0.py --fetch --inspect-header --audit-coordinates
