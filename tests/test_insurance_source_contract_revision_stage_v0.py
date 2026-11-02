@@ -32,6 +32,26 @@ class SourceRevisionStageContractTests(unittest.TestCase):
         self.assertIn("RAISE EXCEPTION 'Pinned source-registry snapshot drift", sql)
         self.assertIn("RAISE EXCEPTION 'Source revision evidence conflicts", sql)
 
+    def test_pinned_entire_source_registry_sha256_before_any_ddl(self):
+        # Source inventory audit is exact to every contract revision field,
+        # not only the current row count or one WorldCover SHA.
+        sql = self.sql
+        guard = sql.split("DO $snapshot_guard$", 1)[1].split("$snapshot_guard$;", 1)[0]
+        self.assertIn("sha256(convert_to(", guard)
+        self.assertIn("string_agg(jsonb_build_object(", guard)
+        self.assertIn("ORDER BY source_key", guard)
+        for key in (
+            "source_key", "git_commit_sha", "git_blob_sha", "git_path",
+            "raw_metadata", "review_status",
+        ):
+            with self.subTest(key=key):
+                self.assertIn(f"'{key}', {key}", guard)
+        self.assertIn(
+            "dce4e12c3aa9385c4a5b6805b1ad13682e2f7f91969eb1b7ed302c14c78fa822",
+            guard,
+        )
+        self.assertLess(sql.index("DO $snapshot_guard$"), sql.index("CREATE TABLE"))
+
     def test_preexisting_permissive_schema_is_rejected_before_any_insert(self):
         sql = self.sql
         guard = sql.split("DO $schema_guard$", 1)[1].split("$schema_guard$;", 1)[0]
