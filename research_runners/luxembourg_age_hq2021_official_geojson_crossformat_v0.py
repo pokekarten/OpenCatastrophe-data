@@ -221,6 +221,12 @@ def audit(original: Path, *, scenario: str, review_polygon_groups=False) -> dict
             raise OriginalGeoJSONError("Original polygon group GEOS diagnostic blocked") from None
         if topology["original_publisher_groups_examined"] != profile["original_publisher_polygon_group_count"]:
             raise OriginalGeoJSONError("Original publisher geometry group count not conserved")
+        if (topology["largest_source_polygon_group_point_count"] > profile["original_publisher_point_pairs"]
+                or topology["quarantined_publisher_polygon_group_point_total"] >
+                profile["original_publisher_point_pairs"]
+                or topology["quarantined_publisher_polygon_group_hole_ring_total"] >
+                profile["original_publisher_hole_ring_count_from_grouping"]):
+            raise OriginalGeoJSONError("Source GEOS complexity budget does not conserve total population")
     return {
         "profile": "lu-age-hq2021-original-publisher-geojson-crossformat-v0",
         "scenario": scenario,
