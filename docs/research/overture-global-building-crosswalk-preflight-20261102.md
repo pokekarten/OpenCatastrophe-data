@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 
 The offline script scripts/overture_building_identity_preflight_v0.py checks bounded local and Overture building polygon lists supplied as strictly structured JSON. It rejects duplicate JSON keys, nonfinite coordinates, invalid/self-intersecting polygons, impossible WGS84 coordinates, mixed release IDs, duplicate entities, UUID syntax problems, oversized batches, unexpected insurance fields and self-declared approvals.
 
-It computes polygon intersection-over-union with fixed cutoff 0.75; **only reciprocal one-to-one pairs** become geometric *candidates*. A one-to-many or many-to-one fit is ambiguous. Any matching result remains research-only, and the output explicitly states:
+It computes an **ellipsoidal WGS84 area ratio** of Shapely-clipped polygon intersection to union, with fixed cutoff 0.75; **only reciprocal one-to-one pairs** become geometric *candidates*. The output explicitly reports `overlap_area_method=wgs84_ellipsoidal`. This replaces the earlier degree-space IoU proxy and includes oriented polygon holes and MultiPolygon components. A one-to-many or many-to-one fit is ambiguous. Any matching result remains research-only, and the output explicitly states:
 - model_input_approved = false
 - raw_data_import_authorized = false
 - gers_registry_membership_verified = false
@@ -55,9 +55,15 @@ Run:
 
 The UUID is only an illustration, not proof of a real external building.
 
+### High-latitude false-identity regression (2026-11-02)
+
+The previous degree-space IoU was not scientifically safe for a worldwide crosswalk. A deterministic polar synthetic example creates a valid 0.01°-wide rectangle spanning 89.75°N–89.94°N; a 76%-height northern subset passes the **degree-based** overlap threshold with 0.76 but yields only **0.648207** geodesic IoU. This must be **unmatched** rather than linked. An equally tall southern subset yields **0.871793** geodesic IoU and remains a one-to-one *candidate*. Two geometries touching at a boundary produce zero polygonal overlap and cannot count as a candidate. Five new tests guard these regressions, malicious unhashable source-family values and implausibly large footprints.
+
+The method calculates geodesic areas of *planar-clipped WGS84 polygon boundaries*. It does not independently establish surveyed ground truth, legal reuse permissions, or GERS membership; the matching threshold is still an uncalibrated research choice, not a measured probability of correctness.
+
 ### Scientific and operational limits
 
-- Polygon IoU is calculated in geographic WGS84 coordinate-plane units as a **local screening proxy**, not ellipsoidal equal-area geodetic matching. Real matches require a reviewed projected-geometry method, geodetic edge-case controls, verified CRS/source year, and manual adjudication of split/merge ambiguities.
+- The crosswalk now uses `pyproj.Geod` ellipsoidal area for WGS84 polygonal overlap and union **after Shapely planar polygon clipping in lon/lat**. Clipping edges themselves are not true geodesic arcs, so it is still an **identity-candidate screening method**, not a certified globally accurate geodesic overlay. Higher-latitude and national-local pilots need independent projection/geometric edge-case challenge, verified CRS/source year, and manual adjudication of split/merge ambiguities.
 - No source GeoParquet is downloaded by the script; no insurer portfolios, policies, insured values, loss curves, CAT runs or database writes.
 - The script cannot grant licences, validate provider data provenance, establish GERS registry membership or certify an insurer-specific model.
 - All inputs must come from independently legally authorized sources; never commit insurer/customer/claims or raw provider bytes to Git.
@@ -197,7 +203,7 @@ python -m scripts.overture_building_geojsonseq_qc_v0 \
 python -m unittest tests.test_overture_building_geojsonseq_qc_v0 -v
 ~~~
 
-The geodesic QC is an improvement over geographic-degree-space IoU in the *earlier* polygon candidate crosswalk; it **does not** turn that older IoU into geodesic matching. A subsequent identity harmonization phase should change the matching routine only after a reviewed, equal-area/geodesic polygon overlap contract and independent source ID evidence are established.
+The separate source geometry QC measures individual geodesic footprint areas, while the **crosswalk now uses ellipsoidal area for its intersection and union**. Both remain fail-closed, candidate-only. A later scientific release must independently verify the geometry clipping method, national source identity and actual polygon/CRS provenance against original provider bytes before making any model admission claims.
 
 Review and permission to fetch exact original source rows, row-group/column bytes, attribution and a genuine geography-specific source pilot remain outstanding. **No real feature-level original geometry has yet passed this QA in Neon.** The purpose of this stage is to make any such pilot measurable, bounded and fail-closed.
 
