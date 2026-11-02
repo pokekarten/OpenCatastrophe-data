@@ -59,15 +59,36 @@ def bounded_rnb_bytes(rnb_id: str) -> bytes:
     return result
 
 
+def _strict_rnb_json(payload: bytes) -> dict:
+    """Parse bounded provider JSON without ambiguous keys/nonfinite numbers."""
+    if not isinstance(payload, bytes) or not 0 < len(payload) <= MAX_API_RESPONSE_BYTES:
+        raise BridgeError("RNB source bytes over cap or empty")
+    def unique_pairs(pairs):
+        out = {}
+        for key, value in pairs:
+            if key in out:
+                raise BridgeError("duplicate RNB JSON key")
+            out[key] = value
+        return out
+    def reject_constant(value):
+        raise BridgeError("non-finite RNB JSON value")
+    try:
+        record = json.loads(
+            payload, object_pairs_hook=unique_pairs, parse_constant=reject_constant
+        )
+    except (UnicodeError, json.JSONDecodeError, RecursionError) as exc:
+        raise BridgeError("malformed current RNB JSON") from exc
+    if not isinstance(record, dict):
+        raise BridgeError("malformed current RNB JSON object")
+    return record
+
+
 def current_rnb_shape(rnb_id: str, payload: bytes) -> tuple[object, dict]:
     if rnb_id not in RNB_IDS or not isinstance(payload, bytes):
         raise BridgeError("unknown source identifier")
     if len(payload) > MAX_API_RESPONSE_BYTES:
         raise BridgeError("RNB source bytes over cap")
-    try:
-        record = json.loads(payload)
-    except (ValueError, UnicodeError) as exc:
-        raise BridgeError("malformed current RNB JSON") from exc
+    record = _strict_rnb_json(payload)
     if (not isinstance(record, dict) or record.get("rnb_id") != rnb_id
         or record.get("is_active") is not True
         or record.get("status") != "constructed"):
