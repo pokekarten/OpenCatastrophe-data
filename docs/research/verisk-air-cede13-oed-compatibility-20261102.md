@@ -132,3 +132,13 @@ python scripts/cede_oed_ods_tools_live_smoke_v0.py
 ```
 
 Review the new dependency separately from routine validation dependency pins; its network/package provenance and transitive dependencies are a separate execution lane. No source data assets, OED-schema validity or rights scope are changed.
+
+## Official OED schema challenge — detected policy/layer type mismatch (2026-11-02)
+
+The isolated GitHub ODTF smoke now **attempts** explicit OED **3.0.2** validation with `ods_tools.oed.OedExposure(oed_schema_info="3.0.2")` and all default validation rules in return mode. This is distinct from a successful transformation: validity is `true` only if the real OED validator returns **zero findings**. The ODS Tools CLI's `check` wrapper catches an `OdsException` and logs it, therefore its process exit status alone is **not** accepted as proof of validation.
+
+**Observed failure:** original synthetic account output mapped `LayerID="L1"` to both `PolNumber` and `LayerNumber`, which the official API could not parse (GitHub smoke run #5: `ValueError: Unable to parse string 'L1' at position 0`). The public Oasis OED `OEDInputFields.csv` specifies `PolNumber` as `varchar(20)` and `LayerNumber` as **positive integer**, not a general string. These are different semantics: a stable policy identifier must not silently be repurposed into an integer layer ordinal. The *upstream legacy example* makes this same direct field copy; when source LayerID is nonnumeric, it cannot safely produce a valid OED LayerNumber without an explicit source-to-number crosswalk.
+
+The research-only bounded synthetic direct-field fixture now uses `LayerID=1,2` for compatibility and adds explicit invented `LocPerils=WEC`, `OtherValue=0`, `TimeElementValue=0` and account `Perils=WEC` to populate OED `LocPerilsCovered`, `OtherTIV`, `BITIV` and `PolPerilsCovered`. These are **assumptions for synthetic testing only**, never inferred real insured perils or values. The layer checker independently rejects noncanonical, zero, negative or alphanumeric LayerID when used as the legacy OED LayerNumber; positive integer policy test IDs are bounded to nine decimal digits for safe parsing.
+
+**Validation status:** Official OED 3.0.2 validation remains **unconfirmed** until the exact-head test reports `oed_schema_validated=true`. Merely reaching the schema parser, or passing the custom matching/TIV checks, does **not** confer full OED validity. Future real CEDE interfaces must separately preserve policy identity and explicit layer-number ordering; do not silently replace arbitrary insurer-provided identifiers with numeric surrogates.
