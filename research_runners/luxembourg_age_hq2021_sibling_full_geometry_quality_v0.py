@@ -60,6 +60,22 @@ def _finalize(scenario: str, metadata: dict, coordinates: dict,
             or ring_topology["source_rings_examined_total"]
             != coordinates["source_polygon_ring_parts"]):
         raise HQ100GeometryError("Original coordinate and topology population mismatch")
+    if (coordinates["positive_signed_orientation_ring_parts"] +
+            coordinates["negative_signed_orientation_ring_parts"] +
+            coordinates["zero_or_near_zero_signed_area_ring_parts"] !=
+            coordinates["source_polygon_ring_parts"]):
+        raise HQ100GeometryError("Original source ring winding population not conserved")
+    if (ring_topology["individually_valid_nonzero_area_rings"] +
+            ring_topology["individually_invalid_rings"] +
+            ring_topology["complex_ring_geometry_test_skipped"] +
+            ring_topology["geos_ring_test_errors"] !=
+            coordinates["source_polygon_ring_parts"]):
+        raise HQ100GeometryError("Original GEOS valid/invalid ring population not conserved")
+    if (ring_topology["complex_ring_geometry_test_skipped"] != 0
+            or ring_topology["geos_ring_test_errors"] != 0):
+        raise HQ100GeometryError("Unexamined original polygon ring blocked")
+    if coordinates["all_original_coordinates_finite"] is not True:
+        raise HQ100GeometryError("Nonfinite original polygon source position")
     if (crs["crs_epsg_match_at_min90_confidence"] != 2169 or
             crs["original_crs_is_projected"] is not True or
             "metre" not in crs["original_crs_axis_unit_names"]):
