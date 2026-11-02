@@ -37,6 +37,16 @@ quality AS (
            min(magnitude) AS minimum_magnitude,
            max(magnitude) AS maximum_magnitude
     FROM observations
+),
+contract_evidence AS (
+    SELECT count(*)::bigint AS matching_access_contracts,
+           count(*) FILTER (WHERE admissible_for_raw IS TRUE)::bigint AS registry_raw_flagged_contracts,
+           max(review_status) AS source_access_review_status,
+           max(rights_status) AS source_rights_review_status
+    FROM registry.source_record
+    WHERE classification = 'access_contract'
+      AND source_id = 'usgs.anss.comcat'
+      AND git_path = 'access/usgs.anss.comcat.json'
 )
 SELECT *,
        CASE
@@ -53,8 +63,13 @@ SELECT *,
                 THEN 'RESEARCH_ORIGINAL_BYTES_NOT_PINNED'
            ELSE 'RESEARCH_STRUCTURALLY_CHECKED_NOT_ADMITTED'
        END AS evidence_status,
+       CASE
+           WHEN matching_access_contracts <> 1 THEN 'ACCESS_CONTRACT_MISSING_OR_AMBIGUOUS'
+           WHEN registry_raw_flagged_contracts <> 0 THEN 'REGISTRY_RAW_FLAG_PRESENT_REQUIRES_SEPARATE_REVIEW'
+           ELSE 'REGISTRY_RAW_ACCESS_NOT_ADMITTED'
+       END AS source_access_evidence_status,
        FALSE AS complete_stochastic_event_catalogue_verified,
        FALSE AS hazard_intensity_footprints_verified,
        FALSE AS scientific_calibration_verified,
        FALSE AS insurer_loss_or_model_input_admitted
-FROM quality;
+FROM quality CROSS JOIN contract_evidence;
