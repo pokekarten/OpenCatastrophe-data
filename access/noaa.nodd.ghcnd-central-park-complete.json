@@ -36,7 +36,7 @@
       "text/plain"
     ],
     "format": "The *complete* original NOAA NODD USW00094728.csv eight-column by_station product. Exact provider header ID,DATE,ELEMENT,DATA_VALUE,M_FLAG,Q_FLAG,S_FLAG,OBS_TIME is mandatory; subsequent provider-native rows are individually validated.",
-    "scientific_semantics": "GHCN station records are observations with original physical element units, M/Q/S provenance flags, missing-value conventions and revisions. The file is a mutable rolling provider object; exact source bytes and header evidence are not a time-versioned scientific release. Validating all CSV rows, date-element uniqueness and source/quality flags does not establish climatological homogeneity, coverage, instrumental consistency, hazard-calibration relevance or insured exposure. Values are never converted, cleaned or model-admitted in this source preflight."
+    "scientific_semantics": "GHCN station records are observations with original physical element units, M/Q/S provenance flags, missing-value conventions and revisions. The file is a mutable rolling provider object; exact source bytes and header evidence are not a time-versioned scientific release. Validating all CSV rows, date-element uniqueness and source/quality flags does not establish climatological homogeneity, coverage, instrumental consistency, hazard-calibration relevance or insured exposure. Values are never converted, cleaned or model-admitted in this source preflight. The original source includes OBS_TIME 2400 for this station. It is retained as a provider-native marker and counted, never silently converted to 0000, UTC or a shifted local day; actual collection-day conventions remain subject to station-history and provider-semantic review."
   },
   "operational_constraints": {
     "timeout_seconds": 60,
@@ -62,7 +62,8 @@
       "Exactly one direct HTTPS 200, fixed official station object, bounded Content-Length 1-24 MiB and exact full response byte count",
       "Full-original-body SHA-256, provider response ETag/Last-Modified metadata where safe, UTC retrieval and script SHA",
       "Original mandatory header, every record checked for station/date/element/signed integer value/M-Q-S flags/time, uniqueness of date-element, row counts and flagged/element statistics",
-      "No raw observations saved/printed; no geographic insurance inference, scientific-quality admission or CAT model input"
+      "No raw observations saved/printed; no geographic insurance inference, scientific-quality admission or CAT model input",
+      "Count provider-native OBS_TIME 2400 separately; do not normalize this special representation or accept other non-HHMM values without provider review."
     ]
   },
   "implementation_decision": "build_adapter_now",
@@ -73,5 +74,5 @@
     "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme-by_station.txt",
     "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41497232656"
   ],
-  "notes": "After a successful 65536-byte first-original prefix probe, a single full original USW00094728.csv research preflight is separately reviewed here. Prior live prefix receipt observed 16,003,495 bytes on 2026-11-02; size is advisory only, not a hard-coded completeness claim. Provider can republish rolling records. A valid full-file receipt is not an approved modelling dataset."
+  "notes": "After a successful 65536-byte first-original prefix probe, a single full original USW00094728.csv research preflight is separately reviewed here. Prior live prefix receipt observed 16,003,495 bytes on 2026-11-02; size is advisory only, not a hard-coded completeness claim. Provider can republish rolling records. A valid full-file receipt is not an approved modelling dataset. After first full-file main run 41500537467 failed safely on OBS_TIME 2400, four bounded independent original-source byte ranges (5M, 8M, 11M and 15M) verified exactly the token 2400 among nonempty unusual observation-time fields; invalid tokens are still rejected. This is format recognition, not time-zone or climatological normalization."
 }
