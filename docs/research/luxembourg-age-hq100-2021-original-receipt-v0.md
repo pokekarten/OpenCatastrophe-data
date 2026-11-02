@@ -104,6 +104,26 @@ The 2021 AGE flood archive and 2026 ACT building data both declare **EPSG:2169**
 
 **Depth next-step source strategy:** an official 2021 flood hazard map is independently exposed as a Geoportal WMS/WMTS render layer `eau_Hochwassergefahrenkarten_HQ100_2021`, while the 2021–2027 flood risk management plan and official gauge information describe classified depth bands. A rendered hazard map legend is **not** a raw raster or per-building depth value. Verify exact numeric depth layer access, temporal/return-period semantics, provider use rights and numeric units independently; if numeric surfaces are not public, request period-correct modelled depths or water-surface elevation layers from AGE. Do not infer flood depth from polygon extent, `Shape_Area` or map pixel colors.
 
+## Actual original coordinate/ring scan (2 November 2026)
+
+[Full original-data workflow 41414516498](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41414516498) **passed** using exact original 2022 ZIP SHA-1 and SHA-256, a pinned PROJ/pyproj runtime, and synthetic malformed-coordinate, invalid-ring-offset, truncation and axis-hypothesis regression cases. The scan read all **1,336,393 stored projected XY coordinate pairs into ephemeral memory**, retained **no per-ring/feature geometry**, and reported:
+
+| Source-wide property | Actual original |
+| --- | ---: |
+| Source ESRI polygon records | 1 |
+| Total ring parts | **6,379** |
+| Closed source rings (first XY equals last XY) | **6,379** |
+| Open rings / nonfinite XY / rings with near-zero signed area | **0 / 0 / 0** |
+| Negative ring winding | **3,724** |
+| Positive ring winding | **2,655** |
+| All-source projected XY bbox (rounded 0.1 m) | **48,893.0 / 59,515.0 / 106,138.3 / 137,088.0** |
+| Native file/record XY bounding boxes agree with actual vertices | **both true** |
+| Source stored XY -> WGS84 bbox (approx, 4 decimals) | **5.7328–6.5340°E, 49.4696–50.1673°N** |
+| Reversed XY -> WGS84 bbox (approx, 4 decimals) | **5.8831–6.9625°E, 49.3722–49.8892°N** |
+| Buffered EPSG2169 area-of-use envelope challenge | **native-only plausible** |
+
+**Narrow conclusion:** Original HQ100 ring linework is complete, entirely finite, individually closed, and has nonzero signed area under the tested aggregate metric; the source's stored XY is geographically consistent with Luxembourg, while the swapped interpretation is not. **This does not prove OGC validity** of individual rings (they may self-intersect), correct assignment of polygon exteriors/holes, inter-ring nesting, stable shape IDs, coordinate-frame epoch, actual flood depth, hydraulic hazard intensity or building overlap. The original multipart polygon **must remain unadmitted** until a separately isolated topology/polygonization check and source-epoch geodetic review pass.
+
 ## Next scientific steps
 
 - Verify the original actual file format, complete record and field counts,
