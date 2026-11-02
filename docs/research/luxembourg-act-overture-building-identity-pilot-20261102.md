@@ -102,7 +102,7 @@ which is frozen at **1,461,640 bytes** (less than the strict 2 MiB cap).
 The code decodes the original Parquet row-group and column-chunk Thrift
 CompactProtocol metadata, checks the complete **256 row-group** inventory
 and original **5,054,907** row conservation, then screens original numeric
-per-row-group `bbox.xmin/xmax/ymin/ymax` FLOAT statistics against
+per-row-group `bbox.xmin/xmax/ymin/ymax` **DOUBLE/float64** statistics against
 6.129..6.131 E, 49.609..49.611 N.
 
 - **Excluded:** Source metadata prove that no bounding boxes in a
@@ -113,7 +113,7 @@ per-row-group `bbox.xmin/xmax/ymin/ymax` FLOAT statistics against
   cannot safely exclude a group; it must remain eligible for a later
   per-row controlled check.
 
-The first original row group's footer metadata was independently sampled:
+The original provider footer declares Parquet physical type **5 = DOUBLE**, with 8-byte statistics for all four bbox columns. A first full-metadata run incorrectly assumed float32 and conservatively returned all 256 groups as `unknown`; this was fixed before using the results to exclude any source group.\n\nThe first original row group's footer metadata was independently sampled:
 **16,234** file rows; `bbox.xmin` 3.890515–3.967390,
 `bbox.xmax` 3.890683–3.967666, `bbox.ymin` 48.707302–49.039326,
 `bbox.ymax` 48.707397–49.039677. These extrema are outside the
