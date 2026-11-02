@@ -94,3 +94,23 @@ that even a source-structurally-green result cannot become an accepted
 hazard catalogue by this query. The source itself still has zero original
 response SHA attestations. Local unit tests cover fail-closed status,
 source-hash-vs-URL distinctions and read-only SQL shape.
+
+## Independent source-access evidence
+
+The same SQL now performs an **exact** canonical contract lookup, independently
+of the event-row quality gate:
+
+- `registry.source_record` rows matching
+  `classification=access_contract`, `source_id=usgs.anss.comcat`,
+  `git_path=access/usgs.anss.comcat.json`: **1**
+- Contract `review_status`: `documented_only`
+- Contract `rights_status`: `unknown`
+- Contract `admissible_for_raw=true`: **0**
+- `source_access_evidence_status`: `REGISTRY_RAW_ACCESS_NOT_ADMITTED`
+
+That exactly matches the canonical GitHub contract: the currently documented
+API URL is not an allowed source-data retrieval or downstream redistribution
+grant. Source-access and original-byte evidence are independent blockers;
+neither a green row-quality check nor a hypothetical provider hash can
+override the contract. An unexpectedly missing/duplicate access contract
+or new raw-admission flag yields a **review** status, never automatic approval.
