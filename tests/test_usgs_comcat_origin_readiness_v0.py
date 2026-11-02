@@ -57,6 +57,22 @@ class USGSComCatOriginReadinessTests(unittest.TestCase):
                      "insurer_loss_or_model_input_admitted"):
             self.assertIn("FALSE AS " + flag, sql)
 
+    def test_exact_source_access_contract_stays_a_separate_gate(self):
+        sql = SQL.read_text(encoding="utf-8")
+        for required in (
+            "FROM registry.source_record",
+            "classification = 'access_contract'",
+            "source_id = 'usgs.anss.comcat'",
+            "git_path = 'access/usgs.anss.comcat.json'",
+            "matching_access_contracts <> 1",
+            "registry_raw_flagged_contracts <> 0",
+            "'REGISTRY_RAW_ACCESS_NOT_ADMITTED'",
+            "'REGISTRY_RAW_FLAG_PRESENT_REQUIRES_SEPARATE_REVIEW'",
+            "FROM quality CROSS JOIN contract_evidence",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, sql)
+
     def test_quality_fields_present(self):
         sql = SQL.read_text(encoding="utf-8")
         for name in ("missing_event_ids", "missing_origin_times",
