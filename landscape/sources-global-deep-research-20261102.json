@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "purpose": "Non-admission deep source discovery using official provider documentation, Exa and public repository source-code sweeps; 17 distinct candidate source families across hazard observation, building/infrastructure exposure, event impact, risk taxonomy and source indexing, without claiming acquisition, rights clearance or independent model validation.",
+  "purpose": "Non-admission deep original-source discovery from official providers, cross-repository audits, Exa search and the 92-row Climate Risk STAC hazard CSV; 27 distinct candidate source families for global CAT risk, model validation, event correlation and catalog discovery. Rights and science remain unreviewed; no original data acquired or admitted.",
   "review_date": "2026-11-02",
   "entries": [
     {
@@ -435,6 +435,256 @@
       "authoritative_url": "https://www.preventionweb.net/understanding-disaster-risk/disaster-losses-and-statistics/global-risk-data-sets",
       "access_class_hint": "public_catalogue_individual_dataset_licenses_apply",
       "note": "Provider list reports over 100 risk dataset references; it is a meta-index rather than a new event or hazard product. Audit origin, date, GIS resolution and restrictions separately; avoid double counting GEM and other upstream products already registered.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "nasa.lance.mcdwd-l3-nrt.v061",
+      "name": "NASA LANCE MODIS MCDWD global near-real-time flood detection",
+      "provider": "NASA GSFC ESDIS LANCE",
+      "categories": [
+        "flood",
+        "remote_sensing",
+        "observed_water"
+      ],
+      "spatial_scope": "Near-global MODIS swath coverage and cloud/snow gaps",
+      "temporal_scope": "NRT operational since 2021; observation-dependent daily composites",
+      "resolution_or_granularity": "Approx 250 m daily 1-day/2-day/3-day MODIS Terra/Aqua water/flood GeoTIFF and HDF tiles",
+      "potential_roles": [
+        "flood_extent_independent_sensor_challenge",
+        "post_event_water_extent",
+        "quality_mask_research"
+      ],
+      "authoritative_url": "https://lance.modaps.eosdis.nasa.gov/flood/",
+      "access_class_hint": "earthdata_login_for_nrt_granules_catalogue_public_rights_review",
+      "note": "NASA original documentation confirms MCDWD collection 6.1 and 1/2/3 day compositing, distinct from registered NASA OPERA DSWx and Copernicus CEMS GFM. Earthdata authentication is required for some archives; water classification affected by cloud, permanent-water masks, flood baseline and satellite platform. No depth or damage inference.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "nasa.lance.vcdwd-l3-nrt.v2",
+      "name": "NASA LANCE VIIRS VCDWD global near-real-time flood detection",
+      "provider": "NASA GSFC ESDIS LANCE",
+      "categories": [
+        "flood",
+        "remote_sensing",
+        "observed_water"
+      ],
+      "spatial_scope": "Near-global VIIRS orbital coverage and observation-dependent gaps",
+      "temporal_scope": "Released April 2025; ongoing NRT daily flood products",
+      "resolution_or_granularity": "Approx 250 m VIIRS NOAA-20 and NOAA-21 flood detection daily 1/2/3 day composites, VIIRS collection 2",
+      "potential_roles": [
+        "post_event_flood_detection",
+        "independent_platform_challenge",
+        "modis_viirs_overlap_research"
+      ],
+      "authoritative_url": "https://lance.modaps.eosdis.nasa.gov/flood/",
+      "access_class_hint": "earthdata_login_for_nrt_granules_catalogue_public_rights_review",
+      "note": "Provider states MODIS MCDWD and VIIRS VCDWD use nearly identical algorithms, so they are NOT independent classification evidence; sensor/platform differences matter. NASA expects VIIRS to replace MODIS after Terra/Aqua retirement. Preserve source platform and compositing period, confounding vegetation, shadows and clouds.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "myriad.eu.hazard-event-sets.2023",
+      "name": "MYRIAD Global Multi-Hazard Event Sets (MYRIAD-HES) 2004-2017",
+      "provider": "MYRIAD-EU / Vrije Universiteit Amsterdam consortium",
+      "categories": [
+        "multi_hazard",
+        "compound_events",
+        "historical_events"
+      ],
+      "spatial_scope": "Global with event/source-specific spatial completeness",
+      "temporal_scope": "2004-2017 historical catalog; published 2023",
+      "resolution_or_granularity": "11 hazard types; event-group IDs, hazard dates, intensity units, WKT hazard geometries; original ZIP approximately 6.4 GB",
+      "potential_roles": [
+        "compound_event_sequence_validation",
+        "temporal_peril_correlation",
+        "event_crosswalk_hypotheses"
+      ],
+      "authoritative_url": "https://zenodo.org/records/8269680",
+      "access_class_hint": "zenodo_original_zip_public_license_asset_review_very_large",
+      "note": "Original Zenodo release includes events defined in Event column with multiple hazard rows, WKT spatial extent and intensity fields. Crucial for correlated multi-peril CAT events, but WKT geometries are inherited/derived from constituent data and cannot prove independent footprints; third-party lineage and 6.4 GB download feasibility/rights need review.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "southampton.ncei.multihazard-storm-event-sets.2026",
+      "name": "Multi-Hazard NCEI Storm Event Sets v1.0",
+      "provider": "University of Southampton / Zenodo",
+      "categories": [
+        "multi_hazard",
+        "severe_storm",
+        "historical_events",
+        "compound_events"
+      ],
+      "spatial_scope": "United States NCEI Storm Events reporting coverage",
+      "temporal_scope": "Event source historical 1950-2024, multi-hazard subsets 1996-2024; release May 2026",
+      "resolution_or_granularity": "Six filtered 1996-2024 hazard-event-set variants, four groupings each including single and multi-hazard pairs and impact thresholds",
+      "potential_roles": [
+        "storm_event_compound_correlation",
+        "event_ordering_research",
+        "loss_model_benchmark_hypotheses"
+      ],
+      "authoritative_url": "https://zenodo.org/records/20285674",
+      "access_class_hint": "zenodo_public_dataset_exact_version_license_review",
+      "note": "Derived explicitly from already-registered NOAA NCEI Storm Events, not a separate independent observation source. Value is reproducible multi-hazard event grouping under various impact and time-lag thresholds; preserve filters, property/crop damage measurement basis, event IDs and reproducible grouping code.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "csic.speibase.global-drought",
+      "name": "CSIC Global SPEI drought index time-series database",
+      "provider": "Spanish National Research Council CSIC",
+      "categories": [
+        "drought",
+        "climate_index",
+        "meteorology"
+      ],
+      "spatial_scope": "Global land as covered by gridded water balance and precipitation reference data",
+      "temporal_scope": "Long historical monthly series; version and end year to inspect",
+      "resolution_or_granularity": "Multiscale Standardized Precipitation Evapotranspiration Index (SPEI) gridded drought anomalies",
+      "potential_roles": [
+        "meteorological_drought_challenge",
+        "drought_event_timing",
+        "multi_timescale_climate_validation"
+      ],
+      "authoritative_url": "https://spei.csic.es/spei_database",
+      "access_class_hint": "public_original_data_portal_odbl_licence_and_version_review",
+      "note": "Identified in Climate Risk STAC original source registry; distinct from TerraClimate meteorological covariates and FAO agricultural stress. Source terms may carry ODbL obligations and underlying PET data lineage. SPEI anomalies alone are not observed agricultural losses or damaged assets.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "uniperugia.gfplain250m.global-floodplains",
+      "name": "GFPLAIN250m global floodplain geomorphology dataset",
+      "provider": "University for Foreigners of Perugia research team",
+      "categories": [
+        "flood",
+        "geomorphology",
+        "exposure"
+      ],
+      "spatial_scope": "Global flood-prone terrain where hydrologic terrain data is available",
+      "temporal_scope": "Static research product (2018 publication)",
+      "resolution_or_granularity": "250 m global floodplain classification from terrain/river morphology",
+      "potential_roles": [
+        "floodplain_static_prior",
+        "exposure_location_susceptibility",
+        "topography_crosscheck"
+      ],
+      "authoritative_url": "https://figshare.com/articles/dataset/GFPLAIN250m/6665165/1",
+      "access_class_hint": "public_research_figshare_distribution_cc_by_claim_requires_original_metadata_review",
+      "note": "Static geomorphological floodplain, not an event footprint, observed river flood level or return-period depth. Climate Risk STAC metadata flags CC BY 4.0 but publisher original asset needs verification of version and exact licence. Compare with hydrosheds, JRC dynamic observations and DEM floodplain limits.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "nasa.sedac.gehe.1983-2016",
+      "name": "NASA SEDAC Annual Global High-Resolution Extreme Heat Estimates GEHE",
+      "provider": "NASA SEDAC / CIESIN",
+      "categories": [
+        "extreme_heat",
+        "climate_observation",
+        "exposure"
+      ],
+      "spatial_scope": "Global with subnational gridded heat estimate availability",
+      "temporal_scope": "1983-2016, version 1.00 static archive",
+      "resolution_or_granularity": "Annual gridded extreme heat indicator estimates; CMR collection CIESIN_SEDAC_SDEI_GEHE",
+      "potential_roles": [
+        "historic_heat_hazard_benchmark",
+        "heat_exposure_excess_context"
+      ],
+      "authoritative_url": "https://doi.org/10.7927/hff0-k565",
+      "access_class_hint": "public_sedac_original_dataset_data_license_and_grid_review",
+      "note": "Provider NASA Earthdata GIS and CMR catalogue identify the dataset. Historic and model-derived heat exposure metrics differ from a physical hazard intensity field; no contemporary 2026 coverage, and no structural insurance loss inference.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "nasa.sedac.uhe-daily.1983-2016",
+      "name": "NASA SEDAC Global High Resolution Daily Extreme Urban Heat Exposure",
+      "provider": "NASA SEDAC / CIESIN",
+      "categories": [
+        "urban_heat",
+        "exposure",
+        "population"
+      ],
+      "spatial_scope": "Global urban-area exposure grid with dataset-specific population era",
+      "temporal_scope": "1983-2016 static retrospective",
+      "resolution_or_granularity": "Daily extreme urban heat exposure products, CMR collection CIESIN_SEDAC_SDEI_UHE",
+      "potential_roles": [
+        "urban_population_heat_validation",
+        "heat_health_context",
+        "temporal_impact_screen"
+      ],
+      "authoritative_url": "https://doi.org/10.7927/fq7g-ny13",
+      "access_class_hint": "public_sedac_download_rights_and_population_vintage_review",
+      "note": "From Climate Risk STAC and NASA SEDAC CMR inventory; derived heat exposure is not independent event loss and overlaps underlying climate/population observations. Verify exact units, heat metric, data vintage and license before risk use.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "ntnu.era5.daily-evapotranspiration-deficit.1979-2022",
+      "name": "Global Daily Evapotranspiration Deficit Index DEDI",
+      "provider": "NTNU / Beijing Normal University / Chinese Academy of Sciences",
+      "categories": [
+        "drought",
+        "evapotranspiration",
+        "climate_index"
+      ],
+      "spatial_scope": "Global land, 0.25 degree grid",
+      "temporal_scope": "Daily 1979-2022, Zenodo publication 2023",
+      "resolution_or_granularity": "0.25 degree daily netCDF per year with actual minus potential evapotranspiration severity signal",
+      "potential_roles": [
+        "daily_drought_onset",
+        "agricultural_stress_antecedent",
+        "temporal_drought_validation"
+      ],
+      "authoritative_url": "https://zenodo.org/records/7768534",
+      "access_class_hint": "zenodo_public_original_netcdf_23gb_license_and_era5_lineage_review",
+      "note": "Source publication explains DEDI derived from ERA5 daily evapotranspiration, so not independent of ERA5. Archive volume approx 23 GB; not a small API. Check exact dataset licence and per-file SHA; bias and 0.25 degree footprint prevent building-scale drought damage inference.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "deltares.global-coastal-flood-maps.planetarycomputer",
+      "name": "Deltares high-resolution global coastal flood hazard maps",
+      "provider": "Deltares / Microsoft Planetary Computer",
+      "categories": [
+        "coastal_flood",
+        "hazard_raster",
+        "climate_scenario"
+      ],
+      "spatial_scope": "Near-global coastal land with DEM limitations",
+      "temporal_scope": "Present-day and future 2050 RCP8.5 scenarios; model sources refer to GTSM ERA5 1979-2018",
+      "resolution_or_granularity": "Approx 3 arc-second global coastal inundation depth at selected return periods, MERIT and NASADEM variants",
+      "potential_roles": [
+        "coastal_inundation_scenario",
+        "storm_surge_damage_prior",
+        "sea_level_rise_exposure"
+      ],
+      "authoritative_url": "https://planetarycomputer.microsoft.com/dataset/deltares-floods",
+      "access_class_hint": "planetarycomputer_stac_cdla_permissive_asset_license_scope_review",
+      "note": "Distinct from already-registered GTSM extreme sea *levels*: this Deltares product models land inundation with DEM/bathtub and attenuation/roughness. Climate Risk STAC lists CDLA-Permissive-1.0; check exact dataset licence and asset/derivative rights. Neither observed event inundation nor independent sea-level source since GTSM+ERA5 underlie it.",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
