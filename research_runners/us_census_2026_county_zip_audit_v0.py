@@ -20,6 +20,9 @@ import zipfile
 
 STEM = "tl_2026_us_county"
 EXPECTED = {f"{STEM}.{ext}" for ext in ("shp", "shx", "dbf", "prj", "cpg")}
+# Known Census-supplied XML metadata sidecars, bounded individually.
+EXPECTED |= {f"{STEM}.shp.{suffix}.iso.xml" for suffix in ("ea", "fgdc")}
+EXPECTED |= {f"{STEM}.shp.iso.xml", f"{STEM}.shp.xml"}
 MANDATORY = {f"{STEM}.{ext}" for ext in ("shp", "shx", "dbf", "prj")}
 MAX_ZIP_BYTES = 125_000_000
 MAX_MEMBER_BYTES = 350_000_000
@@ -173,6 +176,9 @@ def audit_original_zip(raw: bytes, *, independently_pinned_sha256=None):
             _fail("unsafe or oversized ZIP member")
         if sum(i.file_size for i in info) > MAX_TOTAL_UNPACKED:
             _fail("total uncompressed archive budget exceeded")
+        for sidecar in (i for i in info if i.filename.endswith(".xml")):
+            if sidecar.file_size > 1_000_000:
+                _fail("unexpectedly large original Census metadata sidecar")
         try:
             shp = _read_member(archive, f"{STEM}.shp", MAX_MEMBER_BYTES)
             shx = _read_member(archive, f"{STEM}.shx", 150_000)
