@@ -27,7 +27,7 @@ PARAMS = (
 URL = HOST + PATH + '?' + urlencode(PARAMS)
 MAX_BYTES = 1048576
 TIMEOUT = 30
-_TIMESTAMP = re.compile(r'^\d{4}-\d\d-\d\d[T ]\d\d:\d\d:\d\d(?:\.\d+)?Z
+_TIMESTAMP = re.compile(r'^\d{4}-\d\d-\d\d[T ]\d\d:\d\d:\d\d(?:\.\d+)?Z$')
 
 
 class ProbeBlocked(ValueError):
