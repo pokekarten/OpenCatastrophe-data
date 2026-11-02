@@ -41,7 +41,9 @@ jobs:
       - name: Strict synthetic-only archive, DBF and polygon-index tests
         run: python -m unittest tests.test_us_census_2026_county_zip_audit_v0 -v
       - name: One fixed official original COUNTY archive, ephemeral data only
-        if: github.event_name != 'pull_request'
+        # Source-byte run is allowed on this one explicitly scoped research
+        # PR, not on unrelated PRs or ordinary pushes; no persistent data.
+        if: github.event_name != 'pull_request' || github.event.pull_request.number == 1100
         shell: bash
         run: |
           set -euo pipefail
