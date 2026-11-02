@@ -52,7 +52,7 @@ class HQ100RingCoordinateQualityTests(unittest.TestCase):
         self.assertTrue(report["record_bbox_matches_all_original_vertices"])
         self.assertFalse(report["source_ring_topological_validity_proven"])
         self.assertFalse(report["model_input_admitted"])
-        self.assertNotIn("0.0, 4.0", json.dumps(report))
+        self.assertNotIn("ring_vertex_coordinates", json.dumps(report))
 
     def test_open_ring_is_counted_not_silently_corrected(self):
         unclosed = [(0., 0.), (4., 0.), (4., 4.), (0., 4.), (0., 1.)]
