@@ -56,7 +56,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - /api/prod/datagetter
 
-**Parameter rules:** Frozen one-day probe only: begin_date=20260101&end_date=20260101&station=9414290&product=water_level&datum=MLLW&time_zone=gmt&units=metric&application=OpenCatastrophe&format=json. San Francisco station 9414290, 2026-01-01 UTC, six-minute observations relative to Mean Lower Low Water (MLLW), metric metres. Exactly one GET to /api/prod/datagetter, no redirects and at most 1048576 bytes. The script constructs the entire HTTPS URL; no user-supplied URL, host, station, dates, product, datum, timezone, units, headers or extra parameters. One-day metadata/shape probe only; no raw data persistence, crawling or model admission.
+**Parameter rules:** Frozen one-day probe only: begin_date=20260101&amp;end_date=20260101&amp;station=9414290&amp;product=water_level&amp;datum=MLLW&amp;time_zone=gmt&amp;units=metric&amp;application=OpenCatastrophe&amp;format=json. San Francisco station 9414290, 2026-01-01 UTC, six-minute observations relative to Mean Lower Low Water (MLLW), metric metres. Exactly one GET to /api/prod/datagetter, no redirects and at most 1048576 bytes. The script constructs the entire HTTPS URL; no user-supplied URL, host, station, dates, product, datum, timezone, units, headers or extra parameters. One-day metadata/shape probe only; no raw data persistence, crawling or model admission.
 
 ## Response contract
 
