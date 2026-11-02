@@ -267,32 +267,41 @@ completeness, demolished/renovated state or insurance relevance.
 Particularly, the five strict Overture candidates all report upstream
 OpenStreetMap lineage; correlated ACT/OSM geometry is possible.
 
-## ACT primary publication: exact 2026 building-only acquisition candidate
+## ACT original building-only source already verified and used
 
-The **publisher's own** [BD-L-GeoBase open-data record](https://data.public.lu/en/datasets/bd-l-geobase/)
-lists the **2026-10-01** product under **Creative Commons Zero (CC0)**,
-with ACT as the producing agency, and an separately packaged
-[Buildings-only GPKG release](https://data.public.lu/en/datasets/r/e93c27f8-1908-442b-9dc4-d10a117cf315)
-(`buildings-20261001.zip`, **about 37.4 MB**, published MD5
-`f414154f993128a63f539aae2644c75a`). This is a promising
-much-smaller original-source acquisition compared with the nearly
-956 MB all-themes archive used in the already authenticated ACT pilot.
-Neither the complete Buildings-only file's independent local SHA-256
-nor byte-/row-/ID-/geometry-equivalence against the **already pinned**
-all-themes source has been established yet. **Do not substitute it into
-the validated pipeline until those checks pass.**
+**Correction to the earlier preliminary source-comparison plan (2026-11-02):**
+the [ACT BD-L-GeoBase official dataset](https://data.public.lu/en/datasets/bd-l-geobase/)
+includes the smaller 2026-10-01 **Buildings-only** archive
+[`buildings-20261001.zip`](https://data.public.lu/en/datasets/r/e93c27f8-1908-442b-9dc4-d10a117cf315),
+about **37.4 MB**, publisher MD5
+`f414154f993128a63f539aae2644c75a`, CC0 dataset label.
+**This is the source the existing exact-original pilot ALREADY downloads and
+checks**, not a new untested alternative to a 956 MB all-themes archive.
 
-The official [GeoBase product specification](https://data.public.lu/en/datasets/r/3c5d312b-624c-4201-b60d-7908b0c90519)
-documents a **`Source`** property, including cadastral plan
-(`PCN`), ACT 3D buildings (`Bati3DACT`), City of Luxembourg 3D
-buildings (`Bati3DVDL`), official survey (`MO`) and orthophotos
-(`Ortho`). These are **potential causal lineage categories** to
-compare against the five Overture/OSM candidate polygons, not yet
-independently observed source-family counts for the five matches.
-The ACT dataset's official CC0 label is materially distinct from the
-**Overture Buildings ODbL** downstream licensing obligations. Exact
-scope, appropriate attribution and any third-party rights still require
-independent review for combined insurance publication/reuse.
+- In `research_runners/luxembourg_geobase_buildings_20261001_v0.py`,
+  `RESOURCE_ID` and `RESOURCE_URL` point to that exact Buildings-only ZIP.
+  The observed ZIP SHA-256 is
+  `6630f217b39edde5f20f1078bef8a3d6eb4a09337af48394975f45f208bcfed3`.
+- Its extracted Buildings GPKG is independently pinned to SHA-256
+  `ec70bd1175b6f67b6dceaf8ab39e0433bc871e1099ff308c3eb8323127aa5676`.
+  The verified `Buildings_BU_Building` table contains **230,353** features.
+  `research_runners/luxembourg_geobase_2026_id_quality_v0.py`
+  checks source IDs, schema and exact original bytes. The original ACT ×
+  Overture research workflow downloads and validates this same resource.
+- **Still not tested:** equivalence of this theme-only archive against
+  the separate all-themes 956 MB archive. That comparison is optional
+  version/packaging research, **not a prerequisite to continue using the
+  already verified 37.4 MB Buildings source**.
+- The independent security/licence boundary still matters: ACT's official
+  CC0 product classification does not clear Overture Buildings' ODbL
+  obligations for redistribution, combined insurer databases or model inputs.
+
+The official product's `Source` field describes the publisher's digitizing
+lineage (including `PCN`, `Bati3DACT`, `Bati3DVDL`, `MO`, `Ortho`).
+The **next** needed original-source test is a small, aggregate-only ACT
+source-family distribution for the five Overture/OSM geometric candidates,
+with the source row labels restricted to those publisher values and no
+building IDs, source geometries or coordinates emitted.
 
 ## What the new joined-screen code does
 
