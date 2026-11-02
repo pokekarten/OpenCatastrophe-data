@@ -55,6 +55,9 @@ class PublisherGeoJSONGroupOGCTests(unittest.TestCase):
         small = [[20.,0.],[20.,10.],[30.,10.],[30.,0.],[20.,0.]]
         r = challenge_publisher_groups(source([[ring], [small]]), max_group_vertices=4)
         self.assertEqual(r["publisher_groups_over_vertex_complexity_budget"], 2)
+        self.assertEqual(r["largest_source_polygon_group_point_count"], 5)
+        self.assertEqual(r["quarantined_publisher_polygon_group_point_total"], 10)
+        self.assertEqual(r["quarantined_publisher_polygon_group_hole_ring_total"], 0)
         self.assertFalse(r["every_original_publisher_group_tested"])
         for invalid in (0,120001,None,True,-1):
             with self.subTest(invalid=invalid), self.assertRaises(GroupTopologyError):
