@@ -115,3 +115,20 @@ python scripts/cede_oed_layer_identity_v0.py \
 The account CSV must contain at least `PortNumber,AccNumber,PolNumber,LayerNumber,AccCurrency`. The checker fails on missing, duplicated, additional or altered layer identities, unexpected accounts, mixed within-account source currencies and changed account currency. Location values are reconciled with the prior synthetic TIV checks, and the report exposes only counts, aggregates and explicit `false` execution/rights/OED-schema/CEDE-13/financial-terms flags.
 
 **Focused evidence:** 12 new pure-stdlib synthetic tests passed in the local Python runtime, bringing the three CEDE/OED scripts to **35/35 focused tests**. Hosted CI must still pass on the latest head. **Not demonstrated:** actual ODS Tools execution, full OED validity, policy financial terms/coverage/peril mapping, CEDE 13.0 compatibility, license/admission or Neon integration. These remain separate gates.
+
+## Real ODTF executable smoke workflow (2026-11-02)
+
+New script `scripts/cede_oed_ods_tools_live_smoke_v0.py` and isolated PR workflow `.github/workflows/cede-oed-ods-tools-smoke.yml` attempt a **real** Oasis ODTF engine execution using `ods-tools[transform]==5.0.10` (PyPI release 2026-10-29), independently synthetic CEDE-v10-like location CSV rows (two invented DE locations, one fictional account) and two completely invented layer records. The CSVs, two bounded ODTF mapping YAML files, and input/output files exist in a disposable runner temporary directory only; no third-party vendor/source bytes or customer exposures are downloaded or committed.
+
+The new mapping is **original minimal direct-field-only**, not a copy/execution of Oasis' comprehensive 80 KB example. It intentionally tests `ExposureSetName -> PortNumber`, `ContractID -> AccNumber`, `LocationID -> LocNumber`, `CountryISO -> CountryCode`, `Currency -> LocCurrency`, `BuildingValue -> BuildingTIV`, `ContentsValue -> ContentsTIV`, basic coordinates, and `LayerID -> PolNumber + LayerNumber`. If the actual CLI returns zero and both CSVs pass the synthetic location/layer reconciler, this is a narrow successful *engine smoke*, **not** CEDE 13, complete upstream mapping support, OED schema acceptance, peril/financial/treaty conversion, loss model execution, or data admission.
+
+Local environment does not provide `ods_tools` or functioning pip index resolution; this task is run in **dedicated GitHub Actions**. Record its exact run ID, commit SHA, and conclusion after completion. Do not claim a successful actual transform based solely on workflow creation, launch or local YAML parsing.
+
+Manual reproduction after approved installation:
+
+```bash
+python -m pip install 'ods-tools[transform]==5.0.10'
+python scripts/cede_oed_ods_tools_live_smoke_v0.py
+```
+
+Review the new dependency separately from routine validation dependency pins; its network/package provenance and transitive dependencies are a separate execution lane. No source data assets, OED-schema validity or rights scope are changed.
