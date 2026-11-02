@@ -167,6 +167,23 @@ the class thresholds, units, inclusive boundaries and original source
 geometry of each class. No source depth values or independent insurer
 assets have been obtained as part of this PR.
 
+## Complete original-source per-ring GEOS findings (2 November 2026)
+
+The final **entire 6,379-ring original source** [GitHub Actions run 41415231242](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41415231242) **passed**, including checksum/CRC/PRJ/coordinate checks and synthetic self-crossing-ring and complexity-quarantine regressions. A bounded Shapely/GEOS per-ring validity test determined:
+
+| GEOS per-ring classification | Count |
+| --- | ---: |
+| Individually valid positive-area rings | **6,305** |
+| Individually invalid rings | **74** |
+| All invalidity classes | **74 × Ring Self-intersection** |
+| Rings left untested due to complexity | **0** |
+| GEOS parsing/testing errors | **0** |
+| Original rings checked and conserved | **6,379** |
+
+The initial stricter audit with a 250,000-point per-ring limit was [run 41414976854](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41414976854): it observed 73 invalid rings **plus one untested overcomplex ring**. Increasing the safely bounded original-ring limit to 2 million points resulted in 74 invalid rings, no skips. **Use 74/6,379 as the complete documented result**, not the preliminary 73.
+
+Important: each ring was evaluated **individually** as a polygon, so even the 6,305 valid rings do not establish that the original multipart hazard polygon is jointly topologically valid. No exterior/hole containment, between-ring intersections or actual hazard intensity were validated. No original polygon, ring, coordinate, record geometry or location was emitted or persisted. The source is not yet authorised for intersection with ACT buildings or insurer exposures.
+
 ## Next scientific steps
 
 - Verify the original actual file format, complete record and field counts,
