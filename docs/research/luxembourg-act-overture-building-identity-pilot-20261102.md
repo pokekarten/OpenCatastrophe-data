@@ -190,6 +190,16 @@ five stricter ACT–Overture geometric match candidates** came from each
 upstream dataset. Do not attribute those five matches to OSM or Microsoft
 before that further exact-source comparison is verified.
 
+## Source families of the five strict ACT–Overture original geometric candidates
+
+The exact-source [GitHub run 41500592616](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41500592616) **PASSED**, with **16/16** synthetic offline tests and complete ACT full-original SHA verification. It used the same Overture part 00226, source row-group 182 and validated source `sources.dataset` labels in transient memory, preserving correspondence between the 69 real Overture city-window polygons and their individual source metadata **without exporting any source IDs or geometry**.
+
+Among the **five reciprocal ACT–Overture geometric candidate polygons at EPSG:2169 IoU >=0.75**, the matching Overture source labels were: **OpenStreetMap = 5**, **Microsoft ML Buildings = 0**, `unknown_or_multiple = 0`. This exactly conserves the five strict shape candidate pairs. Source-family totals for the broader 69 Overture city polygons remain **64 OpenStreetMap** and **5 Microsoft ML Buildings** (original source-lineage audit #41500090059).
+
+This is a causal **source attribution observation**, not proof that OpenStreetMap and ACT have independent original surveys, share a publisher ID, preserve stable GERS registry membership, or represent five identical physical buildings. It does **not** permit merging polygons, assigning insurer claims, generating replacement values, using copyrighted derivative data commercially without rights review, or treating the 75% IoU cutoff as calibrated identity confidence.
+
+Only the aggregate counts and the original run URL were added to the existing **isolated** Neon CAT research receipt, where `insurance_CAT_model_input_approved = false` is constrained and confirmed. Neither provider features nor original WKB, IDs, coordinates, or OSM record IDs were committed or stored.
+
 ## What the new joined-screen code does
 
 The offline script research_runners/luxembourg_act_overture_identity_preflight_v0.py
