@@ -49,7 +49,7 @@ Canonical **new provider candidates**: [`landscape/sources-monitoring-repo-upstr
 
 `source -> provider event identity/version -> canonical event crosswalk -> authoritative hazard footprint/observation -> permitted exposure join -> modelled gross/net loss -> independent post-event comparison`.
 
-First implement **source-access/documentation probes** for Environment Agency (warning/level schema), Nepal BIPAD (public non-personal flood/river endpoints), and BMKG/JMA; next resolve GLIDE/IDMC/Charter/IFRC/DELTA historical event identities. In FFBK/NextGen, compare **independent observed impact** and modelled loss with uncertainty and data-lineage flags, not an unverified auto-generated 'ground truth'.
+First implement **source-access/documentation probes** for Environment Agency (warning/level schema), Nepal BIPAD (public non-personal flood/river endpoints), and BMKG/JMA; next resolve GLIDE/IDMC/Charter/IFRC/DELTA historical event identities. In downstream risk and loss models, compare **independent observed impact** and modelled loss with uncertainty and data-lineage flags, not an unverified auto-generated 'ground truth'.
 
 ### Inspection boundary
 
