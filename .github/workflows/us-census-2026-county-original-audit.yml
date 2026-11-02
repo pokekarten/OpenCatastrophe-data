@@ -8,6 +8,8 @@ on:
     paths:
       - research_runners/us_census_2026_county_zip_audit_v0.py
       - tests/test_us_census_2026_county_zip_audit_v0.py
+      - research_runners/us_census_2026_parish_spatial_pilot_v0.py
+      - tests/test_us_census_2026_parish_spatial_pilot_v0.py
       - .github/workflows/us-census-2026-county-original-audit.yml
   # One bounded original-source run on this research branch's workflow
   # change and once after merging the reviewed workflow into main.
@@ -38,8 +40,16 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.14"
-      - name: Strict synthetic-only archive, DBF and polygon-index tests
-        run: python -m unittest tests.test_us_census_2026_county_zip_audit_v0 -v
+      - name: Install reviewed spatial validation runtime
+        run: |
+          python -m pip install --disable-pip-version-check --no-input -r requirements-eu-flood-spatial.txt
+          python -m pip check
+      - name: Strict synthetic archive, DBF, and parish polygon tests
+        run: >-
+          python -m unittest
+          tests.test_us_census_2026_county_zip_audit_v0
+          tests.test_us_census_2026_parish_spatial_pilot_v0
+          -v
       - name: One fixed official original COUNTY archive, ephemeral data only
         # Source-byte run is allowed on this one explicitly scoped research
         # PR, not on unrelated PRs or ordinary pushes; no persistent data.
@@ -59,6 +69,8 @@ jobs:
           python -m research_runners.us_census_2026_county_zip_audit_v0 \
             --source-zip "$original" \
             --independent-sha256 'b527c9ba7aeb8f17ef118f026eae5e5a938aa1d00b873bc32342d0dce59321c0'
+          python -m research_runners.us_census_2026_parish_spatial_pilot_v0 \
+            --source-zip "$original"
           # Compared with the independently observed first original-source
           # GitHub Actions acquisition receipt 41409919889 (2026-11-02).
           # This proves repeat bytes, not immutable publisher hosting,
