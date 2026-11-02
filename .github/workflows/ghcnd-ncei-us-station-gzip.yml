@@ -12,6 +12,7 @@ on:
       - '.github/workflows/ghcnd-ncei-us-station-gzip.yml'
   workflow_dispatch:
   # After reviewed first workflow merge, verify exactly one provider original.
+  # One exact-source replay after observed NCEI multi-member gzip repair.
   # PR verification uses only synthetic offline fixtures.
   push:
     branches: [main]
