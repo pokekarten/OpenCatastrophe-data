@@ -94,23 +94,23 @@ scope and policy coverage apply *within* that geography.
 The official 2026 source catalogue and release date are not enough to
 certify the archive's original polygon bytes. This PR also adds:
 
-- \`research_runners/us_census_2026_county_zip_audit_v0.py\`: strictly
+- `research_runners/us_census_2026_county_zip_audit_v0.py`: strictly
   local, standard-library inspection of the original national COUNTY
-  ZIP. Supports one exact filename \`tl_2026_us_county.zip\` and only
+  ZIP. Supports one exact filename `tl_2026_us_county.zip` and only
   known Shapefile members with small optional Census XML metadata
   sidecars. Checks ZIP member safety, byte/expansion limits, member
   CRC via extraction, Shapefile Polygon and DBF headers, SHX/SHP
   index offsets, polygon record lengths/part/point layout and exact
-  DBF row/index count, unique \`STATEFP+COUNTYFP=GEOID\`, original
+  DBF row/index count, unique `STATEFP+COUNTYFP=GEOID`, original
   NAD83 geographic PRJ and observed Orleans Parish GEOID 22071.
-- \`tests/test_us_census_2026_county_zip_audit_v0.py\`: fully fictitious
+- `tests/test_us_census_2026_county_zip_audit_v0.py`: fully fictitious
   tiny archives proving positive structure and adversarial mismatch
   rejection (invalid hash, bad index, missing geometry, unsafe ZIP
   member/path, malformed GEOID, bad CRS and more).
-- \`.github/workflows/us-census-2026-county-original-audit.yml\`:
+- `.github/workflows/us-census-2026-county-original-audit.yml`:
   on PRs, **offline synthetic tests only**. One exact ~80 MB
   original source download occurs only after the reviewed workflow
-  file reaches \`main\` (or on a later explicitly manually dispatched
+  file reaches `main` (or on a later explicitly manually dispatched
   run). The original ZIP is temporarily stored and removed, with
   a maximum 125 MB HTTP response, 210-second deadline, no retries,
   one official HTTPS host and no uploaded provider geometry.
@@ -133,22 +133,74 @@ backend and source vintage before modelling.
 
 Run offline:
 
-\`\`\`sh
+```sh
 python -m unittest tests.test_us_census_2026_county_zip_audit_v0 -v
-\`\`\`
+```
 
 Inspect a *separately, lawfully obtained* original archive:
 
-\`\`\`sh
+```sh
 python -m research_runners.us_census_2026_county_zip_audit_v0 \
   --source-zip /private/tl_2026_us_county.zip
-\`\`\`
+```
 
 Authoritative Census pages:
 [2026 TIGER/Line release](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.2026.html),
 [official national COUNTY archive](https://www2.census.gov/geo/tiger/TIGER2026/COUNTY/).
 No raw ZIP, individual polygon coordinates or source-derived parcel
 assets belong in this public Git repository or production Neon.
+
+## Executed original Census 2026 COUNTY source receipt (2026-11-02)
+
+The original-source scope for the *already registered* national 2026
+COUNTY archive is now **actually exercised**, not only documented:
+
+- First bounded official-source acquisition: [GitHub Actions
+  run 41409919889](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41409919889),
+  commit `6f663948f09dca4c6e51aaf6b8eb4dd18d34a193`.
+- Second separate acquisition, this time enforcing the **exact SHA-256
+  observed in the first run**:
+  [run 41410031153](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41410031153),
+  commit `d46ce5a978b128e8bc0939335e375a51daa27492`.
+  The original-byte step and all 12 synthetic falsifier tests passed.
+- The exact original national ZIP has **83,378,454 bytes** and
+  observed/rechecked SHA-256
+  `b527c9ba7aeb8f17ef118f026eae5e5a938aa1d00b873bc32342d0dce59321c0`.
+- Source original metadata audit: **3,235** unique five-digit GEOID
+  county-equivalent DBF rows; **3,235** matching SHX-indexed polygon
+  records, **18** DBF fields, expected Shapefile Polygon record type,
+  declared NAD83 geographic PRJ, and positive fixed source identity for
+  Orleans Parish: `STATEFP=22`, `COUNTYFP=071`, `GEOID=22071`.
+  Each SHX offset/record size is checked against the source SHP body.
+- The first *failed* official-source attempt was an independent useful
+  falsifier: a non-ASCII county name broke an overly strict ASCII
+  decoder. The verifier now preserves original name bytes, requires
+  ASCII **only for the official numeric GEOID**, and includes a new
+  synthetic negative case. The second actual-source run establishes
+  that the corrected contract accepts the original archive.
+- Original ZIP contents and source geometries were kept in temporary
+  GitHub runner storage only and deleted at task exit. No third-party
+  archive, polygon, asset or derived joined shape was committed or
+  imported into either Neon branch.
+
+The repeat hash is an **independent execution/retrieval consistency
+witness** against the first observed SHA. It is not a publisher-signed
+immutable release digest, no national topological/completeness benchmark,
+no local boundary-law determination, no historical parcel/exposure
+crosswalk, no qualified vulnerability curve, no insured TIV/policy
+admission and no model output. The standalone checker deliberately
+records `complete_polygon_topology_verified=false`,
+`countrywide_completeness_verified=false` and
+`model_input_admitted=false`.
+
+**New readiness classification:** exact national official 2026 county/
+parish polygon *archive structure + identifiers* are technically
+verified in two separate public source runs. Per-source exact rights
+reuse, geodetic/topology/coverage validation and individually
+licence-reviewed geolocation into CAT/NextGen remain blocked as
+separate decisions. This is a higher source-evidence level than
+`documented_only` but does **not** change the canonical access-contract
+or Neon admission flags automatically.
 
 ## Versioned region x peril key and evidence preflight
 
@@ -237,7 +289,7 @@ validation is not an authorization to run a model.
 ## New additive missing-cell matrix for regional and peril coverage
 
 The single-cell preflight is intentionally not a global completeness claim.
-\`scripts/region_peril_coverage_matrix_v0.py\` now produces an **explicit
+`scripts/region_peril_coverage_matrix_v0.py` now produces an **explicit
 cross-product** of exactly declared target administrative units and declared
 perils. A cell with no supplied research evidence appears in the output with
 all eight roles missing; it is **not** silently omitted or inferred from
@@ -252,7 +304,7 @@ illustrative synthetic test scopes, not original source-geometry evidence.
 
 Call the standalone tool with explicit, locally controlled JSON:
 
-\`\`\`json
+```json
 {
   "schema_version": "OC_REGION_PERIL_MATRIX_V0",
   "regions": [
@@ -264,14 +316,14 @@ Call the standalone tool with explicit, locally controlled JSON:
   "perils": ["flood_river","windstorm"],
   "evidence": []
 }
-\`\`\`
+```
 
 Run:
 
-\`\`\`sh
+```sh
 python -m unittest tests.test_region_peril_coverage_matrix_v0 -v
 python scripts/region_peril_coverage_matrix_v0.py /private/declaration.json
-\`\`\`
+```
 
 The output includes each cell's requested perimeter, missing role lists,
 whether any evidence document was supplied, and whether original-source
