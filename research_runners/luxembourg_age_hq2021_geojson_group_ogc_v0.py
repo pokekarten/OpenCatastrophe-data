@@ -77,6 +77,9 @@ def challenge_publisher_groups(obj: dict, *, max_group_vertices: int =
         raise GroupTopologyError("Unpinned Shapely in source diagnostic")
     n = valid = invalid = skipped = errors = 0
     groups_with_holes = 0
+    quarantined_vertex_total = 0
+    quarantined_hole_total = 0
+    largest_group_vertices = 0
     reasons = Counter()
     for rings in _polygons(obj):
         n += 1
@@ -86,8 +89,11 @@ def challenge_publisher_groups(obj: dict, *, max_group_vertices: int =
             raise GroupTopologyError("Missing original polygon ring group")
         groups_with_holes += len(rings) > 1
         npoints = sum(len(r) for r in rings)
+        largest_group_vertices = max(largest_group_vertices, npoints)
         if npoints > max_group_vertices:
             skipped += 1
+            quarantined_vertex_total += npoints
+            quarantined_hole_total += len(rings) - 1
             continue
         try:
             geom = Polygon(rings[0], rings[1:])
@@ -112,6 +118,9 @@ def challenge_publisher_groups(obj: dict, *, max_group_vertices: int =
         "individually_geos_invalid_publisher_polygon_groups": invalid,
         "invalid_group_ogc_reason_categories_only": dict(sorted(reasons.items())),
         "publisher_groups_over_vertex_complexity_budget": skipped,
+        "largest_source_polygon_group_point_count": largest_group_vertices,
+        "quarantined_publisher_polygon_group_point_total": quarantined_vertex_total,
+        "quarantined_publisher_polygon_group_hole_ring_total": quarantined_hole_total,
         "publisher_group_geos_errors": errors,
         "every_original_publisher_group_tested": skipped == 0 and errors == 0,
         "whole_original_publisher_multipolygon_OGC_validity_verified": False,
