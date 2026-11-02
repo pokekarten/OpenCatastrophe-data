@@ -161,6 +161,46 @@ The reviewed reproducible SQL is `research_runners/sql/overture_buildings_metada
 
 This work demonstrates the first **tested database storage of original-source metadata** for the global building pilot, **not** an actual building-footprint, policy, insurer TIV, hazard or damage import. The next *causal scientific step* is an authorized, bounded original Parquet **row-group geometry** read (with correct WKB/GeoParquet CRS, source lineage and per-feature rights) followed by a strict country pilot and separate source/model admission.
 
+## Geodesic research-only building geometry quality gate (2026-11-02)
+
+`scripts/overture_building_geojsonseq_qc_v0.py` adds a **local-only bounded actual-geometry preflight** for a previously independently obtained `GeoJSONSeq` projection from one exact Overture Buildings release object. It never fetches original rows itself and never writes to Neon or a git-tracked provider-data file.
+
+- Requires release `2026-10-21.0` and an *exact original S3 Parquet file key* matching `release/2026-10-21.0/theme=buildings/type=building/part-...zstd.parquet`; the supplied key is an unverified provenance claim, **not** proof of source-object checksum or authorized model use.
+- Accepts at most **64** GeoJSONSeq features and **256 KiB**, including RFC-8142 record separators; rejects duplicate JSON fields, nonfinite values, invalid/oversized geometry, wrong polygon CRS coordinate ranges, conflicting/duplicated Overture feature IDs, incompatible supplied `bbox`, implausible heights/floors and insurer/customer fields.
+- Calculates WGS84 **ellipsoidal geodesic footprint area in square metres** using pyproj.Geod, including oriented holes and separate MultiPolygon components; reports aggregate minimum/median/maximum area, source lineages present, height/floor field presence and exact normalized-polygon duplicate candidates.
+- Does not echo source coordinates, building IDs, source records, private insurance data or raw polygons in its JSON output. Output contains only aggregate QA and a hash of the local sample. A duplicate polygon is an **adjudication candidate**, not permission to deduplicate independent buildings.
+- Explicitly emits `admitted_model_input=false`, `insured_value_inferred=false`, `original_file_sha256_verified=false`, `gers_registry_identity_approved=false`, `independent_source_rights_approved=false` and `neon_written=false`.
+
+**One possible *manual, separately reviewed* original-data sample source:** After independently confirming ODbL/attribution obligations, a pinned DuckDB/Spatial/httpfs environment can run this deliberately one-object, max-25-output-row query. It is an **example not executed in the PR**, and `LIMIT 25` does not cap Parquet network bytes. Rows sampled from the first global shard **do not** establish coverage of any particular country.
+
+~~~sql
+LOAD httpfs;
+LOAD spatial;
+SET s3_region = 'us-west-2';
+COPY (
+  SELECT id, height, num_floors, geometry
+  FROM read_parquet(
+    's3://overturemaps-us-west-2/release/2026-10-21.0/theme=buildings/type=building/part-00000-85375c54-5dfb-57c7-b21d-8b5e5245ad06-c000.zstd.parquet'
+  )
+  LIMIT 25
+) TO '/tmp/overture-local-research-only.geojsonseq'
+WITH (FORMAT GDAL, DRIVER 'GeoJSONSeq', SRS 'EPSG:4326');
+~~~
+
+`/tmp/overture-local-research-only.geojsonseq` stays **outside the repository**. Do not ingest raw rows into insurance Neon. A restricted and reviewed local sample can be checked as follows:
+
+~~~sh
+python -m scripts.overture_building_geojsonseq_qc_v0 \
+  --input /tmp/overture-local-research-only.geojsonseq \
+  --release 2026-10-21.0 \
+  --source-object-key 'release/2026-10-21.0/theme=buildings/type=building/part-00000-85375c54-5dfb-57c7-b21d-8b5e5245ad06-c000.zstd.parquet'
+python -m unittest tests.test_overture_building_geojsonseq_qc_v0 -v
+~~~
+
+The geodesic QC is an improvement over geographic-degree-space IoU in the *earlier* polygon candidate crosswalk; it **does not** turn that older IoU into geodesic matching. A subsequent identity harmonization phase should change the matching routine only after a reviewed, equal-area/geodesic polygon overlap contract and independent source ID evidence are established.
+
+Review and permission to fetch exact original source rows, row-group/column bytes, attribution and a genuine geography-specific source pilot remain outstanding. **No real feature-level original geometry has yet passed this QA in Neon.** The purpose of this stage is to make any such pilot measurable, bounded and fail-closed.
+
 ## Path to real insurer CAT models
 
 1. Freeze an original source object identity, schema version, byte hashes and attribution/rights before a bounded cloud retrieval. Document authoritative GERS ID registry/bridge checks separately.
