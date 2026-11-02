@@ -10,9 +10,12 @@ import tempfile
 from pathlib import Path
 import unittest
 
-from shapely.geometry import Polygon, MultiPolygon
+from shapely.geometry import Polygon, MultiPolygon, box
 from shapely import wkb
 from research_runners.luxembourg_geobase_2026_repair_diagnostic_v0 import RepairDiagnostics
+from research_runners.luxembourg_geobase_2026_synthetic_support_challenge_v0 import (
+    compare_repair_supports, SupportChallengeError,
+)
 
 from research_runners.luxembourg_geobase_2026_geometry_quality_v0 import (
     _decode_gpkg, profile, audit, GeoBaseError
@@ -59,6 +62,10 @@ class LuxembourgGeoBaseFullGeometryTests(unittest.TestCase):
         repair = result["invalid_polygon_repair_diagnostic"]
         self.assertEqual(repair["invalid_original_polygons_assessed"], 1)
         self.assertEqual(repair["repair_multiple_polygons"], 1)
+        self.assertEqual(repair["synthetic_spatial_support_checked_repairs"], 1)
+        self.assertEqual(repair["synthetic_spatial_support_probes"], 3)
+        self.assertEqual(repair["synthetic_spatial_support_area_disagreements"], 0)
+        self.assertFalse(repair["synthetic_spatial_support_is_original_hazard_or_depth"])
         self.assertEqual(repair["repair_single_polygon"], 0)
         self.assertEqual(repair["repair_unusable_or_not_polygonal"], 0)
         self.assertEqual(repair["structure_challenge_usable"], 1)
@@ -125,6 +132,29 @@ class LuxembourgGeoBaseFullGeometryTests(unittest.TestCase):
         self.assertFalse(report["source_boundary_position_accuracy_ground_control_verified"])
         # Original coordinate values are not present in report.
         self.assertNotIn("POLYGON", json.dumps(report))
+
+    def test_same_area_different_position_fails_synthetic_support_challenge(self):
+        left = box(0, 0, 4, 4)
+        right = box(1, 0, 5, 4)
+        self.assertEqual(left.area, right.area)
+        report = compare_repair_supports(left, right, (0, 0, 5, 4))
+        self.assertEqual(report["synthetic_probe_count"], 3)
+        self.assertGreater(report["synthetic_intersection_area_disagreements"], 0)
+        self.assertGreater(report["synthetic_absolute_intersection_area_delta_projected_m2"], 0)
+        self.assertNotIn("POLYGON", json.dumps(report))
+        self.assertNotIn("0 0", json.dumps(report))
+
+    def test_identical_geometry_synthetic_support_invariant_and_bad_source_blocked(self):
+        g = box(0, 0, 4, 4)
+        report = compare_repair_supports(g, g, (0, 0, 4, 4))
+        self.assertEqual(report["synthetic_probe_count"], 3)
+        self.assertEqual(report["synthetic_intersection_area_disagreements"], 0)
+        self.assertEqual(report["synthetic_positive_area_overlap_presence_disagreements"], 0)
+        for bounds in ((0, 0, 0, 5), (0, 0, float("nan"), 5), (0, 0, 4),
+                       (-2, 1, -1, 1)):
+            with self.subTest(bounds=bounds):
+                with self.assertRaises(SupportChallengeError):
+                    compare_repair_supports(g, g, bounds)
 
     def test_untrusted_geom_flags_srs_and_size_fail(self):
         geom = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
