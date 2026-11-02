@@ -66,8 +66,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - text/plain
 - text/csv
 - application/vnd.ms-excel
+- binary/octet-stream
 
-**Format:** First 65536 original bytes of one station-scoped GHCN-Daily provider-native CSV. Strict 8-column ID,DATE,ELEMENT,DATA_VALUE,M_FLAG,Q_FLAG,S_FLAG,OBS_TIME records, possible CSV header; this is only a byte-range sample.
+**Format:** First 65536 original bytes of one station-scoped GHCN-Daily provider-native CSV, returned by the exact NOAA NODD S3 endpoint as binary/octet-stream (as observed 2026-11-02); the payload is still validated as strict UTF-8 CSV. Strict 8-column ID,DATE,ELEMENT,DATA_VALUE,M_FLAG,Q_FLAG,S_FLAG,OBS_TIME records, possible CSV header; this is only a byte-range sample.
 
 **Scientific semantics:** Individual daily station ELEMENT values use NOAA element-specific units and represent local observation semantics, not event losses, calibrated catastrophe intensities or insured locations. Measurement, quality and source flags are essential; blank Q_FLAG does not prove scientific fitness or representativeness. The prefix begins at the earliest provider records and is not a representative or recent climate sample. Central Park observations cannot be inferred to describe New York exposure, insurer portfolios or catastrophe return periods. Exact station identity is needed as a research canary only.
 
@@ -124,4 +125,4 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - <https://github.com/NOAA-Big-Data-Program/nodd-data-docs/blob/main/GHCN-D/Readme.md>
 - <https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme-by_station.txt>
 
-**Notes:** Prior NODD version/country metadata source-access contract is separate and already merged; this pilot attempts real original weather-observation CSV bytes only in a tightly bounded, read-only Range request. The fixed station path is defined by NOAA public NODD station distribution documentation; no claim of a successful exact range request is made before hosted run evidence.
+**Notes:** Prior NODD version/country metadata source-access contract is separate and already merged; this pilot attempts real original weather-observation CSV bytes only in a tightly bounded, read-only Range request. The fixed station path is defined by NOAA public NODD station distribution documentation; no claim of a successful exact range request is made before hosted run evidence. Live original provider response on 2026-11-02 returned binary/octet-stream, not the initially assumed application/octet-stream. The explicit binary/octet-stream support is narrowed to this fixed 206, exact-station, CSV-validated source and does not permit arbitrary binary payloads.
