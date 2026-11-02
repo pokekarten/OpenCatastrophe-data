@@ -69,3 +69,24 @@ event years. No insurance TIV/claims/financial results follow from this table.
 Do not mutate `registry.source_record.admissible_for_raw`,
 `research.usgs_comcat_origin_observation_v0.model_admitted` or publish a
 simulation based on these metadata observations.
+
+## Read-only adversarial PostgreSQL checks
+
+The canonical query and **four** controlled CTE variants were run against
+the same live `insurance` main branch. They alter only the SELECT text and
+never modify source tables:
+
+| SELECT-only case | Observed `evidence_status` | Model admitted |
+| --- | --- | --- |
+| Unmodified 1,333 rows | `RESEARCH_ORIGINAL_BYTES_NOT_PINNED` | false |
+| Force empty observations | `MISSING_RESEARCH_ROWS` | false |
+| Duplicate one already stored event ID | `RESEARCH_RECORD_QUALITY_BLOCKED` | false |
+| Hypothetically set `model_admitted=true` in SELECT | `UNEXPECTED_ADMISSION_REQUIRES_REVIEW` | false |
+| Hypothetically supply 64-hex SHA for every SELECT row | `RESEARCH_STRUCTURALLY_CHECKED_NOT_ADMITTED` | false |
+
+The final case **does not establish any real hash**: the SHA was invented
+inside a SELECT expression solely to challenge the status logic. It proves
+that even a source-structurally-green result cannot become an accepted
+hazard catalogue by this query. The source itself still has zero original
+response SHA attestations. Local unit tests cover fail-closed status,
+source-hash-vs-URL distinctions and read-only SQL shape.
