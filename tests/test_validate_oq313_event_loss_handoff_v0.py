@@ -160,6 +160,13 @@ class ConsumerBoundaryTests(unittest.TestCase):
         with self.assertRaises(consumer.EventLossHandoffValidationError):
             validate(h, j, modified(bad))
 
+    def test_deeply_nested_untrusted_json_never_crashes_consumer(self):
+        # Parsing/encoding recursion limits vary across CPython versions.
+        # Always return a domain validation error, never an unhandled traceback.
+        deeply_nested = b'[' * 3000 + b'0' + b']' * 3000
+        with self.assertRaises(consumer.EventLossHandoffValidationError):
+            consumer._parse_canonical(deeply_nested, "untrusted nested JSON")
+
     def test_read_only_cli_uses_pinned_hashes_and_rejects_symlinked_input(self):
         original, receipt_hash, jsonl, manifest = fixture()
         with tempfile.TemporaryDirectory() as tmp:
