@@ -102,7 +102,7 @@ class AtomChildProofTests(unittest.TestCase):
         for data in (
             b"",
             b"not-xml",
-            b'<!DOCTYPE feed [<!ENTITY external SYSTEM "file:///etc/passwd">]><feed/>',
+            b'<!DOCTYPE feed [<!ENTITY external SYSTEM "https://untrusted.invalid/forbidden-entity">]><feed/>',
             b"<html/>",
             b"x" * (m.CHILD_MAX_BYTES + 1),
         ):
