@@ -33,7 +33,11 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.14"
+      - name: Install fixed scientific NetCDF reader for metadata only
+        run: |
+          python -m pip install --no-input --disable-pip-version-check -r requirements-glofas-acquisition.txt
+          python -m pip check
       - name: Offline source-boundary tests (synthetic only)
         run: python -m unittest tests.test_gtsm_era5_e_original_receipt_v0 -v
       - name: Reproduce publisher original byte-size, MD5 and observed SHA-256
-        run: python scripts/gtsm_era5_e_original_receipt_v0.py --fetch
+        run: python scripts/gtsm_era5_e_original_receipt_v0.py --fetch --inspect-header
