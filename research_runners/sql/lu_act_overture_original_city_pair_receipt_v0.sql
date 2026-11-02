@@ -54,3 +54,26 @@ ON CONFLICT (act_release,overture_release,overture_source_row_group) DO NOTHING;
 -- (IoU >= 0.75), 0 source identity/rights/insurance model admissions.
 -- Production insurance/main does not have this table; source features remain
 -- strictly transient in GitHub runners, with no raw provider data retained.
+
+
+-- Follow-up independently verified full original-source IoU histogram:
+-- https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41499209669
+-- Schema change and UPDATE apply ONLY to the isolated CAT research Neon branch.
+ALTER TABLE research.lu_act_overture_original_city_pair_receipt_v0
+ ADD COLUMN IF NOT EXISTS positive_area_source_polygon_pairs integer,
+ ADD COLUMN IF NOT EXISTS act_best_iou_histogram jsonb,
+ ADD COLUMN IF NOT EXISTS overture_best_iou_histogram jsonb,
+ ADD COLUMN IF NOT EXISTS histogram_source_run_url text;
+
+UPDATE research.lu_act_overture_original_city_pair_receipt_v0
+SET positive_area_source_polygon_pairs=282,
+    act_best_iou_histogram='{"no_positive_area_overlap":3,"iou_below_0_25":72,"iou_0_25_to_0_50":40,"iou_0_50_to_0_75":19,"iou_at_least_0_75":5}'::jsonb,
+    overture_best_iou_histogram='{"no_positive_area_overlap":6,"iou_below_0_25":6,"iou_0_25_to_0_50":33,"iou_0_50_to_0_75":19,"iou_at_least_0_75":5}'::jsonb,
+    histogram_source_run_url='https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41499209669'
+WHERE act_release='2026-10-01' AND overture_release='2026-10-21.0'
+ AND overture_source_row_group=182
+ AND original_provider_geometry_persisted=FALSE
+ AND insurance_CAT_model_input_approved=FALSE;
+-- Verified: all 139 ACT and 69 Overture candidate polygons conserved in
+-- the separate source-best-IoU histograms; 282 positive-area polygon pairs
+-- and 5 reciprocal geometric candidates. Not distinct real-world buildings.
