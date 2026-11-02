@@ -16,9 +16,9 @@ For a separately lawfully acquired original file, use the offline check:
     python scripts/gtsm_era5_e_original_receipt_v0.py --original /path/to/ds_GTSM-ERA5-E_1950-2024_stats.nc
     python -m unittest tests.test_gtsm_era5_e_original_receipt_v0 -v
 
-To verify exactly one public provider file on an internet-enabled runner, run:
+To verify exactly one public provider file and optionally audit only native coordinate pairs in aggregated form on an internet-enabled runner, run:
 
-    python scripts/gtsm_era5_e_original_receipt_v0.py --fetch --inspect-header
+    python scripts/gtsm_era5_e_original_receipt_v0.py --fetch --inspect-header --audit-coordinates
 
 The fixed PR workflow `.github/workflows/gtsm-era5-e-original-receipt.yml` runs the offline tests followed by this exact one-file HTTPS download (only same-repository PRs). The fetch mode has no caller-selectable URL; refuses non-Zenodo redirects, unexpected size, HTTP failures and MD5 mismatch; only a metadata receipt reaches CI logs. Provider bytes are held only in an ephemeral temporary file during verification and deleted immediately. No source file or raw array is uploaded as an artifact.
 
@@ -52,3 +52,11 @@ A downstream coordinate transform must mask the native fill code before applying
 ## Execution evidence
 
 The complete real-source receipt of 2026-11-02 is verified from exact-head runner logs (run #41507598794, job #125490753179); 12 synthetic boundary tests and Python 3.11–3.14 matrix passed. The following revision pins the independently observed SHA-256, reproduces the original native metadata from the GitHub run above, and adds a version-specific dimension/axis/unit/type gate. The next exact-head CI and header-inventory capture remain required before accepting the stricter gate. The earlier receipt did not inspect the NetCDF variables. No model admission, permission for commercial reuse, raw file retention or event generation is implied.
+
+## Bounded native coordinate QA
+
+After the pinned-source SHA-256 and native structure/coordinate packing checks, the fixed source workflow now also reads *only* the native longitude/latitude int32 arrays and reports **aggregate counts**. Mask raw `-999` before applying native 0.001-degree scale; check ±180°/±90° geographic limits in raw integer units, one- or two-coordinate missingness, repeated raw coordinate pairs and positions at (0,0). The only copied values are the two ephemeral in-memory original vectors of 38,957 integers each; source coordinates, location samples, individual IDs, hazard cells and loss outputs are never logged or persisted.
+
+`scripts/gtsm_era5_e_coordinate_audit_v0.py` contains a pure synthetic-testable counter with fixed 38,957-row source budget. It is **not** an all-coastal classifier: publisher data include both ocean and coastal model locations. Individual returned coordinate pairs are not geocoded or joined to buildings. Existing uncertainty about source simulation 44,734 locations, local datum, interpolation validity and permitted reuse remains unresolved.
+
+The next exact-head CI run must confirm the geographic QA counts from the real original; a generated counter or standalone synthetic test is not evidence of real-source quality until this run succeeds.
