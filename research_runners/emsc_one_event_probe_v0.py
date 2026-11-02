@@ -12,8 +12,10 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import re
+import stat
 import sys
 from urllib.parse import urlencode
 from urllib.request import Request, HTTPRedirectHandler, build_opener
@@ -61,7 +63,7 @@ def validate_response(raw: bytes, *, media_type: str, status: int = 200) -> dict
         raise ProbeBlocked('empty or oversized response')
     try:
         payload = json.loads(raw.decode('utf-8'), object_pairs_hook=_unique_pairs, parse_constant=_invalid_constant)
-    except (UnicodeError, json.JSONDecodeError) as exc:
+    except (UnicodeError, json.JSONDecodeError, RecursionError) as exc:
         raise ProbeBlocked('invalid JSON response') from exc
     if not isinstance(payload, dict) or 'error' in payload or payload.get('type') != 'FeatureCollection':
         raise ProbeBlocked('not a valid one-event GeoJSON FeatureCollection')
@@ -106,6 +108,8 @@ def validate_response(raw: bytes, *, media_type: str, status: int = 200) -> dict
         datetime.fromisoformat(origin_time.replace(' ', 'T').replace('Z', '+00:00'))
     except ValueError as exc:
         raise ProbeBlocked('invalid event calendar time') from exc
+    if 'mag' in properties and 'Mag' in properties and properties['mag'] != properties['Mag']:
+        raise ProbeBlocked('conflicting event magnitude aliases')
     magnitude = properties.get('mag', properties.get('Mag'))
     if magnitude is not None and (type(magnitude) not in (int, float) or not math.isfinite(magnitude) or not -3 <= magnitude <= 12):
         raise ProbeBlocked('invalid magnitude')
@@ -149,12 +153,24 @@ def fetch_one(*, opener=None) -> tuple[bytes, str]:
 
 
 def read_synthetic_fixture(path: Path) -> bytes:
-    if path.is_symlink() or not path.is_file():
-        raise ProbeBlocked('fixture must be a local non-symlink file')
-    if path.stat().st_size > MAX_BYTES:
-        raise ProbeBlocked('oversized fixture')
-    with path.open('rb') as stream:
-        return stream.read(MAX_BYTES + 1)
+    """Read a local test fixture from one verified regular-file descriptor.
+
+    Checking the path before opening would allow a symlink replacement race.
+    O_NONBLOCK also ensures a FIFO/device cannot hang a validation workflow.
+    """
+    if not hasattr(os, 'O_NOFOLLOW') or not hasattr(os, 'O_NONBLOCK'):
+        raise ProbeBlocked('atomic local fixture validation is unsupported')
+    flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
+    with os.fdopen(os.open(path, flags), 'rb') as stream:
+        info = os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode):
+            raise ProbeBlocked('fixture must be a regular local file')
+        if not 0 < info.st_size <= MAX_BYTES:
+            raise ProbeBlocked('empty or oversized fixture')
+        raw = stream.read(MAX_BYTES + 1)
+        if len(raw) != info.st_size:
+            raise ProbeBlocked('fixture size changed during read')
+        return raw
 
 
 def main(argv=None) -> int:
