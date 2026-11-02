@@ -144,7 +144,7 @@ def _write_new(path: Path, data: bytes) -> None:
 def write_new_pair(
     jsonl_path: Path, manifest_path: Path, jsonl: bytes, manifest: bytes,
 ) -> None:
-    if type(jsonl_path) is not Path or type(manifest_path) is not Path:
+    if not isinstance(jsonl_path, Path) or not isinstance(manifest_path, Path):
         raise EventLossHandoffError("output paths must be pathlib.Path")
     if jsonl_path.absolute() == manifest_path.absolute():
         raise EventLossHandoffError("JSONL and manifest paths must be distinct")
