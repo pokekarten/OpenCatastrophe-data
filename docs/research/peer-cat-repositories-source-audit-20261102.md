@@ -64,7 +64,7 @@ The existing GEM GEID [event folder](https://github.com/gem/geid/tree/main/Europ
 
 Microsoft's [building damage tool](https://github.com/microsoft/building-damage-assessment) also documents 2023 Türkiye/Syria applications, with [NASA ARIA post-event SAR damage proxy](https://www.jpl.nasa.gov/images/pia25564-satellites-assess-earthquake-damage-in-turkey/) and Maxar/xBD type data as separate validation possibilities. **Caveat:** shared Maxar/ground-truth imagery, reporting agencies or statistical processing can make two apparent products non-independent. A later damage benchmark can assess physical plausibility, never retrospectively turn an old `updateTime` into an authenticated T0 forecast.
 
-Next concrete scientific experiment: rights-review ONE GEID event sample and ONE genuinely independent damage observation at a frozen product vintage, report the support/mask and split training versus holdout, and compare to an OpenQuake/FFBK synthetic admitted-as-research scenario. Do not claim actual insurer ground-up / post-event ultimate loss or regulatory capital.
+Next concrete scientific experiment: rights-review ONE GEID event sample and ONE genuinely independent damage observation at a frozen product vintage, report the support/mask and split training versus holdout, and compare to a bounded OpenQuake-based synthetic scenario. Do not claim actual insurer ground-up / post-event ultimate loss or regulatory capital.
 
 ## Source links and explicit licence evidence
 
