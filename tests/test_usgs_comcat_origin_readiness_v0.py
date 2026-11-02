@@ -24,7 +24,7 @@ class USGSComCatOriginReadinessTests(unittest.TestCase):
         for forbidden in ("INSERT", "UPDATE", "DELETE", "DROP", "TRUNCATE",
                           "ALTER", "CREATE", "MERGE", "COPY", "GRANT"):
             with self.subTest(forbidden=forbidden):
-                self.assertNotRegex(executable, r"\\b" + forbidden + r"\\b")
+                self.assertNotRegex(executable, r"\b" + forbidden + r"\b")
         self.assertIn("FROM research.usgs_comcat_origin_observation_v0", executable)
 
     def test_hash_identity_is_not_a_provider_url(self):
