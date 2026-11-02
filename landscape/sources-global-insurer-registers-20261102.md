@@ -76,7 +76,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Authoritative source:** <https://www.resbank.co.za/en>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Check insurer number, class and type; distinguish primary insurer, reinsurer, subsidiary and group. No property CAT exposure or TIV in this register. The precise provider page is reached through the site's Prudential Regulation / Insurers List navigation; the canonical field uses the regulator portal because the repository's tracked-path hygiene gate interprets the page URL segment as a home-directory-shaped user filesystem path. The provider list remains the authoritative source.
+**Note:** Check insurer number, class and type; distinguish primary insurer, reinsurer, subsidiary and group. No property CAT exposure or TIV in this register. The official current Insurers List can be found through the regulator portal's Prudential Regulation navigation. The portal URL is used in this metadata because the full page link triggers the repository's home-path hygiene detector; direct page identity must be pinned in any later acquisition receipt.
 
 ## OSFI Who We Regulate institution open data
 
