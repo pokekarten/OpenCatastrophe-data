@@ -134,6 +134,14 @@ def profile(connection: sqlite3.Connection, *, expected_rows: int = EXPECTED_FEA
     counted = len(measured) + invalid_topology + empty + nonpositive_area + malformed
     if counted != n:
         raise GeoBaseError("Geometry quality counts do not conserve source rows")
+    repair_stats = repairs.summary(invalid_topology)
+    valid_area_total = math.fsum(measured)
+    repaired_area_total = repair_stats["repair_candidate_area_sum_projected_m2"]
+    total_candidate_area = valid_area_total + repaired_area_total
+    area_materiality_pct = (
+        round(100 * repaired_area_total / total_candidate_area, 6)
+        if total_candidate_area > 0 else None
+    )
     measured.sort()
     med = round(measured[(len(measured) - 1) // 2], 2) if measured else None
     q95 = round(measured[math.ceil(len(measured) * 0.95) - 1], 2) if measured else None
@@ -142,7 +150,9 @@ def profile(connection: sqlite3.Connection, *, expected_rows: int = EXPECTED_FEA
         "polygon_valid_positive_area": len(measured),
         "invalid_topology": invalid_topology,
         "invalid_topology_classes_aggregate": dict(sorted(topology_classes.items())),
-        "invalid_polygon_repair_diagnostic": repairs.summary(invalid_topology),
+        "invalid_polygon_repair_diagnostic": repair_stats,
+        "repair_candidate_area_share_of_valid_plus_repaired_source_polygons_pct": (
+            area_materiality_pct),
         "empty_geometry": empty,
         "nonpositive_or_nonfinite_area": nonpositive_area,
         "malformed_gpkg_geometry": malformed,
