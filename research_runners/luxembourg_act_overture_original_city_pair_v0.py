@@ -184,6 +184,9 @@ def geometric_candidates(act, overture):
     act_hits = [[] for _ in act]
     overture_hits = [[] for _ in overture]
     qualifying_pairs = 0
+    positive_area_pairs = 0
+    best_act = [0.0] * len(act)
+    best_overture = [0.0] * len(overture)
     for ai, a in enumerate(act):
         for oi, b in enumerate(overture):
             if not a.intersects(b):
@@ -198,11 +201,31 @@ def geometric_candidates(act, overture):
                 ratio = area/union
             except GEOSException as exc:
                 raise GeoBaseError("source overlay topology failure") from exc
+            positive_area_pairs += 1
+            best_act[ai] = max(best_act[ai], ratio)
+            best_overture[oi] = max(best_overture[oi], ratio)
             if ratio < MIN_IOU:
                 continue
             qualifying_pairs += 1
             act_hits[ai].append(oi)
             overture_hits[oi].append(ai)
+    def histogram(values):
+        bands = {"no_positive_area_overlap": 0, "iou_below_0_25": 0,
+                 "iou_0_25_to_0_50": 0, "iou_0_50_to_0_75": 0,
+                 "iou_at_least_0_75": 0}
+        for value in values:
+            if value <= 0:
+                bands["no_positive_area_overlap"] += 1
+            elif value < .25:
+                bands["iou_below_0_25"] += 1
+            elif value < .50:
+                bands["iou_0_25_to_0_50"] += 1
+            elif value < .75:
+                bands["iou_0_50_to_0_75"] += 1
+            else:
+                bands["iou_at_least_0_75"] += 1
+        return bands
+
     matched = sum(len(xs) == 1 and len(overture_hits[xs[0]]) == 1
                   for xs in act_hits if xs)
     ambiguous_act = sum(len(xs) > 1 or
@@ -211,6 +234,9 @@ def geometric_candidates(act, overture):
     return {
         "original_act_city_candidate_footprints": len(act),
         "original_overture_city_candidate_footprints": len(overture),
+        "positive_area_original_source_overlap_pairs": positive_area_pairs,
+        "ACT_best_geometric_iou_distribution": histogram(best_act),
+        "Overture_best_geometric_iou_distribution": histogram(best_overture),
         "overlap_pairs_above_iou_0_75": qualifying_pairs,
         "reciprocal_one_to_one_geometric_candidates": matched,
         "act_features_with_ambiguous_many_to_many_candidates": ambiguous_act,
