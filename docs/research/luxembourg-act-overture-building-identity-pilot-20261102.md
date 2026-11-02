@@ -134,6 +134,32 @@ separate full official provider sample and national ACT/Overture polygon
 join remain the next steps. Do not infer an exact city/country building
 count or source rights approval from row-group statistics.
 
+## Real original source geometry and cross-source pilot results (2026-11-02)
+
+**This section supersedes the earlier planning-only statements below.**
+
+**Actual original Overture polygons.** [GitHub source run 41497879623](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41497879623) passed, including 9/9 source-free tests. A direct S3 Arrow range-based read used exactly original **row group 182** of Overture part 00226 and projected only `bbox` and `geometry` columns. The source-group file contains **19,095** rows; the selected columns report **1,583,294 compressed bytes** (a source column budget, *not an HTTP transfer cap*). In the tiny 6.129–6.131 E, 49.609–49.611 N research window, **69** original rows had bounding boxes intersecting and **69** source polygons also had **positive true geometric intersection**; **0** of those candidate polygons were malformed or had invalid topology. A geodesic footprint-area sample (first 64 valid polygons only, not every source feature) had median **142.24 m²**. No original Overture IDs, WKB, coordinates, customer data, or object-level geometry were persisted or emitted.
+
+The row-group preflight [run 41497156085](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41497156085) also passed the full original footer reading after fixing the Parquet DOUBLE-vs-FLOAT width. Original row group 182 was **the only** group not excluded by the file's 256 source-group geographic bbox statistics: 255 excluded, 1 candidate, 0 unknown, with 19,095 candidate-group *source rows* and 5,035,812 source rows in excluded groups. It is **not** a city-wide count and not a national completeness proof.
+
+**Actual ACT x Overture spatial crosswalk.** [First end-to-end original-source workflow 41498511267](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41498511267) **PASS**, with all 11 original-independent synthetic tests. This job obtained the immutable official ACT GeoBase 2026-10-01 Buildings ZIP, verified the original whole-ZIP SHA-256 and extracted original GeoPackage SHA-256 using the canonical source gate, scanned all **230,353 ACT original objects** and quarantined the known **66 invalid polygon topologies**. Within the same small research window it found:
+
+| Original-source research metric | Observed |
+| --- | ---: |
+| ACT 2026 source polygon footprints with positive window intersection | **139** |
+| Overture 2026 source polygon footprints with positive window intersection | **69** |
+| ACT x Overture polygon overlap pairs at EPSG:2169 planar IoU ≥ 0.75 | **5** |
+| Reciprocal one-to-one *geometric candidates* | **5** |
+| ACT features with many-to-one / one-to-many ambiguous matches above threshold | **0** |
+| ACT source features without a >=0.75 match in this supplied research window | **134** |
+| Overture source features without a >=0.75 match in this supplied research window | **64** |
+
+These are **real original polygon geometry comparison observations**, not five independently verified physical building identities, legal source joins, insured locations, TIV, or exposure admissions. In particular, neither ACT's 139 nor Overture's 69 is a complete, independently validated count of buildings in Luxembourg City or a defensible national source coverage ratio. Possible causes for low reciprocal match counts include different polygon segmentation, source lineage, coordinate frame/epoch, generalization, and the strict 0.75 threshold; these hypotheses require measured tests rather than assumptions.
+
+The original provider ZIP and GeoPackage are ephemeral in the GitHub runner; provider WKB, source IDs and geometry coordinates are not emitted to logs or stored in Git or Neon. A research-only **aggregate receipt** was written to isolated CAT Neon branch `br-bold-unit-baf2smqf` under `research.lu_act_overture_original_city_pair_receipt_v0`, plus an Overture-only geometry receipt under `research.overture_lu_city_one_group_geometry_receipt_v0`. Reproducible isolated SQL scripts are in `research_runners/sql/`. Confirmed **0** source-licence approvals, policyholder mappings, model admissions or persisted provider geometry. Production insurance Neon and the Pokémon database remain untouched.
+
+**Next scientific investigation:** `research_runners/luxembourg_act_overture_original_city_pair_v0.py` now additionally computes **aggregate per-source best-IoU histograms**, separating no positive overlap, under 0.25, 0.25–0.50, 0.50–0.75 and ≥0.75. The first original cross-source live run established the five strict candidates; the histogram-enhanced rerun requires its own successful source workflow before any further numbers can be claimed. Retain all low-score/ambiguous cases for research, not automatic deduplication.
+
 ## What the new joined-screen code does
 
 The offline script research_runners/luxembourg_act_overture_identity_preflight_v0.py
