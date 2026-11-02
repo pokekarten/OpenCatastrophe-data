@@ -26,8 +26,8 @@ def sample():
                 ]}
     layers = {"source_version": "10.0.0", "target_version": "3.0.2", "synthetic_only": True,
               "layers": [
-                  {"ExposureSetName": "IMAGINARY", "ContractID": "C1", "LayerID": "L1", "Currency": "EUR"},
-                  {"ExposureSetName": "IMAGINARY", "ContractID": "C1", "LayerID": "L2", "Currency": "EUR"},
+                  {"ExposureSetName": "IMAGINARY", "ContractID": "C1", "LayerID": "1", "Currency": "EUR"},
+                  {"ExposureSetName": "IMAGINARY", "ContractID": "C1", "LayerID": "2", "Currency": "EUR"},
               ]}
     loc = [dict(PortNumber="IMAGINARY", AccNumber="C1", LocNumber=x["LocationID"],
                 CountryCode=x["CountryISO"], LocCurrency=x["Currency"],
@@ -59,7 +59,7 @@ class SyntheticLayerTests(unittest.TestCase):
             reconcile_layers(exposure, layers, loc, acc)
 
     def test_duplicate_and_unknown_output_layers_rejected(self):
-        for value in ("L1", "OTHER"):
+        for value in ("1", "OTHER"):
             exposure, layers, loc, acc = sample()
             acc[1]["PolNumber"] = value
             with self.assertRaises(ReconcileError):
@@ -69,6 +69,15 @@ class SyntheticLayerTests(unittest.TestCase):
         exposure, layers, loc, acc = sample()
         with self.assertRaisesRegex(ReconcileError, "cardinality"):
             reconcile_layers(exposure, layers, loc, acc[:-1])
+
+    def test_legacy_layer_number_requires_positive_integer(self):
+        for invalid in ("L1", "0", "01", "-1", "1.5"):
+            exposure, layers, loc, acc = sample()
+            layers["layers"][0]["LayerID"] = invalid
+            acc[0]["PolNumber"] = invalid
+            acc[0]["LayerNumber"] = invalid
+            with self.assertRaisesRegex(ReconcileError, "positive OED LayerNumber"):
+                reconcile_layers(exposure, layers, loc, acc)
 
     def test_layer_number_or_currency_change_rejected(self):
         for column, value in (("LayerNumber", "X"), ("AccCurrency", "USD")):
