@@ -13,7 +13,11 @@ create physical events, infer insured exposure, or modify Neon.
 
 Run the canonical SQL
 [`research_runners/sql/usgs_comcat_origin_readiness_v0.sql`](../../research_runners/sql/usgs_comcat_origin_readiness_v0.sql)
-in an explicitly selected CAT-only Neon branch. The query always returns a
+on the explicitly selected CAT-only Neon **main** branch. At the checked
+state, `validation-schema-20261031` does **not** contain the USGS origin table
+and raises `relation does not exist`; this is a schema/branch difference, **not**
+a `MISSING_RESEARCH_ROWS` result. Do not treat that branch as an empty
+source population or fabricate data to make the query execute. The query always returns a
 single aggregate row and leaves all scientific/model admission booleans `false`.
 The query deliberately keeps *provider URLs and stable event IDs* separate
 from SHA-256 verification of the original provider response.
