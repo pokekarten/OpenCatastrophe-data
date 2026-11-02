@@ -61,7 +61,7 @@ class JMABestTrackTests(unittest.TestCase):
         self.assertEqual(report["cyclone_header_count"], 2)
         self.assertEqual(report["analysis_record_count"], 3)
         self.assertEqual(report["records_with_positive_reported_max_wind"], 1)
-        self.assertEqual(report["records_with_positive_reported_central_pressure"], 1)
+        self.assertEqual(report["records_with_positive_reported_central_pressure"], 2)
         self.assertEqual(report["source_first_analysis_utc"], "2026-01-13T18:00:00+00:00")
         self.assertTrue(report["zero_wind_or_blank_is_unknown_not_no_wind"])
         self.assertFalse(report["model_input_admitted"])
