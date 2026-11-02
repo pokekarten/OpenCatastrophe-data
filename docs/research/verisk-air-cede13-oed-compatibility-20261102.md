@@ -90,3 +90,28 @@ The checker builds exact composite identities from `ExposureSetName/ContractID/L
 **Important limitations:** The outputs can be hand-constructed for tests; the tool does not *invoke* ODS Tools, does not validate the full OED schema, has no `LayerID`/policy hierarchy in this narrow source profile, and has no CEDE 13 semantics. The original Oasis account mapping requires additional fields such as `LayerID`. Its report deliberately includes `executed_ods_tools=false`, `oed_schema_validated=false`, `cede_13_compatible=false`, `model_input_admitted=false`, and `rights_approved=false`. Any actual end-to-end declaration still requires running the pinned Oasis mapper with a complete synthetic location **and account/layer** input.
 
 **Focused evidence:** 10 additional local synthetic tests passed, alongside the earlier 13 preflight tests (23/23 in the isolated local Python 3.13 fixture). The exact new commit still requires hosted GitHub CI. Local package acquisition is blocked by pip package-index DNS resolution; no genuine ODS Tools invocation was performed.
+
+## Multi-layer account integrity preflight (2026-11-02)
+
+The previous output check counts unique accounts. This is **not sufficient** for a real account extract with multiple insurance layers under the same account; Oasis ODS Tools' published CEDE v10 -> OED v3.0.2 account mapping sends `LayerID` to both `PolNumber` and `LayerNumber`.
+
+The bounded layer-aware synthetic reconciliation adds:
+- `scripts/cede_oed_layer_identity_v0.py`
+- `tests/test_cede_oed_layer_identity_v0.py`
+
+Its inputs are a wholly invented legacy CEDE-v10/OED-v3.0.2 exposure JSON (the pre-existing nine-column profile), a **separate** invented layer JSON document with `ExposureSetName, ContractID, LayerID, Currency`, and candidate OED location/account CSVs. The layer document declares `synthetic_only=true`, `source_version=10.0.0`, `target_version=3.0.2`. Multiple layers may belong to one account. Every source account must have at least one layer and every layer must match exactly one source account and its currency.
+
+Run:
+
+```bash
+python -m unittest tests/test_cede_oed_layer_identity_v0.py -v
+python scripts/cede_oed_layer_identity_v0.py \
+  --synthetic-exposure /path/to/invented_exposure.json \
+  --synthetic-layers /path/to/invented_layers.json \
+  --oed-location /path/to/candidate_location.csv \
+  --oed-account /path/to/candidate_account.csv
+```
+
+The account CSV must contain at least `PortNumber,AccNumber,PolNumber,LayerNumber,AccCurrency`. The checker fails on missing, duplicated, additional or altered layer identities, unexpected accounts, mixed within-account source currencies and changed account currency. Location values are reconciled with the prior synthetic TIV checks, and the report exposes only counts, aggregates and explicit `false` execution/rights/OED-schema/CEDE-13/financial-terms flags.
+
+**Focused evidence:** 12 new pure-stdlib synthetic tests passed in the local Python runtime, bringing the three CEDE/OED scripts to **35/35 focused tests**. Hosted CI must still pass on the latest head. **Not demonstrated:** actual ODS Tools execution, full OED validity, policy financial terms/coverage/peril mapping, CEDE 13.0 compatibility, license/admission or Neon integration. These remain separate gates.
