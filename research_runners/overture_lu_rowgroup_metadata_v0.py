@@ -140,9 +140,12 @@ def read_metadata(footer):
 
 
 def _float_stat(raw):
-    if not isinstance(raw, bytes) or len(raw) != 4:
+    # Parquet primitive Type=5 is DOUBLE (IEEE-754 float64), not FLOAT
+    # (Type=4). This exact original Overture file contains 8-byte
+    # little-endian statistics for all four bbox columns.
+    if not isinstance(raw, bytes) or len(raw) != 8:
         return None
-    result = struct.unpack("<f", raw)[0]
+    result = struct.unpack("<d", raw)[0]
     return result if math.isfinite(result) else None
 
 
@@ -216,8 +219,8 @@ def _bbox_statistics_diagnostics(group):
             "stat_field_ids": sorted(stats.keys()),
             "min_stat_byte_length": len(low) if isinstance(low, bytes) else None,
             "max_stat_byte_length": len(high) if isinstance(high, bytes) else None,
-            "min_stat_parses_as_finite_float32": _float_stat(low) is not None,
-            "max_stat_parses_as_finite_float32": _float_stat(high) is not None,
+            "min_stat_parses_as_finite_double": _float_stat(low) is not None,
+            "max_stat_parses_as_finite_double": _float_stat(high) is not None,
         }
     for name in FLOAT_FIELDS:
         out.setdefault(name, {"column_present": False})
