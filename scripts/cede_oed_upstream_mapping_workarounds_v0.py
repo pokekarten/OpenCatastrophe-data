@@ -33,6 +33,37 @@ UNSAFE_WHEN = "      when: ExposureSetName\n"
 BOOLEAN_WHEN = "      when: ExposureSetName is not in ['', 'NULL']\n"
 
 
+def _diagnose_synthetic_oed_findings(location: Path, account: Path) -> list[dict[str, str]]:
+    """Get bounded official rule diagnostics for wholly invented temporary rows ONLY.
+
+    Never invoke on actual customer exposure: validator messages can echo
+    identifiers and values from underlying input rows.
+    """
+    from ods_tools.oed import OedExposure
+    from ods_tools.oed.common import DEFAULT_VALIDATION_CONFIG
+
+    exposure = OedExposure(
+        location=str(location), account=str(account),
+        oed_schema_info="3.0.2", check_oed=False,
+        disable_oed_version_update=True,
+    )
+    diagnostics: list[dict[str, str]] = []
+    for rule in DEFAULT_VALIDATION_CONFIG:
+        findings = exposure.check([{**rule, "on_error": "return"}])
+        for finding in findings:
+            if len(diagnostics) >= 12:
+                return diagnostics
+            msg = str(finding.get("msg", ""))
+            # Single-line, bounded, and only ever generated from invented values.
+            msg = " ".join(msg.split())[:800]
+            diagnostics.append({
+                "rule": rule["name"],
+                "source": str(finding.get("name", "unknown"))[:40],
+                "summary": msg,
+            })
+    return diagnostics
+
+
 def probe(upstream: Path) -> dict[str, object]:
     mapping_dir = upstream.resolve(strict=True) / MAPPING_PATH
     results = []
@@ -96,6 +127,12 @@ def probe(upstream: Path) -> dict[str, object]:
             if set(outputs) == {"location", "account"}
             else {"attempted": False, "passed": False, "blocked_reason": "missing_output"}
         )
+        official_diagnostics = (
+            _diagnose_synthetic_oed_findings(outputs["location"], outputs["account"])
+            if set(outputs) == {"location", "account"} and not official_probe["passed"]
+            and official_probe.get("blocked_reason") is None
+            else []
+        )
     return {
         "profile": "cede10-oed302-temporary-upstream-example-workaround-probe-v0",
         "upstream_commit": UPSTREAM_COMMIT, "synthetic_only": True,
@@ -104,6 +141,7 @@ def probe(upstream: Path) -> dict[str, object]:
         "both_generated": all(x["generated_csv"] and x.get("output_rows") == 1 for x in results),
         "full_mapping_approved": False,
         "oed_schema_probe": official_probe,
+        "synthetic_oed_validation_findings": official_diagnostics,
         "oed_schema_validated": official_probe["passed"],
         "cede13_compatible": False, "rights_approved": False, "model_input_admitted": False,
     }
