@@ -35,6 +35,37 @@ The provider STAC item reports **609,459,333 original bytes**, **5,054,907 rows*
 
 For this first **Luxembourg-city pilot only**, the pairing code now requires this exact part-00226 file key rather than accepting arbitrary worldwide Parquet files, and an extra negative test rejects a different syntactically valid file. This key pin is a provider metadata receipt, **not** a claim that individual locally supplied records have been source-byte authenticated. Real region geometry and actual spatial sample content remain outstanding.
 
+## Reproducible original-provider file receipt (metadata only)
+
+The reviewed script research_runners/overture_luxembourg_stac_receipt_v0.py
+independently retrieves the exact official STAC item 00226, requires its
+frozen 2026-10-21 release, published source file URL, source size,
+5,054,907 original rows, 256 STAC-reported row groups and bounding-box
+intersection with the small Luxembourg-city research window.
+
+It then asks the actual S3 object for only **4 + 8 + 8,192 = 8,204**
+file bytes using exact HTTP 206 ranges. It checks constant ETag across
+the three independent ranges, Parquet PAR1 header/trailer, and parses the
+original footer-prefix metadata version 2 / 63 schema elements / 5,054,907
+rows. It never reads individual original building feature pages or
+downloads the full 609 MB file. An S3 ETag is NOT a verified full-file SHA256.
+
+    python -m research_runners.overture_luxembourg_stac_receipt_v0 --live
+    python -m unittest tests.test_overture_luxembourg_stac_receipt_v0 -v
+
+The new GitHub workflow .github/workflows/overture-luxembourg-stac-original-file.yml
+runs mock-only tests on PRs; it permits the exact public original metadata probe
+only on manual workflow_dispatch or after a reviewed workflow-file push on main.
+It never logs provider feature rows or writes to Neon. The original S3 source
+file metadata was independently checked in this research turn using public
+HTTP range responses; full exact-head GitHub CI must pass before merging.
+
+**No national ACT/Overture feature identity has yet been proven.** The original
+S3 part file overlaps the research region but its STAC bbox does not prove
+any actual per-row geometry overlaps the region. A reviewed bounded original
+feature sample, verified original file SHA256, geodetic frame review, GERS
+registry evidence, and source-specific reuse rights remain outstanding.
+
 ## What the new joined-screen code does
 
 The offline script research_runners/luxembourg_act_overture_identity_preflight_v0.py
