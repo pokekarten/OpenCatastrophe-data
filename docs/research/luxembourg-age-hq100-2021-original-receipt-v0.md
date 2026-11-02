@@ -86,6 +86,24 @@ The second fixed-original [GitHub workflow 41408573653](https://github.com/pokek
 
 The newly added source regression must reject malformed SHP record lengths/part offsets, source checksum drift, unsafe archive members, nonpolygon shapes, and SHP-vs-DBF population mismatches. No original coordinates or hazard values were persisted or printed.
 
+## Original PRJ geodetic metadata screen (2 November 2026)
+
+Dedicated fixed-provider-content [GitHub Actions run 41408965658](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41408965658) **passed**, including pinned `pyproj==3.7.2`, synthetic valid/invalid WKT cases and the real official ZIP. After independently validating the original file and all ZIP structure/CRCs, `research_runners/luxembourg_age_hq100_2021_prj_crs_screen_v0.py` read **only the original 445-byte PRJ WKT** and reported:
+
+| Declared original-source PRJ property | Verified parser outcome |
+| --- | --- |
+| WKT parsed | true |
+| CRS authority match ≥90% confidence | **EPSG:2169** |
+| Coordinate system projected | true |
+| Axis unit name | **metre** |
+| Original polygon coordinate order and survey epoch field-controlled | **false** |
+| Physical ACT2026 building location matched to this 2021 HQ100 scenario | **false** |
+| CAT input authorized | **false** |
+
+The 2021 AGE flood archive and 2026 ACT building data both declare **EPSG:2169**. This removes an important **declared CRS namespace mismatch**, not actual original *axis-byte-order*, precision, flood geometry validity or survey-vintage discrepancies. A projected CRS identity is not an independent check of 1,336,393 polygon coordinate pairs, actual flood intensities, 100-year recurrence calibration or physical insured building location. Never auto-approve a spatial join on this result alone.
+
+**Depth next-step source strategy:** an official 2021 flood hazard map is independently exposed as a Geoportal WMS/WMTS render layer `eau_Hochwassergefahrenkarten_HQ100_2021`, while the 2021–2027 flood risk management plan and official gauge information describe classified depth bands. A rendered hazard map legend is **not** a raw raster or per-building depth value. Verify exact numeric depth layer access, temporal/return-period semantics, provider use rights and numeric units independently; if numeric surfaces are not public, request period-correct modelled depths or water-surface elevation layers from AGE. Do not infer flood depth from polygon extent, `Shape_Area` or map pixel colors.
+
 ## Next scientific steps
 
 - Verify the original actual file format, complete record and field counts,
