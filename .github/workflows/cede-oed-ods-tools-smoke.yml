@@ -41,3 +41,35 @@ jobs:
           python -c "import importlib.metadata as m; assert m.version('ods-tools') == '5.0.10'"
       - name: Run original synthetic CEDE-10-to-OED-3 direct-field transformation
         run: python scripts/cede_oed_ods_tools_live_smoke_v0.py
+
+  upstream-comprehensive-research:
+    name: Research pinned Oasis full CEDE10 mapping with invented rows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout OpenCatastrophe candidate commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Checkout immutable public Oasis example mapping
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: OasisLMF/ODS_Tools
+          ref: 17f1c25b095bb40111f83a6f0abc58c087652538
+          path: upstream-ods-tools
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install pinned Oasis transform runtime
+        run: python -m pip install --disable-pip-version-check --no-input 'ods-tools[transform]==5.0.10'
+      - name: Check source commit and dependency consistency
+        run: |
+          test "$(git -C upstream-ods-tools rev-parse HEAD)" = "17f1c25b095bb40111f83a6f0abc58c087652538"
+          test "$(git hash-object upstream-ods-tools/ods_tools/odtf/examples/oed-cede/mapping/mapping_loc_Cede-OED.yaml)" = "b5433d6bc7f5ecd926fba4899dc12245d9b1e64a"
+          test "$(git hash-object upstream-ods-tools/ods_tools/odtf/examples/oed-cede/mapping/mapping_acc_Cede-OED.yaml)" = "81a0f2e0aab4d140e8dd403f16ebd12d42d804c8"
+          python -m pip check
+      - name: Probe full original Oasis example (research, not an acceptance gate)
+        run: python scripts/cede_oed_upstream_full_mapping_probe_v0.py --upstream-checkout upstream-ods-tools
