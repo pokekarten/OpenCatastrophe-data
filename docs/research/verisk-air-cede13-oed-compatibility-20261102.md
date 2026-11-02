@@ -142,3 +142,26 @@ The isolated GitHub ODTF smoke now **attempts** explicit OED **3.0.2** validatio
 The research-only bounded synthetic direct-field fixture now uses `LayerID=1,2` for compatibility and adds explicit invented `LocPerils=WEC`, `OtherValue=0`, `TimeElementValue=0` and account `Perils=WEC` to populate OED `LocPerilsCovered`, `OtherTIV`, `BITIV` and `PolPerilsCovered`. These are **assumptions for synthetic testing only**, never inferred real insured perils or values. The layer checker independently rejects noncanonical, zero, negative or alphanumeric LayerID when used as the legacy OED LayerNumber; positive integer policy test IDs are bounded to nine decimal digits for safe parsing.
 
 **Validation status:** Official OED 3.0.2 validation remains **unconfirmed** until the exact-head test reports `oed_schema_validated=true`. Merely reaching the schema parser, or passing the custom matching/TIV checks, does **not** confer full OED validity. Future real CEDE interfaces must separately preserve policy identity and explicit layer-number ordering; do not silently replace arbitrary insurer-provided identifiers with numeric surrogates.
+
+## Full original Oasis example execution — exact reproducible defect inventory (2026-11-02)
+
+A new isolated research job checks out **unchanged** public Oasis ODS Tools commit
+[`17f1c25b095bb40111f83a6f0abc58c087652538`](https://github.com/OasisLMF/ODS_Tools/commit/17f1c25b095bb40111f83a6f0abc58c087652538),
+checks the original location and account YAML **blob IDs**, and runs the pinned `ods-tools[transform]==5.0.10` executable against generated **independently synthetic** inputs. Neither vendor data nor copied upstream mapping files are committed into OpenCatastrophe. Source inputs contain one invented row per file, not customer records.
+
+**Untouched full-reference YAML (GitHub Actions [#16](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41524553442)):**
+
+| File | Actual synthetic input columns | Declared OED outputs | Result |
+| --- | ---: | ---: | --- |
+| Location | 156 | 188 | No CSV. ODTF error: unrecognised source type `ODTF Data Type`. |
+| Account | 70 | 36 | No CSV. ODTF tries to use the **string content** `SYNTHETIC-ONLY` from `ExposureSetName` as a dataframe boolean filter / column reference; this is not a valid boolean `when` condition. |
+
+**Safety warning:** the upstream ODTF transform CLI returned exit code **0 despite both batch errors and no output**. The research runner correctly requires a real nonempty CSV plus one expected row; it reports `full_mapping_executed_both=false`. A green workflow indicates the diagnostic probe completed; **it does not mean the untreated full mapping works**.
+
+**Two strictly temporary diagnostic workarounds, not production patches:** remove the illustrative `Cede Field: type: ODTF Data Type` placeholder from a temporary location YAML copy, and change one `when: ExposureSetName` in each temporary YAML to a value-checked boolean condition. The original upstream mapping SHA remains pinned and untouched. With these two controlled changes, the same [#16 research run](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41524553442) produced **one location CSV with 188 columns** and **one account CSV with 36 columns** from wholly invented input. The account warning log was empty; the location stderr contained a Python assignment warning. Neither artifact was validated against the OED 3.0.2 schema in this first workaround run.
+
+**Additional independently inspected upstream issue:** location source `types:` declares `MinDeduct` **twice**, making schema interpretation vulnerable to duplicate-key overwrite. Original location has 157 syntactic type lines but only 156 unique source fields. For real data, reject ambiguous YAML duplicate keys rather than selecting a silent winner.
+
+**New targeted follow-up:** the workaround runner has been extended to attempt the **official OED 3.0.2 validation** on the resulting CSVs (including required and conditional fields). Until a specific exact-head workflow returns its actual outcome, no OED-validity or scientific parity conclusion for the full mapping is claimed. This test also cannot validate the 2025 CEDE 13.0 changes, vulnerability modules, licensed AIR event catalogs, policy/treaty economics, or rights to vendor sample SQL backups.
+
+**Reproduction:** `python scripts/cede_oed_upstream_full_mapping_probe_v0.py --upstream-checkout <pinned-Oasis-checkout>` and `python scripts/cede_oed_upstream_mapping_workarounds_v0.py --upstream-checkout <pinned-Oasis-checkout>`, after `ods-tools[transform]==5.0.10` is installed. This is an exploratory research lane, not an admission or model-input gate.
