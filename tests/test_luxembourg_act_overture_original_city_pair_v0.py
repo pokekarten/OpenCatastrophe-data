@@ -123,6 +123,41 @@ class OriginalACTOvertureComparisonTests(unittest.TestCase):
             with self.assertRaisesRegex(GeoBaseError, "non-finite"):
                 geometric_candidates(act, overture)
 
+    def test_threshold_sensitivity_exposes_75_to_90_percent_instability(self):
+        # Shift by 1m yields IoU 90/110 ~= .818: a 75% candidate
+        # is NOT a 90% candidate and cannot be labelled 'certain'.
+        out = geometric_candidates([square()], [square(77241)])
+        sweep = out["geometric_threshold_sensitivity_research_only"]
+        self.assertEqual(
+            [sweep[k]["reciprocal_one_to_one_geometric_candidates"]
+             for k in ("iou_0_50", "iou_0_75", "iou_0_90")],
+            [1, 1, 0],
+        )
+        self.assertEqual(out["reciprocal_one_to_one_geometric_candidates"], 1)
+        self.assertIs(out["threshold_sensitivity_is_identity_confidence"], False)
+        self.assertNotIn("77241", str(out))
+
+    def test_lower_cutoff_can_create_ambiguity_without_changing_frozen_75_gate(self):
+        # An exact overlap plus a 3m-shifted polygon produce 2 qualifying
+        # links at 50%, but only the original strict 75% link remains.
+        out = geometric_candidates([square()], [square(), square(77243)])
+        sweep = out["geometric_threshold_sensitivity_research_only"]
+        self.assertEqual(sweep["iou_0_50"]["overlap_pairs_at_or_above_threshold"], 2)
+        self.assertEqual(sweep["iou_0_50"]["reciprocal_one_to_one_geometric_candidates"], 0)
+        self.assertEqual(sweep["iou_0_50"]["act_features_with_ambiguous_geometric_candidates"], 1)
+        self.assertEqual(sweep["iou_0_75"]["reciprocal_one_to_one_geometric_candidates"], 1)
+        self.assertEqual(sweep["iou_0_90"]["reciprocal_one_to_one_geometric_candidates"], 1)
+        self.assertEqual(out["reciprocal_one_to_one_geometric_candidates"], 1)
+
+    def test_exact_geometry_stays_reciprocal_at_all_three_thresholds(self):
+        sweep = geometric_candidates([square()], [square()])[
+            "geometric_threshold_sensitivity_research_only"
+        ]
+        for result in sweep.values():
+            self.assertEqual(result["overlap_pairs_at_or_above_threshold"], 1)
+            self.assertEqual(result["reciprocal_one_to_one_geometric_candidates"], 1)
+            self.assertEqual(result["act_features_with_ambiguous_geometric_candidates"], 0)
+
     def test_default_has_no_source_access(self):
         self.assertEqual(main(["--source-zip", "/tmp/nonexistent-act-original.zip"]), 2)
 
