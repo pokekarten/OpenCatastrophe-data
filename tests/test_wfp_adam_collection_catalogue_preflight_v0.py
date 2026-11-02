@@ -75,6 +75,57 @@ class ADAMCatalogueTests(unittest.TestCase):
                 with self.assertRaises(ADAMCatalogueError):
                     inspect(obj)
 
+    def test_live_twelve_of_thirteen_documentation_drift_is_visible_and_blocked(self):
+        # Synthetic reproduction of provider metadata coverage observed on
+        # 2026-11-02, not a copied provider response or a dataset admission.
+        current = catalogue()
+        current["collections"] = [
+            row for row in current["collections"]
+            if row["id"] != "adam.adam_ts_disturbance_events"
+        ]
+        current["numberMatched"] = 12
+        current["numberReturned"] = 12
+        data = raw(current)
+        pinned = hashlib.sha256(data).hexdigest()
+        with self.assertRaisesRegex(ADAMCatalogueError, "missing=adam.adam_ts_disturbance_events"):
+            inspect_adam_catalogue_bytes(data, pinned)
+        report = inspect_adam_catalogue_bytes(data, pinned, diagnostics_only=True)
+        self.assertEqual(report["reference_collection_count"], 13)
+        self.assertEqual(report["observed_collection_count"], 12)
+        self.assertEqual(report["missing_documented_collection_ids"], ["adam.adam_ts_disturbance_events"])
+        self.assertEqual(report["tropical_cyclone_collection_count"], 7)
+        self.assertFalse(report["catalogue_matches_documented_reference"])
+        self.assertFalse(report["source_admitted_for_model_use"])
+        self.assertFalse(report["events_or_footprints_downloaded"])
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / "catalogue.json"
+            out = Path(folder) / "diagnostic.json"
+            source.write_bytes(data)
+            cmd = [
+                sys.executable,
+                str(ROOT / "research_runners/wfp_adam_collection_catalogue_preflight_v0.py"),
+                str(source), "--expected-sha256", pinned,
+                "--out", str(out), "--diagnose-only",
+            ]
+            proc = subprocess.run(cmd, capture_output=True, text=True)
+            self.assertEqual(proc.returncode, 3, proc.stderr)
+            self.assertIn("BLOCKED", proc.stderr)
+            self.assertEqual(json.loads(out.read_text(encoding="utf-8"))["observed_collection_count"], 12)
+            self.assertEqual(source.read_bytes(), data)
+
+    def test_provider_declared_counts_must_match_not_just_documented_names(self):
+        for wrong in (11, 14, True, -1):
+            with self.subTest(wrong=wrong):
+                sample = catalogue()
+                sample["numberReturned"] = wrong
+                with self.assertRaises(ADAMCatalogueError):
+                    inspect(sample)
+        partial = catalogue()
+        partial["numberReturned"] = 13
+        partial["numberMatched"] = 14
+        with self.assertRaises(ADAMCatalogueError):
+            inspect(partial)
+
     def test_sha_strict_json_and_size(self):
         valid = raw(catalogue())
         for bad in ("0" * 64, "Z" * 64, ""):
