@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: NOAA GHCN complete original station research receipt
+
+on:
+  pull_request:
+    paths:
+      - 'access/noaa.nodd.ghcnd-central-park-complete.*'
+      - 'scripts/probe_ghcnd_full_station_original_v0.py'
+      - 'tests/test_probe_ghcnd_full_station_original_v0.py'
+      - '.github/workflows/ghcnd-full-station-original.yml'
+  workflow_dispatch:
+  # Reviewed one-shot full original source check; PRs use offline tests only.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ghcnd-full-station-original.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ghcnd-full-station-original-\${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  one-full-original:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Exact SHA checkout without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Validate reviewed bounded full-source contract
+        run: python scripts/validate_source_access.py access/noaa.nodd.ghcnd-central-park-complete.json
+      - name: Check deterministic source access human views
+        run: python scripts/render_public_views.py --check --scope access
+      - name: Run synthetic full-station fixture and hostile-provider regression
+        run: python -m unittest tests.test_probe_ghcnd_full_station_original_v0 -v
+      - name: Pin checked executable revision and SHA
+        run: |
+          git rev-parse HEAD
+          sha256sum scripts/probe_ghcnd_full_station_original_v0.py
+      - name: Check one complete NOAA original station file (SHA only)
+        if: github.event_name != 'pull_request'
+        run: python scripts/probe_ghcnd_full_station_original_v0.py --live
