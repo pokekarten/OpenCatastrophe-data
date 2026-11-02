@@ -35,7 +35,8 @@ BYTE_LIMIT = 65_536
 TIMEOUT = 30
 PROFILE = "oc-ghcnd-central-park-64k-original-prefix-v0"
 HEADER = ["ID", "DATE", "ELEMENT", "DATA_VALUE", "M_FLAG", "Q_FLAG", "S_FLAG", "OBS_TIME"]
-# NOAA NODD currently serves this exact CSV object as binary/octet-stream.\nMEDIA = {"application/octet-stream", "binary/octet-stream", "text/plain", "text/csv", "application/vnd.ms-excel"}
+# NOAA NODD currently serves this exact CSV object as binary/octet-stream.
+MEDIA = {"application/octet-stream", "binary/octet-stream", "text/plain", "text/csv", "application/vnd.ms-excel"}
 CONTENT_RANGE = re.compile(r"^bytes 0-65535/([1-9][0-9]*)$")
 ELEMENT = re.compile(r"^[A-Z0-9]{4}$")
 SIGNED_INTEGER = re.compile(r"^-?[0-9]{1,8}$")
