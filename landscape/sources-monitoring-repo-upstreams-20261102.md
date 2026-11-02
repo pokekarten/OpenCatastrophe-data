@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-02`  
 **Purpose:** Non-admission discovery of authoritative upstream event, warning, humanitarian-response and meteorological sources used by World Monitor-like repositories; software aggregators are evidence pointers rather than source admission.
 
-**Entries:** 9
+**Entries:** 12
 
 
 ## GLIDE global disaster identifier catalogue
@@ -161,3 +161,51 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Discovered from Crisis Compass and Ancoda Atlas. The Open-Meteo APIs aggregate DWD ICON, ECMWF IFS, Météo-France ARPEGE, CMA GRAPES and other model outputs. Avoid double counting their upstream model sources as independent observations; record provider, exact model/run, interpolation, forecast lead time and commercial access terms.
+
+
+## BMKG Indonesia open earthquake event feed
+
+**Candidate ID:** `id.bmkg.earthquake-open-data`  
+**Provider:** Badan Meteorologi Klimatologi dan Geofisika (BMKG)  
+**Categories:** `earthquake`, `tsunami_context`, `event_catalogue`, `near_real_time`  
+**Spatial scope:** Indonesia and surrounding earthquake region  
+**Temporal scope:** recent earthquake snapshots updated on occurrence; separate reviewed historical repository  
+**Resolution / granularity:** Recent and felt event JSON/XML with magnitude, depth, time, coordinates and ShakeMap image reference  
+**Potential roles:** `southeast_asia_earthquake_event_crosswalk`, `quake_time_location_validation`  
+**Access hint:** `public_json_xml_limit_60_per_minute_attribution_required_full_history_separate`  
+**Authoritative source:** <https://data.bmkg.go.id/gempabumi/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Discovered in GlobeWatch. BMKG documents recent earthquake event products, seven current files and mandatory attribution, with 60 requests/minute/IP. Its public feed is a recent rolling snapshot, not complete historic seismicity. For history use the separately documented BMKG repository with authentication/rights review; preserve agency IDs and preliminary-to-reviewed revisions.
+
+
+## Japan Meteorological Agency earthquake and volcano high-frequency XML feed
+
+**Candidate ID:** `jp.jma.quake-volcano-high-frequency-xml`  
+**Provider:** Japan Meteorological Agency (JMA)  
+**Categories:** `earthquake`, `volcano`, `event_catalogue`, `near_real_time`  
+**Spatial scope:** Japan and neighboring earthquake/volcano advisory domains  
+**Temporal scope:** operational minute-updated feed carrying the most recent bulletins  
+**Resolution / granularity:** Official XML bulletin references for recent earthquake and volcanic information  
+**Potential roles:** `japan_event_crosswalk`, `operational_quake_warning_context`, `bulletin_revision_tracking`  
+**Access hint:** `public_japan_government_standard_terms_temporal_retention_and_licence_review`  
+**Authoritative source:** <https://www.data.jma.go.jp/developer/xml/feed/eqvol.xml>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Discovered from GlobeWatch; Japanese e-Gov data portal registers JMA eqvol.xml and Japanese Government Standard Terms of Use. Fast operational feed retains recent bulletins only, not a complete historical catalogue. Preserve native event/issue IDs, bulletin type, revisions and official original XML semantics.
+
+
+## NASA Global Imagery Browse Services (GIBS) temporal satellite visualizations
+
+**Candidate ID:** `nasa.gibs.wmts-temporal-imagery`  
+**Provider:** NASA Earthdata / GIBS  
+**Categories:** `satellite_imagery`, `earth_observation`, `event_context`  
+**Spatial scope:** global, selected product coverage and map projection  
+**Temporal scope:** time-varying NASA satellite visualization products; product-dependent archive  
+**Resolution / granularity:** WMS, WMTS, TMS and XYZ map tiles with product-specific resolutions and timestamps  
+**Potential roles:** `post_event_visual_review`, `satellite_overlay_context`, `original_raster_discovery`  
+**Access hint:** `public_wms_wmts_visualization_service_exact_product_rights_and_data_review`  
+**Authoritative source:** <https://nasa-gibs.github.io/gibs-api-docs/access-basics/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Discovered in Terra Watch. GIBS serves imagery visualizations; a colored map tile or corrected reflectance is not directly a damage mask, flood depth or numeric hazard. For quantitative CAT use identify and obtain original instrument/product values, version, cloud quality, time, projection, resampling and rights separately.
