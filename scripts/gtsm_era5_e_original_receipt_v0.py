@@ -27,6 +27,7 @@ SOURCE_DOWNLOAD_URL = (
 SOURCE_NAME = "ds_GTSM-ERA5-E_1950-2024_stats.nc"
 SOURCE_BYTES = 9_652_424
 SOURCE_MD5 = "0f2b7071c6ec3585768be6cf427e6eab"
+PINNED_SHA256 = "e366c79683438d03a48b23764f1159d5ed88845a459f625eeb787dff78cbd767"
 CHUNK = 65536
 HDF5_MAGIC = b"\x89HDF\r\n\x1a\n"
 CDF_MAGIC = (b"CDF\x01", b"CDF\x02", b"CDF\x05")
@@ -77,16 +78,73 @@ def _file_receipt(path: Path, *, expected_size: int, expected_md5: str) -> dict[
             "container_signature": "netcdf4_hdf5" if prefix == HDF5_MAGIC else "netcdf_classic"}
 
 
-def verify_original(path: Path) -> dict[str, object]:
+def verify_original(path: Path, *, inspect_header: bool = False) -> dict[str, object]:
     receipt = _file_receipt(path, expected_size=SOURCE_BYTES, expected_md5=SOURCE_MD5)
+    if not hmac.compare_digest(str(receipt["sha256_observed_not_publisher_pinned"]), PINNED_SHA256):
+        raise GtsmReceiptError("original SHA-256 differs from independently observed pinned original")
+    header = inspect_scientific_header(path) if inspect_header else None
     return {"schema_version": "gtsm-era5-e-original-byte-receipt-v0",
             "source_record": RECORD_URL, "source_filename": SOURCE_NAME,
             "source_version": "Zenodo 14671593 v2 / 1950-2024 statistics",
             "original_byte_evidence": receipt,
-            "publisher_sha256_available": False, "netcdf_variables_inspected": False,
+            "independent_sha256_pinned": True,
+            "scientific_header_inventory": header,
+            "publisher_sha256_available": False, "netcdf_variables_inspected": bool(inspect_header),
             "scientific_fitness_approved": False, "data_rights_approved": False,
             "model_admitted": False, "insurer_exposure_inferred": False,
             "provider_bytes_persisted_by_this_tool": False}
+
+
+def inspect_scientific_header(path: Path) -> dict[str, object]:
+    """Read only structural NetCDF metadata after full pinned-byte verification.
+
+    No variable data slices, numeric arrays, model results or insured values.
+    Header labels can guide a future science review; this is not that review.
+    """
+    try:
+        from netCDF4 import Dataset
+    except ImportError as exc:
+        raise GtsmReceiptError("pinned netCDF4 acquisition dependency is required for header inspection") from exc
+    try:
+        with Dataset(path.as_posix(), "r") as ds:
+            if not ds.dimensions or len(ds.dimensions) > 48:
+                raise GtsmReceiptError("unexpected NetCDF dimension inventory size")
+            if not ds.variables or len(ds.variables) > 200:
+                raise GtsmReceiptError("unexpected NetCDF variable inventory size")
+            dims = {}
+            for name, dim in ds.dimensions.items():
+                if not isinstance(name, str) or len(name) > 128:
+                    raise GtsmReceiptError("unsafe NetCDF dimension label")
+                dims[name] = len(dim)
+            fields = []
+            for name, var in ds.variables.items():
+                if not isinstance(name, str) or len(name) > 128 or len(var.dimensions) > 8:
+                    raise GtsmReceiptError("unsafe NetCDF variable label or rank")
+                def safe_attr(key: str) -> str:
+                    value = getattr(var, key, "")
+                    if not isinstance(value, str) or len(value) > 256:
+                        return ""
+                    return value
+                fields.append({
+                    "name": name,
+                    "dimensions": list(var.dimensions),
+                    "shape": list(var.shape),
+                    "dtype": str(var.dtype)[:80],
+                    "units": safe_attr("units"),
+                    "standard_name": safe_attr("standard_name"),
+                    "long_name": safe_attr("long_name"),
+                })
+    except GtsmReceiptError:
+        raise
+    except Exception as exc:
+        raise GtsmReceiptError("unable to inspect pinned NetCDF scientific header") from exc
+    return {
+        "dimensions": dims, "variables": fields,
+        "metadata_only": True, "variable_values_read": False,
+        "vertical_datum_verified": False,
+        "return_period_method_verified": False,
+        "science_review_approved": False,
+    }
 
 
 class _ZenodoOnlyRedirect(HTTPRedirectHandler):
@@ -100,7 +158,7 @@ class _ZenodoOnlyRedirect(HTTPRedirectHandler):
         return super().redirect_request(request, fp, code, msg, headers, newurl)
 
 
-def fetch_verified_original() -> dict[str, object]:
+def fetch_verified_original(*, inspect_header: bool = False) -> dict[str, object]:
     """One fixed HTTPS original read, ephemeral file, only metadata receipt returned."""
     request = Request(SOURCE_DOWNLOAD_URL, headers={"User-Agent": "OpenCatastrophe-GTSM-Research/1.0"})
     try:
@@ -127,7 +185,7 @@ def fetch_verified_original() -> dict[str, object]:
                         if received > SOURCE_BYTES:
                             raise GtsmReceiptError("source exceeds exact original-byte acquisition cap")
                         target.write(block)
-                return verify_original(path)
+                return verify_original(path, inspect_header=inspect_header)
     except (HTTPError, URLError, TimeoutError, OSError) as exc:
         raise GtsmReceiptError("fixed Zenodo original acquisition unavailable") from exc
 
@@ -137,9 +195,12 @@ def main(argv: list[str] | None = None) -> int:
     choice = parser.add_mutually_exclusive_group(required=True)
     choice.add_argument("--original", type=Path, help="existing original NetCDF, offline read-only")
     choice.add_argument("--fetch", action="store_true", help="one fixed HTTPS Zenodo original only")
+    parser.add_argument("--inspect-header", action="store_true",
+                        help="after SHA-256 validation, inspect only NetCDF dimension and variable metadata")
     args = parser.parse_args(argv)
     try:
-        receipt = fetch_verified_original() if args.fetch else verify_original(args.original)
+        receipt = (fetch_verified_original(inspect_header=args.inspect_header) if args.fetch
+                   else verify_original(args.original, inspect_header=args.inspect_header))
     except (GtsmReceiptError, OSError) as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         return 2
