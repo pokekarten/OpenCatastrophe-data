@@ -12,7 +12,7 @@ from research_runners.overture_lu_rowgroup_metadata_v0 import (
 
 def column(name, low, high):
     return {3: {1: 5, 3: [p.encode() for p in name.split(".")], 12: {
-        5: struct.pack("<f", high), 6: struct.pack("<f", low)}}}
+        5: struct.pack("<d", high), 6: struct.pack("<d", low)}}}
 
 
 def group(x=(6.12, 6.14), y=(49.60, 49.62), size=1):
@@ -47,6 +47,13 @@ class OvertureRowGroupMetadataTests(unittest.TestCase):
 
     def test_inconsistent_min_max_cannot_exclude_group(self):
         self.assertEqual(inspect_group(group(x=(6.14, 6.12))), "unknown")
+
+    def test_wrong_float32_stat_encoding_conservatively_unknown(self):
+        # Original Parquet physical type 5 == DOUBLE: never parse
+        # 4-byte FLOAT32 stats as source DOUBLE, even if values look valid.
+        g = group()
+        g[1][0][3][12][5] = struct.pack("<f", 6.14)
+        self.assertEqual(inspect_group(g), "unknown")
 
     def test_duplicate_bbox_column_rejected(self):
         g = group()
