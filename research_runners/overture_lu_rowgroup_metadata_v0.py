@@ -188,6 +188,42 @@ def inspect_group(group):
     return "candidate"
 
 
+
+def _bbox_statistics_diagnostics(group):
+    """Only source column metadata flags, never original feature data."""
+    out = {}
+    for column in group.get(1, []):
+        meta = column.get(3, {})
+        path = meta.get(3, [])
+        if type(path) is not list or any(type(p) is not bytes for p in path):
+            continue
+        try:
+            name = ".".join(p.decode("utf-8", "strict") for p in path)
+        except UnicodeError:
+            continue
+        if name not in FLOAT_FIELDS:
+            continue
+        stats = meta.get(12)
+        if type(stats) is not dict:
+            out[name] = {"column_present": True, "stat_struct_present": False}
+            continue
+        low = stats.get(6, stats.get(2))
+        high = stats.get(5, stats.get(1))
+        out[name] = {
+            "column_present": True,
+            "parquet_primitive_type": meta.get(1),
+            "stat_struct_present": True,
+            "stat_field_ids": sorted(stats.keys()),
+            "min_stat_byte_length": len(low) if isinstance(low, bytes) else None,
+            "max_stat_byte_length": len(high) if isinstance(high, bytes) else None,
+            "min_stat_parses_as_finite_float32": _float_stat(low) is not None,
+            "max_stat_parses_as_finite_float32": _float_stat(high) is not None,
+        }
+    for name in FLOAT_FIELDS:
+        out.setdefault(name, {"column_present": False})
+    return out
+
+
 def screen(groups):
     counts = {"candidate": 0, "excluded": 0, "unknown": 0}
     rows = {"candidate": 0, "excluded": 0, "unknown": 0}
@@ -199,6 +235,7 @@ def screen(groups):
             or sum(rows.values()) != EXPECTED_ROWS):
         raise ProbeError("row-group audit did not conserve original source file")
     return {
+        "first_original_rowgroup_bbox_metadata_diagnostics": _bbox_statistics_diagnostics(groups[0]),
         "row_group_count_by_status": counts,
         "file_rows_in_groups_by_status": rows,
         "groups_not_excluded": counts["candidate"] + counts["unknown"],
