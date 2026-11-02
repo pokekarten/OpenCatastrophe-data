@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg AGE HQ100 2021 original ZIP format receipt
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_age_hq100_2021_original_preflight_v0.py'
+      - 'tests/test_luxembourg_age_hq100_2021_original_preflight_v0.py'
+      - '.github/workflows/luxembourg-age-hq100-2021-original.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-hq100-format-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact proposed revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Exercise synthetic original ZIP, DBF, SHP and unsafe-archive cases
+        run: python -m unittest tests.test_luxembourg_age_hq100_2021_original_preflight_v0 -v
+      - name: Download immutable publisher source and inspect format headers only
+        shell: bash
+        run: |
+          set -euo pipefail
+          original="$RUNNER_TEMP/lu-age-hq100-2021-source.zip"
+          umask 077
+          trap 'rm -f "$original"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 120 --retry 0 \
+            --max-filesize 16777216 --output "$original" \
+            'https://download.data.public.lu/resources/flood-hazard-maps-100-year-flood/20220613-154804/hwgk2021-hq100.zip'
+          python -m research_runners.luxembourg_age_hq100_2021_original_preflight_v0 \
+            --source-zip "$original"
+          # This check never reads feature geometries nor depth observations.
+          # Original provider bytes never enter Git, logs, artifacts or Neon.
