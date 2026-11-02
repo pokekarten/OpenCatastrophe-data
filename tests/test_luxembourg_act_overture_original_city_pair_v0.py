@@ -3,7 +3,7 @@
 """Original-source independent offline synthetic ACT/Overture IoU tests."""
 import struct
 import unittest
-from shapely.geometry import box
+from shapely.geometry import Point, Polygon, box
 from research_runners.luxembourg_act_overture_original_city_pair_v0 import (
     _gpkg_polygon, geometric_candidates, GeoBaseError, main
 )
@@ -94,6 +94,34 @@ class OriginalACTOvertureComparisonTests(unittest.TestCase):
     def test_large_batch_fails_closed(self):
         with self.assertRaises(GeoBaseError):
             geometric_candidates([square()]*501, [square()])
+
+    def test_invalid_act_and_overture_polygons_never_form_false_matches(self):
+        # A self-intersecting original footprint must not be silently
+        # repaired or dropped: dropping it might fake a reciprocal match.
+        bowtie = Polygon([
+            (77240, 75040), (77250, 75050), (77240, 75050),
+            (77250, 75040), (77240, 75040)
+        ])
+        self.assertFalse(bowtie.is_valid)
+        for act, overture in (([bowtie], [square()]),
+                              ([square()], [bowtie])):
+            with self.subTest(side="act" if act[0] is bowtie else "overture"):
+                with self.assertRaises(GeoBaseError):
+                    geometric_candidates(act, overture)
+
+    def test_reject_nonpolygon_source_geometry_before_iou(self):
+        for act, overture in (([Point(77240, 75040)], [square()]),
+                              ([square()], [Point(77240, 75040)])):
+            with self.assertRaisesRegex(GeoBaseError, "non-polygon"):
+                geometric_candidates(act, overture)
+
+    def test_reject_infinite_projected_area_on_either_source(self):
+        unbounded = box(0, 0, 1e200, 1e200)
+        self.assertFalse(__import__("math").isfinite(unbounded.area))
+        for act, overture in (([unbounded], [square()]),
+                              ([square()], [unbounded])):
+            with self.assertRaisesRegex(GeoBaseError, "non-finite"):
+                geometric_candidates(act, overture)
 
     def test_default_has_no_source_access(self):
         self.assertEqual(main(["--source-zip", "/tmp/nonexistent-act-original.zip"]), 2)
