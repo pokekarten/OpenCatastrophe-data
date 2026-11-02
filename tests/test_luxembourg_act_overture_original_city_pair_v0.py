@@ -5,7 +5,8 @@ import struct
 import unittest
 from shapely.geometry import Point, Polygon, box
 from research_runners.luxembourg_act_overture_original_city_pair_v0 import (
-    _gpkg_polygon, geometric_candidates, GeoBaseError, main
+    _gpkg_polygon, _act_source_label, ACT_SOURCE_FAMILIES,
+    geometric_candidates, GeoBaseError, main
 )
 
 
@@ -157,6 +158,51 @@ class OriginalACTOvertureComparisonTests(unittest.TestCase):
             self.assertEqual(result["overlap_pairs_at_or_above_threshold"], 1)
             self.assertEqual(result["reciprocal_one_to_one_geometric_candidates"], 1)
             self.assertEqual(result["act_features_with_ambiguous_geometric_candidates"], 0)
+
+    def test_ACT_original_source_label_exact_whitelist(self):
+        for label in ACT_SOURCE_FAMILIES[:-1]:
+            self.assertEqual(_act_source_label(label), label)
+        for value in (None, "", "OSM", "PCN-other", "PCN\\nprivate",
+                      "Ortho ", 23, ["PCN"], {"Source": "MO"}):
+            with self.subTest(value=repr(value)):
+                self.assertEqual(_act_source_label(value), "unknown_or_missing")
+
+    def test_ACT_digitizing_source_city_and_candidate_conservation(self):
+        out = geometric_candidates(
+            [square(), square(77300), square(77400)],
+            [square(), square(77400)],
+            overture_source_families=["OpenStreetMap", "Microsoft ML Buildings"],
+            act_source_families=["PCN", "Bati3DACT", "Ortho"],
+        )
+        self.assertEqual(out["reciprocal_one_to_one_geometric_candidates"], 2)
+        self.assertEqual(
+            out["reciprocal_candidate_ACT_digitizing_source_counts"]["PCN"], 1)
+        self.assertEqual(
+            out["reciprocal_candidate_ACT_digitizing_source_counts"]["Ortho"], 1)
+        self.assertEqual(
+            out["reciprocal_candidate_ACT_digitizing_source_counts"]["Bati3DACT"], 0)
+        self.assertEqual(
+            sum(out["ACT_original_city_digitizing_source_counts"].values()), 3)
+        self.assertEqual(
+            sum(out["reciprocal_candidate_ACT_digitizing_source_counts"].values()), 2)
+        self.assertFalse(out["ACT_source_label_is_independent_ground_truth"])
+        self.assertNotIn("77300", str(out))
+
+    def test_ACT_unknown_origin_conservatively_counted_not_discarded(self):
+        out = geometric_candidates(
+            [square()], [square()],
+            act_source_families=[_act_source_label("OTHER_UNVERIFIED_VALUE")])
+        self.assertEqual(
+            out["reciprocal_candidate_ACT_digitizing_source_counts"]["unknown_or_missing"],
+            1)
+
+    def test_ACT_source_family_alignment_and_unsafe_categories_rejected(self):
+        for labels in ([], ["PCN", "Ortho"], ["secret private feature id"],
+                       [None], {"0": "PCN"}):
+            with self.subTest(labels=repr(labels)):
+                with self.assertRaises(GeoBaseError):
+                    geometric_candidates([square()], [square()],
+                                         act_source_families=labels)
 
     def test_default_has_no_source_access(self):
         self.assertEqual(main(["--source-zip", "/tmp/nonexistent-act-original.zip"]), 2)
