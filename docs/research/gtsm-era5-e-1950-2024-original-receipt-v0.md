@@ -82,3 +82,9 @@ This establishes **syntactically sound unique geographic coordinate pairs for th
 
 Review the original-file `quantile` axis separately: the paper describes nine percentile levels but this NetCDF presents only seven `quantile` entries. The raw probability/period axis labels were not read during this coordinate audit. No substitution or extrapolation is allowed until reconciled.
 
+
+## Native probability and return-period axis semantics
+
+The official 2026 GTSM paper enumerates nine percentile levels (1, 5, 10, 25, 50, 75, 90, 95, 99), but the pinned Zenodo v2 statistical NetCDF has only seven `quantile` coordinate entries. The next original-file reader now retrieves only these seven native scalar labels and the eight scalar `return_period` year labels. It runs after the published MD5, independently pinned SHA-256 and exact native header validation. It compares observed period years against the paper (1, 2, 5, 10, 25, 50, 75, 100) without reading `wl_quantiles`, storm events or individual water-level values.
+
+The quantile encoding is only tentatively interpreted as fraction or percent based on observed scalar ranges, and the paper-level discrepancy is retained as a *research unresolved* field until a scientific review confirms exact semantics. The script never interpolates or invents missing quantiles. Run the fixed-source GitHub workflow again before treating the new axis label evidence as verified.
