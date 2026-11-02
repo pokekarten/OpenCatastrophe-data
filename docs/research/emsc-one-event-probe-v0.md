@@ -42,10 +42,38 @@ timeout, no redirects, no automatic retries, no supplied credentials,
 no user-controlled host/URL/query, identity encoding only, and a 1 MiB
 maximum response. A non-200 (including 204) or structurally invalid
 response fails closed. Live raw response bytes are never printed or
-persisted; successful output is only a SHA-256 receipt and boolean
-scope gates. The provider's mutable catalogue may change between runs,
+persisted. The successful hash-only receipt also publishes **the one
+already-validated provider-native event source ID, origin UTC time,
+longitude/latitude and optional magnitude**, explicitly bound to the
+SHA-256 of the entire original provider response. Those attributes
+are bounded current catalogue observations, not an immutable scientific
+identity, archived original JSON, or a source-completeness assertion.
+All scientific/model admission booleans remain false. The provider's mutable catalogue may change between runs,
 so any scientific workflow must separately pin and review original
 event identifiers, event updates, completeness and data use.
+
+
+## Provider-origin revision detection
+
+The first reviewed live source-identity receipt is intentionally one
+**current latest** event returned by the fixed, non-parameterized query.
+Its `provider_event_source_id` and `provider_origin_time_utc` are
+printed only after validating the actual original response; the whole
+`response_sha256` is still the identity of the exact retrieved bytes.
+If a subsequent single query returns a different event, origin time,
+epicentre, magnitude or JSON representation, compare both the source
+identifier and full original hash. A changed hash does **not** prove an
+earthquake revision (it could be a different latest event or a harmless
+serialization/metadata change). The provider's stable event ID alone
+does **not** establish the frozen original origin, ShakeMap/product
+revision, event completeness or scientific hazard-model input.
+
+The recorded coordinates are provider-native degrees with GeoJSON
+longitude/latitude ordering; they are not an intensity field. Any
+future query by a specific event ID, pagination, provider product
+acquisition, database artifact insert or catalogue backfill needs its
+own separately reviewed bounded contract and scientific rights check.
+This revision stores no full original JSON in Git, Neon or Actions.
 
 ## Scientific and database boundary
 
