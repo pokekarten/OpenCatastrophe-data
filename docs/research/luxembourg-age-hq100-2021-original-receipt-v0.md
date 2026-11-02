@@ -252,6 +252,32 @@ All original source file and record bounding boxes matched the measured finite c
 
 **Next scientific gate:** Build an original multipart assembly audit with actual Shapefile signed-winding and shell/hole hierarchy interpretation, bounded inter-ring topology and source-specific repair-effect challenge. A normal `make_valid` of isolated rings cannot substitute for true hole/shell semantics or establish scenario nesting. Separately obtain original numerically machine-readable, source-vintage-compatible HQ10/HQ100/HQextrem flood depth surfaces from AGE under verified rights, unit and vertical datum documentation.
 
+## Original multipart shell/hole hierarchy falsifier: two winding interpretations (2 Nov 2026)
+
+New `research_runners/luxembourg_age_hq2021_ring_hierarchy_challenge_v0.py` runs an **exact-original, checksum-pinned, aggregated-only Shapefile ring hierarchy research challenge**. It uses a bounded spatial index and exact **GEOS `shell.covers(hole)`** predicates only for *individually valid* original rings, and separately records how many candidate holes *might* have been affected by original-invalid outer-ring envelopes. Invalid original rings **are never repaired or silently declared actual floodplain boundaries**. The two competing interpretations are deliberately both tested:
+
+- **Standard Esri Shapefile hypothesis:** clockwise (negative winding) = source exterior; counterclockwise (positive) = source hole.
+- **Reversed hypothesis:** counterclockwise (positive) = source exterior; clockwise (negative) = source hole.
+
+The original-file source run [41484031247](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41484031247) **passed** on the complete original three archives under **both interpretations**, with no candidate-limit quarantines and no GEOS covers errors:
+
+| Exact-source original ring hierarchy *hypothesis* | HQ10 | HQ100 | HQextrem |
+| --- | ---: | ---: | ---: |
+| Standard: individually valid proposed holes | **4,742** | **2,593** | **2,243** |
+| Standard: valid proposed holes with exactly one valid fully covering proposed exterior | **97** | **93** | **157** |
+| Standard: valid proposed holes with no fully covering valid proposed exterior | **4,645** | **2,500** | **2,086** |
+| Standard: valid proposed holes with *possible* original-invalid exterior **bbox** cover (not actual topology) | **4,742** | **2,588** | **2,243** |
+| Reversed: individually valid proposed holes | **8,141** | **3,712** | **2,813** |
+| Reversed: valid proposed holes with exactly one valid fully covering proposed exterior | **1,190** | **632** | **367** |
+| Reversed: valid proposed holes with no fully covering valid proposed exterior | **6,951** | **3,080** | **2,446** |
+| Reversed: valid proposed holes with possible original-invalid exterior **bbox** cover | **674** | **157** | **46** |
+| Any interpretation: valid proposed holes with multiple fully covering valid proposed exteriors | **0** | **0** | **0** |
+| Any interpretation: GEOS cover errors / candidate budget quarantines | **0 / 0** | **0 / 0** | **0 / 0** |
+
+**Interpretation and limitations:** The reverse-winding hypothesis leads to *more* individually contained proposed holes in every tested original scenario, but this **does not prove that the issuer used reversed winding or that these are actual holes**. Most proposed interior rings remain unmatched even under the reversed interpretation. In particular an invalid outer ring may have a very broad **bounding box**, so a bbox plausibility count is deliberately not a proof that a hole is spatially contained by that invalid exterior; do not interpret the Standard-hypothesis source invalid bbox candidates as real interior containment. The source files may contain other ring nesting/overlap defects or source-specific export semantics. A single topological containment test is **not** a sufficient multipart Shapefile reconstruction, and no original hydraulic flood extent or flooded building was approved.
+
+The new code and synthetic tests detect the standard hypothesis, independent reversed hypothesis, orphaned hole, doubly enclosing shell, original-invalid shell, bounded candidate budgets and source count conservation. Original geometries, ring IDs, coordinates and repaired candidates are neither persisted nor emitted. The scientific solution requires source-producer confirmation of SHP export conventions and a separately reviewed polygon shell/hole hierarchy and joint OGC-validity check. Combined with the still-missing actual numeric flood-depth grids, **all three sources remain excluded from production CAT-loss or insurer portfolio calculations**.
+
 ## Next scientific steps
 
 - Verify the original actual file format, complete record and field counts,
