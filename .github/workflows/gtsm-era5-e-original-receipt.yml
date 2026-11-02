@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: GTSM ERA5-E fixed original NetCDF receipt
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/gtsm-era5-e-original-receipt.yml"
+      - "scripts/gtsm_era5_e_original_receipt_v0.py"
+      - "tests/test_gtsm_era5_e_original_receipt_v0.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gtsm-20261102-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-original:
+    name: Fixed Zenodo GTSM 9.7 MB original receipt
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact PR commit without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Offline source-boundary tests (synthetic only)
+        run: python -m unittest tests.test_gtsm_era5_e_original_receipt_v0 -v
+      - name: Reproduce publisher original byte-size, MD5 and observed SHA-256
+        run: python scripts/gtsm_era5_e_original_receipt_v0.py --fetch
