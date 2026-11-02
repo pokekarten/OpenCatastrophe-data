@@ -230,10 +230,13 @@ def _bbox_statistics_diagnostics(group):
 def screen(groups):
     counts = {"candidate": 0, "excluded": 0, "unknown": 0}
     rows = {"candidate": 0, "excluded": 0, "unknown": 0}
-    for group in groups:
+    groups_for_followup = []
+    for ordinal, group in enumerate(groups):
         verdict = inspect_group(group)
         counts[verdict] += 1
         rows[verdict] += group[3]
+        if verdict != "excluded":
+            groups_for_followup.append(ordinal)
     if (sum(counts.values()) != EXPECTED_ROW_GROUPS_STAC
             or sum(rows.values()) != EXPECTED_ROWS):
         raise ProbeError("row-group audit did not conserve original source file")
@@ -242,6 +245,7 @@ def screen(groups):
         "row_group_count_by_status": counts,
         "file_rows_in_groups_by_status": rows,
         "groups_not_excluded": counts["candidate"] + counts["unknown"],
+        "original_zero_based_rowgroup_indices_for_followup": groups_for_followup,
         "no_original_building_data_pages_read": True,
         "country_building_count_measured": False,
         "source_file_full_sha256_verified": False,
