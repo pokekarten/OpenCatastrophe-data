@@ -329,6 +329,27 @@ The follow-up [exact original source run 41494330342](https://github.com/pokekar
 
 No publisher original coordinates, per-feature identifiers, sample points, per-group geometry or real hazard depths were exported, put into Git artifacts or stored in Neon. No insurer TIV, real exposure, event loss, or country-specific flood model input was admitted.
 
+## Full original publisher polygon-group GEOS closure: all 3 scenarios, 2 November 2026
+
+**The earlier 1-per-scenario group quarantine has now been resolved with a separate explicit original-data stress challenge.** The normal research workflow limits each original GeoJSON polygon group to 120,000 coordinate pairs, deliberately leaving the exceptionally large publisher group unevaluated. A *separate bounded research mode* permits up to 1,200,000 original point pairs in one group (fixed 420-second command timeout, no automatic CAT admission), tests the original SHA-1-pinned publisher GeoJSON in ephemeral runner memory and records anonymous summary counts. The complete [official original source run 41496002538](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41496002538) **passed** for HQ10, HQ100 and HQextrem, with no skipped groups:
+
+| Exact original publisher GeoJSON group-level OGC result | HQ10 | HQ100 | HQextrem |
+| --- | ---: | ---: | ---: |
+| Total original publisher groups tested | **8,188** | **3,724** | **2,819** |
+| Individually GEOS-valid groups | **8,139** | **3,710** | **2,811** |
+| Individually GEOS-invalid groups | **49** | **14** | **8** |
+| Invalidity reasons | **49 × Ring Self-intersection** | **14 × Ring Self-intersection** | **8 × Ring Self-intersection** |
+| Original groups not evaluated | **0** | **0** | **0** |
+| GEOS errors | **0** | **0** | **0** |
+| Giant original group (previously skipped) | **INVALID** | **INVALID** | **INVALID** |
+| Entire joint MultiPolygon OGC validity proven | **NO** | **NO** | **NO** |
+
+**Final per-group tally: 71 individually invalid publisher polygon groups across three *separate scenario maps* (49+14+8).** This supersedes the preliminary previous count of 68 (48+13+7) that excluded one megagroup for each scenario. These are counts of publisher polygon groups, **not** original ring self-intersection totals (HQ10 556 / HQ100 74 / HQextrem 52), affected individual buildings, physical inundation area, paid claims or flood damage. Both full OGC and bounded single group testing are **diagnostic**; no geometry repair, hydrodynamic model update or insured loss is implied.
+
+The huge source multipart groups contain most original coordinate/holes, so even with complete per-group OGC diagnostics, a technically correct total inundation mask needs an explicit documented **repair policy** under publisher review. `make_valid` may generate multiple polygon pieces; repairs can alter the actual inundation support and the relationship between shell and interior holes. Numeric hazard depth data and insurer-specific exposure/TIV remain **missing**. All three scenarios are **NOT admitted** for spatial intersection with ACT2026 buildings, production CAT loss, or Neon ingestion.
+
+A standalone workflow `.github/workflows/luxembourg-age-hq100-2021-megagroup-ogc.yml` is retained for future independently scoped original HQ100 source challenge. The standard GeoJSON workflow must maintain its 120k-vertex safety cap; optional full challenge has a separate 1.2m cap and explicit time limit, never silently raises the standard policy.
+
 ## Next scientific steps
 
 - Verify the original actual file format, complete record and field counts,
