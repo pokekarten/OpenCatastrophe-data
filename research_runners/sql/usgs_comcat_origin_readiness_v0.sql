@@ -1,7 +1,9 @@
 -- SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 -- SPDX-License-Identifier: Apache-2.0
 --
--- READ ONLY. Select exact CAT-only Neon insurance project, database and branch.
+-- READ ONLY. Select CAT-only Neon insurance-risk-core / insurance / main. 
+-- The validation-schema-20261031 branch currently lacks this research relation;
+-- a missing relation must error, never be reported as an empty research sample.
 -- USGS ComCat research origins are NOT a stochastic hazard event catalogue,
 -- shaking/intensity footprints, insured loss records or admitted model inputs.
 -- Provider IDs and query URLs do NOT substitute for original-response SHA-256.
