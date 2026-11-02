@@ -94,6 +94,23 @@ class HistoricalRnbBridgeTests(unittest.TestCase):
         with self.assertRaisesRegex(BridgeError, "over cap"):
             current_rnb_shape(RNB_IDS[0], b"x" * 128001)
 
+    def test_duplicate_rnb_identity_is_rejected_even_if_final_id_matches(self):
+        # A parser that silently keeps the last key could misattribute a
+        # mutable RNB source identity or a geometry when fields disagree.
+        payload = self.payload(RNB_IDS[0])
+        duplicate = b'{"rnb_id":"FORGED",' + payload[1:]
+        with self.assertRaisesRegex(BridgeError, "duplicate RNB JSON key"):
+            current_rnb_shape(RNB_IDS[0], duplicate)
+
+    def test_nonfinite_nested_rnb_json_and_deep_nesting_fail_closed(self):
+        payload = self.payload(RNB_IDS[0])
+        injection = payload[:-1] + b',"unexpected_quality":NaN}'
+        with self.assertRaisesRegex(BridgeError, "non-finite RNB JSON"):
+            current_rnb_shape(RNB_IDS[0], injection)
+        deep = b'{"rnb_id":' + b'[' * 3000 + b'0' + b']' * 3000 + b'}'
+        with self.assertRaises(BridgeError):
+            current_rnb_shape(RNB_IDS[0], deep)
+
     def test_missing_historical_components_fail_closed(self):
         (self.path / "BATI_INDUSTRIEL.prj").unlink()
         with self.assertRaisesRegex(BridgeError, "missing or unsafe"):
