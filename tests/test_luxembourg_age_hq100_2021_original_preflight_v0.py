@@ -25,22 +25,34 @@ def shp_header(*, kind: int = 5, length: int = 100) -> bytes:
     return bytes(b)
 
 
+def shp_record(*, kind: int = 5) -> bytes:
+    n_parts, n_points = 1, 5
+    content = bytearray(44 + 4 * n_parts + 16 * n_points)
+    struct.pack_into("<I", content, 0, kind)
+    struct.pack_into("<II", content, 36, n_parts, n_points)
+    struct.pack_into("<I", content, 44, 0)
+    size = 100 + 8 + len(content)
+    return (shp_header(kind=kind, length=size)
+            + struct.pack(">II", 1, len(content) // 2)
+            + bytes(content))
+
+
 def dbf_header() -> bytes:
-    b = bytearray(65 + 8)
+    b = bytearray(65 + 4)
     b[0] = 3
-    struct.pack_into("<IHH", b, 4, 2, 65, 4)
+    struct.pack_into("<IHH", b, 4, 1, 65, 4)
     b[32:37] = b"DEPTH"
     b[43] = ord("N")
     b[48] = 3
     b[49] = 1
     b[64] = 0x0D
-    b[65:] = b" 123 456"
+    b[65:] = b" 123"
     return bytes(b)
 
 
 def archive(path: Path, *, bad_member: str | None = None, bad_shape: bool = False):
     files = {
-        "hq100/test.shp": shp_header(kind=8 if bad_shape else 5),
+        "hq100/test.shp": shp_record(kind=8 if bad_shape else 5),
         "hq100/test.shx": shp_header(),
         "hq100/test.dbf": dbf_header(),
         "hq100/test.prj": b'PROJCS["LUREF",AUTHORITY["EPSG","2169"]]',
@@ -64,13 +76,17 @@ class HQ100OriginalPreflightTests(unittest.TestCase):
             self.assertEqual(report["original_member_suffix_counts"][".dbf"], 1)
             dbf = next(x for x in report["format_header_inventory_only"]
                        if x["format"] == ".dbf")
-            self.assertEqual(dbf["dbf_declared_records"], 2)
+            self.assertEqual(dbf["dbf_declared_records"], 1)
+            self.assertTrue(report["shp_records_match_dbf_records"])
+            shp = next(x for x in report["format_header_inventory_only"]
+                       if x["format"] == ".shp")
+            self.assertEqual(shp["shp_polygon_record_count"], 1)
+            self.assertEqual(shp["shp_total_coordinate_pairs_skipped_without_decoding"], 5)
             self.assertEqual(dbf["dbf_field_schema"][0]["name"], "DEPTH")
             self.assertFalse(report["actual_hazard_geometry_read"])
             self.assertFalse(report["individual_depth_values_read"])
             self.assertFalse(report["model_input_admitted"])
-            self.assertNotIn("123", json.dumps(report))
-            self.assertNotIn("456", json.dumps(report))
+            self.assertNotIn(" 123", json.dumps(report))
 
     def test_wrong_published_checksum_or_unsafe_path_fails(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -86,13 +102,9 @@ class HQ100OriginalPreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "test.zip"
             checksum = archive(path, bad_shape=True)
-            # Point is legal as an unapproved raw source; preflight preserves
-            # source type rather than falsely claiming flood polygons.
-            report = inspect(path, expected_sha1=checksum)
-            shp = next(x for x in report["format_header_inventory_only"]
-                       if x["format"] == ".shp")
-            self.assertEqual(shp["shp_shape_type_code"], 8)
-            self.assertFalse(report["model_input_admitted"])
+            # Point-formatted data must NOT masquerade as polygonal flood support.
+            with self.assertRaisesRegex(HQ100OriginalError, "structural scan blocked"):
+                inspect(path, expected_sha1=checksum)
 
     def test_unexpected_symlink_and_corrupt_bytes_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
