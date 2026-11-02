@@ -35,7 +35,7 @@ from scripts.probe_ghcnd_full_station_original_v0 import inspect_full_csv
 
 PROFILE = "ghcnd-ncei-us-central-park-cat-raw-quarantine-v0"
 BUCKET = "cat-raw"
-S3_HOST = "br-late-recipe-ba1cr8hc.storage.c-8.eu-central-1.aws.neon.tech"
+STORAGE_HOST_PATTERN = re.compile(r"^[a-z0-9-]+\.storage\.c-8\.eu-central-1\.aws\.neon\.tech$")
 SOURCE_SHA = "d7b482aea03c3d7cbd61cfffc13413c0383f12198b663e2ea203cc0ea03887b1"
 INFLATED_SHA = "95018bf74aea808a70c4495e527e35fcfceaa2eb7cdb4020c532a02b1d1b45c0"
 SOURCE_BYTES = 1_820_608
@@ -75,7 +75,7 @@ def _check_presigned_target(url: str) -> None:
         raise TransferBlocked("invalid opaque Neon upload authorization") from exc
     if (
         p.scheme != "https"
-        or p.hostname != S3_HOST
+        or p.hostname is None or STORAGE_HOST_PATTERN.fullmatch(p.hostname) is None
         or port not in (None, 443)
         or p.username is not None or p.password is not None
         or p.path != TARGET_PATH
