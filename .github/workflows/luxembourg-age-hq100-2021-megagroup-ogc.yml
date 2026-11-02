@@ -35,7 +35,7 @@ jobs:
         run: |
           python -m unittest tests.test_luxembourg_age_hq2021_official_geojson_crossformat_v0 -v
           python -m unittest tests.test_luxembourg_age_hq2021_geojson_group_ogc_v0 -v
-      - name: Exact HQ100 publisher GeoJSON: optional 1.2m-vertex megagroup GEOS OGC diagnostic
+      - name: "Exact HQ100 publisher GeoJSON: optional 1.2m-vertex megagroup GEOS OGC diagnostic"
         shell: bash
         run: |
           set -euo pipefail
