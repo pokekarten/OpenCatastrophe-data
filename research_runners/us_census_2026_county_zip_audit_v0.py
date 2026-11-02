@@ -58,6 +58,36 @@ def _shape_header(raw, kind):
     return file_length
 
 
+def _shape_record_alignment(shp, shx, dbf_count):
+    """Check every SHX entry points to one real Polygon record in the SHP."""
+    index_offset = 100
+    source_offset = 100
+    for ordinal in range(1, dbf_count + 1):
+        if index_offset + 8 > len(shx) or source_offset + 12 > len(shp):
+            _fail("Shapefile index or body truncated")
+        index_words, declared_words = struct.unpack(
+            ">II", shx[index_offset:index_offset+8])
+        number, actual_words = struct.unpack(
+            ">II", shp[source_offset:source_offset+8])
+        if (number != ordinal or index_words != source_offset//2
+                or actual_words != declared_words or actual_words < 22):
+            _fail("SHX pointers/record numbers/lengths are inconsistent")
+        end = source_offset + 8 + actual_words*2
+        if end > len(shp):
+            _fail("SHP polygon record exceeds source body")
+        body = shp[source_offset+8:end]
+        if len(body) < 44 or struct.unpack("<I", body[:4])[0] != 5:
+            _fail("unexpected null/nonpolygon source feature")
+        parts, points = struct.unpack("<II", body[36:44])
+        if (not 1 <= parts <= points <= 20_000_000
+                or len(body) != 44 + parts*4 + points*16):
+            _fail("invalid original polygon parts/point byte layout")
+        source_offset = end
+        index_offset += 8
+    if index_offset != len(shx) or source_offset != len(shp):
+        _fail("orphan SHX/SHP data after indexed polygon records")
+
+
 def _dbf_summary(raw):
     if len(raw) < 33 or raw[0] not in (3,):
         _fail("DBF: unsupported source layout/version")
@@ -161,6 +191,7 @@ def audit_original_zip(raw: bytes, *, independently_pinned_sha256=None):
         count, field_count = _dbf_summary(dbf)
         if (len(shx) - 100)//8 != count:
             _fail("SHX/DBF county feature counts disagree")
+        _shape_record_alignment(shp, shx, count)
         if ("GEOGCS" not in prj and "GEOGCRS" not in prj) or not (
                 "North_American_1983" in prj or "NAD_1983" in prj):
             _fail("original CRS is not expected NAD83 geographic")
