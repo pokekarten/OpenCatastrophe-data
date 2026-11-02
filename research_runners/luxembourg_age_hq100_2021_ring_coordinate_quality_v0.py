@@ -31,7 +31,7 @@ class HQ100GeometryError(ValueError):
     pass
 
 
-def check_shp(source) -> dict:
+def check_shp(source, *, ring_diagnostic=None) -> dict:
     """Read exactly one polygon record from a verified SHP stream."""
     header = source.read(100)
     if len(header) != 100 or struct.unpack_from(">i", header, 0)[0] != 9994:
@@ -78,10 +78,13 @@ def check_shp(source) -> dict:
             raise HQ100GeometryError("Nonfinite original ring vertex")
         prior_x, prior_y = first_x, first_y
         signed_area_twice = 0.0
+        ring_points = [] if ring_diagnostic is not None else None
         for index in range(start, end):
             x, y = struct.unpack_from("<dd", points, 16 * index)
             if not math.isfinite(x) or not math.isfinite(y):
                 raise HQ100GeometryError("Nonfinite original coordinate")
+            if ring_points is not None:
+                ring_points.append((x, y))
             xmin, ymin = min(xmin, x), min(ymin, y)
             xmax, ymax = max(xmax, x), max(ymax, y)
             # Recenter to the first point to avoid cancellation at large x/y.
@@ -91,6 +94,9 @@ def check_shp(source) -> dict:
             points_consumed += 1
         if (prior_x, prior_y) == (first_x, first_y):
             closed += 1
+        if ring_diagnostic is not None:
+            ring_diagnostic(ring_points)
+            del ring_points
         signed_area = signed_area_twice * 0.5
         if abs(signed_area) <= 1e-8:
             zero_area += 1
