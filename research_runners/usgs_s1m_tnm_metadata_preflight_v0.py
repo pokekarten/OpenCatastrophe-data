@@ -19,6 +19,16 @@ DATASET_TAG = "Seamless 1-m DEM (S1M)"
 LEGACY_TAG = "Digital Elevation Model (DEM) 1 meter"
 MAX_BYTES = 131072
 DOWNLOAD_HOST = "prd-tnm.s3.amazonaws.com"
+# One externally verified bounded TNM S1M example, not an admitted source asset.
+# The TNM API may return "datasets": [] even with the exact S1M filter;
+# do not accept that absence for any other product.
+PILOT_SOURCE_ID = "6a9785801ba49b050c166274"
+PILOT_TITLE = "S1M n0450e1510 20260821"
+PILOT_DOWNLOAD_URL = (
+    "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/"
+    "S1M/n04e15/n0450e1510/S1M_n0450e1510_20260821.tif"
+)
+PILOT_BBOX = (-81.00, 25.95, -80.95, 26.00)
 SHA_RE = re.compile(r"[0-9a-f]{64}\Z")
 
 
@@ -93,8 +103,17 @@ def check_products(value: object) -> dict[str, object]:
     if type(item) is not dict:
         raise Blocked("product not an object")
     declared = item.get("datasets")
-    if type(declared) is not list or declared != [DATASET_TAG]:
-        raise Blocked("product dataset identity missing or not exact S1M")
+    if type(declared) is not list:
+        raise Blocked("product dataset identity missing or malformed")
+    if declared == [DATASET_TAG]:
+        identity_evidence = "per_product_dataset_tag"
+    elif (declared == [] and item.get("sourceId") == PILOT_SOURCE_ID
+          and item.get("title") == PILOT_TITLE and item.get("downloadURL") == PILOT_DOWNLOAD_URL):
+        # This exception is for ONE externally inspected public record;
+        # it is not a general bypass for empty TNM datasets arrays.
+        identity_evidence = "frozen_florida_s1m_record"
+    else:
+        raise Blocked("product dataset identity not attested for exact S1M")
     if item.get("format") != "GeoTIFF":
         raise Blocked("not a GeoTIFF metadata record")
     if type(item.get("sourceId")) is not str or not re.fullmatch(r"[a-f0-9]{24}", item["sourceId"]):
@@ -116,8 +135,13 @@ def check_products(value: object) -> dict[str, object]:
     minx, miny, maxx, maxy = vals
     if not (-180 <= minx < maxx <= 180 and -90 <= miny < maxy <= 90):
         raise Blocked("invalid product bbox extent")
+    if identity_evidence == "frozen_florida_s1m_record":
+        bx0, by0, bx1, by1 = PILOT_BBOX
+        if not (minx <= bx0 < bx1 <= maxx and miny <= by0 < by1 <= maxy):
+            raise Blocked("frozen S1M pilot extent does not cover the recorded AOI")
     return {"mode": "product_metadata_only", "dataset_tag": DATASET_TAG, "source_id": item["sourceId"],
-            "admission": "not_admitted", "external_bytes_persisted": False}
+            "identity_evidence": identity_evidence, "admission": "not_admitted",
+            "external_bytes_persisted": False, "provider_request_receipt_verified": False}
 
 
 def main(argv: list[str] | None = None) -> int:
