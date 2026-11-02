@@ -52,6 +52,13 @@ def reconcile_layers(exposure: object, layer_document: object,
             raise ReconcileError(f"synthetic layer {index} has invalid identity/currency")
         account = layer["ExposureSetName"], layer["ContractID"]
         key = (*account, layer["LayerID"])
+        # Upstream CEDE-v10 example copies LayerID to OED LayerNumber, which
+        # is a positive integer. Alphanumeric policy IDs cannot be used as
+        # LayerNumber without a separate explicit ordinal mapping.
+        if not layer["LayerID"].isascii() or not layer["LayerID"].isdecimal() or (
+            layer["LayerID"].startswith("0") or int(layer["LayerID"]) < 1
+        ):
+            raise ReconcileError(f"synthetic layer {index} cannot map to positive OED LayerNumber")
         if account not in source_currencies:
             raise ReconcileError(f"synthetic layer {index} references unknown source account")
         if layer["Currency"] not in source_currencies[account]:
