@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - 'research_runners/luxembourg_age_hq100_2021_original_preflight_v0.py'
+      - 'research_runners/luxembourg_age_hq100_2021_shp_structure_v0.py'
       - 'tests/test_luxembourg_age_hq100_2021_original_preflight_v0.py'
       - '.github/workflows/luxembourg-age-hq100-2021-original.yml'
   workflow_dispatch:
