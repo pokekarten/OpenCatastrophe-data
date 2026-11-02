@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+from decimal import Decimal, InvalidOperation
 import json
 from pathlib import Path
 import re
@@ -64,6 +65,62 @@ def _diagnose_synthetic_oed_findings(location: Path, account: Path) -> list[dict
                 "summary": msg,
             })
     return diagnostics
+
+
+def _verify_synthetic_core_values(location: Path, account: Path) -> dict[str, object]:
+    """Compare vital model-input values, independently of OED schema checks.
+
+    Only these invented test rows may be passed; never use this method to
+    attest real insurer portfolios, their location codes, or licensed Works.
+    """
+    expected = {
+        "location": {
+            "PortNumber": "SYNTHETIC-ONLY", "AccNumber": "1", "LocNumber": "1",
+            "CountryCode": "DE", "LocCurrency": "EUR", "OEDVersion": "3.0.2",
+        },
+        "account": {
+            "PortNumber": "SYNTHETIC-ONLY", "AccNumber": "1",
+            "PolNumber": "1", "AccCurrency": "EUR",
+        },
+    }
+    counts = {}
+    errors: list[str] = []
+    for kind, path in (("location", location), ("account", account)):
+        with path.open("r", newline="", encoding="utf-8") as stream:
+            rows = list(csv.DictReader(stream))
+        counts[kind] = len(rows)
+        if len(rows) != 1:
+            errors.append(f"{kind}:cardinality")
+            continue
+        row = rows[0]
+        for key, intended in expected[kind].items():
+            if row.get(key) != intended:
+                errors.append(f"{kind}:{key}")
+        if kind == "location":
+            for column, intended in (
+                ("BuildingTIV", "100.10"), ("ContentsTIV", "20.05"),
+                ("OccupancyCode", "1050"),
+            ):
+                try:
+                    actual = Decimal(row.get(column, ""))
+                    if not actual.is_finite() or actual != Decimal(intended):
+                        errors.append(f"location:{column}")
+                except (InvalidOperation, ValueError):
+                    errors.append(f"location:{column}")
+        else:
+            try:
+                number = Decimal(row.get("LayerNumber", ""))
+                if not number.is_finite() or number != Decimal("1"):
+                    errors.append("account:LayerNumber")
+            except (InvalidOperation, ValueError):
+                errors.append("account:LayerNumber")
+    return {
+        "passed": not errors,
+        "location_count": counts["location"], "account_count": counts["account"],
+        "checked_core_fields": sum(len(x) for x in expected.values()) + 4,
+        "mismatched_field_names": sorted(set(errors)),
+        "scientific_lossless_mapping_proven": False,
+    }
 
 
 def probe(upstream: Path) -> dict[str, object]:
@@ -139,6 +196,11 @@ def probe(upstream: Path) -> dict[str, object]:
             and official_probe.get("blocked_reason") is None
             else []
         )
+        core_values = (
+            _verify_synthetic_core_values(outputs["location"], outputs["account"])
+            if set(outputs) == {"location", "account"}
+            else {"passed": False, "mismatched_field_names": ["missing_outputs"]}
+        )
     return {
         "profile": "cede10-oed302-temporary-upstream-example-workaround-probe-v0",
         "upstream_commit": UPSTREAM_COMMIT, "synthetic_only": True,
@@ -148,6 +210,7 @@ def probe(upstream: Path) -> dict[str, object]:
         "full_mapping_approved": False,
         "oed_schema_probe": official_probe,
         "synthetic_oed_validation_findings": official_diagnostics,
+        "synthetic_core_values": core_values,
         "oed_schema_validated": official_probe["passed"],
         "cede13_compatible": False, "rights_approved": False, "model_input_admitted": False,
     }
@@ -156,12 +219,19 @@ def probe(upstream: Path) -> dict[str, object]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--upstream-checkout", type=Path, required=True)
+    parser.add_argument("--require-synthetic-conformance", action="store_true",
+                        help="fail the CI step if synthetic OED schema or core-value check fails")
     args = parser.parse_args()
     try:
         result = probe(args.upstream_checkout)
     except (OSError, ValueError, yaml.YAMLError) as exc:
         parser.exit(2, f"BLOCKED research infrastructure: {type(exc).__name__}: {exc}\n")
     print(json.dumps(result, sort_keys=True, indent=2))
+    if args.require_synthetic_conformance and not (
+        result["both_generated"] and result["oed_schema_validated"]
+        and result["synthetic_core_values"]["passed"]
+    ):
+        parser.exit(3, "BLOCKED: synthetic comprehensive CEDE/OED validation failed\n")
     return 0
 
 
