@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg AGE 2021 original publisher GeoJSON cross-format receipts
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_age_hq2021_official_geojson_crossformat_v0.py'
+      - 'tests/test_luxembourg_age_hq2021_official_geojson_crossformat_v0.py'
+      - '.github/workflows/luxembourg-age-hq2021-original-geojson.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-age-geojson:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact review revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Reject synthetic nonpolygon, malformed, infinite or unapproved GeoJSON
+        run: python -m unittest tests.test_luxembourg_age_hq2021_official_geojson_crossformat_v0 -v
+      - name: Download all three *independent* official original publisher GeoJSON releases
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          original="$RUNNER_TEMP/lu-age-2021-original-scenario.geojson"
+          trap 'rm -f "$original"' EXIT
+          for scenario in hq10 hq100 hqext; do
+            case "$scenario" in
+              hq10) url='https://download.data.public.lu/resources/flood-hazard-maps-10-year-flood/20220613-155146/hwgk2021-hq10.geojson' ;;
+              hq100) url='https://download.data.public.lu/resources/flood-hazard-maps-100-year-flood/20220613-154835/hwgk2021-hq100.geojson' ;;
+              hqext) url='https://download.data.public.lu/resources/flood-hazard-maps-extreme/20220613-154535/hwgk2021-hqext.geojson' ;;
+            esac
+            curl --fail --location --silent --show-error \
+              --proto '=https' --proto-redir '=https' \
+              --connect-timeout 20 --max-time 180 --retry 0 \
+              --max-filesize 100663296 --output "$original" "$url"
+            python -m research_runners.luxembourg_age_hq2021_official_geojson_crossformat_v0 \
+              --scenario "$scenario" --source-geojson "$original"
+            rm -f "$original"
+          done
+          # No original publisher feature coordinates, geometry, IDs or
+          # depth values are exported, saved to Git, uploaded or written to Neon.
