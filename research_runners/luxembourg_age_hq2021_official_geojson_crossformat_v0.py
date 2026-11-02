@@ -188,7 +188,7 @@ def profile_original_geojson(obj: dict, *, scenario: str) -> dict:
     }
 
 
-def audit(original: Path, *, scenario: str) -> dict:
+def audit(original: Path, *, scenario: str, review_polygon_groups=False) -> dict:
     if scenario not in SOURCES:
         raise OriginalGeoJSONError("Unknown original publisher source scenario")
     p = Path(original)
@@ -210,6 +210,17 @@ def audit(original: Path, *, scenario: str) -> dict:
         # Do not expose source coordinate-bearing parser failures.
         raise OriginalGeoJSONError("Original publisher JSON parser rejected file") from None
     profile = profile_original_geojson(obj, scenario=scenario)
+    topology = {}
+    if review_polygon_groups:
+        from research_runners.luxembourg_age_hq2021_geojson_group_ogc_v0 import (
+            GroupTopologyError, challenge_publisher_groups,
+        )
+        try:
+            topology = challenge_publisher_groups(obj)
+        except GroupTopologyError:
+            raise OriginalGeoJSONError("Original polygon group GEOS diagnostic blocked") from None
+        if topology["original_publisher_groups_examined"] != profile["original_publisher_polygon_group_count"]:
+            raise OriginalGeoJSONError("Original publisher geometry group count not conserved")
     return {
         "profile": "lu-age-hq2021-original-publisher-geojson-crossformat-v0",
         "scenario": scenario,
@@ -220,6 +231,7 @@ def audit(original: Path, *, scenario: str) -> dict:
         "observed_independent_sha256": h2.hexdigest(),
         "source_original_bytes": p.stat().st_size,
         **profile,
+        **({"independent_publisher_group_OGC_diagnostic": topology} if review_polygon_groups else {}),
     }
 
 
@@ -227,9 +239,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scenario", choices=tuple(SOURCES), required=True)
     parser.add_argument("--source-geojson", type=Path, required=True)
+    parser.add_argument("--review-polygon-groups", action="store_true")
     args = parser.parse_args()
     try:
-        print(json.dumps(audit(args.source_geojson, scenario=args.scenario),
+        print(json.dumps(audit(args.source_geojson, scenario=args.scenario,
+                               review_polygon_groups=args.review_polygon_groups),
                          sort_keys=True, indent=2, allow_nan=False))
     except (OriginalGeoJSONError, OSError):
         parser.exit(2, "BLOCKED: Official publisher GeoJSON source integrity or format rejected\n")
