@@ -6,6 +6,12 @@ from __future__ import annotations
 from copy import deepcopy
 import unittest
 
+try:
+    import pyproj  # noqa: F401
+    HAS_PYPROJ = True
+except ImportError:
+    HAS_PYPROJ = False
+
 from research_runners.luxembourg_age_hq2021_sibling_full_geometry_quality_v0 import (
     _finalize, EXPECTED_SHA256,
 )
@@ -53,6 +59,7 @@ def fixtures(scenario: str):
     return meta, coords, topology, crs
 
 
+@unittest.skipUnless(HAS_PYPROJ, "Pinned pyproj required for original axis-envelope hypothesis")
 class SiblingFullGeometryQualityTests(unittest.TestCase):
     def test_both_source_names_are_distinct_and_no_scientific_approval(self):
         for scenario in EXPECTED_SHA256:
