@@ -44,6 +44,16 @@ from research_runners.overture_lu_one_rowgroup_geometry_observation_v0 import (
 
 SCHEMA = "opencatastrophe-luxembourg-act2026-overture2026-real-source-geometric-candidates-v0"
 MAX_SOURCE_ROWS = 250000
+# Publisher-documented ACT Building.Source vocabulary; do not export raw values.
+ACT_SOURCE_FAMILIES = ("Bati3DACT", "Bati3DVDL", "PCN", "MO", "Ortho",
+                       "unknown_or_missing")
+
+
+def _act_source_label(value):
+    if type(value) is str and value in ACT_SOURCE_FAMILIES[:-1]:
+        return value
+    return "unknown_or_missing"
+
 MIN_IOU = 0.75
 MIN_POSITIVE_OVERLAP_M2 = 0.01
 TO_LU = Transformer.from_crs("EPSG:4326", "EPSG:2169", always_xy=True)
@@ -80,6 +90,7 @@ def original_act_city(source_zip):
         raise GeoBaseError("original ACT archive is not the pinned source")
     window = transform(TO_LU.transform, box(*CITY_BOX))
     kept = []
+    kept_act_source_families = []
     invalid_total = 0
     scanned = 0
     with tempfile.TemporaryDirectory(prefix="oc-act-city-private-") as tmp:
@@ -110,7 +121,8 @@ def original_act_city(source_zip):
             n = db.execute('SELECT count(*) FROM "Buildings_BU_Building"').fetchone()[0]
             if n != EXPECTED_FEATURE_COUNT:
                 raise GeoBaseError("ACT original feature count changed")
-            for (raw,) in db.execute('SELECT geom FROM "Buildings_BU_Building" ORDER BY id'):
+            for raw, raw_act_source in db.execute(
+                    'SELECT geom, Source FROM "Buildings_BU_Building" ORDER BY id'):
                 scanned += 1
                 try:
                     polygon = _gpkg_polygon(raw)
@@ -122,11 +134,14 @@ def original_act_city(source_zip):
                     continue
                 if polygon.intersects(window) and polygon.intersection(window).area > 0:
                     kept.append(polygon)
+                    kept_act_source_families.append(_act_source_label(raw_act_source))
             if scanned != n:
                 raise GeoBaseError("ACT original read did not conserve source rows")
         finally:
             db.close()
-    return kept, scanned, invalid_total
+    if len(kept_act_source_families) != len(kept):
+        raise GeoBaseError("ACT source lineage lost original feature alignment")
+    return kept, scanned, invalid_total, kept_act_source_families
 
 
 def original_overture_city():
@@ -222,7 +237,8 @@ def _require_valid_projected_footprints(footprints, *, label):
             raise GeoBaseError(f"{label} source geometry cannot be safely checked") from exc
 
 
-def geometric_candidates(act, overture, *, overture_source_families=None):
+def geometric_candidates(act, overture, *, overture_source_families=None,
+                         act_source_families=None):
     """Reciprocal geometric candidates with only aggregate upstream lineage."""
     if len(act) > 500 or len(overture) > 500:
         raise GeoBaseError("excessive local city-pilot source candidates")
@@ -234,6 +250,12 @@ def geometric_candidates(act, overture, *, overture_source_families=None):
             or any(x not in ("OpenStreetMap", "Microsoft ML Buildings", "unknown_or_multiple")
                    for x in overture_source_families)):
         raise GeoBaseError("source-family association must preserve sampled geometry order")
+    if act_source_families is not None and (
+            type(act_source_families) is not list
+            or len(act_source_families) != len(act)
+            or any(type(x) is not str or x not in ACT_SOURCE_FAMILIES
+                   for x in act_source_families)):
+        raise GeoBaseError("ACT digitizing-source labels must align with original polygons")
     act_hits = [[] for _ in act]
     overture_hits = [[] for _ in overture]
     qualifying_pairs = 0
@@ -342,13 +364,31 @@ def geometric_candidates(act, overture, *, overture_source_families=None):
         if sum(by_family.values()) != matched:
             raise GeoBaseError("source provenance counts do not conserve strict candidates")
         result["reciprocal_candidate_overture_source_family_counts"] = by_family
+    if act_source_families is not None:
+        from collections import Counter
+        city = Counter(act_source_families)
+        strict = Counter()
+        for ai, hits in enumerate(act_hits):
+            if len(hits) == 1 and len(overture_hits[hits[0]]) == 1:
+                strict[act_source_families[ai]] += 1
+        if sum(strict.values()) != matched or sum(city.values()) != len(act):
+            raise GeoBaseError("ACT original digitizing lineage does not conserve source counts")
+        result["ACT_original_city_digitizing_source_counts"] = {
+            source: city[source] for source in ACT_SOURCE_FAMILIES
+        }
+        result["reciprocal_candidate_ACT_digitizing_source_counts"] = {
+            source: strict[source] for source in ACT_SOURCE_FAMILIES
+        }
+        result["ACT_source_label_is_independent_ground_truth"] = False
     return result
 
 
 def live(source_zip):
-    act, act_total, invalid_act = original_act_city(source_zip)
+    act, act_total, invalid_act, act_source_families = original_act_city(source_zip)
     overture, overture_total, invalid_ov, families = original_overture_city()
-    summary = geometric_candidates(act, overture, overture_source_families=families)
+    summary = geometric_candidates(
+        act, overture, overture_source_families=families,
+        act_source_families=act_source_families)
     return {
         "schema": SCHEMA,
         "ACT_original_release": "2026-10-01",
