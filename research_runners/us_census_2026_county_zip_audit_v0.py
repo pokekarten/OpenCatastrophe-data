@@ -123,7 +123,10 @@ def _dbf_summary(raw):
 
     def value(record, field):
         start, width, _type = fields[field]
-        return record[start:start+width].decode("ascii").strip()
+        # Retain original provider name bytes rather than falsely assuming
+        # ASCII for all US and territorial county-equivalent place names.
+        # Only the FIPS/GEOID numeric identity needs strict ASCII syntax.
+        return record[start:start+width].strip(b" \\x00")
 
     ids = set()
     orleans = 0
@@ -133,14 +136,15 @@ def _dbf_summary(raw):
             _fail("DBF: deleted record cannot be certified")
         state, county, geoid, name = (value(record, k) for k in
                                       ("STATEFP", "COUNTYFP", "GEOID", "NAME"))
-        if (not re.fullmatch(r"[0-9]{2}", state)
-            or not re.fullmatch(r"[0-9]{3}", county)
+        if (not re.fullmatch(rb"[0-9]{2}", state)
+            or not re.fullmatch(rb"[0-9]{3}", county)
             or geoid != state+county
-            or geoid in ids or not name):
+            or geoid in ids or not name
+            or any(c < 32 for c in name)):
             _fail("DBF: repeated or invalid official GEOID/county identity")
         ids.add(geoid)
-        if geoid == "22071":
-            if state != "22" or county != "071" or name != "Orleans":
+        if geoid == b"22071":
+            if state != b"22" or county != b"071" or name != b"Orleans":
                 _fail("DBF: Orleans Parish code/name drift")
             orleans += 1
     if orleans != 1:
