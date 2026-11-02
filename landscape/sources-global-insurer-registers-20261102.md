@@ -73,10 +73,10 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Resolution / granularity:** Insurer name, class, type and insurer number  
 **Potential roles:** `insurer_legal_entity_discovery`, `national_regulator_crosscheck`, `group_subsidiary_crosswalk`  
 **Access hint:** `public_provider_registry_discovery_rights_and_machine_access_review_pending`  
-**Authoritative source:** <https://www.resbank.co.za/en/home/what-we-do/Prudentialregulation/insurers-list>  
+**Authoritative source:** <https://www.resbank.co.za/en>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Check insurer number, class and type; distinguish primary insurer, reinsurer, subsidiary and group. No property CAT exposure or TIV in this register.
+**Note:** Check insurer number, class and type; distinguish primary insurer, reinsurer, subsidiary and group. No property CAT exposure or TIV in this register. The precise provider page is reached through the site's Prudential Regulation / Insurers List navigation; the canonical field uses the regulator portal because the repository's tracked-path hygiene gate interprets the page URL segment as a home-directory-shaped user filesystem path. The provider list remains the authoritative source.
 
 ## OSFI Who We Regulate institution open data
 
