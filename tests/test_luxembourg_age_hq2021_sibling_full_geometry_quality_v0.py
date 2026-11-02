@@ -3,7 +3,6 @@
 """Synthetic-only full AGE HQ10/HQext original-geometry conservation gates."""
 from __future__ import annotations
 
-from copy import deepcopy
 import unittest
 
 try:
@@ -89,6 +88,27 @@ class SiblingFullGeometryQualityTests(unittest.TestCase):
             m,c,t,p = fixtures(scenario)
             c["original_coordinate_pairs_read_and_aggregated"] = 14
             with self.assertRaises(HQ100GeometryError):
+                _finalize(scenario,m,c,t,p)
+
+    def test_incomplete_ring_qa_or_inconsistent_winding_fails_closed(self):
+        for scenario in EXPECTED_SHA256:
+            m,c,t,p = fixtures(scenario)
+            t["geos_ring_test_errors"] = 1
+            t["individually_valid_nonzero_area_rings"] = 1
+            with self.subTest(scenario=scenario, failure="geos"), self.assertRaises(HQ100GeometryError):
+                _finalize(scenario,m,c,t,p)
+            m,c,t,p = fixtures(scenario)
+            t["complex_ring_geometry_test_skipped"] = 1
+            t["individually_valid_nonzero_area_rings"] = 1
+            with self.subTest(scenario=scenario, failure="skipped"), self.assertRaises(HQ100GeometryError):
+                _finalize(scenario,m,c,t,p)
+            m,c,t,p = fixtures(scenario)
+            c["positive_signed_orientation_ring_parts"] = 2
+            with self.subTest(scenario=scenario, failure="winding"), self.assertRaises(HQ100GeometryError):
+                _finalize(scenario,m,c,t,p)
+            m,c,t,p = fixtures(scenario)
+            c["all_original_coordinates_finite"] = False
+            with self.subTest(scenario=scenario, failure="nonfinite"), self.assertRaises(HQ100GeometryError):
                 _finalize(scenario,m,c,t,p)
 
     def test_bad_crs_and_invalid_ring_structures_fail(self):
