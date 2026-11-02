@@ -82,6 +82,20 @@ python research_runners/wfp_adam_collection_catalogue_preflight_v0.py \
 
 For JMA, the retrieved file is mutable; the provided source-byte digest identifies **only this particular 44,034-byte response**. Preserve source retrieval time, bytes, SHA and publisher revision metadata separately from the claim of current archive completeness. This research report must not serve as a dataset licence grant.
 
+### Bounded one-feature OGC shape checks (no raw features retained)
+
+Using the original public API `GET /collections/{id}/items?limit=1`, three independent bounded HTTP reads returned `application/geo+json` FeatureCollections. Only schema/field names, counts and geometry **types** were observed; no original features, geometry coordinates, names, event IDs or linked products were persisted.
+
+| Collection | Provider reported matching records | Returned | Example geometry | Interpretation |
+| --- | ---: | ---: | --- | --- |
+| `adam.adam_fl_events` | 1,277 | 1 | **Point** | **Critical:** the sampled live flood event is a point, while provider collection prose describes polygon features. Treat it as a likely event locator, **not** a flood inundation footprint; investigate exact source-layer semantics before any spatial damage join |
+| `adam.adam_eq_events` | 19,144 | 1 | Point | Earthquake event location; not a site ground-motion raster, observed building damage or independent claims |
+| `adam.adam_ts_events` | 16,595 | 1 | Point | Cyclone event point/episode; forecast wind buffers and rainfall must be reviewed through different linked original products |
+
+The matched counts describe provider query responses, not complete or independently validated worldwide disaster inventories. Each one-feature query had a `next` link, **as expected for paginated event results**; the `/collections` catalogue itself had no `next` link. Neither should be treated as a full dataset export or model input.
+
+**Action:** keep event point geometry separate from official observed flood footprint polygons and derived model buffers in the canonical event–hazard–exposure crosswalk. Until a surveyed or independently observed footprint with confirmed units, version, geometry and rights is identified, a flood **point** must never be used to intersect buildings as an inundation area.
+
 ## Offline regression / next acceptance gates
 
 ```bash
