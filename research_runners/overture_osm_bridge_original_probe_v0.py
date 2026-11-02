@@ -72,6 +72,8 @@ def _list_objects(fetch):
         "list-type": "2", "prefix": PREFIX, "max-keys": str(MAX_RESULTS)
     })
     status, _, body = fetch(_request(url), MAX_LIST_BYTES)
+    if len(body) > MAX_LIST_BYTES:
+        raise ProbeError("S3 listing exceeds bounded byte budget")
     if status != 200 or not body.startswith(b"<?xml"):
         raise ProbeError("missing exact S3 XML listing")
     if b"<!DOCTYPE" in body or b"<!ENTITY" in body:
