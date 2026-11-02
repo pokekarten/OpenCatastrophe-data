@@ -160,13 +160,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Categories:** `multi_hazard`, `event_loss`, `hydrometeorology`  
 **Spatial scope:** Indonesia provinces and listed hydromet event reporting jurisdictions  
 **Temporal scope:** Provider-labeled 2015-2024  
-**Resolution / granularity:** ArcGIS REST MapServer DIBI_Hidromet_2015_2024 and province summary map  
-**Potential roles:** `regional_historical_event_crosswalk`, `independent_impact_validation`  
+**Resolution / granularity:** Official ArcGIS REST MapServer exposes two esriGeometryPolygon feature layers, Provinsi_basah_kering and Kabupaten_basah_kering, in EPSG:4326; map has Query capability, 2000 max records; event-level features NOT established  
+**Potential roles:** `regional_hydromet_aggregate_context`, `province_district_drought_wetness_comparison`, `historical_event_source_discovery_only`  
 **Access hint:** `public_arcgis_rest_metadata_available_rights_and_query_fields_review`  
 **Authoritative source:** <https://gis.bnpb.go.id/server/rest/services/inarisk/DIBI_Hidromet_2015_2024/MapServer>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Different from BNPB InaRISK hazard/risk indices: DIBI hydromet service is labeled as historical occurrences; exact event/impact attribute fields and access are not yet probed, so don't assert downloadable counts, observed insured loss, completeness or licensing.
+**Note:** Original public MapServer ?f=pjson inspected: layers 0 Provinsi_basah_kering and 1 Kabupaten_basah_kering are provincial/district wet-dry classification polygons, not demonstrably individual event or damage records. Service name includes DIBI_Hidromet_2015_2024 but does NOT prove event-level losses; correct initial hypothesis and require layer field-level metadata and permissions. Original service supports Map/Query/Data but no historic-moment endpoint and denies export tiles.
 
 ## NOAA NCEI historical tsunami gauge runup and eyewitness observations GIS
 
