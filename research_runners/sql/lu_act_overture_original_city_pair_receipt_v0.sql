@@ -77,3 +77,26 @@ WHERE act_release='2026-10-01' AND overture_release='2026-10-21.0'
 -- Verified: all 139 ACT and 69 Overture candidate polygons conserved in
 -- the separate source-best-IoU histograms; 282 positive-area polygon pairs
 -- and 5 reciprocal geometric candidates. Not distinct real-world buildings.
+
+
+-- Independently verified source attribution for the 5 strict original
+-- ACT–Overture geometric candidates, original workflow SUCCESS with 16 tests:
+-- https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41500592616
+-- Aggregates only; no row-level OSM ID/ACT building ID/geometry persisted.
+ALTER TABLE research.lu_act_overture_original_city_pair_receipt_v0
+ ADD COLUMN IF NOT EXISTS strict_candidate_overture_source_family_counts jsonb,
+ ADD COLUMN IF NOT EXISTS strict_candidate_source_family_run_url text;
+
+UPDATE research.lu_act_overture_original_city_pair_receipt_v0
+SET strict_candidate_overture_source_family_counts =
+    '{"OpenStreetMap":5,"Microsoft ML Buildings":0,"unknown_or_multiple":0}'::jsonb,
+    strict_candidate_source_family_run_url =
+    'https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41500592616'
+WHERE act_release='2026-10-01' AND overture_release='2026-10-21.0'
+ AND overture_source_row_group=182
+ AND original_provider_geometry_persisted=FALSE
+ AND independent_physical_identity_verified=FALSE
+ AND insurance_CAT_model_input_approved=FALSE;
+-- Verified isolated Neon readback: 5 OSM-sourced shape candidates,
+-- 0 Microsoft ML-sourced and 0 unidentified. Source identity and insurance
+-- CAT model source use remain explicitly NOT approved.
