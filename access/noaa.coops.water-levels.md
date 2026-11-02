@@ -24,7 +24,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Interface type:** rest
 
-**Status:** documented_only
+**Status:** probe_ready
 
 **Documentation url:** <https://api.tidesandcurrents.noaa.gov/api/prod/>
 
@@ -56,7 +56,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - /api/prod/datagetter
 
-**Parameter rules:** Future execution must be repository-constructed and bounded to one explicitly reviewed CO-OPS station, product=water_level, a short fixed begin_date/end_date interval, datum, time_zone, units, application identifier and format=json. Callers must not supply a host, arbitrary path, headers, station identifier, product, datum, time zone, units, date range, application value or unrestricted query parameters. This static contract intentionally does not choose those scientific parameters; they require exact source/asset review before a probe is enabled.
+**Parameter rules:** Frozen one-day probe only: begin_date=20260101&end_date=20260101&station=9414290&product=water_level&datum=MLLW&time_zone=gmt&units=metric&application=OpenCatastrophe&format=json. San Francisco station 9414290, 2026-01-01 UTC, six-minute observations relative to Mean Lower Low Water (MLLW), metric metres. Exactly one GET to /api/prod/datagetter, no redirects and at most 1048576 bytes. The script constructs the entire HTTPS URL; no user-supplied URL, host, station, dates, product, datum, timezone, units, headers or extra parameters. One-day metadata/shape probe only; no raw data persistence, crawling or model admission.
 
 ## Response contract
 
@@ -78,44 +78,47 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** bounded_backoff
 
-**Rate limit notes:** No repository-specific request-rate assumption is made. Future execution must remain a small single-station bounded query and must not widen this contract into bulk harvesting.
+**Rate limit notes:** NOAA CO-OPS documents automated machine-to-machine API access but throttles high-volume clients. This probe issues one small historical-day request only, no retries, paging, scheduling, bulk crawl or other stations; any expansion requires distinct provider review.
 
-**Mutability notes:** Operational observations and their quality/verification state can change. Every future receipt must bind retrieval UTC, exact trusted execution-code identity, normalized request identity, response byte count and SHA-256; scientific use must separately freeze the station/product/datum/time-zone/date-range identity it actually consumes.
+**Mutability notes:** Six-minute water-level observations may be revised and verification/quality status can change. Retain query identity, retrieval UTC, response byte length, SHA-256 and script hash as the receipt; this probe does not persist raw observations. Datum MLLW is a tidal reference, not local flood depth above ground or NAVD88.
 
 ## Rights and policy
 
 **Dataset rights status:** verified
 
-**Api terms status:** separate_unreviewed
+**Api terms status:** separate_reviewed
 
-**Terms url:** `null`
+**Terms url:** <https://www.tidesandcurrents.noaa.gov/web_services_info.html>
 
-**Commercial automation status:** unknown
+**Commercial automation status:** allowed
 
 **Redistribution status:** allowed
 
-**Notes:** The CO-OPS disclaimer states that information presented on government servers is considered public domain unless specifically annotated otherwise and may be used freely by the public. For reproduction or re-dissemination, NOAA/NOS requests attribution, and modified content must not be presented as official government material. This dataset-rights and redistribution finding does not establish a CO-OPS API-service-terms or commercial-automation ceiling: those remain separately unreviewed/unknown, so this contract remains documented-only with no probe authorized.
+**Notes:** CO-OPS government data are public domain unless specifically annotated, with attribution requested and no misrepresentation of modified material as official NOAA data. NOAA's published Web Services page explicitly supports automated machine-to-machine retrieval; the Data API page requires an application identifier and documents throttling and short 6-minute limits. These findings support this one fixed small anonymous operational capability probe, not unlimited/commercial bulk use, redistribution of other sources, scientific admission or insurer-loss modelling.
 
 ## Probe contract
 
-**Mode:** none
+**Mode:** provider_specific
 
-**Operation:** `null`
+**Operation:** bounded_water_level_observations
 
 **Requires credentials:** `false`
 
 ### Expected evidence
 
-_Empty array._
+- HTTP 200 anonymous fixed GET with expected JSON media type and station 9414290 metadata
+- One UTC-day sequence of at most 240 six-minute timestamped, finite water-level observations with provider flags
+- Small receipt containing retrieval UTC, exact fixed query, byte count, response SHA-256 and execution-script SHA-256; no provider measurements retained
 
-**Implementation decision:** document_only
+**Implementation decision:** build_adapter_now
 
-**Reviewed at:** 2026-08-12
+**Reviewed at:** 2026-11-02
 
 ## Evidence urls
 
 - <https://api.tidesandcurrents.noaa.gov/api/prod/>
 - <https://api.tidesandcurrents.noaa.gov/api/prod/responseHelp.html>
 - <https://tidesandcurrents.noaa.gov/disclaimers.html>
+- <https://www.tidesandcurrents.noaa.gov/web_services_info.html>
 
-**Notes:** Static access contract only. Issue \#173 records that the NOAA CO-OPS Data API connection has previously been observed live, but that observation is not promoted here into a reusable execution receipt. No provider request, sample, external byte, workflow, adapter or admission change is introduced. Dataset rights and redistribution are now recorded from the authoritative CO-OPS disclaimer, while API-service/commercial-automation policy remains separately fail-closed. The next review must still freeze one scientifically meaningful station/product/datum/time-zone/date-range recipe before status can advance beyond documented_only.
+**Notes:** The fixed San Francisco 2026-01-01 CO-OPS request returned NOAA JSON water-level observations on 2026-11-02 (transient outside-repository connectivity check). A bounded repository probe with strict station/date/response validation is now specified, but a successful probe remains a connectivity/shape receipt only. No provider raw bytes, scientific validation, hazard catalogue, model input, insured exposure or insurance loss is admitted.
