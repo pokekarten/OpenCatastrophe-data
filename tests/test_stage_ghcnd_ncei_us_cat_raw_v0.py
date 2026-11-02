@@ -17,7 +17,7 @@ from tests.test_probe_ghcnd_ncei_us_station_gzip_v0 import fixture
 
 def presigned_url():
     return (
-        "https://" + staging.S3_HOST + staging.TARGET_PATH
+        "https://" + "br-synthetic-tests.storage.c-8.eu-central-1.aws.neon.tech" + staging.TARGET_PATH
         + "?X-Amz-Algorithm=AWS4-HMAC-SHA256"
         + "&X-Amz-Credential=FAKE%2F20261102%2Feu-central-1%2Fs3%2Faws4_request"
         + "&X-Amz-Date=20261102T190000Z&X-Amz-Expires=90"
@@ -77,7 +77,7 @@ class StageUSStationTests(unittest.TestCase):
         urls = [
             "",
             "https://example.org" + staging.TARGET_PATH + presigned_url().split("?")[1],
-            presigned_url().replace(staging.S3_HOST, "attacker.example.org"),
+            presigned_url().replace("br-synthetic-tests.storage.c-8.eu-central-1.aws.neon.tech", "attacker.example.org"),
             presigned_url().replace(staging.SOURCE_SHA, "a" * 64),
             presigned_url().replace("https://", "http://"),
             presigned_url().split("?")[0],
