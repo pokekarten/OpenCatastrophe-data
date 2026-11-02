@@ -14,6 +14,9 @@ import math
 from shapely import make_valid, hausdorff_distance
 from shapely.errors import GEOSException
 from shapely.ops import unary_union
+from research_runners.luxembourg_geobase_2026_synthetic_support_challenge_v0 import (
+    compare_repair_supports, SupportChallengeError,
+)
 
 
 def _components(geometry) -> tuple[list, bool]:
@@ -51,6 +54,12 @@ class RepairDiagnostics:
         self.structure_area_disagreements = 0
         self.structure_topological_set_disagreements = 0
         self.structure_symdiff_area_disagreements = 0
+        self.synthetic_support_checked_repairs = 0
+        self.synthetic_support_probes = 0
+        self.synthetic_support_area_disagreements = 0
+        self.synthetic_support_presence_disagreements = 0
+        self.synthetic_support_area_delta_m2 = 0.0
+        self.synthetic_support_failed = 0
         # Original-invalid-ring to valid-output boundary diagnostics.
         # Source EPSG:2169 metre units are NOT field positional accuracy.
         self.boundary_hausdorff_m = []
@@ -142,6 +151,21 @@ class RepairDiagnostics:
                         self.structure_area_disagreements += abs(alt_area - after) > tolerance
                         self.structure_topological_set_disagreements += not a.equals(b)
                         self.structure_symdiff_area_disagreements += diff_area > tolerance
+                        # Three ephemeral support windows are synthetic
+                        # sensitivity probes only, not real flood extent/depth.
+                        try:
+                            probe = compare_repair_supports(
+                                a, b, tuple(original.bounds))
+                            self.synthetic_support_checked_repairs += 1
+                            self.synthetic_support_probes += probe["synthetic_probe_count"]
+                            self.synthetic_support_area_disagreements += probe[
+                                "synthetic_intersection_area_disagreements"]
+                            self.synthetic_support_presence_disagreements += probe[
+                                "synthetic_positive_area_overlap_presence_disagreements"]
+                            self.synthetic_support_area_delta_m2 += probe[
+                                "synthetic_absolute_intersection_area_delta_projected_m2"]
+                        except SupportChallengeError:
+                            self.synthetic_support_failed += 1
             except (GEOSException, ValueError, TypeError, OverflowError):
                 self.structure_unusable += 1
             delta = abs(after - before)
@@ -170,6 +194,9 @@ class RepairDiagnostics:
                 self.source_vs_linework_boundary_topological_unequal !=
                 self.boundary_metrics_comparable):
             raise ValueError("Boundary lineal-set equality does not conserve comparisons")
+        if (self.synthetic_support_checked_repairs + self.synthetic_support_failed !=
+                self.structure_usable):
+            raise ValueError("Synthetic support challenge does not conserve valid comparison cases")
         changes = sorted(self.absolute_deltas)
         mid = (len(changes) - 1) // 2
         p95 = math.ceil(len(changes) * 0.95) - 1
@@ -184,6 +211,15 @@ class RepairDiagnostics:
             "structure_challenge_unusable": self.structure_unusable,
             "structure_vs_linework_polygon_count_disagreements": self.structure_polygon_count_disagreements,
             "structure_vs_linework_area_disagreements_over_tolerance": self.structure_area_disagreements,
+            "synthetic_spatial_support_checked_repairs": self.synthetic_support_checked_repairs,
+            "synthetic_spatial_support_probes": self.synthetic_support_probes,
+            "synthetic_spatial_support_failed": self.synthetic_support_failed,
+            "synthetic_spatial_support_area_disagreements": self.synthetic_support_area_disagreements,
+            "synthetic_spatial_support_positive_overlap_presence_disagreements": (
+                self.synthetic_support_presence_disagreements),
+            "synthetic_spatial_support_absolute_area_delta_sum_projected_m2": (
+                round(self.synthetic_support_area_delta_m2, 4)),
+            "synthetic_spatial_support_is_original_hazard_or_depth": False,
             "structure_vs_linework_topological_set_disagreements": self.structure_topological_set_disagreements,
             "boundary_discrete_hausdorff_densify_fraction": 0.25,
             "source_boundary_to_linework_boundary_comparable": self.boundary_metrics_comparable,
