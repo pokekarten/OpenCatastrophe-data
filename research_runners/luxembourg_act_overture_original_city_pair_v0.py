@@ -214,6 +214,10 @@ def _require_valid_projected_footprints(footprints, *, label):
                     or len(geometry.bounds) != 4
                     or not all(math.isfinite(v) for v in geometry.bounds)):
                 raise GeoBaseError(f"{label} source has non-finite projected geometry")
+        except GeoBaseError:
+            # Preserve the precise, safely redacted domain failure for tests
+            # and diagnostics; never flatten it into an unrelated GEOS fault.
+            raise
         except (GEOSException, ValueError, TypeError, AttributeError, OverflowError) as exc:
             raise GeoBaseError(f"{label} source geometry cannot be safely checked") from exc
 
