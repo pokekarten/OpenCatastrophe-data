@@ -1,0 +1,241 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery of official insurance regulatory registers to expand worldwide insurance and reinsurance group, legal-entity and jurisdiction coverage without importing third-party raw records.",
+  "review_date": "2026-11-02",
+  "entries": [
+    {
+      "candidate_id": "iais.iaig-register.20261014",
+      "name": "IAIS register of Internationally Active Insurance Groups",
+      "provider": "International Association of Insurance Supervisors (IAIS)",
+      "categories": [
+        "insurance",
+        "insurer_group",
+        "regulation",
+        "global"
+      ],
+      "spatial_scope": "Global; 61 internationally active insurance groups as at 14 October 2026, 19 group-wide supervisor jurisdictions",
+      "temporal_scope": "Snapshot dated 2026-10-14, subject to updates",
+      "resolution_or_granularity": "Group name; group-wide supervisor; supervisor jurisdiction",
+      "potential_roles": [
+        "international_group_seed",
+        "group_supervisor_crosswalk",
+        "legal_parent_review_queue"
+      ],
+      "authoritative_url": "https://www.iais.org/register-of-iaigs/",
+      "access_class_hint": "public_provider_registry_discovery_rights_and_machine_access_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Group subset, not all insurers; group name is not necessarily legal parent or LEI. Preserve supervisor jurisdiction and group vs entity grain."
+    },
+    {
+      "candidate_id": "br.susep.dadoscadastrais.odata",
+      "name": "SUSEP supervised-company OData cadastral records",
+      "provider": "Superintendência de Seguros Privados (SUSEP)",
+      "categories": [
+        "insurance",
+        "reinsurance",
+        "insurer_entity_registry",
+        "regulation"
+      ],
+      "spatial_scope": "Brazil: supervised insurance/reinsurance and pension institutions",
+      "temporal_scope": "Live source, freeze acquisition date before use",
+      "resolution_or_granularity": "OData company names, SUSEP code, Brazilian CNPJ, authorisation dates and contacts",
+      "potential_roles": [
+        "insurer_legal_entity_discovery",
+        "national_regulator_crosscheck",
+        "group_subsidiary_crosswalk"
+      ],
+      "authoritative_url": "https://dados.susep.gov.br/olinda/servico/empresas/versao/v1/odata/DadosCadastrais",
+      "access_class_hint": "public_provider_registry_discovery_rights_and_machine_access_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "SUSEP official API was discovered but direct retrieval timed out in this pass; active-license semantics and pagination not checked. CNPJ is not an LEI; pension entities need classification."
+    },
+    {
+      "candidate_id": "cima.reinsurance-establishments",
+      "name": "CIMA reinsurance companies and offices directory",
+      "provider": "Conférence Interafricaine des Marchés d'Assurances (CIMA)",
+      "categories": [
+        "insurance",
+        "reinsurance",
+        "regulation",
+        "establishment_directory"
+      ],
+      "spatial_scope": "Central and West Africa CIMA member markets",
+      "temporal_scope": "Live web directory; no pinned snapshot",
+      "resolution_or_granularity": "Name, territory, headquarters/subsidiary/branch/representative-office type, contact",
+      "potential_roles": [
+        "insurer_legal_entity_discovery",
+        "national_regulator_crosscheck",
+        "group_subsidiary_crosswalk"
+      ],
+      "authoritative_url": "https://cima-afrique.org/les-etats-membres/?item=REASS&lang=en",
+      "access_class_hint": "public_provider_registry_discovery_rights_and_machine_access_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Mixed establishment types are not unique carrier legal entities. Regional and representative offices must not be counted as separate insurers; licensing and corporate parents require separate evidence."
+    },
+    {
+      "candidate_id": "za.sarb.insurer-register",
+      "name": "South African Prudential Authority insurers list",
+      "provider": "South African Reserve Bank Prudential Authority",
+      "categories": [
+        "insurance",
+        "reinsurance",
+        "insurer_entity_registry",
+        "regulation"
+      ],
+      "spatial_scope": "South Africa",
+      "temporal_scope": "Current web register; freeze snapshot on import",
+      "resolution_or_granularity": "Insurer name, class, type and insurer number",
+      "potential_roles": [
+        "insurer_legal_entity_discovery",
+        "national_regulator_crosscheck",
+        "group_subsidiary_crosswalk"
+      ],
+      "authoritative_url": "https://www.resbank.co.za/en/home/what-we-do/Prudentialregulation/insurers-list",
+      "access_class_hint": "public_provider_registry_discovery_rights_and_machine_access_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Check insurer number, class and type; distinguish primary insurer, reinsurer, subsidiary and group. No property CAT exposure or TIV in this register."
+    },
+    {
+      "candidate_id": "ca.osfi.federally-regulated-institutions.csv",
+      "name": "OSFI Who We Regulate institution open data",
+      "provider": "Office of the Superintendent of Financial Institutions Canada (OSFI)",
+      "categories": [
+        "insurance",
+        "reinsurance",
+        "insurer_entity_registry",
+        "regulation"
+      ],
+      "spatial_scope": "Canada federally regulated financial institutions; province-only insurers outside coverage",
+      "temporal_scope": "Official government CSV metadata updated October 2026",
+      "resolution_or_granularity": "CSV identity register; insurer classification; companion life and P&C financial CSV datasets",
+      "potential_roles": [
+        "insurer_legal_entity_discovery",
+        "national_regulator_crosscheck",
+        "group_subsidiary_crosswalk"
+      ],
+      "authoritative_url": "https://open.canada.ca/data/en/dataset/b27ec3ef-7338-4e76-a6fd-128339a92df5",
+      "access_class_hint": "public_provider_registry_discovery_rights_and_machine_access_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Cross-sector list contains banks too, requiring insurer filter. Federal vs provincial and branch vs subsidiary must be distinguished. Browser read produced 403; direct CSV and rights need separate test."
+    },
+    {
+      "candidate_id": "au.apra.general-insurers-register",
+      "name": "APRA registered general insurers",
+      "provider": "Australian Prudential Regulation Authority (APRA)",
+      "categories": [
+        "insurance",
+        "reinsurance",
+        "insurer_entity_registry",
+        "regulation"
+      ],
+      "spatial_scope": "Australia",
+      "temporal_scope": "Register updated 2026-09-23",
+      "resolution_or_granularity": "Authorised general insurer names, permission categories and licence conditions",
+      "potential_roles": [
+        "insurer_legal_entity_discovery",
+        "national_regulator_crosscheck",
+        "group_subsidiary_crosswalk"
+      ],
+      "authoritative_url": "https://www.apra.gov.au/registers/list-registered-general-insurers",
+      "access_class_hint": "public_provider_registry_discovery_rights_and_machine_access_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Current vs former/limited authority must be separated. Life insurer register is distinct. Local and foreign companies may be members of the same ultimate group."
+    },
+    {
+      "candidate_id": "hk.ia.authorised-insurers",
+      "name": "Hong Kong Insurance Authority authorised insurer register",
+      "provider": "Insurance Authority (Hong Kong)",
+      "categories": [
+        "insurance",
+        "reinsurance",
+        "insurer_entity_registry",
+        "regulation"
+      ],
+      "spatial_scope": "Hong Kong",
+      "temporal_scope": "Register updated 2026-10-17",
+      "resolution_or_granularity": "Names, authorisation and insurer business classes, jurisdiction of incorporation",
+      "potential_roles": [
+        "insurer_legal_entity_discovery",
+        "national_regulator_crosscheck",
+        "group_subsidiary_crosswalk"
+      ],
+      "authoritative_url": "https://www.ia.org.hk/en/supervision/reg_insurers_lloyd/register_of_authorized_insurers.html",
+      "access_class_hint": "public_provider_registry_discovery_rights_and_machine_access_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Includes entities authorised at the last update that may have ceased writing business; do not infer current new-business permission. Operations in HK do not prove group domicile."
+    },
+    {
+      "candidate_id": "bm.bma.regulated-entities",
+      "name": "Bermuda BMA regulated entities directory",
+      "provider": "Bermuda Monetary Authority (BMA)",
+      "categories": [
+        "insurance",
+        "reinsurance",
+        "insurer_entity_registry",
+        "regulation"
+      ],
+      "spatial_scope": "Bermuda",
+      "temporal_scope": "Live web directory; freeze extraction timestamp",
+      "resolution_or_granularity": "Company name, insurance sector and licence/registration class",
+      "potential_roles": [
+        "insurer_legal_entity_discovery",
+        "national_regulator_crosscheck",
+        "group_subsidiary_crosswalk"
+      ],
+      "authoritative_url": "https://www.bma.bm/regulated-entities",
+      "access_class_hint": "public_provider_registry_discovery_rights_and_machine_access_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Mixed captive, SPI, reinsurer, agent and manager classes; potentially multiple entries per firm. Do not count every registered entity as an insurer parent group."
+    },
+    {
+      "candidate_id": "nz.rbnz.licensed-insurers",
+      "name": "New Zealand licensed insurers register",
+      "provider": "Reserve Bank of New Zealand (RBNZ)",
+      "categories": [
+        "insurance",
+        "reinsurance",
+        "insurer_entity_registry",
+        "regulation"
+      ],
+      "spatial_scope": "New Zealand",
+      "temporal_scope": "Register last updated 2026-08-26 per provider metadata",
+      "resolution_or_granularity": "Legal insurer name, licence date, financial strength rating and exemptions",
+      "potential_roles": [
+        "insurer_legal_entity_discovery",
+        "national_regulator_crosscheck",
+        "group_subsidiary_crosswalk"
+      ],
+      "authoritative_url": "https://www.rbnz.govt.nz/regulation-and-supervision/cross-sector-oversight/registers-of-entities-we-regulate/register-of-licensed-insurers",
+      "access_class_hint": "public_provider_registry_discovery_rights_and_machine_access_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Rating and its agency/date must remain distinct; missing or exempt ratings are not evidence of strength or weakness. Separate legal entity and ultimate group."
+    }
+  ]
+}
