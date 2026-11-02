@@ -1,0 +1,109 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+
+GENERATED FILE — DO NOT EDIT DIRECTLY
+Canonical source: landscape/sources-worldwide-cat-data-20261102.json
+Renderer: scripts/render_public_views.py
+Change the canonical JSON and run `python scripts/render_public_views.py --write`.
+-->
+
+# Source landscape: `sources-worldwide-cat-data-20261102.json`
+
+> This Markdown file is a deterministic human-readable projection of the canonical JSON file named above. It does not create a second source of truth or change admission, rights or scientific-review state.
+
+**Schema version:** `1.0.0`  
+**Review date:** `2026-11-02`  
+**Purpose:** Non-admission discovery of six additional global CAT research source products covering roads, river flow, satellite water extent, disaster damage and flood exposure; no rights clearance, sample acquisition or model-input approval.
+
+**Entries:** 6
+
+## NASA OPERA DSWx-HLS V1 dynamic surface-water classification
+
+**Candidate ID:** `nasa.opera.dswx-hls.v1`  
+**Provider:** NASA JPL OPERA / PO.DAAC  
+**Categories:** `flood`, `remote_sensing`, `surface_water_extent`, `validation`  
+**Spatial scope:** Near global; latitude 84 degrees north to 84 degrees south; actual tiles depend on imagery acquisition and quality  
+**Temporal scope:** Collection states 2016 to present; validated water-extent observations begin April 2023  
+**Resolution / granularity:** 30 m Level-3 UTM tiles; 10 cloud-optimized GeoTIFF layers per granule including water class, confidence, cloud and terrain masks  
+**Potential roles:** `flood_water_extent_challenge`, `event_footprint_comparison`, `optical_sar_consistency_research`  
+**Access hint:** `earthdata_cmr_catalogue_with_earthdata_login_for_protected_granule_bytes`  
+**Authoritative source:** <https://podaac.jpl.nasa.gov/dataset/OPERA_L3_DSWX-HLS_V1>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Fixed collection OPERA_L3_DSWX-HLS_V1, DOI 10.5067/OPDSW-PL3V1, CMR C2617126679-POCLOUD. HLS optical product is NOT the OPERA DSWx-S1 SAR product currently proposed in PR 1133. Water classification is not automatically inundation, depth, probability or insured loss. Preserve sensing time, tile, input-platform lineage, cloud mask, confidence flags, baseline permanent water and exact granule identity. Check Copernicus DEM and Sentinel terms and NASA distribution rights before any persistent acquisition. No live sample has been fetched in this work.
+
+## GRIP4 Global Roads Inventory Project vector roads and density
+
+**Candidate ID:** `pbl.grip4.global-roads`  
+**Provider:** PBL Netherlands Environmental Assessment Agency / GLOBIO  
+**Categories:** `exposure`, `roads`, `critical_infrastructure`, `transportation`  
+**Spatial scope:** Global regionalized road inventory with nonuniform original mapping coverage  
+**Temporal scope:** Meijer et al. 2018 publication; historical compilation; no claim of current 2026 completeness  
+**Resolution / granularity:** Regional ESRI Shapefile or File Geodatabase line networks; global 5 arcminute density rasters; regional archives range from tens of MB to GB  
+**Potential roles:** `road_network_exposure`, `critical_infrastructure_overlay`, `infrastructure_hazard_intersection`  
+**Access hint:** `public_region_archive_direct_download_cc0_declared_but_upstream_lineage_review_required`  
+**Authoritative source:** <https://dataportaal.pbl.nl/GRIP4>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** The PBL source page states CC0 and provides separate regional shapefile/FGDB ZIP archives; original compilation contains OpenStreetMap and other sources. Record specific GRIP4 region, archive name and SHA-256 before research ingestion; test topology, road type harmonization, positional accuracy and outdated source vintages. This is physical road geometry or density, not road replacement value or insured assets. Regional upstream provenance and commercial redistribution obligations must be checked for the exact files.
+
+## GEOGLOWS River Forecast System V2 retrospective discharge and forecast ensembles
+
+**Candidate ID:** `geoglows.rfs.v2.global-discharge`  
+**Provider:** GEOGLOWS / ECMWF-linked consortium  
+**Categories:** `flood`, `hydrology`, `river_discharge`, `forecast`, `model_output`  
+**Spatial scope:** Worldwide modeled stream network, subject to basin coverage and model domain  
+**Temporal scope:** Retrospective daily or hourly simulations from January 1940; daily 15-day forecasts; living dataset release and snapshot required  
+**Resolution / granularity:** Around 7 million river reaches; hydrography GeoPackage, discharge time series Zarr; river_id / LINKNO reach key  
+**Potential roles:** `hydrological_discharge_comparison`, `flood_event_forcing_challenge`, `return_period_flow_comparison`  
+**Access hint:** `anonymous_aws_s3_zarr_or_documented_geoglows_api_rights_conflict_blocks_automation`  
+**Authoritative source:** <https://training.geoglows.org/rfs/datasets/catalog/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** RFS V2 training data catalogue labels the model CC BY-NC-SA 4.0, but the AWS Registry page for GEOGLOWS V2 labels the dataset CC BY 4.0. This rights conflict must be resolved with the authoritative data controller for exact Zarr assets before any commercial use, derived redistribution, or automated persistent acquisition. Simulated discharge in m3/s is not flood depth or extent; network ids differ from other basin networks. Preserve release date, forecast issuance, ensemble member, run period, forcing and reach geometry; compare GloFAS shared inputs before scoring independence.
+
+## OECD river flooding exposure indicators DSD_ECH@RIV_FLOOD 2.0
+
+**Candidate ID:** `oecd.ech.riv-flood.v2`  
+**Provider:** Organisation for Economic Co-operation and Development  
+**Categories:** `flood`, `exposure`, `statistics`, `validation`, `economic_context`  
+**Spatial scope:** Global at national level; subnational TL2 for OECD members and a selected additional set of countries  
+**Temporal scope:** Indicator reference years around 2000 to 2020 depending on series; OECD portal last updated 12 October 2026  
+**Resolution / granularity:** SDMX time-series observations of land, population, cropland and built-up area exposed to 10-, 20-, 50- or 100-year river floods  
+**Potential roles:** `aggregate_flood_exposure_benchmark`, `regional_exposure_quality_check`, `independent_reporting_crosswalk`  
+**Access hint:** `oecd_sdmx_dataflow_documentation_and_versioned_csv_or_json_query_review`  
+**Authoritative source:** <https://data-explorer.oecd.org/vis?df%5Bag%5D=OECD.ENV.EPI&df%5Bds%5D=dsDisseminateFinalDMZ&df%5Bid%5D=DSD_ECH%40RIV_FLOOD&df%5Bvs%5D=2.0>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Exact dataset identity is OECD.ENV.EPI / DSD_ECH@RIV_FLOOD version 2.0; check SDMX dimension and unit codes and series revisions. This is aggregated exposure indicator data derived partly from JRC river flood maps, GHSL population and land cover, not original flood event polygons, site-level buildings, insured losses or independent observed ground truth. Do not double-count JRC/GHSL overlap. Reuse/API rules and allowed derived publication are not yet reviewed.
+
+## FLO1K global annual streamflow grids 1960-2015
+
+**Candidate ID:** `pbl.flo1k.streamflow.1960-2015`  
+**Provider:** PBL / Radboud University / Barbarossa and collaborators  
+**Categories:** `hydrology`, `river_discharge`, `historical_simulation`, `validation`  
+**Spatial scope:** Global land excluding Antarctica  
+**Temporal scope:** 1960 to 2015 annual derived flow estimates; original 2018 paper  
+**Resolution / granularity:** 30 arcsecond approximately 1 km CF NetCDF-4 raster layers: yearly mean, maximum monthly mean and minimum monthly mean flows, m3/s  
+**Potential roles:** `historical_discharge_spatial_challenge`, `river_basin_crosscheck`, `hydrological_model_validation`  
+**Access hint:** `bulk_netcdf_download_documented_rights_conflict_no_commercial_use_until_resolved`  
+**Authoritative source:** <https://dataportaal.pbl.nl/FLO1K>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Rights conflict: the PBL file portal expressly says noncommercial academic research only, but data.overheid.nl lists CC BY 4.0 and an individual Figshare record may list CC0. Do not infer a commercial licence from a mirror or a journal open-access article; obtain authoritative exact-file clarification before downloading for any commercial CAT workflow. Files are tens of GB at native resolution. This is ANN-modelled potential in-channel river discharge, NOT actual station observations, daily peak flow or flood depth; yearly maximum means max of monthly-mean flow, not instantaneous flood peak. Preserve network mapping and model training dependence.
+
+## UNOSAT Ranongga Island building damage assessment after MAILA-26, product 4244
+
+**Candidate ID:** `unitar.unosat.solomon-maila.4244`  
+**Provider:** UNITAR United Nations Satellite Centre (UNOSAT)  
+**Categories:** `tropical_cyclone`, `observed_damage`, `building_damage`, `satellite`, `event_validation`  
+**Spatial scope:** Ranongga Island, Western Province, Solomon Islands  
+**Temporal scope:** Satellite image assessment as of 15 April 2026; map published 28 April 2026  
+**Resolution / granularity:** Event-specific building damage mapping with PDF, Shapefile and File Geodatabase publication options  
+**Potential roles:** `building_damage_class_validation`, `tropical_cyclone_footprint_challenge`, `post_disaster_vulnerability_research`  
+**Access hint:** `event_specific_shapefile_gdb_links_require_terms_and_original_licence_review`  
+**Authoritative source:** <https://unosat.org/products/4244>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Product 4244 identifies approximately 320 damaged and 370 potentially damaged buildings after tropical cyclone MAILA-26, assessed primarily using Pleiades satellite imagery and auxiliary aerial images. This is preliminary remotely sensed classification, not field-verified damage, cost or insured claim. Product-level and underlying commercial imagery rights are unresolved; download button does not grant redistribution. Preserve product ID, event date, footprint geometry, class definition, image dates, uncertainty and attribution. Do not use model validation on buildings shared with training labels.
