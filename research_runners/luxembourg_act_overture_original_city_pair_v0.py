@@ -152,6 +152,7 @@ def original_overture_city():
     if table.num_rows != TARGET_ROW_COUNT:
         raise GeoBaseError("selected Overture original population mismatch")
     outlines, invalid = [], 0
+    city_window = transform(TO_LU.transform, box(*CITY_BOX))
     for bound, raw in zip(table["bbox"].to_pylist(), table["geometry"].to_pylist()):
         if not _coordinates_in_city_box(bound):
             continue
@@ -167,6 +168,8 @@ def original_overture_city():
             national = transform(TO_LU.transform, original)
             if not national.is_valid or national.area <= 0:
                 invalid += 1
+                continue
+            if not national.intersects(city_window) or national.intersection(city_window).area <= 0:
                 continue
             outlines.append(national)
         except (GEOSException, ValueError, TypeError):
