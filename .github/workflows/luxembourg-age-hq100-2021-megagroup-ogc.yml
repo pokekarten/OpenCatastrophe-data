@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg AGE HQ100 2021 giant original polygon OGC quarantine challenge
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/luxembourg-age-hq100-2021-megagroup-ogc.yml'
+      - 'research_runners/luxembourg_age_hq2021_geojson_group_ogc_v0.py'
+      - 'research_runners/luxembourg_age_hq2021_official_geojson_crossformat_v0.py'
+      - 'tests/test_luxembourg_age_hq2021_geojson_group_ogc_v0.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-hq100-giant-polygon-research:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact research revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Python 3.13 pinned
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Install pinned OGC polygon interpreter
+        run: |
+          python -m pip install --disable-pip-version-check --no-input shapely==2.1.2
+          python -m pip check
+      - name: Synthetic group-geos safety caps and fail-closed regressions
+        run: |
+          python -m unittest tests.test_luxembourg_age_hq2021_official_geojson_crossformat_v0 -v
+          python -m unittest tests.test_luxembourg_age_hq2021_geojson_group_ogc_v0 -v
+      - name: Exact HQ100 publisher GeoJSON: optional 1.2m-vertex megagroup GEOS OGC diagnostic
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          original="$RUNNER_TEMP/lu-hq100-2021-original-geojson-quarantined.geojson"
+          trap 'rm -f "$original"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 --retry 0 \
+            --max-filesize 100663296 --output "$original" \
+            'https://download.data.public.lu/resources/flood-hazard-maps-100-year-flood/20220613-154835/hwgk2021-hq100.geojson'
+          # Fail when GEOS does not complete the bounded original-source
+          # computation. The regular source workflow always keeps its much
+          # smaller 120k-vertex budget even if this research challenge fails.
+          timeout --signal=TERM --kill-after=20s 420s \
+            python -m research_runners.luxembourg_age_hq2021_official_geojson_crossformat_v0 \
+              --scenario hq100 --source-geojson "$original" \
+              --review-polygon-groups --review-mega-group
+          # No original publisher geometry, point, source ID, insurer TIV or
+          # depth data ever saved in Git, workflow artifacts or Neon.
