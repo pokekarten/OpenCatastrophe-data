@@ -6,7 +6,8 @@ import tempfile
 import unittest
 from pathlib import Path
 from research_runners.usgs_s1m_tnm_metadata_preflight_v0 import (
-    Blocked, DATASET_TAG, LEGACY_TAG, MAX_BYTES, check_catalog, check_products, load_receipt
+    Blocked, DATASET_TAG, LEGACY_TAG, MAX_BYTES, PILOT_DOWNLOAD_URL, PILOT_SOURCE_ID,
+    PILOT_TITLE, check_catalog, check_products, load_receipt
 )
 
 
@@ -72,6 +73,41 @@ class TNMS1MTests(unittest.TestCase):
             p.write_bytes(raw)
             with self.assertRaises(Blocked):
                 load_receipt(p, hashlib.sha256(raw).hexdigest())
+
+
+    def test_real_shape_pinned_florida_product_empties_dataset_array(self):
+        # Mirrors the public TNMAccess structure observed 2026-11-02;
+        # still a SYNTHETIC test body, not original/provider bytes.
+        record = self.product()
+        item = record["items"][0]
+        item["datasets"] = []
+        item["title"] = PILOT_TITLE
+        item["sourceId"] = PILOT_SOURCE_ID
+        item["downloadURL"] = PILOT_DOWNLOAD_URL
+        item["boundingBox"] = {"minX": -81.0028601420002, "minY": 25.92070859857935,
+                               "maxX": -80.8895404313893, "maxY": 26.025030076412904}
+        evidence = check_products(record)
+        self.assertEqual(evidence["identity_evidence"], "frozen_florida_s1m_record")
+        self.assertEqual(evidence["admission"], "not_admitted")
+        self.assertFalse(evidence["provider_request_receipt_verified"])
+
+    def test_frozen_florida_identity_mismatch_rejected(self):
+        record = self.product()
+        record["items"][0].update({"datasets": [], "title": PILOT_TITLE,
+                                   "sourceId": PILOT_SOURCE_ID, "downloadURL": PILOT_DOWNLOAD_URL})
+        # Other product with exact same title/download but different provider ID.
+        record["items"][0]["sourceId"] = "b" * 24
+        with self.assertRaises(Blocked):
+            check_products(record)
+
+    def test_frozen_florida_outside_aoi_rejected(self):
+        record = self.product()
+        record["items"][0].update({"datasets": [], "title": PILOT_TITLE,
+                                   "sourceId": PILOT_SOURCE_ID, "downloadURL": PILOT_DOWNLOAD_URL,
+                                   "boundingBox": {"minX": -110.9, "minY": 43.4,
+                                                   "maxX": -110.8, "maxY": 43.5}})
+        with self.assertRaises(Blocked):
+            check_products(record)
 
 
 if __name__ == "__main__":
