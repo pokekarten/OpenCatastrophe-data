@@ -162,6 +162,34 @@ The original provider ZIP and GeoPackage are ephemeral in the GitHub runner; pro
 
 The **best ACT overlap per Overture polygon**, not a verified source identity, was: **6** no positive polygon contact; **6** best IoU under 0.25; **33** between 0.25 and 0.50; **19** between 0.50 and 0.75; **5** at least 0.75 (sum **69**). The symmetric **best Overture overlap per ACT polygon** was: **3** no contact; **72** under 0.25; **40** between 0.25 and 0.50; **19** between 0.50 and 0.75; **5** at least 0.75 (sum **139**). These are distributions of geometric footprint resemblance only, not recall, precision, confirmed building population, source-independent validation, a license determination, or any insurer attribution. The mismatch is compatible with differing segmentation/generalization/source epochs; these causal explanations still require targeted source lineage and controlled evidence before reducing threshold or joining individual buildings. Retain all low-score/ambiguous cases for research, not automatic deduplication.
 
+## Original Overture upstream family lineage in the city window (2026-11-02)
+
+The exact original [GitHub source lineage run 41500090059](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41500090059)
+**passed**, including **8/8** synthetic no-network tests. It read only
+the `bbox` and `sources` fields from the already pinned exact Overture
+source Parquet part 00226, original row-group 182, and selected the **69**
+source rows whose `bbox` intersects the Luxembourg-city pilot window.
+
+**Original per-row upstream dataset presence:** **64** source polygons
+list `OpenStreetMap`; **5** list `Microsoft ML Buildings`. There were
+**0** sampled city rows with missing original source lists and **0** with
+multiple distinct upstream datasets. The original source license tags
+show `ODbL-1.0` for **69** source rows.
+
+These are reported provider metadata categories, **not** an independent
+audit of individual source licenses, attribution completeness, or survey
+accuracy. Overture's dataset-level ODbL licence and downstream
+derivative/database obligations still require legal review. Neither
+individual `sources.record_id`, original feature IDs, coordinates, raw
+source-lineage records nor building WKB were logged or written to Git/Neon.
+The aggregation is *not* a declaration that all 69 polygons represent
+distinct insured buildings.
+
+An important next causal check is the cross-tabulation of **which of the
+five stricter ACT–Overture geometric match candidates** came from each
+upstream dataset. Do not attribute those five matches to OSM or Microsoft
+before that further exact-source comparison is verified.
+
 ## What the new joined-screen code does
 
 The offline script research_runners/luxembourg_act_overture_identity_preflight_v0.py
