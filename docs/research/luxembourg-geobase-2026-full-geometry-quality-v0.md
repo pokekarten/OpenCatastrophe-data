@@ -131,6 +131,28 @@ The full source runner also aggregates the total, median and maximum projected a
 
 **Critical non-admission conditions:** These three local windows are **not flood, wind, hail or earthquake observations**, not external hazard depths, not real-world return periods and not location-independent hazard fields. A successful overlay challenge proves only the reproducibility of a particular spatial-intersection algorithm on candidate repaired geometries. It does not validate actual peril exposure, flood depth, model calibration, insurer loss or scientific source admission. Follow with a separately licensed, original provider event- or scenario-specific hazard asset with verifiable date, geodetic frame, units and geospatial support before performing meaningful model challenge. The CAT-only Neon insurance database remains read-only.
 
+## Executed synthetic overlay and area materiality (2 November 2026)
+
+The new exact-original source workflow [run 41367423820](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41367423820) **passed**: old original ZIP and inner GPKG SHA-256 pins match, all synthetic negative tests pass, and every one of the 230,353 original GeoBase records is scanned. All **66** originally invalid polygons produce usable in-memory positive-area linework and structure repaired candidates. The newly introduced three-per-object synthetic-only geometry supports give **198 separate spatial overlay probes** with **0** positive-overlap-presence disagreements, **0** intersection-area disagreements above the declared numeric tolerance, **0** failed comparisons and **0.0000 m²** summed differences.
+
+New exact original-source area materiality metrics are:
+
+| Attribute | Measured total / distribution |
+| --- | ---: |
+| 66 invalid-polygon repair candidates, total projected area | **89,057.87 m²** |
+| Median area within the 66 repair candidates | **331.06 m²** |
+| Maximum area of one candidate (no identity exported) | **37,872.54 m²** |
+| 230,287 originally valid positive-area polygons, sum | **47,489,787.71 m²** |
+| Invalid candidates' share of valid-plus-repaired polygon area | **0.18718%** |
+
+The **largest candidate is disproportionately large**, so the scientific effect of invalid source geometries must not be dismissed solely by their 66 / 230,353 feature incidence. These are **projected source-polygon area metrics**, *not* unique building occupied floors, insured assets, loss weights or replacement-cost shares, and geometries can overlap. No per-object geometry, ID or location was logged or ingested.
+
+### Real next peril-source alternative identified
+
+The official [AGE 2021 flood hazard map HQ100](https://data.public.lu/en/datasets/flood-hazard-maps-100-year-flood/) declares CC0, provides a **2022 release** of `hwgk2021-hq100.zip` (~3.9 MB) and GeoJSON (~63.4 MB), and describes modelled floodplain **and water depth**. A separately published [INSPIRE Annex III NZ flood-hazard 100-year map](https://data.public.lu/en/datasets/inspire-annex-iii-theme-natural-risk-zones-flood-hazard-maps-100-year-flood-3/) declares CC0 and lists a **2026-08-11 GML** (~6.7 MB) with WMS. These are **different products and vintages**: their geometries, feature identifiers, scenario semantics, source authority and geometry CRS must be inspected and version-pinned separately rather than treating the 2026 service as an identical or up-to-date replacement of the 2021 HQ100 depth dataset. The source-specific commercial/reuse rights, exact original bytes, depth units, source accuracy, scenario provenance and map-lineage are **not yet admitted**.
+
+An actual **insured-loss** model also needs licensed, source-linked physical assets, an independent insurer portfolio/TIV, valid hazard intensity at correct geospatial and temporal support, damage functions, coverage terms and event aggregation. Neither the 198 *artificial* supports nor a scenario hazard-zone geometry creates those ingredients.
+
 ### Integration boundary
 
 This research evidence may later support a **physical building source intake** with a separate scientific-quality review, source-specific CC0 terms/rights record, pinned artifact identity and verified coordinate-axis semantics. It must **not** populate `exposure.exposure_unit.insured_value`, `insurance.policy_v1`, `insurance.policy_tiv_component_v1`, or real insurer-specific portfolios: none of those can be inferred from official building footprints. Keep the raw geometry out of the CAT-only Neon metadata registry until an explicitly approved persistent storage and admission design exists.
