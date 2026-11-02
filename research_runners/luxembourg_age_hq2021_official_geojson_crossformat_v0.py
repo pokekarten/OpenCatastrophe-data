@@ -193,11 +193,11 @@ def profile_original_geojson(obj: dict, *, scenario: str) -> dict:
 
 
 def audit(original: Path, *, scenario: str, review_polygon_groups=False,
-          review_mega_group=False) -> dict:
+          review_mega_group=False, review_group_repairs=False) -> dict:
     if scenario not in SOURCES:
         raise OriginalGeoJSONError("Unknown original publisher source scenario")
-    if review_mega_group and not review_polygon_groups:
-        raise OriginalGeoJSONError("Explicit megagroup challenge requires group diagnostics")
+    if (review_mega_group or review_group_repairs) and not review_polygon_groups:
+        raise OriginalGeoJSONError("Group repair or megagroup challenge requires source group diagnostics")
     p = Path(original)
     if (p.is_symlink() or not p.is_file() or
             not 0 < p.stat().st_size <= MAX_GEOJSON_BYTES):
@@ -223,11 +223,18 @@ def audit(original: Path, *, scenario: str, review_polygon_groups=False,
             GroupTopologyError, challenge_publisher_groups, MAX_GEOS_POLYGON_GROUP_VERTICES,
             MAX_OPTIONAL_MEGA_GROUP_VERTICES,
         )
+        repair_challenger = None
+        if review_group_repairs:
+            from research_runners.luxembourg_age_hq2021_group_repair_sensitivity_v0 import (
+                InvalidPublisherGroupRepairChallenge,
+            )
+            repair_challenger = InvalidPublisherGroupRepairChallenge()
         try:
             topology = challenge_publisher_groups(
                 obj,
                 max_group_vertices=(MAX_OPTIONAL_MEGA_GROUP_VERTICES if review_mega_group
                                     else MAX_GEOS_POLYGON_GROUP_VERTICES),
+                invalid_repair_challenger=repair_challenger,
             )
         except GroupTopologyError:
             raise OriginalGeoJSONError("Original polygon group GEOS diagnostic blocked") from None
@@ -259,11 +266,13 @@ def main() -> int:
     parser.add_argument("--source-geojson", type=Path, required=True)
     parser.add_argument("--review-polygon-groups", action="store_true")
     parser.add_argument("--review-mega-group", action="store_true")
+    parser.add_argument("--review-group-repairs", action="store_true")
     args = parser.parse_args()
     try:
         print(json.dumps(audit(args.source_geojson, scenario=args.scenario,
                                review_polygon_groups=args.review_polygon_groups,
-                               review_mega_group=args.review_mega_group),
+                               review_mega_group=args.review_mega_group,
+                               review_group_repairs=args.review_group_repairs),
                          sort_keys=True, indent=2, allow_nan=False))
     except (OriginalGeoJSONError, OSError):
         parser.exit(2, "BLOCKED: Official publisher GeoJSON source integrity or format rejected\n")
