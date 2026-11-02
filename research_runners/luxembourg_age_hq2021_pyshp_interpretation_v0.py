@@ -1,10 +1,11 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Independent PyShp 2.3.1 multipart interpretation of original AGE flood SHPs.
+"""Independent PyShp 2.3.1 record/winding corroboration of AGE flood SHPs.
 
 Does not assume GEOS isolated-ring orientation counts describe a complete
-floodplain. Checks how another published, pinned Shapefile reader groups
-source polygon exteriors and holes under its own GeoJSON conversion rules.
+floodplain. Checks independently decoded record size and ring winding.
+Only small synthetic source cases undergo potentially quadratic GeoJSON
+exterior/hole grouping; national source conversion is explicitly quarantined.
 
 All source SHA-1, SHA-256 and ZIP CRCs validated before access. The converter
 may assign an ambiguous or invalid ring incorrectly; its interpretation is
@@ -36,6 +37,8 @@ MAX_SHP_BYTES = 32 * 1024 * 1024
 MAX_SIDECAR_BYTES = 2 * 1024 * 1024
 MAX_RECORD_POINTS = 2_000_000
 MAX_RINGS = 20_000
+MAX_GEO_INTERFACE_RINGS = 300
+MAX_GEO_INTERFACE_POINTS = 20_000
 
 
 class OriginalInterpreterError(ValueError):
@@ -85,7 +88,12 @@ def interpret_bytes(*, shp: bytes, shx: bytes, dbf: bytes,
             if (record.shapeType != 5 or len(record.parts) != expected_rings
                     or len(record.points) != expected_points):
                 raise OriginalInterpreterError("Independent source parser lost shape/ring points")
-            geo = record.__geo_interface__
+            # PyShp 2.3.1 uses a potentially quadratic all-ring
+            # hole/exterior matching pass. National records (13k parts)
+            # must not run that unbounded conversion in CI.
+            geo = (record.__geo_interface__ if
+                   expected_rings <= MAX_GEO_INTERFACE_RINGS and
+                   expected_points <= MAX_GEO_INTERFACE_POINTS else None)
     except OriginalInterpreterError:
         raise
     except (Exception) as exc:
@@ -93,6 +101,46 @@ def interpret_bytes(*, shp: bytes, shx: bytes, dbf: bytes,
         raise OriginalInterpreterError("Independent source Shapefile parser blocked") from None
     finally:
         shapefile.VERBOSE = old_verbose
+    # Separate independent raw-ring winding check, without PyShp's
+    # potentially quadratic shapefile-to-GeoJSON hierarchy assembler.
+    edges = list(record.parts) + [len(record.points)]
+    cw = ccw = 0
+    for lo, hi in zip(edges, edges[1:]):
+        if hi - lo < 4:
+            raise OriginalInterpreterError("Unexpected short original source ring")
+        ring = record.points[lo:hi]
+        if shapefile.is_cw(ring):
+            cw += 1
+        else:
+            ccw += 1
+    if cw + ccw != expected_rings:
+        raise OriginalInterpreterError("Independent source winding count mismatch")
+    base = {
+        "parser": "pyshp",
+        "pinned_pyshp_version": shapefile.__version__,
+        "original_source_shape_type": 5,
+        "original_source_record_count": 1,
+        "original_source_ring_count_conserved": True,
+        "original_source_coordinate_count_conserved": True,
+        "independent_pyshp_clockwise_ring_count": cw,
+        "independent_pyshp_counterclockwise_ring_count": ccw,
+        "source_outline_hole_semantics_independently_verified": False,
+        "pyshp_conversion_is_hydraulic_model_ground_truth": False,
+        "full_source_ogc_geometry_validity_verified": False,
+        "original_individual_ring_locations_or_coordinates_exported": False,
+        "flood_building_spatial_join_authorized": False,
+        "numeric_hazard_depth_verified": False,
+        "CAT_model_input_admitted": False,
+    }
+    if geo is None:
+        return {
+            **base,
+            "pyshp_geo_interface_full_grouping_status": "quarantined_source_complexity",
+            "pyshp_interpreted_polygon_group_count": None,
+            "pyshp_interpreted_hole_ring_count": None,
+            "pyshp_interpreted_exterior_ring_count": None,
+            "source_population_reconstructed_as_full_polygon": False,
+        }
     if not isinstance(geo, dict):
         raise OriginalInterpreterError("Non-GeoJSON converted source")
     if geo.get("type") == "Polygon":
@@ -117,23 +165,13 @@ def interpret_bytes(*, shp: bytes, shx: bytes, dbf: bytes,
     if assembled_rings != expected_rings or assembled_points != expected_points:
         raise OriginalInterpreterError("Independent polygon conversion changed original population")
     return {
-        "parser": "pyshp",
-        "pinned_pyshp_version": shapefile.__version__,
-        "original_source_shape_type": 5,
-        "original_source_record_count": 1,
-        "original_source_ring_count_conserved": True,
-        "original_source_coordinate_count_conserved": True,
+        **base,
+        "pyshp_geo_interface_full_grouping_status": "completed_small_source_only",
+        "source_population_reconstructed_as_full_polygon": False,
         "pyshp_geo_interface_geometry_type": geo["type"],
         "pyshp_interpreted_polygon_group_count": len(groups),
         "pyshp_interpreted_hole_ring_count": holes,
         "pyshp_interpreted_exterior_ring_count": len(groups),
-        "source_outline_hole_semantics_independently_verified": False,
-        "pyshp_conversion_is_hydraulic_model_ground_truth": False,
-        "full_source_ogc_geometry_validity_verified": False,
-        "original_individual_ring_locations_or_coordinates_exported": False,
-        "flood_building_spatial_join_authorized": False,
-        "numeric_hazard_depth_verified": False,
-        "CAT_model_input_admitted": False,
     }
 
 
