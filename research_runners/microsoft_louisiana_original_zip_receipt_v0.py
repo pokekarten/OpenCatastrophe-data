@@ -98,7 +98,7 @@ def probe(fetch=original_fetch):
     if (sig != 0x06054b50 or disk or central_disk or total != 1
             or on_disk != total or comment != len(tail)-(pos+22)
             or not 46 <= cd_len <= MAX_CENTRAL_BYTES
-            or cd_start+cd_len > n-MAX_TAIL_BYTES):
+            or cd_start+cd_len != n-(len(tail)-pos)):
         raise OriginalArchiveError("not an exact one-member ZIP32 archive")
     central = get(cd_start,cd_start+cd_len-1)
     if len(central)<46 or central[:4] != b"PK\x01\x02":
