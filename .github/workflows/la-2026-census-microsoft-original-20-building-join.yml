@@ -1,0 +1,94 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Louisiana original Microsoft roofs to Census 2026 parish match
+
+on:
+  pull_request:
+    paths:
+      - research_runners/us_census_2026_microsoft_louisiana_building_parish_join_v0.py
+      - tests/test_us_census_2026_microsoft_louisiana_building_parish_join_v0.py
+      - .github/workflows/la-2026-census-microsoft-original-20-building-join.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  two-original-source-pilot:
+    name: First 20 original Microsoft buildings vs all 64 exact Census parishes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - name: Checkout exact research review ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Install reviewed pinned GIS runtime
+        run: |
+          python -m pip install --disable-pip-version-check --no-input -r requirements-eu-flood-spatial.txt
+          python -m pip check
+      - name: Offline adversarial two-provider spatial source tests
+        run: >-
+          python -m unittest
+          tests.test_us_census_2026_microsoft_louisiana_building_parish_join_v0
+          -v
+      - name: One explicitly narrow original Census ZIP plus original Microsoft HTTP range
+        # Source bytes are ephemeral. Permit ONLY scoped research PR #1100
+        # until one real-source receipt exists; then revert to manual only.
+        if: github.event_name != 'pull_request' || github.event.pull_request.number == 1100
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          original="$RUNNER_TEMP/tl_2026_us_county.zip"
+          ms="$RUNNER_TEMP/ms_la_first_65536_bytes.ziprange"
+          headers="$RUNNER_TEMP/ms_original_range_headers.txt"
+          trap 'rm -f "$original" "$ms" "$headers"' EXIT
+          curl --fail --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 210 --retry 0 \
+            --max-filesize 125000000 \
+            --output "$original" \
+            'https://www2.census.gov/geo/tiger/TIGER2026/COUNTY/tl_2026_us_county.zip'
+          curl --fail --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 60 --retry 0 \
+            --range 0-65535 \
+            --header 'Accept-Encoding: identity' \
+            --header 'If-Match: "0x8DCFF4D6A6BD59D"' \
+            --dump-header "$headers" \
+            --output "$ms" \
+            'https://minedbuildings.z5.web.core.windows.net/legacy/usbuildings-v2/Louisiana.geojson.zip'
+          # Confirm original server honored Range and source identity.
+          # Failure MUST NOT fall back to downloading the complete ZIP.
+          python - "$headers" "$ms" <<'PY'
+          import pathlib,re,sys
+          h=pathlib.Path(sys.argv[1]).read_text(encoding="ascii")
+          blocks=[b for b in re.split(r"\r?\n\r?\n",h)
+                  if re.match(r"HTTP/\S+\s+\d{3}",b)]
+          if not blocks:
+              raise SystemExit("blocked: no HTTP source response")
+          lines=blocks[-1].replace("\r","").split("\n")
+          if not re.match(r"HTTP/\S+\s+206(?:\s|$)",lines[0]):
+              raise SystemExit("blocked: original server did not return HTTP 206")
+          fields={}
+          for line in lines[1:]:
+              if ":" in line:
+                  k,v=line.split(":",1)
+                  fields[k.lower().strip()]=v.strip()
+          if (fields.get("content-range")!="bytes 0-65535/83974949"
+              or fields.get("content-length")!="65536"
+              or fields.get("etag")!='"0x8DCFF4D6A6BD59D"'):
+              raise SystemExit("blocked: source range/ETag/size mismatch")
+          if pathlib.Path(sys.argv[2]).stat().st_size!=65536:
+              raise SystemExit("blocked: unexpected original sample byte count")
+          print("Official Microsoft 65536-byte original range and ETag: OK")
+          PY
+          python -m research_runners.us_census_2026_microsoft_louisiana_building_parish_join_v0 \
+            --census-zip "$original" --ms-prefix "$ms"
+          # No original geometry, company TIV, or actual source records
+          # are committed, uploaded as artifacts, or written to Neon.
