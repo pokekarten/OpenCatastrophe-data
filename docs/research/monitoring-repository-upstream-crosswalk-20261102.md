@@ -32,9 +32,9 @@ Canonical **new provider candidates**: [`landscape/sources-monitoring-repo-upstr
 
 **Already represented (do not re-add):** GDACS, EONET, NHC operational GIS, NWS CAP, ReliefWeb, UNHCR, IOM DTM, UNDRR DELTA, USGS ComCat, NASA FIRMS, Global Energy Monitor, IMF PortWatch, and other existing `landscape` identities. A candidate is not the same as admission.
 
-**New canonical discovery entries (9):** GLIDE IDs, IDMC IDU, UN CERF project API, IFRC GO/DREF appeals, International Charter activations, Nepal BIPAD, England Environment Agency flood monitoring, UK Met Office severe warning API, Open-Meteo model/single-run API. They are recorded with `evidence_checked` and `not_admitted` and are **not** installed as pipelines.
+**New canonical discovery entries (12):** GLIDE IDs, IDMC IDU, UN CERF project API, IFRC GO/DREF appeals, International Charter activations, Nepal BIPAD, England Environment Agency flood monitoring, UK Met Office severe warning API, Open-Meteo model/single-run API, BMKG Indonesia earthquake feeds, JMA earthquake/volcano XML, and NASA GIBS visualizations. They are recorded with `evidence_checked` and `not_admitted` and are **not** installed as pipelines.
 
-**Investigate next:** BMKG operational vs reviewed catalogue, JMA official earthquake/volcano XML, NASA GIBS time-specific imagery vs original measurement data, InciWeb incident metadata, public national damage/impact datasets surfaced by Charter and DELTA, exact sources for WorldMirror's infrastructure features. Prioritise original sources over feed mirrors.
+**Investigate next:** BMKG operational versus fully reviewed historical catalogue, Japan and Indonesian original bulletin retention, NASA GIBS quantitative source-product mapping, InciWeb incident metadata, public national damage/impact datasets surfaced by Charter and DELTA, exact sources for WorldMirror's infrastructure features. Prioritise original sources over feed mirrors.
 
 ### Scientific and rights traps
 
