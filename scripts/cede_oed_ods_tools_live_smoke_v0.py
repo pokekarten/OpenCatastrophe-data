@@ -108,7 +108,8 @@ def _probe_oed_v302(location: Path, account: Path) -> dict[str, object]:
                 "blocked_reason": None}
     except Exception as exc:
         return {"attempted": True, "passed": False,
-                "blocked_reason": type(exc).__name__}
+                "blocked_reason": type(exc).__name__,
+                "diagnostic": str(exc).splitlines()[0][:240]}
 
 
 def execute(command: str = "ods_tools") -> dict[str, object]:
