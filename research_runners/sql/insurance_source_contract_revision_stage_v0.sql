@@ -45,6 +45,43 @@ CREATE TABLE IF NOT EXISTS registry.source_contract_revision_v0 (
  recorded_at timestamptz NOT NULL DEFAULT now(),
  PRIMARY KEY(source_key,git_blob_sha)
 );
+
+-- CREATE TABLE IF NOT EXISTS must not silently accept an existing,
+-- permissive table with missing rights constraints or duplicate version keys.
+-- Inspect actual PostgreSQL constraints (not merely current rows).
+DO $schema_guard$
+BEGIN
+  IF (
+    SELECT count(*)
+    FROM pg_catalog.pg_constraint c
+    JOIN (
+      VALUES
+        ('source_contract_revision_v0_raw_import_allowed_check', 'c',
+         'CHECK ((raw_import_allowed IS FALSE))'),
+        ('source_contract_revision_v0_model_input_approved_check', 'c',
+         'CHECK ((model_input_approved IS FALSE))'),
+        ('source_contract_revision_v0_pkey', 'p',
+         'PRIMARY KEY (source_key, git_blob_sha)'),
+        ('source_contract_revision_v0_source_key_fkey', 'f',
+         'FOREIGN KEY (source_key) REFERENCES registry.source_record(source_key)')
+    ) AS expected(name, kind, definition)
+      ON c.conname=expected.name
+     AND c.contype=expected.kind
+     AND c.convalidated IS TRUE
+     AND pg_catalog.pg_get_constraintdef(c.oid)=expected.definition
+    WHERE c.conrelid='registry.source_contract_revision_v0'::regclass
+  ) <> 4 OR (
+    SELECT count(*)
+    FROM pg_catalog.pg_attribute a
+    WHERE a.attrelid='registry.source_contract_revision_v0'::regclass
+      AND a.attname IN ('raw_import_allowed','model_input_approved')
+      AND a.attnotnull IS TRUE
+      AND a.attisdropped IS FALSE
+  ) <> 2 THEN
+    RAISE EXCEPTION 'Source revision table lacks reviewed non-admission constraints';
+  END IF;
+END;
+$schema_guard$;
 -- Preserve independently recorded, historical Neon metadata without
 -- mutating source_record. Different revisions must stay distinguishable.
 INSERT INTO registry.source_contract_revision_v0
