@@ -12,8 +12,9 @@ on:
       - 'docs/research/emsc-one-event-probe-v0.md'
       - '.github/workflows/emsc-one-event-original-probe.yml'
   workflow_dispatch:
-  # Only the first reviewed workflow merge (or a manual dispatch) triggers
-  # the original one-event request. PR checks never contact the provider.
+  # A reviewed change of this workflow enables one original provider GET
+  # at merge, to validate the source-ID/time/location receipt on main.
+  # PR checks are synthetic/offline; no scheduled ingestion or bulk requests.
   push:
     branches: [main]
     paths:
