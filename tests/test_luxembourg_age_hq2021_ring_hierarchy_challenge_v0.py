@@ -32,8 +32,8 @@ class OriginalRingHierarchyTests(unittest.TestCase):
         c.observe(SHELL)
         c.observe(HOLE)
         result = c.summary(expected_rings=2)
-        self.assertEqual(result["clockwise_exterior_candidate_rings"], 1)
-        self.assertEqual(result["counterclockwise_hole_candidate_rings"], 1)
+        self.assertEqual(result["proposed_exterior_candidate_rings"], 1)
+        self.assertEqual(result["proposed_hole_candidate_rings"], 1)
         self.assertEqual(result["valid_holes_with_exactly_one_valid_shell_cover"], 1)
         self.assertEqual(result["valid_holes_with_no_valid_shell_cover"], 0)
         self.assertEqual(result["valid_shell_hole_full_geos_covers_checks"], 1)
@@ -60,10 +60,31 @@ class OriginalRingHierarchyTests(unittest.TestCase):
         c.observe(INVALID_SHELL)
         c.observe(HOLE)
         r = c.summary(expected_rings=2)
-        self.assertEqual(r["geos_invalid_clockwise_exterior_candidates"], 1)
+        self.assertEqual(r["geos_invalid_proposed_exterior_candidates"], 1)
         self.assertEqual(r["valid_holes_with_exactly_one_valid_shell_cover"], 0)
         self.assertEqual(r["valid_holes_with_possible_invalid_shell_bbox_cover"], 1)
         self.assertFalse(r["cat_loss_model_input_admitted"])
+
+    def test_reverse_winding_convention_is_independently_falsifiable(self):
+        outer = list(reversed(SHELL))
+        inner = list(reversed(HOLE))
+        reversed_interpretation = SourceRingHierarchy(reverse_orientation=True)
+        reversed_interpretation.observe(outer)
+        reversed_interpretation.observe(inner)
+        result = reversed_interpretation.summary(expected_rings=2)
+        self.assertEqual(result["valid_holes_with_exactly_one_valid_shell_cover"], 1)
+        self.assertEqual(result["proposed_exterior_candidate_rings"], 1)
+        self.assertEqual(result["proposed_hole_candidate_rings"], 1)
+        self.assertEqual(result["original_shapefile_polygon_winding_convention_hypothesis"],
+                         "counterclockwise_exterior_clockwise_hole")
+        traditional = SourceRingHierarchy()
+        traditional.observe(outer)
+        traditional.observe(inner)
+        traditional_result = traditional.summary(expected_rings=2)
+        self.assertEqual(traditional_result["valid_holes_with_exactly_one_valid_shell_cover"], 0)
+        self.assertEqual(traditional_result["valid_holes_with_no_valid_shell_cover"], 1)
+        with self.assertRaises(HierarchyChallengeError):
+            SourceRingHierarchy(reverse_orientation=1)
 
     def test_bounded_exact_comparisons_and_population_fail_closed(self):
         c = SourceRingHierarchy(max_candidates=1)
