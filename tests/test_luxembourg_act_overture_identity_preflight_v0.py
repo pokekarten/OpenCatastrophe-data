@@ -15,7 +15,7 @@ from research_runners.luxembourg_act_overture_identity_preflight_v0 import (
 
 TO_WGS = Transformer.from_crs("EPSG:2169", "EPSG:4326", always_xy=True)
 SOURCE_KEY = ("release/2026-10-21.0/theme=buildings/type=building/"
-              "part-00000-85375c54-5dfb-57c7-b21d-8b5e5245ad06-c000.zstd.parquet")
+              "part-00226-f2e989f6-97e6-5afe-b3d2-cfd2e6228d37-c000.zstd.parquet")
 
 
 def square(x=77240, y=75040, side=10):
@@ -114,6 +114,14 @@ class LuxembourgPairTests(unittest.TestCase):
     def test_reject_wrong_overture_partition(self):
         p = sample()
         p["overture_source_key"] = SOURCE_KEY.replace("type=building/", "type=building_part/")
+        with self.assertRaises(CandidateError):
+            audit(p)
+
+    def test_other_valid_overture_part_is_not_luxembourg_city_source(self):
+        p = sample()
+        p["overture_source_key"] = SOURCE_KEY.replace(
+            "part-00226-f2e989f6-97e6-5afe-b3d2-cfd2e6228d37",
+            "part-00000-85375c54-5dfb-57c7-b21d-8b5e5245ad06")
         with self.assertRaises(CandidateError):
             audit(p)
 
