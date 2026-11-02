@@ -14,8 +14,16 @@ import os
 from pathlib import Path
 import stat
 import sys
+import tempfile
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 RECORD_URL = "https://zenodo.org/records/14671593"
+SOURCE_DOWNLOAD_URL = (
+    "https://zenodo.org/records/14671593/files/"
+    "ds_GTSM-ERA5-E_1950-2024_stats.nc?download=1"
+)
 SOURCE_NAME = "ds_GTSM-ERA5-E_1950-2024_stats.nc"
 SOURCE_BYTES = 9_652_424
 SOURCE_MD5 = "0f2b7071c6ec3585768be6cf427e6eab"
@@ -81,13 +89,57 @@ def verify_original(path: Path) -> dict[str, object]:
             "provider_bytes_persisted_by_this_tool": False}
 
 
+class _ZenodoOnlyRedirect(HTTPRedirectHandler):
+    """Refuse redirects away from the exact public publisher's HTTPS host."""
+
+    def redirect_request(self, request, fp, code, msg, headers, newurl):
+        destination = urlsplit(newurl)
+        if (destination.scheme != "https" or destination.hostname != "zenodo.org"
+                or destination.port not in (None, 443)):
+            raise GtsmReceiptError("disallowed non-Zenodo publisher redirect")
+        return super().redirect_request(request, fp, code, msg, headers, newurl)
+
+
+def fetch_verified_original() -> dict[str, object]:
+    """One fixed HTTPS original read, ephemeral file, only metadata receipt returned."""
+    request = Request(SOURCE_DOWNLOAD_URL, headers={"User-Agent": "OpenCatastrophe-GTSM-Research/1.0"})
+    try:
+        with build_opener(_ZenodoOnlyRedirect()).open(request, timeout=60) as response:
+            final = urlsplit(response.geturl())
+            if final.scheme != "https" or final.hostname != "zenodo.org" or final.port not in (None, 443):
+                raise GtsmReceiptError("unexpected publisher response host")
+            if response.status != 200:
+                raise GtsmReceiptError("unexpected original publisher HTTP status")
+            raw_length = response.headers.get("Content-Length")
+            if raw_length is not None and (
+                not raw_length.isdecimal() or int(raw_length) != SOURCE_BYTES
+            ):
+                raise GtsmReceiptError("provider Content-Length differs from pinned original size")
+            with tempfile.TemporaryDirectory(prefix="gtsm-original-") as directory:
+                path = Path(directory) / SOURCE_NAME
+                received = 0
+                with path.open("xb") as target:
+                    while True:
+                        block = response.read(min(CHUNK, SOURCE_BYTES - received + 1))
+                        if not block:
+                            break
+                        received += len(block)
+                        if received > SOURCE_BYTES:
+                            raise GtsmReceiptError("source exceeds exact original-byte acquisition cap")
+                        target.write(block)
+                return verify_original(path)
+    except (HTTPError, URLError, TimeoutError, OSError) as exc:
+        raise GtsmReceiptError("fixed Zenodo original acquisition unavailable") from exc
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--original", type=Path, required=True,
-                        help="already acquired original Zenodo NetCDF (read-only, no network)")
+    choice = parser.add_mutually_exclusive_group(required=True)
+    choice.add_argument("--original", type=Path, help="existing original NetCDF, offline read-only")
+    choice.add_argument("--fetch", action="store_true", help="one fixed HTTPS Zenodo original only")
     args = parser.parse_args(argv)
     try:
-        receipt = verify_original(args.original)
+        receipt = fetch_verified_original() if args.fetch else verify_original(args.original)
     except (GtsmReceiptError, OSError) as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         return 2
