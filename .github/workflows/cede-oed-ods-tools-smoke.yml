@@ -73,3 +73,5 @@ jobs:
           python -m pip check
       - name: Probe full original Oasis example (research, not an acceptance gate)
         run: python scripts/cede_oed_upstream_full_mapping_probe_v0.py --upstream-checkout upstream-ods-tools
+      - name: Probe two isolated temporary example workarounds (no model approval)
+        run: python scripts/cede_oed_upstream_mapping_workarounds_v0.py --upstream-checkout upstream-ods-tools
