@@ -68,11 +68,11 @@ Official [bridge file documentation](https://docs.overturemaps.org/gers/bridge-f
 
 - `s3://overturemaps-us-west-2/bridgefiles/2026-10-21.0/provider=osm/theme=buildings/type=building/`
 - Do **not** use the old `dataset=OpenStreetMap` directory path; partition key is `provider`, and `dataset` remains a column.
-- Relevant published row columns are `id` (GERS candidate UUID), `record_id` (source OSM object ID plus `@version`), `dataset`, `provider`, `theme`, `type`, alongside optional source-resource metadata. Use only an **already independently acquired, version-pinned** source projection.
+- The original Parquet file schema was verified from its footer: `id`, `dataset`, `record_id`, `update_time`, `resource`, `version`, `between`, `dataset_between`. Crucially, `provider`, `theme`, and `type` are **S3/Hive partition keys**, not row columns. Read exact partition identity from the pinned original object path, and project only `id`, `record_id`, and `dataset` into the narrow bridge preflight.
 - Bridge files omit selected input families, including Microsoft ML Buildings, Google Open Buildings, USGS Lidar and one Zenodo buildings dataset. No matching row does **not** prove that the building is absent from Overture.
 - Official [registry](https://docs.overturemaps.org/gers/registry/) is updated in place and is distinct from release-pinned bridge files. A UUID and a matching bridge row do not independently prove current registry membership or the source Parquet checksum.
 
-`scripts/overture_osm_building_bridge_preflight_v0.py` validates a deliberately narrow read-only **normalization** of just the six columns `id,record_id,dataset,provider,theme,type`. It requires exact OSM IDs such as `w123@5` (never silently strips source versions), source provider `osm`, building theme/type, release `2026-10-21.0`, and explicit source dataset `OpenStreetMap`. An input can contain *at most* 100 local records and 500 bridge rows. This is not a real Parquet reader and does not initiate an external download.
+`scripts/overture_osm_building_bridge_preflight_v0.py` validates a deliberately narrow read-only **normalization** of just the **three original row columns** `id,record_id,dataset`, with the three partition fields `bridge_provider`, `bridge_theme`, and `bridge_type` supplied separately in the outer envelope. It requires exact OSM IDs such as `w123@5` (never silently strips source versions), source provider `osm`, building theme/type, release `2026-10-21.0`, and explicit source dataset `OpenStreetMap`. An input can contain *at most* 100 local records and 500 bridge rows. This is not a real Parquet reader and does not initiate an external download.
 
 Example entirely synthetic JSON input:
 
@@ -80,15 +80,14 @@ Example entirely synthetic JSON input:
       "schema": "opencatastrophe-overture-osm-building-bridge-v0",
       "release": "2026-10-21.0",
       "bridge_provider": "osm",
+      "bridge_theme": "buildings",
+      "bridge_type": "building",
       "bridge_dataset": "OpenStreetMap",
       "local_records": [{"local_id": "SYNTH-1", "record_id": "w123@5"}],
       "bridge_rows": [{
         "id": "fea28f69-7afa-460c-b270-61ef74cd340c",
         "record_id": "w123@5",
-        "dataset": "OpenStreetMap",
-        "provider": "osm",
-        "theme": "buildings",
-        "type": "building"
+        "dataset": "OpenStreetMap"
       }]
     }
 
@@ -120,6 +119,8 @@ Reproduce using the explicitly opt-in, hardcoded, bounded original-source script
     python -m unittest tests.test_overture_osm_bridge_original_probe_v0 -v
 
 The read-only script caps listing XML at 32768 bytes, checks exactly the first one or two partition keys, and requests exactly 4+8 bytes per listed object. It validates `Content-Range`, response status `206`, source ETag consistency, original file size, Parquet boundary magic and a bounded footer-size integer. No credentials, caller-chosen endpoint, listing pagination, full provider file or original row acquisition are used. Only explicit `--live` enables networking; the CI tests are 100% offline and mocked.
+
+**Original footer metadata (first object only):** a bounded 4,281-byte footer read was independently decoded with Parquet Thrift CompactProtocol. It reports 7,852,618 source rows in 3 row groups, root `spark_schema` with eight fields (`id`, `dataset`, `record_id`, `update_time`, `resource`, `version`, `between`, `dataset_between`), and creator `parquet-mr version 1.13.1`. This is verifiable **original file metadata only**; source records/values, object SHA256, GERS identities, provider licence and model suitability were **not** validated. The three partition keys are source path identity, never appended as falsely claimed original columns. This corrected a preflight schema mismatch before an import could be attempted.
 
 **Result:** public cloud object metadata and bounded Parquet-format boundaries verified, but **original GeoParquet source rows NOT inspected, SHA256 not validated, source-record rights NOT approved, GERS membership NOT verified, model input NOT admitted, and no Neon database write**. Before any rows are stored, independently verify the relevant complete source, attribution, licence and scientific bridge; this receipt is not a completed provider-data import.
 
