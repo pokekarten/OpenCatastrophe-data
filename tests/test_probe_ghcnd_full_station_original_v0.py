@@ -93,6 +93,22 @@ class FullStationProbeTests(unittest.TestCase):
         self.assertFalse(out["neon_artifact_inserted"])
         self.assertNotIn("DATA_VALUE", json.dumps(out))
 
+    def test_observed_native_2400_preserved_and_counted_not_shifted(self):
+        before = b"USW00094728,18690101,TMAX,-100,,,Z,\n"
+        after = b"USW00094728,18690101,TMAX,-100,,,Z,2400\n"
+        self.assertIn(before, self.fixture)
+        result = inspect_full_csv(self.fixture.replace(before, after, 1))
+        self.assertEqual(result["provider_native_2400_observation_time_rows"], 1)
+        self.assertFalse(result["observation_time_2400_converted_to_utc_or_next_day"])
+        self.assertEqual(result["first_observation_day"], "18690101")
+
+    def test_unreviewed_clock_tokens_remain_blocked(self):
+        original = b"USW00094728,18690101,TMAX,-100,,,Z,\n"
+        for token in ("2460", "2500", "9999", "24:00"):
+            revised = f"USW00094728,18690101,TMAX,-100,,,Z,{token}\n".encode("ascii")
+            with self.subTest(token=token), self.assertRaises(StationFullProbeError):
+                inspect_full_csv(self.fixture.replace(original, revised, 1))
+
     def test_wrong_station_rejected(self):
         raw = self.fixture.replace(b"USW00094728,", b"USW00094729,", 1)
         with self.assertRaises(StationFullProbeError):
