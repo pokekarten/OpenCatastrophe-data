@@ -13,11 +13,11 @@ on:
       - research_runners/us_census_2026_louisiana_64_parish_qc_v0.py
       - tests/test_us_census_2026_louisiana_64_parish_qc_v0.py
       - .github/workflows/us-census-2026-county-original-audit.yml
-  # One bounded original-source run on this research branch's workflow
-  # change and once after merging the reviewed workflow into main.
-  # Other ordinary commits do not generate repeated 80 MB downloads.
+  # Original provider bytes were already independently QC-tested on this
+  # research PR (run 41414916847). Future PR checks stay offline. One
+  # source retrieval remains available on main workflow merge/dispatch.
   push:
-    branches: [main, research/worldwide-parish-peril-readiness-20261101]
+    branches: [main]
     paths:
       - .github/workflows/us-census-2026-county-original-audit.yml
 
@@ -54,9 +54,9 @@ jobs:
           tests.test_us_census_2026_louisiana_64_parish_qc_v0
           -v
       - name: One fixed official original COUNTY archive, ephemeral data only
-        # Source-byte run is allowed on this one explicitly scoped research
-        # PR, not on unrelated PRs or ordinary pushes; no persistent data.
-        if: github.event_name != 'pull_request' || github.event.pull_request.number == 1100
+        # Full original data QC already succeeded twice at exact code/source
+        # scope; never repeat 83 MB downloads on routine draft PR updates.
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
