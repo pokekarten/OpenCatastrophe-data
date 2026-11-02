@@ -47,7 +47,7 @@ def fake_fetch(*, name=EXPECTED_MEMBER, etag=ETAG,
                 "legacy/usbuildings-v2/Louisiana.geojson.zip"):
             raise AssertionError("unreviewed source host")
         if req.get_method()=="HEAD":
-            return 200, {"content-length":str(N-1 if wrong_original_size else N),
+            return 200, {"content-length":'not-a-number' if wrong_original_size else str(N),
                          "etag":etag, "accept-ranges":"bytes"},b""
         if reject_range:
             return 200,{"content-length":"1"},b"\0"
