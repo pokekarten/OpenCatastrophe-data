@@ -63,7 +63,8 @@ def _polygons(obj):
 
 
 def challenge_publisher_groups(obj: dict, *, max_group_vertices: int =
-                               MAX_GEOS_POLYGON_GROUP_VERTICES) -> dict:
+                               MAX_GEOS_POLYGON_GROUP_VERTICES,
+                               invalid_repair_challenger=None) -> dict:
     if (not isinstance(max_group_vertices, int) or isinstance(max_group_vertices, bool)
             or not 4 <= max_group_vertices <= MAX_OPTIONAL_MEGA_GROUP_VERTICES):
         raise GroupTopologyError("Invalid bounded original GEOS group complexity")
@@ -102,6 +103,8 @@ def challenge_publisher_groups(obj: dict, *, max_group_vertices: int =
                 valid += 1
             else:
                 invalid += 1
+                if invalid_repair_challenger is not None:
+                    invalid_repair_challenger.observe(geom, point_count=npoints)
                 # GEOS error explanations embed original coordinates. The
                 # published report carries ONLY a strict reason category.
                 reason = explain_validity(geom).split("[", 1)[0].strip()
@@ -111,6 +114,8 @@ def challenge_publisher_groups(obj: dict, *, max_group_vertices: int =
             errors += 1
     if n < 1 or n != valid + invalid + skipped + errors or sum(reasons.values()) != invalid:
         raise GroupTopologyError("Original publisher polygon group count not conserved")
+    repair_summary = (invalid_repair_challenger.summary(expected_invalid=invalid)
+                      if invalid_repair_challenger is not None else None)
     return {
         "profile": "lu-age-hq2021-publisher-original-geojson-group-OGC-v0",
         "original_publisher_groups_examined": n,
@@ -130,4 +135,6 @@ def challenge_publisher_groups(obj: dict, *, max_group_vertices: int =
         "original_source_coordinates_or_feature_ids_exported": False,
         "hydraulic_depth_intensity_or_insurer_TIV_verified": False,
         "CAT_loss_input_admitted": False,
+        **({"invalid_publisher_group_repair_sensitivity": repair_summary}
+           if repair_summary is not None else {}),
     }
