@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: GHCN NCEI U.S. private cat-raw staged upload contract
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/stage_ghcnd_ncei_us_cat_raw_v0.py'
+      - 'tests/test_stage_ghcnd_ncei_us_cat_raw_v0.py'
+      - '.github/workflows/ghcnd-cat-raw-transfer-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ghcnd-cat-raw-transfer-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-verified-transfer-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Verify synthetic original, private object, and signed PUT boundary
+        run: python -m unittest tests.test_stage_ghcnd_ncei_us_cat_raw_v0 -v
+      - name: Pin exact transfer code identity
+        run: |
+          git rev-parse HEAD
+          sha256sum scripts/stage_ghcnd_ncei_us_cat_raw_v0.py
+      # No live transfers or secrets. Never pass presigned URLs to GitHub
+      # Actions inputs or print them. Upload requires separate local execution.
