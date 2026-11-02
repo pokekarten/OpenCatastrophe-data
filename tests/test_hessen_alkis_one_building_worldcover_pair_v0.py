@@ -80,7 +80,7 @@ class PairSourceTests(unittest.TestCase):
         with self.assertRaises(pair.PairBlocked):
             pair.inspect_original_pair(raw,bytes([10])*100)
         pixels=bytearray([10])*(pair.SIDE*pair.SIDE)
-        pixels[688*pair.SIDE+676]=255
+        pixels[687*pair.SIDE+676]=255
         with self.assertRaises(pair.PairBlocked):
             pair.inspect_original_pair(raw,bytes(pixels))
 
