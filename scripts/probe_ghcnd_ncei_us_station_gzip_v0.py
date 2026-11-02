@@ -24,7 +24,7 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.validate_source_access import validate_path
-from scripts.probe_ghcnd_full_station_original_v0 import inspect_full_csv
+from scripts.probe_ghcnd_full_station_original_v0 import HEADER, STATION, inspect_full_csv
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "access" / "noaa.ncei.ghcnd-central-park-gzip.json"
@@ -121,6 +121,34 @@ def inflate_validated_gzip_members(
     return b"".join(parts), members
 
 
+def validation_view_for_original_csv(raw: bytes) -> tuple[bytes, bool]:
+    """Preserve provider original bytes, add validation-only header if absent.
+
+    NCEI source can be headerless while NODD-derived station CSV has a header.
+    Accept exactly eight provider-native columns and the fixed station ID in
+    the first real row; do not reinterpret a different CSV schema or modify
+    the original body hash. All rows are then validated by the shared strict
+    original-station inspector.
+    """
+    expected = (",".join(HEADER) + "\n").encode("ascii")
+    if raw.startswith(expected):
+        return raw, True
+    first = raw.split(b"\n", 1)[0]
+    try:
+        columns = first.decode("ascii", errors="strict").split(",")
+    except UnicodeError as exc:
+        raise NCEIStationError("unreviewed first original CSV row") from exc
+    if (
+        len(columns) != len(HEADER)
+        or columns[0] != STATION
+        or not re.fullmatch(r"\d{8}", columns[1])
+        or not re.fullmatch(r"[A-Z0-9]{4}", columns[2])
+        or not re.fullmatch(r"-?[0-9]{1,8}", columns[3])
+    ):
+        raise NCEIStationError("missing exact GHCN header and no valid eight-column first row")
+    return expected + raw, False
+
+
 class NoRedirect(request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         raise NCEIStationError("source redirected to unreviewed host/path")
@@ -170,7 +198,8 @@ def probe(
         raise NCEIStationError("fixed NCEI gzip request failed closed") from exc
 
     csv_raw, gzip_members = inflate_validated_gzip_members(raw)
-    shape = inspect_full_csv(csv_raw)
+    normalized_view, had_header = validation_view_for_original_csv(csv_raw)
+    shape = inspect_full_csv(normalized_view)
     now = utc_clock()
     if now.tzinfo is None or now.utcoffset() is None:
         raise NCEIStationError("timezone-aware UTC required for research receipt")
@@ -187,6 +216,10 @@ def probe(
         "inflated_original_csv_bytes": len(csv_raw),
         "validated_gzip_members": gzip_members,
         "inflated_original_csv_sha256": hashlib.sha256(csv_raw).hexdigest(),
+        "original_provider_csv_header_present": had_header,
+        "transient_header_added_only_for_validation": not had_header,
+        "comparison_csv_sha256_after_header_only_normalization": hashlib.sha256(normalized_view).hexdigest(),
+        "same_observation_rows_as_pinned_nodd_after_header_normalization": hashlib.sha256(normalized_view).hexdigest() == NODD_SHA256,
         "provider_etag": etag if ETAG.fullmatch(etag) else None,
         "provider_last_modified": modified if len(modified) <= 128 else None,
         "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
