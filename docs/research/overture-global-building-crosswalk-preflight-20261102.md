@@ -62,6 +62,45 @@ The UUID is only an illustration, not proof of a real external building.
 - The script cannot grant licences, validate provider data provenance, establish GERS registry membership or certify an insurer-specific model.
 - All inputs must come from independently legally authorized sources; never commit insurer/customer/claims or raw provider bytes to Git.
 
+## Overture 2026 building source-ID bridge (additional offline preflight)
+
+Official [bridge file documentation](https://docs.overturemaps.org/gers/bridge-files/) confirms that release `2026-10-21.0` exposes building crosswalks under the **new August-2026 partition layout**:
+
+- `s3://overturemaps-us-west-2/bridgefiles/2026-10-21.0/provider=osm/theme=buildings/type=building/`
+- Do **not** use the old `dataset=OpenStreetMap` directory path; partition key is `provider`, and `dataset` remains a column.
+- Relevant published row columns are `id` (GERS candidate UUID), `record_id` (source OSM object ID plus `@version`), `dataset`, `provider`, `theme`, `type`, alongside optional source-resource metadata. Use only an **already independently acquired, version-pinned** source projection.
+- Bridge files omit selected input families, including Microsoft ML Buildings, Google Open Buildings, USGS Lidar and one Zenodo buildings dataset. No matching row does **not** prove that the building is absent from Overture.
+- Official [registry](https://docs.overturemaps.org/gers/registry/) is updated in place and is distinct from release-pinned bridge files. A UUID and a matching bridge row do not independently prove current registry membership or the source Parquet checksum.
+
+`scripts/overture_osm_building_bridge_preflight_v0.py` validates a deliberately narrow read-only **normalization** of just the six columns `id,record_id,dataset,provider,theme,type`. It requires exact OSM IDs such as `w123@5` (never silently strips source versions), source provider `osm`, building theme/type, release `2026-10-21.0`, and explicit source dataset `OpenStreetMap`. An input can contain *at most* 100 local records and 500 bridge rows. This is not a real Parquet reader and does not initiate an external download.
+
+Example entirely synthetic JSON input:
+
+    {
+      "schema": "opencatastrophe-overture-osm-building-bridge-v0",
+      "release": "2026-10-21.0",
+      "bridge_provider": "osm",
+      "bridge_dataset": "OpenStreetMap",
+      "local_records": [{"local_id": "SYNTH-1", "record_id": "w123@5"}],
+      "bridge_rows": [{
+        "id": "fea28f69-7afa-460c-b270-61ef74cd340c",
+        "record_id": "w123@5",
+        "dataset": "OpenStreetMap",
+        "provider": "osm",
+        "theme": "buildings",
+        "type": "building"
+      }]
+    }
+
+Run against the local **synthetic** JSON only:
+
+    python -m scripts.overture_osm_building_bridge_preflight_v0 --input /private/synthetic-osm-bridge.json --expected-release 2026-10-21.0
+    python -m unittest tests.test_overture_osm_building_bridge_preflight_v0 -v
+
+The output keeps `gers_registry_membership_verified=false`, `source_file_original_bytes_verified=false`, `physical_geometry_crosschecked=false`, `independent_model_input_approved=false` and `raw_data_import_authorized=false`. Its reciprocal one-to-one records are *candidate joins only*. One-to-many and many-to-one matches are ambiguous. A missing source ID is reported as absent **from the supplied bounded slice only**.
+
+For an actual ingestion chain, first pin and verify original Parquet byte hashes and the correct provider/dataset semantics, then validate a bounded source sample, then verify GERS registry membership and candidate geometry against the national original. Keep unrelated commercial source rights separate. Do not import any original source rows or inferred insured exposure into Neon without review.
+
 ## Path to real insurer CAT models
 
 1. Freeze an original source object identity, schema version, byte hashes and attribution/rights before a bounded cloud retrieval. Document authoritative GERS ID registry/bridge checks separately.
