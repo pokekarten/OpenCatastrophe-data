@@ -40,8 +40,16 @@ def original_fetch(request, limit):
     opener = build_opener(ProxyHandler({}), HTTPSHandler(), NoRedirect())
     with opener.open(request, timeout=20) as response:
         headers = {k.lower(): v for k,v in response.headers.items()}
+        # For HEAD, Content-Length is the remote object size, not the
+        # number of response-body bytes. Never reject it against the zero-byte
+        # HEAD response budget; it is later checked against MAX_ORIGINAL_BYTES.
+        if request.get_method() == "HEAD":
+            body = response.read(1)
+            if body:
+                raise OriginalArchiveError("HEAD unexpectedly returned source bytes")
+            return response.status, headers, b""
         if headers.get("content-length") and int(headers["content-length"]) > limit:
-            raise OriginalArchiveError("response exceeds declared byte limit")
+            raise OriginalArchiveError("range response exceeds declared byte limit")
         body = response.read(limit + 1)
         if len(body) > limit:
             raise OriginalArchiveError("response exceeds stream limit")
