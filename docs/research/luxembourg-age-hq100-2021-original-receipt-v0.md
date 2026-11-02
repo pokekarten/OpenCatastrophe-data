@@ -278,6 +278,57 @@ The original-file source run [41484031247](https://github.com/pokekarten/OpenCat
 
 The new code and synthetic tests detect the standard hypothesis, independent reversed hypothesis, orphaned hole, doubly enclosing shell, original-invalid shell, bounded candidate budgets and source count conservation. Original geometries, ring IDs, coordinates and repaired candidates are neither persisted nor emitted. The scientific solution requires source-producer confirmation of SHP export conventions and a separately reviewed polygon shell/hole hierarchy and joint OGC-validity check. Combined with the still-missing actual numeric flood-depth grids, **all three sources remain excluded from production CAT-loss or insurer portfolio calculations**.
 
+## Independent original publisher GeoJSON and grouped-polygon source challenge (2 November 2026)
+
+A second, **publisher-issued** original format is available for each 2021 AGE HQ scenario. These [AGE HQ10](https://data.public.lu/en/datasets/flood-hazard-maps-10-year-flood/), [HQ100](https://data.public.lu/en/datasets/flood-hazard-maps-100-year-flood/) and [HQextrem](https://data.public.lu/en/datasets/flood-hazard-maps-extreme/) GeoJSON files were all separately published **13 June 2022**, with **their own** SHA-1, resource identifiers and original bytes (never reuse the SHP source checksum). The check is a separate [read-only GitHub Actions workflow](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41493462939), with transient raw files, bounded size and complete original SHA-1 gate. This independent representation should not be mistaken for independent hydraulic research: it is the same publisher/scenario, but offers an explicitly grouped polygon representation.
+
+### Published original GeoJSON versus same-publisher Shapefile
+
+| Byte-pinned original AGE resource | HQ10 | HQ100 | HQextrem |
+| --- | ---: | ---: | ---: |
+| Original GeoJSON publisher SHA-1 | `aeeaa1555eb769560d3d83c1e32450ee6a78e755` | `070966eac7451d9a4f5aeba1d2b7a3f25bf07f51` | `c85a4b3de65170fa93406ef76a77ccfd4cf75124` |
+| Observed new GeoJSON SHA-256 | `063692d6445039e8ef50d7eb4320ba61d19b0d0c4e3f014ec42e35ae16d19b97` | `667eb1955ab8d45d40bd75b2d53b6e564661e336eeb417476171f0596d864be1` | `61eed6c7cc0374419d2debbabba04fe4df7f06680c777666ad7d36b918668943` |
+| Original GeoJSON byte size | **74,317,579** | **66,435,657** | **63,175,318** |
+| Source FeatureCollection / features | **1 / 1** | **1 / 1** | **1 / 1** |
+| Publisher-encoded polygon groups | **8,188** | **3,724** | **2,819** |
+| Publisher-encoded hole rings | **5,251** | **2,655** | **2,289** |
+| Publisher GeoJSON rings / same-publisher SHP rings | **13,439 / 13,439** | **6,379 / 6,379** | **5,108 / 5,108** |
+| Publisher GeoJSON points / same-publisher SHP points | **1,493,429 / 1,493,429** | **1,336,393 / 1,336,393** | **1,288,014 / 1,288,014** |
+| Open source polygon rings | **0** | **0** | **0** |
+
+The **published GeoJSON exterior/hole counts match the standard ESRI clockwise-exterior/CCW-hole assignment** from the Shapefile ring winding observations. This is useful original-provider representation evidence, **not** a proof that all original polygon groups or holes are spatially topologically valid. The previous GEOS ring screen found invalid individual rings. The GeoJSON therefore remains an **unadmitted research source**.
+
+**Crucial interoperability warning:** All three original AGE GeoJSONs store coordinates in a **Luxembourg projected numeric XY domain**, consistent with the corresponding Shapefile's declared EPSG:2169 (source PRJ). They are **not WGS84 longitude/latitude coordinate values**. [RFC 7946 Section 4](https://www.rfc-editor.org/rfc/rfc7946#section-4) specifies WGS84 longitude/latitude for interoperable GeoJSON, so **naively loading these originals as default RFC 7946 WGS84 is wrong**. A future reader must explicitly record/project the original source CRS and transformations, not reinterpret the coordinate values as lon/lat. Full original field survey epoch and control accuracy are still unverified.
+
+### GEOS OGC check of the publisher's own polygon groups
+
+A separate **checksum-gated, ephemeral Shapely/GEOS 2.1.2** group-level challenge evaluates the official source GeoJSON `Polygon` groups **with the provider's assigned holes**, not just the raw individual ring direction. Every individual original group is either checked, rejected or explicitly quarantined by a hard **120,000 original-coordinate-pair** per-group cap. The [full source run 41493898032](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41493898032) **passed** with:
+
+| Individual OGC group-validity result | HQ10 | HQ100 | HQextrem |
+| --- | ---: | ---: | ---: |
+| Publisher polygon groups | 8,188 | 3,724 | 2,819 |
+| Individually valid groups | **8,139** | **3,710** | **2,811** |
+| Individually invalid groups | **48** | **13** | **7** |
+| All group invalidity reasons | Ring Self-intersection | Ring Self-intersection | Ring Self-intersection |
+| Oversized original group (not tested) | **1** | **1** | **1** |
+| Technical GEOS errors | **0** | **0** | **0** |
+
+The follow-up [exact original source run 41494330342](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41494330342) **passed** and measured how much source geometry is concentrated within that **one untested giant group** in each scenario:
+
+| Quarantined one-group burden | HQ10 | HQ100 | HQextrem |
+| --- | ---: | ---: | ---: |
+| Original coordinate pairs in giant group | **961,634** | **964,658** | **1,059,581** |
+| Share of all source coordinate pairs | **64.39%** | **72.18%** | **82.26%** |
+| Publisher-assigned hole rings in giant group | **4,152** | **2,103** | **2,056** |
+| Share of all published holes | **79.07%** | **79.21%** | **89.82%** |
+| All other publisher groups with holes (total) | HQ10 63 | HQ100 30 | HQextrem 20 |
+
+*Last row gives the total number of groups with >=1 hole across the entire original scenario, not how many holes are in those groups.*
+
+**Interpretation:** The original publisher's own GeoJSON makes explicit that **one very large polygon group per scenario contains most of the original ring hierarchy complexity**. This explains why the earlier per-ring `shell.covers(hole)` challenge (which excluded invalid shells) left thousands of would-be hole rings unresolved. It does **not** mean that one giant group causes all invalidity or that it can be repaired safely. All three giant groups remain quarantined and have not been evaluated as valid or invalid polygons; no national joint MultiPolygon OGC-validity claim exists. A bounded separate megagroup check plus a scientifically reviewed repair/area-overlap challenge are prerequisites before comparing flood areas or overlaying ACT2026 buildings.
+
+No publisher original coordinates, per-feature identifiers, sample points, per-group geometry or real hazard depths were exported, put into Git artifacts or stored in Neon. No insurer TIV, real exposure, event loss, or country-specific flood model input was admitted.
+
 ## Next scientific steps
 
 - Verify the original actual file format, complete record and field counts,
