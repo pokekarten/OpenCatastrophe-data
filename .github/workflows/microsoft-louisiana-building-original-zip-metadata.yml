@@ -6,6 +6,8 @@ on:
     paths:
       - research_runners/microsoft_louisiana_original_zip_receipt_v0.py
       - tests/test_microsoft_louisiana_original_zip_receipt_v0.py
+      - research_runners/microsoft_louisiana_original_building_sample_v0.py
+      - tests/test_microsoft_louisiana_original_building_sample_v0.py
       - .github/workflows/microsoft-louisiana-building-original-zip-metadata.yml
   workflow_dispatch:
 
@@ -25,9 +27,19 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.14"
+      - name: Install reviewed Shapely and geodesic dependency profile
+        run: |
+          python -m pip install --disable-pip-version-check --no-input -r requirements-eu-flood-spatial.txt
+          python -m pip check
       - name: Run synthetic no-network source falsifier tests
-        run: python -m unittest tests.test_microsoft_louisiana_original_zip_receipt_v0 -v
+        run: >-
+          python -m unittest
+          tests.test_microsoft_louisiana_original_zip_receipt_v0
+          tests.test_microsoft_louisiana_original_building_sample_v0
+          -v
       - name: One read-only official Microsoft source HEAD and bounded ZIP ranges
         run: python -m research_runners.microsoft_louisiana_original_zip_receipt_v0 --live
+      - name: One bounded 64-KiB compressed original footprint prefix research receipt
+        run: python -m research_runners.microsoft_louisiana_original_building_sample_v0 --live
       # Original complete ZIP is NEVER downloaded; no credentials or source
       # feature values, geolocated buildings or user exposure uploaded.
