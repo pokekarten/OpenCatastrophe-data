@@ -1,12 +1,5 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-# CI/local validation only. Not a runtime/acquisition dependency.
-# Full unittest discovery now includes mandatory historical/current French
-# building geometry checks. Use the reviewed EU spatial CRS/GEOS pins.
-# PyShp 2.3.1 is an exact, pure-Python ESRI Shapefile test dependency (MIT).
-# Coordinate this shared dependency surface with open PR #1107 before merge.
-pyproj==3.7.2
+# CI/local validation only. This is not a runtime or acquisition dependency.
 PyYAML==6.0.3
-pyshp==2.3.1
-shapely==2.1.2
