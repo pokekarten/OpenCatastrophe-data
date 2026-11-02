@@ -15,6 +15,7 @@ from __future__ import annotations
 from collections import Counter
 
 MAX_GEOS_POLYGON_GROUP_VERTICES = 120_000
+MAX_OPTIONAL_MEGA_GROUP_VERTICES = 1_200_000
 MAX_PUBLISHER_GROUPS = 100_000
 ALLOWED_OGC_REASON_LABELS = {
     "Self-intersection",
@@ -64,7 +65,7 @@ def _polygons(obj):
 def challenge_publisher_groups(obj: dict, *, max_group_vertices: int =
                                MAX_GEOS_POLYGON_GROUP_VERTICES) -> dict:
     if (not isinstance(max_group_vertices, int) or isinstance(max_group_vertices, bool)
-            or not 4 <= max_group_vertices <= MAX_GEOS_POLYGON_GROUP_VERTICES):
+            or not 4 <= max_group_vertices <= MAX_OPTIONAL_MEGA_GROUP_VERTICES):
         raise GroupTopologyError("Invalid bounded original GEOS group complexity")
     try:
         from shapely.geometry import Polygon
@@ -118,6 +119,7 @@ def challenge_publisher_groups(obj: dict, *, max_group_vertices: int =
         "individually_geos_invalid_publisher_polygon_groups": invalid,
         "invalid_group_ogc_reason_categories_only": dict(sorted(reasons.items())),
         "publisher_groups_over_vertex_complexity_budget": skipped,
+        "source_polygon_group_vertex_budget_applied": max_group_vertices,
         "largest_source_polygon_group_point_count": largest_group_vertices,
         "quarantined_publisher_polygon_group_point_total": quarantined_vertex_total,
         "quarantined_publisher_polygon_group_hole_ring_total": quarantined_hole_total,
