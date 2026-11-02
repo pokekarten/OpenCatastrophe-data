@@ -23,7 +23,7 @@ from research_runners.luxembourg_age_hq100_2021_ring_coordinate_quality_v0 impor
     check_shp, HQ100GeometryError, EXPECTED_SHA256,
 )
 
-MAX_RING_VERTEX_COMPLEXITY = 250_000
+MAX_RING_VERTEX_COMPLEXITY = 2_000_000
 SAFE_REASONS = {
     "Ring Self-intersection", "Self-intersection",
     "Too few points in geometry component", "Nested shells",
@@ -33,7 +33,11 @@ SAFE_REASONS = {
 
 
 class RingTopologyCounter:
-    def __init__(self):
+    def __init__(self, *, max_ring_vertices=MAX_RING_VERTEX_COMPLEXITY):
+        if (not isinstance(max_ring_vertices, int) or isinstance(max_ring_vertices, bool)
+                or not 4 <= max_ring_vertices <= MAX_RING_VERTEX_COMPLEXITY):
+            raise ValueError("Unbounded ring complexity limit")
+        self.max_ring_vertices = max_ring_vertices
         self.seen = 0
         self.valid = 0
         self.invalid = 0
@@ -46,7 +50,7 @@ class RingTopologyCounter:
         from shapely.validation import explain_validity
         from shapely.errors import GEOSException
         self.seen += 1
-        if len(points) > MAX_RING_VERTEX_COMPLEXITY:
+        if len(points) > self.max_ring_vertices:
             self.skipped_complex += 1
             return
         try:
