@@ -350,6 +350,30 @@ The huge source multipart groups contain most original coordinate/holes, so even
 
 A standalone workflow `.github/workflows/luxembourg-age-hq100-2021-megagroup-ogc.yml` is retained for future independently scoped original HQ100 source challenge. The standard GeoJSON workflow must maintain its 120k-vertex safety cap; optional full challenge has a separate 1.2m cap and explicit time limit, never silently raises the standard policy.
 
+## Source-original bounded invalid polygon-group repair comparison — 2 Nov 2026
+
+A checksum-gated in-memory Shapely/GEOS sensitivity diagnostic now compares `make_valid(method="linework")` and `make_valid(method="structure")` **only for individually invalid polygon groups from the publisher's own GeoJSON grouping**. This is **not** the earlier per-Shapefile-ring repair experiment, and the distinct populations must not be conflated. The source-original group-level check is restricted to the standard **120,000 coordinate pairs per group**; no geometry, ring, original coordinate, repaired candidate or source identifier is persisted or printed. Every group over that budget remains out of this *repair* research step, even if a separate OGC-validity scan has successfully diagnosed it as invalid.
+
+After initial bounded 50k group comparison ([source run 41498431267](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41498431267): 45/12/7 comparable, respectively), the same strict source-original workflow [41498700815](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41498700815) **passed** at the reviewed 120k original-coordinate budget:
+
+| Individually invalid publisher polygon-group repair diagnostic | HQ10 | HQ100 | HQextrem |
+| --- | ---: | ---: | ---: |
+| Publisher polygon groups invalid and below standard OGC 120k cap | **48** | **13** | **7** |
+| `linework` completed usable polygonal candidates | **48** | **13** | **7** |
+| `structure` completed usable candidates | **48** | **13** | **7** |
+| Exact GEOS polygonal set equality: linework vs structure | **48** | **13** | **7** |
+| Candidate equal-set disagreement | **0** | **0** | **0** |
+| Candidate split into multiple polygon pieces | **0** | **0** | **0** |
+| Candidate nonpolygon debris / GEOS repair failure | **0 / 0** | **0 / 0** | **0 / 0** |
+| Difference of nominal source (invalid) group area to candidate area exceeding 1% | **0** | **0** | **0** |
+| Still-quarantined original *giant* group, not repaired | **1** | **1** | **1** |
+| Sum of nominal area of compared invalid publisher groups in source EPSG:2169 m² | **8,190,702.63** | **6,924,660.52** | **2,538,462.89** |
+| Sum of independent linework candidate group areas in source EPSG:2169 m² | **8,190,702.63** | **6,924,660.52** | **2,538,462.89** |
+
+**Narrow conclusion:** Both implementations yield the **same polygonal set** for all **68** *bounded* individually invalid publisher groups, with no observed change in the rounded sum of each invalid-group's nominal area. This is not a source-wide or union inundation-area measurement, and does not prove unaltered boundaries or hydrological correctness. Both procedures can agree on the **same wrong hydraulically interpreted mask**. Aggregate sums may double-count overlapping polygons, exclude all valid groups, and exclude all three extraordinarily complex groups. The source polygons were invalid; their nominal area is not scientific ground truth. The 3 original megagroups (HQ10 961,634 source points; HQ100 964,658; HQextrem 1,059,581) are separately confirmed *invalid* at OGC level, but **remain untested for valid repair candidates** under this research budget. The science blockers are joint all-group topology, publisher-confirmed repair/mask semantics, actual original numeric water-depth surface with units/vertical datum/model-vintage metadata and insurer exposure.
+
+**Provider follow-up:** The [Luxembourg AGE flood-map data request channel](https://inondations.public.lu/en/demande-donnees.html) requests that flood-map or water-level questions go to `zones.inondables@eau.etat.lu`. The published metadata [HQ10](https://data.public.lu/en/datasets/flood-hazard-maps-10-year-flood/), [HQ100](https://data.public.lu/en/datasets/flood-hazard-maps-100-year-flood/) and [HQextrem](https://data.public.lu/en/datasets/flood-hazard-maps-extreme/) describes depths but the verified corresponding original GeoJSON/SHP attributes contain only `OBJECTID`, `Shape_Leng`, and `Shape_Area`. Ask for separately accessible **numerical hydraulic flood-depth grids or depth-interval vector products**, scenario exact lineage, 2021 model vintage, unit, vertical datum, CRS, NoData/zero distinction, polygon-mask relationship, licensing and API/download provenance; a rendered WMS/WMTS layer is not verified as a numerical depth source. **No provider request has been sent**, and numeric depth data has not been obtained.
+
 ## Next scientific steps
 
 - Verify the original actual file format, complete record and field counts,
