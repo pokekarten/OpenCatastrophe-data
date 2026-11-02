@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg GeoBase 2026 original geometry quality
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/luxembourg_geobase_2026_geometry_quality_v0.py'
+      - 'research_runners/luxembourg_geobase_2026_repair_diagnostic_v0.py'
+      - 'research_runners/luxembourg_geobase_2026_synthetic_support_challenge_v0.py'
+      - 'research_runners/luxembourg_spslux_202604_axis_station_screen_v0.py'
+      - 'tests/test_luxembourg_spslux_202604_axis_station_screen_v0.py'
+      - 'tests/test_luxembourg_geobase_2026_geometry_quality_v0.py'
+      - '.github/workflows/luxembourg-geobase-2026-geometry-quality.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-original-geometry-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout pinned revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Install reviewed original-geometry validator
+        run: |
+          python -m pip install --disable-pip-version-check --no-input shapely==2.1.2 pyproj==3.7.2
+          python -m pip check
+      - name: Synthetic corrupt and valid GeoPackage geometry regressions
+        run: python -m unittest tests.test_luxembourg_geobase_2026_geometry_quality_v0 -v
+      - name: Screen official seven April 2026 SPSLux reference stations without publishing positions
+        run: |
+          python -m unittest tests.test_luxembourg_spslux_202604_axis_station_screen_v0 -v
+          python -m research_runners.luxembourg_spslux_202604_axis_station_screen_v0
+      - name: Inspect complete exact-original ACT GeoBase geometry, aggregate only
+        shell: bash
+        run: |
+          set -euo pipefail
+          original="$RUNNER_TEMP/lu-geobase-20261001.zip"
+          umask 077
+          trap 'rm -f "$original"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 --retry 0 \
+            --max-filesize 83886080 --output "$original" \
+            'https://download.data.public.lu/resources/bd-l-geobase/20261001-010523/buildings-20261001.zip'
+          python -m research_runners.luxembourg_geobase_2026_geometry_quality_v0 \
+            --source-zip "$original"
+          # Original ZIP/GPKG is transient in runner. Only aggregate QA logged.
