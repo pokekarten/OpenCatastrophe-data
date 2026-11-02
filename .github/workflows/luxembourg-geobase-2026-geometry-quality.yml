@@ -7,6 +7,7 @@ on:
     paths:
       - 'research_runners/luxembourg_geobase_2026_geometry_quality_v0.py'
       - 'research_runners/luxembourg_geobase_2026_repair_diagnostic_v0.py'
+      - 'research_runners/luxembourg_geobase_2026_synthetic_support_challenge_v0.py'
       - 'research_runners/luxembourg_spslux_202604_axis_station_screen_v0.py'
       - 'tests/test_luxembourg_spslux_202604_axis_station_screen_v0.py'
       - 'tests/test_luxembourg_geobase_2026_geometry_quality_v0.py'
