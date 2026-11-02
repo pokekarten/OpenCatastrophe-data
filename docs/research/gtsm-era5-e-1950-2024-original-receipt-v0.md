@@ -43,6 +43,12 @@ Confirmed original variables and storage: `lon`/`lat` int32 with coordinate unit
 
 The paper describes a hydrodynamic-model coastal output point set, whereas these statistical results are an independently selected 38,957-row NetCDF station axis. Reconcile missing/excluded locations and dependence on prior GTSM/WRI Aqueduct coastal products before treating them as independent validations. Study: https://essd.copernicus.org/articles/18/5759/2026/ .
 
+## Pinned native coordinate packing (2026-11-02 21:04 UTC)
+
+The successful exact-head original-source run [41524827932](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41524827932) confirmed source MD5 and independent pinned SHA-256 again, plus **18** successful offline regression tests. The NetCDF native `lon` and `lat` variables are `int32`; both have the **metadata-only** packing attributes `scale_factor = 0.001`, no `add_offset`, and `_FillValue = -999`. These exact attributes are now fail-closed invariants in the next revision. The raw coordinate and return-period arrays remain unread in this research pass.
+
+A downstream coordinate transform must mask the native fill code before applying the scale factor and independently check geographic ranges, indexing, axis units, coordinate duplicates, and any source/epoch mismatch; **no site-to-building join is authorized by this metadata receipt**. Also assess time-varying datum, coastal-model output-point semantics and 38,957-vs-44,734 coverage before defining coastal exposure.
+
 ## Execution evidence
 
 The complete real-source receipt of 2026-11-02 is verified from exact-head runner logs (run #41507598794, job #125490753179); 12 synthetic boundary tests and Python 3.11–3.14 matrix passed. The following revision pins the independently observed SHA-256, reproduces the original native metadata from the GitHub run above, and adds a version-specific dimension/axis/unit/type gate. The next exact-head CI and header-inventory capture remain required before accepting the stricter gate. The earlier receipt did not inspect the NetCDF variables. No model admission, permission for commercial reuse, raw file retention or event generation is implied.
