@@ -147,13 +147,23 @@ def original_overture_city():
             reader.metadata.row_group(TARGET_ROW_GROUP).num_rows != TARGET_ROW_COUNT):
         raise GeoBaseError("actual Overture original row-group metadata mismatch")
     _expected_column_bytes(reader.metadata.row_group(TARGET_ROW_GROUP))
-    table = reader.read_row_group(TARGET_ROW_GROUP, columns=["bbox", "geometry"],
+    source_column_bytes = sum(
+        reader.metadata.row_group(TARGET_ROW_GROUP).column(j).total_compressed_size
+        for j in range(reader.metadata.row_group(TARGET_ROW_GROUP).num_columns)
+        if reader.metadata.row_group(TARGET_ROW_GROUP).column(j).path_in_schema.startswith("sources.")
+    )
+    if source_column_bytes <= 0 or source_column_bytes > 8 * 1024 * 1024:
+        raise GeoBaseError("upstream original sources column exceeds bounded research budget")
+    table = reader.read_row_group(TARGET_ROW_GROUP,
+                                  columns=["bbox", "geometry", "sources"],
                                   use_threads=False)
     if table.num_rows != TARGET_ROW_COUNT:
         raise GeoBaseError("selected Overture original population mismatch")
-    outlines, invalid = [], 0
+    outlines, invalid, original_source_families = [], 0, []
     city_window = transform(TO_LU.transform, box(*CITY_BOX))
-    for bound, raw in zip(table["bbox"].to_pylist(), table["geometry"].to_pylist()):
+    for bound, raw, lineage in zip(table["bbox"].to_pylist(),
+                                   table["geometry"].to_pylist(),
+                                   table["sources"].to_pylist()):
         if not _coordinates_in_city_box(bound):
             continue
         if not isinstance(raw, bytes) or not 0 < len(raw) <= 500000:
@@ -172,15 +182,31 @@ def original_overture_city():
             if not national.intersects(city_window) or national.intersection(city_window).area <= 0:
                 continue
             outlines.append(national)
+            dataset_labels = set()
+            if type(lineage) is list and len(lineage) <= 128:
+                for item in lineage:
+                    if type(item) is dict and type(item.get("dataset")) is str:
+                        dataset_labels.add(item["dataset"])
+            original_source_families.append(
+                next(iter(dataset_labels)) if len(dataset_labels) == 1
+                and next(iter(dataset_labels)) in ("OpenStreetMap", "Microsoft ML Buildings")
+                else "unknown_or_multiple"
+            )
         except (GEOSException, ValueError, TypeError):
             invalid += 1
-    return outlines, TARGET_ROW_COUNT, invalid
+    return outlines, TARGET_ROW_COUNT, invalid, original_source_families
 
 
-def geometric_candidates(act, overture):
-    """Reciprocal one-to-one geometric *candidates* only, never linked source IDs."""
+def geometric_candidates(act, overture, *, overture_source_families=None):
+    """Reciprocal geometric candidates with only aggregate upstream lineage."""
     if len(act) > 500 or len(overture) > 500:
         raise GeoBaseError("excessive local city-pilot source candidates")
+    if overture_source_families is not None and (
+            type(overture_source_families) is not list
+            or len(overture_source_families) != len(overture)
+            or any(x not in ("OpenStreetMap", "Microsoft ML Buildings", "unknown_or_multiple")
+                   for x in overture_source_families)):
+        raise GeoBaseError("source-family association must preserve sampled geometry order")
     act_hits = [[] for _ in act]
     overture_hits = [[] for _ in overture]
     qualifying_pairs = 0
@@ -231,7 +257,7 @@ def geometric_candidates(act, overture):
     ambiguous_act = sum(len(xs) > 1 or
                         (len(xs) == 1 and len(overture_hits[xs[0]]) > 1)
                         for xs in act_hits)
-    return {
+    result = {
         "original_act_city_candidate_footprints": len(act),
         "original_overture_city_candidate_footprints": len(overture),
         "positive_area_original_source_overlap_pairs": positive_area_pairs,
@@ -243,12 +269,22 @@ def geometric_candidates(act, overture):
         "act_features_without_above_threshold_match": sum(not x for x in act_hits),
         "overture_features_without_above_threshold_match": sum(not x for x in overture_hits),
     }
+    if overture_source_families is not None:
+        by_family = {"OpenStreetMap": 0, "Microsoft ML Buildings": 0,
+                     "unknown_or_multiple": 0}
+        for hits in act_hits:
+            if len(hits) == 1 and len(overture_hits[hits[0]]) == 1:
+                by_family[overture_source_families[hits[0]]] += 1
+        if sum(by_family.values()) != matched:
+            raise GeoBaseError("source provenance counts do not conserve strict candidates")
+        result["reciprocal_candidate_overture_source_family_counts"] = by_family
+    return result
 
 
 def live(source_zip):
     act, act_total, invalid_act = original_act_city(source_zip)
-    overture, overture_total, invalid_ov = original_overture_city()
-    summary = geometric_candidates(act, overture)
+    overture, overture_total, invalid_ov, families = original_overture_city()
+    summary = geometric_candidates(act, overture, overture_source_families=families)
     return {
         "schema": SCHEMA,
         "ACT_original_release": "2026-10-01",
