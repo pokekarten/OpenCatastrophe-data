@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Offline synthetic tests; no actual Overture/source records are asserted."""
+"""Offline synthetic tests of original-compatible projected rows; no real source data."""
 import copy
 import tempfile
 import unittest
@@ -20,11 +20,12 @@ def example():
         "schema": SCHEMA,
         "release": RELEASE,
         "bridge_provider": "osm",
+        "bridge_theme": "buildings",
+        "bridge_type": "building",
         "bridge_dataset": "OpenStreetMap",
         "local_records": [{"local_id": "SYNTH-1", "record_id": "w123@5"}],
         "bridge_rows": [{
             "id": GERS_1, "record_id": "w123@5", "dataset": "OpenStreetMap",
-            "provider": "osm", "theme": "buildings", "type": "building",
         }],
     }
 
@@ -73,19 +74,19 @@ class OSMBridgePreflightTests(unittest.TestCase):
 
     def test_wrong_theme_rejected(self):
         v = example()
-        v["bridge_rows"][0]["theme"] = "base"
+        v["bridge_theme"] = "base"
         with self.assertRaises(BridgeError):
             bridge_osm_buildings(v, expected_release=RELEASE)
 
     def test_building_part_rejected(self):
         v = example()
-        v["bridge_rows"][0]["type"] = "building_part"
+        v["bridge_type"] = "building_part"
         with self.assertRaises(BridgeError):
             bridge_osm_buildings(v, expected_release=RELEASE)
 
     def test_different_provider_rejected(self):
         v = example()
-        v["bridge_rows"][0]["provider"] = "microsoft"
+        v["bridge_provider"] = "microsoft"
         with self.assertRaises(BridgeError):
             bridge_osm_buildings(v, expected_release=RELEASE)
 
