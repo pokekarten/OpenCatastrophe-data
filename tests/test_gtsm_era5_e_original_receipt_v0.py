@@ -195,6 +195,21 @@ class GtsmReceiptTests(unittest.TestCase):
                 verify_original(self.path, inspect_header=True, audit_coordinates=True)
             location_reader.assert_not_called()
 
+
+    def test_statistical_axis_read_requires_validated_header(self):
+        self.fixture()
+        with patch.object(mod, "_file_receipt") as receipt:
+            with self.assertRaises(GtsmReceiptError):
+                verify_original(self.path, inspect_labels=True)
+            receipt.assert_not_called()
+
+    def test_statistical_axis_read_requires_exact_sha256(self):
+        self.fixture()
+        with patch.object(mod, "inspect_original_level_labels") as label_reader:
+            with self.assertRaises(GtsmReceiptError):
+                verify_original(self.path, inspect_header=True, inspect_labels=True)
+            label_reader.assert_not_called()
+
     def test_no_original_file_rejected(self):
         with self.assertRaises(GtsmReceiptError):
             _file_receipt(self.path, expected_size=10, expected_md5="0" * 32)
