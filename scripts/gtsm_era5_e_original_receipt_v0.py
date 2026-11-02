@@ -19,6 +19,11 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
+if __package__:
+    from .gtsm_era5_e_coordinate_audit_v0 import audit_original_coordinates, CoordinateAuditBlocked
+else:
+    from gtsm_era5_e_coordinate_audit_v0 import audit_original_coordinates, CoordinateAuditBlocked
+
 RECORD_URL = "https://zenodo.org/records/14671593"
 SOURCE_DOWNLOAD_URL = (
     "https://zenodo.org/records/14671593/files/"
@@ -97,17 +102,26 @@ def _file_receipt(path: Path, *, expected_size: int, expected_md5: str) -> dict[
             "container_signature": "netcdf4_hdf5" if prefix == HDF5_MAGIC else "netcdf_classic"}
 
 
-def verify_original(path: Path, *, inspect_header: bool = False) -> dict[str, object]:
+def verify_original(path: Path, *, inspect_header: bool = False,
+                    audit_coordinates: bool = False) -> dict[str, object]:
+    if audit_coordinates and not inspect_header:
+        raise GtsmReceiptError("coordinate QA requires prior native NetCDF header validation")
     receipt = _file_receipt(path, expected_size=SOURCE_BYTES, expected_md5=SOURCE_MD5)
     if not hmac.compare_digest(str(receipt["sha256_observed_not_publisher_pinned"]), PINNED_SHA256):
         raise GtsmReceiptError("original SHA-256 differs from independently observed pinned original")
     header = inspect_scientific_header(path) if inspect_header else None
+    try:
+        geography = audit_original_coordinates(path) if audit_coordinates else None
+    except CoordinateAuditBlocked as exc:
+        raise GtsmReceiptError("GTSM original coordinate QA rejected the native array") from exc
     return {"schema_version": "gtsm-era5-e-original-byte-receipt-v0",
             "source_record": RECORD_URL, "source_filename": SOURCE_NAME,
             "source_version": "Zenodo 14671593 v2 / 1950-2024 statistics",
             "original_byte_evidence": receipt,
             "independent_sha256_pinned": True,
             "scientific_header_inventory": header,
+            "coordinate_quality": geography,
+            "coordinate_values_read_for_aggregate_qa_only": bool(audit_coordinates),
             "publisher_sha256_available": False, "netcdf_variables_inspected": bool(inspect_header),
             "scientific_fitness_approved": False, "data_rights_approved": False,
             "model_admitted": False, "insurer_exposure_inferred": False,
@@ -211,7 +225,8 @@ class _ZenodoOnlyRedirect(HTTPRedirectHandler):
         return super().redirect_request(request, fp, code, msg, headers, newurl)
 
 
-def fetch_verified_original(*, inspect_header: bool = False) -> dict[str, object]:
+def fetch_verified_original(*, inspect_header: bool = False,
+                            audit_coordinates: bool = False) -> dict[str, object]:
     """One fixed HTTPS original read, ephemeral file, only metadata receipt returned."""
     request = Request(SOURCE_DOWNLOAD_URL, headers={"User-Agent": "OpenCatastrophe-GTSM-Research/1.0"})
     try:
@@ -238,7 +253,8 @@ def fetch_verified_original(*, inspect_header: bool = False) -> dict[str, object
                         if received > SOURCE_BYTES:
                             raise GtsmReceiptError("source exceeds exact original-byte acquisition cap")
                         target.write(block)
-                return verify_original(path, inspect_header=inspect_header)
+                return verify_original(path, inspect_header=inspect_header,
+                                       audit_coordinates=audit_coordinates)
     except (HTTPError, URLError, TimeoutError, OSError) as exc:
         raise GtsmReceiptError("fixed Zenodo original acquisition unavailable") from exc
 
@@ -250,10 +266,16 @@ def main(argv: list[str] | None = None) -> int:
     choice.add_argument("--fetch", action="store_true", help="one fixed HTTPS Zenodo original only")
     parser.add_argument("--inspect-header", action="store_true",
                         help="after SHA-256 validation, inspect only NetCDF dimension and variable metadata")
+    parser.add_argument("--audit-coordinates", action="store_true",
+                        help="aggregate QA of native lon/lat only; requires --inspect-header")
     args = parser.parse_args(argv)
+    if args.audit_coordinates and not args.inspect_header:
+        parser.error("--audit-coordinates requires --inspect-header")
     try:
-        receipt = (fetch_verified_original(inspect_header=args.inspect_header) if args.fetch
-                   else verify_original(args.original, inspect_header=args.inspect_header))
+        receipt = (fetch_verified_original(inspect_header=args.inspect_header,
+                                           audit_coordinates=args.audit_coordinates) if args.fetch
+                   else verify_original(args.original, inspect_header=args.inspect_header,
+                                        audit_coordinates=args.audit_coordinates))
     except (GtsmReceiptError, OSError) as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         return 2
