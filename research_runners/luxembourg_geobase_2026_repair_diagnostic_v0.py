@@ -48,6 +48,7 @@ class RepairDiagnostics:
         self.relative_delta_gt_5pct = 0
         self.relative_delta_gt_20pct = 0
         self.absolute_deltas = []
+        self.repaired_projected_areas = []
         self.structure_usable = 0
         self.structure_unusable = 0
         self.structure_polygon_count_disagreements = 0
@@ -170,6 +171,7 @@ class RepairDiagnostics:
                 self.structure_unusable += 1
             delta = abs(after - before)
             self.absolute_deltas.append(delta)
+            self.repaired_projected_areas.append(after)
             if before <= 0:
                 self.nonpositive_nominal_area += 1
             else:
@@ -207,6 +209,13 @@ class RepairDiagnostics:
             "repair_multiple_polygons": self.outcomes["multiple_polygons"],
             "repair_unusable_or_not_polygonal": self.outcomes["unusable_or_not_polygonal"],
             "repair_with_nonpolygon_debris": self.with_nonpolygon_debris,
+            "repair_candidate_area_sum_projected_m2": round(math.fsum(self.repaired_projected_areas), 2),
+            "repair_candidate_area_max_projected_m2": (
+                round(max(self.repaired_projected_areas), 2)
+                if self.repaired_projected_areas else None),
+            "repair_candidate_area_median_projected_m2": (
+                round(sorted(self.repaired_projected_areas)[(len(self.repaired_projected_areas)-1)//2], 2)
+                if self.repaired_projected_areas else None),
             "structure_challenge_usable": self.structure_usable,
             "structure_challenge_unusable": self.structure_unusable,
             "structure_vs_linework_polygon_count_disagreements": self.structure_polygon_count_disagreements,
