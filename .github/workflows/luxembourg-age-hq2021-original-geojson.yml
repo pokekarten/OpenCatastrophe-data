@@ -7,6 +7,8 @@ on:
     paths:
       - 'research_runners/luxembourg_age_hq2021_official_geojson_crossformat_v0.py'
       - 'research_runners/luxembourg_age_hq2021_geojson_group_ogc_v0.py'
+      - 'research_runners/luxembourg_age_hq2021_group_repair_sensitivity_v0.py'
+      - 'tests/test_luxembourg_age_hq2021_group_repair_sensitivity_v0.py'
       - 'tests/test_luxembourg_age_hq2021_geojson_group_ogc_v0.py'
       - 'tests/test_luxembourg_age_hq2021_official_geojson_crossformat_v0.py'
       - '.github/workflows/luxembourg-age-hq2021-original-geojson.yml'
@@ -34,6 +36,8 @@ jobs:
           python -m pip check
       - name: Synthetic official publisher source grouped-geometry OGC negative tests
         run: python -m unittest tests.test_luxembourg_age_hq2021_geojson_group_ogc_v0 -v
+      - name: Synthetic bounded repair sensitivity and population-conservation regressions
+        run: python -m unittest tests.test_luxembourg_age_hq2021_group_repair_sensitivity_v0 -v
       - name: Reject synthetic nonpolygon, malformed, infinite or unapproved GeoJSON
         run: python -m unittest tests.test_luxembourg_age_hq2021_official_geojson_crossformat_v0 -v
       - name: Download all three *independent* official original publisher GeoJSON releases
@@ -54,7 +58,7 @@ jobs:
               --connect-timeout 20 --max-time 180 --retry 0 \
               --max-filesize 100663296 --output "$original" "$url"
             python -m research_runners.luxembourg_age_hq2021_official_geojson_crossformat_v0 \
-              --scenario "$scenario" --source-geojson "$original" --review-polygon-groups
+              --scenario "$scenario" --source-geojson "$original" --review-polygon-groups --review-group-repairs
             rm -f "$original"
           done
           # No original publisher feature coordinates, geometry, IDs or
