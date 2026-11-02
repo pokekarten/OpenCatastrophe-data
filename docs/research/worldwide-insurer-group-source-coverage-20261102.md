@@ -22,6 +22,28 @@ IAIS: selected markdown table rows whose first column was a numeric rank from 1 
 
 The IAIS table includes large internationally active groups reported by supervisory authorities; legal entity names and parent structures are different grains. NAIC group codes are a US insurance-supervision identifier and must not be confused with NAIC *company* codes, LEIs, group ownership percentages, risk locations or group parent domicile. IAIS and NAIC rows may overlap and cannot be added to a global-unique total.
 
+## Offline reproducibility: bounded primary-page rendering audit
+
+The repository now includes a strict, **offline-only** audit of a separately acquired local
+UTF-8 *readable rendering* of each original regulator page:
+
+```bash
+python -m unittest tests.test_worldwide_insurer_group_rendered_receipt_v0 -v
+python -m scripts.worldwide_insurer_group_rendered_receipt_v0 \
+  --register iais --rendered-text /tmp/official-iais-rendered.txt
+python -m scripts.worldwide_insurer_group_rendered_receipt_v0 \
+  --register naic --rendered-text /tmp/official-naic-rendered.txt
+```
+
+The script requires the exact declared IAIS date, 61 distinct ordinal groups and 19
+supervisor jurisdictions or the NAIC 2026 Q2 header, 682 distinct group codes and 52
+lead-jurisdiction abbreviations. Truncated, altered, duplicate-ID, oversized and
+wrong-period input fails closed. It outputs **only** aggregate counts and a SHA-256 of
+the local readable rendering, not group names, original provider HTTP-byte digests,
+licensed source snapshots, inferred group links, or rows to insert into Neon. The
+source text is intentionally kept outside Git and must itself be acquired and checked
+for lawful reuse separately. Synthetic negative regression tests require no network.
+
 ## CAT-only Neon main cross-check (read-only; snapshot 2026-11-02)
 
 Project `insurance-risk-core`, database `insurance`, branch `main`:
