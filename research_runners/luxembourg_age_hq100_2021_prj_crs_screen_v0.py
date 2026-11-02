@@ -27,8 +27,12 @@ def parse_wkt(raw: bytes) -> dict:
         raise HQ100CRSError("Invalid PRJ source size")
     try:
         from pyproj import CRS, __version__ as pyproj_version
+        from pyproj.exceptions import CRSError
+    except ImportError as exc:
+        raise HQ100CRSError("Requires pinned pyproj 3.7.2") from exc
+    try:
         crs = CRS.from_wkt(raw.decode("utf-8-sig"))
-    except (ImportError, UnicodeError, ValueError) as exc:
+    except (UnicodeError, ValueError, CRSError) as exc:
         raise HQ100CRSError("Cannot identify original PRJ WKT using pinned pyproj") from exc
     epsg = crs.to_epsg(min_confidence=90)
     authority = crs.to_authority(min_confidence=90)
