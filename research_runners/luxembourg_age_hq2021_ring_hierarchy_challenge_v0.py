@@ -42,10 +42,13 @@ class HierarchyChallengeError(ValueError):
 
 
 class SourceRingHierarchy:
-    def __init__(self, *, max_candidates=MAX_CANDIDATES_PER_HOLE):
+    def __init__(self, *, max_candidates=MAX_CANDIDATES_PER_HOLE, reverse_orientation=False):
         if (not isinstance(max_candidates, int) or isinstance(max_candidates, bool)
                 or not 1 <= max_candidates <= MAX_CANDIDATES_PER_HOLE):
             raise HierarchyChallengeError("Unbounded spatial index candidate limit")
+        if not isinstance(reverse_orientation, bool):
+            raise HierarchyChallengeError("Unsupported original source winding interpretation")
+        self.reverse_orientation = reverse_orientation
         self.max_candidates = max_candidates
         self.seen = 0
         self.negative_winding = 0
@@ -82,12 +85,14 @@ class SourceRingHierarchy:
             raise HierarchyChallengeError("Original GEOS ring could not be represented") from exc
         if signed2 < 0:
             self.negative_winding += 1
+        else:
+            self.positive_winding += 1
+        if (signed2 < 0) != self.reverse_orientation:
             if valid:
                 self.valid_shells.append(ring)
             else:
                 self.invalid_shell_envelopes.append(box(*ring.bounds))
         else:
-            self.positive_winding += 1
             if valid:
                 self.valid_holes.append(ring)
             else:
@@ -147,10 +152,15 @@ class SourceRingHierarchy:
         # overlap an outer ring without exact containment.
         return {
             "original_shapefile_polygon_winding_convention_hypothesis": (
-                "clockwise_exterior_counterclockwise_hole"),
+                "counterclockwise_exterior_clockwise_hole" if self.reverse_orientation
+                else "clockwise_exterior_counterclockwise_hole"),
             "original_ring_count": self.seen,
-            "clockwise_exterior_candidate_rings": self.negative_winding,
-            "counterclockwise_hole_candidate_rings": self.positive_winding,
+            "clockwise_source_ring_parts": self.negative_winding,
+            "counterclockwise_source_ring_parts": self.positive_winding,
+            "proposed_exterior_candidate_rings": (
+                self.positive_winding if self.reverse_orientation else self.negative_winding),
+            "proposed_hole_candidate_rings": (
+                self.negative_winding if self.reverse_orientation else self.positive_winding),
             "zero_orientation_rings": self.zero_winding,
             "geos_valid_clockwise_exterior_candidates": len(shells),
             "geos_invalid_clockwise_exterior_candidates": len(bad_shells),
@@ -174,7 +184,7 @@ class SourceRingHierarchy:
         }
 
 
-def audit(path: Path, scenario: str) -> dict:
+def audit(path: Path, scenario: str, *, reverse_orientation=False) -> dict:
     if scenario == "hq100":
         receipt = inspect(path)
         expected = HQ100_SHA
@@ -189,7 +199,7 @@ def audit(path: Path, scenario: str) -> dict:
     observed_sha = receipt.get("original_zip_sha256_observed", receipt.get("observed_sha256"))
     if observed_sha != expected:
         raise HierarchyChallengeError("Original byte-pinned source has changed")
-    collector = SourceRingHierarchy()
+    collector = SourceRingHierarchy(reverse_orientation=reverse_orientation)
     with zipfile.ZipFile(path) as archive:
         members = [x for x in archive.infolist() if x.filename.lower().endswith(".shp")]
         if len(members) != 1:
@@ -225,9 +235,11 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--scenario", choices=["hq10", "hq100", "hqext"], required=True)
     p.add_argument("--source-zip", type=Path, required=True)
+    p.add_argument("--reverse-orientation", action="store_true")
     args = p.parse_args()
     try:
-        print(json.dumps(audit(args.source_zip, args.scenario),
+        print(json.dumps(audit(args.source_zip, args.scenario,
+                               reverse_orientation=args.reverse_orientation),
                          indent=2, sort_keys=True, allow_nan=False))
     except (OSError, HQ100OriginalError, HQ100GeometryError,
             HierarchyChallengeError, zipfile.BadZipFile) as exc:
