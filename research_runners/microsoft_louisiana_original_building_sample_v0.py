@@ -22,7 +22,7 @@ from research_runners.microsoft_louisiana_original_zip_receipt_v0 import (
 )
 
 SAMPLE_COMPRESSED_BYTES = 65_536
-SAMPLE_MAX_UNCOMPRESSED_BYTES = 400_000
+SAMPLE_MAX_UNCOMPRESSED_BYTES = 1_048_576
 MAX_RECORDS = 20
 MAX_PARSE_PREFIX = 15_000
 SCHEMA = "opencatastrophe-ms-la-building-geojson-prefix-v0"
