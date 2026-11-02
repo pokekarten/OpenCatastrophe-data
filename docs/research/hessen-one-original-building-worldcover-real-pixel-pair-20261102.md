@@ -101,10 +101,10 @@ cell candidates are visited per scenario.
 
 Class 50 represents *built-up land cover*, including artificial
 surfaces: it is **not** a counted, surveyed or valued roof.
-These are shares of the ALKIS polygon's approximate projected
-**raster-cell intersection area**, not ground-truth roof
-material/height/occupancy, physical square metres, exposure,
-vulnerability or insurer insured value.
+These are shares of the ALKIS polygon's **angular EPSG:4326
+raster pixel-square intersection area**, not geodesic physical area
+in square metres. They do not establish ground-truth roof
+material/height/occupancy, exposure, vulnerability or insurer insured value.
 
 ### Why the sensitivity matters
 
