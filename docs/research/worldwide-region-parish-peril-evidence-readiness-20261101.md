@@ -202,6 +202,44 @@ separate decisions. This is a higher source-evidence level than
 `documented_only` but does **not** change the canonical access-contract
 or Neon admission flags automatically.
 
+## Executed real three-parish polygon QA (2 November 2026)
+
+The first original-source spatial check actually **passed** in
+[GitHub run 41414337770](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41414337770).
+It used the exact independently hash-pinned original national 2026
+Census COUNTY archive, Shapely 2.1.2, and **22/22 passing synthetic
+positive/negative test methods**.
+
+| Parish | Original GEOID | Verified source ring points | OGC polygon valid |
+| --- | --- | ---: | --- |
+| Jefferson | `22051` | 2,006 | yes |
+| Orleans | `22071` | 2,503 | yes |
+| St. Bernard | `22087` | 2,515 | yes |
+
+All three original source polygons have one ring and no interior
+holes in this version. Source ring closure, clockwise shell winding,
+non-self-intersection, source-bbox consistency and finite NAD83
+geographic coordinates passed. Their maximum pairwise positive-area
+intersection was **0.0 square degrees**. This is a source geometry
+diagnostic, never a square-kilometre exposure/insured value.
+The provider ZIP and polygons were deleted from temporary runner storage
+afterwards; no original geometry was added to Git or Neon.
+
+An additional new offline runner,
+`research_runners/us_census_2026_louisiana_64_parish_qc_v0.py`,
+separately examines the **64 official Louisiana parishes**
+([state primary source](https://www.louisiana.gov/local-louisiana/))
+using original `STATEFP=22`, source GEOIDs and individually
+reconstructed topology for all 64 boundaries, plus 2,016 inter-parish
+pairs. Its real-source result must be checked separately; the
+three-parish success cannot justify a 64/64 quality claim.
+
+Even a complete 64-parish source-topology pass would **not**
+demonstrate independent coverage versus an official state polygon,
+source-data commercial rights, a historical policy/geolocation
+crosswalk, valid insurer exposure, catastrophe vulnerabilities or
+an admitted OpenCat/NextGen model input.
+
 ## Versioned region x peril key and evidence preflight
 
 `scripts/region_peril_readiness_v0.py` accepts one explicit, locally
