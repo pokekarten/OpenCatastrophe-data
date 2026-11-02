@@ -69,3 +69,24 @@ This is intentionally a **preflight, not ODTF execution, OED validation, CEDE 13
 **Evidence:** on local Python 3.13, `13/13` focused synthetic tests passed; hosted exact-head CI must separately confirm repository-wide rules. The local runtime lacks `ods-tools` and cannot resolve github.com, so no ODS transform execution or SQL Server restore occurred.
 
 **Next true interoperability milestone:** acquire an authorized dependency and bounded fixture, execute the pinned Oasis ODTF CEDE 10 to OED 3 mapping with OED validation, compare the resulting values and missing fields against this preflight, then explicitly version the CEDE 13 delta. Do not mark CEDE 13 as supported from these tests.
+
+## Independent synthetic candidate-output reconciliation (2026-11-02)
+
+A second executable, standard-library-only check is now included:
+- `scripts/cede_oed_output_reconcile_v0.py`
+- `tests/test_cede_oed_output_reconcile_v0.py`
+
+For **wholly invented** synthetic source rows and *candidate* CSV output files:
+
+```bash
+python scripts/cede_oed_output_reconcile_v0.py \
+  --synthetic-input /path/to/invented_legacy_extract.json \
+  --oed-location /path/to/invented_loc_oed.csv \
+  --oed-account /path/to/invented_acc_oed.csv
+```
+
+The checker builds exact composite identities from `ExposureSetName/ContractID/LocationID`, checks required `PortNumber/AccNumber/LocNumber` and stable account membership, reconciles `CountryCode`, `LocCurrency`, `BuildingTIV` and `ContentsTIV` against the legacy extractor input, and optionally exact-checks provided latitude/longitude. It rejects omitted/duplicate/mismatched locations and accounts, changed values/currencies, nonfinite or overprecise losses, malformed CSVs, duplicate headers and unauthorized version drift. Totals are only compared within currency, never converted or silently summed.
+
+**Important limitations:** The outputs can be hand-constructed for tests; the tool does not *invoke* ODS Tools, does not validate the full OED schema, has no `LayerID`/policy hierarchy in this narrow source profile, and has no CEDE 13 semantics. The original Oasis account mapping requires additional fields such as `LayerID`. Its report deliberately includes `executed_ods_tools=false`, `oed_schema_validated=false`, `cede_13_compatible=false`, `model_input_admitted=false`, and `rights_approved=false`. Any actual end-to-end declaration still requires running the pinned Oasis mapper with a complete synthetic location **and account/layer** input.
+
+**Focused evidence:** 10 additional local synthetic tests passed, alongside the earlier 13 preflight tests (23/23 in the isolated local Python 3.13 fixture). The exact new commit still requires hosted GitHub CI. Local package acquisition is blocked by pip package-index DNS resolution; no genuine ODS Tools invocation was performed.
