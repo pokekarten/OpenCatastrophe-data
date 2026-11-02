@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Berlin detailed SRGK bounded ZIP central-directory ranges
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research_runners/berlin_srgk_depth_zip_central_range_v0.py
+      - tests/test_berlin_srgk_depth_zip_central_range_v0.py
+      - .github/workflows/berlin-srgk-depth-zip-central-ranges.yml
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/berlin-srgk-depth-zip-central-ranges.yml
+
+permissions:
+  contents: read
+
+jobs:
+  exact-original-zip-ranges:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - name: Checkout reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Pinned Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Synthetic ZIP/HTTP range abuse and fail-closed tests
+        run: python -m unittest tests.test_berlin_srgk_depth_zip_central_range_v0 -v
+      - name: Original three source ZIP indexes via exactly six bounded Range requests
+        if: github.event_name != 'pull_request'
+        run: python -m research_runners.berlin_srgk_depth_zip_central_range_v0 --live
