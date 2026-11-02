@@ -126,7 +126,7 @@ def _dbf_summary(raw):
         # Retain original provider name bytes rather than falsely assuming
         # ASCII for all US and territorial county-equivalent place names.
         # Only the FIPS/GEOID numeric identity needs strict ASCII syntax.
-        return record[start:start+width].strip(b" \\x00")
+        return record[start:start+width].strip(b" ")
 
     ids = set()
     orleans = 0
