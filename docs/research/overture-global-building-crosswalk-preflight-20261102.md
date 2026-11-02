@@ -145,6 +145,22 @@ Reproducible bounded tool, with an opt-in network switch and no source-row inges
 
 This original-data runner uses hardcoded provider host, release and prefix, no credentials and no redirects, with at most 2 keys and per-object only 4+8+8192 bytes. Range responses require exact HTTP 206, Content-Range, Content-Length and unchanged ETag; the schema parser is bounded and fails closed. All 19 synthetic tests are offline; no live AWS access occurs in PR CI. Before using actual building records for valuation, separately verify source rights, original whole object checksums, row-group selection/CRS, reference years, individual source lineage, GERS and loss model calibration.
 
+## Neon isolated metadata-only pilot (2026-11-02)
+
+On the existing CAT-only Neon project `insurance-risk-core`, a **new isolated branch** `overture-buildings-metadata-pilot-20261102` (ID `br-bold-unit-baf2smqf`) was created from insurance `main`. No production database migration or source-row import was performed.
+
+The reviewed reproducible SQL is `research_runners/sql/overture_buildings_metadata_receipts_v0.sql`. On this **isolated branch only**, the table `research.overture_original_building_file_probe_v0` holds two rows of *metadata receipts*, including exact public source keys, immutable release, provider-reported S3 sizes, Parquet footer sizes, schema-entry counts (63), provider-reported Parquet row counts and S3 ETags. The SQL enforces `original_rows_ingested = false`, `entire_object_sha256_verified = false`, `source_rights_approved = false`, `actual_geometry_validated = false`, `insurer_exposure_admitted = false`, `cat_model_input_approved = false`.
+
+**Actual isolated SQL readback:**
+- Stored original file receipts: **2**.
+- Source Parquet row-count sum in those two files: **10,004,110**.
+- Reported original file-byte total: **1,066,478,631** (files themselves were **not** copied into Neon).
+- Inadvertently approved input/source/import statuses: **0**.
+
+**Production countercheck:** `insurance/main` does **not** have `research.overture_original_building_file_probe_v0`; original raw artefacts and real insured exposure units still count **0**. The other Neon project for Pokémon cards was not accessed.
+
+This work demonstrates the first **tested database storage of original-source metadata** for the global building pilot, **not** an actual building-footprint, policy, insurer TIV, hazard or damage import. The next *causal scientific step* is an authorized, bounded original Parquet **row-group geometry** read (with correct WKB/GeoParquet CRS, source lineage and per-feature rights) followed by a strict country pilot and separate source/model admission.
+
 ## Path to real insurer CAT models
 
 1. Freeze an original source object identity, schema version, byte hashes and attribution/rights before a bounded cloud retrieval. Document authoritative GERS ID registry/bridge checks separately.
