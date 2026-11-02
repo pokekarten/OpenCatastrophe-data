@@ -308,6 +308,70 @@ loss model execution. The private [OpenCat subnational rollup PR #16](https://gi
 needs separately assigned **loss-bearing** synthetic asset IDs,
 and must not treat these 64 fake samples as its source event portfolio.
 
+## Real first-20 Microsoft Louisiana building-to-Census 2026 parish crosswalk
+
+**Executed two independent original-provider sources on 2026-11-02, with
+reproducible public evidence**:
+[GitHub Actions run #41499442235](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41499442235).
+The workflow's new `research_runners/us_census_2026_microsoft_louisiana_building_parish_join_v0.py`
+used (1) the full original 2026 Census national COUNTY archive, **83,378,454
+bytes**, independently pinned SHA-256
+`b527c9ba7aeb8f17ef118f026eae5e5a938aa1d00b873bc32342d0dce59321c0`,
+plus (2) **only 65,536 compressed bytes from the original Microsoft
+Louisiana GeoJSON ZIP**, server-verified
+`Content-Range: bytes 0-65535/83974949` and source ETag
+`"0x8DCFF4D6A6BD59D"`. The original Microsoft full source was **not**
+downloaded, cryptographically SHA-pinned or enumerated. The bounded
+HTTP Range is linked to the independently verified source metadata
+receipt from [OpenCatastrophe-data PR #1107](https://github.com/pokekarten/OpenCatastrophe-data/pull/1107).
+
+**Actual original-source results (20 first buildings, nonrandom):**
+
+| Evidence measure | Result |
+| --- | ---: |
+| Independently structurally and geometrically verified original Louisiana parish source polygons | 64 |
+| Source-original Microsoft roofprint polygons screened | 20 |
+| Strictly inside one parish, footprint wholly contained and >10 metres from border | **20** |
+| Different parish codes represented among matches | **2** |
+| Source footprint touching/near polygon boundary or uncertain datum | **0** |
+| Intersecting two or more parishes | **0** |
+| Outside all 64 official parish source polygons | **0** |
+| New source-free synthetic negative/positive unit cases | **15/15 passed** |
+
+Unlike the previous 64/64 *artificial representative points*, this
+source comparison used **actual Microsoft machine-extracted building
+polygons** on the left and **official source-original Census 2026
+parish polygons** on the right. It reconstructed the 64 county-equivalent
+source shapes and classified *the full original footprint*, not only
+its centroid. Microsoft GeoJSON WGS84 `EPSG:4326` and Census NAD83
+`EPSG:4269` were transformed with pinned pyproj into `EPSG:5070`
+CONUS metric space, then compared with Shapely 2.1.2. A research-only
+**10 m administrative border exclusion** holds out uncertain
+near-boundary footprints. Footprints intersecting multiple parishes
+or no official polygons are explicitly reported, never assigned by
+proximity.
+
+**Non-admission caveats:** the first 20 polygons are spatially
+ordered/nonrandom. Two parishes in the first 20 **do not** establish
+cover of all 64 parishes by Microsoft, quality of 2,173,567 purported
+source footprints, match correctness at county borders, exact datum
+epoch alignment, individual building imagery year, observation
+coverage, commercial ODbL data reuse clearance, property addresses,
+building height/occupancy, insurance values, policy and contractual
+terms, vulnerability, hazard intensity or scientific CAT model use.
+Source ZIP and 64 KiB original sample were kept only on ephemeral
+GitHub runner storage and deleted. **No original building rows,
+coordinates, geometries or identities were stored in Git, Neon or
+output artifacts.** This remains a read-only *two-source research
+crosswalk*, not an admitted insurance exposure register.
+
+Next controlled work: independent, diverse *sampled source partitions*
+rather than only the first twenty prefix rows; document imagery vintages
+and permissible reuse; source-specific real-building identifiers
+and geometry QA; per-parish spatial coverage/missingness; then event-
+and peril-specific physical hazard, calibrated vulnerability and
+coverage/contract semantics before any model run admission.
+
 ## Versioned region x peril key and evidence preflight
 
 `scripts/region_peril_readiness_v0.py` accepts one explicit, locally
