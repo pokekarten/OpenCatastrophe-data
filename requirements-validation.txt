@@ -4,5 +4,8 @@
 # CI/local validation only. This is not a runtime or acquisition dependency.
 # The repository-wide unittest discovery includes mandatory PPRI polygon
 # topology tests; use the already-reviewed EU flood spatial Shapely pin.
+# Geodesic WGS84-area validation for globally sourced building footprints;
+# uses the same already-reviewed pin as requirements-eu-flood-spatial.txt.
+pyproj==3.7.2
 PyYAML==6.0.3
 shapely==2.1.2
