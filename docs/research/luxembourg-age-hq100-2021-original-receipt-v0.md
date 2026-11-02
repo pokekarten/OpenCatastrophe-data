@@ -204,6 +204,28 @@ The 73 challenged original rings have **6,890,737.09 m² aggregate nominal signe
 
 **Critical finding:** 62 of 73 technically recoverable rings result in **more than one polygon**. Treating each original invalid ring as a simple one-for-one recovered floodplain polygon would be wrong. The 74th unusually complex ring has **not been repaired or automatically approved**; source-wide full multipolygon assembly, shell/hole relationships and original hydraulic-mask lineage remain unverified. Even a repaired individual ring does not tell us which portion is permanently flooded or what depth to assign. All CAT-model/exposure admissions stay false.
 
+## Exact original AGE HQ10 and HQextreme sibling sources, 2 November 2026
+
+The separate first-party [AGE HQ10 catalogue](https://data.public.lu/en/datasets/flood-hazard-maps-10-year-flood/) and [AGE HQextreme catalogue](https://data.public.lu/en/datasets/flood-hazard-maps-extreme/) provide distinct original 2021-model/2022-publication ZIP files and **different independent publisher SHA-1 checksums**. The new read-only `research_runners/luxembourg_age_hq2021_sibling_source_receipts_v0.py` only accepts the pinned exact official resource for each named scenario. It reuses the reviewed strict ZIP CRC and SHP record/DBF schema validator, but assigns source-specific identity and never trusts the HQ100 wrapper's model label for the two other original scenarios.
+
+The official [GitHub original-source workflow 41435808291](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41435808291) **passed** for all three scenarios, including negative synthetic source-label checks. For the two previously unexamined scenarios:
+
+| Original audited source | HQ10 | HQextrem |
+| --- | ---: | ---: |
+| Provider SHA-1 | `08c75a51c0d2f42b9f95530494320ec085203d89` | `a32da12e9c41275466c07d51fff72a8c518eaf26` |
+| Observed additional SHA-256 | `f5bf50e49f8e47207782e9030c6644594121c661cf31f4acb1bf292e5837b8fa` | `c26e81026bad0cad19e41086a905d7709bcf4cfd11341db2259aaa9d4d529888` |
+| Compressed original ZIP | **4,699,796 bytes** | **3,932,876 bytes** |
+| ZIP members / original SHP record | **8 / 1** | **8 / 1** |
+| SHP polygon type code | **5** | **5** |
+| Original polygon-ring parts (from SHP headers) | **13,439** | **5,108** |
+| Original point pairs skipped without decoding | **1,493,429** | **1,288,014** |
+| Original DBF fields | `OBJECTID`, `Shape_Leng`, `Shape_Area` | `OBJECTID`, `Shape_Leng`, `Shape_Area` |
+| Numeric water-depth attribute | **Not present in DBF** | **Not present in DBF** |
+
+Both official provider catalogues label the datasets CC0. **Original source SHP geometry topology, original CRS PRJ, stored-axis order, hydrological meaning and scientific reuse fitness for these *siblings* remain untested.** The source record/ring count is *not* evidence of scenario area, river coverage or actual flood risk monotonicity. In particular, **HQ10 having more ring parts than HQ100 or HQextrem does not mean a larger area**; multipart segmentation is not a monotone proxy for inundation area. Never infer it. Before any cross-scenario scientific comparison the original extent/mask topology, geodetic reference and 2021 model version must be independently checked for all three sources.
+
+The three files have now passed first-stage original acquisition and structural-integrity research, but **none has numeric depth semantics or CAT-model input admission**. No original source bytes, original individual geometry, coordinates, depth values or insured exposures were committed, logged or imported to Neon.
+
 ## Next scientific steps
 
 - Verify the original actual file format, complete record and field counts,
