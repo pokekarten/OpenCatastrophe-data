@@ -40,6 +40,20 @@ class OriginalACTOvertureComparisonTests(unittest.TestCase):
         result = geometric_candidates([square()], [square(77244)])
         self.assertEqual(result["reciprocal_one_to_one_geometric_candidates"], 0)
 
+    def test_best_iou_histogram_catches_partial_overlap(self):
+        result = geometric_candidates([square()], [square(77244)])
+        self.assertEqual(result["positive_area_original_source_overlap_pairs"], 1)
+        self.assertEqual(
+            result["Overture_best_geometric_iou_distribution"]["iou_0_25_to_0_50"], 1)
+        self.assertEqual(
+            result["Overture_best_geometric_iou_distribution"]["iou_at_least_0_75"], 0)
+
+    def test_zero_overlap_histogram_is_distinct_from_low_iou(self):
+        result = geometric_candidates([square()], [square(77300)])
+        self.assertEqual(result["positive_area_original_source_overlap_pairs"], 0)
+        self.assertEqual(
+            result["Overture_best_geometric_iou_distribution"]["no_positive_area_overlap"], 1)
+
     def test_two_overture_same_act_is_quarantined(self):
         result = geometric_candidates([square()], [square(), square()])
         self.assertEqual(result["act_features_with_ambiguous_many_to_many_candidates"], 1)
