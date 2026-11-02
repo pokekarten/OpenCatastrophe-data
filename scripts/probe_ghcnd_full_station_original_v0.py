@@ -92,6 +92,7 @@ def inspect_full_csv(raw: bytes) -> dict[str, Any]:
         q_count = 0
         m_count = 0
         s_count = 0
+        native_2400_count = 0
         earliest: str | None = None
         latest: str | None = None
         unique: set[tuple[str, str]] = set()
@@ -113,7 +114,10 @@ def inspect_full_csv(raw: bytes) -> dict[str, Any]:
                 raise StationFullProbeError("original element or integer observation malformed")
             if not all(FLAG.fullmatch(flag) is not None for flag in (mflag, qflag, sflag)):
                 raise StationFullProbeError("invalid original measurement/quality/source flags")
-            if observation_time and CLOCK.fullmatch(observation_time) is None:
+            # NOAA GHCN's original Central Park CSV contains provider-native
+            # '2400'. Preserve and count it; never infer a timezone, next-day
+            # rollover or scientific timing suitability from this string.
+            if observation_time and observation_time != "2400" and CLOCK.fullmatch(observation_time) is None:
                 raise StationFullProbeError("invalid original observation time")
             identity = (date, element)
             if identity in unique:
@@ -128,6 +132,7 @@ def inspect_full_csv(raw: bytes) -> dict[str, Any]:
             q_count += bool(qflag)
             m_count += bool(mflag)
             s_count += bool(sflag)
+            native_2400_count += observation_time == "2400"
             missing_values += value == "-9999"
             if qflag:
                 flagged_quality[element] = flagged_quality.get(element, 0) + 1
@@ -145,6 +150,8 @@ def inspect_full_csv(raw: bytes) -> dict[str, Any]:
         "nonblank_measurement_flag_rows": m_count,
         "nonblank_quality_flag_rows": q_count,
         "nonblank_source_flag_rows": s_count,
+        "provider_native_2400_observation_time_rows": native_2400_count,
+        "observation_time_2400_converted_to_utc_or_next_day": False,
         "original_missing_sentinel_rows": missing_values,
         "all_original_rows_validated": True,
         "units_converted": False,
