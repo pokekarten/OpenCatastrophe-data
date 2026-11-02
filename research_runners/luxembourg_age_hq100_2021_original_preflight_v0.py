@@ -90,8 +90,8 @@ def _shp_header(stream, length: int) -> dict:
     b = stream.read(100)
     if len(b) != 100 or length < 100:
         raise HQ100OriginalError("Truncated SHP main header")
-    magic, declared_words = struct.unpack_from(">i6xi", b, 0) if False else (
-        struct.unpack_from(">i", b, 0)[0], struct.unpack_from(">i", b, 24)[0])
+    magic = struct.unpack_from(">i", b, 0)[0]
+    declared_words = struct.unpack_from(">i", b, 24)[0]
     version, kind = struct.unpack_from("<ii", b, 28)
     if magic != 9994 or version != 1000 or declared_words * 2 != length:
         raise HQ100OriginalError("Invalid SHP magic/version/declared byte length")
