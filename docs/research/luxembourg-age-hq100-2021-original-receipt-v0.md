@@ -124,6 +124,49 @@ The 2021 AGE flood archive and 2026 ACT building data both declare **EPSG:2169**
 
 **Narrow conclusion:** Original HQ100 ring linework is complete, entirely finite, individually closed, and has nonzero signed area under the tested aggregate metric; the source's stored XY is geographically consistent with Luxembourg, while the swapped interpretation is not. **This does not prove OGC validity** of individual rings (they may self-intersect), correct assignment of polygon exteriors/holes, inter-ring nesting, stable shape IDs, coordinate-frame epoch, actual flood depth, hydraulic hazard intensity or building overlap. The original multipart polygon **must remain unadmitted** until a separately isolated topology/polygonization check and source-epoch geodetic review pass.
 
+## Source-wide independent-ring topology challenge
+
+A further read-only original SHA-pinned analyzer,
+`research_runners/luxembourg_age_hq100_2021_ring_topology_v0.py`,
+evaluates each original polygon ring **as a separate ephemeral GEOS
+Polygon** under `shapely==2.1.2`. It reports only counts of individually
+valid/invalid rings, low-precision whitelisted validity reason classes,
+GEOS failures, and any rings over the 250,000-vertex complexity cap.
+Rings over the cap are **quarantined as untested**, not optimistically
+marked valid. Regression tests include a valid square, a self-crossing
+bow-tie and an intentionally overcomplex ring.
+
+**Interpretation boundary:** even if all source rings pass individually,
+that does not prove the **entire 6,379-part polygon record is OGC-valid**:
+an exterior ring can overlap another, two holes can overlap, ring
+orientation alone does not prove exterior/hole identity, and the original
+2021 flood scenario may not precisely match the ACT 2026 building survey
+date. The only defensible next geometry check is complete original
+multipart polygonization and exact original-source geometry validity
+with a bounded, fully reviewed parser and no feature export.
+
+## Next exact numerical flood-depth source access
+
+The official [Luxembourg flood data request page](https://inondations.public.lu/en/demande-donnees.html)
+identifies **zones.inondables@eau.etat.lu** for flood maps and related
+water-level information. The HQ100 map is also exposed as a
+[Geoportal rendered WMTS layer](https://wms.geoportail.lu/mapproxy_4_v3/demo/?type=external&wmts_capabilities=),
+`eau_Hochwassergefahrenkarten_HQ100_2021`, which provides map imagery
+and is **not** verified to provide numeric water depths.
+
+A precise request should ask AGE for the **original numerical HQ100
+2021 water-depth surface** (per-cell metres with NoData semantics),
+provider-vintage elevation/depth model, extent, geographic CRS and axis
+order, vertical datum and geodetic epoch, grid resolution, permanent
+download link and file SHA-256, availability for all catchments and
+exact rights for model calibration/derivative works, and matching HQ10
+and HQextrem scenarios. Ask whether the 2022 ZIP source's floodplain
+polygon is the exact dry/wet mask of that depth grid; **do not infer
+this equivalence**. If only classified depths are available, request
+the class thresholds, units, inclusive boundaries and original source
+geometry of each class. No source depth values or independent insurer
+assets have been obtained as part of this PR.
+
 ## Next scientific steps
 
 - Verify the original actual file format, complete record and field counts,
