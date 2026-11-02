@@ -124,6 +124,27 @@ The read-only script caps listing XML at 32768 bytes, checks exactly the first o
 
 **Result:** public cloud object metadata and bounded Parquet-format boundaries verified, but **original GeoParquet source rows NOT inspected, SHA256 not validated, source-record rights NOT approved, GERS membership NOT verified, model input NOT admitted, and no Neon database write**. Before any rows are stored, independently verify the relevant complete source, attribution, licence and scientific bridge; this receipt is not a completed provider-data import.
 
+## Original Overture building Parquet source metadata pilot (2026-11-02)
+
+In addition to the OSM bridge, the actual **Buildings** dataset was inspected directly from the public original AWS S3 bucket, frozen at Overture release `2026-10-21.0` under
+`release/2026-10-21.0/theme=buildings/type=building/`. A deliberately bounded S3 ListObjectsV2 response with `max-keys=2` returned `IsTruncated=true`, so this is a **two-object sample**, not a global inventory.
+
+| Original object suffix | Original bytes (S3 listing) | Parquet footer length | FileMetaData.num_rows |
+|---|---:|---:|---:|
+| `part-00000-85375c54-5dfb-57c7-b21d-8b5e5245ad06-c000.zstd.parquet` | 533137080 | 668264 | 5002132 |
+| `part-00001-25a868c6-9ddc-5e1c-8e0e-8286ae2005d9-c000.zstd.parquet` | 533341551 | 703774 | 5001978 |
+
+The original first four bytes and final eight bytes were obtained by independent exact HTTP Range requests on **both** objects; all boundary checks returned `PAR1`. A further **32768-byte read at the start of each original Parquet metadata footer** allowed a bounded Thrift CompactProtocol decode of `FileMetaData.version=2`, the nested original file schema and `FileMetaData.num_rows`. Both files report the same schema structure of 63 nested schema entries with a root building schema declaring 24 children. Actual original nested schema names include `id`, `sources`, `record_id`, `geometry`, `bbox`, `height`, `num_floors`, and `xmin/ymin/xmax/ymax`.
+
+**This is access and schema evidence only.** The 10,004,110 sum counts stored *rows in two files*, not distinct buildings, country coverage, eligible insurer addresses or actual insured exposures. No data-row pages were fetched, geometry WKB validated, feature identities proved, source/file SHA256 measured or downstream ODbL compliance signed off. The two file-specific multipart ETags are **not cryptographic whole-object SHA256**. Height and floors in the schema do **not** establish non-null values, surveyed truth or commercial insurance sums.
+
+Reproducible bounded tool, with an opt-in network switch and no source-row ingestion:
+
+    python -m research_runners.overture_building_original_metadata_probe_v0 --live
+    python -m unittest tests.test_overture_building_original_metadata_probe_v0 -v
+
+This original-data runner uses hardcoded provider host, release and prefix, no credentials and no redirects, with at most 2 keys and per-object only 4+8+8192 bytes. Range responses require exact HTTP 206, Content-Range, Content-Length and unchanged ETag; the schema parser is bounded and fails closed. All 19 synthetic tests are offline; no live AWS access occurs in PR CI. Before using actual building records for valuation, separately verify source rights, original whole object checksums, row-group selection/CRS, reference years, individual source lineage, GERS and loss model calibration.
+
 ## Path to real insurer CAT models
 
 1. Freeze an original source object identity, schema version, byte hashes and attribution/rights before a bounded cloud retrieval. Document authoritative GERS ID registry/bridge checks separately.
