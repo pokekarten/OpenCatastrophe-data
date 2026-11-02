@@ -22,6 +22,19 @@ The first two globally listed objects have verified metadata-only receipts in PR
 **neither is known to cover Luxembourg**. Full file SHA-256 and individual original source rows
 are not yet verified. Overture licensing/attribution: https://docs.overturemaps.org/attribution/ .
 
+## Provider-confirmed Luxembourg-city candidate file (2026-11-02)
+
+The official [Overture STAC item 00226](https://stac.overturemaps.org/2026-10-21.0/buildings/building/00226/00226.json) was fetched directly, not inferred from the first world files. Its **source-file bounding box** is
+longitude **3.8891329765 to 6.5342741013** and latitude **48.7070693970 to 50.8007278442**.
+This box intersects our explicit Luxembourg-city research query window longitude **6.129 to 6.131** and latitude **49.609 to 49.611**. Nearby STAC item files 00224–00225, 00227–00233 were screened by their published bounds; the 00226 item is the directly supported candidate for the query window. This is **file extent evidence only**: a file bbox does not prove that any actual polygon intersects the small research box.
+
+Exact S3 object:
+https://overturemaps-us-west-2.s3.us-west-2.amazonaws.com/release/2026-10-21.0/theme=buildings/type=building/part-00226-f2e989f6-97e6-5afe-b3d2-cfd2e6228d37-c000.zstd.parquet
+
+The provider STAC item reports **609,459,333 original bytes**, **5,054,907 rows** in **256 row groups**. Separate public source HTTP byte ranges verified its first and last **PAR1** magic bytes, original Parquet footer length **1,461,640 bytes**, and a bounded 8,192-byte metadata-footer prefix. Independently decoded the actual Parquet metadata header: version **2**, **5,054,907** rows and **63** nested schema nodes (root 24 children), agreeing with STAC. Original feature data pages and whole-file SHA-256 were **not read or checked**.
+
+For this first **Luxembourg-city pilot only**, the pairing code now requires this exact part-00226 file key rather than accepting arbitrary worldwide Parquet files, and an extra negative test rejects a different syntactically valid file. This key pin is a provider metadata receipt, **not** a claim that individual locally supplied records have been source-byte authenticated. Real region geometry and actual spatial sample content remain outstanding.
+
 ## What the new joined-screen code does
 
 The offline script research_runners/luxembourg_act_overture_identity_preflight_v0.py
