@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Worldwide original source sweep: 2026-11-02
 
-**Status: research only, no scientific/rights admission.** This audit cross-references 48 canonical `landscape/sources*.json` shards on public main, the separate open monitoring-source PR #1141, and public primary-provider catalogs. The new source identities are in [the canonical JSON discovery register](../../landscape/sources-global-deep-research-20261102.json), with [the generated Markdown projection](../../landscape/sources-global-deep-research-20261102.md). The new shard has **17 entries**, no external data bytes, claims or model inputs.
+**Status: research only, no scientific/rights admission.** This audit cross-references 48 canonical `landscape/sources*.json` shards on public main, the separate open monitoring-source PR #1141, and public primary-provider catalogs. The new source identities are in [the canonical JSON discovery register](../../landscape/sources-global-deep-research-20261102.json), with [the generated Markdown projection](../../landscape/sources-global-deep-research-20261102.md). The new shard has **27 entries**, no external data bytes, claims or model inputs.
 
 ## Research execution / original directories
 
@@ -31,6 +31,27 @@ The twelve monitoring repositories were reviewed at tree/source-adapter/document
 | **Indonesia multi-hazard and events** | BNPB **InaRISK hazard/vulnerability maps** and **DIBI-labeled 2015–2024 hydrometeorological administrative wet/dry layer service** | High geographic value for river/flash floods, seismic, tsunami, volcano, drought, landslide and fire; DIBI-labeled map currently exposes provincial/district polygons, not proven event rows | ArcGIS MapServer/ImageServer service catalogs verified as public; DIBI service ?f=pjson verified layers 0 Provinsi_basah_kering and 1 Kabupaten_basah_kering as EPSG:4326 polygon maps, not event-level loss observations. Per-layer fields and licences remain unchecked |
 | **Linked source indices and risk taxonomies** | **Climate Risk STAC v1**, **UNICEF GCHD**, **UNDRR Datum**, **UNEP/CDRI GIRI**, **ESIP Trusted Data Now**, **UNDRR PreventionWeb global risk collection** | Substantially broaden long-tail discovery and harmonize all-peril classifications | Source indexes, composite model outputs or 3rd-party portals are not direct asset/loss truth; do not count their referenced datasets twice |
 
+### Second-pass mining: Climate Risk STAC underlying hazard CSV
+
+Inspected the repository's original `csv/hazard.csv` (92 table rows, **28 distinct collection/provider keys** after de-duplicating temporal/scenario rows). A majority were already represented in the 48 landscape shards or had an identical original-provider product; only 10 additional strong original products were added in this pass. The catalog's headline 214 metadata entries spans exposure, vulnerability and hazard, **not** 214 original independent data sources.
+
+| Additional distinct candidate | Original authority | Exact boundary |
+| --- | --- | --- |
+| NASA **MODIS MCDWD** and **VIIRS VCDWD** LANCE flood observations | [NASA LANCE FLOOD](https://lance.modaps.eosdis.nasa.gov/flood/) | Both ~250m and related algorithms; MODIS NRT since 2021, VIIRS since April 2025; do not count them as two independent classifier proofs |
+| **MYRIAD-HES** 2004–2017 | [Zenodo primary data](https://zenodo.org/records/8269680) | 11 peril classes, compound event groupings, date/intensity/WKT; 6.4 GB archive and common upstream lineage |
+| **Multi-Hazard NCEI Storm Event Sets** v1.0 (May 2026) | [Zenodo original release](https://zenodo.org/records/20285674) | Derived from already admitted/discovered NOAA Storm Events, but useful grouping of coupled perils by time/damage thresholds; no new independent claims |
+| **CSIC Global SPEI** | [CSIC provider](https://spei.csic.es/spei_database) | Drought temporal anomalies, not direct insured losses; confirm terms and historical release |
+| **GFPLAIN250m** | [Original Figshare](https://figshare.com/articles/dataset/GFPLAIN250m/6665165/1) | 250m static floodplain terrain classification, not observed flood depth or event inundation |
+| **NASA SEDAC GEHE** and **UHE-Daily** | [NASA Earthdata catalog](https://gis.earthdata.nasa.gov/portal/home/) | Historical 1983–2016 extreme heat and urban exposure; two related but distinct gridded products, source population/heat lineage |
+| **Global DEDI** daily evapotranspiration-deficit index | [Original Zenodo 7768534](https://zenodo.org/records/7768534) | 1979–2022 daily 0.25 degree and **derived from ERA5**, approx 23GB netCDF, not an independent daily rain/soil observation |
+| **Deltares Global Coastal Flood Maps** | [Microsoft Planetary Computer](https://planetarycomputer.microsoft.com/dataset/deltares-floods) | GTSM-derived coastal inundation scenario/depth raster; distinct from already registered GTSM extreme water level, not observed flooding |
+
+**Original source live metadata checks performed after discovery:**
+
+- DLR official [`WSF_TRACKER` STAC collection page](https://geoservice.dlr.de/eoc/ogc/stac/v1/collections/WSF_TRACKER) was accessible and reported CC BY 4.0, bounding box approximately longitude −180 to 180, latitude −60 to 78, and temporal 2016-06-01 through 2026-01-01. Product marketing describes twice-yearly data, but collection metadata shows `Composite Type: P1Y`. **This cadence mismatch needs per-item verification**, not a guessed interval.
+- JRC [GFDS v2 original provider page](https://www.gdacs.org/flooddetection/data/) was accessible and provides named raster branches `ALL`, `SINGLE`, `GPM`, `TRMM`, `AMSR2`, `AMSR-E`. It warns of sensor offsets and experimental status; neither daily water coverage nor river flooding at building scale is guaranteed.
+- BNPB official [DIBI_Hidromet_2015_2024 `?f=pjson`](https://gis.bnpb.go.id/server/rest/services/inarisk/DIBI_Hidromet_2015_2024/MapServer?f=pjson) was reachable and has two EPSG:4326 Polygon Feature Layers named `Provinsi_basah_kering` and `Kabupaten_basah_kering`, with Map/Query/Data operations and maximum record count 2000. The actual returned layer metadata **contradicts the initial hypothesis that the service exposes row-level disaster losses**. Treat it as wet/dry administrative classifications only until original fields prove otherwise.
+
 ### Explicit duplicate avoidance across main and open PRs
 
 Original providers or products **already registered** on main: `gem.geid.2026` (GEM Global Earthquake Impact Database); `gem.global-exposure-model.v2026.0.0` (some tiers **CC BY-NC-SA**, commercial restricted); `copernicus.cems.gfm.v4.1.1`; `nasa.opera.dswx-hls.v1`; `nasa.opera.dswx-s1.v1`; `nasa.gpm.imerg.v07b`; `geoglows.rfs.v2.global-discharge`; `noaa.ncei.global-historical-tsunami` (events, not the new runup observation layers); `noaa.ncei.ibtracs.v04r01`; `dlr.wsf.2019`, `dlr.wsf.evolution.1985-2015`, `dlr.wsf.3d.v02` (but **not** the new Tracker or Material Stock). Existing wildfire/air-quality and natural-hazard products remain in their original shards.
@@ -48,4 +69,4 @@ PR #1141 contains 23 additional monitoring-derived candidates including WFP ADAM
 
 ## Outcome
 
-The repository receives 17 carefully distinct candidate source families in the canonical landscape, plus evidence and action order. **No original data has been acquired here; no source was admitted into a CAT model, no insurer loss generated, no existing shared files overwritten and no Neon rows modified.** The canonical JSON governs this discovery; Markdown is a deterministic projection. A successful CI contract is necessary but not evidence of data licensing or hazard/loss science.
+The repository receives 27 carefully distinct candidate source families in the canonical landscape, plus evidence and action order. **No original data has been acquired here; no source was admitted into a CAT model, no insurer loss generated, no existing shared files overwritten and no Neon rows modified.** The canonical JSON governs this discovery; Markdown is a deterministic projection. A successful CI contract is necessary but not evidence of data licensing or hazard/loss science.
