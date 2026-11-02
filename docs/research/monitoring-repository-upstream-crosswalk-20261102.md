@@ -7,6 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 
 **Scope:** Source discovery for catastrophe event intelligence, post-event impact validation and exposure context. Repository README/docs and identified provider pages were inspected on 2026-11-02. This is a **discovery and provenance map, not a data admission, executable API proof, licence clearance, production-readiness claim or permission to persist third-party data**. Source-level original rights and model fitness remain independent gates.
 
+For the follow-up **code-level source sweep across all twelve shortlisted repositories**, see [monitoring-repositories-code-source-sweep-20261102.md](monitoring-repositories-code-source-sweep-20261102.md). The canonical registry now has **23** candidates: 12 first-pass entries and 11 additional code/provider-discovery entries.
+
 ## Registry link and anti-duplication rule
 
 Canonical **new provider candidates**: [`landscape/sources-monitoring-repo-upstreams-20261102.json`](../landscape/sources-monitoring-repo-upstreams-20261102.json), with deterministic Markdown view. Existing World Monitor discovery: [`landscape/sources-worldmonitor-upstream-20261102.json`](../landscape/sources-worldmonitor-upstream-20261102.json). Existing provider candidates in `landscape/sources*.json`, including GDACS, NASA EONET, UNDRR DELTA, USGS ComCat and NOAA NHC, **must not be duplicated**. A dashboard/tool source can suggest a feed but does not make that third-party feed rights-cleared or scientifically independent.
@@ -32,7 +34,7 @@ Canonical **new provider candidates**: [`landscape/sources-monitoring-repo-upstr
 
 **Already represented (do not re-add):** GDACS, EONET, NHC operational GIS, NWS CAP, ReliefWeb, UNHCR, IOM DTM, UNDRR DELTA, USGS ComCat, NASA FIRMS, Global Energy Monitor, IMF PortWatch, and other existing `landscape` identities. A candidate is not the same as admission.
 
-**New canonical discovery entries (12):** GLIDE IDs, IDMC IDU, UN CERF project API, IFRC GO/DREF appeals, International Charter activations, Nepal BIPAD, England Environment Agency flood monitoring, UK Met Office severe warning API, Open-Meteo model/single-run API, BMKG Indonesia earthquake feeds, JMA earthquake/volcano XML, and NASA GIBS visualizations. They are recorded with `evidence_checked` and `not_admitted` and are **not** installed as pipelines.
+**First-pass discovery entries (12 of 23):** GLIDE IDs, IDMC IDU, UN CERF project API, IFRC GO/DREF appeals, International Charter activations, Nepal BIPAD, England Environment Agency flood monitoring, UK Met Office severe warning API, Open-Meteo model/single-run API, BMKG Indonesia earthquake feeds, JMA earthquake/volcano XML, and NASA GIBS visualizations. They are recorded with `evidence_checked` and `not_admitted` and are **not** installed as pipelines.
 
 **Investigate next:** BMKG operational versus fully reviewed historical catalogue, Japan and Indonesian original bulletin retention, NASA GIBS quantitative source-product mapping, InciWeb incident metadata, public national damage/impact datasets surfaced by Charter and DELTA, exact sources for WorldMirror's infrastructure features. Prioritise original sources over feed mirrors.
 
