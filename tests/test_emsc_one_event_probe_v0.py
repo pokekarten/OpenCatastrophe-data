@@ -3,6 +3,7 @@
 """Offline deterministic EMSC adapter regression tests (all examples synthetic)."""
 import io
 import json
+import os
 import tempfile
 import unittest
 from contextlib import redirect_stdout, redirect_stderr
@@ -81,10 +82,24 @@ class EmscOneEventTests(unittest.TestCase):
         with self.assertRaises(ProbeBlocked):
             check(d)
 
+    def test_conflicting_magnitude_aliases_blocked(self):
+        d = valid()
+        props = d['features'][0]['properties']
+        props['Mag'] = props['mag']
+        self.assertEqual(check(d)['event_count'], 1)
+        props['Mag'] = 5.4
+        with self.assertRaisesRegex(ProbeBlocked, 'conflicting event magnitude'):
+            check(d)
+
     def test_duplicate_key_and_nan_rejected(self):
         for raw in [b'{"type":"FeatureCollection","type":"FeatureCollection"}', b'{"type":NaN}']:
             with self.assertRaises(ProbeBlocked):
                 validate_response(raw, media_type='application/json')
+
+    def test_excessively_nested_json_fails_closed(self):
+        raw = b'[' * 2000 + b'0' + b']' * 2000
+        with self.assertRaisesRegex(ProbeBlocked, 'invalid JSON response'):
+            validate_response(raw, media_type='application/json')
 
     def test_non_json_and_status_rejected(self):
         raw = json.dumps(valid()).encode()
@@ -115,6 +130,14 @@ class EmscOneEventTests(unittest.TestCase):
             (Path(tmp)/'link.json').symlink_to(p)
             with redirect_stderr(io.StringIO()):
                 self.assertEqual(main(['--fixture', str(Path(tmp)/'link.json')]), 1)
+
+    @unittest.skipUnless(hasattr(os, 'mkfifo'), 'FIFO test requires POSIX')
+    def test_fifo_fixture_fails_without_blocking(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pipe = Path(tmp) / 'not-a-regular-file'
+            os.mkfifo(pipe)
+            with redirect_stderr(io.StringIO()):
+                self.assertEqual(main(['--fixture', str(pipe)]), 1)
 
     def test_fake_network_client_does_not_follow_or_accept_wrong_url(self):
         raw = json.dumps(valid()).encode()
