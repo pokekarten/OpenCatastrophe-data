@@ -29,6 +29,7 @@ BASELINE = {
     "ContentsValue": "20.05", "OtherValue": "0", "TimeElementValue": "0",
     "Perils": "EQ", "LocPerils": "EQ", "LayerPerils": "EQ",
     "InceptionDate": "2026-01-01", "ExpirationDate": "2027-12-31",
+    "OccupancyCode": "301",  # invented legacy input, upstream maps to OED 1050
 }
 ALLOWED_TYPES = {"int", "float", "string"}
 
