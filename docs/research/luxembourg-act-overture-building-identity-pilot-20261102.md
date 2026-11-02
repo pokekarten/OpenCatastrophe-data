@@ -90,6 +90,50 @@ nonproduction-only reproduction SQL is versioned at
 research_runners/sql/overture_buildings_metadata_receipts_v0.sql.
 This STAC/S3 audit does not admit geometry into a loss model.
 
+## Original Parquet row-group geography metadata pilot (2026-11-02)
+
+The STAC original filename is a coarse geographic container, not a proof of
+individual building footprints. To reduce avoidable provider data access, the
+new `research_runners/overture_lu_rowgroup_metadata_v0.py` performs a
+**metadata-only**, exact-file-limited preflight on that original 609 MB file.
+It rechecks STAC/file headers, then reads only the source Parquet footer,
+which is frozen at **1,461,640 bytes** (less than the strict 2 MiB cap).
+
+The code decodes the original Parquet row-group and column-chunk Thrift
+CompactProtocol metadata, checks the complete **256 row-group** inventory
+and original **5,054,907** row conservation, then screens original numeric
+per-row-group `bbox.xmin/xmax/ymin/ymax` FLOAT statistics against
+6.129..6.131 E, 49.609..49.611 N.
+
+- **Excluded:** Source metadata prove that no bounding boxes in a
+  given group can intersect the query window.
+- **Candidate:** Coarse row-group bounds could intersect; a candidate is
+  **not** a real city building, nor proof of a feature overlap.
+- **Unknown:** Missing, invalid, nonfinite or contradictory bbox statistics
+  cannot safely exclude a group; it must remain eligible for a later
+  per-row controlled check.
+
+The first original row group's footer metadata was independently sampled:
+**16,234** file rows; `bbox.xmin` 3.890515–3.967390,
+`bbox.xmax` 3.890683–3.967666, `bbox.ymin` 48.707302–49.039326,
+`bbox.ymax` 48.707397–49.039677. These extrema are outside the
+Luxembourg-city query box and safely exclude that **one** group.
+That is a strictly original-source **footer finding**, without reading any
+row-level polygons or records.
+
+Run only after confirming bounded source-metadata access:
+
+    python -m unittest tests.test_overture_lu_rowgroup_metadata_v0 -v
+    python -m research_runners.overture_lu_rowgroup_metadata_v0 --live
+
+An explicit read-only [GitHub research workflow](https://github.com/pokekarten/OpenCatastrophe-data/blob/research/overture-building-crosswalk-preflight-20261102/.github/workflows/overture-lu-rowgroup-metadata.yml)
+checks the public pinned STAC and original Parquet footer. It does
+**not** decode geometries, original row IDs or insurance values; only
+aggregate candidate/excluded/unknown group counts may be logged. A
+separate full official provider sample and national ACT/Overture polygon
+join remain the next steps. Do not infer an exact city/country building
+count or source rights approval from row-group statistics.
+
 ## What the new joined-screen code does
 
 The offline script research_runners/luxembourg_act_overture_identity_preflight_v0.py
