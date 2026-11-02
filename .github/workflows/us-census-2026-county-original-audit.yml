@@ -9,10 +9,11 @@ on:
       - research_runners/us_census_2026_county_zip_audit_v0.py
       - tests/test_us_census_2026_county_zip_audit_v0.py
       - .github/workflows/us-census-2026-county-original-audit.yml
-  # One bounded original-source run only when first reviewed workflow merges.
-  # Other main commits do not generate repeated 80 MB provider downloads.
+  # One bounded original-source run on this research branch's workflow
+  # change and once after merging the reviewed workflow into main.
+  # Other ordinary commits do not generate repeated 80 MB downloads.
   push:
-    branches: [main]
+    branches: [main, research/worldwide-parish-peril-readiness-20261101]
     paths:
       - .github/workflows/us-census-2026-county-original-audit.yml
 
