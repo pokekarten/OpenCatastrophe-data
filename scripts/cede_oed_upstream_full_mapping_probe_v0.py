@@ -40,7 +40,7 @@ def duplicate_type_keys(mapping_text: str) -> list[str]:
     block = ("\n" + mapping_text).split("\ntypes:\n", 1)[1].split("\nnull_values:\n", 1)[0]
     observed: set[str] = set()
     repeated: set[str] = set()
-    for match in re.finditer(r"(?m)^  ([A-Za-z][A-Za-z0-9 ]*):\\s*$", block):
+    for match in re.finditer(r"(?m)^  ([A-Za-z][A-Za-z0-9 ]*):\s*$", block):
         key = match.group(1)
         if key in observed:
             repeated.add(key)
