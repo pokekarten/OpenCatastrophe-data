@@ -60,3 +60,25 @@ After the pinned-source SHA-256 and native structure/coordinate packing checks, 
 `scripts/gtsm_era5_e_coordinate_audit_v0.py` contains a pure synthetic-testable counter with fixed 38,957-row source budget. It is **not** an all-coastal classifier: publisher data include both ocean and coastal model locations. Individual returned coordinate pairs are not geocoded or joined to buildings. Existing uncertainty about source simulation 44,734 locations, local datum, interpolation validity and permitted reuse remains unresolved.
 
 The next exact-head CI run must confirm the geographic QA counts from the real original; a generated counter or standalone synthetic test is not evidence of real-source quality until this run succeeds.
+
+## Observed original geographic QA receipt (2 November 2026)
+
+The exact-source, same-repository GitHub workflow [41528000802](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41528000802), job `125561318447`, finished **successfully**. Its 32 synthetic offline tests passed and it revalidated the original source's published 9,652,424 bytes, published MD5 `0f2b7071c6ec3585768be6cf427e6eab` and independent pinned SHA-256 `e366c79683438d03a48b23764f1159d5ed88845a459f625eeb787dff78cbd767`.
+
+The workflow then read only original *unscaled native int32 longitude and latitude arrays* with the already verified NetCDF4 `scale_factor=0.001`, absent offset and raw fill value `-999`. It published only the following aggregate QA receipt, with no individual point coordinates or original-byte artifacts:
+
+| Original-coordinate check | Observed count |
+| --- | ---: |
+| Native location rows checked | 38,957 |
+| Coordinate pairs within geographic bounds | 38,957 |
+| Distinct within-range coordinate pairs | 38,957 |
+| Both coordinates missing | 0 |
+| Exactly one coordinate missing | 0 |
+| Outside longitude ±180°, latitude ±90° | 0 |
+| Repeated in-range coordinate pairs | 0 |
+| Records at exactly (0°, 0°) | 0 |
+
+This establishes **syntactically sound unique geographic coordinate pairs for this exact file version**, not truth of site locations, coastline proximity, actual 44,734-model-station completeness, physical vertical datum, observed sea level, uncertainty-calibrated local flood hazard or insurance-risk suitability. The raw source has been removed from the ephemeral workflow environment; no individual coordinates were added to Git or Neon.
+
+Review the original-file `quantile` axis separately: the paper describes nine percentile levels but this NetCDF presents only seven `quantile` entries. The raw probability/period axis labels were not read during this coordinate audit. No substitution or extrapolation is allowed until reconciled.
+
