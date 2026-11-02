@@ -8,7 +8,7 @@ import unittest
 import zipfile
 
 from research_runners.us_census_2026_county_zip_audit_v0 import (
-    CensusZipError, STEM, MAX_ZIP_BYTES, audit_original_zip,
+    CensusZipError, STEM, MAX_ZIP_BYTES, _dbf_summary, audit_original_zip,
 )
 
 
@@ -123,6 +123,24 @@ class CountyOriginalZipTests(unittest.TestCase):
         x[f"{STEM}.shp"] = shp
         with self.assertRaises(CensusZipError):
             audit_original_zip(zipped(x))
+
+    def test_original_nonascii_county_names_do_not_change_numeric_geoids(self):
+        dbf = bytearray(fake_members()[f"{STEM}.dbf"])
+        header_len = struct.unpack("<H", dbf[8:10])[0]
+        record_len = struct.unpack("<H", dbf[10:12])[0]
+        struct.pack_into("<I", dbf, 4, 2)
+        # Fictional second county with Unicode source label; its exact
+        # bytes stay untouched and numeric GEOID must still validate.
+        invented_name = b"Do\xc3\xb1a Ana"
+        dbf.extend(b" " + b"35" + b"013" + b"35013" +
+                   invented_name.ljust(20, b" "))
+        self.assertEqual(len(dbf), header_len + 2*record_len)
+        self.assertEqual(_dbf_summary(bytes(dbf))[0], 2)
+        # But non-ASCII in an official fixed-digit GEOID is never okay.
+        bad = bytearray(dbf)
+        bad[header_len + record_len + 1 + 2 + 3] = 0xc3
+        with self.assertRaises(CensusZipError):
+            _dbf_summary(bytes(bad))
 
     def test_invalid_or_duplicate_official_parish_geoids_rejected(self):
         for value in (b"22072", b"00000"):
