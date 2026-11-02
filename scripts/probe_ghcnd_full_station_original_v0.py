@@ -66,7 +66,8 @@ def verify_contract(path: Path = CONTRACT) -> dict[str, Any]:
         or payload["rights_and_policy"]["dataset_rights_status"] != "verified"
         or payload["rights_and_policy"]["api_terms_status"] != "same_as_dataset"
         or payload["rights_and_policy"]["commercial_automation_status"] != "allowed"
-        or payload["operational_constraints"]["max_probe_bytes"] != MAX_BYTES
+        or payload["operational_constraints"]["max_probe_bytes"] != 5 * 1024 * 1024
+        or payload["operational_constraints"]["max_sample_bytes"] != MAX_BYTES
         or payload["operational_constraints"]["timeout_seconds"] != TIMEOUT
     ):
         raise StationFullProbeError("frozen whole-station NOAA source contract differs from code")
