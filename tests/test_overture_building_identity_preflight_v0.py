@@ -110,5 +110,54 @@ class CrosswalkTests(unittest.TestCase):
         with self.assertRaises(CrosswalkError): crosswalk(p,expected_release=RELEASE)
 
 
+    def test_geodesic_high_latitude_rejects_degree_space_false_match(self):
+        # Exactly 76% of angular area, but only ~64.8% ellipsoidal area.
+        p = base()
+        y = 89.75
+        height = .19
+        def rect(south, north):
+            return {"type": "Polygon", "coordinates": [
+                [[10.0,south],[10.01,south],[10.01,north],
+                 [10.0,north],[10.0,south]]]}
+        p["local_buildings"][0]["geometry"] = rect(y, y+height)
+        p["overture_buildings"][0]["geometry"] = rect(y+.24*height, y+height)
+        response = crosswalk(p, expected_release=RELEASE)
+        self.assertEqual(response["overlap_area_method"], "wgs84_ellipsoidal")
+        self.assertEqual(response["unmatched_local_ids"], ["BLD-1"])
+        self.assertFalse(response["one_to_one_geometric_candidates"])
+
+    def test_geodesic_high_latitude_accepts_southern_coverage(self):
+        # Still 76% in angular units, but ~87.2% of ellipsoidal area.
+        p = base()
+        y = 89.75
+        h = .19
+        def rect(south, north):
+            return {"type": "Polygon", "coordinates": [
+                [[10.0,south],[10.01,south],[10.01,north],
+                 [10.0,north],[10.0,south]]]}
+        p["local_buildings"][0]["geometry"] = rect(y, y+h)
+        p["overture_buildings"][0]["geometry"] = rect(y, y+.76*h)
+        response = crosswalk(p, expected_release=RELEASE)
+        self.assertEqual(len(response["one_to_one_geometric_candidates"]), 1)
+        self.assertGreater(response["one_to_one_geometric_candidates"][0]["overlap_score"], .85)
+
+    def test_polygon_boundary_only_touch_not_matching(self):
+        p = base()
+        p["overture_buildings"][0]["geometry"] = square(10.001, 50)
+        self.assertEqual(crosswalk(p,expected_release=RELEASE)["unmatched_local_ids"],["BLD-1"])
+
+    def test_reject_unhashable_false_source_family_claim(self):
+        p = base()
+        p["overture_buildings"][0]["source_families"] = [{"dataset":"OSM"}]
+        with self.assertRaises(CrosswalkError):
+            crosswalk(p,expected_release=RELEASE)
+
+    def test_reject_implausibly_large_building_footprint(self):
+        p = base()
+        p["local_buildings"][0]["geometry"] = square(10.0, 0.0, .1)
+        with self.assertRaises(CrosswalkError):
+            crosswalk(p,expected_release=RELEASE)
+
+
 if __name__ == '__main__':
     unittest.main()
