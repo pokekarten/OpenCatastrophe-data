@@ -24,7 +24,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Interface type:** rest
 
-**Status:** documented_only
+**Status:** probe_ready
 
 **Documentation url:** <https://tnmaccess.nationalmap.gov/api/v1/docs>
 
@@ -35,7 +35,6 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 ## Access scope
 
 - metadata
-- catalogue
 
 ## Authentication
 
@@ -51,14 +50,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ### Allowed operations
 
-- document_s1m_datasets_and_products
+- probe_single_florida_s1m_product
 
 ### Path templates
 
-- /api/v1/datasets
 - /api/v1/products
 
-**Parameter rules:** DOCUMENTATION ONLY. Discovery MUST identify USGS TNM dataset tag 'Seamless 1-m DEM (S1M)' from the official datasets catalogue and not infer or silently substitute older project-based 1-meter DEM, OPR DEM, 1/3 arc-second, 1/9 arc-second, LiDAR LAZ or a generic 1-meter result. A subsequent separately approved trusted metadata probe would query a single frozen S1M dataset and one fixed small bounding box with max=1 and offset=0. Until explicit T1 approval reject caller-supplied host, dataset alias, coordinates, product ID, URL, parameters, pagination, download link and redirects. Catalogues may return a product download URL; do not dereference it under this contract.
+**Parameter rules:** Exactly one explicit opt-in HTTPS GET to service root https://tnmaccess.nationalmap.gov and exact path /api/v1/products using ONLY literal query datasets=Seamless%201-m%20DEM%20%28S1M%29&amp;bbox=-81.00,25.95,-80.95,26.00&amp;max=1&amp;offset=0. The fixed source/collection is Seamless 1-m DEM (S1M), not older project-based 1m DEM; the pinned Florida bbox is \[-81.00,25.95,-80.95,26.00\] WGS84, max=1 and offset=0. Never accept caller-selected host, source, AOI, dates, headers, pagination, extra parameters, retries, redirects, alternate URL, object download, raw GeoTIFF, metadata crawl or schedule. A successful catalogue response remains metadata-only, not CAT admission. One response may have an empty item.datasets array: its title, sourceId, exact S1M TIFF URL and AOI must match the one independently frozen record.
 
 ## Response contract
 
@@ -80,37 +78,41 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** none
 
-**Rate limit notes:** No network requests are approved by this documentation-only contract. Later T1 approval must specify one bounded metadata request and fixed AOI, max=1, offset=0, no automatic pagination or directory traversal, no GeoTIFF transfer, retry, schedule or bulk harvesting.
+**Rate limit notes:** One manually triggered exact HTTPS GET (max=1 offset=0), no retries, redirects, concurrent calls, pagination, interval schedule, alternate areas or asset download. USGS public-domain statement does not imply a throughput entitlement. No provider bytes saved in repository, Neon or local cache.
 
-**Mutability notes:** USGS TNM catalogue is continuously updated. Freeze discovery UTC, exact query, resolved sbDatasetTag, dataset and product IDs, full provider metadata URLs, any tile reference/filename, response byte count and SHA-256. The full original COG would require a separately approved exact-byte retrieval receipt and independent raster validity/datum checks.
+**Mutability notes:** TNM S1M product catalogue can change; record original response SHA-256, byte count, retrieval UTC, exact GET request hash, parser and code hash, one vetted source ID and expected TIFF URL. Failure to match the pinned 2026-08-21 Florida record must block rather than search alternate tiles. Source TIFF ~447MB is not touched in this T1 metadata probe.
 
 ## Rights and policy
 
 **Dataset rights status:** verified
 
-**Api terms status:** unknown
+**Api terms status:** separate_reviewed
 
-**Terms url:** `null`
+**Terms url:** <https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map>
 
-**Commercial automation status:** unknown
+**Commercial automation status:** allowed
 
 **Redistribution status:** unknown
 
-**Notes:** USGS explicitly lists 3DEP products as public domain and makes S1M freely accessible; the S1M Science Data Catalog release DOI is 10.5066/P13LJKFS. This dataset-level rights evidence does not automatically establish the permitted load/rate conditions for TNMAccess services or legal status of every possible downstream ancillary layer; the machine interface and any eventual automated acquisition must be reviewed separately. No rights promotion from public-domain science data to unattended API automation or model admission.
+**Notes:** Official USGS National Map FAQ states mapping services and downloaded data are public domain, free and unrestricted with recommended agency acknowledgement; National Map FAQ and public TNMAccess OpenAPI explicitly support developers making programmatic HTTP GET/POST requests. This review approves only one human-triggered, fixed anonymous GET retrieving public product metadata. It does NOT approve sustained/high-rate API use, provider bytes redistribution, alternate assets or original GeoTIFF downloads; preserve explicit data attribution and retain no external response body.
 
 ## Probe contract
 
-**Mode:** none
+**Mode:** metadata_get
 
-**Operation:** `null`
+**Operation:** probe_single_florida_s1m_product
 
 **Requires credentials:** `false`
 
 ### Expected evidence
 
-_Empty array._
+- One exact fixed request to /api/v1/products with reviewed S1M dataset, bbox, max=1, offset=0 and without redirects or credentials
+- HTTP 200, application/json and uncompressed content under 131072 original bytes
+- Strict JSON shape with exactly one product matching frozen S1M sourceId, exact title, TIFF URL, valid bounds and original collection identity
+- SHA-256 and byte count of original response, request fingerprint, parser/code SHA and retrieval UTC; no raw response body persisted
+- model_input_admitted=false; original_tiff_downloaded=false; external_bytes_persisted=false
 
-**Implementation decision:** document_only
+**Implementation decision:** build_adapter_now
 
 **Reviewed at:** 2026-11-02
 
@@ -121,5 +123,6 @@ _Empty array._
 - <https://tnmaccess.nationalmap.gov/api/v1/docs>
 - <https://apps.nationalmap.gov/datasets/>
 - <https://www.usgs.gov/faqs/there-api-accessing-national-map-data>
+- <https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map>
 
-**Notes:** Bounded interface description only. This does not prove any S1M tile is available in a requested county, and no provider DEM, catalogue response bytes or finished-floor elevations have been acquired or staged. S1M must be distinguished from USGS older project-based 1-meter DEM and from high-resolution building roof products. No CAT model admission, insurer attribution, coverage selection or Neon write is authorized.
+**Notes:** One metadata-only, explicitly opt-in T1 route for the single verified public South Florida S1M product sourceId 6a9785801ba49b050c166274. Dataset is public-domain but any different AOI, raw COG, DEM pixel, footprint overlay, building height or insurer loss requires new source-scientific authorization. No automatic data import or Neon write follows.
