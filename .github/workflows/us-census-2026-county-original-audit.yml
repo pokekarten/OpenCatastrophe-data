@@ -12,6 +12,8 @@ on:
       - tests/test_us_census_2026_parish_spatial_pilot_v0.py
       - research_runners/us_census_2026_louisiana_64_parish_qc_v0.py
       - tests/test_us_census_2026_louisiana_64_parish_qc_v0.py
+      - research_runners/us_census_2026_parish_point_crosswalk_v0.py
+      - tests/test_us_census_2026_parish_point_crosswalk_v0.py
       - .github/workflows/us-census-2026-county-original-audit.yml
   # Original provider bytes were already independently QC-tested on this
   # research PR (run 41414916847). Future PR checks stay offline. One
@@ -52,11 +54,14 @@ jobs:
           tests.test_us_census_2026_county_zip_audit_v0
           tests.test_us_census_2026_parish_spatial_pilot_v0
           tests.test_us_census_2026_louisiana_64_parish_qc_v0
+          tests.test_us_census_2026_parish_point_crosswalk_v0
           -v
       - name: One fixed official original COUNTY archive, ephemeral data only
         # Full original data QC already succeeded twice at exact code/source
         # scope; never repeat 83 MB downloads on routine draft PR updates.
-        if: github.event_name != 'pull_request'
+        # One deliberately scoped PR#1100 execution for the new research
+        # crosswalk; temporary policy must be reverted after exact evidence.
+        if: github.event_name != 'pull_request' || github.event.pull_request.number == 1100
         shell: bash
         run: |
           set -euo pipefail
@@ -75,6 +80,8 @@ jobs:
           python -m research_runners.us_census_2026_parish_spatial_pilot_v0 \
             --source-zip "$original"
           python -m research_runners.us_census_2026_louisiana_64_parish_qc_v0 \
+            --source-zip "$original"
+          python -m research_runners.us_census_2026_parish_point_crosswalk_v0 \
             --source-zip "$original"
           # Compared with the independently observed first original-source
           # GitHub Actions acquisition receipt 41409919889 (2026-11-02).
