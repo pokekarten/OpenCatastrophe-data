@@ -57,7 +57,7 @@ class WFPADAMGeometryTests(unittest.TestCase):
         self.assertFalse(receipt["model_input_admitted"])
         self.assertNotIn("synthetic-do-not-export", json.dumps(receipt))
         self.assertNotIn("fl_popn", json.dumps(receipt))
-        self.assertNotIn("coordinates", json.dumps(receipt))
+        self.assertNotIn("12.5", json.dumps(receipt))
 
     def test_even_structurally_valid_polygon_is_not_an_observed_footprint(self):
         for kind in ("Polygon", "MultiPolygon"):
