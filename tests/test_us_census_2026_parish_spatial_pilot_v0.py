@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import struct
 import unittest
 
@@ -37,6 +38,8 @@ def invented_zip(*, closed=True, ccw=False, xshift=0.0, geoid=None):
     return zipped(m)
 
 
+@unittest.skipUnless(importlib.util.find_spec("shapely") is not None,
+                     "Dedicated exact pinned geo workflow installs Shapely")
 class CensusParishPilotTopologyTests(unittest.TestCase):
     def test_synthetic_single_clockwise_source_shape_valid_but_not_admitted(self):
         raw=invented_zip()
