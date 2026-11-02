@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Microsoft Louisiana official building ZIP metadata proof
+on:
+  pull_request:
+    paths:
+      - research_runners/microsoft_louisiana_original_zip_receipt_v0.py
+      - tests/test_microsoft_louisiana_original_zip_receipt_v0.py
+      - .github/workflows/microsoft-louisiana-building-original-zip-metadata.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-metadata-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact review commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Use Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Run synthetic no-network source falsifier tests
+        run: python -m unittest tests.test_microsoft_louisiana_original_zip_receipt_v0 -v
+      - name: One read-only official Microsoft source HEAD and bounded ZIP ranges
+        run: python -m research_runners.microsoft_louisiana_original_zip_receipt_v0 --live
+      # Original complete ZIP is NEVER downloaded; no credentials or source
+      # feature values, geolocated buildings or user exposure uploaded.
