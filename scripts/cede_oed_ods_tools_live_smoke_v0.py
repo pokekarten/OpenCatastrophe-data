@@ -79,6 +79,36 @@ def _write_config(path: Path, input_path: Path, output_path: Path, mapping: Path
     )
 
 
+def _probe_oed_v302(location: Path, account: Path) -> dict[str, object]:
+    """Check the *explicit* legacy OED 3.0.2 schema; diagnostics never imply admission.
+
+    Do not use the CLI's exit code as validation evidence: the ODS Tools check
+    command may log a caught OdsException without returning a failure status.
+    """
+    try:
+        from ods_tools.oed import OedExposure
+        from ods_tools.oed.common import DEFAULT_VALIDATION_CONFIG
+
+        exposure = OedExposure(
+            location=str(location), account=str(account),
+            oed_schema_info="3.0.2",
+            check_oed=False, disable_oed_version_update=True,
+        )
+        checks = [{**item, "on_error": "return"} for item in DEFAULT_VALIDATION_CONFIG]
+        findings = exposure.check(checks)
+        if type(findings) is not list:
+            return {"attempted": True, "passed": False,
+                    "blocked_reason": "unexpected_validator_return"}
+        # Do not copy raw records or detailed validation messages to logs.
+        return {"attempted": True, "passed": len(findings) == 0,
+                "finding_count": len(findings),
+                "finding_sources": sorted({str(item.get("name", "unknown")) for item in findings}),
+                "blocked_reason": None}
+    except Exception as exc:
+        return {"attempted": True, "passed": False,
+                "blocked_reason": type(exc).__name__}
+
+
 def execute(command: str = "ods_tools") -> dict[str, object]:
     with tempfile.TemporaryDirectory(prefix="oc-synthetic-cede-oed-") as directory:
         root = Path(directory)
@@ -120,6 +150,7 @@ def execute(command: str = "ods_tools") -> dict[str, object]:
             if not out.is_file() or not out.stat().st_size:
                 raise SmokeError(f"ODS Tools {label} produced no CSV output")
         checked = reconcile_layers(exposure_json, layers_json, loc_out, layer_out)
+        oed_validation = _probe_oed_v302(loc_out, layer_out)
         if not checked["layer_identity_consistent"]:
             raise SmokeError("synthetic layer integrity check failed")
         return {
@@ -132,7 +163,8 @@ def execute(command: str = "ods_tools") -> dict[str, object]:
             "synthetic_totals_by_currency": checked["synthetic_totals_by_currency"],
             "executed_ods_tools": True, "minimal_field_mapping_reconciled": True,
             "upstream_comprehensive_mapping_executed": False,
-            "oed_schema_validated": False, "cede_13_compatible": False,
+            "oed_schema_validated": oed_validation["passed"],
+            "oed_schema_probe": oed_validation, "cede_13_compatible": False,
             "financial_terms_validated": False, "rights_approved": False,
             "model_input_admitted": False,
         }
