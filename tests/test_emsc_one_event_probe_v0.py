@@ -98,7 +98,9 @@ class EmscOneEventTests(unittest.TestCase):
 
     def test_excessively_nested_json_fails_closed(self):
         raw = b'[' * 2000 + b'0' + b']' * 2000
-        with self.assertRaisesRegex(ProbeBlocked, 'invalid JSON response'):
+        # Python JSON decoder depth limits differ across supported releases.
+        # Either parse rejection or a non-GeoJSON shape must fail closed.
+        with self.assertRaises(ProbeBlocked):
             validate_response(raw, media_type='application/json')
 
     def test_non_json_and_status_rejected(self):
