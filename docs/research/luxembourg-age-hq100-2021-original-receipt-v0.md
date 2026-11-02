@@ -226,6 +226,32 @@ Both official provider catalogues label the datasets CC0. **Original source SHP 
 
 The three files have now passed first-stage original acquisition and structural-integrity research, but **none has numeric depth semantics or CAT-model input admission**. No original source bytes, original individual geometry, coordinates, depth values or insured exposures were committed, logged or imported to Neon.
 
+## Full original coordinate and independent-ring topology QA: HQ10 and HQextrem (2 November 2026)
+
+The sibling-specific pinned-original source workflow [41471764396](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41471764396) **passed** with `pyproj==3.7.2`, `shapely==2.1.2`, source-specific original published SHA-1 checks, previously observed independent SHA-256 pins and complete ZIP CRC checks. A separate new runner scans *all* original polygon source XY pairs in memory, verifies file/record bbox and closed/finite/non-degenerate rings, decodes only the PRJ as WKT, checks both as-stored and coordinate-swapped envelope hypotheses, and diagnoses every original individual ring with GEOS. All provider coordinates and ring geometries are transient, and the workflow outputs only aggregate source-wide figures.
+
+| Verified original-source property | HQ10 | HQ100 (prior check) | HQextrem |
+| --- | ---: | ---: | ---: |
+| Original polygon-ring parts examined | **13,439** | **6,379** | **5,108** |
+| Original coordinate pairs read | **1,493,429** | **1,336,393** | **1,288,014** |
+| Closed source rings | 13,439 | 6,379 | 5,108 |
+| Open / nearly zero signed-area rings | **0 / 0** | **0 / 0** | **0 / 0** |
+| Individually GEOS-valid positive-area rings | **12,883** | **6,305** | **5,056** |
+| Individually GEOS-invalid rings | **556** | **74** | **52** |
+| GEOS invalidity reason | Ring Self-intersection | Ring Self-intersection | Ring Self-intersection |
+| GEOS test error / ring untested | **0 / 0** | **0 / 0** | **0 / 0** |
+| Source projected bbox xmin/ymin (rounded m) | **48,893.0 / 59,518.0** | **48,893.0 / 59,515.0** | **48,893.0 / 59,507.0** |
+| Source projected bbox xmax/ymax (rounded m) | **106,138.3 / 137,076.0** | **106,138.3 / 137,088.0** | **106,138.3 / 137,098.0** |
+| Declared CRS recognized from each *original PRJ* | **EPSG:2169** | **EPSG:2169** | **EPSG:2169** |
+| Country-envelope plausibility, source XY | **plausible** | **plausible** | **plausible** |
+| Country-envelope plausibility, swapped XY | **not plausible** | **not plausible** | **not plausible** |
+
+All original source file and record bounding boxes matched the measured finite coordinates. Ring-winding counts among new siblings: HQ10 **8,188 negative / 5,251 positive**, HQextrem **2,819 negative / 2,289 positive**. Winding does **not** prove correct exterior/hole hierarchy.
+
+**Scientific interpretation:** This upgrade establishes complete structural integrity and diagnoses the type and number of individual invalid rings in both newly covered sources. The HQ10 result of **556** invalid rings is materially different from **74** HQ100 and **52** HQextrem, but the ring count is **not a flood surface size, event damage ratio, hazard return-period failure, or vulnerability weight**. All three sets contain multiple individual source ring self-intersections and their full one-record multipart polygon shell/hole topology remains unproven. A geographic envelope is a weak spatial support check only; it is **not** an independent building-control-point, accuracy or geodetic epoch proof. No model loss, building overlay, depth or synthetic insurer TIV was calculated, and no producer geometry/attribute values were written to Neon or Git.
+
+**Next scientific gate:** Build an original multipart assembly audit with actual Shapefile signed-winding and shell/hole hierarchy interpretation, bounded inter-ring topology and source-specific repair-effect challenge. A normal `make_valid` of isolated rings cannot substitute for true hole/shell semantics or establish scenario nesting. Separately obtain original numerically machine-readable, source-vintage-compatible HQ10/HQ100/HQextrem flood depth surfaces from AGE under verified rights, unit and vertical datum documentation.
+
 ## Next scientific steps
 
 - Verify the original actual file format, complete record and field counts,
