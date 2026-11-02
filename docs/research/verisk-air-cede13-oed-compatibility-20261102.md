@@ -48,3 +48,24 @@ The exact *legacy* Oasis mapping contains:
 A bounded, offline-reproducible migration test should first use ODS Tools' original **CEDE 10.0.0/OED 3.0.2** fixture/mapping, pin its commit and run it on wholly synthetic CSV rows, then add explicit CEDE 13.0 edge-case fixtures and compare before revising the mapping. Publishing new vendor example bytes or claiming OED 4.x support would be premature.
 
 **Status:** evidence reviewed and source registry extended in PR #1124. License describes rights for licensed Works; exact CEDE sample backup rights/bytes, SQL restore, mapping execution, and target-version scientific fidelity are **not yet verified**. All AIR sources and Oasis tools remain landscape candidates (non-admission). No external data bytes, protected assets or secrets are included.
+
+## Executable synthetic preflight added (2026-11-02)
+
+A dependency-free, **synthetic-only and legacy-version-only** gate now exists at:
+- `scripts/cede_oed_synthetic_preflight_v0.py`
+- `tests/test_cede_oed_synthetic_preflight_v0.py`
+
+Usage on wholly invented JSON (private test data are not to be supplied):
+
+```bash
+python -m unittest tests/test_cede_oed_synthetic_preflight_v0.py -v
+python scripts/cede_oed_synthetic_preflight_v0.py --synthetic-input /path/to/invented_legacy_extract.json
+```
+
+The input document requires `source_format=CEDE`, `source_version=10.0.0`, `target_format=OED`, `target_version=3.0.2`, `synthetic_only=true`, and a bounded array of rows containing only the specified nine legacy extract columns (`ExposureSetName`, `ContractID`, `LocationID`, `CountryISO`, `Currency`, `BuildingValue`, `ContentsValue`, `Latitude`, `Longitude`). Strings are required for exact decimal monetary and coordinate inputs. The report contains only aggregate synthetic totals, link/cardinality counts, field-name examples, mapping blob identities and explicit `false` flags for execution, CEDE 13 compatibility, rights and model-input admission.
+
+This is intentionally a **preflight, not ODTF execution, OED validation, CEDE 13.0 conversion, full financial coverage mapping, or production acceptance**. Any additional CEDE 13 column (including `AverageHazardLevel`) blocks rather than being silently dropped. It also rejects wrong format versions, real/unverified input flags, duplicate composite location identities, invalid amounts and coordinate ranges, partial coordinates, unknown columns, duplicate JSON keys and nonfinite values.
+
+**Evidence:** on local Python 3.13, `13/13` focused synthetic tests passed; hosted exact-head CI must separately confirm repository-wide rules. The local runtime lacks `ods-tools` and cannot resolve github.com, so no ODS transform execution or SQL Server restore occurred.
+
+**Next true interoperability milestone:** acquire an authorized dependency and bounded fixture, execute the pinned Oasis ODTF CEDE 10 to OED 3 mapping with OED validation, compare the resulting values and missing fields against this preflight, then explicitly version the CEDE 13 delta. Do not mark CEDE 13 as supported from these tests.
