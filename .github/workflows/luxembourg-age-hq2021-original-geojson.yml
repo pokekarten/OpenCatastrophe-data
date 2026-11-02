@@ -55,8 +55,6 @@ jobs:
               --max-filesize 100663296 --output "$original" "$url"
             python -m research_runners.luxembourg_age_hq2021_official_geojson_crossformat_v0 \
               --scenario "$scenario" --source-geojson "$original" --review-polygon-groups
-            # Evaluate each original large publisher polygon under fixed 420s budget.
-            timeout --signal=TERM --kill-after=20s 420s python -m research_runners.luxembourg_age_hq2021_official_geojson_crossformat_v0 --scenario "$scenario" --source-geojson "$original" --review-polygon-groups --review-mega-group
             rm -f "$original"
           done
           # No original publisher feature coordinates, geometry, IDs or
