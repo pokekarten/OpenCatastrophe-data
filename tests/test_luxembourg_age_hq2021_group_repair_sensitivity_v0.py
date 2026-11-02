@@ -46,6 +46,26 @@ class PublisherRepairComparisonTests(unittest.TestCase):
         self.assertEqual(r["linework_repairs_with_nonpolygon_debris"], 1)
         self.assertEqual(r["original_nominal_vs_linework_area_change_above_1pct"], 0)
 
+    def test_integration_only_invalid_source_groups_reach_repair_challenger(self):
+        from research_runners.luxembourg_age_hq2021_geojson_group_ogc_v0 import (
+            challenge_publisher_groups,
+        )
+        square = [[0.,0.],[0.,4.],[4.,4.],[4.,0.],[0.,0.]]
+        bowtie = [[10.,0.],[13.,3.],[10.,3.],[13.,0.],[10.,0.]]
+        source = {"type":"FeatureCollection", "features":[{"type":"Feature",
+                  "geometry":{"type":"MultiPolygon", "coordinates":[[square],[bowtie]]},
+                  "properties":{}}]}
+        challenger = InvalidPublisherGroupRepairChallenge()
+        result = challenge_publisher_groups(source, invalid_repair_challenger=challenger)
+        self.assertEqual(result["original_publisher_groups_examined"], 2)
+        self.assertEqual(result["individually_geos_valid_publisher_polygon_groups"], 1)
+        self.assertEqual(result["individually_geos_invalid_publisher_polygon_groups"], 1)
+        summary = result["invalid_publisher_group_repair_sensitivity"]
+        self.assertEqual(summary["original_invalid_publisher_group_population"], 1)
+        self.assertEqual(summary["linework_usable_publisher_groups"], 1)
+        self.assertEqual(summary["linework_structure_equal_polygonal_sets"], 1)
+        self.assertFalse(summary["building_overlay_or_cat_model_input_authorized"])
+
     def test_complexity_quarantined_and_population_conserved(self):
         bowtie = Polygon([(0, 0), (3, 3), (0, 3), (3, 0), (0, 0)])
         c = InvalidPublisherGroupRepairChallenge(max_vertices=4)
