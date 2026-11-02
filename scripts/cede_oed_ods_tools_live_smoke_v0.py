@@ -29,8 +29,8 @@ SOURCE_LOC = [
      "ContentsValue": "0", "Latitude": "48.6", "Longitude": "11.6"},
 ]
 SOURCE_LAYERS = [
-    {"ExposureSetName": "SYNTHETIC-ONLY", "ContractID": "C1", "LayerID": "L1", "Currency": "EUR"},
-    {"ExposureSetName": "SYNTHETIC-ONLY", "ContractID": "C1", "LayerID": "L2", "Currency": "EUR"},
+    {"ExposureSetName": "SYNTHETIC-ONLY", "ContractID": "C1", "LayerID": "1", "Currency": "EUR"},
+    {"ExposureSetName": "SYNTHETIC-ONLY", "ContractID": "C1", "LayerID": "2", "Currency": "EUR"},
 ]
 LOCATION_MAP = {
     "ExposureSetName": "PortNumber", "ContractID": "AccNumber",
