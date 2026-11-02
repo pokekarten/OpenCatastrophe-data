@@ -11,12 +11,19 @@ Those are provider metadata, **not** evidence that repository authors downloaded
 
 ## Executable research step
 
-After a separately lawful, manually acquired original asset, run:
+For a separately lawfully acquired original file, use the offline check:
 
     python scripts/gtsm_era5_e_original_receipt_v0.py --original /path/to/ds_GTSM-ERA5-E_1950-2024_stats.nc
     python -m unittest tests.test_gtsm_era5_e_original_receipt_v0 -v
 
-The verifier performs local read-only streaming over the full regular non-symlink source file, checks exact published length and MD5, validates a recognizable HDF5/NetCDF signature, then emits computed SHA-256 **as an observed receipt only**. It never fetches, persists source bytes, derives loss or publishes raw values. The production-facing CLI has no hash/size override; synthetic unit tests exercise the internal receipt function with independently invented fixtures.
+To verify exactly one public provider file on an internet-enabled runner, run:
+
+    python scripts/gtsm_era5_e_original_receipt_v0.py --fetch
+
+The fixed PR workflow `.github/workflows/gtsm-era5-e-original-receipt.yml` runs the offline tests followed by this exact one-file HTTPS download (only same-repository PRs). The fetch mode has no caller-selectable URL; refuses non-Zenodo redirects, unexpected size, HTTP failures and MD5 mismatch; only a metadata receipt reaches CI logs. Provider bytes are held only in an ephemeral temporary file during verification and deleted immediately. No source file or raw array is uploaded as an artifact.
+
+
+The verifier performs local read-only streaming over the full regular non-symlink source file, checks exact published length and MD5, validates a recognizable HDF5/NetCDF signature, then emits computed SHA-256 **as an observed receipt only**. Offline mode never fetches; online mode uses only an ephemeral temporary file and deletes it before returning. Neither mode retains provider bytes in the repository, derives losses, or publishes raw values. The production-facing CLI has no hash/size override; synthetic unit tests exercise the internal receipt function with independently invented fixtures.
 
 ## Scientific and licence barriers
 
@@ -28,4 +35,4 @@ The verifier performs local read-only streaming over the full regular non-symlin
 
 ## Execution evidence
 
-Eight independently synthetic tests passed offline in the ChatGPT Linux environment on 2026-11-02. No real Zenodo bytes were acquired here because the execution environment's download connection was unavailable. Exact-head repository CI is the next check, and any original-data retrieval requires a separate reviewed, bounded acquisition action.
+Initial eight synthetic tests passed offline and the earlier exact-head repository CI passed. This revision adds fixed-provider bounded download mode, four additional regression tests and a scoped original-byte workflow. The ChatGPT container has no outbound DNS; a reproducible real SHA-256 claim requires inspecting the result from the new exact-head GitHub Action. This documentation is not evidence that any provider bytes were acquired or scientifically approved.
