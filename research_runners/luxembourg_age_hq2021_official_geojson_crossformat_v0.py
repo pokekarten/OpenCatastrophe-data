@@ -173,6 +173,10 @@ def profile_original_geojson(obj: dict, *, scenario: str) -> dict:
         "open_publisher_rings": num_rings - closed_rings,
         "all_original_coordinate_pairs_finite": nonfinite == 0,
         "source_coordinate_domain_hypothesis": domain,
+        "RFC7946_WGS84_longitude_latitude_domain_plausible": (
+            domain == "looks_luxembourg_longitude_latitude"),
+        "requires_explicit_projected_CRS_interpretation_before_spatial_use": (
+            domain == "looks_luxembourg_projected_EPSG2169"),
         "original_publisher_bbox_rounded_4dp": [round(x0, 4), round(y0, 4),
                                                  round(x1, 4), round(y1, 4)],
         "source_property_field_names_only": sorted(field_names),
