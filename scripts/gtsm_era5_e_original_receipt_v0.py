@@ -31,6 +31,21 @@ PINNED_SHA256 = "e366c79683438d03a48b23764f1159d5ed88845a459f625eeb787dff78cbd76
 CHUNK = 65536
 HDF5_MAGIC = b"\x89HDF\r\n\x1a\n"
 CDF_MAGIC = (b"CDF\x01", b"CDF\x02", b"CDF\x05")
+EXPECTED_NATIVE_DIMS = {"quantile": 7, "return_period": 8, "stations": 38_957}
+EXPECTED_NATIVE_FIELDS = {
+    "lon": (("stations",), "degrees_east", "int32"),
+    "lat": (("stations",), "degrees_north", "int32"),
+    "stations": (("stations",), "", "uint16"),
+    "quantile": (("quantile",), "", "float64"),
+    "wl_quantiles": (("quantile", "stations"), "m", "float32"),
+    "return_period": (("return_period",), "years", "int64"),
+    "eva_param_scale": (("stations",), "", "float64"),
+    "eva_param_shape": (("stations",), "", "float64"),
+    "eva_param_loc": (("stations",), "", "float64"),
+    "wl_extreme_bestfit": (("stations", "return_period"), "m", "float64"),
+    "wl_extreme_5perc": (("stations", "return_period"), "m", "float64"),
+    "wl_extreme_95perc": (("stations", "return_period"), "m", "float64"),
+}
 
 
 class GtsmReceiptError(ValueError):
@@ -95,6 +110,21 @@ def verify_original(path: Path, *, inspect_header: bool = False) -> dict[str, ob
             "provider_bytes_persisted_by_this_tool": False}
 
 
+def validate_native_header(dims: dict[str, int], fields: list[dict[str, object]]) -> None:
+    """Observed release-specific axes/type/unit invariant, no numeric data reads."""
+    if dims != EXPECTED_NATIVE_DIMS:
+        raise GtsmReceiptError("native GTSM axis identity or lengths changed")
+    by_name = {str(x["name"]): x for x in fields}
+    for name, (axes, unit, dtype) in EXPECTED_NATIVE_FIELDS.items():
+        value = by_name.get(name)
+        if value is None:
+            raise GtsmReceiptError(f"native GTSM source variable missing: {name}")
+        if (tuple(value["dimensions"]) != axes
+                or value["units"] != unit or value["dtype"] != dtype
+                or list(value["shape"]) != [dims[axis] for axis in axes]):
+            raise GtsmReceiptError(f"native GTSM axes, units or numeric storage drift: {name}")
+
+
 def inspect_scientific_header(path: Path) -> dict[str, object]:
     """Read only structural NetCDF metadata after full pinned-byte verification.
 
@@ -117,6 +147,7 @@ def inspect_scientific_header(path: Path) -> dict[str, object]:
                     raise GtsmReceiptError("unsafe NetCDF dimension label")
                 dims[name] = len(dim)
             fields = []
+            packing = {}
             for name, var in ds.variables.items():
                 if not isinstance(name, str) or len(name) > 128 or len(var.dimensions) > 8:
                     raise GtsmReceiptError("unsafe NetCDF variable label or rank")
@@ -125,6 +156,12 @@ def inspect_scientific_header(path: Path) -> dict[str, object]:
                     if not isinstance(value, str) or len(value) > 256:
                         return ""
                     return value
+                if name in ("lon", "lat"):
+                    attributes = set(var.ncattrs())
+                    packing[name] = {
+                        key: (str(getattr(var, key))[:80] if key in attributes else None)
+                        for key in ("scale_factor", "add_offset", "_FillValue")
+                    }
                 fields.append({
                     "name": name,
                     "dimensions": list(var.dimensions),
@@ -138,8 +175,12 @@ def inspect_scientific_header(path: Path) -> dict[str, object]:
         raise
     except Exception as exc:
         raise GtsmReceiptError("unable to inspect pinned NetCDF scientific header") from exc
+    validate_native_header(dims, fields)
     return {
         "dimensions": dims, "variables": fields,
+        "coordinate_packing_attributes": packing,
+        "native_axes_units_and_dtypes_checked": True,
+        "coordinate_unpacking_verified": False,
         "metadata_only": True, "variable_values_read": False,
         "vertical_datum_verified": False,
         "return_period_method_verified": False,
