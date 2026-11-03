@@ -107,11 +107,14 @@ def validate_solo_stock_claims(
             raise GWPControlError("invalid rollup identity or subtotal counted as direct atomic LoB")
         rollup_names.add(name)
         children = roll["child_lob_codes"]
-        if not isinstance(children, list) or len(children) < 2 or len(children) > len(rows):
+        if not isinstance(children, list) or len(children) < 2:
             raise GWPControlError("rollup needs at least two direct atomic LoBs")
-        if (any(not isinstance(c, str) for c in children) or len(set(children)) != len(children)
+        if (any(not isinstance(c, str) for c in children)
+                or len(set(children)) != len(children)
                 or any(c not in rows for c in children)):
             raise GWPControlError("rollup children duplicate, unknown or without stock observations")
+        if len(children) > len(rows):
+            raise GWPControlError("rollup has more children than observed atomic LoBs")
         if any(c in used_children for c in children):
             raise GWPControlError("overlapping rollup groups could double-count a child")
         used_children.update(children)
