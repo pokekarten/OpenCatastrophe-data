@@ -3,12 +3,11 @@
 
 # CI/local validation only. This is not a runtime or acquisition dependency.
 # The repository-wide unittest discovery includes mandatory PPRI polygon
-# topology tests; preserve the frozen 2.1.2 Luxembourg original-source
-# diagnostic version, independent of the newer EU flood spatial profile.
-# Geodesic WGS84-area validation for globally sourced building footprints;
-# pyproj and pyshp are separate source research dependencies.
-# Mandatory historic 2016 BD TOPO/RNB footprint test dependency (PR #937).
-# MIT, pure-Python; pinned to tested geometry adapter contract.
+# topology tests; pin the exact version required by the Luxembourg source
+# diagnostic (independent of the newer EU flood spatial profile).
+# Geodesic WGS84-area, CRS and original-shapefile metadata research checks
+# need the two following exact dependencies in addition to the frozen
+# Luxembourg-compatible Shapely 2.1.2 pin. Not a model runtime profile.
 pyproj==3.7.2
 PyYAML==6.0.3
 pyshp==2.3.1

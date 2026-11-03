@@ -54,14 +54,14 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Provider:** World Bank / GFDRR  
 **Categories:** `multi_hazard`, `hazard_screening`, `risk_classification`, `admin_boundaries`  
 **Spatial scope:** global with national and subnational availability depending on selected layer  
-**Temporal scope:** periodic screening scores; hazard and underlying dataset vintages differ  
-**Resolution / granularity:** ADM0/ADM1/ADM2 location-level categories and source-layer references for eleven perils  
+**Temporal scope:** Dated 2026 ThinkHazard integration-site publication (production equivalence unverified); distinct 2021 World Bank score-table archive (2025 catalog metadata); underlying hazard-layer vintages vary  
+**Resolution / granularity:** Portal: ADM0/ADM1/ADM2 screening classes and approximately 3,000 urban areas in the 2026 version; World Bank catalogue dataset 0060151 is a separate 2021 Excel ADM0/ADM1/ADM2 snapshot  
 **Potential roles:** `regional_hazard_priority_screening`, `risk_source_discovery`, `cross_peril_gap_analysis`  
 **Access hint:** `public_report_api_and_downloads_underlying_layers_independent_licenses`  
 **Authoritative source:** <https://gfdrr.github.io/thinkhazard/>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** API exposes hazard scores by administrative division; official methodology describes classified levels as CC BY and distinct original-layer rights. Do not convert categories VLO/LOW/MED/HIG into physical intensities, probabilities of loss or calibrated insurance rates. Underlying model layers can overlap already-registered GFDRR sources. Software at https://github.com/GFDRR/thinkhazard is GPL-3.0 and is not the hazard-data licence.
+**Note:** Version trap confirmed from publisher: https://int.thinkhazard.org/en/about reports a 2026-09-18 data publication on an integration-site host; equivalence with the public production portal is not established; https://datacatalog.worldbank.org/search/dataset/0060151/thinkhazard-hazard-ranking describes a 2021 Excel snapshot (file last updated 2021-11-29; catalog metadata 2025-03-07), with CC BY 4.0 *for that dated product*. Neither proves that the 2021 file equals the 2026 portal classification nor licenses underlying third-party hazard layers. Pin platform version, source-layer revisions, admin-boundary/urban method, exact country+peril class and original item attribution before any use. Scores VLO/LOW/MED/HIG are hazard screening, never physical ground intensity, earthquake source annual occurrence, insured loss or event timing. Code GPL-3.0 is separate from dataset rights.
 
 ## Maxar Open Data Program pre/post-disaster high-resolution imagery
 

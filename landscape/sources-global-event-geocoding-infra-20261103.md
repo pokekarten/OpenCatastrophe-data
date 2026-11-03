@@ -14,9 +14,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Schema version:** `1.0.0`  
 **Review date:** `2026-11-03`  
-**Purpose:** Non-admission discovery from Exa and authoritative provider pages of five globally relevant event geocoding, impact reporting and US infrastructure/Storm Events derivatives; no dataset or insurer model input is approved.
+**Purpose:** Non-admission discovery from Exa and original-provider pages of seven event geocoding, impact and US infrastructure/event derivatives, including separately versioned LLM-GeoDis v1/v7 and noncommercial GAUL Geo-Disasters; no commercial data use or model input is approved.
 
-**Entries:** 5
+**Entries:** 7
 
 ## NASA SEDAC Geocoded Disasters (GDIS) v1.00
 
@@ -92,3 +92,33 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** This is a downstream cleaned/reprojected NOAA NCEI Storm Events derivative, not an independent observed loss dataset. Many point locations are first reported event coordinates or synthetic county/zone centroids and do NOT represent physical storm footprints; some are null. Property and crop damages are reported economic estimates, never observed insured losses. Preserve original NOAA event_id, episode_id and source version, and verify exact release snapshot, freshness, attribution and producer terms before ingest.
+
+## LLM-GeoDis global EM-DAT event geocoding Zenodo v7 (10 March 2026)
+
+**Candidate ID:** `emdat.llm-geodis.2026.v7`  
+**Provider:** EM-DAT geocoding research / Zenodo (Ronco et al.)  
+**Categories:** `multi_peril`, `historical_disasters`, `event_geocoding`, `nlp_derived`, `validation`  
+**Spatial scope:** Global EM-DAT events with reported locality descriptions and GADM/OSM/Wikidata georeferences  
+**Temporal scope:** EM-DAT 2000-2024 geocoding; distinct Zenodo release v7 published 2026-03-10  
+**Resolution / granularity:** 14,215 events and 17,948 named locations with GADM, OSM and Wikidata-derived administrative polygons/points; 14 original-record metadata file identities including five large ZIP parts and a GDIS DisNo crosswalk  
+**Potential roles:** `release_pinned_llm_geodis_metadata_receipt`, `emdat_disno_gdis_location_crosswalk`, `uncertain_administrative_geometry_challenge`  
+**Access hint:** `original_Zenodo_v7_record_metadata_only_offline_preflight_no_raw_download_upstream_rights_and_release_hash_review`  
+**Authoritative source:** <https://zenodo.org/records/18935447>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Pinned Zenodo v7 DOI 10.5281/zenodo.18935447 (2026-03-10), distinct from existing 2025 v1 DOI 10.5281/zenodo.17544932 and concept DOI 10.5281/zenodo.17544931. Open/CC BY 4.0 at record level does NOT override upstream EM-DAT, GAUL 2015, GADM or OSM conditions. Model use and commercial redistribution remain unreviewed. Record file metadata are not downloaded file bytes or independently verified digests; historic events are administrative location inferences, NOT observed hazard intensity, physical flood footprints or independent insured/economic losses. Join only on source-preserved EM-DAT DisNo with source-release and polygon-vintage provenance, no row-count/TIV inference.
+
+## Geo-Disasters v1.0.0 (geocoded EM-DAT climate disaster locations)
+
+**Candidate ID:** `emdat.geo-disasters.gaul2015.2025.v1`  
+**Provider:** Teber et al. / Zenodo / GAUL 2015 source geometry  
+**Categories:** `multi_peril`, `historical_disasters`, `event_geocoding`, `climate_hazards`, `validation`  
+**Spatial scope:** 207 countries and territories represented among climate-related EM-DAT disasters; boundary geometry from GAUL 2015  
+**Temporal scope:** 1990-2023 historic climate-related events; Zenodo publication 2025-05-22  
+**Resolution / granularity:** 45,121 geocoded subnational polygons for 9,217 disaster events; GPKG layers, location-level quality flags 1-4 and event-level dissolved administrative polygons; Douglas-Peucker simplified geometry (0.005 degree tolerance)  
+**Potential roles:** `noncommercial_gdis_llm_geodis_location_comparison`, `geocoding_uncertainty_validation`, `admin_boundary_vintage_bias_research`  
+**Access hint:** `public_Zenodo_record_noncommercial_GAUL_2015_geometry_license_block_commercial_model_use`  
+**Authoritative source:** <https://zenodo.org/records/15487667>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Critical rights split: provider documents non-commercial GAUL 2015 licence for spatial geometries (with attribution) while non-spatial attributes are CC BY 4.0. Do NOT treat an open Zenodo record as commercial spatial reuse authorization. Administrative unit polygons are geocoding proxies rather than actual climate disaster intensity or physical hazard footprints; reported country-level impact is not automatically allocable across polygons. GAUL2015 source vintage differs from GDIS GADM3.6 and EM-DAT 2026 GADM4.1 migration; compare only with explicit boundary/algorithm/quality metadata. No source bytes fetched or admitted.

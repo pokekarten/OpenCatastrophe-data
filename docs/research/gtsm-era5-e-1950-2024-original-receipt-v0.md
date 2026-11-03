@@ -99,3 +99,42 @@ The successful exact-head GitHub runner [41528816768](https://github.com/pokekar
 
 The original source also again reported **38,957** valid, in-geographic-range unique longitude/latitude coordinate pairs, no missing or duplicate pairs, and no (0,0) locations. The audit does not establish coastline proximity, local inundation depths, vertical datum compatibility, probability calibration, annual stochastic event independence, reuse permission or insurer-level losses. All admission flags remain false; no provider grids, site coordinates or source bytes were written to Git or Neon.
 
+
+## Original extreme-return-level QA (research 2026-11-03)
+
+The next research workflow reads the three source-native water-level statistic matrices `wl_extreme_bestfit`, `wl_extreme_5perc` and `wl_extreme_95perc` (38,957 station rows × 8 return-period columns). The read is **strictly gated** behind an exact original 9,652,424-byte download, published MD5, independently pinned SHA-256, release-specific NetCDF dimensions, units, packing and the eight original return-period year labels. An isolated, size-bounded checker `scripts/gtsm_era5_e_return_level_qa_v0.py` counts missing/nonfinite values, uncertainty band inversions, best estimates outside the 5–95% bands and descending adjacent best-fit return levels. Source-declared fill/missing sentinels are excluded from numeric comparison. A 1e-9 metre comparison tolerance avoids obvious floating point rounding false positives.
+
+The workflow emits **only aggregate counts**: no point values, station IDs, raw coordinates, measured sea levels, inundation depths or provider source assets. Its synthetic tests are located at `tests/test_gtsm_era5_e_return_level_qa_v0.py`. Detected flags warrant scientific investigation; a difference in fitted extreme-value parameters and statistical uncertainty conventions is not automatically a data defect. These checks do not establish local vertical datum, rate independence, tide-gauge skill, coastal flood connectivity, proper loss-model coupling, allowed commercial reuse or model admission. Real-source numbers must be obtained from the exact-head GitHub execution; no counts are preasserted.
+
+Primary sources: https://zenodo.org/records/14671593 and https://essd.copernicus.org/articles/18/5759/2026/.
+
+## Verified aggregate original return-level findings (2026-11-03)
+
+The same-repository exact original-source GitHub Actions run [41640280655](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41640280655), job `125931771294`, passed **58 deterministic offline source-boundary/synthetic tests** and the **real, exact pinned Zenodo original NetCDF QA**. It repeated the 9,652,424-byte source-byte receipt and original SHA-256 `e366c79683438d03a48b23764f1159d5ed88845a459f625eeb787dff78cbd767`. Original three native water-level statistic matrices were inspected in memory only. The workflow printed *aggregate counts*, never individual station water levels.
+
+| Observed original statistic QA | Count |
+| --- | ---: |
+| Original station positions | 38,957 |
+| Return-period slots | 8 |
+| Candidate (best-fit, 5%, 95%) triples | 311,656 |
+| Numerically finite triples | **311,655** |
+| Triples with at least one missing/nonfinite cell | **1** |
+| Inverted 5%–95% intervals | **0** |
+| Best-fit above upper 95% bound (cell comparisons) | **22** |
+| Best-fit below lower 5% bound (cell comparisons) | **4** |
+| Stations with any best-fit/band disagreement | **6** |
+| Adjacent best-fit return-period descents (> 1e-9 m) | **0** |
+| Stations with a missing/nonfinite triple | **1** |
+| Stations with no tested flags | **38,950** |
+
+**Interpretation:** the 22 above-band and 4 below-band *cells* are not 26 independent stations; the original source shows six distinct station rows with a band/point-estimate inconsistency. There is one *additional* station row with a missing/nonfinite triple. These observations should trigger examination of source-native `wl_extreme_5perc`, `wl_extreme_95perc`, the fitting/uncertainty convention and possible numeric encoding; they are **not** sufficient to conclude physical error, bias or unfitness at any given location. The source's extreme-value and coastal model assumptions, vertical datum and dependence on ERA5 require separate scientific checks.
+
+The original published 1st and 99th percentiles are not present in this specific seven-level `quantile` array (verified labels are 5, 10, 25, 50, 75, 90, 95 %); the above 5%-95% confidence bound checks concern the *separate return-level arrays*. Do not confuse these two kinds of percentile quantity, fabricate missing levels or use return-level vectors as stochastic YLT/ELT inputs.
+
+**Admission boundary:** this is reproducible original-source numeric QA only. No commercial licensing or redistribution of source bytes is approved, no geometry join or coastal inundation computed, no insurer or portfolio rows created, no Cat XL/NextGen loss outputs inferred.
+
+## Integration and non-admission checkpoint (2026-11-03)
+
+The previous full repository CI failure originated in the unrelated Luxembourg AGE `Shapely 2.2.0` versus explicitly required `2.1.2` original-source diagnostic. The main branch has subsequently merged #1183 and #1185 to reconcile that version boundary. The already successful GTSM original-source workflow is retained as a **separate** source-byte/numeric aggregate receipt, not as proof of whole-repo CI. This PR therefore requires a fresh successful **exact-head CI** after integration with current main before any merger.
+
+The observed 26 return-level bestfit-versus-band conflict *cells* involve only six stations, plus one distinct missing/nonfinite station; none is an event footprint, local flood depth or insured loss. A later scientific review must investigate GPD fitting/interval conventions, vertical datum, site attribution and source licence without automatically modifying or dropping original values. This repository retains only aggregate diagnostics and source references.
