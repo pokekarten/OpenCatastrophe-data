@@ -54,6 +54,6 @@ The non-referenced source events are **3 wind events** and **1,962 flood events*
 
 ## Next non-loss scientific steps
 
-First, define an event relation contract that keeps original event IDs, provenance, time windows and hazard-specific units, with **no loss amount or independent-event simulation**. Second, use a bounded rights-reviewed sparse NetCDF sample to verify actual coincident *cells*, CRS, and grids, rather than bounding boxes. Third, compare against independently sourced post-event observations. Only after licensed and scientific validation can a separate, controlled consumer be considered for NextGen annual event clustering, Oasis/ORD model interchange and FFBK Cat-XL / capital modelling.
+First, define an event relation contract that keeps original event IDs, provenance, time windows and hazard-specific units, with **no loss amount or independent-event simulation**. Second, use a bounded rights-reviewed sparse NetCDF sample to verify actual coincident *cells*, CRS, and grids, rather than bounding boxes. Third, compare against independently sourced post-event observations. Only after licensed and scientific validation can a separate, controlled consumer be considered for later annual event clustering, Oasis/ORD model interchange and independent reinsurance/capital-modelling consumers.
 
 **State: source original-byte and event-ID linkage verified; scientific model use, upstream commercial rights, data ingestion, insured loss, and CAT simulation admission remain blocked.**
