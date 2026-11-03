@@ -54,3 +54,25 @@ python scripts/check_all.py
 1. Confirm original product-specific WFP/CHC/Source Cooperative access and commercial/redistribution rights for exact versions and routes; record attribution and licence conditions independently of the parent dataset.
 2. Determine whether any trusted original-issue forecast archive with immutable issue `issue_time_utc`, lead time, original source bytes and SHA-256 exists. Without it, no retrospective forecast-skill or as-of event analysis is possible from the rolling WFP mirror alone.
 3. Only after a reviewed fixed product/vintage can a bounded original metadata probe and separate approved model-consumer contract be developed. Keep forecast, observed precipitation, physical flood hazard, economic loss and insured loss as distinct roles.
+
+
+## Second independent obstacle: original WFP STAC raster-band units
+
+Original WFP STAC Collection metadata was reviewed via Exa's official-page fetch on 2026-11-03:
+
+- Daily: https://api.earthobservation.vam.wfp.org/stac/collections/chirps_daily_forecast
+- Dekadal: https://api.earthobservation.vam.wfp.org/stac/collections/chirps_dekad_forecast
+
+Both collections advertise STAC version `1.0.0`, licence identifier `CC-BY-4.0`, a 60S–60N spatial bbox, time interval beginning `2001-01-01T00:00:00Z`, a COG `band` asset, `raster:bands[0].data_type=float32`, `nodata=-9999`, and **`raster:bands[0].unit="1"`**. That string does **not verify millimetres of precipitation**. No scaling, unit conversion, interpretation of a pixel as mm/day or mm/dekad, loss hazard, or forecast performance is legitimate until the exact provider asset and band semantics are independently checked. The provider also does not establish that every historical forecast issue is preserved.
+
+`research_runners/wfp_chirps_gefs_stac_collection_preflight_v0.py` is a second offline fail-closed checker for one externally saved original provider STAC **collection metadata JSON** (not feature/item/asset downloads). It requires exact fixed collection ID, version, origin/self URL, geospatial/temporal metadata, COG band type, numeric fill, unit declaration, source role and strict original byte SHA-256. It emits negative claims for verified rainfall mm units, retained issue history, original COG acquisition, as-of evaluation and model admission. Tests under `tests/test_wfp_chirps_gefs_stac_collection_preflight_v0.py` use synthetic metadata and reject mutated science and structural fields. Passing a caller-supplied file hash cannot establish HTTP transport authenticity; no real original-byte hash has been recorded yet.
+
+Only after an authorized exact original metadata response is independently saved **outside Git**, the read-only checker may be run as:
+
+```bash
+python research_runners/wfp_chirps_gefs_stac_collection_preflight_v0.py \
+  --collection daily --original-json /path/outside/git/original-collection.json \
+  --expected-sha256 <verified_original_bytes_sha256>
+```
+
+The example is a future operator procedure, not a claim that provider bytes were fetched, that commercial rights were resolved, or that original forecast item values were obtained. The output must remain non-admission until a separate scientific/rights review and exact asset provenance prove physical units, issue-vintage and forecast roles.
