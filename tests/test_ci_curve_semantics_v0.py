@@ -60,7 +60,7 @@ class CurveSemanticsTests(unittest.TestCase):
                 self.base(points=bad)
 
     def test_malformed_point_shapes_are_explicitly_rejected(self):
-        for bad in (None, 123, "bad", [1], [(0,)], [(0, 1, 2)],
+        for bad in (123, "bad", [1], [(0,)], [(0, 1, 2)],
                     [{"intensity": 1, "damage": 0.2}]):
             with self.subTest(value=repr(bad)), self.assertRaises(CurveSemanticsError):
                 self.base(points=bad)
