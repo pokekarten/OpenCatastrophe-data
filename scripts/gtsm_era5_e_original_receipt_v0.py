@@ -130,7 +130,7 @@ def verify_original(path: Path, *, inspect_header: bool = False,
     try:
         level_qa = audit_original_return_levels(path) if audit_return_levels else None
     except ReturnLevelAuditBlocked as exc:
-        raise GtsmReceiptError("original GTSM return-level quality audit blocked") from exc
+        raise GtsmReceiptError("original GTSM return-level quality audit blocked: " + str(exc)) from exc
     return {"schema_version": "gtsm-era5-e-original-byte-receipt-v0",
             "source_record": RECORD_URL, "source_filename": SOURCE_NAME,
             "source_version": "Zenodo 14671593 v2 / 1950-2024 statistics",
