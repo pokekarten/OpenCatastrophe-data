@@ -16,6 +16,14 @@ The query snapshots must contain only a `fields` array with exactly those select
 
 The two snapshots are **explicitly caller-selected** and must each have a lowercase SHA-256 of those exact downloaded response bytes. The runner **cannot independently authenticate the query URL or original publisher** and does not compare against the native archive GPKG/SQLite hashes. It does not make any request on its own.
 
+## Original publisher count-only observations (2026-11-03)
+
+Four bounded, aggregate-only provider REST `/query?returnCountOnly=true` responses were tested on the current live services (no raw rows or geometry retrieved). The [FPA FOD 2024 year-view layer](https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_FireOccurrenceCurrentEdition_01/MapServer/2024) reported **87,708** fire occurrence rows (`where=1=1`); the same layer with `mtbs_id IS NOT NULL` reported **415** rows, equivalent to roughly **0.47% of FPA 2024 occurrence records carrying this cross-catalogue ID**. This is a *key-population ratio* for a live service snapshot, **not** a random matching success rate, an annual insured fire frequency, complete event incidence or proof that 99.53% of records are unsuitable.
+
+The [MTBS 2024 burned-area boundary layer 82](https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServer/82) reported **1,051** boundary features (`where=1=1`), and `fire_type = 'Wildfire'` reported **411**. Grouped native provider statistics `groupByFieldsForStatistics=fire_type` with count of `objectid` reconciled to **411 `Wildfire`**, **638 `Prescribed Fire`** and **2 `Other`** (=1,051). The `Other` label is *not* recognized by our reviewed event-kind mapping and must be quarantined as `unknown`; it must never be silently treated as `wildfire`. Controlled burns are a distinct source type and must never be counted as natural-catastrophe wildfires by default.
+
+Both REST services are mutable; these observations have **no pinned HTTP original-response checksum, license release approval or provider archive frozen-byte identity**. Treat as transient 2026-11-03 research observations, not admitted CAT data or historical actuarial truth. The query-pair runner intentionally never estimates the national joining rate from selected small `mtbs_id IS NOT NULL` samples. Before frequency calibration, inspect original publisher catalog scope, small-fire coverage, missing source IDs, prescribed-fire treatment and sampling/selection mechanisms.
+
 ## Command
 
 ```sh
