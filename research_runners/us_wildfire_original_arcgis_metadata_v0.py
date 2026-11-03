@@ -51,6 +51,23 @@ class OriginalLayerBlocked(ValueError):
     """Required source, schema or byte evidence is missing or inconsistent."""
 
 
+def classify_mtbs_fire_type(raw: object) -> tuple[str, bool]:
+    """Conservative reviewed MTBS publication label mapping (not source admission).
+
+    The boolean indicates whether a recognized publisher label was supplied;
+    never infer a wildfire from missing or novel publisher values.
+    """
+    labels = {
+        "Wildfire": "wildfire",
+        "Prescribed Fire": "prescribed",
+        "Wildland Fire Use": "unknown",
+        "Unknown": "unknown",
+    }
+    if type(raw) is not str or raw not in labels:
+        return "unknown", False
+    return labels[raw], True
+
+
 def _object(pairs):
     result = {}
     for key, value in pairs:
@@ -147,6 +164,11 @@ def inspect_layer(blob: bytes, expected_sha256: str, profile: str) -> dict:
         "native_row_values_examined": False,
         "native_field_semantics_and_nullability_validated": False,
         "polygon_component_key_from_perim_id_authorized": False,
+        "perim_id_publisher_semantics": (
+            "optional additional perimeter delineation satellite scene ID; "
+            "not an event, geometry component or policy loss key"
+        ),
+        "map_id_publisher_semantics": "mapping activity ID, not an approved event key",
         "original_source_file_sha256_pinned": False,
         "individual_event_join_proven": False,
         "source_rights_or_cat_admission_granted": False,
