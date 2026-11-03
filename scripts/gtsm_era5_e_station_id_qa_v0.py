@@ -9,6 +9,7 @@ index, so these are explicitly *candidate* indexing diagnostics, not joins.
 from __future__ import annotations
 
 from pathlib import Path
+from numbers import Integral
 
 EXPECTED_SOURCE_ROWS = 38_957
 PAPER_GTSM_OUTPUT_LOCATIONS = 44_734
@@ -116,11 +117,9 @@ def inspect_original_station_ids(path: Path) -> dict[str, object]:
             source_fill = None
             if "_FillValue" in station.ncattrs():
                 raw_fill = station.getncattr("_FillValue")
-                if getattr(raw_fill, "ndim", 0) != 0 or (
-                    str(type(raw_fill)) not in (
-                        "<class 'numpy.uint16'>", "<class 'int'>"
-                    )
-                ):
+                if (getattr(raw_fill, "ndim", 0) != 0
+                        or isinstance(raw_fill, bool)
+                        or not isinstance(raw_fill, Integral)):
                     raise StationIdAuditBlocked("native station-ID fill marker has unexpected type")
                 source_fill = int(raw_fill)
             station.set_auto_maskandscale(False)
