@@ -180,7 +180,7 @@ class OQ313RiskByEventProfileTests(unittest.TestCase):
         self.assertEqual(profile["loss"]["top_loss_rows"][-1]["loss_f32_be_hex"], "80000000")
 
     def test_negative_nonzero_and_nonfinite_values_remain_rejected(self) -> None:
-        for forbidden in ("bf800000", "7f800000", "ff800000", "7fc00000"):
+        for forbidden in ("80000001", "bf800000", "ff7fffff", "7f800000", "ff800000", "7fc00000"):
             with self.subTest(hex_bits=forbidden):
                 with self.assertRaises(profiler.OQ313RiskByEventProfileError):
                     profiler._f32_bits(forbidden)
