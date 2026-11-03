@@ -161,6 +161,14 @@ def compare_original_to_author_catalogue(
             else:
                 not_in_statistics_outside_source_id_span += 1
     remaining = len(catalogue) - matched_ids
+    occupied_original_id_span = source_max - source_min + 1
+    missing_original_ids_within_its_span = occupied_original_id_span - len(seen)
+    missing_in_both_within_source_span = (
+        missing_original_ids_within_its_span
+        - not_in_statistics_inside_source_id_span
+    )
+    if missing_in_both_within_source_span < 0:
+        raise AuthorCatalogueAuditBlocked("original/author occupied-ID span reconciliation failed")
     if (sum(author_prefix_counts.values()) != len(catalogue)
             or sum(not_in_statistics_prefix_counts.values()) != remaining
             or not_in_statistics_inside_source_id_span
@@ -176,6 +184,11 @@ def compare_original_to_author_catalogue(
         "author_catalogue_ids_not_in_original_statistics": remaining,
         "author_catalogue_name_family_by_prefix": author_prefix_counts,
         "author_catalogue_not_in_statistics_by_prefix": not_in_statistics_prefix_counts,
+        "original_native_id_span_width": occupied_original_id_span,
+        "integer_id_labels_absent_in_both_files_inside_original_span": (
+            missing_in_both_within_source_span
+        ),
+        "parent_paper_44734_model_positions_same_catalogue_release_proven": False,
         "author_catalogue_not_in_statistics_inside_occupied_original_id_span": (
             not_in_statistics_inside_source_id_span
         ),
