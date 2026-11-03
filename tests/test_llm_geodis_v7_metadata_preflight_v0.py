@@ -18,6 +18,7 @@ from scripts.zenodo_cat_metadata_preflight_v0 import (
     LLM_GEODIS_SOURCE,
     LLM_GEODIS_V7_FILES,
     LLM_GEODIS_V7_PUBLISHED_MD5,
+    LLM_GEODIS_V7_PUBLISHED_SIZES,
     MetadataPreflightError,
     RECORDS,
     audit_record,
@@ -41,7 +42,7 @@ def synthetic_metadata() -> dict:
         "files": [
             {
                 "key": filename,
-                "size": 1000 + index,
+                "size": LLM_GEODIS_V7_PUBLISHED_SIZES[filename],
                 "checksum": "md5:" + LLM_GEODIS_V7_PUBLISHED_MD5[filename],
                 "links": {"self": f"https://zenodo.org/api/records/{RID}/files/{filename}/content"},
             }
@@ -159,6 +160,45 @@ class LLMGeoDisMetadataPreflightTests(unittest.TestCase):
                     )
                     self.assertEqual(result.returncode, 2)
                     self.assertIn("BLOCKED", result.stderr)
+
+    def test_original_zenodo_api_relation_index_six_is_version_seven(self) -> None:
+        data = synthetic_metadata()
+        data["metadata"].pop("version")
+        data["conceptrecid"] = "17544931"
+        data["conceptdoi"] = "10.5281/zenodo.17544931"
+        data["metadata"]["relations"] = {"version": [
+            {"index": 6, "is_last": True, "parent": {"pid_type": "recid", "pid_value": "17544931"}}
+        ]}
+        result = audit_record(data, LLM_GEODIS_SOURCE, "1" * 64)
+        self.assertEqual(result["record_version"], "v7")
+        self.assertEqual(result["version_evidence"], "zenodo_relation_index_6")
+        self.assertEqual(result["file_count"], 14)
+        self.assertFalse(result["source_bytes_acquired"])
+
+    def test_wrong_original_relation_index_or_concept_parent_rejected(self) -> None:
+        data = synthetic_metadata()
+        data["metadata"].pop("version")
+        data["metadata"]["relations"] = {"version": [
+            {"index": 7, "parent": {"pid_type": "recid", "pid_value": "17544931"}}
+        ]}
+        with self.assertRaisesRegex(MetadataPreflightError, "version index"):
+            audit_record(data, LLM_GEODIS_SOURCE, "2" * 64)
+        data["metadata"]["relations"]["version"][0]["index"] = 6
+        data["metadata"]["relations"]["version"][0]["parent"]["pid_value"] = "99999999"
+        with self.assertRaisesRegex(MetadataPreflightError, "concept parent"):
+            audit_record(data, LLM_GEODIS_SOURCE, "3" * 64)
+
+    def test_missing_both_explicit_and_original_relation_version_rejected(self) -> None:
+        data = synthetic_metadata()
+        data["metadata"].pop("version")
+        with self.assertRaisesRegex(MetadataPreflightError, "release/version evidence missing"):
+            audit_record(data, LLM_GEODIS_SOURCE, "4" * 64)
+
+    def test_original_published_byte_length_drift_rejected(self) -> None:
+        data = synthetic_metadata()
+        data["files"][0]["size"] += 1
+        with self.assertRaisesRegex(MetadataPreflightError, "byte length mismatch"):
+            audit_record(data, LLM_GEODIS_SOURCE, "5" * 64)
 
     def test_published_original_v7_checksums_are_pinned(self) -> None:
         self.assertEqual(set(LLM_GEODIS_V7_PUBLISHED_MD5), LLM_GEODIS_V7_FILES)
