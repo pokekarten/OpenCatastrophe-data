@@ -29,6 +29,35 @@ warns that campus energy may be allocated to only one child property despite
 several buildings. Parent and child property submissions can overlap in
 financial/physical scope. Data cover reportable buildings, not all NYC stock.
 
+## Original NYC Socrata column-metadata probe (2026-11-04)
+
+Read-only original provider metadata returned from:
+
+- https://data.cityofnewyork.us/api/views/64uk-42ks/columns.json (PLUTO)
+- https://data.cityofnewyork.us/api/views/5zyy-y8am/columns.json (LL84)
+
+Verified PLUTO fieldName keys include **borough**, **block**, **lot**,
+**bbl**, **numbldgs**, **bldgarea**, **yearbuilt** and **assesstot**.
+Verified LL84 fieldName keys include **report_year**, **property_id**,
+**parent_property_id**, **nyc_borough_block_and_lot**,
+**nyc_building_identification** and **number_of_buildings**.
+These are observed API metadata fields, *not* proof of field value quality,
+one-to-one identity, API stability, source reuse rights or actual successful
+data-row acquisition.
+
+The LL84 API's cached column statistics currently describe 103,259
+records across report years 2022-2024 (30,485 / 33,684 / 39,090).
+Those are **provider-reported cached metadata counts**, not independently
+downloaded/validated rows; the metadata can change. The BBL column's
+cached top/missing-value examples include **Not Available**, artificial
+formatted masks and semicolon-delimited multi-BBL strings; BIN examples
+include **Not Available**, **0**, and multiple BIN strings. The research
+diagnostic intentionally rejects such unnormalized strings; any future
+authorized source-specific adapter must first classify missing values,
+placeholder codes, multi-valued IDs and future reporting years with
+a version-pinned original data dictionary. Do **not** convert invalid
+identifiers to a guessed BBL/BIN or count them as matched physical assets.
+
 ## Implemented bounded, offline diagnostic
 
 The executable research-only preflight is:
