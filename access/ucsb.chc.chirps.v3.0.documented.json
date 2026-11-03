@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "ucsb.chc.chirps.v3.0",
+  "source_ids": [
+    "ucsb.chc.chirps.v3.0"
+  ],
+  "provider": "University of California Santa Barbara, Climate Hazards Center",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://www.chc.ucsb.edu/data/chirps3",
+  "service_root": "https://data.chc.ucsb.edu",
+  "api_version": "v3.0",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "chirps3_original_readme_metadata"
+    ],
+    "path_templates": [
+      "/products/CHIRPS/v3.0/README-CHIRPSv3.0.txt"
+    ],
+    "parameter_rules": "Documentation-only exact v3.0 README identity. No actual requests are authorized. Future callers must fix this host and path and may not choose another host, path, query, region, time, format, data file, redirection or download URL. No CHIRPS precipitation assets, preliminary/final products, daily/monthly/pentad grids, directory listing, binary range, or bulk retrieval are authorized by this contract."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "text/plain"
+    ],
+    "format": "Plain-text original UCSB CHC CHIRPS version 3.0 source README; NOT a rainfall dataset payload.",
+    "scientific_semantics": "CHIRPS3 is terrestrial 0.05-degree precipitation from 1981 onward between latitudes 60S and 60N. Preliminary pentad and later final monthly-vintage products use different station inputs and validation. Pentad and month are fundamental; daily rnl is ERA5-disaggregated and daily sat is IMERG Late V07-disaggregated. They are non-independent of those daily forcing products. CHIRPS3 is not observed inundation, flood damage, an insurer exposure, an economic loss or a stochastic event set."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 25,
+    "max_probe_bytes": 65536,
+    "max_sample_bytes": 65536,
+    "retry_policy": "none",
+    "rate_limit_notes": "The original README is documented as anonymously visible, but current source-use and service terms for programmatic collection have not been independently cleared. Probe mode is none; no automated provider request or numeric rate entitlement is claimed.",
+    "mutability_notes": "The v3.0 root is a scientific version namespace but active preliminary/final files and the README may change. Any eventual authorized retrieval requires actual response UTC, original SHA-256, exact URL and byte count. Any scientific asset separately needs immutable time aggregation, region, product vintage (prelim/final), daily algorithm source, units, grid and content identity."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "The official CHIRPS3 site explicitly declares CC BY 4.0 and publishes dataset DOI 10.15780/G2JQ0P and citation. This is evidence to review rather than a completed OpenCatastrophe exact-asset, commercial-automation, service-terms or redistribution admission. Both execution and public asset reuse stay blocked until a bounded rights and science review."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-03",
+  "evidence_urls": [
+    "https://www.chc.ucsb.edu/data/chirps3",
+    "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/README-CHIRPSv3.0.txt",
+    "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/readme.txt",
+    "https://doi.org/10.15780/G2JQ0P",
+    "https://doi.org/10.1038/s41597-026-07096-4",
+    "https://creativecommons.org/licenses/by/4.0/"
+  ],
+  "notes": "Documentation-only CHIRPS3 product access identity. No provider requests, source bytes, hosted third-party files, Neon writes, API-key/secret, model run or rights admission. Next: authoritative exact-product terms and scientific/vintage review before any fixed one-object metadata pilot."
+}
