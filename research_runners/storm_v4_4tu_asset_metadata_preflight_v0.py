@@ -138,6 +138,12 @@ def inspect(article_raw: bytes, article_sha256: str,
         name = row.get("name")
         if type(name) is not str or name not in EXPECTED or name in seen_names:
             raise Blocked("unreviewed/duplicated STORM v4 original filename")
+        # A provider-side link-only or incomplete upload is not the original
+        # 4TU physical track artifact, even if the name matches the source page.
+        for flag in ("is_link_only", "is_incomplete"):
+            state = row.get(flag, False)
+            if type(state) is not bool or state:
+                raise Blocked("source file is linked/incomplete or has invalid upload flags")
         size = row.get("size")
         expected_size, expected_md5 = EXPECTED[name]
         if type(size) is not int or size != expected_size:
