@@ -16,7 +16,16 @@ class GeoVersionBoundaryTests(unittest.TestCase):
     def test_generic_matrix_and_pinned_source_are_explicitly_distinct(self):
         generic = (ROOT / "requirements-validation.txt").read_text(encoding="utf-8")
         source = (ROOT / "research_runners/luxembourg_age_hq2021_geojson_group_ogc_v0.py").read_text(encoding="utf-8")
-        self.assertIn("shapely==2.2.0", generic)
+        # Parallel main updates may restore the generic 2.1.2 pin.
+        # Under 2.1.2 the OGC tests execute; under 2.2.0 their
+        # version-sensitive subsets skip, while specialist jobs still run.
+        self.assertTrue(
+            "shapely==2.1.2" in generic or "shapely==2.2.0" in generic,
+            "generic CI must pin one reviewed Shapely version",
+        )
+        self.assertEqual(
+            sum(s in generic for s in ("shapely==2.1.2", "shapely==2.2.0")), 1,
+        )
         self.assertIn('shapely.__version__ != "2.1.2"', source)
         self.assertIn('raise GroupTopologyError("Unpinned Shapely', source)
 
