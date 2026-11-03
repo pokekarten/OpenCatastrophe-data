@@ -247,6 +247,20 @@ class GtsmReceiptTests(unittest.TestCase):
                 with self.assertRaises(GtsmReceiptError):
                     mod.select_original_release_attributes({"license": malformed})
 
+    def test_station_ids_require_original_header_before_any_source_read(self):
+        self.fixture()
+        with patch.object(mod, "_file_receipt") as original:
+            with self.assertRaises(GtsmReceiptError):
+                verify_original(self.path, audit_station_ids=True)
+            original.assert_not_called()
+
+    def test_station_ids_cannot_be_read_before_fixed_original_sha256(self):
+        self.fixture()
+        with patch.object(mod, "inspect_original_station_ids") as reader:
+            with self.assertRaises(GtsmReceiptError):
+                verify_original(self.path, inspect_header=True, audit_station_ids=True)
+            reader.assert_not_called()
+
     def test_no_original_file_rejected(self):
         with self.assertRaises(GtsmReceiptError):
             _file_receipt(self.path, expected_size=10, expected_md5="0" * 32)
