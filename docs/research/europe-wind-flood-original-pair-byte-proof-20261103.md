@@ -55,6 +55,6 @@ Original verified aggregate receipt:
 1. Verify and crosswalk publisher event IDs with hazardinfows.csv and hazardinfofl.csv; preserve many-to-many relationships and original hashes.
 2. Define a typed event-relation research consumer that links time-window and hazard IDs but cannot generate claims, loss correlation, AEP or OEP directly.
 3. For a bounded licensed subset, test exact overlapping NetCDF **pixels** rather than event envelopes, then compare to independently sourced post-event observations.
-4. Only after rights/science review, design a separate consumer for NextGen annual clustering, FFBK CAT-XL, and Oasis model input without overwriting source identities.
+4. Only after rights/science review, design a separate consumer for annual event clustering, reinsurance CAT-XL evaluation, and Oasis-compatible model input without overwriting source identities.
 
 **Decision:** exact source-byte technical verification passed for the 801,138-byte original CSV. Commercial rights, scientific sufficiency, original NetCDF acquisition and operational CAT model admission **remain blocked**.
