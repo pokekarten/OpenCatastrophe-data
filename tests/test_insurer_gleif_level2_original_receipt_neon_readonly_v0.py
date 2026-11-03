@@ -30,6 +30,10 @@ SHA_BY_SUBJECT = {
         "2ecb0188bd2ef2ebb2f8cfeed757fffc17e29e81638b4910f1bde8eb12b89653",
         1295,
     ),
+    "5299006ZIILJ6VJVSJ32": (
+        "533b8e18d880e84e4922e03e0f59a0c8966ac452c85c6a8ae6326d3e72a8ac23",
+        1296,
+    ),
     "529900MUF4C20K50JS49": (
         "df25b9584023978cb55ac6386d71e35ecd32a0071940453992fed961425008de",
         531,
@@ -51,8 +55,8 @@ def inspect_contract(sql: str) -> dict:
     """Independently fail closed if a source row changes or a write sneaks in."""
     uncom = re.sub(r"--[^\n]*", "", sql)
     rows = RECEIPT_ROW.findall(uncom)
-    if len(rows) != 4:
-        raise ValueError("expected exactly four source-original receipt rows")
+    if len(rows) != 5:
+        raise ValueError("expected exactly five source-original receipt rows")
     known = set(PILOT)
     checked = set()
     link_count = 0
@@ -79,7 +83,7 @@ def inspect_contract(sql: str) -> dict:
             exception_count += 1
         else:
             raise ValueError("unknown GLEIF Level-2 source class")
-    if set(SHA_BY_SUBJECT) != checked or link_count != 2 or exception_count != 2:
+    if set(SHA_BY_SUBJECT) != checked or link_count != 3 or exception_count != 2:
         raise ValueError("fixed verified accounting/exception cohort changed")
     if re.search(r"\b(?:INSERT|UPDATE|DELETE|MERGE|CREATE|ALTER|DROP|TRUNCATE|GRANT|COPY|CALL|DO)\b", uncom, re.I):
         raise ValueError("SQL must not mutate the independent Neon database")
@@ -102,9 +106,9 @@ class OriginalGleifReceiptNeonReadonlyTests(unittest.TestCase):
 
     def test_approved_original_source_metadata_and_no_promotion(self):
         observed = inspect_contract(self.sql)
-        self.assertEqual(observed["links"], 2)
+        self.assertEqual(observed["links"], 3)
         self.assertEqual(observed["exceptions"], 2)
-        self.assertEqual(len(observed["subjects"]), 4)
+        self.assertEqual(len(observed["subjects"]), 5)
 
     def test_sha_drift_blocks(self):
         mutated = self.sql.replace("88a2204b3721a1916b36a1f0df390c8b7a5c0c1ca5551abb1194bd7e1017af9c", "f" * 64)
