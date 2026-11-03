@@ -210,6 +210,24 @@ class GtsmReceiptTests(unittest.TestCase):
                 verify_original(self.path, inspect_header=True, inspect_labels=True)
             label_reader.assert_not_called()
 
+
+    def test_return_level_audit_requires_native_header_and_year_axes(self):
+        self.fixture()
+        with patch.object(mod, "_file_receipt") as byte_reader:
+            with self.assertRaises(GtsmReceiptError):
+                verify_original(self.path, audit_return_levels=True)
+            with self.assertRaises(GtsmReceiptError):
+                verify_original(self.path, inspect_header=True, audit_return_levels=True)
+            byte_reader.assert_not_called()
+
+    def test_return_level_audit_rejects_wrong_original_sha_before_matrix_read(self):
+        self.fixture()
+        with patch.object(mod, "audit_original_return_levels") as reader:
+            with self.assertRaises(GtsmReceiptError):
+                verify_original(self.path, inspect_header=True, inspect_labels=True,
+                                audit_return_levels=True)
+            reader.assert_not_called()
+
     def test_no_original_file_rejected(self):
         with self.assertRaises(GtsmReceiptError):
             _file_receipt(self.path, expected_size=10, expected_md5="0" * 32)

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Fail-closed local original-byte receipt for one Zenodo GTSM NetCDF asset.
 
-Read only: never fetches, persists or publishes provider data or model inputs.
+Original data remain ephemeral; only derived aggregate evidence is printed.
 """
 from __future__ import annotations
 
@@ -22,9 +22,11 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 if __package__:
     from .gtsm_era5_e_coordinate_audit_v0 import audit_original_coordinates, CoordinateAuditBlocked
     from .gtsm_era5_e_axis_labels_v0 import inspect_original_level_labels, NativeAxesBlocked
+    from .gtsm_era5_e_return_level_qa_v0 import audit_original_return_levels, ReturnLevelAuditBlocked
 else:
     from gtsm_era5_e_coordinate_audit_v0 import audit_original_coordinates, CoordinateAuditBlocked
     from gtsm_era5_e_axis_labels_v0 import inspect_original_level_labels, NativeAxesBlocked
+    from gtsm_era5_e_return_level_qa_v0 import audit_original_return_levels, ReturnLevelAuditBlocked
 
 RECORD_URL = "https://zenodo.org/records/14671593"
 SOURCE_DOWNLOAD_URL = (
@@ -105,11 +107,14 @@ def _file_receipt(path: Path, *, expected_size: int, expected_md5: str) -> dict[
 
 
 def verify_original(path: Path, *, inspect_header: bool = False,
-                    audit_coordinates: bool = False, inspect_labels: bool = False) -> dict[str, object]:
+                    audit_coordinates: bool = False, inspect_labels: bool = False,
+                    audit_return_levels: bool = False) -> dict[str, object]:
     if audit_coordinates and not inspect_header:
         raise GtsmReceiptError("coordinate QA requires prior native NetCDF header validation")
     if inspect_labels and not inspect_header:
         raise GtsmReceiptError("statistical scalar labels require prior native header validation")
+    if audit_return_levels and not (inspect_header and inspect_labels):
+        raise GtsmReceiptError("return-level QA requires original native header and year-axis checks")
     receipt = _file_receipt(path, expected_size=SOURCE_BYTES, expected_md5=SOURCE_MD5)
     if not hmac.compare_digest(str(receipt["sha256_observed_not_publisher_pinned"]), PINNED_SHA256):
         raise GtsmReceiptError("original SHA-256 differs from independently observed pinned original")
@@ -122,6 +127,10 @@ def verify_original(path: Path, *, inspect_header: bool = False,
         labels = inspect_original_level_labels(path) if inspect_labels else None
     except NativeAxesBlocked as exc:
         raise GtsmReceiptError("GTSM original statistical axis labels rejected") from exc
+    try:
+        level_qa = audit_original_return_levels(path) if audit_return_levels else None
+    except ReturnLevelAuditBlocked as exc:
+        raise GtsmReceiptError("original GTSM return-level quality audit blocked: " + str(exc)) from exc
     return {"schema_version": "gtsm-era5-e-original-byte-receipt-v0",
             "source_record": RECORD_URL, "source_filename": SOURCE_NAME,
             "source_version": "Zenodo 14671593 v2 / 1950-2024 statistics",
@@ -130,6 +139,7 @@ def verify_original(path: Path, *, inspect_header: bool = False,
             "scientific_header_inventory": header,
             "coordinate_quality": geography,
             "statistical_axis_labels": labels,
+            "return_level_quality": level_qa,
             "coordinate_values_read_for_aggregate_qa_only": bool(audit_coordinates),
             "publisher_sha256_available": False, "netcdf_variables_inspected": bool(inspect_header),
             "scientific_fitness_approved": False, "data_rights_approved": False,
@@ -235,7 +245,8 @@ class _ZenodoOnlyRedirect(HTTPRedirectHandler):
 
 
 def fetch_verified_original(*, inspect_header: bool = False,
-                            audit_coordinates: bool = False, inspect_labels: bool = False) -> dict[str, object]:
+                            audit_coordinates: bool = False, inspect_labels: bool = False,
+                            audit_return_levels: bool = False) -> dict[str, object]:
     """One fixed HTTPS original read, ephemeral file, only metadata receipt returned."""
     request = Request(SOURCE_DOWNLOAD_URL, headers={"User-Agent": "OpenCatastrophe-GTSM-Research/1.0"})
     try:
@@ -264,7 +275,8 @@ def fetch_verified_original(*, inspect_header: bool = False,
                         target.write(block)
                 return verify_original(path, inspect_header=inspect_header,
                                        audit_coordinates=audit_coordinates,
-                                       inspect_labels=inspect_labels)
+                                       inspect_labels=inspect_labels,
+                                       audit_return_levels=audit_return_levels)
     except (HTTPError, URLError, TimeoutError, OSError) as exc:
         raise GtsmReceiptError("fixed Zenodo original acquisition unavailable") from exc
 
@@ -280,18 +292,24 @@ def main(argv: list[str] | None = None) -> int:
                         help="aggregate QA of native lon/lat only; requires --inspect-header")
     parser.add_argument("--inspect-labels", action="store_true",
                         help="read only seven native quantile and eight return-period scalar labels")
+    parser.add_argument("--audit-return-levels", action="store_true",
+                        help="emit only aggregate original finite, interval and return-level QA counts")
     args = parser.parse_args(argv)
     if args.audit_coordinates and not args.inspect_header:
         parser.error("--audit-coordinates requires --inspect-header")
     if args.inspect_labels and not args.inspect_header:
         parser.error("--inspect-labels requires --inspect-header")
+    if args.audit_return_levels and not (args.inspect_header and args.inspect_labels):
+        parser.error("--audit-return-levels requires --inspect-header and --inspect-labels")
     try:
         receipt = (fetch_verified_original(inspect_header=args.inspect_header,
                                            audit_coordinates=args.audit_coordinates,
-                                           inspect_labels=args.inspect_labels) if args.fetch
+                                           inspect_labels=args.inspect_labels,
+                                           audit_return_levels=args.audit_return_levels) if args.fetch
                    else verify_original(args.original, inspect_header=args.inspect_header,
                                         audit_coordinates=args.audit_coordinates,
-                                        inspect_labels=args.inspect_labels))
+                                        inspect_labels=args.inspect_labels,
+                                        audit_return_levels=args.audit_return_levels))
     except (GtsmReceiptError, OSError) as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         return 2
