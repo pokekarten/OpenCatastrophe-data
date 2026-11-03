@@ -6,7 +6,7 @@ from __future__ import annotations
 import unittest
 
 from scripts.gtsm_era5_e_return_level_qa_v0 import (
-    ReturnLevelAuditBlocked, audit_return_levels,
+    ReturnLevelAuditBlocked, audit_return_levels, should_compare_source_fill_value,
 )
 
 
@@ -72,6 +72,20 @@ class GtsmReturnLevelAuditTests(unittest.TestCase):
                 with self.assertRaises(ReturnLevelAuditBlocked):
                     audit_return_levels([], [], [], expected_stations=stations,
                                         expected_periods=periods)
+
+    def test_native_nan_missing_marker_allowed_without_false_equality(self):
+        self.assertFalse(should_compare_source_fill_value(float("nan")))
+        self.assertTrue(should_compare_source_fill_value(-9999.))
+
+    def test_infinite_missing_marker_remains_blocked(self):
+        for value in (float("inf"), float("-inf")):
+            with self.subTest(value=value), self.assertRaises(ReturnLevelAuditBlocked):
+                should_compare_source_fill_value(value)
+
+    def test_non_float_missing_marker_rejected(self):
+        for value in (True, "nan", None):
+            with self.subTest(value=value), self.assertRaises(ReturnLevelAuditBlocked):
+                should_compare_source_fill_value(value)
 
     def test_no_loss_or_exposure_claim_from_statistics(self):
         report = self.profile([[1.]], [[0.]], [[2.]])
