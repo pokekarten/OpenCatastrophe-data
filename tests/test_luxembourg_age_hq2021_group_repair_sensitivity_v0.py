@@ -46,6 +46,8 @@ class PublisherRepairComparisonTests(unittest.TestCase):
         self.assertEqual(r["linework_repairs_with_nonpolygon_debris"], 1)
         self.assertEqual(r["original_nominal_vs_linework_area_change_above_1pct"], 0)
 
+    @unittest.skipUnless(HAS_SHAPELY and shapely.__version__ == "2.1.2",
+                         "Publisher integration requires pinned Shapely 2.1.2")
     def test_integration_only_invalid_source_groups_reach_repair_challenger(self):
         from research_runners.luxembourg_age_hq2021_geojson_group_ogc_v0 import (
             challenge_publisher_groups,

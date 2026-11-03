@@ -5,11 +5,14 @@ from __future__ import annotations
 
 import json
 import unittest
+from unittest.mock import patch
 
 try:
     import shapely  # noqa: F401
-    HAS_SHAPELY = True
+    HAS_SHAPELY_INSTALLED = True
+    HAS_SHAPELY = shapely.__version__ == "2.1.2"
 except ImportError:
+    HAS_SHAPELY_INSTALLED = False
     HAS_SHAPELY = False
 
 from research_runners.luxembourg_age_hq2021_geojson_group_ogc_v0 import (
@@ -23,6 +26,14 @@ def source(polygons):
          "properties": {"OBJECTID": 456},
          "geometry": {"type": "MultiPolygon", "coordinates": polygons}},
     ]}
+
+
+@unittest.skipUnless(HAS_SHAPELY_INSTALLED, "Requires Shapely to challenge version gate")
+class PublisherGeometryVersionGateTests(unittest.TestCase):
+    def test_unapproved_installed_version_remains_rejected(self):
+        with patch.object(shapely, "__version__", "unapproved"):
+            with self.assertRaisesRegex(GroupTopologyError, "Unpinned Shapely"):
+                challenge_publisher_groups(source([]))
 
 
 @unittest.skipUnless(HAS_SHAPELY, "Requires pinned Shapely 2.1.2")
