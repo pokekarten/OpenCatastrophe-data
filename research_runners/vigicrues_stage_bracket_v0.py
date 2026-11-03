@@ -24,6 +24,14 @@ class StageReviewError(ValueError):
 _ALLOWED_EVIDENCE = {"official_pdf_metadata", "historical_report_only"}
 _ALLOWED_PRODUCTS = {"ZIP", "ZICH"}
 _STATION_RE = re.compile(r"^[A-Z][0-9]{9}$")
+# This bounded v0 research audit independently reviewed ONLY these two
+# scenario PDF metadata identities. A plausible filename/URL is NOT proof
+# of a currently existing source. To extend this list, independently verify
+# the actual official metadata document and its station/stage/product first.
+_REVIEWED_PDF_METADATA_IDENTITIES = frozenset({
+    ("F700000103", "ZICH", 5660),
+    ("F700000103", "ZICH", 7190),
+})
 
 
 def _strict_object(pairs):
@@ -75,6 +83,8 @@ def _metadata(value, station):
             or parsed.password or parsed.fragment):
         raise StageReviewError("source reference must be plain HTTPS")
     if evidence == "official_pdf_metadata":
+        if (station, product, level) not in _REVIEWED_PDF_METADATA_IDENTITIES:
+            raise StageReviewError("source metadata not independently reviewed for this exact station/product/stage")
         expected = f"/ftp/pdf/{product}_{station}_{level}.pdf"
         if parsed.hostname not in {"www.vigicrues.gouv.fr", "vigicrues.gouv.fr"}:
             raise StageReviewError("unrecognized provider metadata host")
@@ -111,7 +121,8 @@ def review_stage(observed_stage_mm, station, catalogue, product="ZICH"):
         "profile": "oc-vigicrues-stage-bracket-research-v0",
         "station": station, "product": product,
         "observed_stage_mm": observed,
-        "confirmed_pdf_metadata_stage_mm": official,
+        "reviewed_pdf_metadata_stage_mm": official,
+        "input_source_original_bytes_authenticated": False,
         "historical_report_only_stage_mm": historical_only,
         "lower_pdf_metadata_stage_mm": lower,
         "upper_pdf_metadata_stage_mm": upper,
