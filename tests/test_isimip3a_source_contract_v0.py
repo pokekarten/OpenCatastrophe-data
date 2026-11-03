@@ -43,7 +43,7 @@ class ISIMIP3aSourceContractTests(unittest.TestCase):
         self.assertIn("extreme_precipitation", self.entry["categories"])
         self.assertNotIn("wind_speed", self.entry["categories"])
         self.assertIn("not wind speed", self.entry["note"])
-        self.assertIn("not independent", self.entry["note"])
+        self.assertIn("not count as independent", self.entry["note"])
         self.assertIn("1950–2021", self.entry["temporal_scope"])
 
     def test_markdown_is_exact_deterministic_projection(self) -> None:
