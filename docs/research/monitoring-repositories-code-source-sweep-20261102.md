@@ -9,7 +9,7 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Method and registry
 
-- Canonical non-admission source entries: [`landscape/sources-monitoring-repo-upstreams-20261102.json`](../../landscape/sources-monitoring-repo-upstreams-20261102.json) (**22 canonical entries in this shard**, from 23 historical research leads: 12 first-pass and 11 code-sweep leads, with the GLIDE ID preserved only in `landscape/sources-peer-cat-repositories-20261102.json` to avoid a global duplicate).
+- Canonical non-admission source entries: [`landscape/sources-monitoring-repo-upstreams-20261102.json`](../../landscape/sources-monitoring-repo-upstreams-20261102.json) (**20 unique canonical entries in this shard**, from 23 historical research leads: GLIDE, CERF and Charter are retained only in `landscape/sources-peer-cat-repositories-20261102.json` to prevent double-counting).
 - World Monitor original provider candidates already exist in [`landscape/sources-worldmonitor-upstream-20261102.json`](../../landscape/sources-worldmonitor-upstream-20261102.json) (**18 candidates**). This new pass does not duplicate its existing identities.
 - Other existing source shards already contain NASA FIRMS/EONET, USGS ComCat, GDACS, NHC, WMO warning systems, UNDRR DELTA/DesInventar, Sentinel-5P SO2, OpenStreetMap-derived exposure datasets, NOAA IBTrACS and various original flood/hazard sources. They are not copied again.
 - Source discovery records remain `not_admitted`; exact provider/product, rights, commercial-use conditions, spatial/temporal meaning and scientific validity must be independently approved before ingestion/model runs.
