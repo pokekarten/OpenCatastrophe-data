@@ -43,7 +43,8 @@ class StormDataciteNonAdmissionContract(unittest.TestCase):
         self.assertLessEqual(limits["timeout_seconds"], 20)
         self.assertEqual(limits["retry_policy"], "none")
         self.assertIn("No live DataCite call is authorized", limits["rate_limit_notes"])
-        self.assertIn("no track-byte request", self.data["request_contract"]["parameter_rules"])
+        self.assertIn("No 4TU file-list, download, or track-byte request is authorized",
+                      self.data["request_contract"]["parameter_rules"])
 
     def test_dataset_rights_not_confused_with_api_or_model_approval(self):
         x = self.data
