@@ -14,7 +14,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Schema version:** `1.0.0`  
 **Review date:** `2026-11-03`  
-**Purpose:** Research-only original-product discovery for global tropical-cyclone coastal wind exceedance validation and country-specific authoritative building-footprint provider discovery. No event-level CAT catalogue, property locations, insured TIV or source reuse/admission is inferred.
+**Purpose:** Non-admission research-only original-product discovery for global tropical-cyclone coastal wind exceedance validation and country-specific authoritative building-footprint provider discovery. No event-level CAT catalogue, property locations, insured TIV or source reuse/admission is inferred.
 
 **Entries:** 2
 
