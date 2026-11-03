@@ -88,7 +88,8 @@ def _validate_array(doc: dict, level: str):
         raise WSFGateError("source does not document earliest-event index and overview reducer")
     grid = doc.get("chunk_grid")
     if (type(grid) is not dict or grid.get("name") != "regular"
-            or grid.get("configuration", {}).get("chunk_shape") != [8192, 8192]):
+            or type(grid.get("configuration")) is not dict
+            or grid["configuration"].get("chunk_shape") != [8192, 8192]):
         raise WSFGateError("unexpected storage shard grid; bounded sampling must be redesigned")
     codecs = doc.get("codecs")
     if (type(codecs) is not list or len(codecs) != 1
@@ -148,6 +149,9 @@ def inspect_wsf_metadata_bytes(
         "one_epoch_every_six_months": True,
         "overview_aggregates_with_minimum": True,
         "overview_valid_for_area_count_or_vintage_statistics": False,
+        "index_one_preexisting_by_2016_07_not_construction_date": True,
+        "direct_geozarr_to_dlr_stac_cog_pixel_alignment_verified": False,
+        "native_raster_required_for_exact_built_up_area_statistics": True,
         "native_raster_chunks_acquired": False,
         "building_footprints_observed": False,
         "building_values_observed": False,
