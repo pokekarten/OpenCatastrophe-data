@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "purpose": "Non-admission discovery of German regulator carrier-count and German insurance-market district-level penetration/loss priors for probabilistically calibrated synthetic residential property portfolios; all data remain separately rights-scoped and unadmitted.",
+  "purpose": "Non-admission discovery of German regulatory insurer and elemental-cat insurance context and the exact Destatis Zensus 2022 regional buildings/dwellings product, with explicitly blocked GDV automated text/data mining pending permission and separate scientific/rights review.",
   "review_date": "2026-11-03",
   "entries": [
     {
@@ -31,6 +31,35 @@
       "note": "Selection-biased: insurers with no complaints absent; in-force risk counts omitted below 10 million EUR threshold on 2024 earned gross class premiums and for EEA undertakings not required to submit; numbers can represent insured persons in group insurance and are not unique policies or buildings. Not fit as a nationwide carrier census or TIV without additional evidence."
     },
     {
+      "candidate_id": "de.destatis.zensus2022.regional-building-dwelling-tables",
+      "name": "Destatis Zensus 2022 regional tables, buildings and dwellings, machine-readable CSV",
+      "provider": "Statistisches Bundesamt and Statistische Ämter des Bundes und der Länder",
+      "categories": [
+        "buildings",
+        "residential_property",
+        "district",
+        "municipality",
+        "administrative_statistics",
+        "2022_census",
+        "evidence_vintage"
+      ],
+      "spatial_scope": "Germany, official country, Land, Kreis and Gemeinde levels at the Zensus 15 May 2022 reference date",
+      "temporal_scope": "Snapshot as of 15 May 2022; NOT annual 2025 insurer property stock",
+      "resolution_or_granularity": "Buildings and dwellings (distinct Census universes) by official administrative unit, census classification and potentially suppressed/ambiguous values in directly machine-readable CSV and XLSX regional tables",
+      "potential_roles": [
+        "census_2022_district_building_stock_prior",
+        "district_geography_vintage_crosswalk",
+        "residential_building_vs_dwelling_denominator_challenge"
+      ],
+      "authoritative_url": "https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/Publikationen/publikationen-akkordeon-regionaltabellen.html",
+      "access_class_hint": "public_machine_readable_csv_exact_asset_licence_attribution_and_methodology_review_required",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Distinct product from Zensus 2022 100m/1km building-grid files already registered. Official regional CSV is without XLSX footnotes/method explanations, so suppressed or missing cells must not be silently converted to 0; retrieve the related methodology and exact original CSV bytes and confirm licence for the specific dataset before numeric model use. Building counts do not equal private insurer 2025 year-end contracts; official Kreis key as of 2022 may require geography-boundary reconciliation. Zensus publication portal lists 2022 regional tables and machine-readable CSV; no original external bytes or census aggregates have been committed here."
+    },
+    {
       "candidate_id": "de.gdv.natcat-district-loss-frequency.2026",
       "name": "GDV 2026 Naturgefahrenreport county/district residential catastrophe loss frequency and severity",
       "provider": "Gesamtverband der Deutschen Versicherungswirtschaft (GDV)",
@@ -52,12 +81,12 @@
         "historical_event_market_frequency_benchmark"
       ],
       "authoritative_url": "https://www.gdv.de/gdv/statistik/datenservice-zum-naturgefahrenreport/sachversicherung-naturgefahren/naturgefahren-koennen-jeden-treffen--157404",
-      "access_class_hint": "public_web_report_graphs_tables_original_csv_availability_and_reuse_rights_pending",
+      "access_class_hint": "provider_terms_may_2025_tdm_without_express_consent_prohibited_no_automated_provider_mining",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Historical normalized district losses are industry-wide and represent insured coverage, not building-level hazard intensities or a specific insurer's actual losses. Preserve insured contract denominator, event as-of, inflation normalization, vintage and peril class; do not distribute reported industry claims into Allianz insured addresses."
+      "note": "Historical normalized district losses are industry-wide and represent insured coverage, not building-level hazard intensities or a specific insurer's actual losses. Preserve insured contract denominator, event as-of, inflation normalization, vintage and peril class; do not distribute reported industry claims into Allianz insured addresses. Provider licence page (21 May 2025): https://www.gdv.de/gdv/statistik/nutzungsbedingungen-fuer-statistikdaten-und-deren-visualisierung-188704. Sec. 2.3 expressly reserves text/data mining and requires explicit consent; sec. 2.2 restricts stand-alone economic exploitation or resale of the material. Sec. 2.1 permits certain attributed uses but is NOT blanket automated data harvesting or model-input permission. Separate licence and scientific review of each exact dataset and permitted extraction path mandatory; keep blocked in the interim."
     },
     {
       "candidate_id": "de.gdv.natcat-elemental-penetration-district.2026",
@@ -80,12 +109,12 @@
         "residential_claim_exposure_denominator_challenge"
       ],
       "authoritative_url": "https://www.gdv.de/gdv/statistik/datenservice-zum-naturgefahrenreport/sachversicherung-elementar/versicherungsdichte-bei-elementarschadenversicherung-regional-sehr-unterschiedlich-183592",
-      "access_class_hint": "public_interactive_map_report_raw_grid_export_and_commercial_rights_review_pending",
+      "access_class_hint": "provider_terms_may_2025_tdm_without_express_consent_prohibited_no_automated_provider_mining",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "A landkreis-level market share of insured buildings is NOT the company-specific percentage or a unique set of coverage addresses; some historical policies included; coverage here means full elemental-peril insurance, not all general homeowners protection. Machine-download rights and spatial/vintage consistency must be reviewed. Keep county IDs, numerator/denominator definitions and publisher revision."
+      "note": "A landkreis-level market share of insured buildings is NOT the company-specific percentage or a unique set of coverage addresses; some historical policies included; coverage here means full elemental-peril insurance, not all general homeowners protection. Machine-download rights and spatial/vintage consistency must be reviewed. Keep county IDs, numerator/denominator definitions and publisher revision. Provider licence page (21 May 2025): https://www.gdv.de/gdv/statistik/nutzungsbedingungen-fuer-statistikdaten-und-deren-visualisierung-188704. Sec. 2.3 expressly reserves text/data mining and requires explicit consent; sec. 2.2 restricts stand-alone economic exploitation or resale of the material. Sec. 2.1 permits certain attributed uses but is NOT blanket automated data harvesting or model-input permission. Separate licence and scientific review of each exact dataset and permitted extraction path mandatory; keep blocked in the interim."
     }
   ]
 }
