@@ -68,6 +68,31 @@ def summarize_native_station_ids(
         raise StationIdAuditBlocked("native source-ID totals cannot be reconciled")
     span = max(seen) - min(seen) + 1 if seen else 0
     holes = span - distinct if seen else 0
+    sorted_ids = sorted(seen)
+    missing_runs = [
+        right - left - 1
+        for left, right in zip(sorted_ids, sorted_ids[1:])
+        if right - left > 1
+    ]
+    if sum(missing_runs) != holes:
+        raise StationIdAuditBlocked("native ID gap-run totals do not reconcile")
+    # Hypothetical arithmetic ONLY; source index range does not prove same-vintage
+    # parent catalogue identity or a coast/ocean classification.
+    zero_based_range_compatible = valid > 0 and outside_zero_based_parent == 0
+    hypothetical_omissions = None
+    if zero_based_range_compatible:
+        before_span = min(seen)
+        after_span = PAPER_GTSM_OUTPUT_LOCATIONS - max(seen) - 1
+        total_unrepresented = PAPER_GTSM_OUTPUT_LOCATIONS - distinct
+        if before_span + holes + after_span != total_unrepresented:
+            raise StationIdAuditBlocked("candidate zero-based index counts do not reconcile")
+        hypothetical_omissions = {
+            "before_native_id_span": before_span,
+            "inside_native_id_span": holes,
+            "after_native_id_span": after_span,
+            "total_if_same_parent_catalogue": total_unrepresented,
+            "conditional_on_unproven_parent_index_identity": True,
+        }
     return {
         "schema_version": "gtsm-native-station-id-catalogue-qa-v0",
         "source_statistical_rows": expected_rows,
@@ -81,11 +106,13 @@ def summarize_native_station_ids(
         "nonincreasing_adjacent_id_pairs": adjacent_non_increasing,
         "native_id_span_width": span,
         "unrepresented_ids_inside_native_span": holes,
+        "number_of_internal_gap_runs": len(missing_runs),
+        "largest_internal_gap_run": max(missing_runs, default=0),
+        "internal_gap_runs_of_at_least_1000_ids": sum(n >= 1000 for n in missing_runs),
+        "zero_based_hypothetical_parent_omissions": hypothetical_omissions,
         "ids_outside_zero_based_paper_catalogue_range": outside_zero_based_parent,
         "ids_outside_one_based_paper_catalogue_range": outside_one_based_parent,
-        "zero_based_catalogue_index_range_compatible": (
-            valid > 0 and outside_zero_based_parent == 0
-        ),
+        "zero_based_catalogue_index_range_compatible": zero_based_range_compatible,
         "one_based_catalogue_index_range_compatible": (
             valid > 0 and outside_one_based_parent == 0
         ),
