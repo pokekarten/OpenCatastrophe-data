@@ -118,6 +118,13 @@ def audit_return_levels(
     }
 
 
+def should_compare_source_fill_value(value: float) -> bool:
+    """NaN is already nonfinite; compare only finite scalar provider fill codes."""
+    if type(value) is not float or math.isinf(value):
+        raise ReturnLevelAuditBlocked("unsafe non-numeric or infinite original missing-data marker")
+    return math.isfinite(value)
+
+
 def audit_original_return_levels(path: Path) -> dict[str, object]:
     """Only after caller's SHA-256, native header and year-axis gates pass."""
     try:
@@ -144,9 +151,13 @@ def audit_original_return_levels(path: Path) -> dict[str, object]:
                 for attr in ("_FillValue", "missing_value"):
                     if attr in var.ncattrs():
                         marker = np.asarray(var.getncattr(attr))
-                        if marker.ndim != 0 or not np.isfinite(marker).all():
-                            raise ReturnLevelAuditBlocked("unsafe original missing-data marker")
-                        values[values == float(marker)] = np.nan
+                        if marker.ndim != 0 or not np.issubdtype(marker.dtype, np.number):
+                            raise ReturnLevelAuditBlocked("unsafe original missing-data marker shape/type")
+                        fill = float(marker)
+                        if should_compare_source_fill_value(fill):
+                            values[values == fill] = np.nan
+                        # A native NaN fill marker is already handled by isfinite()
+                        # in aggregate cell QA; never use equality-to-NaN.
                 matrices.append(values.tolist())
     except ReturnLevelAuditBlocked:
         raise
