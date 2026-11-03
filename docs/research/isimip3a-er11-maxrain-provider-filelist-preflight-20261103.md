@@ -51,6 +51,10 @@ python3 -m unittest tests.test_isimip3a_er11_maxrain_filelist_preflight_v0 -v
 1. Confirm exact dataset-level rights and content provenance (input vs output, ERA5/IBTrACS attribution, relevant secondary licensing, commercial/reinsurance automation). **Not yet approved.**
 2. Produce a pinned, original provider filelist SHA256/metadata receipt from an authorised read-only metadata run; compare the full 72-file inventory with this recorded source family. No raw NetCDF acquisition implied.
 3. After dataset access approval, perform a strictly bounded **one-file NetCDF header** check for time/grid, unit, variable name, fill value, version, storm aggregation and product ID; do not begin a 72-file bulk download.
-4. Crosswalk the hazard field to NextGen event identities while preserving year, source, force model, provenance, original grid and distinct loss components (TC wind, TC rain, coastal surge). Integrate with losses and FFBK only after independent vulnerability calibration, source governance and model validation.
+4. Crosswalk the hazard field to separately reviewed event identities while preserving year, source, forcing model, provenance, original grid and distinct loss components (TC wind, TC rain, coastal surge). Integrate with financial-loss and capital-modelling consumers only after independent vulnerability calibration, source governance and model validation.
 
 **Status:** A single ISIMIP3a annual filelist has been documented through public metadata. No product byte download, no insurer portfolio enrichment, no Neon ingest, no independent hurricane observation, no CAT model admission and no dataset licence clearance is claimed.
+
+## Integration CI control (2026-11-03)
+
+An earlier full CI run contained two independent failures: this document named a private downstream project on the public surface, and the inherited Luxembourg AGE geometry tests were run with an incompatible generic Shapely version. The private name is now removed, and the main-branch version conflict was resolved through merged #1183 and #1185. **A new exact-head full CI run is still required** before this metadata-only filelist research is merged. Neither full CI nor the offline 72-year validation constitutes rights approval for original ISIMIP NetCDF bytes.
