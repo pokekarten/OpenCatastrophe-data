@@ -50,3 +50,45 @@ A scientific comparison of those books against an actual cyclone/flood hazard ca
 **The next actual-data step:** acquire the selected **Destatis** *regional CSV plus its methodology workbook* in an access-approved external staging area; freeze original SHA-256/version and exact table/column identities; verify suppressed cells and Kreis AGS against the **15 May 2022** boundary release. Separately obtain an exact **GDV written permission or unambiguous scope-specific exception** before any automated district-table extraction or CAT product redistribution. Build at least two *independently justified* and uncertainty-labelled carrier priors rather than copying the industry-wide coverage map into a company portfolio. Only then move toward NextGen OED location/coverage and event-loss simulation gates.
 
 No extraction in this work changes the production DB: zero `entity.published_metric`, `exposure.portfolio` and `exposure.exposure_unit` rows on last live check.
+
+## Exact publisher file and original-byte receipt execution lane
+
+**New exact XLSX URL independently resolved from official Destatis publisher site:**  
+https://www.destatis.de/static/DE/zensus/gitterdaten/Regionaltabelle_Gebaeude_Wohnungen.xlsx
+
+This is the official ~20 MB *regional* Buildings-and-Dwellings workbook
+rather than the separately registered 100 m/1 km building-grid ZIP.
+The publisher text calls out a machine-readable flat/CSV structure and
+an "Erläuterungen zur Methodik" tab, while warning that nonnumeric
+suppression/annotation markers still occur in CSV-like fields. **Do not
+assert that a separately downloadable exact CSV URL has been found**
+merely because the XLSX contains machine-readable worksheets.
+
+**New exact-byte tool:** `research_runners/zensus_regional_original_receipt_v0.py`
+only accepts the **single fixed publisher HTTPS URL** for an optional
+network fetch. Redirects outside the publisher host fail. It caps source
+body at 36 MB, recognizes a valid bounded OOXML package, enumerates real
+Excel worksheet names from `xl/workbook.xml`, and emits the SHA-256 of
+**complete raw workbook bytes**, file length, sheet names, presence of
+methodology-labeled sheets and unambiguous non-admission flags. It
+intentionally does not parse or republish building counts or any actual
+Census/GDV/insurer row. The original XLSX is in memory on the test runner,
+and no raw files or cell tables are added to the public repository.
+
+**New separate GitHub Actions lane:**
+`.github/workflows/zensus2022-original-workbook-receipt.yml` triggers on
+its own code/doc changes, and can be manually dispatched. It first runs
+ten entirely synthetic OOXML integrity/invalid-URL tests, then attempts
+the single official source download in an isolated runner; the workflow
+must **fail** if network acquisition, complete-byte hashing, package
+format or source URL identity is not confirmed. The logs supply the
+true SHA / sheet-title receipt only if the original source was actually
+retrieved. No artificial "verified" status is emitted on a network
+failure. This workflow makes progress on original-source identification
+but still does **not** establish tabular column definitions, district
+counts, Census code meaning, rights approval or model admission.
+
+The current local container's DNS cannot resolve `www.destatis.de`.
+For this reason the exact original download is being tested on the
+separate GitHub Actions runner; consult the result of the **exact PR
+head** before claiming that the PDF/XLSX source check passed.
