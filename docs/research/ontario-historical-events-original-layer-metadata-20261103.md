@@ -13,7 +13,7 @@ Research-only supplement to OpenCatastrophe-data PR #1153. No source bytes, exte
 - Original metadata inspected by Exa on 2026-11-03. It advertises layer id `20`, display name `Emergency Management Historical Event`, type `Feature Layer`, source WKID `4269` (NAD83) and **`esriGeometryMultipoint`**, not flood, fire, damage or loss polygons.
 - Provider fields include `OGF_ID` (double, indexed unique in original metadata), `EVENT_TYPE`, `EVENT_YEAR` (small integer), `EVENT_NUMBER`, `LOCATION_ACCURACY`, `EVENT_DESCR` and date fields. A unique OGF_ID index does not prove globally stable historical disaster identifiers, let alone insurer event-to-claim attribution.
 - Service metadata advertised `Map,Query,Data`, `maxRecordCount=2000`. These are machine capabilities, **not** authorization to fetch feature rows, bulk-copy original records, or reuse them commercially in the absence of a specific review.
-- The government catalogue reports revision 2026-03-25 and admits selection effects: events are those involving Ontario MNR emergency response or a request for assistance, not a population-wide hazard/event census.
+- The Canadian federated catalogue currently reports modification 2026-10-07, while the Ontario provincial catalogue shows an older dataset update/vintage; neither date proves the timestamp or completeness of each event feature. The catalogue also admits selection effects: events are those involving Ontario MNR emergency response or a request for assistance, not a population-wide hazard/event census.
 - No quantitative loss field is asserted from the published schema. `EVENT_DESCR` and `EVENT_DATA_REFERENCE` are free-text/data-reference attributes and are not harvested, echoed, or used by this preflight.
 
 ## Offline source-byte verification
