@@ -37,6 +37,12 @@ SOURCES = {
     "flood": ("hazardinfofl.csv", 477845, "01ee8e21e7844e1335767bd40ea3f836"),
     "pairs": ("fl_ws.csv", 801138, "4b88bee853013fa40095b555620f0852"),
 }
+# Independent original source SHA-256 from the completed bounded provider run.
+EXPECTED_SHA256 = {
+    "wind": "35f10da966ad8b6f0bc5fd9dba904bb8251ae11a9f52fe7e10f4f6ff9e2bf787",
+    "flood": "0d4d24baf9839b43559a7c3a3abca781ad2626ee19dbdde6d741be2f5db5a431",
+    "pairs": "087a0db2f6cfde6e952f5944040019ec32f956297487b1f6e429f91c82b6225f",
+}
 INDEX_HEADER = [
     "hazardtype", "groupname", "start_date", "end_date",
     "minlon", "maxlon", "minlat", "maxlat", "intensity",
@@ -53,10 +59,13 @@ def original_file_receipt(kind: str, raw: bytes) -> dict:
     name, size, publisher_md5 = SOURCES[kind]
     if len(raw) != size or hashlib.md5(raw).hexdigest() != publisher_md5:
         raise CrosswalkError(f"{kind}: exact original size/MD5 mismatch")
+    independent_sha256 = hashlib.sha256(raw).hexdigest()
+    if independent_sha256 != EXPECTED_SHA256[kind]:
+        raise CrosswalkError(f"{kind}: original SHA-256 differs from independently pinned bytes")
     return {
         "file_key": name, "original_size_bytes": size,
         "publisher_md5_recomputed": publisher_md5,
-        "original_sha256_recomputed": hashlib.sha256(raw).hexdigest(),
+        "original_sha256_recomputed": independent_sha256,
     }
 
 
