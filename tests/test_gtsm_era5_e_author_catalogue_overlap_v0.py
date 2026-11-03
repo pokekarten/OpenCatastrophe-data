@@ -43,6 +43,7 @@ class GtsmAuthorCatalogueOverlapTests(unittest.TestCase):
         self.assertEqual(report["source_station_family_by_author_prefix"]["coast_name_prefix"], 1)
         self.assertEqual(report["author_catalogue_not_in_statistics_by_prefix"]["observation_name_prefix"], 1)
         self.assertEqual(report["author_catalogue_not_in_statistics_outside_occupied_original_id_span"], 1)
+        self.assertEqual(report["integer_id_labels_absent_in_both_files_inside_original_span"], 0)
         self.assertEqual(sum(report["author_catalogue_name_family_by_prefix"].values()), 3)
         self.assertTrue(report["source_source_parent_catalogue_join_for_all_rows_proven"])
         self.assertFalse(report["commercial_rights_approved"])
@@ -91,6 +92,21 @@ class GtsmAuthorCatalogueOverlapTests(unittest.TestCase):
         self.assertEqual(summary["author_catalogue_not_in_statistics_by_prefix"]["coast_name_prefix"], 1)
         self.assertEqual(summary["author_catalogue_not_in_statistics_by_prefix"]["regular_grid_name_prefix"], 1)
         self.assertEqual(sum(summary["author_catalogue_not_in_statistics_by_prefix"].values()), 2)
+        self.assertEqual(summary["integer_id_labels_absent_in_both_files_inside_original_span"], 0)
+
+    def test_neither_original_nor_author_occupies_some_native_id_labels(self):
+        cat = parse_author_catalogue(sample([
+            (0, "id_coast_a", "0", "0"),
+            (4, "id_reg_grid_b", "4", "4"),
+        ]))
+        result = compare_original_to_author_catalogue(
+            [0, 4], [0, 4000], [0, 4000], cat, expected_rows=2,
+        )
+        self.assertEqual(result["original_native_id_span_width"], 5)
+        self.assertEqual(
+            result["integer_id_labels_absent_in_both_files_inside_original_span"], 3
+        )
+        self.assertFalse(result["parent_paper_44734_model_positions_same_catalogue_release_proven"])
 
     def test_header_and_duplicate_ids_rejected(self):
         bad_header = "station\tname\tx\ty\n1\tid_coast\t1.1\t2.2\n"
