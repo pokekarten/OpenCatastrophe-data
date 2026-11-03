@@ -4,7 +4,7 @@
   "review_date": "2026-11-03",
   "entries": [
     {
-      "candidate_id": "isimip3a.tc.er11.historical.maxrain.1950-2021",
+      "candidate_id": "isimip3a.tc.er11-wind.historical.maxrain.1950-2021",
       "name": "ISIMIP3a historical tropical cyclone ER11/TCR maximum 24-hour precipitation fields (1950–2021)",
       "provider": "ISIMIP / Potsdam Institute for Climate Impact Research (PIK); derived from IBTrACS, ERA5 and TC intensity model output",
       "categories": [
