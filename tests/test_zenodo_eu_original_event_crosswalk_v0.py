@@ -10,7 +10,7 @@ import io
 import unittest
 
 from scripts.zenodo_eu_original_event_crosswalk_v0 import (
-    INDEX_HEADER, SOURCES, CrosswalkError, original_file_receipt,
+    INDEX_HEADER, SOURCES, EXPECTED_SHA256, CrosswalkError, original_file_receipt,
     parse_index, reconcile,
 )
 from tests.test_zenodo_eu_wind_flood_pairs_preflight_v0 import rows
@@ -97,6 +97,8 @@ class TestZenodoEuOriginalEventCrosswalk(unittest.TestCase):
             original_file_receipt("flood", index_bytes("fl"))
         self.assertEqual(SOURCES["flood"][1], 477845)
         self.assertEqual(SOURCES["pairs"][1], 801138)
+        self.assertEqual(set(EXPECTED_SHA256), set(SOURCES))
+        self.assertTrue(all(len(value) == 64 for value in EXPECTED_SHA256.values()))
 
 
 if __name__ == "__main__":
