@@ -21,11 +21,15 @@ def csv_bytes(header, records):
 
 
 def fpa(**replace):
-    return dict(fpa_record_id="1", mtbs_id="MTBS-ONE", fire_year="2021", **replace)
+    row = dict(fpa_record_id="1", mtbs_id="MTBS-ONE", fire_year="2021")
+    row.update(replace)
+    return row
 
 
 def mtbs(**replace):
-    return dict(mtbs_component_id="p1", mtbs_id="MTBS-ONE", fire_year="2021", event_kind="wildfire", **replace)
+    row = dict(mtbs_component_id="p1", mtbs_id="MTBS-ONE", fire_year="2021", event_kind="wildfire")
+    row.update(replace)
+    return row
 
 
 def run(fpas=None, mtbss=None, **options):
