@@ -268,6 +268,8 @@ def audit_hypothetical_100_id_batches(
     total_stat_in_full_bins = 0
     total_author_in_full_bins = 0
     complete_bins = 0
+    author_only_in_source_nonempty_bins = 0
+    bins_with_any_stat_and_additional_author_ids = 0
 
     if first_full_start <= last_full_start:
         for start in range(first_full_start, last_full_start + 1, width):
@@ -296,15 +298,20 @@ def audit_hypothetical_100_id_batches(
                     row = author_catalogue.get(key)
                     if row is not None:
                         author_only_in_zero_stat_by_prefix[row[2]] += 1
+            else:
+                difference = author - stat
+                if difference > 0:
+                    bins_with_any_stat_and_additional_author_ids += 1
+                    author_only_in_source_nonempty_bins += difference
 
     if sum(states.values()) != complete_bins:
         raise AuthorCatalogueAuditBlocked("author 100-ID batch classes do not reconcile")
     if total_stat_in_full_bins > total_author_in_full_bins:
         raise AuthorCatalogueAuditBlocked("author original ID subset invariant failed")
-    if sum(author_only_in_zero_stat_by_prefix.values()) > (
-        total_author_in_full_bins - total_stat_in_full_bins
-    ):
-        raise AuthorCatalogueAuditBlocked("author-only batch counts do not reconcile")
+    catalogue_only_in_complete_bins = total_author_in_full_bins - total_stat_in_full_bins
+    if (sum(author_only_in_zero_stat_by_prefix.values())
+            + author_only_in_source_nonempty_bins != catalogue_only_in_complete_bins):
+        raise AuthorCatalogueAuditBlocked("author-only coverage across 100-ID bins does not reconcile")
 
     gap_runs_multiple_of_100 = 0
     gap_runs_100_aligned = 0
@@ -326,6 +333,15 @@ def audit_hypothetical_100_id_batches(
         "author_catalogue_rows_in_complete_bins": total_author_in_full_bins,
         "complete_bin_coverage_classes": states,
         "author_name_families_in_100_id_bins_with_zero_statistics": author_only_in_zero_stat_by_prefix,
+        "author_catalogue_only_ids_in_100_id_bins_with_any_statistics": (
+            author_only_in_source_nonempty_bins
+        ),
+        "number_of_100_id_bins_with_statistics_and_extra_catalogue_ids": (
+            bins_with_any_stat_and_additional_author_ids
+        ),
+        "all_author_only_ids_within_complete_bins_are_in_zero_statistic_bins": (
+            author_only_in_source_nonempty_bins == 0
+        ),
         "original_missing_id_runs_length_multiple_of_100": gap_runs_multiple_of_100,
         "original_missing_id_runs_exactly_aligned_to_hypothetical_100_id_boundaries": (
             gap_runs_100_aligned
