@@ -52,6 +52,21 @@ SPDX-License-Identifier: Apache-2.0
 4. **Prove the wind/tropical-cyclone route.** DWD homogeneous stations and NOAA observed IBTrACS need explicit intensity/magnitude conventions, STORM v4 needs original track acquisition and calibrated spatial hazard. No direct ELT/YLT from a track CSV.
 5. **Insurance context last.** Resolve 18,180 name candidates against official regulators/LEIs, then use defensible financial reporting data; only then estimate explicitly labelled synthetic portfolios. Insurance positions and loss contracts cannot be read out of a names list.
 
+## Follow-up: 2016 Seine Hub'Eau historical daily-flow QA (live read-only SQL)
+
+A second **executed** aggregate query, [Hubeau 47-day station QA](../../research_runners/sql/hubeau_2016_47day_source_quality_audit_v0.sql), checks every date in the stored research slice, exact units conversion, source hash *format*, status/qualification/method code groups, and explicit rights/physical-event/model flags. It was run on CAT-only Neon `insurance-risk-core/insurance/main` without writes. The observed source is the historic mean-daily discharge QmJ (litres/s as published; m³/s derived by /1000), **not** instant peak discharge or flood depth.
+
+| Station code | Days / expected continuous | Published status codes 12 / 16 | Quality codes 12 / 20 | Method codes 4 / 8 / 10 | Daily Q range (m³/s) | Original hash format | Rights/event/model admissions |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| F447000302 | 47 / 47 (15 May–30 June 2016) | 47 / 0 | 7 / 40 | 0 / 7 / 40 | 268.866–1,299.307 | 47/47 well-formed, **one shared response hash** | 0 / 0 / 0 |
+| F700000103 | 47 / 47 (15 May–30 June 2016) | 0 / 47 | 0 / 47 | 10 / 2 / 35 | 373.005–1,745.481 | 47/47 well-formed, **one shared response hash** | 0 / 0 / 0 |
+
+**Critical scientific observation:** the 94 stored records are complete *within this selected 47-day window*, but they are **not 94 independently obtained source responses**. Each station's rows share one response SHA; independent acquisition authenticity is not established merely by hash-format checks. Code 12 vs 16 in the **status** column distinguishes prevalidated vs validated under SANDRE observation-status nomenclature 514; qualification code 12 and method code 4/8/10 are retained separately and require exact versioned nomenclature review before quantitative filtering. These are **different columns and codes**. In particular, it is misleading to call all 94 values uniformly validated. This cohort did not independently fetch the source payload or verify its original SHA at the provider.
+
+Official references: [Hub'Eau Hydrométrie API v2](https://www.data.gouv.fr/dataservices/hubeau-hydrometrie) documents historic `obs_elab` daily mean QmJ and discharge units (litres/s); [the Sandre hydrometry dictionary](https://www.sandre.eaufrance.fr/definition/OHY/2) distinguishes measurement status, qualification and method; [Eaufrance's API v2 notice](https://www.eaufrance.fr/actualites/evolution-de-lapi-hubeau-hydrometrie) explains status/continuity changes with the v2 migration.
+
+**Next independent checks:** resolve the applicable original provider-response identity, license/service reuse for these exact historic observations, station location/rating-curve/quality/continuity flags, and an independently observed 2016 flood footprint or depth grid. A daily mean discharge cannot, without a calibrated hydraulic mapping, directly determine an asset's flood-depth loss.
+
 ## Reproduction and merge boundaries
 
 Run only the [SELECT-only SQL](../../research_runners/sql/source_usability_cohort_audit_v0.sql) in CAT-only Neon `insurance-risk-core/insurance/main`. Its output is aggregate-only and its logic has been executed against live main for this review. It is not a legal approval or a replacement for source-native QA. Recheck the exact PR head under repository `scripts/check_all.py` before merge, and do not promote any `admissible_for_raw`, `model_admitted`, `production_approved` or insurer portfolio status on the basis of this report. This review contains no original-provider data bytes, coordinates or credentials.
