@@ -16,7 +16,7 @@ The [merged 2026 wildfire crosswalk](us-wildfire-identity-audit-executable-v0.md
 | USFS FPA FOD Seventh Edition original point event record | [EDW current edition layer 0](https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_FireOccurrenceCurrentEdition_01/MapServer/0) | `fod_id` / Integer | `fpa_record_id` (not ephemeral `objectid`) |
 | USFS FPA FOD optional MTBS link | Same layer | `mtbs_id` / String | `mtbs_id` |
 | USFS FPA FOD discovery year | Same layer | `fire_year` / SmallInteger | `fire_year` |
-| MTBS 2024 burned-area **polygon** | [EDW MTBS layer 82](https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServer/82) | `perim_id` / String | `mtbs_component_id` (*candidate only; uniqueness/nullability not yet proven*) |
+| MTBS 2024 burned-area **polygon** | [EDW MTBS layer 82](https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServer/82) | `perim_id` / String | **No mapping permitted to `mtbs_component_id`**: observed null in 23 of 25 queried rows; stable polygon component identity requires a separate verified source key |
 | MTBS 2024 polygon event ID | Same layer | `fire_id` / String | `mtbs_id` |
 | MTBS 2024 polygon event year | Same layer | `year` / SmallInteger | `fire_year` |
 | MTBS 2024 polygon class | Same layer | `fire_type` / String | `event_kind` (*requires reviewed vocabulary mapping*) |
@@ -43,6 +43,8 @@ python -m research_runners.us_wildfire_original_arcgis_metadata_v0 \
 ```
 
 The runner supports two small JSON snapshots, each at most 2 MB. It strictly checks duplicate JSON and field keys, expected typed columns, source layer number/name, geometry type, and the reported spatial reference. It fails closed on any schema drift; extra provider fields remain permitted.
+
+**Bounded observed provider response on 2026-11-03:** Live read-only ArcGIS responses contained 25 MTBS 2024 boundary rows, only 2 with nonempty `perim_id`, and 25 with `fire_id` and `map_id`. One ID-selected FPA-FOD-to-MTBS lookup returned a unique wildfire boundary but `perim_id` null. Do NOT substitute `map_id` automatically: 25 distinct observed values do not establish global, cross-release or per-event uniqueness. See [original service read-only sample receipt](us-wildfire-2024-original-service-bounded-query-20261103.md). The in-code mapping now returns `null` for the unsafe `mtbs_component_id` conversion.
 
 Passing means **only that supplied metadata are structurally compatible** with the documented research projection. It does **not** authenticate that the caller obtained the bytes from the original provider, resolve alternate field definitions in archived GPKG/SQLite, confirm uniqueness of `perim_id`, validate `FIRE_TYPE` categories, prove source rights, map real events, or approve catastrophe/insurance loss models. No data is fetched or saved into Neon.
 
