@@ -178,6 +178,12 @@ def reconcile(wind: bytes, flood: bytes, pairs: bytes) -> dict:
             if source_event[4] != current[4]:
                 source_unit_differences.add(event_id)
 
+    # Counts are *catalogue coverage*, not insurer exposures or event rates.
+    wind_refs = {item for item in seen_pair_refs if item.startswith("ws")}
+    flood_refs = {item for item in seen_pair_refs if item.startswith("fl")}
+    unpaired_wind = len(set(wind_index) - wind_refs)
+    unpaired_flood = len(set(flood_index) - flood_refs)
+
     discrepancy_ids = (
         missing_ids | date_differences | extent_differences |
         intensity_differences | source_unit_differences |
@@ -189,6 +195,10 @@ def reconcile(wind: bytes, flood: bytes, pairs: bytes) -> dict:
         "source_candidate_id": SOURCE_ID,
         "original_wind_catalogue_events": len(wind_index),
         "original_flood_catalogue_events": len(flood_index),
+        "original_wind_events_not_in_pair_index": unpaired_wind,
+        "original_flood_events_not_in_pair_index": unpaired_flood,
+        "wind_catalogue_pair_reference_coverage_pct": round(100 * (len(wind_index) - unpaired_wind) / len(wind_index), 3),
+        "flood_catalogue_pair_reference_coverage_pct": round(100 * (len(flood_index) - unpaired_flood) / len(flood_index), 3),
         "unique_event_ids_referenced_by_pairs": len(seen_pair_refs),
         "unique_missing_index_ids": len(missing_ids),
         "unique_event_date_mismatches": len(date_differences),
