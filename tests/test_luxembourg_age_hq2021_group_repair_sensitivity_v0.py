@@ -7,18 +7,21 @@ import json
 import unittest
 
 try:
+    # The repository-wide matrix pins Shapely 2.2.0, while the separate
+    # original-source geometry workflow executes these tests with 2.1.2.
+    # Do not run them under another GEOS/Shapely version.
     import shapely  # noqa: F401
     from shapely.geometry import Polygon
-    HAS_SHAPELY = True
+    HAS_PINNED_SHAPELY = shapely.__version__ == "2.1.2"
 except ImportError:
-    HAS_SHAPELY = False
+    HAS_PINNED_SHAPELY = False
 
 from research_runners.luxembourg_age_hq2021_group_repair_sensitivity_v0 import (
     GroupRepairChallengeError, InvalidPublisherGroupRepairChallenge,
 )
 
 
-@unittest.skipUnless(HAS_SHAPELY, "Pinned shapely required for bounded challenge")
+@unittest.skipUnless(HAS_PINNED_SHAPELY, "Pinned shapely required for bounded challenge")
 class PublisherRepairComparisonTests(unittest.TestCase):
     def test_bowtie_zero_nominal_area_and_no_cat_admission(self):
         bowtie = Polygon([(0, 0), (3, 3), (0, 3), (3, 0), (0, 0)])
