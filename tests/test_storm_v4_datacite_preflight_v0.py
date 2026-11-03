@@ -73,6 +73,35 @@ class MetadataPreflight(unittest.TestCase):
         with self.assertRaises(Blocked):
             _inspect(payload)
 
+    def test_conflicting_fields_in_same_rights_row_blocked(self):
+        payload = _example()
+        payload["data"]["attributes"]["rightsList"] = [{
+            "rightsIdentifier": "CC0-1.0",
+            "rightsUri": "https://creativecommons.org/licenses/by/4.0/",
+        }]
+        with self.assertRaisesRegex(Blocked, "rights claim"):
+            _inspect(payload)
+
+    def test_cc0_substring_and_lookalike_uri_blocked(self):
+        for field, value in (
+            ("rights", "No licence: https://creativecommons.org/publicdomain/zero/1.0"),
+            ("rightsUri", "https://evil.example/creativecommons.org/publicdomain/zero/1.0"),
+            ("rightsUri", "https://creativecommons.org/publicdomain/zero/1.0/malicious"),
+        ):
+            payload = _example()
+            payload["data"]["attributes"]["rightsList"] = [{field: value}]
+            with self.subTest(field=field, value=value), self.assertRaises(Blocked):
+                _inspect(payload)
+
+    def test_standard_datacite_cc0_full_row_allowed(self):
+        payload = _example()
+        payload["data"]["attributes"]["rightsList"] = [{
+            "rights": "Creative Commons Zero v1.0 Universal",
+            "rightsIdentifier": "CC0-1.0",
+            "rightsUri": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+        }]
+        self.assertTrue(_inspect(payload)["datacite_cc0_claim_observed"])
+
     def test_missing_title_and_publisher_rejected(self):
         for field, value in (("titles", []), ("publisher", "")):
             payload = _example()
