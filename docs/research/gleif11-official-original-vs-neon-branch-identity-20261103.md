@@ -13,7 +13,7 @@ Fetched and inspected **11 separate exact original GLEIF JSON:API HTTP response 
 
 The eleven original HTTP bytes are **not stored in Git**. The exact URLs, original-body byte lengths, SHA-256, expected source relationship kind and source `RELATIONSHIP_PERIOD` start timestamp live in the bounded [read-only Neon SQL](../../research_runners/sql/gleif11_original_http_neon_branch_readonly_20261103.sql). This is a **source-versioned research snapshot**, not a standing claim that the online API cannot change.
 
-Executed that exact SQL against independent **`insurance-risk-core` / `insurance` / `main`**. For all 11 receipts, precisely **one** previous `entity.relationship_observation` row had matching child LEI, exact official source endpoint, source-reported parent, relationship category, source-reported status (or explicit exception), and `RELATIONSHIP_PERIOD.startDate`. The observations were originally staged on 2026-10-31 from **two FFBK research assets**, not ingested from the present GLEIF API snapshot.
+Executed that exact SQL against independent **`insurance-risk-core` / `insurance` / `main`**. For all 11 receipts, precisely **one** previous `entity.relationship_observation` row had matching child LEI, exact official source endpoint, source-reported parent, relationship category, source-reported status (or explicit exception), and `RELATIONSHIP_PERIOD.startDate`. The observations were originally staged on 2026-10-31 from **two source-scoped research assets**, not ingested from the present GLEIF API snapshot.
 
 | Distinct current evidence category | Observations | Independent Neon identity status |
 | --- | ---: | --- |
