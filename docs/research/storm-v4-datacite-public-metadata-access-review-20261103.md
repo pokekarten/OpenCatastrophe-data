@@ -5,9 +5,9 @@ SPDX-License-Identifier: Apache-2.0
 
 # Independent DataCite public metadata route review — STORM v4 (2026-11-03)
 
-**Scope:** narrow authoritative **metadata documentation** review, not an
-executed DOI API request, provider track-file download, license override,
-model admission, or a migration to insurance Neon production.
+**Scope:** authoritative public API documentation plus one independently retrieved
+original DOI JSON metadata response on 2026-11-03. This is NOT a provider track
+file download, a repository-native runner execution, model admission or Neon write.
 
 ## Reviewed primary service documentation
 
@@ -32,33 +32,42 @@ model admission, or a migration to insurance Neon production.
 5. [VU Amsterdam original STORM v4 dataset entry](https://research.vu.nl/en/datasets/storm-ibtracs-present-climate-synthetic-tropical-cyclone-tracks-6/)
    directly identifies DOI `10.4121/12706085.v4` and publisher
    4TU.Centre for Research Data. It labels the v4 dataset **CC0-1.0**,
-   while its v4 correction note distinguishes it from faulty earlier
-   versions.
+   while its v4 correction note distinguishes ## Current verified engineering boundary
 
-## Current verified engineering boundary
+The canonical access contract `access/storm.ibtracs.present-climate.v4.datacite.json`
+is now `probe_ready` for exactly one manual, opt-in anonymous `metadata_get` operation.
+The repository-native runner `research_runners/storm_v4_datacite_probe_v0.py`
+requires the explicit `--probe-once` flag and rejects default execution.
+It fixes the original URL and DOI, refuses redirects and unreviewed media types,
+uses a 256-KiB cap and 20-second timeout, forbids retries and emits a metadata-only receipt.
+There is no automatic, recurring or broad harvesting.
 
-The separate access contract
-`access/storm.ibtracs.present-climate.v4.datacite.json` stays
-`documented_only` with `probe_contract.mode=none` and
-`implementation_decision=document_only`. Its exact fixed URL, byte
-bound 256 KiB and independent offline SHA-256 test are appropriate for a
-later separately approved bounded T1 run. The profile
-`research_runners/storm_v4_datacite_preflight_v0.py` never accesses
-the network. DataCite public metadata-service documentation is
-independently verified, but provider API **response bytes were not
-retrieved or checked** in this review. No live singleton evidence was
-produced. A DOI page, dataset-level CC0 label, and public API service
-policy **do not** verify 4TU downloadable file identities or the
-scientific interpretation of individual simulated years/events.
+An independent external single-DOI API observation has now been completed:
+`https://api.datacite.org/dois/10.4121%2F12706085.v4`.
+Original JSON response: **14,825 bytes**; SHA-256 of original captured response bytes:
+`90bbb620c7e04632e45b5c86c2998b3b023a55d246b56c2c7f09cc1a66c62f66`.
+The response reports exact v4 DOI (both `data.id` and `attributes.doi`),
+`types.resourceTypeGeneral=Dataset`, `version=4`, STORM title, publisher
+`4TU.Centre for Research Data`, and a `rightsIdentifier=cc0-1.0` claim.
 
-**Decision:** It is reasonable to merge the **metadata access contract
-as documentation-only research code** after exact-head full CI and
-review, while keeping the separate provider request, 4TU original-file
-retrieval and every CAT/insurance model-admission gate disabled.
+Original [DataCite Data File Use Policy](https://support.datacite.org/docs/datacite-data-file-use-policy)
+allows open CC0 reuse of its deposited DOI metadata, while expressly excluding
+linked datasets and resources from that CC0 waiver. The record verifies neither
+any 4TU track-file name/size/hash nor 10,000-year event semantics, wind footprints,
+vulnerabilities, insurer TIV, or model admission.
 
-## Separate T1 proposal (not executed)
+The exact observation is recorded separately in
+`docs/research/storm-v4-original-datacite-metadata-receipt-20261103.md`.
+The **repository-native one-shot runner itself has not been executed against
+the public API**; the external source observation must not be presented as such.
 
-Any future read-only DOI metadata request must pin the exact URL,
+**Decision:** merge metadata-only access research after exact-head CI and source
+review, without STORM asset downloads or automatic admission.
+ance model-admission gate disabled.
+
+## Separate repository-native T1 execution gate (not yet exercised)
+
+Any future repo-native read-only DOI metadata request must pin the exact URL,
 declare HTTPS, single request, no credentials, no redirects to unreviewed
 hosts, bounded 256 KiB response and timeout, provider response time and
 SHA-256, no provider response persisted to Git. Use an operator-owned
