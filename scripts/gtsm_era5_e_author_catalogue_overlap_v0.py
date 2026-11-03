@@ -313,6 +313,21 @@ def audit_hypothetical_100_id_batches(
             + author_only_in_source_nonempty_bins != catalogue_only_in_complete_bins):
         raise AuthorCatalogueAuditBlocked("author-only coverage across 100-ID bins does not reconcile")
 
+    author_rows_within_original_id_span = sum(
+        low <= station_id <= high for station_id in author_catalogue
+    )
+    author_outside_original_id_span = len(author_catalogue) - author_rows_within_original_id_span
+    original_rows_in_partial_boundary_bins = len(original_ids) - total_stat_in_full_bins
+    author_rows_in_partial_boundary_bins = (
+        author_rows_within_original_id_span - total_author_in_full_bins
+    )
+    if (original_rows_in_partial_boundary_bins < 0
+            or author_rows_in_partial_boundary_bins < original_rows_in_partial_boundary_bins
+            or author_outside_original_id_span < 0
+            or author_rows_in_partial_boundary_bins + total_author_in_full_bins
+               + author_outside_original_id_span != len(author_catalogue)):
+        raise AuthorCatalogueAuditBlocked("source/author terminal partial-bin rows do not reconcile")
+
     gap_runs_multiple_of_100 = 0
     gap_runs_100_aligned = 0
     omitted_aligned_ids = 0
@@ -331,6 +346,11 @@ def audit_hypothetical_100_id_batches(
         "complete_100_id_bins_within_original_native_id_span": complete_bins,
         "source_statistic_rows_in_complete_bins": total_stat_in_full_bins,
         "author_catalogue_rows_in_complete_bins": total_author_in_full_bins,
+        "source_rows_in_omitted_partial_boundary_bins": original_rows_in_partial_boundary_bins,
+        "author_rows_in_omitted_partial_boundary_bins": author_rows_in_partial_boundary_bins,
+        "author_catalogue_rows_outside_original_source_native_id_span": (
+            author_outside_original_id_span
+        ),
         "complete_bin_coverage_classes": states,
         "author_name_families_in_100_id_bins_with_zero_statistics": author_only_in_zero_stat_by_prefix,
         "author_catalogue_only_ids_in_100_id_bins_with_any_statistics": (
