@@ -95,7 +95,7 @@ class MontyEventLinkageTests(unittest.TestCase):
 
     def test_reference_hazard_impact_and_nonfeature_rejected(self):
         item=gate.fixture_item("A","C","2023-02-06T01:17:34Z")
-        for roles in (["event","reference"],["hazard"],["impact"]):
+        for roles in (["event","reference"],["hazard"],["impact"],["event","source","impact"]):
             with self.subTest(roles=roles):
                 test=deepcopy(item);test["roles"]=roles
                 with self.assertRaisesRegex(gate.MontyLinkageBlocked,"source event role"):
