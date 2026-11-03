@@ -92,3 +92,33 @@ The current local container's DNS cannot resolve `www.destatis.de`.
 For this reason the exact original download is being tested on the
 separate GitHub Actions runner; consult the result of the **exact PR
 head** before claiming that the PDF/XLSX source check passed.
+
+## **Verified original-byte receipt** (GitHub Actions, exact PR head)
+
+On the public GitHub Actions Linux runner, workflow
+\`Zensus 2022 official regional workbook receipt\` run
+[41737802098](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41737802098)
+**COMPLETED SUCCESS** at 2026-11-03T23:16Z. It ran all 10 synthetic
+negative OOXML tests and **actually downloaded the exact full original
+publisher XLSX** once. This resolves the earlier *source-file receipt
+blocker*, but **not** the scientific column, license or CAT input gates.
+
+| Checked field | Observed original result |
+| --- | --- |
+| Official source | \`https://www.destatis.de/static/DE/zensus/gitterdaten/Regionaltabelle_Gebaeude_Wohnungen.xlsx\` |
+| Size of original unmodified response | **21,451,209 bytes** |
+| SHA-256 of exact original bytes | \`82da8578a4657e20752b436a756ed27846c77f96e3f7333bdea7f4fe29a8b551\` |
+| OOXML structure | **Verified**, parseable \`xl/workbook.xml\` |
+| Count of real worksheets | **8** |
+| Worksheet titles (as obtained) | \`Titel GWZ\`; \`Impressum\`; \`Erläuterungen zur Methodik\`; \`Gebäude \` (trailing space); \`Wohnungen\`; \`Erläuterung zu CSV-Tabellen\`; \`CSV-Gebäude\`; \`CSV-Wohnungen\` |
+| Original numeric cells and Kreis AGS headers checked? | **NO** |
+| Suppression symbols / original method meaning reviewed? | **NO** |
+| Approved 2022 regional buildings or 2025 insured risk sites? | **NO** |
+
+This is exactly the **full original XLSX byte fingerprint**, not a hash
+of a reconstructed workbook, a screenshot or a publisher catalogue.
+The original was retained neither in this repository nor the job's
+published artifacts. An official provider replacing bytes at the same URL
+will produce a **different** hash and must trigger a dataset revision
+and downstream source-method re-review, not silently overwrite the
+accepted input.
