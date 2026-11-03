@@ -133,3 +133,8 @@ The original published 1st and 99th percentiles are not present in this specific
 
 **Admission boundary:** this is reproducible original-source numeric QA only. No commercial licensing or redistribution of source bytes is approved, no geometry join or coastal inundation computed, no insurer or portfolio rows created, no Cat XL/NextGen loss outputs inferred.
 
+## Integration and non-admission checkpoint (2026-11-03)
+
+The previous full repository CI failure originated in the unrelated Luxembourg AGE `Shapely 2.2.0` versus explicitly required `2.1.2` original-source diagnostic. The main branch has subsequently merged #1183 and #1185 to reconcile that version boundary. The already successful GTSM original-source workflow is retained as a **separate** source-byte/numeric aggregate receipt, not as proof of whole-repo CI. This PR therefore requires a fresh successful **exact-head CI** after integration with current main before any merger.
+
+The observed 26 return-level bestfit-versus-band conflict *cells* involve only six stations, plus one distinct missing/nonfinite station; none is an event footprint, local flood depth or insured loss. A later scientific review must investigate GPD fitting/interval conventions, vertical datum, site attribution and source licence without automatically modifying or dropping original values. This repository retains only aggregate diagnostics and source references.
