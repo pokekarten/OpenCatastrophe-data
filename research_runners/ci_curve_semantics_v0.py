@@ -20,6 +20,7 @@ class CurveSemanticsError(ValueError):
 OUTPUT_METRICS = frozenset(
     {"fractional_damage_ratio", "repair_rate", "pipe_repairs_per_km"}
 )
+MAX_CURVE_POINTS = 4096  # bounded metadata preflight, never a raster/asset stream
 
 
 def validate_curve_semantics(
@@ -45,12 +46,13 @@ def validate_curve_semantics(
         raise CurveSemanticsError("explicit scientifically reviewed unit conversion required")
     if output_metric not in OUTPUT_METRICS:
         raise CurveSemanticsError("unknown or ambiguous output metric is not admitted")
-    if isinstance(points, (str, bytes)) or not points:
-        raise CurveSemanticsError("curve must contain one or more numeric point pairs")
+    if (not isinstance(points, Sequence) or isinstance(points, (str, bytes))
+            or not 1 <= len(points) <= MAX_CURVE_POINTS):
+        raise CurveSemanticsError("curve requires a bounded sequence of numeric point pairs")
     clean: list[tuple[float, float]] = []
     previous = None
     for point in points:
-        if len(point) != 2:
+        if not isinstance(point, (tuple, list)) or len(point) != 2:
             raise CurveSemanticsError("each point must be (intensity, consequence)")
         raw_x, raw_y = point
         if isinstance(raw_x, bool) or isinstance(raw_y, bool):
