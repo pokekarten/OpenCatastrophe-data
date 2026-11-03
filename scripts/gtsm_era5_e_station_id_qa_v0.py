@@ -76,6 +76,24 @@ def summarize_native_station_ids(
     ]
     if sum(missing_runs) != holes:
         raise StationIdAuditBlocked("native ID gap-run totals do not reconcile")
+    gap_classes = (
+        ("one", lambda n: n == 1),
+        ("two_to_nine", lambda n: 2 <= n <= 9),
+        ("ten_to_ninetynine", lambda n: 10 <= n <= 99),
+        ("hundred_to_999", lambda n: 100 <= n <= 999),
+        ("thousand_or_more", lambda n: n >= 1000),
+    )
+    gap_profile = {
+        category: {
+            "gap_runs": sum(1 for n in missing_runs if matches(n)),
+            "unrepresented_ids": sum(n for n in missing_runs if matches(n)),
+        }
+        for category, matches in gap_classes
+    }
+    if (sum(x["gap_runs"] for x in gap_profile.values()) != len(missing_runs)
+            or sum(x["unrepresented_ids"] for x in gap_profile.values()) != holes):
+        raise StationIdAuditBlocked("source-ID gap buckets do not reconcile")
+
     # Hypothetical arithmetic ONLY; source index range does not prove same-vintage
     # parent catalogue identity or a coast/ocean classification.
     zero_based_range_compatible = valid > 0 and outside_zero_based_parent == 0
@@ -107,6 +125,7 @@ def summarize_native_station_ids(
         "native_id_span_width": span,
         "unrepresented_ids_inside_native_span": holes,
         "number_of_internal_gap_runs": len(missing_runs),
+        "internal_gap_run_size_buckets": gap_profile,
         "largest_internal_gap_run": max(missing_runs, default=0),
         "internal_gap_runs_of_at_least_1000_ids": sum(n >= 1000 for n in missing_runs),
         "zero_based_hypothetical_parent_omissions": hypothetical_omissions,
