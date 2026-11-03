@@ -105,6 +105,60 @@ def damage_status(raw: str) -> str:
     return "reported_zero" if amount == 0 else "reported_positive"
 
 
+def _subset_summary(ids, events, fatality_counts, location_counts):
+    # Summarize parents once, independently of child join multiplicity.
+    damage = {field: Counter(missing=0, reported_zero=0, reported_positive=0)
+              for field in ("DAMAGE_PROPERTY", "DAMAGE_CROPS")}
+    for key in ids:
+        for field in damage:
+            damage[field][damage_status(events[key][field])] += 1
+    return {
+        "parent_rows": len(ids),
+        "matched_location_rows": sum(location_counts[key] for key in ids),
+        "reported_fatalities": {
+            kind: sum(events[key][field] for key in ids)
+            for kind, field in (("D", "DEATHS_DIRECT"), ("I", "DEATHS_INDIRECT"))},
+        "matched_fatality_rows": {
+            kind: sum(fatality_counts[key, kind] for key in ids) for kind in ("D", "I")},
+        "damage_field_status": {field: dict(value) for field, value in damage.items()},
+    }
+
+
+def _review_partition(events, fatality_counts, location_counts, flagged, problems):
+    # This proposes a review subset; it never drops or repairs source records.
+    orphan_rows = {key: problems[key] for key in
+                   ("fatality_orphan_rows", "location_orphan_rows")}
+    blocked = any(orphan_rows.values())
+    eligible = set() if blocked else set(events) - flagged
+    quarantined = set(events) - eligible
+    summaries = {
+        label: _subset_summary(ids, events, fatality_counts, location_counts)
+        for label, ids in (("eligible_for_selected_checks", eligible),
+                           ("quarantined_for_review", quarantined))}
+    total = _subset_summary(set(events), events, fatality_counts, location_counts)
+    conserved = all(
+        sum(group["reported_fatalities"][kind] for group in summaries.values())
+        == total["reported_fatalities"][kind] for kind in ("D", "I"))
+    conserved = conserved and sum(group["parent_rows"] for group in summaries.values()) == len(events)
+    if not conserved or eligible.intersection(quarantined):
+        raise StormAuditError("review partition does not conserve parent totals")
+    eligible_counts_agree = all(
+        summaries["eligible_for_selected_checks"]["reported_fatalities"][kind]
+        == summaries["eligible_for_selected_checks"]["matched_fatality_rows"][kind]
+        for kind in ("D", "I"))
+    if not eligible_counts_agree:
+        raise StormAuditError("eligible review subset still has count contradictions")
+    return {
+        "scope": "selected cross-table consistency only; no automatic model-input exclusion",
+        "state": "blocked_by_orphan_children" if blocked else "review_partition_available",
+        "distinct_parents_with_known_contradiction": len(flagged),
+        "unassigned_orphan_child_rows": orphan_rows,
+        "parent_and_reported_fatality_totals_conserved": conserved,
+        "nonempty_eligible_subset_checks_passed": bool(eligible) and eligible_counts_agree,
+        **summaries,
+    }
+
+
 def audit_tables(blobs: dict[str, bytes], expected_sha256: dict[str, str]) -> dict:
     """Audit three pinned tables, returning only aggregate diagnostics."""
     if set(blobs) != set(HEADERS) or set(expected_sha256) != set(HEADERS):
@@ -134,6 +188,7 @@ def audit_tables(blobs: dict[str, bytes], expected_sha256: dict[str, str]) -> di
     fatality_keys = set()
     location_keys = set()
     location_counts = Counter()
+    flagged_parents = set()
     problems = Counter(fatality_orphan_rows=0, location_orphan_rows=0,
                        location_episode_mismatch_rows=0)
     for row in tables["fatalities"]:
@@ -159,10 +214,15 @@ def audit_tables(blobs: dict[str, bytes], expected_sha256: dict[str, str]) -> di
             problems["location_orphan_rows"] += 1
         elif row["EPISODE_ID"] != events[event_id]["EPISODE_ID"]:
             problems["location_episode_mismatch_rows"] += 1
+            flagged_parents.add(event_id)
     reconciliation = {}
     for kind, field in (("D", "DEATHS_DIRECT"), ("I", "DEATHS_INDIRECT")):
-        residuals = [fatality_counts[key, kind] - row[field]
-                     for key, row in events.items()]
+        residuals = []
+        for key, row in events.items():
+            residual = fatality_counts[key, kind] - row[field]
+            residuals.append(residual)
+            if residual:
+                flagged_parents.add(key)
         reconciliation[kind] = {
             "reported_in_details": sum(row[field] for row in events.values()),
             "matched_child_rows": sum(fatality_counts[key, kind] for key in events),
@@ -180,6 +240,8 @@ def audit_tables(blobs: dict[str, bytes], expected_sha256: dict[str, str]) -> di
         "source_compressed_sha256": dict(expected_sha256),
         "rows": {kind: len(rows) for kind, rows in tables.items()},
         "problems": dict(problems), "fatality_reconciliation": reconciliation,
+        "review_partition": _review_partition(
+            events, fatality_counts, location_counts, flagged_parents, problems),
         "damage_field_status": {key: dict(value) for key, value in damage.items()},
         "thunderstorm_wind_magnitude_types": dict(wind_types),
         "join_cardinality": {
