@@ -58,3 +58,27 @@ OpenAIRE describes the Zenodo record as **CC BY** (https://explore.openaire.eu/s
 - Merged original extreme return-level QA: PR #1175.
 - This isolated research increment: per-return-period aggregate counts plus explicit upstream CDS version-drift/vertical-datum/rights review.
 - **Scientific next action**: ask the source producer to confirm the CDS original run/version and exactly which statistical array the revised CDS v3 reanalysis supersedes; then design a controlled comparison, not blind data replacement.
+
+## Verified original per-return-period quality receipt (2026-11-03)
+
+GitHub Actions same-repository original-source run [41690641744](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41690641744), job `126107980612`, reproduced original exact SHA-256 `e366c79683438d03a48b23764f1159d5ed88845a459f625eeb787dff78cbd767` and passed **59** wholly synthetic/offline regression tests before the original-byte in-memory examination. The complete original 38,957 × 8 station-period array was checked, and only these per-period **aggregate counts** were emitted:
+
+| Return years | Best fit above upper 95% confidence bound | Best fit below lower 5% confidence bound | Missing/nonfinite triplets |
+| ---: | ---: | ---: | ---: |
+| 1 | 4 | 2 | 1 |
+| 2 | 4 | 2 | 0 |
+| 5 | 4 | 0 | 0 |
+| 10 | 4 | 0 | 0 |
+| 25 | 2 | 0 | 0 |
+| 50 | 2 | 0 | 0 |
+| 75 | 1 | 0 | 0 |
+| 100 | 1 | 0 | 0 |
+| **Total** | **22** | **4** | **1** |
+
+For that one nonfinite 1-year triplet, **all three source-native fields** (`wl_extreme_bestfit`, `wl_extreme_5perc`, `wl_extreme_95perc`) were nonfinite. The exact original also confirmed **zero** inverted 5%-95% intervals and **zero** descending best-fit levels across increasing return periods. Earlier source audit found **six distinct station rows** containing the 26 band/estimate crossings (not 26 distinct stations). Most crossings occur at low return periods; there is **no statistical evidence from these counts alone** to identify a cause. Do not infer the positions, physical causes, spatial clustering, probability calibration or commercial viability.
+
+No individual numerical water level, original site position, original file, event catalogue, building exposure or insured loss was exported.
+
+## Verified CDS terms and outstanding rights
+
+The official ECMWF CDS [Terms of Use (rev. 13)](https://cds.climate.copernicus.eu/licences/terms-of-use-cds), together with ECMWF's [28 October 2026 update notice](https://forum.ecmwf.int/t/upcoming-cds-terms-of-use-change/15374), confirms the CDS terms update. Article (4) says individual CDS products remain governed by the licence **attributed to that product**, and Article (5) prohibits implying ECMWF/EU endorsement. The upstream GTSM CDS product page identifies its licence as CC-BY, while OpenAIRE labels the Zenodo statistics CC BY. Those statements improve the rights evidence but **do not automatically establish exact file-level obligations, all source derivatives, or completed approval for the intended commercial insurer product**. Maintain `data_rights_approved=false` and `cat_model_admitted=false` until attribution, per-file source conditions and specific use-case are reviewed.
