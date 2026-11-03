@@ -218,6 +218,10 @@ def probe(*, open_request=wfs._open) -> dict:
     except (error.URLError,error.HTTPError,TimeoutError,OSError) as exc:
         raise CRSBlocked("original single-feature WFS source unavailable") from exc
     details=inspect_original_crs_and_topology(raw)
+    # The original-source CRS gate above already validated this exact runtime.
+    # Report the version actually used rather than inventing a single version
+    # when two explicitly tested versions are allowed.
+    import shapely as verified_shapely
     return {
         **details,
         "source_id":SOURCE,
@@ -228,7 +232,7 @@ def probe(*, open_request=wfs._open) -> dict:
         "retrieved_utc":datetime.now(timezone.utc).isoformat(),
         "code_sha256":hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "pyproj_version":REQUIRED_PYPROJ,
-        "shapely_version":REQUIRED_SHAPELY,
+        "shapely_version":verified_shapely.__version__,
         "raw_source_geometry_or_address_persisted":False,
         "raw_building_coordinates_or_ids_emitted":False,
     }
