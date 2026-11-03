@@ -83,6 +83,16 @@ class PublisherGeoJSONGroupOGCTests(unittest.TestCase):
             challenge_publisher_groups(source_group,
                                        max_group_vertices=MAX_OPTIONAL_MEGA_GROUP_VERTICES + 1)
 
+    def test_strict_shapely_pin_rejects_mismatched_version(self):
+        # A scientific profile must not silently accept an unreviewed GEOS runtime.
+        from unittest.mock import patch
+        import shapely
+        ring = [[0., 0.], [0., 10.], [10., 10.], [10., 0.], [0., 0.]]
+        with patch.object(shapely, "__version__", "2.1.2"):
+            with self.assertRaisesRegex(GroupTopologyError, "Unpinned Shapely"):
+                challenge_publisher_groups(source([[ring]]))
+        self.assertEqual(shapely.__version__, "2.2.0")
+
     def test_reject_nonpolygon_sources(self):
         with self.assertRaises(GroupTopologyError):
             challenge_publisher_groups({"type":"Point","coordinates":[0,0]})
