@@ -52,8 +52,22 @@ class TestWindFloodPairPreflight(unittest.TestCase):
         }
         report = parse_pair_csv(rows({}, same))
         self.assertEqual(report["other_pair_rows_requires_scientific_review"], 1)
+        self.assertEqual(report["wind_wind_pair_rows"], 1)
+        self.assertEqual(report["flood_flood_pair_rows"], 0)
         self.assertEqual(report["wind_flood_pair_rows"], 1)
         self.assertTrue(report["original_event_ids_not_insured_losses"])
+
+    def test_flood_flood_pairs_are_counted_separately(self) -> None:
+        flood = {
+            "groupname_1": "fl610", "groupname_2": "fl611",
+            "hazardtype_1": "fl", "hazardtype_2": "fl",
+            "intensity unit_1": "Mean flood depth (cm)",
+            "intensity unit_2": "Mean flood depth (cm)",
+        }
+        report = parse_pair_csv(rows({}, flood))
+        self.assertEqual(report["wind_flood_pair_rows"], 1)
+        self.assertEqual(report["wind_wind_pair_rows"], 0)
+        self.assertEqual(report["flood_flood_pair_rows"], 1)
 
     def test_nonoverlap_is_flagged_without_fabricating_match(self) -> None:
         report = parse_pair_csv(rows({
