@@ -39,9 +39,22 @@ class TestZenodoEuOriginalEventCrosswalk(unittest.TestCase):
         self.assertTrue(r["exact_event_id_crosswalk_complete"])
         self.assertEqual(r["original_wind_catalogue_events"], 1)
         self.assertEqual(r["original_flood_catalogue_events"], 1)
+        self.assertEqual(r["original_wind_events_not_in_pair_index"], 0)
+        self.assertEqual(r["original_flood_events_not_in_pair_index"], 0)
+        self.assertEqual(r["wind_catalogue_pair_reference_coverage_pct"], 100.0)
+        self.assertEqual(r["flood_catalogue_pair_reference_coverage_pct"], 100.0)
         self.assertEqual(r["pair_source_diagnostic"]["wind_flood_pair_rows"], 1)
         self.assertFalse(r["model_input_admitted"])
         self.assertFalse(r["pixel_overlap_proven"])
+        self.assertFalse(r["insured_loss_generated"])
+
+    def test_unpaired_source_event_is_counted_not_equated_with_loss(self) -> None:
+        wind = index_bytes("ws")
+        additional = wind.splitlines(keepends=True)[-1].replace(b"ws1687", b"ws9999")
+        r = reconcile(wind + additional, index_bytes("fl"), rows())
+        self.assertTrue(r["exact_event_id_crosswalk_complete"])
+        self.assertEqual(r["original_wind_events_not_in_pair_index"], 1)
+        self.assertEqual(r["wind_catalogue_pair_reference_coverage_pct"], 50.0)
         self.assertFalse(r["insured_loss_generated"])
 
     def test_missing_index_id_is_reported_not_fabricated(self) -> None:
