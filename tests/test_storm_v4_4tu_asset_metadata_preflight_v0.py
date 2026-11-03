@@ -150,6 +150,20 @@ class STORMv4OriginalAssetMetadataTests(unittest.TestCase):
             with self.subTest(url=url), self.assertRaises(Blocked):
                 check(rows=rows)
 
+    def test_4tu_v2_file_shape_with_null_legacy_id_accepted(self):
+        rows = file_list()
+        for row in rows:
+            row["id"] = None
+            row["supplied_md5"] = None
+            row["is_incomplete"] = False
+            row["is_link_only"] = False
+            row["download_url"] = (
+                f"https://data.4tu.nl/file/{ARTICLE_UUID}/{row['uuid']}"
+            )
+        receipt = check(rows=rows)
+        self.assertEqual(len(receipt["files"]), 3)
+        self.assertFalse(receipt["asset_download_authorized"])
+
     def test_wrong_response_sha_rejected(self):
         a, files = wire(article()), wire(file_list())
         with self.assertRaisesRegex(Blocked, "SHA-256 mismatch"):
