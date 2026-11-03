@@ -7,18 +7,20 @@ import json
 import unittest
 
 try:
-    import shapely  # noqa: F401
+    import shapely
     from shapely.geometry import Polygon
-    HAS_SHAPELY = True
+    # Preserve the same GEOS comparison as the 2.1.2 publisher polygon gate;
+    # do not silently run repair sensitivity on generic CI's 2.2.0 build.
+    HAS_PINNED_SHAPELY = shapely.__version__ == "2.1.2"
 except ImportError:
-    HAS_SHAPELY = False
+    HAS_PINNED_SHAPELY = False
 
 from research_runners.luxembourg_age_hq2021_group_repair_sensitivity_v0 import (
     GroupRepairChallengeError, InvalidPublisherGroupRepairChallenge,
 )
 
 
-@unittest.skipUnless(HAS_SHAPELY, "Pinned shapely required for bounded challenge")
+@unittest.skipUnless(HAS_PINNED_SHAPELY, "Pinned shapely required for bounded challenge")
 class PublisherRepairComparisonTests(unittest.TestCase):
     def test_bowtie_zero_nominal_area_and_no_cat_admission(self):
         bowtie = Polygon([(0, 0), (3, 3), (0, 3), (3, 0), (0, 0)])
