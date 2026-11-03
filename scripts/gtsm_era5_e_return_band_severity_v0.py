@@ -15,13 +15,17 @@ if __package__:
         audit_return_levels_by_author_name_family, GtsmFamilyReturnAuditBlocked,
         FAMILIES, EXPECTED_SOURCE_ROWS, EXPECTED_PERIODS,
     )
-    from .gtsm_era5_e_return_level_qa_v0 import FLOAT_TOLERANCE_METRES, RETURN_PERIODS
+    from .gtsm_era5_e_return_level_qa_v0 import (
+        FLOAT_TOLERANCE_METRES, RETURN_PERIODS, audit_return_levels, ReturnLevelAuditBlocked,
+    )
 else:
     from gtsm_era5_e_author_family_return_qa_v0 import (
         audit_return_levels_by_author_name_family, GtsmFamilyReturnAuditBlocked,
         FAMILIES, EXPECTED_SOURCE_ROWS, EXPECTED_PERIODS,
     )
-    from gtsm_era5_e_return_level_qa_v0 import FLOAT_TOLERANCE_METRES, RETURN_PERIODS
+    from gtsm_era5_e_return_level_qa_v0 import (
+        FLOAT_TOLERANCE_METRES, RETURN_PERIODS, audit_return_levels, ReturnLevelAuditBlocked,
+    )
 
 
 class OriginalBandSeverityBlocked(ValueError):
@@ -139,13 +143,32 @@ def audit_return_band_severity_by_family_and_year(
                 != by_family[family]["missing_or_nonfinite_triplets"]):
             raise OriginalBandSeverityBlocked("source family missingness totals do not reconcile")
 
+    # Independently reconcile each published return period against the
+    # original unstratified QA, not just by-family aggregate totals.
+    try:
+        all_periods = audit_return_levels(
+            *matrices, expected_stations=expected_rows, expected_periods=EXPECTED_PERIODS
+        )["aggregate_quality_by_return_period"]
+    except ReturnLevelAuditBlocked as exc:
+        raise OriginalBandSeverityBlocked("original per-period severity reconciliation rejected") from exc
+    for j, native in enumerate(all_periods):
+        for grouped_key, original_key in (
+            ("above_reported_upper_cells", "bestfit_above_upper"),
+            ("below_reported_lower_cells", "bestfit_below_lower"),
+            ("missing_or_nonfinite_triplets", "missing_or_nonfinite_triplets"),
+        ):
+            if sum(period_groups[family][j][grouped_key] for family in FAMILIES) != native[original_key]:
+                raise OriginalBandSeverityBlocked("source return-period counts do not reconcile")
+
     return {
         "schema_version": "gtsm-original-return-band-size-family-year-qa-v0",
         "native_return_period_years": list(RETURN_PERIODS),
         "original_station_rows": expected_rows,
         "by_author_name_family_and_return_year": period_groups,
         "band_exceedance_size_categories_m": severity_groups,
-        "nominal_pyextremes_2p3p1_alpha_0p95_percentile_formula": [2.5, 97.5],
+        "nominal_pyextremes_2p3p1_alpha_0p95_percentile_formula": [
+            round(x, 10) for x in bootstrap_percentiles_from_nominal_alpha(0.95)
+        ],
         "historical_model_mle_bootstrap_default_n_samples": 100,
         "historical_pyextremes_random_state_not_pinned_in_producer_script": True,
         "producer_exact_runtime_version_and_seeds_not_proven": True,
