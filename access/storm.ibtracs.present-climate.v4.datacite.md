@@ -24,7 +24,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Interface type:** rest
 
-**Status:** verified_anonymous
+**Status:** probe_ready
 
 **Documentation url:** <https://support.datacite.org/docs/api-get-doi>
 
@@ -57,13 +57,14 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - /dois/10.4121/12706085.v4
 
-**Parameter rules:** One original anonymous singleton DOI metadata GET was verified on 2026-11-03 at https://api.datacite.org/dois/10.4121%2F12706085.v4 (14,825 JSON bytes; captured SHA-256 90bbb620c7e04632e45b5c86c2998b3b023a55d246b56c2c7f09cc1a66c62f66). Future T1 metadata probes are restricted to one user-initiated GET per run using the fixed service root and DOI path, no caller-selected host, different DOI, parameters, pagination, arbitrary headers, credentials, mass harvesting, automatic retries or cross-origin redirects. The offline preflight separately verifies the raw response SHA-256 supplied by the caller. No 4TU original file-list/track-byte request, model ingestion or dataset admission is permitted by this metadata contract.
+**Parameter rules:** Exactly one opt-in, anonymous, repository-constructed GET for the fixed DOI 10.4121/12706085.v4 (no query parameters, redirects, pagination, retries, caller-supplied URLs, headers, tokens or alternative DOIs). DataCite publicly documents this singleton metadata API. Only public DataCite DOI JSON metadata may be read and SHA-receipted transiently. No 4TU/STORM track files, asset URLs, enumeration, polling or dataset bytes are authorized. A response identity/licence mismatch must fail closed.
 
 ## Response contract
 
 ### Expected media types
 
 - application/json
+- application/vnd.api+json
 
 **Format:** DataCite public singleton DOI JSON:API metadata response (data.type=dois, exact data.id and attributes.doi).
 
@@ -79,7 +80,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** none
 
-**Rate limit notes:** DataCite official published public REST guidance permits anonymous DOI metadata retrieval/harvesting, with a provider limit of 500 requests per five minutes for unidentified clients (HTTP 429 when limited). Our own much narrower research boundary is at most one exact DOI metadata GET per user-initiated run, timeout 20s, &lt;=256 KiB, no retry, no bulk harvesting or query expansion. Terms: https://support.datacite.org/docs/harvesting-datacite-doi-metadata and https://support.datacite.org/docs/rate-limit.
+**Rate limit notes:** DataCite documents unrestricted anonymous public DOI metadata retrieval and rate limits; this contract is intentionally much narrower: one manual, fixed DOI GET per --probe-once, 20-second timeout, 256-KiB cap, no redirects, no retries, no recurring polling, no broad harvest. DataCite recommends identifiable User-Agent for frequent scripted calls; this runner does not make frequent requests. Never escalate automatically to dataset assets.
 
 **Mutability notes:** DOI v4 is version-pinned but the public metadata record is mutable: original capture 2026-11-03, 14,825 bytes, SHA-256 90bbb620c7e04632e45b5c86c2998b3b023a55d246b56c2c7f09cc1a66c62f66, with provider reported metadata updated 2025-06-01T05:36:28Z. Any subsequent response must produce a new bounded original byte digest; a differing digest is not by itself evidence that STORM v4 track bytes changed. Track file inventory, sizes, checksums, native schema and year/event semantics remain separately unverified.
 
@@ -91,11 +92,11 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Terms url:** <https://support.datacite.org/docs/harvesting-datacite-doi-metadata>
 
-**Commercial automation status:** unknown
+**Commercial automation status:** allowed
 
-**Redistribution status:** unknown
+**Redistribution status:** allowed
 
-**Notes:** The fixed DOI record and institutional v4 review identify synthetic STORM v4 dataset licence CC0-1.0; DataCite's original policy explicitly says DOI metadata themselves are openly CC0 and public anonymous REST metadata harvesting is supported. This supports a bounded metadata-only GET, NOT broad automation of 4TU original tracks, approval of original track-file republication, model use, or assumption that DataCite API rate limits license other providers. Commercial automated ingestion and redistribution decisions for provider track assets remain unknown and separate; the current source review is metadata-only.
+**Notes:** DataCite official public REST API guidance explicitly invites anonymous DOI metadata retrieval/harvesting, and the DataCite Data File Use Policy states its deposited bibliographic metadata are CC0 and available for any purpose. This source-specific judgement permits only one narrow public metadata GET; it is not general website scraping. General website Terms restrict systematic website scraping, which this fixed API canary does not perform. This metadata scope does not transfer CC0 to linked provider datasets, files, names/logos, sensitive elements or STORM track assets; separate 4TU source rights and exact-file admission remain necessary.
 
 ## Probe contract
 
@@ -107,13 +108,14 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ### Expected evidence
 
-- HTTP original singleton DataCite JSON response, exact fixed DOI (no dynamic path or query), anonymous metadata-only
-- Source record data.type=dois; data.id=attributes.doi=10.4121/12706085.v4; resourceTypeGeneral=Dataset; title identifies STORM tropical cyclone tracks; version=4
-- Original 2026-11-03 metadata response size=14825 bytes, independently calculated SHA-256=90bbb620c7e04632e45b5c86c2998b3b023a55d246b56c2c7f09cc1a66c62f66
-- Original DOI metadata rightsList CC0-1.0 (this is not a track-file byte or rights admission)
-- Negative flags preserved: source track file bytes not acquired, provider asset inventory not verified, model input unauthorized
+- one exact public GET URL and response HTTP 200 with no redirect
+- response application/json or application/vnd.api+json and at most 262144 bytes
+- same-body response SHA-256, retrieval UTC and source access_id
+- strict exact v4 DOI, dataset title, version, types and licence conflict gate
+- no provider response body or data files persisted
+- metadata-only receipt with source_admission_extended=false and model_input_approved=false
 
-**Implementation decision:** build_later
+**Implementation decision:** build_adapter_now
 
 **Reviewed at:** 2026-11-03
 
@@ -126,5 +128,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - <https://support.datacite.org/docs/harvesting-datacite-doi-metadata>
 - <https://support.datacite.org/docs/rate-limit>
 - <https://api.datacite.org/dois/10.4121%2F12706085.v4>
+- <https://support.datacite.org/docs/datacite-data-file-use-policy>
+- <https://support.datacite.org/docs/best-practices-for-integrators>
 
-**Notes:** 2026-11-03 independent original public DataCite DOI metadata check verified singleton response (14825 bytes; SHA-256 90bbb620c7e04632e45b5c86c2998b3b023a55d246b56c2c7f09cc1a66c62f66), exact STORM v4 ID, publisher 4TU.Centre for Research Data, dataset type, metadata version 4 and declared CC0. API rights and rate notes are official DataCite documentation, not a blanket clearance for 4TU original assets. Offline preflight and synthetic regression tests remain non-admission; no track files, original 4TU asset manifest, original track hashes, cross-peril event correlation or insured losses have been fetched/verified/imported.
+**Notes:** T1: one manual opt-in DataCite DOI metadata GET through research_runners/storm_v4_datacite_probe_v0.py with fail-closed exact contract and offline synthetic tests. No provider request has yet been successfully executed or receipted in this PR; probe_ready means executable contract, not verified live access. STORM track assets and actual CAT model data remain outside scope, unacquired and unapproved.
