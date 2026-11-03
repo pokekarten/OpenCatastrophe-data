@@ -88,7 +88,7 @@ def parse_pair_csv(raw: bytes) -> dict[str, object]:
         reader = csv.DictReader(io.StringIO(contents, newline=""), strict=True)
         if reader.fieldnames != HEADER:
             raise OriginalPairError("unexpected original pair CSV header")
-        counts = {"wind_flood": 0, "other": 0}
+        counts = {"wind_flood": 0, "wind_wind": 0, "flood_flood": 0}
         all_pairs: set[tuple[str, str]] = set()
         distinct = {"ws": set(), "fl": set()}
         nonoverlap_time = 0
@@ -108,8 +108,12 @@ def parse_pair_csv(raw: bytes) -> dict[str, object]:
             all_pairs.add(pair_key)
             if {a[0], b[0]} == {"ws", "fl"}:
                 counts["wind_flood"] += 1
+            elif a[0] == b[0] == "ws":
+                counts["wind_wind"] += 1
+            elif a[0] == b[0] == "fl":
+                counts["flood_flood"] += 1
             else:
-                counts["other"] += 1
+                raise OriginalPairError(f"line {line}: unexpected peril pairing")
             if a[3] < b[2] or b[3] < a[2]:
                 nonoverlap_time += 1
             # Bounding-box overlap is necessary, but not sufficient, for
@@ -127,7 +131,9 @@ def parse_pair_csv(raw: bytes) -> dict[str, object]:
     return {
         "pair_rows": len(all_pairs),
         "wind_flood_pair_rows": counts["wind_flood"],
-        "other_pair_rows_requires_scientific_review": counts["other"],
+        "wind_wind_pair_rows": counts["wind_wind"],
+        "flood_flood_pair_rows": counts["flood_flood"],
+        "other_pair_rows_requires_scientific_review": counts["wind_wind"] + counts["flood_flood"],
         "wind_event_ids_referenced": len(distinct["ws"]),
         "flood_event_ids_referenced": len(distinct["fl"]),
         "pair_rows_without_calendar_overlap": nonoverlap_time,
