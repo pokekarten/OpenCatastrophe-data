@@ -74,6 +74,17 @@ These flags are not subjective estimates: the [official Hub'Eau v2 hydrometry AP
 
 **Model implication:** no source here can be used as a sensor-exact observed peak discharge, independent flood-depth observation, or verified insurance loss benchmark. Distinguish reliable staff-gauge stage chronology from independently validated discharge, seek the hydrograph's official reconstruction/uncertainty evidence and provider revision history, and only then build a separate hydraulic model and validation holdout. Treat all authority-specific timestamps and references with original timezone/revision metadata rather than assigning a hypothetical continuous outage duration.
 
+## Independent instrument-failure corroboration
+
+An official February 2017 government investigation documents two station problems during the June 2016 flood:
+
+- Paris-Austerlitz: the measurement well stopped tracking the river level, with discrepancies up to 30 cm over about 18 hours. A temporary station was installed on 3 June.
+- Saint-Fargeau-Ponthierry: floating debris interfered with a velocity sensor path, causing calculated discharge to be underestimated.
+
+Source: https://igedd.documentation.developpement-durable.gouv.fr/documents/Affaires-0009575/010743-01_rapport.pdf (printed page 131). These findings do not establish per-day corrections, flood depths or source licensing.
+
+An executed read-only audit is available at [SQL](../../research_runners/sql/hubeau_2016_flood_peak_station_incident_audit_v0.sql). During 3–7 June it found five reconstructed, validated Paris daily flows and five calculated, doubtful Ponthierry daily flows. Neither series is model-admitted. The 30 cm station discrepancy is distinct from cartographic uncertainty.
+
 ## Provider rights and actual next input
 
 The 5.66/7.19 published PDFs explicitly state that re-use of the underlying VIGINOND/ZIP data requires an exchange with the producing/managing authority and understanding the data lineage and terms. The author is **SPC SMYL**. No commercial or broader geospatial permission is inferred from PDF web accessibility. The Paris scenario simulations predate the 2016 flood and do not include all the observed mechanisms (e.g. tributary, groundwater and network flooding); independent historic field/extent references are needed.
