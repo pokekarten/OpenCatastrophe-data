@@ -153,3 +153,81 @@ document. No current SHA-256 or full 64-page local byte receipt has been
 claimed, and neither validation runner was executed against the full
 real report bytes. No usage-rights decision or production Neon write is
 implied by source-page visual verification or aggregate arithmetic.
+
+## Independent gross NatCat observation: NOT an event-loss catalogue
+
+The original Allianz Versicherungs-AG 2025 annual report, **printed p. 8 /
+PDF zero-based p. 9**, additionally states that gross **expenses for
+elemental damage within the reporting business year** were **EUR 277 million
+in 2025** versus **EUR 906 million in 2024**. This is a public
+insurer-specific CAT-associated accounting observation, distinct from the
+**405,700 annual reported claims** in the broader fire/property LoB
+population, distinct from group loss and distinct from a catastrophe-event
+GUL/YLT. Do **not** classify all 405,700 reports as catastrophic events,
+interpret this gross elemental expense as an AEL or 200-year PML, or infer
+wind/hail/flood proportions from this one disclosed annual number.
+For a NextGen annual CAT loss comparison, the reviewer must establish the
+insured-peril definition, calendar/event/underwriting/reporting year,
+gross / direct / assumed / net basis and reserve-development alignment.
+
+Original issuer document: https://www.allianz.de/content/dam/onemarketing/azde/azd/unternehmenskommunikation/pdfs/unternehmen/zahlen-daten-fakten/geschaeftsberichte/GB_AZV_2025_websafe.pdf
+
+## Executable fully synthetic geographic inverse problem
+
+New repository files:
+- research_runners/synthetic_regional_property_book_v0.py
+- tests/test_synthetic_regional_property_book_v0.py
+
+The operator supplies independently **fictional** solo national
+year-end contract stock, annual written gross EUR cents, year-end and
+fictional regions. Regions declare *synthetic* capacities in
+contract-equivalent units, scenario prior weights, written-premium
+relativities, *hypothetical* market elemental penetration and independent
+assumed carrier-vs-market take-up multipliers.
+
+A deterministic capacity-bounded weighted water fill + Hamilton rounding
+**exactly** conserves total integer contract counts. A separate cent-exact
+partition **exactly** conserves annual gross written premiums. The output
+computes hypothetical elemental-cover contract-equivalents bounded by
+allocated contracts. It does **not** identify insurer-specific coverage
+or actual assets. Changing the assumed regional weights gives different
+county distributions with the same nationally conserved stock/premiums.
+Changing carrier elemental coverage assumptions changes the elemental
+count without changing any observed original national control. This is
+a constructive demonstration of **non-identifiability**.
+
+Output explicitly rejects any claim that flow/stock ratios are technical
+tariffs, that end-year contract counts are unique residential buildings,
+that market elemental penetration equals company-specific penetration, or
+that the generated rows are insurer observations, true risk-site
+coordinates, CAT losses, TIV, reinsurance treaties or approved model input.
+
+The GDV industry-wide 2026 data service states that in 2025
+**10.6 million residential buildings** had broad elemental insurance,
+**59% broad elemental penetration** relative to its residential building
+fire reference population, versus **96% wind/hail residential building
+coverage**. Some rainfall-only contracts are excluded from the broad
+elemental statistic. Official:
+https://www.gdv.de/gdv/statistik/datenservice-zum-naturgefahrenreport/sachversicherung-elementar/versicherungsquote-bei-elementarschadenversicherung-steigt-kontinuierlich--147644
+
+The separately registered 2026 **GDV district-level** source documents
+strong industry-wide spatial variation, **not any Allianz district
+allocation**:
+https://www.gdv.de/gdv/statistik/datenservice-zum-naturgefahrenreport/sachversicherung-elementar/versicherungsdichte-bei-elementarschadenversicherung-regional-sehr-unterschiedlich-183592
+
+The already-registered official **Destatis Zensus 2022 buildings grid**
+is downloadable with attribution and 10 km / 1 km / 100 m geometry.
+Its 2022 reference date differs from the 2025 Allianz/GDV policy year.
+The grid counts are neither unique company-insured risk sites nor
+confirmed exposure locations. Confidentiality suppression and the
+2022-to-2025 vintage change must be addressed before using regional priors.
+Official:
+https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/_inhalt.html
+
+**Remaining causal science gate:** normalize exact insurer, district,
+industry elemental and Zensus population definitions and vintages.
+Build two distinct permitted geographic priors to stress test
+wind/flood modeled losses and compare only to compatible independent
+public gross loss controls. The original Allianz full PDF byte SHA and
+per-source redistribution review remain *blocked*, and the new runner
+continues to use only fully invented inputs.
