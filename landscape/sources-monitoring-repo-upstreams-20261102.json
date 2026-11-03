@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "purpose": "Non-admission monitoring-repository upstream source discovery with 22 unique local entries after GLIDE was consolidated into the canonical peer-cat-repositories source shard; preserves twelve-repository research provenance, no data admission or third-party reuse rights.",
+  "purpose": "Non-admission monitoring-repository upstream source discovery with 20 unique local entries after GLIDE, CERF and International Charter were consolidated into the canonical peer-cat-repositories source shard; preserves twelve-repository research provenance, no data admission or third-party reuse rights.",
   "review_date": "2026-11-02",
   "entries": [
     {
@@ -29,31 +29,6 @@
       "admission_status": "not_admitted"
     },
     {
-      "candidate_id": "unocha.cerf.gms-api",
-      "name": "UN CERF grants and project data API",
-      "provider": "UN OCHA Central Emergency Response Fund",
-      "categories": [
-        "humanitarian_finance",
-        "disaster_response",
-        "impact_proxy"
-      ],
-      "spatial_scope": "global countries receiving CERF allocations",
-      "temporal_scope": "historical and current allocations and project records",
-      "resolution_or_granularity": "Application, project, country, year, sector and allocation metadata",
-      "potential_roles": [
-        "response_timing_context",
-        "event_crosswalk",
-        "humanitarian_impact_proxy"
-      ],
-      "authoritative_url": "https://cerfgms-webapi.unocha.org/",
-      "access_class_hint": "public_documented_api_exact_endpoints_rights_review_required",
-      "note": "MapAction disaster-impact treats CERF as an event-related source. Financial allocations indicate humanitarian response, not gross catastrophe damage or insured claims; funding timing, emergency classification, code and overlaps with IFRC must be preserved.",
-      "candidate_status": "evidence_checked",
-      "rights_review_status": "not_reviewed",
-      "scientific_review_status": "not_reviewed",
-      "admission_status": "not_admitted"
-    },
-    {
       "candidate_id": "ifrc.go.dref-appeals-api",
       "name": "IFRC GO Disaster Response Emergency Fund appeals API",
       "provider": "International Federation of Red Cross and Red Crescent Societies",
@@ -73,31 +48,6 @@
       "authoritative_url": "https://go-wiki.ifrc.org/en/go-api/data_dictionary_appeal",
       "access_class_hint": "documented_api_source_data_licence_not_confirmed",
       "note": "MapAction disaster-impact lists IFRC-DREF. GO appeal atype=0 denotes DREF; event associations may be absent and reported beneficiaries are not insured loss. GO upstream data rights may be unstated; review API conditions and field-level semantics before any persistent import.",
-      "candidate_status": "evidence_checked",
-      "rights_review_status": "not_reviewed",
-      "scientific_review_status": "not_reviewed",
-      "admission_status": "not_admitted"
-    },
-    {
-      "candidate_id": "disasterscharter.activations.archive",
-      "name": "International Charter Space and Major Disasters activations",
-      "provider": "International Charter Space and Major Disasters",
-      "categories": [
-        "satellite_response",
-        "event_catalogue",
-        "disaster_mapping"
-      ],
-      "spatial_scope": "global activations; selective coverage",
-      "temporal_scope": "public activation archive from 2000 onward",
-      "resolution_or_granularity": "Activation ID/date, disaster type, country, links to imagery and event-specific derived mapping products",
-      "potential_roles": [
-        "satellite_damage_map_discovery",
-        "event_identity_crosswalk",
-        "post_event_footprint_discovery"
-      ],
-      "authoritative_url": "https://disasterscharter.org/activations",
-      "access_class_hint": "public_activation_metadata_event_products_have_separate_reuse_rights",
-      "note": "Found through MapAction disaster-impact. Activation is an observation/response selection signal, not an exhaustive event inventory. Map/imagery products have individual rights, footprints and confidence; do not conflate an activation with an observed damage polygon.",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
