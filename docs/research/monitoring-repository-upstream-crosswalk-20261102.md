@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 **Scope:** Source discovery for catastrophe event intelligence, post-event impact validation and exposure context. Repository README/docs and identified provider pages were inspected on 2026-11-02. This is a **discovery and provenance map, not a data admission, executable API proof, licence clearance, production-readiness claim or permission to persist third-party data**. Source-level original rights and model fitness remain independent gates.
 
-For the follow-up **code-level source sweep across all twelve shortlisted repositories**, see [monitoring-repositories-code-source-sweep-20261102.md](monitoring-repositories-code-source-sweep-20261102.md). The canonical registry now has **23** candidates: 12 first-pass entries and 11 additional code/provider-discovery entries.
+For the follow-up **code-level source sweep across all twelve shortlisted repositories**, see [monitoring-repositories-code-source-sweep-20261102.md](monitoring-repositories-code-source-sweep-20261102.md). This canonical shard now has **20 unique new candidates** from 23 researched leads (12 first-pass and 11 additional code/provider-discovery leads); three already belonged to the peer-CAT registry.
 
 ## Registry link and anti-duplication rule
 
@@ -34,7 +34,7 @@ Canonical **new provider candidates**: [`landscape/sources-monitoring-repo-upstr
 
 **Already represented (do not re-add):** GDACS, EONET, NHC operational GIS, NWS CAP, ReliefWeb, UNHCR, IOM DTM, UNDRR DELTA, USGS ComCat, NASA FIRMS, Global Energy Monitor, IMF PortWatch, and other existing `landscape` identities. A candidate is not the same as admission.
 
-**First-pass discovery entries (12 of 23):** GLIDE IDs, IDMC IDU, UN CERF project API, IFRC GO/DREF appeals, International Charter activations, Nepal BIPAD, England Environment Agency flood monitoring, UK Met Office severe warning API, Open-Meteo model/single-run API, BMKG Indonesia earthquake feeds, JMA earthquake/volcano XML, and NASA GIBS visualizations. They are recorded with `evidence_checked` and `not_admitted` and are **not** installed as pipelines.
+**First-pass discovery leads (12 reviewed, 9 retained as unique new candidates):** GLIDE IDs, IDMC IDU, UN CERF project API, IFRC GO/DREF appeals, International Charter activations, Nepal BIPAD, England Environment Agency flood monitoring, UK Met Office severe warning API, Open-Meteo model/single-run API, BMKG Indonesia earthquake feeds, JMA earthquake/volcano XML, and NASA GIBS visualizations. They are recorded with `evidence_checked` and `not_admitted` and are **not** installed as pipelines.
 
 **Investigate next:** BMKG operational versus fully reviewed historical catalogue, Japan and Indonesian original bulletin retention, NASA GIBS quantitative source-product mapping, InciWeb incident metadata, public national damage/impact datasets surfaced by Charter and DELTA, exact sources for WorldMirror's infrastructure features. Prioritise original sources over feed mirrors.
 
@@ -56,3 +56,5 @@ First implement **source-access/documentation probes** for Environment Agency (w
 ### Inspection boundary
 
 Verified repository README/provider documentation only; no bulk upstream downloads, no tokens, no sample data in Git and no direct rights/admission decision. Full live endpoint validation, exact field schema and licence review are future access/admission steps.
+
+**2026-11-03 cross-shard deduplication:** The GLIDE disaster ID, UN CERF GMS API and International Charter activations leads were already registered in `landscape/sources-peer-cat-repositories-20261102.json` under the canonical source IDs `adrc.glide.disaster-identifiers`, `unocha.cerf.gms-data-api`, and `international-charter.space-major-disasters.activations`. The original research descriptions remain for provenance, but these three were removed from the monitoring shard's canonical JSON and generated Markdown to avoid duplicate records, false independent counts and global-contract failures. No source rights or model admission changes.
