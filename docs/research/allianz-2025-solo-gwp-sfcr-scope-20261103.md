@@ -93,3 +93,63 @@ Earlier independent Neon main inventory: 22 verified organisations,
 does **not** import the annual-report values, claim legal or commercial
 permission to run bulk report extraction, create an insured portfolio, or
 alter any current data/database admission flag.
+
+## Additional original-source observation: contract stock and reported claims
+
+Independent visual/source inspection of the official annual report, **printed
+p. 50 / PDF zero-based p. 51**, found its table **"Anzahl der mindestens
+einjährigen Versicherungsverträge und der gemeldeten Schäden"**. For 2025 it
+reports by HGB fire/property sub-line **year-end contract stock** and
+**annual reported claims**. This is a new, materially stronger set of
+calibration constraints than gross written premiums alone.
+
+Independent *arithmetic* reconciliation of the printed fire-and-property
+group and its four sub-lines (fire, contents, connected residential building,
+other property):
+
+| Published group control (2025) | Independently sum of four sub-lines | Published group amount | Arithmetic result |
+| --- | ---: | ---: | --- |
+| Direct gross **written** contributions, EUR thousands (printed p. 8) | 3,372,507 | 3,372,507 | Equal |
+| Stock of contracts **at least one year** (printed p. 50) | 5,645,881 | 5,645,881 | Equal |
+| **Reported claims**, annual all-claims universe (printed p. 50) | 405,700 | 405,700 | Equal |
+
+These three checks refer to the same **HGB fire/property insurance
+classification** at two pages of the **same original annual report**.
+Never sum a fire/property parent row on top of its four direct children.
+Even within property lines, one structure may have multiple policies and
+a policy may cover more than one object. Therefore contract counts are
+**not unique buildings** and reported losses are **not event/peril-only**.
+
+Two focused, publicly reported line observations have an illustrative
+research-only ratio: connected residential building (2025 written GWP
+EUR 1,999.741m, year-end contract count 2,321,478, all claims reported
+237,977) gives **EUR 861.41 annual written premium / year-end contract**
+and **0.102511 all reported claims / year-end contract**. Home contents
+(EUR 522.370m, contracts 2,946,112, reported claims 123,994) gives
+**EUR 177.31** and **0.042087**, respectively. These **are not measured
+policy rates, exact actuarial claim frequencies, individual TIV, mean
+insured losses, regional allocations, weather-event counts or a company
+CAT risk exposure**. Their numerators are annual flows whereas
+denominators are year-end stocks and include changing policy mix.
+
+**Executable, nonpromoting cross-table control:**
+`research_runners/solo_insurer_stock_claims_control_v0.py` reuses the same
+privately supplied PDF fingerprint and validates matching legal entity/year,
+distinct source-page evidence, exact matched atomic LoB names and three
+separately tested published parent controls (premiums, contract stock,
+claims). It rejects a parent also counted as an atomic premium LoB,
+overlapping rollups, unknown child lines, source/period mismatch and
+silent CAT/geography assumptions. Derived reference ratios are returned
+as labelled research diagnostics, never model inputs.
+`tests/test_solo_insurer_stock_claims_control_v0.py` uses **17
+independently invented** scenarios; no publisher PDF or external rows
+committed as test fixtures.
+
+**Original bytes gate is STILL BLOCKED:** The official PDF is visually
+available through the public browser and the original source pages were
+inspected, but this session's local container could not retrieve full
+original file bytes. A separate service returned only a truncated base64
+document. No current SHA-256 or full 64-page local byte receipt has been
+claimed, and neither validation runner was executed against the full
+real report bytes. No usage-rights decision or production Neon write is
+implied by source-page visual verification or aggregate arithmetic.
