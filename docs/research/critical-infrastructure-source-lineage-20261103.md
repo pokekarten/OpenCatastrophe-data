@@ -35,7 +35,11 @@ Read only provider-published service/layer metadata after terms review; layer ID
 ## Acceptance gates
 1. Record exact source-specific licence and commercial derivative permissions, source version/release and original provider data hashes.
 2. Validate geographic/temporal coverage and data-collection biases; establish immutable event/model IDs.
-3. Implement a narrow synthetic-only curve semantics unit test (repair-rate vs fractional loss) before ingesting real source arrays.
+3. **Implemented synthetic-only contract:** `research_runners/ci_curve_semantics_v0.py` and `tests/test_ci_curve_semantics_v0.py` now reject unit mismatches, unknown output measures, non-finite/out-of-order intensities and damage ratios outside [0,1]. Repair rates and pipes-per-km remain explicitly non-fractional without imposing a false 0–1 bound. This does not validate any provider data, authorize conversion, or create loss-model input.
 4. Review and approve a model-specific `manifests/` entry only after an independent scientific quality assessment. An entry in `landscape/` remains `not_admitted`.
 
 **Cross-check:** WRI Aqueduct Floods, CEMS/GloFAS, GFD MODIS, GEM global seismic vulnerability, NCEI Storm Data, NCEI Event Footprint Catalog and prior `sebkrantz` curve export were already registered. This source pass does not duplicate those provider identities or promote their model rights.
+
+## Offline code checks (synthetic data only)
+
+Run `python -m unittest tests.test_ci_curve_semantics_v0 tests.test_ci_vulnerability_source_lineage_20261103` or the repository-wide `python scripts/check_all.py`. A passing test validates a **semantic guard** only; original source workbooks/CSV, NOAA DAT features, scientific transferability and commercial data rights are still unverified. The model cannot infer a missing intensity conversion, unrecorded asset type or an insured-loss interpretation from this check.
