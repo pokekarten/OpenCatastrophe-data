@@ -126,7 +126,7 @@ def inspect_layer(blob: bytes, expected_sha256: str, profile: str) -> dict:
     else:
         source_edition = "MTBS 2024 boundary subset (live service; release NOT fixed)"
         mapped = {
-            "mtbs_component_id": by_name["perim_id"][0],
+            "mtbs_component_id": None,  # PERIM_ID observed null in original 2024 provider data
             "mtbs_id": by_name["fire_id"][0],
             "fire_year": by_name["year"][0],
             "event_kind": by_name["fire_type"][0],
@@ -146,6 +146,7 @@ def inspect_layer(blob: bytes, expected_sha256: str, profile: str) -> dict:
         "authenticated_original_publisher_bytes": False,
         "native_row_values_examined": False,
         "native_field_semantics_and_nullability_validated": False,
+        "polygon_component_key_from_perim_id_authorized": False,
         "original_source_file_sha256_pinned": False,
         "individual_event_join_proven": False,
         "source_rights_or_cat_admission_granted": False,
