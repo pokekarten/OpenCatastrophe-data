@@ -24,13 +24,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Interface type:** rest
 
-**Status:** documented_only
+**Status:** probe_ready
 
 **Documentation url:** <https://figshare.com/articles/dataset/Global_Dam_Watch_database_version_1_0/25988293>
 
 **Service root:** <https://api.figshare.com>
 
-**Api version:** v2
+**Api version:** Figshare API v2; frozen public article 25988293, version 1
 
 ## Access scope
 
@@ -51,13 +51,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ### Allowed operations
 
-- gdw_v10_archive_metadata
+- gdw_v10_archive_metadata_version1
 
 ### Path templates
 
-- /v2/articles/25988293
+- /v2/articles/25988293/versions/1
 
-**Parameter rules:** Static documentation contract only. The archival metadata identity is fixed to Figshare public article 25988293 for Global Dam Watch database version 1.0. A future reviewed implementation may resolve only this fixed public article metadata record. Callers must not supply a host, article ID, version, file ID, file name, path, query, headers, redirect target or download URL. This contract does not authorize /download, /files, version-file listing, Range requests or ZIP retrieval. Figshare is archival/access infrastructure and must not be represented as a native Global Dam Watch scientific query API.
+**Parameter rules:** Exactly one explicit opt-in anonymous GET of https://api.figshare.com/v2/articles/25988293/versions/1. No caller-selected ID, version, URL, query, headers, redirects, pagination, archive download, file URL follow, or second request. Public article metadata only. Any changed version, licence or file-list identity blocks. The first live receipt must be reviewed before scientific/data promotion.
 
 ## Response contract
 
@@ -65,7 +65,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - application/json
 
-**Format:** Figshare public article metadata JSON for the fixed Global Dam Watch v1.0 archival record.
+**Format:** Figshare public, immutable-version-targeted article details JSON: article ID 25988293, version 1, exact version DOI and CC BY 4.0; metadata describing two alternate v1.0 ZIP representations (gdb and shp) only. Reject unverified/missing required metadata instead of assuming files.
 
 **Scientific semantics:** Global Dam Watch v1.0 is a global river-barrier and reservoir reference database. The published release contains a barrier point layer and an associated reservoir polygon layer; these are distinct scientific objects linked by identifiers/location, and not every barrier has an associated reservoir polygon. The two release ZIPs are alternate Geodatabase and Shapefile delivery representations, not independent scientific releases. The published v1.0 inventory reports 41,145 barrier points and 35,295 associated reservoir polygons. Presence in the database does not establish dam-failure probability, structural fragility, reservoir operating state, current asset status, downstream inundation or catastrophe-model fitness.
 
@@ -79,9 +79,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** none
 
-**Rate limit notes:** No repository-specific numeric Figshare API rate-limit assumption is made. Figshare publicly documents API v2 and public article metadata endpoints, but this contract remains documentation-only and authorizes no live probe. Any future metadata receipt must remain a single fixed-record lookup under the reviewed public API/access policy and current operational guidance.
+**Rate limit notes:** Figshare official API documentation recommends at most one request per second and reserves throttle/block rights. This contract permits one explicitly invoked fixed metadata GET without pagination, redirects, retry, file retrieval or a scheduled acquisition loop.
 
-**Mutability notes:** The scientific release is pinned to Global Dam Watch version 1.0, Figshare article 25988293 and version DOI 10.6084/m9.figshare.25988293.v1. The public metadata service is an access route, not scientific byte identity. Any later selected file must separately freeze the exact Figshare file identity and representation, retrieval UTC, byte count and SHA-256 before scientific, admission or publication use.
+**Mutability notes:** Use the version-specific /versions/1 API route rather than mutable latest article details. Archive file identities, declared sizes and optional provider MD5 from that response are metadata, not verified original ZIP bytes. A live result must record retrieval UTC, response byte count/SHA-256 and code identity. For archived file acquisition, separately review exact asset, permissions, declared and independently computed SHA-256 and CRS/column semantics.
 
 ## Rights and policy
 
@@ -99,19 +99,25 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ## Probe contract
 
-**Mode:** none
+**Mode:** metadata_get
 
-**Operation:** `null`
+**Operation:** gdw_v10_archive_metadata_version1
 
 **Requires credentials:** `false`
 
 ### Expected evidence
 
-_Empty array._
+- exact version-specific Figshare metadata endpoint HTTP 200 without redirect
+- strict bounded UTF-8 application/json; response byte count and SHA-256
+- article id 25988293, version 1, version DOI 10.6084/m9.figshare.25988293.v1
+- CC BY 4.0 licence identity from provider metadata
+- exact two alternate archive names, item identifiers, positive declared sizes and any provider MD5
+- retrieval UTC and execution code identity
+- no archive download, provider bytes persisted, CAT admission or database write
 
-**Implementation decision:** document_only
+**Implementation decision:** build_adapter_now
 
-**Reviewed at:** 2026-08-12
+**Reviewed at:** 2026-11-04
 
 ## Evidence urls
 
@@ -122,5 +128,6 @@ _Empty array._
 - <https://info.figshare.com/user-guide/figshare-policies/>
 - <https://info.figshare.com/user-guide/how-to-use-the-figshare-api/>
 - <https://docs.figshare.com/>
+- <https://docs.figshare.com/v2/>
 
-**Notes:** Static metadata/access boundary only for \#173/\#244. No provider request, external byte, file/download authority, adapter, Agent Action dispatch, admission promotion or publication decision is introduced. Future byte acquisition must select one exact v1.0 release representation and file only after a separate asset-specific review; do not infer dam safety, failure likelihood, hazard intensity or loss from inclusion in the inventory.
+**Notes:** A single fixed, version-specific Figshare public metadata canary is ready for explicitly opted-in execution, never an unbounded harvester. It cannot retrieve either archive, follow links or admit GIS source data. Publisher paper confirms 41,145 barriers and 35,295 reservoir polygons; 5,850 barrier points have no matched polygon. The source is not dam-failure hazard or insured loss. First live provider response remains unverified in this change.
