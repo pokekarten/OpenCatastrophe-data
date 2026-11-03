@@ -141,13 +141,47 @@ def compare_original_to_author_catalogue(
             or exact_packed_coordinate_matches + within_one_packed_unit
             + coordinate_conflicts != matched_ids):
         raise AuthorCatalogueAuditBlocked("author/source catalogue overlap counts do not reconcile")
+
+    # No original rows emitted: aggregate only the publisher catalogue's
+    # name-family prefixes for IDs *not* represented in the Zenodo statistics.
+    author_prefix_counts = dict.fromkeys(prefix_counts, 0)
+    not_in_statistics_prefix_counts = dict.fromkeys(prefix_counts, 0)
+    not_in_statistics_inside_source_id_span = 0
+    not_in_statistics_outside_source_id_span = 0
+    source_min = min(seen)
+    source_max = max(seen)
+    for catalogue_id, (_, _, family) in catalogue.items():
+        if family not in author_prefix_counts:
+            raise AuthorCatalogueAuditBlocked("supplier catalogue name-family drift")
+        author_prefix_counts[family] += 1
+        if catalogue_id not in seen:
+            not_in_statistics_prefix_counts[family] += 1
+            if source_min <= catalogue_id <= source_max:
+                not_in_statistics_inside_source_id_span += 1
+            else:
+                not_in_statistics_outside_source_id_span += 1
+    remaining = len(catalogue) - matched_ids
+    if (sum(author_prefix_counts.values()) != len(catalogue)
+            or sum(not_in_statistics_prefix_counts.values()) != remaining
+            or not_in_statistics_inside_source_id_span
+               + not_in_statistics_outside_source_id_span != remaining):
+        raise AuthorCatalogueAuditBlocked("supplier-only ID counts do not reconcile")
+
     return {
         "schema_version": "gtsm-zenodo-author-station-catalogue-overlap-v0",
         "original_zenodo_statistical_rows": expected_rows,
         "author_catalogue_rows": len(catalogue),
         "matching_native_station_ids": matched_ids,
         "original_native_station_ids_absent_in_author_catalogue": absent_ids,
-        "author_catalogue_ids_not_in_original_statistics": len(catalogue) - matched_ids,
+        "author_catalogue_ids_not_in_original_statistics": remaining,
+        "author_catalogue_name_family_by_prefix": author_prefix_counts,
+        "author_catalogue_not_in_statistics_by_prefix": not_in_statistics_prefix_counts,
+        "author_catalogue_not_in_statistics_inside_occupied_original_id_span": (
+            not_in_statistics_inside_source_id_span
+        ),
+        "author_catalogue_not_in_statistics_outside_occupied_original_id_span": (
+            not_in_statistics_outside_source_id_span
+        ),
         "matching_ids_with_exact_quantized_coordinates": exact_packed_coordinate_matches,
         "matching_ids_within_one_0p001_degree_packed_unit": within_one_packed_unit,
         "matching_ids_with_coordinate_conflict_larger_than_0p001_degree": coordinate_conflicts,
