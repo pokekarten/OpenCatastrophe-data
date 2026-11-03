@@ -57,3 +57,7 @@ The non-referenced source events are **3 wind events** and **1,962 flood events*
 First, define an event relation contract that keeps original event IDs, provenance, time windows and hazard-specific units, with **no loss amount or independent-event simulation**. Second, use a bounded rights-reviewed sparse NetCDF sample to verify actual coincident *cells*, CRS, and grids, rather than bounding boxes. Third, compare against independently sourced post-event observations. Only after licensed and scientific validation can a separate, controlled consumer be considered for later annual event clustering, Oasis/ORD model interchange and independent reinsurance/capital-modelling consumers.
 
 **State: source original-byte and event-ID linkage verified; scientific model use, upstream commercial rights, data ingestion, insured loss, and CAT simulation admission remain blocked.**
+
+## Repository integration verification (2026-11-03)
+
+This research PR must pass a **new full exact-head CI run** against current `main` after integration changes to the global validation geometry dependency (merged PRs #1183 and #1185). Earlier branch CI failure on pinned Luxembourg AGE geometry tests is **not** evidence of an error or success in this EU event-ID crosswalk. Keep the separately successful Zenodo original-source workflow as a distinct receipt, not as proof of full repository compatibility. No multi-peril model input or insurance loss is admitted by either test.
