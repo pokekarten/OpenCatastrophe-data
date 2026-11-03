@@ -116,6 +116,24 @@ class ThreeWayRegistryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             compare(github()+[github()[0]], stage(), production())
 
+    def test_historical_documented_filename_does_not_rewrite_access_id(self):
+        # Original public CHIRPS 3.0 contract has .documented.json on disk
+        # but its immutable access_id/source_key omits that role suffix.
+        path = "access/ucsb.chc.chirps.v3.0.documented.json"
+        record_alias = record(path, H1)
+        record_alias["source_id"] = "ucsb.chc.chirps.v3.0"
+        record_alias["source_key"] = "access:ucsb.chc.chirps.v3.0"
+        listing = github() + [{"path": path, "sha": H1, "type": "file"}]
+        result = compare(listing, stage() + [record_alias],
+                         production() + [record_alias])
+        self.assertEqual(result["github_access_contracts"], 3)
+        self.assertEqual(result["production_current_blob_matches"], 2)
+        self.assertNotIn(path, result["historical_version_conflicts"])
+        bad = deepcopy(record_alias)
+        bad["source_id"] = "unrelated.provider"
+        with self.assertRaises(ValueError):
+            compare(listing, stage() + [bad], production())
+
     def test_untrusted_access_rights_status_rejected(self):
         for field, value in (
             ("rights_status", "unrestricted_commercial_model_import"),
