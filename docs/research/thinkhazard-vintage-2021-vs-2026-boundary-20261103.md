@@ -26,7 +26,7 @@ event footprints, event recurrences, calibrated exceedance curves or insured los
   `not_reviewed`; the rest of the previously registered sources did not
   change.
 - Added a source-specific **documentation-only** access contract
-  [for the 2021 Word Bank catalogue record](../../access/worldbank.gfdrr.thinkhazard.screening-scores.2021-wb-catalogue.json),
+  [for the 2021 World Bank catalogue record](../../access/worldbank.gfdrr.thinkhazard.screening-scores.2021-wb-catalogue.json),
   with dataset rights marked verified **only for that exact 2021 CC BY 4.0
   record**, while API service automation remains unknown and all probes
   remain disabled. It does not claim a permission to acquire the provider
