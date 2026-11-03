@@ -69,7 +69,7 @@ class EventGeocodingSourceBoundaryTests(unittest.TestCase):
         source = self.by_id["emdat.geo-disasters.gaul2015.2025.v1"]
         self.assertIn("noncommercial", source["access_class_hint"].lower())
         self.assertIn("non-commercial", source["note"].lower())
-        self.assertIn("not actual", source["note"].lower())
+        self.assertIn("rather than actual", source["note"].lower())
         self.assertEqual(source["rights_review_status"], "not_reviewed")
 
     def test_wikimpacts_noncommercial_and_no_automatic_insurer_reuse(self):
