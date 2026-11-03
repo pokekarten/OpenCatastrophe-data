@@ -7,7 +7,7 @@
   "provider": "Global Dam Watch / Figshare archival record",
   "interface_type": "rest",
   "status": "probe_ready",
-  "documentation_url": "https://figshare.com/articles/dataset/Global_Dam_Watch_database_version_1_0/25988293",
+  "documentation_url": "https://docs.figshare.com/v2/",
   "service_root": "https://api.figshare.com",
   "api_version": "Figshare API v2; frozen public article 25988293, version 1",
   "access_scope": [
@@ -50,7 +50,7 @@
     "terms_url": "https://info.figshare.com/user-guide/figshare-policies/",
     "commercial_automation_status": "allowed",
     "redistribution_status": "allowed",
-    "notes": "The exact Global Dam Watch v1.0 Figshare dataset record states CC BY 4.0, and the peer-reviewed data paper likewise identifies GDW v1.0 as available under CC BY 4.0. Figshare's public Data Access Policy and API guidance allow public metadata/data access and API mining subject to the content licence. These verified rights and service permissions are ceilings, not repository execution or publication approval: this contract deliberately remains documented_only with no live probe or file request. Any persisted sample still requires exact asset identity, provenance, required attribution and repository review before bytes are committed or published."
+    "notes": "Global Dam Watch v1.0 original Figshare item and peer-reviewed article identify CC BY 4.0; Figshare's public Data Access Policy and official API guide authorize anonymous public metadata access and responsible API use. This permits one explicit version-pinned metadata canary only. It does not approve any GIS ZIP download, raw/derived data redistribution in this repository, scientific model use or unattended crawling. The final release Technical Documentation and exact selected file must be reviewed before acquiring or publishing original GIS bytes."
   },
   "probe_contract": {
     "mode": "metadata_get",
