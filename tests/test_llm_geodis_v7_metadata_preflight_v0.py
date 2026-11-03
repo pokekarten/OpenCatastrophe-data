@@ -148,7 +148,10 @@ class LLMGeoDisMetadataPreflightTests(unittest.TestCase):
     def test_duplicate_json_keys_and_nonfinite_values_rejected(self) -> None:
         base = json.dumps(synthetic_metadata(), separators=(",", ":"))
         dup = '{"id":18935447,"id":18935447,' + base[1:]
-        for raw in (dup, base.replace('"size":1000', '"size":NaN', 1)):
+        first_size = synthetic_metadata()["files"][0]["size"]
+        nonfinite = base.replace(f'"size":{first_size}', '"size":NaN', 1)
+        self.assertNotEqual(nonfinite, base)
+        for raw in (dup, nonfinite):
             with self.subTest(payload=raw[:70]):
                 with tempfile.TemporaryDirectory() as directory:
                     path = Path(directory) / "untrusted.json"
