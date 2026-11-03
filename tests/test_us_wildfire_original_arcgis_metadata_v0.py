@@ -42,10 +42,11 @@ class WildfireOriginalMetadataTests(unittest.TestCase):
     def test_mtbs_polygons_map_source_id_year_and_event_type(self):
         value = parse("mtbs_perimeters_2024")
         self.assertEqual(value["source_to_research_projection_field_map"], {
-            "mtbs_component_id": "perim_id", "mtbs_id": "fire_id",
+            "mtbs_component_id": None, "mtbs_id": "fire_id",
             "fire_year": "year", "event_kind": "fire_type",
         })
         self.assertEqual(value["geometry"], "esriGeometryPolygon")
+        self.assertFalse(value["polygon_component_key_from_perim_id_authorized"])
 
     def test_valid_pair_remains_research_only(self):
         f = json.dumps(metadata("fpa_fod_7")).encode()
