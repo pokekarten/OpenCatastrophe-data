@@ -67,6 +67,21 @@ Official references: [Hub'Eau Hydrométrie API v2](https://www.data.gouv.fr/data
 
 **Next independent checks:** resolve the applicable original provider-response identity, license/service reuse for these exact historic observations, station location/rating-curve/quality/continuity flags, and an independently observed 2016 flood footprint or depth grid. A daily mean discharge cannot, without a calibrated hydraulic mapping, directly determine an asset's flood-depth loss.
 
+## Follow-up: all 94 historic QmJ rows checked against live official API (2026-11-03)
+
+This is **new live source-comparison evidence**, separate from the preceding database-internal QA. Two **bounded, anonymous, read-only** official Hub'Eau Hydrométrie v2 `obs_elab` requests were submitted through the connected web-content intermediary with independently constructed fixed parameters:
+
+- `code_entite=F447000302&date_debut_obs_elab=2016-05-15&date_fin_obs_elab=2016-06-30&grandeur_hydro_elab=QmnJ&size=100`
+- `code_entite=F700000103&date_debut_obs_elab=2016-05-15&date_fin_obs_elab=2016-06-30&grandeur_hydro_elab=QmnJ&size=100`
+
+Both returned official API field `api_version=2.0.1`, each with `count=47`, 47 distinct calendar-day observations and no continuation page. The responses were **transiently** parsed, not committed to Git, Neon or a persistent original-data store. One read-only Neon `SELECT` independently selected precisely those two station/date windows from `research.hubeau_seine_47day_daily_q_research_v0`.
+
+**Result: all 94/94 station/day identities matched, and 470/470 field comparisons matched without discrepancy** on: exact published discharge in litres/second, observation status code, qualification code, method code and source production timestamp. Dates themselves were used as independent composite join keys, not counted among the five compared fields. Stored bounds match live provider: F447000302 **268.866–1,299.307 m³/s**, F700000103 **373.005–1,745.481 m³/s**. Source production timestamps were consistent with `2026-08-18` for both station series, with distinct source times.
+
+A *live web-content intermediary* is not a controlled byte-exact source acquisition. Thus this establishes an **observed current provider-vs-database semantic match for the frozen 94-row window**, not original HTTP body authenticity, an independently measured original SHA-256, guaranteed future unchanged provider revisions or licensed rights. No CAT model/use/admission flags were changed.
+
+Official source documentation: [Hub'Eau v2 Hydrométrie](https://www.data.gouv.fr/dataservices/hubeau-hydrometrie). The precise original response SHA-256 must still be acquired and attested through an approved original-byte receipt workflow if needed for reproducible scientific runs. **All 94 remain research-only:** the current `original_licence_reuse_reviewed`, `physical_flood_event_identity_verified` and `model_input_admitted` flags are false. No loss depth, 2016 asset vintage or insurance TIV is established here.
+
 ## Reproduction and merge boundaries
 
 Run only the [SELECT-only SQL](../../research_runners/sql/source_usability_cohort_audit_v0.sql) in CAT-only Neon `insurance-risk-core/insurance/main`. Its output is aggregate-only and its logic has been executed against live main for this review. It is not a legal approval or a replacement for source-native QA. Recheck the exact PR head under repository `scripts/check_all.py` before merge, and do not promote any `admissible_for_raw`, `model_admitted`, `production_approved` or insurer portfolio status on the basis of this report. This review contains no original-provider data bytes, coordinates or credentials.
