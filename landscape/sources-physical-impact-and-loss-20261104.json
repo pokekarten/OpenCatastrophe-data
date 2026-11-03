@@ -23,12 +23,12 @@
         "asset_level_hazard_sampling_preflight"
       ],
       "authoritative_url": "https://registry.opendata.aws/os-climate-physrisk/",
-      "access_class_hint": "public_no_sign_s3_collection_provider_says_no_use_restrictions_exact_asset_and_upstream_terms_review_pending",
+      "access_class_hint": "public_anonymous_s3_collection_mixed_upstream_rights_individual_product_review_required",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "AWS registry identifies s3://os-climate-physical-risk (us-east-1), accessible with aws s3 ls --no-sign-request. Canonical inventory at https://github.com/os-climate/hazard/blob/main/src/inventories/hazard/inventory.json maps individual hazard resources to model/provider lineages and index semantics. https://github.com/os-climate/physrisk is the separate Apache-2.0 computational engine, NOT a new independent hazard observation. The inventory includes WRI Aqueduct Floods products already represented in OpenCatastrophe; preserve upstream identity and avoid counting transformed indicators as independent validation. A listing or unrestricted AWS notice is not an exact-asset SHA, original-vintage proof, automatic commercial sublicense of upstream assets, or scientific/model admission."
+      "note": "AWS registry identifies s3://os-climate-physical-risk (us-east-1), accessible with aws s3 ls --no-sign-request. Canonical inventory at https://github.com/os-climate/hazard/blob/main/src/inventories/hazard/inventory.json maps individual hazard resources to model/provider lineages and index semantics. https://github.com/os-climate/physrisk is the separate Apache-2.0 computational engine, NOT a new independent hazard observation. The inventory includes WRI Aqueduct Floods products already represented in OpenCatastrophe; preserve upstream identity and avoid counting transformed indicators as independent validation. A listing or unrestricted AWS notice is not an exact-asset SHA, original-vintage proof, automatic commercial sublicense of upstream assets, or scientific/model admission. Crucially, the original OS-Climate hazard inventory labels Jupiter-derived layers as Commercial and expressly disallows use related to emergency management, public safety, physical safety or property endangerment; anonymous S3 readability and the broad AWS registry notice do not override such provider-specific terms. Jupiter data must not be imported or used in CAT modelling absent direct written clearance."
     },
     {
       "candidate_id": "ucl.openvulnerability.impact-model-portal.2026",
