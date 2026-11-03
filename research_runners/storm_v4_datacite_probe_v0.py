@@ -126,6 +126,7 @@ def probe(
         "provider_body_persisted": False,
         "provider_track_file_downloaded": False,
         "original_track_bytes_verified": False,
+        "source_admission_extended": False,
         "model_input_approved": False,
     }
 
