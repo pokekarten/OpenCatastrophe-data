@@ -16,22 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-02`  
 **Purpose:** Non-admission discovery of authoritative upstream event, warning, humanitarian-response and meteorological sources used by World Monitor-like repositories; software aggregators are evidence pointers rather than source admission.
 
-**Entries:** 23
-
-## GLIDE global disaster identifier catalogue
-
-**Candidate ID:** `adrc.glide.disaster-identifiers`  
-**Provider:** Asian Disaster Reduction Centre / GLIDE partners  
-**Categories:** `event_catalogue`, `multi_hazard`, `event_identity`  
-**Spatial scope:** global  
-**Temporal scope:** historical and ongoing records; registration and completeness vary  
-**Resolution / granularity:** Global disaster numbers, country, disaster type, onset dates and linked reports  
-**Potential roles:** `cross_provider_event_identity`, `historical_event_crosswalk`  
-**Access hint:** `public_search_and_report_download_rights_review_required`  
-**Authoritative source:** <https://glidenumber.net/glide/public/disclaimer.jsp>  
-**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
-
-**Note:** Found through MapAction disaster-impact. GLIDE explicitly discourages secondary statistical analysis of its database; use identifiers to reconcile events, not as an independent loss or frequency estimate. Resolve variant dates, multi-country events, missing and duplicate IDs.
+**Entries:** 20
 
 ## IDMC Internal Displacement Updates (IDU)
 
@@ -48,21 +33,6 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Note:** Found through MapAction disaster-impact. IDU is a provisional count of internal movements, not unique people, building damage or insured losses. Preserve event window, source, estimate vintage and subsequent GIDD revisions; inspect API authentication and terms separately.
 
-## UN CERF grants and project data API
-
-**Candidate ID:** `unocha.cerf.gms-api`  
-**Provider:** UN OCHA Central Emergency Response Fund  
-**Categories:** `humanitarian_finance`, `disaster_response`, `impact_proxy`  
-**Spatial scope:** global countries receiving CERF allocations  
-**Temporal scope:** historical and current allocations and project records  
-**Resolution / granularity:** Application, project, country, year, sector and allocation metadata  
-**Potential roles:** `response_timing_context`, `event_crosswalk`, `humanitarian_impact_proxy`  
-**Access hint:** `public_documented_api_exact_endpoints_rights_review_required`  
-**Authoritative source:** <https://cerfgms-webapi.unocha.org/>  
-**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
-
-**Note:** MapAction disaster-impact treats CERF as an event-related source. Financial allocations indicate humanitarian response, not gross catastrophe damage or insured claims; funding timing, emergency classification, code and overlaps with IFRC must be preserved.
-
 ## IFRC GO Disaster Response Emergency Fund appeals API
 
 **Candidate ID:** `ifrc.go.dref-appeals-api`  
@@ -77,21 +47,6 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** MapAction disaster-impact lists IFRC-DREF. GO appeal atype=0 denotes DREF; event associations may be absent and reported beneficiaries are not insured loss. GO upstream data rights may be unstated; review API conditions and field-level semantics before any persistent import.
-
-## International Charter Space and Major Disasters activations
-
-**Candidate ID:** `disasterscharter.activations.archive`  
-**Provider:** International Charter Space and Major Disasters  
-**Categories:** `satellite_response`, `event_catalogue`, `disaster_mapping`  
-**Spatial scope:** global activations; selective coverage  
-**Temporal scope:** public activation archive from 2000 onward  
-**Resolution / granularity:** Activation ID/date, disaster type, country, links to imagery and event-specific derived mapping products  
-**Potential roles:** `satellite_damage_map_discovery`, `event_identity_crosswalk`, `post_event_footprint_discovery`  
-**Access hint:** `public_activation_metadata_event_products_have_separate_reuse_rights`  
-**Authoritative source:** <https://disasterscharter.org/activations>  
-**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
-
-**Note:** Found through MapAction disaster-impact. Activation is an observation/response selection signal, not an exhaustive event inventory. Map/imagery products have individual rights, footprints and confidence; do not conflate an activation with an observed damage polygon.
 
 ## Nepal BIPAD disaster, flood-gauge and incident APIs
 
