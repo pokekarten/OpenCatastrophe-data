@@ -43,6 +43,8 @@ No LLM, MCP host, IDE extension, paid API or hidden service is required to valid
 - `tests/` — deterministic offline regression and negative tests using synthetic inputs.
 - `.github/` — public contribution intake, ownership and hosted CI configuration.
 
+A [worked acquisition audit](docs/research/executed-source-findings-20261103.md) connects downloaded NOAA Storm Events/IBTrACS evidence to executable checks, unresolved contradictions and model-use limits.
+
 ## Who this is for
 
 - **AI agents and developers** get explicit repository instructions, canonical machine contracts, generated human views, machine-readable task/run-evidence contracts, deterministic checks and public PR coordination.
