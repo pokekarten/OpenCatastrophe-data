@@ -41,7 +41,7 @@ All file outputs are *modelled* hazard intensity estimates derived from historic
 ```sh
 python3 research_runners/isimip3a_er11_maxrain_filelist_preflight_v0.py \
   --filelist /path/to/independently-obtained-filelist.txt \
-  --expected-sha256 <independently-recorded-64-char-sha256> \
+  --expected-sha256 YOUR_INDEPENDENTLY_RECORDED_64_HEX_SHA256 \
   --out /tmp/isimip-filelist-receipt.json
 python3 -m unittest tests.test_isimip3a_er11_maxrain_filelist_preflight_v0 -v
 ```
