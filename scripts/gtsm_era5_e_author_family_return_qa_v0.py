@@ -48,6 +48,39 @@ class GtsmFamilyReturnAuditBlocked(ValueError):
     """Source-native matrices or published author family labels are inconsistent."""
 
 
+def require_verified_author_station_join(
+    overlap: dict[str, object], *, expected_rows: int = EXPECTED_SOURCE_ROWS,
+) -> None:
+    """Fail closed before assigning return-level QA to author-name families.
+
+    A native ID match alone is insufficient: source packed coordinates must
+    agree with the independently pinned author catalogue within the existing
+    0.001-degree rounding tolerance. This is *not* independent location or
+    coastal-hazard validation.
+    """
+    if (type(expected_rows) is not int or not 1 <= expected_rows <= EXPECTED_SOURCE_ROWS
+            or type(overlap) is not dict):
+        raise GtsmFamilyReturnAuditBlocked("author station overlap receipt unavailable")
+    keys = (
+        "matching_native_station_ids",
+        "original_native_station_ids_absent_in_author_catalogue",
+        "matching_ids_with_exact_quantized_coordinates",
+        "matching_ids_within_one_0p001_degree_packed_unit",
+        "matching_ids_with_coordinate_conflict_larger_than_0p001_degree",
+    )
+    if any(type(overlap.get(key)) is not int for key in keys):
+        raise GtsmFamilyReturnAuditBlocked("author station overlap counts malformed")
+    if (overlap.get("source_source_parent_catalogue_join_for_all_rows_proven") is not True
+            or overlap["matching_native_station_ids"] != expected_rows
+            or overlap["original_native_station_ids_absent_in_author_catalogue"] != 0
+            or overlap["matching_ids_with_coordinate_conflict_larger_than_0p001_degree"] != 0
+            or overlap["matching_ids_with_exact_quantized_coordinates"]
+               + overlap["matching_ids_within_one_0p001_degree_packed_unit"] != expected_rows):
+        raise GtsmFamilyReturnAuditBlocked(
+            "original source stations not fully reconciled to author coordinates"
+        )
+
+
 def audit_return_levels_by_author_name_family(
     source_station_ids: list[int],
     matrices: tuple[list[list[float]], list[list[float]], list[list[float]]],
