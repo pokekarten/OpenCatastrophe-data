@@ -151,5 +151,8 @@ def audit_original_return_levels(path: Path) -> dict[str, object]:
     except ReturnLevelAuditBlocked:
         raise
     except Exception as exc:
-        raise ReturnLevelAuditBlocked("failed bounded read of original GTSM return-level matrices") from exc
+        raise ReturnLevelAuditBlocked(
+            "failed bounded read of original GTSM return-level matrices (error type: "
+            + type(exc).__name__ + ")"
+        ) from exc
     return audit_return_levels(*matrices)
