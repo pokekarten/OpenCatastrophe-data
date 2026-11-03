@@ -24,7 +24,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Interface type:** rest
 
-**Status:** documented_only
+**Status:** verified_anonymous
 
 **Documentation url:** <https://support.datacite.org/docs/api-get-doi>
 
@@ -57,7 +57,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - /dois/10.4121/12706085.v4
 
-**Parameter rules:** DOCUMENTATION-ONLY, NOT AN AUTHORIZED LIVE PROBE. One exact anonymous DataCite GET metadata record for DOI 10.4121/12706085.v4 is documented. Do not add query parameters, paging, search, arbitrary DOI, host, redirects, API tokens or caller-selected URL; the offline validator takes locally captured bytes and independent SHA-256. No 4TU file-list, download, or track-byte request is authorized by this contract.
+**Parameter rules:** One original anonymous singleton DOI metadata GET was verified on 2026-11-03 at https://api.datacite.org/dois/10.4121%2F12706085.v4 (14,825 JSON bytes; captured SHA-256 90bbb620c7e04632e45b5c86c2998b3b023a55d246b56c2c7f09cc1a66c62f66). Future T1 metadata probes are restricted to one user-initiated GET per run using the fixed service root and DOI path, no caller-selected host, different DOI, parameters, pagination, arbitrary headers, credentials, mass harvesting, automatic retries or cross-origin redirects. The offline preflight separately verifies the raw response SHA-256 supplied by the caller. No 4TU original file-list/track-byte request, model ingestion or dataset admission is permitted by this metadata contract.
 
 ## Response contract
 
@@ -79,37 +79,41 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Retry policy:** none
 
-**Rate limit notes:** No live DataCite call is authorized by this documentation-only contract. DataCite public singleton DOI access is documented; any T1 request requires a separate terms and bounded execution review, no bulk harvesting, redirects, arbitrary query, retry or polling.
+**Rate limit notes:** DataCite official published public REST guidance permits anonymous DOI metadata retrieval/harvesting, with a provider limit of 500 requests per five minutes for unidentified clients (HTTP 429 when limited). Our own much narrower research boundary is at most one exact DOI metadata GET per user-initiated run, timeout 20s, &lt;=256 KiB, no retry, no bulk harvesting or query expansion. Terms: https://support.datacite.org/docs/harvesting-datacite-doi-metadata and https://support.datacite.org/docs/rate-limit.
 
-**Mutability notes:** DOI version is fixed, but its mutable public metadata and links must not be mistaken for immutable versioned track files. A future receipt must retain retrieval UTC, exact URL, response byte count, SHA-256, parsed DOI/title/rights/version and separate 4TU original-file listing, size and SHA-256 once independently approved.
+**Mutability notes:** DOI v4 is version-pinned but the public metadata record is mutable: original capture 2026-11-03, 14,825 bytes, SHA-256 90bbb620c7e04632e45b5c86c2998b3b023a55d246b56c2c7f09cc1a66c62f66, with provider reported metadata updated 2025-06-01T05:36:28Z. Any subsequent response must produce a new bounded original byte digest; a differing digest is not by itself evidence that STORM v4 track bytes changed. Track file inventory, sizes, checksums, native schema and year/event semantics remain separately unverified.
 
 ## Rights and policy
 
 **Dataset rights status:** verified
 
-**Api terms status:** unknown
+**Api terms status:** separate_reviewed
 
-**Terms url:** `null`
+**Terms url:** <https://support.datacite.org/docs/harvesting-datacite-doi-metadata>
 
 **Commercial automation status:** unknown
 
 **Redistribution status:** unknown
 
-**Notes:** The existing admitted manifest and 2022 VU institutional v4 record identify STORM v4 as CC0-1.0 for the dataset; this does not make DataCite API automation terms reviewed or approve repository publication of any particular track file. The provider file-byte scope remains metadata-only until a separate exact asset review.
+**Notes:** The fixed DOI record and institutional v4 review identify synthetic STORM v4 dataset licence CC0-1.0; DataCite's original policy explicitly says DOI metadata themselves are openly CC0 and public anonymous REST metadata harvesting is supported. This supports a bounded metadata-only GET, NOT broad automation of 4TU original tracks, approval of original track-file republication, model use, or assumption that DataCite API rate limits license other providers. Commercial automated ingestion and redistribution decisions for provider track assets remain unknown and separate; the current source review is metadata-only.
 
 ## Probe contract
 
-**Mode:** none
+**Mode:** metadata_get
 
-**Operation:** `null`
+**Operation:** retrieve_fixed_v4_doi_metadata
 
 **Requires credentials:** `false`
 
 ### Expected evidence
 
-_Empty array._
+- HTTP original singleton DataCite JSON response, exact fixed DOI (no dynamic path or query), anonymous metadata-only
+- Source record data.type=dois; data.id=attributes.doi=10.4121/12706085.v4; resourceTypeGeneral=Dataset; title identifies STORM tropical cyclone tracks; version=4
+- Original 2026-11-03 metadata response size=14825 bytes, independently calculated SHA-256=90bbb620c7e04632e45b5c86c2998b3b023a55d246b56c2c7f09cc1a66c62f66
+- Original DOI metadata rightsList CC0-1.0 (this is not a track-file byte or rights admission)
+- Negative flags preserved: source track file bytes not acquired, provider asset inventory not verified, model input unauthorized
 
-**Implementation decision:** document_only
+**Implementation decision:** build_later
 
 **Reviewed at:** 2026-11-03
 
@@ -119,5 +123,8 @@ _Empty array._
 - <https://support.datacite.org/docs/rest-api>
 - <https://research.vu.nl/en/datasets/storm-ibtracs-present-climate-synthetic-tropical-cyclone-tracks-6/>
 - <https://doi.org/10.4121/12706085.v4>
+- <https://support.datacite.org/docs/harvesting-datacite-doi-metadata>
+- <https://support.datacite.org/docs/rate-limit>
+- <https://api.datacite.org/dois/10.4121%2F12706085.v4>
 
-**Notes:** One bounded DOI-metadata route for already reviewed source storm.ibtracs.present-climate.v4; offline reader research_runners/storm_v4_datacite_preflight_v0.py validates raw response identity and independent SHA-256, with synthetic tests. No original STORM file or provider response has been fetched, stored in Git, or admitted as hazard/model input by this work.
+**Notes:** 2026-11-03 independent original public DataCite DOI metadata check verified singleton response (14825 bytes; SHA-256 90bbb620c7e04632e45b5c86c2998b3b023a55d246b56c2c7f09cc1a66c62f66), exact STORM v4 ID, publisher 4TU.Centre for Research Data, dataset type, metadata version 4 and declared CC0. API rights and rate notes are official DataCite documentation, not a blanket clearance for 4TU original assets. Offline preflight and synthetic regression tests remain non-admission; no track files, original 4TU asset manifest, original track hashes, cross-peril event correlation or insured losses have been fetched/verified/imported.
