@@ -49,6 +49,22 @@ def audit_return_levels(
     rows_with_any_nonfinite = 0
     rows_with_any_interval_conflict = 0
     rows_with_any_nonmonotonic_bestfit = 0
+    period_counts = [
+        {
+            "return_period_years": RETURN_PERIODS[index],
+            "source_station_rows": expected_stations,
+            "finite_triplets": 0,
+            "missing_or_nonfinite_triplets": 0,
+            "bestfit_nonfinite_cells": 0,
+            "lower_nonfinite_cells": 0,
+            "upper_nonfinite_cells": 0,
+            "inverted_intervals": 0,
+            "bestfit_below_lower": 0,
+            "bestfit_above_upper": 0,
+            "descending_bestfit_from_previous_period": 0,
+        }
+        for index in range(expected_periods)
+    ]
 
     for station in range(expected_stations):
         rows = tuple(matrix[station] for matrix in matrices)
@@ -65,31 +81,58 @@ def audit_return_levels(
         bad_monotonic = False
 
         for period_index in range(expected_periods):
+            summary = period_counts[period_index]
             triple = (best[period_index], low[period_index], high[period_index])
+            for value, key in zip(triple, ("bestfit_nonfinite_cells",
+                                           "lower_nonfinite_cells", "upper_nonfinite_cells")):
+                summary[key] += int(not math.isfinite(value))
             if not all(math.isfinite(x) for x in triple):
                 missing_or_nonfinite_triplets += 1
+                summary["missing_or_nonfinite_triplets"] += 1
                 bad_nonfinite = True
                 continue
             valid_numeric_triplets += 1
+            summary["finite_triplets"] += 1
             if low[period_index] > high[period_index] + FLOAT_TOLERANCE_METRES:
                 inverted_uncertainty_interval += 1
+                summary["inverted_intervals"] += 1
                 bad_interval = True
             if best[period_index] + FLOAT_TOLERANCE_METRES < low[period_index]:
                 bestfit_below_lower += 1
+                summary["bestfit_below_lower"] += 1
                 bad_interval = True
             if best[period_index] > high[period_index] + FLOAT_TOLERANCE_METRES:
                 bestfit_above_upper += 1
+                summary["bestfit_above_upper"] += 1
                 bad_interval = True
         for period_index in range(1, expected_periods):
             prior, current = best[period_index-1:period_index+1]
             if (math.isfinite(prior) and math.isfinite(current)
                     and current + FLOAT_TOLERANCE_METRES < prior):
                 descending_bestfit_adjacent_periods += 1
+                period_counts[period_index]["descending_bestfit_from_previous_period"] += 1
                 bad_monotonic = True
         rows_with_any_nonfinite += int(bad_nonfinite)
         rows_with_any_interval_conflict += int(bad_interval)
         rows_with_any_nonmonotonic_bestfit += int(bad_monotonic)
         fully_clean_station_rows += int(not (bad_nonfinite or bad_interval or bad_monotonic))
+
+    audited = expected_stations * expected_periods
+    if valid_numeric_triplets + missing_or_nonfinite_triplets != audited:
+        raise ReturnLevelAuditBlocked("source matrix counts do not reconcile")
+    for key, overall in (
+        ("finite_triplets", valid_numeric_triplets),
+        ("missing_or_nonfinite_triplets", missing_or_nonfinite_triplets),
+        ("inverted_intervals", inverted_uncertainty_interval),
+        ("bestfit_below_lower", bestfit_below_lower),
+        ("bestfit_above_upper", bestfit_above_upper),
+        ("descending_bestfit_from_previous_period", descending_bestfit_adjacent_periods),
+    ):
+        if sum(period[key] for period in period_counts) != overall:
+            raise ReturnLevelAuditBlocked("per-period quality totals do not reconcile")
+    if any(period["finite_triplets"] + period["missing_or_nonfinite_triplets"]
+           != expected_stations for period in period_counts):
+        raise ReturnLevelAuditBlocked("native return-year partition misses source rows")
 
     return {
         "schema_version": "gtsm-original-extreme-return-level-qa-v0",
@@ -108,6 +151,8 @@ def audit_return_levels(
         "stations_with_descending_bestfit_periods": rows_with_any_nonmonotonic_bestfit,
         "stations_without_any_these_quality_flags": fully_clean_station_rows,
         "comparison_tolerance_m": FLOAT_TOLERANCE_METRES,
+        "aggregate_quality_by_return_period": period_counts,
+        "period_rows_do_not_contain_station_ids_or_coordinates": True,
         "per_station_values_emitted": False,
         "provider_sea_level_values_redistributed": False,
         "sea_level_to_inundation_transform_performed": False,
