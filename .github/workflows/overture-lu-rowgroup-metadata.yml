@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg Overture original row-group bounding-box metadata
+
+on:
+  pull_request:
+    paths:
+      - research_runners/overture_lu_rowgroup_metadata_v0.py
+      - tests/test_overture_lu_rowgroup_metadata_v0.py
+      - .github/workflows/overture-lu-rowgroup-metadata.yml
+      - research_runners/overture_luxembourg_stac_receipt_v0.py
+      - research_runners/overture_building_original_metadata_probe_v0.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lu-overture-rowgroup-original-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source-rowgroup-metadata-only:
+    name: Original STAC and <=2 MiB Parquet footer / no data pages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact source code without credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Synthetic fail-closed bbox and Thrift parser regressions
+        run: python -m unittest tests.test_overture_lu_rowgroup_metadata_v0 -v
+      - name: Check exact original source metadata only
+        run: python -m research_runners.overture_lu_rowgroup_metadata_v0 --live
