@@ -92,7 +92,8 @@ def parse_source_event(
     if not isinstance(item.get("collection"), str) or not item["collection"]:
         raise MontyLinkageBlocked("STAC collection required")
     roles = item.get("roles")
-    if not isinstance(roles, list) or "event" not in roles or "source" not in roles or "reference" in roles:
+    if (not isinstance(roles, list) or "event" not in roles or "source" not in roles
+            or any(role in roles for role in ("reference", "hazard", "impact", "response"))):
         raise MontyLinkageBlocked("requires source event role, not reference/hazard/impact")
     p = item["properties"]
     srcid = p.get("monty:src_event_id")
