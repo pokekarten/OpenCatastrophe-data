@@ -32,8 +32,10 @@ class EventGeocodingSourceBoundaryTests(unittest.TestCase):
         cls.entries = json.loads(SOURCE.read_text(encoding="utf-8"))["entries"]
         cls.by_id = {item["candidate_id"]: item for item in cls.entries}
 
-    def test_only_seven_unique_research_candidates(self):
-        self.assertEqual(set(self.by_id), EXPECTED)
+    def test_seven_reviewed_baseline_candidates_remain_present_and_unique(self):
+        # New versioned research sources may be added without breaking the
+        # baseline regression; their rights/admission states are checked below.
+        self.assertTrue(EXPECTED.issubset(set(self.by_id)))
         self.assertEqual(len(self.entries), len(self.by_id))
         urls = [item["authoritative_url"].rstrip("/") for item in self.entries]
         self.assertEqual(len(urls), len(set(urls)))
