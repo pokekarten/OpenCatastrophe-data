@@ -24,7 +24,7 @@ MAX_ENTRIES = 500
 REPO = "pokekarten/OpenCatastrophe-data"
 ACCESS_STATUSES = frozenset({
     "documented_only", "probe_ready", "verified_anonymous",
-    "restricted_by_terms", "blocked_credentials",
+    "restricted_by_terms", "blocked_credentials", "blocked_registration",
 })
 ACCESS_RIGHTS = frozenset({
     "verified", "not_reviewed", "unknown", "conflicting", "restricted",
