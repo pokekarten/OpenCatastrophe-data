@@ -76,3 +76,16 @@ python research_runners/wfp_chirps_gefs_stac_collection_preflight_v0.py \
 ```
 
 The example is a future operator procedure, not a claim that provider bytes were fetched, that commercial rights were resolved, or that original forecast item values were obtained. The output must remain non-admission until a separate scientific/rights review and exact asset provenance prove physical units, issue-vintage and forecast roles.
+
+
+## Alternative historical source: original CHC CHIRPS3-GEFS archive
+
+The **producer**, UC Santa Barbara Climate Hazards Center, separately documents CHIRPS3-GEFS forecast products and historic archives: https://www.chc.ucsb.edu/node/251 . The daily forecast archive directory is https://data.chc.ucsb.edu/products/CHIRPS-GEFS/v3/daily/global/ . Original directory metadata visibly advertises year folders 2001 through 2026, a `created/` folder and the v3 model family. This is an upstream potential access route distinct from the WFP rolling COG delivery of the same underlying forecast family, **not a statistically independent forecast model** and not an admitted dataset.
+
+Crucial original publisher caveats (CHC product page):
+- CHIRPS3-GEFS v3 historical products begin 2001 and are calibrated to CHIRPS v3; GEFSv12 is the forecast parent. A visible historical year directory is **not** proof of complete, exact original forecast issue coverage or true point-in-time operational availability for that year.
+- The publisher expressly says **2020 is excluded from its historical data archive** due to a nine-month reforecast/operational gap. A directory named `2020/` may exist even though that exclusion applies. Do not treat a directory label as a verified full forecast time series; reconcile its contents and actual issue coverage before any coverage claims.
+- Historical GEFSv12 *reforecasts* and later actual *operational* forecasts are different experiment types. Backtesting a post-2025 reprocessed historical reforecast cannot be labeled the real 2001-era forecast known at that time. Model training/calibration cuts must remain independent from simulated out-of-sample tests.
+- Publisher source DOI https://doi.org/10.15780/G2PH2M and original CC BY 4.0 source statement are useful licence/science evidence, not a licence review for any one exact WFP asset or an OpenCatastrophe admission.
+
+**Next executable causal step:** after dataset and API terms are reviewed, construct a tightly bounded metadata-only original-source listing for one documented historical year and product path; record original response SHA-256, requested URL, retrieval UTC, actual filename/issue-time semantics, and a reproducible `reforecast` versus `operational` designation. Only after that could a real issue/valid/lead mapping and physical raster-unit challenge start; neither this PR nor WFP's rolling archive allows a retrospective as-of claim by itself.
