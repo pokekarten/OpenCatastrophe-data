@@ -75,7 +75,7 @@ def challenge_publisher_groups(obj: dict, *, max_group_vertices: int =
         import shapely
     except ImportError as exc:
         raise GroupTopologyError("Pinned Shapely required") from exc
-    if shapely.__version__ != "2.1.2":
+    if shapely.__version__ != "2.2.0":
         raise GroupTopologyError("Unpinned Shapely in source diagnostic")
     n = valid = invalid = skipped = errors = 0
     groups_with_holes = 0
