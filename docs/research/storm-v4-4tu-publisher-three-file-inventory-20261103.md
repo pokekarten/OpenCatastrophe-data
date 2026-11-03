@@ -137,7 +137,7 @@ redirect targets or alternative file download routes.
 4. Preserve synthetic versus observed storm distinction. A STORM track is
    not yet a grid-level wind/surge footprint or a historical insured loss.
    Native OpenCatastrophe hazard → exposure → vulnerability → policy /
-   reinsurance → NextGen/FFBK must be independently tested and licensed.
+   reinsurance and downstream actuarial modelling must be independently tested and licensed.
 
 Related tracking issue: [#1168](https://github.com/pokekarten/OpenCatastrophe-data/issues/1168).
 
