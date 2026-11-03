@@ -61,6 +61,10 @@ class TestZenodoCatMetadataPreflight(unittest.TestCase):
         with self.assertRaises(MetadataPreflightError):
             audit_record(fixture(), "example.other", "0" * 64)
 
+    def test_latest_transclima_catalogue_restricted_blocked(self) -> None:
+        with self.assertRaisesRegex(MetadataPreflightError, "restricted"):
+            audit_record(fixture(), "ihcantabria.transclima.tropical-cyclone-data-catalogue.v1", "0" * 64)
+
     def test_wrong_record_id_blocked(self) -> None:
         data = fixture()
         data["id"] = RID + 1
