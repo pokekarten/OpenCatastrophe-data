@@ -47,7 +47,10 @@ class EventGeocodingSourceBoundaryTests(unittest.TestCase):
         for key in ("nasa.sedac.gdis.v1.00", "emdat.llm-geodis.2025"):
             note = self.by_id[key]["note"].lower()
             self.assertIn("em-dat", note)
-            self.assertIn("not", note)
+            self.assertTrue(
+                "not independent" in note or "neither independent" in note,
+                f"missing independence disclaimer for {key}",
+            )
         self.assertIn("administrative", self.by_id["nasa.sedac.gdis.v1.00"]["note"].lower())
 
     def test_wikimpacts_noncommercial_and_no_automatic_insurer_reuse(self):
