@@ -92,4 +92,23 @@ Research on the public GTSM author repository, inspected at commit `30580a729be8
 - `pyextremes` API defines `alpha` as interval *width* (https://georgebv.github.io/pyextremes/api/models/). The `alpha=0.95` call therefore warrants a **scientific consistency check** against the original return-level field names `5perc`/`95perc` and the paper's 5%-95% wording. We have not established the exact upstream code revision or installed `pyextremes` version used in creating the Zenodo 2025 asset. Treat this as a hypothesis to verify, not proof of a mismarked interval.
 - The author source code requests nine quantiles while the exact original stats file has **seven**. Neither code path's request alone explains why 1% and 99% are missing from the published array; do not fabricate them.
 
-To narrow those source-specific evidence gaps, the next pinned original-byte GitHub workflow will report only eight predeclared, bounded **global NetCDF release metadata strings** (`license`, `history`, `source`, `title`, `time_coverage_start`, `time_coverage_end`, `geospatial_vertical_units`, `geospatial_vertical_positive`). The code rejects oversize/non-ASCII/multiline/unexpected values, prints no variable arrays or coordinates, and retains all data-rights/model-admission flags **false**. The executable production metadata receipt must pass CI before any original global-attribute claims.
+The pinned GitHub original-byte workflow reads only eight predeclared, bounded **global NetCDF release metadata strings** (`license`, `history`, `source`, `title`, `time_coverage_start`, `time_coverage_end`, `geospatial_vertical_units`, `geospatial_vertical_positive`). The code rejects oversize/non-ASCII/multiline/unexpected values, prints no variable arrays or coordinates, and retains all data-rights/model-admission flags **false**.
+
+### Actual original release-attribute receipt, run 41691573859
+
+The exact-head [GitHub original-source run 41691573859](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41691573859), job `126111225573`, succeeded on **2026-11-03**, with **61 synthetic/offline tests** and repeated publisher-size/MD5 and independently observed source SHA-256 verification: `e366c79683438d03a48b23764f1159d5ed88845a459f625eeb787dff78cbd767`.
+
+The actual original NetCDF global file header contains:
+
+| Native key | Observed original file value |
+| --- | --- |
+| `license` | **Creative Commons Attribution 4.0 International** |
+| `history` | This is version 2 of the dataset |
+| `source` | GTSMv3 forced with ERA5 climate reanalysis |
+| `time_coverage_start` | 1950-01-01 |
+| `time_coverage_end` | 2024-12-31 |
+| `geospatial_vertical_units` | m |
+| `geospatial_vertical_positive` | up |
+| `title` | Statistics of detrended still water level timeseries for GTSM-ERA5-E dataset (1950-2024) |
+
+This significantly narrows **file-native licensing and vertical metadata provenance**, but does **not** by itself prove all upstream CDS source rights, attribution completeness, the source-producing code's exact commit, the original pyextremes sampling/CI convention, or the local mean-sea-level-to-DEM/geoid transform. Provider data remain ephemeral and `data_rights_approved=false`, `vertical_datum_validated=false`, `cat_model_admitted=false`. The original source version is now evidenced as a file header and must not be conflated with CDS reanalysis v2/v3 or GTSM model v3.0.
