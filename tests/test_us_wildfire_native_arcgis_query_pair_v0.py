@@ -84,6 +84,7 @@ class NativeArcgisQueryPairTests(unittest.TestCase):
         for value, disposition in (
             ("Prescribed Fire", "prescribed_fire_not_wildfire"),
             ("Unexpected case", "unknown_fire_type"),
+            ("Other", "unknown_fire_type"),
             (None, "unknown_fire_type"),
         ):
             with self.subTest(value=value):
