@@ -134,6 +134,19 @@ class ThreeWayRegistryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             compare(listing, stage() + [bad], production())
 
+    def test_blocked_registration_is_a_historic_research_state_not_probe_approval(self):
+        file = "access/jp.gsi.fgd.building-outline.gml.json"
+        row = record(file, H1)
+        row["review_status"] = "blocked_registration"
+        row["rights_status"] = "restricted"
+        listing = github() + [{"path": file, "sha": H1, "type": "file"}]
+        result = compare(listing, stage() + [row], production())
+        candidate = next(x for x in result["manual_append_review_candidates"]
+                         if x["git_path"] == file)
+        self.assertEqual(candidate["review_status"], "blocked_registration")
+        self.assertEqual(candidate["rights_status"], "restricted")
+        self.assertFalse(result["automatic_production_sync_authorized"])
+
     def test_untrusted_access_rights_status_rejected(self):
         for field, value in (
             ("rights_status", "unrestricted_commercial_model_import"),
