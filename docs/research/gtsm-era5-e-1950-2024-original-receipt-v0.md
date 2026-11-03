@@ -99,3 +99,11 @@ The successful exact-head GitHub runner [41528816768](https://github.com/pokekar
 
 The original source also again reported **38,957** valid, in-geographic-range unique longitude/latitude coordinate pairs, no missing or duplicate pairs, and no (0,0) locations. The audit does not establish coastline proximity, local inundation depths, vertical datum compatibility, probability calibration, annual stochastic event independence, reuse permission or insurer-level losses. All admission flags remain false; no provider grids, site coordinates or source bytes were written to Git or Neon.
 
+
+## Original extreme-return-level QA (research 2026-11-03)
+
+The next research workflow reads the three source-native water-level statistic matrices `wl_extreme_bestfit`, `wl_extreme_5perc` and `wl_extreme_95perc` (38,957 station rows × 8 return-period columns). The read is **strictly gated** behind an exact original 9,652,424-byte download, published MD5, independently pinned SHA-256, release-specific NetCDF dimensions, units, packing and the eight original return-period year labels. An isolated, size-bounded checker `scripts/gtsm_era5_e_return_level_qa_v0.py` counts missing/nonfinite values, uncertainty band inversions, best estimates outside the 5–95% bands and descending adjacent best-fit return levels. Source-declared fill/missing sentinels are excluded from numeric comparison. A 1e-9 metre comparison tolerance avoids obvious floating point rounding false positives.
+
+The workflow emits **only aggregate counts**: no point values, station IDs, raw coordinates, measured sea levels, inundation depths or provider source assets. Its synthetic tests are located at `tests/test_gtsm_era5_e_return_level_qa_v0.py`. Detected flags warrant scientific investigation; a difference in fitted extreme-value parameters and statistical uncertainty conventions is not automatically a data defect. These checks do not establish local vertical datum, rate independence, tide-gauge skill, coastal flood connectivity, proper loss-model coupling, allowed commercial reuse or model admission. Real-source numbers must be obtained from the exact-head GitHub execution; no counts are preasserted.
+
+Primary sources: https://zenodo.org/records/14671593 and https://essd.copernicus.org/articles/18/5759/2026/.
