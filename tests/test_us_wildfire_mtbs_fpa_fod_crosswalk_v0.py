@@ -142,6 +142,10 @@ class WildfireCrosswalkTests(unittest.TestCase):
         c=dict(a, fpa_record_id="3", mtbs_id="missing")
         first=run(fpas=[a,b,c])
         second=run(fpas=[c,a,b])
-        self.assertEqual(first,second)
+        # The input byte receipt must change on reordering, but the aggregate
+        # scientific disposition is deterministic and conserves parent rows.
+        self.assertNotEqual(first["fpa_projection_sha256"], second["fpa_projection_sha256"])
+        self.assertEqual(first["fpa_row_disposition"], second["fpa_row_disposition"])
+        self.assertEqual(first["state"], second["state"])
         self.assertEqual(sum(first["fpa_row_disposition"].values()),3)
         self.assertEqual(first["fpa_row_disposition"]["unique_mtbs_id_research_candidate"],1)
