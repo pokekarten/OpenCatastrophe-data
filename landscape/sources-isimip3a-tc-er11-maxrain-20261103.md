@@ -20,7 +20,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ## ISIMIP3a historical tropical cyclone ER11/TCR maximum 24-hour precipitation fields (1950–2021)
 
-**Candidate ID:** `isimip3a.tc.er11.historical.maxrain.1950-2021`  
+**Candidate ID:** `isimip3a.tc.er11-wind.historical.maxrain.1950-2021`  
 **Provider:** ISIMIP / Potsdam Institute for Climate Impact Research (PIK); derived from IBTrACS, ERA5 and TC intensity model output  
 **Categories:** `tropical_cyclone`, `extreme_precipitation`, `event_hazard_footprint`, `derived_model_output`, `global`  
 **Spatial scope:** Global tropical cyclones covered by historical IBTrACS 1950–2021; gridded footprint product on global 300 arc-second (~10 km) grid  
