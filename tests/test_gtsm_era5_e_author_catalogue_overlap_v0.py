@@ -120,6 +120,8 @@ class GtsmAuthorCatalogueOverlapTests(unittest.TestCase):
         self.assertEqual(summary["complete_bin_coverage_classes"]["full_100_of_100_statistics"], 1)
         self.assertEqual(summary["complete_bin_coverage_classes"]["zero_statistics_all_100_author_rows"], 1)
         self.assertEqual(summary["author_name_families_in_100_id_bins_with_zero_statistics"]["coast_name_prefix"], 100)
+        self.assertEqual(summary["author_catalogue_only_ids_in_100_id_bins_with_any_statistics"], 0)
+        self.assertTrue(summary["all_author_only_ids_within_complete_bins_are_in_zero_statistic_bins"])
         self.assertEqual(summary["original_missing_id_runs_length_multiple_of_100"], 1)
         self.assertEqual(summary["original_missing_id_runs_exactly_aligned_to_hypothetical_100_id_boundaries"], 1)
         self.assertEqual(summary["missing_integer_ids_in_100_boundary_aligned_gap_runs"], 100)
@@ -135,6 +137,16 @@ class GtsmAuthorCatalogueOverlapTests(unittest.TestCase):
         self.assertEqual(summary["complete_bin_coverage_classes"]["zero_statistics_some_author_rows"], 1)
         self.assertEqual(summary["author_name_families_in_100_id_bins_with_zero_statistics"]["other_name_prefix"], 1)
         self.assertEqual(summary["original_missing_id_runs_exactly_aligned_to_hypothetical_100_id_boundaries"], 0)
+
+    def test_author_only_records_within_active_source_bin_not_misclassified(self):
+        cat = {0: (0, 0, "coast_name_prefix"),
+               1: (0, 0, "coast_name_prefix"),
+               200: (0, 0, "coast_name_prefix")}
+        summary = audit_hypothetical_100_id_batches([0, 200], cat)
+        self.assertEqual(summary["author_catalogue_only_ids_in_100_id_bins_with_any_statistics"], 1)
+        self.assertEqual(summary["number_of_100_id_bins_with_statistics_and_extra_catalogue_ids"], 1)
+        self.assertEqual(sum(summary["author_name_families_in_100_id_bins_with_zero_statistics"].values()), 0)
+        self.assertFalse(summary["all_author_only_ids_within_complete_bins_are_in_zero_statistic_bins"])
 
     def test_empty_or_out_of_catalogue_native_batch_inputs_blocked(self):
         for source, cat in [
