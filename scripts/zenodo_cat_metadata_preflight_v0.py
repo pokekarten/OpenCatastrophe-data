@@ -23,7 +23,6 @@ RECORDS = {
     "nl.vu.european-multihazard-sparse-events.v1": 22080546,
     "ihcantabria.ih-storm.enso-synthetic-tracks.v2": 15097665,
     "ihcantabria.transclima.tc-surge-hydrographs.2026": 18170693,
-    "ihcantabria.transclima.tropical-cyclone-data-catalogue.v1": 23736379,
     "nl.deltares.gtsm-era5-e.extreme-sea-level-stats.v2": 14671593,
     "waleedgeo.gfsm.global-flood-susceptibility.v1": 20568218,
 }
@@ -63,6 +62,8 @@ def check_download_url(value: Any, record_id: int) -> None:
 
 
 def audit_record(payload: dict[str, Any], source_id: str, raw_sha256: str) -> dict[str, Any]:
+    if source_id == "ihcantabria.transclima.tropical-cyclone-data-catalogue.v1":
+        raise MetadataPreflightError("catalogue latest record 23736380 is restricted; no public files")
     if source_id not in RECORDS:
         raise MetadataPreflightError("unknown source candidate; no unreviewed dynamic IDs")
     record = require_dict(payload, "record")
