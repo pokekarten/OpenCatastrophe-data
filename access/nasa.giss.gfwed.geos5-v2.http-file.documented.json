@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "nasa.giss.gfwed.geos5-v2.http-file.documented",
+  "source_ids": [
+    "nasa.giss.gfwed.geos5.daily-fwi.v2.0"
+  ],
+  "provider": "NASA Goddard Institute for Space Studies / GFWED",
+  "interface_type": "http_file",
+  "status": "documented_only",
+  "documentation_url": "https://data.giss.nasa.gov/impacts/gfwed/",
+  "service_root": "https://portal.nccs.nasa.gov/datashare/GlobalFWI",
+  "api_version": "v2.0 dataset path segment, HTTP file archive (not an API protocol version)",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_published_example_file_path"
+    ],
+    "path_templates": [
+      "/v2.0/fwiCalcs.GEOS-5/Default/GEOS-5/2014/FWI.GEOS-5.Daily.Default.20140501.nc"
+    ],
+    "parameter_rules": "This is an exact provider-published example file path and evidence of a potential NetCDF acquisition route, NOT an executable OpenCatastrophe download operation. No HTTP HEAD/GET/Range, crawler, recursive archive walk, redirects, user supplied URL/path/date, credential use or storage of source bytes is allowed by this contract. Later independent authorization must pin the exact version, file date, expected response size, byte caps, terms and SHA-256 evidence."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/x-netcdf",
+      "application/octet-stream"
+    ],
+    "format": "Provider NetCDF archive path is documented, but response content type, magic bytes, compression, variables, dimensions and checksum have not been observed. This profile authorizes no response acquisition.",
+    "scientific_semantics": "NASA GFWED computes Canadian Fire Weather Index family from reanalysis/weather model forcing including precipitation variants. The described GEOS-5 subset uses experimental near-real-time analysis, not a raw sensor fire-detection record. Retain FWI index meaning, local-noon sampling convention, model/forcing lineage, daily time, grid, missing values and version identity; fire-weather danger must not be equated to fire occurrence, footprint or insured loss."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 20,
+    "max_probe_bytes": 262144,
+    "max_sample_bytes": 262144,
+    "retry_policy": "none",
+    "rate_limit_notes": "No automated HTTP probe is authorized until exact third-party rights, source persistence and provider usage policy have been reviewed. The provider's example wget/curl snippet describes generic retrieval ability only.",
+    "mutability_notes": "Provider portal documents a v2.0 path and multiple precipitation/calculation variants. Do not infer that an HTTP file name freezes all upstream science, nor accept missing/cached/redirected data as a successful source receipt. Exact file SHA-256, date, response provenance and byte size are still unknown."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "not_reviewed",
+    "api_terms_status": "unknown",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "NASA GISS publicly documents the GFWED NetCDF downloads, but no exact product/file licence, API automation terms, commercial insurer-use or derivative redistribution permission has been reviewed in this PR. NASA branding or government-source generalizations are not a substitute for a product-specific rights decision, including input precipitation and model lineage. Do not execute data acquisition or publish bytes until source-specific terms are established."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": false,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-02",
+  "evidence_urls": [
+    "https://data.giss.nasa.gov/impacts/gfwed/",
+    "https://portal.nccs.nasa.gov/datashare/GlobalFWI/",
+    "https://science.nasa.gov/earth/earth-atmosphere/studying-weather-to-help-see-the-likelihood-of-fires/"
+  ],
+  "notes": "T0 documented_only access contract. Explicitly nonexecutable. First future bounded step, after legal review, would be a single exact-file HEAD or range-limited NetCDF signature/header check with immutable URI/date, checksum and response receipt and no bulk downloads; scientific crosswalk with FIRMS would preserve non-independence of forcing and fire detections. No actual external file bytes or Neon records are present."
+}

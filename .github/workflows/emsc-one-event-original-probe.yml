@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: EMSC one-event original JSON source check
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/emsc_one_event_probe_v0.py'
+      - 'tests/test_emsc_one_event_probe_v0.py'
+      - 'access/emsc.seismicportal.fdsn-event.json'
+      - 'docs/research/emsc-one-event-probe-v0.md'
+      - '.github/workflows/emsc-one-event-original-probe.yml'
+  workflow_dispatch:
+  # A reviewed change of this workflow enables one original provider GET
+  # at merge, to validate the source-ID/time/location receipt on main.
+  # PR checks are synthetic/offline; no scheduled ingestion or bulk requests.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/emsc-one-event-original-probe.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emsc-one-event-original-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  one-event:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Verify unmodified access contract human view
+        run: python scripts/render_public_views.py --check --scope access
+      - name: Run offline synthetic event and security validations
+        run: python -m unittest tests.test_emsc_one_event_probe_v0 -v
+      - name: Record exact reviewed script Git and SHA-256 identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD
+          sha256sum research_runners/emsc_one_event_probe_v0.py
+      - name: One exact provider event, hash-only receipt, no raw output
+        if: github.event_name != 'pull_request'
+        run: python research_runners/emsc_one_event_probe_v0.py --probe

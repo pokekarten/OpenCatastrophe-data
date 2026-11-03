@@ -1,0 +1,97 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+"""Synthetic source grouped polygon OGC validity, complexity quarantine and privacy."""
+from __future__ import annotations
+
+import json
+import unittest
+
+try:
+    # The repository-wide matrix pins Shapely 2.2.0, while the separate
+    # original-source geometry workflow executes these tests with 2.1.2.
+    # Do not run them under another GEOS/Shapely version.
+    import shapely  # noqa: F401
+    HAS_PINNED_SHAPELY = shapely.__version__ == "2.1.2"
+except ImportError:
+    HAS_PINNED_SHAPELY = False
+
+from research_runners.luxembourg_age_hq2021_geojson_group_ogc_v0 import (
+    GroupTopologyError, challenge_publisher_groups,
+)
+
+
+def source(polygons):
+    return {"type": "FeatureCollection", "features": [
+        {"type": "Feature", "id": "do-not-output-source-id",
+         "properties": {"OBJECTID": 456},
+         "geometry": {"type": "MultiPolygon", "coordinates": polygons}},
+    ]}
+
+
+@unittest.skipUnless(HAS_PINNED_SHAPELY, "Requires pinned Shapely 2.1.2")
+class PublisherGeoJSONGroupOGCTests(unittest.TestCase):
+    def test_valid_shell_hole_and_independent_invalid_bowtie(self):
+        square = [[0., 0.], [0., 10.], [10., 10.], [10., 0.], [0., 0.]]
+        hole = [[2., 2.], [4., 2.], [4., 4.], [2., 4.], [2., 2.]]
+        bowtie = [[20., 0.], [24., 4.], [20., 4.], [24., 0.], [20., 0.]]
+        r = challenge_publisher_groups(source([[square, hole], [bowtie]]))
+        self.assertEqual(r["original_publisher_groups_examined"], 2)
+        self.assertEqual(r["publisher_groups_with_assigned_holes"], 1)
+        self.assertEqual(r["individually_geos_valid_publisher_polygon_groups"], 1)
+        self.assertEqual(r["individually_geos_invalid_publisher_polygon_groups"], 1)
+        self.assertEqual(r["publisher_groups_over_vertex_complexity_budget"], 0)
+        self.assertFalse(r["whole_original_publisher_multipolygon_OGC_validity_verified"])
+        self.assertFalse(r["CAT_loss_input_admitted"])
+        self.assertNotIn("do-not-output-source-id", json.dumps(r))
+        self.assertNotIn("456", json.dumps(r))
+
+    def test_hole_outside_shell_is_invalid_and_not_repaired(self):
+        square = [[0., 0.], [0., 10.], [10., 10.], [10., 0.], [0., 0.]]
+        hole = [[11., 2.], [13., 2.], [13., 4.], [11., 4.], [11., 2.]]
+        r = challenge_publisher_groups(source([[square, hole]]))
+        self.assertEqual(r["individually_geos_invalid_publisher_polygon_groups"], 1)
+        self.assertEqual(r["invalid_group_ogc_reason_categories_only"].get("Hole lies outside shell"), 1)
+        self.assertFalse(r["source_polygons_repaired_or_admitted"])
+
+    def test_overbudget_groups_quarantined_and_counts_conserved(self):
+        ring = [[0.,0.],[0.,10.],[10.,10.],[10.,0.],[0.,0.]]
+        small = [[20.,0.],[20.,10.],[30.,10.],[30.,0.],[20.,0.]]
+        r = challenge_publisher_groups(source([[ring], [small]]), max_group_vertices=4)
+        self.assertEqual(r["publisher_groups_over_vertex_complexity_budget"], 2)
+        self.assertEqual(r["largest_source_polygon_group_point_count"], 5)
+        self.assertEqual(r["quarantined_publisher_polygon_group_point_total"], 10)
+        self.assertEqual(r["quarantined_publisher_polygon_group_hole_ring_total"], 0)
+        self.assertFalse(r["every_original_publisher_group_tested"])
+        for invalid in (0,1200001,None,True,-1):
+            with self.subTest(invalid=invalid), self.assertRaises(GroupTopologyError):
+                challenge_publisher_groups(source([[ring]]),max_group_vertices=invalid)
+
+    def test_explicit_megagroup_mode_overrides_default_only_with_strict_ceiling(self):
+        from research_runners.luxembourg_age_hq2021_geojson_group_ogc_v0 import (
+            MAX_GEOS_POLYGON_GROUP_VERTICES, MAX_OPTIONAL_MEGA_GROUP_VERTICES,
+        )
+        ring = [[0.,0.],[0.,10.],[10.,10.],[10.,0.],[0.,0.]]
+        source_group = source([[ring]])
+        standard = challenge_publisher_groups(source_group, max_group_vertices=4)
+        self.assertEqual(standard["publisher_groups_over_vertex_complexity_budget"], 1)
+        self.assertEqual(standard["quarantined_publisher_polygon_group_point_total"], 5)
+        advanced = challenge_publisher_groups(source_group,
+                                              max_group_vertices=MAX_OPTIONAL_MEGA_GROUP_VERTICES)
+        self.assertEqual(advanced["individually_geos_valid_publisher_polygon_groups"], 1)
+        self.assertEqual(advanced["publisher_groups_over_vertex_complexity_budget"], 0)
+        self.assertFalse(advanced["whole_original_publisher_multipolygon_OGC_validity_verified"])
+        self.assertFalse(advanced["CAT_loss_input_admitted"])
+        self.assertEqual(MAX_GEOS_POLYGON_GROUP_VERTICES, 120000)
+        with self.assertRaises(GroupTopologyError):
+            challenge_publisher_groups(source_group,
+                                       max_group_vertices=MAX_OPTIONAL_MEGA_GROUP_VERTICES + 1)
+
+    def test_reject_nonpolygon_sources(self):
+        with self.assertRaises(GroupTopologyError):
+            challenge_publisher_groups({"type":"Point","coordinates":[0,0]})
+        with self.assertRaises(GroupTopologyError):
+            challenge_publisher_groups({"type":"FeatureCollection","features":[]})
+
+
+if __name__ == "__main__":
+    unittest.main()

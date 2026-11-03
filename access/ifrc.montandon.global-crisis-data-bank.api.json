@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "ifrc.montandon.global-crisis-data-bank.api",
+  "source_ids": [
+    "ifrc.montandon.global-crisis-data-bank.api"
+  ],
+  "provider": "International Federation of Red Cross and Red Crescent Societies (IFRC) / Montandon Global Crisis Data Bank",
+  "interface_type": "stac",
+  "status": "blocked_credentials",
+  "documentation_url": "https://montandondata.org/get-started.html",
+  "service_root": "https://montandon-eoapi.ifrc.org",
+  "api_version": "Montandon STAC API (CQL2 / Monty extension; production endpoint advertised in official onboarding)",
+  "access_scope": [
+    "metadata",
+    "catalogue"
+  ],
+  "authentication": {
+    "mode": "bearer_token",
+    "credential_reference": "IFRC_MONTANDON_API_TOKEN",
+    "registration_url": "https://go.ifrc.org/montandon-landing",
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "inspect_stac_catalogue_documentation"
+    ],
+    "path_templates": [
+      "/stac"
+    ],
+    "parameter_rules": "Documented-only, zero network execution authority. Montandon requires a token generated in an approved IFRC GO account; IFRC_MONTANDON_API_TOKEN is a symbolic future secret reference, never a stored token. No anonymous STAC request, arbitrary query, CQL2 filter, pagination, search, link following, asset download, credential sharing or return-data persistence is authorized. The stage endpoint in Monty developer docs is NOT the production service."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "application/json",
+      "application/geo+json"
+    ],
+    "format": "STAC API catalog/collection/item metadata with Monty event, hazard and impact roles and CQL2 queries, only after separate authenticated access review.",
+    "scientific_semantics": "Monty item IDs, issuer src_event_id, episode_number and source-local corr_id are distinct. Monty documentation explicitly warns that monty:corr_id is not a cross-source global join key. Event-to-event candidates require hazard/country/temporal and optional geometry tests; same crisis is not proof of same physical shock, contractual occurrence, independent hazard evidence, observed property damage or insured loss. Field event datetime is not a source publication or our receipt time."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 30,
+    "max_probe_bytes": 262144,
+    "max_sample_bytes": 1048576,
+    "retry_policy": "none",
+    "rate_limit_notes": "No live automated queries authorized until access token, provider API service terms and per-upstream reuse rights are independently qualified; no repository-specific rate entitlement assumed.",
+    "mutability_notes": "Montandon and its source-provider transformations are mutable. Future receipts require authenticated identity provenance without the secret, exact source STAC ID/collection, upstream issuer event ID, transforming software/version, event issue/publication/ingest times, geometry, hazard taxonomy, original asset hash where allowed, known cross-source dependencies and a distinct arrival/knowledge-cut time."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "unknown",
+    "api_terms_status": "separate_unreviewed",
+    "terms_url": null,
+    "commercial_automation_status": "unknown",
+    "redistribution_status": "unknown",
+    "notes": "The official Montandon onboarding says API token access is required because underlying providers include licensed/restricted data. Public STAC documentation and accessible landing pages do not grant blanket commercial automation or raw/derived redistribution rights; review each source/product, bearer-token terms and intended insurance use independently."
+  },
+  "probe_contract": {
+    "mode": "none",
+    "operation": null,
+    "requires_credentials": true,
+    "expected_evidence": []
+  },
+  "implementation_decision": "document_only",
+  "reviewed_at": "2026-11-03",
+  "evidence_urls": [
+    "https://montandondata.org/get-started.html",
+    "https://go.ifrc.org/montandon-landing",
+    "https://ifrcgo.org/monty-stac-extension/model/stac-api/correlation_algorithms/",
+    "https://github.com/IFRCGo/monty-stac-extension"
+  ],
+  "notes": "First source-specific access contract for the already registered landscape candidate. Token remains absent and no provider request, STAC item, raw asset, claims record, Neon write, scientific model run or source admission is implemented. The companion research gate uses fully invented STAC items only."
+}

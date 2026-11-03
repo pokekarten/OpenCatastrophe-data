@@ -1,0 +1,319 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+
+GENERATED FILE — DO NOT EDIT DIRECTLY
+Canonical source: landscape/sources-monitoring-repo-upstreams-20261102.json
+Renderer: scripts/render_public_views.py
+Change the canonical JSON and run `python scripts/render_public_views.py --write`.
+-->
+
+# Source landscape: `sources-monitoring-repo-upstreams-20261102.json`
+
+> This Markdown file is a deterministic human-readable projection of the canonical JSON file named above. It does not create a second source of truth or change admission, rights or scientific-review state.
+
+**Schema version:** `1.0.0`  
+**Review date:** `2026-11-02`  
+**Purpose:** Non-admission monitoring-repository upstream source discovery with 20 unique local entries after GLIDE, CERF and International Charter were consolidated into the canonical peer-cat-repositories source shard; preserves twelve-repository research provenance, no data admission or third-party reuse rights.
+
+**Entries:** 20
+
+## IDMC Internal Displacement Updates (IDU)
+
+**Candidate ID:** `idmc.idu.disaster-displacement`  
+**Provider:** Internal Displacement Monitoring Centre  
+**Categories:** `humanitarian_impact`, `displacement`, `event_catalogue`  
+**Spatial scope:** global, event and country dependent  
+**Temporal scope:** provisional latest 180 days; daily updates, historical GIDD separate  
+**Resolution / granularity:** Event-linked displacement estimates and disaster type with selected geospatial downloads  
+**Potential roles:** `post_event_population_impact`, `disaster_event_crosswalk`, `impact_validation_context`  
+**Access hint:** `public_downloads_api_key_request_rights_and_provisional_data_review`  
+**Authoritative source:** <https://www.internal-displacement.org/internal-displacement-updates/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Found through MapAction disaster-impact. IDU is a provisional count of internal movements, not unique people, building damage or insured losses. Preserve event window, source, estimate vintage and subsequent GIDD revisions; inspect API authentication and terms separately.
+
+## IFRC GO Disaster Response Emergency Fund appeals API
+
+**Candidate ID:** `ifrc.go.dref-appeals-api`  
+**Provider:** International Federation of Red Cross and Red Crescent Societies  
+**Categories:** `humanitarian_impact`, `response_funding`, `event_catalogue`  
+**Spatial scope:** global where Red Cross/Red Crescent appeals operate  
+**Temporal scope:** operational and historical appeal/event records; completeness varies  
+**Resolution / granularity:** Appeal code, event link, country, start/end, appeal type, amounts requested/funded and beneficiaries  
+**Potential roles:** `post_event_response_context`, `cross_agency_event_crosswalk`, `humanitarian_impact_validation`  
+**Access hint:** `documented_api_source_data_licence_not_confirmed`  
+**Authoritative source:** <https://go-wiki.ifrc.org/en/go-api/data_dictionary_appeal>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** MapAction disaster-impact lists IFRC-DREF. GO appeal atype=0 denotes DREF; event associations may be absent and reported beneficiaries are not insured loss. GO upstream data rights may be unstated; review API conditions and field-level semantics before any persistent import.
+
+## Nepal BIPAD disaster, flood-gauge and incident APIs
+
+**Candidate ID:** `np.ndrrma.bipad.api`  
+**Provider:** Government of Nepal / NDRRMA BIPAD portal  
+**Categories:** `flood`, `earthquake`, `incident_catalogue`, `hydrometeorology`, `impact`  
+**Spatial scope:** Nepal  
+**Temporal scope:** operational and historic portal holdings; endpoint-dependent  
+**Resolution / granularity:** Events, alerts, river/rain stations, hazard layers and selected impact records by administrative geography  
+**Potential roles:** `national_flood_event_monitoring`, `flood_gauge_crosscheck`, `post_event_impact_validation`  
+**Access hint:** `public_api_documentation_endpoint_auth_rights_and_privacy_review_required`  
+**Authoritative source:** <https://bipadportal.gov.np/api/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Discovered from Ancoda Atlas. Public API documentation lists event, flood-station, rain-stations, incident and geohazard GeoJSON endpoints; some schemas include household or individual data and must be excluded. Require per-endpoint auth, provider rights and sensitive-data review before use.
+
+## Environment Agency real-time flood monitoring API
+
+**Candidate ID:** `uk.environment-agency.flood-monitoring-api`  
+**Provider:** Environment Agency (England)  
+**Categories:** `flood`, `river_level`, `streamflow`, `warnings`, `observation`  
+**Spatial scope:** England; specific forecast documents may have broader coverage  
+**Temporal scope:** operational latest readings and current warnings; typical reading archive approx. four weeks with separate daily CSV archives  
+**Resolution / granularity:** River stage/flow station observations, timestamps, flood warnings and warning-area geometries  
+**Potential roles:** `flood_warning_trigger`, `hydrological_observation_validation`, `warning_area_crosswalk`  
+**Access hint:** `open_government_licence_api_attribution_and_field_scope_review`  
+**Authoritative source:** <https://environment.data.gov.uk/flood-monitoring/doc/reference>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Discovered from Emergency Centre. API documentation states public OGL open data and 15-minute service cycles but individual station upload cadence varies. Warning areas are not measured inundation and latest readings are not a complete archive. Capture unit, station datum, time and warning lifecycle.
+
+## Met Office National Severe Weather Warnings Service API
+
+**Candidate ID:** `uk.met-office.nswws-public-warnings`  
+**Provider:** UK Met Office  
+**Categories:** `severe_weather`, `alerts`, `windstorm`, `flood_context`  
+**Spatial scope:** United Kingdom  
+**Temporal scope:** operational issued/updated warnings; provider states no historical warnings archive  
+**Resolution / granularity:** Atom feed of issued warnings, issue/change timestamps, MultiPolygon warning areas, impact likelihood and severity  
+**Potential roles:** `uk_severe_weather_warning_trigger`, `warning_footprint_context`, `event_crosswalk`  
+**Access hint:** `public_warning_api_terms_and_product_scope_review_required`  
+**Authoritative source:** <https://datahub.metoffice.gov.uk/docs/g/category/warnings/overview>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Discovered from Emergency Centre. Met Office documents Atom as the live source of truth and no historical warning API. Need capture issued/updated/cancelled lifecycle while monitoring. Polygon means forecast warning area, never an observed physical wind/flood footprint.
+
+## Open-Meteo multi-model forecast and archived single-runs APIs
+
+**Candidate ID:** `openmeteo.model-forecast-single-runs`  
+**Provider:** Open-Meteo GmbH (redistributor of national weather model output)  
+**Categories:** `weather_forecast`, `storm`, `precipitation`, `ensemble`, `model_archive`  
+**Spatial scope:** global with regional native model subsets  
+**Temporal scope:** live forecasts; original-run archives depend on model and release, with IFS from 2024 and many models from April 2026  
+**Resolution / granularity:** Point forecasts, selected model run/init/lead hour, model-specific spatial resolution and interpolated time series  
+**Potential roles:** `cat_event_nowcast`, `multi_model_forecast_challenge`, `forecast_uncertainty_context`  
+**Access hint:** `api_noncommercial_free_tier_commercial_plan_and_upstream_model_rights_review`  
+**Authoritative source:** <https://open-meteo.com/en/docs/single-runs-api>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Discovered from Crisis Compass and Ancoda Atlas. The Open-Meteo APIs aggregate DWD ICON, ECMWF IFS, Météo-France ARPEGE, CMA GRAPES and other model outputs. Avoid double counting their upstream model sources as independent observations; record provider, exact model/run, interpolation, forecast lead time and commercial access terms.
+
+## BMKG Indonesia open earthquake event feed
+
+**Candidate ID:** `id.bmkg.earthquake-open-data`  
+**Provider:** Badan Meteorologi Klimatologi dan Geofisika (BMKG)  
+**Categories:** `earthquake`, `tsunami_context`, `event_catalogue`, `near_real_time`  
+**Spatial scope:** Indonesia and surrounding earthquake region  
+**Temporal scope:** recent earthquake snapshots updated on occurrence; separate reviewed historical repository  
+**Resolution / granularity:** Recent and felt event JSON/XML with magnitude, depth, time, coordinates and ShakeMap image reference  
+**Potential roles:** `southeast_asia_earthquake_event_crosswalk`, `quake_time_location_validation`  
+**Access hint:** `public_json_xml_limit_60_per_minute_attribution_required_full_history_separate`  
+**Authoritative source:** <https://data.bmkg.go.id/gempabumi/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Discovered in GlobeWatch. BMKG documents recent earthquake event products, seven current files and mandatory attribution, with 60 requests/minute/IP. Its public feed is a recent rolling snapshot, not complete historic seismicity. For history use the separately documented BMKG repository with authentication/rights review; preserve agency IDs and preliminary-to-reviewed revisions.
+
+## Japan Meteorological Agency earthquake and volcano high-frequency XML feed
+
+**Candidate ID:** `jp.jma.quake-volcano-high-frequency-xml`  
+**Provider:** Japan Meteorological Agency (JMA)  
+**Categories:** `earthquake`, `volcano`, `event_catalogue`, `near_real_time`  
+**Spatial scope:** Japan and neighboring earthquake/volcano advisory domains  
+**Temporal scope:** operational minute-updated feed carrying the most recent bulletins  
+**Resolution / granularity:** Official XML bulletin references for recent earthquake and volcanic information  
+**Potential roles:** `japan_event_crosswalk`, `operational_quake_warning_context`, `bulletin_revision_tracking`  
+**Access hint:** `public_japan_government_standard_terms_temporal_retention_and_licence_review`  
+**Authoritative source:** <https://www.data.jma.go.jp/developer/xml/feed/eqvol.xml>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Discovered from GlobeWatch; Japanese e-Gov data portal registers JMA eqvol.xml and Japanese Government Standard Terms of Use. Fast operational feed retains recent bulletins only, not a complete historical catalogue. Preserve native event/issue IDs, bulletin type, revisions and official original XML semantics.
+
+## NASA Global Imagery Browse Services (GIBS) temporal satellite visualizations
+
+**Candidate ID:** `nasa.gibs.wmts-temporal-imagery`  
+**Provider:** NASA Earthdata / GIBS  
+**Categories:** `satellite_imagery`, `earth_observation`, `event_context`  
+**Spatial scope:** global, selected product coverage and map projection  
+**Temporal scope:** time-varying NASA satellite visualization products; product-dependent archive  
+**Resolution / granularity:** WMS, WMTS, TMS and XYZ map tiles with product-specific resolutions and timestamps  
+**Potential roles:** `post_event_visual_review`, `satellite_overlay_context`, `original_raster_discovery`  
+**Access hint:** `public_wms_wmts_visualization_service_exact_product_rights_and_data_review`  
+**Authoritative source:** <https://nasa-gibs.github.io/gibs-api-docs/access-basics/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Discovered in Terra Watch. GIBS serves imagery visualizations; a colored map tile or corrected reflectance is not directly a damage mask, flood depth or numeric hazard. For quantitative CAT use identify and obtain original instrument/product values, version, cloud quality, time, projection, resampling and rights separately.
+
+## WFP ADAM OGC global disaster impact and alert layers
+
+**Candidate ID:** `wfp.adam.ogc-global-disaster-impact`  
+**Provider:** World Food Programme Geospatial  
+**Categories:** `multi_hazard`, `event_catalogue`, `rapid_impact_estimate`, `ogc_api`  
+**Spatial scope:** global event coverage dependent on module  
+**Temporal scope:** near-real-time; public API layers with model-dependent event history  
+**Resolution / granularity:** OGC API Features/GeoJSON and vector tiles; hazard and estimated population/cropland/infrastructure impacts  
+**Potential roles:** `post_event_impact_crosscheck`, `disaster_event_crosswalk`, `preliminary_exposure_overlay`  
+**Access hint:** `public_documented_readonly_ogc_api_collection_level_rights_review`  
+**Authoritative source:** <https://docs.adam.geospatial.wfp.org/developers/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** MapAction disaster-impact described old WFP ADAM scraping as blocked; the current provider developer docs describe a public no-auth OGC API. This is an apparent access evolution, not a successful endpoint probe. ADAM derives from GDACS, USGS ShakeMap, GloFAS, FloodScan and other inputs: outputs are NOT independent ground truth or insured damages; preserve collection, event, timestamp and lineage.
+
+## JMA RSMC Tokyo historical tropical cyclone best track
+
+**Candidate ID:** `jp.jma.rsmc-tokyo.best-track`  
+**Provider:** Japan Meteorological Agency RSMC Tokyo  
+**Categories:** `tropical_cyclone`, `storm_track`, `historical_observation`  
+**Spatial scope:** western North Pacific and South China Sea per RSMC Tokyo area  
+**Temporal scope:** historic best-track text archive from 1951 through 2026 with published revisions  
+**Resolution / granularity:** storm identifier, time, center coordinates, central pressure, wind metrics and categorical intensities  
+**Potential roles:** `cyclone_track_holdout`, `storm_event_identity`, `regional_windstorm_validation`  
+**Access hint:** `official_public_archives_version_and_reuse_terms_review`  
+**Authoritative source:** <https://www.jma.go.jp/jma/jma-eng/jma-center/rsmc-hp-pub-eg/besttrack.html>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Discovered from World Monitor western Pacific cyclones and Crisis Compass JMA-model context. Historic best track is a retrospective agency analysis, unlike operational advisory and forecast tracks. Preserve issue/revision history, UTC convention, unit conversion and basin; tracks are not a wind-speed footprint.
+
+## NOAA NTWC/PTWC official tsunami warning Atom feeds
+
+**Candidate ID:** `noaa.nws.tsunami-warning-centers.atom`  
+**Provider:** NOAA National Weather Service U.S. Tsunami Warning Centers  
+**Categories:** `tsunami`, `operational_alert`, `coastal_hazard`  
+**Spatial scope:** NTWC continental US/Alaska/Canada; PTWC Hawaii, US Pacific and Caribbean territories plus international advisories  
+**Temporal scope:** current operational notices and product update stream; archive/retention unknown  
+**Resolution / granularity:** NTWC PAAQAtom.xml and PTWC PHEBAtom.xml entries with product identifiers and issue time  
+**Potential roles:** `tsunami_event_trigger`, `coastal_warning_context`, `warning_revision_tracking`  
+**Access hint:** `public_atom_feeds_bulletin_scope_terms_review_required`  
+**Authoritative source:** <https://www.tsunami.gov/?page=productRetrieval>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Source code in GlobeWatch uses both Atom URLs; NOAA officially lists both. Message regions do not prove inundation, wave height at any location or physical damage; combine with NOAA tsunami historical and coastal observations already in OpenCatastrophe only after model/data independence review.
+
+## USGS Volcano Hazards Program HANS notices and VONA API
+
+**Candidate ID:** `usgs.vhp.hans-volcano-alerts`  
+**Provider:** United States Geological Survey Volcano Hazards Program  
+**Categories:** `volcano`, `ashfall`, `operational_alert`, `aviation_disruption`  
+**Spatial scope:** US volcanoes monitored by USGS observatories, notice-specific  
+**Temporal scope:** current and selected historical notices; provider warns endpoint stability is not guaranteed  
+**Resolution / granularity:** Volcano IDs, alert levels, timestamps, VONA aviation notices, observatory and CAP alert metadata  
+**Potential roles:** `volcano_event_crosswalk`, `ash_aviation_disruption_trigger`, `eruption_warning_context`  
+**Access hint:** `public_documented_usgs_utility_api_no_continuity_guarantee`  
+**Authoritative source:** <https://volcanoes.usgs.gov/hans-public/api/volcano/default>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** WorldMirror lists USGS volcano notices. Official USGS HANS API returns current alerts for elevated volcanoes, monitored volcano status and individual notices. An alert level is not an ash plume, depth or loss footprint. Preserve notice lifecycle and provider service-version availability.
+
+## GDELT 2.0 Event database and associated mentions
+
+**Candidate ID:** `gdelt.v2.events-news-geocoded`  
+**Provider:** The GDELT Project  
+**Categories:** `global_news`, `geopolitical_events`, `disaster_mention_context`, `osint`  
+**Spatial scope:** global multilingual news where monitored publishers cover events  
+**Temporal scope:** machine-updated 15-minute global event/mentions stream with heterogeneous historic coverage  
+**Resolution / granularity:** CAMEO event and article mention tables; approximate geo references, textual themes and media attention  
+**Potential roles:** `disaster_mention_discovery`, `event_coverage_bias_measurement`, `early_reporting_context`  
+**Access hint:** `public_raw_data_available_reuse_terms_publication_rights_and_bias_review`  
+**Authoritative source:** <https://www.gdeltproject.org/data.html>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Found in World Monitor, GlobeWatch, Terra Watch, WorldMirror and FIRESTORM. Multiple dashboards reading GDELT are one underlying source; never count articles as independent perils or insured loss. Media attention, language, geocoding and event type create systematic bias. GEO 2.0 query endpoint should not be assumed operational from older repo code.
+
+## Cloudflare Radar internet outage and anomaly API
+
+**Candidate ID:** `cloudflare.radar.internet-outage-annotations`  
+**Provider:** Cloudflare Radar  
+**Categories:** `critical_infrastructure`, `network_outage`, `business_interruption_proxy`  
+**Spatial scope:** global countries and AS networks with Cloudflare signal coverage  
+**Temporal scope:** time-bounded current and historic annotations; provider API specific history  
+**Resolution / granularity:** Start/end outage timestamps, affected geographies, ASNs, descriptions and outage cause  
+**Potential roles:** `post_event_infrastructure_disruption_crosscheck`, `indirect_business_interruption_context`  
+**Access hint:** `api_token_required_cc_by_nc_4_0_noncommercial_reuse_restricted`  
+**Authoritative source:** <https://developers.cloudflare.com/api/resources/radar/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Found in World Monitor infrastructure monitor. Cloudflare states Radar API material is CC BY-NC 4.0; insurance/commercial usage requires separate rights clearance. Geographic coverage and inferred causes can be incomplete. A network outage does not directly measure physical facility damage or insured business interruption.
+
+## Epoch AI global data-center locations and power estimates
+
+**Candidate ID:** `epoch.ai.global-ai-data-centers.2026`  
+**Provider:** Epoch AI  
+**Categories:** `critical_infrastructure`, `exposure`, `energy`, `datacenter`  
+**Spatial scope:** largest AI compute data centers worldwide; knowingly incomplete  
+**Temporal scope:** revised downloadable dataset with changeable coverage and site records  
+**Resolution / granularity:** Site location, build phase, modelled electricity capacity, facility attributes and estimated hardware  
+**Potential roles:** `large_facility_exposure_context`, `power_dependency_network`, `post_event_bi_context`  
+**Access hint:** `public_csv_zip_cc_by_attribution_dataset_version_and_source_review`  
+**Authoritative source:** <https://epoch.ai/data/data-centers-documentation>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** World Monitor mentions Epoch data centers. Provider supplies CSV/ZIP and CC-BY attribution, but sources are satellite/permits and estimates, not insured values or exhaustive datacenter stock. Freeze exact release, status, lat/lon precision, observed vs estimated variables and attribution.
+
+## Fintraffic Digitraffic marine AIS, port call, sea-state and ice navigation API
+
+**Candidate ID:** `fi.fintraffic.digitraffic.marine`  
+**Provider:** Fintraffic / Finnish Transport Infrastructure Agency  
+**Categories:** `maritime`, `port_infrastructure`, `ais`, `coastal_hazard`  
+**Spatial scope:** Finnish maritime region; vessel routes and call data as covered by Finland feeds  
+**Temporal scope:** frequently updated observational/operational services; historical retention varies  
+**Resolution / granularity:** AIS location GeoJSON/JSON, vessel and port-call metadata, buoy sea state, winter navigation and AtoN faults  
+**Potential roles:** `port_business_interruption_context`, `vessel_exposure_proxy`, `coastal_event_validation`  
+**Access hint:** `public_openapi_own_terms_api_fair_use_reuse_review`  
+**Authoritative source:** <https://www.digitraffic.fi/en/marine-traffic/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** GlobeWatch code calls meri.digitraffic.fi AIS endpoints. Official Digitraffic docs show port calls, sea state and winter navigation as extra datasets. Geographic coverage is NOT global; ship position and AIS visibility are not complete ship exposure or insured cargo values.
+
+## InciWeb / NIFC official wildfire incident updates
+
+**Candidate ID:** `us.nifc.inciweb.active-fire-incident-reports`  
+**Provider:** National Interagency Fire Center and participating incident management teams  
+**Categories:** `wildfire`, `incident_reports`, `post_event_damage_context`  
+**Spatial scope:** United States reported major incidents and participating response teams  
+**Temporal scope:** operational incident reports and maps; updates vary by incident and archive policy  
+**Resolution / granularity:** Incident names, agency updates, containment, affected community and linked maps  
+**Potential roles:** `wildfire_event_crosswalk`, `incident_timeline_enrichment`, `perimeter_discovery`  
+**Access hint:** `official_incident_web_portal_no_guaranteed_bulk_api_provider_terms_review`  
+**Authoritative source:** <https://www.nifc.gov/fire-information>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** FIRESTORM consumes InciWeb RSS. NIFC identifies InciWeb as current incident-specific information, but an openly documented, stable public machine API has not been confirmed. Manual discovery only pending official feed/API review. Containment or reported acreage does not equal physical damage polygon or insured loss.
+
+## Copernicus Sentinel-5P TROPOMI Level-2 NO2 columns
+
+**Candidate ID:** `copernicus.s5p.tropomi.no2.l2`  
+**Provider:** Copernicus Data Space Ecosystem / ESA  
+**Categories:** `atmospheric_chemistry`, `air_quality`, `indirect_economic_activity`, `satellite_observation`  
+**Spatial scope:** global with cloud/algorithm coverage constraints  
+**Temporal scope:** 2018-present archives; separate near-real-time and non-time-critical processing  
+**Resolution / granularity:** Tropospheric nitrogen dioxide column products, product QA and L2 pixels or openEO/Sentinel Hub aggregation  
+**Potential roles:** `industrial_disruption_proxy`, `post_event_activity_context`, `atmospheric_quality_validation`  
+**Access hint:** `public_cdse_accounts_quotas_version_processor_and_data_rights_review`  
+**Authoritative source:** <https://dataspace.copernicus.eu/news/2026-9-17-new-sentinel-5p-level-2-collections-available-openeo-cdse>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** World Monitor uses Sentinel-5P TROPOMI NO2 as an industrial activity proxy. This is distinct from the existing Sentinel-5P SO2 volcano entry. September 2026 CDSE openEO adds collection SENTINEL5P_L2_NO2. NO2 reflects emissions, weather, chemistry, seasonality and clouds; it is never direct site production, asset damage or insured loss.
+
+## FloodScan near-real-time and historical flood mapping
+
+**Candidate ID:** `aer.floodscan.flood-observation`  
+**Provider:** Atmospheric and Environmental Research (AER)  
+**Categories:** `flood`, `satellite_observation`, `modelled_inundation`  
+**Spatial scope:** global coverage stated in WFP ADAM, product-specific  
+**Temporal scope:** near-real-time and historical flood estimates; precise span/version to be checked  
+**Resolution / granularity:** flood extent / surface-water presence layers and associated quality/processing metadata  
+**Potential roles:** `event_flood_extent_crosscheck`, `remote_sensing_inundation_context`  
+**Access hint:** `third_party_commercial_product_access_licence_unknown_no_download`  
+**Authoritative source:** <https://www.aer.com/weather-risk-management/floodscan-near-real-time-and-historical-flood-mapping/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** WFP ADAM documents FloodScan as a flood observatory upstream. Whether OpenCatastrophe can obtain the exact FloodScan product commercially or redistribute results is unknown; fail closed. ADAM-derived features reuse FloodScan and cannot serve as independent holdout against original FloodScan.

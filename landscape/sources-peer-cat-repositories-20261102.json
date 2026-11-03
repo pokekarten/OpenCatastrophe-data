@@ -1,0 +1,297 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission review of external original datasets and access leads found while auditing 20 peer catastrophe-risk, disaster-data, satellite-damage and insurance model repositories. Software references are not dataset admissions; accepted existing GEM GEID, GFDRR Risk Data Library and Oasis/USGS source identities are not duplicated.",
+  "review_date": "2026-11-02",
+  "entries": [
+    {
+      "candidate_id": "ifrc.montandon.global-crisis-data-bank.api",
+      "name": "IFRC Montandon Global Crisis Data Bank event, hazard and impact API",
+      "provider": "IFRC / Montandon",
+      "categories": [
+        "multi_hazard",
+        "historical_disasters",
+        "event_catalogue",
+        "observed_impact"
+      ],
+      "spatial_scope": "global, depending on upstream source and reporting completeness",
+      "temporal_scope": "historical and current event, hazard and impact records; provider vintages vary",
+      "resolution_or_granularity": "Linked disaster event/hazard/impact records, country and spatial joins, multiple original source IDs",
+      "potential_roles": [
+        "event_source_crosswalk",
+        "post_event_impact_validation",
+        "source_lineage_research"
+      ],
+      "authoritative_url": "https://montandondata.org/get-started.html",
+      "access_class_hint": "ifrc_go_account_approved_token_required_and_upstream_per_source_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "IFRCGo/GCDB performs multi-provider ETL; IFRCGo/monty-stac-extension and IFRCGo/pystac-monty implement STAC event/hazard/impact relationships. Montandon requires an IFRC GO token due to upstream restrictions. Check ETL provenance, original ID, impact type, known-at time and allowed redistribution separately. Do not merge related earthquakes or treat a humanitarian impact estimate as insured loss. Discovery: https://github.com/IFRCGo/GCDB ; https://github.com/IFRCGo/monty-stac-extension ; https://github.com/IFRCGo/pystac-monty."
+    },
+    {
+      "candidate_id": "eth.climada.data-api.v2",
+      "name": "CLIMADA Data API v2 hazard and exposure dataset catalogue",
+      "provider": "ETH Zurich CLIMADA",
+      "categories": [
+        "multi_hazard",
+        "hazard",
+        "exposure",
+        "probabilistic_events",
+        "data_catalogue"
+      ],
+      "spatial_scope": "global for selected datasets, spatial/time coverage differs by product",
+      "temporal_scope": "historical, present and future climate scenario sets; dataset and version specific",
+      "resolution_or_granularity": "API v2 dataset IDs and metadata, downloadable input files and event-set references",
+      "potential_roles": [
+        "hazard_dataset_discovery",
+        "independent_risk_model_challenge",
+        "uncertainty_benchmark"
+      ],
+      "authoritative_url": "https://climada.ethz.ch/data-api/v2/docs",
+      "access_class_hint": "public_api_and_cc_by4_platform_notice_individual_dataset_metadata_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official data API documents v2 dataset and data_type endpoints. Provider publicly describes CC BY 4.0 data and GPL-3.0 software; verify each dataset's upstream provenance, units, spatial support, source licences, climate scenario and revision before admission. CLIMADA hazard sets are not automatically independent of copied IBTrACS or other underlying providers; 4 km products cannot be assumed building-resolution. Code: https://github.com/CLIMADA-project/climada_python ; https://github.com/CLIMADA-project/climada_petals."
+    },
+    {
+      "candidate_id": "worldbank.gfdrr.thinkhazard.screening-scores",
+      "name": "GFDRR ThinkHazard multi-peril administrative hazard scores",
+      "provider": "World Bank / GFDRR",
+      "categories": [
+        "multi_hazard",
+        "hazard_screening",
+        "risk_classification",
+        "admin_boundaries"
+      ],
+      "spatial_scope": "global with national and subnational availability depending on selected layer",
+      "temporal_scope": "Dated 2026 ThinkHazard integration-site publication (production equivalence unverified); distinct 2021 World Bank score-table archive (2025 catalog metadata); underlying hazard-layer vintages vary",
+      "resolution_or_granularity": "Portal: ADM0/ADM1/ADM2 screening classes and approximately 3,000 urban areas in the 2026 version; World Bank catalogue dataset 0060151 is a separate 2021 Excel ADM0/ADM1/ADM2 snapshot",
+      "potential_roles": [
+        "regional_hazard_priority_screening",
+        "risk_source_discovery",
+        "cross_peril_gap_analysis"
+      ],
+      "authoritative_url": "https://gfdrr.github.io/thinkhazard/",
+      "access_class_hint": "public_report_api_and_downloads_underlying_layers_independent_licenses",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Version trap confirmed from publisher: https://int.thinkhazard.org/en/about reports a 2026-09-18 data publication on an integration-site host; equivalence with the public production portal is not established; https://datacatalog.worldbank.org/search/dataset/0060151/thinkhazard-hazard-ranking describes a 2021 Excel snapshot (file last updated 2021-11-29; catalog metadata 2025-03-07), with CC BY 4.0 *for that dated product*. Neither proves that the 2021 file equals the 2026 portal classification nor licenses underlying third-party hazard layers. Pin platform version, source-layer revisions, admin-boundary/urban method, exact country+peril class and original item attribution before any use. Scores VLO/LOW/MED/HIG are hazard screening, never physical ground intensity, earthquake source annual occurrence, insured loss or event timing. Code GPL-3.0 is separate from dataset rights."
+    },
+    {
+      "candidate_id": "maxar.open-data.ard-disaster-imagery",
+      "name": "Maxar Open Data Program pre/post-disaster high-resolution imagery",
+      "provider": "Maxar",
+      "categories": [
+        "remote_sensing",
+        "disaster_impact",
+        "buildings",
+        "post_event",
+        "satellite_imagery"
+      ],
+      "spatial_scope": "global event activations, not continuous worldwide coverage",
+      "temporal_scope": "pre/post event releases by activation, with product-dependent acquisition dates",
+      "resolution_or_granularity": "Event-scoped cloud optimized imagery and STAC footprints, collection date and provider mosaic metadata",
+      "potential_roles": [
+        "post_event_building_visual_validation",
+        "damage_change_detection",
+        "remote_sensing_training_candidate"
+      ],
+      "authoritative_url": "https://registry.opendata.aws/maxar-open-data/",
+      "access_class_hint": "public_event_based_stac_cog_noncommercial_cc_by_nc_4_0",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "The official AWS registry states CC BY-NC 4.0 and activation-only coverage. Distinguish image acquisition, processing, publication and controlled receipt. Commercial use, derived imagery and redistribution need separate rights review; no unapproved bytes in Git. Discovery from Microsoft's building-damage assessment workflow: https://github.com/microsoft/building-damage-assessment."
+    },
+    {
+      "candidate_id": "xview2.xbd.annotated-building-damage",
+      "name": "xView2 xBD annotated pre/post disaster building damage dataset",
+      "provider": "xView2 / Maxar Open Data Program collaborators",
+      "categories": [
+        "buildings",
+        "satellite_imagery",
+        "damage_labels",
+        "post_event",
+        "validation"
+      ],
+      "spatial_scope": "selected disaster events across multiple countries, non-exhaustive",
+      "temporal_scope": "selected labelled disasters and static published benchmark splits",
+      "resolution_or_granularity": "Paired optical satellite images, building polygons and damage classes no/minor/major/destroyed",
+      "potential_roles": [
+        "building_damage_validation",
+        "image_segmentation_research",
+        "damage_class_taxonomy_crosswalk"
+      ],
+      "authoritative_url": "https://xview2.org/dataset",
+      "access_class_hint": "registration_or_approved_download_noncommercial_dataset_rights",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Benchmark includes many building polygons across multiple perils; registration and noncommercial conditions apply to datasets, regardless of permissive code wrappers in TorchGeo or Microsoft. Prevent image-tile leakage across training/holdout and treat subjective damage labels as annotated observations, not insured economic losses. Discoverer: https://github.com/microsoft/building-damage-assessment."
+    },
+    {
+      "candidate_id": "nasa.jpl.aria.post-event-damage-proxy-maps",
+      "name": "NASA JPL ARIA satellite radar damage proxy maps",
+      "provider": "NASA JPL / ARIA; contributing satellite partners",
+      "categories": [
+        "earthquake",
+        "remote_sensing",
+        "damage_proxy",
+        "post_event",
+        "sar"
+      ],
+      "spatial_scope": "individual earthquake/disaster regions, includes 2023 Turkiye event",
+      "temporal_scope": "post-event acquisitions and derived maps with case-specific timestamps",
+      "resolution_or_granularity": "SAR coherence/change-based mapped areas; 2023 Turkiye release example has approximately 30 m pixels",
+      "potential_roles": [
+        "independent_post_event_spatial_challenge",
+        "earthquake_damage_proxy_comparison",
+        "satellite_evidence_lineage"
+      ],
+      "authoritative_url": "https://www.jpl.nasa.gov/images/pia25564-satellites-assess-earthquake-damage-in-turkey/",
+      "access_class_hint": "public_product_example_jaxa_and_partner_upstream_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "NASA JPL article links a 2023 earthquake damage-proxy-map download; ALOS-2 data involve JAXA and EO Singapore contributors. SAR change is not a confirmed collapsed building or financial loss; urban/vegetation bias, before/after dates and earthquake sequence timing must be captured. Evaluate each mapped original file licence separately."
+    },
+    {
+      "candidate_id": "ifrc.go.disaster-events-fieldreports-v2",
+      "name": "IFRC GO disaster event and field-report API v2",
+      "provider": "International Federation of Red Cross and Red Crescent Societies",
+      "categories": [
+        "multi_hazard",
+        "disaster_event",
+        "response",
+        "humanitarian_impact"
+      ],
+      "spatial_scope": "global national society reports, uneven coverage",
+      "temporal_scope": "reports and situation updates by event, publication and edit time",
+      "resolution_or_granularity": "IFRC event identity, appeals, situation/field reports, affected population and response indicators",
+      "potential_roles": [
+        "event_identity_crosswalk",
+        "impact_report_timeline",
+        "post_event_response_context"
+      ],
+      "authoritative_url": "https://go-wiki.ifrc.org/en/go-api/Data_dictionary_situation_report",
+      "access_class_hint": "public_api_metadata_some_visibility_and_content_rights_restricted",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "IFRC GO v2 situation_report docs provide created_at and event linkage. Some records are visibility-scoped; preserve permission and reporting qualifiers, not all textual attachments are reusable. Monty may derive its IFRC entries from the same API: do not count Monty and IFRC as independent evidence. Differentiate DREF from emergency appeals and field reports."
+    },
+    {
+      "candidate_id": "unocha.cerf.gms-data-api",
+      "name": "UN OCHA CERF grants and humanitarian allocations API",
+      "provider": "UN OCHA Central Emergency Response Fund",
+      "categories": [
+        "humanitarian_finance",
+        "response",
+        "disaster_impact_context",
+        "api"
+      ],
+      "spatial_scope": "global CERF supported operations, limited to funded countries/crises",
+      "temporal_scope": "historic and current allocations with funding/application release dates",
+      "resolution_or_granularity": "Applications, projects, country/agency/sector, allocation and donor-contribution values",
+      "potential_roles": [
+        "post_event_response_finance_context",
+        "indirect_disaster_impact_validation",
+        "event_crosswalk_hypothesis"
+      ],
+      "authoritative_url": "https://cerfgms-webapi.unocha.org/",
+      "access_class_hint": "public_documented_api_provider_reuse_and_attribution_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "CERF amounts represent response grants and fundraising, NOT actual physical damage, insured losses or reconstruction cost. Match to original crisis event identifiers with versioned and uncertainty-aware mappings; guard double counting with ReliefWeb/IFRC. Confirm exact endpoint and redistribution policy before automated ingestion."
+    },
+    {
+      "candidate_id": "undrr.desinventar.sendai-disaster-loss-records",
+      "name": "UNDRR DesInventar Sendai country disaster loss inventories",
+      "provider": "United Nations Office for Disaster Risk Reduction / country custodians",
+      "categories": [
+        "multi_hazard",
+        "disaster_loss",
+        "historical_event",
+        "subnational"
+      ],
+      "spatial_scope": "country-dependent, historical inventories for participating countries",
+      "temporal_scope": "historic inventory vintages differ by jurisdiction; programme evolving toward DELTA",
+      "resolution_or_granularity": "Local-level disaster reports on fatalities, affected/damaged buildings and economic effects, with inconsistent definitions",
+      "potential_roles": [
+        "historical_disaster_impact_benchmark",
+        "country_event_crosswalk",
+        "loss_reporting_bias_research"
+      ],
+      "authoritative_url": "https://desinventar-api.undrr.org/",
+      "access_class_hint": "public_discovery_country_database_permissions_and_successor_version_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Country databases are contributed by national custodians; software Apache licensing DOES NOT license all underlying records. UNDRR describes a transition to DELTA Resilience. Confirm national version, original source, admin boundary and report-date uncertainty; economic damage is not insurer paid loss. Monty GCDB uses DesInventar as an upstream source."
+    },
+    {
+      "candidate_id": "adrc.glide.disaster-identifiers",
+      "name": "GLIDE global disaster identifier registry",
+      "provider": "Asian Disaster Reduction Center (ADRC)",
+      "categories": [
+        "multi_hazard",
+        "disaster_event",
+        "event_identifier",
+        "crosswalk"
+      ],
+      "spatial_scope": "global event identifiers where partner reporting exists",
+      "temporal_scope": "historical disaster identifiers since 2004, updated with reports",
+      "resolution_or_granularity": "Per-disaster hazard type, year, sequential number and ISO country components",
+      "potential_roles": [
+        "event_alias_crosswalk",
+        "catalogue_deduplication_challenge",
+        "source_id_reconciliation"
+      ],
+      "authoritative_url": "https://glidenumber.net/glide/public/about.jsp",
+      "access_class_hint": "public_search_registration_optional_statistics_disclaimer_and_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "ADRC explicitly cautions that GLIDE IDs serve linking across disparate databases and discourages use of the registry for statistical secondary analysis. One GLIDE ID is not evidence of one physical seismic shock nor of one insurance occurrence; cross-border and multi-shock relations must remain explicit. Monty/MapAction/other upstream crosswalk evidence."
+    },
+    {
+      "candidate_id": "international-charter.space-major-disasters.activations",
+      "name": "International Charter Space and Major Disasters activation and map-product archive",
+      "provider": "International Charter: Space and Major Disasters",
+      "categories": [
+        "multi_hazard",
+        "satellite_disaster",
+        "activation_catalogue",
+        "post_event_mapping"
+      ],
+      "spatial_scope": "global supported disaster activations, selective event coverage",
+      "temporal_scope": "public activation archive since 2000, individual product acquisition and release dates vary",
+      "resolution_or_granularity": "Activation event links, disaster area, satellite-derived map products, mapped damage/flood/fire interpretation",
+      "potential_roles": [
+        "new_event_source_discovery",
+        "post_event_mapping_source_discovery",
+        "impact_footprint_validation_candidate"
+      ],
+      "authoritative_url": "https://disasterscharter.org/activations",
+      "access_class_hint": "public_activations_authorized_raw_imagery_and_map_specific_rights",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "The public activation list and example maps do not authorize downloading/reusing underlying satellite acquisitions. Commercial rights and redistribution vary by original agency/provider and map product; modelled damage overlays do not constitute insured loss. Source used in MapAction disaster-impact harmonization."
+    }
+  ]
+}
