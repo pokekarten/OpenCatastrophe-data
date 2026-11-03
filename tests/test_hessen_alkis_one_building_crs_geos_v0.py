@@ -121,6 +121,9 @@ class OfficialSourceCRSGeosTests(unittest.TestCase):
         self.assertFalse(receipt["raw_source_geometry_or_address_persisted"])
         self.assertFalse(receipt["raw_building_coordinates_or_ids_emitted"])
         self.assertEqual(len(receipt["source_response_sha256"]),64)
+        import shapely
+        self.assertEqual(receipt["shapely_version"], shapely.__version__)
+        self.assertIn(receipt["shapely_version"], crs.REVIEWED_SHAPELY_VERSIONS)
         self.assertFalse(receipt["model_input_approved"])
 
     def test_bad_http_status_redirect_transport_mime_and_size_fail_closed(self):
