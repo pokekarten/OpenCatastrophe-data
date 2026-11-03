@@ -45,19 +45,19 @@
       ],
       "spatial_scope": "Germany, official country, Land, Kreis and Gemeinde levels at the Zensus 15 May 2022 reference date",
       "temporal_scope": "Snapshot as of 15 May 2022; NOT annual 2025 insurer property stock",
-      "resolution_or_granularity": "Buildings and dwellings (distinct Census universes) by official administrative unit, census classification and potentially suppressed/ambiguous values in directly machine-readable CSV and XLSX regional tables",
+      "resolution_or_granularity": "Publisher original XLSX 21,451,209 bytes, 8 real worksheets including CSV-Gebäude, CSV-Wohnungen, Erläuterungen zur Methodik and Erläuterung zu CSV-Tabellen; actual CSV-Gebäude first-row headers include Berichtszeitpunkt, _RS, Name, Regionalebene, GEBAEUDEART_SYS_1, ...",
       "potential_roles": [
         "census_2022_district_building_stock_prior",
         "district_geography_vintage_crosswalk",
         "residential_building_vs_dwelling_denominator_challenge"
       ],
       "authoritative_url": "https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/Publikationen/publikationen-akkordeon-regionaltabellen.html",
-      "access_class_hint": "public_machine_readable_csv_exact_asset_licence_attribution_and_methodology_review_required",
+      "access_class_hint": "exact_official_original_xlsx_sha256_verified_method_column_population_and_reuse_admission_pending",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Distinct product from Zensus 2022 100m/1km building-grid files already registered. Official regional CSV is without XLSX footnotes/method explanations, so suppressed or missing cells must not be silently converted to 0; retrieve the related methodology and exact original CSV bytes and confirm licence for the specific dataset before numeric model use. Building counts do not equal private insurer 2025 year-end contracts; official Kreis key as of 2022 may require geography-boundary reconciliation. Zensus publication portal lists 2022 regional tables and machine-readable CSV; no original external bytes or census aggregates have been committed here."
+      "note": "Original official 2022-05-15 census product is distinct from 100m/1km building grids. Exact original https://www.destatis.de/static/DE/zensus/gitterdaten/Regionaltabelle_Gebaeude_Wohnungen.xlsx was retrieved intact on GitHub run 41737802098: 21,451,209 bytes SHA-256 82da8578a4657e20752b436a756ed27846c77f96e3f7333bdea7f4fe29a8b551; workbook sheet titles/OOXML verified. Later exact-head run 41738437581 verified original CSV-Gebäude first-row source headers only, with field _RS and Regionalebene, without republishing numerical source rows. The XLSX's CSV-like sheets remain in the same XLSX; a separately published CSV asset was not independently verified. No actual Kreis building count, nested GEBAEUDEART_SYS code meaning, suppression symbols, exact source reuse licence, current 2025 company contract mapping, or admission validated. It is invalid to treat mixed administrative levels (Bund/Land/Kreis/Gemeinde) as independent risk-site rows; require exact 5-digit _RS and the Kreis Regionalebene. Do not infer 2025 insurer risk locations or TIV from 2022 census counts."
     },
     {
       "candidate_id": "de.gdv.natcat-district-loss-frequency.2026",
