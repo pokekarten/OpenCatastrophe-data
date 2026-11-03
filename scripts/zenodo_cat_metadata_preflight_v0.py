@@ -47,6 +47,24 @@ LLM_GEODIS_V7_FILES = frozenset({
 })
 
 
+LLM_GEODIS_V7_PUBLISHED_MD5 = {
+    "241204_emdat_archive.xlsx": "e78b986f8234a48de376b8026017d1dc",
+    "Instructions_LLM-GeoDis.pdf": "2e8cb9f813877cd10dcbaa326b9ed01f",
+    "LLMGeoDis_part1.zip": "e0b90fa7ffff0ca9a4ef102118db8056",
+    "LLMGeoDis_part2.zip": "e8137895a92159c6d9b19f21a4559709",
+    "LLMGeoDis_part3.zip": "817e75737a4834b782568e6a079e3dc5",
+    "LLMGeoDis_part4.zip": "667f69347acd41261bf397cadd8f11a3",
+    "LLMGeoDis_part5.zip": "be427a1290f6eea5eb88a7bf87b2141d",
+    "emdat_geocoding-zenodo.zip": "6d177d89cc6ceacf790068213974b5b7",
+    "gdis_disnos.csv": "41e6a666c7e26323ae6853ef753f960d",
+    "geoemdat_gaul.gpkg": "79b9e864059c19e6bf76b084a4aba9ee",
+    "input_emdat.csv": "97384f5817103569d2b1b18de5be4ea4",
+    "pend-gdis-1960-2018-disasterlocations.csv": "c6a669466c815a0882deb5b4cc648acb",
+    "reliability_db.csv": "fbb290425afbb64a3de62d8373fb839d",
+    "synthetic_EMDAT_locations.csv": "391085a505a50c948b95ffdb257ab058",
+}
+# Published digests do NOT independently verify the original data bytes.
+
 class MetadataPreflightError(ValueError):
     """Fail-closed source metadata or identity error."""
 
@@ -221,6 +239,10 @@ def audit_record(payload: dict[str, Any], source_id: str, raw_sha256: str) -> di
             raise MetadataPreflightError("LLM-GeoDis declared record license differs from pinned CC BY 4.0")
         if seen != LLM_GEODIS_V7_FILES:
             raise MetadataPreflightError("LLM-GeoDis v7 original file inventory mismatch")
+        for item in inventory:
+            published = "md5:" + LLM_GEODIS_V7_PUBLISHED_MD5[item["key"]]
+            if item["publisher_checksum"] != published:
+                raise MetadataPreflightError("LLM-GeoDis v7 published source checksum mismatch")
 
     return {
         "schema_version": "zenodo-cat-metadata-preflight-v0",
