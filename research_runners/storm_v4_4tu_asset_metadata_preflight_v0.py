@@ -91,7 +91,10 @@ def _download_link_safe(row: dict, ident: str) -> None:
         return
     if type(url) is not str:
         raise Blocked("malformed provider file URL")
-    parts = urlsplit(url)
+    try:
+        parts = urlsplit(url)
+    except ValueError as exc:
+        raise Blocked("invalid provider download URL") from exc
     expected_path = "/file/" + ARTICLE_UUID + "/" + ident
     if (parts.scheme != "https" or parts.netloc != "data.4tu.nl"
         or parts.path != expected_path or parts.query or parts.fragment
@@ -107,7 +110,7 @@ def inspect(article_raw: bytes, article_sha256: str,
         raise Blocked("expected v2 single article and unpaginated file list")
     if article.get("uuid") != ARTICLE_UUID:
         raise Blocked("4TU article UUID does not match v4 provider permalink")
-    if article.get("doi", "").casefold() != DOI:
+    if type(article.get("doi")) is not str or article["doi"].casefold() != DOI:
         raise Blocked("wrong exact STORM v4 DOI")
     version = article.get("version")
     if type(version) is int:
