@@ -18,7 +18,7 @@ from urllib.request import Request, build_opener, HTTPRedirectHandler
 
 from gtsm_era5_e_author_catalogue_overlap_v0 import (
     AuthorCatalogueAuditBlocked, compare_original_to_author_catalogue,
-    parse_author_catalogue,
+    parse_author_catalogue, audit_hypothetical_100_id_batches,
 )
 from gtsm_era5_e_original_receipt_v0 import (
     GtsmReceiptError, PINNED_SHA256, SOURCE_BYTES, SOURCE_DOWNLOAD_URL,
@@ -147,6 +147,7 @@ def original_author_identity_receipt() -> dict[str, object]:
         catalogue = parse_author_catalogue(author_csv)
         station, lon, lat = read_original_native_id_coordinates(source_path)
         overlap = compare_original_to_author_catalogue(station, lon, lat, catalogue)
+        batch_check = audit_hypothetical_100_id_batches(station, catalogue)
         return {
             "schema_version": "gtsm-zenodo-v2-author-github-catalogue-receipt-v0",
             "zenodo_original_sha256": PINNED_SHA256,
@@ -155,6 +156,7 @@ def original_author_identity_receipt() -> dict[str, object]:
             "author_catalogue_git_blob_sha1_verified": AUTHOR_CATALOGUE_GIT_BLOB_SHA1,
             "author_catalogue_original_byte_length": author_size,
             "author_catalogue_derived_data_only": overlap,
+            "hypothetical_100_id_batch_aggregate_quality": batch_check,
             "original_provider_source_files_redistributed": False,
             "original_source_station_ids_or_coordinate_pairs_emitted": False,
             "original_source_files_persisted_after_probe": False,

@@ -211,3 +211,168 @@ def compare_original_to_author_catalogue(
         "commercial_rights_approved": False,
         "cat_model_admitted": False,
     }
+
+
+def audit_hypothetical_100_id_batches(
+    original_station_ids: list[int],
+    author_catalogue: dict[int, tuple[int, int, str]],
+) -> dict[str, object]:
+    """Classify *aggregate* numeric-ID coverage in the author's 100-ID blocks.
+
+    Only full 0..99, 100..199, ... bins completely contained within the
+    original statistical ID span are considered. The author's p01 SLURM
+    script uses 100 stations per batch, but no production run manifest or
+    source-file completeness guarantee has been obtained.
+    """
+    if type(original_station_ids) is not list or not original_station_ids:
+        raise AuthorCatalogueAuditBlocked("original statistical station ID list unavailable")
+    if len(original_station_ids) > EXPECTED_STATS_ROWS:
+        raise AuthorCatalogueAuditBlocked("source station IDs exceed exact original budget")
+    if type(author_catalogue) is not dict or not author_catalogue:
+        raise AuthorCatalogueAuditBlocked("original author catalogue unavailable")
+    original_ids = set()
+    for key in original_station_ids:
+        if type(key) is not int or not 0 <= key <= 65_535:
+            raise AuthorCatalogueAuditBlocked("unexpected native uint16 identifier")
+        if key in original_ids:
+            raise AuthorCatalogueAuditBlocked("original native station ID duplicated")
+        if key not in author_catalogue:
+            raise AuthorCatalogueAuditBlocked("author station catalogue does not contain original native ID")
+        original_ids.add(key)
+    for key, record in author_catalogue.items():
+        if (type(key) is not int or not 0 <= key <= 65_535
+                or type(record) is not tuple or len(record) != 3
+                or record[2] not in ("coast_name_prefix", "regular_grid_name_prefix",
+                                     "observation_name_prefix", "other_name_prefix")):
+            raise AuthorCatalogueAuditBlocked("author original station catalogue entry invalid")
+
+    width = 100
+    low, high = min(original_ids), max(original_ids)
+    first_full_start = ((low + width - 1) // width) * width
+    # Note: exclude terminal partial 100-ID bin rather than make it appear
+    # incomplete due only to being outside the published statistics ID span.
+    last_full_start = (high - (width - 1)) // width * width
+    states = {
+        "full_100_of_100_statistics": 0,
+        "partial_1_to_99_statistics": 0,
+        "zero_statistics_all_100_author_rows": 0,
+        "zero_statistics_some_author_rows": 0,
+        "zero_statistics_zero_author_rows": 0,
+    }
+    author_only_in_zero_stat_by_prefix = {
+        name: 0 for name in (
+            "coast_name_prefix", "regular_grid_name_prefix",
+            "observation_name_prefix", "other_name_prefix"
+        )
+    }
+    total_stat_in_full_bins = 0
+    total_author_in_full_bins = 0
+    complete_bins = 0
+    author_only_in_source_nonempty_bins = 0
+    bins_with_any_stat_and_additional_author_ids = 0
+
+    if first_full_start <= last_full_start:
+        for start in range(first_full_start, last_full_start + 1, width):
+            stat = 0
+            author = 0
+            for key in range(start, start + width):
+                if key in original_ids:
+                    stat += 1
+                if key in author_catalogue:
+                    author += 1
+            total_stat_in_full_bins += stat
+            total_author_in_full_bins += author
+            complete_bins += 1
+            if stat == width:
+                states["full_100_of_100_statistics"] += 1
+            elif stat:
+                states["partial_1_to_99_statistics"] += 1
+            elif author == width:
+                states["zero_statistics_all_100_author_rows"] += 1
+            elif author:
+                states["zero_statistics_some_author_rows"] += 1
+            else:
+                states["zero_statistics_zero_author_rows"] += 1
+            if stat == 0:
+                for key in range(start, start + width):
+                    row = author_catalogue.get(key)
+                    if row is not None:
+                        author_only_in_zero_stat_by_prefix[row[2]] += 1
+            else:
+                difference = author - stat
+                if difference > 0:
+                    bins_with_any_stat_and_additional_author_ids += 1
+                    author_only_in_source_nonempty_bins += difference
+
+    if sum(states.values()) != complete_bins:
+        raise AuthorCatalogueAuditBlocked("author 100-ID batch classes do not reconcile")
+    if total_stat_in_full_bins > total_author_in_full_bins:
+        raise AuthorCatalogueAuditBlocked("author original ID subset invariant failed")
+    catalogue_only_in_complete_bins = total_author_in_full_bins - total_stat_in_full_bins
+    if (sum(author_only_in_zero_stat_by_prefix.values())
+            + author_only_in_source_nonempty_bins != catalogue_only_in_complete_bins):
+        raise AuthorCatalogueAuditBlocked("author-only coverage across 100-ID bins does not reconcile")
+
+    author_rows_within_original_id_span = sum(
+        low <= station_id <= high for station_id in author_catalogue
+    )
+    author_outside_original_id_span = len(author_catalogue) - author_rows_within_original_id_span
+    original_rows_in_partial_boundary_bins = len(original_ids) - total_stat_in_full_bins
+    author_rows_in_partial_boundary_bins = (
+        author_rows_within_original_id_span - total_author_in_full_bins
+    )
+    if (original_rows_in_partial_boundary_bins < 0
+            or author_rows_in_partial_boundary_bins < original_rows_in_partial_boundary_bins
+            or author_outside_original_id_span < 0
+            or author_rows_in_partial_boundary_bins + total_author_in_full_bins
+               + author_outside_original_id_span != len(author_catalogue)):
+        raise AuthorCatalogueAuditBlocked("source/author terminal partial-bin rows do not reconcile")
+
+    gap_runs_multiple_of_100 = 0
+    gap_runs_100_aligned = 0
+    omitted_aligned_ids = 0
+    ordered = sorted(original_ids)
+    for left, right in zip(ordered, ordered[1:]):
+        missing = right - left - 1
+        if missing > 0 and missing % width == 0:
+            gap_runs_multiple_of_100 += 1
+            if (left + 1) % width == 0 and right % width == 0:
+                gap_runs_100_aligned += 1
+                omitted_aligned_ids += missing
+    return {
+        "schema_version": "gtsm-author-station-id-batch100-coverage-v0",
+        "batch_origin": "numeric_zero_based_hypothesis",
+        "batch_width_ids": width,
+        "complete_100_id_bins_within_original_native_id_span": complete_bins,
+        "source_statistic_rows_in_complete_bins": total_stat_in_full_bins,
+        "author_catalogue_rows_in_complete_bins": total_author_in_full_bins,
+        "source_rows_in_omitted_partial_boundary_bins": original_rows_in_partial_boundary_bins,
+        "author_rows_in_omitted_partial_boundary_bins": author_rows_in_partial_boundary_bins,
+        "author_catalogue_rows_outside_original_source_native_id_span": (
+            author_outside_original_id_span
+        ),
+        "complete_bin_coverage_classes": states,
+        "author_name_families_in_100_id_bins_with_zero_statistics": author_only_in_zero_stat_by_prefix,
+        "author_catalogue_only_ids_in_100_id_bins_with_any_statistics": (
+            author_only_in_source_nonempty_bins
+        ),
+        "number_of_100_id_bins_with_statistics_and_extra_catalogue_ids": (
+            bins_with_any_stat_and_additional_author_ids
+        ),
+        "all_author_only_ids_within_complete_bins_are_in_zero_statistic_bins": (
+            author_only_in_source_nonempty_bins == 0
+        ),
+        "original_missing_id_runs_length_multiple_of_100": gap_runs_multiple_of_100,
+        "original_missing_id_runs_exactly_aligned_to_hypothetical_100_id_boundaries": (
+            gap_runs_100_aligned
+        ),
+        "missing_integer_ids_in_100_boundary_aligned_gap_runs": omitted_aligned_ids,
+        "actual_producer_batch_file_manifest_verified": False,
+        "same_source_release_and_processing_run_proven": False,
+        "any_missing_batches_proven": False,
+        "author_name_prefix_is_not_coast_model_fitness_proof": True,
+        "individual_station_ids_coordinates_or_batch_start_ids_emitted": False,
+        "source_original_data_persisted": False,
+        "commercial_rights_approved": False,
+        "cat_model_admitted": False,
+    }
