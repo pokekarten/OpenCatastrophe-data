@@ -34,7 +34,9 @@ Canonical **new provider candidates**: [`landscape/sources-monitoring-repo-upstr
 
 **Already represented (do not re-add):** GDACS, EONET, NHC operational GIS, NWS CAP, ReliefWeb, UNHCR, IOM DTM, UNDRR DELTA, USGS ComCat, NASA FIRMS, Global Energy Monitor, IMF PortWatch, and other existing `landscape` identities. A candidate is not the same as admission.
 
-**First-pass discovery entries (12 of 23):** GLIDE IDs, IDMC IDU, UN CERF project API, IFRC GO/DREF appeals, International Charter activations, Nepal BIPAD, England Environment Agency flood monitoring, UK Met Office severe warning API, Open-Meteo model/single-run API, BMKG Indonesia earthquake feeds, JMA earthquake/volcano XML, and NASA GIBS visualizations. They are recorded with `evidence_checked` and `not_admitted` and are **not** installed as pipelines.
+The global source contract requires each candidate ID exactly once. After the 2026-11-03 cross-shard reconciliation, this monitoring shard contains **22 entries** and GLIDE is preserved in the [peer CAT source register](../../landscape/sources-peer-cat-repositories-20261102.json). The 23 historical leads remain discoverable across the two shards, but no longer duplicate the same canonical `adrc.glide.disaster-identifiers` ID.
+
+**First-pass discovery entries (12 of 23 historical research leads):** GLIDE IDs, IDMC IDU, UN CERF project API, IFRC GO/DREF appeals, International Charter activations, Nepal BIPAD, England Environment Agency flood monitoring, UK Met Office severe warning API, Open-Meteo model/single-run API, BMKG Indonesia earthquake feeds, JMA earthquake/volcano XML, and NASA GIBS visualizations. They are recorded with `evidence_checked` and `not_admitted` and are **not** installed as pipelines.
 
 **Investigate next:** BMKG operational versus fully reviewed historical catalogue, Japan and Indonesian original bulletin retention, NASA GIBS quantitative source-product mapping, InciWeb incident metadata, public national damage/impact datasets surfaced by Charter and DELTA, exact sources for WorldMirror's infrastructure features. Prioritise original sources over feed mirrors.
 
