@@ -101,6 +101,64 @@ class LLMGeoDisMetadataPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(MetadataPreflightError, "duplicate"):
             audit_record(data, LLM_GEODIS_SOURCE, "0" * 64)
 
+    def test_inveniordm_public_metadata_shape_accepts_synthetic_input(self) -> None:
+        data = synthetic_metadata()
+        data["id"] = str(RID)
+        data["pids"] = {"doi": {"identifier": data.pop("doi")}}
+        data["access"] = {"record": "public", "files": "public"}
+        data["metadata"].pop("access_right")
+        data["metadata"]["rights"] = [data["metadata"].pop("license")]
+        files = data["files"]
+        data["files"] = {"enabled": True, "count": len(files), "entries": files}
+        for entry in files:
+            entry["links"]["content"] = entry["links"]["self"]
+            entry["links"]["self"] = entry["links"]["content"].removesuffix("/content")
+        result = audit_record(data, LLM_GEODIS_SOURCE, "c" * 64)
+        self.assertEqual(result["metadata_api_shape"], "inveniordm")
+        self.assertEqual(result["file_count"], 14)
+        self.assertFalse(result["model_input_approved"])
+
+    def test_inveniordm_hidden_file_fails_closed(self) -> None:
+        data = synthetic_metadata()
+        data["access"] = {"record": "public", "files": "restricted"}
+        with self.assertRaisesRegex(MetadataPreflightError, "not public"):
+            audit_record(data, LLM_GEODIS_SOURCE, "a" * 64)
+
+    def test_inveniordm_file_inventory_count_disagreement_fails(self) -> None:
+        data = synthetic_metadata()
+        files = data["files"]
+        data["files"] = {"enabled": True, "count": len(files) + 1, "entries": files}
+        with self.assertRaisesRegex(MetadataPreflightError, "count mismatch"):
+            audit_record(data, LLM_GEODIS_SOURCE, "b" * 64)
+
+    def test_inveniordm_conflicting_doi_fails(self) -> None:
+        data = synthetic_metadata()
+        data["pids"] = {"doi": {"identifier": "10.5281/zenodo.17544932"}}
+        with self.assertRaisesRegex(MetadataPreflightError, "conflicting"):
+            audit_record(data, LLM_GEODIS_SOURCE, "c" * 64)
+
+    def test_inveniordm_conflicting_license_fails(self) -> None:
+        data = synthetic_metadata()
+        data["metadata"]["rights"] = [{"id": "cc0-1.0"}]
+        with self.assertRaisesRegex(MetadataPreflightError, "contradictory"):
+            audit_record(data, LLM_GEODIS_SOURCE, "c" * 64)
+
+    def test_duplicate_json_keys_and_nonfinite_values_rejected(self) -> None:
+        base = json.dumps(synthetic_metadata(), separators=(",", ":"))
+        dup = '{"id":18935447,"id":18935447,' + base[1:]
+        for raw in (dup, base.replace('"size":1000', '"size":NaN', 1)):
+            with self.subTest(payload=raw[:70]):
+                with tempfile.TemporaryDirectory() as directory:
+                    path = Path(directory) / "untrusted.json"
+                    path.write_text(raw, encoding="utf-8")
+                    result = subprocess.run(
+                        [sys.executable, str(ROOT / "scripts/zenodo_cat_metadata_preflight_v0.py"),
+                         "--source-id", LLM_GEODIS_SOURCE, "--metadata", str(path)],
+                        capture_output=True, text=True, check=False,
+                    )
+                    self.assertEqual(result.returncode, 2)
+                    self.assertIn("BLOCKED", result.stderr)
+
     def test_no_network_cli_and_deterministic_receipt(self) -> None:
         data = synthetic_metadata()
         raw = json.dumps(data, sort_keys=True, separators=(",", ":")).encode("utf-8")
