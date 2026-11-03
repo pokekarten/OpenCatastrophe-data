@@ -14,15 +14,15 @@
       ],
       "spatial_scope": "Global except published latitude limits; extent roughly 60 S to 78 N",
       "temporal_scope": "2016-2026 six-month composite time series, release June 2026",
-      "resolution_or_granularity": "10 m classified settlement presence/change, STAC collection WSF_TRACKER, COG/HTTP and WMS",
+      "resolution_or_granularity": "10 m DLR STAC global COG and openly accessible MindEarth/Source Cooperative Zarr v3 GeoZarr, 20 half-year emergence-index codes; DLR WMS for visual reference",
       "potential_roles": [
         "exposure_vintage",
         "building_stock_change",
         "pre_post_event_settlement_context"
       ],
       "authoritative_url": "https://geoservice.dlr.de/web/datasets/wsf_tracker",
-      "access_class_hint": "public_stac_cog_and_wms_cc_by_4_0_product_review",
-      "note": "Genuine new temporal product distinct from registered DLR WSF 2019, Evolution 1985-2015 and 3D. Licence stated CC BY 4.0 and DOI 10.15489/3fa4d2j0tk78; freeze tile time, class codes, STAC item, input Sentinel lineage. Built-up pixel is not an individual building, construction material, occupancy or insured value.",
+      "access_class_hint": "public_stac_cog_wms_plus_public_mindearth_sourcecoop_geozarr_v3_no_auth_rights_review",
+      "note": "Original DLR EOC provider reports CC BY 4.0 (DOI 10.15489/3fa4d2j0tk78) and its STAC collection WSF_TRACKER. Independently verified public MindEarth/Source Cooperative GeoZarr root source.coop/mindearth/wsf, exact public array metadata at data.source.coop/.../World_WSF_20160701-20260101.zarr/0/wsf_tracker/zarr.json. Zarr v3 int8 0=no settlement OR nodata, 1..20 first detected built-up half-year from 2016-07-01 through 2026-01-01; code 1 includes pre-existing settlements and does NOT indicate construction in 2016. Native GeoZarr shape 1536433x4007502 versus DLR STAC COG published 1536210x4007502: never assume cell alignment without geotransform/CRS cross-validation. Multi-resolution overviews use MIN, not suitable for built-up area counting, exact vintage or building-value estimates. Confirm attribution/asset terms, pixel meaning, stable original release and spatial support before model use. See research_runners/dlr_wsf_tracker_geozarr_metadata_preflight_v0.py.",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
