@@ -100,7 +100,7 @@ class SizeLinkageStatsTests(unittest.TestCase):
 
     def test_unexpected_size_group_blocked(self):
         a, _, _ = example()
-        a["H"] = 1
+        a["H"] = a.pop("G")
         with self.assertRaisesRegex(gate.SizeLinkageBlocked, "unknown"):
             audited(a=grouped(a))
 
