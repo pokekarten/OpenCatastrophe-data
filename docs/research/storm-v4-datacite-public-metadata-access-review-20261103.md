@@ -32,7 +32,9 @@ file download, a repository-native runner execution, model admission or Neon wri
 5. [VU Amsterdam original STORM v4 dataset entry](https://research.vu.nl/en/datasets/storm-ibtracs-present-climate-synthetic-tropical-cyclone-tracks-6/)
    directly identifies DOI `10.4121/12706085.v4` and publisher
    4TU.Centre for Research Data. It labels the v4 dataset **CC0-1.0**,
-   while its v4 correction note distinguishes ## Current verified engineering boundary
+   and distinguishes this release from earlier STORM variants.
+
+## Current verified engineering boundary
 
 The canonical access contract `access/storm.ibtracs.present-climate.v4.datacite.json`
 is now `probe_ready` for exactly one manual, opt-in anonymous `metadata_get` operation.
@@ -61,18 +63,14 @@ The exact observation is recorded separately in
 The **repository-native one-shot runner itself has not been executed against
 the public API**; the external source observation must not be presented as such.
 
-**Decision:** merge metadata-only access research after exact-head CI and source
-review, without STORM asset downloads or automatic admission.
-ance model-admission gate disabled.
+**Decision:** keep the draft until the latest-head CI and independent source review pass. The T1 receipt is metadata-only; no original STORM tracks or model inputs are admitted.
 
-## Separate repository-native T1 execution gate (not yet exercised)
+## Next source-asset gate (still blocked)
 
-Any future repo-native read-only DOI metadata request must pin the exact URL,
-declare HTTPS, single request, no credentials, no redirects to unreviewed
-hosts, bounded 256 KiB response and timeout, provider response time and
-SHA-256, no provider response persisted to Git. Use an operator-owned
-contact in the `User-Agent` if routinely automated; do not put private
-contacts or secrets in this public repository. Review the actual metadata
-fields for DOI, title, publisher, resource type, rights and version and
-run the existing offline parser. Treat HTTP 404, 429, 5xx or changed
-rights/version as explicit evidence gaps rather than approval.
+Before obtaining STORM v4 track files, independently review the 4TU version-specific
+asset listing and automation/redistribution terms. Freeze each selected source-native
+filename, file size, SHA-256 and native schema; preserve event, basin, storm and
+synthetic-year identities. Track catalogues must remain distinct from wind/surge
+hazard footprints, exposure, vulnerability and insured loss.
+
+The DataCite metadata probe cannot approve or download these track assets.
