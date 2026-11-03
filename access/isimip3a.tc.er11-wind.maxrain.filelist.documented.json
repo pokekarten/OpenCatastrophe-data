@@ -22,12 +22,14 @@
   },
   "request_contract": {
     "allowed_operations": [
-      "inspect_published_filelist_metadata"
+      "inspect_published_filelist_metadata",
+      "inspect_published_dataset_metadata"
     ],
     "path_templates": [
-      "/api/v1/datasets/f08ab32e-b3ad-4984-81d1-495235765b6c/filelist/"
+      "/api/v1/datasets/f08ab32e-b3ad-4984-81d1-495235765b6c/filelist/",
+      "/api/v1/datasets/f08ab32e-b3ad-4984-81d1-495235765b6c/"
     ],
-    "parameter_rules": "This contract documents exactly one ISIMIP metadata-filelist route and is not permission to run automated HTTP requests. Do not fetch NetCDF, crawl adjacent datasets, modify dataset UUID or file family, use query parameters, redirects or credentials. A future independently approved read-only metadata receipt must record the original exact URI, date, byte count, SHA256 and 72-file completeness."
+    "parameter_rules": "This contract documents exactly one ISIMIP metadata-filelist route and is not permission to run automated HTTP requests. Do not fetch NetCDF, crawl adjacent datasets, modify dataset UUID or file family, use query parameters, redirects or credentials. A future independently approved read-only metadata receipt must record the original exact URI, date, byte count, SHA256 and 72-file completeness. The provider also publishes exact version/rights/size/SHA-512 claims on the fixed dataset metadata URL; that second route is likewise nonexecutable."
   },
   "response_contract": {
     "expected_media_types": [
@@ -51,7 +53,7 @@
     "terms_url": "https://www.isimip.org/gettingstarted/terms-of-use/terms-use-publicly-available-isimip-data-after-embargo-period/",
     "commercial_automation_status": "unknown",
     "redistribution_status": "unknown",
-    "notes": "ISIMIP public terms forbid sale of provided data and require compliance with each source file/dataset's assigned licence; ISIMIP3 general CC0 preference refers to model outputs and does not automatically cover this ISIMIP3a InputData product or downstream insurer applications. No dataset-specific commercial-use, automation, output derivative or redistribution permission established."
+    "notes": "The exact ISIMIP publisher metadata for dataset edition 20240402 explicitly declares CC0 1.0 at dataset level and all 72 file entries. Separately, ISIMIP public terms forbid sale of the data and require compliance with assigned licences. These CC0 declarations are useful evidence but upstream IBTrACS/ERA5 terms, insurer-specific commercial application, scientific fitness, original-byte integrity and derivative/redistribution obligations have not been fully approved; do not automate or admit this product."
   },
   "probe_contract": {
     "mode": "none",
