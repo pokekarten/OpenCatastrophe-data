@@ -58,6 +58,25 @@ placeholder codes, multi-valued IDs and future reporting years with
 a version-pinned original data dictionary. Do **not** convert invalid
 identifiers to a guessed BBL/BIN or count them as matched physical assets.
 
+## Exact read-only public API count probes (2026-11-04)
+
+The independent public source endpoints responded successfully to bounded
+Socrata SoQL aggregate-only queries, without authentication or row downloads:
+
+- PLUTO: https://data.cityofnewyork.us/resource/64uk-42ks.json?%24select=count%28%2A%29
+  returned a JSON count of **858,284** records.
+- LL84 report year 2024:
+  https://data.cityofnewyork.us/resource/5zyy-y8am.json?%24select=count%28%2A%29&%24where=report_year%3D2024
+  returned a JSON count of **39,090** records.
+
+These response counts validate only *public API reachability, query grammar
+and query-time row counts*. A PLUTO tax lot and an LL84 annual reported property
+are not a common statistical denominator: **39,090 / 858,284 is NOT a citywide
+building coverage or match rate**. No original row payload, download,
+individual building match, source-level rights approval, full-schema parse,
+geometric join or value validation was performed. Responses may change with
+provider updates; pin UTC receipt and exact query in any future measured run.
+
 ## Implemented bounded, offline diagnostic
 
 The executable research-only preflight is:
