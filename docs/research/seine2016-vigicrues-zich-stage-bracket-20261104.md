@@ -64,6 +64,6 @@ The 5.66/7.19 published PDFs explicitly state that re-use of the underlying VIGI
 **Causal next steps**, without inventing an asset:
 1. Request authoritative exact `F700000103_6310` GIS/PDF identity if available, full underlying ZIP/ZICH product and version (including original-file checksum and permitted acquisition/reuse/redistribution scope), and any updated 2D hydraulic model or map.
 2. Identify independently verified observed May/June 2016 flooded areas and high-water marks, with correct AOI, geometry/topology and timestamps. Compare model scenarios against them by geography/phenomenon, not merely by gauge height.
-3. Before NextGen/FFBK usage, combine source-licensed flood depth, 2016-vintage building/valuation data and vulnerability/insurance policy terms; split calibration and independent validation to avoid using the same event for both.
+3. Before any downstream catastrophe-risk and insurer-capital model use, combine source-licensed flood depth, 2016-vintage building/valuation data and vulnerability/insurance policy terms; split calibration and independent validation to avoid using the same event for both.
 
 **Do not** automatically infer a flood-depth field, a GUL/YLT/ELT or an insurance loss from the PDF maps or the 2017 retrospective.
