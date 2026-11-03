@@ -38,3 +38,25 @@ The original-author dual-source workflow verifies both complete files first: fix
 4. Keep `commercial_rights_approved=false`, `cat_model_admitted=false`, no raw station data in GitHub or Neon and no producer-loss/YLT extrapolation.
 
 **Status:** Automated 100-ID original-dataset results are pending exact-head GitHub Actions; do not invent them or call the source production archive complete.
+
+
+## Verified original two-source numeric block result (2026-11-03)
+
+The exact original [GitHub Actions run 41713279553](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41713279553), job `126186620451`, passed **17 synthetic/offline tests** and verified the original source bytes (Zenodo SHA-256 `e366c79683438d03a48b23764f1159d5ed88845a459f625eeb787dff78cbd767`, author Git blob SHA-1 `07c784f401a1296bea15e7bfbd10332065dc3732`). It produced these **actual** aggregate counts for **437 complete numeric 100-ID bins** inside the known source ID range:
+
+| Hypothetical 100-ID bin class | Count |
+| --- | ---: |
+| All 100 station IDs present in source statistics | **364** |
+| 1–99 station IDs present in source statistics | **26** |
+| No statistics, all 100 station IDs in author catalogue | **31** |
+| No statistics, some station IDs in author catalogue | **16** |
+| No statistics and no author catalogue IDs | **0** |
+| **Total** | **437** |
+
+The 437 complete bins contain **38,923** statistics source IDs and **43,085** author catalogue IDs. The remaining final partial 34-ID bin (excluded from complete-bin analysis by design) has **34** source and **34** author IDs, so the entire author-only difference **43,119 − 38,957 = 4,162** occurs inside complete 100-ID bins. The 31 source-empty but catalogue-full bins account for **3,100** absent statistics; the 16 source-empty partially catalogue-populated bins account for the other **1,062** absent statistics. A programmatic, separate active-bin/empty-bin count is being added as an extra test; do not assume this methodology reveals actual producer-run failures.
+
+The original statistics' two 2,200-ID and three 100-ID missing native-ID runs are **all exactly aligned on zero-origin 100-ID numerical boundaries**, totaling **4,700** missing integer labels. The remaining **77** internal labels are separately not represented in the native statistics. This alignment is striking but does **not** prove the original processing batches ran from exactly those ID boundaries, or whether exclusion was intentional. The existing original/author pair proves source ID+coordinate lineage of the *present* 38,957 statistical rows; the cause of the *absent* 4,162 is still unresolved.
+
+### Concrete next reproducibility gate
+
+**Do not impute** any absent author catalogue station's hazard statistic. Seek a source-producer 1950–2024 manifest for expected numeric 100-ID batches, checksums and row counts of each `_eva.csv` and `_stats.nc`, Slurm job IDs/exit statuses, and the source-time-series station coverage and missingness/fitting log. Match and reconcile those originals to the existing independently hashed two-source receipt, then review the 200 `id_coast_`-prefix gaps. Only then can an omitted producer batch or systematic exclusions be asserted, and no author coordinate/name or raw provider losses should be copied to the public data register.
