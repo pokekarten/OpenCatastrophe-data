@@ -59,6 +59,19 @@ class CurveSemanticsTests(unittest.TestCase):
             with self.subTest(bad=repr(bad)), self.assertRaises(CurveSemanticsError):
                 self.base(points=bad)
 
+    def test_malformed_point_shapes_are_explicitly_rejected(self):
+        for bad in (None, 123, "bad", [1], [(0,)], [(0, 1, 2)],
+                    [{"intensity": 1, "damage": 0.2}]):
+            with self.subTest(value=repr(bad)), self.assertRaises(CurveSemanticsError):
+                self.base(points=bad)
+
+    def test_unbounded_point_count_rejected(self):
+        from research_runners.ci_curve_semantics_v0 import MAX_CURVE_POINTS
+        self.assertEqual(MAX_CURVE_POINTS, 4096)
+        points = [(i, 0.2) for i in range(MAX_CURVE_POINTS + 1)]
+        with self.assertRaisesRegex(CurveSemanticsError, "bounded"):
+            self.base(points=points)
+
     def test_returns_explicit_immutable_tuple_without_interpolation(self):
         self.assertEqual(self.base(points=[(100, 0.3)]), ((100.0, 0.3),))
 
