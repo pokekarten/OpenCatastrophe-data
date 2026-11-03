@@ -228,6 +228,25 @@ class GtsmReceiptTests(unittest.TestCase):
                                 audit_return_levels=True)
             reader.assert_not_called()
 
+
+    def test_source_native_release_header_metadata_is_strictly_allowlisted(self):
+        result = mod.select_original_release_attributes({
+            "license": "Creative Commons Attribution 4.0 International",
+            "history": "This is version 2 of the dataset",
+            "provider_data": "not published",
+        })
+        self.assertEqual(
+            result["license"], "Creative Commons Attribution 4.0 International"
+        )
+        self.assertNotIn("provider_data", result)
+        self.assertIsNone(result["time_coverage_start"])
+
+    def test_native_release_header_rejects_nonstring_and_unsafe_values(self):
+        for malformed in (42, "\n", "a" * 257, "x\ty", "é"):
+            with self.subTest(value=str(malformed)[:25]):
+                with self.assertRaises(GtsmReceiptError):
+                    mod.select_original_release_attributes({"license": malformed})
+
     def test_no_original_file_rejected(self):
         with self.assertRaises(GtsmReceiptError):
             _file_receipt(self.path, expected_size=10, expected_md5="0" * 32)
