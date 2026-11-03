@@ -60,15 +60,17 @@ def inspect(original: bytes, collection: str) -> dict[str, object]:
     if record.get("license") != "CC-BY-4.0":
         raise Blocked("unexpected source licence identifier")
     extent = record.get("extent")
-    if type(extent) is not dict or extent.get("spatial", {}).get("bbox") != [[-180, -60, 180, 60]]:
+    if type(extent) is not dict or type(extent.get("spatial")) is not dict or type(extent.get("temporal")) is not dict:
+        raise Blocked("incomplete STAC extent")
+    if extent["spatial"].get("bbox") != [[-180, -60, 180, 60]]:
         raise Blocked("changed global 60-degree-latitude bbox")
-    interval = extent.get("temporal", {}).get("interval")
+    interval = extent["temporal"].get("interval")
     if interval != [["2001-01-01T00:00:00Z", None]]:
         raise Blocked("unexpected temporal start or interval")
     providers = record.get("providers")
     if type(providers) is not list or not any(
         type(p) is dict and p.get("name") == "Climate Hazards Center (CHC)"
-        and "producer" in p.get("roles", [])
+        and type(p.get("roles")) is list and "producer" in p["roles"]
         for p in providers
     ):
         raise Blocked("original CHC producer lineage not attested")
