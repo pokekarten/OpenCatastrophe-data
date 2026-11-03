@@ -84,6 +84,42 @@ table. It does not download anything, emit provider records, normalize dates or
 coordinates, or infer rights/model readiness. Changed provider vintages require
 new reviewed hashes; do not substitute a newer file for this snapshot silently.
 
+### Lossless review partition, not automatic data deletion
+
+The auditor now also reports `review_partition`. This is an aggregate review
+proposal for the **selected cross-table checks**, not an export, a repaired
+source, an admission decision or an instruction to exclude all other fields.
+A parent with a fatality-count contradiction or location/episode disagreement
+is counted once in `quarantined_for_review`; other parents are counted once in
+`eligible_for_selected_checks`. Direct and indirect mismatches affecting the
+same parent are not counted twice. Duplicate keys still invalidate the input.
+Any orphan child blocks the entire eligible subset because its missing parent
+cannot be assigned safely; orphan rows remain separately visible.
+
+The pinned 2024 snapshot produces the following aggregate decomposition:
+
+| Review group | Parents | Reported direct / indirect deaths | Matched direct / indirect child rows |
+| --- | ---: | ---: | ---: |
+| Eligible for selected checks | 69,798 | 772 / 367 | 772 / 367 |
+| Quarantined for review | 3 | 1 / 0 | 0 / 2 |
+| Unchanged full source | 69,801 | 773 / 367 | 772 / 369 |
+
+All 41,574 matched location rows belong to the eligible subset; no orphan child
+exists in this snapshot. Parent and reported-fatality totals are conserved.
+Damage missing/zero/positive categories also conserve their original totals
+across groups. In particular, **two flagged parents have positive reported
+property damage**; their fatality disagreements do not establish that those
+property estimates or wind fields are invalid. Nothing is silently discarded,
+zero-filled or corrected. No individual source keys or fatality attributes are
+emitted. The complete source remains `status=inconsistent`, exit **1**, even
+though the nonempty eligible subset passes its selected count checks.
+
+Five additional synthetic regressions cover one-parent/multiple-disagreement
+union semantics, orphan blocking, targeted episode disagreement, preservation
+of unaffected parents and missing/zero/positive categories, and the difference
+between one parent and six hypothetical join rows. Together with the original
+regressions, the focused suite has 17 tests.
+
 [Synthetic regression tests](../../tests/test_noaa_storm_events_relational_audit_v0.py)
 cover compensating per-event errors with equal global totals, orphan children,
 duplicate keys, mismatched episodes, schema drift, byte corruption, decompression
@@ -160,7 +196,8 @@ catalogue, exposure values, vulnerability calibration or insured-loss semantics.
 
 No statement here means that all registered sources have been downloaded/tested.
 The NOAA fatality contradictions, source-coverage biases and rights review remain
-open. A useful next change is a version-bound resolution/quarantine rule for
-mismatched EVENT_IDs and multi-year measured-gust evaluation, retaining parent
-cardinality and episode-separated splits. The current auditor deliberately emits
+open. The version-bound review partition now quantifies the affected subset;
+it does not resolve the provider contradictions or export a cleaned dataset.
+Next work is source-specific resolution and multi-year measured-gust evaluation,
+retaining parent cardinality and episode-separated splits. The auditor emits
 only aggregates; no fatality demographics or narratives are added to Git.
