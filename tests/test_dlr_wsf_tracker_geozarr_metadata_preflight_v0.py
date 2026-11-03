@@ -62,6 +62,8 @@ class WSFTrackerMetadataTests(unittest.TestCase):
         self.assertEqual(got["source_index_zero_meaning"],
                          "NO_SETTLEMENT_OR_NODATA_NOT_A_BUILDING_COUNT")
         self.assertTrue(got["overview_aggregates_with_minimum"])
+        self.assertTrue(got["index_one_preexisting_by_2016_07_not_construction_date"])
+        self.assertFalse(got["direct_geozarr_to_dlr_stac_cog_pixel_alignment_verified"])
         self.assertFalse(got["overview_valid_for_area_count_or_vintage_statistics"])
         self.assertFalse(got["building_footprints_observed"])
         self.assertFalse(got["building_values_observed"])
