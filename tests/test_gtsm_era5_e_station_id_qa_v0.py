@@ -41,6 +41,8 @@ class GtsmStationIdTests(unittest.TestCase):
         self.assertEqual(value["distinct_native_ids"], 4)
         self.assertEqual(value["number_of_internal_gap_runs"], 2)
         self.assertEqual(value["largest_internal_gap_run"], 2)
+        self.assertEqual(value["internal_gap_run_size_buckets"]["one"]["gap_runs"], 1)
+        self.assertEqual(value["internal_gap_run_size_buckets"]["two_to_nine"]["gap_runs"], 1)
         self.assertEqual(
             value["zero_based_hypothetical_parent_omissions"]["before_native_id_span"], 1
         )
@@ -74,6 +76,21 @@ class GtsmStationIdTests(unittest.TestCase):
         self.assertEqual(value["number_of_internal_gap_runs"], 1)
         self.assertEqual(value["largest_internal_gap_run"], 1000)
         self.assertEqual(value["internal_gap_runs_of_at_least_1000_ids"], 1)
+        self.assertEqual(value["internal_gap_run_size_buckets"]["thousand_or_more"],
+                         {"gap_runs": 1, "unrepresented_ids": 1000})
+
+    def test_gap_histogram_exactly_partitions_source_id_missingness(self):
+        result = self.summary([0, 2, 10, 111, 1112])
+        buckets = result["internal_gap_run_size_buckets"]
+        self.assertEqual(sum(part["gap_runs"] for part in buckets.values()), 4)
+        self.assertEqual(
+            sum(part["unrepresented_ids"] for part in buckets.values()),
+            result["unrepresented_ids_inside_native_span"]
+        )
+        self.assertEqual(buckets["one"]["unrepresented_ids"], 1)
+        self.assertEqual(buckets["two_to_nine"]["unrepresented_ids"], 7)
+        self.assertEqual(buckets["hundred_to_999"]["unrepresented_ids"], 100)
+        self.assertEqual(buckets["thousand_or_more"]["unrepresented_ids"], 1000)
 
     def test_native_fill_does_not_appear_as_valid_station(self):
         value = self.summary([1, 65535, 3], source_fill_value=65535)
