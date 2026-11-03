@@ -85,6 +85,14 @@ Source: https://igedd.documentation.developpement-durable.gouv.fr/documents/Affa
 
 An executed read-only audit is available at [SQL](../../research_runners/sql/hubeau_2016_flood_peak_station_incident_audit_v0.sql). During 3–7 June it found five reconstructed, validated Paris daily flows and five calculated, doubtful Ponthierry daily flows. Neither series is model-admitted. The 30 cm station discrepancy is distinct from cartographic uncertainty.
 
+## Open data licence: observational source versus flood geometry
+
+The [official BRGM Hub'Eau FAQ](https://assistance.brgm.fr/fr/aide/HubEau) states that environmental data exposed through the API may be reused under the French interministerial Open Licence. The French [hydrometric station source listing](https://www.data.gouv.fr/datasets/donnees-aux-stations-hydrometriques) specifically publishes **Licence Ouverte v2.0**, with archived station records and accompanying quality-code documentation. This is positive, authoritative service- and dataset-level rights evidence for **hydrometric observations**, distinct from scientific suitability.
+
+The already stored 94 QmnJ observations still carry **zero rights-review/admission flags** in Neon, and no flags were modified here. Before changing the canonical model-input permission, preserve the exact version/date/query, attribution, original-byte receipts and review of any source-specific exceptions. Independent hydraulic and instrument-failure review is necessary even for lawfully reusable observations.
+
+The licence conclusion must **not** be applied to Vigicrues/VIGInond ZIP or ZICH flood GIS, which have separate reuse restrictions and product-specific source lineage. Do not merge these different rights scopes.
+
 ## Provider rights and actual next input
 
 The 5.66/7.19 published PDFs explicitly state that re-use of the underlying VIGINOND/ZIP data requires an exchange with the producing/managing authority and understanding the data lineage and terms. The author is **SPC SMYL**. No commercial or broader geospatial permission is inferred from PDF web accessibility. The Paris scenario simulations predate the 2016 flood and do not include all the observed mechanisms (e.g. tributary, groundwater and network flooding); independent historic field/extent references are needed.
