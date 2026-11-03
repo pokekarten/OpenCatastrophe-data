@@ -25,8 +25,63 @@ RECORDS = {
     "ihcantabria.transclima.tc-surge-hydrographs.2026": 18170693,
     "nl.deltares.gtsm-era5-e.extreme-sea-level-stats.v2": 14671593,
     "waleedgeo.gfsm.global-flood-susceptibility.v1": 20568218,
+    "emdat.llm-geodis.2026.v7": 18935447,
 }
 
+LLM_GEODIS_SOURCE = "emdat.llm-geodis.2026.v7"
+LLM_GEODIS_V7_FILES = frozenset({
+    "241204_emdat_archive.xlsx",
+    "emdat_geocoding-zenodo.zip",
+    "gdis_disnos.csv",
+    "geoemdat_gaul.gpkg",
+    "input_emdat.csv",
+    "Instructions_LLM-GeoDis.pdf",
+    "LLMGeoDis_part1.zip",
+    "LLMGeoDis_part2.zip",
+    "LLMGeoDis_part3.zip",
+    "LLMGeoDis_part4.zip",
+    "LLMGeoDis_part5.zip",
+    "pend-gdis-1960-2018-disasterlocations.csv",
+    "reliability_db.csv",
+    "synthetic_EMDAT_locations.csv",
+})
+
+
+LLM_GEODIS_V7_PUBLISHED_MD5 = {
+    "241204_emdat_archive.xlsx": "e78b986f8234a48de376b8026017d1dc",
+    "Instructions_LLM-GeoDis.pdf": "2e8cb9f813877cd10dcbaa326b9ed01f",
+    "LLMGeoDis_part1.zip": "e0b90fa7ffff0ca9a4ef102118db8056",
+    "LLMGeoDis_part2.zip": "e8137895a92159c6d9b19f21a4559709",
+    "LLMGeoDis_part3.zip": "817e75737a4834b782568e6a079e3dc5",
+    "LLMGeoDis_part4.zip": "667f69347acd41261bf397cadd8f11a3",
+    "LLMGeoDis_part5.zip": "be427a1290f6eea5eb88a7bf87b2141d",
+    "emdat_geocoding-zenodo.zip": "6d177d89cc6ceacf790068213974b5b7",
+    "gdis_disnos.csv": "41e6a666c7e26323ae6853ef753f960d",
+    "geoemdat_gaul.gpkg": "79b9e864059c19e6bf76b084a4aba9ee",
+    "input_emdat.csv": "97384f5817103569d2b1b18de5be4ea4",
+    "pend-gdis-1960-2018-disasterlocations.csv": "c6a669466c815a0882deb5b4cc648acb",
+    "reliability_db.csv": "fbb290425afbb64a3de62d8373fb839d",
+    "synthetic_EMDAT_locations.csv": "391085a505a50c948b95ffdb257ab058",
+}
+# Published digests do NOT independently verify the original data bytes.
+
+LLM_GEODIS_V7_PUBLISHED_SIZES = {
+    "241204_emdat_archive.xlsx": 6694069,
+    "Instructions_LLM-GeoDis.pdf": 275195,
+    "LLMGeoDis_part1.zip": 1900701070,
+    "LLMGeoDis_part2.zip": 1866432452,
+    "LLMGeoDis_part3.zip": 1815922123,
+    "LLMGeoDis_part4.zip": 1544278469,
+    "LLMGeoDis_part5.zip": 1586312015,
+    "emdat_geocoding-zenodo.zip": 29158439,
+    "gdis_disnos.csv": 135278,
+    "geoemdat_gaul.gpkg": 6114693120,
+    "input_emdat.csv": 2794720,
+    "pend-gdis-1960-2018-disasterlocations.csv": 4916733,
+    "reliability_db.csv": 3496073,
+    "synthetic_EMDAT_locations.csv": 104253,
+}
+# Published byte lengths from original Zenodo v7 API metadata; data bytes not fetched.
 
 class MetadataPreflightError(ValueError):
     """Fail-closed source metadata or identity error."""
@@ -61,12 +116,86 @@ def check_download_url(value: Any, record_id: int) -> None:
         raise MetadataPreflightError("file content URL record identity mismatch")
 
 
+def normalize_llm_geodis_v7(payload: dict[str, Any]) -> tuple[dict[str, Any], str]:
+    """Accept the exact current InvenioRDM metadata shape, never data files.
+
+    Preserve the other historical Zenodo candidates' original parser contract.
+    This shape conversion is not evidence of original download or upstream
+    commercial rights.
+    """
+    record = dict(require_dict(payload, "Zenodo v7 record"))
+    shape = "legacy_compatibility"
+    raw_id = record.get("id")
+    if type(raw_id) is str:
+        if raw_id != str(RECORDS[LLM_GEODIS_SOURCE]):
+            raise MetadataPreflightError("LLM-GeoDis v7 source record ID mismatch")
+        record["id"] = RECORDS[LLM_GEODIS_SOURCE]
+    metadata = dict(require_dict(record.get("metadata"), "metadata"))
+
+    pids = record.get("pids")
+    if pids is not None:
+        doi_entry = require_dict(require_dict(pids, "pids").get("doi"), "pids.doi")
+        doi = require_text(doi_entry.get("identifier"), "pids.doi.identifier")
+        if "doi" in record and record["doi"].casefold() != doi.casefold():
+            raise MetadataPreflightError("conflicting legacy DOI and version DOI")
+        record["doi"] = doi
+        shape = "inveniordm"
+
+    access = record.get("access")
+    if isinstance(access, dict) and ("record" in access or "files" in access):
+        if access.get("record") != "public" or access.get("files") != "public":
+            raise MetadataPreflightError("record or original file access not public")
+        if "access_right" in metadata and metadata["access_right"] != "open":
+            raise MetadataPreflightError("conflicting access statements")
+        metadata["access_right"] = "open"
+        shape = "inveniordm"
+
+    if "rights" in metadata:
+        rights = metadata["rights"]
+        if not isinstance(rights, list) or len(rights) != 1:
+            raise MetadataPreflightError("expected exactly one version-pinned record license")
+        declared = require_text(require_dict(rights[0], "metadata.rights[0]").get("id"), "rights.id")
+        previous = metadata.get("license")
+        if previous is not None:
+            old_id = previous.get("id") if isinstance(previous, dict) else previous
+            if old_id != declared:
+                raise MetadataPreflightError("contradictory record license statements")
+        metadata["license"] = {"id": declared}
+        shape = "inveniordm"
+
+    raw_files = record.get("files")
+    if isinstance(raw_files, dict):
+        if raw_files.get("enabled") is not True:
+            raise MetadataPreflightError("Zenodo v7 files are not enabled")
+        entries = raw_files.get("entries")
+        if not isinstance(entries, list):
+            raise MetadataPreflightError("InvenioRDM files.entries must be an array")
+        count = raw_files.get("count")
+        if count is not None and (type(count) is not int or count != len(entries)):
+            raise MetadataPreflightError("InvenioRDM file count mismatch")
+        for position, item in enumerate(entries):
+            links = require_dict(require_dict(item, f"files.entries[{position}]").get("links"), "file links")
+            content = require_text(links.get("content"), "original file content URL")
+            key = require_text(item.get("key"), "source file key")
+            check_download_url(content, RECORDS[LLM_GEODIS_SOURCE])
+            if not content.endswith(f"/files/{key}/content"):
+                raise MetadataPreflightError("file content link does not match exact key")
+        record["files"] = entries
+        shape = "inveniordm"
+
+    record["metadata"] = metadata
+    return record, shape
+
+
 def audit_record(payload: dict[str, Any], source_id: str, raw_sha256: str) -> dict[str, Any]:
     if source_id == "ihcantabria.transclima.tropical-cyclone-data-catalogue.v1":
         raise MetadataPreflightError("catalogue latest record 23736380 is restricted; no public files")
     if source_id not in RECORDS:
         raise MetadataPreflightError("unknown source candidate; no unreviewed dynamic IDs")
     record = require_dict(payload, "record")
+    metadata_api_shape = "legacy_compatibility"
+    if source_id == LLM_GEODIS_SOURCE:
+        record, metadata_api_shape = normalize_llm_geodis_v7(record)
     record_id = RECORDS[source_id]
     if type(record.get("id")) is not int or record["id"] != record_id:
         raise MetadataPreflightError("original Zenodo record ID mismatch")
@@ -121,13 +250,56 @@ def audit_record(payload: dict[str, Any], source_id: str, raw_sha256: str) -> di
             "original_checksum_independently_verified": False,
         })
 
+    version_evidence = None
+    if source_id == LLM_GEODIS_SOURCE:
+        declared_version = metadata.get("version")
+        if declared_version is not None and declared_version != "v7":
+            raise MetadataPreflightError("LLM-GeoDis record version is not pinned v7")
+
+        # The original Zenodo public-record API uses metadata.relations.version
+        # with a zero-based index (v7 -> index 6) rather than metadata.version.
+        relations = metadata.get("relations")
+        if relations is not None:
+            relation = require_dict(relations, "metadata.relations").get("version")
+            if not isinstance(relation, list) or len(relation) != 1:
+                raise MetadataPreflightError("missing unambiguous Zenodo v7 relation")
+            entry = require_dict(relation[0], "metadata.relations.version[0]")
+            parent = require_dict(entry.get("parent"), "Zenodo concept parent")
+            if (type(entry.get("index")) is not int or entry["index"] != 6
+                    or parent.get("pid_type") != "recid"
+                    or parent.get("pid_value") != "17544931"):
+                raise MetadataPreflightError("wrong Zenodo version index or concept parent")
+            version_evidence = "zenodo_relation_index_6"
+            if record.get("conceptrecid") not in (None, "17544931", 17544931):
+                raise MetadataPreflightError("Zenodo concept record identity mismatch")
+            if record.get("conceptdoi") not in (None, "10.5281/zenodo.17544931"):
+                raise MetadataPreflightError("Zenodo concept DOI identity mismatch")
+        elif declared_version == "v7":
+            version_evidence = "declared_metadata.version"
+        else:
+            raise MetadataPreflightError("LLM-GeoDis v7 release/version evidence missing")
+
+        if license_id.casefold() != "cc-by-4.0":
+            raise MetadataPreflightError("LLM-GeoDis declared record license differs from pinned CC BY 4.0")
+        if seen != LLM_GEODIS_V7_FILES:
+            raise MetadataPreflightError("LLM-GeoDis v7 original file inventory mismatch")
+        for item in inventory:
+            key = item["key"]
+            published = "md5:" + LLM_GEODIS_V7_PUBLISHED_MD5[key]
+            if item["publisher_checksum"] != published:
+                raise MetadataPreflightError("LLM-GeoDis v7 published source checksum mismatch")
+            if item["size_bytes"] != LLM_GEODIS_V7_PUBLISHED_SIZES[key]:
+                raise MetadataPreflightError("LLM-GeoDis v7 published source byte length mismatch")
+
     return {
         "schema_version": "zenodo-cat-metadata-preflight-v0",
+        "metadata_api_shape": metadata_api_shape,
         "source_candidate_id": source_id,
         "original_zenodo_record_id": record_id,
         "original_doi": doi,
         "record_title": title,
-        "record_version": metadata.get("version") if isinstance(metadata.get("version"), str) else None,
+        "record_version": "v7" if source_id == LLM_GEODIS_SOURCE else (metadata.get("version") if isinstance(metadata.get("version"), str) else None),
+        "version_evidence": version_evidence,
         "declared_record_license": license_id,
         "record_access_status": access,
         "metadata_body_sha256": raw_sha256,
@@ -141,6 +313,19 @@ def audit_record(payload: dict[str, Any], source_id: str, raw_sha256: str) -> di
     }
 
 
+def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise MetadataPreflightError(f"duplicate metadata JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _reject_nonfinite(value: str) -> None:
+    raise MetadataPreflightError(f"nonfinite metadata JSON value: {value}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-id", required=True, choices=sorted(RECORDS))
@@ -150,7 +335,7 @@ def main() -> int:
         if not args.metadata.is_file() or args.metadata.stat().st_size > MAX_METADATA_BYTES:
             raise MetadataPreflightError("metadata file missing or exceeds 5 MiB cap")
         raw = args.metadata.read_bytes()
-        payload = json.loads(raw.decode("utf-8"))
+        payload = json.loads(raw.decode("utf-8"), object_pairs_hook=_reject_duplicate_keys, parse_constant=_reject_nonfinite)
         receipt = audit_record(payload, args.source_id, hashlib.sha256(raw).hexdigest())
     except (OSError, UnicodeError, json.JSONDecodeError, MetadataPreflightError) as exc:
         parser.exit(2, f"BLOCKED: {exc}\n")
