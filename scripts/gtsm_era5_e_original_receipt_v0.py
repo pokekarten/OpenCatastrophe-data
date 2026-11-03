@@ -168,6 +168,33 @@ def validate_coordinate_packing(packing: dict[str, dict[str, str | None]]) -> No
         raise GtsmReceiptError("native GTSM longitude/latitude scale, offset or fill value drift")
 
 
+
+ORIGINAL_RELEASE_METADATA_KEYS = (
+    "license", "history", "source", "title",
+    "time_coverage_start", "time_coverage_end",
+    "geospatial_vertical_units", "geospatial_vertical_positive",
+)
+
+
+def select_original_release_attributes(attributes: dict[str, object]) -> dict[str, str | None]:
+    """Only eight predeclared, bounded public native metadata strings.
+
+    Do not pass untrusted arbitrary attribute dictionaries into a CI log.
+    The returned licence claim is source self-description, not legal approval.
+    """
+    selected: dict[str, str | None] = {}
+    for name in ORIGINAL_RELEASE_METADATA_KEYS:
+        value = attributes.get(name)
+        if value is None:
+            selected[name] = None
+            continue
+        if (not isinstance(value, str) or len(value) > 256 or not value.isprintable()
+                or any(ord(character) < 32 or ord(character) > 126 for character in value)):
+            raise GtsmReceiptError("source release header contains non-string or unsafe metadata")
+        selected[name] = value
+    return selected
+
+
 def inspect_scientific_header(path: Path) -> dict[str, object]:
     """Read only structural NetCDF metadata after full pinned-byte verification.
 
@@ -184,6 +211,10 @@ def inspect_scientific_header(path: Path) -> dict[str, object]:
                 raise GtsmReceiptError("unexpected NetCDF dimension inventory size")
             if not ds.variables or len(ds.variables) > 200:
                 raise GtsmReceiptError("unexpected NetCDF variable inventory size")
+            release_attributes = select_original_release_attributes({
+                name: ds.getncattr(name) for name in ORIGINAL_RELEASE_METADATA_KEYS
+                if name in ds.ncattrs()
+            })
             dims = {}
             for name, dim in ds.dimensions.items():
                 if not isinstance(name, str) or len(name) > 128:
@@ -222,6 +253,8 @@ def inspect_scientific_header(path: Path) -> dict[str, object]:
     validate_coordinate_packing(packing)
     return {
         "dimensions": dims, "variables": fields,
+        "source_native_release_metadata": release_attributes,
+        "source_native_metadata_does_not_approve_legal_reuse": True,
         "coordinate_packing_attributes": packing,
         "coordinate_packing_schema_checked": True,
         "native_axes_units_and_dtypes_checked": True,
