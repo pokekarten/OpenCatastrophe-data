@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Research-only original-product discovery for global tropical-cyclone coastal wind exceedance validation and country-specific authoritative building-footprint provider discovery. No event-level CAT catalogue, property locations, insured TIV or source reuse/admission is inferred.",
+  "review_date": "2026-11-03",
+  "entries": [
+    {
+      "candidate_id": "global.chaz.tc-coastal-wind-exceedance-maps.2025",
+      "name": "CHAZ 2025 global coastal tropical cyclone wind hazard maps",
+      "provider": "Columbia tropical cyclone hazard model researchers via Dryad",
+      "categories": [
+        "tropical_cyclone",
+        "windstorm",
+        "hazard",
+        "return_period",
+        "climate_scenarios",
+        "model_validation"
+      ],
+      "spatial_scope": "Global coastal land-facing hazard map sites; not recommended for over-ocean interpolation or individual storm reconstruction",
+      "temporal_scope": "Dryad 2025-11-19 version; ERA5-based reference 1981-2019, 1995-2014 climate historical baseline, 2041-2060 and 2081-2100 future scenarios",
+      "resolution_or_granularity": "58.45 GB dataset: 44.69 GB exceedance_intensity.zip and 13.75 GB return_periods.zip plus README; point CSV and NetCDF/raster variants. Exceedance intensities rp_10 to rp_1000; threshold return periods thr_33 and thr_50 for 33 and 50 m/s; per-GCM and SSP outputs.",
+      "potential_roles": [
+        "independent_tc_site_wind_exceedance_benchmark",
+        "coastal_wind_return_period_cross_model_challenge",
+        "climate_scenario_sensitivity_context"
+      ],
+      "authoritative_url": "https://datadryad.org/dataset/doi:10.5061/dryad.qfttdz0vz",
+      "access_class_hint": "publisher_dataset_page_and_readme_verified_cc0_label_but_file_rights_and_byte_identity_not_admitted",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Published Dryad dataset page explicitly labels this dataset CC0, while associated Scientific Data article has its own publication licence; distinguish dataset rights from article rights and verify each original asset before admission. These are derived spatial exceedance/return-period maps, NOT original per-event cyclone tracks, historical wind observations, annual event frequency or loss tables. Raster.nc regular grid interpolation over oceans is explicitly cautioned against. Neither 58 GB files nor original hashes were acquired; 2025 product and scenario identities are unverified at byte level."
+    },
+    {
+      "candidate_id": "global.nus-ogbd.government-building-dataset-index.2021",
+      "name": "NUS Open Government Building Data global authoritative source index",
+      "provider": "National University of Singapore Urban Analytics Lab",
+      "categories": [
+        "buildings",
+        "exposure",
+        "source_discovery",
+        "government_geodata",
+        "national_footprints",
+        "geometry_provenance"
+      ],
+      "spatial_scope": "Global inventory of governmental building-footprint providers, including Europe and national or subnational datasets elsewhere; not a uniform worldwide footprint layer",
+      "temporal_scope": "Public beta inventory originally published 2021-07-09; project warns many outbound links were checked in Q2 2021 and can now be stale",
+      "resolution_or_granularity": "Index links to national, regional and city governmental 2D building polygon datasets; the index refers to provider collections jointly spanning more than 100 million building footprints; geometry and semantic attributes vary by provider",
+      "potential_roles": [
+        "find_national_official_building_polygon_replacements",
+        "overture_microsoft_google_crosswalk_validation",
+        "source_licence_vintage_completeness_preflight",
+        "exposure_building_coverage_diagnostics"
+      ],
+      "authoritative_url": "https://ual.sg/project/ogbd/",
+      "access_class_hint": "public_index_only_individual_national_authorities_have_separate_current_licences_and_original_downloads",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "NUS OGBD is a source catalogue and map, NOT a redistributable global building-footprint file or permission for all listed datasets. Its source list is a preliminary 2021 snapshot and country URLs, releases and access rights require independent rechecks. Government footprints are not observed insurer TIV, policy coverage or address-level carrier allocation. For each national candidate verify source currency, semantic attributes, geometry CRS/topology, partial coverage and duplicates with Overture/OSM before any CAT exposure research."
+    }
+  ]
+}
