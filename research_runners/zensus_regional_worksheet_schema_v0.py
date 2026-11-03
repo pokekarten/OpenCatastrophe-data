@@ -3,8 +3,8 @@
 """Bounded OOXML header-only peek at the *original* 2022 Kreis-region workbook.
 
 This is a structural preflight: resolve one exact worksheet with OOXML
-relationships, inspect at most 24 early rows and report ONLY string headings
-and cell-type tags. No actual numerical Census counts, no bulk cell export,
+relationships, inspect ONLY the first/header row and report ONLY the
+column labels. Source data rows (including *numeric strings*) are excluded. No actual numerical Census counts, no bulk cell export,
 no GDV extraction, no insurance-location assumptions.
 """
 from __future__ import annotations
@@ -22,7 +22,7 @@ M = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 D = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 P = "{http://schemas.openxmlformats.org/package/2006/relationships}"
 SHEET_TITLE = "CSV-Gebäude"
-MAX_HEADER_ROWS = 24
+MAX_HEADER_ROWS = 1
 MAX_HEADER_COLUMNS = 28
 MAX_HEADING_CELLS = 120
 MAX_SHARED_INDEX = 2_000_000
@@ -164,7 +164,8 @@ def inspect_original_gwz_header(raw: bytes) -> dict:
         "resolved_original_sheet_path": target,
         "initial_rows_scanned": len(rows),
         "initial_shared_string_cells_resolved": len(indices),
-        "bounded_nonnumeric_cell_headings": headings,
+        "bounded_header_labels_only": headings,
+        "source_data_rows_exported": False,
         "numerical_census_cells_exported": False,
         "full_worksheet_semantics_verified": False,
         "2022_kreis_ags_and_population_column_admitted": False,
