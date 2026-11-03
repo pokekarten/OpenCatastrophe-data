@@ -90,7 +90,7 @@
     },
     {
       "candidate_id": "de.gdv.natcat-elemental-penetration-district.2026",
-      "name": "GDV 2026 county-level residential elemental-peril insurance take-up",
+      "name": "GDV district-level residential elemental-peril take-up interactive map (publication-vintage review)",
       "provider": "Gesamtverband der Deutschen Versicherungswirtschaft (GDV)",
       "categories": [
         "insurance",
@@ -101,7 +101,7 @@
         "market_statistics"
       ],
       "spatial_scope": "Germany approximately 400 counties and independent cities; aggregate insurance-market coverage",
-      "temporal_scope": "2020-2025 county take-up series, updated in 2026",
+      "temporal_scope": "GDV webpage last updated 2025-10-10; historical district elemental coverage series; any advertised 2026 data-service update must be independently reconciled with the actual embedded chart version",
       "resolution_or_granularity": "Percent of residential buildings with full elemental-peril cover by district; excludes certain stand-alone heavy-rain contracts",
       "potential_roles": [
         "flood_covered_asset_probability_prior",
@@ -114,7 +114,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "A landkreis-level market share of insured buildings is NOT the company-specific percentage or a unique set of coverage addresses; some historical policies included; coverage here means full elemental-peril insurance, not all general homeowners protection. Machine-download rights and spatial/vintage consistency must be reviewed. Keep county IDs, numerator/denominator definitions and publisher revision. Provider licence page (21 May 2025): https://www.gdv.de/gdv/statistik/nutzungsbedingungen-fuer-statistikdaten-und-deren-visualisierung-188704. Sec. 2.3 expressly reserves text/data mining and requires explicit consent; sec. 2.2 restricts stand-alone economic exploitation or resale of the material. Sec. 2.1 permits certain attributed uses but is NOT blanket automated data harvesting or model-input permission. Separate licence and scientific review of each exact dataset and permitted extraction path mandatory; keep blocked in the interim."
+      "note": "A landkreis-level market share of insured buildings is NOT the company-specific percentage or a unique set of coverage addresses; some historical policies included; coverage here means full elemental-peril insurance, not all general homeowners protection. Machine-download rights and spatial/vintage consistency must be reviewed. Keep county IDs, numerator/denominator definitions and publisher revision. Provider licence page (21 May 2025): https://www.gdv.de/gdv/statistik/nutzungsbedingungen-fuer-statistikdaten-und-deren-visualisierung-188704. Sec. 2.3 expressly reserves text/data mining and requires explicit consent; sec. 2.2 restricts stand-alone economic exploitation or resale of the material. Sec. 2.1 permits certain attributed uses but is NOT blanket automated data harvesting or model-input permission. Separate licence and scientific review of each exact dataset and permitted extraction path mandatory; keep blocked in the interim. Version warning: the cited GDV webpage explicitly states its last update as 10 Oct 2025 and embeds a third-party 23degrees chart. Do not represent chart values as a separately downloaded 2026 county CSV or claim current published survey year without checking the original version."
     }
   ]
 }
