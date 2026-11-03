@@ -48,6 +48,28 @@ class WildfireOriginalMetadataTests(unittest.TestCase):
         self.assertEqual(value["geometry"], "esriGeometryPolygon")
         self.assertFalse(value["polygon_component_key_from_perim_id_authorized"])
 
+    def test_publisher_fire_type_mapping_is_explicit_and_never_guesses_wildfire(self):
+        cases = (
+            ("Wildfire", ("wildfire", True)),
+            ("Prescribed Fire", ("prescribed", True)),
+            ("Wildland Fire Use", ("unknown", True)),
+            ("Unknown", ("unknown", True)),
+            ("new publisher category", ("unknown", False)),
+            ("wildfire", ("unknown", False)),
+            (" Wildfire ", ("unknown", False)),
+            ("", ("unknown", False)),
+            (None, ("unknown", False)),
+        )
+        for raw, expected in cases:
+            with self.subTest(raw=raw):
+                self.assertEqual(g.classify_mtbs_fire_type(raw), expected)
+
+    def test_perim_id_is_satellite_scene_not_polygon_key(self):
+        value = parse("mtbs_perimeters_2024")
+        self.assertFalse(value["polygon_component_key_from_perim_id_authorized"])
+        self.assertIsNone(value["source_to_research_projection_field_map"]["mtbs_component_id"])
+        self.assertIn("satellite scene", value["perim_id_publisher_semantics"])
+
     def test_valid_pair_remains_research_only(self):
         f = json.dumps(metadata("fpa_fod_7")).encode()
         m = json.dumps(metadata("mtbs_perimeters_2024")).encode()
