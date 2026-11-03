@@ -9,6 +9,7 @@ from scripts.gtsm_era5_e_author_catalogue_overlap_v0 import (
     AuthorCatalogueAuditBlocked,
     compare_original_to_author_catalogue,
     parse_author_catalogue,
+    audit_hypothetical_100_id_batches,
 )
 
 
@@ -107,6 +108,52 @@ class GtsmAuthorCatalogueOverlapTests(unittest.TestCase):
             result["integer_id_labels_absent_in_both_files_inside_original_span"], 3
         )
         self.assertFalse(result["parent_paper_44734_model_positions_same_catalogue_release_proven"])
+
+
+    def test_hypothetical_100_id_batches_catalogue_complete_but_statistics_missing(self):
+        cat = {key: (0, 0, "coast_name_prefix") for key in range(201)}
+        sample = [0] + list(range(1, 100)) + [200]
+        summary = audit_hypothetical_100_id_batches(sample, cat)
+        self.assertEqual(summary["complete_100_id_bins_within_original_native_id_span"], 2)
+        self.assertEqual(summary["source_statistic_rows_in_complete_bins"], 100)
+        self.assertEqual(summary["author_catalogue_rows_in_complete_bins"], 200)
+        self.assertEqual(summary["complete_bin_coverage_classes"]["full_100_of_100_statistics"], 1)
+        self.assertEqual(summary["complete_bin_coverage_classes"]["zero_statistics_all_100_author_rows"], 1)
+        self.assertEqual(summary["author_name_families_in_100_id_bins_with_zero_statistics"]["coast_name_prefix"], 100)
+        self.assertEqual(summary["original_missing_id_runs_length_multiple_of_100"], 1)
+        self.assertEqual(summary["original_missing_id_runs_exactly_aligned_to_hypothetical_100_id_boundaries"], 1)
+        self.assertEqual(summary["missing_integer_ids_in_100_boundary_aligned_gap_runs"], 100)
+        self.assertFalse(summary["any_missing_batches_proven"])
+
+    def test_partial_author_coverage_and_unaligned_long_run(self):
+        cat = {0: (0, 0, "other_name_prefix"),
+               5: (0, 0, "regular_grid_name_prefix"),
+               111: (0, 0, "other_name_prefix"),
+               200: (0, 0, "other_name_prefix")}
+        summary = audit_hypothetical_100_id_batches([0, 5, 200], cat)
+        self.assertEqual(summary["complete_bin_coverage_classes"]["partial_1_to_99_statistics"], 1)
+        self.assertEqual(summary["complete_bin_coverage_classes"]["zero_statistics_some_author_rows"], 1)
+        self.assertEqual(summary["author_name_families_in_100_id_bins_with_zero_statistics"]["other_name_prefix"], 1)
+        self.assertEqual(summary["original_missing_id_runs_exactly_aligned_to_hypothetical_100_id_boundaries"], 0)
+
+    def test_empty_or_out_of_catalogue_native_batch_inputs_blocked(self):
+        for source, cat in [
+            ([], {0: (0, 0, "coast_name_prefix")}),
+            ([0], {}),
+            ([2], {0: (0, 0, "coast_name_prefix")}),
+            ([0, 0], {0: (0, 0, "coast_name_prefix")}),
+            ([True], {1: (0, 0, "coast_name_prefix")}),
+        ]:
+            with self.subTest(source=source), self.assertRaises(AuthorCatalogueAuditBlocked):
+                audit_hypothetical_100_id_batches(source, cat)
+
+    def test_tiny_valid_source_has_zero_complete_100_id_bins(self):
+        summary = audit_hypothetical_100_id_batches(
+            [7, 8], {7: (0, 0, "coast_name_prefix"), 8: (0, 0, "coast_name_prefix")}
+        )
+        self.assertEqual(summary["complete_100_id_bins_within_original_native_id_span"], 0)
+        self.assertFalse(summary["actual_producer_batch_file_manifest_verified"])
+        self.assertFalse(summary["individual_station_ids_coordinates_or_batch_start_ids_emitted"])
 
     def test_header_and_duplicate_ids_rejected(self):
         bad_header = "station\tname\tx\ty\n1\tid_coast\t1.1\t2.2\n"
