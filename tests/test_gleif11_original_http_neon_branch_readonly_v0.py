@@ -151,7 +151,7 @@ class OfficialGleifElevenNeonReadOnlyTests(unittest.TestCase):
     def test_branch_consolidation_cannot_be_flipped(self):
         altered = self.sql.replace(
             "('969500VV8Y4PQ7XJWE02', 'direct-parent-relationship', 'F240A7PWJB2BLKELB442'",
-            "('969500VV8Y4PQ7XJWE02', 'direct-parent-relationship', '529900K9B0N5BT694847'",
+            "('969500VV8Y4PQ7XJWE02', 'direct-parent-relationship', '529900KIN5BE45V5KB18'",
         )
         with self.assertRaisesRegex(EvidenceSourceContractError, "ultimate parent disagrees"):
             inspect_contract(altered)
