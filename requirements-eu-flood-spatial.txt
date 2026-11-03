@@ -4,4 +4,4 @@
 # Synthetic-only EU flood Phase A1 CRS/intersection runtime.
 # Core repository validation/tooling remains independent of this optional profile.
 pyproj==3.7.2
-shapely==2.1.2
+shapely==2.2.0
