@@ -61,6 +61,7 @@ def inspect_contract(sql: str) -> dict:
     checked = set()
     link_count = 0
     exception_count = 0
+    direct_parent_by_child = {}
     for child, parent_text, kind, exception_text, digest, byte_count in rows:
         if child in checked:
             raise ValueError("duplicate child LEI in fixed evidence batch")
@@ -73,6 +74,7 @@ def inspect_contract(sql: str) -> dict:
             parent = parent_text.strip("'")
             if (child, "direct-parent-relationship", parent) not in known:
                 raise ValueError("unapproved direct accounting parent edge")
+            direct_parent_by_child[child] = parent
             link_count += 1
         elif kind == "DIRECT_ACCOUNTING_CONSOLIDATION_PARENT_EXCEPTION":
             if parent_text != "NULL" or exception_text == "NULL":
@@ -85,6 +87,15 @@ def inspect_contract(sql: str) -> dict:
             raise ValueError("unknown GLEIF Level-2 source class")
     if set(SHA_BY_SUBJECT) != checked or link_count != 3 or exception_count != 2:
         raise ValueError("fixed verified accounting/exception cohort changed")
+    # A chain of published accounting-consolidation edges must be acyclic.
+    for start in direct_parent_by_child:
+        node = start
+        seen = set()
+        while node in direct_parent_by_child:
+            if node in seen:
+                raise ValueError("cyclic GLEIF accounting consolidation chain")
+            seen.add(node)
+            node = direct_parent_by_child[node]
     if re.search(r"\b(?:INSERT|UPDATE|DELETE|MERGE|CREATE|ALTER|DROP|TRUNCATE|GRANT|COPY|CALL|DO)\b", uncom, re.I):
         raise ValueError("SQL must not mutate the independent Neon database")
     if (
@@ -97,7 +108,7 @@ def inspect_contract(sql: str) -> dict:
         or "BLOCKED_GLEIF_REPORTING_EXCEPTION_NO_PARENT_EDGE" not in uncom
     ):
         raise ValueError("missing strict verified-identity / exception / nonadmission gate")
-    return {"links": link_count, "exceptions": exception_count, "subjects": checked}
+    return {"links": link_count, "exceptions": exception_count, "subjects": checked, "direct_parent_by_child": direct_parent_by_child}
 
 
 class OriginalGleifReceiptNeonReadonlyTests(unittest.TestCase):
@@ -109,6 +120,18 @@ class OriginalGleifReceiptNeonReadonlyTests(unittest.TestCase):
         self.assertEqual(observed["links"], 3)
         self.assertEqual(observed["exceptions"], 2)
         self.assertEqual(len(observed["subjects"]), 5)
+
+    def test_three_exact_direct_edges_form_acyclic_hdi_chain(self):
+        edges = inspect_contract(self.sql)["direct_parent_by_child"]
+        path = ["529900UCN37OZCXGVW88"]
+        while path[-1] in edges:
+            path.append(edges[path[-1]])
+        self.assertEqual(path, [
+            "529900UCN37OZCXGVW88",  # E+S
+            "529900KIN5BE45V5KB18",  # Hannover Rueck
+            "5299006ZIILJ6VJVSJ32",  # Talanx
+            "529900F2F9VZ5FRROH89",  # HDI V.a.G.
+        ])
 
     def test_sha_drift_blocks(self):
         mutated = self.sql.replace("88a2204b3721a1916b36a1f0df390c8b7a5c0c1ca5551abb1194bd7e1017af9c", "f" * 64)
