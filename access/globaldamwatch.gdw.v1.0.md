@@ -26,7 +26,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Status:** probe_ready
 
-**Documentation url:** <https://figshare.com/articles/dataset/Global_Dam_Watch_database_version_1_0/25988293>
+**Documentation url:** <https://docs.figshare.com/v2/>
 
 **Service root:** <https://api.figshare.com>
 
@@ -95,7 +95,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Redistribution status:** allowed
 
-**Notes:** The exact Global Dam Watch v1.0 Figshare dataset record states CC BY 4.0, and the peer-reviewed data paper likewise identifies GDW v1.0 as available under CC BY 4.0. Figshare's public Data Access Policy and API guidance allow public metadata/data access and API mining subject to the content licence. These verified rights and service permissions are ceilings, not repository execution or publication approval: this contract deliberately remains documented_only with no live probe or file request. Any persisted sample still requires exact asset identity, provenance, required attribution and repository review before bytes are committed or published.
+**Notes:** Global Dam Watch v1.0 original Figshare item and peer-reviewed article identify CC BY 4.0; Figshare's public Data Access Policy and official API guide authorize anonymous public metadata access and responsible API use. This permits one explicit version-pinned metadata canary only. It does not approve any GIS ZIP download, raw/derived data redistribution in this repository, scientific model use or unattended crawling. The final release Technical Documentation and exact selected file must be reviewed before acquiring or publishing original GIS bytes.
 
 ## Probe contract
 
