@@ -46,6 +46,7 @@ class HistoricalGtsmBootstrapAndBandSeverityTests(unittest.TestCase):
         upper[0][1]=best[0][1]-0.05
         upper[0][2]=best[0][2]-0.5
         upper[0][3]=best[0][3]-1.5
+        lower[0][3]=best[0][3]-2.5  # valid interval, yet bestfit exceeds upper by 1.5m
         lower[1][4]=best[1][4]+0.05
         best[2][5]=math.nan
         report=audit_return_band_severity_by_family_and_year(
@@ -91,6 +92,15 @@ class HistoricalGtsmBootstrapAndBandSeverityTests(unittest.TestCase):
                 audit_return_band_severity_by_family_and_year(
                     ids,good_matrix(len(ids)),author,expected_rows=len(ids)
                 )
+
+    def test_inverted_published_interval_fails_closed(self):
+        m=good_matrix(1)
+        m[1][0][0]=3.0
+        m[2][0][0]=1.0
+        with self.assertRaises(OriginalBandSeverityBlocked):
+            audit_return_band_severity_by_family_and_year(
+                [1],m,catalogue([1],["coast_name_prefix"]),expected_rows=1
+            )
 
     def test_invalid_matrices_fail_closed_without_source_value_echo(self):
         m=good_matrix(1)
