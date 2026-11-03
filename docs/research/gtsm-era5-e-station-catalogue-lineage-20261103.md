@@ -54,6 +54,19 @@ The observed IDs are strictly increasing, distinct and compatible with the **num
 
 A second, successful [exact original-source run 41704354442](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41704354442), job `126155809046`, passed **76 synthetic/offline tests** and reconfirmed the same bytewise original SHA-256, 38,957 source identifiers and 4,777 internal unrepresented labels. There are **76 contiguous internal gap runs**, the largest comprising **2,200 integer IDs**, with **two runs of 1,000 or more missing integer IDs**. These counts are descriptive of the *integer-ID sequence*, **not geographic or coastal regions**. They suggest investigating whether entire processing/selection batches were omitted; they do not prove a source failure or its cause.
 
-The next validator revision classifies the 76 gap runs into five size buckets (1, 2–9, 10–99, 100–999, 1,000+) and verifies bucket totals against 4,777. Exact-head original execution is required before reporting any numerical breakdown for these new buckets.
+A third successful, fixed-original [GitHub run 41704772407](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41704772407), job `126157225130`, passed **77 synthetic/offline tests** and verified the exact original MD5 and independently pinned SHA-256. Its five aggregate missing-ID-span buckets are:
+
+| Missing ID-run length | Number of runs | Omitted integer labels within native span |
+| --- | ---: | ---: |
+| Exactly 1 ID | 66 | 66 |
+| 2–9 IDs | 5 | 11 |
+| 10–99 IDs | 0 | 0 |
+| 100–999 IDs | 3 | 300 |
+| >=1,000 IDs | 2 | 4,400 |
+| **Total** | **76** | **4,777** |
+
+Together with the independently verified **largest run of 2,200 IDs**, the two >=1,000-ID runs must **both be exactly 2,200**. Similarly, three runs in the 100–999 class total 300 omitted labels, so all three must be **exactly 100 IDs**. These patterns are strikingly consistent with *whole integer-ID batch-range omissions*, but **do not establish a cause, original producer-side batch size, geography or even that the paper and statistics file use precisely the same parent catalogue**.
+
+**Priority for reproducibility:** compare the exact original author's stations-index/source-filter/provenance manifests and archived batch logs or per-batch outputs for these integer-ID span lengths; determine whether any source runs were omitted or numerical data excluded by fitting, while also checking the 1,000-ID theoretical tail. Do not generate or infer missing original data, or reclassify any IDs as coastal until the same-release authoritative station catalogue is obtained.
 
 The original author [ESSD study](https://essd.copernicus.org/articles/18/5759/2026/) differentiates about 18,000 coastal locations from offshore ocean output stations; nothing in an unsigned uint16 ID range alone supplies this membership. The source index mapping, point-name/coast-class catalogue version and any omitted-domain reasons remain outstanding.
