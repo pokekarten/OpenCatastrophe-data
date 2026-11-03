@@ -21,6 +21,8 @@ EXPECTED = {
     "vub.hydr.wikimpacts.v1.0.final",
     "seerai.hifld.archive.2025",
     "earthgenome.noaa.storm-events.geoparquet.2025",
+    "emdat.llm-geodis.2026.v7",
+    "emdat.geo-disasters.gaul2015.2025.v1",
 }
 
 
@@ -30,7 +32,7 @@ class EventGeocodingSourceBoundaryTests(unittest.TestCase):
         cls.entries = json.loads(SOURCE.read_text(encoding="utf-8"))["entries"]
         cls.by_id = {item["candidate_id"]: item for item in cls.entries}
 
-    def test_only_five_unique_research_candidates(self):
+    def test_only_seven_unique_research_candidates(self):
         self.assertEqual(set(self.by_id), EXPECTED)
         self.assertEqual(len(self.entries), len(self.by_id))
         urls = [item["authoritative_url"].rstrip("/") for item in self.entries]
@@ -52,6 +54,23 @@ class EventGeocodingSourceBoundaryTests(unittest.TestCase):
                 f"missing independence disclaimer for {key}",
             )
         self.assertIn("administrative", self.by_id["nasa.sedac.gdis.v1.00"]["note"].lower())
+
+    def test_original_v1_and_new_v7_remain_distinct(self):
+        legacy = self.by_id["emdat.llm-geodis.2025"]
+        latest = self.by_id["emdat.llm-geodis.2026.v7"]
+        self.assertNotEqual(legacy["authoritative_url"], latest["authoritative_url"])
+        self.assertIn("17544932", legacy["authoritative_url"])
+        self.assertIn("18935447", latest["authoritative_url"])
+        self.assertIn("EM-DAT", latest["note"])
+        self.assertIn("NOT", latest["note"])
+        self.assertEqual(latest["admission_status"], "not_admitted")
+
+    def test_gaul_spatial_geometry_stays_noncommercial(self):
+        source = self.by_id["emdat.geo-disasters.gaul2015.2025.v1"]
+        self.assertIn("noncommercial", source["access_class_hint"].lower())
+        self.assertIn("non-commercial", source["note"].lower())
+        self.assertIn("not actual", source["note"].lower())
+        self.assertEqual(source["rights_review_status"], "not_reviewed")
 
     def test_wikimpacts_noncommercial_and_no_automatic_insurer_reuse(self):
         x = self.by_id["vub.hydr.wikimpacts.v1.0.final"]
