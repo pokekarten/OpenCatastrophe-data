@@ -22,6 +22,12 @@ class GtsmStationIdTests(unittest.TestCase):
         self.assertEqual(value["unrepresented_ids_inside_native_span"], 0)
         self.assertEqual(value["distinct_native_ids"], 4)
         self.assertEqual(value["duplicate_native_id_records"], 0)
+        self.assertEqual(value["number_of_internal_gap_runs"], 0)
+        self.assertEqual(value["largest_internal_gap_run"], 0)
+        self.assertEqual(
+            value["zero_based_hypothetical_parent_omissions"]["after_native_id_span"],
+            PAPER_GTSM_OUTPUT_LOCATIONS - 4,
+        )
         self.assertTrue(value["zero_based_catalogue_index_range_compatible"])
         self.assertFalse(value["one_based_catalogue_index_range_compatible"])
         self.assertFalse(value["parent_catalogue_index_identity_proven"])
@@ -33,6 +39,14 @@ class GtsmStationIdTests(unittest.TestCase):
         self.assertEqual(value["duplicate_native_id_records"], 1)
         self.assertEqual(value["nonincreasing_adjacent_id_pairs"], 1)
         self.assertEqual(value["distinct_native_ids"], 4)
+        self.assertEqual(value["number_of_internal_gap_runs"], 2)
+        self.assertEqual(value["largest_internal_gap_run"], 2)
+        self.assertEqual(
+            value["zero_based_hypothetical_parent_omissions"]["before_native_id_span"], 1
+        )
+        self.assertEqual(
+            value["zero_based_hypothetical_parent_omissions"]["inside_native_id_span"], 3
+        )
 
     def test_hypothetical_parent_range_is_not_verified_identity(self):
         value = self.summary([PAPER_GTSM_OUTPUT_LOCATIONS - 1,
@@ -40,8 +54,26 @@ class GtsmStationIdTests(unittest.TestCase):
         self.assertEqual(value["ids_outside_zero_based_paper_catalogue_range"], 1)
         self.assertEqual(value["ids_outside_one_based_paper_catalogue_range"], 0)
         self.assertFalse(value["zero_based_catalogue_index_range_compatible"])
+        self.assertIsNone(value["zero_based_hypothetical_parent_omissions"])
         self.assertTrue(value["one_based_catalogue_index_range_compatible"])
         self.assertFalse(value["paper_output_location_count_same_release_proven"])
+
+    def test_parent_index_gap_partition_sums_only_under_zero_based_hypothesis(self):
+        value = self.summary([0, 5, 9])
+        parts = value["zero_based_hypothetical_parent_omissions"]
+        self.assertEqual(parts["before_native_id_span"], 0)
+        self.assertEqual(parts["inside_native_id_span"], 7)
+        self.assertEqual(parts["after_native_id_span"], PAPER_GTSM_OUTPUT_LOCATIONS - 10)
+        self.assertEqual(sum(parts[k] for k in (
+            "before_native_id_span", "inside_native_id_span", "after_native_id_span"
+        )), PAPER_GTSM_OUTPUT_LOCATIONS - 3)
+        self.assertFalse(value["parent_catalogue_index_identity_proven"])
+
+    def test_thousand_length_internal_gap_reported_without_positions(self):
+        value = self.summary([0, 1001])
+        self.assertEqual(value["number_of_internal_gap_runs"], 1)
+        self.assertEqual(value["largest_internal_gap_run"], 1000)
+        self.assertEqual(value["internal_gap_runs_of_at_least_1000_ids"], 1)
 
     def test_native_fill_does_not_appear_as_valid_station(self):
         value = self.summary([1, 65535, 3], source_fill_value=65535)
