@@ -159,6 +159,23 @@ class GtsmAuthorCatalogueOverlapTests(unittest.TestCase):
             with self.subTest(source=source), self.assertRaises(AuthorCatalogueAuditBlocked):
                 audit_hypothetical_100_id_batches(source, cat)
 
+    def test_34_record_terminal_partial_bin_excluded_from_full_batch_comparison(self):
+        ids = list(range(134))
+        author = {i: (0, 0, "regular_grid_name_prefix") for i in ids}
+        report = audit_hypothetical_100_id_batches(ids, author)
+        self.assertEqual(report["complete_100_id_bins_within_original_native_id_span"], 1)
+        self.assertEqual(report["source_rows_in_omitted_partial_boundary_bins"], 34)
+        self.assertEqual(report["author_rows_in_omitted_partial_boundary_bins"], 34)
+        self.assertEqual(report["author_catalogue_rows_outside_original_source_native_id_span"], 0)
+        self.assertTrue(report["all_author_only_ids_within_complete_bins_are_in_zero_statistic_bins"])
+
+    def test_author_catalogue_rows_beyond_source_span_accounted_separately(self):
+        author = {key: (0, 0, "other_name_prefix") for key in (0, 100, 200)}
+        report = audit_hypothetical_100_id_batches([0, 100], author)
+        self.assertEqual(report["author_catalogue_rows_outside_original_source_native_id_span"], 1)
+        self.assertEqual(report["source_rows_in_omitted_partial_boundary_bins"], 1)
+        self.assertEqual(report["author_rows_in_omitted_partial_boundary_bins"], 1)
+
     def test_tiny_valid_source_has_zero_complete_100_id_bins(self):
         summary = audit_hypothetical_100_id_batches(
             [7, 8], {7: (0, 0, "coast_name_prefix"), 8: (0, 0, "coast_name_prefix")}
