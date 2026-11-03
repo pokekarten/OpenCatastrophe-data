@@ -29,7 +29,7 @@ The common synthetic occurrence process should drive a *shared cyclone parent ev
 ## Model handoff / acceptance gates
 
 1. **Filelist identity**: exact 72-year URI inventory, independent pinned filelist SHA-256, expected dataset UUID, correct ER11-wind/maxrain pathway. Current offline runner covers syntax and completeness when given a verified local list.
-2. **Rights**: source-specific assigned file licence, IBM/ERA5/IBTrACS provenance and attribution, commercial modelling and derivative rules, redistribution, ISIMIP terms. Until these are checked, do not automate downloads or promote to model inputs.
+2. **Rights**: source-specific assigned file licence, ISIMIP/ERA5/IBTrACS provenance and attribution, commercial modelling and derivative rules, redistribution, ISIMIP terms. Until these are checked, do not automate downloads or promote to model inputs.
 3. **One bounded NetCDF**: only when authorised, validate original bytes, SHA-256, variable names/units/time coords/CRS/fill, event IDs, no-data, grid and true interpretation of maximum 24-h rainfall. This metadata is currently **unverified**.
 4. **Hazard independence**: modelled ISIMIP rain is not independent observational truth relative to its IBTrACS parent. Never count two hazard reconstructions as two historic cyclones.
 5. **Reproducibility**: pin provider dataset ID, exact file version and checksums; source identity must survive downstream in NextGen/OED/vulnerability mappings and capital/reinsurance treaty analysis.
