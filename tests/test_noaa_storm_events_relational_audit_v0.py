@@ -79,6 +79,79 @@ class StormRelationalAuditTests(unittest.TestCase):
         self.assertEqual(summary['mismatched_events'], 2)
         self.assertFalse(result['selected_checks_passed'])
 
+    def test_partition_retains_clean_parent_and_does_not_hide_source_failure(self):
+        tables = fixture()
+        original = tables['details'][0]
+        original['DEATHS_DIRECT'] = '3'
+        tables['details'].append(dict(
+            original, EVENT_ID='2', DEATHS_DIRECT='0',
+            DAMAGE_PROPERTY='1K', DAMAGE_CROPS=''))
+        result = run(tables)
+        part = result['review_partition']
+        self.assertFalse(result['selected_checks_passed'])
+        self.assertEqual(result['status'], 'inconsistent')
+        self.assertEqual(part['distinct_parents_with_known_contradiction'], 1)
+        self.assertTrue(part['nonempty_eligible_subset_checks_passed'])
+        clean = part['eligible_for_selected_checks']
+        flagged = part['quarantined_for_review']
+        self.assertEqual(clean['parent_rows'], 1)
+        self.assertEqual(flagged['parent_rows'], 1)
+        self.assertEqual(flagged['reported_fatalities']['D'], 3)
+        self.assertEqual(flagged['matched_fatality_rows']['D'], 2)
+        self.assertEqual(clean['damage_field_status']['DAMAGE_PROPERTY']['reported_positive'], 1)
+        self.assertEqual(flagged['damage_field_status']['DAMAGE_PROPERTY']['missing'], 1)
+        for field, statuses in result['damage_field_status'].items():
+            for status, count in statuses.items():
+                self.assertEqual(count, sum(
+                    group['damage_field_status'][field][status]
+                    for group in (clean, flagged)))
+        self.assertTrue(part['parent_and_reported_fatality_totals_conserved'])
+        self.assertNotIn('unpublishable', json.dumps(part))
+        self.assertNotIn('EVENT_ID', json.dumps(part))
+
+    def test_same_parent_with_two_death_disagreements_is_not_counted_twice(self):
+        tables = fixture()
+        tables['details'][0].update(DEATHS_DIRECT='3', DEATHS_INDIRECT='1')
+        result = run(tables)
+        part = result['review_partition']
+        self.assertEqual(sum(x['mismatched_events'] for x in
+                             result['fatality_reconciliation'].values()), 2)
+        self.assertEqual(part['distinct_parents_with_known_contradiction'], 1)
+        self.assertEqual(part['quarantined_for_review']['parent_rows'], 1)
+        self.assertFalse(part['nonempty_eligible_subset_checks_passed'])
+
+    def test_orphan_children_block_the_entire_review_subset(self):
+        for kind in ('fatalities', 'locations'):
+            with self.subTest(kind=kind):
+                tables = fixture()
+                tables[kind][0]['EVENT_ID'] = '99'
+                part = run(tables)['review_partition']
+                self.assertEqual(part['state'], 'blocked_by_orphan_children')
+                self.assertEqual(part['eligible_for_selected_checks']['parent_rows'], 0)
+                self.assertEqual(part['quarantined_for_review']['parent_rows'], 1)
+                self.assertFalse(part['nonempty_eligible_subset_checks_passed'])
+                self.assertEqual(sum(part['unassigned_orphan_child_rows'].values()), 1)
+
+    def test_episode_disagreement_quarantines_only_affected_known_parent(self):
+        tables = fixture()
+        tables['locations'][0]['EPISODE_ID'] = '99'
+        tables['details'].append(dict(tables['details'][0], EVENT_ID='2', DEATHS_DIRECT='0'))
+        part = run(tables)['review_partition']
+        self.assertEqual(part['distinct_parents_with_known_contradiction'], 1)
+        self.assertEqual(part['eligible_for_selected_checks']['parent_rows'], 1)
+        self.assertEqual(part['quarantined_for_review']['matched_location_rows'], 3)
+
+    def test_consistent_source_still_has_one_parent_despite_six_join_rows(self):
+        result = run(fixture())
+        part = result['review_partition']
+        self.assertTrue(result['selected_checks_passed'])
+        self.assertEqual(result['join_cardinality']['naive_left_join_rows'], 6)
+        self.assertEqual(part['eligible_for_selected_checks']['parent_rows'], 1)
+        self.assertEqual(part['quarantined_for_review']['parent_rows'], 0)
+        self.assertEqual(part['eligible_for_selected_checks']['matched_location_rows'], 3)
+        self.assertEqual(part['eligible_for_selected_checks']['matched_fatality_rows']['D'], 2)
+        self.assertTrue(part['parent_and_reported_fatality_totals_conserved'])
+
     def test_duplicate_parent_and_child_keys_are_rejected(self):
         for kind in audit.HEADERS:
             with self.subTest(kind=kind):
