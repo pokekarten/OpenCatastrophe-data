@@ -3,6 +3,7 @@
 
 # CI/local validation only. This is not a runtime or acquisition dependency.
 # The repository-wide unittest discovery includes mandatory PPRI polygon
-# topology tests; pin the exact version required by the Luxembourg source\n# diagnostic (independent of the newer EU flood spatial profile).
+# topology tests; pin the exact version required by the Luxembourg source
+# diagnostic (independent of the newer EU flood spatial profile).
 PyYAML==6.0.3
 shapely==2.1.2
