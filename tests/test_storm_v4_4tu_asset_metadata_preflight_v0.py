@@ -164,6 +164,14 @@ class STORMv4OriginalAssetMetadataTests(unittest.TestCase):
         self.assertEqual(len(receipt["files"]), 3)
         self.assertFalse(receipt["asset_download_authorized"])
 
+    def test_link_only_and_incomplete_provider_assets_blocked(self):
+        for flag, value in (("is_link_only", True), ("is_incomplete", True),
+                            ("is_link_only", "false"), ("is_incomplete", 0)):
+            rows = file_list()
+            rows[2][flag] = value
+            with self.subTest(flag=flag, value=value), self.assertRaises(Blocked):
+                check(rows=rows)
+
     def test_wrong_response_sha_rejected(self):
         a, files = wire(article()), wire(file_list())
         with self.assertRaisesRegex(Blocked, "SHA-256 mismatch"):
