@@ -30,6 +30,22 @@ The classes correspond to the [NWCG fire-size glossary](https://www.nwcg.gov/pub
 
 The separate [2024 MTBS boundary layer 82](https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServer/82) returned **1,051 polygon features**, grouped as **411 Wildfire**, **638 Prescribed Fire** and **2 Other** in independent count-only / grouped statistics queries. This is a *different product population*; its totals are not conservation denominators for FPA FOD rows. The term **MTBS_ID present is not equivalent to the MTBS source `FIRE_ID` actually matched**, independently verified or model-ready.
 
+## Secondary geographic selection-bias check (current 2024 live service)
+
+A separate official year-view **state-code grouped count** query used `groupByFieldsForStatistics=state` and the same `count(fod_id)` statistic, first with `where=fire_year=2024`, then with `where=fire_year=2024 AND mtbs_id IS NOT NULL`. The provider returned **53** distinct all-record state/territory codes (summing to **87,708**) but only **35** codes with any non-null MTBS reference (summing to **415**). Thus **18 state/territory categories** in that response had no populated ID. Examples of unadjusted counts (not risk rankings):
+
+| State code | All 2024 source rows | Rows with MTBS_ID | ID-populated / all |
+| --- | ---: | ---: | ---: |
+| OR | 1,748 | 57 | 3.26% |
+| ID | 1,555 | 48 | 3.09% |
+| AK | 379 | 22 | 5.80% |
+| CA | 8,182 | 24 | 0.29% |
+| CO | 8,223 | 12 | 0.15% |
+| VA | 6,761 | 7 | 0.10% |
+| MI | 4,310 | 0 | 0.00% |
+
+These are **aggregated publisher-reported source-key availability shares** in an as-accessed mutable service, not unbiased samples, physical event matches, natural-hazard frequencies, insured-loss rates or modeled geographic differences. The regional contrast may be confounded by the composition of sizes, agency reporting sources, prescribed-fire inclusion, MTBS geographic thresholds and release coverage. A joint `state × size class` stratification and source-join validity review are required before any state-level data selection correction. No raw event identifiers, coordinates or policy exposure are included in this document.
+
 ## Reproducible offline grouped-statistics gate
 
 After separately saving each of the three original **small aggregate JSON responses** to private files, record original bytes and SHA-256. This repo contains **no provider response bytes** and the research notes do not claim captured original HTTP headers, metadata timestamps or provider SHA receipts. Run:
