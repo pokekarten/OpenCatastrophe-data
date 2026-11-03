@@ -20,6 +20,12 @@ from gtsm_era5_e_author_catalogue_overlap_v0 import (
     AuthorCatalogueAuditBlocked, compare_original_to_author_catalogue,
     parse_author_catalogue, audit_hypothetical_100_id_batches,
 )
+from gtsm_era5_e_author_family_return_qa_v0 import (
+    audit_return_levels_by_author_name_family,
+    read_pinned_original_return_matrices,
+    GtsmFamilyReturnAuditBlocked, COUNTER_FIELDS,
+    require_verified_author_station_join,
+)
 from gtsm_era5_e_original_receipt_v0 import (
     GtsmReceiptError, PINNED_SHA256, SOURCE_BYTES, SOURCE_DOWNLOAD_URL,
     SOURCE_NAME, _ZenodoOnlyRedirect, verify_original,
@@ -141,13 +147,24 @@ def original_author_identity_receipt() -> dict[str, object]:
         fetch_verified_statistical_original(source_path)
         verified_source = verify_original(
             source_path, inspect_header=True, audit_coordinates=True,
-            audit_station_ids=True,
+            inspect_labels=True, audit_return_levels=True, audit_station_ids=True,
         )
         author_csv, author_size = get_author_original_csv()
         catalogue = parse_author_catalogue(author_csv)
         station, lon, lat = read_original_native_id_coordinates(source_path)
         overlap = compare_original_to_author_catalogue(station, lon, lat, catalogue)
+        require_verified_author_station_join(overlap)
         batch_check = audit_hypothetical_100_id_batches(station, catalogue)
+        native_extremes = read_pinned_original_return_matrices(source_path)
+        family_quality = audit_return_levels_by_author_name_family(
+            station, native_extremes, catalogue
+        )
+        independently_verified_global = verified_source["return_level_quality"]
+        for key in COUNTER_FIELDS:
+            if family_quality["source_global_quality_counts"][key] != independently_verified_global[key]:
+                raise GtsmFamilyReturnAuditBlocked(
+                    "producer-family return QA disagrees with independently verified global original QA"
+                )
         return {
             "schema_version": "gtsm-zenodo-v2-author-github-catalogue-receipt-v0",
             "zenodo_original_sha256": PINNED_SHA256,
@@ -157,6 +174,7 @@ def original_author_identity_receipt() -> dict[str, object]:
             "author_catalogue_original_byte_length": author_size,
             "author_catalogue_derived_data_only": overlap,
             "hypothetical_100_id_batch_aggregate_quality": batch_check,
+            "source_return_level_quality_by_author_name_family": family_quality,
             "original_provider_source_files_redistributed": False,
             "original_source_station_ids_or_coordinate_pairs_emitted": False,
             "original_source_files_persisted_after_probe": False,
@@ -168,7 +186,8 @@ def original_author_identity_receipt() -> dict[str, object]:
 if __name__ == "__main__":
     try:
         print(json.dumps(original_author_identity_receipt(), sort_keys=True, allow_nan=False))
-    except (GtsmReceiptError, AuthorCatalogueAuditBlocked, HTTPError, URLError,
+    except (GtsmReceiptError, AuthorCatalogueAuditBlocked,
+            GtsmFamilyReturnAuditBlocked, HTTPError, URLError,
             TimeoutError, OSError, ValueError) as exc:
         # None of these sanitized exception messages contain individual
         # source rows, station IDs, coordinates or file bytes.

@@ -9,6 +9,9 @@ on:
       - ".github/workflows/gtsm-original-author-catalogue.yml"
       - "scripts/gtsm_era5_e_author_catalogue_overlap_v0.py"
       - "scripts/gtsm_era5_e_author_catalogue_original_v0.py"
+      - "scripts/gtsm_era5_e_author_family_return_qa_v0.py"
+      - "tests/test_gtsm_era5_e_author_family_return_qa_v0.py"
+      - "scripts/gtsm_era5_e_return_level_qa_v0.py"
       - "tests/test_gtsm_era5_e_author_catalogue_overlap_v0.py"
       - "scripts/gtsm_era5_e_original_receipt_v0.py"
 
@@ -40,6 +43,6 @@ jobs:
           python -m pip install --no-input --disable-pip-version-check -r requirements-glofas-acquisition.txt
           python -m pip check
       - name: Synthetic source-ID, name-family and coordinate overlap tests
-        run: python -m unittest tests.test_gtsm_era5_e_author_catalogue_overlap_v0 -v
+        run: python -m unittest tests.test_gtsm_era5_e_author_catalogue_overlap_v0 tests.test_gtsm_era5_e_author_family_return_qa_v0 -v
       - name: Match only exact GitHub blob and original Zenodo NetCDF in memory
         run: python scripts/gtsm_era5_e_author_catalogue_original_v0.py
