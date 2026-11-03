@@ -77,6 +77,44 @@ individual building match, source-level rights approval, full-schema parse,
 geometric join or value validation was performed. Responses may change with
 provider updates; pin UTC receipt and exact query in any future measured run.
 
+## Measured identifier complexities in LL84 2024 (read-only 2026-11-04)
+
+Additional aggregate-only original Socrata queries against
+https://data.cityofnewyork.us/resource/5zyy-y8am.json used
+SoQL select=count(*) with each **report_year = 2024** filter:
+
+| Additional where condition | Count |
+| --- | ---: |
+| nyc_borough_block_and_lot like '%;%' | 866 |
+| nyc_building_identification like '%;%' | 3,305 |
+| nyc_borough_block_and_lot = 'Not Available' | 219 |
+| nyc_building_identification = 'Not Available' | 346 |
+| Union: any of the four OR conditions above | **3,812** |
+
+The union was computed **on the original API**, not by adding overlapping
+individual categories. These are rows with at least one *observable*
+identifier-complexity condition; not all problematic IDs are detected (e.g.,
+zero/placeholder BINs, inconsistent condo billing keys and nonstandard masks).
+Multiple BINs are not necessarily malformed data; many describe legitimate
+campus buildings and must not be naively auto-split or joined as one asset.
+
+Reproducible union SoQL request (one anonymous aggregate count, zero row data):
+
+    $select=count(*)
+    $where=report_year = 2024 AND (
+      nyc_borough_block_and_lot like '%;%' OR
+      nyc_building_identification like '%;%' OR
+      nyc_borough_block_and_lot = 'Not Available' OR
+      nyc_building_identification = 'Not Available'
+    )
+
+This result is a **hard lower-bound count of these four identified special
+cases in the current 2024 source query**, not a validated percentage of
+unmatchable records or complete data quality assessment. It confirms
+that a one-row-per-building SQL join would silently misstate a material
+subset of the source. Real raw acquisition, rights approval and provider
+asset admission remain pending.
+
 ## Implemented bounded, offline diagnostic
 
 The executable research-only preflight is:
