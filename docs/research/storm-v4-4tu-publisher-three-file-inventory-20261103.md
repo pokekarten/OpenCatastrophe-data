@@ -39,6 +39,54 @@ page may summarize this total separately; it is **not** a proof of an
 uncompressed archive size or a guarantee against archive expansion attacks.
 No file URLs are reproduced or executed.
 
+## Example operator-generated transcription
+
+This is **not** a 4TU API response. Create this local JSON explicitly by
+transcribing the publisher's *v4* landing-page listing; do not interpret this
+example as an independently acquired or re-hashed original ZIP.
+
+```json
+{
+  "schema_version": "storm-v4-4tu-publisher-listing-transcription-v0",
+  "record_doi": "10.4121/12706085.v4",
+  "publisher_page": "https://data.4tu.nl/articles/_/12706085/4",
+  "version": 4,
+  "observation_basis": "manual_transcription_of_provider_landing_listing",
+  "files": [
+    {
+      "name": "README.txt",
+      "size_bytes": 2322,
+      "publisher_md5": "bcffee2371f9f2dacc16905b91f22202"
+    },
+    {
+      "name": "Basins of STORM IBTrACS dataset.kml",
+      "size_bytes": 2612,
+      "publisher_md5": "e45ddb50b5d9b7007564b77cfe21a34c"
+    },
+    {
+      "name": "STORMV4.zip",
+      "size_bytes": 543251824,
+      "publisher_md5": "d3e5647fa9c01b1ed33c33c0c930eb30"
+    }
+  ]
+}
+```
+
+Save it outside Git as `storm-v4-publisher-listing.json`. Calculate the SHA-256
+of **that local JSON text** with `sha256sum storm-v4-publisher-listing.json`,
+then invoke:
+
+```bash
+python research_runners/storm_v4_4tu_landing_inventory_preflight_v0.py \
+  --snapshot storm-v4-publisher-listing.json \
+  --expected-sha256 <the-sha256-printed-by-sha256sum>
+```
+
+Do not reuse any previously calculated SHA-256 after reformatting the JSON:
+the local **transcription bytes**, rather than publisher original file bytes,
+are hashed here. A PASS only compares the normalized metadata to our pinned
+publisher listing; it grants no scientific, rights, download or model admission.
+
 ## Repeatable, read-only identity test
 
 `research_runners/storm_v4_4tu_landing_inventory_preflight_v0.py` accepts
