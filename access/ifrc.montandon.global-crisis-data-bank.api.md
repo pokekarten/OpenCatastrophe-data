@@ -110,7 +110,6 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 _Empty array._
 
-
 **Implementation decision:** document_only
 
 **Reviewed at:** 2026-11-03
