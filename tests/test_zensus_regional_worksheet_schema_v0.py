@@ -55,11 +55,12 @@ class BoundedRealWorksheetPreflightTests(unittest.TestCase):
         out=inspect_original_gwz_header(example())
         self.assertEqual(out["sheet_exact_name"],"CSV-Gebäude")
         self.assertEqual(out["resolved_original_sheet_path"],"xl/worksheets/sheet1.xml")
-        self.assertEqual(out["initial_rows_scanned"],2)
+        self.assertEqual(out["initial_rows_scanned"],1)
         self.assertEqual(out["initial_shared_string_cells_resolved"],2)
-        self.assertEqual([x["text"] for x in out["bounded_nonnumeric_cell_headings"]],
+        self.assertEqual([x["text"] for x in out["bounded_header_labels_only"]],
                          ["Kreis AGS","Gebäude mit Wohnraum"])
         self.assertFalse(out["numerical_census_cells_exported"])
+        self.assertFalse(out["source_data_rows_exported"])
         self.assertFalse(out["nextgen_cat_model_input_approved"])
 
     def test_inline_string_without_shared_string_file(self):
@@ -82,7 +83,7 @@ class BoundedRealWorksheetPreflightTests(unittest.TestCase):
 
     def test_original_headers_are_not_numerical_cells(self):
         out=inspect_original_gwz_header(example())
-        text=" ".join(x["text"] for x in out["bounded_nonnumeric_cell_headings"])
+        text=" ".join(x["text"] for x in out["bounded_header_labels_only"])
         self.assertNotIn("99999",text)
         self.assertNotIn("#N/A",text)
 
