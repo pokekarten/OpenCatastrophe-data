@@ -1,7 +1,7 @@
 -- SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 -- SPDX-License-Identifier: Apache-2.0
 --
--- Read-only, exact-LEI reconciliation of FOUR GLEIF Level-2 ORIGINAL HTTP
+-- Read-only, exact-LEI reconciliation of FIVE GLEIF Level-2 ORIGINAL HTTP
 -- response receipts captured with the official GLEIF API on 2026-11-03.
 -- Source GOLDEN COPY publish date for each was 2026-11-03T00:00:00Z.
 --
@@ -29,6 +29,11 @@ WITH gleif_original_receipts(
      'IS_DIRECTLY_CONSOLIDATED_BY',NULL,
      '2ecb0188bd2ef2ebb2f8cfeed757fffc17e29e81638b4910f1bde8eb12b89653',1295,
      'https://api.gleif.org/api/v1/lei-records/529900KIN5BE45V5KB18/direct-parent-relationship',
+     '2026-11-03T00:00:00Z'),
+    ('5299006ZIILJ6VJVSJ32','529900F2F9VZ5FRROH89',
+     'IS_DIRECTLY_CONSOLIDATED_BY',NULL,
+     '533b8e18d880e84e4922e03e0f59a0c8966ac452c85c6a8ae6326d3e72a8ac23',1296,
+     'https://api.gleif.org/api/v1/lei-records/5299006ZIILJ6VJVSJ32/direct-parent-relationship',
      '2026-11-03T00:00:00Z'),
     ('529900MUF4C20K50JS49',NULL,
      'DIRECT_ACCOUNTING_CONSOLIDATION_PARENT_EXCEPTION','NO_KNOWN_PERSON',
