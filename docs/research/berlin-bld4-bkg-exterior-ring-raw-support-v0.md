@@ -90,7 +90,62 @@ The dedicated workflow runs the synthetic disjoint-ring challenges on PR
 events, and runs a single strict original-provider WFS × TIFF evidence check
 only on an approved main workflow change or explicit workflow dispatch.
 
-**On this PR, actual exterior ring results are PENDING.** No prior
-original-source run collected these exterior band aggregates. A successful
-post-merge original run must be separately checked and documented before
-claiming real perimeter support.
+## Actual original BKG–ALKIS exterior measurements (verified 2026-11-01)
+
+After merging [PR #1080](https://github.com/pokekarten/OpenCatastrophe-data/pull/1080),
+the exact source-only [GitHub Actions run 41350285830](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41350285830)
+succeeded on main commit `63a13bd477067527dc9e67e6e6d4ba817189178f`.
+It independently verified the complete BKG 47,280,200-byte TIFF SHA-256
+(`7e11fcf4cac2ce07fdefa3dc0fa4414b2cc248c516a373a12c14c33b30726a6f`)
+and acquired a *current, mutable* original five-feature Berlin ALKIS WFS
+response with SHA-256
+`c4342109c0c13b31996d7cb9a5a16db56af3e536dc4910938a9fc72bab049bba`.
+This WFS response digest differs from the earlier original-building audit:
+**do not infer identical source response snapshots across runs**.
+
+| Exact external distance band | Unique exterior area (m²) | Original positive raw-code area (m²) | Valid numeric zero (m²) | NoData area (m²) | Valid numeric coverage |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 0–1 m | 296.465049 | 28.156356 | 94.312623 | 173.996069 | 41.31% |
+| 1–3 m | 613.724262 | 170.126378 | 141.690844 | 301.907040 | 50.81% |
+| 3–5 m | 634.364187 | 236.862675 | 121.530717 | 275.970795 | 56.50% |
+
+All distances measure horizontal projected proximity to the **union** of
+the five clipped buildings, not actual distance to a door or basement entry.
+No building footprint is part of a perimeter ring. All areas are fractional
+source-pixel overlaps in EPSG:25832, clipped to the exact reprojected
+research pilot boundary; no out-of-window area was found. Source rounding
+accounts for a maximum 0.000001 m² conservation residual.
+
+The unchanged building-interior source area is **683.311267 m²**, of
+which **666.124849 m² (97.48%) is NoData**, 14.434404 m² has numeric zero
+and 2.752013 m² positive **raw code**. This shows more valid raster
+coverage outside the building masks; it does **not** establish an
+entry-water-level, dry or wet building, or scientific flood-loss estimate.
+
+Machine-verifiable, source-URL-, run-, version- and digest-linked **metadata
+only** is stored as
+[original exterior band receipt](berlin-bld4-bkg-original-exterior-ring-receipt-20261101.toml).
+It stores no original WFS features, source TIFF or individual building values.
+A changed WFS footprint selection, source TIFF, scenario or geometry must
+produce new evidence rather than silently reuse these 2026 measurements.
+
+### Remaining hard scientific gate: raw integer depth scaling
+
+The [BKG HWK_SRG product page](https://www.bkg.bund.de/DE/Themen/Umwelt-und-Klimawandel/Starkregen/starkregen_cont.html)
+and [official WMS metadata](https://gdz.bkg.bund.de/index.php/default/wms-hinweiskarte-starkregengefahren-wms-starkregen.html)
+describe simulated *maximum water depth* at 1-m **horizontal** spatial
+resolution, but do not provide an independently verified conversion rule
+from this exact BKG original signed-Int16 TIFF's **raw values** to a
+physical depth unit. Even if a cartographic legend displays centimetres,
+a unit/scale test tied to this exact original TIFF remains necessary.
+The positive-raw area above is not a quantitative flooded-area claim.
+
+Further prerequisites for CAT modelling are scenario-frequency semantics,
+NoData explanation, source-vintage reconciliation, validated external
+water-entrance geometry/elevation and explicit vulnerability/rights gates.
+
+Reproduce the **stored receipt only** without provider calls:
+
+```bash
+python -m unittest tests.test_berlin_bkg_original_exterior_ring_receipt_v0 -v
+```

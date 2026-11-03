@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+receipt_schema = "bkg-berlin-official-wms-kostra-actual-original-featureinfo-v0"
+research_only = true
+source_provider = "Bundesamt fuer Kartographie und Geodaesie (BKG)"
+source_url = "https://sgx.geodatenzentrum.de/wms_starkregen"
+source_wms_layer = "be_tiefe_agw"
+source_wms_version = "1.3.0"
+source_query_crs = "EPSG:25832"
+source_query_fixed_private_location_values_recorded = false
+source_query_scope = "one fixed 64 x 64 m position in the existing Berlin 200m research pilot"
+original_github_actions_run_id = 41354445114
+original_github_actions_url = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41354445114"
+original_main_commit = "a1a342ac8e41e9129928674d5c5e81cb7e5820ca"
+original_capabilities_sha256_only = "1f5050be9a560c4a2e2bce3f5e17c74ed4ff8973c62e63b975da5c5e5d07f75f"
+original_capabilities_bytes = 480596
+original_featureinfo_response_sha256_only = "6f6429b2def52bb12f9bdcd5f8092e88761e6d38e50023222bd26761c4a4f038"
+original_featureinfo_response_bytes = 205
+actual_original_layer_found = true
+actual_original_layer_queryable = true
+actual_original_featureinfo_format = "application/json"
+feature_info_explicit_physical_unit_label_candidate_found = false
+provider_wms_explicit_units_or_scaling_proven = false
+wms_and_original_tiff_same_numeric_encoding_proven = false
+original_download_tiff_full_sha256_independent = "7e11fcf4cac2ce07fdefa3dc0fa4414b2cc248c516a373a12c14c33b30726a6f"
+original_download_tiff_physical_depth_unit_proven = false
+original_wms_payload_saved = false
+per_building_risk_or_raw_source_values_saved = false
+unscaled_pixel_value_converted_to_depth = false
+source_rights_full_publication_review_complete = false
+insurance_cat_model_input_admitted = false
+interpretation = "Original BKG WMS GetCapabilities and one GetFeatureInfo succeeded; no explicit unit candidate found in inspected native JSON. Neither WMS GetFeatureInfo values nor legends can establish the physical scale of the separate BKG 2024 signed Int16 direct-download GeoTIFF. No water depth, building damage, hazard frequency or insurer loss can be inferred."

@@ -63,6 +63,31 @@ class OverlayTest(unittest.TestCase):
         a,b=example();b['grid_cells'][1]['geometry']=rect(500,0,1500,1000)
         with self.assertRaisesRegex(OverlayError,'overlapping grid'):
             overlay(a,b)
+    def test_overlapping_distinct_nuts2_polygons_are_blocked(self):
+        a,b=example()
+        a['features'][1]['geometry']=rect(1500,0,3000,1000)
+        with self.assertRaisesRegex(OverlayError,'overlapping NUTS2 regions'):
+            overlay(a,b)
+
+    def test_touching_nuts2_boundaries_have_zero_overlap_and_are_allowed(self):
+        a,b=example()
+        p,q=overlay(a,b)['region_metrics']
+        self.assertEqual((p['nuts2'],q['nuts2']),('DE21','DE22'))
+        self.assertEqual(p['covered_area_km2'],2.0)
+        self.assertEqual(q['covered_area_km2'],0.0)
+
+    def test_nested_nuts2_region_is_rejected_as_double_allocation(self):
+        a,b=example()
+        a['features'][1]['geometry']=rect(500,100,750,900)
+        with self.assertRaisesRegex(OverlayError,'overlapping NUTS2 regions'):
+            overlay(a,b)
+
+    def test_excessive_region_roster_blocks_before_geometric_allocation(self):
+        a,b=example()
+        a['features']=[a['features'][0]]*10001
+        with self.assertRaisesRegex(OverlayError,'unbounded NUTS2 region count'):
+            overlay(a,b)
+
     def test_duplicate_region_blocked(self):
         a,b=example();a['features'].append(copy.deepcopy(a['features'][0]))
         with self.assertRaises(OverlayError):overlay(a,b)

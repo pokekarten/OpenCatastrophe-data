@@ -43,7 +43,7 @@ def _geometry(value: object, kind: str):
         geom = shape(value)
     except (ValueError, TypeError, AttributeError) as e:
         raise OverlayError(f'{kind} cannot be parsed') from e
-    if not geom.is_valid or geom.is_empty or geom.area <= 0:
+    if not geom.is_valid or geom.is_empty or not math.isfinite(geom.area) or geom.area <= 0:
         raise OverlayError(f'{kind} is invalid, empty, or zero area; no automatic repair')
     if not all(math.isfinite(v) for v in geom.bounds):
         raise OverlayError(f'{kind} has nonfinite coordinates')
@@ -92,6 +92,8 @@ def overlay(regions: dict, footprint: dict) -> dict:
         raise OverlayError('only extratropical windstorm footprints supported')
     if not isinstance(regions['features'], list) or not regions['features']:
         raise OverlayError('empty regions')
+    if len(regions['features']) > 10000:
+        raise OverlayError('unbounded NUTS2 region count')
     if not isinstance(footprint['grid_cells'], list) or not footprint['grid_cells']:
         raise OverlayError('empty footprint cells')
     if len(footprint['grid_cells']) > 1000000:
@@ -109,6 +111,30 @@ def overlay(regions: dict, footprint: dict) -> dict:
             raise OverlayError('duplicate NUTS2 ID')
         region_ids.add(code)
         region_shapes.append((code, _geometry(feature['geometry'], 'region')))
+
+    # These are distinct NUTS2 peers in ONE boundary vintage, not competing
+    # risk zones. Their positive-area interiors must be disjoint. Otherwise
+    # the same storm and buildings could be credited to multiple regions.
+    # STRtree avoids quadratic checking for non-neighbouring polygons; adjacent
+    # polygons with a shared zero-area border are intentionally permitted.
+    region_geometries = [g for _, g in region_shapes]
+    region_tree = STRtree(region_geometries)
+    for i, (code, geometry) in enumerate(region_shapes):
+        for j in region_tree.query(geometry):
+            j = int(j)
+            if j <= i:
+                continue
+            overlap_area = geometry.intersection(region_geometries[j]).area
+            if not math.isfinite(overlap_area):
+                raise OverlayError('nonfinite NUTS2 overlap area')
+            # Permit insignificant roundoff in projected government borders;
+            # no positive-area modelling double count above this threshold.
+            tolerance = max(0.000001, min(geometry.area, region_geometries[j].area) * 1e-12)
+            if overlap_area > tolerance:
+                raise OverlayError(
+                    f'overlapping NUTS2 regions {code} and {region_shapes[j][0]}; '
+                    'no duplicate geographical weather allocation'
+                )
 
     grid_shapes = []
     gusts = []

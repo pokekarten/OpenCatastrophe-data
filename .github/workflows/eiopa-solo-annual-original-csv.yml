@@ -1,0 +1,62 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: EIOPA original solo annual S.05.01 CSV market research
+
+on:
+  pull_request:
+    paths:
+      - "scripts/eiopa_solo_annual_pce_original_csv_pilot.py"
+      - "tests/test_eiopa_solo_annual_pce_original_csv_pilot.py"
+      - ".github/workflows/eiopa-solo-annual-original-csv.yml"
+      - "docs/EIOPA_SOLO_ANNUAL_MARKET_PILOT_V0.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eiopa-country-market-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-source-data:
+    name: Verify official solo annual 2016-2025 CSV and keep research rows isolated
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Synthetic-only EIOPA parser and CAT-only SQLite checks
+        run: python -m unittest tests.test_eiopa_solo_annual_pce_original_csv_pilot -v
+      - name: Materialize dedicated CAT-only source metadata database
+        run: python scripts/export_cat_source_registry_sqlite.py --out "$RUNNER_TEMP/cat-market-research.sqlite"
+      - name: Verify original official EIOPA CSV and stage without provider-row publication
+        run: |
+          python scripts/eiopa_solo_annual_pce_original_csv_pilot.py --fetch             --out "$RUNNER_TEMP/cat-market-research.sqlite"             --result "$RUNNER_TEMP/eiopa-market-source-metadata.json"
+      - name: Check original row-count integrity and nonadmission
+        run: |
+          python - <<'PY'
+          import json,os,sqlite3
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])
+          receipt=json.loads((root/"eiopa-market-source-metadata.json").read_text(encoding="utf-8"))
+          assert receipt["source_row_count"] > 1000
+          assert receipt["country_count"] >= 20
+          assert "Y2025" in receipt["reference_periods"]
+          assert receipt["staged_observations"] == receipt["source_row_count"]
+          assert not receipt["value_unit_verified"]
+          assert not receipt["model_source_admitted"]
+          assert not receipt["data_rights_for_persistent_import_reviewed"]
+          with sqlite3.connect(root/"cat-market-research.sqlite") as db:
+              assert db.execute("select count(*) from cat_eiopa_annual_market_stage").fetchone()[0] == receipt["source_row_count"]
+              assert db.execute("select count(*) from cat_eiopa_annual_market_stage where unit_verified!=0 or model_admitted!=0 or rights_reviewed!=0").fetchone()[0] == 0
+          print("PASS: EIOPA original source CSV, exact schema, country/year coverage and nonadmitted isolated research rows")
+          PY

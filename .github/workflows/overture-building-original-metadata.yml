@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Overture original building metadata bounded source check
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research_runners/overture_building_original_metadata_probe_v0.py
+      - tests/test_overture_building_original_metadata_probe_v0.py
+      - .github/workflows/overture-building-original-metadata.yml
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/overture-building-original-metadata.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: overture-buildings-original-metadata-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source-metadata:
+    name: Frozen original release / two-object metadata and synthetic tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout reviewed source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Run offline strict negative and synthetic format tests
+        run: python -m unittest tests.test_overture_building_original_metadata_probe_v0 -v
+      - name: One bounded original AWS S3 metadata check, no source rows
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+        run: python -m research_runners.overture_building_original_metadata_probe_v0 --live

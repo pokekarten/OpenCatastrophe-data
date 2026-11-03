@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Berlin SRGK fixed FES geom intersects pilot model-area proof
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - research_runners/berlin_srgk_fes_model_area_pilot_v0.py
+      - tests/test_berlin_srgk_fes_model_area_pilot_v0.py
+      - .github/workflows/berlin-srgk-fes-model-area.yml
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/berlin-srgk-fes-model-area.yml
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-fes-geometric-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout reviewed scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Pinned geometry runtime
+        run: |
+          python -m pip install --disable-pip-version-check --no-input -r requirements-eu-flood-spatial.txt
+          python -m pip check
+      - name: Synthetic exact FES2 geometry/uncertainty regression
+        run: python -m unittest tests.test_berlin_srgk_fes_model_area_pilot_v0 -v
+      - name: Official source two fixed GETs after reviewed main merge
+        if: github.event_name != 'pull_request'
+        run: python -m research_runners.berlin_srgk_fes_model_area_pilot_v0 --live

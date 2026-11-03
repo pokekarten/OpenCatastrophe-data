@@ -1,0 +1,91 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery of German regulator carrier-count and German insurance-market district-level penetration/loss priors for probabilistically calibrated synthetic residential property portfolios; all data remain separately rights-scoped and unadmitted.",
+  "review_date": "2026-11-03",
+  "entries": [
+    {
+      "candidate_id": "de.bafin.insurer-complaint-statistics.2025",
+      "name": "BaFin 2025 insurer complaint statistics with reported in-force risk-count denominators",
+      "provider": "Bundesanstalt für Finanzdienstleistungsaufsicht (BaFin)",
+      "categories": [
+        "insurance",
+        "insurer_entity",
+        "policy_count_proxy",
+        "market_statistics",
+        "disclosure_bias"
+      ],
+      "spatial_scope": "Germany reporting insurers and lines in regulator complaint reporting population",
+      "temporal_scope": "2025 complaint publication; in-force counts may refer to 2024 gross premiums and company coverage thresholds",
+      "resolution_or_granularity": "XLSX published complaint counts and denominators by insurer and class where eligible; missing when threshold or data status not met",
+      "potential_roles": [
+        "carrier_policy_stock_prior_research",
+        "nonlife_lob_entity_crosscheck",
+        "company_coverage_completeness_challenge"
+      ],
+      "authoritative_url": "https://bafin.de/DE/die-bafin/publikationen-daten/statistiken/beschwerdestatistik/2025/2025.html",
+      "access_class_hint": "public_regulator_xlsx_terms_and_denominator_year_audit_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Selection-biased: insurers with no complaints absent; in-force risk counts omitted below 10 million EUR threshold on 2024 earned gross class premiums and for EEA undertakings not required to submit; numbers can represent insured persons in group insurance and are not unique policies or buildings. Not fit as a nationwide carrier census or TIV without additional evidence."
+    },
+    {
+      "candidate_id": "de.gdv.natcat-district-loss-frequency.2026",
+      "name": "GDV 2026 Naturgefahrenreport county/district residential catastrophe loss frequency and severity",
+      "provider": "Gesamtverband der Deutschen Versicherungswirtschaft (GDV)",
+      "categories": [
+        "insurance",
+        "market_losses",
+        "residential_property",
+        "storm_hail",
+        "flood",
+        "county",
+        "claims"
+      ],
+      "spatial_scope": "Approximately 400 German districts/cities; insurer industry aggregate only",
+      "temporal_scope": "Report 2026, historic household/building catastrophe experience including 2002-2024 period and selected 2025 updates",
+      "resolution_or_granularity": "District-level aggregate insured building event loss frequency, average claim and largest cumul event, split wind/hail and flood/heavy rain/earth movement/snow as available",
+      "potential_roles": [
+        "district_property_natcat_loss_prior",
+        "industry_peril_region_challenge",
+        "historical_event_market_frequency_benchmark"
+      ],
+      "authoritative_url": "https://www.gdv.de/gdv/statistik/datenservice-zum-naturgefahrenreport/sachversicherung-naturgefahren/naturgefahren-koennen-jeden-treffen--157404",
+      "access_class_hint": "public_web_report_graphs_tables_original_csv_availability_and_reuse_rights_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Historical normalized district losses are industry-wide and represent insured coverage, not building-level hazard intensities or a specific insurer's actual losses. Preserve insured contract denominator, event as-of, inflation normalization, vintage and peril class; do not distribute reported industry claims into Allianz insured addresses."
+    },
+    {
+      "candidate_id": "de.gdv.natcat-elemental-penetration-district.2026",
+      "name": "GDV 2026 county-level residential elemental-peril insurance take-up",
+      "provider": "Gesamtverband der Deutschen Versicherungswirtschaft (GDV)",
+      "categories": [
+        "insurance",
+        "insured_penetration",
+        "residential_property",
+        "flood",
+        "district",
+        "market_statistics"
+      ],
+      "spatial_scope": "Germany approximately 400 counties and independent cities; aggregate insurance-market coverage",
+      "temporal_scope": "2020-2025 county take-up series, updated in 2026",
+      "resolution_or_granularity": "Percent of residential buildings with full elemental-peril cover by district; excludes certain stand-alone heavy-rain contracts",
+      "potential_roles": [
+        "flood_covered_asset_probability_prior",
+        "regional_insurance_penetration_calibration",
+        "residential_claim_exposure_denominator_challenge"
+      ],
+      "authoritative_url": "https://www.gdv.de/gdv/statistik/datenservice-zum-naturgefahrenreport/sachversicherung-elementar/versicherungsdichte-bei-elementarschadenversicherung-regional-sehr-unterschiedlich-183592",
+      "access_class_hint": "public_interactive_map_report_raw_grid_export_and_commercial_rights_review_pending",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "A landkreis-level market share of insured buildings is NOT the company-specific percentage or a unique set of coverage addresses; some historical policies included; coverage here means full elemental-peril insurance, not all general homeowners protection. Machine-download rights and spatial/vintage consistency must be reviewed. Keep county IDs, numerator/denominator definitions and publisher revision."
+    }
+  ]
+}

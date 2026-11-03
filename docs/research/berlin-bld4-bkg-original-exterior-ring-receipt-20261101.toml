@@ -1,0 +1,71 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+receipt_schema = "berlin-bld4-bkg-verified-original-exterior-raw-support-v0"
+research_only = true
+observation_kind = "original-source aggregate polygon-cross-raster area"
+original_github_actions_run_id = 41350285830
+original_github_actions_run_url = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41350285830"
+original_main_commit = "63a13bd477067527dc9e67e6e6d4ba817189178f"
+original_provider = "Bundesamt fuer Kartographie und Geodaesie (BKG)"
+original_bkg_source_url = "https://daten.gdz.bkg.bund.de/produkte/sonstige/starkregen/aktuell/be/maxdepth_kostra/s32790/starkregen_maxdepth_kostra_32790_5820_10_be.tif"
+original_bkg_full_file_sha256_locally_verified = "7e11fcf4cac2ce07fdefa3dc0fa4414b2cc248c516a373a12c14c33b30726a6f"
+original_bkg_tiff_bytes = 47280200
+original_alkis_wfs_response_sha256 = "c4342109c0c13b31996d7cb9a5a16db56af3e536dc4910938a9fc72bab049bba"
+original_source_wfs_response_mutable = true
+original_alkis_clipped_building_count = 5
+fixed_pilot_crs = "EPSG:25833"
+raster_crs = "EPSG:25832"
+original_raster_resolution_metres = 1
+original_raster_window_cells = 47089
+original_building_area_total_m2 = 683.311267
+original_building_positive_raw_area_m2 = 2.752013
+original_building_valid_zero_area_m2 = 14.434404
+original_building_nodata_area_m2 = 666.124849
+original_building_outside_window_area_m2 = 0.0
+original_buildings_any_positive_code = 3
+original_buildings_all_area_valid = 0
+original_buildings_without_valid_codes = 2
+all_exterior_bands_unique_and_disjoint = true
+distance_is_projected_planar_not_building_entry_distance = true
+original_numeric_raw_code_physical_depth_unit_verified = false
+original_raster_zero_indicates_observed_dryness = false
+original_raster_nodata_indicates_observed_dryness = false
+actual_building_entrance_and_basement_elevation_verified = false
+model_product_building_vintage_consistent = false
+annual_loss_probability_or_recurrence_estimated = false
+individual_building_ids_or_geometry_exported = false
+original_source_data_persisted = false
+insured_building_exposure_or_cat_loss_admitted = false
+bkg_data_reuse_licence_label = "DL-DE/BY-2.0, BKG and original provider source attribution review"
+interpretation = "Area fractions represent overlapping geometry and valid raw raster support only. Positive numbers are uncalibrated Int16 source codes, not verified water depth, inundation, or insured risk. NoData is missing support, never dry."
+
+[[exterior_bands]]
+distance_min_m = 0
+distance_max_m = 1
+sample_area_m2 = 296.465049
+positive_raw_area_m2 = 28.156356
+valid_zero_area_m2 = 94.312623
+source_nodata_area_m2 = 173.996069
+outside_window_area_m2 = 0.0
+valid_numeric_support_fraction = 0.413098
+
+[[exterior_bands]]
+distance_min_m = 1
+distance_max_m = 3
+sample_area_m2 = 613.724262
+positive_raw_area_m2 = 170.126378
+valid_zero_area_m2 = 141.690844
+source_nodata_area_m2 = 301.907040
+outside_window_area_m2 = 0.0
+valid_numeric_support_fraction = 0.508074
+
+[[exterior_bands]]
+distance_min_m = 3
+distance_max_m = 5
+sample_area_m2 = 634.364187
+positive_raw_area_m2 = 236.862675
+valid_zero_area_m2 = 121.530717
+source_nodata_area_m2 = 275.970795
+outside_window_area_m2 = 0.0
+valid_numeric_support_fraction = 0.564965
