@@ -84,6 +84,15 @@ def _neon(rows, label):
         if kind is None:
             continue
         key, source_id = _expected_identity(path, kind)
+        # A historical, strictly documented-only filename can carry the
+        # canonical access_id without the '.documented' file-role suffix.
+        # Check both the basename and source_key; never grant an alias to a
+        # new provider identity or silently rewrite the record.
+        if kind == "access_contract" and path.endswith(".documented.json"):
+            alternate = source_id.removesuffix(".documented")
+            if (row.get("source_id") == alternate
+                and row.get("source_key") == "access:" + alternate):
+                key, source_id = "access:" + alternate, alternate
         if (path in result or row.get("classification") != kind
             or row.get("source_key") != key or row.get("source_id") != source_id
             or not _sha(row.get("git_blob_sha"))
