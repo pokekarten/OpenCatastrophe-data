@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-02`  
 **Purpose:** Non-admission discovery and deduplicated research of additional compound-event, tropical-cyclone, storm-surge and flood-screening products from Exa and original provider evidence, checked against current main and open 2026-11-02 CAT source PRs; all rights and scientific admission remain blocked pending explicit review.
 
-**Entries:** 7
+**Entries:** 6
 
 ## European Multi-Hazard Dataset in Sparse Array Format v1
 
@@ -77,21 +77,6 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Catalogue is a discovery aid, NOT 262 unique admitted or rights-cleared datasets. Recorded entries expose provider, original link, spatial/temporal resolution, protocols, access and license hints. CC BY 4.0 applies to the catalogue compilation only; individual data products have their own rights. Deduplicate with existing registry and freeze original provider/product identity before creating new candidates. Never copy source data or assume commercial licensing from catalogue entries. LIVE ACCESS CORRECTION 2026-11-03: Zenodo concept record 23736379 resolved via its API to latest record 23736380, DOI 10.5281/zenodo.23736380, with access_right=restricted and files=[]. The CC BY 4.0 record metadata license is not downloadable workbook permission; mark as restricted access, no live source file.
-
-## GTSM-ERA5-E extreme sea level percentile and return-level statistics 1950-2024
-
-**Candidate ID:** `nl.deltares.gtsm-era5-e.extreme-sea-level-stats.v2`  
-**Provider:** Deltares / Vrije Universiteit Amsterdam  
-**Categories:** `coastal_flood`, `storm_surge`, `extreme_sea_level`, `hazard`, `return_period`  
-**Spatial scope:** Global coastal model stations/grid described in release  
-**Temporal scope:** 1950-2024 model hindcast; Zenodo release v2 2025-02-25  
-**Resolution / granularity:** NetCDF ~9.7 MB; percentiles and 1/2/5/10/25/50/75/100-year water-level return values with GPD parameters  
-**Potential roles:** `coastal_hazard_return_level_benchmark`, `coastal_surge_model_challenge`, `regional_coastal_sensitivity`  
-**Access hint:** `public_zenodo_stats_netCDF_source_and_climate_data_store_rights_review`  
-**Authoritative source:** <https://zenodo.org/records/14671593>  
-**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
-
-**Note:** Derived from ECMWF CDS GTSM-ERA5-E water-level time series DOI 10.24381/cds.a6d42d60, code https://github.com/VU-IVM/gtsm3-era5-nrt. Do not confuse statistical water-level return values with actual 2D flood depths or coastal defences. Review vertical datum, tide/surge treatment, ensemble/forcing and provider licensing before model use. Check overlap with GESLA gauge validation and other GTSM/Deltares products. Live API lists one open CC BY 4.0 NetCDF file ds_GTSM-ERA5-E_1950-2024_stats.nc, size 9,652,424 bytes, publisher MD5 0f2b7071c6ec3585768be6cf427e6eab. Source bytes not acquired.
 
 ## EO4MULTIHAZARDS Events Database PostgREST query service
 
