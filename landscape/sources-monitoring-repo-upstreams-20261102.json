@@ -1,32 +1,8 @@
 {
   "schema_version": "1.0.0",
-  "purpose": "Non-admission discovery of authoritative upstream event, warning, humanitarian-response and meteorological sources used by World Monitor-like repositories; software aggregators are evidence pointers rather than source admission.",
+  "purpose": "Non-admission monitoring-repository upstream source discovery with 22 unique local entries after GLIDE was consolidated into the canonical peer-cat-repositories source shard; preserves twelve-repository research provenance, no data admission or third-party reuse rights.",
   "review_date": "2026-11-02",
   "entries": [
-    {
-      "candidate_id": "adrc.glide.disaster-identifiers",
-      "name": "GLIDE global disaster identifier catalogue",
-      "provider": "Asian Disaster Reduction Centre / GLIDE partners",
-      "categories": [
-        "event_catalogue",
-        "multi_hazard",
-        "event_identity"
-      ],
-      "spatial_scope": "global",
-      "temporal_scope": "historical and ongoing records; registration and completeness vary",
-      "resolution_or_granularity": "Global disaster numbers, country, disaster type, onset dates and linked reports",
-      "potential_roles": [
-        "cross_provider_event_identity",
-        "historical_event_crosswalk"
-      ],
-      "authoritative_url": "https://glidenumber.net/glide/public/disclaimer.jsp",
-      "access_class_hint": "public_search_and_report_download_rights_review_required",
-      "note": "Found through MapAction disaster-impact. GLIDE explicitly discourages secondary statistical analysis of its database; use identifiers to reconcile events, not as an independent loss or frequency estimate. Resolve variant dates, multi-country events, missing and duplicate IDs.",
-      "candidate_status": "evidence_checked",
-      "rights_review_status": "not_reviewed",
-      "scientific_review_status": "not_reviewed",
-      "admission_status": "not_admitted"
-    },
     {
       "candidate_id": "idmc.idu.disaster-displacement",
       "name": "IDMC Internal Displacement Updates (IDU)",

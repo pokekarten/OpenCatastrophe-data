@@ -14,24 +14,9 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Schema version:** `1.0.0`  
 **Review date:** `2026-11-02`  
-**Purpose:** Non-admission discovery of authoritative upstream event, warning, humanitarian-response and meteorological sources used by World Monitor-like repositories; software aggregators are evidence pointers rather than source admission.
+**Purpose:** Non-admission monitoring-repository upstream source discovery with 22 unique local entries after GLIDE was consolidated into the canonical peer-cat-repositories source shard; preserves twelve-repository research provenance, no data admission or third-party reuse rights.
 
-**Entries:** 23
-
-## GLIDE global disaster identifier catalogue
-
-**Candidate ID:** `adrc.glide.disaster-identifiers`  
-**Provider:** Asian Disaster Reduction Centre / GLIDE partners  
-**Categories:** `event_catalogue`, `multi_hazard`, `event_identity`  
-**Spatial scope:** global  
-**Temporal scope:** historical and ongoing records; registration and completeness vary  
-**Resolution / granularity:** Global disaster numbers, country, disaster type, onset dates and linked reports  
-**Potential roles:** `cross_provider_event_identity`, `historical_event_crosswalk`  
-**Access hint:** `public_search_and_report_download_rights_review_required`  
-**Authoritative source:** <https://glidenumber.net/glide/public/disclaimer.jsp>  
-**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
-
-**Note:** Found through MapAction disaster-impact. GLIDE explicitly discourages secondary statistical analysis of its database; use identifiers to reconcile events, not as an independent loss or frequency estimate. Resolve variant dates, multi-country events, missing and duplicate IDs.
+**Entries:** 22
 
 ## IDMC Internal Displacement Updates (IDU)
 
