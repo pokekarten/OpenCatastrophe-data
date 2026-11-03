@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission original-source discovery for historical event-based tropical cyclone wind footprint challenges and separately aggregated CLIMADA-on-HDX hazard exports. The sources have different physical/event semantics and are not approved model inputs, downloads, insurer exposures or loss records.",
+  "review_date": "2026-11-04",
+  "entries": [
+    {
+      "candidate_id": "global.wrn.historical-tc-wind-footprints.figshare-v1",
+      "name": "Willis Research Network global historical tropical cyclone wind footprints (Figshare collection v1)",
+      "provider": "Willis Research Network / James Done and coauthors via Figshare",
+      "categories": [
+        "tropical_cyclone",
+        "windstorm",
+        "historical_events",
+        "modelled_footprints",
+        "validation"
+      ],
+      "spatial_scope": "Global landfalling and selected near-miss tropical cyclones with regional historical-coverage differences",
+      "temporal_scope": "Figshare collection version 1 published 2022-02-17; historical storms through 2019; basin start dates depend on available input track and radius-of-maximum-wind observations",
+      "resolution_or_granularity": "1,046 modelled historical cyclone footprints; storm-lifetime maximum one-minute-average 10-m sustained wind in m/s on lat/lon grids at approximately 3 km globally and 4 km for Caribbean and US regions; source describes 17 regional gzipped TAR archives nested inside a parent TAR",
+      "potential_roles": [
+        "historical_cyclone_wind_footprint_model_challenge",
+        "event_identity_and_ibtracs_lineage_crosswalk",
+        "storm_landfall_wind_footprint_sensitivity_validation"
+      ],
+      "authoritative_url": "https://figshare.com/collections/Willis_Research_Network_Global_Tropical_Cyclone_Wind_Footprint_Dataset/5843453",
+      "access_class_hint": "public_figshare_collection_v1_metadata_original_item_and_file_licence_hash_inventory_unverified",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Original Figshare collection DOI 10.6084/m9.figshare.c.5843453.v1 describes modelled Willoughby/Kepert-Wang wind fields informed by historical Extended Best Track/JTWC and IBTrACS lineage, including a 1.225 urban wind-speed adjustment. A footprint is a lifetime peak sustained wind envelope, NOT a gust, time-series event track, measured wind observation, insured loss, complete set of cyclones or stochastic annual-frequency catalogue. Missing storms can result from missing rmax observations. Collection-level metadata does not establish each original item/asset licence, stable checksum, event naming convention, file count, or safe commercial reuse. No source file, metadata API response, model-input artefact or byte hash was acquired."
+    },
+    {
+      "candidate_id": "eth.climada.hdx.tc-hazard-country-csv.2025",
+      "name": "ETH CLIMADA tropical cyclone country and admin-level hazard CSV exports on HDX",
+      "provider": "ETH Zurich Weather and Climate Risks / UN OCHA HDX exporter",
+      "categories": [
+        "tropical_cyclone",
+        "windstorm",
+        "hazard",
+        "historical_events",
+        "country_grids",
+        "aggregation",
+        "validation"
+      ],
+      "spatial_scope": "Selected humanitarian-response countries with country 150-arcsecond raster-like point grids and administrative summaries; not uniformly global building-level coverage",
+      "temporal_scope": "HDX tropical-cyclone product catalogued with historical coverage 1980-01-02 through 2020-12-25; HDX page last modified 2025-09-06; actual temporal meaning is resource and indicator specific",
+      "resolution_or_granularity": "35 reported HDX resources, typically about 4 km at the equator; country-level gridded CSV, admin1 summary CSV, and where available admin-level event-date time-series summary, with second-row HXL tags. Values and aggregation semantics (sum/max) differ by indicator and resource",
+      "potential_roles": [
+        "cross_country_tc_wind_hazard_baseline_comparison",
+        "event_date_and_administrative_impact_reconciliation",
+        "climada_model_output_and_hdx_export_lineage_audit"
+      ],
+      "authoritative_url": "https://data.humdata.org/dataset/climada-tropical-cyclone-dataset",
+      "access_class_hint": "public_hdx_csv_cc_by_dataset_notice_upstream_and_per_resource_rights_versions_and_exporter_private_boundary_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official HDX product declares CC BY 4.0, but exact resource and upstream dataset rights, file vintage and attribution must be checked. OCHA exporter source at https://github.com/OCHA-DAP/hdx-scraper-climada documents CSV fields and HXL tag row, and its build uses a private UNMAP boundary dataset; do not copy or assume rights in those upstream boundaries. The CSV export may contain grids, admin summaries or event_date values but no validated globally unique event IDs, common stochastic event catalogue, annual frequency or insured-loss mapping. Data last dated 2020 cannot represent current hazard monitoring. No original HDX CSV bytes, file checksums or live retrieval response were acquired."
+    }
+  ]
+}
