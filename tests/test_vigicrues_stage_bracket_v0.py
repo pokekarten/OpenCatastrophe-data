@@ -31,6 +31,21 @@ class StageBracketTests(unittest.TestCase):
         self.assertEqual(r["upper_pdf_metadata_stage_mm"], 7190)
         self.assertEqual(r["historical_report_only_stage_mm"], [6310])
 
+    def test_guessed_6310_official_pdf_must_fail_closed(self):
+        # Plausible filename is not provider metadata; the tested public
+        # candidate URL was not confirmed. The source review allowlist
+        # contains only verified 5660 and 7190 PDF metadata identities.
+        with self.assertRaises(StageReviewError):
+            review_stage(6098, STATION, [
+                candidate(5660), candidate(6310), candidate(7190)])
+
+    def test_reported_pdf_metadata_is_not_original_byte_attestation(self):
+        result = review_stage(6098, STATION,
+                              [candidate(5660), candidate(7190)])
+        self.assertEqual(result["reviewed_pdf_metadata_stage_mm"],
+                         [5660, 7190])
+        self.assertFalse(result["input_source_original_bytes_authenticated"])
+
     def test_report_only_upper_does_not_make_bracket(self):
         r = review_stage(6098, STATION, [
             candidate(5660), candidate(6310, "historical_report_only")])
