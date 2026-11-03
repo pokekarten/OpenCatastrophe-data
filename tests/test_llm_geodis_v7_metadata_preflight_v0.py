@@ -17,6 +17,7 @@ from pathlib import Path
 from scripts.zenodo_cat_metadata_preflight_v0 import (
     LLM_GEODIS_SOURCE,
     LLM_GEODIS_V7_FILES,
+    LLM_GEODIS_V7_PUBLISHED_MD5,
     MetadataPreflightError,
     RECORDS,
     audit_record,
@@ -41,7 +42,7 @@ def synthetic_metadata() -> dict:
             {
                 "key": filename,
                 "size": 1000 + index,
-                "checksum": "md5:" + format(index + 1, "032x"),
+                "checksum": "md5:" + LLM_GEODIS_V7_PUBLISHED_MD5[filename],
                 "links": {"self": f"https://zenodo.org/api/records/{RID}/files/{filename}/content"},
             }
             for index, filename in enumerate(sorted(LLM_GEODIS_V7_FILES))
@@ -158,6 +159,14 @@ class LLMGeoDisMetadataPreflightTests(unittest.TestCase):
                     )
                     self.assertEqual(result.returncode, 2)
                     self.assertIn("BLOCKED", result.stderr)
+
+    def test_published_original_v7_checksums_are_pinned(self) -> None:
+        self.assertEqual(set(LLM_GEODIS_V7_PUBLISHED_MD5), LLM_GEODIS_V7_FILES)
+        data = synthetic_metadata()
+        target = next(entry for entry in data["files"] if entry["key"] == "gdis_disnos.csv")
+        target["checksum"] = "md5:" + "1" * 32
+        with self.assertRaisesRegex(MetadataPreflightError, "published source checksum mismatch"):
+            audit_record(data, LLM_GEODIS_SOURCE, "d" * 64)
 
     def test_no_network_cli_and_deterministic_receipt(self) -> None:
         data = synthetic_metadata()
