@@ -12,8 +12,8 @@
 --
 -- Compare only exact LEI + endpoint, declared kind, parent, exception,
 -- source-report status, and RELATIONSHIP_PERIOD start with the 11 existing
--- research observations staged from two FFBK source assets on 2026-10-31.
--- The old FFBK assets remain research_only/source_scoped/raw_import_allowed
+-- research observations staged from two source-scoped internal research assets on 2026-10-31.
+-- The earlier source-scoped research assets remain research_only/source_scoped/raw_import_allowed
 -- = false. Neither original body hashes nor latest Golden Copy bytes are
 -- stored in the older Neon relationship observations.
 --
