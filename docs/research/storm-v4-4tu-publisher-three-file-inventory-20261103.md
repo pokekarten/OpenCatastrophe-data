@@ -144,3 +144,7 @@ Related tracking issue: [#1168](https://github.com/pokekarten/OpenCatastrophe-da
 **Disposition:** publisher landing-page file metadata is **documented**,
 original 4TU API UUID and source-file bytes **unverified**, raw CAT
 model-input approval and any insurance DB imports **not admitted**.
+
+## Source identity and CI integration boundary (2026-11-03)
+
+This landing-page inventory is **one metadata view of the same STORM v4 publication** that the distinct API-response validator in merged PR #1172 targets. It is not a second independent tropical-cyclone track generator or a second observed-event dataset. A true original-file proof still requires exact 4TU v4 identity and separately authorized original-file bytes plus SHA-256. The failed earlier CI used a now-resolved global Shapely-version conflict (merged fixes #1183 and #1185); it must be replaced by a new **full exact-head** CI result before merger. Do not equate any synthetic offline check to verified API or 543 MB archive acquisition.
