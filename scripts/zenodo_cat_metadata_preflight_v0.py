@@ -65,6 +65,24 @@ LLM_GEODIS_V7_PUBLISHED_MD5 = {
 }
 # Published digests do NOT independently verify the original data bytes.
 
+LLM_GEODIS_V7_PUBLISHED_SIZES = {
+    "241204_emdat_archive.xlsx": 6694069,
+    "Instructions_LLM-GeoDis.pdf": 275195,
+    "LLMGeoDis_part1.zip": 1900701070,
+    "LLMGeoDis_part2.zip": 1866432452,
+    "LLMGeoDis_part3.zip": 1815922123,
+    "LLMGeoDis_part4.zip": 1544278469,
+    "LLMGeoDis_part5.zip": 1586312015,
+    "emdat_geocoding-zenodo.zip": 29158439,
+    "gdis_disnos.csv": 135278,
+    "geoemdat_gaul.gpkg": 6114693120,
+    "input_emdat.csv": 2794720,
+    "pend-gdis-1960-2018-disasterlocations.csv": 4916733,
+    "reliability_db.csv": 3496073,
+    "synthetic_EMDAT_locations.csv": 104253,
+}
+# Published byte lengths from original Zenodo v7 API metadata; data bytes not fetched.
+
 class MetadataPreflightError(ValueError):
     """Fail-closed source metadata or identity error."""
 
@@ -232,17 +250,46 @@ def audit_record(payload: dict[str, Any], source_id: str, raw_sha256: str) -> di
             "original_checksum_independently_verified": False,
         })
 
+    version_evidence = None
     if source_id == LLM_GEODIS_SOURCE:
-        if metadata.get("version") != "v7":
+        declared_version = metadata.get("version")
+        if declared_version is not None and declared_version != "v7":
             raise MetadataPreflightError("LLM-GeoDis record version is not pinned v7")
+
+        # The original Zenodo public-record API uses metadata.relations.version
+        # with a zero-based index (v7 -> index 6) rather than metadata.version.
+        relations = metadata.get("relations")
+        if relations is not None:
+            relation = require_dict(relations, "metadata.relations").get("version")
+            if not isinstance(relation, list) or len(relation) != 1:
+                raise MetadataPreflightError("missing unambiguous Zenodo v7 relation")
+            entry = require_dict(relation[0], "metadata.relations.version[0]")
+            parent = require_dict(entry.get("parent"), "Zenodo concept parent")
+            if (type(entry.get("index")) is not int or entry["index"] != 6
+                    or parent.get("pid_type") != "recid"
+                    or parent.get("pid_value") != "17544931"):
+                raise MetadataPreflightError("wrong Zenodo version index or concept parent")
+            version_evidence = "zenodo_relation_index_6"
+            if record.get("conceptrecid") not in (None, "17544931", 17544931):
+                raise MetadataPreflightError("Zenodo concept record identity mismatch")
+            if record.get("conceptdoi") not in (None, "10.5281/zenodo.17544931"):
+                raise MetadataPreflightError("Zenodo concept DOI identity mismatch")
+        elif declared_version == "v7":
+            version_evidence = "declared_metadata.version"
+        else:
+            raise MetadataPreflightError("LLM-GeoDis v7 release/version evidence missing")
+
         if license_id.casefold() != "cc-by-4.0":
             raise MetadataPreflightError("LLM-GeoDis declared record license differs from pinned CC BY 4.0")
         if seen != LLM_GEODIS_V7_FILES:
             raise MetadataPreflightError("LLM-GeoDis v7 original file inventory mismatch")
         for item in inventory:
-            published = "md5:" + LLM_GEODIS_V7_PUBLISHED_MD5[item["key"]]
+            key = item["key"]
+            published = "md5:" + LLM_GEODIS_V7_PUBLISHED_MD5[key]
             if item["publisher_checksum"] != published:
                 raise MetadataPreflightError("LLM-GeoDis v7 published source checksum mismatch")
+            if item["size_bytes"] != LLM_GEODIS_V7_PUBLISHED_SIZES[key]:
+                raise MetadataPreflightError("LLM-GeoDis v7 published source byte length mismatch")
 
     return {
         "schema_version": "zenodo-cat-metadata-preflight-v0",
@@ -251,7 +298,8 @@ def audit_record(payload: dict[str, Any], source_id: str, raw_sha256: str) -> di
         "original_zenodo_record_id": record_id,
         "original_doi": doi,
         "record_title": title,
-        "record_version": metadata.get("version") if isinstance(metadata.get("version"), str) else None,
+        "record_version": "v7" if source_id == LLM_GEODIS_SOURCE else (metadata.get("version") if isinstance(metadata.get("version"), str) else None),
+        "version_evidence": version_evidence,
         "declared_record_license": license_id,
         "record_access_status": access,
         "metadata_body_sha256": raw_sha256,
