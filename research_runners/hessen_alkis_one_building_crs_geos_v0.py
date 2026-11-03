@@ -30,7 +30,10 @@ MAX_BYTES = wfs.MAX_BYTES
 TIMEOUT_SECONDS = wfs.TIMEOUT_SECONDS
 MAX_VERTICES = 128
 REQUIRED_PYPROJ = "3.7.2"
-REQUIRED_SHAPELY = "2.1.2"
+# Original Hessen metadata review used 2.1.2. The current shared validation
+# profile uses exactly 2.2.0; both are challenged by the strict source/CRS
+# synthetic regression suite. Any other release remains fail-closed.
+REVIEWED_SHAPELY_VERSIONS = frozenset(("2.1.2", "2.2.0"))
 # Exact provider WorldCover 2021 v200 N48E009 geographic raster step.
 PIXEL_STEP_DEGREES = 1/12000
 GRID_WEST = 9.0
@@ -53,7 +56,7 @@ def _reviewed_transformer():
         from shapely.ops import transform as shapely_transform
     except ImportError as exc:
         raise CRSBlocked("pinned optional PyProj and Shapely runtime is mandatory") from exc
-    if pyproj.__version__ != REQUIRED_PYPROJ or shapely.__version__ != REQUIRED_SHAPELY:
+    if pyproj.__version__ != REQUIRED_PYPROJ or shapely.__version__ not in REVIEWED_SHAPELY_VERSIONS:
         raise CRSBlocked("unreviewed PyProj/Shapely library version")
     network.set_network_enabled(False)
     try:
