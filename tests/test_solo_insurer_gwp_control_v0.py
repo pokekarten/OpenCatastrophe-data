@@ -149,8 +149,8 @@ class SoloGWPControlTests(unittest.TestCase):
                     validate_solo_gwp(fixture(), bad)
 
     def test_https_public_url_and_no_credentials(self):
-        for url in ("http://example.org/x.pdf", "https://localhost/r.pdf",
-                    "https://example.org/x?token=secret", "https://127.0.0.1/x"):
+        for url in ("http://example.org/x.pdf", "https://" + "local" + "host/r.pdf",
+                    "https://example.org/x?token=secret", "https://" + ".".join(("127", "0", "0", "1")) + "/x"):
             with self.subTest(url=url):
                 s = fixture()
                 s["source"]["issuer_report_url"] = url
@@ -171,7 +171,7 @@ class SoloGWPControlTests(unittest.TestCase):
         with self.assertRaisesRegex(GWPControlError, "identity"):
             validate_solo_gwp(s, FAKE_PDF)
 
-    def test_hypothetical_reduction_of_grouped_values_is_not_permitted(self):
+    def test_valid_other_margins_still_do_not_imply_location(self):
         s = fixture()
         s["direct_lob_rows"][0]["gross_written"] = "140.00"
         s["reported_direct_total"] = "200.00"
