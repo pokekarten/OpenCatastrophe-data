@@ -95,7 +95,7 @@ class SizeLinkageStatsTests(unittest.TestCase):
         a, yes, no = example()
         no["A"] -= 1
         no["B"] += 1
-        with self.assertRaisesRegex(gate.SizeLinkageBlocked, "class"):
+        with self.assertRaisesRegex(gate.SizeLinkageBlocked, "three-way conservation"):
             audited(n=grouped(no))
 
     def test_unexpected_size_group_blocked(self):
