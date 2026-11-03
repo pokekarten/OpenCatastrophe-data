@@ -25,7 +25,26 @@ RECORDS = {
     "ihcantabria.transclima.tc-surge-hydrographs.2026": 18170693,
     "nl.deltares.gtsm-era5-e.extreme-sea-level-stats.v2": 14671593,
     "waleedgeo.gfsm.global-flood-susceptibility.v1": 20568218,
+    "emdat.llm-geodis.2026.v7": 18935447,
 }
+
+LLM_GEODIS_SOURCE = "emdat.llm-geodis.2026.v7"
+LLM_GEODIS_V7_FILES = frozenset({
+    "241204_emdat_archive.xlsx",
+    "emdat_geocoding-zenodo.zip",
+    "gdis_disnos.csv",
+    "geoemdat_gaul.gpkg",
+    "input_emdat.csv",
+    "Instructions_LLM-GeoDis.pdf",
+    "LLMGeoDis_part1.zip",
+    "LLMGeoDis_part2.zip",
+    "LLMGeoDis_part3.zip",
+    "LLMGeoDis_part4.zip",
+    "LLMGeoDis_part5.zip",
+    "pend-gdis-1960-2018-disasterlocations.csv",
+    "reliability_db.csv",
+    "synthetic_EMDAT_locations.csv",
+})
 
 
 class MetadataPreflightError(ValueError):
@@ -120,6 +139,14 @@ def audit_record(payload: dict[str, Any], source_id: str, raw_sha256: str) -> di
             "file_bytes_downloaded": False,
             "original_checksum_independently_verified": False,
         })
+
+    if source_id == LLM_GEODIS_SOURCE:
+        if metadata.get("version") != "v7":
+            raise MetadataPreflightError("LLM-GeoDis record version is not pinned v7")
+        if license_id.casefold() != "cc-by-4.0":
+            raise MetadataPreflightError("LLM-GeoDis declared record license differs from pinned CC BY 4.0")
+        if seen != LLM_GEODIS_V7_FILES:
+            raise MetadataPreflightError("LLM-GeoDis v7 original file inventory mismatch")
 
     return {
         "schema_version": "zenodo-cat-metadata-preflight-v0",
