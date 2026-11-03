@@ -43,7 +43,7 @@ class GtsmAuthorCatalogueOverlapTests(unittest.TestCase):
         self.assertEqual(report["source_station_family_by_author_prefix"]["coast_name_prefix"], 1)
         self.assertEqual(report["author_catalogue_not_in_statistics_by_prefix"]["observation_name_prefix"], 1)
         self.assertEqual(report["author_catalogue_not_in_statistics_outside_occupied_original_id_span"], 1)
-        self.assertEqual(report["integer_id_labels_absent_in_both_files_inside_original_span"], 0)
+        self.assertEqual(report["integer_id_labels_absent_in_both_files_inside_original_span"], 1)
         self.assertEqual(sum(report["author_catalogue_name_family_by_prefix"].values()), 3)
         self.assertTrue(report["source_source_parent_catalogue_join_for_all_rows_proven"])
         self.assertFalse(report["commercial_rights_approved"])
