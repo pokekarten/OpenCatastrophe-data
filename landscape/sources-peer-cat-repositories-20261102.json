@@ -67,7 +67,7 @@
         "admin_boundaries"
       ],
       "spatial_scope": "global with national and subnational availability depending on selected layer",
-      "temporal_scope": "2026 ThinkHazard portal revision published September 2026; distinct World Bank 2021 score-table archive (2025 catalogue metadata); underlying hazard layer vintages vary",
+      "temporal_scope": "Dated 2026 ThinkHazard integration-site publication (production equivalence unverified); distinct 2021 World Bank score-table archive (2025 catalog metadata); underlying hazard-layer vintages vary",
       "resolution_or_granularity": "Portal: ADM0/ADM1/ADM2 screening classes and approximately 3,000 urban areas in the 2026 version; World Bank catalogue dataset 0060151 is a separate 2021 Excel ADM0/ADM1/ADM2 snapshot",
       "potential_roles": [
         "regional_hazard_priority_screening",
@@ -80,7 +80,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Version trap confirmed from publisher: https://int.thinkhazard.org/en/about dates the portal dataset publication to 2026-09-18; https://datacatalog.worldbank.org/search/dataset/0060151/thinkhazard-hazard-ranking describes a 2021 Excel snapshot (file last updated 2021-11-29; catalog metadata 2025-03-07), with CC BY 4.0 *for that dated product*. Neither proves that the 2021 file equals the 2026 portal classification nor licenses underlying third-party hazard layers. Pin platform version, source-layer revisions, admin-boundary/urban method, exact country+peril class and original item attribution before any use. Scores VLO/LOW/MED/HIG are hazard screening, never physical ground intensity, earthquake source annual occurrence, insured loss or event timing. Code GPL-3.0 is separate from dataset rights."
+      "note": "Version trap confirmed from publisher: https://int.thinkhazard.org/en/about reports a 2026-09-18 data publication on an integration-site host; equivalence with the public production portal is not established; https://datacatalog.worldbank.org/search/dataset/0060151/thinkhazard-hazard-ranking describes a 2021 Excel snapshot (file last updated 2021-11-29; catalog metadata 2025-03-07), with CC BY 4.0 *for that dated product*. Neither proves that the 2021 file equals the 2026 portal classification nor licenses underlying third-party hazard layers. Pin platform version, source-layer revisions, admin-boundary/urban method, exact country+peril class and original item attribution before any use. Scores VLO/LOW/MED/HIG are hazard screening, never physical ground intensity, earthquake source annual occurrence, insured loss or event timing. Code GPL-3.0 is separate from dataset rights."
     },
     {
       "candidate_id": "maxar.open-data.ard-disaster-imagery",
