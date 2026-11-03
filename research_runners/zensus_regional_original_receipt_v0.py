@@ -148,6 +148,7 @@ def main() -> int:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--official-live", action="store_true")
     group.add_argument("--local-original", type=str)
+    parser.add_argument("--schema-preview", action="store_true", help="bounded first rows of CSV-Gebäude header text only")
     args = parser.parse_args()
     try:
         if args.official_live:
@@ -159,6 +160,9 @@ def main() -> int:
                 raise OriginalReceiptError("input file size exceeds allowed bound")
             raw = path.read_bytes()
         result = inspect_original_package(raw)
+        if args.schema_preview:
+            from zensus_regional_worksheet_schema_v0 import inspect_original_gwz_header
+            result["original_csv_gebaeude_header_preflight"] = inspect_original_gwz_header(raw)
     except (OSError, OriginalReceiptError) as exc:
         parser.exit(status=2, message=f"BLOCKED: {exc}\n")
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
