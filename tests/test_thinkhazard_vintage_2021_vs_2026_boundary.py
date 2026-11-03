@@ -25,6 +25,7 @@ class ThinkHazardVintageBoundaryTests(unittest.TestCase):
         self.assertIn("0060151", a["documentation_url"])
         self.assertIn("2021-11-29", a["api_version"])
         self.assertIn("2026", self.source["temporal_scope"])
+        self.assertIn("production equivalence unverified", self.source["temporal_scope"])
         self.assertIn("2021", self.source["temporal_scope"])
         self.assertIn("2025-03-07", self.source["note"])
         self.assertIn("2026-09-18", self.source["note"])
