@@ -182,7 +182,8 @@ def tiff_sample_coding(header: bytes) -> dict[str, int]:
 
 def decode_original_block(raw: bytes, *, predictor: int,
                           expected_compressed_bytes: int = BLOCK_RANGE[1]-BLOCK_RANGE[0]+1,
-                          synthetic_polygon_overlap: bool = False) -> dict:
+                          synthetic_polygon_overlap: bool = False,
+                          synthetic_shift_sensitivity: bool = False) -> dict:
     """Bounded DEFLATE decompress plus optional TIFF horizontal predictor undo."""
     if (type(raw) is not bytes or type(expected_compressed_bytes) is not int
             or not 0 < expected_compressed_bytes <= 65536
@@ -225,6 +226,17 @@ def decode_original_block(raw: bytes, *, predictor: int,
             }
         except PolygonOverlapBlocked as exc:
             raise PixelBlockBlocked("synthetic polygon-to-pixel overlap rejected") from exc
+    sensitivity_evidence = {}
+    if synthetic_shift_sensitivity:
+        from scripts.worldcover_synthetic_grid_shift_sensitivity_v0 import (
+            SensitivityBlocked, synthetic_grid_shift_sensitivity,
+        )
+        try:
+            sensitivity_evidence = {
+                "synthetic_grid_shift_sensitivity": synthetic_grid_shift_sensitivity(pixels)
+            }
+        except SensitivityBlocked as exc:
+            raise PixelBlockBlocked("bounded synthetic grid shift sensitivity rejected") from exc
     return {
         "decompressed_uint8_pixel_count": UNCOMPRESSED_LIMIT,
         "class_code_counts": {str(k): counts[k] for k in sorted(counts)},
@@ -232,11 +244,13 @@ def decode_original_block(raw: bytes, *, predictor: int,
         "decoded_block_sha256": hashlib.sha256(pixels).hexdigest(),
         "class_code_whitelist_verified": True,
         **synthetic_overlap,
+        **sensitivity_evidence,
     }
 
 
 def probe(*, open_request=_open, contract_path: Path = CONTRACT_PATH,
-          synthetic_polygon_overlap: bool = False) -> dict:
+          synthetic_polygon_overlap: bool = False,
+          synthetic_shift_sensitivity: bool = False) -> dict:
     timeout, contract_sha = reviewed_contract(contract_path)
     header = _read_one(bounds=HEADER_RANGE, open_request=open_request, timeout=timeout)
     coding = tiff_sample_coding(header)
@@ -255,6 +269,7 @@ def probe(*, open_request=_open, contract_path: Path = CONTRACT_PATH,
     outcome = decode_original_block(
         compressed, predictor=coding["predictor"],
         synthetic_polygon_overlap=synthetic_polygon_overlap,
+        synthetic_shift_sensitivity=synthetic_shift_sensitivity,
     )
     return {
         "profile": "oc-esa-worldcover-one-classified-block-v0",
@@ -290,11 +305,14 @@ def main(argv=None) -> int:
     parser.add_argument("--live", action="store_true")
     parser.add_argument("--synthetic-polygon", action="store_true",
                         help="overlay only the fixed invented EPSG:4326 ring on verified pixels")
+    parser.add_argument("--synthetic-grid-sensitivity", action="store_true",
+                        help="17 fixed synthetic footprint shifts, no real buildings or extra GETs")
     args = parser.parse_args(argv)
     if not args.live:
         parser.error("requires explicit --live; offline by default")
     try:
-        print(json.dumps(probe(synthetic_polygon_overlap=args.synthetic_polygon),
+        print(json.dumps(probe(synthetic_polygon_overlap=args.synthetic_polygon,
+                               synthetic_shift_sensitivity=args.synthetic_grid_sensitivity),
                          sort_keys=True, allow_nan=False))
     except (PixelBlockBlocked, ValueError, OSError) as exc:
         print(json.dumps({"status": "BLOCKED", "reason": str(exc),

@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.0.0",
+  "access_id": "noaa.nodd.ghcnd-central-park-complete",
+  "source_ids": [
+    "noaa.ncei.ghcn-daily"
+  ],
+  "provider": "NOAA NCEI / NOAA Open Data Dissemination (NODD)",
+  "interface_type": "http_file",
+  "status": "probe_ready",
+  "documentation_url": "https://registry.opendata.aws/noaa-ghcn/",
+  "service_root": "https://noaa-ghcn-pds.s3.amazonaws.com",
+  "api_version": "NOAA GHCN-Daily rolling 3.x; complete, provider-original single-station CSV research preflight",
+  "access_scope": [
+    "sample"
+  ],
+  "authentication": {
+    "mode": "none",
+    "credential_reference": null,
+    "registration_url": null,
+    "secret_in_repository": false
+  },
+  "request_contract": {
+    "allowed_operations": [
+      "read_one_full_station_for_hash_and_schema"
+    ],
+    "path_templates": [
+      "/csv/by_station/USW00094728.csv"
+    ],
+    "parameter_rules": "One anonymous HTTPS GET for the fixed NOAA NODD object https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/USW00094728.csv, without query string, Range, redirects, retries, credentials, caller-supplied station/URL or arbitrary headers. Require 200 and Content-Length matching original received body, between 1 MiB and 24 MiB; no Content-Range or compressed response. The full original file is read into transient bounded memory, SHA-256 hashed and parsed as original eight-column station CSV, but no original observations may be printed, persisted, committed to GitHub or admitted to Neon/model tables. One-shot workflow on reviewed merge only; pull requests use offline fixtures."
+  },
+  "response_contract": {
+    "expected_media_types": [
+      "binary/octet-stream",
+      "application/octet-stream",
+      "text/csv",
+      "text/plain"
+    ],
+    "format": "The *complete* original NOAA NODD USW00094728.csv eight-column by_station product. Exact provider header ID,DATE,ELEMENT,DATA_VALUE,M_FLAG,Q_FLAG,S_FLAG,OBS_TIME is mandatory; subsequent provider-native rows are individually validated.",
+    "scientific_semantics": "GHCN station records are observations with original physical element units, M/Q/S provenance flags, missing-value conventions and revisions. The file is a mutable rolling provider object; exact source bytes and header evidence are not a time-versioned scientific release. Validating all CSV rows, date-element uniqueness and source/quality flags does not establish climatological homogeneity, coverage, instrumental consistency, hazard-calibration relevance or insured exposure. Values are never converted, cleaned or model-admitted in this source preflight. The original source includes OBS_TIME 2400 for this station. It is retained as a provider-native marker and counted, never silently converted to 0000, UTC or a shifted local day; actual collection-day conventions remain subject to station-history and provider-semantic review."
+  },
+  "operational_constraints": {
+    "timeout_seconds": 60,
+    "max_probe_bytes": 5242880,
+    "max_sample_bytes": 25165824,
+    "retry_policy": "none",
+    "rate_limit_notes": "The generic contract's diagnostic max_probe_bytes is 5 MiB; this fixed, independently reviewed full-file sample is governed by max_sample_bytes=25_165_824. Exactly one fixed full-object GET, no retry/mirrors/listing/other stations or scheduled collection; only reviewed main workflow runs the original sample.",
+    "mutability_notes": "Record exact retrieval UTC, full response SHA-256, body bytes, Content-Length, ETag if valid, Last-Modified if present, first/last date, element/flag counts, code SHA. The separately acquired GHCN version marker is NOT automatically a cryptographically bound station-version manifest. On source changes compare full-file hashes, and do not silently reuse scientific interpretations."
+  },
+  "rights_and_policy": {
+    "dataset_rights_status": "verified",
+    "api_terms_status": "same_as_dataset",
+    "terms_url": "https://registry.opendata.aws/noaa-ghcn/",
+    "commercial_automation_status": "allowed",
+    "redistribution_status": "allowed",
+    "notes": "This fixed NOAA NODD public GHCN product is catalogued as CC0-1.0, with attribution requested and no NOAA endorsement. The public right to fetch does not constitute scientific admission, validation of third-party source networks, availability guarantee or permission to mirror outside this reviewed source contract. Original bytes are not redistributed or persisted by this preflight."
+  },
+  "probe_contract": {
+    "mode": "provider_specific",
+    "operation": "read_one_full_station_for_hash_and_schema",
+    "requires_credentials": false,
+    "expected_evidence": [
+      "Exactly one direct HTTPS 200, fixed official station object, bounded Content-Length 1-24 MiB and exact full response byte count",
+      "Full-original-body SHA-256, provider response ETag/Last-Modified metadata where safe, UTC retrieval and script SHA",
+      "Original mandatory header, every record checked for station/date/element/signed integer value/M-Q-S flags/time, uniqueness of date-element, row counts and flagged/element statistics",
+      "No raw observations saved/printed; no geographic insurance inference, scientific-quality admission or CAT model input",
+      "Count provider-native OBS_TIME 2400 separately; do not normalize this special representation or accept other non-HHMM values without provider review."
+    ]
+  },
+  "implementation_decision": "build_adapter_now",
+  "reviewed_at": "2026-11-02",
+  "evidence_urls": [
+    "https://registry.opendata.aws/noaa-ghcn/",
+    "https://github.com/awslabs/open-data-docs/blob/main/docs/noaa/noaa-ghcn/README.md",
+    "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme-by_station.txt",
+    "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41497232656"
+  ],
+  "notes": "After a successful 65536-byte first-original prefix probe, a single full original USW00094728.csv research preflight is separately reviewed here. Prior live prefix receipt observed 16,003,495 bytes on 2026-11-02; size is advisory only, not a hard-coded completeness claim. Provider can republish rolling records. A valid full-file receipt is not an approved modelling dataset. After first full-file main run 41500537467 failed safely on OBS_TIME 2400, four bounded independent original-source byte ranges (5M, 8M, 11M and 15M) verified exactly the token 2400 among nonempty unusual observation-time fields; invalid tokens are still rejected. This is format recognition, not time-zone or climatological normalization."
+}
