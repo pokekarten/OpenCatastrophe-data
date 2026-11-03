@@ -37,6 +37,47 @@ Code/CI:
 
 ## Pending evidence and scientific gates
 
-The exact-head original dataset run must determine whether the catalogue is truly co-indexed with the published 2025 statistical asset. Until it succeeds, **do not claim** any parent catalogue row count, overlap count, ID membership or coastline-class fraction as observed. The 2026 paper's 44,734 output-point figure is independent evidence for *model output positions* and does not guarantee this precise CSV's vintage or cardinality.
+## Verified joint original-source evidence (2026-11-03)
+
+The exact-head [two-pinned-originals GitHub Actions run 41708472051](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41708472051), job `126170000614`, passed **13 synthetic/offline tests** and fully verified both provider originals: the fixed 9,652,424-byte Zenodo NetCDF with published MD5 and observed SHA-256 and the exact **1,798,674-byte** author CSV against the pinned GitHub Git blob SHA-1 `07c784f401a1296bea15e7bfbd10332065dc3732`. The entire comparison is in-memory and the original NetCDF is erased at completion.
+
+| Author catalogue / Zenodo v2 statistical source crosscheck | Actual aggregate count |
+| --- | ---: |
+| Author catalogue rows | **43,119** |
+| Original Zenodo statistics rows | **38,957** |
+| Zenodo native IDs found in author catalogue | **38,957** |
+| Exactly matching station ID **and** coordinates packed at 0.001 degrees | **38,957** |
+| Native statistics IDs absent from author catalogue | **0** |
+| Original ID matches with differing packed coordinates | **0** |
+| Author catalogue IDs **not** represented in Zenodo statistics | **4,162** |
+| Author-only IDs inside occupied Zenodo station-ID span | **4,162** |
+| Author-only IDs outside occupied Zenodo station-ID span | **0** |
+| Integer labels inside original native-ID span absent in **both** files | **615** |
+| Width of original source ID span | **43,734** |
+
+The two-dimensional **ID and exact coordinate correspondence for all 38,957 published statistical rows is verified**, rather than merely hypothesized. The author catalogue **is not** the 44,734-point paper count: the actual author CSV has 43,119 records. The two files together occupy 43,119 unique native ID labels inside a 43,734-wide span, leaving 615 unrepresented labels in **both**. The 4,777 internal gaps previously reported in the source NetCDF therefore reconcile exactly to **4,162 author-catalogue-only IDs + 615 IDs in neither**. Comparing the *paper's different 44,734 count* against 43,119 author rows leaves **1,615** positions with still-unresolved catalogue-version/selection provenance; the subset/arithmetic interpretation of 1,000 beyond the observed span remains **conditional**, not a proven mapping to physical sites.
+
+### Original station name-family coverage
+
+These are **prefix-based catalogue classes**, not independent geospatial coast/ocean model support verification:
+
+| Author source name-prefix family | Original author catalogue | Represented in Zenodo statistics | Author-only (missing statistical row) |
+| --- | ---: | ---: | ---: |
+| `id_coast_` | 18,714 | **18,514** | **200** |
+| `id_reg_grid_` | 19,893 | 17,598 | 2,295 |
+| `id_obs_` | 829 | 416 | 413 |
+| Other source names | 3,683 | 2,429 | 1,254 |
+| **Total** | **43,119** | **38,957** | **4,162** |
+
+One noteworthy practical implication: the present statistical file includes **18,514 of 18,714** catalogue rows marked with a `coast` station-name prefix. A claimed building-specific coastal flood model still requires checking the exact coast station's physical support, bathymetry, terrain/geoid and flood-defence mapping, storm and surge components, independent gauge validation, and the station's true membership in that catalogue release.
+
+### Remaining questions, now narrowed
+
+1. Obtain the *run-vintage source catalogue and generation manifests* for the paper's 44,734 hydrodynamic points and reconcile the 43,119-row author CSV with that count. An exact ID and coordinate match for the existing 38,957 records **does not prove** every simulation point was intended to have a statistical result.
+2. Identify why the **4,162** author-catalogue entries did not receive a published statistic, especially **200** coast-prefix and **2,295** grid-prefix entries; examine the author batch manifests, NetCDF input inventory, filtering/drop criteria and failed-fit reports. The earlier native IDs had two exactly 2,200-ID holes and three exactly 100-ID holes, suggestive of but not proving whole-batch omissions.
+3. Determine the meaning and source of the **615** integer labels found in neither published file; they may belong to another index version, deleted positions or just unused sequence labels. Never fabricate a row or assign a coordinate to these labels.
+4. Continue the independent CDS v2/v3 data vintage, 2.5/97.5% versus 5/95% confidence interval label and local mean sea level/geoid harmonization investigations. Do not treat a data identity match as approval to model insured losses.
+
+The original-source verification now confirms *existing station identity and coordinates*; **same processing-run input history, missing-station causes, legal/commercial reuse scope and CAT model physical fitness remain open**. The 2026 paper's 44,734 model output point count is an independent result and cannot automatically be substituted for the 43,119-row author catalogue.
 
 `source_release_identity_and_commercial_rights_approved=false`, `cat_model_admitted=false`; commercial rights and upstream CDS license use must be approved separately, and coordinate/datum alignment to real-world building parcels and hydrodynamic coast support remain unvalidated.
