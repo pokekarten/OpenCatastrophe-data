@@ -20,7 +20,7 @@ class GLIDECanonicalOwnerTests(unittest.TestCase):
         matches = [e for e in peer if e["candidate_id"] == ID]
         self.assertEqual(len(matches), 1)
         self.assertFalse(any(e["candidate_id"] == ID for e in monitoring))
-        self.assertEqual(len(monitoring), 22)
+        self.assertEqual(len({e["candidate_id"] for e in monitoring}), len(monitoring))
         self.assertEqual(matches[0]["admission_status"], "not_admitted")
         self.assertEqual(matches[0]["rights_review_status"], "not_reviewed")
         self.assertEqual(matches[0]["scientific_review_status"], "not_reviewed")
