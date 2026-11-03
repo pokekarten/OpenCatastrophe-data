@@ -24,6 +24,7 @@ from gtsm_era5_e_author_family_return_qa_v0 import (
     audit_return_levels_by_author_name_family,
     read_pinned_original_return_matrices,
     GtsmFamilyReturnAuditBlocked, COUNTER_FIELDS,
+    require_verified_author_station_join,
 )
 from gtsm_era5_e_original_receipt_v0 import (
     GtsmReceiptError, PINNED_SHA256, SOURCE_BYTES, SOURCE_DOWNLOAD_URL,
@@ -152,6 +153,7 @@ def original_author_identity_receipt() -> dict[str, object]:
         catalogue = parse_author_catalogue(author_csv)
         station, lon, lat = read_original_native_id_coordinates(source_path)
         overlap = compare_original_to_author_catalogue(station, lon, lat, catalogue)
+        require_verified_author_station_join(overlap)
         batch_check = audit_hypothetical_100_id_batches(station, catalogue)
         native_extremes = read_pinned_original_return_matrices(source_path)
         family_quality = audit_return_levels_by_author_name_family(
