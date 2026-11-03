@@ -36,4 +36,8 @@ python scripts/check_all.py
 
 The focused test suite checks exact synthetic gross, ceded and net outcomes, loss conservation, deterministic repeatability, unit rejection, no extrapolation, fractional-vs-repair mismatch, fictional identity, amount type bounds, and bypass-resistant downstream treaty semantics.
 
+## Checked upstream rights metadata (separate from the synthetic test)
+
+The [original Nirandjan et al. v1.1.0 Zenodo record](https://zenodo.org/records/13889558) identifies the three D1/D2/D3 Excel workbooks and explicitly lists a **CC BY 4.0** dataset licence. This is stronger provider-record evidence than an unspecified licence, but does not finish the source-specific rights, original-byte hash and scientific-usage review required by OpenCatastrophe. Each constituent function's upstream attribution, correction history and any third-party restrictions still need review; the later [SebKrantz CSV repository](https://github.com/SebKrantz/VulnerabilityCurves) advertises CC0, which must not be silently treated as removing upstream credit/provenance. Neither original provider data nor derived CSVs were fetched or passed into this test. Its vulnerability curve remains wholly invented.
+
 **Remaining gates for a genuine source-backed model:** original dataset version/sha256/license, admitted model-input manifest, exposure geometry/TIV and taxonomy, event footprint and intensity uncertainty, vulnerability applicability and deductible, contractual occurrence/reinstatement logic, plus independent validation. The path to NextGen/FFBK must not label toy gross loss as genuine CAT ILTs or insured results.
