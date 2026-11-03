@@ -13,7 +13,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 > This Markdown file is a deterministic human-readable projection of the canonical JSON file named above. It does not create a second source of truth or change admission, rights or scientific-review state.
 
 **Schema version:** `1.0.0`  
-**Review date:** `2026-10-31`  
+**Review date:** `2026-11-02`  
 **Purpose:** Non-admission discovery registry of additional exposure, built-environment and impact-validation sources relevant to catastrophe risk.
 
 **Entries:** 13
@@ -174,14 +174,14 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Provider:** Overture Maps Foundation  
 **Categories:** `built_environment`, `building_footprints`, `entity_resolution`, `geospatial_interoperability`, `exposure_context`  
 **Spatial scope:** global  
-**Temporal scope:** monthly releases; official current release at review time 2026-06-17.0 with schema v1.17.0; later scheduled releases require re-check  
-**Resolution / granularity:** building and building_part vector features with polygon/multipolygon geometry, conflated upstream sources and GERS identifiers; no single raster resolution  
+**Temporal scope:** monthly provider releases; reviewed published snapshot 2026-10-21.0 (current official building schema v2.0.0); future releases and exact original file identities require new review  
+**Resolution / granularity:** building polygon/multipolygon features with GERS candidate UUIDs, optional building attributes and upstream source lineage; building_part identifiers are not GERS registry identities  
 **Potential roles:** `exposure_entity_resolution`, `cross_source_building_linkage`, `hazard_exposure_join`, `cross_release_entity_tracking`  
 **Access hint:** `public_cloud_geoparquet_and_query_tools`  
 **Authoritative source:** <https://docs.overturemaps.org/guides/buildings/>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Overture documents the Buildings theme under ODbL 1.0 and conflates multiple community, national/municipal and ML-derived building sources. GERS can provide stable entity linkage across datasets/releases, including insurance-to-building joins, but conflated footprints are not cadastral, occupancy, value or portfolio truth. Public data releases are retained for at most 60 days, so any future use must pin an exact release/schema and byte identities; rights remain unreviewed in this discovery registry.
+**Note:** Provider documents 2026-10-21.0 global GeoParquet building release on public S3/Azure, building-theme ODbL and archived monthly releases. GERS membership requires explicit registry evidence, not a UUID alone; conflated OSM/Esri/Microsoft/Google footprints are not independent ground truth or a clean building count. Source rights, provenance, geometry fidelity, national vintage and exact object digests remain unreviewed. Buildings alone are not occupancy, policy attachment or insurer TIV; no model admission.
 
 ## GEM Global Exposure Model v2026.0.0
 
