@@ -5,4 +5,4 @@
 # The repository-wide unittest discovery includes mandatory PPRI polygon
 # topology tests; use the already-reviewed EU flood spatial Shapely pin.
 PyYAML==6.0.3
-shapely==2.1.2
+shapely==2.2.0
