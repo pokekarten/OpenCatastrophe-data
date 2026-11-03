@@ -92,24 +92,38 @@ def inspect_metadata(raw: bytes, independent_sha256: str) -> dict[str, object]:
     rights_rows = attributes.get("rightsList", [])
     if type(rights_rows) is not list:
         raise Blocked("invalid DataCite rightsList")
+    # Every populated assertion in a rights row must independently identify
+    # the *same* CC0 grant. One good identifier must not mask an incompatible
+    # rights URI or an arbitrary text field containing a CC0 URL substring.
+    accepted = {
+        "rights": {
+            "cc0", "cc0-1.0", "cc0 1.0",
+            "creative commons zero v1.0 universal",
+            "creative commons cc0 1.0 universal",
+            "creative commons zero 1.0 universal",
+        },
+        "rightsIdentifier": {"cc0", "cc0-1.0"},
+        "rightsUri": {
+            "https://creativecommons.org/publicdomain/zero/1.0",
+            "https://creativecommons.org/publicdomain/zero/1.0/",
+            "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+            "https://creativecommons.org/publicdomain/zero/1.0/legalcode/",
+        },
+    }
     cc0_confirmed = False
     for row in rights_rows:
         if type(row) is not dict:
             raise Blocked("invalid rightsList entry")
-        label = row.get("rights")
-        ident = row.get("rightsIdentifier")
-        uri = row.get("rightsUri")
-        if any(value is not None and type(value) is not str for value in (label, ident, uri)):
-            raise Blocked("malformed rights claim")
-        candidate = [v.casefold().strip() for v in (label, ident, uri) if v]
-        if not candidate:
-            continue
-        if any("creativecommons.org/publicdomain/zero/1.0" in v or v in {"cc0-1.0", "cc0", "creative commons zero v1.0 universal"} for v in candidate):
+        present = False
+        for field, allowed in accepted.items():
+            value = row.get(field)
+            if value is None or value == "":
+                continue
+            if type(value) is not str or value.strip().casefold() not in allowed:
+                raise Blocked("DataCite rights claim requires independent review")
+            present = True
+        if present:
             cc0_confirmed = True
-        else:
-            # Do not silently resolve contradictory licence metadata by
-            # trusting the earlier source review over the current response.
-            raise Blocked("DataCite rights claim requires independent review")
     return {
         "profile": PROFILE,
         "source_id": SOURCE_ID,
