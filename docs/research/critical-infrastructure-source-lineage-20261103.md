@@ -42,4 +42,4 @@ Read only provider-published service/layer metadata after terms review; layer ID
 
 ## Offline code checks (synthetic data only)
 
-Run `python -m unittest tests.test_ci_curve_semantics_v0 tests.test_ci_vulnerability_source_lineage_20261103` or the repository-wide `python scripts/check_all.py`. A passing test validates a **semantic guard** only; original source workbooks/CSV, NOAA DAT features, scientific transferability and commercial data rights are still unverified. The model cannot infer a missing intensity conversion, unrecorded asset type or an insured-loss interpretation from this check.
+Run `python -m unittest discover -s tests -p 'test_ci_curve_semantics_v0.py' && python -m unittest discover -s tests -p 'test_ci_vulnerability_source_lineage_20261103.py'` or the repository-wide `python scripts/check_all.py`. A passing test validates a **semantic guard** only; original source workbooks/CSV, NOAA DAT features, scientific transferability and commercial data rights are still unverified. The model cannot infer a missing intensity conversion, unrecorded asset type or an insured-loss interpretation from this check.
