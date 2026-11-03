@@ -78,7 +78,8 @@ def _file_id(row: dict) -> str:
     ident = row.get("uuid", row.get("id"))
     if type(ident) is not str or not UUID.fullmatch(ident):
         raise Blocked("provider file UUID absent or invalid")
-    if "uuid" in row and "id" in row and row["uuid"] != row["id"]:
+    # 4TU v2 file-list examples legitimately contain id=null alongside uuid.
+    if row.get("id") is not None and row["id"] != ident:
         raise Blocked("conflicting file UUID aliases")
     return ident
 
