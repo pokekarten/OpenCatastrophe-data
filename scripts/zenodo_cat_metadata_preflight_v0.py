@@ -80,12 +80,86 @@ def check_download_url(value: Any, record_id: int) -> None:
         raise MetadataPreflightError("file content URL record identity mismatch")
 
 
+def normalize_llm_geodis_v7(payload: dict[str, Any]) -> tuple[dict[str, Any], str]:
+    """Accept the exact current InvenioRDM metadata shape, never data files.
+
+    Preserve the other historical Zenodo candidates' original parser contract.
+    This shape conversion is not evidence of original download or upstream
+    commercial rights.
+    """
+    record = dict(require_dict(payload, "Zenodo v7 record"))
+    shape = "legacy_compatibility"
+    raw_id = record.get("id")
+    if type(raw_id) is str:
+        if raw_id != str(RECORDS[LLM_GEODIS_SOURCE]):
+            raise MetadataPreflightError("LLM-GeoDis v7 source record ID mismatch")
+        record["id"] = RECORDS[LLM_GEODIS_SOURCE]
+    metadata = dict(require_dict(record.get("metadata"), "metadata"))
+
+    pids = record.get("pids")
+    if pids is not None:
+        doi_entry = require_dict(require_dict(pids, "pids").get("doi"), "pids.doi")
+        doi = require_text(doi_entry.get("identifier"), "pids.doi.identifier")
+        if "doi" in record and record["doi"].casefold() != doi.casefold():
+            raise MetadataPreflightError("conflicting legacy DOI and version DOI")
+        record["doi"] = doi
+        shape = "inveniordm"
+
+    access = record.get("access")
+    if isinstance(access, dict) and ("record" in access or "files" in access):
+        if access.get("record") != "public" or access.get("files") != "public":
+            raise MetadataPreflightError("record or original file access not public")
+        if "access_right" in metadata and metadata["access_right"] != "open":
+            raise MetadataPreflightError("conflicting access statements")
+        metadata["access_right"] = "open"
+        shape = "inveniordm"
+
+    if "rights" in metadata:
+        rights = metadata["rights"]
+        if not isinstance(rights, list) or len(rights) != 1:
+            raise MetadataPreflightError("expected exactly one version-pinned record license")
+        declared = require_text(require_dict(rights[0], "metadata.rights[0]").get("id"), "rights.id")
+        previous = metadata.get("license")
+        if previous is not None:
+            old_id = previous.get("id") if isinstance(previous, dict) else previous
+            if old_id != declared:
+                raise MetadataPreflightError("contradictory record license statements")
+        metadata["license"] = {"id": declared}
+        shape = "inveniordm"
+
+    raw_files = record.get("files")
+    if isinstance(raw_files, dict):
+        if raw_files.get("enabled") is not True:
+            raise MetadataPreflightError("Zenodo v7 files are not enabled")
+        entries = raw_files.get("entries")
+        if not isinstance(entries, list):
+            raise MetadataPreflightError("InvenioRDM files.entries must be an array")
+        count = raw_files.get("count")
+        if count is not None and (type(count) is not int or count != len(entries)):
+            raise MetadataPreflightError("InvenioRDM file count mismatch")
+        for position, item in enumerate(entries):
+            links = require_dict(require_dict(item, f"files.entries[{position}]").get("links"), "file links")
+            content = require_text(links.get("content"), "original file content URL")
+            key = require_text(item.get("key"), "source file key")
+            check_download_url(content, RECORDS[LLM_GEODIS_SOURCE])
+            if not content.endswith(f"/files/{key}/content"):
+                raise MetadataPreflightError("file content link does not match exact key")
+        record["files"] = entries
+        shape = "inveniordm"
+
+    record["metadata"] = metadata
+    return record, shape
+
+
 def audit_record(payload: dict[str, Any], source_id: str, raw_sha256: str) -> dict[str, Any]:
     if source_id == "ihcantabria.transclima.tropical-cyclone-data-catalogue.v1":
         raise MetadataPreflightError("catalogue latest record 23736380 is restricted; no public files")
     if source_id not in RECORDS:
         raise MetadataPreflightError("unknown source candidate; no unreviewed dynamic IDs")
     record = require_dict(payload, "record")
+    metadata_api_shape = "legacy_compatibility"
+    if source_id == LLM_GEODIS_SOURCE:
+        record, metadata_api_shape = normalize_llm_geodis_v7(record)
     record_id = RECORDS[source_id]
     if type(record.get("id")) is not int or record["id"] != record_id:
         raise MetadataPreflightError("original Zenodo record ID mismatch")
@@ -150,6 +224,7 @@ def audit_record(payload: dict[str, Any], source_id: str, raw_sha256: str) -> di
 
     return {
         "schema_version": "zenodo-cat-metadata-preflight-v0",
+        "metadata_api_shape": metadata_api_shape,
         "source_candidate_id": source_id,
         "original_zenodo_record_id": record_id,
         "original_doi": doi,
@@ -168,6 +243,19 @@ def audit_record(payload: dict[str, Any], source_id: str, raw_sha256: str) -> di
     }
 
 
+def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise MetadataPreflightError(f"duplicate metadata JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _reject_nonfinite(value: str) -> None:
+    raise MetadataPreflightError(f"nonfinite metadata JSON value: {value}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-id", required=True, choices=sorted(RECORDS))
@@ -177,7 +265,7 @@ def main() -> int:
         if not args.metadata.is_file() or args.metadata.stat().st_size > MAX_METADATA_BYTES:
             raise MetadataPreflightError("metadata file missing or exceeds 5 MiB cap")
         raw = args.metadata.read_bytes()
-        payload = json.loads(raw.decode("utf-8"))
+        payload = json.loads(raw.decode("utf-8"), object_pairs_hook=_reject_duplicate_keys, parse_constant=_reject_nonfinite)
         receipt = audit_record(payload, args.source_id, hashlib.sha256(raw).hexdigest())
     except (OSError, UnicodeError, json.JSONDecodeError, MetadataPreflightError) as exc:
         parser.exit(2, f"BLOCKED: {exc}\n")
