@@ -101,6 +101,21 @@ def _validate_array(doc: dict, level: str):
         raise WSFGateError("unreviewed storage transformer")
 
 
+def earliest_detection_epoch(index: int) -> str | None:
+    """Source raster code to first observed built-up epoch, NOT building age.
+
+    Code 1 means built-up was ALREADY observed by 2016-07-01, not that a
+    building was constructed in 2016. Zero conflates no-built-up and nodata.
+    """
+    if type(index) is not int or not 0 <= index <= 20:
+        raise WSFGateError("WSF emergence index must be a source int8 code from 0 to 20")
+    if index == 0:
+        return None
+    year = 2016 + index // 2
+    month = 7 if index % 2 else 1
+    return f"{year:04d}-{month:02d}-01"
+
+
 def inspect_wsf_metadata_bytes(
     native_blob: bytes, overview_blob: bytes,
     native_sha256: str, overview_sha256: str,
