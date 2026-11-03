@@ -170,7 +170,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 def retrieve_original() -> bytes:
     req = urllib.request.Request(
         ORIGINAL_URL,
-        headers={"Accept": "text/plain, text/csv, application/octet-stream",
+        headers={"Accept": "*/*",
                  "User-Agent": "OpenCatastrophe-data/1.0 bounded-source-proof"},
     )
     opener = urllib.request.build_opener(NoRedirect)
