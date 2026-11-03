@@ -122,3 +122,48 @@ published artifacts. An official provider replacing bytes at the same URL
 will produce a **different** hash and must trigger a dataset revision
 and downstream source-method re-review, not silently overwrite the
 accepted input.
+
+## Source CSV-Gebäude original header schema: first field mapping
+
+A follow-up original workbook inspection through GitHub Actions
+run [41738226022](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41738226022)
+independently re-fetched the **same original SHA-256**
+\`82da8578a4657e20752b436a756ed27846c77f96e3f7333bdea7f4fe29a8b551\`,
+resolved the \`CSV-Gebäude\` worksheet through the actual OOXML workbook
+relationship map and confirmed source header cells:
+
+| Original cell | Actual 2022 original field | Pre-admission meaning |
+| --- | --- | --- |
+| \`A1\` | \`Berichtszeitpunkt\` | Census reporting date, NOT company insurance year |
+| \`B1\` | \`_RS\` | Original **regional key**, NOT a verified named \`Kreis_AG S\` column |
+| \`C1\` | \`Name\` | Official area name |
+| \`D1\` | \`Regionalebene\` | Distinguishes \`Bund\`, \`Land\`, \`Stadtkreis/kreisfreie Stadt/Landkreis\`, \`Gemeinde\` etc |
+| \`E1\` | \`GEBAEUDEART_SYS_1\` | Published code; **not yet proven** to be the desired residential-use building count |
+| \`F1-I1\` | \`GEBAEUDEART_SYS_11\`, \`GEBAEUDEART_SYS_111\`, \`GEBAEUDEART_SYS_112\`, \`GEBAEUDEART_SYS_12\` | Subcategories whose official classification and possible nesting must be mapped using source methodology |
+| \`J1-S1\` | \`BAUJAHR_10JA__01\` through \`BAUJAHR_10JA__10\` | Building age categories; 2022 census vintage only |
+
+Crucial: the actual region fields are not named \`kreis_ags_2022\` as
+our *synthetic scenario* contract is. The original workbook includes
+mixed hierarchical administrative levels in the same CSV-like
+sheet: e.g. \`_RS\` 2-digit Land codes, 5-digit Kreis identifiers and
+longer Gemeinde identifiers; **only** rows with the exact required
+\`Regionalebene\` and five-character \`_RS\` can be considered
+*potential* Kreis records. Province/Kreis/Gemeinde values must not be
+summed together or treated as independent locations.
+
+This first preflight **does not** establish which of the nested
+\`GEBAEUDEART_SYS_*\` columns counts the correct residential building
+universe, how "unavailable" cells are encoded, nor that any source
+row matches an insurer year-end contract population. Those require
+checking the exact methodology sheet and potentially the separate
+\`Erläuterung zu CSV-Tabellen\` sheet before any source-value extraction.
+
+**Data leak/quality correction:** Numeric Census values may be stored as
+*Excel shared strings*, not OOXML numeric cells. The initial bounded
+worksheet preview showed this problem: type \`s\` is **not** proof
+that a cell contains a qualitative header. The source inspector was
+subsequently tightened to read **only row 1**, deliberately never
+logging or exporting any second-or-later data row. This avoids
+misclassifying data-shaped shared strings as headers. The required
+post-correction workflow run must be checked on its exact SHA before
+the header-only guarantee is called tested.
