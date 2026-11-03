@@ -136,6 +136,7 @@ class StormRelationalAuditTests(unittest.TestCase):
 
     def test_unknown_type_negative_or_fractional_counts_rejected(self):
         for kind, field, value in [('fatalities', 'FATALITY_TYPE', 'unknown'),
+                                   ('details', 'MAGNITUDE_TYPE', 'unknown'),
                                    ('details', 'DEATHS_DIRECT', '-1'),
                                    ('details', 'DEATHS_DIRECT', '1.5'),
                                    ('details', 'DEATHS_DIRECT', '1' * 5000)]:

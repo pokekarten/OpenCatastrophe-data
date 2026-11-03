@@ -127,6 +127,8 @@ def audit_tables(blobs: dict[str, bytes], expected_sha256: dict[str, str]) -> di
         for field in damage:
             damage[field][damage_status(row[field])] += 1
         if row["EVENT_TYPE"] == "Thunderstorm Wind":
+            if row["MAGNITUDE_TYPE"] not in ("", "MG", "EG", "MS", "ES"):
+                raise StormAuditError("unknown thunderstorm wind magnitude type")
             wind_types[row["MAGNITUDE_TYPE"] or "(missing)"] += 1
     fatality_counts = Counter()
     fatality_keys = set()
