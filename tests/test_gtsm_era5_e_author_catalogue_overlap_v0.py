@@ -41,6 +41,9 @@ class GtsmAuthorCatalogueOverlapTests(unittest.TestCase):
         self.assertEqual(report["matching_ids_with_exact_quantized_coordinates"], 2)
         self.assertEqual(report["author_catalogue_ids_not_in_original_statistics"], 1)
         self.assertEqual(report["source_station_family_by_author_prefix"]["coast_name_prefix"], 1)
+        self.assertEqual(report["author_catalogue_not_in_statistics_by_prefix"]["observation_name_prefix"], 1)
+        self.assertEqual(report["author_catalogue_not_in_statistics_outside_occupied_original_id_span"], 1)
+        self.assertEqual(sum(report["author_catalogue_name_family_by_prefix"].values()), 3)
         self.assertTrue(report["source_source_parent_catalogue_join_for_all_rows_proven"])
         self.assertFalse(report["commercial_rights_approved"])
 
@@ -66,7 +69,28 @@ class GtsmAuthorCatalogueOverlapTests(unittest.TestCase):
         )
         self.assertEqual(report["original_native_station_ids_absent_in_author_catalogue"], 1)
         self.assertEqual(report["matching_native_station_ids"], 1)
+        self.assertEqual(report["author_catalogue_ids_not_in_original_statistics"], 0)
         self.assertFalse(report["source_source_parent_catalogue_join_for_all_rows_proven"])
+
+    def test_author_only_inside_and_outside_original_span_reconcile(self):
+        cat = parse_author_catalogue(sample([
+            (0, "id_coast_first", "0", "0"),
+            (1, "id_reg_grid_extra", "1", "1"),
+            (2, "id_obs_last", "2", "2"),
+            (3, "id_coast_beyond", "3", "3"),
+        ]))
+        summary = compare_original_to_author_catalogue(
+            [0, 2], [0, 2000], [0, 2000], cat, expected_rows=2,
+        )
+        self.assertEqual(
+            summary["author_catalogue_not_in_statistics_inside_occupied_original_id_span"], 1
+        )
+        self.assertEqual(
+            summary["author_catalogue_not_in_statistics_outside_occupied_original_id_span"], 1
+        )
+        self.assertEqual(summary["author_catalogue_not_in_statistics_by_prefix"]["coast_name_prefix"], 1)
+        self.assertEqual(summary["author_catalogue_not_in_statistics_by_prefix"]["regular_grid_name_prefix"], 1)
+        self.assertEqual(sum(summary["author_catalogue_not_in_statistics_by_prefix"].values()), 2)
 
     def test_header_and_duplicate_ids_rejected(self):
         bad_header = "station\tname\tx\ty\n1\tid_coast\t1.1\t2.2\n"
