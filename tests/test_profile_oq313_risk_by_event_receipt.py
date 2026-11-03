@@ -153,6 +153,32 @@ class OQ313RiskByEventProfileTests(unittest.TestCase):
                      "aep_authorized", "scientific_validity_verified", "model_use_authorized"):
             self.assertIs(result[flag], False)
 
+    def test_positive_and_negative_zero_have_equal_rank_and_keep_bits(self) -> None:
+        rows = [
+            {
+                "event_id": 3, "rup_id": 10, "rlz_id": 0,
+                "loss_f32_be_hex": "80000000",
+                "variance_f32_be_hex": "00000000",
+            },
+            {
+                "event_id": 1, "rup_id": 10, "rlz_id": 0,
+                "loss_f32_be_hex": "00000000",
+                "variance_f32_be_hex": "80000000",
+            },
+        ]
+        receipt, _ = projector.project_oq313_risk_by_event_receipt(
+            rows, portfolio_agg_id=0, structural_loss_id=0, concurrent_tasks=1,
+        )
+        profile = profiler.profile_receipt(receipt)
+        self.assertEqual(profile["loss"]["zero_row_count"], 2)
+        self.assertEqual(profile["variance"]["zero_row_count"], 2)
+        self.assertEqual(profile["loss"]["minimum_row"]["event_id"], 1)
+        self.assertEqual(profile["loss"]["minimum_row"]["loss_f32_be_hex"], "00000000")
+        self.assertEqual(profile["loss"]["maximum_row"]["event_id"], 1)
+        self.assertEqual(profile["loss"]["exact_sum_binary"]["coefficient"], "0")
+        self.assertEqual(profile["variance"]["exact_sum_binary"]["coefficient"], "0")
+        self.assertEqual(profile["loss"]["top_loss_rows"][-1]["loss_f32_be_hex"], "80000000")
+
     def test_negative_nonzero_and_nonfinite_values_remain_rejected(self) -> None:
         for forbidden in ("bf800000", "7f800000", "ff800000", "7fc00000"):
             with self.subTest(hex_bits=forbidden):
