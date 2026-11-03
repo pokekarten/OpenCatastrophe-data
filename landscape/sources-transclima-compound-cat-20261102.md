@@ -31,7 +31,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Authoritative source:** <https://zenodo.org/records/22080546>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** New dataset package is a transformation of separately known ERA5-Land, EFFIS, C3S windstorm tracks/footprints and JRC flood depth; not an independent observational source for those hazards. Each event has own id/time and sparse coordinate representation; flood intensity is centimetres, wind gust m/s, wildfire burned-area binary. Preserve event IDs, sparse grid/CRS, original input provenance, overlap algorithm and original source rights. Dataset page lists file hashes as MD5; compute SHA-256 for a bounded rights-cleared artifact. License and use scope require direct provider confirmation. Do not interpret overlap pairs as simultaneous insured losses.
+**Note:** New dataset package is a transformation of separately known ERA5-Land, EFFIS, C3S windstorm tracks/footprints and JRC flood depth; not an independent observational source for those hazards. Each event has own id/time and sparse coordinate representation; flood intensity is centimetres, event-info intensity labelled Mean wind speed (m/s), NOT peak gust, wildfire burned-area binary. Preserve event IDs, sparse grid/CRS, original input provenance, overlap algorithm and original source rights. Dataset page lists file hashes as MD5; compute SHA-256 for a bounded rights-cleared artifact. License and use scope require direct provider confirmation. Do not interpret overlap pairs as simultaneous insured losses. Verified read-only original hazardinfows.csv 32,210 bytes, 234 distinct wind-event IDs; computed SHA-256 35f10da966ad8b6f0bc5fd9dba904bb8251ae11a9f52fe7e10f4f6ff9e2bf787 and publisher MD5 e58a511d83da230931b57cb9822d8841 matched. Full sparse data archive not fetched; model/rights review remains blocked.
 
 ## Global 12000-year synthetic tropical cyclone track ensembles by ENSO regime
 
@@ -46,7 +46,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Authoritative source:** <https://zenodo.org/records/15097665>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** IH-STORM model code: https://github.com/IHCantabria/IH-STORM and https://zenodo.org/records/23763850 (2026-10-29); original STORM lineage: https://github.com/NBloemendaal/STORM. Synthetic model output, not historical observations or wind-field footprints. Preserve basin, stochastic year, track id, ENSO regime, baseline and exact release; review license of dataset and model separately. Check dependencies with IBTrACS and any previously registered STORM-derived sources to avoid treating the ensemble as independent truth.
+**Note:** IH-STORM model code: https://github.com/IHCantabria/IH-STORM and https://zenodo.org/records/23763850 (2026-10-29); original STORM lineage: https://github.com/NBloemendaal/STORM. Synthetic model output, not historical observations or wind-field footprints. Preserve basin, stochastic year, track id, ENSO regime, baseline and exact release; review license of dataset and model separately. Check dependencies with IBTrACS and any previously registered STORM-derived sources to avoid treating the ensemble as independent truth. Original README.txt 3,800 bytes read-only and SHA-256-verified: 80c913ae6d46f58a8ab9c6dc435e552e5743f3a3edca618c59841acaea00280e; specifies 3-hour timestep, maximum 10-min sustained wind in m/s, longitudes 0-360 and 1,000-year shard semantics. No ZIP tracks read.
 
 ## Global cyclone-attributed storm-surge hydrographs GTSMv3/GESLAv3
 
@@ -61,7 +61,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Authoritative source:** <https://zenodo.org/records/18170693>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Derived via DKM-DBSCAN Hazard Tracker (https://github.com/IHCantabria/TRANSCLIMA.hazard_tracker; https://zenodo.org/records/23765126) and GTSMv3/GESLAv3. Companion method describes 2723 historical cyclones. GTSM modelled and GESLA gauge paths are not independent if collated into one target; preserve original station/SID, time units, vertical reference, gauge quality, and storm-event identity. Hydrograph is water level surge, not inundation depth or damage. Rights on all contributing data and derived outputs require review.
+**Note:** Derived via DKM-DBSCAN Hazard Tracker (https://github.com/IHCantabria/TRANSCLIMA.hazard_tracker; https://zenodo.org/records/23765126) and GTSMv3/GESLAv3. Companion method describes 2723 historical cyclones. GTSM modelled and GESLA gauge paths are not independent if collated into one target; preserve original station/SID, time units, vertical reference, gauge quality, and storm-event identity. Hydrograph is water level surge, not inundation depth or damage. Rights on all contributing data and derived outputs require review. Original README.txt 7,005 bytes read-only and SHA-256-verified: c06107caa6aea8de4116b8fbc264547dd2b6696ac1030ae75b4de0d78d867abd; confirms storm SIDs from IBTrACS and surge in metres. No ZIP hydrographs read.
 
 ## TRANSCLIMA tropical cyclone and coastal climate risk source catalogue (262 entries)
 
@@ -72,11 +72,11 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Temporal scope:** Catalog published 2026-10-28; source vintages vary by entry  
 **Resolution / granularity:** Excel workbook with 262 referenced datasets/models/tools over 14 themes including waves, wind, surge, sea level, exposure, losses and vulnerability  
 **Potential roles:** `source_discovery_crosswalk`, `source_rights_gap_detection`, `model_component_gap_inventory`  
-**Access hint:** `public_metadata_catalogue_cc_by4_catalogue_only_upstream_rights_separate`  
+**Access hint:** `zenodo_concept_doi_latest_version_restricted_metadata_only`  
 **Authoritative source:** <https://doi.org/10.5281/zenodo.23736379>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Catalogue is a discovery aid, NOT 262 unique admitted or rights-cleared datasets. Recorded entries expose provider, original link, spatial/temporal resolution, protocols, access and license hints. CC BY 4.0 applies to the catalogue compilation only; individual data products have their own rights. Deduplicate with existing registry and freeze original provider/product identity before creating new candidates. Never copy source data or assume commercial licensing from catalogue entries.
+**Note:** Catalogue is a discovery aid, NOT 262 unique admitted or rights-cleared datasets. Recorded entries expose provider, original link, spatial/temporal resolution, protocols, access and license hints. CC BY 4.0 applies to the catalogue compilation only; individual data products have their own rights. Deduplicate with existing registry and freeze original provider/product identity before creating new candidates. Never copy source data or assume commercial licensing from catalogue entries. LIVE ACCESS CORRECTION 2026-11-03: Zenodo concept record 23736379 resolved via its API to latest record 23736380, DOI 10.5281/zenodo.23736380, with access_right=restricted and files=[]. The CC BY 4.0 record metadata license is not downloadable workbook permission; mark as restricted access, no live source file.
 
 ## GTSM-ERA5-E extreme sea level percentile and return-level statistics 1950-2024
 
@@ -91,7 +91,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Authoritative source:** <https://zenodo.org/records/14671593>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Derived from ECMWF CDS GTSM-ERA5-E water-level time series DOI 10.24381/cds.a6d42d60, code https://github.com/VU-IVM/gtsm3-era5-nrt. Do not confuse statistical water-level return values with actual 2D flood depths or coastal defences. Review vertical datum, tide/surge treatment, ensemble/forcing and provider licensing before model use. Check overlap with GESLA gauge validation and other GTSM/Deltares products.
+**Note:** Derived from ECMWF CDS GTSM-ERA5-E water-level time series DOI 10.24381/cds.a6d42d60, code https://github.com/VU-IVM/gtsm3-era5-nrt. Do not confuse statistical water-level return values with actual 2D flood depths or coastal defences. Review vertical datum, tide/surge treatment, ensemble/forcing and provider licensing before model use. Check overlap with GESLA gauge validation and other GTSM/Deltares products. Live API lists one open CC BY 4.0 NetCDF file ds_GTSM-ERA5-E_1950-2024_stats.nc, size 9,652,424 bytes, publisher MD5 0f2b7071c6ec3585768be6cf427e6eab. Source bytes not acquired.
 
 ## EO4MULTIHAZARDS Events Database PostgREST query service
 
@@ -121,4 +121,4 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Authoritative source:** <https://zenodo.org/records/20568218>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Trained using WRI Aqueduct Flood Hazard Maps as labels plus topographic and other environmental covariates, therefore derived/overlapping with existing Aqueduct candidate; NOT a new independent flood event or a flood depth/annual-probability product. Susceptibility class cut-offs 1-5 must not be read as calibrated loss probabilities. No flood defences or future climate changes represented. Check exact license/attribution, tile index, 30 m grid CRS EPSG:3395 and regional missing coverage before using; avoid large bulk downloads before access approval.
+**Note:** Trained using WRI Aqueduct Flood Hazard Maps as labels plus topographic and other environmental covariates, therefore derived/overlapping with existing Aqueduct candidate; NOT a new independent flood event or a flood depth/annual-probability product. Susceptibility class cut-offs 1-5 must not be read as calibrated loss probabilities. No flood defences or future climate changes represented. Check exact license/attribution, tile index, 30 m grid CRS EPSG:3395 and regional missing coverage before using; avoid large bulk downloads before access approval. Live API lists open CC BY 4.0 numerous large regional ZIPs with original-file MD5 metadata; no raster source archive acquired. The file license and upstream rights still need exact review.
