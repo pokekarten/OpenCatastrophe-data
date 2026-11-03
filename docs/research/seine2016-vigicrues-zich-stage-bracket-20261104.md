@@ -57,6 +57,23 @@ A separate source search identified three distinct evidence families, which must
 
 **Selection rule:** prefer *same event + same physical mechanism + same area/time + independently verified observed geometry* for independent holdout; treat historical atlases, retrospective/modelled ZIP/ZICH products, tributary-only maps and regulatory PPRI zones as **separately labelled context**. No source or source-rights state was upgraded on the basis of this discovery.
 
+## New primary-source finding: peak-period Paris-Austerlitz instrument outage
+
+The **official HydroPortail station event chronology** for [`F700000103`](https://hydro.eaufrance.fr/stationhydro/F700000103/evenements) records an instrument/telemetry incident **during the 2016 Seine flood crest**, independently of the `obs_elab` data. The authority states that its automatic station feed failed around **2016-06-02 23:00 local reference in the incident text**; from **3 June** observed *stage heights* were entered from observers' staff-gauge readings. A **6 June 2016** notice additionally says velocity-sensor cable damage disrupted **discharge measurement**. The incident listing gives UTC timestamps for the notices; it does **not** independently establish an exact station-recovery timestamp or full outage interval. Do not infer that the daily maxima were simultaneously and continuously measured by an unbroken automatic sensor.
+
+This reconciles two facts that are otherwise easy to misuse: `HIXnJ` stage on **2016-06-03** is labelled `Mesurée` by the published API, while `QmnJ` / `QIXnJ` **discharge** is labelled `Reconstituée` at Paris. A station-stage *measured* code can reflect **manual readings**, not uninterrupted telemetry. A validated/reconstructed discharge is not an independently measured physical river flow at the same moment. The underlying direct sensor sequence and the operator's reconstruction method still require separate original-source evidence.
+
+An additional **actual read-only Neon execution** of [the incident/method cross-check](../../research_runners/sql/hubeau_2016_flood_peak_station_incident_audit_v0.sql) compared the exact five-day **3–7 June 2016** window, *not* a claimed full outage duration:
+
+| Station | 3–7 June rows | Method codes | Qualification codes | Validated | Model input admitted |
+| --- | ---: | --- | --- | ---: | ---: |
+| `F700000103` (Paris) | 5/5 | **5 reconstructed** | **5 good** | 5 | 0 |
+| `F447000302` (Ponthierry) | 5/5 | **5 calculated** | **5 doubtful** | 0 | 0 |
+
+These flags are not subjective estimates: the [official Hub'Eau v2 hydrometry API](https://hubeau.eaufrance.fr/page/api-hydrometrie) labels its recorded `obs_elab` values and provenance methods, and an earlier [complete 94-row live QmnJ source-parity check](source-usability-cohort-20261103.md) matched every stored value/status/method/quality/production timestamp. The incident is a distinct, **new contextual provenance signal** that does not downgrade the authority's own `Bonne` label; it does block **our separate stronger scientific claim** of an uninterrupted, direct 2016 flow measurement at the crest. The original historical incident event response was read as an official public rendered page, **not** independently acquired original bytes with a SHA-256 receipt; the incident metadata are not copied as raw provider bytes.
+
+**Model implication:** no source here can be used as a sensor-exact observed peak discharge, independent flood-depth observation, or verified insurance loss benchmark. Distinguish reliable staff-gauge stage chronology from independently validated discharge, seek the hydrograph's official reconstruction/uncertainty evidence and provider revision history, and only then build a separate hydraulic model and validation holdout. Treat all authority-specific timestamps and references with original timezone/revision metadata rather than assigning a hypothetical continuous outage duration.
+
 ## Provider rights and actual next input
 
 The 5.66/7.19 published PDFs explicitly state that re-use of the underlying VIGINOND/ZIP data requires an exchange with the producing/managing authority and understanding the data lineage and terms. The author is **SPC SMYL**. No commercial or broader geospatial permission is inferred from PDF web accessibility. The Paris scenario simulations predate the 2016 flood and do not include all the observed mechanisms (e.g. tributary, groundwater and network flooding); independent historic field/extent references are needed.
