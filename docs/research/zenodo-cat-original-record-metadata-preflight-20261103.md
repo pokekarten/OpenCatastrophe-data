@@ -20,7 +20,7 @@ The offline runner at scripts/zenodo_cat_metadata_preflight_v0.py knows exactly 
 | GTSM-ERA5-E extreme coastal levels/statistics | https://zenodo.org/records/14671593 |
 | GFSM 30 m derived global flood susceptibility | https://zenodo.org/records/20568218 |
 
-The seventh candidate, Eurac EO4MULTIHAZARDS, is a separate PostgREST service and is intentionally outside this Zenodo preflight.
+The sixth candidate, Eurac EO4MULTIHAZARDS, is a separate PostgREST service and is intentionally outside this Zenodo preflight.
 
 The [official Zenodo records API](https://developers.zenodo.org/) documents anonymous GET /api/records/:id metadata access. Zenodo [explains](https://support.zenodo.org/help/en-gb/2-content/21-can-i-get-permission-to-use-a-specific-record) that record metadata is CC0, while source files retain their declared license. Individual upstream data rights must be checked separately.
 
