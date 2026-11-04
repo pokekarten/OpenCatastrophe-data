@@ -51,3 +51,24 @@ Each native-to-normalized transform still needs a pinned original source version
 4. Only after independent asset geometry, actual vs imputed owner identity, economic asset-value priors and insurer financial constraints are approved, hand **distributions of synthetic scenarios** into NextGen. Do not reconstruct a claim that any public facility is insured by a named company.
 
 **Execution evidence:** 14/14 new deterministic local unit tests and compilation passed in ChatGPT Linux on 2026-11-04. Repository-wide CI must be checked on the exact latest PR head. No provider original data, live site crosswalk or production database integration was executed.
+
+## Original EPA FRS CSV projection pilot (added 2026-11-04)
+
+The original [EPA ECHO FRS download dictionary](https://echo.epa.gov/tools/data-downloads/frs-download-summary) documents native `FRS_FACILITIES.csv` columns `REGISTRY_ID`, `LATITUDE_MEASURE`, `LONGITUDE_MEASURE` and facility name/address attributes. Its ECHO subset differs from EPA's separately downloadable full FRS inventory; do **not** merge their observation perimeters or vintages without a crosswalk.
+
+The new [bounded native adapter](../../research_runners/epa_frs_native_projection_v0.py) and [synthetic tests](../../tests/test_epa_frs_native_projection_v0.py) consume an **already legally acquired, manually bounded** original FRS facilities CSV (max 2 MB / 10,000 rows), validate provided original-byte SHA-256, real release date, mandatory native headers, unique source identifiers and syntactically valid coordinate pairs, and generate deterministic sorted `frs_id,country_code,latitude,longitude` rows for the existing FRS-GEM crosswalk. Raw names and addresses are **not** projected; no source bytes are committed or downloaded by this script. The CLI writes the projection only to an explicitly supplied, previously nonexistent file *outside* the repository and prints aggregate receipts.
+
+**Important geographic restraint:** The currently consulted provider dictionary confirms the native latitude/longitude fields, but not sufficient coordinate datum, coordinate quality and transformation evidence for this audit. Therefore the CLI **suppresses all coordinates by default** and only produces an ID-safe projection. A direct Python caller can set `coordinates_approved=True` for a separately reviewed, exact-source, datum-verified local experiment, but that flag is a caller assertion, **not independently authenticated provider evidence** and does not grant any model admission. Never interpret coordinate suppression as a statement that the facility lacks a location. This stage cannot produce a geospatially accepted crosswalk.
+
+Example with local pre-reviewed input (the placeholders are not usable file identities):
+
+```bash
+python -m unittest discover -s tests -p 'test_epa_frs_native_projection_v0.py' -v
+python research_runners/epa_frs_native_projection_v0.py \
+  --original-facilities-csv /reviewed/private/FRS_FACILITIES_slice.csv \
+  --original-csv-sha256 ORIGINAL_SLICE_SHA256 \
+  --release-date YYYY-MM-DD \
+  --output /reviewed/private/frs_id_only_projection.csv
+```
+
+This is a verified *transform contract*, not an EPA original dataset acquisition or an actual FRS-GEM match. A useful next measurement is the exact original ECHO-FRS ZIP or full-FRS source identity, the native facilities projection coverage, and an independent fixed coordinate reference/accuracy receipt before enabling geospatial comparison.
