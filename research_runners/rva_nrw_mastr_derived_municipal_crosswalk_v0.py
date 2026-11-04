@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from collections import Counter
 from decimal import Decimal, InvalidOperation
+from pathlib import Path
+import tomllib
 import csv
 import hashlib
 import io
@@ -187,6 +189,8 @@ def crosswalk(secondary: dict, official_ags: set[str]) -> dict:
         "secondary_original_git_blob_sha1": secondary["secondary_csv_exact_git_blob_sha1"],
         "secondary_original_sha256": secondary["secondary_csv_full_sha256"],
         "secondary_original_bytes": secondary["secondary_original_bytes"],
+        "secondary_germany_municipalities": secondary["source_municipality_count"],
+        "secondary_original_field_count": secondary["source_field_count"],
         "official_nrw_potential_original_sha256": nrw.EXPECTED_SHA256,
         "official_nrw_municipality_keys": len(official_ags),
         "secondary_nrw_municipality_keys": len(from_second),
@@ -209,10 +213,76 @@ def crosswalk(secondary: dict, official_ags: set[str]) -> dict:
     }
 
 
+RECEIPT_PATH = (Path(__file__).resolve().parents[1] / "research" /
+    "observations" / "rva_nrw_pv_mastr_derived_20261002_original_checksum_v0.toml")
+
+
+def assert_saved_aggregate_receipt(result: dict, *, receipt: dict | None = None) -> dict:
+    if receipt is None:
+        receipt = tomllib.loads(RECEIPT_PATH.read_text(encoding="utf-8"))
+    fixed = {
+        "schema_version": "RVA_NRW_PUBLIC_PV_DERIVED_20261002_AGG_V0",
+        "target_company": "R+V Allgemeine Versicherung AG",
+        "secondary_dataset_commit": THIRD_PARTY_COMMIT,
+        "secondary_git_blob_sha1": THIRD_PARTY_BLOB_SHA1,
+        "secondary_original_sha256": result["secondary_original_sha256"],
+        "secondary_original_size_bytes": result["secondary_original_bytes"],
+        "secondary_original_germany_municipalities": EXPECTED_GERMANY_MUNICIPALITIES,
+        "secondary_original_nrw_municipalities": EXPECTED_NRW_MUNICIPALITIES,
+        "nrw_original_sha256": nrw.EXPECTED_SHA256,
+        "exact_ags_matches_between_sources": 396,
+        "unmatched_secondary_municipalities": 0,
+        "unmatched_official_municipalities": 0,
+        "nrw_secondary_reported_total_installed_pv_capacity_kwp":
+            result["secondary_nrw_reported_active_all_pv_capacity_kwp"],
+    }
+    if any(receipt.get(key) != val for key, val in fixed.items()):
+        raise ValueError("NRW_MASTR_RECORD_SOURCE_IDENTITY_OR_AGGREGATE_DRIFT")
+    category_keys = {
+        "einheiten_in_betrieb": "active_solar_generating_units",
+        "gebaeudesolaranlagen": "building_solar_units",
+        "balkonkraftwerke": "balcony_solar_units",
+        "freiflaeche": "ground_mounted_solar_units",
+        "sonstige": "other_solar_units",
+    }
+    observations = receipt.get("nrw_public_MaStR_derived_unit_counts", {})
+    for src_key, category in category_keys.items():
+        if observations.get(category) != result["secondary_nrw_reported_active_pv_unit_sums_by_type"][src_key]:
+            raise ValueError("NRW_MASTR_RECORDED_UNIT_CATEGORY_DRIFT")
+    if (observations.get("secondary_municipalities_with_nonadditive_category_counts")
+        != result["secondary_nrw_category_nonadditive_municipalities"]):
+        raise ValueError("NRW_MASTR_RECORDED_UNIT_COMPONENT_SUM_DRIFT")
+    if sum(observations[k] for k in (
+        "building_solar_units", "balcony_solar_units", "ground_mounted_solar_units",
+        "other_solar_units"
+    )) != observations["active_solar_generating_units"]:
+        raise ValueError("NRW_MASTR_UNIT_CATEGORIES_DOUBLE_COUNT_OR_MISSING")
+    false_must = (
+        "nrw_technical_potential_and_installed_all_pv_denominators_comparable",
+        "number_of_reported_pv_units_is_number_of_physical_roofs",
+        "roof_only_pv_capacity_observed_from_secondary",
+        "individual_municipal_ags_or_address_rows_stored",
+        "federal_primary_xml_export_downloaded_and_verified",
+        "insurer_company_actual_pv_exposure_or_value_observed",
+        "insurer_specific_nrw_pv_installation_coverage_observed",
+        "model_source_approved",
+    )
+    if any(receipt.get(k) is not False for k in false_must):
+        raise ValueError("NRW_MASTR_INSURER_ORIGINAL_MODEL_STATUS_FALSELY_PROMOTED")
+    if receipt.get("rights_and_independent_scientific_review_required") is not True:
+        raise ValueError("NRW_MASTR_SOURCE_RIGHTS_REVIEW_SKIPPED")
+    return {
+        "original_git_pinned_secondary_and_state_checksum_receipt_match": True,
+        "insurer_actual_pv_assets_or_site_positions_admitted": False,
+    }
+
+
 def main() -> int:
     secondary = inspect_secondary(fetch_secondary(), pin_blob=True)
     official = official_nrw_ags(nrw.fetch_official())
-    print(json.dumps(crosswalk(secondary, official), ensure_ascii=False, sort_keys=True))
+    checked = crosswalk(secondary, official)
+    checked["frozen_NRW_aggregate_receipt"] = assert_saved_aggregate_receipt(checked)
+    print(json.dumps(checked, ensure_ascii=False, sort_keys=True))
     return 0
 
 
