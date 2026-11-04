@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: R+V NRW original rooftop PV safe schema observation
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/rva-nrw-original-roof-pv-schema.yml"
+      - "research_runners/rva_nrw_original_pv_schema_observation_v0.py"
+      - "tests/test_rva_nrw_original_pv_schema_observation_v0.py"
+      - "docs/research/rva-nrw-pv-original-schema-observation-20261104.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rva-nrw-pv-schema-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-publisher-schema:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout reviewed code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Run synthetic schema and privacy regression tests
+        run: python -m unittest discover -s tests -p "test_rva_nrw_original_pv_schema_observation_v0.py" -v
+      - name: Inspect fixed official original workbook schema with no municipality values
+        run: python -m research_runners.rva_nrw_original_pv_schema_observation_v0
