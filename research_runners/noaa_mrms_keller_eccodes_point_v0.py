@@ -20,6 +20,7 @@ from typing import Any
 
 from research_runners.noaa_mrms_mesh_direct_https_proof_v0 import (
     DirectSourceProofError,
+    KELLER_REPORT_WINDOW,
     fetch_pinned_original_object,
 )
 from research_runners.noaa_mrms_mesh_original_preflight_v0 import (
@@ -35,6 +36,12 @@ REPORT_LON = -97.29
 REPORTED_HAIL_MM = 63.5
 REPORT_NCEI_ID = 956694
 MAX_RADIUS_KM = 2.0
+
+KELLER_PRODUCT_SEMANTICS = {
+    "mesh_keller_2021": "instantaneous_2min_before_report",
+    "mesh_keller_2021_after": "instantaneous_2min_after_report",
+    "mesh_keller_2021_max30": "rolling_30min_max_after_report",
+}
 
 
 class PointDecodeError(ValueError):
@@ -62,13 +69,18 @@ def _expected_four_indices(geography: dict) -> set[int]:
     return {row * grid_nx + col for row in (jj, jj + 1) for col in (ii, ii + 1)}
 
 
-def decode_original_keller(blob: bytes, decoder: Any = None) -> dict:
-    """Validate original provider object then read four ecCodes nearest cells."""
-    pinned = SOURCE_OBJECTS[PRODUCT]
+def decode_original_keller(
+    blob: bytes, decoder: Any = None, product: str = PRODUCT
+) -> dict:
+    """Source-verify and compare four independent ecCodes values per window."""
+    if product not in KELLER_PRODUCT_SEMANTICS:
+        raise PointDecodeError("unreviewed Keller time-window product")
+    pinned = SOURCE_OBJECTS[product]
+    expected_utc, source_offset_s = KELLER_REPORT_WINDOW[product]
     try:
-        receipt = audit_original(blob, PRODUCT, pinned["basename"])
-        if receipt["reference_utc"] != "2021-04-29T01:36:39+00:00":
-            raise PointDecodeError("source UTC is not fixed report-window snapshot")
+        receipt = audit_original(blob, product, pinned["basename"])
+        if receipt["reference_utc"] != expected_utc:
+            raise PointDecodeError("source UTC is not pinned report-window snapshot")
         geography = receipt["grid_geography"]
         expected = _expected_four_indices(geography)
         message = inflate_gzip_capped(blob)
@@ -87,7 +99,7 @@ def decode_original_keller(blob: bytes, decoder: Any = None) -> dict:
         exact = {
             "discipline": 209,
             "parameterCategory": 3,
-            "parameterNumber": 28,
+            "parameterNumber": pinned["mrms_grib_parameter_number"],
             "numberOfPoints": 24_500_000,
             "Ni": 7000,
             "Nj": 3500,
@@ -140,6 +152,11 @@ def decode_original_keller(blob: bytes, decoder: Any = None) -> dict:
                  if row["value_status"] == "decoded_radar_mesh_mm"]
         return {
             "schema_version": "noaa-mrms-keller-eccodes-four-cell-v0",
+            "source_radar_product_semantics": KELLER_PRODUCT_SEMANTICS[product],
+            "source_relative_to_report_seconds": source_offset_s,
+            "source_is_rolling_max_not_an_additional_event": (
+                product == "mesh_keller_2021_max30"
+            ),
             "original_object_key": pinned["key"],
             "original_compressed_sha256": receipt["compressed_sha256"],
             "original_verified_gzip_crc32": receipt["gzip_crc32_checked"],
@@ -177,9 +194,18 @@ def decode_original_keller(blob: bytes, decoder: Any = None) -> dict:
 
 
 def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--product", choices=sorted(KELLER_PRODUCT_SEMANTICS),
+        default=PRODUCT,
+        help="One fixed researched source; not a URL or dynamic time window",
+    )
+    args = parser.parse_args()
     try:
-        original = fetch_pinned_original_object(PRODUCT)
-        receipt = decode_original_keller(original)
+        original = fetch_pinned_original_object(args.product)
+        receipt = decode_original_keller(original, product=args.product)
     except (DirectSourceProofError, PointDecodeError) as exc:
         # Never echo upstream exception text, source bodies or environment data.
         print("BLOCKED: fixed NOAA source or ecCodes point validation failed", file=sys.stderr)
