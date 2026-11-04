@@ -132,7 +132,19 @@ def decode_original_keller(
                     or abs(((lon - REPORT_LON + 180) % 360) - 180) > 0.02):
                 raise PointDecodeError("ecCodes nearest four disagree with verified GRIB geography")
             received_indices.add(idx)
-            is_missing = not math.isfinite(val) or val == missing_sentinel or val > 1e10
+            # NOAA/NSSL MRMS GRIB2 user table, discipline 209/category 3,
+            # parameters 28/29: -1 = Missing, -3 = No Coverage (mm scale).
+            # These are ordinary encoded numeric values, NOT the ecCodes GRIB
+            # missing sentinel; never convert them to physical zero hail.
+            # The strict source-specific values are version-review evidence,
+            # not permission to mask any arbitrary negative number.
+            no_coverage = val == -3.0
+            mrms_missing = val == -1.0
+            grib_missing = (
+                not math.isfinite(val)
+                or val == missing_sentinel or val > 1e10
+            )
+            is_missing = no_coverage or mrms_missing or grib_missing
             if not is_missing and (val < 0 or val > 1000):
                 raise PointDecodeError("unphysical or wrongly scaled decoded MESH")
             observations.append({
@@ -142,7 +154,11 @@ def decode_original_keller(
                 "latitude_deg": round(lat, 6),
                 "longitude_deg_east_0_360": round(lon % 360, 6),
                 "distance_to_report_km": round(dist, 4),
-                "value_status": "missing" if is_missing else "decoded_radar_mesh_mm",
+                "value_status": (
+                    "source_no_coverage" if no_coverage else
+                    "source_missing" if mrms_missing else
+                    "grib_missing" if grib_missing else "decoded_radar_mesh_mm"
+                ),
                 "decoded_radar_mesh_mm": None if is_missing else round(val, 3),
             })
         if received_indices != expected:
@@ -176,6 +192,15 @@ def decode_original_keller(
             "four_nearest_radar_cells": observations,
             "valid_neighbour_count": len(valid),
             "missing_neighbour_count": 4 - len(valid),
+            "source_no_coverage_neighbour_count": sum(
+                row["value_status"] == "source_no_coverage" for row in observations
+            ),
+            "source_missing_neighbour_count": sum(
+                row["value_status"] == "source_missing" for row in observations
+            ),
+            "grib_encoded_missing_neighbour_count": sum(
+                row["value_status"] == "grib_missing" for row in observations
+            ),
             "decoded_local_min_radar_mesh_mm": min(valid) if valid else None,
             "decoded_local_max_radar_mesh_mm": max(valid) if valid else None,
             "physical_model_skill_established": False,
