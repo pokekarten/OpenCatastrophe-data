@@ -43,6 +43,33 @@ The new `research_runners/rva_nrw_original_pv_class_aggregates_v0.py` **fails cl
 - `Insgesamt` is a publisher total, so summing it again with the six named classes **double counts**.
 - The aggregates may be used to challenge **physical rooftop exposure mix** (residential vs industrial vs agricultural). They do **not** represent actual R+V insured PV systems, installation values, rate-on-line, sums insured or claim risk.
 
+## Real source-derived statewide numeric receipt (same SHA)
+
+A new exact-source [read-only original workflow](https://github.com/pokekarten/OpenCatastrophe-data/pull/1331) successfully examined all **396 uniquely assigned eight-digit AGS** on each of the four publisher original sheets, verified the same set across all sheets, all **36×7** year-tagged class headers and both **7-class** technical potential headers, and generated *only state-wide class totals*. Source values are unchanged; output below is rounded to **0.001 of the explicitly printed source unit** (kW or kWh). The immutable machine-readable candidate receipt is [NRW original statewide source aggregates](../../research/observations/nrw_pv_official_municipality_class_state_20260312_v0.toml). The runner checks that the committed research receipt matches the original each run; the original raw workbook is not stored.
+
+| Publisher building category | **Technical potential capacity, kW** | **Technical potential yield, kWh/year** |
+| --- | ---: | ---: |
+| Wohngebäude | 41,654,518.126 | 32,997,670,528.744 |
+| Gewerbe und Industrie | 25,300,151.824 | 21,084,493,097.682 |
+| Öffentliche Gebäude | 4,488,901.655 | 3,624,658,941.606 |
+| Landwirtschaft | 9,058,205.432 | 7,082,135,214.501 |
+| Sonstige Gebäude | 2,805,121.991 | 2,253,329,842.415 |
+| Nicht zuordbar | 1,002,103.170 | 821,456,974.884 |
+| **Publisher Insgesamt (separate total column)** | **84,309,002.198** | **67,863,744,599.832** |
+
+This represents approximately **84.309 GW of modeled potential rooftop PV capacity** and **67.864 TWh/y of potential electricity yield** in NRW's exact 2026 publisher product. The six disjoint category values agree with the separately published total to the displayed milliunit rounding. Do NOT sum `Insgesamt` with component categories.
+
+| Distinct original source field | Sum of 396 municipal **2025-tagged column**, not yet cumulatively interpreted |
+| --- | ---: |
+| `Bestand Leistung [kW] 2025 Insgesamt` | **12,848,498.954 kW** |
+| `Bestand Ertrag [kWh] 2025 Insgesamt` | **11,409,467,071.152 kWh** |
+
+**Vital scientific caveat:** these are *single 2025-labelled source spreadsheet fields*, not verified installations/cumulative installed fleet as of year end. The workbook lists `1990–2025` for each year but a publisher methodology proving whether such columns are cumulative, year-of-commissioning bins or another meaning has **not** been recovered. Therefore **no potential-minus-bestand availability estimate**, installed PV loss payout, insured PV penetration ratio, 2025 new capacity claim or historical CAT hazard model is authorized.
+
+**Floating-point source precision:** The actual XLSX numeric strings carry tiny binary-to-decimal serialisation residuals. Source original category sums versus published `Insgesamt` have maximum absolute differences **4.732×10⁻⁹ kW** in potential capacity and **0.0000036019 kWh** in potential yield. These are vastly below actual model/source precision. The original runner now **fails** if any group exceeds **0.00001 kW** or **0.0001 kWh** respectively, rather than falsely counting all nonzero lexical noise as real data mismatches. Neither the published source totals nor category values were forced into equality. It is correct to keep the original exact bytes as provenance and the rounded state aggregate as a reproducible **physical opportunity** input candidate only.
+
+R+V **2025 solo insurer contracts (1,060,546)** and HGB property premium are national controls; nothing in the original NRW solar spreadsheet allocates those contracts or their insured sums to these municipalities or building classes. This source may eventually inform a *conditional* rooftop PV technical-capacity stress by residential/industrial/agricultural occupation, **not** a company-specific R+V PV book and not installed physical coverage from MaStR.
+
 ## Explicit evidence classifications
 
 | Object | State after this PR |
