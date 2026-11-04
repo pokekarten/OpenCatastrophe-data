@@ -55,3 +55,36 @@ The allocator has no verified optional flood cover. Its `hypothetical_elemental_
 4. **Outward treaty and actual Oasis model:** Existing [R+V solo 2021–25 external RI sources](../../research/observations/rva_solo_public_natcat_ri_2021_2025_v0.toml) report public treaty *families* (XL, quota, parent NatCat cover) but **not exact real attachment, limit, cession, inuring order, reinstatements or incurred event ceded loss**. Use declared fictional contract terms to compute IL/RI/net and disclose every structural uncertainty. Only after independent German event/vulnerability and synthetic location/TIV intake can native Oasis OEP/AEP be called a calibrated run.
 
 **Scientific result:** mathematically exact (counts and EUR cents), nationally issuer-anchored **fictional spatial scenarios**. Not yet a *statistically estimated* R+V geographic exposure portfolio, not real or synthetic geocoded OED, and not a Germany hazard-calibrated Oasis output.
+
+
+## Major improvement: **real 2022 state-level building opportunity data**, not only fictional macro weights
+
+Original **Thüringer Landesamt für Statistik**, *Statistisches Monatsheft Mai 2025*, article *Ergebnisse der Gebäude- und Wohnungszählung des Zensus 2022 zu Gebäuden mit Wohnraum in Thüringen*, **figure 5, printed p.29** (all 16 Länder plus Germany), direct official-archive link:
+https://www.statistischebibliothek.de/mir/servlets/MCRFileNodeServlet/THMonografie_derivate_00000684/Aufsatz-05a-2025.pdf
+
+A narrow, attributed and machine-readable transcription of the actual national/state **2022 Gebäude mit Wohnraum** totals and four ownership classes lives in [zensus2022_16_state_residential_use_buildings_v0.toml](../../research/observations/zensus2022_16_state_residential_use_buildings_v0.toml), the **first actual 16-state German physical opportunity numeric matrix** for the R+V exercise. Publisher print: Germany **19,957,268 buildings with residential use**. The **16 published individual Länder rows sum to 19,957,266**, i.e. **2 fewer**. Ownership subtotals likewise differ in small amounts, up to 6 within a state and up to 10 when comparing the sum of states to publisher national ownership categories. The pipeline **reports this original non-additivity instead of silently inventing 2 buildings or forcing statistical counts to agree**. Underlying original office PDF bytes were not downloaded or SHA256 authenticated in this step; only small cited aggregates were manually transcribed. Never treat this article as a licensed individual-building location file.
+
+The published statistic **Gebäude mit Wohnraum** also includes *other buildings with some dwelling use*, so it is **not exactly** `Wohngebäude` and is **not equivalent** to R+V insured connected-building contract counts. It represents an independent **2022 physical-building opportunity denominator** only. Ownership classes are *physical building owner types*, **not** the insurer's policyholder / insured category shares.
+
+### Executable 16-state hypothesis comparison, first truly external geographic distribution
+
+```bash
+python research_runners/rva_census_16state_company_prior_v0.py
+python -m unittest discover -s tests -p 'test_rva_census_16state_company_prior_v0.py' -v
+```
+
+The executable reads the attributed **2022 public census state counts** plus the already source-pinned **2025 R+V Allgemeine solo HGB national policy count 1,060,546 and booked GWP EUR 997.710m**. It produces **three alternative hypothetical, exactly mass-conserving 2025 state allocations** based on different factual **2022 opportunity** categories:
+
+1. all 2022 buildings with residential use (uniform hypothetical contract affinity per published physical building);
+2. 2022 privately owned buildings (hypothetical bias towards individual owners);
+3. 2022 apartment-owner association + housing-company buildings (alternative hypothetical bias towards professionally/collectively managed holdings).
+
+The first case illustrates the raw 2022 physical opportunity benchmark. Its company-book distribution is a **simulation**, not a measured geographic share. Example approximate 2025 allocations under this **uniform hypothetical**: North Rhine-Westphalia **~214,807**, Bavaria **~171,503**, Baden-Württemberg **~136,411**, Berlin **~17,997** *hypothetical contracts*. They are not reported actual R+V sales! All 16 state predictions sum to exactly **1,060,546** and the allocated book GWP to exactly **EUR 997.710m**, after deterministic integer/cent rounding. The actual state share could differ substantially, as demonstrated by the other two scenarios.
+
+No BVR association statistics enter these computed state weights: no validated BVR association->Land crosswalk or issuer bank partner conversion has been obtained. The earlier four invented macro-region stress script stays useful as a *separate structural sensitivity*, while this 16-state proof finally uses **genuine public physical-building evidence** for one dimension of the estimated portfolio. No real 2025 insurer locations, endorsements, TIV, county exposures or perils are inferred.
+
+### Critical data gaps before production insurance/GIS modelling
+
+The next technical evidence step is to acquire the **original Zensus 2022 Kreis-level** CSV at the same 15 May 2022 geography, with original byte SHA, column semantics and suppression treatment. The **national 2022** to **insurer 2025** population shift is not corrected by the currently source-backed record, and the model must explicitly calculate sensitivity to 2022–25 growth, insurance policy multiplicity, urban multi-unit cover and the issuer's own regional market shares. Once district-level data and genuine building footprints are admitted with correct rights, one can generate location-level *synthetic* OED. German DWD peril hazard, vulnerability, actual model execution and gross/net OEP/AEP are subsequent independent scientific gates, not outcomes of the present BVR/census research.
+
+**Source state:** First audited public **16-state opportunity input and three company-anchored inferred spatial distributions**, still NOT actual R+V exposures, CAT losses, underwriting location or a calibrated Oasis model.
