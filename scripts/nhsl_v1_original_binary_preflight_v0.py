@@ -182,6 +182,47 @@ def parse_original_dictionary(raw: bytes) -> dict[str, Any]:
         }
 
 
+def _feature_geometry_wkb_base_type(
+    raw: bytes | memoryview | None,
+    source_srs_id: int,
+) -> int:
+    """Verify GeoPackage header/SRS and identify the actual ISO WKB geometry family.
+
+    This is a type-level inspection, NOT full coordinate/topology validation.
+    GeoPackage geometry_columns may lawfully declare the generic GEOMETRY
+    supertype even when all actual WKB values are Polygon/MultiPolygon/Point.
+    """
+    if not isinstance(raw, (bytes, memoryview)):
+        raise NHSLBinaryError("GeoPackage feature geometry missing or not a BLOB")
+    blob = bytes(raw)
+    if len(blob) < 13 or blob[:2] != b"GP" or blob[2] != 0:
+        raise NHSLBinaryError("invalid or unsupported GeoPackage binary geometry header")
+    flags = blob[3]
+    if flags & 0xF0:
+        raise NHSLBinaryError("empty/reserved GeoPackage geometry flags")
+    order = "little" if (flags & 1) else "big"
+    envelope = (flags >> 1) & 7
+    envelope_bytes = {0: 0, 1: 32, 2: 48, 3: 48, 4: 64}.get(envelope)
+    if envelope_bytes is None:
+        raise NHSLBinaryError("reserved GeoPackage geometry envelope code")
+    header_srs = int.from_bytes(blob[4:8], order, signed=True)
+    if header_srs != source_srs_id:
+        raise NHSLBinaryError("GeoPackage per-feature SRS does not match metadata")
+    start = 8 + envelope_bytes
+    if start + 5 > len(blob):
+        raise NHSLBinaryError("truncated WKB geometry after GeoPackage envelope")
+    wkb_order = blob[start]
+    if wkb_order not in (0, 1):
+        raise NHSLBinaryError("invalid WKB endian indicator")
+    raw_type = int.from_bytes(
+        blob[start + 1:start + 5], "little" if wkb_order else "big"
+    )
+    # ISO WKB can add 1000/2000/3000 to the basic type for Z/M/ZM.
+    if raw_type >= 4000 or raw_type < 1:
+        raise NHSLBinaryError("unsupported or extended WKB feature type")
+    return raw_type % 1000
+
+
 def check_sqlite_gpkg(gpkg: bytes, role: str, expected: dict[str, Any]) -> dict[str, Any]:
     """Run a read-only, temporary SQLite structural check; never persist original data."""
     if not gpkg.startswith(b"SQLite format 3\x00") or len(gpkg) > MAX_DECOMPRESSED_MEMBER_BYTES:
@@ -205,13 +246,33 @@ def check_sqlite_gpkg(gpkg: bytes, role: str, expected: dict[str, Any]) -> dict[
                 table, column, geom, epsg = geometry_rows[0]
                 if (
                     not isinstance(table, str) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,110}", table)
-                    or geom.upper() not in expected["geometry_family"] or table not in table_names
+                    or table not in table_names
+                    or not isinstance(column, str)
+                    or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,110}", column)
+                    or not isinstance(geom, str)
+                    or geom.upper() not in expected["geometry_family"] | {"GEOMETRY"}
+                    or type(epsg) is not int
                 ):
-                    raise NHSLBinaryError(f"{role}: wrong feature table or geometry family")
+                    raise NHSLBinaryError(f"{role}: wrong feature table, column or geometry declaration")
                 columns = {str(row[1]) for row in con.execute(f'PRAGMA table_info("{table}")')}
-                missing = expected["required_columns"] - columns
+                missing = (expected["required_columns"] | {column}) - columns
                 if missing:
                     raise NHSLBinaryError(f"{role}: missing exact GPKG columns: {sorted(missing)}")
+                expected_wkb = {"polygon": {3, 6}, "archetype": {1, 4}}[role]
+                observed_wkb: set[int] = set()
+                checked_geometries = 0
+                for (binary,) in con.execute(f'SELECT "{column}" FROM "{table}"'):
+                    checked_geometries += 1
+                    if checked_geometries > 5_000_000:
+                        raise NHSLBinaryError(f"{role}: unbounded feature geometries")
+                    base_type = _feature_geometry_wkb_base_type(binary, epsg)
+                    if base_type not in expected_wkb:
+                        raise NHSLBinaryError(
+                            f"{role}: actual WKB geometry family conflicts with role"
+                        )
+                    observed_wkb.add(base_type)
+                if not checked_geometries:
+                    raise NHSLBinaryError(f"{role}: no original feature geometries")
                 content = con.execute(
                     "SELECT data_type, srs_id FROM gpkg_contents WHERE table_name=?", (table,)
                 ).fetchone()
@@ -224,6 +285,11 @@ def check_sqlite_gpkg(gpkg: bytes, role: str, expected: dict[str, Any]) -> dict[
                     raise NHSLBinaryError(f"{role}: impossible row count")
                 return {
                     "geometry_family": geom.upper(),
+                    "metadata_geometry_is_generic": geom.upper() == "GEOMETRY",
+                    "observed_wkb_base_types": sorted(observed_wkb),
+                    "wkb_feature_geometries_checked": checked_geometries,
+                    "wkb_type_and_srs_check": "passed",
+                    "wkb_topology_and_coordinate_bounds_checked": False,
                     "internal_gpkg_srs_id": epsg,
                     "feature_table_name": table,
                     "feature_count": count,

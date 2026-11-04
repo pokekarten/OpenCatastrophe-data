@@ -73,7 +73,8 @@ def fake_xlsx() -> bytes:
     return stream.getvalue()
 
 
-def synthetic_gpkg(role: str) -> bytes:
+def synthetic_gpkg(role: str, *, generic_metadata: bool = False,
+                   actual_wkb_type: int | None = None) -> bytes:
     spec = PINNED[role]
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "synthetic.gpkg"
@@ -85,16 +86,28 @@ def synthetic_gpkg(role: str) -> bytes:
             con.execute("CREATE TABLE gpkg_spatial_ref_sys (srs_id INTEGER PRIMARY KEY, organization TEXT)")
             con.execute("INSERT INTO gpkg_spatial_ref_sys VALUES (4326, 'EPSG')")
             table = "fictional_poly" if role == "polygon" else "fictional_archetype"
-            geometry = "MULTIPOLYGON" if role == "polygon" else "MULTIPOINT"
+            geometry = "GEOMETRY" if generic_metadata else (
+                "MULTIPOLYGON" if role == "polygon" else "MULTIPOINT"
+            )
+            wkb_type = actual_wkb_type if actual_wkb_type is not None else (
+                6 if role == "polygon" else 4
+            )
+            # Invented GPKG GP header, EPSG:4326, then a minimal ISO-WKB type.
+            # Empty synthetic multi-geometry body is only for type-level tests.
+            gpkg_geom = (
+                b"GP\x00\x01" + (4326).to_bytes(4, "little", signed=True)
+                + b"\x01" + wkb_type.to_bytes(4, "little")
+                + (0).to_bytes(4, "little")
+            )
             fields = sorted(spec["required_columns"])
             columns = ", ".join(f'"{col}" TEXT' for col in fields)
             con.execute(f'CREATE TABLE "{table}" (feature_id INTEGER PRIMARY KEY, {columns}, geom BLOB)')
             con.execute("INSERT INTO gpkg_contents VALUES (?, 'features', 4326)", (table,))
             con.execute("INSERT INTO gpkg_geometry_columns VALUES (?, 'geom', ?, 4326)", (table, geometry))
             con.execute(
-                f'INSERT INTO "{table}" ({",".join(chr(34)+f+chr(34) for f in fields)})'
-                f' VALUES ({",".join("?" for _ in fields)})',
-                ["invented" for _ in fields],
+                f'INSERT INTO "{table}" ({",".join(chr(34)+f+chr(34) for f in fields)}, geom)'
+                f' VALUES ({",".join("?" for _ in fields)}, ?)',
+                ["invented" for _ in fields] + [gpkg_geom],
             )
             con.commit()
         finally:
@@ -140,6 +153,20 @@ class TestNHSLOfflineBinaryPreflight(unittest.TestCase):
                 result = check_archive(raw, role, spec)
                 self.assertEqual(result["feature_count"], 1)
                 self.assertFalse(result["original_rows_or_coordinates_emitted"])
+
+    def test_original_generic_geometry_requires_actual_wkb_role_match(self) -> None:
+        for role, expected_type in (("polygon", 6), ("archetype", 4)):
+            with self.subTest(role=role):
+                gpkg = synthetic_gpkg(role, generic_metadata=True)
+                receipt = check_sqlite_gpkg(gpkg, role, PINNED[role])
+                self.assertTrue(receipt["metadata_geometry_is_generic"])
+                self.assertEqual(receipt["observed_wkb_base_types"], [expected_type])
+                self.assertEqual(receipt["wkb_feature_geometries_checked"], 1)
+                self.assertEqual(receipt["wkb_type_and_srs_check"], "passed")
+                self.assertFalse(receipt["wkb_topology_and_coordinate_bounds_checked"])
+        gpkg = synthetic_gpkg("polygon", generic_metadata=True, actual_wkb_type=1)
+        with self.assertRaisesRegex(NHSLBinaryError, "actual WKB geometry family"):
+            check_sqlite_gpkg(gpkg, "polygon", PINNED["polygon"])
 
     def test_wrong_geometry_family_rejected(self) -> None:
         gpkg = synthetic_gpkg("polygon")
