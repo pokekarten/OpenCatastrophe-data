@@ -154,6 +154,7 @@ class NRWMaStRDerivedCrosswalkTests(unittest.TestCase):
             "nrw_key_set_private_only": set(list(sorted(official))[:-1]),
             "secondary_csv_exact_git_blob_sha1": m.THIRD_PARTY_BLOB_SHA1,
             "secondary_csv_full_sha256": "0"*64, "secondary_original_bytes": 1000,
+            "source_municipality_count": 10759, "source_field_count": 31,
             "nrw_unit_sums": {}, "nrw_all_generation_pv_capacity_kwp": "0",
             "nrw_rows_with_category_count_difference": 0,
         }
@@ -166,6 +167,7 @@ class NRWMaStRDerivedCrosswalkTests(unittest.TestCase):
             "nrw_key_set_private_only": set(official),
             "secondary_csv_exact_git_blob_sha1": m.THIRD_PARTY_BLOB_SHA1,
             "secondary_csv_full_sha256": "0"*64, "secondary_original_bytes": 1000,
+            "source_municipality_count": 10759, "source_field_count": 31,
             "nrw_unit_sums": {"gebaeudesolaranlagen": 1},
             "nrw_all_generation_pv_capacity_kwp": "2",
             "nrw_rows_with_category_count_difference": 0,
