@@ -206,6 +206,13 @@ def inspect_members(gen_raw:bytes, util_raw:bytes, owner_raw:bytes, *,
         raise GeneratorOperatorJoinBlocked("generator inventory conservation failure")
     utility_match=sum(any(uid in utility_codes for uid in operator_by_key[k])
                       for k in memberships)
+    reporting_utilities_in_cohort=set()
+    plant_utility_ids=defaultdict(set)
+    for (plant, _gen), util_ids in operator_by_key.items():
+        reporting_utilities_in_cohort.update(util_ids)
+        plant_utility_ids[plant].update(util_ids)
+    plants_with_multiple_reporting_utilities=sum(
+        len(ids)>1 for ids in plant_utility_ids.values())
     operator_missing=sum(not operator_by_key[k] for k in memberships)
     operator_multiple=sum(len(operator_by_key[k])>1 for k in memberships)
     owner_with_roster=len(owner_keys & set(memberships))
@@ -237,6 +244,8 @@ def inspect_members(gen_raw:bytes, util_raw:bytes, owner_raw:bytes, *,
             t:dict(sorted(tab_statuses[t].items())) for t in tabs},
         "source_generator_rows_with_missing_or_unknown_status_by_sheet":dict(status_without_value),
         "source_utility_distinct_ids_nationwide":len(utility_codes),
+        "in_cohort_distinct_reporting_utility_ids":len(reporting_utilities_in_cohort),
+        "in_cohort_plant_codes_with_multiple_reporting_utility_ids":plants_with_multiple_reporting_utilities,
         "source_utility_duplicate_id_rows":utility_duplicates,
         "source_utility_empty_or_invalid_id_rows":utility_empty_or_invalid,
         "generator_keys_with_at_least_one_source_utility_id":len(memberships)-operator_missing,
