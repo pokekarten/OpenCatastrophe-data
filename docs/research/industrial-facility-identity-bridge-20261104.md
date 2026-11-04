@@ -118,3 +118,9 @@ python research_runners/epa_frs_eia860_oris_crosswalk_v0.py \
 ```
 
 The exact original 2025 EIA workbook/sheet header, EPA source ZIP timestamp and source-specific data reuse rights must be reviewed before a genuine run. It is **forbidden** to infer that a current EIA plant is a GEM unit, the owner is an insurance group, or that capacity/revenue equals TIV. This bridge is intended to provide independently inspectable *candidate identity*, and nothing further.
+
+## First real original-response receipts (2026-11-04)
+
+The first bounded live [EPA Delaware EIA-860 facility proof](epa-frs-eia860-live-original-json-receipts-20261104.md) has **three individually SHA-256-hashed original API HTTP response bodies**: 14 FRS facility records and 15 EIA-860 program IDs across three disjoint Delaware city queries, including one FRS record referring to two EIA plant IDs. This validates only source-reported *FRS ↔ EIA-860 program links*, not independent EIA 2025 annual-workbook membership or a GEM project mapping. The fresh ORIS 3136 standalone answer also exhibits contradictory provider site labeling; do not promote location, owner or insured-risk fields.
+
+The ECHO FRS weekly programme-filtered download is not the complete EPA FRS registry. A blank EIA-860 link within that ECHO subset cannot be interpreted as evidence of a missing power plant in full FRS. Original-data access/usage rights, exact annual EIA file bytes, and geospatial accuracy remain separate gates.
