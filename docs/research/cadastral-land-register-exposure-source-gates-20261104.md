@@ -84,3 +84,22 @@ Response metadata and one Dutch feature structure were inspected only; **no raw 
 **NRW source-vintage drift:** Geoportal's WFS metadata lists ALKIS source vintage **2026-09-01**, but GovData's current listing describes **2026-10-01** (https://www.govdata.de/suche/daten/inspire-nw-flurstucke-grundstucke-alkis1b731). This is unresolved catalogue inconsistency; do not pin raw features until original service responds and its actual version is captured.
 
 **Pilot choice updated:** first bounded live candidate ingestion should use the Netherlands' confirmed OGC parcels endpoint. NRW remains a Germany/R&V priority, blocked pending an independent service-health/proxy retry or sanctioned official alternative download. None of these probes establish BAG crosswalk, physical building identity, building replacement cost, insurer coverage or TIV.
+
+## First same-bbox real-provider PDOK evidence — 2026-11-04
+
+**Bounded location window (CRS84 west,south,east,north):** `5.1202,52.0902,5.1206,52.0906` (a very small research window). Queries use the same bbox and `limit=40`, `f=json`:
+
+- BRK: https://api.pdok.nl/kadaster/brk-kadastrale-kaart/ogc/v1/collections/perceel/items?bbox=5.1202,52.0902,5.1206,52.0906&limit=40&f=json — timestamp 2026-11-04T20:25:18Z, 19 parcel MultiPolygon features, `numberReturned=19`, no `next` link.
+- BAG: https://api.pdok.nl/kadaster/bag/ogc/v2/collections/pand/items?bbox=5.1202,52.0902,5.1206,52.0906&limit=40&f=json — timestamp 2026-11-04T20:25:22Z, 21 building Polygon features, `numberReturned=21`, no `next` link.
+- BAG status observed: 19 `Pand in gebruik` (in use) and 2 `Niet gerealiseerd pand` (not realised). Non-realised buildings are *not* active exposure.
+- **Illustrative geometry-centroid containment diagnostic** (local recentered shoelace calculation, not verified PostGIS overlap): 13/21 building centres fell inside one of 19 returned parcel geometries; 8/21 did not; no centre fell in >1 parcel; among 19 in-use buildings, 11 had one parcel-centroid candidate. This does **not** mean the other 8 buildings lack land, nor that the 13 are legally verified parcel/building relations. Building and parcel snapshots are both time-sensitive and original data should not be redistributed without scope review.
+- A naive shoelace centroid using absolute 5.x/52.x degree coordinates gave numerically unstable results for tiny rooftops. **Recenter polygon coordinates before computing area-weighted centroid**; the corrected diagnostic found zero building centroids outside their own Polygon for this test. Always distinguish 'centroid-in-parcel' from actual building footprint overlap/area proportion. The open cadastral map is indicative and not a legally precise boundary survey.
+
+**New reproducibility code, offline/fail-closed:** `scripts/audit_pdok_brk_bag_centroid_v0.py` and `tests/test_audit_pdok_brk_bag_centroid_v0.py`. The diagnostic requires local bounded original GeoJSON snapshots and a separately declared shared bbox; rejects result pagination, wrong CRS84 coordinate ranges, older than one-day source-time drift, sensitive owner/address/title fields, future ambiguity or invalid data. It only prints aggregate candidate counts, never source IDs. This program is **not** a polygon intersection engine and must never feed an exposure model until a licensed source manifest and accurate spatial join are independently reviewed.
+
+```sh
+python -m unittest tests.test_audit_pdok_brk_bag_centroid_v0 -v
+python scripts/audit_pdok_brk_bag_centroid_v0.py --parcels /private/pdok-parcels-40.json --buildings /private/pdok-bag-panden-40.json --bbox 5.1202,52.0902,5.1206,52.0906
+```
+
+**Validation status:** current CI is pending as of this research note; do not claim these new Python unit tests have passed until execution evidence is available. No parcel/building source records, household details, addresses, or provider bytes have been committed.
