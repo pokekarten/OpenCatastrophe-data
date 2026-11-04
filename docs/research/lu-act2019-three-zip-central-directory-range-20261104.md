@@ -50,3 +50,7 @@ All observed central-directory offsets, per-entry byte lengths and count conserv
  If the actual official ZIPs use ZIP64, a spanned archive, unexpected source syntax or larger metadata than the budget, the job will fail closed and the result must be documented as a source format discovery rather than by loosening constraints to force green.
 
 Scientific downstream gates remain: original tile full SHA256, actual LAS/LAZ header and CRS/datum/classification verification, 2019 vs 2026 sensor/pipeline ancestry, blinded holdout and rights review. Model/insured-asset/TIV/claims admission remains false.
+
+## Immutable metadata follow-up gate
+
+The three **observed metadata-only** central-directory SHA256 digests above are now pinned in the actual source runner together with **9 .laz filename-extension members per archive**. The source workflow fails closed if even a same-HEAD-length archive has changed its ZIP central-directory metadata. This pin **does not** validate the much larger archive data bytes, source LAZ file headers, return classes or 2019 building existence. Synthetic tests separately exercise a tampered metadata digest, changed entry count, different extension distribution, encryption flags and an invented study site. A final exact-head original-source and full repository CI pass is still mandatory after this update.
