@@ -45,7 +45,7 @@ jobs:
         run: python -m unittest tests.test_gdw_v1_shapefile_archive_preflight_v0 -v
 
       - name: Inspect exact original published GDW v1 Shapefile ZIP without exporting bytes
-        if: github.event_name != 'pull_request'
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
