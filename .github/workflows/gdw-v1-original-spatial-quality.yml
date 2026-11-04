@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: GDW v1 Original Paired Geometry Topology Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/gdw-v1-original-spatial-quality.yml"
+      - "research_runners/gdw_v1_original_shapefile_evidence_v0.py"
+      - "research_runners/gdw_v1_original_spatial_quality_v0.py"
+      - "tests/test_gdw_v1_original_spatial_quality_v0.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/gdw-v1-original-spatial-quality.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gdw-v1-original-spatial-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  spatial-source-quality:
+    name: Geos validity and paired GDW_ID containment, original source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact reviewed source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+
+      - name: Install pinned spatial source readers
+        run: python -m pip install --disable-pip-version-check --no-cache-dir --no-input "pyshp==2.3.1" "shapely==2.1.2"
+
+      - name: Synthetic geometry/ID and publisher evidence regressions
+        run: python -m unittest tests.test_gdw_v1_shapefile_archive_preflight_v0 tests.test_gdw_v1_original_spatial_quality_v0 -v
+
+      - name: Check one original Figshare GDW v1 ZIP and aggregate GEOS spatial quality
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          original="$RUNNER_TEMP/GDW_v1_0_shp.zip"
+          trap 'rm -f "$original"' EXIT
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 240 --retry 0 \
+            --max-filesize 69745749 \
+            --output "$original" \
+            'https://ndownloader.figshare.com/files/47913754'
+          # Pinned original SHA-256 from independent prior successful main CI
+          # is checked before the in-memory geometry reader opens the archive.
+          # Source ZIP is never committed, cached or uploaded as a GitHub artifact.
+          python research_runners/gdw_v1_original_spatial_quality_v0.py \
+            --original-zip "$original"
+          echo "GDW source spatial diagnostic complete; no model admission or source bytes exported."
