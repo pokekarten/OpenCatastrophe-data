@@ -53,3 +53,30 @@ The [public live GitHub original-source job](https://github.com/pokekarten/OpenC
 The [second-stage bounded audit](../../research_runners/eia860_2025_owner_shares_cohort_v0.py) and its [synthetic tests](../../tests/test_eia860_2025_owner_shares_cohort_v0.py) now measure **EIA Owner Schedule 4 rows for the 15 EPA/EIA-confirmed Delaware plant IDs**, grouped by exact (plant, generator) keys. It checks whether the *reported* owner percentages sum to 100±0.05 percentage points, detects missing/bad source shares and repeated owner names, and prints only aggregate counts. **This is not a population census of every generator at the plant:** the Owner workbook intentionally omits operator-owned generators, so observed rows must not be extrapolated to 100% generator or company-wide ownership.
 
 A fresh, exact-hash EIA source run and full GitHub CI are mandatory before writing **any actual observed ownership-share counts** into the evidence register. If a source group fails the share test, preserve the anomaly and continue research; never modify or impute original percentages to force a pass. No carrier, facility construction cost, BI downtime, hazard score, TIV or reinsurance treaty is inferred from this schema.
+
+## Real generator-share cohort audit and Excel percentage-unit correction
+
+The [official original-source CI run #41892331971](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41892331971) completed **successfully** after reading the same pinned annual 2025 EIA ZIP and `4___Owner_Y2025.xlsx`. It ran 7 original-schema synthetic tests and 10 source-ownership synthetic tests before the real source aggregation.
+
+**Critical scientific correction:** The first live generator share audit incorrectly treated the underlying XLSX raw fractional cell contents as percentage points. The six in-cohort `Percent Owned` cells all used **original XLSX cell style 12 with built-in number format ID 10 = 0.00%**, and their numeric values were between 0 and 1. XLSX percent style means a raw `0.40` denotes **40 percentage points**, not 0.4%. The original-source runner was modified to multiply by 100 **only for native percent-formatted cells**. On an exact-original source, a cell missing/using an unreviewed format is quarantined rather than silently assigned a unit. The earlier 6/6 apparent under-100 totals were an **artifact of our pre-correction parsing**, not an EIA ownership gap.
+
+### Verified source observation, 2026-11-04
+
+| Metric | Original-owner proof |
+| --- | ---: |
+| Original source ZIP SHA-256 | `2b27929d26cc1da9ad6a530da1cac6718cd8496098ee560c4d47cfffd96d08ba` |
+| Inner Owner workbook SHA-256 | `f0600c57b24f065017983e50a8a6561c8aa563382bb8862ad216448ca32d9383` |
+| Total Owner schedule rows with plant and generator fields, all U.S. | **5,680** |
+| EIA 2025 Delaware cohort: EPA-confirmed plant codes | **15** |
+| Delaware cohort plants with explicitly reported Schedule 4 ownership rows | **3** |
+| Reported Schedule 4 generator rows / distinct generators, cohort | **6 / 6** |
+| Generators with summed reported owner percentages equal to 100 ± 0.05 percentage points | **6 / 6** |
+| Generators with sub-100 / supra-100 shares after correct Excel formatting | **0 / 0** |
+| Source rows with unparseable percentages or missing owner names | **0 / 0** |
+| Source duplicate owner-name entries for the same generator | **0** |
+
+The six named source owner rows are **not** reproduced here. Their source-identifying values were only held in memory while computing aggregates. The total 5,680 source rows is the all-U.S. Owner *special reporting schedule*, **not** the total U.S. generator population, and 3/15 plants should not be read as 20% ownership coverage. Generators absent from this exception schedule may be wholly owned by their reported operator, but **do not impute a legal owner** until generator roster/plant operator and exact report-year semantics are independently confirmed.
+
+The five upstream review boundaries remain unchanged: actual 2026 GEM unit/location match and rights (including TZ CC BY-NC), EIA Schedule 4 owner-code versus operator-code identity, GLEIF ownership/accounting consolidation, company-specific insured exposure/replacement TIV and business interruption, and independent treaty/loss model configuration.
+
+The initial source anomaly is now resolved by **original Excel-format evidence** rather than changing the share data or loosening the test. Reproducibility remains conditioned on exact GitHub head CI after final documentation and status cleanup.
