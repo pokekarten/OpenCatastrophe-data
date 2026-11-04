@@ -141,7 +141,7 @@ def inspect_zip_members_untrusted(raw: bytes) -> dict:
             for info in infos:
                 name = info.filename
                 if (not isinstance(name, str) or not name or name.startswith("/")
-                    or "\\\\" in name or "\\x00" in name
+                    or "\\" in name or "\x00" in name
                     or re.match(r"^[A-Za-z]:", name)
                     or any(part in ("", ".", "..") for part in name.rstrip("/").split("/"))):
                     raise DryadReceiptBlocked("unsafe ZIP member path")
