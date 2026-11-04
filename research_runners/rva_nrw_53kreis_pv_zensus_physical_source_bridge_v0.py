@@ -19,6 +19,7 @@ from pathlib import Path
 import re
 import sys
 import tomllib
+import urllib.request
 
 from research_runners import rva_nrw_mastr_derived_municipal_crosswalk_v0 as ma
 from research_runners import rva_nrw_original_rooftop_pv_xlsx_v0 as nrw
@@ -155,13 +156,27 @@ def aggregate_NRW_Kreise(secondary_bytes: bytes, original_nrw_ags: set[str],
     }
 
 
+def fetch_secondary_with_bounded_retry(*, fetch=ma.fetch_secondary) -> bytes:
+    # Exact source Git-blob and sha256 checks still happen after acquisition.
+    # Retry transient network errors only, never semantic/schema/hash failures.
+    last_error = None
+    for _ in range(2):
+        try:
+            return fetch(open_url=lambda request, timeout: urllib.request.urlopen(
+                request, timeout=75
+            ))
+        except (OSError, TimeoutError) as exc:
+            last_error = exc
+    raise TimeoutError("PINNED_SECONDARY_SOURCE_NETWORK_UNAVAILABLE") from last_error
+
+
 def main() -> int:
     p=argparse.ArgumentParser()
     p.add_argument("--county-rows",action="store_true",
         help="Include ONLY PUBLIC 53 Landkreis aggregate rows, never 396 municipality rows")
     x=p.parse_args()
     b,a=load_public_county_context()
-    secondary=ma.fetch_secondary()
+    secondary=fetch_secondary_with_bounded_retry()
     official=ma.official_nrw_ags(nrw.fetch_official())
     result=aggregate_NRW_Kreise(secondary,official,b,a)
     if not x.county_rows:
