@@ -1,0 +1,38 @@
+{
+  "schema_version": "OpenCatastrophe_RVA_SOLO_PUBLIC_NATCAT_STRESS_V0",
+  "as_of": "2025-12-31",
+  "observation_status": "official_source_observation_only_not_model_calibrated",
+  "subject": {
+    "legal_entity": "R+V Allgemeine Versicherung AG",
+    "perimeter": "solo_direct_insurer",
+    "ffbk_profile_ref": "RVA_DE_2025"
+  },
+  "source": {
+    "publisher": "R+V Allgemeine Versicherung AG",
+    "report": "SFCR 2025",
+    "url": "https://www.ruv.de/dam/jcr:9c8441a7-28dd-4d98-9b79-3eb3c8b4afa5/2025-SFCR-Allgemeine.pdf",
+    "printed_page": 41,
+    "pdf_page_index": 42,
+    "section": "C.1 Risikosensitivitaeten/-stresse",
+    "observed_in_original_render": "2026-11-04"
+  },
+  "scenario": {
+    "kind": "public_insurer_solvency_stress_test",
+    "description": "two very severe storm events; own-funds reduction equivalent to present-day impacts of Bernd 2021 and Kyrill 2007",
+    "base_solvency_coverage_percent": "241.2",
+    "natcat_stress_coverage_percent": "221.4",
+    "reported_scr_increase_eur_million": "121.899",
+    "reported_own_funds_decrease_eur_million": "314.118",
+    "derived_coverage_decline_percentage_points": "19.8"
+  },
+  "scientific_limits": [
+    "SCR increase and change in eligible own funds are not direct insured event losses or gross/net catastrophe loss amounts.",
+    "Events have no public full footprints, event loss vectors, precise insurance exposure, policy/reinsurance conditions or calibrated annual frequencies here.",
+    "The public hypothetical stress is not a 1-in-200 or 99.5 percent event loss and cannot be directly mapped onto OEP/AEP curves.",
+    "The 2025 solo stress must not be equated with 2025 group elemental claims EUR 150m or 2024 group elemental claims EUR 442m.",
+    "May be used as a future independently held-out aggregate resilience/sensitivity challenge only if capital, tax, own-funds and risk mitigation semantics are comparable."
+  ],
+  "real_insured_location_data_present": false,
+  "event_loss_calibration_target": false,
+  "oasis_model_input_approved": false
+}
