@@ -8,6 +8,8 @@ on:
     paths:
       - 'scripts/nhsl_v1_original_sauid_reconcile_v0.py'
       - 'scripts/nhsl_v1_original_binary_preflight_v0.py'
+      - 'scripts/nhsl_v1_nunavut_spatial_support_v0.py'
+      - 'tests/test_nhsl_v1_nunavut_spatial_support_v0.py'
       - 'tests/test_nhsl_v1_original_sauid_reconcile_v0.py'
       - 'tests/test_nhsl_v1_original_binary_preflight_v0.py'
       - 'docs/research/nhsl-v1-nunavut-original-sauid-reaggregation-20261104.md'
@@ -20,6 +22,7 @@ on:
       - '.github/workflows/nhsl-nunavut-original-sauid-conservation.yml'
       - 'scripts/nhsl_v1_original_sauid_reconcile_v0.py'
       - 'scripts/nhsl_v1_original_binary_preflight_v0.py'
+      - 'scripts/nhsl_v1_nunavut_spatial_support_v0.py'
 
 permissions:
   contents: read
@@ -45,13 +48,14 @@ jobs:
           python-version: '3.12'
 
       - name: Run synthetic-only source reconciliation tests
-        run: python -m unittest tests.test_nhsl_v1_original_binary_preflight_v0 tests.test_nhsl_v1_original_sauid_reconcile_v0 -v
+        run: python -m unittest tests.test_nhsl_v1_original_binary_preflight_v0 tests.test_nhsl_v1_original_sauid_reconcile_v0 tests.test_nhsl_v1_nunavut_spatial_support_v0 -v
 
       - name: Record reviewed executable identities
         run: |
           git rev-parse HEAD
           sha256sum scripts/nhsl_v1_original_sauid_reconcile_v0.py
           sha256sum scripts/nhsl_v1_original_binary_preflight_v0.py
+          sha256sum scripts/nhsl_v1_nunavut_spatial_support_v0.py
 
       - name: Reconcile both original NHSL v1 Nunavut GeoPackages on trusted main
         if: github.event_name != 'pull_request'
@@ -108,5 +112,59 @@ jobs:
               "pinned_original_zip_sha256": r["original_source_file_hashes_verified"],
               "source_admitted": False,
               "oed_insured_locations_exportable": False,
+          }, sort_keys=True))
+          PY
+
+          # Additional bounded polygon spatial-support uncertainty proof.
+          # Requires the original numeric proof above to succeed first.
+          python scripts/nhsl_v1_nunavut_spatial_support_v0.py \
+            --polygon-zip "$tmp/s_nu.zip" \
+            --archetype-zip "$tmp/b_nu.zip" > "$tmp/spatial.json"
+          python - "$tmp/spatial.json" <<'PY'
+          import json
+          import math
+          import sys
+          from decimal import Decimal
+
+          with open(sys.argv[1], encoding="utf-8") as stream:
+              r = json.load(stream)
+          def require(cond, label):
+              if not cond:
+                  raise SystemExit("NHSL SPATIAL PROOF BLOCKED: " + label)
+
+          require(r["original_source_polygon_areas"] == 103, "settled areas")
+          require(r["original_source_archetypes"] == 2087, "archetype count")
+          require(r["archetype_parent_centroid_agreement_passed"] is True, "centroid join")
+          require(r["archetype_missing_polygon_count"] == 0, "missing SAUID group")
+          require(r["archetype_centroid_coordinate_mismatch_count"] == 0, "point/centroid mismatch")
+          require(
+              abs(Decimal(str(r["original_modeled_total_replacement_cad_2019"]))
+                  - Decimal("7031084592.667")) < Decimal("0.02"),
+              "2019-CAD replacement cost",
+          )
+          radius = r["vertex_radius_proxy_km"]
+          require(
+              0 <= radius["p50"] <= radius["p90"] <= radius["p95"] <= radius["maximum"],
+              "nonmonotone/negative support radius",
+          )
+          require(
+              r["centroid_inside_polygon_count"] + r["centroid_outside_polygon_count"] == 103,
+              "centroid placement coverage",
+          )
+          require(r["source_admitted"] is False and r["can_export_oed"] is False, "admission")
+          require(r["modeled_hazard_or_losses"] is False, "hazard output")
+          print(json.dumps({
+              "result": "original_nhsl_v1_nunavut_spatial_support_profile_passed",
+              "settled_areas": r["original_source_polygon_areas"],
+              "archetypes": r["original_source_archetypes"],
+              "centroid_inside_polygon_count": r["centroid_inside_polygon_count"],
+              "centroid_outside_polygon_count": r["centroid_outside_polygon_count"],
+              "archetype_centroid_coordinate_mismatch_count":
+                  r["archetype_centroid_coordinate_mismatch_count"],
+              "vertex_radius_proxy_km": radius,
+              "area_radius_greater_than_km": r["area_radius_greater_than_km"],
+              "max_bbox_corner_radius_proxy_km": r["max_bbox_corner_radius_proxy_km"],
+              "source_admitted": False,
+              "can_export_oed": False,
           }, sort_keys=True))
           PY
