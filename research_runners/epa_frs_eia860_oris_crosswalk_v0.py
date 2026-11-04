@@ -109,10 +109,17 @@ def audit_eia_frs(frs_blob: bytes, frs_sha: str, eia_blob: bytes, eia_sha: str,
         known.add((fid, p))
         by_plant[p].add(fid)
         by_frs[fid].add(p)
-    unique = sum(1 for p in ids if len(by_plant[p]) == 1 and len(by_frs[next(iter(by_plant[p]))]) == 1)
-    multi = sum(1 for p in ids if p in by_plant and
-                (len(by_plant[p]) != 1 or len(by_frs[next(iter(by_plant[p]))]) != 1))
-    missing = sum(1 for p in ids if p not in by_plant)
+    # Never index a defaultdict during classification: doing so would create
+    # empty entries for missing EIA IDs and falsify the missing/extra counts.
+    unique = multi = missing = 0
+    for p in ids:
+        frs_ids = by_plant.get(p)
+        if not frs_ids:
+            missing += 1
+        elif len(frs_ids) != 1 or len(by_frs[next(iter(frs_ids))]) != 1:
+            multi += 1
+        else:
+            unique += 1
     extra = sum(1 for p in by_plant if p not in ids)
     if unique + multi + missing != len(ids):
         raise EIAFRSBridgeBlocked("EIA plant-row conservation failed")
