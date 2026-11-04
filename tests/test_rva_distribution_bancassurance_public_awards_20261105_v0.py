@@ -50,7 +50,7 @@ def validate(c):
             raise ValueError("unknown research action priority")
         for key in ("publisher","vintage","source_scope","geographic_grain",
                     "public_evidence","admission_blocker"):
-            if len(r.get(key,""))<(2 if key=="publisher" else 8):
+            if len(r.get(key,""))<(2 if key=="publisher" else 4 if key=="vintage" else 8):
                 raise ValueError("incomplete mandatory source field")
     return {r["id"]:r for r in records}
 
