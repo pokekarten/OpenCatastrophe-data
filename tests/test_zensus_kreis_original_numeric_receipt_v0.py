@@ -18,12 +18,13 @@ COLUMNS=("Berichtszeitpunkt","_RS","Name","Regionalebene",
          "GEBAEUDEART_SYS_111","GEBAEUDEART_SYS_112",
          "GEBAEUDEART_SYS_12")
 
-def build(*,edit=None,make_rows=400,duplicate=False,other_level=False):
+def build(*,edit=None,make_rows=400,duplicate=False,other_level=False,missing_state=False):
     rows=[list(COLUMNS)]
     # Synthetic 25 different Kreis-like AGS keys for each of 16 states.
     for n in range(make_rows):
         st=n//25+1
         code=f"{st:02}{n%25+1:03}"
+        if missing_state and st==16:\n            code=f"01{n%25+26:03}"
         if duplicate and n==1:
             code="01001"
         row=["15.05.2022",code,f"Fiktiv Kreis {n+1}",
@@ -79,7 +80,7 @@ class OriginalKreisNumericReceiptTests(unittest.TestCase):
 
     def test_header_schema_prevents_misaligned_value(self):
         with self.assertRaisesRegex(OriginalReceiptError,"column schema changed"):
-            inspect_original_kreis_building_counts(build(edit=(0,"2025-12-31")),require_original_sha=False) if False else inspect_original_kreis_building_counts(build_with_header_mutation(),require_original_sha=False)
+            inspect_original_kreis_building_counts(build_with_header_mutation(),require_original_sha=False)
 
     def test_publisher_suppression_marker_is_not_zero(self):
         for bad in ("/","...","-","x","","0.5",None):
@@ -105,11 +106,11 @@ class OriginalKreisNumericReceiptTests(unittest.TestCase):
 
     def test_too_few_kreise_not_admitted(self):
         with self.assertRaisesRegex(OriginalReceiptError,"missing Kreis rows"):
-            inspect_original_kreis_building_counts(build(make_rows=390),require_original_sha=False) if False else inspect_original_kreis_building_counts(build(make_rows=375),require_original_sha=False)
+            inspect_original_kreis_building_counts(build(make_rows=375),require_original_sha=False)
 
     def test_all_16_states_required(self):
         with self.assertRaisesRegex(OriginalReceiptError,"missing Kreis rows or Länder"):
-            inspect_original_kreis_building_counts(build(make_rows=380),require_original_sha=False)
+            inspect_original_kreis_building_counts(build(missing_state=True),require_original_sha=False)
 
     def test_stable_deterministic_count_receipt(self):
         first,rows=inspect_original_kreis_building_counts(build(),require_original_sha=False)
