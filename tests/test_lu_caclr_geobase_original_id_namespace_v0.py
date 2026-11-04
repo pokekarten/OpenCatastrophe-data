@@ -36,7 +36,7 @@ class NamespaceTests(unittest.TestCase):
         self.assertFalse(x["common_string_proves_same_physical_building"])
 
     def test_exact_text_preserves_leading_zeros_and_case(self):
-        r = aggregate_ids(["0001","ABC"],["f"],["1","abc"])
+        r = aggregate_ids(["0001","ABC"],["f","g"],["1","abc"])
         self.assertEqual(r["exact_text_overlap"]["caclr_to_geobase_distinct_shared_strings"],0)
 
     def test_duplicate_address_building_string_is_not_deduplicated_by_policy(self):
