@@ -9,8 +9,9 @@ import unittest
 import zipfile
 
 from research_runners.lu_act2019_three_zip_directory_range_v0 import (
-    DirectoryError, ORIGINAL_SIZE_BY_SITE, MAX_TAIL, locate_eocd,
-    summarize_central, safe_range, inspect_one_zip,
+    DirectoryError, ORIGINAL_SIZE_BY_SITE, OBSERVED_DIRECTORY_SHA256_BY_SITE,
+    OBSERVED_LAZ_MEMBER_COUNT_PER_ZIP, MAX_TAIL, locate_eocd,
+    summarize_central, safe_range, inspect_one_zip, freeze_original_directory_receipts,
 )
 
 SYNTHETIC_URL = (
@@ -171,6 +172,39 @@ class ZIPCentralDirectoryTests(unittest.TestCase):
     def test_pinned_site_zip_lengths_not_claimed_full_integrity(self):
         self.assertEqual(ORIGINAL_SIZE_BY_SITE["luxembourg-city"],(449275061,))
         self.assertEqual(ORIGINAL_SIZE_BY_SITE["berdorf-village"],(410361626,374704804))
+
+    def test_original_central_directory_receipts_frozen_as_metadata_only(self):
+        self.assertEqual(OBSERVED_LAZ_MEMBER_COUNT_PER_ZIP,9)
+        self.assertEqual(len(OBSERVED_DIRECTORY_SHA256_BY_SITE["luxembourg-city"]),1)
+        self.assertEqual(len(OBSERVED_DIRECTORY_SHA256_BY_SITE["berdorf-village"]),2)
+        for source in OBSERVED_DIRECTORY_SHA256_BY_SITE.values():
+            self.assertTrue(all(len(h)==64 for h in source))
+
+    def test_frozen_directory_receipt_rejects_unreviewed_metadata_changes(self):
+        digest=OBSERVED_DIRECTORY_SHA256_BY_SITE["luxembourg-city"][0]
+        report={
+            "central_directory_sha256_partial_metadata_only":digest,
+            "central_member_total":9,
+            "member_extension_counts":{"laz":9,"las":0,"txt":0,"xml":0,
+                                       "json":0,"prj":0,"other":0},
+            "directory_records":0,
+            "encrypted_flag_count":0,
+        }
+        self.assertIsNone(freeze_original_directory_receipts("luxembourg-city",[report]))
+        for change in (
+            {"central_directory_sha256_partial_metadata_only":"0"*64},
+            {"central_member_total":8},
+            {"member_extension_counts":{"laz":8,"las":1}},
+            {"encrypted_flag_count":1},
+        ):
+            with self.subTest(change=change):
+                altered={**report,**change}
+                with self.assertRaises(DirectoryError):
+                    freeze_original_directory_receipts("luxembourg-city",[altered])
+        with self.assertRaises(DirectoryError):
+            freeze_original_directory_receipts("unreviewed-location",[report])
+        with self.assertRaises(DirectoryError):
+            freeze_original_directory_receipts("berdorf-village",[report])
 
     def test_tiny_synthetic_archive_full_flow_read_bounds(self):
         archive=fake_archive()
