@@ -89,6 +89,15 @@ class NAICSJoinTests(unittest.TestCase):
         with self.assertRaisesRegex(w.NAICSAuditBlocked, "SHA-256 mismatch"):
             w.audit_frs_naics(f, "0"*64, n, h, frs_vintage="2026-10-30", naics_vintage="2026-10-30")
 
+    def test_mismatched_source_vintage_is_blocked(self):
+        with self.assertRaisesRegex(w.NAICSAuditBlocked, "share one explicit"):
+            audit(naics_vintage="2026-10-31")
+
+    def test_program_ids_with_spaces_are_accepted_as_source_identifiers(self):
+        out = audit(naics_rows=[naics(program="TRI SOURCE", system="SITE / 2")])
+        self.assertEqual(out["frs_facilities_with_at_least_one_naics"], 1)
+        self.assertFalse(out["naics_taxonomy_codebook_version_verified"])
+
     def test_invalid_native_header_rejected(self):
         f, fh = blob(w.PROJECTION_HEADERS, [facility()])
         n, nh = blob(("REGISTRY_ID",), [{"REGISTRY_ID": "FRS1"}])
