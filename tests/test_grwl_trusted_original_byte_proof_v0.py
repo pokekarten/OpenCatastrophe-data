@@ -122,6 +122,18 @@ class GRWLTrustedOriginalTests(TestCase):
         self.assertTrue(_safe_redirect_host("https://cdn.zenodo.org/file"))
         self.assertTrue(_safe_redirect_host("https://s3.eu-central-1.amazonaws.com/file"))
 
+    def test_live_workflow_entrypoint_resolves_repository_namespace(self):
+        workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" /
+                    "grwl-original-summary-byte-receipt.yml").read_text(encoding="utf-8")
+        self.assertIn(
+            "python -m research_runners.grwl_trusted_original_byte_proof_v0 --live",
+            workflow,
+        )
+        self.assertNotIn(
+            "python research_runners/grwl_trusted_original_byte_proof_v0.py --live",
+            workflow,
+        )
+
     def test_default_no_network(self):
         self.assertEqual(runner_main([]),2)
 
