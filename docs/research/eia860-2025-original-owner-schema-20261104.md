@@ -40,3 +40,16 @@ python research_runners/eia860_2025_original_owner_schema_v0.py --live
 3. Only then consider translating true generation ownership into legal-entity identity and synthetic portfolio *priors*. Never infer actual insured buildings, building replacement costs, commercial source rights, reinsurer coverage or an inward/outward treaty from generator-equity observations.
 
 Issue [#1251](https://github.com/pokekarten/OpenCatastrophe-data/issues/1251) remains open pending verified GEM location/unit ID provenance and rights. This first source-original Owner step does not change any database or source admission gate.
+
+## Real original Owner sheet fingerprint (2026-11-04)
+
+The [public live GitHub original-source job](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41891296290) completed **successfully** and exercised all 7 synthetic metadata tests before fetching the exact EIA 2025 ZIP again against its pinned source SHA.
+
+- Exact nested source member `4___Owner_Y2025.xlsx`: **514,124 bytes**, SHA-256 `f0600c57b24f065017983e50a8a6561c8aa563382bb8862ad216448ca32d9383`.
+- Actual source worksheet: **`Ownership`**. Original source headers recognized by exact allowlist: **`Generator ID`, `Owner Name`, `Percent Owned`, `Plant Code`, `Plant Name`, `State`, `Utility ID`**.
+- This matches the [official EIA generator-owner exception reporting description](https://www.eia.gov/electricity/data/eia860/). The source did not reveal ownership values or names in the GitHub logs.
+- **Important semantic limit:** `Utility ID` is not automatically a legal entity LEI or insurance company, and `State` in the Owner schedule must not automatically be assumed to represent the physical site as opposed to an owner mailing address. The next audit uses **Plant Code and Generator ID only** for keying, not name/location matches.
+
+The [second-stage bounded audit](../../research_runners/eia860_2025_owner_shares_cohort_v0.py) and its [synthetic tests](../../tests/test_eia860_2025_owner_shares_cohort_v0.py) now measure **EIA Owner Schedule 4 rows for the 15 EPA/EIA-confirmed Delaware plant IDs**, grouped by exact (plant, generator) keys. It checks whether the *reported* owner percentages sum to 100±0.05 percentage points, detects missing/bad source shares and repeated owner names, and prints only aggregate counts. **This is not a population census of every generator at the plant:** the Owner workbook intentionally omits operator-owned generators, so observed rows must not be extrapolated to 100% generator or company-wide ownership.
+
+A fresh, exact-hash EIA source run and full GitHub CI are mandatory before writing **any actual observed ownership-share counts** into the evidence register. If a source group fails the share test, preserve the anomaly and continue research; never modify or impute original percentages to force a pass. No carrier, facility construction cost, BI downtime, hazard score, TIV or reinsurance treaty is inferred from this schema.
