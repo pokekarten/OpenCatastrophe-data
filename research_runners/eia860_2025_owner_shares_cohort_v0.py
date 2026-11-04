@@ -219,7 +219,7 @@ def inspect_owner_worksheet(owner_xlsx:bytes, *,
         "gem_owner_id_or_location_join_confirmed":False,
         "source_scientific_or_insurance_model_admission_granted":False,
         "state":"REVIEW_OWNER_SHARE_ANOMALIES" if low or high or incomplete
-                else "EIA_OWNER_GENERATOR_COACH_RESEARCH_ONLY",
+                else "EIA_OWNER_GENERATOR_SHARES_RESEARCH_ONLY",
     }
 
 
