@@ -53,4 +53,4 @@ jobs:
       - name: Bounded original Zenodo downloads and temporary member-byte comparison
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
-          python research_runners/grwl_trusted_original_byte_proof_v0.py --live
+          python -m research_runners.grwl_trusted_original_byte_proof_v0 --live
