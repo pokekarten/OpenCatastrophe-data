@@ -278,10 +278,14 @@ def main(argv=None) -> int:
     args = p.parse_args(argv)
     try:
         result = run(args.address_csv, args.geobase_zip, site=args.site)
-    except (AddressFootprintError, GeoBaseError, GeoPackageGateError,
+    except AddressFootprintError as exc:
+        # Only our fixed, author-written no-data error strings are printed.
+        # NEVER include raw source exception text, individual source values,
+        # provider row data, original addresses or geometry coordinates.
+        p.exit(2,"BLOCKED: reviewed original-stage rule: "+str(exc)+"\n")
+    except (GeoBaseError, GeoPackageGateError,
             OSError, UnicodeError, ValueError, RuntimeError, csv.Error,
             zipfile.BadZipFile, OverflowError):
-        # Original source IDs, addresses and geometry must never enter an error.
         p.exit(2,"BLOCKED: exact original source or geometry contract failed\n")
     print(json.dumps(result,ensure_ascii=False,sort_keys=True,indent=2,allow_nan=False))
     return 0
