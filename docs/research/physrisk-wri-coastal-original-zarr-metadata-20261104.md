@@ -307,3 +307,68 @@ python scripts/check_all.py
 ```
 
 **No scientific or commercial admission:** The exact build/producer commit of public Zarr, the full TIFF and Zarr source-object fingerprints, original rights and derivative-use permissions, other coastal return periods/geographies, all riverine inputs, defence effects, vulnerability, exposure and risk dependence are still unverified. The 1.5-year WRI original return period remains absent in the nine-period Physrisk derived source. Neither return-period collection supplies event IDs, an annual occurrence/YLT generator, reinsurance losses nor insurers' actual insured TIV.
+
+## Original Physrisk nine-return-period monotonicity / mask audit (4 November 2026)
+
+**New executed real-source read-only test:** All **nine** historical coastal, *no subsidence* Physrisk/WRI return-period planes were checked on the **same 1,000 Bay of Bengal cells**: original world raster row 8100, global columns 32000–32999 (22.4958333°N, approximately 86.6708333–94.9958333°E). Source object:
+https://os-climate-physical-risk.s3.amazonaws.com/hazard-indicators/hazard.zarr/inundation/wri/v2/inuncoast_historical_nosub_hist_0/0.8.32
+
+Using the independent original Zarr array metadata source receipts, each return period maps to a different **Blosc compressed block** within the *same* 9×1,000×1,000 Zarr chunk. Original HTTP ranges were individually fetched in <=40,000-byte fragments and concatenated in source byte order; each reassembled **complete compressed block** is independently SHA-256-pinned. No complete Zarr object was downloaded, no third-party raster bytes entered Git and no actual input assets were uploaded to Neon.
+
+| Return period (years) | Blosc block | Original compressed HTTP byte range (inclusive) | SHA-256 of reassembled block |
+| ---: | ---: | --- | --- |
+| 2 | 0 | 81215–127556 | 045b4f5a6d7967e66e0ae44d34f926f5ec2b1062bbdac0cbe0d92fee4fddca7e |
+| 5 | 8 | 390129–499231 | 79ed33e93d9a2c7dcfbc49b152609bce9bddab2987c908f0691c12dda72b688a |
+| 10 | 16 | 519441–632668 | 343c1dd325eed5af633a50638f7f7a272c0075381874fd9951f435ff0d63383f |
+| 25 | 23 | 798336–912377 | 2c3a6eb4ddbea6c19da6f65b4d0037630bc7889c2903dd361f48f3bc14aecf7e |
+| 50 | 31 | 1088543–1242359 | 71980e6dc36f4735d895be13e1ab8bb9e1fd89b8f7528a8ad98c16d2951ce7f0 |
+| 100 | 38 | 1380254–1466008 | 9144355508425d0f703c309d28e919c019ca4c52841ec2e000e3c69849a5d8f5 |
+| 250 | 46 | 1657387–1804362 | c8d36d83d2ba920a458e1e4cb54db46dfcde10c1b37a81c7e8d3869b4f9ced38 |
+| 500 | 54 | 1950955–2110961 | 2ed7f66bb72a72d604ca6e9027c09ba69e536fddaa7d7b7507745e0c1bbe3f7f |
+| 1000 | 61 | 2256526–2375869 | 7bf594f62bc4e9c7e26311869df19188a2e77f7a72f4487dda0a5c6c26837d0d |
+
+Bounded original 4,096-byte chunk header SHA-256 = \`d0d1abe763ca50acc59706516a12d744d359d81c235d0ba1b9c0e1fa4b8dfad8\`; header states 69 Blosc blocks, byte-shuffled Float32 with 524,288 uncompressed bytes per ordinary block and original compressed object total 2,375,870 bytes. The exact nine block extents and offsets were independently checked against the original 69-entry header index. These hashes **only** prove the selected source responses, not an immutable globally versioned release.
+
+### Actual 1,000 cells × nine return periods, no invented or synthetic depths
+
+| RP years | Positive finite cells | Zero finite cells | NaN NoData cells | Selected positive example at global column 32146 (m) |
+| ---: | ---: | ---: | ---: | ---: |
+| 2 | 110 | 818 | 72 | 0.000000000 |
+| 5 | 213 | 715 | 72 | 3.797132969 |
+| 10 | 252 | 676 | 72 | 4.274469852 |
+| 25 | 288 | 640 | 72 | 4.991788387 |
+| 50 | 312 | 616 | 72 | 5.516768932 |
+| 100 | 334 | 594 | 72 | 5.993498325 |
+| 250 | 357 | 571 | 72 | 6.621191025 |
+| 500 | 368 | 560 | 72 | 7.095147610 |
+| 1000 | 378 | 550 | 72 | 7.568761349 |
+
+**Verified:** 928 locations have finite, nonnegative values in all nine periods; the exact same 72 locations are **NaN** throughout; no mixed-missing cell was observed. All eight adjacent return-period transitions at these 1,000 aligned locations yield **8,000 total comparisons: 7,424 finite pairs, 576 both-NaN pairs, 2,502 strictly increasing pairs, 4,922 equal pairs, zero decreases, zero valid↔missing transitions**. No negative, infinite or otherwise invalid Float32 value was observed.
+
+The increasing depth at global column 32146 is one illustrative source cell only. This is not an empirical statement about water depth at a specific building; it is a modelled flood *return-period intensity surface*.
+
+**New executable quality gate:** \`research_runners/wri_physrisk_coastal_nine_period_monotonicity_v0.py\` (stdlib only) binds the original 4,096-byte Blosc header plus the **nine exact original compressed block byte-range files**, checks full response lengths and SHA-256, compressed block offsets, Blosc/LZ4 codec and byte-shuffle, spatial/period indexing and per-cell finite/missing conditions. For this original-source evidence it **fails closed** if any of the pinned per-period populations or adjacent-pair monotonicity/mask categories changes. Its synthetic-only regressions are in \`tests/test_wri_physrisk_coastal_nine_period_monotonicity_v0.py\` and deliberately introduce decreasing depths, altered NoData masks, negative/infinite values and truncated/hijacked compressed inputs.
+
+Example using the exact original response ranges from the table (for source files acquired and joined **outside** the Git repository):
+
+\`\`\`bash
+python research_runners/wri_physrisk_coastal_nine_period_monotonicity_v0.py \
+  --zarr-header /private/physrisk-rp/zarr-header-4096b.bin \
+  --rp-2 /private/physrisk-rp/2y-blosc.bin \
+  --rp-5 /private/physrisk-rp/5y-blosc.bin \
+  --rp-10 /private/physrisk-rp/10y-blosc.bin \
+  --rp-25 /private/physrisk-rp/25y-blosc.bin \
+  --rp-50 /private/physrisk-rp/50y-blosc.bin \
+  --rp-100 /private/physrisk-rp/100y-blosc.bin \
+  --rp-250 /private/physrisk-rp/250y-blosc.bin \
+  --rp-500 /private/physrisk-rp/500y-blosc.bin \
+  --rp-1000 /private/physrisk-rp/1000y-blosc.bin \
+  --out /tmp/physrisk-wri-coastal-nine-rp-monotonicity.json
+
+python -m unittest discover -s tests -p 'test_wri_physrisk_coastal_nine_period_monotonicity_v0.py'
+python scripts/check_all.py
+\`\`\`
+
+### Strict conclusions and remaining blockers
+
+This is **one** deliberately selected region and only the nine return-period bands of one Physrisk *derived* coastal Zarr object. It is neither a global/raster-wide nor an upstream original-WRI GeoTIFF monotonicity audit. The earlier original WRI vs Physrisk cellwise comparisons remain limited to *two return periods and two locations*. The WRI-only 1.5-year return period is missing here; source-defence protection, tidal and subsidence differences, regional uncertainty, full-object producer revision, upstream rights, other hazard types/regions and the possibility of independent events/correlated annual modelled losses have **not** been resolved. Consequently all admission flags must remain **false** and no CAT event/YLT, insurer TIV, OEP/IP gross/net or reinsurance output may be derived directly from this gate.
