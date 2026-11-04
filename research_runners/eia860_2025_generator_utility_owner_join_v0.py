@@ -115,6 +115,7 @@ def inspect_members(gen_raw:bytes, util_raw:bytes, owner_raw:bytes, *,
     operator_by_key=defaultdict(set)
     duplicated_in_tab=Counter()
     bad_key_rows=Counter()
+    source_unkeyed_rows_without_generator=Counter()
     status_without_value=Counter()
     for sheets,shared,zf,buf in [_open_approved_workbook(
             gen_raw,GEN_SHA if require_pinned else sha256(gen_raw).hexdigest(),"generator")]:
@@ -125,7 +126,15 @@ def inspect_members(gen_raw:bytes, util_raw:bytes, owner_raw:bytes, *,
                                       ("Plant Code","Generator ID","Status","Utility ID")):
                     plant,gen=r["Plant Code"],r["Generator ID"]
                     if not PLANT.fullmatch(plant) or int(plant)==0:
-                        bad_key_rows[tab]+=1
+                        if not gen:
+                            # Provider source footer/banner with no source
+                            # plant or generator key is not a real generator;
+                            # retain a count but never emit the text.
+                            source_unkeyed_rows_without_generator[tab]+=1
+                        else:
+                            # A purported generator without an official
+                            # numeric plant key needs human review.
+                            bad_key_rows[tab]+=1
                         continue
                     p=str(int(plant))
                     if p not in COHORT:
@@ -222,6 +231,7 @@ def inspect_members(gen_raw:bytes, util_raw:bytes, owner_raw:bytes, *,
         "in_cohort_plant_ids_with_generator_rows":len({k[0] for k in memberships}),
         "in_cohort_generator_keys_in_multiple_sheets":cross_tab,
         "in_cohort_duplicate_keys_within_sheet":sum(duplicated_in_tab.values()),
+        "source_rows_without_plant_and_generator_keys_by_sheet":dict(source_unkeyed_rows_without_generator),
         "original_source_rows_with_bad_plant_or_generator_key_by_sheet":dict(bad_key_rows),
         "source_generator_status_code_counts_by_sheet":{
             t:dict(sorted(tab_statuses[t].items())) for t in tabs},
