@@ -36,3 +36,18 @@ Database: separate Neon project `insurance-risk-core`, database `insurance`. Rea
 ## Reproduce
 
 Run each SQL file on its explicitly named branch with database `insurance`. Both are single read-only `WITH ... SELECT` statements. Record the output aggregate, query commit SHA and selected branch ID in the research log. No personal insured data, original raw source bytes, or production DB writes were used here.
+
+## Additional live NAIC crosswalk check (2026-11-04)
+
+The separately executed read-only SQL
+[`insurance_naic_overlap_validation_v0.sql`](../../research_runners/sql/insurance_naic_overlap_validation_v0.sql)
+runs only on validation branch `br-summer-sky-bawujqu8`.
+
+- Florida has **160** distinct reported NAIC codes.
+- **101** exact NAIC codes appear in the FL/NC research overlap, **59** Florida codes do not, and **0** overlap codes fall outside the Florida set. Research-only code overlap: **63.13%**.
+- The overlap dataset contains **0** verified parent-company ownership links, **0** carrier-by-ZIP exposure records, **0** insurer CAT-TIV admissions, **0** complete-regulatory-universe claims and **0** commercial-rights-reviewed Florida original rows.
+- All 442 Florida report rows carry a format-valid 64-character original workbook SHA reference, but it is **one distinct workbook SHA repeated across rows**, not 442 independently acquired or verified files.
+- The reported 7,707,052 policy-count **sum across source policy types** and USD 4,061,022,979,788.76 **sum of source-reported statewide exposures** cannot, absent policy-type/market perimeter reconciliation, be called unique policies or additive insured-location TIV.
+- First recorded additional gate: `BLOCKED_RIGHTS_REVIEW`. This separate gate is not a license clearance and cannot supersede the Texas original-source block from the first validation SQL.
+
+This tests the **legal-entity key overlap only**, explicitly avoids the invalid inference that group ownership or insurer x ZIP shares are measured, and never changes `main` or the validation branch.
