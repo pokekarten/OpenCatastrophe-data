@@ -52,3 +52,58 @@ history. Rights and scientific admission must remain false.
 **Execution status:** exact official-original job has not yet run.
 An observed metric distribution may only be recorded after passing
 synthetic tests, SHA-pinned original full download and GitHub CI.
+
+## Executed original-source results (2026-11-04)
+
+The [dedicated original SHA-pinned GitHub source run 41892290371](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41892290371)
+completed successfully. All **11** wholly fictional GeoPackageBinary and
+metric/failure regressions passed, then complete official April
+GeoBase Addresses and November BD-Adresses originals were verified
+from source bytes, matched in the same **EPSG:2169 metric CRS** by only
+singleton CACLR key candidates, and analysed strictly in memory.
+
+| Original-source metric | Observed |
+| --- | ---: |
+| Distinct CACLR keys occurring once on both releases | **177,709** |
+| Original matched records with usable single-point geometry | **177,709** |
+| Omitted empty or multi-location source geometries | **0** |
+| Matched position distance **≤0.01 metre** | **174,839** |
+| Matched position distance **≤1 metre** | **174,989** |
+| Matched position distance **≤10 metres** | **177,398** |
+| Matched position distance **≤50 metres** | **177,689** |
+| Matched position distance **>50 metres** | **20** |
+| Median / 95th percentile original-coordinate residual | **0.000 m / 0.000 m** |
+| 99th percentile residual | **3.320 m** |
+| Largest observed residual | **345.049 m** |
+| Shared but non-singleton CACLR key groups excluded | **545** |
+
+Each distance row is nested in the larger threshold row: do **not** add
+cumulative threshold bins together. Exactly 20 original singleton-key
+candidates have a discrepancy larger than 50 m, but their individual
+addresses, identifiers and positions remain strictly unexposed. No
+source rows, original geometry or original ID pair was written to Git
+or stored in the model database.
+
+**Scientific interpretation:** 174,839/177,709 approximately **98.4%**
+of unique-key pairs agree within 1 cm **inside the same ACT cadastral
+data lineage**. This is a reproducibility and source-relative
+coordinate stability proof, **not independent positional accuracy**.
+A zero rounded median and p95 reflect many identical source-position
+coordinates; they are not zero physical uncertainty. The 20 residuals
+over 50 metres (and 311 over 10 metres) could reflect source revision,
+address relocation/renumbering, register semantics, associated parcel
+centroids or other causes, **none adjudicated** by the current test.
+Even the 174,839 near-identical pairs remain *address candidates*
+rather than proven insured building footprints.
+
+### Recommended non-admission and anomaly gate
+
+Keep the **20 >50 m** cases and the **545 repeated-key groups**
+outside any automated forced one-to-one building join, together with
+a conservative pending-review flag for all cases not independently
+adjudicated. Use a secured, authorized holdout workflow to inspect
+publisher version history and independently confirmed building
+geometry/entrances where available; do not print an anomaly list
+or asset-level details into public CI output. An appropriately licensed
+CAT exposure inventory and actual insurer portfolio allocation still
+require independent evidence and a separate explicit review.
