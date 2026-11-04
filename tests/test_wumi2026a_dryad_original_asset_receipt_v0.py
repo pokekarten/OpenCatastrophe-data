@@ -142,3 +142,16 @@ class DryadWumiOriginalMetadataTests(unittest.TestCase):
     def test_corrupted_zip_rejected(self):
         with self.assertRaises(mod.DryadReceiptBlocked):
             mod.inspect_zip_members_untrusted(b"not a ZIP")
+
+    def test_valid_zip_with_more_than_old_40_member_limit(self):
+        stream = BytesIO()
+        with ZipFile(stream, "w") as archive:
+            archive.writestr("lists/no_subfires.txt", "synthetic")
+            archive.writestr("lists/with_subfires.txt", "synthetic")
+            for i in range(45):
+                archive.writestr(f"subfires/synthetic-{i:03d}.txt", "synthetic")
+        result = mod.inspect_zip_members_untrusted(stream.getvalue())
+        self.assertEqual(result["zip_member_count"], 47)
+        self.assertEqual(result["zip_file_count"], 47)
+        self.assertTrue(result["zip_structure_crc_checked"])
+        self.assertFalse(result["zip_extraction_performed"])
