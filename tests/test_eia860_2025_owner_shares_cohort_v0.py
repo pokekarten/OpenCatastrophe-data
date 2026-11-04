@@ -57,7 +57,7 @@ class OriginalOwnerShareTests(unittest.TestCase):
         self.assertEqual(r["delaware_owner_schedule_rows"],2)
         self.assertEqual(r["delaware_distinct_generators_with_owner_schedule_rows"],1)
         self.assertEqual(r["delaware_generators_owner_sum_100_within_0_05_percentage_points"],1)
-        self.assertEqual(r["state"],"EIA_OWNER_GENERATOR_COACH_RESEARCH_ONLY")
+        self.assertEqual(r["state"],"EIA_OWNER_GENERATOR_SHARES_RESEARCH_ONLY")
         self.assertFalse(r["source_owner_name_or_address_emitted"])
         self.assertFalse(r["insurer_policies_or_tiv_inferred"])
         self.assertFalse(r["unreported_generators_are_operator_owned_proven"])
@@ -69,7 +69,7 @@ class OriginalOwnerShareTests(unittest.TestCase):
         self.assertEqual(r["delaware_generators_owner_sum_below_99_95_pct"],0)
         self.assertEqual(r["delaware_owner_rows_with_native_percent_format"],2)
         self.assertEqual(r["delaware_percent_owned_style_number_format_ids"],{"1":"10"})
-        self.assertEqual(r["state"],"EIA_OWNER_GENERATOR_COACH_RESEARCH_ONLY")
+        self.assertEqual(r["state"],"EIA_OWNER_GENERATOR_SHARES_RESEARCH_ONLY")
 
     def test_unstyled_fraction_must_not_be_misrepresented_as_100_percent(self):
         r=m.inspect_owner_worksheet(fixture(rows=[
