@@ -87,6 +87,34 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "bm.bsx.manatee-re-iii-2019-1-note-lifecycle.2026",
+      "name": "BSX original Manatee Re III 2019-1 Class A and Class B delisting notices",
+      "provider": "Bermuda Stock Exchange (BSX), original issuer-supplied regulatory announcements",
+      "categories": [
+        "reinsurance",
+        "ils",
+        "cat_bond",
+        "security_lifecycle",
+        "historical_regulatory_news"
+      ],
+      "spatial_scope": "Singapore-domiciled ILS SPV, original Class A and Class B USD 20 million securities linked to Safepoint reinsurance",
+      "temporal_scope": "Class B early redemption announcement 2022-10-21; Class A and program maturity/redemption and delisting 2026-06-29",
+      "resolution_or_granularity": "Original issuer-supplied exchange notice URLs, class and program identity, nominal note face amount, announcement date, security maturity and delisting date; Class A ISIN US562011AA46",
+      "potential_roles": [
+        "ils_note_listing_status_by_class",
+        "avoid_stale_2026_covered_capacity",
+        "investment_security_vs_underlying_treaty_guard",
+        "cat_bond_issuance_to_exit_lifecycle"
+      ],
+      "authoritative_url": "https://www.bsx.com/article/1100807273",
+      "access_class_hint": "public_exchange_issuer_announcements_source_license_and_reinsurance_settlement_not_verified",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "BSX announced early redemption and delisting of Class B on 2022-10-21 (https://www.bsx.com/article/1100801701), and maturity/redemption and delisting of Class A and note program on 2026-06-29. Nominal 2019 issuance is not amount repaid. Delisting does not prove full cedant claim runoff, company dissolution, zero residual liabilities, or any current in-force reinsurance treaty."
     }
   ]
 }
