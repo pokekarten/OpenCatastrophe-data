@@ -1,0 +1,108 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: NHSL v1 original Nunavut SAUID conservation
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/nhsl_v1_original_sauid_reconcile_v0.py'
+      - 'tests/test_nhsl_v1_original_sauid_reconcile_v0.py'
+      - 'docs/research/nhsl-v1-nunavut-original-sauid-reaggregation-20261104.md'
+      - '.github/workflows/nhsl-nunavut-original-sauid-conservation.yml'
+  workflow_dispatch:
+  # Original provider binaries are downloaded ONLY by reviewed code on main.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nhsl-nunavut-original-sauid-conservation.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nhsl-v1-original-sauid-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  original-nunavut-sauid:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout reviewed workflow ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Run synthetic-only source reconciliation tests
+        run: python -m unittest tests.test_nhsl_v1_original_sauid_reconcile_v0 -v
+
+      - name: Record reviewed executable identities
+        run: |
+          git rev-parse HEAD
+          sha256sum scripts/nhsl_v1_original_sauid_reconcile_v0.py
+          sha256sum scripts/nhsl_v1_original_binary_preflight_v0.py
+
+      - name: Reconcile both original NHSL v1 Nunavut GeoPackages on trusted main
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          # Fixed original GitHub release files; no inputs, tokens, or mirrors.
+          # Exact SHA-256 and ZIP member CRC/length checked by the Python script.
+          curl --fail --location --silent --show-error --retry 2 \
+            --max-time 90 --max-filesize 1000000 \
+            'https://github.com/OpenDRR/national-human-settlement/releases/download/v1.0/nhsl_physical_exposure_indicators_s_nu.zip' \
+            -o "$tmp/s_nu.zip"
+          curl --fail --location --silent --show-error --retry 2 \
+            --max-time 90 --max-filesize 1000000 \
+            'https://github.com/OpenDRR/national-human-settlement/releases/download/v1.0/nhsl_physical_exposure_indicators_b_nu.zip' \
+            -o "$tmp/b_nu.zip"
+          python scripts/nhsl_v1_original_sauid_reconcile_v0.py \
+            --polygon-zip "$tmp/s_nu.zip" \
+            --archetype-zip "$tmp/b_nu.zip" > "$tmp/receipt.json"
+          # Print only aggregate non-admission proof, no raw original features.
+          python - "$tmp/receipt.json" <<'PY'
+          import json
+          import sys
+          from decimal import Decimal
+          with open(sys.argv[1], encoding="utf-8") as stream:
+              r = json.load(stream)
+          def require(ok, reason):
+              if not ok:
+                  raise SystemExit("NHSL ORIGINAL PROOF BLOCKED: " + reason)
+          require(r["numeric_conservation_passed"] is True, "SAUID conservation")
+          require(r["settled_areas"] == 103, "polygon count")
+          require(r["archetype_records"] == 2087, "archetype count")
+          require(r["matched_sauids"] == 103, "matched groups")
+          require(r["unmatched_polygon_sauids"] == 0, "unmatched polygon")
+          require(r["unmatched_archetype_sauids"] == 0, "unmatched archetype")
+          require(Decimal(r["metrics"]["building_count"]["polygon_total"]) == 6307, "building count")
+          require(Decimal(r["metrics"]["floor_area_sqft"]["polygon_total"]) == 32616779, "area sqft")
+          require(
+              abs(Decimal(r["metrics"]["assets_cad_2019"]["polygon_total"]) - Decimal("7031084592.666673")) < Decimal("0.02"),
+              "source asset total",
+          )
+          require(all(v["sauids_exceeding_tolerance"] == 0 for v in r["metrics"].values()), "per-Sauid mismatch")
+          require(r["admission_status"] == "not_admitted", "admission")
+          require(r["model_input_approved"] is False, "model approval")
+          require(r["oed_insured_locations_exportable"] is False, "OED approval")
+          print(json.dumps({
+              "result": "original_nhsl_v1_nunavut_sauid_numeric_conservation_passed",
+              "settled_areas": r["settled_areas"],
+              "archetype_records": r["archetype_records"],
+              "estimated_buildings": r["metrics"]["building_count"]["polygon_total"],
+              "floor_area_sqft": r["metrics"]["floor_area_sqft"]["polygon_total"],
+              "modeled_2019_cad_assets": r["metrics"]["assets_cad_2019"]["polygon_total"],
+              "pinned_original_zip_sha256": r["original_source_file_hashes_verified"],
+              "source_admitted": False,
+              "oed_insured_locations_exportable": False,
+          }, sort_keys=True))
+          PY
