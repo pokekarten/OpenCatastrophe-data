@@ -17,7 +17,10 @@ import json
 from pathlib import Path
 import re
 
-from research_runners.epa_frs_native_projection_v0 import _release, MAX_BYTES, MAX_ROWS
+try:
+    from .epa_frs_native_projection_v0 import _release, MAX_BYTES, MAX_ROWS
+except ImportError:  # Direct script invocation from repository root.
+    from epa_frs_native_projection_v0 import _release, MAX_BYTES, MAX_ROWS
 
 PROJECTION_HEADERS = ("frs_id", "country_code", "latitude", "longitude")
 NAICS_HEADERS = ("REGISTRY_ID", "PGM_SYS_ACRNM", "PGM_SYS_ID", "NAICS_CODE")
