@@ -34,7 +34,7 @@ def asset(**updates):
 
 
 def link(**updates):
-    row = dict(frs_id="FRS1", gem_asset_id="GEM1", evidence_kind="publisher_explicit_cross_id", evidence_sha256="a"*64)
+    row = dict(frs_id="FRS1", gem_asset_id="GEM1", evidence_kind="publisher_explicit_cross_id", evidence_url="https://example.org/research-evidence", evidence_sha256="a"*64)
     row.update(updates)
     return row
 
@@ -69,7 +69,7 @@ class IndustrialIdentityTests(unittest.TestCase):
         self.assertEqual(out["frs_row_dispositions"]["no_link_in_bounded_subset"], 1)
 
     def test_proximity_is_not_identity(self):
-        out = audit(links=[link(evidence_kind="name_or_proximity_only", evidence_sha256="")])
+        out = audit(links=[link(evidence_kind="name_or_proximity_only", evidence_url="", evidence_sha256="")])
         self.assertEqual(out["frs_row_dispositions"]["name_or_proximity_only_unverified"], 1)
         self.assertEqual(out["state"], "REVIEW_NEEDED")
 
@@ -121,6 +121,10 @@ class IndustrialIdentityTests(unittest.TestCase):
             audit(links=[link(evidence_kind="fuzzy_name")])
         with self.assertRaises(w.IdentityPreflightBlocked):
             audit(links=[link(evidence_sha256="")])
+        for invalid in ("", "http://example.org/record", "https://user:secret@example.org/record",
+                        "https://example.org/record?token=secret"):
+            with self.subTest(invalid=invalid), self.assertRaises(w.IdentityPreflightBlocked):
+                audit(links=[link(evidence_url=invalid)])
 
     def test_bad_vintage_rejected(self):
         for date in ("latest", "2026-02-30", "2018-01-01", "2026-11-04T00:00"):
