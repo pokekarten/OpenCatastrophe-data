@@ -41,3 +41,39 @@ Date: 2026-11-04. **Metadata/source code research only. No external model execut
 - [ ] Explicit review before promoting source beyond metadata candidate; no production DB raw admission
 
 **State:** qualified OSS+data **candidate**, scientific/rights/source runtime **not admitted**.
+
+
+## Verified upstream execution risk: incorrect argument order (static source audit)
+
+A second, *independent GitHub source-level review* identified a concrete blocker
+to calling the original WISC top-level `analyze.exposure()` as-is:
+
+- Original [`scripts/functions.py`](https://github.com/ElcoK/WISC/blob/c3779b387664b37cdfc49399202c74ab30531066/scripts/functions.py),
+  Git blob `da6278d5dc61fb05dd89018fa854d77b36f16f2b`, declares
+  `region_exposure(region, include_storms=True, event_set=False, sens_analysis_storms=[], save=True)`.
+- Original [`scripts/analyze.py`](https://github.com/ElcoK/WISC/blob/c3779b387664b37cdfc49399202c74ab30531066/scripts/analyze.py),
+  Git blob `79b311c58354bb478088ec547dc53b23c625f483`, passes
+  `Pool.starmap(region_exposure, zip(regions, country_list, storms))`;
+  the serial route passes `region_exposure(region, country, True)`,
+  including on the `include_storms=False` branch.
+- Thus the *country code string* is passed into boolean `include_storms`,
+  and the `storms` indicator is passed into `event_set`. The intended
+  source option and hazard semantics can be silently swapped. This is a
+  deterministic **signature/argument mismatch in the original tracked code**,
+  not an executed catastrophe-loss numerical failure. Do not run a source
+  pipeline or claim original economics until this is fixed and separately
+  regression-tested in a maintained, clearly identified adapter/fork.
+- README prescribes `.environment.yml`, but this file is **absent at the
+  checked upstream commit**. `scripts/functions.py` also imports GDAL,
+  Rasterio, Rasterstats, GeoPandas, scikit-learn, NumPy and Pandas. A pinned,
+  verified modern environment is therefore needed; do not assume installability
+  merely because the published source code is MIT.
+- Favor a clean modern adapter to CLIMADA's `StormEurope`/impact-function
+  pathway as the primary compatible research engine, with WISC formulas,
+  fragility assumptions and independently comparable Tier3 outputs as an
+  **explicit model-vs-model challenger**, rather than blindly re-running the
+  legacy `analyze.exposure()`.
+
+This exact-head static inspection **does not** replace a native successful
+WISC execution, a source-footprint or claims calibration, or verification
+of an actual RNV/Zurich insured inventory.
