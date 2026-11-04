@@ -50,7 +50,7 @@ The next [in-memory generator/utility/owner crosswalk](../../research_runners/ei
 
 Each generator row's 2025 `Utility ID` is checked for presence in the original `1___Utility_Y2025.xlsx`, **not** treated as a legal beneficial-owner proof. Each of the six original generator keys with explicit Schedule 4 ownership is sought by exact (plant, generator) key across source reporting tabs; a missing Owner row **is not interpreted** as 0%, 100% operator-owned, or absent insurance coverage. EIA `Status` values are restricted to the official codebook (unknown or incomplete statuses cannot be logged as source text and require review). We preserve original status-scope distinctions and detect duplicates, source join misses, and missing utility-code evidence without printing raw source keys.
 
-**No actual count of operable vs proposed vs retired generators, no matched owner schedule count, and no utility operator link is claimed until a live run of the new adapter succeeds on the exact original EIA source ZIP.** All outputs remain aggregate, research-only, and explicitly refuse insurance portfolio/TIV model admission.
+The exact native join **has now succeeded** on the original pinned EIA 2025 ZIP in [the live original-source research job #41904234652](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41904234652), following synthetic tests. It provides the source population and status-/key-cardinality counts below. All outputs remain aggregate, research-only, and explicitly refuse insurance portfolio/TIV model admission.
 
 ```bash
 python -m unittest tests.test_eia860_2025_generator_utility_owner_join_v0 -v
@@ -58,3 +58,36 @@ python research_runners/eia860_2025_generator_utility_owner_join_v0.py --live
 ```
 
 **Next scientific gate:** Report exact live-source generator counts by reporting scope and source utility match rates. To build a synthetic insurer portfolio, separate named EIA operator legal entities and generators into reproducible, licensed and dated research inputs with independent company/LEI and geographic risk-quality evidence. The mere existence of a generator is not proof of a building, a commercial insurance policy, a modeled event loss or an inward/outward reinsurance treaty.
+
+## Verified original generator / reporting utility / Owner Schedule 4 pilot — 2026-11-04
+
+A [successful direct original-EIA source run](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41904234652) re-acquired the fixed **23,622,347-byte** 2025 annual ZIP with original SHA `2b27929d26cc1da9ad6a530da1cac6718cd8496098ee560c4d47cfffd96d08ba`, then independently verified the nested Generator, Utility and Owner workbook SHA-256 fingerprints from the earlier receipts. The source run passed the initial 10 schema tests and 12 generator-utility-owner tests. This is a **real provider source audit**, not a simulated portfolio.
+
+| Exact 2025 EIA source perimeter | Actual unique counts in the 15 Delaware plants |
+| --- | ---: |
+| Independently EPA-FRS/EIA-2025-confirmed plant codes | **15** |
+| Distinct generator keys `(Plant Code, Generator ID)` in annual three-sheet source | **35** |
+| Operable tab: source code `OP` (operating in 2025 reporting scope) | **26** |
+| Operable tab: source code `SB` (standby in 2025 reporting scope) | **4** |
+| Proposed tab in this pilot | **0** |
+| Retired and Canceled tab: source code `RE` | **5** |
+| Generator keys appearing in multiple tabs or duplicated within one tab | **0** |
+| Distinct `Utility ID` values on these 35 generator keys | **11** |
+| Generator keys with a utility ID found in original 2025 EIA Utility workbook | **35/35** |
+| Plant codes with more than one source reporting utility ID | **0** |
+| Original nationwide Utility workbook distinct IDs (not company-group counts) | **6,946** |
+| Explicit Owner Schedule 4 rows / distinct generator keys in pilot | **6 / 6** |
+| Owner Schedule 4 generator keys matched to Generator source inventory | **6/6** |
+| Owner Schedule 4 matched generator keys by source tab | **3 Operable, 0 Proposed, 3 Retired and Canceled** |
+| Original workbook source rows lacking *both* official plant and generator ID (per status tab) | **1 each** |
+
+The **three unkeyed source rows** from the three generator worksheets are separately reported and **not** counted as generators: they lack usable official plant and generator keys. Their free-text payloads were neither logged nor used as evidence of actual facilities. No malformed in-cohort generator keys, missing/unknown source statuses, duplicated generator keys, absent reporting utility IDs or unmatched Owner Schedule 4 generator keys occurred in the pilot.
+
+### Scientific interpretation
+
+- **35 source generator keys ≠ 35 insured buildings**; several may be equipment units at the same physical site and five have **retired** reporting status in the **2025** vintage. Even 26 code `OP` rows only show EIA reporting status, not a 2026 operating guarantee, insurance eligibility, policy, CAT loss or BI replacement value.
+- EIA `Utility ID` is the source **reporting-utility identifier**. Exactly **11** such codes occur among the 35 generators, and no original plant in this cohort has multiple reporting utility IDs. These **11 are not 11 insurer groups** and not independently resolved ultimate beneficial ownership/LEIs.
+- **Three of the six explicitly Owner-Schedule-reported generator keys occur in the retired reporting tab.** Do not count all six as currently operable insured assets. A generator **without** an Owner Schedule 4 row is **not ownerless**; a missing Schedule 4 row cannot be treated as proof of the current owner without an independently validated reporting-operator relation and the EIA survey instructions.
+- The original source Utility workbook's `Utility Name`, address and other entity fields were not printed. This audit is the base for a **controlled legal-entity lineage and insurer portfolio prior** with independent company reports, GLEIF entities, commercial data permissions, spatial asset proof and treaty contracts still separate.
+
+**Next verification:** (1) inspect the exact EIA `Ownership` status codebook and 2025 Utility→operator semantics, (2) check 11 utility IDs' corporate parent evidence against dated legal company sources, and (3) derive only evidence-labeled **synthetic** portfolio weights and capacity exposure, never assume all EIA power plants are insured by a named carrier or that nameplate MW is TIV.
