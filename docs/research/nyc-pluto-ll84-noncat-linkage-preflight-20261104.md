@@ -153,6 +153,45 @@ Limits: 2 MB input, 10,000 rows per side; no network requests. The strict
 26v2 release identity is a research contract, not a claim that that release
 is complete/current or usable under commercial source rights.
 
+## Executable original-source canary (added 2026-11-04)
+
+The research source-access probe is now implemented as
+research_runners/nyc_socrata_count_canary_v0.py. It supports only:
+
+    python research_runners/nyc_socrata_count_canary_v0.py --live
+
+Network access requires the explicit live flag. Without it, the runner refuses
+to execute. Exactly **seven** GET requests are hard-coded to the original
+HTTPS NYC Socrata service (resource views 64uk-42ks and 5zyy-y8am):
+the PLUTO row total, the LL84 2024 row total, four named identifier-complexity
+classes, and their logical OR union. Every request uses SoQL select=count(*);
+there is no configurable host, field expression, geographic key, token, input
+dataset or user query. Redirects and non-JSON responses are rejected and each
+aggregate result is capped at 4,096 bytes.
+
+The runner enforces that category counts cannot exceed the union, the union
+cannot exceed the LL84 total, and union cannot exceed the sum of categories.
+This **does not** establish that those categories cover every malformed key.
+The canary emits aggregate-only JSON with explicit false flags for building
+identity, insurance value or model-input admission. Its tests
+(tests/test_nyc_socrata_count_canary_v0.py) use mocked response bytes only;
+they can run offline under the repository unittest suite. The runner is
+neither a model input, source approval nor a raw-data connector.
+
+Important scientific limitations:
+- PLUTO and LL84 row counts have incomparable grains. Do not divide their
+  respective totals to claim building coverage.
+- LL84 contains year-specific observations; a single property can recur in
+  several years. Revisions and parent-child campuses require original review.
+- Conditions overlap, so the four separate counts must not be added to
+  derive a unique count; the canary queries their explicit OR union.
+- The seven live counts can change if NYC refreshes tables. Store the query
+  identity, source metadata release date, retrieval timestamp and scientific
+  context in a separate independently reviewed receipt before comparative use.
+- Authentication-free public API access is not a blanket data-reuse grant;
+  raw/derived asset acquisition, crosswalk rights and all admissions remain
+  unapproved.
+
 ## Next scientific and rights gate
 
 1. Check live original NYC Socrata field metadata and pin the exact LL84
