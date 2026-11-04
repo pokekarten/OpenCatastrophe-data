@@ -1,0 +1,127 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Only the national annual 2025 carrier controls are issuer observations.
+# Every spatial weight, regional premium relativity, capacity and coverage assumption below is invented.
+schema_version = "RVA_SOLO_2025_MACRO_PRIOR_STRESS_V0"
+target_legal_entity = "R+V Allgemeine Versicherung AG"
+issuer_contract_measure = "connected_building_year_end_policies_not_buildings"
+issuer_premium_measure = "annual_HGB_direct_booked_connected_buildings_TEUR_not_insured_TIV"
+issuer_year = 2025
+scenario_kind = "national_observed_controls_entirely_fictional_geography"
+geographical_region_definition = "fictional_macro_bucket_not_verified_census_region"
+real_company_region_shares_observed = false
+original_zensus_regional_building_counts_admitted = false
+bvr_association_to_state_geography_verified = false
+bvr_indicators_used_as_company_weights = false
+issuer_peril_take_up_observed = false
+insurer_sites_and_tiv_observed = false
+model_input_approved = false
+note = "A/B/C show mathematical non-identifiability under exact issuer national aggregate controls. Do not identify a macro bucket with real Kreis data or a bank-association footprint. No flood take-up inferred; zero coverage diagnostic input means NOT ESTIMATED."
+
+[[hypotheses]]
+name = "UNIFORM_HYPOTHESIS"
+status = "invented_research_sensitivity"
+
+[[hypotheses.regions]]
+region_code = "DE_NORTH"
+hypothetical_contract_capacity = "2000000"
+contract_prior_weight = "1"
+premium_relativity = "1"
+hypothetical_market_elemental_share = "0"
+assumed_carrier_uptake_multiplier = "0"
+
+[[hypotheses.regions]]
+region_code = "DE_EAST"
+hypothetical_contract_capacity = "2000000"
+contract_prior_weight = "1"
+premium_relativity = "1"
+hypothetical_market_elemental_share = "0"
+assumed_carrier_uptake_multiplier = "0"
+
+[[hypotheses.regions]]
+region_code = "DE_SOUTH"
+hypothetical_contract_capacity = "2000000"
+contract_prior_weight = "1"
+premium_relativity = "1"
+hypothetical_market_elemental_share = "0"
+assumed_carrier_uptake_multiplier = "0"
+
+[[hypotheses.regions]]
+region_code = "DE_WEST"
+hypothetical_contract_capacity = "2000000"
+contract_prior_weight = "1"
+premium_relativity = "1"
+hypothetical_market_elemental_share = "0"
+assumed_carrier_uptake_multiplier = "0"
+
+[[hypotheses]]
+name = "SOUTH_WEST_HYPOTHESIS"
+status = "invented_research_sensitivity"
+
+[[hypotheses.regions]]
+region_code = "DE_NORTH"
+hypothetical_contract_capacity = "2000000"
+contract_prior_weight = "0.15"
+premium_relativity = "0.85"
+hypothetical_market_elemental_share = "0"
+assumed_carrier_uptake_multiplier = "0"
+
+[[hypotheses.regions]]
+region_code = "DE_EAST"
+hypothetical_contract_capacity = "2000000"
+contract_prior_weight = "0.10"
+premium_relativity = "0.75"
+hypothetical_market_elemental_share = "0"
+assumed_carrier_uptake_multiplier = "0"
+
+[[hypotheses.regions]]
+region_code = "DE_SOUTH"
+hypothetical_contract_capacity = "2000000"
+contract_prior_weight = "0.40"
+premium_relativity = "1.15"
+hypothetical_market_elemental_share = "0"
+assumed_carrier_uptake_multiplier = "0"
+
+[[hypotheses.regions]]
+region_code = "DE_WEST"
+hypothetical_contract_capacity = "2000000"
+contract_prior_weight = "0.35"
+premium_relativity = "1.10"
+hypothetical_market_elemental_share = "0"
+assumed_carrier_uptake_multiplier = "0"
+
+[[hypotheses]]
+name = "NORTH_EAST_HYPOTHESIS"
+status = "invented_research_sensitivity"
+
+[[hypotheses.regions]]
+region_code = "DE_NORTH"
+hypothetical_contract_capacity = "2000000"
+contract_prior_weight = "0.35"
+premium_relativity = "1.05"
+hypothetical_market_elemental_share = "0"
+assumed_carrier_uptake_multiplier = "0"
+
+[[hypotheses.regions]]
+region_code = "DE_EAST"
+hypothetical_contract_capacity = "2000000"
+contract_prior_weight = "0.30"
+premium_relativity = "0.85"
+hypothetical_market_elemental_share = "0"
+assumed_carrier_uptake_multiplier = "0"
+
+[[hypotheses.regions]]
+region_code = "DE_SOUTH"
+hypothetical_contract_capacity = "2000000"
+contract_prior_weight = "0.20"
+premium_relativity = "1.00"
+hypothetical_market_elemental_share = "0"
+assumed_carrier_uptake_multiplier = "0"
+
+[[hypotheses.regions]]
+region_code = "DE_WEST"
+hypothetical_contract_capacity = "2000000"
+contract_prior_weight = "0.15"
+premium_relativity = "1.10"
+hypothetical_market_elemental_share = "0"
+assumed_carrier_uptake_multiplier = "0"
