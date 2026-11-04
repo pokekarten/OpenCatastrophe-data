@@ -14,6 +14,7 @@ from research_runners.grwl_original_oriented_vertex_metric_v0 import read_origin
 from research_runners.grwl_original_shape_leng_audit_v0 import (
     SCHEMA, compare_length_releases, main, read_keyed_source_lengths,
     spherical_centerline_length_km, planar_original_wgs84_length_in_degrees,
+    has_original_longitude_jump_across_dateline,
 )
 from tests.test_grwl_original_aggregate_semantic_diff_v0 import (
     A, B, C, artifact,
@@ -182,6 +183,35 @@ class SHAPELengthAuditTests(unittest.TestCase):
         out = compare_length_releases(old, new)
         self.assertEqual(out["original_2018_features_exceeding_planar_degree_rel_error"]["0.01"], 1)
         self.assertEqual(out["original_2018_abs_relative_error_vs_planar_degrees"]["count"], 2)
+
+    def test_dateline_jump_only_within_a_source_part(self):
+        crossing = (struct.pack("<dd", 179.9, 0.) +
+                    struct.pack("<dd", -179.9, 0.))
+        self.assertTrue(has_original_longitude_jump_across_dateline(((2,), crossing)))
+        # Crossing between separate parts is not a source segment.
+        self.assertFalse(has_original_longitude_jump_across_dateline(
+            ((2, 2), struct.pack("<8d", 179., 0., 179.9, 0.,
+                                -179.9, 0., -179., 0.))))
+
+    def test_2026_spherical_outlier_with_dateline_jump_classified(self):
+        crossing = ((179.9, 0.), (-179.9, 0.))
+        old = sample()
+        later = sample(rows=((1, "50", "111.195", "DE"),
+                             (2, "60", "50", "FR")),
+                       points=(A, crossing))
+        r = compare_length_releases(old, later)
+        self.assertEqual(r["original_2026_features_with_any_longitude_jump_over_180_degrees"], 1)
+        self.assertEqual(r["original_2026_spherical_km_outliers_over_1pct_with_dateline_jump"], 1)
+        self.assertEqual(r["original_2026_spherical_km_outliers_over_1pct_without_dateline_jump"], 0)
+        self.assertTrue(r["dateline_jump_does_not_independently_establish_error_cause"])
+
+    def test_2026_spherical_outlier_without_dateline_is_counted(self):
+        early = sample()
+        later = sample()
+        r = compare_length_releases(early, later)
+        self.assertEqual(r["original_2026_features_with_any_longitude_jump_over_180_degrees"], 0)
+        self.assertEqual(r["original_2026_spherical_km_outliers_over_1pct_with_dateline_jump"], 0)
+        self.assertEqual(r["original_2026_spherical_km_outliers_over_1pct_without_dateline_jump"], 2)
 
     def test_no_network_by_default(self):
         self.assertEqual(main([]), 2)
