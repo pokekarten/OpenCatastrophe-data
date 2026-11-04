@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: GRWL 2018 vs 2026 exact original byte receipt
+
+on:
+  pull_request:
+    paths:
+      - research_runners/grwl_trusted_original_byte_proof_v0.py
+      - tests/test_grwl_trusted_original_byte_proof_v0.py
+      - docs/research/grwl-trusted-original-byte-proof-20261104.md
+      - .github/workflows/grwl-original-summary-byte-receipt.yml
+  workflow_dispatch:
+  # One trusted-main original-source run at first merge; no network on PR head.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/grwl-original-summary-byte-receipt.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grwl-exact-original-summary-byte-receipt
+  cancel-in-progress: false
+
+jobs:
+  exact-grwl-original-bytes:
+    name: Two fixed original GRWL ZIPs, member digest only
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Offline synthetic network-control checks
+        run: |
+          python -m unittest tests.test_grwl_trusted_original_byte_proof_v0 -v
+          python -m unittest tests.test_grwl_original_zip_structure_preflight_v0 -v
+          python -m unittest tests.test_grwl_original_member_digest_compare_v0 -v
+      - name: Frozen code and source identity
+        run: |
+          git rev-parse HEAD
+          sha256sum research_runners/grwl_trusted_original_byte_proof_v0.py
+          sha256sum research_runners/grwl_original_member_digest_compare_v0.py
+          sha256sum research_runners/grwl_original_zip_structure_preflight_v0.py
+      - name: Bounded original Zenodo downloads and temporary member-byte comparison
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          python research_runners/grwl_trusted_original_byte_proof_v0.py --live
