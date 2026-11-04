@@ -111,11 +111,28 @@ def audit_original_csv(blob: bytes) -> dict:
     row = matches[0]
     # Only conservative fixed fields. Date/time and source coordinates remain
     # as the NOAA CSV actually labels them, not silently converted to UTC.
-    if (row["EVENT_TYPE"].upper() != "HAIL"
-            or row["STATE"].upper() != "TEXAS"
-            or row["YEAR"] != "2024"
-            or "MAY" not in row["BEGIN_DATE_TIME"].upper()):
-        raise NCEIProofBlocked("original NCEI record not expected TX hail case")
+    # Strict exact-row crosswalk discovered from the *original* 2024
+    # provider archive, 2026-11-04 direct HTTPS receipt #41829444110.
+    # NCEI uses 18:43 CST-6 = 00:43Z the next date. It labels the same
+    # report locality DALWORTHINGTON rather than the preliminary NWS
+    # '2 NE ARLINGTON'; field equality does NOT prove raw mPING identity.
+    original_identity = {
+        "EVENT_ID": "1186553",
+        "EPISODE_ID": "190994",
+        "YEAR": "2024",
+        "STATE": "TEXAS",
+        "EVENT_TYPE": "Hail",
+        "BEGIN_DATE_TIME": "27-MAY-24 18:43:00",
+        "CZ_TIMEZONE": "CST-6",
+        "SOURCE": "Public",
+        "MAGNITUDE": "3.25",
+        "BEGIN_LAT": "32.71",
+        "BEGIN_LON": "-97.1",
+        "BEGIN_LOCATION": "DALWORTHINGTON",
+        "CZ_NAME": "TARRANT",
+    }
+    if any(row[key] != expected for key, expected in original_identity.items()):
+        raise NCEIProofBlocked("original NCEI row identity or event fields drift")
     return {
         "schema_version": "noaa-ncei-2024-hail-event-original-row-v0",
         "provider": "NOAA NCEI Storm Events original annual CSV",
