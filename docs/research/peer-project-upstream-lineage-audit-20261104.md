@@ -117,3 +117,43 @@ Three additional original-provider candidates now live in [`landscape/sources-pe
 **Additional primary-config notes:** OpenGIRA [WRI Aqueduct list](https://github.com/nismod/open-gira/blob/main/config/hazard_resource_locations/aqueduct-river.txt) enumerates v2 `WATCH` 1980 return-period rasters and 2030/2050/2080 RCP 4.5 scenarios, with filenames encoding scenario and return period. A WRI return-period raster is **not** a catalogue of individual annual flood events or Poisson occurrence probabilities. This family overlaps ongoing [PR #1226](https://github.com/pokekarten/OpenCatastrophe-data/pull/1226), so it is **not duplicated**. OpenGIRA's [network config](https://github.com/nismod/open-gira/blob/main/config/config.yaml) refers to **JBA** and **Arup** hazard files but does not establish redistributable rights. No unauthorized hazard downloads.
 
 The three source families were identified through **original project files plus original publisher pages**, but no data assets, tile-index GeoPackage, PANGAEA raw geospatial file or ministry spreadsheet was ingested. Specific use of any one requires exact provider/release/file identity, licensing, real access receipt, semantic/CRS/unit validation and a model consumer rationale. The existing register's admission gates remain closed.
+
+
+## Verified live original metadata receipt — 2026-11-04
+
+The previous sections correctly block **source-asset bytes**, but their earlier statements that original REST *metadata* could not be accessed are superseded by these read-only publisher metadata observations. No archive contents were downloaded.
+
+**OpenDRR NHSL v1.0 original GitHub Releases JSON** (provider [REST endpoint](https://api.github.com/repos/OpenDRR/national-human-settlement/releases/tags/v1.0)): release `id=49557713`, `tag_name=v1.0`, `draft=false`, `prerelease=false`, published 2021-09-14, last release metadata update 2022-10-20. The API currently reports 50 attached assets (the human release page may count auto-generated source archives separately). The exact original declared asset identities are:
+
+| NHSL release asset | GitHub asset ID | Provider-reported bytes | Publisher digest |
+| --- | ---: | ---: | --- |
+| `nhsl_physical_exposure_attributes_en.xlsx` | `61543484` | `17888` | absent |
+| `nhsl_physical_exposure_indicators_b.zip` | `61551864` | `115408117` | absent |
+| `nhsl_physical_exposure_indicators_s.zip` | `61551969` | `197526923` | absent |
+
+The NHSL metadata gate now pins **exact release ID + three asset IDs + exact provider-reported sizes**. This is a repeatable change/drift detector, **not** proof that the zip/XLSX data bytes or SHA-256 were inspected. The published `2021` release date and `2022` uploaded asset dates must not be silently treated as the same data-observation vintage.
+
+**WIOD 2016 original Dataverse REST JSON** ([publisher endpoint](https://dataverse.nl/api/datasets/:persistentId/?persistentId=doi%3A10.34894%2FPJ2M1C)): dataset `id=199086`, DOI `10.34894/PJ2M1C`; latest released Dataverse metadata version `2.1` with `releaseTime=2025-10-09T08:23:27Z` and 13 attached files. The original table series is WIOD **2016** covering 2000–2014; its Dataverse 2025 metadata update is **not a new economic observation year**.
+
+| WIOD original archive | Dataverse file ID | Provider-reported bytes | Provider-reported SHA-1 |
+| --- | ---: | ---: | --- |
+| `WIOTS_in_R.zip` | `199101` | `641578409` | `51efc2a6c0358cff485e24d6b4b96ffe27f4e23a` |
+| `Exchange_Rates.xlsx` | `199097` | `19308` | `06952426dc6fdac6ecf5b4c71bf40239167864e7` |
+| `WIOTS_in_EXCEL.zip` (discovery context only) | `199104` | `919328606` | `72748c32ed94a2b19a7e96c22b2f9d68930cffaa` |
+
+Original Dataverse metadata marks these assets `restricted=false` and its dataset `termsOfUse` cites Creative Commons Attribution 4.0. **Direct file access** to the archive may nevertheless be blocked by the host's Anubis challenge. Neither the archive contents, individual 2011 R/Excel WIOT member, original file SHA-1 nor practical ability to download the archive has been independently verified. A metadata hash is not a source-file hash.
+
+New [WIOD offline original metadata validator](../../scripts/wiod_dataverse_metadata_preflight_v0.py) and [synthetic negative tests](../../tests/test_wiod_dataverse_metadata_preflight_v0.py) pin source dataset, exact latest metadata release, R archive and exchange-rate asset identifiers/sizes/declared SHA-1 without retrieving source bytes.
+
+**Repeat the original metadata-only check outside Git and never commit downloaded response bodies:**
+
+```bash
+curl --fail --silent --show-error --max-time 30 \
+  'https://dataverse.nl/api/datasets/:persistentId/?persistentId=doi%3A10.34894%2FPJ2M1C' \
+  -o /tmp/wiod2016-dataverse.json
+python scripts/wiod_dataverse_metadata_preflight_v0.py \
+  --dataset-json /tmp/wiod2016-dataverse.json
+python -m unittest tests.test_wiod_dataverse_metadata_preflight_v0 -v
+```
+
+**Rights/science status remains `not_reviewed` and admission remains `not_admitted`.** The authenticated/permitted exact archive retrieval, 2011 matrix contents and extraction of specific country-sector groups are separate subsequent steps.
