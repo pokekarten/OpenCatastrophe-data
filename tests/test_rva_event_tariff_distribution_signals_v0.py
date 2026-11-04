@@ -4,12 +4,15 @@
 
 from decimal import Decimal
 from pathlib import Path
+import sys
 import tomllib
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 HISTORY = ROOT / "research/observations/rva_solo_hgb_property_2019_2025_v0.toml"
 EVIDENCE = ROOT / "research/observations/rva_public_event_tariff_distribution_signals_v0.toml"
+sys.path.insert(0, str(ROOT / "research_runners"))
+from rva_public_constraint_summary_v0 import public_receipt  # noqa: E402
 
 def read(path):
     return tomllib.loads(path.read_text(encoding="utf-8"))
@@ -140,6 +143,33 @@ class PublicRvaPerimeterTests(unittest.TestCase):
     def test_missing_source_and_duplicate_claim_blocked(self):
         self.e["evidence"][1]["id"] = self.e["evidence"][0]["id"]
         with self.assertRaises(ValueError): validate(self.h, self.e)
+
+
+    def test_benchmark_receipt_policy_scale_not_actual_insurance_rate(self):
+        out = public_receipt(self.h, self.e)
+        latest = out["company_aggregate_hgb_connected_buildings"][-1]
+        self.assertEqual(latest["observed_year_end_connected_building_contracts"], 1060546)
+        self.assertEqual(latest["derived_booked_gwp_over_year_end_contract_eur"], "940.75")
+        self.assertEqual(latest["derived_all_cause_claim_expense_over_booked_gwp_percent"], "57.88")
+        self.assertTrue(latest["derived_ratio_not_tariff_rate"])
+        self.assertFalse(out["admission"]["model_input_approved"])
+
+    def test_benchmark_receipt_group_severity_separate(self):
+        c = public_receipt(self.h, self.e)["group_public_claims_context"]
+        self.assertEqual(c["bernd_2021_reported_large_claim_share_percent_approx"], "4.00")
+        self.assertEqual(c["bernd_2021_reported_large_claim_amount_share_percent_approx"], "61.64")
+        self.assertEqual(c["hail_2024_reported_group_non_motor_residual_eur_million_approx"], "41")
+        self.assertTrue(c["2024_nonmotor_hail_not_equivalent_to_building_hail"])
+
+    def test_benchmark_receipt_fails_on_unadmitted_peril_claim(self):
+        self.e["company_peril_specific_solo_loss_observed"] = True
+        with self.assertRaises(ValueError):
+            public_receipt(self.h, self.e)
+
+    def test_benchmark_receipt_fails_wrong_group_selected_population(self):
+        self.e["evidence"][0]["flood_coverage_population"] = "all_German_undamaged_RVA_policies"
+        with self.assertRaises(ValueError):
+            public_receipt(self.h, self.e)
 
 if __name__ == "__main__":
     unittest.main()
