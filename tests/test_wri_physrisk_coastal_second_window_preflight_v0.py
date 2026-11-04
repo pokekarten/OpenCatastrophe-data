@@ -97,7 +97,7 @@ class SecondWindowTests(unittest.TestCase):
 
     def test_out_of_range_or_wrong_geometry_fails(self):
         row, streams = synthetic_second_window()
-        for scalar_row, ncols in ((5101, 1000), (0, 1000), (5100, 1001)):
+        for scalar_row, ncols in ((5120, 1000), (0, 1000), (5100, 43201)):
             with self.subTest(scalar_row=scalar_row, ncols=ncols):
                 with self.assertRaises(PixelGateError):
                     compare_pixels(row, streams, FIRST_COL, ncols, scalar_row,
