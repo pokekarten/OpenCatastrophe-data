@@ -38,7 +38,7 @@ from research_runners.luxembourg_gpkg_schema_window_v0 import (
 
 # Two predeclared public research locations, previously used in ACT-GIS work.
 STUDY_SITES = {
-    "luxembourg-city": (6.1319, 49.6116, 107),
+    "luxembourg-city": (6.1319, 49.6116, 104),  # 107 enclosing-rectangle candidates
     "berdorf-village": (6.348821, 49.820946, 16),
 }
 HALFWIDTH_M = 50.0
@@ -247,6 +247,9 @@ def run(address_csv: Path, geobase_zip: Path, *, site: str = "luxembourg-city") 
         result = classify(points, polygons)
     return {
         "profile": "lu-act20261102-address-vs-geobase20261001-original-100m-v0",
+        "rtree_enclosing_bbox_polygon_candidates": building_count,
+        "exact_positive_area_polygon_count": len(polygons),
+        "bbox_only_polygon_candidates_excluded": building_count - len(polygons),
         "study_site": site,
         "study_area": "fixed 100m x 100m EPSG3035 original research window",
         "original_source_evidence": {
