@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from collections import defaultdict
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from pathlib import Path
+import tomllib
 import io
 import json
 import re
@@ -189,9 +191,55 @@ def verify_and_aggregate(original: bytes) -> dict:
     }
 
 
+REGISTER = (Path(__file__).resolve().parents[1] / "research" / "observations" /
+            "nrw_pv_official_municipality_class_state_20260312_v0.toml")
+REGISTER_KEY = (
+    "residential_buildings", "commerce_industry", "public_buildings",
+    "agriculture", "other_buildings", "unassigned", "overall",
+)
+
+
+def verify_recorded_state_observation(aggregate: dict, *, register: dict | None = None) -> dict:
+    if register is None:
+        register = tomllib.loads(REGISTER.read_text(encoding="utf-8"))
+    if (register.get("schema_version") != "NRW_OFFICIAL_ROOF_PV_MUNICIPALITY_AGGREGATE_20260312_V0"
+        or register.get("verified_original_source_sha256") != source.EXPECTED_SHA256
+        or register.get("verified_original_source_bytes") != source.EXPECTED_BYTES
+        or register.get("source_rows_original_8digit_AGS_verified_and_unique_each_sheet") != 396
+        or aggregate.get("source_sha256") != source.EXPECTED_SHA256
+        or aggregate.get("verified_distinct_8digit_AGS_per_sheet") != 396
+        or any(register.get(key) is not False for key in (
+            "original_xlsx_raw_committed_to_repo", "company_RV_actual_insured_roofs_or_pv_observed",
+            "company_RV_insured_PV_replacement_cost_observed",
+            "company_RV_property_concentration_observed", "model_input_admitted"))):
+        raise ValueError("ORIGINAL_NRW_PV_RECORDED_SOURCE_OR_INSURER_SCOPE_INVALID")
+    entries = register.get("measures", [])
+    observed = aggregate.get("sheets", [])
+    if len(entries) != len(SHEETS) or len(observed) != len(SHEETS):
+        raise ValueError("ORIGINAL_NRW_PV_SOURCE_AGGREGATE_MEASURE_COUNT_DRIFT")
+    for e, o in zip(entries, observed):
+        if (e.get("sheet_name") != o.get("sheet_title")
+            or e.get("source_unit") != o.get("units_exact_header")
+            or e.get("is_2025_labeled_Bestand_column") != (
+                o.get("selected_column_year") == 2025
+            )
+            or set(e.get("category_totals", {})) != set(REGISTER_KEY)):
+            raise ValueError("ORIGINAL_NRW_PV_RECORDED_MEASURE_TAXONOMY_DRIFT")
+        for i, category in enumerate(CLASSES):
+            wanted = e["category_totals"][REGISTER_KEY[i]]
+            got = o["NRW_aggregate_by_building_type"][category]
+            if wanted != got:
+                raise ValueError("ORIGINAL_NRW_PV_RECORDED_ORIGINAL_VALUE_DRIFT")
+    return {
+        "recorded_396_municipality_state_aggregates_match_verified_original": True,
+        "science_and_insurer_data_admitted": False,
+    }
+
+
 def main() -> int:
     original = source.fetch_official()
     result = verify_and_aggregate(original)
+    result["state_receipt_conservation"] = verify_recorded_state_observation(result)
     print(json.dumps(result, sort_keys=True, ensure_ascii=False))
     return 0
 
