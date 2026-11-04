@@ -140,6 +140,27 @@ def planar_original_wgs84_length_in_degrees(shape):
     return total
 
 
+def has_original_longitude_jump_across_dateline(shape):
+    """Classify source longitude transitions >180 degrees, return no coordinates."""
+    parts, xy = shape
+    if not parts:
+        return False
+    if len(xy) != 16 * sum(parts):
+        raise OriginalZipError("bad original SHP geometry byte extent")
+    offset = 0
+    for n in parts:
+        if n < 2:
+            raise OriginalZipError("bad original polyline part length")
+        previous = struct.unpack_from("<dd", xy, offset * 16)
+        for k in range(offset + 1, offset + n):
+            current = struct.unpack_from("<dd", xy, k * 16)
+            if abs(current[0] - previous[0]) > 180.0:
+                return True
+            previous = current
+        offset += n
+    return False
+
+
 def _pct(values, fraction):
     if not values:
         return None
@@ -181,6 +202,9 @@ def compare_length_releases(a, b):
     degree_error_thresholds = Counter()
     spherical_error_thresholds = Counter()
     diagnostic_tolerances = (1e-9, 1e-6, 1e-4, 0.01, 0.1)
+    dateline_2026_count = 0
+    spherical_over_one_percent_dateline_count = 0
+    spherical_over_one_percent_other_count = 0
     zero_denominator = 0
     same_xy_relative = []
     changed_xy_relative = []
@@ -221,6 +245,14 @@ def compare_length_releases(a, b):
                 geodesic_by_vintage[label].append(ratio_km)
                 if label == "2026":
                     err_km = abs(ratio_km - 1.0)
+                    dateline = has_original_longitude_jump_across_dateline(shape)
+                    if dateline:
+                        dateline_2026_count += 1
+                    if err_km > 0.01:
+                        if dateline:
+                            spherical_over_one_percent_dateline_count += 1
+                        else:
+                            spherical_over_one_percent_other_count += 1
                     new_km_spherical_relative_error.append(err_km)
                     for t in diagnostic_tolerances:
                         if err_km > t:
@@ -268,6 +300,12 @@ def compare_length_releases(a, b):
             str(t): spherical_error_thresholds[str(t)] for t in diagnostic_tolerances
         },
         "planar_degree_control_is_not_ground_distance": True,
+        "original_2026_features_with_any_longitude_jump_over_180_degrees": dateline_2026_count,
+        "original_2026_spherical_km_outliers_over_1pct_with_dateline_jump":
+            spherical_over_one_percent_dateline_count,
+        "original_2026_spherical_km_outliers_over_1pct_without_dateline_jump":
+            spherical_over_one_percent_other_count,
+        "dateline_jump_does_not_independently_establish_error_cause": True,
         "spherical_length_diagnostic_basis": EARTH_LENGTH_APPROXIMATION,
         "geodesic_distance_or_projection_method_of_source_verified": False,
         "source_shape_leng_units_independently_verified": False,
