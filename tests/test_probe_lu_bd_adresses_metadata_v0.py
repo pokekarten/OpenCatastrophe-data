@@ -9,8 +9,8 @@ from scripts.probe_lu_bd_adresses_metadata_v0 import ASSETS, MAX_METADATA_BYTES,
 
 def fake_record(asset):
     rid, filename, timestamp, md5, lo, hi = asset
-    return {"id": rid, "filename": filename, "url": f"https://download.data.public.lu/resources/adresses-georeferencees-bd-adresses/{timestamp}/{filename}",
-            "md5": md5, "filesize": (lo + hi) // 2, "last_modified": "2026-10-12T03:01:01Z"}
+    return {"id": rid, "title": filename, "url": f"https://download.data.public.lu/resources/adresses-georeferencees-bd-adresses/{timestamp}/{filename}",
+            "checksum": {"type": "md5", "value": md5}, "filesize": (lo + hi) // 2, "last_modified": "2026-11-02T03:01:01Z"}
 
 
 def raw(obj):
@@ -61,13 +61,13 @@ class MetadataTests(unittest.TestCase):
             with self.subTest(u=u), self.assertRaises(MetadataReceiptError): _parse(raw(f), ASSETS[0])
 
     def test_rejects_changed_file_vintage(self):
-        f = fake_record(ASSETS[0]); f["url"] = f["url"].replace("20261012", "20261013")
+        f = fake_record(ASSETS[0]); f["url"] = f["url"].replace("20261102", "20261103")
         with self.assertRaises(MetadataReceiptError): _parse(raw(f), ASSETS[0])
-        f = fake_record(ASSETS[0]); f["last_modified"] = "2026-10-13T00:00:00Z"
+        f = fake_record(ASSETS[0]); f["last_modified"] = "2026-11-03T00:00:00Z"
         with self.assertRaises(MetadataReceiptError): _parse(raw(f), ASSETS[0])
 
     def test_rejects_md5_change(self):
-        f = fake_record(ASSETS[1]); f["md5"] = "0" * 32
+        f = fake_record(ASSETS[1]); f["checksum"]["value"] = "0" * 32
         with self.assertRaises(MetadataReceiptError): _parse(raw(f), ASSETS[1])
 
     def test_rejects_bad_byte_count(self):
@@ -76,7 +76,7 @@ class MetadataTests(unittest.TestCase):
             with self.subTest(val=val), self.assertRaises(MetadataReceiptError): _parse(raw(f), ASSETS[1])
 
     def test_rejects_bad_filename(self):
-        f = fake_record(ASSETS[2]); f["filename"] = "address-shp.zip"
+        f = fake_record(ASSETS[2]); f["title"] = "address-shp.zip"
         with self.assertRaises(MetadataReceiptError): _parse(raw(f), ASSETS[2])
 
     def test_rejects_overlong_and_duplicate_json(self):
