@@ -1,0 +1,257 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Secondary evidence register of dated public source claims, not a loss or insured-exposure dataset.
+schema_version = "RVA_PUBLIC_EVENT_TARIFF_DISTRIBUTION_SIGNALS_V0"
+target_legal_entity = "R+V Allgemeine Versicherung AG"
+target_profile_id = "RVA_DE_2025"
+created_on = "2026-11-04"
+rights_status = "source_links_and_bounded_observation_only_no_bulk_redistribution"
+company_insured_address_observed = false
+company_regional_portfolio_shares_observed = false
+company_peril_specific_solo_loss_observed = false
+company_treaty_structure_observed = false
+production_calibration_authorized = false
+notes = "Publisher-issued press releases may describe all R+V customers, not 2025 solo R+V Allgemeine; do not combine annual/peril/event overlapping updates or infer risk geography from claims site or agency offices."
+
+[[evidence]]
+id = "ruv_bernd_flood_claims_report_20220707"
+kind = "historical_group_cat_loss_context"
+entity = "R+V customers"
+scope = "group_customer_population_mixed_entities"
+observation_date = "2022-07-07"
+event_year = 2021
+peril = "flood"
+geography = "flood-affected German regions (Ahr Valley included)"
+source = "https://www.ruv.de/newsroom/pressemitteilungen/2022-07-07-420-millionen-euro-an-flutopfer-gezahlt"
+amount = "730"
+qualifier = "approximately_reported_total_as_of_publication"
+claims = "15000"
+claims_qualifier = "approximately_reported"
+large_claims = "600"
+large_claims_amount = "450"
+large_claim_threshold = "250000"
+flood_coverage_fraction = "0.75"
+flood_coverage_population = "affected_R+V_customers_in_flood_areas_2021"
+use = "historical_group_tail_severity_and_cover_take_up_context"
+blocked = "not_solo_loss_not_unconditional_de_flood_penetration_not_event_frequency_not_net_loss"
+solo_geographic_exposure_admitted = false
+solo_catastrophe_loss_calibration_admitted = false
+
+[[evidence]]
+id = "ruv_south_flood_flash_20240606"
+kind = "preliminary_group_event_loss_context"
+entity = "R+V customers"
+scope = "group_customer_population_mixed_entities"
+observation_date = "2024-06-06"
+event_year = 2024
+peril = "flood"
+geography = "Bavaria and Baden-Wuerttemberg"
+source = "https://www.ruv.de/newsroom/pressemitteilungen/2024-06-06-hochwasser-schaeden-juni"
+amount = "100"
+qualifier = "preliminary_early_estimate"
+use = "regional_group_flood_event_affects_buildings"
+blocked = "not_solo_final_not_damage_intensity_not_geo_risk_count_not_net"
+solo_geographic_exposure_admitted = false
+solo_catastrophe_loss_calibration_admitted = false
+
+[[evidence]]
+id = "ruv_hail_2023_followup_20250521"
+kind = "group_annual_peril_claims_context"
+entity = "R+V customers"
+scope = "group_customer_population_mixed_entities"
+observation_date = "2025-05-21"
+event_year = 2023
+peril = "hail"
+geography = "Germany various, no insurer regional allocation"
+source = "https://www.ruv.de/newsroom/pressemitteilungen/2025-05-21-hagelschaeden"
+amount = "200"
+qualifier = "nearly_approximate_annual_total"
+motor_included = true
+use = "multi_line_yearly_hail_context"
+blocked = "not_building_loss_not_solo_not_event_amount"
+solo_geographic_exposure_admitted = false
+solo_catastrophe_loss_calibration_admitted = false
+
+[[evidence]]
+id = "ruv_hail_2024_followup_20250521"
+kind = "group_annual_peril_claims_context"
+entity = "R+V customers"
+scope = "group_customer_population_mixed_entities"
+observation_date = "2025-05-21"
+event_year = 2024
+peril = "hail"
+geography = "Germany; July hail noted Bavaria and Baden-Wuerttemberg"
+source = "https://www.ruv.de/newsroom/pressemitteilungen/2025-05-21-hagelschaeden"
+amount = "97"
+qualifier = "approximately_annual_total"
+motor_included = true
+motor_amount = "56"
+motor_qualifier = "approximately"
+use = "peril_annual_group_and_non_motor_upper_bound_only"
+blocked = "not_solo_building_loss_41m_nonmotor_residual_not_pure_property"
+solo_geographic_exposure_admitted = false
+solo_catastrophe_loss_calibration_admitted = false
+
+[[evidence]]
+id = "ruv_hail_2025_followup_20260529"
+kind = "group_annual_peril_claims_context"
+entity = "R+V customers"
+scope = "group_customer_population_mixed_entities"
+observation_date = "2026-05-29"
+event_year = 2025
+peril = "hail"
+geography = "Germany no insurer regional breakdown"
+source = "https://www.ruv.de/newsroom/pressemitteilungen/2026-05-29-schaeden-hagel-2025"
+amount = "56"
+qualifier = "approximately_annual_total"
+motor_included = true
+motor_share = "more_than_half"
+use = "yearly_group_hail_context"
+blocked = "not_solo_property_loss_motor_split_not_exact"
+solo_geographic_exposure_admitted = false
+solo_catastrophe_loss_calibration_admitted = false
+
+[[evidence]]
+id = "ruv_local_loss_adjustment_benediktbeuern_202309"
+kind = "documented_local_group_claim_handling"
+entity = "R+V customers"
+scope = "group_customer_population_mixed_entities"
+observation_date = "2023-09-12"
+event_year = 2023
+peril = "hail_and_precipitation"
+geography = "Benediktbeuern, Bad Toelz-Wolfratshausen district, Bavaria"
+source = "https://www.ruv.de/newsroom/blog/2023-08-25-reportage-benediktbeuren"
+use = "qualitative_evidence_of_customer_claim_presence_and_roof_damage_types"
+blocked = "no_count_no_market_share_no_location_file_no_claim_total"
+solo_geographic_exposure_admitted = false
+solo_catastrophe_loss_calibration_admitted = false
+
+[[evidence]]
+id = "ruv_sales_koblenz_historical_20230623"
+kind = "group_sales_territory"
+entity = "R+V group sales"
+scope = "group_distribution_network_not_solo_property"
+observation_date = "2023-06-23"
+event_year = 2023
+peril = "not_applicable"
+geography = "Koblenz territory Rhine-Hesse Mainz Trier Hunsrueck Westerwald Eifel Rhein/Lahn Limburg"
+source = "https://www.ruv.de/newsroom/pressemitteilungen/2023-06-23-100-jahre-koblenz"
+qualifier = "24_customer_and_branch_directorates_group_2023"
+use = "public_channel_catchment_geography_hypothesis_only"
+blocked = "branch_territory_does_not_equal_insured_risk_geography_or_volume"
+solo_geographic_exposure_admitted = false
+solo_catastrophe_loss_calibration_admitted = false
+
+[[evidence]]
+id = "ruv_national_channel_2026"
+kind = "group_sales_footprint"
+entity = "R+V group sales"
+scope = "group_distribution_network_not_solo_property"
+observation_date = "2026-11-04"
+event_year = 2026
+peril = "not_applicable"
+geography = "Germany nationally"
+source = "https://www.ruv.de/karriere/vertrieb/unser-ruv-vertrieb"
+qualifier = "current_page_at_review_not_time_series"
+bank_count_approx = "700"
+general_agencies_count_approx = "300"
+field_sales_staff_count_minimum = "5000"
+use = "qualitative_broad_channel_presence_only"
+blocked = "do_not_allocate_policies_by_bank_branch_agency_or_staff_without_validation"
+solo_geographic_exposure_admitted = false
+solo_catastrophe_loss_calibration_admitted = false
+
+[[evidence]]
+id = "rva_hgb_2025_distribution_model"
+kind = "solo_insurer_distribution_description"
+entity = "R+V Allgemeine Versicherung AG"
+scope = "solo_company_channel_description"
+observation_date = "2026-04-21"
+event_year = 2025
+peril = "not_applicable"
+geography = "Germany nationwide; bank omnichannel, general agencies and brokers"
+source = "https://www.ruv.de/dam/jcr:e0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R+V%20Allgemeine%20Versicherung%20AG_final.2026-04-21-14-59-23.pdf"
+use = "channel_architecture_not_exposure_share"
+blocked = "no_branch_to_company_policy_match"
+solo_geographic_exposure_admitted = false
+solo_catastrophe_loss_calibration_admitted = false
+
+[[evidence]]
+id = "ruv_home_classic_comfort"
+kind = "issuer_residential_product"
+entity = "R+V product offering"
+scope = "group_marketing_not_insured_book_mix"
+observation_date = "2026-11-04"
+event_year = 2026
+peril = "wind_hail_flood_optional"
+geography = "Germany"
+source = "https://www.ruv.de/wohngebaeudeversicherung"
+qualifier = "classic_and_comfort_variants_with_optional_Naturgefahren_Plus"
+use = "fictional_policy_cover_archetypes_wind_hail_base_flood_optional"
+blocked = "no_company_flood_take_up_no_tariff_rate_frequency_no_contract_share"
+solo_geographic_exposure_admitted = false
+solo_catastrophe_loss_calibration_admitted = false
+
+[[evidence]]
+id = "ruv_residential_building_application_form"
+kind = "issuer_underwriting_field_dictionary"
+entity = "R+V product underwriting"
+scope = "public_blank_form_no_customer_records"
+observation_date = "2026-11-04"
+event_year = 2026
+peril = "not_applicable"
+geography = "Germany"
+source = "https://online.ruv.de/ruvdownloads/makler/vertriebsdownloads/ruv-privatpolice-analysebogen-wohngebaeude-summenmodell?action=download"
+qualifier = "blank_public_risk_questionnaire_for_3plus_storey_sum_insured_model"
+use = "building_type_floor_area_roof_structure_construction_class_risk_postcode_occupancy"
+blocked = "field_presence_is_not_distribution_and_no_real_addresses"
+solo_geographic_exposure_admitted = false
+solo_catastrophe_loss_calibration_admitted = false
+
+[[evidence]]
+id = "ruv_agri_building_cover"
+kind = "issuer_agricultural_product"
+entity = "R+V product offering"
+scope = "group_marketing_not_insured_book_mix"
+observation_date = "2026-11-04"
+event_year = 2026
+peril = "fire_storm_hail_flood_optional"
+geography = "Germany nationwide"
+source = "https://www.ruv.de/firmenkunden/landwirtschaftliche-versicherungen/agrarpolice/gebaeudeversicherung"
+qualifier = "farmhouse_stable_barn_insurable_new_value_or_actual_cash_value"
+use = "separate_rural_agri_building_and_content_archetypes_with_optional_elementar"
+blocked = "not_evidence_of_company_agri_asset_counts_or_TIV"
+solo_geographic_exposure_admitted = false
+solo_catastrophe_loss_calibration_admitted = false
+
+[[evidence]]
+id = "ruv_agri_2025_contract_terms"
+kind = "issuer_agricultural_policy_wording"
+entity = "R+V Allgemeine Versicherung AG"
+scope = "published_standard_terms_not_policy_sales"
+observation_date = "2025-07-01"
+event_year = 2025
+peril = "flood_rueckstau_optional"
+geography = "Germany"
+source = "https://www.ruv.de/dam/jcr:673b1764-43a7-4488-9157-0f344c8649fb/versicherungsbedingungen-ruv-agrarpolice-sachversicherung.pdf"
+qualifier = "conditional_flood_backwater_terms_and_exclusions_in_agri_property"
+use = "coverage_trigger_exclusion_hypotheses_require_exact_contract_variant"
+blocked = "published_conditions_dont_prove_actual_policy_mixes_or_coverage"
+solo_geographic_exposure_admitted = false
+solo_catastrophe_loss_calibration_admitted = false
+
+[[evidence]]
+id = "ruv_commercial_building_cover"
+kind = "issuer_commercial_property_product"
+entity = "R+V product offering"
+scope = "group_marketing_not_insured_book_mix"
+observation_date = "2026-11-04"
+event_year = 2026
+peril = "fire_water_wind_hail_flood_optional"
+geography = "Germany"
+source = "https://www.ruv.de/static-files/ruvde/downloads/firmenkunden/kundeninfoblatt-gebaeudeversicherung.pdf"
+qualifier = "business_building_policy_for_mixed_use_and_rental_loss"
+use = "commercial_mixed_use_structure_and_business_interruption_optional"
+blocked = "not_proof_of_insurer_occurrence_or_company_cat_TIV"
+solo_geographic_exposure_admitted = false
+solo_catastrophe_loss_calibration_admitted = false

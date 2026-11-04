@@ -1,0 +1,103 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+-->
+
+# R+V Allgemeine: public claim, product and regional distribution triangulation (2026-11-04)
+
+**Scope:** **R+V Allgemeine Versicherung AG (solo)** is the hypothetical insurer target. Public company and R+V **group-wide customer press** are **not** the same reporting entity. This register is the second, independent source discovery layer following [historical HGB portfolio source registry](rva-solo-historical-property-sources-20261104.md). Exact original URLs, timestamps, reported scope, permitted hypothesis and excluded inferences are typed in [rva_public_event_tariff_distribution_signals_v0.toml](../../research/observations/rva_public_event_tariff_distribution_signals_v0.toml).
+
+## New high-signal issuer solo property stock: stronger than any agency map
+
+Original [R+V Allgemeine 2024 HGB](https://www.ruv.de/dam/jcr:71a5e2d0-4f86-4e5f-a716-f3f3f6aa5102/Allgemeine-2024.pdf) movement of insurance business table (PDF page 74) gives **Connected Buildings contracts at 31 Dec 2023: 1,036,338** and **31 Dec 2024: 1,073,802**. In a separate side column, **Condor Allgemeine** had **68,847** such contracts as of 31 Dec 2023 before the merger effective 1 Jan 2024. This means the raw year-on-year 2024 change is affected by a legal-entity change. Do **not** interpret the 2024 +37,464 contract delta as organic acquisition, or count the 68,847 Condor policies twice.
+
+Original [R+V Allgemeine 2025 HGB](https://www.ruv.de/dam/jcr:e0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R+V%20Allgemeine%20Versicherung%20AG_final.2026-04-21-14-59-23.pdf) movement of business (PDF page 78) reports **1,060,546 connected-building policies** 31 Dec 2025 vs **1,073,802** 31 Dec 2024. The 2025 R+V Direktversicherung merger comparison column has **zero** Connected Buildings policies: it is primarily a motor merger and does not bring a new block of residential contracts. The count fell by **13,256** (**~1.23%**), although booked connected-building gross premium increased from **EUR 895.090m** 2024 to **EUR 997.710m** 2025. Inflation, coverage and repricing, merger and customer mix matter, not just locations.
+
+Same solo 2025 report I.4 (PDF page 67) directly discloses gross claims expense in Connected Buildings: **EUR 577,492,703.97 in 2025** versus **EUR 717,388,635.00 in 2024** (whole coverage causes; not NatCat-only). Original insured claims are **not** an observed event, geographic, hazard, TIV, outward RI or net-OEP distribution.
+
+For a reproducible *book accounting ratio*, the year-end-contract denominators and **booked annual gross premium** imply:
+- 2023: ~**EUR 723.01** per year-end connected-building contract (gross booked premium / year-end policy stock; NOT observed earned premium, rating rate or fixed individual policy price).
+- 2024: ~**EUR 833.57** by the same quotient, with Condor merger perimeter change.
+- 2025: ~**EUR 940.75** by the same quotient, policy count **declining**.
+- 2024 gross claims expenses / booked premiums ~**80.15%**, 2025 ~**57.88%**; **not** cat loss ratio and not an actuarially matched earned-premium loss ratio.
+
+These exact observations supersede the **approximate** 1.1m policy-count text in the initial source bridge. The machine-readable original 2019–2025 insurer historical source [has been extended](../../research/observations/rva_solo_hgb_property_2019_2025_v0.toml) with a 2023–2025 policy series and 2024–2025 gross all-cause claims; the older source's rounded 1.1m remains a separately marked publisher narrative.
+
+## Public group **claims**: strong constraints on tails, but not solo spatial weights
+
+| Event / datum | Original publisher evidence | Can constrain | Not identifiable |
+| --- | --- | --- | --- |
+| Bernd flood July 2021, reported 7 July 2022 | [R+V claims release](https://www.ruv.de/newsroom/pressemitteilungen/2022-07-07-420-millionen-euro-an-flutopfer-gezahlt) | About **15k claims / EUR 730m** group-customer loss, **600 large claims / EUR 450m** in total, threshold >= EUR 250k; approximate event claim large-claim fraction 4%, amount concentration 62%; explicitly in **flood-affected customers** circa 75% had natural-perils cover | NOT solo, 2021 observed flood return period, nationwide flood take-up, original risk geography, event net ceded layer, or all-flood perils |
+| June 2024 Southern German flood, release 6 June 2024 | [R+V early event estimate](https://www.ruv.de/newsroom/pressemitteilungen/2024-06-06-hochwasser-schaeden-juni) | Early estimate **EUR 100m** R+V-customer claims in **Bavaria and Baden-Württemberg**, many initial reported buildings, with large commercial losses | Not final, not solo, not a hazard footprint/depth map or company exposure share |
+| 2023 hail, retrospective release 21 May 2025 | [R+V annual hail statement](https://www.ruv.de/newsroom/pressemitteilungen/2025-05-21-hagelschaeden) | **Nearly EUR 200m** of R+V-customer hail claims nationwide including motor and property | Not buildings-only, no regional share, no annual frequency |
+| 2024 hail, release 21 May 2025 | [R+V hail release](https://www.ruv.de/newsroom/pressemitteilungen/2025-05-21-hagelschaeden) | **~EUR 97m total**, **~EUR 56m motor**: non-motor **residual ~EUR 41m**, but not pure connected-building or solo property. Notes 2024 July hail in Bavaria/Baden-Württemberg | No R+V solo hail GUL, no per-event building claims, no location mix |
+| 2025 hail, release 29 May 2026 | [R+V hail release](https://www.ruv.de/newsroom/pressemitteilungen/2026-05-29-schaeden-hagel-2025) | **~EUR 56m annual hail claims**, **more than half motor**; changing interannual group exposure/peril context | No exact 2025 motor amount, no isolate of buildings or GUL |
+| August 2023 Benediktbeuern / Bad Tölz | [Issuer field loss-adjuster account](https://www.ruv.de/newsroom/blog/2023-08-25-reportage-benediktbeuren) | Documents **actual R+V customers** affected locally and roof/structure hail loss adjuster experience | Anecdote does not establish frequency of R+V policies, company share, TIV, exact affected addresses or insurer event claim value |
+
+The group-wide **annual** elemental loss series, annual hail figures and **specific event** releases overlap. They **must not be added**; press estimates are snapshots with dates and possible IBNR/claims development. R+V group and **R+V Allgemeine** solo losses must not be equated. Similarly, the 2021 flood-area **75% take-up** is a selected, affected customer cohort, **not** a country-wide insurer take-up: it is most useful as a **conditional alternative scenario** in severe flood areas, not an estimate for all R+V policies.
+
+## Distribution and geography: independent evidence, very low quantitative authority
+
+- [Issuer 2025 solo HGB](https://www.ruv.de/dam/jcr:e0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R+V%20Allgemeine%20Versicherung%20AG_final.2026-04-21-14-59-23.pdf): banks / omnichannel, general agencies, specialist cooperative channels and brokers. Property risk addresses are **not disclosed**.
+- [Issuer 2026 sales recruitment](https://www.ruv.de/karriere/vertrieb/unser-ruv-vertrieb) describes roughly **700 cooperative banks**, **300 general agencies** and more than **5,000** field staff nationwide across the **R+V group**; this is not the number of insured properties. Other issuer pages quote roughly **260 agencies / 640 banks**, illustrating differing vintage and definitions. Never force these numbers into a consistent historical portfolio count.
+- [R+V Koblenz 2023 regional report](https://www.ruv.de/newsroom/pressemitteilungen/2023-06-23-100-jahre-koblenz) mentions **24 customers/filial directorates**, the Koblenz catchment from South Hesse, Rheinhessen, Mainz, Trier, Hunsrück, Westerwald, Eifel to Rhein/Lahn/Limburg and Ahr valley flood support. A sales territory is not an insurance location histogram.
+- [Public general-agent directory](https://www.generalagenten.de/) separately exposes state pages, e.g. [Bavaria](https://www.generalagenten.de/Bayern), [Baden-Württemberg](https://www.generalagenten.de/Baden-Wuerttemberg), [Hesse](https://www.generalagenten.de/Hessen) and [Rhineland-Palatinate](https://www.generalagenten.de/id/rheinland-pfalz.html). The sites showed ~70, ~51, ~47 and ~17 public general agency listings during the search; listings **can change**, exclude bank/broker sales and serve the entire R+V group. Do not use as observed regional shares, source of insured addresses, or universal spatial weights. If needed use only as **separate qualitative sensitivity prior** after original coverage/licensing checks.
+- [R+V sites](https://www.ruv.de/ueber-uns/unternehmen/standorte) describe insurance group distribution across Germany and business-focused Austria and Italy branches. The existing SFCR 2025 **all-company** country GWP is overwhelmingly Germany but does **not** identify the residential, agrarian or industrial spatial mix.
+- Independent spatial priors should come from **licensed Destatis 2022 building grid / municipal tables**, occupancy and replacement-cost archetypes, not the *distance to the nearest R+V office*. A town may have insured locations without an R+V office, and headquarters may serve widely dispersed customers.
+
+## Underwriting and tariffs: what model attributes are observable
+
+| Publisher product/form | Observable product/underwriting fields | Synthetic scenario interpretation |
+| --- | --- | --- |
+| [R+V Wohngebäude, classic/comfort](https://www.ruv.de/wohngebaeudeversicherung) | Product variants; base peril packages, optional **Naturgefahren Plus**, garage/outbuilding/solar cover and extensions | **Basic storm/hail != natural peril endorsement**, storm/wind/hail included only where policy wording supports; flood/rueckstau separate Bernoulli per policy with uncertain scenario-weighted probability |
+| [Original R+V blank residential building analysis questionnaire](https://online.ruv.de/ruvdownloads/makler/vertriebsdownloads/ruv-privatpolice-analysebogen-wohngebaeude-summenmodell?action=download) | Postal code (risk location), building type single/two/multi family, number of floors, per-floor floor area, construction class massive/wood/timber frame, roofing, cellar and external finishes; 'summenmodell' for >=3 full storeys | Build **synthetic OED location and vulnerability class mapping**; each field is a category, **no published frequency distribution**. Do not scrape customer applications |
+| [R+V agrarian building product](https://www.ruv.de/firmenkunden/landwirtschaftliche-versicherungen/agrarpolice/gebaeudeversicherung) | Farmhouse/stable/barn, agricultural auxiliary structures, optional solar/PV, new value vs actual cash value, optional perils and business rental loss | Separate **farm** and rural auxiliary building archetypes; different roof/structure vulnerability, perils and limits than ordinary homes |
+| [Official 2025 R+V agricultural property conditions](https://www.ruv.de/dam/jcr:673b1764-43a7-4488-9157-0f344c8649fb/versicherungsbedingungen-ruv-agrarpolice-sachversicherung.pdf) | Flood and backwater optional, conditional loss trigger, exclusions (e.g. storm surge; groundwater without specified triggering cause) | Create explicit policy trigger/exclusion flags, not a blanket `flood_covered=true` for all risks; check precise version |
+| [R+V business building product](https://www.ruv.de/static-files/ruvde/downloads/firmenkunden/kundeninfoblatt-gebaeudeversicherung.pdf) | Business premises and mixed residential/commercial buildings, basic fire/tap-water/storm/hail, optional flood and rent loss | Distinct SME/commercial occupancy, business interruption policy account and optional covers; **not** 1-to-1 with residential 1.06m policy count |
+
+**Do not interpret a public tariff offer as proof of a policy actually sold or the fraction of R+V customers selecting it.** The first generation should have at least four underwriting layers:
+1. private single/double-family residential, separate from multifamily residential;
+2. agriculture (farmhouse, barn, stable, secondary structures and PV);
+3. SME/mixed-use commercial properties and optional rental/BI exposure;
+4. industrial/technical property, separate from standard connected buildings and with distinct replacement-value concentration.
+
+## First reproducible calibrated-*constraint* experiment
+
+Public source hierarchy for a synthetic Germany Oasis property book:
+
+**Observed solo stock** → 2025 **1,060,546 connected-building *policies***; **EUR 997.710m booked GWP**; **EUR 577.493m gross all-cause claims**. At this layer only **aggregate contract and total-book financial constraints** can be matched.
+
+**Synthetic site occupancy/geography** → Destatis building count/age/type by grid/district; sample explicit policy-to-location multiplicity and permit one policy to cover several premises. Assign independently estimated sums insured by physical attributes. Do **not** scale the HGB total or use an agency postal code as an observed risk coordinate.
+
+**Synthetic contract conditions** → policy variants and optional flood endorsement, sampled by separate scenario with conditional flood-area alternative. Both wind/hail and flood perils must use exactly correct contract cover, exclusions, deductibles, limits and version.
+
+**Independent hazard-loss challenge** → DWD / licensed hazard catalogues and GDV public *industry* storm/flood comparison; the selected R+V **group** losses are out-of-sample reasonableness checks or claim severity stress references, not mathematical one-point calibration to the 2025 solo GUL. Handle flood/hail motor claims separately.
+
+**Native Oasis** → proper OED geocoded `location.csv`, linked `account.csv` and `policy.csv`; German event/hazard/vulnerability coverage; identical event/sample/period IDs; GUL->IL->**fictional** treaty RI/net->AAL/OEP/AEP. Preserve multiple scenarios and report bounds, not a claim of actual R+V geographic PML.
+
+### Remaining empirical blockers / targeted next-source asks
+
+1. **No state/district breakdown of actual R+V Allgemeine connected-building contracts or sum insured.** Public agent map is **not a substitute**. Ask insurer for aggregate state/district-by-line counts or identify other public regional rate books, insurer filings, bank account distribution by service region. Keep non-response as missing.
+2. **No policy variant, endorsement, wind/flood deductible share** by company, building class or region. Build a range using official GDV *market* take-up only where lawful and source population matches; the 75% in flood-affected 2021 R+V clients is non-random.
+3. **No actual solo event loss severity/claims history or RI treaty tower.** Distinguish original issuer all-cause HGB claims from group press and net reinsurance balances; do not present invented catastrophe treaty terms as insurer facts.
+4. **No observed insurer-specific geographical business mix** between private residential, agricultural, SME and technical/industrial property despite published product catalogs. Build separate testable synthetic archetypes and challenge their loss and premium totals independently.
+
+The typed [evidence source](../../research/observations/rva_public_event_tariff_distribution_signals_v0.toml) includes 14 per-item rights/usage restrictions with explicit `solo_geographic_exposure_admitted = false` and `solo_catastrophe_loss_calibration_admitted = false`. All data here are **bounded public observations and source URLs only**; no scraped underlying proprietary tables, individual claims, personal addresses or real insurer risk/customer portfolio bytes are incorporated.
+
+
+## Additional independent geographic denominators discovered in the broad search
+
+These are **not** insurer-specific portfolio locations, but are the best next route to forming multiple **testable alternative geographic allocations** instead of guessing an insurer's county risk shares.
+
+| Original public source | What it actually measures | Safe role in sensitivity analysis |
+| --- | --- | --- |
+| [BVR Jahresbericht 2025: Regionalstatistik der genossenschaftlichen Banken](https://berichte.bvr.de/downloads/2025-jb/BVR_JB25_RZ_DS_REGIONALE%20STATISTIK.pdf) and [publisher downloads](https://berichte.bvr.de/jahresbericht-2025/daten-und-downloads/) | 2025 regional cooperative bank organisations, branches and **members**, compared with 2024. The Baden-Württemberg regional association reports **1,126** bank branches and the Bavarian association **1,443** in 2025; other associations cross state borders. | A plausible **bank-channel presence hypothesis**, *only* after respecting the definitions of regional bank associations. Not R+V contracted bank branches, not insurer geographic market share, not residential policy counts and not exposure TIV. |
+| [BVR directory of all banks 2025](https://www.bvr.de/p.nsf/0/D3E488DF22571CECC1257D0A005439B7/$file/Liste_AlleBanken%202025_neu.pdf) | Bank corporate names, head offices, balance-sheet figures; head-office location is **not a service-area map** | Can help locate cooperative institutions and join to separately licensed branch/service-area datasets, but banking assets/customer loans != insured property value. |
+| [Statistikportal Agrarstatistik-Atlas](https://www.statistikportal.de/de/karten/atlas-agrarstatistik) | Farm operating statistics, crops and livestock by approximately **5 km grid** based mainly on agriculture censuses 2010/2020 and 2016 survey | Independent opportunity weights for **agricultural property** archetypes (farmhouses, barns, stables), **not** insured R+V farms, physical structure counts, valuations or disclosure of confidential farm locations. Need study exact downloadable data rights and suppression first. |
+| [Destatis regional 2024 establishment map](https://www.destatis.de/DE/Themen/Branchen-Unternehmen/Unternehmen/Unternehmensregister/Karten.html) | Number of business branches and employees by **district** and sector, public 2024 company register statistics | Separate SME and industrial occupancy pool from residential buildings to avoid forcing the whole HGB Fire/Other Property premium into homes. Corporate branch may have multiple buildings; not an insured policy record. |
+| [Destatis GENESIS 52111 Unternehmensregister](https://genesis.destatis.de/datenbank/online/statistic/52111/details) and [GENESIS API/Data licence](https://www.destatis.de/DE/Service/OpenData/genesis-api-webservice-oberflaeche.html) | Machine-downloadable legal units/establishments, size classes and sector time series; Destatis states the **Deutschland Namensnennung 2.0** data licence for GENESIS | Candidate reproducible district × NACE/WZ building-use priors. Check that the selected individual output table supports the desired geography, vintage and joins. **Do not** reuse restricted business microdata. |
+| [Agrarstrukturerhebung 2023 Niedersachsen](https://www.statistik.niedersachsen.de/landwirtschaft_forstwirtschaft_fischerei/landwirtschaft_in_niedersachsen/agrarstrukturerhebung_landwirtschaftliche_betriebe/agrarstrukturerhebung-2023-statistische-berichte-236233.html) | Niedersachsen farm size, crop and livestock administrative statistics, some municipal detail | More recent *regional farm mix* sanity check for livestock vs mixed arable rural archetypes; 2023 farm statistics != 2025 R+V insured stables. |
+
+**Specific misuse prevention:** Commercial sales through banks, brokers, agencies and specialist cooperatives overlaps. A county with many cooperative banking offices can have few R+V property policies, and a county with no own office can still have many insured sites. The insurer does **not** exclusively insure every cooperative bank's members. No simple `agency_count / 300` or `bank_branch_count / 6813` is an observed R+V location share. If a quantitative sensitivity prior is introduced, keep a **national census-weighted base scenario** alongside a **bank-channel-weighted alternative**, and test multiple uncertain conversion factors calibrated only to the **published national 1,060,546 connected-building policy constraint**; do not claim that an issuer-based geo portfolio was observed.
+
+**Prioritised regional data-build chain:** license-check Destatis building grids/age/occupancy, add BVR bank-channel indicators as independent *soft covariates*, add agriculture 5km operating mix for farm archetypes, add 2024 enterprise branch/employee density for SME and technical property, then generate synthetic places from physical exposure opportunities, subject to publishable contract totals and observed GWP at distinct issuer basis. Wind and flood hazards and historic issuer claims remain separate model challenges.
