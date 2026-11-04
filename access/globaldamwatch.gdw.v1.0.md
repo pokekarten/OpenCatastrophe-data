@@ -67,7 +67,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Format:** Figshare original public version-1 article metadata JSON: original release file identity contains two alternate GIS archives (GDW_v1_0_gdb.zip and GDW_v1_0_shp.zip) AND a separately published final technical document (GDW_TechDoc_v1_0.pdf). These are 3 archival files, not 3 independent scientific datasets.
 
-**Scientific semantics:** Global Dam Watch v1.0 is a global river-barrier and reservoir reference database. The published release contains a barrier point layer and an associated reservoir polygon layer; these are distinct scientific objects linked by identifiers/location, and not every barrier has an associated reservoir polygon. The two release ZIPs are alternate Geodatabase and Shapefile delivery representations, not independent scientific releases. The published v1.0 inventory reports 41,145 barrier points and 35,295 associated reservoir polygons. Presence in the database does not establish dam-failure probability, structural fragility, reservoir operating state, current asset status, downstream inundation or catastrophe-model fitness.
+**Scientific semantics:** Figshare v1 metadata identifies the Global Dam Watch dataset, two alternative GIS archive formats and a separately published final 15-page TechDoc. Original v1 manual identifies 41,145 WGS84 barrier points, 35,295 associated reservoir polygons linked by GDW_ID; 5,850 point-only barrier records legitimately lack a polygon. Original numeric missing values use -99 and missing elevations -9999; blank text is unknown. These are source-defined conventions for a separately reviewed future import, not measured zero, independently verified source archive bytes, dam-failure probabilities, hydraulic inundation, site-specific insured exposure or model readiness.
 
 ## Operational constraints
 
@@ -95,7 +95,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Redistribution status:** allowed
 
-**Notes:** Global Dam Watch v1.0 original Figshare item and peer-reviewed article identify CC BY 4.0; Figshare's public Data Access Policy and official API guide authorize anonymous public metadata access and responsible API use. This permits one explicit version-pinned metadata canary only. It does not approve any GIS ZIP download, raw/derived data redistribution in this repository, scientific model use or unattended crawling. The final release Technical Documentation and exact selected file must be reviewed before acquiring or publishing original GIS bytes.
+**Notes:** Final publisher v1.0 TechDoc (July 2024, Figshare file 47913739, section 4.1) and original Figshare v1 item both explicitly state CC BY 4.0. The final technical document also asks users to refrain from full original-format mirror/rehosting on third-party websites without authors' written permission. This is an author request, not proof of a different legal licence; project publication policy remains metadata-only with no original provider files in Git. Figshare's public Data Access Policy and API guidance support bounded anonymous metadata access and responsible rate usage. A live source-specific parser receipt, exact original archive bytes, derivative/publication decision and model rights remain separate stages.
 
 ## Probe contract
 
@@ -129,5 +129,6 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - <https://docs.figshare.com/>
 - <https://docs.figshare.com/v2/>
 - <https://api.figshare.com/v2/articles/25988293/versions/1>
+- <https://ndownloader.figshare.com/files/47913739>
 
-**Notes:** Provider's exact public v1 metadata was independently inspected on 2026-11-04 (HTTP 200) and lists 3 files: 2 alternate GIS archive formats plus a separate final technical PDF. Exact original file IDs, provider declared byte sizes, matching supplied/computed MD5, licence, DOI and total size are frozen in the new probe. This is independent provider metadata evidence, not a successful execution receipt from the reviewed Python probe itself, not a checked archive SHA-256, and not source admission or acquisition permission. Freeze one original GIS archive separately only after review. See PR \#1233.
+**Notes:** Provider's exact public v1 metadata was independently inspected on 2026-11-04 (HTTP 200) and lists 3 files: 2 alternate GIS archive formats plus a separate final technical PDF. Exact original file IDs, provider declared byte sizes, matching supplied/computed MD5, licence, DOI and total size are frozen in the new probe. This is independent provider metadata evidence, not a successful execution receipt from the reviewed Python probe itself, not a checked archive SHA-256, and not source admission or acquisition permission. Freeze one original GIS archive separately only after review. See PR \#1233. The final v1.0 Technical Documentation (not pre-release delta) was also reviewed through the public documentation interface: WGS84, GDW_ID pairing, numeric/elevation missing-value sentinels and the author request against whole original-data rehosting were confirmed. Actual GIS file bytes remain unacquired.
