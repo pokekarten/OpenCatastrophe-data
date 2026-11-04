@@ -10,7 +10,7 @@ SPDX-License-Identifier: Apache-2.0
 ## Exact implementation
 
 - `scripts/geocode_evidence_quality_v0.py` — standard-library-only `benchmark(rows, threshold_metres=50.0)` function; no web requests, filesystem writes or new dependencies.
-- `tests/test_geocode_evidence_quality_v0.py` — 14 deterministic tests using wholly invented coordinates and source IDs.
+- `tests/test_geocode_evidence_quality_v0.py` — 15 deterministic tests using wholly invented coordinates and source IDs.
 - Input case fields: `case_id`, `engine`, `reference` and `candidates`. The independent *declared* reference supplies `lat`, `lon`, `crs=EPSG:4326`, `source_family`, `as_of`. Each ranked candidate supplies `rank`, WGS84 coordinates and CRS, `source_family`, `source_id`, `snapshot`, `as_of`, `precision` (one of `address_point`, `building_rooftop`, `parcel_centroid`, `street_interpolation`, `place_centroid`, `unknown`).
 - Only **declared rank one** is scored against truth. The reference coordinate is never used to rank or promote a candidate. Great-circle distance assumes spherical Earth radius 6,371,008.8 metres; this is a QA approximation, not parcel-survey accuracy.
 - Fail closed for malformed coordinates (including `bool` and NaN), non-WGS84/unknown CRS, bad source IDs/snapshots, invalid dates, duplicate cases, duplicate source features, duplicate/gapped ranks, invalid precision, invalid thresholds.
@@ -27,7 +27,7 @@ python -m unittest tests.test_geocode_evidence_quality_v0 -v
 python scripts/check_all.py
 ```
 
-On 2026-11-04 the 14/14 synthetic focused tests were run successfully on Python 3.13.5 in an isolated Linux working directory using the exact 7,970-byte module and 5,015-byte test contents subsequently committed to the branch. **Not established:** complete repository `check_all.py` at exact PR head, public-provider retrieval, source-file rights, live Pelias/Photon install, accuracy on real addresses, geodetic survey-grade distance or downstream asset joins. The source checkout cannot be cloned through the isolated container DNS; keep PR in draft pending the full CI gate.
+On 2026-11-04 the 15/15 synthetic focused tests were run successfully on Python 3.13.5 in an isolated Linux working directory using the exact 8,005-byte module and 5,234-byte test contents subsequently committed to the branch. **Not established:** complete repository `check_all.py` at exact PR head, public-provider retrieval, source-file rights, live Pelias/Photon install, accuracy on real addresses, geodetic survey-grade distance or downstream asset joins. The source checkout cannot be cloned through the isolated container DNS; keep PR in draft pending the full CI gate.
 
 ## Provider-specific blockers
 
