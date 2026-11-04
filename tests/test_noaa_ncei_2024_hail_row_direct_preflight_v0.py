@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import gzip
 import io
 import unittest
@@ -25,20 +26,22 @@ def rows(*entries: dict, fieldnames=None) -> bytes:
 def good(**changes) -> dict:
     record = dict.fromkeys(p.SELECTED_FIELDS, "")
     record.update({
-        "EVENT_ID": "1186553", "EPISODE_ID": "184504", "YEAR": "2024",
+        "EVENT_ID": "1186553", "EPISODE_ID": "190994", "YEAR": "2024",
         "STATE": "TEXAS", "EVENT_TYPE": "Hail",
         "BEGIN_DATE_TIME": "27-MAY-24 18:43:00",
         "CZ_TIMEZONE": "CST-6",
         "SOURCE": "Public", "MAGNITUDE": "3.25",
         "MAGNITUDE_TYPE": "E", "BEGIN_LAT": "32.71",
-        "BEGIN_LON": "-97.1", "BEGIN_LOCATION": "ARLINGTON",
+        "BEGIN_LON": "-97.1", "BEGIN_LOCATION": "DALWORTHINGTON",
     })
     record.update(changes)
     return record
 
 
 def audited(source: bytes) -> dict:
-    with patch.object(p, "EXPECTED_COMPRESSED_BYTES", len(source)):
+    with (patch.object(p, "EXPECTED_COMPRESSED_BYTES", len(source)),
+          patch.object(p, "EXPECTED_ORIGINAL_SHA256",
+                       hashlib.sha256(source).hexdigest())):
         return p.audit_original_csv(source)
 
 
@@ -102,12 +105,30 @@ class NCEIHailOriginalCSVTests(unittest.TestCase):
             ("STATE", "OKLAHOMA"), ("BEGIN_DATE_TIME", "27-APR-24 18:43:00"),
         ):
             with self.subTest(key=key):
-                with self.assertRaisesRegex(p.NCEIProofBlocked, "not expected"):
+                with self.assertRaisesRegex(p.NCEIProofBlocked, "identity"):
                     audited(rows(good(**{key: value})))
+
+    def test_original_event_episode_and_measurement_drift_fails_closed(self):
+        for field, bad in (
+            ("EPISODE_ID", "900"),
+            ("MAGNITUDE", "2.75"),
+            ("SOURCE", "Radar"),
+            ("BEGIN_LAT", "32.73"),
+            ("BEGIN_LON", "-97.11"),
+            ("BEGIN_LOCATION", "ARLINGTON"),
+            ("CZ_TIMEZONE", "CDT-5"),
+        ):
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(p.NCEIProofBlocked, "identity"):
+                    audited(rows(good(**{field: bad})))
 
     def test_gzip_failure_missing_columns_and_source_size(self):
         with self.assertRaisesRegex(p.NCEIProofBlocked, "size mismatch"):
             p.audit_original_csv(b"fake")
+        source = rows(good())
+        with patch.object(p, "EXPECTED_COMPRESSED_BYTES", len(source)):
+            with self.assertRaisesRegex(p.NCEIProofBlocked, "SHA256"):
+                p.audit_original_csv(source)
         with self.assertRaises(p.NCEIProofBlocked):
             audited(b"not a gzip")
         with self.assertRaisesRegex(p.NCEIProofBlocked, "schema"):
@@ -135,6 +156,8 @@ class NCEIHailOriginalCSVTests(unittest.TestCase):
             with self.subTest(response=response):
                 opener = FakeOpener(response)
                 with (patch.object(p, "EXPECTED_COMPRESSED_BYTES", len(source)),
+                      patch.object(p, "EXPECTED_ORIGINAL_SHA256",
+                                   hashlib.sha256(source).hexdigest()),
                       self.assertRaises(p.NCEIProofBlocked)):
                     p.direct_original_probe(opener)
                 self.assertEqual(opener.requests[0][0].full_url, p.PROVIDER_URL)
@@ -145,7 +168,9 @@ class NCEIHailOriginalCSVTests(unittest.TestCase):
         opener = FakeOpener(
             FakeResponse(source, content_length=str(len(source)))
         )
-        with patch.object(p, "EXPECTED_COMPRESSED_BYTES", len(source)):
+        with (patch.object(p, "EXPECTED_COMPRESSED_BYTES", len(source)),
+              patch.object(p, "EXPECTED_ORIGINAL_SHA256",
+                           hashlib.sha256(source).hexdigest())):
             result = p.direct_original_probe(opener)
         self.assertTrue(result["ncei_source_row_verified"])
         self.assertEqual(result["source_compressed_bytes"], len(source))
