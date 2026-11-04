@@ -65,7 +65,9 @@ def _cell_raw(cell: ET.Element) -> tuple[str,str]:
     raise OriginalReceiptError("unsupported original source cell type")
 
 
-def _read_original_rows(archive: ZipFile, sheet: str) -> tuple[list[dict[str,tuple[str,str]]],set[int]]:
+def _read_original_rows(archive: ZipFile, sheet: str, *, max_columns: int = MAX_COLS) -> tuple[list[dict[str,tuple[str,str]]],set[int]]:
+    if not 9 <= max_columns <= 19:
+        raise OriginalReceiptError("original worksheet column scan outside bounded scope")
     if archive.getinfo(sheet).file_size>MAX_SHEET_BYTES:
         raise OriginalReceiptError("source worksheet too large")
     stored=[]
@@ -82,7 +84,7 @@ def _read_original_rows(archive: ZipFile, sheet: str) -> tuple[list[dict[str,tup
                 row={}
                 for cell in elem.findall(M+"c"):
                     ix=_column(cell.get("r",""))
-                    if ix>MAX_COLS:
+                    if ix>max_columns:
                         continue
                     key=chr(64+ix)
                     if key in row:
