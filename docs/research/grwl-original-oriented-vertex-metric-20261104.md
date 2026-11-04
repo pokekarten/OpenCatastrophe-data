@@ -47,4 +47,35 @@ Execution is intentionally disabled without the explicit `--live` option, and li
 
 These statistics can narrow whether source differences are exact orientation reversals, tiny numeric serialization differences or substantial corresponding-vertex offsets. They cannot validate feature identity, topology, riverbank alignment, hazard intensities, probabilities, insurer synthetic portfolios or net/gross OEP/IP. Real RiverATLAS conflation, independent spatial holdouts, legal attribution and explicit scientific model-input admission remain necessary.
 
-**Current source-result status at PR creation:** the new orientation-aware *original-data* run has not yet executed; do not invent its displacement counts. Original ZIP byte hashes and the previous keyed values above are already confirmed by prior reviewed runs.
+## Actual original direction-aware WGS84 result (2026-11-04)
+
+**Completed successful trusted-main [workflow run #41884435108](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41884435108)**; main commit `26099f278c387bfefb0b6630b6169fa5f870df85`; observed around 2026-11-04 18:12 UTC. The runner downloaded and independently SHA-256 reverified the original exact 2018 and 2026 ZIPs (the hashes pinned above), parsed all GRWL simplified SHP XY records and aligned **42,077 unique export `OBJECTID` candidates in identical record order**. Both originals contained **3,129,821 WGS84 XY vertices**. No original row, coordinate or source ZIP bytes were included in the public output.
+
+### Observed geometry classes
+
+| Tested class at matching export OBJECTID | Feature count |
+| --- | ---: |
+| Raw XY and part structure byte-identical | **4,722** |
+| Raw bytes differ but line/part direction reversal produces exact same coordinates | **0** |
+| Different XY bytes with compatible part/vertex topology and measurable oriented vertex correspondence | **37,355** |
+| Changed part or point count prevents vertex-to-vertex comparison | **0** |
+| Total checked | **42,077** |
+
+### Largest paired-vertex distance, approximate spherical metres
+
+| Maximum paired-vertex separation threshold per comparable original line | Lines exceeding |
+| --- | ---: |
+| More than 0.01 metre (1 cm) | **1** |
+| More than 0.1 metre (10 cm) | **1** |
+| More than 1 metre | **0** |
+| More than 10 metres | **0** |
+| More than 100 metres | **0** |
+| More than 1,000 metres | **0** |
+
+The **largest approximate corresponding-vertex difference was 0.375415 metre**. The computed p50, p95, and p99 feature-maximum separations all **round to 0.000000 m** at six decimal places; this does **not** mean every original vertex is exactly identical. SHA-256 proved most XY payloads are not byte-identical. The vast majority of corresponding coordinates differ only beneath that reported precision. The 37,355 different byte sequences therefore cannot responsibly be described as 37,355 materially shifted river lines.
+
+**Interpretation:** this is convincing quantitative evidence that most original XY differences between the 2018 and 2026 simplified GRWL files are extremely small positional/serialization changes. It does not by itself prove a source-code or geometric CRS change; no revision documentation establishes why bytes differ. The prior separately observed **42,077 changed `SHAPE_LENG` values** are not explainable solely as large XY relocations: even 4,722 byte-identical lines have changed `SHAPE_LENG`. A controlled length-field provenance and units audit is warranted before that DBF field is used.
+
+**Authority restrictions remain:** `OBJECTID` is still an export matching candidate, not a validated persistent river identity. A best-direction corresponding-vertex haversine metric cannot rule out every spatial/topological discrepancy, and it is not a geodesic Hausdorff or nearest-waterway distance. Nothing here establishes flood-stage river geometry, physical inundation, return periods, risk model calibration, exposures or insured losses. `source_data_admitted=false`; no raw GIS data or original source attributes committed.
+
+
