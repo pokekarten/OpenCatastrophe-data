@@ -190,6 +190,59 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "fr.dgfip.dvf.transactions.2026-10",
+      "name": "France DGFiP DVF property transactions and Cerema DVF+ geospatial access",
+      "provider": "DGFiP / Cerema",
+      "categories": [
+        "property_transactions",
+        "cadastral_parcels",
+        "property_prices",
+        "france"
+      ],
+      "spatial_scope": "Most of France excluding Alsace, Moselle and Mayotte according to current scope",
+      "temporal_scope": "Rolling five-year DVF history; authoritative provider refresh of 2026-10-12",
+      "resolution_or_granularity": "Notarial/cadastral transaction records, with price, local type and property surface; Cerema DVF+ geolocates mutations through cadastre",
+      "potential_roles": [
+        "regional_property_price_prior",
+        "parcel_transaction_spatial_join",
+        "dwelling_type_and_size_challenge"
+      ],
+      "authoritative_url": "https://www.data.gouv.fr/datasets/demandes-de-valeurs-foncieres",
+      "access_class_hint": "public_download_open_licence_2_no_reidentification_or_external_search_indexing",
+      "note": "DVF is transaction-level and can contain multiple property or land lots per mutation. Source instructions explicitly prohibit reidentification and indexing by external search engines. The upstream semiannual refresh replaces earlier files and may backfill transactions. Cerema DVF+ reuses DVF plus cadastral mapping and is NOT an independent price source. Prices include land and are not insured building replacement costs or TIV; no bytes acquired or model permission established.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "uk.hmlr.price-paid.2026",
+      "name": "HM Land Registry Price Paid Data and August 2026 building identifier lookup",
+      "provider": "HM Land Registry",
+      "categories": [
+        "property_transactions",
+        "property_prices",
+        "residential",
+        "property_identifiers",
+        "england_wales"
+      ],
+      "spatial_scope": "England and Wales; qualifying registered residential transactions rather than complete property stock",
+      "temporal_scope": "Historical series from 1995, monthly 2026 releases; UPRN and INSPIRE lookup tables launched 2026-08-28",
+      "resolution_or_granularity": "CSV or linked data with sale date, price, property type and address attributes; separate lookup tables for identifiers",
+      "potential_roles": [
+        "property_type_and_sale_price_context",
+        "property_identifier_join_research",
+        "sale_selection_bias_benchmark"
+      ],
+      "authoritative_url": "https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads",
+      "access_class_hint": "price_paid_ogl3_but_address_third_party_rights_and_uprn_lookup_separate_terms",
+      "note": "Official HMLR says Price Paid Data uses OGL v3 but its Royal Mail/Ordnance Survey address components have additional rights; UPRN and INSPIRE ID lookup tables also have separate terms. Do not presume all address joins are commercially permitted. UPRN can refer to an addressable unit rather than one building. Sale price is not structure replacement cost, insurance TIV, current owner or insured policy. No files acquired.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
     }
   ]
 }
