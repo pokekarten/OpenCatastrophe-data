@@ -7,7 +7,9 @@ on:
   pull_request:
     paths:
       - 'scripts/nhsl_v1_original_sauid_reconcile_v0.py'
+      - 'scripts/nhsl_v1_original_binary_preflight_v0.py'
       - 'tests/test_nhsl_v1_original_sauid_reconcile_v0.py'
+      - 'tests/test_nhsl_v1_original_binary_preflight_v0.py'
       - 'docs/research/nhsl-v1-nunavut-original-sauid-reaggregation-20261104.md'
       - '.github/workflows/nhsl-nunavut-original-sauid-conservation.yml'
   workflow_dispatch:
@@ -16,6 +18,8 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/nhsl-nunavut-original-sauid-conservation.yml'
+      - 'scripts/nhsl_v1_original_sauid_reconcile_v0.py'
+      - 'scripts/nhsl_v1_original_binary_preflight_v0.py'
 
 permissions:
   contents: read
@@ -41,7 +45,7 @@ jobs:
           python-version: '3.12'
 
       - name: Run synthetic-only source reconciliation tests
-        run: python -m unittest tests.test_nhsl_v1_original_sauid_reconcile_v0 -v
+        run: python -m unittest tests.test_nhsl_v1_original_binary_preflight_v0 tests.test_nhsl_v1_original_sauid_reconcile_v0 -v
 
       - name: Record reviewed executable identities
         run: |
