@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: GRWL original 2026 WGS84 ellipsoid geodesic source audit
+
+on:
+  pull_request:
+    paths:
+      - requirements-grwl-ellipsoid.txt
+      - research_runners/grwl_original_wgs84_ellipsoid_length_v0.py
+      - tests/test_grwl_original_wgs84_ellipsoid_length_v0.py
+      - research_runners/grwl_original_shape_leng_audit_v0.py
+      - research_runners/grwl_original_oriented_vertex_metric_v0.py
+      - research_runners/grwl_original_aggregate_semantic_diff_v0.py
+      - research_runners/grwl_original_zip_structure_preflight_v0.py
+      - research_runners/grwl_trusted_original_byte_proof_v0.py
+      - docs/research/grwl-original-2026-wgs84-ellipsoid-length-20261104.md
+      - .github/workflows/grwl-original-wgs84-ellipsoid-length.yml
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/grwl-original-wgs84-ellipsoid-length.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grwl-wgs84-ellipsoid-original-audit
+  cancel-in-progress: false
+
+jobs:
+  wgs84-ellipsoid-source:
+    name: Original GRWL 2026 WGS84 shortest geodesic length proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact reviewed commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Set up Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Install isolated pinned ellipsoid audit dependency
+        run: |
+          python -m pip install --disable-pip-version-check --no-input --no-deps -r requirements-grwl-ellipsoid.txt
+          python -m pip check
+          python -c 'import geographiclib; assert geographiclib.__version__ == "2.1"'
+      - name: Offline synthetic ellipsoid, dateline and provider source integrity tests
+        run: |
+          python -m unittest tests.test_grwl_original_wgs84_ellipsoid_length_v0 -v
+          python -m unittest tests.test_grwl_original_shape_leng_audit_v0 -v
+          python -m unittest tests.test_grwl_original_aggregate_semantic_diff_v0 -v
+          python -m unittest tests.test_grwl_trusted_original_byte_proof_v0 -v
+      - name: Pin source code and dependency requirements
+        run: |
+          git rev-parse HEAD
+          sha256sum research_runners/grwl_original_wgs84_ellipsoid_length_v0.py requirements-grwl-ellipsoid.txt
+      - name: Exact original SHA256-pinned 2026 SHAPE_LENG versus WGS84 ellipsoid
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: python -m research_runners.grwl_original_wgs84_ellipsoid_length_v0 --live
