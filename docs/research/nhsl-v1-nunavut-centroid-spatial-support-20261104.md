@@ -82,3 +82,20 @@ The trusted-main original source workflow [run **41903569037**](https://github.c
 The **three reported centers outside the WKB footprint** are *diagnostics only*. Causes could include non-convex polygons, holes, mismatched centroid construction, planar ring handling or source geometry peculiarities. Do not silently move these points or classify them as missing insured buildings. Next bounded source challenge: independently compare these three situations with exact polygon topology (e.g. a vetted geospatial geometry engine), report only aggregate counts and the value share, then perform a real hazard-cell support sensitivity analysis.
 
 The native run emits only counts, source hashes, aggregated threshold/value shares and radius quantiles. No SAUID strings, original WKB, raw coordinates, source files, hazard events or insurance-level data are committed. The source remains **`not_admitted`**; no conversion from NHSL replacement value to actual or synthetic insurer TIV is asserted by this verification.
+
+
+## Independent GEOS topology verification of three outside reported centroids
+
+**Objective (review phase, pending original-source runner):** A separate geometry engine must independently challenge the finding from the original in-house WKB parser and lon/lat ray-casting approach: **3/103** NHSL Nunavut reported SAUID centroid coordinates fall outside their GeoPackage polygons. A purely synthetic unit test cannot establish the real result.
+
+**New implementation:** [`scripts/nhsl_v1_nunavut_geos_topology_challenge_v0.py`](../../scripts/nhsl_v1_nunavut_geos_topology_challenge_v0.py) with [independent GEOS synthetic regressions](../../tests/test_nhsl_v1_nunavut_geos_topology_challenge_v0.py) and the same exact-byte-pinned original GitHub workflow. This step:
+
+- Requires the already-green exact SHA-256/ZIP CRC/native SQLite original-source audit and prior numeric and spatial SAUID consistency checks.
+- Uses repository-pinned **Shapely 2.1.2 / GEOS**, not the previous custom WKB polygon implementation, to parse original GeoPackage geometries and independently run `geometry.is_valid`, `geometry.covers(Point)` and `geometry.touches(Point)`. Counts individual valid/invalid source geometries, multipart areas and interior rings, **without emitting SAUID identities or WKB**.
+- For the reported original centroids lying outside the actual polygon support, measures **nearest-point distance** in the **planar lon/lat GEOS geometry** and then calculates a descriptive Haversine separation (km). Also computes original center vs GEOS planar polygon centroid distance; **these proxies are not geodesic topology or actual location errors**.
+- Quantifies the *source-modeled replacement-cost share* of the polygons whose centroids are outside, rather than assuming equal area/value weight or a loss bias. This is not insured TIV or the probability that an actual building lies outside the footprint.
+- Fails closed if GEOS finds invalid polygon topology, original SHA/geometry fails, or the independent outside count disagrees with the original **3**. The workflow is synthetic-only for pull requests and downloads original provider bytes **on reviewed main only** after merge; raw ZIPs are removed and no original location identifiers are logged.
+
+**Method ceiling:** GEOS `covers` operates in a planar interpretation of geographic EPSG:4326 degrees. This is a useful independent *topological* challenge for these small original Nunavut polygons, **not a geodesic area overlay**, a surveyed site-location confirmation or an insured portfolio. Actual hazard-cell resolution mismatch and spatial asset distribution remain separate work.
+
+**Exact source GEOS results: pending the reviewed-main run.** Record the trusted main run URL, GEOS validity and count, value share, multipart/hole counts and maximum nearest-distance proxy **only after reading a successful original-data receipt**. The previous 100-inside/3-outside figures remain independently measured by the original in-house method, not yet corroborated by GEOS at this stage.
