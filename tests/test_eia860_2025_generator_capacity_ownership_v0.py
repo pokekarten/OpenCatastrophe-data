@@ -37,6 +37,11 @@ class NativeNameplateOwnerTests(unittest.TestCase):
         self.assertEqual(r["original_gen_keys"],5)
         self.assertEqual(r["by_reporting_tab_nameplate_mw_not_tiv"],
                          {"Operable":"15.500","Proposed":"50.000","Retired and Canceled":"3.000"})
+        self.assertEqual(r["by_exact_2025_source_status_nameplate_mw_not_tiv"],
+                         {"OP":"14.750","P":"50.000","RE":"3.000","SB":"0.750"})
+        self.assertEqual(r["by_reporting_tab_prime_mover_family_nameplate_mw_not_tiv"]["Operable"],
+                         {"gas_turbine":"4.250","internal_combustion":"0.750",
+                          "solar_pv":"10.500"})
         self.assertEqual(r["by_reporting_tab_ownership_code_S_J_W"]["Operable"],
                          {"S":2,"J":1,"W":0})
         self.assertEqual(r["owner_schedule_gen_keys_by_original_ownership_code"],
