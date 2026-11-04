@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-04`  
 **Purpose:** Non-admission discovery of geospatial address, gazetteer, temporal-building, soil and self-hosted geocoding foundations for global CAT exposure linkage and map production.
 
-**Entries:** 7
+**Entries:** 8
 
 ## OpenAddresses worldwide authoritative address and parcel source index
 
@@ -122,3 +122,18 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Software is Apache-2.0 but its underlying OSM database retains ODbL obligations. The public Photon demo is limited and may throttle bulk workloads; use a self-hosted, version-pinned instance if justified. This is not independent of OSM, Nominatim or Overture OSM-derived building data.
+
+## Luxembourg ACT BD-Adresses georeferenced official address points
+
+**Candidate ID:** `lu.act.bd-adresses.georeferenced-address-points.2026`  
+**Provider:** Administration du cadastre et de la topographie (ACT), Luxembourg  
+**Categories:** `addresses`, `geocoding`, `georeferenced_address_points`, `cadastral_source`, `luxembourg`  
+**Spatial scope:** Luxembourg nationwide; incomplete subset of official CACLR address register  
+**Temporal scope:** Rolling official register and snapshot downloads; provider page lists 2026 releases with variable file modification dates  
+**Resolution / granularity:** Individual address-point GeoJSON, CSV and zipped Shapefile. CSV and SHP metadata document EPSG:2169 LUREF XY and WGS84 latitude/longitude; address points can be manually placed or calculated from parcel or largest-building centroids.  
+**Potential roles:** `official_luxembourg_geocoder_benchmark`, `address_to_cadastral_geometry_crosswalk`, `geocoded_address_coverage_audit`, `candidate_precision_semantics_challenge`  
+**Access hint:** `official_public_cc0_catalogue_pinned_resource_file_version_and_coordinates_rights_review`  
+**Authoritative source:** <https://data.public.lu/en/datasets/adresses-georeferencees-bd-adresses/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Distinct from the already catalogued CACLR official address text register, which has no coordinates. Official ACT dataset page advertises CC0 and GeoJSON/CSV/SHP resource permalinks; exact revision/hash and original source usage scope require review. ACT warns points are NOT real entrances, may share identical coordinates, and are not a complete address list. They can be manually placed or parcel/largest-building centroids; parcel-derived points are not independent of ACT cadastre footprints or EUBUCCO government lineage. The INSPIRE Addresses variant and OpenAddresses Luxembourg imports may reuse the same source family, not independent holdout truth. The community-enriched OSM CSV on the same portal is separately ODbL-licensed and must NOT inherit the official dataset CC0 clearance. Never equate CACLR address-building IDs with ACT building polygon IDs without an independent crosswalk; keep personal/household address text out of public Git.
