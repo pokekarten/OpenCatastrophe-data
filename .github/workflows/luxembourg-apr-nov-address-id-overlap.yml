@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg original Apr-Nov ACT address ID namespace comparison
+
+on:
+  pull_request:
+    paths:
+      - "research_runners/lu_apr_nov_address_id_overlap_v0.py"
+      - "tests/test_lu_apr_nov_address_id_overlap_v0.py"
+      - "docs/research/lu-apr-nov-address-id-overlap-20261104.md"
+      - ".github/workflows/luxembourg-apr-nov-address-id-overlap.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lu-apr-nov-address-namespace-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pinned-original:
+    name: Compare only pinned original ACT address ID populations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact workflow ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Run synthetic anti-false-join tests before real source
+        run: python -m unittest tests.test_lu_apr_nov_address_id_overlap_v0 -v
+      - name: Compare only original April GeoBase and November BD-Adresses
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          april="$RUNNER_TEMP/act-geobase-apr-2026.zip"
+          november="$RUNNER_TEMP/act-bd-adresses-nov-2026.csv"
+          trap 'rm -f "$april" "$november"' EXIT
+          curl --fail --location --silent --show-error --retry 0 \
+            --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+            --max-time 180 --max-filesize 25165824 -o "$april" \
+            'https://download.data.public.lu/resources/bd-l-geobase/20260401-011010/addresses-20260401.zip'
+          curl --fail --location --silent --show-error --retry 0 \
+            --proto '=https' --proto-redir '=https' --connect-timeout 20 \
+            --max-time 180 --max-filesize 32000000 -o "$november" \
+            'https://download.data.public.lu/resources/adresses-georeferencees-bd-adresses/20261102-033122/addresses.csv'
+          python -m research_runners.lu_apr_nov_address_id_overlap_v0 \
+            --geobase-addresses-zip "$april" --bd-adresses-csv "$november"
+          # Only aggregate counts. Source rows, IDs and crosswalk never exported.
