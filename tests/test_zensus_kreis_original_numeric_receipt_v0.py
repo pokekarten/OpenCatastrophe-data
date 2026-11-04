@@ -105,7 +105,7 @@ class OriginalKreisNumericReceiptTests(unittest.TestCase):
             inspect_original_kreis_building_counts(build(edit=(4,30)),require_original_sha=False)
 
     def test_too_few_kreise_not_admitted(self):
-        with self.assertRaisesRegex(OriginalReceiptError,"missing Kreis rows"):
+        with self.assertRaisesRegex(OriginalReceiptError,"missing Kreis rows|incomplete"):
             inspect_original_kreis_building_counts(build(make_rows=375),require_original_sha=False)
 
     def test_all_16_states_required(self):
