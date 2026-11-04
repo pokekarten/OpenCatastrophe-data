@@ -24,7 +24,7 @@ Original provider API endpoints are frozen in `research_runners/grwl_trusted_ori
 
 `.github/workflows/grwl-original-summary-byte-receipt.yml` follows the existing `ghcnd-station-prefix.yml` review pattern:
 
-- PR-head: run 17 targeted **synthetic-only** network-control tests and existing offline GRWL structure/member digest suites. **No original network downloads on PR head**.
+- PR-head: run 19 targeted **synthetic-only** network-control tests and existing offline GRWL structure/member digest suites. **No original network downloads on PR head**.
 - On merge to `main`, triggered only by the addition/change of this particular workflow, run a single original-source proof in a public GitHub-hosted Ubuntu job. `workflow_dispatch` on `main` permits explicit future retries only.
 - Permitted GitHub token rights: `contents: read`. Checkout credentials are not persisted. No external/source files are uploaded as artifacts or committed.
 - Temporary files are named only from frozen provider identities and are automatically cleaned. Stdout contains a machine-readable JSON receipt of original ZIP SHA-256, metadata and **individual uncompressed ZIP-member SHA-256** values, but no geometry, DBF records or raw third-party bytes. An HTTP/network/byte-check failure must fail the job closed with a non-admission error rather than producing a fake result.
