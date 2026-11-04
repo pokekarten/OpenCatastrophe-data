@@ -106,6 +106,7 @@ def read_dbf_semantics(archive: zipfile.ZipFile):
             raise OriginalZipError("GRWL width_mean missing from original DBF")
 
         values_by_field = {name: Counter() for name, _, _ in fields}
+        field_value_hashes_by_ordinal = {name: [] for name, _, _ in fields}
         rows = Counter()
         ordered_rows = []
         for _ in range(n):
@@ -117,6 +118,7 @@ def read_dbf_semantics(archive: zipfile.ZipFile):
             for name, kind, width in fields:
                 value = _normalized(raw_row[offset:offset+width], kind)
                 values_by_field[name][value] += 1
+                field_value_hashes_by_ordinal[name].append(hashlib.sha256(value).digest())
                 chunks.append(struct.pack(">I", len(value)) + value)
                 offset += width
             key = hashlib.sha256(b"".join(chunks)).digest()
@@ -125,7 +127,8 @@ def read_dbf_semantics(archive: zipfile.ZipFile):
         if stream.read(2) not in (b"", b"\x1a"):
             raise OriginalZipError("unexpected trailing bytes after DBF rows")
     return {"record_count": n, "fields": fields, "values": values_by_field,
-            "rows": rows, "ordered_rows": ordered_rows}
+            "rows": rows, "ordered_rows": ordered_rows,
+            "field_value_hashes_by_ordinal": field_value_hashes_by_ordinal}
 
 
 def read_shp_xy_sequences(archive: zipfile.ZipFile):
@@ -201,6 +204,53 @@ def _unmatched(counter_a, counter_b):
     return sum((counter_a - counter_b).values())
 
 
+def objectid_keyed_candidate(early_dbf, late_dbf, early_shp, late_shp):
+    """Candidate *export OBJECTID* join, never a certified river ID / hydraulic join."""
+    blocked = {
+        "status": "blocked_not_uniquely_matchable",
+        "objectid_is_approved_stable_river_identifier": False,
+        "per_river_change_attribution_verified": False,
+        "any_raw_objectids_or_feature_values_emitted": False,
+    }
+    if early_dbf["fields"] != late_dbf["fields"]:
+        return blocked
+    kinds = {name: kind for name, kind, width in early_dbf["fields"]}
+    if kinds.get("OBJECTID") != "N":
+        return blocked
+    keys_a = early_dbf["field_value_hashes_by_ordinal"]["OBJECTID"]
+    keys_b = late_dbf["field_value_hashes_by_ordinal"]["OBJECTID"]
+    if (len(keys_a) != early_dbf["record_count"] or len(keys_b) != late_dbf["record_count"]
+            or len(set(keys_a)) != len(keys_a) or len(set(keys_b)) != len(keys_b)
+            or set(keys_a) != set(keys_b)):
+        return blocked
+    lookup_a = {key: idx for idx, key in enumerate(keys_a)}
+    lookup_b = {key: idx for idx, key in enumerate(keys_b)}
+    changed_field_counts = {}
+    for name, _, _ in early_dbf["fields"]:
+        a = early_dbf["field_value_hashes_by_ordinal"][name]
+        b = late_dbf["field_value_hashes_by_ordinal"][name]
+        changed_field_counts[name] = sum(
+            a[lookup_a[key]] != b[lookup_b[key]] for key in lookup_a
+        )
+    xy_a, xy_b = early_shp["xy_ordered"], late_shp["xy_ordered"]
+    changed_xy = sum(xy_a[lookup_a[key]] != xy_b[lookup_b[key]] for key in lookup_a)
+    return {
+        "status": "unique_matching_objectid_candidate_only",
+        "matched_export_objectid_values": len(keys_a),
+        "export_objectid_order_equal": keys_a == keys_b,
+        "field_values_different_at_matching_objectid": changed_field_counts,
+        "xy_sequences_different_at_matching_objectid": changed_xy,
+        "all_non_length_fields_equal_at_matching_objectid": all(
+            change_count == 0 for name, change_count in changed_field_counts.items()
+            if name != "SHAPE_LENG"
+        ),
+        "objectid_is_approved_stable_river_identifier": False,
+        "per_river_change_attribution_verified": False,
+        "xy_sequences_direction_normalized": False,
+        "any_raw_objectids_or_feature_values_emitted": False,
+    }
+
+
 def aggregate_pair(early_dbf, late_dbf, early_shp, late_shp):
     if (early_dbf["record_count"] != early_shp["record_count"] or
             late_dbf["record_count"] != late_shp["record_count"]):
@@ -227,6 +277,7 @@ def aggregate_pair(early_dbf, late_dbf, early_shp, late_shp):
         "record_count_2026": late_dbf["record_count"],
         "dbf_field_schema_equal": equivalent_schema,
         "dbf_fields": fields,
+        "objectid_keyed_candidate": objectid_keyed_candidate(early_dbf, late_dbf, early_shp, late_shp),
         "semantic_row_multiset_equal": equivalent_schema and early_dbf["rows"] == late_dbf["rows"],
         "semantic_rows_equal_by_ordinal": equivalent_schema and early_dbf["ordered_rows"] == late_dbf["ordered_rows"],
         "minimum_unmatched_semantic_rows_each_release":

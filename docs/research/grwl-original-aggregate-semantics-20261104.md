@@ -37,10 +37,29 @@ python -m research_runners.grwl_original_aggregate_semantic_diff_v0 --live
 
 It reports exact source ZIP SHA-256, source DBF field names/descriptor types, field-level counts of distinct values and minimum unmatched value counts, holistic row multiset comparison, and SHP XY-stream multiset comparison. Output is bounded aggregate metadata; **no original source ZIPs or raw DBF/geometry rows are published**.
 
+## Actual original-source aggregate result (2026-11-04)
+
+The first trusted-main original attempt failed closed with a source-network timeout. **The single controlled retry succeeded**: [GitHub Actions run 41850217184](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41850217184), rerun attempt 2, original source checkout `f385eac72de228cd3372b23f476c952d41218800`. Both source ZIP SHA-256 pins matched exactly. Original ZIPs were read ephemerally without publication of source feature records.
+
+Observed on **both original releases**:
+- `record_count=42,077`, `total_xy_points=3,129,821`.
+- Identical DBF field schema for `OBJECTID`, `ID`, `WIDTH_MIN_`, `WIDTH_MED_`, `WIDTH_MEAN`, `WIDTH_MAX_`, `WIDTH_SD_M`, `LAKEFLAG`, `NSEGPX`, `SHAPE_LENG`.
+- The **entire value multisets** of the first nine fields are identical, including all five width measures. `WIDTH_MEAN` has 32 distinct normalized numeric values in each release.
+- `SHAPE_LENG` differs in all 42,077 normalized numeric value assignments at **multiset** level; unique numeric lengths: 42,076 in 2018, 42,077 in 2026.
+- `semantic_row_multiset_equal=false` because full DBF rows include `SHAPE_LENG`; do not interpret this as every *other* field changing.
+- `minimum_unmatched_xy_sequences_each_release=37,355` from 42,077 original SHP polyline XY-sequence hashes. Equal total coordinate point counts do **not** establish identical geometry.
+- `OBJECTID` has exactly **42,077 distinct numeric values** in each original, and its **value multiset is identical**. Unlike `ID` (383 distinct values), `OBJECTID` can serve as a testable unique export-row join candidate, but **is not thereby validated as a permanent real-world river identifier**.
+
+This is original, observed aggregate evidence, not a synthetic example. It establishes preserved aggregate width distributions, while leaving per-river widths and per-feature geometry changes **unattributed**.
+
+### Keyed candidate hypothesis now under test
+
+The next reviewed source run compares cryptographic digests of each individual field and the SHP XY sequence **at matching original `OBJECTID` values**, after proving uniqueness and identical `OBJECTID` sets. The output is still aggregate changed-counts only; no individual `OBJECTID`, width or coordinate may be emitted. If the ID set is missing, duplicated or changed, candidate joining fails closed. Even a successful `OBJECTID` matching experiment is not a certified hydrological ID or RiverATLAS join.
+
 ## Scientific gate
 
 If the numeric `width_mean` value distribution differs, a numeric value difference is supported without needing row alignment, but **the altered individual rivers are not yet identified**. If the width multiset is identical while SHP/DBF member bytes differ, the change could be reordering or another attribute. If the original XY multiset differs, the result still requires a future fully keyed, geometry-normalized spatial comparison to distinguish reversed coordinate sequences, precision shifts and true geometry changes.
 
 No RiverATLAS crosswalk admission, flood-stage widths, return periods, insured losses, loss modeling or production Neon writes are authorized. Use-specific source licensing/attribution and independent scientific holdouts remain pending. All original individual row/coordinate data stay off public GitHub.
 
-**Current PR evidence:** source semantic workflow has not executed the live step at PR creation. Its results must be read from the exact merge commit workflow logs rather than guessed.
+**Original source evidence:** the previous aggregate live step completed successfully after one controlled retry (linked above). The new export-OBJECTID-keyed step remains pending until the updated reviewed-main workflow actually executes.
