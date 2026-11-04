@@ -82,7 +82,11 @@ class GeneratorSourceSchemaTests(unittest.TestCase):
         rendered=json.dumps(x).replace(digest,"<source-sha256>")
         self.assertNotIn("SECRET OWNERSHIP",rendered)
         self.assertNotIn("GEN-X",rendered)
-        self.assertNotIn("599",rendered)
+        # The source workbook SHA-256 is deliberately exported for provenance.
+        # Its random-looking hex characters may coincidentally contain the
+        # source ID "599"; that is not the same as exporting a worksheet row.
+        self.assertNotIn("599", json.dumps(x["worksheets"], sort_keys=True))
+        self.assertFalse(x["raw_generator_rows_or_owner_names_exported"])
 
     def test_unknown_header_not_whitelisted(self):
         x=m.inspect_workbook(xlsx([("Utility",["Name of Our Company"])]),scope="utility")
