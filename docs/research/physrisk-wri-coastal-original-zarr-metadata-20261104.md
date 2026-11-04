@@ -372,3 +372,61 @@ python scripts/check_all.py
 ### Strict conclusions and remaining blockers
 
 This is **one** deliberately selected region and only the nine return-period bands of one Physrisk *derived* coastal Zarr object. It is neither a global/raster-wide nor an upstream original-WRI GeoTIFF monotonicity audit. The earlier original WRI vs Physrisk cellwise comparisons remain limited to *two return periods and two locations*. The WRI-only 1.5-year return period is missing here; source-defence protection, tidal and subsidence differences, regional uncertainty, full-object producer revision, upstream rights, other hazard types/regions and the possibility of independent events/correlated annual modelled losses have **not** been resolved. Consequently all admission flags must remain **false** and no CAT event/YLT, insurer TIV, OEP/IP gross/net or reinsurance output may be derived directly from this gate.
+
+## Executed THIRD original WRI TIFF / Physrisk sample — European North Sea, RP 100 years (2026-11-04)
+
+**Executed original-data comparison, independent geography from the prior USA Gulf Coast (RP2) and Bay of Bengal (RP100) samples.**
+
+The original WRI Aqueduct Floods v2 **historical coastal, no subsidence** 100-year [GeoTIFF \`inuncoast_historical_nosub_hist_rp0100_0.tif\`](https://aqueduct.wridata.org/AqueductFloods20/inuncoast_historical_nosub_hist_rp0100_0.tif) was compared to a separate Physrisk distribution [Zarr chunk \`0.4.22\`](https://os-climate-physical-risk.s3.amazonaws.com/hazard-indicators/hazard.zarr/inundation/wri/v2/inuncoast_historical_nosub_hist_0/0.4.22). Original WRI TIFF's source IFD (first IFD at byte 46209472) was used to locate LZW row 4560 at original strip offset **9,532,356**, with **2,717** compressed bytes. The Zarr array's 100-year return period is *index 5*; global row **4560**, columns **22000–22999** correspond to array-local row 560 and all 1,000 columns of Zarr chunk \`0.4.22\`, with the selected original **Blosc block #42** from compressed byte offset **1,118,968** to **1,169,975** (51,008 bytes). Blosc original header verifies Float32 byte-shuffled LZ4, 69 blocks and full *compressed* Zarr object length **1,751,433 bytes**.
+
+Geographic grid centres are approximately **51.995833°N, 3.3375–11.6625°E**, a one-row section crossing the Netherlands/North Sea coastal area and extending into Germany. This is only one highly selective latitude line, not a representative sample of all protected and unprotected European buildings.
+
+### Original HTTP response byte receipts
+
+**Six independent, bounded, anonymous read-only provider source HTTP Range responses; no complete TIFF/Zarr was fetched and no source bytes have been committed to Git:**
+
+| Original object | Inclusive byte range | Bytes | SHA-256 of exact returned body |
+| --- | --- | ---: | --- |
+| WRI GeoTIFF row 4560 strip-offset table | \`46314334–46314337\` | 4 | \`e0566cbf3b0a881e353c75e0ac62b41d391941947f8aa85fd5b93f4814d9e01b\` |
+| WRI GeoTIFF row 4560 strip-length table | \`46227934–46227937\` | 4 | \`4079d31186209119f8b7d75a5375b4db0991f7e149e621c6369ddc422f749f8f\` |
+| WRI original compressed TIFF LZW row | \`9532356–9535072\` | 2,717 | \`aa32aef31052fadef112ab337c0c609f085965e8a7ad4eabdfd0e3e4e0e0f911\` |
+| Physrisk Zarr chunk \`0.4.22\` Blosc header/offset table | \`0–4095\` | 4,096 | \`c1fa76465612674450949a993c2ce31ffcbfc3cb2ee8b5d3d9dc1d828f81432d\` |
+| Physrisk compressed block #42, part 0 | \`1118968–1148967\` | 30,000 | \`cd154830e94a6a5bb6d96b35b55868fa6c2029635c3cbe589bceb2eb45793068\` |
+| Physrisk compressed block #42, part 1 | \`1148968–1169975\` | 21,008 | \`6cfb0ea208674c0455faafe5a1f6b675ff8b59c1a9f39252ee13c66b46cf9609\` |
+
+### Independent original-to-derived comparison
+
+Real source **LZW strip** was decompressed to one Float32 row with 43,200 columns and real source **Blosc block** decoded from four LZ4 byte-shuffled streams, with exact return-period, row and column indexing. **1,000/1,000 paired cells agree on source category and depth:**
+
+| Value category | Actual WRI TIFF | Actual derived Physrisk | Match |
+| --- | ---: | ---: | --- |
+| Finite zero | 819 | 819 | **819 exact Float32 byte matches** |
+| Finite positive depth | 88 | 88 | **88 exact Float32 byte matches** |
+| WRI original missing \`-9999\` | 93 | 93 actual \`NaN\` values | **93/93 missing-category matches** |
+| Unexplained pair differences | — | — | **0** |
+
+Positive matching examples include global columns **22093 (0.8273507953 m)**, **22096 (1.8572196960 m)**, **22097 (1.8661835194 m)** and **22115 (0.0180678368 m)**. Exact original-byte Float32 equality was checked for all 907 finite source pixels (no rounded numeric tolerance). The source NoData sentinel is *intentionally not numerically equal* to the resulting derived NaN.
+
+**Three distinct geographically located original↔derived checks now total 3,000 source cells: 2,652 bitwise-identical finite pairs (2,226 zeros and 426 positive depths), 348 original NoData \`-9999\` → derived \`NaN\` category matches, and zero observed mismatches.** The first RP2 USA check, second RP100 Bangladesh/Bay of Bengal check and this third RP100 Europe/North Sea check together validate *sampled transformations*, not a global dataset or model. The separately executed nine-period monotonicity test is inside one derived Bay of Bengal Zarr chunk and is not additional original-WRI TIFF pairing.
+
+### New bounded offline verifier and synthetic regression tests
+
+- \`research_runners/wri_physrisk_coastal_europe_100yr_pair_v0.py\` is a **stdlib-only, fail-closed** reader for the six exact source byte-range response files saved **outside Git**. It checks fixed SHA-256/size, TIFF original table entries, Blosc original header/69-entry offset table, source LZW and derived LZ4 decompressors, return-period/coordinate alignment and all 1,000 paired cell categories. Emits **\`model_input_admitted=false\`**.
+- \`tests/test_wri_physrisk_coastal_europe_100yr_pair_v0.py\` contains **synthetic-only** tests for exact finite and missing-category matching, mutated/invalid original files, unexpected depth, NoData erroneously converted to zero, block boundary changes and output-source overwrite protections.
+
+\`\`\`bash
+python research_runners/wri_physrisk_coastal_europe_100yr_pair_v0.py \
+  --wri-row-offset /private/europe-original/wri-row4560-offset-4b.bin \
+  --wri-row-length /private/europe-original/wri-row4560-bytecount-4b.bin \
+  --wri-strip /private/europe-original/wri-row4560-lzw-2717b.bin \
+  --zarr-header /private/europe-original/zarr0.4.22-header-4096b.bin \
+  --zarr-part0 /private/europe-original/zarr0.4.22-blosc42-part0-30000b.bin \
+  --zarr-part1 /private/europe-original/zarr0.4.22-blosc42-part1-21008b.bin \
+  --out /tmp/wri-physrisk-100yr-europe-third-pair.json
+
+python -m unittest discover -s tests -p 'test_wri_physrisk_coastal_europe_100yr_pair_v0.py'
+\`\`\`
+
+### What remains scientifically unresolved
+
+This does **not** verify all European coasts, all WRI return periods, future scenarios, riverine flood, physical flood defences, vulnerability functions or exact published Zarr build/asset version. Full original TIFF and original derived Zarr whole-object immutable identifiers are still unpinned. Dataset- and usage-specific legal rights plus scientific model review remain unresolved. The source's missing 1.5-year original recurrence is not reconstructed. Return-period quantile depths do not yield actual stochastic event records, insurer exposure, dependence, ELTs/YLTs, gross/net OEP, AEP or IP; the source remains **not admitted** as a production CAT model input.
