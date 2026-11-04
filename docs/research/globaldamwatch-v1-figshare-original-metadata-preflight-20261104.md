@@ -27,6 +27,33 @@ be tested for uniqueness and correct spatial/topological matching on original
 files. Archive names **GDW_v1_0_gdb.zip** and **GDW_v1_0_shp.zip** are alternate
 format representations of one dataset, not distinct scientific releases.
 The Shapefile representation additionally includes barrier-attribute CSV.
+The actual original Figshare v1 metadata also lists the **final technical
+document as a distinct third file**: GDW_TechDoc_v1_0.pdf. That file is
+scientific documentation, not a third GIS dataset.
+
+### Original Figshare API metadata receipt, 2026-11-04
+
+The official version-specific endpoint
+https://api.figshare.com/v2/articles/25988293/versions/1 was fetched
+independently through a web research connector. The provider returned
+HTTP 200, application/json, 9,524 response bytes, article id 25988293,
+version 1, v1 DOI, CC BY 4.0 and article total size 127,938,795 bytes.
+The three file rows are:
+
+| Original publisher file | Figshare file id | Declared bytes | Provider supplied and computed MD5 |
+| --- | ---: | ---: | --- |
+| GDW_TechDoc_v1_0.pdf | 47913739 | 716,288 | 5b2fc93c384f674414fa711b657bef5e |
+| GDW_v1_0_gdb.zip | 47913742 | 57,476,758 | 410d1ed16312ac613975fd092c193c65 |
+| GDW_v1_0_shp.zip | 47913754 | 69,745,749 | 5064cf2315ef6159d9133b03596e761a |
+
+The original response's declared sizes sum exactly to its article total
+(127,938,795 bytes); the two provider MD5 fields agreed for each of
+three files. These are **observed provider metadata** only: none of the
+three original file bodies were fetched or independently hashed. This
+independent API read verifies real endpoint/record shape but does **not**
+constitute a live execution receipt of the repository's Python probe.
+The Python probe remains probe_ready pending an exact-branch live run.
+No original provider response body is stored in the repository.
 
 ### Original-publisher disagreement: do not silently calibrate
 
@@ -56,7 +83,9 @@ CC BY 4.0 per publisher and journal, but this PR grants no public mirror.
   explicit --live request, no caller-provided URL/ID/headers/credentials,
   redirect, pagination, retry, archive retrieval or polling; timeout 30 s,
   metadata maximum 131072 bytes, strict UTF-8 JSON, fixed article/version/DOI,
-  CC BY 4.0 and precisely two archive names with positive IDs/sizes.
+  CC BY 4.0 and the exact two GIS archive names plus the standalone
+  final technical PDF, each with frozen file IDs, provider byte sizes
+  and mutually matching provider MD5 fields.
 - The receipt records retrieval UTC, exact request, response SHA-256/byte count,
   script SHA-256 and provider-declared file metadata; provider download links
   are never followed. Provider MD5 is **not** independent byte verification.
@@ -64,17 +93,22 @@ CC BY 4.0 per publisher and journal, but this PR grants no public mirror.
   file-list drift, malformed JSON, duplicate keys, wrong media/status,
   redirects, oversized responses and naive clocks.
 
-**Actual evidence boundary:** publisher and API documentation checked on
-2026-11-04. In this session the endpoint's real JSON could not be retrieved
-from the local execution plane, and no production live canary, original archive
-bytes, GIS audit or full repository CI is claimed. This source is **probe_ready**
-but not **verified_anonymous** and remains **not admitted** for model input.
+**Actual evidence boundary:** official version-specific JSON was retrieved
+through a connected public web research service on 2026-11-04, with exact
+article/file-level identity proven at metadata level. The local Linux
+container could not reach Figshare directly (DNS resolution unavailable),
+so the updated repository-owned Python --live probe has not been run against
+the provider from its intended execution environment. The earlier PR-head
+GitHub CI was successful, but CI after these changes must be rechecked.
+No original archive/PDF bytes, independently computed archive SHA-256,
+GIS audit or model admission is claimed. This source is **probe_ready**
+rather than **verified_anonymous** and remains **not admitted**.
 Any real response-shape conflict must be treated as a failed source check,
 not bypassed by loosening identity or rights constraints.
 
 ## Next causal steps
 
-1. At the exact PR head run **python scripts/check_all.py**. Then, from a
+1. At the exact new PR head run **python scripts/check_all.py**. Then, from a
    trusted network environment, intentionally run a single
    **python scripts/probe_globaldamwatch_gdw_v1_metadata_v0.py --live**.
    Save only the small receipt and exact commit identity, not provider JSON.
