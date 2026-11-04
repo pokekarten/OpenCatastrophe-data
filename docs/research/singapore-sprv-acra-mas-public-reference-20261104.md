@@ -45,6 +45,19 @@ Two exact original-note identities hold: **2023 paid + reserve = 17,947,952**; *
 
 The company identifies **Manatee Shares Trust** as immediate/ultimate holding entity in printed note page **10**, and **Intertrust (Singapore) Ltd.** as share trustee. Separately, MAS identifies **Marsh** as an operating manager. These are distinct roles. Reinsured peril, cedant, SPV owner, asset location and investor security must not be merged by brand or by common management. Under FRS 117, the consolidated insurance liability and variable-note fair-value accounts have their own accounting definitions, not a direct one-for-one mapping from this public claim-note bridge.
 
+## Later original securities lifecycle: current exposure caution
+
+The historical audited FY2024 claim does **not** imply the 2019 notes or their original collateralised reinsurance capacity remain in force on 2026-11-04. The original issuer-supplied Bermuda Stock Exchange announcements document separate securities lifecycle events:
+
+- [BSX announcement, 21 October 2022](https://www.bsx.com/article/1100801701): **Class B**, originally US$20,000,000 Series 2019-1 principal-at-risk variable-rate notes, **early redemption** reported to BSX and **delisted 2022-10-21**. The announcement does not give the actual cash principal repayment amount or the residual underlying treaty exposure.
+- [BSX announcement, 29 June 2026](https://www.bsx.com/article/1100807273): maturity and redemption reported for **Class A**, originally US$20,000,000, **due 2026-06-08**, and the principal-at-risk variable-rate note program; both **delisted 2026-06-29**. The [original BSX Class A security record](https://www.bsx.com/company/1099939272) identifies **ISIN US562011AA46**, original BSX listing date **2019-06-21**, and status **Delisted** as of the issuer announcement.
+
+A source-date caveat matters: the signed FY2024 annual report (note 13, printed p. 24) describes original **2019-05-30** issuances and an **original due date in June 2022**, whereas the official later BSX class security record gives the 2026 extended maturity. These are **different reported vintages**, not a licence to overwrite the 2019 issuance terms. Keep original dates, later amendments and actual delisting events separate.
+
+**Correct classification:** `NOT_CURRENTLY_LISTED_AT_BSX` for Class A, Class B and the identified note program as of 2026-11-04. This **does not prove** that the SPV has dissolved, that the cedant has no remaining claims, that all contractual obligations have expired, that investors received the full original face value, or that there are no newer ILS securities issued by this legal entity. The actual contractual wording, settlement notices and winding-up filings must be verified separately. Neither face value nor the Class A/B lifecycle is an active 2026 insurer portfolio line.
+
+The **canonical public source landscape** now includes the ACRA government company dataset, MAS SPRV regulator details, original Manatee FY2024 financial report and the two original BSX exit announcements in `landscape/sources-singapore-ils-acra-mas-20261104.json` with deterministic generated Markdown. Original ACRA singleton-response SHA-256 fingerprints and official query URLs are separately in `docs/research/acra-four-sprv-original-response-receipts-20261104.json`. No exchange-page HTML, raw government JSON, financial PDF or underlying reinsurance contract is checked in.
+
 ## Implementation boundary
 
 The **private NextGen research PR #279** retains executable bounded GLEIF Level-1 metadata validation plus a reproducible integer-only [Manatee claim-note bridge](https://github.com/pokekarten/NextGen/pull/279): nine focused synthetic/adversarial tests passed locally; both code blobs match locally executed sources. **This public registry carries links and audit observations only**. Original ACRA data rows, GLEIF responses, MAS web pages and BSX PDF content are *not* checked into this repository.
