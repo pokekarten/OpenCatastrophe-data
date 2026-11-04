@@ -45,6 +45,26 @@ class RvNRWOriginalClassAggregatesTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     m.decimal_amount(val)
 
+    def test_binary_float_serialisation_tail_is_not_an_adverse_category_error(self):
+        self.assertEqual(
+            m.validate_source_category_subtotal_residual(Decimal("4.732E-9"), "kW"),
+            Decimal("0.00001"),
+        )
+        self.assertEqual(
+            m.validate_source_category_subtotal_residual(Decimal("-0.0000036019"), "kWh"),
+            Decimal("0.0001"),
+        )
+
+    def test_large_category_totals_disagreement_blocks(self):
+        for val, units in [(Decimal("0.01"), "kW"), (Decimal("-0.1"), "kWh")]:
+            with self.subTest(val=str(val), units=units):
+                with self.assertRaisesRegex(ValueError, "OUTSIDE_LEXICAL_FLOAT_TOLERANCE"):
+                    m.validate_source_category_subtotal_residual(val, units)
+
+    def test_units_must_be_exact_source_header(self):
+        with self.assertRaisesRegex(ValueError, "UNIT_NOT_RECOGNISED"):
+            m.validate_source_category_subtotal_residual(Decimal(0), "kWp")
+
     def test_duplicate_ags_rejected_without_printing_ags(self):
         rows = [{2: "05162020", 3: "SYN_PLACE"}] * 396
         with self.assertRaisesRegex(ValueError, "DUPLICATE_AGS"):
