@@ -177,8 +177,7 @@ def inspect_original_kreis_building_counts(raw: bytes, *, require_original_sha=T
     districts.sort(key=lambda r:r["kreis_ags_2022"])
     valkeys=("gebaeude_mit_wohnraum","wohngebaeude","wohngebaeude_ohne_wohnheime","wohnheime","sonstiges_gebaeude_mit_wohnraum")
     sums={k:sum(d[k] for d in districts) for k in valkeys}
-    discrepancy={k:sum(abs(d["gebaeude_mit_wohnraum"]-d["wohngebaeude"]-d["sonstiges_gebaeude_mit_wohnraum"])
-                  for d in districts)}
+    hierarchy_nonadditivity = sum(abs(d["gebaeude_mit_wohnraum"] - d["wohngebaeude"] - d["sonstiges_gebaeude_mit_wohnraum"]) for d in districts)
     canonical=json.dumps(districts,sort_keys=True,ensure_ascii=False,separators=(",",":")).encode("utf-8")
     receipt={
         "schema_version":"ZENSUS2022_ORIGINAL_KREIS_BUILDING_NUMERIC_RECEIPT_V0",
@@ -194,6 +193,7 @@ def inspect_original_kreis_building_counts(raw: bytes, *, require_original_sha=T
         "land_codes_present":sorted({x["kreis_ags_2022"][:2] for x in districts}),
         "kreis_count_sum_by_field":sums,
         "kreis_numeric_mapping_sha256":hashlib.sha256(canonical).hexdigest(),
+        "sum_count_nonadditivity_hierarchy_abs":hierarchy_nonadditivity,
         "original_geography_2022_05_15":True,
         "insurer_spatial_contracts_observed":False,
         "insurer_policy_to_building_1to1_proven":False,
