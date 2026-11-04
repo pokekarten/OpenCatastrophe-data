@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-04`  
 **Purpose:** Non-admission discovery of unusual building intelligence from commercial property portfolios, judicial appraisals, rooftop analytics, LoD2 derivatives and EU stock statistics. Rights, individual-building identity, privacy, source-lineage and replacement-value safeguards remain explicit; no data bytes or insured-policy assertions are admitted.
 
-**Entries:** 7
+**Entries:** 9
 
 ## IÖR 3D Building Metrics Germany 2025
 
@@ -122,3 +122,33 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Official API terms section 6 prohibits crawling/robots to obtain portal data; section 7 prohibits use to create licensee databases or evaluations for other purposes and limits standard API storage to 24 hours. Therefore do NOT scrape, bulk-copy, persist or train from listings under ordinary terms. Candidate documents a licensing barrier, not an available source. Seek direct written commercial permission before ingestion.
+
+## France DGFiP DVF property transactions and Cerema DVF+ geospatial access
+
+**Candidate ID:** `fr.dgfip.dvf.transactions.2026-10`  
+**Provider:** DGFiP / Cerema  
+**Categories:** `property_transactions`, `cadastral_parcels`, `property_prices`, `france`  
+**Spatial scope:** Most of France excluding Alsace, Moselle and Mayotte according to current scope  
+**Temporal scope:** Rolling five-year DVF history; authoritative provider refresh of 2026-10-12  
+**Resolution / granularity:** Notarial/cadastral transaction records, with price, local type and property surface; Cerema DVF+ geolocates mutations through cadastre  
+**Potential roles:** `regional_property_price_prior`, `parcel_transaction_spatial_join`, `dwelling_type_and_size_challenge`  
+**Access hint:** `public_download_open_licence_2_no_reidentification_or_external_search_indexing`  
+**Authoritative source:** <https://www.data.gouv.fr/datasets/demandes-de-valeurs-foncieres>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** DVF is transaction-level and can contain multiple property or land lots per mutation. Source instructions explicitly prohibit reidentification and indexing by external search engines. The upstream semiannual refresh replaces earlier files and may backfill transactions. Cerema DVF+ reuses DVF plus cadastral mapping and is NOT an independent price source. Prices include land and are not insured building replacement costs or TIV; no bytes acquired or model permission established.
+
+## HM Land Registry Price Paid Data and August 2026 building identifier lookup
+
+**Candidate ID:** `uk.hmlr.price-paid.2026`  
+**Provider:** HM Land Registry  
+**Categories:** `property_transactions`, `property_prices`, `residential`, `property_identifiers`, `england_wales`  
+**Spatial scope:** England and Wales; qualifying registered residential transactions rather than complete property stock  
+**Temporal scope:** Historical series from 1995, monthly 2026 releases; UPRN and INSPIRE lookup tables launched 2026-08-28  
+**Resolution / granularity:** CSV or linked data with sale date, price, property type and address attributes; separate lookup tables for identifiers  
+**Potential roles:** `property_type_and_sale_price_context`, `property_identifier_join_research`, `sale_selection_bias_benchmark`  
+**Access hint:** `price_paid_ogl3_but_address_third_party_rights_and_uprn_lookup_separate_terms`  
+**Authoritative source:** <https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Official HMLR says Price Paid Data uses OGL v3 but its Royal Mail/Ordnance Survey address components have additional rights; UPRN and INSPIRE ID lookup tables also have separate terms. Do not presume all address joins are commercially permitted. UPRN can refer to an addressable unit rather than one building. Sale price is not structure replacement cost, insurance TIV, current owner or insured policy. No files acquired.
