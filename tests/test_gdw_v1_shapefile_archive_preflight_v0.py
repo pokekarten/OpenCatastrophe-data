@@ -111,7 +111,7 @@ class GDWShapefilePreflightTests(unittest.TestCase):
         result = self.inspect(build_zip())
         self.assertEqual(result["layer_record_counts"], {x: 1 for x in COUNTS})
         self.assertTrue(result["provider_declared_md5_matches"])
-        self.assertTrue(result["sha256_independently_pinned"])
+        self.assertTrue(result["caller_supplied_sha256_matches"])
         self.assertTrue(result["shp_shx_dbf_row_counts_agree"])
         self.assertTrue(result["zip_streams_crc_checked"])
         self.assertTrue(result["coordinate_bounds_and_polygon_ring_closure_checked"])
@@ -124,7 +124,7 @@ class GDWShapefilePreflightTests(unittest.TestCase):
         self.assertNotIn("synthetic documentation", str(result))
 
     def test_unpinned_digest_is_not_an_independent_identity(self):
-        self.assertFalse(self.inspect(build_zip(), sha=False)["sha256_independently_pinned"])
+        self.assertFalse(self.inspect(build_zip(), sha=False)["caller_supplied_sha256_matches"])
 
     def test_provider_md5_or_byte_size_drift_blocks(self):
         b = build_zip()
