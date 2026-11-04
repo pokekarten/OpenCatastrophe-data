@@ -190,5 +190,38 @@ class ContractConsistencyTests(unittest.TestCase):
         )
 
 
+    def test_source_review_index_admission_labels_match_manifest_status(self) -> None:
+        """Index descriptors must not downgrade an approved artifact to metadata-only."""
+        review_dir = ROOT / "docs/source-reviews"
+        readme_lines = (review_dir / "README.md").read_text(encoding="utf-8").splitlines()
+
+        for review_path in sorted(review_dir.glob("*.md")):
+            if review_path.name == "README.md":
+                continue
+            entries = [
+                line for line in readme_lines
+                if line.startswith(f"- `{review_path.name}` — ")
+            ]
+            self.assertEqual(len(entries), 1, f"exactly one index entry required for {review_path.name}")
+            references = set(
+                MANIFEST_REFERENCE_RE.findall(review_path.read_text(encoding="utf-8"))
+            )
+            self.assertTrue(references, f"{review_path.name} must reference manifests")
+            statuses = {
+                json.loads((ROOT / reference).read_text(encoding="utf-8"))["review"]["status"]
+                for reference in references
+            }
+            label = entries[0].casefold()
+            if statuses == {"approved_metadata_only"}:
+                self.assertIn("metadata-only", label, review_path.name)
+            else:
+                self.assertNotIn(
+                    "metadata-only", label,
+                    f"{review_path.name} has a non-metadata manifest admission",
+                )
+                if "approved_derived" in statuses:
+                    self.assertIn("approved-derived", label, review_path.name)
+
+
 if __name__ == "__main__":
     unittest.main()
