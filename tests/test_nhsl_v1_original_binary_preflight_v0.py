@@ -123,7 +123,7 @@ class TestNHSLOfflineBinaryPreflight(unittest.TestCase):
         self.assertIn("E_BlgEpoch != E_BldgEpoch", result["literal_difference_to_live_service"]["archetype"])
 
     def test_missing_original_dictionary_field_fails(self) -> None:
-        data = fake_xlsx().replace(b"xl/workbook.xml", b"xl/workbook.yy")
+        data = fake_xlsx().replace(b"xl/workbook.xml", b"xl/workbook.xxx")
         with self.assertRaisesRegex(NHSLBinaryError, "XLSX"):
             parse_original_dictionary(data)
         with self.assertRaisesRegex(NHSLBinaryError, "ZIP"):
