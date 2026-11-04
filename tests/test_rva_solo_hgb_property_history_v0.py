@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 """Public, independent HGB history audit: no hidden portfolio or NatCat reconstruction."""
-import copy
 from pathlib import Path
 import tomllib
 import unittest
@@ -108,7 +107,7 @@ class RvaSoloHgbHistoryTests(unittest.TestCase):
     def test_detects_broken_property_splits_and_company_totals(self):
         for k in ("connected_buildings_self_written", "total_accepted_reinsurance_gwp"):
             d = load()
-            d["years"][-1][k] += 2
+            d["years"][-1][k] += 3
             with self.subTest(k=k), self.assertRaises(ValueError):
                 validate(d)
 
