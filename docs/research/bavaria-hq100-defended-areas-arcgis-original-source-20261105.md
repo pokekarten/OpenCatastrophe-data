@@ -115,3 +115,57 @@ Added \`research_runners/bavaria_hq100_defended_arcgis_source_preflight_v0.py\` 
 With dynamic source-vintage tolerant counts, the runner **fails closed** if provider layer name, EPSG:25832, polygon type, required source attribute fields, page safety, GeoJSON polygon ring / WGS84, count consistency, HQ100 data class, source determination dates or response completeness is wrong. It writes a small JSON receipt containing source URLs, original response SHA-256, feature counts/year distributions and hard **non-admission** flags, **without any original polygons, coordinates, insured addresses or original source attributes in Git**.
 
 **Remaining blockers:** verify actual source rights for *this* ArcGIS vector endpoint (do not generalize WMS/LfU CC-BY-SA to all server outputs without review); original full polygon source bytes and dates for all 80 areas, full geometry for 1,193 ordinary hazard polygons, WRI coarse grid vs protected polygon containment tests, whether a particular dike line and protected zone belong to the same river/defence system, event/failure model, insured exposure, vulnerability and treaty losses. \`model_input_admitted=false\`, \`defended_site_flood_depth_calculated=false\`; retain Draft, no source auto-import.
+
+## 2026-11-05 executed point-centre QA: 25 genuinely positive WRI riverine pixels vs official defended / HQ100 polygons
+
+**Source-by-source actual narrow question:** "Of the 25 **positive original WRI historical riverine RP100 cell centres** on global grid row 5000 across the previously verified 554-cell Bavaria-longitude band, how many points are contained in official LfU ArcGIS protected HQ100, defended-depth-class or ordinary HQ100 hazard polygons?"
+
+This is *not* a full WRI cell/official polygon area-overlap operation and certainly not a building-level risk classification.
+
+1. Independently reacquired and LZW-decoded the original WRI TIFF row5000 strip bytes \`28730421–28736961\`, 6541 bytes, whose original source SHA256 is pinned in [the WRI riverine source proof](wri-riverine-bavaria-defence-candidate-grid-20261104.md): \`35b4e90ec28ef3fbc5794ebf6bf1f9854b303571e108d47033102728e0c1becc\`. From the **actual decoded original Float32 depths**, determined the exact **25 positive column IDs**, not picked source points or a derived interpolated indicator.
+2. For each selected column, calculated WRI's native **EPSG:4326 PixelIsArea** centre \`lon = -180 + (col+0.5)/120\`, \`lat = 90 - (5000+0.5)/120\`.
+3. Independently called the same official original read-only ArcGIS server for **75 exact point predicates**, with no original polygon geometry/insured site data exported:
+
+\`\`\`text
+https://umweltatlas.bayern.de/arcgis/rest/services/wasser/naturgefahren_ftz/MapServer/{ID}/query
+?where=1%3D1
+&geometry={centre_lon},{centre_lat}
+&geometryType=esriGeometryPoint
+&inSR=4326
+&spatialRel=esriSpatialRelIntersects
+&returnCountOnly=true
+&f=pjson
+
+IDs: 8 = ordinary HQ100 hazard polygons,
+     10 = officially protected HQ100 polygons,
+     14 = protected-area HQ100 failure-case depth-class polygons.
+\`\`\`
+
+Actual original WRI **25 positive grid columns**:
+
+\`\`\`text
+22788, 22789, 22790, 22791,
+22802, 22803, 22804, 22805,
+22997,
+23000, 23001, 23002, 23003, 23004, 23006, 23007, 23008, 23009,
+23195, 23196, 23197, 23198, 23199, 23200, 23201
+\`\`\`
+
+### Original server-side point containment outcomes
+
+| Provider original polygon layer | Of 25 positive-WRI-cell **centre points**, how many are inside at least one official polygon? |
+| --- | ---: |
+| **ID 10** \`hwgg_hq100\` (officially protected area) | **0/25** |
+| **ID 14** \`wt_hwgg_hq100\` (protected-area *conditional* depth class) | **0/25** |
+| **ID 8** \`hwgf_hq100\` (official ordinary HQ100 hazard area) | **1/25** (only WRI global column **23200**) |
+
+**Positive control:** Independently fetched a genuine original Polygon / GeoJSON source feature from the official ID 10 and calculated a point lying **strictly inside** its outer ring but not any holes, using the original real polygon coordinates in-memory. The exact same \`returnCountOnly=true, geometryType=esriGeometryPoint, inSR=4326, esriSpatialRelIntersects\` query returned **count=1** for this positive control. Thus the 0/25 ID 10 result is *not* simply the result of a malformed point predicate that always returns zero. The ID 8 source independently returned **count=1** for original WRI column23200, confirming the matching predicate is live on that layer.
+
+**Numerical limits and interpretation:**
+
+- There are **7 official protected area polygons**, **30 conditional protected-depth polygons** and **74 ordinary HQ100 hazard polygons** with **any spatial intersection** with the entire thin *row envelope* (earlier server-side envelope proof). The fact that **25 specific WRI positive-cell centres** intersect zero of those protected polygons is not contradictory: envelope intersect ≠ any one particular cell centre contained by a polygon.
+- A 30-arcsecond WRI grid pixel spans roughly **hundreds of metres** across Bavaria. A centre point outside a narrow official floodplain polygon may still have the *pixel footprint* partially overlapping the official polygon. No claims of raster area-overlap percentages, official source miss rate, false-positive WRI classifications, insurer exposure agreement, or calibration skill are justified from these **one-row, 25 centre-point** probes.
+- The two HQ100 products are not necessarily equivalent event simulations: **original WRI global undefended flood hazard** vs **regional Bavarian detailed hydraulic HQ100** with actual defences represented. Data vintages, river coverage, protection treatments, subgrid terrain and flow assumptions differ. Official LfU sources additionally warn that not all waterways have detailed local hazard assessments. **An absent regional polygon must never be translated into an insured building's flood probability being zero.**
+- **No protected building or insurance policy was assigned**; no corrected flood depths or conditional barrier failure likelihood were estimated. The 25 point queries were a separately executed original-provider online research probe; the synthetic-only GitHub CI does **not** claim to have replayed all 75 live queries.
+
+**Practical next gate:** download and version **complete original protected HQ100 area polygons (ID10) and defended-depth class polygons (ID14)** in an approved, attributed research staging area; compare *full raster cell footprints* to those polygons in a common, explicitly transformed CRS; join specific LfU line geometries only after topology/side and local hydraulic source/assessment date are known. Preserve the distinctions \`wri_undefended_hazard\`, \`lfu_official_hq100_protected_zone\`, \`lfu_conditional_failure_depth_class\` and \`unclassified_area_due_to_missing_hazard_assessment\`. All CAT admission and insurer loss flags remain **false**.
