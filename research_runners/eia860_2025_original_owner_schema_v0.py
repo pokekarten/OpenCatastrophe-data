@@ -98,20 +98,31 @@ def _header_tokens(wb: ZipFile, sheet_path: str, shared: list[str]) -> dict:
     }
 
 
+def inspect_owner_workbook_member(member:bytes)->list[dict]:
+    """Metadata-only schema reader; testable with a synthetic inner XLSX."""
+    try:
+        if type(member) is not bytes or not 0<len(member)<=MAX_OWNER_XLSX:
+            raise OwnerSchemaBlocked("unbounded inner Owner XLSX")
+        with ZipFile(BytesIO(member)) as wb:
+            eia._safe_zip(wb)
+            sheets=_workbook_sheet_paths(wb)
+            shared=eia._shared_strings(wb)
+            return [
+                {"sheet_name":name,**_header_tokens(wb,path,shared)}
+                for name,path in sheets
+            ]
+    except (BadZipFile,OSError,RuntimeError,ET.ParseError,
+            eia.EIA860ProofBlocked) as exc:
+        raise OwnerSchemaBlocked("unsupported or corrupt inner owner XLSX") from exc
+
+
 def inspect_owner_original_zip(original:bytes)->dict:
     try:
         outer=eia.check_original_archive(original,expected_sha256=eia.PINNED_ORIGINAL_SHA256)
         with ZipFile(BytesIO(original)) as archive:
             eia._safe_zip(archive)
             member=eia._read_member(archive,OWNER_MEMBER,MAX_OWNER_XLSX)
-        with ZipFile(BytesIO(member)) as wb:
-            eia._safe_zip(wb)
-            sheets=_workbook_sheet_paths(wb)
-            shared=eia._shared_strings(wb)
-            sheet_receipts=[]
-            for name,path in sheets:
-                r=_header_tokens(wb,path,shared)
-                sheet_receipts.append({"sheet_name":name,**r})
+        sheet_receipts=inspect_owner_workbook_member(member)
     except (BadZipFile,OSError,RuntimeError,ET.ParseError,eia.EIA860ProofBlocked) as exc:
         raise OwnerSchemaBlocked("unsupported or corrupt source-owner ZIP/XLSX") from exc
     return {
