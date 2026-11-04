@@ -125,6 +125,20 @@ class EMSR165ScienceGates(unittest.TestCase):
         with self.assertRaises(ReviewBlocked):
             preflight(envelope(prod))
 
+    def test_huge_json_integer_coordinate_blocks_instead_of_crashing(self):
+        prod = synthetic_product()
+        prod["aoi_bbox_wgs84"] = [2.2, 48.7, 10 ** 3000, 48.9]
+        with self.assertRaises(ReviewBlocked):
+            preflight(envelope(prod))
+
+    def test_unhashable_or_nonstr_product_class_is_rejected(self):
+        for value in (["DEL"], {"type": "DEL"}, None, 4):
+            with self.subTest(value=value):
+                prod = synthetic_product()
+                prod["product_type"] = value
+                with self.assertRaises(ReviewBlocked):
+                    preflight(envelope(prod))
+
     def test_injected_approval_field_forbidden(self):
         prod = synthetic_product()
         prod["model_ready"] = True
