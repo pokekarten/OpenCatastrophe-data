@@ -14,7 +14,7 @@
         "germany"
       ],
       "spatial_scope": "North Rhine-Westphalia, Germany",
-      "temporal_scope": "Official source metadata 2026-09-01; live WFS changes on refresh",
+      "temporal_scope": "Geoportal metadata records 2026-09-01; GovData current listing cites 2026-10-01. Actual mutable WFS vintage unresolved pending original data receipt.",
       "resolution_or_granularity": "INSPIRE polygon geometry for parcels, cadastral units and districts via WFS; EPSG:25832 and EPSG:4258 supported",
       "potential_roles": [
         "parcel_building_geometry_join",
@@ -27,7 +27,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Official listing states free DL-DE-Zero 2.0 terms, no access restriction and maximum 100000 objects per response; choose bounded spatial query or recommended stored dataset query. Parcel shape is not a building footprint, ownership record, dwelling count or insured value. Preserve ALKIS version, CRS and compound/split parcel identities."
+      "note": "Official listing states free DL-DE-Zero 2.0 terms, no access restriction and maximum 100000 objects per response; choose bounded spatial query or recommended stored dataset query. Parcel shape is not a building footprint, ownership record, dwelling count or insured value. Preserve ALKIS version, CRS and compound/split parcel identities. Original provider GetCapabilities URL probed twice on 2026-11-04 (with and without VERSION=2.0.0); both returned HTTP 500 OGC Proxy Internal Server Error through the research fetch path. Do not claim usable original feature bytes or a working download until independent retry/alternate official access succeeds. Source vintage differs between Geoportal (Sep) and GovData (Oct)."
     },
     {
       "candidate_id": "de.nrw.grundsteuer-flurstuecke.2026",
@@ -233,7 +233,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Not the existing BAG building register candidate: BRK Perceel is a distinct cadastral parcel identity layer. PDOK descriptions do not imply owner names, replacement value or insured coverage. Pin access date and exact feature geometry, avoid treating one parcel as one BAG pand/verblijfsobject."
+      "note": "Not the existing BAG building register candidate: BRK Perceel is a distinct cadastral parcel identity layer. PDOK descriptions do not imply owner names, replacement value or insured coverage. Pin access date and exact feature geometry, avoid treating one parcel as one BAG pand/verblijfsobject. Bounded original OGC API test on 2026-11-04: GET collections/perceel/items?f=json&limit=1 returned HTTP 200 application/geo+json with exactly one MultiPolygon feature, parcel identifier, municipality, area and validity metadata. Feature bytes and any person-level fields were not committed. This establishes one machine-readable response, not field rights/admission or BAG crosswalk quality."
     },
     {
       "candidate_id": "ch.geneva.sitg-cad-parcelle-mensu.egrid.2026",
