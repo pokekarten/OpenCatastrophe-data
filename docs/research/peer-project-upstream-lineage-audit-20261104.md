@@ -1,0 +1,159 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+-->
+
+# Peer-project and original-upstream audit — 2026-11-04
+
+**Scope:** Review all peer projects raised in the November 4 comparison plus the COMPASS code repository behind the Zenodo release. Original project GitHub README and selected config/source files were read; official publisher pages were cross-checked where stated. This is a *bounded repository/source-lineage audit*, **not** a line-by-line code review, live asset/API download, new dataset admission, or a claim of model readiness.
+
+**Canonical new candidate sources:** [`landscape/sources-peer-project-upstream-20261104.json`](../../landscape/sources-peer-project-upstream-20261104.json) (8 entries; [deterministic view](../../landscape/sources-peer-project-upstream-20261104.md)). Distinguish a project/framework, derivative data product, authoritative original provider and distribution intermediary. Do not count the same underlying OSM/WorldPop/GHSL/IBTrACS/ERA5 inputs as independent validation.
+
+## Peer projects reviewed (13)
+
+| Project and original evidence | What it does | Specific original upstreams or linked sources | Existing register/PR disposition |
+| --- | --- | --- | --- |
+| [GFDRR/rdl-jkan](https://github.com/GFDRR/rdl-jkan/blob/rdl-1.0/README.md) | JKAN-backed Risk Data Library catalog, not a new measured hazard layer | World Bank Data Catalog; OCHA HDX; Copernicus CDS; FAO data; GAR PreventionWeb. All are catalogs/portals: extract and resolve individual product/release IDs and original licences | GFDRR Risk Data Library and [RDLS metadata standard](https://github.com/GFDRR/rdl-standard) already known; avoid a second copy of its nearly 10,000 catalogue rows |
+| [OpenDRR/national-human-settlement](https://github.com/OpenDRR/national-human-settlement/blob/main/physical-exposure/README.md) | Canadian NHSL Physical Exposure and Social Fabric layers | **2016 Statistics Canada census housing by dissemination block**, georeferenced business listing inputs, regional industry structure/contents replacement costs; derived social-vulnerability indicators | **NEW:** two distinct NHSL candidates in this shard; 2016 census/business/cost inputs are referenced, but source table/vintage and commercial reuse require item-level review |
+| [nismod/open-gira](https://github.com/nismod/open-gira/blob/main/config/config.yaml) | Snakemake global network risk/disruption workflow; software, not an independent hazard or infrastructure observation | **OSM planet and Geofabrik region PBFs**, WRI Aqueduct river/coast flood, JRC river flood, JBA event flood, Deltares coastal flood, Arup landslide; config-driven study areas. Exact release/asset rights differ | Already being recorded in **open PR #1232** as a method reference; no duplicate source candidate here. JBA and Arup are *not* assumed public reusable hazard bytes |
+| [CLIMADA-project/nccs-global-impacts-modelling](https://github.com/CLIMADA-project/nccs-global-impacts-modelling/blob/main/README.md) | Sector exposure, direct climate loss and indirect Leontief/Ghosh supply chain modeling | **WIOD16 global input-output matrix (2011)**, World Bank GDP and mineral rents, ETH [NCCS original research collection](https://hdl.handle.net/20.500.11850/785985), CLIMADA hazard catalog and sector impact functions. Processing code includes forestry/manufacturing/mining/utilities; full runs require substantial compute | **NEW:** WIOD16 and ETH project archive distinct candidates; CLIMADA API already registered. Derived project assets should not be confused with external empirical loss observations |
+| [GFDRR/urban_validation](https://github.com/GFDRR/urban_validation/blob/main/README.md) | Multi-dataset building footprint validation using IoU/F1, size/density bias and AOI holdouts | Candidate layers: Overture, Global Building Atlas, 3D-GloBFP, Google Open Buildings Temporal, Microsoft TEMPO, DLR WSF Tracker, JRC GHSL Built-S/Height. Reference AOIs: HOTOSM, World Bank data, University of Edinburgh datasets, **SpaceNet 7** | Overture/GBA/3D-GloBFP/WSF/GHSL are already known through main or other research; **NEW:** SpaceNet 7 benchmark candidate. Microsoft TEMPO and Edinburgh need precise original release/terms verification before admission |
+| [UGA-ITOSHumanitarianGIS/HumanitarianDataRegistry](https://github.com/UGA-ITOSHumanitarianGIS/HumanitarianDataRegistry/blob/master/README.md) | Broad human-curated GIS resources index (spreadsheet, >600 listings), not 600 independent source datasets | HDX, OSM, MapX and downstream links in [registry spreadsheet](https://github.com/UGA-ITOSHumanitarianGIS/HumanitarianDataRegistry/blob/master/Data/GIS%20Data%20Repositories.xlsx) | **New catalog lead, no underlying products separately admitted.** Individual spreadsheet rows still require automated extraction, URL resolution, duplicates and original-publisher verification |
+| [ElcoK/gmtra](https://github.com/ElcoK/gmtra/blob/master/README.md) | Road/rail multi-hazard risk analysis research code | **OSM planet snapshot 2018-07-17**, UNISDR GAR 2015 earthquake and cyclone layers, **Fathom/SSBN May 2017 flood (permission based)**, European Commission JRC coastal flood maps | Methods useful; proprietary Fathom sample is explicitly **not** open-redistributable just because cited in GPL software; map original JRC and GAR products separately |
+| [climate-risk-data/climate-risk-stac](https://github.com/climate-risk-data/climate-risk-stac/blob/main/README.md) | STAC metadata catalog for hazard, exposure and vulnerability | Original source/product keys under CSV and STAC assets. Prior [deep sweep](global-source-deep-sweep-20261102.md) checked hazard.csv: 92 rows, 28 distinct collection/provider keys; avoid counting catalog records as unique empirical observations | Already assessed and registered in earlier 2026-11-02 research; reuse its publisher/asset/license metadata as crosswalk |
+| [GFDRR/rdl-standard](https://github.com/GFDRR/rdl-standard/blob/1.0/README.md) | Risk Data Library metadata standard; not a dataset | Hazard, exposure, vulnerability and modeled-loss schemas; original data stays in underlying publisher collections | Existing RDLS reference; interoperability only, keep native admission/provenance authoritative |
+| [CLIMADA-project/climada_python](https://github.com/CLIMADA-project/climada_python/blob/main/README.md) | Probabilistic impact/risk engine and Data API; code is not loss ground truth | CLIMADA Data API v2 dataset/product IDs, LitPop exposure modelling, storm datasets and CLIMADA Petals hazard extensions; many upstreams share public datasets (e.g. storm histories) | Existing [CLIMADA Data API](../../landscape/sources-peer-cat-repositories-20261102.json) candidate; no duplicate. Pin scenario, event-set version and original forcing sources before independent benchmarking |
+| [gem/global_exposure_model](https://github.com/gem/global_exposure_model/blob/main/README.md) | 215-country/territory modeled building stock and replacement value by taxonomy/region | GEM regional exposure models, seismic hazard mosaic, building taxonomy mapping and vulnerability model; original building census/construction-cost evidence varies per region | **Already exists** as `gem.global-exposure-model.v2026.0.0`; **CC BY-NC-SA 4.0** data restricts commercial downstream use |
+| [HORIZON-COMPASS/Exposure-and-vulnerability-modelling](https://github.com/HORIZON-COMPASS/Exposure-and-vulnerability-modelling/blob/main/README.md) | Code for gridded global exposure and HANZE operational revisions | **JRC GHSL**, **Utrecht HYDE 3.2**, **WorldPop/FuturePop**, Eurostat and IMF macroeconomic data for HANZE; specific global archive [Zenodo 17572467](https://zenodo.org/records/17572467) | **NEW:** COMPASS global gridded exposure, FuturePop v0.2, HYDE 3.2 candidate identities. Avoid double-counting derived grid and input layers |
+| [COMPASS Exposure datasets at multiple scales](https://zenodo.org/records/17572467) | 2025 dataset release, with multi-year gridded population/GDP/net fixed assets and selected resolution/sample files | Same GHSL/HYDE/WorldPop/FuturePop upstream graph as code row; 15.9 GB record, selective raster times and separate large auxiliary archives | Same **one** COMPASS candidate as above (not a ninth source). No full-download or licence clearance |
+
+## Original-provider chains that matter
+
+1. **Building valuation (Canada):** Statistics Canada 2016 housing census + georeferenced business listings + regional replacement costs -> NRCan NHSL physical exposure -> possible *aggregate* occupancy/cost calibration. Neither a 390k NHSL grouped location nor a derived building count is an insured policy location.
+2. **Geographic building labels:** Overture, TUM/GBA, 3D-GloBFP, Google Open Buildings, Microsoft TEMPO, DLR WSF, JRC GHSL -> GFDRR urban_validation against HOTOSM/World Bank/Edinburgh/SpaceNet 7 references. Separate observation provenance from reference-label sampling; use geographically isolated holdouts and don't treat algorithmically shared training imagery as independent proof.
+3. **Asset/revenue and value chain (Switzerland/world):** WIOD16 current-price IO flows + World Bank GDP/mineral rents + NCCS sector allocation -> modeled exposed sector value -> CLIMADA event loss -> Leontief/Ghosh indirect business interruption. Sector value and affected production are **not** firm-level TIV, reinsurance cession or ultimate insured business interruption.
+4. **Cross-century stock:** JRC GHSL grids + HYDE 3.2 census-interpolated population + WorldPop and FuturePop SSP scenarios + other national macroeconomic inputs -> COMPASS historical/projected 1850-2100 gridded population/GDP/fixed assets. Exact country, socioeconomic scenario, currency/year, resolution, denominators and source vintage must all match.
+5. **Roads and infrastructure:** OSM planet/Geofabrik distribution + WRI Aqueduct/JRC/Deltares hazard grids + potentially restricted JBA/Arup/Fathom -> OpenGIRA or GMTRA exposure/interruption workflows. Network topology is not private asset ownership; closed hazard distributions remain blocked without terms.
+6. **Catalogs and metadata:** GFDRR rdl-jkan, RDLS, Climate Risk STAC and humanitarian GIS registry serve *discovery* and upstream source links, not independent measurement. Traverse entries recursively with provider/product/version identity and retain canonical-source references.
+
+## Dedupe and overlap ledger
+
+- Confirmed existing main: `gem.global-exposure-model.v2026.0.0`; CLIMADA Data API v2; GFDRR Risk Data Library; Climate Risk STAC; JRC/GHSL; Overture and GlobalBuildingAtlas research; 3D-GloBFP; DLR WSF Tracker; core OSM and storm catalogs.
+- Confirmed open work: [PR #1232](https://github.com/pokekarten/OpenCatastrophe-data/pull/1232) independently records OpenGIRA plus Eurostat FIGARO and other cross-sector sources. [PR #1226](https://github.com/pokekarten/OpenCatastrophe-data/pull/1226) examines Physrisk/WRI Aqueduct; do not conflict with its coastal-array source identity. [PR #1228](https://github.com/pokekarten/OpenCatastrophe-data/pull/1228) handles unrelated non-CAT asset-proxy sources.
+- Newly proposed canonical IDs: `can.nrcan.nhsl.physical-exposure.2016-2020`, `can.nrcan.nhsl.social-fabric`, `rug.wiod2016.world-input-output-tables`, `compass.paprotny.global-exposure.2025.17572467`, `worldpop.futurepop.ssp.1km.v0.2`, `uu.hyde3.2.historical-population`, `spacenet.spacenet7.multitemporal-urban-development`, `eth.nccs.global-impacts-data-collection.2025`. GitHub code search of current main for project-specific names/exact DOI/URLs found no matching canonical registrations for these exact products; **a global ID collision check remains required at full-suite validation**.
+- Not separately counted as new assets: Geofabrik (OSM distributor), historical OSM snapshot, RDLS schema, JKAN website, CLIMADA Python, OpenGIRA/GMTRA algorithms, derived NCCS model output for independent observed loss, generic World Bank/HDX catalog URLs, unversioned University of Edinburgh reference data.
+
+## Scientific and rights blockers
+
+- Public repo availability and a software licence never authorize associated *external* imagery, census microdata, vendor flood hazard, data derivative or further insurance modeling.
+- Potential restricted products include **Fathom SSBN** (GMTRA explicitly notes access by permission), **JBA** and **Arup** hazard catalogs referenced in OpenGIRA configuration. Do not retrieve/publish these asset bytes until original product/version/allowed use is documented.
+- WorldPop applies ODbL to certain products with OSM/Microsoft lineage; the specifically cited FuturePop v0.2 release reports CC BY 4.0 but product/version must stay pinned.
+- GEM 2026 non-commercial licence cannot be promoted to a commercially reusable underwriting feed. NHSL official general Open Government Licence - Canada is evidence to review, not automatic acceptance of all underlying proprietary replacement-cost microinputs.
+- No live API token, source-asset byte probe, checksum, scientific model validation, code execution or database ingest has been claimed in this investigation.
+- Avoid unbounded bulk downloads: COMPASS original Zenodo bundle totals about 15.9 GB; start with original metadata/file inventory and one bounded anonymous asset preflight only after precise rights review.
+
+## Next executable actions
+
+1. For NHSL, pin one GPKG release and its data dictionary, compare schema/units with OED Exposure fields; inspect official publisher redistribution terms for data vs underlying business-listing material.
+2. For WIOD16, pin the exact 2011 WIOT file name, release and checksum. Check row/column dimension, currencies and original publisher attribution; create a local, synthetic small fixture only for BI algebra tests.
+3. For COMPASS/FuturePop/HYDE, resolve the three **independent** original release IDs and test a *metadata-only* lineage receipt; prohibit an inferred insured replacement-cost claim.
+4. For SpaceNet 7, pin exact scene/label versions and rights; compare GFDRR AOI reference overlap to training inputs and withheld geographies.
+5. Traverse the humanitarian registry spreadsheet and GFDRR JKAN catalog in bounded source batches; record provider-specified URLs as leads with no automatic admission.
+6. Re-run `python scripts/render_public_views.py --check` and `python scripts/check_all.py` on the exact PR head, then review rights/science independently before any source promotion.
+
+**No external source data bytes or derived source data bytes are committed by this change.**
+
+## Additional original-publisher metadata checks (2026-11-04; no asset bytes downloaded)
+
+- **NHSL Physical Exposure:** [Canada Open Government data product 1818cf27-03ea-4ebb-bc43-fd371b42198b](https://open.canada.ca/data/en/dataset/1818cf27-03ea-4ebb-bc43-fd371b42198b) lists explicit v1.0 GeoPackage building layer [`nhsl_physical_exposure_indicators_b.zip`](https://github.com/OpenDRR/national-human-settlement/releases/download/v1.0/nhsl_physical_exposure_indicators_b.zip), settlement-area layer [`nhsl_physical_exposure_indicators_s.zip`](https://github.com/OpenDRR/national-human-settlement/releases/download/v1.0/nhsl_physical_exposure_indicators_s.zip), and exact English [v1.0 data dictionary](https://github.com/OpenDRR/national-human-settlement/releases/download/v1.0/nhsl_physical_exposure_attributes_en.xlsx). Original publisher lists **Open Government Licence - Canada**, 35.2m people / 9.7m estimated buildings / 390k *grouped locations* and 2019 CAD $8.2tn estimated replacement value. **Terminology discrepancy:** repo Physical Exposure README says 2016 census *dissemination blocks*; federal catalog says *dissemination areas*. Resolve using the original method + released GPKG schema before an unqualified spatial census join.
+- **WIOD 2016:** [University of Groningen release page](https://www.rug.nl/ggdc/valuechain/wiod/wiod-2016-release) links the original [Dataverse DOI 10.34894/PJ2M1C](https://doi.org/10.34894/PJ2M1C). Official [WIOD landing page](https://www.rug.nl/ggdc/valuechain/wiod/) states CC BY 4.0 for WIOD, but archived satellite accounts from JRC may carry different terms. Release has 43 explicitly modeled countries, 56 sectors, historical 2000-2014 and current-price WIOTs in millions of USD; NCCS uses **2011** as a distinct matrix vintage.
+- **FuturePop:** WorldPop [exact original product id 110984](https://hub.worldpop.org/geodata/summary?id=110984), DOI `10.5258/SOTON/WP00849`, specifies v0.2, five 2025-2100 SSP raster archives at 1km / 30 arc seconds. Original release states CC BY 4.0 for this product. Terms must be revisited for other WorldPop products that depend on OSM/Microsoft.
+- **SpaceNet 7:** [Official dataset/challenge page](https://www.spacenet.ai/sn7-challenge/) identifies **101 AOIs**, 2,389 observations and AWS distribution prefix `s3://spacenet-dataset/spacenet/SN7_buildings/`; publicly downloadable with AWS account requirements. Publisher states **CC BY-SA 4.0**, not an automatically permissive MIT dataset licence. Check source imagery/label scope, sharing duties and exact challenge split before using as a model validation holdout.
+- **COMPASS global exposure:** [Original Zenodo 17572467](https://zenodo.org/records/17572467) identifies major downloadable archives (30-sec GDP/fixed assets; population/urbanization), 30-arc-sec and 30-arc-min examples, and upstream GHSL, HYDE 3.2, WorldPop/FuturePop. Its data/code dependencies are broader than a single archive's licence. Do a metadata/manifest receipt before any bulk retrieval.
+
+**Operational status:** The links above are original metadata/download endpoints, **not proof of downloaded bytes, asset hash, exact entitlement, query reproducibility, scientific suitability, or model input admission**. These specific version/size/licence observations supersede any vague source-family descriptions when planning the first bounded preflight.
+
+
+## Executable NHSL metadata-only acquisition gate — 2026-11-04
+
+Added [`scripts/nhsl_release_metadata_preflight_v0.py`](../../scripts/nhsl_release_metadata_preflight_v0.py) plus [synthetic regressions](../../tests/test_nhsl_release_metadata_preflight_v0.py). This specifically validates the *release metadata* of public OpenDRR/NHSL `v1.0` from GitHub, rather than relying on an unversioned webpage and a guessed download URL. It enforces `tag_name=v1.0`, the official release URL, non-draft/non-prerelease state, unique required asset names, bounded positive advertised sizes and exact same-release HTTPS download URLs for three required files:
+
+- `nhsl_physical_exposure_indicators_b.zip` — building-archetype points at settlement centroids, **not individual roofs**.
+- `nhsl_physical_exposure_indicators_s.zip` — settlement polygons, **not the point/archetype file**.
+- `nhsl_physical_exposure_attributes_en.xlsx` — English original data dictionary needed to verify all columns/units.
+
+**Reproduce only with local official metadata** (no external bytes in this repository):
+
+```bash
+curl --fail --silent --show-error --max-time 30 \
+  https://api.github.com/repos/OpenDRR/national-human-settlement/releases/tags/v1.0 \
+  -o /tmp/nhsl-v1.0-release-metadata.json
+python scripts/nhsl_release_metadata_preflight_v0.py \
+  --release-json /tmp/nhsl-v1.0-release-metadata.json
+python -m unittest tests.test_nhsl_release_metadata_preflight_v0 -v
+```
+
+**Semantics and contradiction gate:** [Official Canada Physical Exposure product](https://open.canada.ca/data/en/dataset/1818cf27-03ea-4ebb-bc43-fd371b42198b) says housing census *dissemination areas*, 9.7m buildings / 390k grouped locations / CAD 8.2tn (2019). A separate [official Canadian NHSL family overview](https://open.canada.ca/data/en/dataset/e9905001-6a39-43ca-a02d-4ab5144df0f8) describes *9.1m buildings* and *CAD 8.3tn*, and the OpenDRR code README references census *dissemination blocks*. These statements are **not interchangeable point-identity, denominator, census geography, release vintage or cost base**. An exact v1.0 GPKG layer schema, method report and source-provenance check are required to reconcile them before any use. Do not join a hypothetical insured policy to a settlement centroid and call it a building.
+
+**Evidence boundary:** As of this investigation, original publisher pages and the GitHub release listing show the source names and release `v1.0`. No original GitHub release REST JSON, data dictionary, archive bytes, true file checksum, commercial-use admission or building-footprint geometry has been downloaded or independently verified during this run. Metadata-only validator flags stay `false` for rights/science/model approval even after a successful check. The raw metadata hash is a hash of the JSON provided to the preflight, **not a source-asset hash**.
+
+## WIOD exact-source access blocker — 2026-11-04
+
+- [University of Groningen original WIOD 2016 release](https://www.rug.nl/ggdc/valuechain/wiod/wiod-2016-release?lang=en) confirms 2000–2014, 43 countries + RoW, 56 sectors, WIOT current prices in **millions of USD**, separate previous-year-price `WIOT_PYP` tables, and separate national IO / exchange rate / socio-economic tables. Project archive DOI `10.34894/PJ2M1C` is the source family identity; the NCCS modeling code explicitly uses matrix year **2011**. All of these are distinct from the published WIOD 2013 edition or 2026 economy/insured values.
+- Direct read-only inspection of Dataverse links for original R/Excel WIOT was obstructed by its active Anubis access-control/challenge. **No original 2011 file name, file SHA-256, physical dimensions, data rows, columns, redistribution right for a chosen datafile, or runtime availability has been independently verified**. Do not fake a Dataverse API response or bypass access controls.
+- Groningen states the WIOD 2016 release is CC BY 4.0, but this does not automatically cover JRC environmental satellite accounts or proprietary downstream insurer data. Before a WIOD ingestion or BI financial allocation is built, pin exact datafile ID, original filename and checksum, table price basis/currency, IO orientation and the selected sector/country definitions.
+
+
+## Third-pass original sources from project configuration, 2026-11-04
+
+Three additional original-provider candidates now live in [`landscape/sources-peer-project-upstream-industrial-20261104.json`](../../landscape/sources-peer-project-upstream-industrial-20261104.json) and its [generated human view](../../landscape/sources-peer-project-upstream-industrial-20261104.md). These are **distinct** from the original eight candidates, so the two shards together contain **11** non-admitted candidates.
+
+| Underlying source | Exact observed original evidence | Interpretation and no-go boundary |
+| --- | --- | --- |
+| [PANGAEA Maus et al. mining polygons v2](https://doi.org/10.1594/PANGAEA.942325) | NCCS [mining README](https://github.com/CLIMADA-project/nccs-global-impacts-modelling/blob/main/exposures/mining/refinement_1/README_mining.md) cites the original DOI and selected 30-arc-second mining-area grid; PANGAEA publication supplies GPKG, country CSV and multiple area grids. | 44,929 surface-mine polygons and 101,583 km² are mine-area estimates; **not** insured property TIV, firm ownership or production flow. Original PANGAEA licence **CC BY-SA 4.0**; the [EC Africa Knowledge Platform](https://africa-knowledge-platform.ec.europa.eu/dataset/mining-polygons-version-2-pangaea) lists **CC BY 4.0** for a related record. This discrepancy must be reconciled at the chosen original file before commercial/derivative use. S&P mine locations and Sentinel-2 interpretation create selection/source dependencies. |
+| [Microsoft Buildings global density/height](https://github.com/microsoft/buildings) | GFDRR [urban_validation original config](https://github.com/GFDRR/urban_validation/blob/main/configs/data_configs.yaml) sets `tile_index_url=https://opendata.aiforgood.ai/building-density/tile_index.gpkg`; Microsoft primary README confirms two global quarters 2020Q4 and 2023Q4, EPSG:3857 quad tile index, 100m COGs; 5 urban locations have 40m quarterly series 2020Q2–2025Q2. | Band1 building density fraction 0–1; band2 normalised height 0–1 x100 metres; nodata = -1. Models use PlanetScope quarterly imagery. The repo MIT **code** licence is not evidence of rights to original third-party Planet imagery or all derived data. Time-index and quarter must be pinned; modeled density/height are not measured individual buildings. |
+| [Austria BMF World Mining Data 2026](https://www.bmf.gv.at/en/topics/mining/mineral-resources-policy/wmd.html) | Primary Austrian ministry page: 65 mineral commodities / 168 countries, 2026 volume with production years 2020–2024 and per-commodity/per-country Excel tables. NCCS mining script cites a distinct **WorldMiningData 2021** resource for WIOD rest-of-world allocation. | Historical WMD 2021 and contemporary WMD 2026 are **not** equivalent inputs. National production estimates contain missingness/imputation and differ from mining facility values, replacement costs or BI loss. Source document access, units and download permissions still need file-level proof. |
+
+**Additional primary-config notes:** OpenGIRA [WRI Aqueduct list](https://github.com/nismod/open-gira/blob/main/config/hazard_resource_locations/aqueduct-river.txt) enumerates v2 `WATCH` 1980 return-period rasters and 2030/2050/2080 RCP 4.5 scenarios, with filenames encoding scenario and return period. A WRI return-period raster is **not** a catalogue of individual annual flood events or Poisson occurrence probabilities. This family overlaps ongoing [PR #1226](https://github.com/pokekarten/OpenCatastrophe-data/pull/1226), so it is **not duplicated**. OpenGIRA's [network config](https://github.com/nismod/open-gira/blob/main/config/config.yaml) refers to **JBA** and **Arup** hazard files but does not establish redistributable rights. No unauthorized hazard downloads.
+
+The three source families were identified through **original project files plus original publisher pages**, but no data assets, tile-index GeoPackage, PANGAEA raw geospatial file or ministry spreadsheet was ingested. Specific use of any one requires exact provider/release/file identity, licensing, real access receipt, semantic/CRS/unit validation and a model consumer rationale. The existing register's admission gates remain closed.
+
+
+## Verified live original metadata receipt — 2026-11-04
+
+The previous sections correctly block **source-asset bytes**, but their earlier statements that original REST *metadata* could not be accessed are superseded by these read-only publisher metadata observations. No archive contents were downloaded.
+
+**OpenDRR NHSL v1.0 original GitHub Releases JSON** (provider [REST endpoint](https://api.github.com/repos/OpenDRR/national-human-settlement/releases/tags/v1.0)): release `id=49557713`, `tag_name=v1.0`, `draft=false`, `prerelease=false`, published 2021-09-14, last release metadata update 2022-10-20. The API currently reports 50 attached assets (the human release page may count auto-generated source archives separately). The exact original declared asset identities are:
+
+| NHSL release asset | GitHub asset ID | Provider-reported bytes | Publisher digest |
+| --- | ---: | ---: | --- |
+| `nhsl_physical_exposure_attributes_en.xlsx` | `61543484` | `17888` | absent |
+| `nhsl_physical_exposure_indicators_b.zip` | `61551864` | `115408117` | absent |
+| `nhsl_physical_exposure_indicators_s.zip` | `61551969` | `197526923` | absent |
+
+The NHSL metadata gate now pins **exact release ID + three asset IDs + exact provider-reported sizes**. This is a repeatable change/drift detector, **not** proof that the zip/XLSX data bytes or SHA-256 were inspected. The published `2021` release date and `2022` uploaded asset dates must not be silently treated as the same data-observation vintage.
+
+**WIOD 2016 original Dataverse REST JSON** ([publisher endpoint](https://dataverse.nl/api/datasets/:persistentId/?persistentId=doi%3A10.34894%2FPJ2M1C)): dataset `id=199086`, DOI `10.34894/PJ2M1C`; latest released Dataverse metadata version `2.1` with `releaseTime=2025-10-09T08:23:27Z` and 13 attached files. The original table series is WIOD **2016** covering 2000–2014; its Dataverse 2025 metadata update is **not a new economic observation year**.
+
+| WIOD original archive | Dataverse file ID | Provider-reported bytes | Provider-reported SHA-1 |
+| --- | ---: | ---: | --- |
+| `WIOTS_in_R.zip` | `199101` | `641578409` | `51efc2a6c0358cff485e24d6b4b96ffe27f4e23a` |
+| `Exchange_Rates.xlsx` | `199097` | `19308` | `06952426dc6fdac6ecf5b4c71bf40239167864e7` |
+| `WIOTS_in_EXCEL.zip` (discovery context only) | `199104` | `919328606` | `72748c32ed94a2b19a7e96c22b2f9d68930cffaa` |
+
+Original Dataverse metadata marks these assets `restricted=false` and its dataset `termsOfUse` cites Creative Commons Attribution 4.0. **Direct file access** to the archive may nevertheless be blocked by the host's Anubis challenge. Neither the archive contents, individual 2011 R/Excel WIOT member, original file SHA-1 nor practical ability to download the archive has been independently verified. A metadata hash is not a source-file hash.
+
+New [WIOD offline original metadata validator](../../scripts/wiod_dataverse_metadata_preflight_v0.py) and [synthetic negative tests](../../tests/test_wiod_dataverse_metadata_preflight_v0.py) pin source dataset, exact latest metadata release, R archive and exchange-rate asset identifiers/sizes/declared SHA-1 without retrieving source bytes.
+
+**Repeat the original metadata-only check outside Git and never commit downloaded response bodies:**
+
+```bash
+curl --fail --silent --show-error --max-time 30 \
+  'https://dataverse.nl/api/datasets/:persistentId/?persistentId=doi%3A10.34894%2FPJ2M1C' \
+  -o /tmp/wiod2016-dataverse.json
+python scripts/wiod_dataverse_metadata_preflight_v0.py \
+  --dataset-json /tmp/wiod2016-dataverse.json
+python -m unittest tests.test_wiod_dataverse_metadata_preflight_v0 -v
+```
+
+**Rights/science status remains `not_reviewed` and admission remains `not_admitted`.** The authenticated/permitted exact archive retrieval, 2011 matrix contents and extraction of specific country-sector groups are separate subsequent steps.
