@@ -3,6 +3,8 @@
 """Synthetic-only safety tests; never include original LiDAR polygons/URLs."""
 from __future__ import annotations
 import json
+import hashlib
+from unittest import mock
 from pathlib import Path
 import tempfile
 import unittest
@@ -87,6 +89,26 @@ class OriginalLiDARIndexTests(unittest.TestCase):
             f.write_text(json.dumps(fixture()),encoding="utf-8")
             with self.assertRaisesRegex(OriginalIndexError,"publisher SHA1"):
                 verify_original(f)
+
+    def test_publisher_sha1_alone_cannot_bypass_frozen_sha256(self):
+        from research_runners import lu_act2019_original_lidar_tile_index_v0 as mod
+        with tempfile.TemporaryDirectory() as tmp:
+            f=Path(tmp)/"synthetic.geojson"
+            raw=json.dumps(fixture()).encode("utf-8")
+            f.write_bytes(raw)
+            with mock.patch.object(mod,"PUBLISHED_SHA1",hashlib.sha1(raw).hexdigest()):
+                with self.assertRaisesRegex(OriginalIndexError, "SHA256/size"):
+                    verify_original(f)
+
+    def test_frozen_actual_receipt_values_are_specific(self):
+        from research_runners.lu_act2019_original_lidar_tile_index_v0 import (
+            OBSERVED_FEATURES, OBSERVED_ORIGINAL_BYTES, OBSERVED_ORIGINAL_SHA256,
+            OBSERVED_STUDY_TILE_COUNTS,
+        )
+        self.assertEqual(OBSERVED_FEATURES, 1287)
+        self.assertEqual(OBSERVED_ORIGINAL_BYTES, 450512)
+        self.assertEqual(len(OBSERVED_ORIGINAL_SHA256), 64)
+        self.assertEqual(OBSERVED_STUDY_TILE_COUNTS, {"luxembourg-city":2,"berdorf-village":1})
 
     def test_missing_original_asset_rejected_without_network(self):
         with self.assertRaises(OriginalIndexError):
