@@ -102,7 +102,7 @@ class ZIPCentralDirectoryTests(unittest.TestCase):
 
     def test_nonconserved_eocd_offset_rejected(self):
         archive=bytearray(fake_archive())
-        archive[-6:-2]=struct.pack("<I",500)  # directory offset changes
+        archive[-8:-4]=struct.pack("<I",500)  # EOCD central directory offset changes
         with self.assertRaises(DirectoryError):
             parse_original_fixture(bytes(archive))
 
