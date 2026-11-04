@@ -18,6 +18,8 @@ from scripts.nhsl_release_metadata_preflight_v0 import (
     API_URL,
     ASSET_PREFIX,
     MAX_METADATA_BYTES,
+    PINNED_ASSETS,
+    PINNED_RELEASE_ID,
     NHSLPreflightError,
     RELEASE_URL,
     REQUIRED_ASSETS,
@@ -30,6 +32,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def synthetic_release() -> dict:
     return {
+        "id": PINNED_RELEASE_ID,
         "tag_name": "v1.0",
         "html_url": RELEASE_URL,
         "draft": False,
@@ -37,7 +40,8 @@ def synthetic_release() -> dict:
         "assets": [
             {
                 "name": name,
-                "size": 128 + index * 100,
+                "id": PINNED_ASSETS[name][0],
+                "size": PINNED_ASSETS[name][1],
                 "browser_download_url": ASSET_PREFIX + name,
             }
             for index, name in enumerate(REQUIRED_ASSETS)
@@ -49,6 +53,7 @@ class TestNHSLReleasePreflight(unittest.TestCase):
     def test_valid_release_is_metadata_only(self) -> None:
         receipt = audit_release(synthetic_release(), "1" * 64)
         self.assertEqual(receipt["metadata_source_url"], API_URL)
+        self.assertEqual(receipt["publisher_release_id"], PINNED_RELEASE_ID)
         self.assertEqual(len(receipt["assets"]), 3)
         self.assertFalse(receipt["source_asset_bytes_acquired"])
         self.assertFalse(receipt["dataset_rights_reviewed"])
@@ -60,6 +65,7 @@ class TestNHSLReleasePreflight(unittest.TestCase):
 
     def test_wrong_release_identity_or_state_is_blocked(self) -> None:
         for field, value in (
+            ("id", 123),
             ("tag_name", "v2.0"),
             ("html_url", "https://example.org/release"),
             ("draft", True),
@@ -72,7 +78,7 @@ class TestNHSLReleasePreflight(unittest.TestCase):
                     audit_release(data, "0" * 64)
 
     def test_missing_duplicate_and_asset_spoof_are_blocked(self) -> None:
-        for mutation in ("missing", "duplicate", "url", "size", "bool-size", "digest"):
+        for mutation in ("missing", "duplicate", "url", "size", "bool-size", "asset-id", "digest"):
             with self.subTest(mutation=mutation):
                 data = synthetic_release()
                 a = data["assets"]
@@ -86,6 +92,8 @@ class TestNHSLReleasePreflight(unittest.TestCase):
                     a[0]["size"] = 0
                 elif mutation == "bool-size":
                     a[0]["size"] = True
+                elif mutation == "asset-id":
+                    a[0]["id"] += 1
                 elif mutation == "digest":
                     a[0]["digest"] = "sha256:not-a-sha"
                 with self.assertRaises(NHSLPreflightError):
