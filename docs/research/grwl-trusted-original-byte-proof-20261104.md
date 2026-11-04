@@ -32,10 +32,10 @@ Original provider API endpoints are frozen in `research_runners/grwl_trusted_ori
 Local command for a *trusted* environment with Zenodo DNS access:
 
 ```bash
-python research_runners/grwl_trusted_original_byte_proof_v0.py --live
+python -m research_runners.grwl_trusted_original_byte_proof_v0 --live
 ```
 
-Omitting `--live` never contacts a provider.
+Invoke with `python -m` from the repository root: direct path execution does not put the project root on `sys.path` and previously failed the first trusted-main run before contacting Zenodo. Omitting `--live` never contacts a provider.
 
 ## Interpretation gate
 
