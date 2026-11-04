@@ -147,17 +147,27 @@ def inspect_original_kreis_building_counts(raw: bytes, *, require_original_sha=T
         levels[region_type]+=1
         dates[date]+=1
         nums=[]
+        suppressed=[]
         for col in ("E","F","G","H","I"):
             v=_value(raw_row.get(col),shared)
             if not re.fullmatch(r"(?:0|[1-9][0-9]*)",v):
-                # Printed symbols and suppressed values cannot become zero.
-                raise OriginalReceiptError("missing/suppressed/noninteger county building count: "+col+" for "+code)
+                # Exact primary whole-building population is essential.
+                # Optional subtype cells may be intentionally suppressed
+                # (e.g. Wohnheime); preserve NULL, never replace by 0.
+                if col=="E":
+                    raise OriginalReceiptError("missing/suppressed/noninteger county building count: "+col+" for "+code)
+                nums.append(None)
+                suppressed.append(col)
+                continue
             n=int(v)
             if n>MAX_COUNT:
                 raise OriginalReceiptError("implausible county 2022 building count")
             nums.append(n)
         total,residential,non_dormitory,dormitory,other=nums
-        if not (total>=residential>=non_dormitory and residential>=dormitory and total>=other):
+        if any(v is not None and v>total for v in (residential,non_dormitory,dormitory,other)):
+            raise OriginalReceiptError("source building hierarchy impossible at Kreis "+code)
+        if residential is not None and any(v is not None and v>residential
+                                           for v in (non_dormitory,dormitory)):
             raise OriginalReceiptError("source building hierarchy impossible at Kreis "+code)
         districts.append({
             "kreis_ags_2022":code,
@@ -167,6 +177,7 @@ def inspect_original_kreis_building_counts(raw: bytes, *, require_original_sha=T
             "wohngebaeude_ohne_wohnheime":non_dormitory,
             "wohnheime":dormitory,
             "sonstiges_gebaeude_mit_wohnraum":other,
+            "suppressed_subcategory_columns":suppressed,
         })
         if len(districts)>MAX_KREISE:
             raise OriginalReceiptError("too many Kreis values; mixed geo hierarchy")
@@ -176,8 +187,12 @@ def inspect_original_kreis_building_counts(raw: bytes, *, require_original_sha=T
         raise OriginalReceiptError("five-digit Landkreis key has conflicting region type")
     districts.sort(key=lambda r:r["kreis_ags_2022"])
     valkeys=("gebaeude_mit_wohnraum","wohngebaeude","wohngebaeude_ohne_wohnheime","wohnheime","sonstiges_gebaeude_mit_wohnraum")
-    sums={k:sum(d[k] for d in districts) for k in valkeys}
-    hierarchy_nonadditivity = sum(abs(d["gebaeude_mit_wohnraum"] - d["wohngebaeude"] - d["sonstiges_gebaeude_mit_wohnraum"]) for d in districts)
+    sums={k:sum(d[k] for d in districts if d[k] is not None) for k in valkeys}
+    coverage={k:sum(d[k] is not None for d in districts) for k in valkeys}
+    all_hierarchy=[d for d in districts if d["wohngebaeude"] is not None and
+                   d["sonstiges_gebaeude_mit_wohnraum"] is not None]
+    hierarchy_nonadditivity = sum(abs(d["gebaeude_mit_wohnraum"] - d["wohngebaeude"] -
+                                   d["sonstiges_gebaeude_mit_wohnraum"]) for d in all_hierarchy)
     canonical=json.dumps(districts,sort_keys=True,ensure_ascii=False,separators=(",",":")).encode("utf-8")
     receipt={
         "schema_version":"ZENSUS2022_ORIGINAL_KREIS_BUILDING_NUMERIC_RECEIPT_V0",
@@ -191,9 +206,12 @@ def inspect_original_kreis_building_counts(raw: bytes, *, require_original_sha=T
         "original_reported_dates":dict(dates),
         "kreis_count":len(districts),
         "land_codes_present":sorted({x["kreis_ags_2022"][:2] for x in districts}),
-        "kreis_count_sum_by_field":sums,
+        "kreis_numeric_sum_by_field_available_only":sums,
+        "kreis_complete_numeric_coverage_by_field":coverage,
+        "kreis_optional_subcategory_null_not_zero": True,
         "kreis_numeric_mapping_sha256":hashlib.sha256(canonical).hexdigest(),
-        "sum_count_nonadditivity_hierarchy_abs":hierarchy_nonadditivity,
+        "sum_count_nonadditivity_hierarchy_abs_complete_rows_only":hierarchy_nonadditivity,
+        "hierarchy_rows_with_all_relevant_counts":len(all_hierarchy),
         "original_geography_2022_05_15":True,
         "insurer_spatial_contracts_observed":False,
         "insurer_policy_to_building_1to1_proven":False,
