@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: R+V NRW 396 municipal MaStR-derived and official rooftop PV crosswalk
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/rva-nrw-mastr-derived-ags-crosswalk.yml"
+      - "research_runners/rva_nrw_mastr_derived_municipal_crosswalk_v0.py"
+      - "tests/test_rva_nrw_mastr_derived_municipal_crosswalk_v0.py"
+      - "docs/research/rva-nrw-mastr-derived-vs-roof-potential-ags-20261105.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rva-nrw-mastr-ags-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pinned-secondary-vs-official:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Strictly offline synthetic error and privacy tests
+        run: python -m unittest discover -s tests -p "test_rva_nrw_mastr_derived_municipal_crosswalk_v0.py" -v
+      - name: Compare exact pinned MaStR-derived municipal snapshot to original NRW AGS
+        run: python -m research_runners.rva_nrw_mastr_derived_municipal_crosswalk_v0
