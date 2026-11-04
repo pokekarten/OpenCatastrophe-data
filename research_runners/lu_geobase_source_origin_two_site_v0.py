@@ -174,6 +174,10 @@ def main(argv=None):
     args=parser.parse_args(argv)
     try:
         report=run(args.geobase_zip)
+    except SourceLineageError as exc:
+        # These are only fixed self-authored stage names, never provider text.
+        print("BLOCKED: source-lineage gate: "+str(exc))
+        return 2
     except (OSError,ValueError,GeoPackageGateError,TypeError):
         print("BLOCKED: original GeoBase source, schema, area or lineage gate failed")
         return 2
