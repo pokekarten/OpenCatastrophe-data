@@ -20,7 +20,7 @@ BOX = [[6.1,49.6],[6.2,49.6],[6.2,49.7],[6.1,49.7],[6.1,49.6]]
 def fixture(*, urls=None):
     return {"type":"FeatureCollection","crs":{"type":"name","properties":{"name":CRS84}},
         "features":[{"type":"Feature","properties":{"url":u},
-                     "geometry":{"type":"Polygon","coordinates":[BOX]}}
+                     "geometry":{"type":"Polygon","coordinates":[[list(point) for point in BOX]]}}
                     for u in (urls or [FAKE_PROVIDER])]}
 
 
