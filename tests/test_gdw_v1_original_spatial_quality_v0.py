@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import io
 from pathlib import Path
 import struct
@@ -44,6 +45,13 @@ def fixture(*, point=(13.05, 52.05), polygon=None, corrupt=None):
     return out.getvalue()
 
 
+HAS_SPATIAL_READER = (
+    importlib.util.find_spec("shapefile") is not None
+    and importlib.util.find_spec("shapely") is not None
+)
+
+
+@unittest.skipUnless(HAS_SPATIAL_READER, "optional pinned pyshp/Shapely source audit wheels")
 class GDWOriginalSpatialAuditTests(unittest.TestCase):
     def setUp(self):
         d = tempfile.TemporaryDirectory()
@@ -99,6 +107,7 @@ class GDWOriginalSpatialAuditTests(unittest.TestCase):
             with self.subTest(case=case), self.assertRaises(pre.GDWArchiveError):
                 self.inspect(fixture(corrupt=case))
 
+class GDWFrozenOriginalEvidenceTests(unittest.TestCase):
     def test_frozen_original_receipt_no_model_promotion(self):
         self.assertEqual(EVIDENCE["original_file_bytes"], 69_745_749)
         self.assertEqual(EVIDENCE["barrier_point_records"], 41_145)
@@ -109,6 +118,7 @@ class GDWOriginalSpatialAuditTests(unittest.TestCase):
         for key in ("model_source_admitted", "original_archive_bytes_published",
                     "per_id_point_in_polygon_verified", "geos_polygon_topology_validated"):
             self.assertFalse(EVIDENCE[key])
+
 
 
 if __name__ == "__main__":
