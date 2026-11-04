@@ -196,7 +196,11 @@ def decode_original_keller(
         valid = [row["decoded_radar_mesh_mm"] for row in observations
                  if row["value_status"] == "decoded_radar_mesh_mm"]
         return {
-            "schema_version": "noaa-mrms-hail-original-four-cell-v1",
+            "schema_version": (
+                "noaa-mrms-keller-eccodes-four-cell-v0"
+                if product in KELLER_PRODUCT_SEMANTICS
+                else "noaa-mrms-arlington-eccodes-four-cell-v0"
+            ),
             "source_radar_product_semantics": HAIL_PRODUCT_SEMANTICS[product],
             "source_relative_to_report_seconds": source_offset_s,
             "source_is_rolling_max_not_an_additional_event": (
@@ -208,7 +212,8 @@ def decode_original_keller(
             "grib2_decoded_message_size": receipt["decoded_grib_bytes"],
             "ecCodes_python_version": str(getattr(decoder, "__version__", "unreported")),
             "grib2_origin_utc": receipt["reference_utc"],
-            "independent_ground_report_ncei_id_candidate": report_id,
+            "independent_ground_report_ncei_id": report_id,
+            "ncei_event_id_original_csv_verified": not preliminary_report,
             "report_source_identity": report_reference,
             "preliminary_public_report_not_instrument_calibration": preliminary_report,
             "independent_report_utc": report_utc,
