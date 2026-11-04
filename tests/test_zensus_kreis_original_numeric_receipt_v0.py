@@ -24,7 +24,8 @@ def build(*,edit=None,make_rows=400,duplicate=False,other_level=False,missing_st
     for n in range(make_rows):
         st=n//25+1
         code=f"{st:02}{n%25+1:03}"
-        if missing_state and st==16:\n            code=f"01{n%25+26:03}"
+        if missing_state and st==16:
+            code=f"01{n%25+26:03}"
         if duplicate and n==1:
             code="01001"
         row=["15.05.2022",code,f"Fiktiv Kreis {n+1}",
