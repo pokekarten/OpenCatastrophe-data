@@ -52,9 +52,29 @@ Observed on **both original releases**:
 
 This is original, observed aggregate evidence, not a synthetic example. It establishes preserved aggregate width distributions, while leaving per-river widths and per-feature geometry changes **unattributed**.
 
-### Keyed candidate hypothesis now under test
+### Original export-`OBJECTID` keyed result — observed, not inferred
 
-The next reviewed source run compares cryptographic digests of each individual field and the SHP XY sequence **at matching original `OBJECTID` values**, after proving uniqueness and identical `OBJECTID` sets. The output is still aggregate changed-counts only; no individual `OBJECTID`, width or coordinate may be emitted. If the ID set is missing, duplicated or changed, candidate joining fails closed. Even a successful `OBJECTID` matching experiment is not a certified hydrological ID or RiverATLAS join.
+**Successful trusted-main original-data run:** [GitHub Actions #41852020214](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41852020214), checkout `22fef9e93458d241244c4bc10d29a54b5502b3a5`, completed 2026-11-04 ~14:54:29 UTC. The run reacquired the exact source files and verified the same 2018/2026 original ZIP SHA-256 pins. It compared typed DBF field-value digests and original polyline XY-sequence digests after requiring the `OBJECTID` to be numeric, unique in each original, with identical key sets. Each original has 42,077 unique `OBJECTID` values, and **the original `OBJECTID` record order is also identical** across the two releases.
+
+| Exact field or WGS84 XY stream, joined at the same export `OBJECTID` candidate | Number of differing values |
+| --- | ---: |
+| `OBJECTID` | 0 |
+| `ID` | 0 |
+| `WIDTH_MIN_` | **0** |
+| `WIDTH_MED_` | **0** |
+| `WIDTH_MEAN` | **0** |
+| `WIDTH_MAX_` | **0** |
+| `WIDTH_SD_M` | **0** |
+| `LAKEFLAG` | 0 |
+| `NSEGPX` | 0 |
+| `SHAPE_LENG` | **42,077** |
+| Original polyline XY coordinate/part-order **byte sequences** | **37,355** |
+
+The updated keyed comparison is strictly stronger than equality of aggregate width histograms: **all five width fields are numerically identical at the same verified-unique export `OBJECTID`**. The difference between 42,077 original geometries and 37,355 differing XY sequences means **4,722 export-`OBJECTID` matches retain byte-identical XY sequences**, *even though* their `SHAPE_LENG` DBF values still differ. Therefore the `SHAPE_LENG` re-computation cannot be explained solely by changed XY coordinates. It could involve how length was calculated, serialized or reprojected; the original upstream processing history has not yet been established.
+
+**Identity limit:** `OBJECTID` is a dataset/export row ID. Uniqueness, equal value sets, equal order and matching non-length attributes make it a reproducible within-release crosswalk *candidate*, but **not** an independently certified river identifier. No original feature IDs, coordinates, widths, or raw rows are published. The code reports `objectid_is_approved_stable_river_identifier=false` and `per_river_change_attribution_verified=false`.
+
+**Scientific next step:** distinguish polyline orientation reversals and coordinate serialization/precision differences from actual spatial relocation by comparing geometries at matching `OBJECTID` using direction-insensitive geometry checks and a documented geographic-to-metric transformation, then independently validate original river identity against GRWL documentation and regional base-map observations. Investigate the provenance/units of `SHAPE_LENG` separately; **do not** use it as a measured hydraulic river width.
 
 ## Scientific gate
 
@@ -62,4 +82,4 @@ If the numeric `width_mean` value distribution differs, a numeric value differen
 
 No RiverATLAS crosswalk admission, flood-stage widths, return periods, insured losses, loss modeling or production Neon writes are authorized. Use-specific source licensing/attribution and independent scientific holdouts remain pending. All original individual row/coordinate data stay off public GitHub.
 
-**Original source evidence:** the previous aggregate live step completed successfully after one controlled retry (linked above). The new export-OBJECTID-keyed step remains pending until the updated reviewed-main workflow actually executes.
+**Original source evidence:** both aggregate and export-OBJECTID-keyed trusted-main original checks have completed successfully (runs linked above). All numerical comparisons were performed on source bytes with the pinned original ZIP hashes. The semantic interpretation of physical river-geometry changes remains unvalidated.
