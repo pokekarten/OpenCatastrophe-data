@@ -119,6 +119,20 @@ def review_gipt_projection(blob: bytes, projection_sha: str, *,
     eia_multiple_locations = sum(len(places) > 1 for places in eia_locations.values())
     de_without_candidate = len(DE_EPA_EIA_CODES) - cohort_with_location
     mixed = sum(len(rights) > 1 for rights in location_rights.values())
+    quarantined_locations = {
+        place for place, rights in location_rights.items()
+        if "TZ_NONCOMMERCIAL" in rights
+    }
+    # Report only *reviewable* non-TZ claims when no units at the location
+    # carry the non-commercial marker. Never call even those rights-approved.
+    eia_with_non_tz_location_only = sum(
+        all(place not in quarantined_locations for place in locations)
+        for locations in eia_locations.values()
+    )
+    eia_with_any_tz_location = sum(
+        any(place in quarantined_locations for place in locations)
+        for locations in eia_locations.values()
+    )
     if cohort_with_location + de_without_candidate != len(DE_EPA_EIA_CODES):
         raise GIPTBlocked("Delaware cohort conservation failure")
     if tz_rows:
@@ -142,6 +156,9 @@ def review_gipt_projection(blob: bytes, projection_sha: str, *,
         "rows_missing_gem_location_id": missing_location_rows,
         "rows_with_transitionzero_id": tz_rows,
         "locations_containing_both_tz_and_non_tz_units": mixed,
+        "gem_locations_with_any_tz_unit": len(quarantined_locations),
+        "eia_de_claims_at_any_tz_quarantined_location": eia_with_any_tz_location,
+        "eia_de_claims_only_at_non_tz_locations_still_rights_unverified": eia_with_non_tz_location_only,
         "rows_with_no_explicit_eia860_token": idless_rows,
         "rows_with_multiple_eia860_tokens": multi_eia_rows,
         "rows_with_eia_claim_in_non_us_country_area": non_us_claims,
