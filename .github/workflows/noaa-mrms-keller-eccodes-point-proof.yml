@@ -47,3 +47,7 @@ jobs:
         run: python -m unittest tests.test_noaa_mrms_keller_eccodes_point_v0 -v
       - name: Decode only four Keller-site MESH values from exact NOAA HTTPS source
         run: python -m research_runners.noaa_mrms_keller_eccodes_point_v0
+      - name: Decode four post-report two-minute NOAA MESH cells (98-second offset)
+        run: python -m research_runners.noaa_mrms_keller_eccodes_point_v0 --product mesh_keller_2021_after
+      - name: Decode NOAA 30-minute maximum hail swath four cells (60-second offset)
+        run: python -m research_runners.noaa_mrms_keller_eccodes_point_v0 --product mesh_keller_2021_max30
