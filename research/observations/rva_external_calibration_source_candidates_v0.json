@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
-# SPDX-License-Identifier: Apache-2.0
 {
   "schema_version": "RVA_EXTERNAL_CALIBRATION_SOURCE_CANDIDATES_V0",
   "target_entity": "R+V Allgemeine Versicherung AG",
@@ -322,5 +320,7 @@
       "model_input_admitted": false,
       "limitation": "Industry and insurer share event correlation; do not fit and validate with the same statistics."
     }
-  ]
+  ],
+  "SPDX-FileCopyrightText": "2026 OpenCatastrophe contributors",
+  "SPDX-License-Identifier": "Apache-2.0"
 }
