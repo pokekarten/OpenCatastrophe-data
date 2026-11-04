@@ -55,7 +55,8 @@ def make_origin_opener() -> urllib.request.OpenerDirector:
     )
 
 
-def fetch_and_audit(product: str, opener: Any = None) -> dict:
+def fetch_pinned_original_object(product: str, opener: Any = None) -> bytes:
+    """Receive only fixed original NOAA source bytes in memory; never persist."""
     if product not in SOURCE_OBJECTS:
         raise DirectSourceProofError("unknown fixed NOAA product")
     selected = SOURCE_OBJECTS[product]
@@ -84,6 +85,12 @@ def fetch_and_audit(product: str, opener: Any = None) -> dict:
         raise DirectSourceProofError("fixed NOAA HTTPS request failed") from exc
     if len(source_bytes) > MAX_COMPRESSED_BYTES:
         raise DirectSourceProofError("original provider response exceeded byte cap")
+    return source_bytes
+
+
+def fetch_and_audit(product: str, opener: Any = None) -> dict:
+    source_bytes = fetch_pinned_original_object(product, opener)
+    selected = SOURCE_OBJECTS[product]
     try:
         receipt = audit_original(source_bytes, product, selected["basename"])
     except MRMSPreflightError as exc:
