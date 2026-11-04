@@ -165,7 +165,10 @@ def inspect(source_zip: Path, *, expected_md5: str = PUBLISHER_MD5) -> dict:
             gpkg = []
             total = 0
             for member in members:
-                _safe(member)
+                try:
+                    _safe(member)
+                except ValueError as exc:
+                    raise GeoBaseAddressError("unsafe original ZIP member") from exc
                 if member.filename in names:
                     raise GeoBaseAddressError("duplicate source ZIP path")
                 names.add(member.filename)
