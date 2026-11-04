@@ -72,3 +72,33 @@ SPDX-License-Identifier: Apache-2.0
 - **COMPASS global exposure:** [Original Zenodo 17572467](https://zenodo.org/records/17572467) identifies major downloadable archives (30-sec GDP/fixed assets; population/urbanization), 30-arc-sec and 30-arc-min examples, and upstream GHSL, HYDE 3.2, WorldPop/FuturePop. Its data/code dependencies are broader than a single archive's licence. Do a metadata/manifest receipt before any bulk retrieval.
 
 **Operational status:** The links above are original metadata/download endpoints, **not proof of downloaded bytes, asset hash, exact entitlement, query reproducibility, scientific suitability, or model input admission**. These specific version/size/licence observations supersede any vague source-family descriptions when planning the first bounded preflight.
+
+
+## Executable NHSL metadata-only acquisition gate — 2026-11-04
+
+Added [`scripts/nhsl_release_metadata_preflight_v0.py`](../../scripts/nhsl_release_metadata_preflight_v0.py) plus [synthetic regressions](../../tests/test_nhsl_release_metadata_preflight_v0.py). This specifically validates the *release metadata* of public OpenDRR/NHSL `v1.0` from GitHub, rather than relying on an unversioned webpage and a guessed download URL. It enforces `tag_name=v1.0`, the official release URL, non-draft/non-prerelease state, unique required asset names, bounded positive advertised sizes and exact same-release HTTPS download URLs for three required files:
+
+- `nhsl_physical_exposure_indicators_b.zip` — building-archetype points at settlement centroids, **not individual roofs**.
+- `nhsl_physical_exposure_indicators_s.zip` — settlement polygons, **not the point/archetype file**.
+- `nhsl_physical_exposure_attributes_en.xlsx` — English original data dictionary needed to verify all columns/units.
+
+**Reproduce only with local official metadata** (no external bytes in this repository):
+
+```bash
+curl --fail --silent --show-error --max-time 30 \
+  https://api.github.com/repos/OpenDRR/national-human-settlement/releases/tags/v1.0 \
+  -o /tmp/nhsl-v1.0-release-metadata.json
+python scripts/nhsl_release_metadata_preflight_v0.py \
+  --release-json /tmp/nhsl-v1.0-release-metadata.json
+python -m unittest tests.test_nhsl_release_metadata_preflight_v0 -v
+```
+
+**Semantics and contradiction gate:** [Official Canada Physical Exposure product](https://open.canada.ca/data/en/dataset/1818cf27-03ea-4ebb-bc43-fd371b42198b) says housing census *dissemination areas*, 9.7m buildings / 390k grouped locations / CAD 8.2tn (2019). A separate [official Canadian NHSL family overview](https://open.canada.ca/data/en/dataset/e9905001-6a39-43ca-a02d-4ab5144df0f8) describes *9.1m buildings* and *CAD 8.3tn*, and the OpenDRR code README references census *dissemination blocks*. These statements are **not interchangeable point-identity, denominator, census geography, release vintage or cost base**. An exact v1.0 GPKG layer schema, method report and source-provenance check are required to reconcile them before any use. Do not join a hypothetical insured policy to a settlement centroid and call it a building.
+
+**Evidence boundary:** As of this investigation, original publisher pages and the GitHub release listing show the source names and release `v1.0`. No original GitHub release REST JSON, data dictionary, archive bytes, true file checksum, commercial-use admission or building-footprint geometry has been downloaded or independently verified during this run. Metadata-only validator flags stay `false` for rights/science/model approval even after a successful check. The raw metadata hash is a hash of the JSON provided to the preflight, **not a source-asset hash**.
+
+## WIOD exact-source access blocker — 2026-11-04
+
+- [University of Groningen original WIOD 2016 release](https://www.rug.nl/ggdc/valuechain/wiod/wiod-2016-release?lang=en) confirms 2000–2014, 43 countries + RoW, 56 sectors, WIOT current prices in **millions of USD**, separate previous-year-price `WIOT_PYP` tables, and separate national IO / exchange rate / socio-economic tables. Project archive DOI `10.34894/PJ2M1C` is the source family identity; the NCCS modeling code explicitly uses matrix year **2011**. All of these are distinct from the published WIOD 2013 edition or 2026 economy/insured values.
+- Direct read-only inspection of Dataverse links for original R/Excel WIOT was obstructed by its active Anubis access-control/challenge. **No original 2011 file name, file SHA-256, physical dimensions, data rows, columns, redistribution right for a chosen datafile, or runtime availability has been independently verified**. Do not fake a Dataverse API response or bypass access controls.
+- Groningen states the WIOD 2016 release is CC BY 4.0, but this does not automatically cover JRC environmental satellite accounts or proprietary downstream insurer data. Before a WIOD ingestion or BI financial allocation is built, pin exact datafile ID, original filename and checksum, table price basis/currency, IO orientation and the selected sector/country definitions.
