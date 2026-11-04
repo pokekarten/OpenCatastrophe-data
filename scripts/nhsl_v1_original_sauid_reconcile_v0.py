@@ -11,6 +11,7 @@ Outputs counts, totals and numerical residuals ONLY, not source feature rows.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import math
 import sqlite3
@@ -159,7 +160,7 @@ def compare_aggregate_rows(
                     "archetype_total": str(archetype_total[metric]),
                     "max_abs_delta_per_sauid": str(info["max_abs_diff"]),
                     "delta_sum": str(info["delta_sum"]),
-                    "saudis_exceeding_tolerance": info["mismatch_count"],
+                    "sauids_exceeding_tolerance": info["mismatch_count"],
                     "tolerance": str(TOLERANCES[metric]),
                 }
                 for metric, info in per_field.items()
@@ -182,7 +183,8 @@ def _read_rows(extracted_gpkg: Path, role: str) -> list[dict[str, Any]]:
     cols = ["Sauid"] + [
         pair[0] if role == "polygon" else pair[1] for pair in FIELDS.values()
     ]
-    query = f"SELECT {', '.join('"' + c + '"' for c in cols)} FROM {quoted}"
+    projection = ", ".join('"' + col + '"' for col in cols)
+    query = f"SELECT {projection} FROM {quoted}"
     con = sqlite3.connect(extracted_gpkg.as_uri() + "?mode=ro&immutable=1", uri=True)
     try:
         con.execute("PRAGMA query_only=ON")
@@ -206,7 +208,7 @@ def audit_original_archives(polygon_zip: Path, archetype_zip: Path) -> dict[str,
     with tempfile.TemporaryDirectory(prefix="nhsl-sauid-reconcile-") as tmp:
         original_rows = {}
         for role in ("polygon", "archetype"):
-            with zipfile.ZipFile(__import__("io").BytesIO(raw[role])) as zf:
+            with zipfile.ZipFile(io.BytesIO(raw[role])) as zf:
                 data = zf.read(PINNED[role]["member"])
             target = Path(tmp) / (role + ".gpkg")
             target.write_bytes(data)
