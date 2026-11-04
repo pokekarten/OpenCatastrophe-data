@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Bounded native US EPA FRS_FACILITIES.csv -> research-only FRS projection.
+"""Bounded native-format US EPA FRS_FACILITIES.csv *slice* -> FRS projection.
 
-The original source must be legally acquired and verified separately. No HTTP
+Publisher original ZIP/file receipts must be verified separately. No HTTP
 requests, provider archive downloads, exposure estimation or approved data writes.
 Original source data and local projections remain OUTSIDE the public Git repo.
 """
@@ -62,7 +62,7 @@ def _coord(value: str, axis: str) -> str:
 
 def project_native_frs(original: bytes, expected_sha256: str, *,
                        release_date: str, coordinates_approved: bool = False) -> tuple[bytes, dict]:
-    """Project caller-provided native-CSV bytes; never independently verify source rights.
+    """Project caller-provided native-format CSV slice; not original provider proof.
 
     Coordinates are intentionally suppressed by default. Permit passing them
     through only after an upstream review establishes geographic reference
@@ -72,17 +72,17 @@ def project_native_frs(original: bytes, expected_sha256: str, *,
     if not isinstance(coordinates_approved, bool):
         raise FRSProjectionBlocked("coordinate approval must be an explicit boolean")
     if not isinstance(expected_sha256, str) or not HEX_SHA.fullmatch(expected_sha256):
-        raise FRSProjectionBlocked("expected original lowercase SHA-256")
+        raise FRSProjectionBlocked("expected native-slice lowercase SHA-256")
     if type(original) is not bytes or not 0 < len(original) <= MAX_BYTES:
-        raise FRSProjectionBlocked("original CSV bytes empty or over bounded limit")
+        raise FRSProjectionBlocked("native-format CSV slice empty or over bounded limit")
     actual = hashlib.sha256(original).hexdigest()
     if actual != expected_sha256:
-        raise FRSProjectionBlocked("original supplied CSV SHA-256 mismatch")
+        raise FRSProjectionBlocked("supplied CSV slice SHA-256 mismatch")
     try:
         reader = csv.DictReader(io.StringIO(original.decode("utf-8-sig"), newline=""), strict=True)
         headers = tuple(reader.fieldnames or ())
         if len(headers) != len(set(headers)) or not all(x in headers for x in REQUIRED):
-            raise FRSProjectionBlocked("original FRS_FACILITIES columns missing or repeated")
+            raise FRSProjectionBlocked("native-format FRS_FACILITIES columns missing or repeated")
         rows = []
         seen = set()
         missing_coordinates = 0
@@ -120,14 +120,15 @@ def project_native_frs(original: bytes, expected_sha256: str, *,
         "state": "RESEARCH_PROJECTION_ONLY",
         "native_product": "EPA_ECHO_FRS_FACILITIES_CSV",
         "source_vintage": release_date,
-        "source_original_csv_sha256_claim": actual,
+        "source_native_csv_slice_sha256": actual,
         "normalized_projection_sha256": hashlib.sha256(projection).hexdigest(),
         "rows": len(rows),
         "native_rows_without_both_coordinates": missing_coordinates,
         "projected_coordinates_suppressed": not coordinates_approved,
         "country_code_assigned_from_product_scope": "US",
         "projection_preserves_source_ids": True,
-        "source_bytes_independently_authenticated": False,
+        "publisher_original_file_bytes_authenticated": False,
+        "native_csv_slice_is_publisher_original": False,
         "source_rights_or_model_admission_granted": False,
         "insured_asset_or_tiv_inferred": False,
     }
@@ -135,23 +136,23 @@ def project_native_frs(original: bytes, expected_sha256: str, *,
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--original-facilities-csv", type=Path, required=True)
-    ap.add_argument("--original-csv-sha256", required=True)
+    ap.add_argument("--native-facilities-slice-csv", type=Path, required=True)
+    ap.add_argument("--native-slice-sha256", required=True)
     ap.add_argument("--release-date", required=True)
     ap.add_argument("--output", type=Path, required=True)
     # Deliberately no CLI switch to override coordinate suppression;
     # that gate requires a separately reviewed/native-to-WGS84 transform.
     args = ap.parse_args(argv)
     try:
-        if (args.original_facilities_csv.is_symlink() or not args.original_facilities_csv.is_file() or
-                args.original_facilities_csv.stat().st_size > MAX_BYTES):
-            raise FRSProjectionBlocked("expected bounded local original CSV")
+        if (args.native_facilities_slice_csv.is_symlink() or not args.native_facilities_slice_csv.is_file() or
+                args.native_facilities_slice_csv.stat().st_size > MAX_BYTES):
+            raise FRSProjectionBlocked("expected bounded local native-format CSV slice")
         out = args.output.expanduser().absolute()
         repository = Path(__file__).resolve().parents[1]
         if out == repository or repository in out.parents or out.is_symlink():
             raise FRSProjectionBlocked("output must remain outside public repository")
         projection, report = project_native_frs(
-            args.original_facilities_csv.read_bytes(), args.original_csv_sha256,
+            args.native_facilities_slice_csv.read_bytes(), args.native_slice_sha256,
             release_date=args.release_date)
         # Exclusive create refuses overwrites and directories, and never prints source IDs.
         with out.open("xb") as handle:
