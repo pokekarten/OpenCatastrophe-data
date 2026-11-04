@@ -151,7 +151,10 @@ def layer_role(name: str) -> str | None:
     return None
 
 
-def inspect_original_gdb(gdb: Path) -> dict:
+def inspect_original_gdb(gdb: Path, *, invalid_ids: set[int] | None = None,
+                         barrier_ids: set[int] | None = None,
+                         polygon_ids: set[int] | None = None) -> dict:
+    """Optional ephemeral caller-owned set is never included in result/CLI output."""
     try:
         import fiona
         from shapely.geometry import shape
@@ -214,12 +217,18 @@ def inspect_original_gdb(gdb: Path) -> dict:
                                 raise ValueError("not a polygon")
                             if geom.is_empty:
                                 invalid += 1
+                                if invalid_ids is not None:
+                                    invalid_ids.add(ident)
                                 reasons["empty_polygon"] += 1
                             elif not geom.is_valid:
                                 invalid += 1
+                                if invalid_ids is not None:
+                                    invalid_ids.add(ident)
                                 reasons[_validity_reason_family(explain_validity(geom))] += 1
                             elif geom.area <= 0:
                                 invalid += 1
+                                if invalid_ids is not None:
+                                    invalid_ids.add(ident)
                                 reasons["nonpositive_polygon_area"] += 1
                             elif geom.contains(points[ident]):
                                 inside += 1
@@ -229,6 +238,8 @@ def inspect_original_gdb(gdb: Path) -> dict:
                                 outside += 1
                         except (ValueError, TypeError, GEOSException):
                             unreadable += 1
+                            if invalid_ids is not None:
+                                invalid_ids.add(ident)
                             reasons["conversion_error"] += 1
         except GDWFileGDBError:
             raise
@@ -240,6 +251,10 @@ def inspect_original_gdb(gdb: Path) -> dict:
             or inside + boundary + outside + invalid + unreadable != polygon_count
             or sum(reasons.values()) != invalid + unreadable):
         raise GDWFileGDBError("GDB source counts or paired GDW_ID relations drift")
+    if barrier_ids is not None:
+        barrier_ids.update(points)
+    if polygon_ids is not None:
+        polygon_ids.update(totals)
     return {
         "barrier_points": point_count,
         "reservoir_polygons": polygon_count,
@@ -271,7 +286,10 @@ def _gdw_id(value: object) -> int:
 
 
 def audit(path: Path, *, expected_size=PROVIDER_BYTES,
-          expected_md5=PROVIDER_MD5, expected_sha256=None) -> dict:
+          expected_md5=PROVIDER_MD5, expected_sha256=None,
+          invalid_ids: set[int] | None = None,
+          barrier_ids: set[int] | None = None,
+          polygon_ids: set[int] | None = None) -> dict:
     source = original_file_identity(path, expected_size=expected_size,
                                     expected_md5=expected_md5,
                                     expected_sha256=expected_sha256)
@@ -281,7 +299,10 @@ def audit(path: Path, *, expected_size=PROVIDER_BYTES,
             with tempfile.TemporaryDirectory(prefix="gdw-v1-gdb-original-") as folder:
                 temp = Path(folder)
                 extract_members(z, members, temp)
-                quality = inspect_original_gdb(temp.joinpath(*PurePosixPath(root).parts))
+                quality = inspect_original_gdb(temp.joinpath(*PurePosixPath(root).parts),
+                                               invalid_ids=invalid_ids,
+                                               barrier_ids=barrier_ids,
+                                               polygon_ids=polygon_ids)
     except (OSError, zipfile.BadZipFile, EOFError, RuntimeError) as exc:
         raise GDWFileGDBError("unable to read source GDB ZIP safely") from exc
     return {
