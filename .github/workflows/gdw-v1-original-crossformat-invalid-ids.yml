@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: GDW v1 Original GDB-Shapefile Invalid GDW-ID Concordance
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/gdw-v1-original-crossformat-invalid-ids.yml"
+      - "research_runners/gdw_v1_original_crossformat_invalidity_v0.py"
+      - "research_runners/gdw_v1_original_filegdb_quality_v0.py"
+      - "research_runners/gdw_v1_original_filegdb_receipt_v0.py"
+      - "tests/test_gdw_v1_original_crossformat_invalidity_v0.py"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/gdw-v1-original-crossformat-invalid-ids.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gdw-original-id-concordance-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  original-concordance:
+    name: Original GDW invalid polygon ID set intersection, aggregate only
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install pinned original feature readers
+        run: |
+          python -m pip install --disable-pip-version-check --no-input \
+            "fiona==1.10.1" "shapely==2.1.2" "pyshp==2.3.1"
+          python -m pip check
+          python -c 'import fiona; assert "OpenFileGDB" in fiona.supported_drivers'
+      - name: Reproduce synthetic nonleaking invalid-ID overlap checks
+        run: python -m unittest tests.test_gdw_v1_original_crossformat_invalidity_v0 tests.test_gdw_v1_original_filegdb_quality_v0 -v
+      - name: Compare two exact original GDW v1 releases in private runner only
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          shp="$RUNNER_TEMP/GDW_v1_0_shp.zip"
+          gdb="$RUNNER_TEMP/GDW_v1_0_gdb.zip"
+          trap 'rm -f "$shp" "$gdb"' EXIT
+          # Provider files are two alternate representations of the same
+          # public GDW v1 dataset; full SHA-256 for BOTH separately pinned.
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 240 --retry 0 \
+            --max-filesize 69745749 --output "$shp" \
+            'https://ndownloader.figshare.com/files/47913754'
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 240 --retry 0 \
+            --max-filesize 57476758 --output "$gdb" \
+            'https://ndownloader.figshare.com/files/47913742'
+          python research_runners/gdw_v1_original_crossformat_invalidity_v0.py \
+            --shp-zip "$shp" --gdb-zip "$gdb"
+          echo "GDW exact original per-ID comparison complete; no original IDs or geometry published."
