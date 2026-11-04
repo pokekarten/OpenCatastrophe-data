@@ -1,0 +1,252 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+"""Original-byte-locked NRW solar roof PV data: municipal row integrity, statewide aggregates.
+
+This is not insured R+V properties or the number of *installed* PV systems.
+Only totals across 396 publisher municipalities are emitted, never raw rows.
+"""
+from __future__ import annotations
+
+from collections import defaultdict
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from pathlib import Path
+import tomllib
+import io
+import json
+import re
+import sys
+import zipfile
+from xml.etree import ElementTree as ET
+
+from research_runners import rva_nrw_original_rooftop_pv_xlsx_v0 as source
+from research_runners import rva_nrw_original_pv_schema_observation_v0 as schema
+
+CLASSES = (
+    "Wohngebäude", "Gewerbe und Industrie", "Öffentliche Gebäude",
+    "Landwirtschaft", "Sonstige Gebäude", "Nicht zuordbar", "Insgesamt",
+)
+YEARS = tuple(range(1990, 2026))
+SHEETS = (
+    ("Bestand Leistung", "Bestand Leistung [kW]", "kW"),
+    ("Bestand Ertrag", "Bestand Ertrag [kWh]", "kWh"),
+    ("Potenzial Leistung", "Potenzial Leistung [kW]", "kW"),
+    ("Potenzial Ertrag", "Potenzial Ertrag [kWh]", "kWh"),
+)
+EXPECTED_MUNICIPALITY_COUNT = 396
+AGS = re.compile(r"^[0-9]{8}$")
+MAX_AMOUNT = Decimal("1000000000000000000")
+
+
+def decimal_amount(raw: str) -> Decimal:
+    if not isinstance(raw, str) or not raw.strip() or len(raw) > 45:
+        raise ValueError("SOURCE_NUMERIC_REQUIRED")
+    try:
+        val = Decimal(raw)
+    except InvalidOperation as exc:
+        raise ValueError("SOURCE_NUMERIC_INVALID") from exc
+    if not val.is_finite() or val < 0 or val > MAX_AMOUNT:
+        raise ValueError("SOURCE_NUMERIC_NEGATIVE_NONFINITE_OR_TOO_LARGE")
+    return val
+
+
+def validate_source_category_subtotal_residual(residual: Decimal, units: str) -> Decimal:
+    # Original Excel holds long binary-converted float lexical tails.
+    # 0.01 W / 0.1 Wh is far below any source-model resolution; do not
+    # mistake nonzero floating serialisation tails for a real category miss.
+    tolerances = {"kW": Decimal("0.00001"), "kWh": Decimal("0.0001")}
+    if units not in tolerances:
+        raise ValueError("SOURCE_UNIT_NOT_RECOGNISED")
+    tolerance = tolerances[units]
+    if abs(residual) > tolerance:
+        raise ValueError("SOURCE_CLASS_SUM_OUTSIDE_LEXICAL_FLOAT_TOLERANCE")
+    return tolerance
+
+
+def expected_headers(prefix: str, is_yearly: bool) -> dict[int, str]:
+    names = {2: "AGS", 3: "Gemeinde"}
+    for j, category in enumerate(CLASSES):
+        if is_yearly:
+            for year in YEARS:
+                # Source has year-major ordering, so j offsets within each year.
+                names[4 + (year - YEARS[0]) * len(CLASSES) + j] = (
+                    f"{prefix} {year} {category}"
+                )
+        else:
+            names[4 + j] = f"{prefix} {category}"
+    return names
+
+
+def parse_row_cells(row: ET.Element, shared: list[str]) -> dict[int, str]:
+    cells = {}
+    for c in row.findall("m:c", source.NS):
+        idx = schema._column_index(c.get("r", "")) + 1
+        if idx in cells:
+            raise ValueError("SOURCE_DUPLICATE_CELL")
+        cells[idx] = schema._cell_text(c, shared)
+    return cells
+
+
+def check_ags(records: list[dict[int, str]]) -> set[str]:
+    codes = []
+    for row in records:
+        value = row.get(2, "")
+        if not AGS.fullmatch(value) or not row.get(3, "").strip():
+            raise ValueError("SOURCE_MUNICIPALITY_AGSCODE_OR_LABEL_INVALID")
+        codes.append(value)
+    if len(set(codes)) != len(codes):
+        raise ValueError("SOURCE_DUPLICATE_AGS")
+    if len(codes) != EXPECTED_MUNICIPALITY_COUNT:
+        raise ValueError("SOURCE_MUNICIPALITY_COUNT_CHANGED")
+    return set(codes)
+
+
+def verify_and_aggregate(original: bytes) -> dict:
+    source.parse_original(
+        original, expected_sha256=source.EXPECTED_SHA256,
+        expected_bytes=source.EXPECTED_BYTES,
+        expected_structure=source.EXPECTED_STRUCTURE,
+    )
+    # Run through identical safe schema parser too, to preserve original label/role.
+    original_shape = schema.describe(original, pinned=True)
+    names = [s["sheet_title"] for s in original_shape["spreadsheet_sheets"]]
+    if names[1:] != [x[0] for x in SHEETS]:
+        raise ValueError("SOURCE_WORKSHEET_MEASURES_CHANGED")
+    aggregate = []
+    expected_key_set = None
+    with zipfile.ZipFile(io.BytesIO(original)) as archive:
+        shared = schema._shared_strings(archive)
+        for sheet_no, (sheet_name, prefix, units) in enumerate(SHEETS, 2):
+            root = ET.fromstring(archive.read(f"xl/worksheets/sheet{sheet_no}.xml"))
+            source_rows = root.findall(".//m:sheetData/m:row", source.NS)
+            if len(source_rows) != EXPECTED_MUNICIPALITY_COUNT + 1:
+                raise ValueError("SOURCE_WORKSHEET_ROW_COUNT_CHANGED")
+            header = parse_row_cells(source_rows[0], shared)
+            is_yearly = sheet_no in (2, 3)
+            wanted = expected_headers(prefix, is_yearly)
+            if set(header) != set(wanted) or any(header[c] != v for c, v in wanted.items()):
+                raise ValueError("SOURCE_COLUMN_TAXONOMY_CHANGED")
+            rows = [parse_row_cells(r, shared) for r in source_rows[1:]]
+            key_set = check_ags(rows)
+            if expected_key_set is None:
+                expected_key_set = key_set
+            elif key_set != expected_key_set:
+                raise ValueError("SOURCE_CROSS_SHEET_AGS_SET_MISMATCH")
+            nvals = len(CLASSES) * (len(YEARS) if is_yearly else 1)
+            amount_keys = tuple(range(4, 4 + nvals))
+            totals = {col: Decimal(0) for col in amount_keys}
+            lexical_nonzero = 0
+            max_abs_residual = Decimal(0)
+            tolerance = Decimal('0')
+            for row in rows:
+                if set(row) != set(wanted):
+                    raise ValueError("SOURCE_ROW_CELL_COMPLETENESS_CHANGED")
+                numeric = {c: decimal_amount(row[c]) for c in amount_keys}
+                for c, val in numeric.items():
+                    totals[c] += val
+                for start in range(4, 4 + nvals, len(CLASSES)):
+                    subtotal = sum((numeric[start+i] for i in range(6)), Decimal(0))
+                    residual = subtotal - numeric[start+6]
+                    if residual:
+                        lexical_nonzero += 1
+                    tolerance = validate_source_category_subtotal_residual(residual, units)
+                    max_abs_residual = max(max_abs_residual, abs(residual))
+            if is_yearly:
+                # One selected column year is reported, not a cumulative fleet.
+                selected_year = 2025
+                first = 4 + (selected_year - YEARS[0]) * len(CLASSES)
+                selected = {CLASSES[j]: format(totals[first+j].quantize(Decimal("0.001"), rounding=ROUND_HALF_UP), "f") for j in range(len(CLASSES))}
+            else:
+                selected_year = None
+                selected = {CLASSES[j]: format(totals[4+j].quantize(Decimal("0.001"), rounding=ROUND_HALF_UP), "f") for j in range(len(CLASSES))}
+            aggregate.append({
+                "sheet_title": sheet_name,
+                "publisher_measure": prefix,
+                "units_exact_header": units,
+                "year_column_scope": "single_2025_publisher_column_not_known_as_installed_stock" if is_yearly else "nonannual_technical_potential",
+                "selected_column_year": selected_year,
+                "NRW_aggregate_by_building_type": selected,
+                "state_total_output_rounded_to_0_001_source_unit": True,
+                "sum_of_6_categories_vs_publisher_total":
+                    {"original_lexical_float_residual_nonzero_groups": lexical_nonzero,
+                     "maximum_abs_difference_in_source_units": str(max_abs_residual),
+                     "maximum_allowed_original_float_tolerance_in_source_units": str(tolerance),
+                     "any_group_above_tolerance": False,
+                     "not_forced_to_balance": True},
+            })
+    return {
+        "schema": "NRW_ROOF_PV_AGGREGATES_SOURCE_20260312_V0",
+        "publisher": "LANUK_NRW_OPEN_GEODATA",
+        "source_sha256": source.EXPECTED_SHA256,
+        "source_original_bytes": source.EXPECTED_BYTES,
+        "verified_distinct_8digit_AGS_per_sheet": EXPECTED_MUNICIPALITY_COUNT,
+        "geographic_scope": "NRW_MUNICIPALITIES_SOURCE_VINTAGE_UNVALIDATED",
+        "printed_values_grain": "NRW_AGGREGATE_BY_BUILDING_CATEGORY_ONLY",
+        "company_RV_real_locations_observed": False,
+        "company_RV_TIV_observed": False,
+        "installed_rooftop_PV_units_observed": False,
+        "building_category_sensitivity_only": True,
+        "source_admitted_to_CAT_models": False,
+        "issuer_2025_RV_policy_crosswalk_established": False,
+        "sheets": aggregate,
+    }
+
+
+REGISTER = (Path(__file__).resolve().parents[1] / "research" / "observations" /
+            "nrw_pv_official_municipality_class_state_20260312_v0.toml")
+REGISTER_KEY = (
+    "residential_buildings", "commerce_industry", "public_buildings",
+    "agriculture", "other_buildings", "unassigned", "overall",
+)
+
+
+def verify_recorded_state_observation(aggregate: dict, *, register: dict | None = None) -> dict:
+    if register is None:
+        register = tomllib.loads(REGISTER.read_text(encoding="utf-8"))
+    if (register.get("schema_version") != "NRW_OFFICIAL_ROOF_PV_MUNICIPALITY_AGGREGATE_20260312_V0"
+        or register.get("verified_original_source_sha256") != source.EXPECTED_SHA256
+        or register.get("verified_original_source_bytes") != source.EXPECTED_BYTES
+        or register.get("source_rows_original_8digit_AGS_verified_and_unique_each_sheet") != 396
+        or aggregate.get("source_sha256") != source.EXPECTED_SHA256
+        or aggregate.get("verified_distinct_8digit_AGS_per_sheet") != 396
+        or any(register.get(key) is not False for key in (
+            "original_xlsx_raw_committed_to_repo", "company_RV_actual_insured_roofs_or_pv_observed",
+            "company_RV_insured_PV_replacement_cost_observed",
+            "company_RV_property_concentration_observed", "model_input_admitted"))):
+        raise ValueError("ORIGINAL_NRW_PV_RECORDED_SOURCE_OR_INSURER_SCOPE_INVALID")
+    entries = register.get("measures", [])
+    observed = aggregate.get("sheets", [])
+    if len(entries) != len(SHEETS) or len(observed) != len(SHEETS):
+        raise ValueError("ORIGINAL_NRW_PV_SOURCE_AGGREGATE_MEASURE_COUNT_DRIFT")
+    for e, o in zip(entries, observed):
+        if (e.get("sheet_name") != o.get("sheet_title")
+            or e.get("source_unit") != o.get("units_exact_header")
+            or e.get("is_2025_labeled_Bestand_column") != (
+                o.get("selected_column_year") == 2025
+            )
+            or set(e.get("category_totals", {})) != set(REGISTER_KEY)):
+            raise ValueError("ORIGINAL_NRW_PV_RECORDED_MEASURE_TAXONOMY_DRIFT")
+        for i, category in enumerate(CLASSES):
+            wanted = e["category_totals"][REGISTER_KEY[i]]
+            got = o["NRW_aggregate_by_building_type"][category]
+            if wanted != got:
+                raise ValueError("ORIGINAL_NRW_PV_RECORDED_ORIGINAL_VALUE_DRIFT")
+    return {
+        "recorded_396_municipality_state_aggregates_match_verified_original": True,
+        "science_and_insurer_data_admitted": False,
+    }
+
+
+def main() -> int:
+    original = source.fetch_official()
+    result = verify_and_aggregate(original)
+    result["state_receipt_conservation"] = verify_recorded_state_observation(result)
+    print(json.dumps(result, sort_keys=True, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except (OSError, ValueError, TimeoutError, ET.ParseError) as exc:
+        print(f"NRW_PV_ORIGINAL_AGGREGATE_BLOCKED: {type(exc).__name__}", file=sys.stderr)
+        sys.exit(2)
