@@ -213,7 +213,7 @@ def run(address_csv: Path, geobase_zip: Path, *, site: str = "luxembourg-city") 
             native_window,
         )
         if len(polygons) != expected_polygons:
-            raise AddressFootprintError("Exact-area original building count differs from prior site proof")
+            raise AddressFootprintError(f"Exact-area aggregate polygon count at {site}: observed {len(polygons)}; previously observed {expected_polygons}")
         # All points are compared in native EPSG2169 metre coordinates. Only
         # the WGS84 versions decide the independent, frozen EPSG3035 window.
         points = []
@@ -279,8 +279,8 @@ def main(argv=None) -> int:
     try:
         result = run(args.address_csv, args.geobase_zip, site=args.site)
     except AddressFootprintError as exc:
-        # Only our fixed, author-written no-data error strings are printed.
-        # NEVER include raw source exception text, individual source values,
+        # Only enumerated public sites and bounded aggregate counts are permitted
+        # in these self-authored messages. Never include source record values,
         # provider row data, original addresses or geometry coordinates.
         p.exit(2,"BLOCKED: reviewed original-stage rule: "+str(exc)+"\n")
     except (GeoBaseError, GeoPackageGateError,
