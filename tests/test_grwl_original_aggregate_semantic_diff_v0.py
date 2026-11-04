@@ -167,6 +167,79 @@ class AggregateSemanticTests(unittest.TestCase):
         self.assertEqual(r["dbf_fields"],[])
         self.assertIsNone(r["minimum_unmatched_semantic_rows_each_release"])
 
+
+    def test_unique_objectid_candidate_and_no_scientific_identity_admission(self):
+        cols=(("objectid","N",10),("width_mean","N",12),("lakeflag","N",3),("region","C",3))
+        src=artifact(rows=((1,"100",0,"DE"),(2,"200",0,"FR")),fields=cols)
+        out=compare(src,src)["objectid_keyed_candidate"]
+        self.assertEqual(out["status"],"unique_matching_objectid_candidate_only")
+        self.assertEqual(out["matched_export_objectid_values"],2)
+        self.assertEqual(out["field_values_different_at_matching_objectid"]["WIDTH_MEAN"],0)
+        self.assertEqual(out["xy_sequences_different_at_matching_objectid"],0)
+        self.assertFalse(out["objectid_is_approved_stable_river_identifier"])
+        self.assertFalse(out["per_river_change_attribution_verified"])
+        self.assertFalse(out["any_raw_objectids_or_feature_values_emitted"])
+
+    def test_reordered_objectid_and_corresponding_xy_stay_equal(self):
+        cols=(("objectid","N",10),("width_mean","N",12),("lakeflag","N",3),("region","C",3))
+        a=artifact(rows=((1,"100",0,"DE"),(2,"200",0,"FR")),fields=cols,points=(A,B))
+        b=artifact(rows=((2,"200",0,"FR"),(1,"100",0,"DE")),fields=cols,points=(B,A))
+        result=compare(a,b)["objectid_keyed_candidate"]
+        self.assertFalse(result["export_objectid_order_equal"])
+        self.assertEqual(result["field_values_different_at_matching_objectid"]["WIDTH_MEAN"],0)
+        self.assertEqual(result["xy_sequences_different_at_matching_objectid"],0)
+
+    def test_same_width_histogram_but_different_objectid_assignment(self):
+        cols=(("objectid","N",10),("width_mean","N",12),("lakeflag","N",3),("region","C",3))
+        a=artifact(rows=((1,"100",0,"DE"),(2,"200",0,"FR")),fields=cols)
+        b=artifact(rows=((1,"200",0,"DE"),(2,"100",0,"FR")),fields=cols)
+        result=compare(a,b)
+        hist=next(f for f in result["dbf_fields"] if f["field"]=="WIDTH_MEAN")
+        self.assertTrue(hist["value_multiset_equal"])
+        self.assertEqual(result["objectid_keyed_candidate"]["field_values_different_at_matching_objectid"]["WIDTH_MEAN"],2)
+
+    def test_keyed_xy_change_and_width_change_counted_separately(self):
+        cols=(("objectid","N",10),("width_mean","N",12),("lakeflag","N",3),("region","C",3))
+        a=artifact(rows=((1,"100",0,"DE"),(2,"200",0,"FR")),fields=cols)
+        b=artifact(rows=((1,"101",0,"DE"),(2,"200",0,"FR")),fields=cols,points=(A,C))
+        result=compare(a,b)["objectid_keyed_candidate"]
+        self.assertEqual(result["field_values_different_at_matching_objectid"]["WIDTH_MEAN"],1)
+        self.assertEqual(result["xy_sequences_different_at_matching_objectid"],1)
+
+    def test_duplicate_objectid_blocks_candidate(self):
+        cols=(("objectid","N",10),("width_mean","N",12),("lakeflag","N",3),("region","C",3))
+        a=artifact(rows=((1,"100",0,"DE"),(1,"200",0,"FR")),fields=cols)
+        result=compare(a,a)["objectid_keyed_candidate"]
+        self.assertEqual(result["status"],"blocked_not_uniquely_matchable")
+
+    def test_different_objectid_sets_block_candidate(self):
+        cols=(("objectid","N",10),("width_mean","N",12),("lakeflag","N",3),("region","C",3))
+        a=artifact(rows=((1,"100",0,"DE"),(2,"200",0,"FR")),fields=cols)
+        b=artifact(rows=((1,"100",0,"DE"),(3,"200",0,"FR")),fields=cols)
+        self.assertEqual(compare(a,b)["objectid_keyed_candidate"]["status"],"blocked_not_uniquely_matchable")
+
+    def test_objectid_requires_numeric_column(self):
+        cols=(("objectid","C",10),("width_mean","N",12),("lakeflag","N",3),("region","C",3))
+        a=artifact(rows=((1,"100",0,"DE"),(2,"200",0,"FR")),fields=cols)
+        self.assertEqual(compare(a,a)["objectid_keyed_candidate"]["status"],"blocked_not_uniquely_matchable")
+
+    def test_only_shape_length_changed_at_unique_export_objectid(self):
+        cols=(("objectid","N",10),("width_mean","N",12),("lakeflag","N",3),("shape_leng","F",19))
+        a=artifact(rows=((1,"100",0,"3.123"),(2,"200",0,"4.321")),fields=cols)
+        b=artifact(rows=((1,"100",0,"3.124"),(2,"200",0,"4.322")),fields=cols)
+        keyed=compare(a,b)["objectid_keyed_candidate"]
+        self.assertTrue(keyed["all_non_length_fields_equal_at_matching_objectid"])
+        self.assertEqual(keyed["field_values_different_at_matching_objectid"]["SHAPE_LENG"],2)
+        self.assertEqual(keyed["field_values_different_at_matching_objectid"]["WIDTH_MEAN"],0)
+
+    def test_numeric_objectid_formatting_canonicalized(self):
+        cols=(("objectid","N",10),("width_mean","N",12),("lakeflag","N",3),("region","C",3))
+        a=artifact(rows=(("1","100",0,"DE"),("2","200",0,"FR")),fields=cols)
+        b=artifact(rows=(("01.0","100",0,"DE"),("02.00","200",0,"FR")),fields=cols)
+        keyed=compare(a,b)["objectid_keyed_candidate"]
+        self.assertEqual(keyed["status"],"unique_matching_objectid_candidate_only")
+        self.assertEqual(keyed["field_values_different_at_matching_objectid"]["OBJECTID"],0)
+
     def test_no_network_default(self):
         self.assertEqual(main([]),2)
 
