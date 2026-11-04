@@ -5,6 +5,46 @@ SPDX-License-Identifier: Apache-2.0
 
 # R+V insurer portfolio discovery: bank catchments, agents, named public property awards, and non-obvious market priors
 
+## Breakthrough: **primary government document directly identifies 2025 R+V Allgemeine insured corporate property books**
+
+**Much stronger than indirect bank/agency footprint or a secondary procurement index.** Original 6-page **Berlin Senate answer, April 1, 2025, Abgeordnetenhaus Drucksache 19/22033**, [full official public document](https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/SchrAnfr/S19-22033.pdf), specifically **question 2 on PDF page 3**. This is a written official response based on disclosures of the six state-owned housing companies themselves, **not a statistical prediction**.
+
+The Senate confirms as of April 1, 2025:
+
+| Named corporate housing property account | Official building insurer relationship | Status for hypothetical R+V exposure |
+| --- | --- | --- |
+| **GESOBAU AG** | **R+V Allgemeine Versicherung AG** building insurance contract | Confirmed **named property account**, not building/site list |
+| **WBM Wohnungsbaugesellschaft Berlin-Mitte mbH** | **R+V Allgemeine Versicherung AG** building insurance contract | Confirmed **named property account**, not site list |
+| **degewo AG** | **Allianz AG + R+V Allgemeine Versicherung AG in insurer consortium** | Confirmed **shared co-insurance relationship**, **R+V allocation unknown** |
+| Gewobag | ERGO and Generali | **Other insurer comparator** for the named Berlin state-owned property book |
+| HOWOGE | Westfälische Provinzial Versicherung AG | **Other insurer comparator** |
+| STADT UND LAND | Allianz AG | **Other insurer comparator** |
+
+Machine-readable primary evidence with these explicit positive and negative relationship checks: [`rva_berlin_senate_housing_insurer_relations_2025_v0.toml`](../../research/observations/rva_berlin_senate_housing_insurer_relations_2025_v0.toml); 13 tests. Government publication identifies the **legal insurer**, corporate account and general property cover, with significantly stronger direct evidence than bank office density.
+
+**Contract / scientific semantics, Senate questions 3 and 4:** The corporate buildings are insured **under each company's broad/master building-insurance contract**, NOT one individually sold residential house policy per dwelling. WBM's **purely commercial properties use a separate master policy**; the Senate question 2 does not establish the carrier/2025 coverage for that separate commercial contract. Across the state-owned companies the Senate reports the following insurance peril categories: **fire, tap water, wind/hail, elemental and vandalism**, **NOT** granular peril endorsements for every property or a calibrated insured peril take-up. WBM commercial insurance has higher deductibles and price indexation provisions than the residential master. We do not know WBM commercial insured-site details or 2025 solo R+V share. More generally, no R+V insurer TIV, asset-by-asset schedule, amount of coverage, claims, or coinsurance percentage for degewo is disclosed.
+
+**Senate Q1**: Examples across *unspecified* Berlin municipal housing company portfolios put annual net premiums per **residential dwelling** under EUR 100 in 2019, above EUR 200 in 2024, with yearly variation ~1–57%. **This is not actual R+V 2025 policy premium, insured property TIV, an insurer's annual GWP, or proof of the building insured.** A company named as insurer of a large housing corporate book cannot be naively injected as tens of thousands of residential insurance contracts into the R+V Allgemeine solo **1,060,546** year-end *connected residential building* policy anchor. The source reports typical EU-wide re-tendering of corporate building master agreements every **four years**, which helps monitoring past/future awards but does not guarantee 2026 continuation.
+
+### Independent corporate inventory opportunity and location data
+
+Primary company **2025** inventory, **dwelling units / business units**, NOT insurance policies, TIV or single buildings:
+
+- [WBM 2025 corporate annual presentation](https://gb.wbm.de/) identifies **34,498 dwellings**, **2,159,600 m² residential area** and **314,000 m² commercial area**; these are corporate **stock**, not a 2025 R+V covered asset schedule.
+- [GESOBAU 2025 corporate numbers](https://www.gesobau.de/ueber-uns/gesobau-in-zahlen/) describe roughly **48,800 own dwellings** and **~800 commercial units** plus ~700 third-party-managed dwellings; distinguish owned from managed holdings and insurance liability.
+- [degewo 2025 corporate news](https://www.degewo.de/wir-sind-degewo/presse) states **more than 83,000 apartments managed/supplied** (source UI sometimes differs by textual interpolation); 2025 company owned/managed legal group and degewo joint insurer co-share remain unverified.
+- Very approximately those three corporations together have **more than 166,000 dwelling units**, but these figures have mixed owned/managed definitions; **never call them 166,000 buildings, R+V contracts or insured sites**.
+
+**New highly useful 2025 public geospatial dataset:** [Berlin official Wohnungsbestand der landeseigenen Wohnungsunternehmen WFS](https://daten.berlin.de/datensaetze/wohnungsbestand-der-landeseigenen-wohnungsunternehmen-wfs-4c4e0115) with **DL-DE-Zero-2.0 licensing** and polygons of **cadastral parcels with at least 4 residential units per address**, derived from address-level corporate stock reports and subsequently geocoded by the Senate. Government source is a **2025 spatial opportunity mask** and much better than a bank office catchment for *possible* large multifamily housing locations. BUT critically: the [official source data format description](https://gdi.berlin.de/data/lwu/docs/Datenformatbeschreibung_LWU.pdf) lists only geometry, **`gisid` cadastral parcel ID and `typ` category**. **It does not expose WHICH of the six corporations owns/operates a parcel**. Source explicitly warns parcels can contain units owned by other landlords; so **one cannot join polygons to GESOBAU/WBM/degewo insured company** from this WFS. A parcel is not automatically a building, one dwelling, or one R+V-covered site. No raw WFS output or individual house coordinates were acquired in this PR. Its 2025 geography vintage is also different from the 2022 Zensus 400 Kreis building population.
+
+Additional independently dated [Berlin Senate WMS metadata](https://daten.berlin.de/datensaetze/wohnungsbestand-der-landeseigenen-wohnungsunternehmen-wms-f97597ac) supports spatial coverage, not owner attribution. Individual company **legitimately published** portfolio mapping such as [WBM's self-published corporate stock map](https://www.wbm.de/neubau-berlin/bestandskarte/) or official reports may eventually help *corporate* site identification; those are still not the property schedule attached to the R+V policy. Inspect source rights before combining/distributing geometries.
+
+**Model impact:** Most defensible new class is **confirmed corporate-property insurance relationship** with conditional public real-estate opportunity; prioritize Berlin WBM, GESOBAU and degewo *separately* from standard one-policy-per-building residential household book. Test influence of named public multi-building accounts in dedicated commercial/multifamily / large-risk modelling scenarios and alternative co-insurance fractions (0–100% intentionally hypothetical). Negative controls from Senate ensure other state-owned Berlin property accounts are **not automatically ascribed to R+V**.
+
+---
+
+
+
 **2026-11-05 research note.** Target **R+V Allgemeine Versicherung AG** (legal entity, SOLO), not all of R+V group and not an ENV company different from this identified target. Machine-readable inventory: [28 source candidates](../../research/observations/rva_distribution_bancassurance_public_awards_20261105_v0.toml), each with evidence grain, source scope, vintage, research priority and explicit **NO source asset/insurer site/TIV admission**.
 
 ## 1. What the stronger evidence actually shows
