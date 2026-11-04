@@ -14,6 +14,7 @@ import argparse
 import csv
 import hashlib
 import json
+import io
 import re
 from collections import Counter
 from datetime import date
@@ -139,17 +140,17 @@ def inspect_file(path: Path) -> dict:
         raise PreflightError("source-data bytes must remain outside public Git checkout")
     if not path.is_file() or path.stat().st_size > MAX_BYTES:
         raise PreflightError("source path is not a bounded local CSV file")
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
     try:
-        with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        with path.open("rb") as handle:
+            original_bytes = handle.read(MAX_BYTES + 1)
+        if len(original_bytes) > MAX_BYTES:
+            raise PreflightError("source CSV exceeds byte bound")
+        with io.TextIOWrapper(io.BytesIO(original_bytes), encoding="utf-8-sig", newline="") as handle:
             result = inspect_csv(handle)
     except UnicodeError as exc:
         raise PreflightError("original CSV requires an explicit encoding review") from exc
-    result["source_byte_sha256"] = digest.hexdigest()
-    result["source_byte_count"] = path.stat().st_size
+    result["source_byte_sha256"] = hashlib.sha256(original_bytes).hexdigest()
+    result["source_byte_count"] = len(original_bytes)
     return result
 
 
