@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-04`  
 **Purpose:** Non-admission discovery of Singapore original company-register, insurance regulator and ILS financial-source products with legal identity, historic claims and model-provenance constraints.
 
-**Entries:** 3
+**Entries:** 4
 
 ## Singapore ACRA registered-entities government open-data snapshot
 
@@ -62,3 +62,18 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Original note 4 reports two-year exact paid-plus-reserve identities for one Ida event. Printed 28.57 percent is rounded and cannot be promoted as confirmed contract share; historical settlement is not complete policy wording, vendor event loss, insured TIV, retro settlement, FRS117 liability bridge or a CAT risk calibration.
+
+## BSX original Manatee Re III 2019-1 Class A and Class B delisting notices
+
+**Candidate ID:** `bm.bsx.manatee-re-iii-2019-1-note-lifecycle.2026`  
+**Provider:** Bermuda Stock Exchange (BSX), original issuer-supplied regulatory announcements  
+**Categories:** `reinsurance`, `ils`, `cat_bond`, `security_lifecycle`, `historical_regulatory_news`  
+**Spatial scope:** Singapore-domiciled ILS SPV, original Class A and Class B USD 20 million securities linked to Safepoint reinsurance  
+**Temporal scope:** Class B early redemption announcement 2022-10-21; Class A and program maturity/redemption and delisting 2026-06-29  
+**Resolution / granularity:** Original issuer-supplied exchange notice URLs, class and program identity, nominal note face amount, announcement date, security maturity and delisting date; Class A ISIN US562011AA46  
+**Potential roles:** `ils_note_listing_status_by_class`, `avoid_stale_2026_covered_capacity`, `investment_security_vs_underlying_treaty_guard`, `cat_bond_issuance_to_exit_lifecycle`  
+**Access hint:** `public_exchange_issuer_announcements_source_license_and_reinsurance_settlement_not_verified`  
+**Authoritative source:** <https://www.bsx.com/article/1100807273>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** BSX announced early redemption and delisting of Class B on 2022-10-21 (https://www.bsx.com/article/1100801701), and maturity/redemption and delisting of Class A and note program on 2026-06-29. Nominal 2019 issuance is not amount repaid. Delisting does not prove full cedant claim runoff, company dissolution, zero residual liabilities, or any current in-force reinsurance treaty.
