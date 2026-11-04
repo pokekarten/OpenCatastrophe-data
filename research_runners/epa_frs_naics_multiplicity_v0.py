@@ -26,7 +26,7 @@ PROJECTION_HEADERS = ("frs_id", "country_code", "latitude", "longitude")
 NAICS_HEADERS = ("REGISTRY_ID", "PGM_SYS_ACRNM", "PGM_SYS_ID", "NAICS_CODE")
 HEX_SHA = re.compile(r"[0-9a-f]{64}\Z")
 SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,99}\Z")
-PROGRAM_FIELD = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,89}\Z")
+PROGRAM_FIELD = re.compile(r"[ -~]{1,90}\Z")
 
 
 class NAICSAuditBlocked(ValueError):
@@ -63,6 +63,8 @@ def audit_frs_naics(frs_blob: bytes, frs_sha: str, naics_blob: bytes, naics_sha:
                    *, frs_vintage: str, naics_vintage: str) -> dict:
     _release(frs_vintage)
     _release(naics_vintage)
+    if frs_vintage != naics_vintage:
+        raise NAICSAuditBlocked("source tables must share one explicit FRS source-release vintage")
     # Never use facility/NAICS values as one-to-one portfolio records.
     facilities = _csv(frs_blob, frs_sha, PROJECTION_HEADERS, "FRS projection")
     codes = _csv(naics_blob, naics_sha, NAICS_HEADERS, "native FRS NAICS slice")
@@ -119,6 +121,7 @@ def audit_frs_naics(frs_blob: bytes, frs_sha: str, naics_blob: bytes, naics_sha:
         "sector_memberships_are_additive_exposure_counts": False,
         "native_slice_proves_epa_original_byte_identity": False,
         "naics_is_insurance_line_or_tiv": False,
+        "naics_taxonomy_codebook_version_verified": False,
         "source_rights_or_model_admission_granted": False,
     }
 
