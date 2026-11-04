@@ -72,4 +72,26 @@ A VDL municipal metadata catalogue record does not prove 2019 original asset ava
 
 No new separate canonical source registry is created in this research note. After original index verification, promote the metadata candidate to the existing canonical landscape source catalogue and regenerate its derived public view, preserving rights/science/admission blocks.
 
-**Actual full-index and site-coverage results are not yet verified pending exact-head original-source workflow.**
+## Full original ACT LiDAR 2019 index successfully verified
+
+**GitHub Actions original-source run:** https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41892606021 — successful after correction of one synthetic test-fixture isolation issue. Fourteen offline synthetic tests passed. Original resource SHA1 matched the provider-published 6fa8f0bd8afdf87bd175c9dab2d7b479b1b18874. The full original 450512-byte file had computed SHA256 **2ad881f794e3699b83a0b312c84c2b0e467f21a7ec92bbf10a0c9a21aa4d1e6a** and held **1287** original Polygon tile entries in OGC:CRS84. URL origin, source schema, coordinate and bounded tile counts all passed.
+
+| Official original LiDAR 2019 tile polygons intersecting fixed 100m research window | Count |
+| --- | ---: |
+| Luxembourg-city centre (same fixed window as original ACT 2026 address and GeoBase tests) | **2** |
+| Berdorf village centre (same fixed window as original ACT 2026 address and GeoBase tests) | **1** |
+| Original LiDAR 2019 point-cloud ZIP bytes acquired | **0** |
+| Original classified building returns examined | **0** |
+| Independent physical building identity/accuracy proven | **No** |
+
+These counts are the **original index polygons intersecting** the declared window, not actual point-cloud data coverage/valid pixels, not a national LiDAR tile inventory census, and not actual building observation counts. A publisher-provided file SHA1 plus computed full original SHA256 now both gate the index. The runner was strengthened to freeze the actually observed 450512 bytes, 1287 features and site counts 2/1. The final exact-head workflow must pass again after those new pins.
+
+## Canonical source candidates recorded
+
+Three new entries have been added to existing canonical file landscape/sources-europe-building-attribute-discovery.json and its deterministic generated Markdown view, NOT an independently editable duplicate registry:
+
+- lu.vdl.city3d.2019-catalogue — municipal LoD2.2 2019 official metadata, original model bytes, capture method and licences still missing;
+- lu.act.lidar2019.tile-index — actual 450512-byte official SHA-verified index, 1287 polygon footprints, fixed study-area 2/1 tile candidate selection, no tile bytes;
+- lu.act.orthophoto2019.official — official dated ortho source metadata, original image bytes, per-scene rights and VDL-source independence still unverified.
+
+All are metadata/research candidates with rights_review_status=not_reviewed, scientific_review_status=not_reviewed and admission_status=not_admitted. Do not use these records as an allowlist for production CAT building exposures. If any original LiDAR index file differs, fail closed: do NOT mutate pins to match an unreviewed new upstream edition.
