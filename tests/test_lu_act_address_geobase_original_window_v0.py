@@ -40,7 +40,15 @@ class SourceCandidateTests(unittest.TestCase):
         result = classify([Point(2,2),Point(8,8)], [box(0,0,10,10)])
         self.assertEqual(result["polygons_with_multiple_uniquely_contained_addresses"],1)
         self.assertEqual(result["addresses_in_such_polygons"],2)
+        self.assertEqual(result["polygons_with_exactly_one_uniquely_contained_address"],0)
+        self.assertEqual(result["polygons_without_uniquely_contained_sample_addresses"],0)
         self.assertFalse(result["one_to_one_physical_building_identity_proven"])
+
+    def test_polygon_sample_without_address_is_not_counted_as_missing_insurance(self):
+        result = classify([Point(5,5)], [box(0,0,10,10),box(20,20,30,30)])
+        self.assertEqual(result["polygons_with_exactly_one_uniquely_contained_address"],1)
+        self.assertEqual(result["polygons_without_uniquely_contained_sample_addresses"],1)
+        self.assertFalse(result["cat_model_exposure_admitted"])
 
     def test_non_building_area_hole_does_not_count_as_containment(self):
         poly = Polygon([(0,0),(10,0),(10,10),(0,10)], holes=[[(4,4),(6,4),(6,6),(4,6)]])
