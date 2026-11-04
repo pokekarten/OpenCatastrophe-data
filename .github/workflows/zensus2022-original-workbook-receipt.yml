@@ -14,6 +14,9 @@ on:
       - "research_runners/zensus_kreis_original_age_cohorts_v0.py"
       - "research_runners/zensus_kreis_original_ownership_v0.py"
       - "tests/test_zensus_kreis_original_ownership_v0.py"
+      - "research/observations/zensus2022_400_kreis_original_owner_code_aggregates_v0.toml"
+      - "research_runners/rva_2025_kreis_original_owner_code_sensitivity_v0.py"
+      - "tests/test_rva_2025_kreis_original_owner_code_sensitivity_v0.py"
       - "tests/test_zensus_kreis_original_age_cohorts_v0.py"
       - "tests/test_zensus_kreis_original_numeric_receipt_v0.py"
       - "research/observations/zensus2022_400_kreis_original_building_aggregates_v0.toml"
@@ -47,7 +50,7 @@ jobs:
         with:
           python-version: "3.14"
       - name: Run hermetic original-package negative tests
-        run: python -m unittest tests.test_zensus_regional_original_receipt_v0 tests.test_zensus_regional_worksheet_schema_v0 tests.test_zensus_kreis_original_numeric_receipt_v0 tests.test_zensus_kreis_original_age_cohorts_v0 tests.test_zensus_kreis_original_ownership_v0 tests.test_rva_2025_kreis_zensus_real_prior_fictional_book_v0 -v
+        run: python -m unittest tests.test_zensus_regional_original_receipt_v0 tests.test_zensus_regional_worksheet_schema_v0 tests.test_zensus_kreis_original_numeric_receipt_v0 tests.test_zensus_kreis_original_age_cohorts_v0 tests.test_zensus_kreis_original_ownership_v0 tests.test_rva_2025_kreis_original_owner_code_sensitivity_v0 tests.test_rva_2025_kreis_zensus_real_prior_fictional_book_v0 -v
       - name: Acquire and audit one exact publisher original in memory
         run: python research_runners/zensus_regional_original_receipt_v0.py --official-live --schema-preview
       - name: Verify exact-source 2022 Kreis building totals and emit attributed aggregate rows
@@ -62,3 +65,5 @@ jobs:
         run: python research_runners/rva_2025_kreis_age_source_sensitivity_v0.py
       - name: Verify original published 2022 Kreis owner types T through AA
         run: python research_runners/zensus_kreis_original_ownership_v0.py --official-live --emit-ownership-tsv
+      - name: Validate source owner code values against 2025 solo national control and distinguish source labels
+        run: python research_runners/rva_2025_kreis_original_owner_code_sensitivity_v0.py
