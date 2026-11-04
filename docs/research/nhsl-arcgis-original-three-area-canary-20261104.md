@@ -57,3 +57,16 @@ The offline gate **does not cryptographically authenticate the source of supplie
 3. Maintain clear lines between original modeled replacement-cost stock, OED's building/contents **insured** TIV, actual terms/deductibles/reinsurance, and downstream hazard/vulnerability calibration.
 
 **Scientific/model state: not admitted. Source rights review for the exact downstream use: still pending.**
+
+
+## Exact original dictionary ↔ live polygon schema discrepancy
+
+A direct field-name set comparison of [NHSL's published YAML](https://github.com/OpenDRR/national-human-settlement/blob/main/docs/_data/nhsl_physical_exposure_attributes.yml) against the original ArcGIS layer 1 `fields[].name` yielded:
+
+- **66 documented names** versus **64 live service fields**, **54 exact common names**, **12 documented-only** and **10 service-only**. This is not simply a two-field difference. Treat type and naming differences as schema/version drift until individual product content confirms them.
+- Documented-only: `Et_PopNight___E_AreaHa`, `Et_AssetValue___E_AreaHa`, `Et_BldgNum___E_AreaHa`, `E_SAC`, `E_SSRegion`, `E_CensusBldg`, `Et_Pop_Km2`, `Et_PPH`, `Et_ResLD`, `Et_ResMD`, `Et_RESHD`, `ET_MFHshld`.
+- Service-only: `Et_MFHshld`, `OBJECTID`, `geom_poly`, `Et_PopDay_Km2`, `Et_PopDay_Ha`, `Et_PopNight_Km2`, `Et_PopNight_Ha`, `Et_Res`, `geom_poly_Length`, `geom_poly_Area`.
+- **Notable case drift:** `ET_MFHshld` in published YAML versus `Et_MFHshld` in the live service. Do not silently use a case-folding transform for schema admission: verify the original release XLSX and exact layer attribute semantics first.
+- **Validated overlap:** all ten required `nhsl_oed_staging_preflight_v0.py` input names are in the exact intersection with expected string/double types; `OBJECTID` is the eleventh explicit live service query field. Nothing here proves original GeoPackage columns.
+
+**Blocked independent cross-layer proof:** Read-only attempts to aggregate the unindexed-looking layer-0 building archetypes by `Sauid` and to retrieve its first three records repeatedly exceeded the external access tool's live-query timeout. No archetype-to-polygon conservation identity has therefore been asserted. A bounded, site-friendly alternative (provider field index or original regional GeoPackage outside Git) is required; do not run broad group-by scans over the national ArcGIS feature layer.
