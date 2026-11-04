@@ -29,6 +29,24 @@ A successfully parsed **classic ZIP central directory** may reveal only **aggreg
 
 ## Original results
 
-**Do not populate member counts or archive formats until actual source GitHub CI passes.** If the actual official ZIPs use ZIP64, a spanned archive, unexpected source syntax or larger metadata than the budget, the job will fail closed and the result must be documented as a source format discovery rather than by loosening constraints to force green.
+**Actual source ZIP central-directory run:** https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41905140379 — **SUCCESS**. Fifteen synthetic offline ZIP safety/structure regressions passed, and all three official ZIP metadata tails were read under the strict original index and site checks.
+
+| Official source site / index-order ZIP | Source ZIP HEAD bytes | Central entries | `.laz` extension | ZIP compression method | Encrypted flag |
+| --- | ---: | ---: | ---: | --- | ---: |
+| Luxembourg-city, one tile ZIP | **449275061** | **9** | **9** | **8 / DEFLATE** | 0 |
+| Berdorf, first tile ZIP | **410361626** | **9** | **9** | **8 / DEFLATE** | 0 |
+| Berdorf, second tile ZIP | **374704804** | **9** | **9** | **8 / DEFLATE** | 0 |
+| **Total** | **1234341491** reported bytes | **27** | **27** | all method 8 | 0 |
+
+The three original classic ZIP central directories were **756, 759 and 756 bytes** respectively. No entries with `.las`, `.txt`, `.xml`, `.json`, `.prj`, or other extension were observed; no ZIP-directory records and no ZIP comments. The ZIP central metadata contain a small number of `.laz`-named assets — a concrete acquisition candidate, **not proof that these assets contain valid LASzip headers or any classified LiDAR returns**.
+
+The original ZIP central-directory SHA256 digests (only ZIP *metadata* bytes, **not whole-file SHA256**) for the fixed source order are:
+- city: `a7d96dc5a21b578e617d359f0b793e85db67de028164677ee22c39c5f472bf58`
+- Berdorf first: `7bc9e106577a4ef7c81fc30572f8d280118c47ffe79425d5360bb2329d69ddf1`
+- Berdorf second: `3b7ce099b4918321030d92710dd917b873e62104903f69ab5a69608c4d4addd6`
+
+All observed central-directory offsets, per-entry byte lengths and count conservation passed. This **metadata-only** observation is not a replacement for a full original ZIP SHA256, independent 2019 building footprint control, actual LiDAR coordinate/vertical datum inspection or licence approval.
+
+ If the actual official ZIPs use ZIP64, a spanned archive, unexpected source syntax or larger metadata than the budget, the job will fail closed and the result must be documented as a source format discovery rather than by loosening constraints to force green.
 
 Scientific downstream gates remain: original tile full SHA256, actual LAS/LAZ header and CRS/datum/classification verification, 2019 vs 2026 sensor/pipeline ancestry, blinded holdout and rights review. Model/insured-asset/TIV/claims admission remains false.
