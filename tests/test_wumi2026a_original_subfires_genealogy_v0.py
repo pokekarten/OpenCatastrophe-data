@@ -7,9 +7,38 @@ from zipfile import ZipFile
 
 from research_runners import wumi2026a_original_subfires_genealogy_v0 as g
 from research_runners import wumi2026a_dryad_original_asset_receipt_v0 as z
-from tests.test_wumi2026a_parent_subfire_partition_v0 import (
-    FIELDS, PARENT, CHILD1, CHILD2, STANDALONE, listbytes, row, synthetic_pair,
-)
+# Independent native-layout *fictional* fixtures: no imports from other test files.
+FIELDS = ("fireid", "dataset", "agency", "name", "year", "month", "day",
+          "lat", "lon", "lat_ll", "lon_ll", "lat_ur", "lon_ur",
+          "poly_area_ha", "burn_area_ha", "mtbs_name", "mtbs_id",
+          "irwinid", "fod_id", "fpa_id", "object_id_wfaip",
+          "object_id_fpafod", "object_id_wfigs", "object_id_calfire",
+          "object_id_usgs", "object_id_iafph", "cause_human_or_natural",
+          "cause_specific")
+
+
+def row(fireid, *, year=2024, polygon="400", burned="300", source="mtbs"):
+    attrs = {key: "N/A" for key in FIELDS}
+    attrs.update(fireid=fireid, year=str(year), month="7", day="8",
+                 dataset=source, poly_area_ha=polygon, burn_area_ha=burned)
+    return ",".join(attrs[x] for x in FIELDS)
+
+
+def listbytes(*rows):
+    return (",".join(FIELDS) + "\n" + "\n".join(rows) + "\n").encode()
+
+
+PARENT = "20240708_330000_1110000"
+CHILD1 = "20240708_330001_1110000"
+CHILD2 = "20240708_330002_1110000"
+STANDALONE = "20240708_330003_1110000"
+
+
+def synthetic_pair():
+    return (listbytes(row(PARENT), row(STANDALONE)),
+            listbytes(row(CHILD1, polygon="200", burned="150"),
+                      row(CHILD2, polygon="200", burned="150"),
+                      row(STANDALONE)))
 
 NESTED = "20240708_330004_1110000"
 
