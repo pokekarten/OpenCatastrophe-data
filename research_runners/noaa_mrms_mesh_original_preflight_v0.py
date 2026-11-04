@@ -125,8 +125,14 @@ def template0_grid_geography(section3: bytes, expected_points: int) -> dict:
     # WMO Template 3.0 Note 1: a zero or *missing* basic angle and
     # subdivisions mean the recommended 10^-6 degree unit. ecCodes implements
     # missing() for subdivisions as all-one bits (0xffffffff).
-    if (basic_angle not in (0, 0xffffffff) or
-            subdivisions not in (0, 0xffffffff)):
+    normalized_angle = 1 if basic_angle in (0, 0xffffffff) else basic_angle
+    normalized_subdivisions = (
+        1_000_000 if subdivisions in (0, 0xffffffff) else subdivisions
+    )
+    # Permit only the exact 10^-6 degree unit established for this fixed
+    # MRMS vintage; this includes original provider (1, 1_000_000).
+    # Any coarser/finer/non-rational grid scale remains fail-closed.
+    if normalized_angle * 1_000_000 != normalized_subdivisions:
         raise MRMSPreflightError(
             f"unreviewed GRIB2 angular scale ({basic_angle}, {subdivisions})"
         )
