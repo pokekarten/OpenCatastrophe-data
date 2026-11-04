@@ -56,11 +56,13 @@ def inspect_owner_worksheet(owner_xlsx:bytes, *,
                 raise OwnerShareBlocked("expected exactly one EIA annual Ownership worksheet")
             shared=eia._shared_strings(wb)
             raw=eia._read_member(wb,matches[0],owner.MAX_SHEET_XML)
-            style_xml=eia._read_member(wb,"xl/styles.xml",2_000_000)
+            style_xml=(eia._read_member(wb,"xl/styles.xml",2_000_000)
+                       if "xl/styles.xml" in wb.namelist() else None)
     except (BadZipFile,OSError,RuntimeError,eia.EIA860ProofBlocked,owner.OwnerSchemaBlocked) as exc:
         raise OwnerShareBlocked("invalid original annual generator Owner workbook") from exc
-    style_root=eia._xml(style_xml)
-    cell_xfs=style_root.find("{%s}cellXfs" % eia.NS)
+    style_root=eia._xml(style_xml) if style_xml is not None else None
+    cell_xfs=(style_root.find("{%s}cellXfs" % eia.NS)
+              if style_root is not None else None)
     styles=[] if cell_xfs is None else [x.get("numFmtId","0") for x in cell_xfs]
     percent_styles=Counter()
     raw_le_one=raw_gt_one=0
