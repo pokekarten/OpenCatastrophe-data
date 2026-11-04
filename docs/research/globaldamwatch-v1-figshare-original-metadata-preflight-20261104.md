@@ -65,13 +65,42 @@ revisions, rounding or different definitions; there is not yet evidence
 to resolve the cause. Neither set is verified from original data bytes.
 Do not use as an exact model calibration target without reconciliation.
 
-A publicly indexed **pre-release delta** technical document at
+### Final v1.0 Technical Documentation inspected
+
+The **actual final** `GDW_TechDoc_v1_0.pdf`, Figshare file id **47913739**
+(15-page original, dated July 2024), was inspected as public documentation
+through a web research connector on 2026-11-04:
+https://ndownloader.figshare.com/files/47913739
+
+Its sections 3.1, 3.2 and 4.1 establish these field-level and rights
+conditions for future original-archive import (not yet executed):
+
+- Two GIS feature layers **GDW_barriers_v1_0** (points) and
+  **GDW_reservoirs_v1_0** (polygons); paired features share **GDW_ID**.
+  The declared 5,850 point-only barriers must be treated as expected
+  unmatched points, not silently discarded as bad joins.
+- GIS coordinates use **geographic WGS 84 (GCS_WGS_1984)**, not an
+  implicitly metric/projected CRS. The Shapefile representation declares
+  a .prj companion; a standalone UTF-8 comma-delimited barrier attributes
+  text file is included in the Shapefile package.
+- **-99** denotes missing numeric values; **-9999** denotes missing
+  elevation values; empty text fields mean unknown, never inferred absence
+  or measured zero. Replace sentinels with *typed nulls* only in a
+  documented derivative with untouched raw values preserved externally.
+- Section 4.1 states **CC BY 4.0**, while additionally *asking* downstream
+  users not to rehost the complete unmodified original release on other
+  websites without explicit written author permission. This is an author
+  request in the final document, not a silently inferred new licence
+  prohibition overriding CC BY terms. In line with the repo's separate
+  admission/redistribution governance, no original GIS/PDF mirror is
+  authorized or included in this PR.
+
+The **pre-release delta** technical document at
 https://jeodpp.jrc.ec.europa.eu/ftp/public/JRC-OpenData/GDW/GDW_TechDoc_v1_delta.pdf
-requests avoiding full original-format redistribution without explicit author
-permission, despite its stated CC BY licence. It is not the final v1 TechDoc
-inside the published archive. Check the final release instructions, reuse
-rights and attribution before republishing any source bytes. The source is
-CC BY 4.0 per publisher and journal, but this PR grants no public mirror.
+is a separate review-phase artefact and should **not** be substituted for the
+final original v1.0 document. This resolves the former documentation-version
+uncertainty but does not establish independent original GIS byte integrity,
+source record completeness or fitness for insurer CAT modelling.
 
 ## Implementation: bounded metadata only
 
@@ -113,8 +142,9 @@ not bypassed by loosening identity or rights constraints.
    **python scripts/probe_globaldamwatch_gdw_v1_metadata_v0.py --live**.
    Save only the small receipt and exact commit identity, not provider JSON.
 2. Resolve any metadata shape mismatch against the original API specification;
-   do not infer a live pass from synthetic tests. Confirm final v1 archive
-   licence/TechDoc and choose one file representation. Separately freeze its
+   do not infer a live pass from synthetic tests. The final v1.0 TechDoc has
+   now been read; explicitly preserve its WGS84, GDW_ID, missing-value and
+   full-original-rehosting caveats when choosing one GIS representation. Separately freeze its
    file ID, download rights, byte count and independently computed SHA-256.
 3. Audit GDW_ID uniqueness, polygon match coverage, geometry, CRS, original
    per-record source attribution and attribute missingness before external
