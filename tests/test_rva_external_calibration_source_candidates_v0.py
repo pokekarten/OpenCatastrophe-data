@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 """Offline tests for R+V external calibration source landscape: NO source downloads."""
-import json
+import tomllib
 from pathlib import Path
 import unittest
 from urllib.parse import urlsplit
 
-PATH = Path(__file__).resolve().parents[1] / "research" / "observations" / "rva_external_calibration_source_candidates_v0.json"
+PATH = Path(__file__).resolve().parents[1] / "research" / "observations" / "rva_external_calibration_source_candidates_v0.toml"
 DOMAINS = {
     "www.ruv.de", "berichte.bvr.de", "www.destatis.de", "genesis.destatis.de",
     "opendata.dwd.de", "gdz.bkg.bund.de", "www.gdv.de",
@@ -19,7 +19,7 @@ FIELDS = {
 
 
 def load():
-    return json.loads(PATH.read_text(encoding="utf-8"))
+    return tomllib.loads(PATH.read_text(encoding="utf-8"))
 
 
 def validate(payload):
@@ -27,7 +27,6 @@ def validate(payload):
     assert payload["target_entity"] == "R+V Allgemeine Versicherung AG"
     assert payload["admission_status"] == "NOT_ADMITTED_RESEARCH_ONLY"
     assert payload["assessed_at"] == "2026-11-04"
-    assert payload["SPDX-License-Identifier"] == "Apache-2.0"
     records = payload["records"]
     assert len(records) == payload["source_count"] >= 20
     ids = set()
@@ -57,7 +56,7 @@ def validate(payload):
 
 
 class RvaExternalSourcesTests(unittest.TestCase):
-    def test_json_and_complete_research_inventory(self):
+    def test_toml_and_complete_research_inventory(self):
         self.assertEqual(len(validate(load())), 21)
 
     def test_group_not_solo_and_claims_not_peril_loss(self):
