@@ -46,3 +46,7 @@ jobs:
         run: python -m research_runners.noaa_mrms_mesh_direct_https_proof_v0 --product mesh_keller_2021_after
       - name: Verify 30-minute Keller rolling hail swath source separately
         run: python -m research_runners.noaa_mrms_mesh_direct_https_proof_v0 --product mesh_keller_2021_max30
+      - name: Verify separate 2024 Arlington MESH 00-42-43 source identity
+        run: python -m research_runners.noaa_mrms_mesh_direct_https_proof_v0 --product mesh_arlington_2024
+      - name: Verify 2024 Arlington rolling 30-minute MESH maximum source identity
+        run: python -m research_runners.noaa_mrms_mesh_direct_https_proof_v0 --product mesh_arlington_2024_max30
