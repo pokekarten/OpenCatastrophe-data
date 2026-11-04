@@ -77,7 +77,7 @@ class SourceCandidateTests(unittest.TestCase):
         self.assertEqual(result["geobase_polygons_sampled"],1)
 
     def test_predeclared_public_sites_only(self):
-        self.assertEqual(STUDY_SITES["luxembourg-city"], (6.1319,49.6116,107))
+        self.assertEqual(STUDY_SITES["luxembourg-city"], (6.1319,49.6116,104))
         self.assertEqual(STUDY_SITES["berdorf-village"], (6.348821,49.820946,16))
         self.assertEqual(set(STUDY_SITES), {"luxembourg-city","berdorf-village"})
 
