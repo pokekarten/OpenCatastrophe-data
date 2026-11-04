@@ -89,6 +89,10 @@ class NOAARealGridGeometryTests(unittest.TestCase):
             (0xffffffff, 0xffffffff),
             (0, 0xffffffff),
             (0xffffffff, 0),
+            (1, 1000000),
+            (2, 2000000),
+            (0, 1000000),
+            (1, 0),
         ):
             with self.subTest(first=first, second=second):
                 source = bytearray(grib3())
@@ -104,7 +108,7 @@ class NOAARealGridGeometryTests(unittest.TestCase):
         for label, offset, replacement in (
             ("points", slice(6, 10), (10).to_bytes(4, "big")),
             ("nx", slice(30, 34), (0).to_bytes(4, "big")),
-            ("angle", slice(38, 42), (1).to_bytes(4, "big")),
+            ("angle", slice(38, 42), (7).to_bytes(4, "big")),
             ("scan", 71, 0x41),
             ("end", slice(55, 59), (15_000_000).to_bytes(4, "big")),
             ("latitude", slice(46, 50), (91_000_000).to_bytes(4, "big")),
