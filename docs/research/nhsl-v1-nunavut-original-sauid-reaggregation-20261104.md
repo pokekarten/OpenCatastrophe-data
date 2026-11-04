@@ -63,3 +63,15 @@ Tests include invented multi-archetype group matching, deliberate 0.04 CAD misma
 This establishes a dependable **aggregate-preserving exposure taxonomy**: we can move among NHSL's settlement-area inventory and its *distribution of building archetypes* without unintentionally creating/destroying replacement-cost totals. The archetype classes can later be joined to documented earthquake/flood vulnerability functions, whereas the settlement-area polygons can be used for uncertainty-aware hazard support. The original source defines `BldgLon`/`BldgLat` as settled-area centroids, **not individual address/risk locations**. Estimated replacement values in **2019 CAD** are **not insured BuildingTIV or ContentsTIV**.
 
 **Still missing before portfolio/model use:** (1) original native SQLite provider-file integrity check with CLI receipt, (2) centroid-versus-polygon geometry uncertainty assessment, (3) vulnerability/engineering-taxonomy mappings with references, (4) scenario-specific **synthetic insurance terms and insuring fraction** with an explicit methodology, (5) an original-licence/third-party and modeling-fitness review. Do not move this candidate's model-admission flag or infer actual insurer policy cover from the above consistency results.
+
+
+## Trusted-main replay of exact provider bytes
+
+A narrowly scoped [GitHub Actions original-source proof](../../.github/workflows/nhsl-nunavut-original-sauid-conservation.yml) follows the existing repository's reviewed-main download pattern. PR review runs **only synthetic unit tests**, without original provider egress. **On the first reviewed merge to `main`** changing the workflow itself (or a later manual `workflow_dispatch` on main), it:
+
+1. Uses SHA-pinned read-only GitHub Actions and Python setup, and stores downloaded original ZIPs only in the runner's temporary directory with cleanup.
+2. Downloads **only the exact two fixed original provider v1.0 Nunavut archive URLs** (no user-selectable URL/ref/source), subject to a 1 MB per-file and 90-second per-request cap.
+3. Calls the new Python validator, which independently checks **exact SHA-256, ZIP metadata/CRC, native `PRAGMA integrity_check` and seven cross-layer quantities**, all with a no-go admission receipt.
+4. **Fails closed** if any actual source value, SAUID count, grouping, ZIP identity or scientific tolerance changes; prints *only aggregate* values and exact source hashes, no GPKG/CSV/SAUID/site rows or source artifacts. `contents: read`, checkout credentials not persisted.
+
+The **original native SQLite run is not yet confirmed here**. CI success on PR-head is *not* equivalent to a successful trusted-main original-source run: after merging, inspect the exact GitHub Actions workflow result and retain the run URL/log-reported receipt before claiming native SQLite source proof. A source-side 403/429, zip drift or 0.02-CAD mismatch is a scientific/access blocker to report, **not** a reason to weaken the gate.
