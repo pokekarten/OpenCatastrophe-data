@@ -84,6 +84,21 @@ class NOAARealGridGeometryTests(unittest.TestCase):
         self.assertFalse(nominal_grid_cell(grid, 10.0, -97.29)["within_source_grid_bounds"])
         self.assertEqual(_grib_signed_magnitude_i32(_encode_sign_magnitude(-12)), -12)
 
+    def test_wmo_missing_angle_and_subdivisions_are_default_microdegrees(self) -> None:
+        for first, second in (
+            (0xffffffff, 0xffffffff),
+            (0, 0xffffffff),
+            (0xffffffff, 0),
+        ):
+            with self.subTest(first=first, second=second):
+                source = bytearray(grib3())
+                source[38:42] = first.to_bytes(4, "big")
+                source[42:46] = second.to_bytes(4, "big")
+                grid = template0_grid_geography(bytes(source), 24500000)
+                self.assertEqual(grid["latitude_increment_deg"], 0.01)
+                self.assertEqual(grid["longitude_increment_deg"], 0.01)
+                self.assertTrue(grid["geometry_checked"])
+
     def test_reject_corrupt_count_scale_scan_endpoint_and_lat(self) -> None:
         good = grib3()
         for label, offset, replacement in (
