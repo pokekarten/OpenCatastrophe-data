@@ -74,3 +74,23 @@ GitHub-hosted [NOAA direct proof run #41797985117](https://github.com/pokekarten
 The first execution of the new grid parser **blocked correctly** because the synthetic fixtures assumed only `(basic angle, subdivisions)=(0,0)`. The original source disclosed `(1,1000000)`, also exactly **10^-6 degree** per WMO GRIB2 Template 3.0 Note 1. The parser now validates the actual **ratio**, with fail-closed rejection of non-equivalent scales; unit tests cover both WMO zero/missing sentinels and the observed positive ratio. This is a standards-based correction, **not** removal of the grid checks. Invalid geometries still fail.
 
 **Remaining:** all source raster intensity values, no-data/bitmap semantics, event-vs-radar timing bias, and independent ground observation uncertainty remain untested. The 63.5 mm figure comes **exclusively from the NCEI report** and must not be represented as a decoded MESH value. Independent ecCodes/wgrib2 point sampling of this fixed source is the next defensible science step.
+
+
+## First actual radar-value decode: independent ecCodes four-cell challenge (2026-11-04)
+
+[Source-action run #41799100987](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41799100987) was the first **successful real original-field value decode** for this case, using ecCodes Python **2.50.0**, in a separate opt-in research-only GitHub Actions job. It first fetched the **fixed and SHA-256/CRC32 verified original NOAA S3** `MRMS_MESH_00.50_20210429-013639.grib2.gz` (54,463 bytes compressed), opened its decompressed GRIB2 message in memory, and used **ecCodes independent geodesic nearest-four** to read just four cells surrounding the rounded `32.92°N / −97.29°` NCEI location. The test did not commit original binary bytes or full raster values.
+
+| Relative grid corner | Source zero-based index | Grid center lat/lon (0..360 east) | ecCodes distance from rounded NCEI report | Actual decoded MESH value |
+| --- | ---: | --- | ---: | ---: |
+| North-west | 15,452,270 | 32.925°N / 262.704999°E | 0.7255 km | **5.8 mm** |
+| North-east | 15,452,271 | 32.925°N / 262.714999°E | 0.7254 km | **14.6 mm** |
+| South-west | 15,459,270 | 32.915°N / 262.704999°E | 0.7256 km | **4.4 mm** |
+| South-east | 15,459,271 | 32.915°N / 262.714999°E | 0.7254 km | **16.8 mm** |
+
+**All four values are valid decoded numeric source cells**; none was classified missing. The independent NCEI employee-reported tennis-ball hail was **2.50 inches = 63.5 mm** at `2021-04-29T01:37:00Z`, only **21 seconds** after the original MESH timestamp.
+
+**Observed discrepancy, not resolved model bias:** Across four adjacent radar cells MESH is **4.4–16.8 mm** versus a **63.5 mm ground hail report**. The 63.5 mm is an independently reported observation and **not an ecCodes result**. The 2021 object is an *instantaneous* radar estimate, not a local event-lifetime maximum. The NCEI location is coarse and appears effectively at a **four-cell junction**; each grid center is approximately **0.725 km** from its rounded point. Radar storm structure, spatial offset, hail-time uncertainty, report rounding, calibration/vintage and data packing/quality rules are all potential differences. This comparison alone **cannot justify reducing insurer losses, calibrating vulnerability, inferring an annual frequency or certifying an accuracy score**.
+
+The original NCEI report says **NWS Employee**, event ID 956694, `1.5NNW KELLER ALTA VISTA AR`, with local historical `04/28/2021 19:37 CST-6` label. Beware that NOAA uses an explicit fixed `CST-6` offset: converting the timestamp to UTC is **01:37Z**, whereas wall-clock daylight local labels seen on some secondary sites may show **20:37 CDT** for the same event. The corresponding NCEI `40.00M` property-damage field, if read, is **not a policy claim, independent insurer paid-loss dataset, or per-coordinate ground truth**. Source: https://www.ncei.noaa.gov/access/storm-events-database/event-details/956694.
+
+**Next falsifiable science checks:** read exact `MESH_Max_30min` swath for the same episode and 2–3 adjacent two-minute instantaneous source records; verify the maximum within a bounded time window, true missing/zero semantics and radar version, and compare across multiple de-duplicated NCEI point reports. A 30-minute rolling swath is **not an additional physical event** and must not be added to instantaneous MESH as an independent occurrence. This remains **research-only** with no hazard, vulnerability, pricing, TIV, insurer loss or model-input admission.
