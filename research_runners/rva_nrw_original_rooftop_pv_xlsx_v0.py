@@ -26,6 +26,9 @@ SOURCE_LANDING = (
     "energie/solarkataster/photovoltaik/"
 )
 SOURCE_DATE = "2026-03-12"
+EXPECTED_SHA256 = "a9730f844159781c0747a4eb816f88382924239d0cc1874ea69d7a70ce912071"
+EXPECTED_BYTES = 1506519
+EXPECTED_STRUCTURE = [(6, 2), (397, 254), (397, 254), (397, 9), (397, 9)]
 MAX_SOURCE_BYTES = 8 * 1024 * 1024
 MAX_TOTAL_UNCOMPRESSED = 125 * 1024 * 1024
 MAX_SINGLE_UNCOMPRESSED = 65 * 1024 * 1024
@@ -55,12 +58,16 @@ def fetch_official(*, open_url=urllib.request.urlopen):
         return b"".join(chunks)
 
 
-def parse_original(original: bytes):
+def parse_original(original: bytes, *, expected_sha256=None, expected_bytes=None, expected_structure=None):
     if not isinstance(original, bytes):
         raise ValueError("ORIGINAL_SOURCE_NOT_BYTES")
     if not (1024 <= len(original) <= MAX_SOURCE_BYTES):
         raise ValueError("ORIGINAL_SOURCE_BAD_SIZE")
     digest = hashlib.sha256(original).hexdigest()
+    if expected_sha256 is not None and digest != expected_sha256:
+        raise ValueError("ORIGINAL_SOURCE_SHA256_MISMATCH")
+    if expected_bytes is not None and len(original) != expected_bytes:
+        raise ValueError("ORIGINAL_SOURCE_BYTE_LENGTH_MISMATCH")
     try:
         with zipfile.ZipFile(io.BytesIO(original)) as archive:
             members = archive.infolist()
@@ -109,6 +116,10 @@ def parse_original(original: bytes):
                 })
     except (zipfile.BadZipFile, ET.ParseError, RuntimeError) as exc:
         raise ValueError("ORIGINAL_XLSX_BAD_STRUCTURE") from exc
+    if expected_structure is not None and [
+        (x["occupied_row_elements"], x["max_occupied_columns"]) for x in stats
+    ] != expected_structure:
+        raise ValueError("ORIGINAL_WORKSHEET_SHAPE_MISMATCH")
     return {
         "status": "ORIGINAL_BYTES_OBSERVED_RESEARCH_ONLY",
         "original_source_url": SOURCE_URL,
@@ -126,13 +137,18 @@ def parse_original(original: bytes):
         "pv_installed_units_observed": False,
         "insurer_roof_pv_endorsement_observed": False,
         "actual_model_input_admitted": False,
-        "original_sha_pinned_in_source_code": False,
+        "original_sha_pinned_in_source_code": expected_sha256 is not None,
     }
 
 
 def main():
     original = fetch_official()
-    result = parse_original(original)
+    result = parse_original(
+        original,
+        expected_sha256=EXPECTED_SHA256,
+        expected_bytes=EXPECTED_BYTES,
+        expected_structure=EXPECTED_STRUCTURE,
+    )
     print(json.dumps(result, sort_keys=True))
     return 0
 
