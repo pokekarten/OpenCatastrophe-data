@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # BD-Adresses / GeoBase: city-centre versus Berdorf exact-area original-source challenge
 
-**2026-11-04. Original-source research only, no insurer asset or CAT exposure admission.** This follow-up builds on PR #1269 rather than reimplementing address and polygon original-receipt validators.
+**2026-11-04. Original-source research only, no insurer asset or CAT exposure admission.** This consolidated PR #1272 supersedes the unmerged #1269 while retaining its original source validation and fixing the two-site spatial extent semantics.
 
 ## Two preselected source locations
 
