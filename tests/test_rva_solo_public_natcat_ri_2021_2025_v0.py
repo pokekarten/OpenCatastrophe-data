@@ -60,6 +60,26 @@ def check(d):
             raise ValueError("Actual RI financial layer/source permission falsely admitted")
         if row.get("signed_outward_result_is_ceded_cat_loss_only") is not False or row.get("signed_outward_result_is_a_treaty_premium_or_claim") is not False:
             raise ValueError("Annual technical result misrepresented as CAT claim or premium")
+    shock=d.get("historical_solo_gross_natcat_shock_2021",{})
+    if (shock.get("source_report_year")!=2022
+        or shock.get("event_year")!=2021
+        or shock.get("reporting_entity")!="R+V Allgemeine Versicherung AG"
+        or Decimal(shock.get("gross_current_year_elemental_loss_expense_eur_million"))!=Decimal("949.8")
+        or any(shock.get(k) is not False for k in (
+            "single_bernd_event_value", "property_building_only_loss",
+            "all_solo_yearly_natcat_treaty_cession_observed",
+            "precise_hazard_event_catalogue_observed",
+            "underlying_source_pdf_bytes_verified_here"))):
+        raise ValueError("2021 solo annual NatCat gross shock falsely promoted")
+    buildings=d.get("connected_building_current_underwriting_year_claims",[])
+    known={2021:804326,2022:493862,2023:539986,2024:696566,2025:601698}
+    if ([x.get("year") for x in buildings]!=list(known)
+        or any(type(row.get("gross_current_year_claims_teuro")) is not int
+               or row["gross_current_year_claims_teuro"]!=known[row["year"]]
+               or row.get("source_report_year",0)<row["year"]
+               or not row.get("source_url","").startswith("https://www.ruv.de/")
+               for row in buildings)):
+        raise ValueError("Building current-year loss scope or amount drift")
     return rows
 
 class RvaSourcedRiTests(unittest.TestCase):
@@ -99,6 +119,20 @@ class RvaSourcedRiTests(unittest.TestCase):
 
     def test_reject_parent_treated_as_proven_reinsurance_tower_end(self):
         d=source();d["years"][2]["inuring_order_known"]=True
+        with self.assertRaises(ValueError):check(d)
+
+    def test_2021_company_cat_shock_not_bernd_only(self):
+        d=source();check(d)
+        self.assertEqual(d["historical_solo_gross_natcat_shock_2021"]["gross_current_year_elemental_loss_expense_eur_million"],"949.8")
+        self.assertFalse(d["historical_solo_gross_natcat_shock_2021"]["single_bernd_event_value"])
+
+    def test_reject_2021_cat_gross_as_net_recovery(self):
+        d=source();d["historical_solo_gross_natcat_shock_2021"]["all_solo_yearly_natcat_treaty_cession_observed"]=True
+        with self.assertRaises(ValueError):check(d)
+
+    def test_current_year_building_expenses_not_old_year_balance_sheet(self):
+        d=source();self.assertEqual([x["gross_current_year_claims_teuro"] for x in d["connected_building_current_underwriting_year_claims"]],[804326,493862,539986,696566,601698])
+        d["connected_building_current_underwriting_year_claims"][-1]["gross_current_year_claims_teuro"]=577493
         with self.assertRaises(ValueError):check(d)
 
     def test_reject_solo_group_mismatch(self):
