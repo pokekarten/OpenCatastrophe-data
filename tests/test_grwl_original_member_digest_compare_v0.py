@@ -2,11 +2,16 @@
 # SPDX-License-Identifier: Apache-2.0
 """Synthetic-only member-byte/CRC/size comparison tests; no original GRWL ZIPs."""
 import io
+import hashlib
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 import zipfile
 import unittest
 
 from research_runners.grwl_original_member_digest_compare_v0 import (
     SCHEMA, OriginalZipError, compare_digest_inventories, member_digests,
+    fingerprint_original,
 )
 
 CORE = {'GRWL.shp':b'GEOMETRY-ORIGINAL', 'GRWL.shx':b'INDEX-ORIGINAL',
@@ -112,6 +117,28 @@ class OriginalMemberDigestTests(unittest.TestCase):
         self.assertEqual(len(rec['grwl.shp']['sha256_of_uncompressed_member_bytes']),64)
         self.assertNotIn('raw',rec['grwl.shp'])
         self.assertNotIn('contents',rec['grwl.shp'])
+
+
+    def test_original_descriptor_rehash_matches_pinned_receipt(self):
+        payload=synthetic_zip()
+        with TemporaryDirectory() as d:
+            path=Path(d)/'synthetic.zip'
+            path.write_bytes(payload)
+            receipt={'independently_computed_original_zip_sha256':hashlib.sha256(payload).hexdigest()}
+            with patch('research_runners.grwl_original_member_digest_compare_v0.inspect_original_zip',return_value=receipt):
+                result,members=fingerprint_original(path,'2018')
+            self.assertEqual(result,receipt)
+            self.assertIn('grwl.shp',members)
+
+    def test_original_descriptor_rehash_rejects_false_receipt(self):
+        payload=synthetic_zip()
+        with TemporaryDirectory() as d:
+            path=Path(d)/'synthetic.zip'
+            path.write_bytes(payload)
+            receipt={'independently_computed_original_zip_sha256':'0'*64}
+            with patch('research_runners.grwl_original_member_digest_compare_v0.inspect_original_zip',return_value=receipt):
+                with self.assertRaises(OriginalZipError):
+                    fingerprint_original(path,'2018')
 
 
 if __name__ == '__main__':
