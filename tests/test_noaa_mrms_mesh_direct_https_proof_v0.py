@@ -107,7 +107,11 @@ class NOAAFixedDirectHTTPSProofTests(unittest.TestCase):
             ("unparseable_length", {"content_length": "x"}),
         ):
             with self.subTest(test=test):
-                response = FakeResponse(b"abc", url, **kwargs)
+                destination = kwargs.get("url", url)
+                response = FakeResponse(
+                    b"abc", destination,
+                    **{key: value for key, value in kwargs.items() if key != "url"},
+                )
                 with self.assertRaises(direct.DirectSourceProofError):
                     direct.fetch_and_audit("mesh", FakeOpener(response))
 
