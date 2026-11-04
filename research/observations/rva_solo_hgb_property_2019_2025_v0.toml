@@ -1,0 +1,160 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Public issuer HGB annual-report research observations, never customer-level exposure.
+schema_version = "RVA_SOLO_HGB_PROPERTY_HISTORY_V0"
+entity = "R+V Allgemeine Versicherung AG"
+entity_kind = "solo_direct_insurer"
+accounting_basis = "HGB_Gebuchte_Bruttobeitraege"
+premium_unit = "thousand_eur"
+fire_property_scope = "self_written_direct_business"
+reporting_currency = "EUR"
+reviewed_at = "2026-11-04"
+exposure_site_count_observed = false
+company_insured_tiv_observed = false
+company_geo_exposure_observed = false
+company_natcat_claims_observed = false
+first_year = 2019
+last_year = 2025
+rounding_tolerance_thousand_eur = 1
+notes = "Separate from Solvency II S.05 Fire and Other Property premium: not the same insurer accounting classification or premium population. Values in TEUR; comparison-year values sourced from subsequent issuer report when annotated."
+
+[[years]]
+year = 2019
+fire_property_self_written = 1233215
+fire_self_written = 181661
+household_contents_self_written = 137870
+connected_buildings_self_written = 523860
+other_property_self_written = 389824
+total_solo_company_gwp = 4303486
+total_self_written_company_gwp = 4209224
+total_accepted_reinsurance_gwp = 94263
+source_report_year = 2020
+source_url = "https://www.ruv.de/dam/jcr:3119d518-15fc-4926-a1b7-9f748af99a85/2020-allgemeine-pdf"
+source_scope = "issuer_HGB_annual_report"
+comparative_from_next_report = true
+corporate_perimeter_break = false
+merger_event = "none documented in this source matrix"
+
+[[years]]
+year = 2020
+fire_property_self_written = 1307631
+fire_self_written = 191306
+household_contents_self_written = 141820
+connected_buildings_self_written = 562520
+other_property_self_written = 411985
+total_solo_company_gwp = 4513531
+total_self_written_company_gwp = 4398611
+total_accepted_reinsurance_gwp = 114920
+source_report_year = 2020
+source_url = "https://www.ruv.de/dam/jcr:3119d518-15fc-4926-a1b7-9f748af99a85/2020-allgemeine-pdf"
+source_scope = "issuer_HGB_annual_report"
+comparative_from_next_report = false
+corporate_perimeter_break = false
+merger_event = "none documented in this source matrix"
+
+[[years]]
+year = 2021
+fire_property_self_written = 1374189
+fire_self_written = 200950
+household_contents_self_written = 143184
+connected_buildings_self_written = 598955
+other_property_self_written = 431101
+total_solo_company_gwp = 4653443
+total_self_written_company_gwp = 4530900
+total_accepted_reinsurance_gwp = 122543
+source_report_year = 2022
+source_url = "https://www.ruv.de/dam/jcr:55c81597-b4fe-4df2-a3e0-65aedb9ba15a/2022-allgemeine.pdf"
+source_scope = "issuer_HGB_annual_report"
+comparative_from_next_report = true
+corporate_perimeter_break = false
+merger_event = "none documented in this source matrix"
+
+[[years]]
+year = 2022
+fire_property_self_written = 1493237
+fire_self_written = 217134
+household_contents_self_written = 146256
+connected_buildings_self_written = 663322
+other_property_self_written = 466524
+total_solo_company_gwp = 4839589
+total_self_written_company_gwp = 4703569
+total_accepted_reinsurance_gwp = 136020
+source_report_year = 2022
+source_url = "https://www.ruv.de/dam/jcr:55c81597-b4fe-4df2-a3e0-65aedb9ba15a/2022-allgemeine.pdf"
+source_scope = "issuer_HGB_annual_report"
+comparative_from_next_report = false
+corporate_perimeter_break = false
+merger_event = "none documented in this source matrix"
+
+[[years]]
+year = 2023
+fire_property_self_written = 1663476
+fire_self_written = 252015
+household_contents_self_written = 152757
+connected_buildings_self_written = 749285
+other_property_self_written = 509419
+total_solo_company_gwp = 5173247
+total_self_written_company_gwp = 5031864
+total_accepted_reinsurance_gwp = 141382
+source_report_year = 2023
+source_url = "https://www.ruv.de/dam/jcr:781b9b4f-3574-44c3-8183-24d4dde18195/2023-allgemeine.pdf"
+source_scope = "issuer_HGB_annual_report"
+comparative_from_next_report = false
+corporate_perimeter_break = false
+merger_event = "none documented in this source matrix"
+
+[[years]]
+year = 2024
+fire_property_self_written = 1950290
+fire_self_written = 290360
+household_contents_self_written = 163440
+connected_buildings_self_written = 895090
+other_property_self_written = 601399
+total_solo_company_gwp = 5605967
+total_self_written_company_gwp = 5499027
+total_accepted_reinsurance_gwp = 106940
+source_report_year = 2024
+source_url = "https://www.ruv.de/dam/jcr:71a5e2d0-4f86-4e5f-a716-f3f3f6aa5102/Allgemeine-2024.pdf"
+source_scope = "issuer_HGB_annual_report"
+comparative_from_next_report = false
+corporate_perimeter_break = true
+merger_event = "Condor Allgemeine merged retroactively from 2024-01-01"
+
+[[years]]
+year = 2025
+fire_property_self_written = 2125473
+fire_self_written = 305990
+household_contents_self_written = 164585
+connected_buildings_self_written = 997710
+other_property_self_written = 657188
+total_solo_company_gwp = 5992306
+total_self_written_company_gwp = 5893662
+total_accepted_reinsurance_gwp = 98643
+source_report_year = 2025
+source_url = "https://www.ruv.de/dam/jcr:e0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R+V%20Allgemeine%20Versicherung%20AG_final.pdf"
+source_scope = "issuer_HGB_annual_report"
+comparative_from_next_report = false
+corporate_perimeter_break = true
+merger_event = "R+V Direktversicherung merged retroactively from 2025-01-01"
+
+[additional_issuer_observations_2025]
+year = 2025
+building_contracts_approx_million = "1.1"
+building_contract_change_pct_approx = "-1.2"
+building_contract_status = "reported_approximation_not_risk_locations_or_cat_insured_contracts"
+other_property_technical_insurance_gwp_approx_million_eur = "315.3"
+other_property_technical_insurance_status = "subset_of_other_property_not_residential_natcat"
+company_domestic_gwp_thousand_eur_sfcr_basis = 5932143
+company_austria_gwp_thousand_eur_sfcr_basis = 55540
+company_italy_gwp_thousand_eur_sfcr_basis = 4622
+geography_warning = "S05 geography is whole-company, NOT fire/property or connected-buildings geographic mix"
+geography_source_url = "https://www.ruv.de/dam/jcr:9c8441a7-28dd-4d98-9b79-3eb3c8b4afa5/2025-SFCR-Allgemeine.pdf"
+contracts_source_url = "https://www.ruv.de/dam/jcr:e0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R+V%20Allgemeine%20Versicherung%20AG_final.pdf"
+
+[cross_basis_2025]
+year = 2025
+hgb_direct_fire_property_thousand_eur = 2125473
+solvency_ii_fire_other_property_thousand_eur = 2223182
+status = "non_equivalent_premium_classifications_reconciliation_not_established"
+hgb_source_url = "https://www.ruv.de/dam/jcr:e0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R+V%20Allgemeine%20Versicherung%20AG_final.pdf"
+solvency_source_url = "https://www.ruv.de/dam/jcr:9c8441a7-28dd-4d98-9b79-3eb3c8b4afa5/2025-SFCR-Allgemeine.pdf"
