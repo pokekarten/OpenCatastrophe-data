@@ -10,9 +10,12 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+from io import BytesIO
 import json
 from pathlib import Path
 import re
+import stat
+from zipfile import BadZipFile, ZipFile, ZIP_STORED, ZIP_DEFLATED
 
 MAX_JSON = 128_000
 VERSION = 458442
@@ -118,11 +121,78 @@ def inspect_dryad_files_metadata(raw: bytes, sha256: str, *, expected_version: i
     }
 
 
+
+def inspect_zip_members_untrusted(raw: bytes) -> dict:
+    """Bounded ZIP structural/CRC check on bytes, no extraction or member content output.
+
+    This does NOT establish original asset identity; caller must validate
+    exact byte count and publisher digest before using its result.
+    """
+    if type(raw) is not bytes or not 0 < len(raw) <= 5_000_000:
+        raise DryadReceiptBlocked("missing/oversized small WUMI ZIP payload")
+    try:
+        with ZipFile(BytesIO(raw), "r") as archive:
+            infos = archive.infolist()
+            if not 0 < len(infos) <= 40:
+                raise DryadReceiptBlocked("unexpected empty/overpopulated original ZIP")
+            seen = set()
+            total = 0
+            files = 0
+            for info in infos:
+                name = info.filename
+                if (not isinstance(name, str) or not name or name.startswith("/")
+                    or "\\\\" in name or "\\x00" in name
+                    or re.match(r"^[A-Za-z]:", name)
+                    or any(part in ("", ".", "..") for part in name.rstrip("/").split("/"))):
+                    raise DryadReceiptBlocked("unsafe ZIP member path")
+                folded = name.rstrip("/").casefold()
+                if folded in seen:
+                    raise DryadReceiptBlocked("ambiguous duplicate ZIP member path")
+                seen.add(folded)
+                if info.flag_bits & 0x1:
+                    raise DryadReceiptBlocked("encrypted ZIP member not admitted")
+                if info.compress_type not in (ZIP_STORED, ZIP_DEFLATED):
+                    raise DryadReceiptBlocked("unknown ZIP compression")
+                # file system symlinks are not safe payload members.
+                if (info.create_system == 3 and
+                    stat.S_IFMT(info.external_attr >> 16) == stat.S_IFLNK):
+                    raise DryadReceiptBlocked("ZIP symlink member blocked")
+                if info.file_size > 30_000_000:
+                    raise DryadReceiptBlocked("unbounded expanded member")
+                total += info.file_size
+                if total > 80_000_000:
+                    raise DryadReceiptBlocked("unbounded ZIP expanded total")
+                if not info.is_dir():
+                    files += 1
+            if files == 0:
+                raise DryadReceiptBlocked("ZIP has no ordinary files")
+            if archive.testzip() is not None:
+                raise DryadReceiptBlocked("ZIP member CRC failed")
+    except (BadZipFile, OSError, EOFError, RuntimeError) as exc:
+        raise DryadReceiptBlocked("invalid WUMI ZIP container/CRC") from exc
+    return {"zip_structure_crc_checked": True, "zip_member_count": len(infos),
+            "zip_file_count": files, "zip_total_uncompressed_bytes": total,
+            "zip_extraction_performed": False,
+            "zip_member_names_or_contents_in_report": False}
+
+
+def inspect_original_zip_pinned(raw: bytes) -> dict:
+    """Require Dryad's exact original bytes before inspecting ZIP structure."""
+    if type(raw) is not bytes or len(raw) != ASSET_BYTES:
+        raise DryadReceiptBlocked("original ZIP byte count differs from publisher receipt")
+    if hashlib.sha256(raw).hexdigest() != ASSET_SHA256:
+        raise DryadReceiptBlocked("original ZIP SHA256 differs from publisher receipt")
+    result = inspect_zip_members_untrusted(raw)
+    return {"target_original_file_sha256_verified": True,
+            "target_downloaded_bytes": len(raw), **result}
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--metadata-json", type=Path, required=True)
     ap.add_argument("--metadata-sha256", required=True)
     ap.add_argument("--dryad-version", type=int, required=True)
+    ap.add_argument("--original-zip", type=Path, help="Optional exact original 4.68 MB ZIP to byte-hash and CRC check")
     args = ap.parse_args(argv)
     try:
         f = args.metadata_json
@@ -131,6 +201,12 @@ def main(argv=None) -> int:
         result = inspect_dryad_files_metadata(
             f.read_bytes(), args.metadata_sha256, expected_version=args.dryad_version
         )
+        if args.original_zip is not None:
+            zip_path = args.original_zip
+            if not zip_path.is_file() or zip_path.stat().st_size != ASSET_BYTES:
+                raise DryadReceiptBlocked("missing or wrong-sized original WUMI ZIP")
+            result.update(inspect_original_zip_pinned(zip_path.read_bytes()))
+            result["state"] = "ORIGINAL_ZIP_BYTES_AND_CRC_MATCH_NO_MODEL_ADMISSION"
     except (OSError, DryadReceiptBlocked) as exc:
         print(json.dumps({"state": "BLOCKED", "reason": str(exc)}))
         return 2
