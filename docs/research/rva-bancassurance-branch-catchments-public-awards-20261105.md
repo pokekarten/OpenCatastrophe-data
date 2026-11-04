@@ -28,6 +28,39 @@ Machine-readable primary evidence with these explicit positive and negative rela
 
 Supporting typed source for WBM/GESOBAU/degewo 2025 stock numbers plus the Berlin government WFS metadata and **no corporate-entity GIS join**: [`rva_berlin_named_housing_public_stock_geography_2025_v0.toml`](../../research/observations/rva_berlin_named_housing_public_stock_geography_2025_v0.toml). This source contains **only aggregated corporate counts and official WFS metadata**, no polygons, personal addresses or individual covered insurance risks. Tested with 12 source-gated negative controls.
 
+### **New original 2025 Berlin district-by-corporation data: real geography for these named insurance-client corporates**
+
+The **same government that directly confirmed insurer identities in April** later published a **complete 12-Berlin-Bezirk × seven land-owned property operators original dwelling count matrix**. Its independent official source is [Berlin Senate, 11 Nov 2025, Drucksache 19/24229](https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/SchrAnfr/S19-24229.pdf), **question 2, PDF page 3**. This is **NOT postcode data**: the government explicitly says **no PLZ breakdown** is available. Six corporation totals are **as of June 30, 2025**; berlinovo total **as of Sept 30, 2025**. This is a genuine company-by-borough corporate **dwelling stock observation**, not a measured count of risk addresses or insurance contracts.
+
+Canonical bounded public numeric transcription with source exact row totals: [`rva_berlin_senate_housing_borough_stock_2025_v0.toml`](../../research/observations/rva_berlin_senate_housing_borough_stock_2025_v0.toml). Executive original table:
+
+| Borough (selected) | GESOBAU **dwellings** | WBM **dwellings** | degewo **dwellings** |
+| --- | ---: | ---: | ---: |
+| Pankow | 19,578 | 139 | 964 |
+| Reinickendorf | 18,049 | 0 | 995 |
+| Mitte | 6,625 | 12,455 | 8,055 |
+| Friedrichshain-Kreuzberg | 0 | 16,531 | 1,662 |
+| Marzahn-Hellersdorf | 2,878 | 0 | 19,566 |
+| Treptow-Köpenick | 0 | 159 | 16,656 |
+| **Published corporate TOTAL including non-borough stock** | **49,054** | **34,040** | **82,637** |
+
+The full 12-district table also includes **Gewobag, HOWOGE, STADT UND LAND** as **competitor-insured controls** (per April Senate document) plus berlinovo (insurer not established by that report). The original **six companies' aggregate totals reconcile exactly to 376,278 housing units**, plus separate berlinovo **18,666**; a subset of corporate stock is explicitly classified `weitere Bestände` that can include property outside Berlin, student/MUF housing and holdings in affiliates/funds. Do **NOT** smear `weitere Bestände` over the twelve Berlin districts. The sum of the three named R+V-connected company totals is **165,731 dwellings** including the outside/other category, while the **12-Berlin-district subtotal** is **162,883 dwellings** (WBM + GESOBAU + degewo), and this still is **NOT insured buildings** or active insurance policies.
+
+A deterministic [`rva_berlin_named_corporate_borough_opportunity_sensitivity_v0.py`](../../research_runners/rva_berlin_named_corporate_borough_opportunity_sensitivity_v0.py) computes **three declared what-if scenarios** for the degewo **share/coverage of its observed dwelling-based corporate opportunity**: 0%, 50%, 100%, added to the GESOBAU+WBM corporate dwelling opportunity baseline **for prioritizing geographic survey**. Total **hypothetical corporate dwelling-equivalents within the 12 Berlin boroughs** are respectively **82,787; 122,835; 162,883**. These are **scenario denominators**, NOT the company's actual insured dwelling count, insurers' legal co-share (especially degewo vs Allianz), R+V year-end contract count, property TIV, cat exposure or actual retention. No insurer participation share or assured cover of all owned corporation properties is known. The hypothetical scale *must not be added* to **1,060,546 R+V Allgemeine 2025 connected-building policies**, as buildings, unit counts and master contract structures are not equivalent.
+
+**This is now a high-confidence *geographic named-corporate-opportunity* layer** directly anchored by two **separate official government publications** (corporate insurer names and corporate dwelling stock distribution). It is scientifically MUCH more informative for Berlin **large multifamily/corporate accounts** than universal bank-office proximity and establishes controls: WBM concentration Mitte and Friedrichshain-Kreuzberg; GESOBAU Pankow and Reinickendorf; degewo Marzahn-Hellersdorf/Treptow-Köpenick, among others. Still no identifiable insurer-covered building geometry or property-specific cover!
+
+2025 owner-stock reporting dates differ from the 2025-12 company balance-sheet snapshot, and the **2023 WBM award ends Jan 2027 per secondary contract-index sources**; these do not prove cover unchanged in 2026. [Later Berlin Senate Nov 24 2025 answer, Drucksache 19/24336](https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/SchrAnfr/S19-24336.pdf) specifically confirms no public fine-grained street + house-number + PLZ company housing table of this type was supplied in response, pointing researchers to the district-level parliamentary table. That is a useful **source disclosure limit**; public GIS polygons do not carry company identifiers as described above.
+
+Reproducibility:
+
+```bash
+python research_runners/rva_berlin_named_corporate_borough_opportunity_sensitivity_v0.py
+python -m unittest discover -s tests -p 'test_rva_berlin_named_corporate_borough_opportunity_2025_v0.py' -v
+```
+
+12 additional tests validate 12×7 source numeric entries, original six-company housing mass, named R+V/competitor legal-entity separation, no artificial geo assignment of `weitere Bestände`, no risk address/TIV assumption, and degewo alternate *hypotheses*.
+
 ### Independent corporate inventory opportunity and location data
 
 Primary company **2025** inventory, **dwelling units / business units**, NOT insurance policies, TIV or single buildings:
