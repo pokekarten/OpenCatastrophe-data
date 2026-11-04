@@ -170,6 +170,66 @@ def fetch_secondary_with_bounded_retry(*, fetch=ma.fetch_secondary) -> bytes:
     raise TimeoutError("PINNED_SECONDARY_SOURCE_NETWORK_UNAVAILABLE") from last_error
 
 
+RECORDED_53_KREIS = (ROOT / "research" / "observations" /
+    "rva_nrw_53_kreis_census2022_pv2026_source_bridge_v0.toml")
+COUNTY_FIELDS = (
+    "AGS_Kreis", "municipality_rows", "active_PV_generating_units",
+    "building_PV_generating_units", "balcony_PV_generating_units",
+    "freefield_PV_generating_units", "other_PV_generating_units",
+    "all_PV_installed_kWp", "zensus2022_published_buildings_with_living_space",
+    "zensus2022_residential_buildings",
+    "zensus2022_mixeduse_buildings_with_living_space",
+    "zensus2022_pre1950_age_cells", "zensus2022_2000plus_age_cells",
+    "ecological_2026_registered_building_PV_units_per_1000_2022_living_space_buildings",
+)
+
+
+def verify_persisted_53_county_public_source(result: dict, *, register=None) -> dict:
+    if register is None:
+        register=tomllib.loads(RECORDED_53_KREIS.read_text(encoding="utf-8"))
+    if (
+        register.get("schema_version")!="RVA_NRW_53_KREIS_REAL_2022_BUILDINGS_2026_DERIVED_PV_CONTEXT_V0"
+        or register.get("original_census_date")!="2022-05-15"
+        or register.get("secondary_mastr_registry_date")!="2026-10-02"
+        or register.get("original_census_publisher_sha256")!=SOURCE_ORIGINAL_CENSUS_SHA
+        or register.get("secondary_MaStR_derived_pinned_sha256")!=result["derived_2026_MaStR_original_sha256"]
+        or register.get("official_NRW_roof_potential_sha256")!=nrw.EXPECTED_SHA256
+        or register.get("nrw_original_census_county_rows")!=53
+        or register.get("nrw_secondary_pv_municipality_rows")!=396
+        or register.get("source_data_are_public_county_aggregates") is not True
+        or register.get("no_individual_municipality_or_pv_operator_rows") is not True
+        or any(register.get(k) is not False for k in (
+            "secondary_source_is_primary_BNetzA_XML",
+            "company_RV_insurer_county_policies_observed",
+            "company_RV_insured_pv_geography_or_TIV_observed",
+            "same_year_insurer_covariate_universes",
+            "insured_pv_policy_coverage_vulnerability_or_loss_known",
+            "native_cat_and_RI_model_admitted",
+        ))
+    ):
+        raise ValueError("RVA_NRW_53_COUNTY_ORIGINAL_OR_INSURER_SCOPE_CHANGED")
+    rows=result.get("kreis_aggregates",[])
+    recorded=register.get("kreise",[])
+    if len(rows)!=53 or len(recorded)!=53:
+        raise ValueError("RVA_NRW_53_COUNTY_SOURCE_COUNT_DRIFT")
+    if {x.get("AGS_Kreis") for x in recorded}!={x.get("AGS_Kreis") for x in rows}:
+        raise ValueError("RVA_NRW_53_COUNTY_AGGREGATE_KEYS_CHANGED")
+    orig={x["AGS_Kreis"]:x for x in rows}
+    for entry in recorded:
+        actual=orig[entry["AGS_Kreis"]]
+        if set(entry)!=set(COUNTY_FIELDS):
+            raise ValueError("RVA_NRW_53_COUNTY_PUBLISHED_FIELDS_CHANGED")
+        if any(entry[key]!=actual[key] for key in COUNTY_FIELDS):
+            raise ValueError("RVA_NRW_53_COUNTY_PUBLISHED_VALUES_CHANGED")
+    for name,number in result["observed_public_summary_counts"].items():
+        if register.get("national_NRW_"+name)!=number:
+            raise ValueError("RVA_NRW_53_COUNTY_NATIONAL_SOURCE_SUM_DRIFT")
+    return {
+        "53_Kreis_public_source_aggregates_match_original":True,
+        "insurer_and_CAT_model_source_admitted":False,
+    }
+
+
 def main() -> int:
     p=argparse.ArgumentParser()
     p.add_argument("--county-rows",action="store_true",
@@ -179,6 +239,7 @@ def main() -> int:
     secondary=fetch_secondary_with_bounded_retry()
     official=ma.official_nrw_ags(nrw.fetch_official())
     result=aggregate_NRW_Kreise(secondary,official,b,a)
+    result["public_original_source_receipt"]=verify_persisted_53_county_public_source(result)
     if not x.county_rows:
         result.pop("kreis_aggregates")
     print(json.dumps(result,sort_keys=True,ensure_ascii=False))
