@@ -57,7 +57,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - /v2/articles/25988293/versions/1
 
-**Parameter rules:** Exactly one explicit opt-in anonymous GET of https://api.figshare.com/v2/articles/25988293/versions/1. No caller-selected ID, version, URL, query, headers, redirects, pagination, archive download, file URL follow, or second request. Public article metadata only. Any changed version, licence or file-list identity blocks. The first live receipt must be reviewed before scientific/data promotion.
+**Parameter rules:** One explicit opted-in anonymous GET of https://api.figshare.com/v2/articles/25988293/versions/1 only, no redirect, caller ID/URL/version/host/path/query/headers, pagination, follow-up download or retry. Exact original v1 provider metadata was separately retrieved with HTTP 200 on 2026-11-04; the reviewed parser must verify all three fixed metadata identities including item-level size and BOTH MD5 values. Verification does not permit file download or source promotion.
 
 ## Response contract
 
@@ -65,7 +65,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 - application/json
 
-**Format:** Figshare public, immutable-version-targeted article details JSON: article ID 25988293, version 1, exact version DOI and CC BY 4.0; metadata describing two alternate v1.0 ZIP representations (gdb and shp) only. Reject unverified/missing required metadata instead of assuming files.
+**Format:** Figshare original public version-1 article metadata JSON: original release file identity contains two alternate GIS archives (GDW_v1_0_gdb.zip and GDW_v1_0_shp.zip) AND a separately published final technical document (GDW_TechDoc_v1_0.pdf). These are 3 archival files, not 3 independent scientific datasets.
 
 **Scientific semantics:** Global Dam Watch v1.0 is a global river-barrier and reservoir reference database. The published release contains a barrier point layer and an associated reservoir polygon layer; these are distinct scientific objects linked by identifiers/location, and not every barrier has an associated reservoir polygon. The two release ZIPs are alternate Geodatabase and Shapefile delivery representations, not independent scientific releases. The published v1.0 inventory reports 41,145 barrier points and 35,295 associated reservoir polygons. Presence in the database does not establish dam-failure probability, structural fragility, reservoir operating state, current asset status, downstream inundation or catastrophe-model fitness.
 
@@ -81,7 +81,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Rate limit notes:** Figshare official API documentation recommends at most one request per second and reserves throttle/block rights. This contract permits one explicitly invoked fixed metadata GET without pagination, redirects, retry, file retrieval or a scheduled acquisition loop.
 
-**Mutability notes:** Use the version-specific /versions/1 API route rather than mutable latest article details. Archive file identities, declared sizes and optional provider MD5 from that response are metadata, not verified original ZIP bytes. A live result must record retrieval UTC, response byte count/SHA-256 and code identity. For archived file acquisition, separately review exact asset, permissions, declared and independently computed SHA-256 and CRS/column semantics.
+**Mutability notes:** Original version-specific Figshare v1 public article JSON retrieved 2026-11-04 and reported article total 127,938,795 bytes comprising final PDF (716,288 bytes, file 47913739), Geodatabase ZIP (57,476,758 bytes, 47913742) and Shapefile ZIP (69,745,749 bytes, 47913754). Provider-supplied and computed MD5 fields agreed for each file; these are metadata declarations, not independently recalculated byte receipts. Any version or metadata drift must fail closed. Original ZIP/GIS file acquisition requires distinct review, exact SHA-256, attribute/geometry quality gates and full final v1 TechDoc rights check.
 
 ## Rights and policy
 
@@ -107,13 +107,12 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 ### Expected evidence
 
-- exact version-specific Figshare metadata endpoint HTTP 200 without redirect
-- strict bounded UTF-8 application/json; response byte count and SHA-256
-- article id 25988293, version 1, version DOI 10.6084/m9.figshare.25988293.v1
-- CC BY 4.0 licence identity from provider metadata
-- exact two alternate archive names, item identifiers, positive declared sizes and any provider MD5
-- retrieval UTC and execution code identity
-- no archive download, provider bytes persisted, CAT admission or database write
+- fixed Figshare article-version v1 original metadata endpoint returns HTTP 200 without redirect
+- strict bounded JSON, response byte count and SHA-256, retrieval UTC and probe code SHA-256
+- article id 25988293, version 1, DOI 10.6084/m9.figshare.25988293.v1, CC BY 4.0
+- two GIS archives plus one separately listed final TechDoc PDF with exact reviewed file names/ids/sizes, matching provider declared supplied/computed MD5
+- provider article total declared 127938795 bytes, no file-link resolution or download
+- no original GIS/PDF file bytes persisted, CAT admission or database write
 
 **Implementation decision:** build_adapter_now
 
@@ -129,5 +128,6 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 - <https://info.figshare.com/user-guide/how-to-use-the-figshare-api/>
 - <https://docs.figshare.com/>
 - <https://docs.figshare.com/v2/>
+- <https://api.figshare.com/v2/articles/25988293/versions/1>
 
-**Notes:** A single fixed, version-specific Figshare public metadata canary is ready for explicitly opted-in execution, never an unbounded harvester. It cannot retrieve either archive, follow links or admit GIS source data. Publisher paper confirms 41,145 barriers and 35,295 reservoir polygons; 5,850 barrier points have no matched polygon. The source is not dam-failure hazard or insured loss. First live provider response remains unverified in this change.
+**Notes:** Provider's exact public v1 metadata was independently inspected on 2026-11-04 (HTTP 200) and lists 3 files: 2 alternate GIS archive formats plus a separate final technical PDF. Exact original file IDs, provider declared byte sizes, matching supplied/computed MD5, licence, DOI and total size are frozen in the new probe. This is independent provider metadata evidence, not a successful execution receipt from the reviewed Python probe itself, not a checked archive SHA-256, and not source admission or acquisition permission. Freeze one original GIS archive separately only after review. See PR \#1233.
