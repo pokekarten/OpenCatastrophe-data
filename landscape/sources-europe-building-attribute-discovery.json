@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "purpose": "Non-admission discovery-only additional European building observations, national registers, energy certificates, heights, roof equipment, address IDs and cross-country links to enrich EUBUCCO; rights/science/admission never implied.",
-  "review_date": "2026-11-01",
+  "review_date": "2026-11-04",
   "entries": [
     {
       "candidate_id": "tum.globalbuildingatlas.odbl-polygons",
@@ -408,6 +408,82 @@
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
       "note": "Keep discovery only: OS NGD roof attributes should not be confused with free OS OpenMap Local and OS Open UPRN. Before any use, purchase/contract/rights and data licensing review; do not claim free download or derive user-facing roof models from proprietary source."
+    },
+    {
+      "candidate_id": "lu.vdl.city3d.2019-catalogue",
+      "name": "Luxembourg City VDL LoD2.2 3D buildings 2019 official metadata",
+      "provider": "Ville de Luxembourg - Service Topographie et geomatique",
+      "categories": [
+        "building_3d",
+        "municipal_geometry",
+        "luxembourg"
+      ],
+      "spatial_scope": "City of Luxembourg municipal boundary; catalogue describes LoD2.2 in 2019",
+      "temporal_scope": "2019 city 3D model as catalogued; ISO metadata date 2022-07-27 is not survey epoch",
+      "resolution_or_granularity": "Government GeoNetwork ISO metadata only; city online map is not proof of download of original municipal building file, original CityGML format or full feature SHA256",
+      "potential_roles": [
+        "vdl_building_upstream_lineage",
+        "municipal_historical_3d_reference_candidate"
+      ],
+      "authoritative_url": "https://geocatalogue.geoportail.lu/geonetwork/geoportail-lu/api/records/a116f21e-faf1-4bdd-9a29-064fd9a30b8d",
+      "access_class_hint": "metadata_only_municipal_original_asset_and_rights_unverified",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official municipality Geomatics origin confirmed; no original 2019 building data acquired or 2026 Bati3DVDL per-object crosswalk. City original capture date, model generation, accuracy, source rights and independent imagery/ALS are unproven. Do not transfer ACT national 2020 LoD2.2 flight/accuracy statements to VDL."
+    },
+    {
+      "candidate_id": "lu.act.lidar2019.tile-index",
+      "name": "Luxembourg ACT LiDAR 2019 official original classified tile index",
+      "provider": "Administration du cadastre et de la topographie (ACT)",
+      "categories": [
+        "lidar",
+        "classified_point_cloud",
+        "tile_index",
+        "luxembourg"
+      ],
+      "spatial_scope": "Luxembourg national LiDAR 2019 coverage; two frozen 100m public city and Berdorf windows",
+      "temporal_scope": "2019 airborne laser survey; original GeoJSON tile URL index issued February 2020",
+      "resolution_or_granularity": "Original 450512-byte CRS84 GeoJSON has 1287 tile polygons, only 2/1 polygons intersect fixed 100m city/Berdorf windows; official URL directory points to separate classified point-cloud ZIP tiles",
+      "potential_roles": [
+        "original_tile_selection",
+        "different_processing_method_candidate",
+        "2019_roof_reconstruction_preflight"
+      ],
+      "authoritative_url": "https://data.public.lu/en/datasets/lidar-2019-releve-3d-du-territoire-luxembourgeois/",
+      "access_class_hint": "catalogue_cc0_original_tile_index_full_sha_verified_no_pointcloud_bytes",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official original tile-index full SHA256 2ad881f794e3699b83a0b312c84c2b0e467f21a7ec92bbf10a0c9a21aa4d1e6a and published SHA1 6fa8f0bd8afdf87bd175c9dab2d7b479b1b18874 verified in GitHub Action 41892606021. This is NOT verification of any source LAZ/ZIP tile or actual classified building points. Potential raw-sensor overlap with VDL 3D remains unresolved; independent validation not admitted."
+    },
+    {
+      "candidate_id": "lu.act.orthophoto2019.official",
+      "name": "Luxembourg ACT official 2019 orthophoto original geocatalogue",
+      "provider": "Administration du cadastre et de la topographie (ACT)",
+      "categories": [
+        "aerial_imagery",
+        "orthophoto",
+        "historical_roof_context",
+        "luxembourg"
+      ],
+      "spatial_scope": "Luxembourg national orthoimagery including special city-area acquisition criteria",
+      "temporal_scope": "Flights 4 and 5 July 2019 and 22 August 2019; original GeoNetwork metadata dated 2023",
+      "resolution_or_granularity": "Official original ortho source metadata advertises ground sample distance under 20cm and WMS visualization; no individual original raster scene, tile SHA256 or manually validated building footprint acquired",
+      "potential_roles": [
+        "historical_visual_roof_holdout_candidate",
+        "sensor_lineage_comparison",
+        "city_2019_change_review"
+      ],
+      "authoritative_url": "https://geocatalogue.geoportail.lu/geonetwork/geoportail-lu/api/records/97c88ef6-6c64-4cb0-a134-06bb42b2b448",
+      "access_class_hint": "official_wms_metadata_cc0_catalogue_original_raster_sha_unverified",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Original source is ACT, potentially the same imagery/survey foundation as municipality or cadastral models. Viewer imagery is not a ground-truth building label. Verify actual scene timestamps, original rights, image masks and raw-sensor independence before any 2019-versus-2026 error benchmark."
     }
   ]
 }
