@@ -23,6 +23,24 @@ The annual reports **2021, 2023, 2024 and 2025** describe **quota-share and exce
 
 The 2021 NatCat protection **trigger** is a rare actual observed Boolean control for our stress-test designs. However five annual Booleans cannot identify monetary **attachment**, **limit**, **quota**, number of reinstatements, per-occurrence vs aggregate cover, inuring order, reinstatement premium, geographical perimeter or external retro proportions; these must remain genuinely **hypothetical** and cannot be reverse-solved from group Bernd €730m press estimate. Even 2021 event chronology is not one single Bernd hazard event: other June/July storms may have aggregated into the contractual result.
 
+## Newly recovered actual SOLO gross catastrophe benchmark and building-claims history
+
+The **R+V Allgemeine 2022 HGB** [official report, PDF pp. 9–10](https://www.ruv.de/dam/jcr:55c81597-b4fe-4df2-a3e0-65aedb9ba15a/2022-allgemeine.pdf) retrospectively reports **€949.8m of 2021 gross *current-year catastrophe/natural elemental claim expense*** in this solo entity. The source explicitly connects the historic severe 2021 season to the June–July storms including **Volker, Wolfgang, Xero and Bernd**. This is much stronger than any *group* Bernd press snapshot as a **company-level annual gross NatCat severity holdout**. **It is not a single Bernd event loss**, not a connected-buildings-only loss, and not the 2021 parent NatCat XL cession or standalone premium. Do not subtract the 2021 €470.6m *ceded annual total technical result* from €949.8m and label the difference as model company net CAT: the two account on different perils, contract cashflows, reserve development, and financial signs.
+
+A separate issuer **direct connected-building current-underwriting-year gross all-cause claims** series, in **TEUR** (thousand EUR), is recoverable from the solo report's original/current-year comparative tables:
+
+| Underwriting/event financial year | Direct connected-buildings *current-year* gross claims (TEUR) | Primary solo HGB page/table |
+| --- | ---: | --- |
+| 2021 | **804,326** | [2022 report](https://www.ruv.de/dam/jcr:55c81597-b4fe-4df2-a3e0-65aedb9ba15a/2022-allgemeine.pdf) comparative, PDF p. 10 |
+| 2022 | **493,862** | Same 2022 report, PDF p. 10 |
+| 2023 | **539,986** | [2023 report](https://www.ruv.de/dam/jcr:781b9b4f-3574-44c3-8183-24d4dde18195/2023-allgemeine.pdf) |
+| 2024 | **696,566** | [2025 report](https://www.ruv.de/dam/jcr:e0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R+V%20Allgemeine%20Versicherung%20AG_final.2026-04-21-14-59-23.pdf) 2024 comparative |
+| 2025 | **601,698** | Same 2025 report |
+
+**Do NOT confuse the 2025 €601.698m *current-underwriting-year* gross building claim expense above with the separately documented 2025 €577.49270397m HGB *balance-sheet* gross claims expense**, which can include development of earlier years. Both represent non-NatCat all-cause insured building claims, and the 2024 Condor / 2025 Direktversicherung legal-perimeter changes mean raw year-to-year difference alone is not an event frequency or insurer portfolio location estimate.
+
+These source-reported numeric controls (not PDF-original asset SHA-256s, per-event ELTs, GUL/IL, policy IDs, hazard, net loss or TIV) are now separately typed in the same TOML evidence receipt and covered by explicit negative tests. **The €949.8m 2021 solo annual gross NatCat figure is a high-priority challenge for an independently generated 2021 event replay**, but a single historical annual loss does not validate a stochastic OEP/AEP tail, especially not a 1:200 PML.
+
 ## Independent parent/inward context and name risk
 
 R+V Versicherung AG is a **different** company acting as parent/internal reinsurer, while R+V Allgemeine's direct residential/commercial policies are issued by the **solo direct insurer**. The parent insurer/reinsurer annual [2025 report](https://www.rv-re.com/about-us/ratings-reports) covers far more worldwide inward reinsurance business and should NEVER be used as the target's actual building-risk geography or premium numerator. The R+V Allgemeine separately reports a modest **inward** book (2025 gross assumed business premium approximately €98.6m): do NOT mix with its **outward** signed technical-result control.
