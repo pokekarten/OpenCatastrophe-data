@@ -123,6 +123,26 @@ class OriginalGeneratorOperatorJoinTests(unittest.TestCase):
         self.assertNotIn("PRIVATELY NAMED SOURCE",json.dumps(r))
         self.assertEqual(r["state"],"REVIEW_KEY_OR_SOURCE_STATUS")
 
+    def test_source_unkeyed_footer_metadata_excluded_without_weakening_real_keys(self):
+        g={"Operable":[("599","G1","OP","123","X"),
+                       ("A page of notes","","","","")],
+           "Proposed":[("Source notes","","","","")],
+           "Retired and Canceled":[]}
+        r=m.inspect_members(*sample(gens=g,owners=[]),require_pinned=False)
+        self.assertEqual(r["source_rows_without_plant_and_generator_keys_by_sheet"],
+                         {"Operable":1,"Proposed":1})
+        self.assertEqual(r["original_source_rows_with_bad_plant_or_generator_key_by_sheet"],{})
+        self.assertEqual(r["in_cohort_distinct_plant_generator_keys"],1)
+        self.assertEqual(r["state"],"GENERATOR_OPERATOR_KEYS_RESEARCH_ONLY")
+        self.assertNotIn("A page of notes",json.dumps(r))
+
+    def test_malformed_generator_present_but_plant_code_missing_is_review(self):
+        g={"Operable":[("unparseable","G1","OP","123","X")],
+           "Proposed":[],"Retired and Canceled":[]}
+        r=m.inspect_members(*sample(gens=g,owners=[]),require_pinned=False)
+        self.assertEqual(r["original_source_rows_with_bad_plant_or_generator_key_by_sheet"]["Operable"],1)
+        self.assertEqual(r["state"],"REVIEW_KEY_OR_SOURCE_STATUS")
+
     def test_utility_missing_and_unmatched_not_fabricated(self):
         g={"Operable":[("599","G1","OP","999","X"),
                        ("599","G2","OP","","X")],
