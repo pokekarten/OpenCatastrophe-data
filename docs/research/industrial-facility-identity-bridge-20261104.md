@@ -74,3 +74,23 @@ python research_runners/epa_frs_native_projection_v0.py \
 This is a verified *transform contract*, not an EPA original dataset acquisition or an actual FRS-GEM match. A useful next measurement is the exact original ECHO-FRS ZIP or full-FRS source identity, the native facilities projection coverage, and an independent fixed coordinate reference/accuracy receipt before enabling geospatial comparison.
 
 **Original-file identity correction:** The hash of a manually bounded native-format FRS CSV slice proves only the supplied *slice* bytes, not the EPA provider ZIP/file, its publisher version, or the original extraction process. The adapter machine report explicitly sets `publisher_original_file_bytes_authenticated=false` and `native_csv_slice_is_publisher_original=false`. Original provider hashes, exact licence and audited extraction provenance remain separate prerequisites before a real asset join.
+
+## Native FRS NAICS multiple-activity audit (added 2026-11-04)
+
+The [EPA ECHO original source dictionary](https://echo.epa.gov/tools/data-downloads/frs-download-summary) identifies native `FRS_NAICS_CODES.csv` columns `REGISTRY_ID`, `PGM_SYS_ACRNM`, `PGM_SYS_ID`, and six-digit `NAICS_CODE`. A single facility can carry multiple regulatory program IDs and multiple NAICS classifications. Converting each NAICS row into one unique building would **multiply physical assets and potentially insured TIV** incorrectly.
+
+The [standalone offline aggregate audit](../../research_runners/epa_frs_naics_multiplicity_v0.py) and [synthetic-only tests](../../tests/test_epa_frs_naics_multiplicity_v0.py) compare an *FRS normalized research projection* against a separately supplied native-format NAICS CSV slice. The audit enforces original-column names, unique FRS projection identifiers, six-digit NAICS notation, distinct programme+system+facility+NAICS combinations and caller-claimed SHA-256 of each **slice**, without asserting these hashes authenticate EPA original ZIP files. It reports distinct facilities with codes, multiple distinct codes, duplicates of a code across different programmes, out-of-perimeter NAICS rows and **at-most-once per facility per two-digit sector** membership counts.
+
+Sector counts can sum to **more than the total number of facilities**. A two-digit NAICS prefix is neither a Solvency-II line of business, a building occupancy assigned to one structure, nor an insured asset value. No insurer company, NAICS-to-OED occupancy, TIV or CAT business-interruption vulnerability is inferred. A missing NAICS link in a bounded slice does not mean the facility has no economic activity.
+
+Execute offline on approved local slices (placeholders are nonfunctional):
+
+```bash
+python -m unittest discover -s tests -p 'test_epa_frs_naics_multiplicity_v0.py' -v
+python research_runners/epa_frs_naics_multiplicity_v0.py \
+  --frs-csv /reviewed/private/frs_id_only_projection.csv --frs-sha256 FRS_SLICE_SHA256 \
+  --naics-csv /reviewed/private/FRS_NAICS_CODES_slice.csv --naics-sha256 NAICS_SLICE_SHA256 \
+  --frs-vintage YYYY-MM-DD --naics-vintage YYYY-MM-DD
+```
+
+**Next empirical decision:** freeze the original source archive identity and exact native extraction/perimeter before using any numerical NAICS-sector distribution in a synthetic company portfolio. This research audit is designed to expose join multiplication and source gaps, not to assign insurance risk.
