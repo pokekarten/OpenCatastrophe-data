@@ -93,4 +93,6 @@ python research_runners/epa_frs_naics_multiplicity_v0.py \
   --frs-vintage YYYY-MM-DD --naics-vintage YYYY-MM-DD
 ```
 
+**Snapshot and taxonomy gate:** The facility projection and NAICS sample must be sourced from one explicitly shared release date; different reported vintages are rejected instead of silently combined. A six-digit code is not enough to identify the NAICS taxonomy *revision*; the audit marks codebook version as unverified pending original provider documentation.
+
 **Next empirical decision:** freeze the original source archive identity and exact native extraction/perimeter before using any numerical NAICS-sector distribution in a synthetic company portfolio. This research audit is designed to expose join multiplication and source gaps, not to assign insurance risk.
