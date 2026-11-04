@@ -23,6 +23,11 @@ OFFICIAL_INDEX = (
 )
 # Original publisher resource metadata (not a hash manufactured by this script).
 PUBLISHED_SHA1 = "6fa8f0bd8afdf87bd175c9dab2d7b479b1b18874"
+# Independently calculated from all 450512 exact original bytes in Actions 41892606021.
+OBSERVED_ORIGINAL_SHA256 = "2ad881f794e3699b83a0b312c84c2b0e467f21a7ec92bbf10a0c9a21aa4d1e6a"
+OBSERVED_ORIGINAL_BYTES = 450_512
+OBSERVED_FEATURES = 1_287
+OBSERVED_STUDY_TILE_COUNTS = {"luxembourg-city": 2, "berdorf-village": 1}
 INDEX_BYTES_MAX = 600_000
 ITEMS_MAX = 2000
 POINTS_MAX = 20
@@ -143,8 +148,8 @@ def site_coverage(polygons):
         if not window.is_valid or window.area <= 0:
             raise OriginalIndexError("Invalid fixed research window")
         positive_tiles = sum(g.intersects(window) and g.intersection(window).area > 0 for g in safe_polys)
-        if not 1 <= positive_tiles <= 8:
-            raise OriginalIndexError("No or excessive original tiles covering fixed site")
+        if positive_tiles != OBSERVED_STUDY_TILE_COUNTS[site]:
+            raise OriginalIndexError("Exact source site tile coverage drift")
         output[site] = {
             "original_index_tile_polygons_intersecting_100m_window": positive_tiles,
             "actual_2019_lidar_tile_bytes_retrieved": False,
@@ -161,12 +166,16 @@ def verify_original(path: Path) -> dict:
     sha1 = hashlib.sha1(raw).hexdigest()
     if sha1 != PUBLISHED_SHA1:
         raise OriginalIndexError("Original index source differs from publisher SHA1")
+    if len(raw) != OBSERVED_ORIGINAL_BYTES or hashlib.sha256(raw).hexdigest() != OBSERVED_ORIGINAL_SHA256:
+        raise OriginalIndexError("Original full SHA256/size differs from observed source receipt")
     try:
         source=json.loads(raw.decode("utf-8-sig"),object_pairs_hook=_unique_pairs,
                           parse_constant=_reject_constant)
     except (ValueError,UnicodeError) as exc:
         raise OriginalIndexError("Malformed original GeoJSON document") from exc
     polygons=profile_index(source)
+    if len(polygons) != OBSERVED_FEATURES:
+        raise OriginalIndexError("Original tile-index population differs from observed receipt")
     return {
         "profile": "lu-act2019-original-lidar-tile-index-two-site-v0",
         "official_index_resource": OFFICIAL_INDEX,
