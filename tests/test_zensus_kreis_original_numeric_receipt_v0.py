@@ -67,10 +67,10 @@ class OriginalKreisNumericReceiptTests(unittest.TestCase):
         self.assertEqual(r["kreis_count"],400)
         self.assertEqual(len(rows),400)
         self.assertEqual(r["land_codes_present"],[f"{n:02}" for n in range(1,17)])
-        self.assertEqual(r["kreis_count_sum_by_field"]["gebaeude_mit_wohnraum"],400000)
-        self.assertEqual(r["kreis_count_sum_by_field"]["wohngebaeude"],360000)
-        self.assertEqual(r["kreis_count_sum_by_field"]["sonstiges_gebaeude_mit_wohnraum"],40000)
-        self.assertEqual(r["sum_count_nonadditivity_hierarchy_abs"],0)
+        self.assertEqual(r["kreis_numeric_sum_by_field_available_only"]["gebaeude_mit_wohnraum"],400000)
+        self.assertEqual(r["kreis_numeric_sum_by_field_available_only"]["wohngebaeude"],360000)
+        self.assertEqual(r["kreis_numeric_sum_by_field_available_only"]["sonstiges_gebaeude_mit_wohnraum"],40000)
+        self.assertEqual(r["sum_count_nonadditivity_hierarchy_abs_complete_rows_only"],0)
         self.assertEqual(r["original_reported_dates"],{"15.05.2022":400})
         self.assertFalse(r["insurer_spatial_contracts_observed"])
         self.assertFalse(r["oasis_model_input_admitted"])
@@ -88,6 +88,15 @@ class OriginalKreisNumericReceiptTests(unittest.TestCase):
             value="" if bad is None else bad
             with self.subTest(value=value),self.assertRaisesRegex(OriginalReceiptError,"missing/suppressed"):
                 inspect_original_kreis_building_counts(build(edit=(4,value)),require_original_sha=False)
+
+
+    def test_suppressed_optional_wohnheim_not_silently_zero(self):
+        result,rows=inspect_original_kreis_building_counts(build(edit=(7,"/")),require_original_sha=False)
+        self.assertIsNone(rows[0]["wohnheime"])
+        self.assertEqual(rows[0]["suppressed_subcategory_columns"],["H"])
+        self.assertEqual(result["kreis_complete_numeric_coverage_by_field"]["wohnheime"],399)
+        self.assertEqual(result["kreis_numeric_sum_by_field_available_only"]["wohnheime"],399*20)
+        self.assertTrue(result["kreis_optional_subcategory_null_not_zero"])
 
     def test_duplicate_kreis_ags_blocked(self):
         with self.assertRaisesRegex(OriginalReceiptError,"duplicated"):
@@ -122,7 +131,7 @@ class OriginalKreisNumericReceiptTests(unittest.TestCase):
 
     def test_total_land_must_not_be_summed(self):
         r,_=inspect_original_kreis_building_counts(build(),require_original_sha=False)
-        self.assertNotEqual(r["kreis_count_sum_by_field"]["gebaeude_mit_wohnraum"],1399999)
+        self.assertNotEqual(r["kreis_numeric_sum_by_field_available_only"]["gebaeude_mit_wohnraum"],1399999)
 
 
 def build_with_header_mutation():
