@@ -57,6 +57,18 @@ class GRWLTrustedOriginalTests(TestCase):
     def test_html_response_rejected(self):
         with self.assertRaises(OriginalAcquisitionError):self._invoke(content_type="text/html")
 
+    def test_missing_content_length_accepted_only_after_full_integrity_check(self):
+        result = self._invoke()
+        self.assertEqual(result["bytes"], 5)
+
+    def test_response_mime_rejects_html_before_writing(self):
+        with TemporaryDirectory() as tmp:
+            target = Path(tmp) / SOURCE_FILES["2018"][0]
+            with self.assertRaises(OriginalAcquisitionError):
+                download_fixed("2018", target,
+                    open_stream=lambda url: FakeResponse(b"<html>", content_type="text/html"))
+            self.assertFalse(target.exists())
+
     def test_json_response_rejected(self):
         with self.assertRaises(OriginalAcquisitionError):self._invoke(content_type="application/json")
 
