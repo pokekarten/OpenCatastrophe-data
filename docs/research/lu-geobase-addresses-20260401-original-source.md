@@ -68,3 +68,61 @@ measured **zero** in PR #1287).
 **Execution status:** initial source/run pending. No original-file
 SHA-256, record counts or released source fields are claimed here until
 the exact GitHub job reports success.
+
+## Actual original-source receipt (2026-11-04)
+
+The dedicated [original-source GitHub run 41885861174](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41885861174)
+completed **successfully** on tested head `6f58cc0713c2438857a4d07ce6eee0a14b706ee9`.
+All **9 synthetic tests passed**; the *actual official 2026-04-01*
+GeoBase Addresses GeoPackage ZIP was fully downloaded and inspected
+in the temporary runner. This is not a synthetic result.
+
+| Observed original property | Exact-source result |
+| --- | --- |
+| Original ZIP byte count | **13,448,318** |
+| Publisher MD5 matched complete bytes | `5157355db4b81736ad2e1d2d399a1bed` |
+| Independently calculated full ZIP SHA-256 | `edaf17ed2c802c155fd75caecfe44cbd23581a4b0a59f25935fa2d71a5e0b2eb` |
+| Original extracted GeoPackage SHA-256 | `b357e7aa76a61ecabee45df28d68f3cdbce4ecdebf6f396d4d83ad2ba648fc12` |
+| Actual address layer | `AD_Address` |
+| Geometry type / CRS declared | `MULTIPOINT`, EPSG:2169 |
+| Original address feature rows | **179,024** |
+| `AD_AddressID` nonblank distinct IDs | **179,024** (0 missing, 0 duplicate excess) |
+| `AlternativeIdentifier` nonblank distinct IDs | **178,431** (0 missing, **593** duplicate excess) |
+| Maximum rows for one `AlternativeIdentifier` | **5** |
+
+Actual original layer field names include `AD_AddressID`,
+`AlternativeIdentifier`, `AddressSemantics`, `AddressNumber`,
+`AddressNumberExtension`, `ThoroughfareName`, `PostCode`,
+`AddressAreaName`, `AddressAreaID`, `MunicipalityName`,
+`ValidFrom`, `MunicipalityID`, `RoadID`, plus local
+`id` and `geom`. The field *names* only were emitted; no source
+text, identifiers, individual geographic positions or joined pairs
+were disclosed.
+
+**Scientific interpretation:** original GeoBase 2026-04 has **179,024**
+address entities, while original BD-Adresses 2026-11 has **179,768**
+address rows. The simple difference of **744** may reflect different
+source dates, population scopes, identifiers or geometric capture,
+and is **not** an observed population growth rate, demolition count,
+new construction, or change in insured exposures. Original source
+`ValidFrom` was observed as a *field name*, not analysed as a
+validated lifetime-effective timestamp.
+
+The upstream MD5 and observed original full-file hashes above are
+reproducibility evidence; the exact strong source ZIP/GPKG SHA-256
+values are now pinned into the parser so later byte drift fails closed.
+An exact-head rerun is required before merge.
+
+## Next audit question
+
+The **appropriate testable identifier hypothesis** is whether
+GeoBase Addresses' `AlternativeIdentifier` corresponds to
+BD-Adresses' `id_caclr_bat`, subject to release chronology,
+source definitions and duplicates. That would establish a
+*potential address key relation*, not an address↔building geometry
+association. The already proven `BU_BuildingID` namespace
+has **zero literal overlap** with both original BD-Adresses keys
+(PR #1287), and must remain distinct. A later exact-source test
+should count only intersections/changes in aggregate, never
+print IDs or source address data. Source-independence, position
+accuracy, commercial rights and model admission are still unresolved.
