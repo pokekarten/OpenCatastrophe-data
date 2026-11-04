@@ -113,6 +113,33 @@ def spherical_centerline_length_km(shape):
     return answer
 
 
+def planar_original_wgs84_length_in_degrees(shape):
+    """Simple 2-D Euclidean lon/lat length, direct source degrees, no dateline wrap.
+
+    This control deliberately uses the original projected-on-a-plane coordinate
+    representation. It is *not* a physical ground distance in kilometres.
+    """
+    parts, xy = shape
+    if not parts:
+        return 0.0
+    if len(xy) != 16 * sum(parts):
+        raise OriginalZipError("invalid original planar degree SHP structure")
+    total, offset = 0.0, 0
+    for n in parts:
+        if n < 2:
+            raise OriginalZipError("original planar degree polyline part too short")
+        previous = struct.unpack_from("<dd", xy, offset * 16)
+        for k in range(offset + 1, offset + n):
+            current = struct.unpack_from("<dd", xy, k * 16)
+            total += math.hypot(current[0] - previous[0],
+                                current[1] - previous[1])
+            previous = current
+        offset += n
+    if not math.isfinite(total):
+        raise OriginalZipError("nonfinite original planar degree length")
+    return total
+
+
 def _pct(values, fraction):
     if not values:
         return None
@@ -148,6 +175,12 @@ def compare_length_releases(a, b):
     abs_relative = []
     delta_source = []
     geodesic_by_vintage = {"2018": [], "2026": []}
+    original_degree_length_ratio = []
+    original_degree_relative_error = []
+    new_km_spherical_relative_error = []
+    degree_error_thresholds = Counter()
+    spherical_error_thresholds = Counter()
+    diagnostic_tolerances = (1e-9, 1e-6, 1e-4, 0.01, 0.1)
     zero_denominator = 0
     same_xy_relative = []
     changed_xy_relative = []
@@ -182,10 +215,26 @@ def compare_length_releases(a, b):
         for label, source_length, shape in (
                 ("2018", old, shapes_a[i]), ("2026", new, shapes_b[j])):
             spherical = spherical_centerline_length_km(shape)
+            angular = planar_original_wgs84_length_in_degrees(shape)
             if spherical > 0:
-                geodesic_by_vintage[label].append(source_length / spherical)
+                ratio_km = source_length / spherical
+                geodesic_by_vintage[label].append(ratio_km)
+                if label == "2026":
+                    err_km = abs(ratio_km - 1.0)
+                    new_km_spherical_relative_error.append(err_km)
+                    for t in diagnostic_tolerances:
+                        if err_km > t:
+                            spherical_error_thresholds[str(t)] += 1
             else:
                 zero_geographic_lengths[label] += 1
+            if angular > 0 and label == "2018":
+                ratio_deg = source_length / angular
+                original_degree_length_ratio.append(ratio_deg)
+                err_deg = abs(ratio_deg - 1.0)
+                original_degree_relative_error.append(err_deg)
+                for t in diagnostic_tolerances:
+                    if err_deg > t:
+                        degree_error_thresholds[str(t)] += 1
     # Source product documentation reported Shape_Leng in kilometres; the
     # spherical comparison is only diagnostic and must not be used to
     # reinterpret the field units without upstream processing evidence.
@@ -209,6 +258,16 @@ def compare_length_releases(a, b):
             for label, values in geodesic_by_vintage.items()
         },
         "nonpositive_spherical_centerline_length_count_by_release": dict(zero_geographic_lengths),
+        "original_2018_shape_leng_over_wgs84_planar_degrees": _distribution(original_degree_length_ratio),
+        "original_2018_abs_relative_error_vs_planar_degrees": _distribution(original_degree_relative_error),
+        "original_2018_features_exceeding_planar_degree_rel_error": {
+            str(t): degree_error_thresholds[str(t)] for t in diagnostic_tolerances
+        },
+        "original_2026_abs_relative_error_vs_spherical_km": _distribution(new_km_spherical_relative_error),
+        "original_2026_features_exceeding_spherical_km_rel_error": {
+            str(t): spherical_error_thresholds[str(t)] for t in diagnostic_tolerances
+        },
+        "planar_degree_control_is_not_ground_distance": True,
         "spherical_length_diagnostic_basis": EARTH_LENGTH_APPROXIMATION,
         "geodesic_distance_or_projection_method_of_source_verified": False,
         "source_shape_leng_units_independently_verified": False,

@@ -39,6 +39,31 @@ At matching unique original export `OBJECTID` candidates, the code reports **agg
 
 Zero source-length ratios are **excluded and counted explicitly**; zero spherical-length geometries are **excluded from the source/spherical comparison and counted**. Negative, nonfinite, missing or ambiguous source values fail closed. Per-feature raw data never leave the runner.
 
+## Observed original-source length evidence, before the planar-degree confirmation
+
+**Successfully completed [GitHub main run 41905516679](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41905516679)** at reviewed merge commit `f687227300652bb7b00a0b40a8d55a2ed65d60dc` on 2026-11-04. Both original ZIPs matched the independent exact 2018/2026 SHA-256 pins. All **42,077 unique candidate export `OBJECTID`** pairs were included; no source ZIP, coordinates or original DBF field values were published.
+
+| Original-data statistic | Value |
+| --- | ---: |
+| Pairs with differing `SHAPE_LENG` | **42,077 / 42,077** |
+| Median `SHAPE_LENG(2026) / SHAPE_LENG(2018)` | **100.4982643653** |
+| P05 / P95 ratio of the two original length fields | 50.4211902202 / 110.8953075458 |
+| Median original 2018 `SHAPE_LENG` / independently calculated spherical WGS84 kilometres | **0.0099510154** |
+| Median original 2026 `SHAPE_LENG` / same 2026 spherical-km control | **1.0002575005** |
+| P05 / P95 original 2026 `SHAPE_LENG` / calculated spherical-km control | 0.9970136457 / 1.0037708757 |
+| Maximum original 2026 `SHAPE_LENG` / spherical-km control | **222.0488171062** |
+| Original byte-identical XY pairs with `SHAPE_LENG` changed | **4,722** |
+
+This strongly favors a **unit/calculation-method change**, not 42,077 spatially relocated rivers. One plausible mechanism is that the 2018 field stored ordinary planar longitude/latitude **angular degree** lengths, despite the [official 2026 Zenodo product description](https://zenodo.org/records/18624542) clearly labeling the simplified product's `Shape_Leng` unit as **kilometres**. The older original angular/metric ratio depends on latitude; a uniform ×100 conversion must **not** be assumed or applied.
+
+The extreme ratio (222.0488) between one 2026 source length and spherical-km control needs independent examination (antimeridian, geometry processing, projection, segmentation or a source attribute issue); no interpretation is justified from an aggregate outlier alone.
+
+### Next falsifiable control: original planar angular WGS84 length
+
+This PR adds a direct calculation of **sum of sqrt(Δlongitude² + Δlatitude²)** across every original SHP polyline part, in decimal degrees with **no longitude wrapping**. It compares the *original 2018* `SHAPE_LENG` against this planar-degree result and counts segments exceeding 1e-9, 1e-6, 1e-4, 1%, and 10% relative error. Separately it counts the 2026 segments exceeding those same error thresholds versus **approximate spherical kilometres**.
+
+If old `SHAPE_LENG / planar angular length` is near exactly 1 for all records, that substantially substantiates the 2018-angle-unit hypothesis. If the 2026 / spherical-km residual is small except rare exceptions, the 2026-km hypothesis is strengthened. This **still does not identify** the exact 2026 vendor software, projection, ellipsoid or update code, nor does it establish that every outlier is a genuine geographic feature error.
+
 ## How to interpret
 
 If 2026 / 2018 ratios cluster tightly around one fixed factor, a deterministic recalculation/scaling/units hypothesis becomes testable, but is **not proof of a particular GIS tool, CRS, ellipsoid or source code**. If both original `SHAPE_LENG` units match the documentation's kilometre description, the per-release source/spherical reference ratios might be near 1, but curvature, projection, endpoint discretization and segment method may differ. A source/spherical ratio not near 1 can suggest mismatched units, but cannot identify the correct source unit without provider documentation or independent geographic validation.
@@ -53,7 +78,7 @@ python -m unittest tests.test_grwl_original_shape_leng_audit_v0 -v
 
 Live source processing is allowed only from reviewed `main` via `.github/workflows/grwl-original-shape-leng-audit.yml` and `python -m research_runners.grwl_original_shape_leng_audit_v0 --live`. PR heads run **offline tests only**. Full repository CI remains required.
 
-**No original-data result is available from this new length experiment at PR creation.** Read the exact completed trusted-main workflow result before making a unit/scaling claim.
+**The first original source length comparison completed successfully**, as documented above. The additional planar-degree experiment is pending a new reviewed-main live run; do not claim its results until that separate GitHub log has been verified.
 
 ## Model boundaries
 
