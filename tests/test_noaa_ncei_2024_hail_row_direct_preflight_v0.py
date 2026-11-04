@@ -31,8 +31,9 @@ def good(**changes) -> dict:
         "BEGIN_DATE_TIME": "27-MAY-24 18:43:00",
         "CZ_TIMEZONE": "CST-6",
         "SOURCE": "Public", "MAGNITUDE": "3.25",
-        "MAGNITUDE_TYPE": "E", "BEGIN_LAT": "32.71",
+        "MAGNITUDE_TYPE": "", "BEGIN_LAT": "32.71",
         "BEGIN_LON": "-97.1", "BEGIN_LOCATION": "DALWORTHINGTON",
+        "CZ_NAME": "TARRANT",
     })
     record.update(changes)
     return record
