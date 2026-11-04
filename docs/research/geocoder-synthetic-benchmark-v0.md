@@ -26,9 +26,9 @@ correct building or insured loss location.
 
 ## Input
 
-Create a *local* \`/tmp/synthetic-geocoding.json\` with the structure below:
+Create a *local* `/tmp/synthetic-geocoding.json` with the structure below:
 
-\`\`\`json
+```json
 {
   "schema_version": "oc-geocoder-benchmark-synthetic-v0",
   "synthetic_only": true,
@@ -48,14 +48,14 @@ Create a *local* \`/tmp/synthetic-geocoding.json\` with the structure below:
     }
   ]
 }
-\`\`\`
+```
 
 Run:
 
-\`\`\`bash
+```bash
 python scripts/geocoder_synthetic_benchmark_v0.py --input /tmp/synthetic-geocoding.json
 python -m unittest tests.test_geocoder_synthetic_benchmark_v0 -v
-\`\`\`
+```
 
 Strict fields reject address text, source content, opaque provider IDs, unknown
 cases, invalid coordinates, duplicate ranks, gaps in rank 1..3, non-finite JSON,
@@ -68,7 +68,7 @@ individual coordinates. No existing geocoding endpoint is called.
 
 ## Limits and next falsifiable test
 
-A shared \`index_snapshot_id\` is merely a user declaration, **not independent
+A shared `index_snapshot_id` is merely a user declaration, **not independent
 evidence** that imported indexes share identical OSM/OpenAddresses/GeoNames
 vintages. Before real Luxembourg testing, separately prove exact original
 snapshot hashes and release, geocoder/index version, license, source lineage,
