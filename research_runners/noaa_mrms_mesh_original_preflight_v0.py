@@ -186,7 +186,6 @@ def nominal_grid_cell(grid: dict, latitude_deg: float, longitude_deg: float) -> 
         "nearest_grid_column": col if within else None,
         "nearest_grid_row": row if within else None,
         "within_source_grid_bounds": within,
-        "reported_stone_diameter_mm_observed_separately": 63.5,
         "same_location_as_actual_radar_maximum_not_established": True,
         "raster_cell_value_read": False,
     }
