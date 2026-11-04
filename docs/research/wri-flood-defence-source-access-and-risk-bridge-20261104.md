@@ -44,7 +44,7 @@ Executed **actual original HTTP response**, 2026-11-04:
 - The ATOM feed returned **16,541 bytes**, confirmed \`Hochwasserschutzanlagen - Downloaddienst\`, source rights **CC BY-SA 4.0** and both exact download links:
   - \`https://www.lfu.bayern.de/gdi/dls/daten/hwsa/hwsa_epsg25832_shp.zip\`
   - \`https://www.lfu.bayern.de/gdi/dls/daten/hwsa/hwsa_epsg4258_shp.zip\`
-- Both links replied to **independent 512-byte HTTP Range probes** with ZIP local-header magic \`PK\x03\x04\`, not HTML errors: EPSG:25832 ZIP's first member \`deich_epsg25832.dbf\`, EPSG:4258 ZIP's first member \`deich_epsg4258.dbf\`. **In a second source probe**, the exact final **2,048 HTTP response bytes** of each ZIP were independently fetched and their EOCD and complete central directories inspected: **12 members in each archive**, corresponding to three asset types (`deich`, `hwschutzwand`, `hwschutzsystem`) and each required `.dbf`, `.prj`, `.shp` and `.shx` sidecar. The central-directory offsets imply total ZIP lengths **1,072,960 bytes** (EPSG:25832) and **1,095,279 bytes** (EPSG:4258). Uncompressed SHX size metadata implies **2,171**, **801** and **891** *potential index slots* for `deich`, `hwschutzwand` and `hwschutzsystem`, respectively (per ZIP, **not independent assets across both projections**). **These are only counts inferred from metadata and were not independently confirmed from decompressed SHX/geometry.** No full ZIP member payload, CRC, actual geometries, crest heights or scientific protection reliability was decoded or approved; do *not* confuse a complete directory check with a fully verified dataset.
+- Both links replied to **independent 512-byte HTTP Range probes** with ZIP local-header magic \`PK\x03\x04\`, not HTML errors: EPSG:25832 ZIP's first member \`deich_epsg25832.dbf\`, EPSG:4258 ZIP's first member \`deich_epsg4258.dbf\`. **In a second source probe**, the exact final **2,048 HTTP response bytes** of each ZIP were independently fetched and their EOCD and complete central directories inspected: **12 members in each archive**, corresponding to three asset types (`deich`, `hwschutzwand`, `hwschutzsystem`) and each required `.dbf`, `.prj`, `.shp` and `.shx` sidecar. The central-directory offsets imply total ZIP lengths **1,072,960 bytes** (EPSG:25832) and **1,095,279 bytes** (EPSG:4258). Uncompressed SHX size metadata implies **2,171**, **801** and **891** *potential index slots* for `deich`, `hwschutzwand` and `hwschutzsystem`, respectively (per ZIP, **not independent assets across both projections**). **Those initial totals were metadata-derived only. The separate follow-up analysis below now independently decompresses and validates the actual EPSG:4258 DBF/SHX/SHP member contents for all three layers, including CRCs, DBF records and every polyline geometry.** The EPSG:25832 alternate-export member payloads remain unverified, as do site-specific crest heights, defence effectiveness and source version.
 - WMS \`GetCapabilities\` separately returned relevant structure layers including \`deich\`, \`hwschutzwand\` and \`hwschutzsystem\`. Do not treat an imagery WMS as a vector feature endpoint. The ATOM feed's own descriptive updated timestamp is old (2015); the separately published LfU service catalogue lists a weekly update cadence, but we have **not yet established the actual version/age of the ZIP contents**.
 - Provider attribution: **"Datenquelle: Bayerisches Landesamt für Umwelt, www.lfu.bayern.de"**. **CC BY-SA 4.0 share-alike conditions are distinct from WRI's CC BY 4.0 and NBPW public-domain conditions**; derivative rights and distribution require independent review.
 - Physical source covers deikes, walls and **mobile** systems that may only be installed during flood events. A mobile barrier's mapped location does *not* prove deployment, state or protection success in a particular simulation year.
@@ -95,5 +95,56 @@ python research_runners/wri_flood_defence_source_access_preflight_v0.py \
 
 python -m unittest discover -s tests -p 'test_wri_flood_defence_source_access_preflight_v0.py'
 \`\`\`
+
+## NEW: EPSG:4258 original Shapefile member contents independently decoded and checked (2026-11-04)
+
+This improves the source access preflight materially. All actual **three** flood-defence line classes in the **original official EPSG:4258** archive were decoded from *bounded original HTTP Range responses* on 4 November 2026. This is an original-provider payload test, not a synthetic-only assumption or a conclusion drawn from ZIP directory sizes. The full ZIP was **not** checked as a single SHA-256-pinned artifact. Distinct compressed members were decompressed locally in read-only memory and checked against their **original ZIP local-entry CRC-32** values.
+
+Original provider source:
+
+- https://www.lfu.bayern.de/gdi/dls/daten/hwsa/hwsa_epsg4258_shp.zip
+- Publication metadata: [LfU Download service](https://www.lfu.bayern.de/umweltdaten/geodatendienste/index_detail.htm?id=52f9bb4f-6813-4721-97b9-49aa48ecb1ea&profil=Download). LfU's publication date is **2014-04-22**, nominal refresh cadence **weekly**, and provider-declared license **CC BY-SA 4.0** with mandatory attribution; *the exact contained ZIP revision/publication instant is NOT independently pinned*.
+
+| Real EPSG:4258 source layer | Actual DBF records | Actual SHX index slots | Real SHP polyline records | Polyline parts | All inspected vertex coordinates | Invalid vertices or record structures |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| \`deich\` (dikes) | **2,171** | **2,171** | **2,171** | 2,439 | 66,484 | 0 |
+| \`hwschutzwand\` (flood-protection walls) | **801** | **801** | **801** | 1,338 | 12,842 | 0 |
+| \`hwschutzsystem\` (mobile systems) | **891** | **891** | **891** | 1,057 | 2,479 | 0 |
+| **Total (one CRS export, not both)** | **3,863** | **3,863** | **3,863** | **4,834** | **81,805** | **0** |
+
+**What the original independent binary probes checked:**
+
+- **SHP**: original compressed member from the official URL; raw DEFLATE decode; original ZIP CRC-32; classic ESRI Shapefile magic 9994, little-endian version 1000, polyline type 3, exact file byte lengths; sequential record numbers, every declared content length, every polyline part offset, all XY vertex coordinate pairs and all record-local XY bounding boxes. No null shapes and no invalid coordinate pairs were observed in these three layers. Source compressed \`.shp\` members: **838,652** bytes (dikes), **168,545** bytes (walls), **42,583** bytes (mobile systems); expanded into **1,186,492**, **252,576** and **90,324** bytes, respectively. Largest dike member required **18 adjacent bounded HTTP Range responses**. Every source member matched the original ZIP CRC.
+- **SHX**: the actual decompressed source index arrays, including all **3,863 eight-byte index entries**, were checked for exact declared file lengths, sequential nonoverlapping record offsets, consistent source SHP file sizes, original ZIP CRC-32 and native geographic XY bounding boxes.
+- **DBF**: the actual decompressed source field descriptor headers, exact record lengths and source row counts were read, with original ZIP CRC-32. All three publish the same five fields **\`WWO_KNZ\`, \`GEW_KNZ\`, \`OBJ_ART\`, \`WWA\`, \`LINK\`** (character fields); no measured crest height or physical failure rate was found in the advertised DBF *schema*. For each layer the DBF row count matches the SHX and SHP counts. Row attribute values are **not** copied or listed in this repository.
+
+Read-only original member CRC-32 receipts (hex, as stored in local ZIP headers and independently checked against decompressed bytes):
+
+| Layer | \`.dbf\` | \`.shx\` | \`.shp\` |
+| --- | --- | --- | --- |
+| \`deich\` | \`8592b2ee\` | \`ef7bdff8\` | \`4ce85ae7\` |
+| \`hwschutzwand\` | \`0e1cc10d\` | \`b9dfe316\` | \`c697ecee\` |
+| \`hwschutzsystem\` | \`34072e28\` | \`4284acbf\` | \`1ac3f882\` |
+
+Independent source layer bounds (original **EPSG:4258 / ETRS89 geographic longitude-latitude**, not a metre-valued CRS and not an insured-property search result):
+
+| Layer | Longitude min | Latitude min | Longitude max | Latitude max |
+| --- | ---: | ---: | ---: | ---: |
+| \`deich\` | 9.0333568892 | 47.4013258202 | 13.5790520246 | 50.4592548849 |
+| \`hwschutzwand\` | 9.1348757114 | 47.4029098080 | 13.6450644934 | 50.4798543779 |
+| \`hwschutzsystem\` | 9.1344456729 | 47.5004054807 | 13.6451124117 | 50.4780087167 |
+
+**Reproducibility:** a new *stdlib-only* read-only validator, \`research_runners/bavaria_hwsa_full_shapefile_integrity_v0.py\`, accepts one or both unmodified original ZIP files located **outside Git**. Its ZIP parser checks the full 12-file manifest and each extracted member's CRC; its DBF+SHX+SHP crosscheck checks every record, part index and vertex within native source bounds. It refuses path traversal, unexpected schema, corrupt byte counts, wrong native CRS, inconsistent record counts, invalid geometry and altered ZIP. Synthetic-only adversarial regression tests are in \`tests/test_bavaria_hwsa_full_shapefile_integrity_v0.py\`. When both projection exports are passed, it verifies identical DBF member SHA-256 identifiers and does **not** double the feature counts.
+
+\`\`\`bash
+python research_runners/bavaria_hwsa_full_shapefile_integrity_v0.py \
+  --epsg-4258 /private/provider-sources/hwsa_epsg4258_shp.zip \
+  --epsg-25832 /private/provider-sources/hwsa_epsg25832_shp.zip \
+  --out /tmp/bavaria-hwsa-structural-source-proof.json
+
+python -m unittest discover -s tests -p 'test_bavaria_hwsa_full_shapefile_integrity_v0.py'
+\`\`\`
+
+**Critical limits:** This turn did not independently decode all original **EPSG:25832** archive members or calculate a full-object immutable ZIP SHA-256 for either projection. The original \`.prj\` source files were identified in the archive but were not independently reviewed as whole uncompressed members in these byte probes. A matching source geometry and CRC does *not* prove a currently maintained structure, completeness across all Bavaria, legal protection standard, physical crest, temporary-barrier deployment, protected-side topology, hydraulic overtopping/breach mechanism, building-level defended flood depth, vulnerability, insured TIV or reinsurance losses. The nominal provider "weekly" cadence does not prove this specific ZIP's vintage. **No original binary ZIP, DBF, SHP, SHX or insurer exposure data is committed to Git; no scientific or rights admission follows.**
 
 **No effect on source admission:** all listed flood-defence sources remain \`not_admitted\` in the CAT/insurer model sense. This research is focused on existence, ownership and bounded technical access, not a product-grade flood protection calculation.
