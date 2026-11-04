@@ -9,7 +9,7 @@ from pathlib import Path
 import unittest
 
 from scripts.probe_globaldamwatch_gdw_v1_metadata_v0 import (
-    ARCHIVES, DOI, MAX_BYTES, URL, ProbeBlocked, inspect_metadata, probe, verify_contract,
+    FROZEN_FILES, EXPECTED_TOTAL_BYTES, DOI, MAX_BYTES, URL, ProbeBlocked, inspect_metadata, probe, verify_contract,
 )
 
 
@@ -19,10 +19,13 @@ def example() -> dict:
         "version": 1,
         "doi": DOI,
         "license": {"name": "CC BY 4.0", "url": "https://creativecommons.org/licenses/by/4.0/"},
+        "size": EXPECTED_TOTAL_BYTES,
         "files": [
-            {"id": 101, "name": ARCHIVES[0], "size": 400, "supplied_md5": "a" * 32,
-             "download_url": "https://untrusted.example/restricted"},
-            {"id": 102, "name": ARCHIVES[1], "size": 300, "computed_md5": "b" * 32},
+            {"id": identity[0], "name": name, "size": identity[1],
+             "supplied_md5": identity[2], "computed_md5": identity[2],
+             "is_link_only": False,
+             "download_url": "https://untrusted.example/restricted"}
+            for name, identity in FROZEN_FILES.items()
         ],
         "unreviewed_field": {"secret": "never-print"},
     }
@@ -62,7 +65,9 @@ class GDWMetadataProbeTests(unittest.TestCase):
         parsed = inspect_metadata(encoded())
         self.assertEqual(parsed["article_id"], 25988293)
         self.assertEqual(parsed["article_version"], 1)
-        self.assertEqual(len(parsed["archive_metadata"]), 2)
+        self.assertEqual(len(parsed["release_file_metadata"]), 3)
+        self.assertEqual(parsed["gis_archive_count"], 2)
+        self.assertEqual(parsed["final_technical_pdf_count"], 1)
         self.assertFalse(parsed["provider_archive_bytes_verified"])
         self.assertNotIn("untrusted.example", json.dumps(parsed))
         self.assertNotIn("never-print", json.dumps(parsed))
@@ -104,14 +109,26 @@ class GDWMetadataProbeTests(unittest.TestCase):
             lambda d: d["files"].append(d["files"][0]),
             lambda d: d["files"][0].update(name="GDW_v2.zip"),
             lambda d: d["files"][0].update(size=0),
+            lambda d: d["files"][0].update(size=d["files"][0]["size"] + 1),
             lambda d: d["files"][0].update(id=0),
             lambda d: d["files"][1].update(computed_md5="not-md5"),
+            lambda d: d["files"][1].update(supplied_md5="0" * 32),
+            lambda d: d["files"][2].update(is_link_only=True),
+            lambda d: d.update(size=EXPECTED_TOTAL_BYTES - 1),
             lambda d: d["files"][1].update(name=d["files"][0]["name"]),
         ):
             item = example()
             changed(item)
             with self.subTest(item=item["files"]), self.assertRaises(ProbeBlocked):
                 inspect_metadata(encoded(item))
+
+    def test_exact_frozen_original_file_metadata(self):
+        by_name = {row["filename"]: row for row in inspect_metadata(encoded())["release_file_metadata"]}
+        self.assertEqual(set(by_name), set(FROZEN_FILES))
+        for name, (ident, size, md5) in FROZEN_FILES.items():
+            self.assertEqual(by_name[name]["figshare_file_id"], ident)
+            self.assertEqual(by_name[name]["provider_declared_bytes"], size)
+            self.assertEqual(by_name[name]["provider_declared_md5"], md5)
 
     def test_bad_json_duplicate_nonfinite_oversize_blocked(self):
         for raw in (
