@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: NOAA NCEI pinned 2024 original hail row proof
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/noaa-ncei-2024-original-hail-row-proof.yml"
+      - "research_runners/noaa_ncei_2024_hail_row_direct_preflight_v0.py"
+      - "tests/test_noaa_ncei_2024_hail_row_direct_preflight_v0.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ncei-original-2024-hail-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-single-source-row:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Checkout exact PR ref without credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Synthetic no-network identity and failsafe checks
+        run: python -m unittest tests.test_noaa_ncei_2024_hail_row_direct_preflight_v0 -v
+      - name: Download one fixed original NOAA yearly release and verify single event row
+        run: python -m research_runners.noaa_ncei_2024_hail_row_direct_preflight_v0
