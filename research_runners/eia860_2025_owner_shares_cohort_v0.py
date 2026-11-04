@@ -9,7 +9,7 @@ No names, addresses, source rows or insurer TIV are printed or persisted.
 """
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from decimal import Decimal, InvalidOperation
 from hashlib import sha256
 from io import BytesIO
@@ -56,8 +56,14 @@ def inspect_owner_worksheet(owner_xlsx:bytes, *,
                 raise OwnerShareBlocked("expected exactly one EIA annual Ownership worksheet")
             shared=eia._shared_strings(wb)
             raw=eia._read_member(wb,matches[0],owner.MAX_SHEET_XML)
+            style_xml=eia._read_member(wb,"xl/styles.xml",2_000_000)
     except (BadZipFile,OSError,RuntimeError,eia.EIA860ProofBlocked,owner.OwnerSchemaBlocked) as exc:
         raise OwnerShareBlocked("invalid original annual generator Owner workbook") from exc
+    style_root=eia._xml(style_xml)
+    cell_xfs=style_root.find("{%s}cellXfs" % eia.NS)
+    styles=[] if cell_xfs is None else [x.get("numFmtId","0") for x in cell_xfs]
+    percent_styles=Counter()
+    raw_le_one=raw_gt_one=0
     hdr=None
     row_n=0
     source_rows=0
@@ -75,11 +81,13 @@ def inspect_owner_worksheet(owner_xlsx:bytes, *,
             if row_n>MAX_ROWS:
                 raise OwnerShareBlocked("Owner sheet row limit exceeded")
             cells={}
+            cell_styles={}
             for cell in elem.findall("{%s}c" % eia.NS):
                 c=eia._col_number(cell.get("r",""))
                 if c in cells:
                     raise OwnerShareBlocked("duplicated original Owner worksheet column")
                 cells[c]=eia._cell_text(cell,shared).strip()
+                cell_styles[c]=cell.get("s","0")
             if hdr is None:
                 inverse={value:col for col,value in cells.items() if value}
                 if all(field in inverse for field in REQUIRED_HEADERS):
@@ -106,6 +114,8 @@ def inspect_owner_worksheet(owner_xlsx:bytes, *,
                 raise OwnerShareBlocked("invalid in-cohort generator ID")
             owner_name=cells.get(hdr[2],"")
             pct=cells.get(hdr[3],"")
+            style_index=cell_styles.get(hdr[3],"0")
+            percent_styles[style_index]+=1
             group=groups[(plant,generator)]
             if not owner_name or len(owner_name)>180:
                 invalid_owner_identity+=1
@@ -125,6 +135,10 @@ def inspect_owner_worksheet(owner_xlsx:bytes, *,
                     unparsed_shares+=1
                     group["incomplete"]=True
                 else:
+                    if Decimal("0")<=share<=Decimal("1"):
+                        raw_le_one+=1
+                    elif share>Decimal("1"):
+                        raw_gt_one+=1
                     if not Decimal("0")<=share<=Decimal("100"):
                         unparsed_shares+=1
                         group["incomplete"]=True
@@ -155,6 +169,14 @@ def inspect_owner_worksheet(owner_xlsx:bytes, *,
         "delaware_epa_eia_plant_cohort":len(cohorts),
         "source_rows_with_plant_and_generator_fields":source_rows,
         "delaware_owner_schedule_rows":cohort_rows,
+        "delaware_owner_raw_percentage_cells_between_0_and_1":raw_le_one,
+        "delaware_owner_raw_percentage_cells_greater_than_1":raw_gt_one,
+        "delaware_percent_owned_source_cell_style_counts":dict(sorted(percent_styles.items())),
+        "delaware_percent_owned_style_number_format_ids":{
+            st:(styles[int(st)] if st.isdigit() and int(st)<len(styles) else "UNRESOLVED")
+            for st in sorted(percent_styles)
+        },
+        "percent_units_interpreted_using_original_xlsx_style":False,
         "delaware_plant_ids_with_explicit_owner_schedule_rows":len({x[0] for x in groups}),
         "delaware_distinct_generators_with_owner_schedule_rows":len(groups),
         "delaware_generators_owner_sum_100_within_0_05_percentage_points":good,
