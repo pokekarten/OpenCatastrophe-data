@@ -110,3 +110,35 @@ python -m unittest discover -s tests -p 'test_wri_riverine_bavaria_original_row5
 \`\`\`
 
 This **does not** establish any flood-risk reduction from dikes, a protected asset's hazard, all riverine return-period surfaces, or a nationwide physical flood hazard model; the source's legal reuse and model applicability gates remain separately pending.
+
+## 5. New executed original-source all-class geometric raster overlap audit (2026-11-05)
+
+**Important distinction from section 3:** This exploratory audit actually fetched and decoded **all three LfU EPSG:4258 original compressed .shp members** from bounded HTTP Range reads (16 requests for the 838,652-byte original compressed \`deich\` entry, 4 for \`hwschutzwand\`, 1 for \`hwschutzsystem\`). Each decompressed source member passed its original ZIP local-entry CRC-32: \`deich=4ce85ae7\`, \`hwschutzwand=c697ecee\`, \`hwschutzsystem=1ac3f882\`. The feature, multipart and original vertex counts were checked against the prior independent all-geometry proof.
+
+For geographical coordinate conversion, the separately reviewed PROJ/pyproj environment reports operation **"ETRS89 to WGS 84 (1)"**, a numerical \`+proj=noop\` translation with **reported accuracy 1 metre**, plus explicit XY-axis-order conversion. This **does not** establish sub-metre exact datum identity. The exploratory original-source overlap used the EPSG operation's unchanged numeric longitude/latitude with an **additional 0.0025-raster-cell boundary tolerance** (approximately 1.5–2.3 metres over Bavaria), conserving both adjacent cells near a grid boundary. Every segment between consecutive genuine SHP vertices was traversed: not merely the vertices. **This was a separate V8 in-memory research calculation**, not yet a validated invocation of the committed production \`pyproj\` source ZIP offline runner. A new committed Python-side CRS-accuracy-aware grid boundary safeguard and synthetic negative tests complement the pilot.
+
+| Layer in original EPSG:4258 ZIP | Source feature count | Distinct WRI EPSG:4326 candidate cells **within the layer** | Feature↔cell relations (repeated cells across features included) | Features touching WRI row 5000 over Bavaria-longitude columns | Distinct row-5000 candidate cells within layer |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| \`deich\` | **2,171** | **2,237** | **4,644** | 16 | 12 |
+| \`hwschutzwand\` | **801** | **442** | **1,029** | 3 | 2 |
+| \`hwschutzsystem\` | **891** | **299** | **931** | 1 | 1 |
+| **Sum (all layer feature records)** | **3,863** | **2,978 sum of per-layer unique counts; not deduplicated across kinds** | **6,604** | **20** | **15 sum of per-layer unique counts; not deduplicated across kinds** |
+
+Actual original-source WRI 100-year riverine row 5000 was previously decoded: of the **554** Bavaria-longitude cells, **25 have positive modelled depth**, 529 zero, none missing. The independent spatial overlap shows *some protection-structure candidate cells on that row*, **not** whether the 25 positive-depth cells coincide with those structures. We have **not yet proved the actual multi-layer joined distinct WRI cell count**, protected-side polygons, any structure's effectiveness or site-specific defended water depth.
+
+Validated actual source feature-to-tile associations from the original SHP members (one line can touch more than one tile; these are **counts of features touching each coarse tile**, not independent defences or hazard pixels):
+
+| Tile \`row/1000.column/1000\` | \`deich\` | \`hwschutzwand\` | \`hwschutzsystem\` |
+| --- | ---: | ---: | ---: |
+| \`4.22\` | 674 | 382 | 336 |
+| \`4.23\` | 758 | 204 | 402 |
+| \`5.22\` | 489 | 115 | 102 |
+| \`5.23\` | 263 | 100 | 51 |
+
+### Source/algorithm review controls
+
+- The checks **did not persist or expose original provider vertex lists**, insured locations or raw raster pixels into Git. Only aggregate counts, source filenames and original per-member CRC proofs were kept.
+- The independent V8 run and committed Python program **should not be called equivalent until the same original outside-Git archive is reprocessed with the explicit actual \`pyproj\` operation and the per-class counts reconciled**. The earlier run's coordinate operation was numerically \`noop\` for the reviewed environment, subject to its reported ~1m datum uncertainty; other environments/accuracy classifications must fail closed or adjust the tolerance.
+- The Python bridge now allows a **source-CRS-accuracy-aware boundary margin**. At the validated 1m PROJ operation, its minimum **0.0025 cell** margin matches the exploratory count convention. In stricter/other geodetic environments, the configured margin can grow to cover the reported operation uncertainty (up to the fail-closed maximum); that may change aggregate cell counts, and such differences require review rather than silent adjustment.
+- Full **WRI flood intensity at each candidate cell** remains **unmeasured**. Only one 554-pixel row transect was decoded separately. Matching an LfU \`deich\`, fixed wall or mobile installation with a WRI raster cell does not imply a defended building, reduced modelled depth, overtopping probability or an insurance claim outcome.
+- **No CAT source, insurer exposure, protection factor, ELT/YLT, OEP/AEP/IP or reinsurance loss output is admitted.** All original LfU geometry and WRI hazard remain unmodified and unimported; \`model_input_admitted=false\`.
