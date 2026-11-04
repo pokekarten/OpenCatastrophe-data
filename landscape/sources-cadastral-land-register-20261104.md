@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-04`  
 **Purpose:** Non-admission discovery of official cadastral parcel, land-register geometry and public property-sale sources for synthetic CAT exposures, with strict field-level property title and personal-data restrictions.
 
-**Entries:** 12
+**Entries:** 13
 
 ## NRW INSPIRE ALKIS cadastral parcels WFS
 
@@ -197,3 +197,18 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Published with OGL statements for both HM Land Registry and OS; any join with Price Paid address components remains subject to separate third-party address terms. Official technical spec says non-backdated, postcode address file-dependent, often absent for land-only sales and newly built or unmatched addresses; a single sale can have several UPRNs e.g. flats. UPRN is an addressable location, not a freehold polygon, building, owner, policy record, reinstatement cost or TIV. Distinct from transaction UID to INSPIRE ID lookup which excludes leaseholds.
+
+## Dutch Kadastrale Kaart Bebouwing BGT-derived building footprint and BAG pand-ID linkage
+
+**Candidate ID:** `nl.kadaster.bgt-bebouwing-bagid.2026`  
+**Provider:** Kadaster / PDOK, derived from Basisregistratie Grootschalige Topografie (BGT)  
+**Categories:** `building_geometry`, `official_building_id_crosswalk`, `bgt`, `bag`, `netherlands`  
+**Spatial scope:** Netherlands; BGT-derived subset of building geometries shown in Kadastrale Kaart, not the full BAG inventory  
+**Temporal scope:** Mutable daily PDOK OGC API; source test 2026-11-04, per-feature source dates vary  
+**Resolution / granularity:** Bebouwing feature MultiPolygon with identification_local_id, identificatie_bag_pnd direct BAG pand ID, bgt_status and publishing dates; one BAG building can potentially have multiple BGT geometries  
+**Potential roles:** `official_bgt_to_bag_id_crosswalk`, `parcel_to_bgt_geometry_to_bag_attribute_join`, `building_geometry_lineage_quality_challenge`  
+**Access hint:** `pdok_public_ogc_collection_cc_by_4_0_bgt_origin_and_per_feature_rights_review`  
+**Authoritative source:** <https://api.pdok.nl/kadaster/brk-kadastrale-kaart/ogc/v1/collections/bebouwing?f=html>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** This is NOT an independent building register: Bebouwing is BGT-derived and only a subset of buildings, accessed through the same Kadaster Kadastrale Kaart OGC service as the separate Perceel parcel collection. Original tiny CRS84 bbox probe 2026-11-04 returned 9 Bebouwing features, 9 populated BAG pand IDs, 9/9 exact ID matches against 21 BAG pand features (all 9 linked BAG objects Pand in gebruik); 9/9 BGT centroid parcel candidates in 19 parcel polygons. No pagination in those bounded calls. These are spatial/entity linkage hypotheses, not property-owner records, legal parcel/footprint intersections, dwelling counts, insurer membership, insured sums, commercial model admission or independent source validation. Keep official source timestamps and multiple-geometry-per-BAG diagnostics.
