@@ -22,6 +22,27 @@ Source-specific original workflow `.github/workflows/rva-nrw-original-roof-pv-sc
 3. Separate *residential* versus *commercial* roof opportunity with original official category codes and negative tests for overlapping sizes, aggregation totals and special taxonomies.
 4. Only after independent source terms, schema and reasonable totals: determine an optional **technical PV rooftop potential prior** by municipality, compare to separately aggregated BNetzA MaStR installed units, and preserve unknown R+V policy/endorsement take-up. Building stock/roof type from Zensus 2022 and state LoD2 are separate physical universes and might share upstream geometry.
 
+
+## Real original schema receipt observed in GitHub original run #41907146126
+
+Exact original-source canary after ten source privacy/safety tests **succeeded** for the source pinned at SHA-256 `a9730f844159781c0747a4eb816f88382924239d0cc1874ea69d7a70ce912071`.
+
+| Original worksheet | Rows: header + candidates | Field pattern |
+| --- | ---: | --- |
+| `Bestand Leistung` | 397 | `AGS` / `Gemeinde` + **1990–2025** × 7 categories; header unit **kW** |
+| `Bestand Ertrag` | 397 | Same 36 year tags × 7 categories; header unit **kWh** |
+| `Potenzial Leistung` | 397 | 7 category columns; unit **kW** |
+| `Potenzial Ertrag` | 397 | 7 category columns; unit **kWh** |
+
+The seven categories are **Wohngebäude, Gewerbe und Industrie, Öffentliche Gebäude, Landwirtschaft, Sonstige Gebäude, Nicht zuordbar and Insgesamt**. Each of the four data worksheets shows **396 eight-digit AGS-shaped candidate codes** in the first columns, numeric cells in all category positions, and no observed spreadsheet suppression characters in the sampled complete source. This real original inspection is stronger than the previous sheet-count-only report, but **key uniqueness, cross-sheet alignment and whether 2025 `Bestand` means an *installed fleet*, cumulative portfolio or installation-vintage bin remain unproven pending the numeric runner.**
+
+The new `research_runners/rva_nrw_original_pv_class_aggregates_v0.py` **fails closed** if the four exact header taxonomies, original SHA/size/worksheet structures, all 396 unique AGS keys, cross-sheet key set, 396×7 or 396×36×7 numeric cell completeness, nonnegative finite amounts or bounded range change. It will emit **only NRW-wide class aggregates** for the two *technical potential* sheets and for the **single 2025-labeled column** in the two stock sheets. It will also quantify the **unadjusted original six-class-versus-total residual** in rows/year groups instead of silently forcing accounting equality. An internally seen eight-digit code is **not printed** to logs or copied into a consumer portfolio. 13 synthetic tests check amount/unit/AGS failure cases; no original personal source data are committed. In particular:
+
+- **Do not sum 1990–2025 `Bestand` to create installed 2025 capacity** before the original source methodology states whether annual columns overlap, are vintages, or are cumulative.
+- **Do not compute `PV potential minus Bestand 2025` as available roof capacity** until the source definitions and data vintages are reconciled.
+- `Insgesamt` is a publisher total, so summing it again with the six named classes **double counts**.
+- The aggregates may be used to challenge **physical rooftop exposure mix** (residential vs industrial vs agricultural). They do **not** represent actual R+V insured PV systems, installation values, rate-on-line, sums insured or claim risk.
+
 ## Explicit evidence classifications
 
 | Object | State after this PR |
