@@ -133,7 +133,7 @@ def inspect_zip_members_untrusted(raw: bytes) -> dict:
     try:
         with ZipFile(BytesIO(raw), "r") as archive:
             infos = archive.infolist()
-            if not 0 < len(infos) <= 40:
+            if not 0 < len(infos) <= 20_000:
                 raise DryadReceiptBlocked("unexpected empty/overpopulated original ZIP")
             seen = set()
             total = 0
