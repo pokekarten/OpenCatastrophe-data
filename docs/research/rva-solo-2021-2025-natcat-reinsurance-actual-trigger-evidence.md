@@ -29,7 +29,7 @@ R+V Versicherung AG is a **different** company acting as parent/internal reinsur
 
 Corporate year-on-year changes from Condor (2024) and R+V Direktversicherung (2025) additionally affect premium and contract perimeters. Yearly technical result is **not** normalized to unchanged treaty/portfolio terms.
 
-## What we can now build correctly in FFBK/NextGen/Oasis
+## What we can now build correctly in OpenCatastrophe/NextGen/Oasis
 
 For a purely **synthetic** R+V-like book, distinguish:
 1. **Gross ground-up** event loss by fictional location, structural class and one licensed calibrated Germany peril event surface; aggregate by consistent period/event IDs.
