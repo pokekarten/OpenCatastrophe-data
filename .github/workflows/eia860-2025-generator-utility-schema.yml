@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: EIA-860 2025 original generator and utility roster proof
+
+on:
+  pull_request:
+    paths:
+      - "research_runners/eia860_2025_generator_utility_schema_v0.py"
+      - "tests/test_eia860_2025_generator_utility_schema_v0.py"
+      - "docs/research/eia860-2025-original-generator-utility-schema-20261104.md"
+      - ".github/workflows/eia860-2025-generator-utility-schema.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-generator:
+    name: Original annual EIA 2025 generator+utility source schema
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact ref, no credentials retained
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Synthetic generator and utility workbook semantics
+        run: python -m unittest tests.test_eia860_2025_generator_utility_schema_v0 -v
+      - name: Check pinned source and only print allowlisted metadata
+        run: python research_runners/eia860_2025_generator_utility_schema_v0.py --live
