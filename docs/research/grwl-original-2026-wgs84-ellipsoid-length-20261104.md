@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # GRWL 2026 — original WGS84 ellipsoid length audit and antimeridian holdout
 
-Prepared 2026-11-04. **Status at PR creation: implemented offline and awaiting reviewed-main original-source execution.** This is an independent geodetic *diagnostic*, not a production river-network length, topology or flood-hazard admission.
+Prepared and verified 2026-11-04. **The reviewed-main original source geodesic run completed successfully** (exact evidence below). This is an independent geodetic *diagnostic*, not a production river-network length, topology or flood-hazard admission.
 
 ## Confirmed original-source context
 
@@ -40,4 +40,33 @@ No original ZIP, original `OBJECTID`, raw `SHAPE_LENG`, vertex, geometry, addres
 
 **Authority limits:** original export `OBJECTID` is not a independently certified river identity; shortest-geodesic original vertex paths are not coast-aware/land-aware river paths, reach topology, flood-stage channel widths or inundation hazard. `model_input_admitted=false`, `flood_stage_or_insured_loss_calculated=false`, `production_database_modified=false`.
 
-**No live original ellipsoid results should be claimed before the reviewed-main workflow succeeds and its original source log is inspected.**
+## Verified 2026 original-archive WGS84 ellipsoid comparison
+
+**Observed, not inferred:** [successful GitHub trusted-main workflow run 41931046842](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41931046842), exact reviewed `main` commit `c43e771ac1ed8619039f437877c0e15324c986e8`. The source guard independently verified the 2026 original archive SHA-256 `78aa43a7104d24b1696e9b1547347eec13ba5d660aa990c1e7cea98e7ae70e4a` and its original source structure. GeographicLib **2.1** processed **3,129,821** WGS84 original vertices from **42,077 uniquely keyed export `OBJECTID` candidates** in original 2026 `GRWL_summaryStats`, without publishing any source individual value or coordinate.
+
+| Independent original-data metric | Verified result |
+| --- | ---: |
+| Original 2026 segments | **42,077** |
+| Segments with source versus independently calculated ellipsoidal-km absolute relative error greater than **0.01%** | **1** |
+| Segments with error greater than **0.1%** | **1** |
+| Segments with error greater than **1%** | **1** |
+| Non-antimeridian segments above **0.01%** | **0 of 42,076** |
+| Median `SHAPE_LENG / WGS84 ellipsoid kilometre` | **1.0000000005** |
+| P95 / P99 of same original source/ellipsoid ratio | **1.0000000129 / 1.0000000421** |
+| Maximum non-antimeridian source/ellipsoid ratio | **1.0000119566** |
+| Median absolute relative error as a **fraction** | **0.0000000005** (5×10⁻¹⁰) |
+| P95 / P99 absolute relative error fraction | **0.0000000129 / 0.0000000421** |
+| Original antimeridian crossings between consecutive source points | **1** |
+| Original antimeridian segment source/ellipsoid ratio | **221.2397059819** |
+| Original 2026 nonpositive ellipsoidal-length records | **0** |
+| Production model admission | **false** |
+
+### What the evidence establishes
+
+**42,076 of 42,077 original 2026 `SHAPE_LENG` values agree with the independent WGS84 ellipsoid shortest-geodesic calculation to within 0.01% relative error.** At the median, the absolute disagreement is only ~0.00000005% (not the ~0.212% measured with an approximate spherical earth). This is strong evidence that the 2026 publisher values are numerically consistent with an ellipsoidal or closely equivalent source-processing method. We have **not** independently verified the producer's actual software/library, settings, feature edits or code lineage.
+
+**The single source antimeridian-crossing line is also the sole major length mismatch.** Its original source-reported `SHAPE_LENG` is **221.2397059819 times** the independently computed shortest ellipsoidal length. That number does **not** mean the river physically lengthened, and the data do not independently establish whether the cause was the provider's longitude unwrapping, GIS geometry length implementation, line feature representation, or export processing. Do not assume an automated original-data replacement until source processing provenance and an independent dateline-aware spatial inspection are complete.
+
+The previously established 2018 `SHAPE_LENG` angular-degree storage error remains separate: **do not apply any one uniform conversion factor** to the 2018 archive. For potentially useful derived physical lengths, use a documented WGS84 ellipsoid method, keep the raw `SHAPE_LENG` attribute unchanged and labelled with the exact source-vintage hash, and flag all dateline-crossing lengths. Independent river-identity and RiverATLAS conflation, flood-stage widths, inundation calibration and production insurer exposure/risk-model admission are still blocked.
+
+
