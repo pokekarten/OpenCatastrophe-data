@@ -196,16 +196,34 @@ jobs:
           check(r["geos_invalid_geometry_count"] == 0, "invalid polygon topology")
           check(r["geos_centroids_in_or_on_polygon_count"] + r["geos_reported_centroids_outside_polygon_count"] == 103, "centroid coverage")
           check(r["geos_reported_centroids_outside_polygon_count"] == 3, "GEOS/previous source baseline")
+          check(r["geos_interiors_hole_count"] == 3, "original interior-ring count")
+          classified = (
+              r["geos_outside_centroids_inside_an_interior_hole_count"]
+              + r["geos_outside_centroids_outside_all_exterior_shells_count"]
+          )
+          check(classified == 3, "outside centroid classification coverage")
+          check(
+              abs(
+                  r["hole_centroid_modeled_value_share"]
+                  + r["outside_shell_centroid_modeled_value_share"]
+                  - r["outside_centroid_modeled_value_share"]
+              ) <= 0.000002,
+              "outside centroid modeled value shares",
+          )
           check(r["source_admitted"] is False and r["oed_insured_locations_exportable"] is False, "insurance admission")
           print(json.dumps({
               "result": "original_nhsl_v1_nunavut_geos_centroid_topology_crosscheck_passed",
               "polygons": r["polygons"],
               "geos_invalid_geometry_count": r["geos_invalid_geometry_count"],
               "geos_reported_centroids_outside_polygon_count": r["geos_reported_centroids_outside_polygon_count"],
+              "geos_outside_centroids_inside_an_interior_hole_count": r["geos_outside_centroids_inside_an_interior_hole_count"],
+              "geos_outside_centroids_outside_all_exterior_shells_count": r["geos_outside_centroids_outside_all_exterior_shells_count"],
               "geos_reported_centroids_on_boundary_count": r["geos_reported_centroids_on_boundary_count"],
               "geos_multipart_area_count": r["geos_multipart_area_count"],
               "geos_interiors_hole_count": r["geos_interiors_hole_count"],
               "outside_centroid_modeled_value_share": r["outside_centroid_modeled_value_share"],
+              "hole_centroid_modeled_value_share": r["hole_centroid_modeled_value_share"],
+              "outside_shell_centroid_modeled_value_share": r["outside_shell_centroid_modeled_value_share"],
               "max_outside_centroid_to_polygon_nearest_point_km_proxy": r["max_outside_centroid_to_polygon_nearest_point_km_proxy"],
               "max_original_centroid_to_geos_planar_centroid_km_proxy": r["max_original_centroid_to_geos_planar_centroid_km_proxy"],
               "source_admitted": False,
