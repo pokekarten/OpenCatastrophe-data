@@ -78,3 +78,35 @@ python -m unittest discover -s tests -p 'test_wri_bavaria_riverine_defence_spati
 **Pending scientific checks**: Full WRI riverine source cells at specific LfU line positions; independent WRI riverine-to-Physrisk provenance and units; projection accuracy/release date; per-feature hydraulic side, insured building relationship, DE protected-area polygons, river flow, defence crest and condition, line continuity, protection standard vs actual exceedance/failure; OEP/AEP/IP/ELT/YLT and outward/inward reinsurance treaty treatment. None of these is established by this matching pipeline.
 
 **Fail-closed conclusion:** \`model_input_admitted=false\`, \`riverine_flood_depth_reduced=false\`, \`any_building_insurance_exposure_matched=false\`. Keep as a Draft research PR; no automatic merging based solely on green CI.
+
+## 4. NEW executed original riverine depth sample — 554 Bavaria-longitude cells on world row 5000
+
+Unlike the preceding **metadata-only** WRI riverine test, this is an executed read of **original actual float32 hazard intensity values** from the 100-year riverine WRI GeoTIFF (historical WATCH 1980), inspected separately on 2026-11-04.
+
+- Provider source: https://aqueduct.wridata.org/AqueductFloods20/inunriver_historical_000000000WATCH_1980_rp00100.tif
+- Original 43,200-cell **row 5000**, approximately **48.3291667°N cell-centre**.
+- **Global columns 22,684–23,237 inclusive** (**554** x 1/120° cells), cell-centre longitude approximately **9.0375°E–13.6458333°E**. This is a latitude transect bounded by the longitudes of the official Bavaria LfU source geometry, **NOT a dike-following or a randomly selected representative grid sample**.
+- Original row-strip pointer **28,730,421**, LZW-compressed source strip length **6,541 bytes**, decoded to **172,800 Float32 little-endian row bytes**.
+- Source depth outcome on this **single 554-cell row transect**: **25 positive finite cells**, **529 finite zero cells**, **0 NoData and 0 other invalid values**. Minimum positive depth **0.11534500122070312 m**, maximum **1.1153450012207031 m**. Example source col22,788 positive **0.18764880299568176 m**. These original data values are **not matched to physical flood-defence polygons, barrier lines or building coordinates**; any overlap requires a separate correctly reprojected geometry join and scientific hazard assessment.
+
+Three more exact original provider byte-body SHA-256 receipts:
+
+| Source range (inclusive) | Length | SHA-256 |
+| --- | ---: | --- |
+| TIFF \`StripOffsets\` entry row5000, \`92095742–92095745\` | 4 | \`a12803f9f96d7240493012204aa9c94c0f0b6663693443f8204e44a0262f6b15\` |
+| TIFF \`StripByteCounts\` entry row5000, \`92009342–92009345\` | 4 | \`aded26cfbb510c2b40c76ebbba6034131b1a38780768eea915b9cef81fa6609e\` |
+| Original compressed row-strip \`28730421–28736961\` | 6541 | \`35b4e90ec28ef3fbc5794ebf6bf1f9854b303571e108d47033102728e0c1becc\` |
+
+**Executable independent reproduction**: \`research_runners/wri_riverine_bavaria_original_row5000_v0.py\` is stdlib-only and uses the already independently reviewed TIFF LZW decoder. With only those **three outside-Git original response files** it checks all three original lengths and SHA-256, strip pointer/bytecount, 43,200 Float32 row decode, selected 554 column categories and observed min/max depth. It rejects provider source drift and always emits \`model_input_admitted=false\`. The synthetic-only tests \`tests/test_wri_riverine_bavaria_original_row5000_v0.py\` cover the column math, altered positive / NoData / invalid source values, truncated input and no source overwrite.
+
+\`\`\`bash
+python research_runners/wri_riverine_bavaria_original_row5000_v0.py \
+  --offset /private/wri-riverine/row5000-strip-offset-4b.bin \
+  --bytecount /private/wri-riverine/row5000-strip-count-4b.bin \
+  --strip /private/wri-riverine/row5000-lzw-6541b.bin \
+  --out /tmp/wri-riverine-bavaria-row5000-source-proof.json
+
+python -m unittest discover -s tests -p 'test_wri_riverine_bavaria_original_row5000_v0.py'
+\`\`\`
+
+This **does not** establish any flood-risk reduction from dikes, a protected asset's hazard, all riverine return-period surfaces, or a nationwide physical flood hazard model; the source's legal reuse and model applicability gates remain separately pending.
