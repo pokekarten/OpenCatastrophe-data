@@ -8,6 +8,7 @@ on:
       - ".github/workflows/rva-nrw-53-kreis-pv-zensus-bridge.yml"
       - "research_runners/rva_nrw_53kreis_pv_zensus_physical_source_bridge_v0.py"
       - "tests/test_rva_nrw_53kreis_pv_zensus_physical_source_bridge_v0.py"
+      - "research/observations/rva_nrw_53_kreis_census2022_pv2026_source_bridge_v0.toml"
       - "docs/research/rva-nrw-53kreis-original-pv-vs-zensus-20261105.md"
   workflow_dispatch:
 
