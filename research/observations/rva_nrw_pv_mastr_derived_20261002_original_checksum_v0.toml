@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+schema_version = "RVA_NRW_PUBLIC_PV_DERIVED_20261002_AGG_V0"
+target_company = "R+V Allgemeine Versicherung AG"
+geography = "North_Rhine_Westphalia"
+data_role = "physical_PV_unit_market_context_NOT_company_insured_asset"
+reported_register_date = "2026-10-02"
+original_publisher = "Bundesnetzagentur Marktstammdatenregister"
+secondary_derivative_publisher = "solarzahlen.de"
+secondary_dataset_repo = "https://github.com/mwhitex/solarzahlen-daten"
+secondary_dataset_commit = "4208eeb39ce49eb2d12c60b0d7f3f51a7dacd9ef"
+secondary_dataset_path = "data/photovoltaik-gemeinden-deutschland-2026-10-02.csv"
+source_reporting_universe = "IN_OPERATION_PUBLIC_MASTR_DERIVED_PV_GENERATING_UNITS_NOT_ROOFS"
+secondary_original_size_bytes = 2258397
+secondary_git_blob_sha1 = "38d2427b792eb7418e214da18281973bcbe9f897"
+secondary_original_sha256 = "32678e605fb6cc9c80e6b9dbce01b8ba2fcfc2f88fea4fcde8ddf97e1478b7dd"
+secondary_original_germany_municipalities = 10759
+secondary_original_nrw_municipalities = 396
+nrw_original_publisher = "OpenGeodata NRW"
+nrw_original_product = "2026-03-12 municipality rooftop technical solar potential workbook"
+nrw_original_sha256 = "a9730f844159781c0747a4eb816f88382924239d0cc1874ea69d7a70ce912071"
+nrw_original_municipalities = 396
+exact_ags_matches_between_sources = 396
+unmatched_secondary_municipalities = 0
+unmatched_official_municipalities = 0
+nrw_source_rooftop_technical_potential_capacity_kw = "84309002.198"
+nrw_secondary_reported_total_installed_pv_capacity_kwp = "15864876.7"
+nrw_technical_potential_and_installed_all_pv_denominators_comparable = false
+number_of_reported_pv_units_is_number_of_physical_roofs = false
+roof_only_pv_capacity_observed_from_secondary = false
+individual_municipal_ags_or_address_rows_stored = false
+federal_primary_xml_export_downloaded_and_verified = false
+insurer_company_actual_pv_exposure_or_value_observed = false
+insurer_specific_nrw_pv_installation_coverage_observed = false
+model_source_approved = false
+secondary_source_license = "Datenlizenz Deutschland Namensnennung 2.0"
+mandatory_derived_source_attribution = "solarzahlen.de. Quelle: Marktstammdatenregister, Bundesnetzagentur (dl-de/by-2-0), Daten geändert"
+rights_and_independent_scientific_review_required = true
+scope_note = "Second-party aggregation from 2026-10-02 MaStR is not federal original XML; snapshot and roof potential March 2026 and company HGB 2025 have different vintages. No municipal R+V insured buildings, TIV, covered PV losses or treaty tower, no installed-roof saturation quotient. Active unit counts are generators, not distinct roof/building count."
+[nrw_public_MaStR_derived_unit_counts]
+active_solar_generating_units = 1180822
+building_solar_units = 876684
+balcony_solar_units = 302851
+ground_mounted_solar_units = 1259
+other_solar_units = 28
+source_unit_category_sum_equals_active_unit_count = true
+secondary_municipalities_with_nonadditive_category_counts = 0
