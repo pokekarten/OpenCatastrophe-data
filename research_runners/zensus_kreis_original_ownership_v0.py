@@ -51,7 +51,8 @@ def extract_original_kreis_ownership(raw: bytes, baseline: dict[str,int],
         raw_rows,indices=_read_original_rows(z,target,max_columns=27)
         strings=_shared_strings(z,indices)
     expected=FIRST+tuple(f"BAUJAHR_10JA__{i:02}" for i in range(1,11))+OWNER_CODES
-    actual=tuple(_value(raw_rows[0].get(chr(65+i)),strings) for i in range(27))
+    source_columns=[chr(65+i) for i in range(26)]+["AA"]
+    actual=tuple(_value(raw_rows[0].get(col),strings) for col in source_columns)
     if actual!=expected:
         raise OriginalReceiptError("original 2022 ownership sheet header/column order mismatched")
     out={}
