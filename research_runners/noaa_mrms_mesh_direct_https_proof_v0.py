@@ -91,6 +91,7 @@ def fetch_pinned_original_object(product: str, opener: Any = None) -> bytes:
 def fetch_and_audit(product: str, opener: Any = None) -> dict:
     source_bytes = fetch_pinned_original_object(product, opener)
     selected = SOURCE_OBJECTS[product]
+    url = ORIGIN + selected["key"]
     try:
         receipt = audit_original(source_bytes, product, selected["basename"])
     except MRMSPreflightError as exc:
