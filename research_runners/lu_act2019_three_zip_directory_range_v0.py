@@ -33,6 +33,18 @@ ORIGINAL_SIZE_BY_SITE = {
     "luxembourg-city": (449275061,),
     "berdorf-village": (410361626, 374704804),
 }
+# SHA256 of the three actually observed *ZIP central directory metadata bytes* in
+# Actions 41905140379. These are NOT SHA256 receipts for full archive payloads.
+OBSERVED_DIRECTORY_SHA256_BY_SITE = {
+    "luxembourg-city": (
+        "a7d96dc5a21b578e617d359f0b793e85db67de028164677ee22c39c5f472bf58",
+    ),
+    "berdorf-village": (
+        "7bc9e106577a4ef7c81fc30572f8d280118c47ffe79425d5360bb2329d69ddf1",
+        "3b7ce099b4918321030d92710dd917b873e62104903f69ab5a69608c4d4addd6",
+    ),
+}
+OBSERVED_LAZ_MEMBER_COUNT_PER_ZIP = 9
 MAX_TAIL = 65_557  # 22-byte classic ZIP EOCD plus max 65535-byte comment
 MAX_CENTRAL = 262_144
 MAX_ENTRIES = 256
@@ -228,12 +240,21 @@ def run(index: Path, *, opener=None) -> dict:
         selected = urls[site]
         if len(selected) != len(expected_sizes):
             raise DirectoryError("Original pinned site count changed")
+        metadata = [
+            inspect_one_zip(url, expected_size=size, opener=opener)
+            for url, size in zip(selected, expected_sizes, strict=True)
+        ]
+        for item, observed_digest in zip(
+                metadata, OBSERVED_DIRECTORY_SHA256_BY_SITE[site], strict=True):
+            if (item["central_directory_sha256_partial_metadata_only"] != observed_digest
+                    or item["central_member_total"] != OBSERVED_LAZ_MEMBER_COUNT_PER_ZIP
+                    or item["member_extension_counts"]["laz"] != OBSERVED_LAZ_MEMBER_COUNT_PER_ZIP
+                    or sum(item["member_extension_counts"].values()) != OBSERVED_LAZ_MEMBER_COUNT_PER_ZIP
+                    or item["directory_records"] != 0 or item["encrypted_flag_count"] != 0):
+                raise DirectoryError("Original ZIP central-directory receipt changed")
         results[site] = {
             "original_index_tiles": len(selected),
-            "ordered_archive_central_directory": [
-                inspect_one_zip(url, expected_size=size, opener=opener)
-                for url, size in zip(selected, expected_sizes, strict=True)
-            ],
+            "ordered_archive_central_directory": metadata,
         }
     return {
         "profile": "lu-act2019-three-zip-range-central-directory-v0",
