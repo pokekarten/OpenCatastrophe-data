@@ -72,7 +72,7 @@ def render(parcels, bgt, bag, *, bbox):
         if not isinstance(status, str) or not status:
             raise ParcelBagError("BAG status missing")
         bag_status[ident] = status
-        bag_sql.append([_lit(ident), _lit("Pand in gebruik" if status == "Pand in gebruik" else "OTHER")])
+        bag_sql.append([_lit(ident), "'Pand in gebruik'" if status == "Pand in gebruik" else "'OTHER'"])
 
     parcel_sql = []
     for ident, props, rings in par:
