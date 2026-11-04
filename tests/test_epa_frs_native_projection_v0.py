@@ -40,8 +40,9 @@ class NativeEPAProjectionTests(unittest.TestCase):
         self.assertEqual(blob, b"frs_id,country_code,latitude,longitude\n110000000001,US,,\n")
         self.assertTrue(report["projected_coordinates_suppressed"])
         self.assertEqual(report["normalized_projection_sha256"], hashlib.sha256(blob).hexdigest())
-        self.assertFalse(report["source_bytes_independently_authenticated"])
+        self.assertFalse(report["publisher_original_file_bytes_authenticated"])
         self.assertFalse(report["insured_asset_or_tiv_inferred"])
+        self.assertFalse(report["native_csv_slice_is_publisher_original"])
         self.assertNotIn("SYNTHETIC_SITE_ONLY", str(report))
         self.assertNotIn("110000000001", str(report))
 
