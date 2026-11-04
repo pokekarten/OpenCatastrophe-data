@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg original ACT 2026 address to GeoBase 100m window linkage
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/lu_act_address_geobase_original_window_v0.py'
+      - 'tests/test_lu_act_address_geobase_original_window_v0.py'
+      - '.github/workflows/luxembourg-act-address-geobase-original-window.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verified-original-pair:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 13
+    steps:
+      - name: Checkout reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Install bounded coordinate and topology dependencies
+        run: python -m pip install --disable-pip-version-check 'pyproj==3.7.2' 'shapely==2.1.2'
+      - name: Check synthetic point-to-polygon edge cases
+        run: python -m unittest discover -s tests -p 'test_lu_act_address_geobase_original_window_v0.py' -v
+      - name: Fetch only two SHA-pinned official source assets and emit aggregate spatial diagnostic
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          addresses="$RUNNER_TEMP/lu-act-addresses-20261102.csv"
+          buildings="$RUNNER_TEMP/lu-geobase-buildings-20261001.zip"
+          trap 'rm -f "$addresses" "$buildings"' EXIT
+          curl --fail --location --silent --show-error --retry 0 \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 \
+            --max-filesize 32000000 -o "$addresses" \
+            'https://download.data.public.lu/resources/adresses-georeferencees-bd-adresses/20261102-033122/addresses.csv'
+          curl --fail --location --silent --show-error --retry 0 \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 180 \
+            --max-filesize 83886080 -o "$buildings" \
+            'https://download.data.public.lu/resources/bd-l-geobase/20261001-010523/buildings-20261001.zip'
+          python -m research_runners.lu_act_address_geobase_original_window_v0 \
+            --address-csv "$addresses" --geobase-zip "$buildings"
+          # Source data, individual addresses and geometry pairs are never uploaded.
