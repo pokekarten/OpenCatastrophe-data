@@ -8,6 +8,8 @@ on:
     paths:
       - "research_runners/eia860_2025_generator_utility_schema_v0.py"
       - "tests/test_eia860_2025_generator_utility_schema_v0.py"
+      - "research_runners/eia860_2025_generator_utility_owner_join_v0.py"
+      - "tests/test_eia860_2025_generator_utility_owner_join_v0.py"
       - "docs/research/eia860-2025-original-generator-utility-schema-20261104.md"
       - ".github/workflows/eia860-2025-generator-utility-schema.yml"
   workflow_dispatch:
@@ -34,3 +36,7 @@ jobs:
         run: python -m unittest tests.test_eia860_2025_generator_utility_schema_v0 -v
       - name: Check pinned source and only print allowlisted metadata
         run: python research_runners/eia860_2025_generator_utility_schema_v0.py --live
+      - name: Test generator/Owner Schedule 4/Utility key-cardinality and status scopes
+        run: python -m unittest tests.test_eia860_2025_generator_utility_owner_join_v0 -v
+      - name: Re-fetch original pinned EIA ZIP and audit the 15 Delaware plants by generator identity
+        run: python research_runners/eia860_2025_generator_utility_owner_join_v0.py --live
