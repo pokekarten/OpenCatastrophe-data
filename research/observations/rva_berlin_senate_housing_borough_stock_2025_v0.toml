@@ -1,0 +1,172 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Manual bounded numeric facts from Berlin Senate official parliamentary answer 19/24229 PDF p3.
+# 2025 corporate dwelling stocks, NOT building insurance policy schedules, TIV or insured risk geocodes.
+schema_version = "BERLIN_SENATE_2025_LWU_12_BOROUGH_CORPORATE_DWELLING_MATRIX_V0"
+source_publisher = "Senatsverwaltung fuer Stadtentwicklung Bauen und Wohnen Berlin"
+source_official_url = "https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/SchrAnfr/S19-24229.pdf"
+source_document_number = "Drucksache 19/24229"
+source_answer_date = "2025-11-11"
+source_table_question = 2
+source_pdf_page_zero_based = 2
+source_stock_date_six_lwu = "2025-06-30"
+source_stock_date_berlinovo = "2025-09-30"
+original_pdf_byte_sha256_verified_this_turn = false
+company_column_order = ["degewo","gesobau","gewobag","howoge","stadt_und_land","wbm","berlinovo"]
+borough_rows = 12
+original_reported_total_six_lwu_dwellings = 376278
+original_reported_total_berlinovo_dwellings = 18666
+other_stock_not_borough_specific = true
+other_stock_definition = "outside_Berlin_MUF_student_housing_subsidiaries_funds"
+are_corporate_stock_dwellings = true
+company_by_borough_stock_really_observed = true
+any_property_insured_by_rva_from_matrix = false
+april_2025_insurer_relationship_source_is_separate = true
+april_2025_insurer_roles = "R+V named for WBM, GESOBAU; member of Allianz consortium for degewo; no R+V named for Gewobag HOWOGE Stadt und Land"
+june_2025_corporate_stock_same_as_april_2025_policy_schedule = false
+insurance_contract_count_observed_from_this_matrix = false
+insured_buildings_count_observed = false
+insured_site_address_or_geocode_observed = false
+covered_tiv_or_rv_coinsurance_percent_observed = false
+share_of_each_corporate_building_portfolio_covered_by_rv = "unknown"
+rights = "public government document; short numeric factual transcription, original PDF asset not redistributed"
+method_note = "Wohneinheit not building; April 2025 insurer connection plus June 2025 company geography only supports corporate opportunity scenarios. R+V solo residential 1,060,546 contracts separate population."
+
+[national_published_row_totals]
+degewo = 82637
+gesobau = 49054
+gewobag = 75091
+howoge = 82152
+stadt_und_land = 53304
+wbm = 34040
+berlinovo = 18666
+
+[unassigned_other_stock]
+degewo = 2541
+gesobau = 307
+gewobag = 329
+howoge = 276
+stadt_und_land = 1066
+wbm = 0
+berlinovo = 0
+
+[[boroughs]]
+borough_name = "Charlottenburg-Wilmersdorf"
+degewo = 4553
+gesobau = 1602
+gewobag = 9008
+howoge = 158
+stadt_und_land = 171
+wbm = 796
+berlinovo = 0
+
+[[boroughs]]
+borough_name = "Friedrichshain-Kreuzberg"
+degewo = 1662
+gesobau = 0
+gewobag = 7276
+howoge = 2377
+stadt_und_land = 0
+wbm = 16531
+berlinovo = 23
+
+[[boroughs]]
+borough_name = "Lichtenberg"
+degewo = 624
+gesobau = 0
+gewobag = 3067
+howoge = 62086
+stadt_und_land = 319
+wbm = 0
+berlinovo = 1467
+
+[[boroughs]]
+borough_name = "Marzahn-Hellersdorf"
+degewo = 19566
+gesobau = 2878
+gewobag = 379
+howoge = 3038
+stadt_und_land = 19153
+wbm = 0
+berlinovo = 6824
+
+[[boroughs]]
+borough_name = "Mitte"
+degewo = 8055
+gesobau = 6625
+gewobag = 2275
+howoge = 766
+stadt_und_land = 54
+wbm = 12455
+berlinovo = 1534
+
+[[boroughs]]
+borough_name = "Neukoelln"
+degewo = 8659
+gesobau = 0
+gewobag = 4629
+howoge = 2016
+stadt_und_land = 9160
+wbm = 428
+berlinovo = 1149
+
+[[boroughs]]
+borough_name = "Pankow"
+degewo = 964
+gesobau = 19578
+gewobag = 13219
+howoge = 4027
+stadt_und_land = 0
+wbm = 139
+berlinovo = 1753
+
+[[boroughs]]
+borough_name = "Reinickendorf"
+degewo = 995
+gesobau = 18049
+gewobag = 8322
+howoge = 1481
+stadt_und_land = 27
+wbm = 0
+berlinovo = 450
+
+[[boroughs]]
+borough_name = "Spandau"
+degewo = 2969
+gesobau = 0
+gewobag = 18022
+howoge = 155
+stadt_und_land = 0
+wbm = 3304
+berlinovo = 4351
+
+[[boroughs]]
+borough_name = "Steglitz-Zehlendorf"
+degewo = 4622
+gesobau = 15
+gewobag = 870
+howoge = 1466
+stadt_und_land = 1010
+wbm = 228
+berlinovo = 10
+
+[[boroughs]]
+borough_name = "Tempelhof-Schoeneberg"
+degewo = 10771
+gesobau = 0
+gewobag = 7164
+howoge = 656
+stadt_und_land = 7212
+wbm = 0
+berlinovo = 0
+
+[[boroughs]]
+borough_name = "Treptow-Koepenick"
+degewo = 16656
+gesobau = 0
+gewobag = 531
+howoge = 3650
+stadt_und_land = 15132
+wbm = 159
+berlinovo = 1105
+
