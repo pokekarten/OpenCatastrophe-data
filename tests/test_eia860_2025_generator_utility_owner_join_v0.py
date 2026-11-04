@@ -78,6 +78,8 @@ class OriginalGeneratorOperatorJoinTests(unittest.TestCase):
         self.assertEqual(r["owner_schedule_generator_keys_by_original_tab"],
                          {"Operable":2,"Proposed":0,"Retired and Canceled":0})
         self.assertEqual(r["generator_keys_with_a_utility_id_in_original_utility_roster"],5)
+        self.assertEqual(r["in_cohort_distinct_reporting_utility_ids"],2)
+        self.assertEqual(r["in_cohort_plant_codes_with_multiple_reporting_utility_ids"],1)
         self.assertFalse(r["generator_keys_without_schedule4_are_confirmed_operator_owned"])
         self.assertFalse(r["insurer_portfolio_or_loss_model_admitted"] if "insurer_portfolio_or_loss_model_admitted" in r else r["insured_portfolio_or_loss_model_admitted"])
         txt=json.dumps(r)
