@@ -26,6 +26,8 @@ RESOURCE_ID, FILENAME, VINTAGE, PUBLISHER_MD5, _LOW, _HIGH = SOURCE
 URL = f"https://download.data.public.lu/resources/adresses-georeferencees-bd-adresses/{VINTAGE}/{FILENAME}"
 # Sourced from the exact publisher resource record, read 2026-11-04.
 EXPECTED_SIZE = 28_209_815
+# Independently computed by complete original 2026-11-02 GET in Actions run 41800041417.
+EXPECTED_SHA256 = "f163ed856200eedd8b501da2d7787e01ee373be1a55a4d79abcf57c96982a99c"
 MAX_BYTES = 32_000_000
 MAX_ROWS = 1_000_000
 CHUNK = 65536
@@ -151,7 +153,8 @@ def inspect_csv(original_file, *, transformer=None) -> dict:
 
 
 def verify_original_stream(source, *, expected_size: int = EXPECTED_SIZE,
-                           expected_md5: str = PUBLISHER_MD5, transformer=None) -> dict:
+                           expected_md5: str = PUBLISHER_MD5,
+                           expected_sha256: str = EXPECTED_SHA256, transformer=None) -> dict:
     """Single pass full source-byte MD5/SHA256 check; bounded spooled disk."""
     size = 0
     md5 = hashlib.md5()  # nosec B324: publisher's metadata checksum, not for security
@@ -170,6 +173,8 @@ def verify_original_stream(source, *, expected_size: int = EXPECTED_SIZE,
             md5.update(chunk); sha.update(chunk)
         if size != expected_size or md5.hexdigest().lower() != expected_md5:
             raise OriginalAddressError("Original byte count/MD5 did not match fixed provider receipt")
+        if sha.hexdigest().lower() != expected_sha256:
+            raise OriginalAddressError("Original SHA-256 drift from verified source baseline")
         report = inspect_csv(spool, transformer=transformer)
     return {
         "profile": "lu-bd-adresses-original-csv-v0",
