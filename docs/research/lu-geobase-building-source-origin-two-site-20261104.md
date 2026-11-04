@@ -56,4 +56,28 @@ The GeoBase Source column is a **source-family hint**, not evidence of truly ind
 
 No insurer, TIV, address unit, building ownership, vulnerability, insured loss, catastrophe model result, or regulatory source admission is allowed from this research. Two purposive 100m sites are not representative of Luxembourg nationally. The sample output must remain non-admitted.
 
-**Actual source-frequency counts remain unverified until exact-head CI run completes successfully.**
+## Executed exact-source original-data evidence — 2026-11-04
+
+**Successful original-source GitHub Actions run:** https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41885385975 .
+The source runner downloaded the one fixed official GeoBase Buildings ZIP, checked the already established national source and inner GeoPackage SHA-256 receipts, verified all 230,353 source objects and the original geometry-layer index, then scanned the exact fixed city/Berdorf 100m windows. **Ten of ten offline fictional regression tests also passed.** No feature ID, origin text outside preapproved published labels, address or polygon coordinates, WKB, or source file was uploaded to GitHub.
+
+| Exact original receipt and geometry filter | Luxembourg city | Berdorf |
+| --- | ---: | ---: |
+| Raw indexed rectangle RTree row hits | **108** | **18** |
+| Geometry actually intersects the enclosing native rectangle | **107** | **18** |
+| Geometry intersects the exact rotated 100m window with positive area | **104** | **16** |
+| Removed by final positive-area filter | **3** | **2** |
+| Source: Bati3DVDL, City of Luxembourg 3D database | **104** | 0 |
+| Source: Bati3DACT, ACT 3D database | 0 | **16** |
+| Source: PCN, MO, Ortho, missing_label, other_unreviewed | **0** | **0** |
+
+**Conservation:** 104 city true-area polygons = 104 city-managed 3D-building origin labels; 16 village true-area polygons = 16 ACT-managed 3D-building origin labels. Neither site contained a missing or unrecognized Source code in this fixed original snapshot.
+
+The explicit **108 → 107 → 104** distinction in the city experiment is important: the original native RTree may return an envelope-rectangle hit whose actual polygon does not even intersect that enclosing rectangle. Earlier city source experiments cited 107 as their native rectangle-filtered polygons, while the exact 100m research window contains 104 positive-area polygon objects. For Berdorf the same stages are 18 → 18 → 16. The official original data and original source hashes remained unchanged; the stage counts express different geometry selection rules.
+
+### Interpretation for future genuinely independent validation
+
+The observed city 104 all carry the original Bati3DVDL label while the observed village 16 all carry Bati3DACT. This **demonstrates heterogeneous digitization-source lineage** even within an ACT-published GeoBase export, and provides an informed direction for separate urban versus village ground-truth evaluation.
+
+It does **not prove** that the municipality and national cadastre collected independent raw imagery or survey points, that VDL 3D geometry validates ACT addresses, or that these proportions generalize beyond two tiny purposively selected research blocks. The upstream municipal 3D survey epoch, photogrammetry inputs, joint cadastral data and licences are not independently audited. A blind manual control and independent raw sensor/sample design remain mandatory. The 51/51 city and 6/6 Berdorf address-in-polygon rates are not independent accuracies and no insured properties or replacement values are admitted.
+
