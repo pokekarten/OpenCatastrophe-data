@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: R+V NRW original rooftop PV municipality XLSX canary
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/rva-nrw-official-roof-pv-original-xlsx.yml"
+      - "research_runners/rva_nrw_original_rooftop_pv_xlsx_v0.py"
+      - "tests/test_rva_nrw_original_rooftop_pv_xlsx_v0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rva-nrw-pv-original-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-publisher-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Synthetic negative tests (no network, no original records)
+        run: python -m unittest discover -s tests -p "test_rva_nrw_original_rooftop_pv_xlsx_v0.py" -v
+      - name: Official public municipal rooftop PV potential original (1.4 MB)
+        run: python research_runners/rva_nrw_original_rooftop_pv_xlsx_v0.py
