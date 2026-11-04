@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: GRWL original orientation-invariant WGS84 vertex correspondence
+
+on:
+  pull_request:
+    paths:
+      - research_runners/grwl_original_oriented_vertex_metric_v0.py
+      - tests/test_grwl_original_oriented_vertex_metric_v0.py
+      - docs/research/grwl-original-oriented-vertex-metric-20261104.md
+      - .github/workflows/grwl-original-oriented-vertex-metric.yml
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/grwl-original-oriented-vertex-metric.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grwl-original-oriented-vertex-metric
+  cancel-in-progress: false
+
+jobs:
+  original-oriented-geometry:
+    name: Original SHA256-pinned GRWL directional WGS84 metric preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout reviewed source commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Offline synthetic geometry and source integrity tests
+        run: |
+          python -m unittest tests.test_grwl_original_oriented_vertex_metric_v0 -v
+          python -m unittest tests.test_grwl_original_aggregate_semantic_diff_v0 -v
+          python -m unittest tests.test_grwl_trusted_original_byte_proof_v0 -v
+      - name: Pin reviewed source
+        run: |
+          git rev-parse HEAD
+          sha256sum research_runners/grwl_original_oriented_vertex_metric_v0.py
+      - name: Original GRWL source SHA256 and directional vertex comparison
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: python -m research_runners.grwl_original_oriented_vertex_metric_v0 --live
