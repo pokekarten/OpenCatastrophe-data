@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from shapely import wkb
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
 from shapely.ops import nearest_points
 
 if __package__:
