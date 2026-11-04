@@ -50,6 +50,7 @@ jobs:
           sha256sum research_runners/grwl_trusted_original_byte_proof_v0.py
           sha256sum research_runners/grwl_original_member_digest_compare_v0.py
           sha256sum research_runners/grwl_original_zip_structure_preflight_v0.py
+      # Re-run once after replacing the content-type-restrictive Accept header (HTTP 406).
       - name: Bounded original Zenodo downloads and temporary member-byte comparison
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
