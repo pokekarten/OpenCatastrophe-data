@@ -206,9 +206,32 @@ def main() -> int:
     try:
         original = fetch_pinned_original_object(args.product)
         receipt = decode_original_keller(original, product=args.product)
-    except (DirectSourceProofError, PointDecodeError) as exc:
-        # Never echo upstream exception text, source bodies or environment data.
-        print("BLOCKED: fixed NOAA source or ecCodes point validation failed", file=sys.stderr)
+    except DirectSourceProofError:
+        print("BLOCKED: pinned original NOAA HTTPS source integrity", file=sys.stderr)
+        return 2
+    except PointDecodeError as exc:
+        # Only static identifiers enter public CI logs, never external error
+        # text, source bytes, headers or provider-supplied strings.
+        message = str(exc)
+        if message == "source UTC is not pinned report-window snapshot":
+            reason = "source_utc"
+        elif message == "original SHA/gzip/GRIB verification failed":
+            reason = "preflight_integrity"
+        elif message == "source report point is not near four-cell corner":
+            reason = "report_coordinate"
+        elif message.startswith("ecCodes original grid/product definition drift:"):
+            reason = "ecCodes_grid_identity"
+        elif message.startswith("ecCodes nearest four"):
+            reason = "ecCodes_nearest_location"
+        elif message == "ecCodes failed to return exactly four nearest points":
+            reason = "ecCodes_nearest_count"
+        elif message == "unphysical or wrongly scaled decoded MESH":
+            reason = "decoded_value_domain"
+        elif message == "independent ecCodes decoding/metadata check failed":
+            reason = "ecCodes_decoder"
+        else:
+            reason = "other_source_or_science_gate"
+        print("BLOCKED: Keller four-cell science gate " + reason, file=sys.stderr)
         return 2
     print(json.dumps(receipt, sort_keys=True, indent=2))
     return 0
