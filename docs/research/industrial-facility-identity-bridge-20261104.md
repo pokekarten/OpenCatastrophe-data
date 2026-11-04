@@ -96,3 +96,25 @@ python research_runners/epa_frs_naics_multiplicity_v0.py \
 **Snapshot and taxonomy gate:** The facility projection and NAICS sample must be sourced from one explicitly shared release date; different reported vintages are rejected instead of silently combined. A six-digit code is not enough to identify the NAICS taxonomy *revision*; the audit marks codebook version as unverified pending original provider documentation.
 
 **Next empirical decision:** freeze the original source archive identity and exact native extraction/perimeter before using any numerical NAICS-sector distribution in a synthetic company portfolio. This research audit is designed to expose join multiplication and source gaps, not to assign insurance risk.
+
+
+## Native EPA FRS EIA-860 / ORIS identifier bridge (added 2026-11-04)
+
+**This is the best current non-geospatial identity lead, but it is not yet a validated GEM match.**
+
+- [Official EPA-owned FRS/EIA mashup example](https://github.com/USEPA/FRS-getfacilities-samples/blob/master/EIA-EPA_Mashup.md) documents that the FRS program acronym `EIA-860` and `PGM_SYS_ID` identify an EIA ORIS plant code. The official example uses Keystone plant **ORIS 3136** and **FRS Registry ID 110000538525**, illustrating the *historical meaning of the crosswalk*, not current site membership or an authenticated 2026 data response.
+- [Official EIA-860 annual 2025](https://www.eia.gov/electricity/data/eia860/) publishes plant, utility, generator and generator-owner worksheets. An EIA plant ID is **not** an individual generator ID or an insured building. The generator ownership table omits generators wholly owned by their operator, so an absent ownership row is not absence of owners.
+- [GEM Global Integrated Power Tracker September 2026](https://globalenergymonitor.org/projects/global-integrated-power-tracker) provides GEM unit/phase and location identities, but its official methodology does **not** prove a universal EIA ORIS field on every row. The FRS↔EIA plant link and EIA↔GEM project link are separate evidence questions.
+
+The [fail-closed ORIS bridge](../../research_runners/epa_frs_eia860_oris_crosswalk_v0.py) and [synthetic-only tests](../../tests/test_epa_frs_eia860_oris_crosswalk_v0.py) accept caller-supplied *native-format* FRS `FRS_PROGRAM_LINKS.csv` slice (columns `REGISTRY_ID`, `PGM_SYS_ACRNM`, `PGM_SYS_ID`) and a separate **normalized** deduplicated plant-ID projection from the EIA 2025 annual plant workbook. Each projection/slice is bounded and hash-checked, but provider original files are **not** authenticated by this audit. It canonicalizes numerical plant-ID zero padding, allows a many-to-many relation to be observed without multiplying plants, and reports one-to-one *research candidates*, cardinality conflicts, missing IDs within the selected subset and out-of-scope matches. No IDs or coordinates are printed. `eia_to_gem_asset_ids_confirmed=false`, `facility_ownership_or_insurance_inferred=false`, `source_rights_or_model_admission_granted=false` are permanent fail-closed outputs.
+
+```bash
+python -m unittest discover -s tests -p 'test_epa_frs_eia860_oris_crosswalk_v0.py' -v
+python research_runners/epa_frs_eia860_oris_crosswalk_v0.py \
+  --frs-program-links-slice /reviewed/private/FRS_PROGRAM_LINKS_slice.csv \
+  --frs-sha256 FRS_NATIVE_SLICE_SHA256 --frs-release YYYY-MM-DD \
+  --eia-plant-projection /reviewed/private/eia860_2025_plant_ids.csv \
+  --eia-sha256 EIA_NORMALIZED_PROJECTION_SHA256 --eia-reporting-year 2025
+```
+
+The exact original 2025 EIA workbook/sheet header, EPA source ZIP timestamp and source-specific data reuse rights must be reviewed before a genuine run. It is **forbidden** to infer that a current EIA plant is a GEM unit, the owner is an insurance group, or that capacity/revenue equals TIV. This bridge is intended to provide independently inspectable *candidate identity*, and nothing further.
