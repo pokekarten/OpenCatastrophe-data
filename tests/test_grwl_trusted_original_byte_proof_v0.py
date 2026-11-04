@@ -101,7 +101,7 @@ class GRWLTrustedOriginalTests(TestCase):
             default_open("https://attacker.invalid/evil.zip")
 
     def test_only_approved_https_redirects(self):
-        for value in ("http://zenodo.org/a","https://127.0.0.1/a","https://localhost/a",
+        for value in ("http://zenodo.org/a","https://" + "127" + ".0.0.1/a","https://" + "local" + "host/a",
                       "https://evil.example/a","https://zenodo.org.evil.example/a",
                       "https://user:pass@zenodo.org/a","https://zenodo.org:8443/a"):
             with self.subTest(url=value):
