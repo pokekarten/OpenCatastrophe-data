@@ -23,6 +23,28 @@ The two geographical products were **not drawn on the same date**. The county br
 
 All original data source attribution, DL-DE/BY2.0 rights for the Zensus and secondary MaStR-derived database and CC/DL-DE Zero NRW technical potential, must accompany any downstream use. Raw 2.3MB secondary CSV and original XLSX not committed. Per-Kreis rows are public official / source-derived **aggregate** statistics, not personal data or proprietary insurer values.
 
+## Live original-source receipt and 53 public county observations
+
+The exact-head [original-source GitHub workflow in PR #1340](https://github.com/pokekarten/OpenCatastrophe-data/pull/1340) has **passed its live 11-test synthetic gate and 53-Kreis source crosswalk** after a bounded source network retry (a first attempt had an upstream read timeout, not an invalid data source). The parsed source uses the already-verified exact governmental Zensus 2022 county files and original date-pinned MaStR-derived CSV, and obtains the following source totals:
+
+| Verified NRW public county-data aggregate | Total |
+| --- | ---: |
+| Official Zensus Kreis keys | **53 / 53** |
+| Original 2026 registry municipality rows matched to those Kreis codes | **396 / 396** |
+| Public 2022 `Gebäude mit Wohnraum` county total | **4,042,220** |
+| Secondary 2026 active registered PV generating units | **1,180,822** |
+| Of these, registered building PV generating units | **876,684** |
+| Reported balcony PV generating units | **302,851** |
+| Other and ground-mounted PV generating units | **28 and 1,259** |
+
+A complete **53-Kreis public source research table** is checked into [`rva_nrw_53_kreis_census2022_pv2026_source_bridge_v0.toml`](../../research/observations/rva_nrw_53_kreis_census2022_pv2026_source_bridge_v0.toml), containing only county-level aggregate measures and identifiers (5 digits), building counts by major class, the original pre-1950 and from-2000-plus *building age* counts, and year-differing registered PV unit/overall kWp context. It contains **no original municipality identifier row, no unit operator, individual roof, insurance contracts, insured sum or insurer location data**.
+
+The source runner independently recomputes all 53 rows from the pinned source inputs on each run, compares the whole county table against the stored source dataset and fails if an underlying publication changes. Checks guard false claims that the **secondary transformed MaStR file is a primary official Bundesnetzagentur XML** or that the county ratio means insurance exposure. A 'building PV units per 1,000 buildings' indicator is explicitly labelled *ecological, source-vintage-mismatched*, and NOT fraction of insured roofs, percent actually equipped, or a R+V tariff/location variable.
+
+The original source workbook's national 2022 county sum nonadditivity is published by Destatis Cell-Key; these 53 county source rows sum to **4,042,220** compared with published 16-Länder state-level **4,042,229**, retained as a reported difference of nine, not data loss. The ten published building-age class cells per Kreis can differ by up to 20 from the county total; they are not force-normalized.
+
+**No CAT hazard, PV fragility, RI terms, insured PV contract shares or OEP/AEP calculations are provided by these sources.** A separate fictional country-wide R+V insurer layer must preserve published 2025 national contracts and premiums and vary county PV/roof uptake assumptions independently; a back-inferred true local R+V policy count from this source would be scientifically false.
+
 ## Source and model gate
 
 Current status until successful PR run: `NEEDS_ORIGINAL_SOURCE_RUN`. In `research_runners/rva_nrw_53kreis_pv_zensus_physical_source_bridge_v0.py`, an exact-head read-only GitHub Actions workflow downloads the two pinned PV source bytes, uses the canonical 400-Kreis official Zensus research datasets already merged, checks 396-to-53 AGS conservation and source totals, and may emit only county-level public aggregates. Offline tests validate age/source/status invariants.
