@@ -55,3 +55,63 @@ deleted or new source features without independent temporal proof.
 
 **Execution status:** this page is a predeclared contract. Report
 real overlaps only after exact-head original-source GitHub run completes.
+
+## Actual complete-original source result (2026-11-04)
+
+The exact-head [original-source Actions run 41891420321](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41891420321)
+passed **all 10 synthetic negative/positive tests**, verified full SHA-256 of
+both frozen official releases, and compared the actual original national
+address-feature identifiers. No original ID, address, location, pair,
+geometric record or source file was exported from the ephemeral runner.
+
+| Original source key population | Distinct nonblank IDs | Duplicate excess |
+| --- | ---: | ---: |
+| 2026-04 GeoBase `AD_AddressID` | **179,024** | 0 |
+| 2026-04 GeoBase `AlternativeIdentifier` | **178,431** | 593 |
+| 2026-11 BD-Adresses `id_geoportail` | **179,768** | 0 |
+| 2026-11 BD-Adresses `id_caclr_bat` | **179,184** | 584 |
+
+| Cross-release exact-text comparison | Distinct shared identifiers | April rows involving shared keys | November rows involving shared keys |
+| --- | ---: | ---: | ---: |
+| `AD_AddressID` ↔ `id_geoportail` | **0** | 0 | 0 |
+| `AlternativeIdentifier` ↔ `id_caclr_bat` | **178,254** | **178,845** | **178,837** |
+| Complete two-key ordered pairs | **0** | 0 | 0 |
+
+For CACLR-aligned alternative IDs:
+
+- **177,709** distinct shared identifiers occur exactly once on **both** sides.
+- **545** distinct shared identifiers occur more than once on at least
+  one side; they MUST remain ambiguous one-to-many or many-to-many
+  candidates until a separately evidenced disambiguation step.
+- **177** distinct April alternative IDs have no exact counterpart
+  among November CACLR identifiers.
+- **930** distinct November CACLR IDs have no exact counterpart
+  among April alternative identifiers.
+- The intersection **178,254 / 178,431 = approximately 99.9%** of
+  April alternative identifiers. The reverse coverage is lower
+  because November's source population is larger.
+
+**Conclusion:** the April GeoBase `AlternativeIdentifier` and November
+`id_caclr_bat` share a highly reproducible **CACLR-style text namespace**,
+whereas the purported `AD_AddressID` ↔ `id_geoportail` equality
+hypothesis has **zero** exact matches. Their ordered two-key pairs
+therefore also have zero matches. A literal CACLR key is an excellent
+*cross-release address-record candidate* but is **not** an authoritative
+statement that the corresponding building or insurance risk is identical.
+
+**No seven-month lifetime claim**: IDs absent on one side may reflect
+release differences, source coverage, data quality, address semantics,
+different versions, or genuine change, which this comparison does not
+adjudicate. The same ACT producer family means neither source is
+independent ground truth. Do not coerce IDs, infer construction/demolition
+or transfer insurer exposures based on this table.
+
+### Next research acceptance gate
+
+Confirm official CACLR `AlternativeIdentifier` semantics for duplicate
+building-level IDs, then test the **177,709 singleton-key candidate pairs**
+against independent address-semantic field agreement, source-vintage
+validity and cross-CRS positional consistency. Preserve the 545
+non-unique CACLR values as unresolved multi-address candidates; an
+independent holdout and explicit address-to-building footprint
+geometry proof are necessary before a CAT model input proposal.
