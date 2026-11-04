@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-name: Luxembourg original ACT 2026 address to GeoBase 100m window linkage
+name: Luxembourg original ACT address / GeoBase city and Berdorf spatial challenges
 
 on:
   pull_request:
@@ -49,5 +49,9 @@ jobs:
             --max-filesize 83886080 -o "$buildings" \
             'https://download.data.public.lu/resources/bd-l-geobase/20261001-010523/buildings-20261001.zip'
           python -m research_runners.lu_act_address_geobase_original_window_v0 \
-            --address-csv "$addresses" --geobase-zip "$buildings"
+            --address-csv "$addresses" --geobase-zip "$buildings" \
+            --site luxembourg-city
+          python -m research_runners.lu_act_address_geobase_original_window_v0 \
+            --address-csv "$addresses" --geobase-zip "$buildings" \
+            --site berdorf-village
           # Source data, individual addresses and geometry pairs are never uploaded.
