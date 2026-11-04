@@ -90,6 +90,8 @@ def classify(points, polygons):
         "address_points_sampled": len(points),
         "geobase_polygons_sampled": len(polygons),
         "status_counts": dict(sorted(counts.items())),
+        "polygons_with_exactly_one_uniquely_contained_address": sum(v == 1 for v in address_by_polygon.values()),
+        "polygons_without_uniquely_contained_sample_addresses": len(polygons) - len(address_by_polygon),
         "polygons_with_multiple_uniquely_contained_addresses": sum(v > 1 for v in address_by_polygon.values()),
         "addresses_in_such_polygons": sum(v for v in address_by_polygon.values() if v > 1),
         "outside_distance_mean_m": None if not distances else round(math.fsum(distances) / len(distances), 3),
