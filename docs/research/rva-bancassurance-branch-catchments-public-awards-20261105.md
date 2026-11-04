@@ -26,6 +26,8 @@ Machine-readable primary evidence with these explicit positive and negative rela
 
 **Senate Q1**: Examples across *unspecified* Berlin municipal housing company portfolios put annual net premiums per **residential dwelling** under EUR 100 in 2019, above EUR 200 in 2024, with yearly variation ~1–57%. **This is not actual R+V 2025 policy premium, insured property TIV, an insurer's annual GWP, or proof of the building insured.** A company named as insurer of a large housing corporate book cannot be naively injected as tens of thousands of residential insurance contracts into the R+V Allgemeine solo **1,060,546** year-end *connected residential building* policy anchor. The source reports typical EU-wide re-tendering of corporate building master agreements every **four years**, which helps monitoring past/future awards but does not guarantee 2026 continuation.
 
+Supporting typed source for WBM/GESOBAU/degewo 2025 stock numbers plus the Berlin government WFS metadata and **no corporate-entity GIS join**: [`rva_berlin_named_housing_public_stock_geography_2025_v0.toml`](../../research/observations/rva_berlin_named_housing_public_stock_geography_2025_v0.toml). This source contains **only aggregated corporate counts and official WFS metadata**, no polygons, personal addresses or individual covered insurance risks. Tested with 12 source-gated negative controls.
+
 ### Independent corporate inventory opportunity and location data
 
 Primary company **2025** inventory, **dwelling units / business units**, NOT insurance policies, TIV or single buildings:
