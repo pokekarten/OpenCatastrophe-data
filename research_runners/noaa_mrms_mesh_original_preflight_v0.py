@@ -122,8 +122,14 @@ def template0_grid_geography(section3: bytes, expected_points: int) -> dict:
         raise MRMSPreflightError("inconsistent GRIB2 grid dimensions/point count")
     basic_angle = int.from_bytes(section3[38:42], "big")
     subdivisions = int.from_bytes(section3[42:46], "big")
-    if (basic_angle, subdivisions) != (0, 0):
-        raise MRMSPreflightError("unreviewed GRIB2 angular scale")
+    # WMO Template 3.0 Note 1: a zero or *missing* basic angle and
+    # subdivisions mean the recommended 10^-6 degree unit. ecCodes implements
+    # missing() for subdivisions as all-one bits (0xffffffff).
+    if (basic_angle not in (0, 0xffffffff) or
+            subdivisions not in (0, 0xffffffff)):
+        raise MRMSPreflightError(
+            f"unreviewed GRIB2 angular scale ({basic_angle}, {subdivisions})"
+        )
     latitude_first = _grib_signed_magnitude_i32(section3[46:50]) / 1_000_000
     longitude_first = _grib_signed_magnitude_i32(section3[50:54]) / 1_000_000
     latitude_last = _grib_signed_magnitude_i32(section3[55:59]) / 1_000_000
