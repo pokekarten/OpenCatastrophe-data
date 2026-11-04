@@ -154,15 +154,17 @@ def exact_area_candidates(polygons, native_window):
 
 def run(address_csv: Path, geobase_zip: Path, *, site: str = "luxembourg-city") -> dict:
     """Only original pinned data accepted, no original records or geometries emitted."""
+    # Validate user-selectable research-site identifier before importing
+    # optional GIS modules. Offline repository CI does not install pyproj;
+    # a forbidden site must reject without either GIS modules or source IO.
+    if site not in STUDY_SITES:
+        raise AddressFootprintError("Unapproved original research site")
+    centre_lon, centre_lat, expected_polygons = STUDY_SITES[site]
     try:
         from pyproj import Transformer
         from shapely.geometry import box, Point, shape, Polygon
     except ImportError as exc:
         raise AddressFootprintError("Pinned PyProj/Shapely runtime required") from exc
-
-    if site not in STUDY_SITES:
-        raise AddressFootprintError("Unapproved original research site")
-    centre_lon, centre_lat, expected_polygons = STUDY_SITES[site]
     if any(p.is_symlink() or not p.is_file() for p in (address_csv, geobase_zip)):
         raise AddressFootprintError("Original inputs must be local regular nonsymlink files")
     if address_csv.stat().st_size != ADDRESS_BYTES:
