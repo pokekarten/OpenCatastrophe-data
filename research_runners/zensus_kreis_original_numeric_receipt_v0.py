@@ -36,6 +36,7 @@ MAX_ROWS = 35000
 MAX_COLS = 9
 MAX_COUNT = 10000000
 MAX_KREISE = 450
+MAX_CELL_KEY_CATEGORY_EXCESS = 10
 
 
 def _column(ref: str) -> int:
@@ -164,11 +165,19 @@ def inspect_original_kreis_building_counts(raw: bytes, *, require_original_sha=T
                 raise OriginalReceiptError("implausible county 2022 building count")
             nums.append(n)
         total,residential,non_dormitory,dormitory,other=nums
-        if any(v is not None and v>total for v in (residential,non_dormitory,dormitory,other)):
-            raise OriginalReceiptError("source building hierarchy impossible at Kreis "+code)
-        if residential is not None and any(v is not None and v>residential
-                                           for v in (non_dormitory,dormitory)):
-            raise OriginalReceiptError("source building hierarchy impossible at Kreis "+code)
+        # Official 2022 Zensus uses Cell-Key perturbation: published cells
+        # need not add or nest exactly. Accept *only* bounded small excess,
+        # record the discrepancy, and never 'correct' source figures.
+        excesses=[max(0,v-total) for v in (residential,non_dormitory,dormitory,other)
+                  if v is not None]
+        if residential is not None:
+            excesses += [max(0,v-residential) for v in (non_dormitory,dormitory)
+                         if v is not None]
+        maximum_excess=max(excesses,default=0)
+        if maximum_excess>MAX_CELL_KEY_CATEGORY_EXCESS:
+            raise OriginalReceiptError(
+                "source building hierarchy excess outside 10-count Cell-Key QC bound at Kreis "+
+                code+" (excess="+str(maximum_excess)+")")
         districts.append({
             "kreis_ags_2022":code,
             "kreis_name_2022":name,
@@ -178,6 +187,7 @@ def inspect_original_kreis_building_counts(raw: bytes, *, require_original_sha=T
             "wohnheime":dormitory,
             "sonstiges_gebaeude_mit_wohnraum":other,
             "suppressed_subcategory_columns":suppressed,
+            "published_cell_key_category_excess":maximum_excess,
         })
         if len(districts)>MAX_KREISE:
             raise OriginalReceiptError("too many Kreis values; mixed geo hierarchy")
@@ -212,6 +222,9 @@ def inspect_original_kreis_building_counts(raw: bytes, *, require_original_sha=T
         "kreis_numeric_mapping_sha256":hashlib.sha256(canonical).hexdigest(),
         "sum_count_nonadditivity_hierarchy_abs_complete_rows_only":hierarchy_nonadditivity,
         "hierarchy_rows_with_all_relevant_counts":len(all_hierarchy),
+        "cell_key_hierarchy_overage_max":max(x["published_cell_key_category_excess"] for x in districts),
+        "cell_key_hierarchy_overage_kreis_count":sum(x["published_cell_key_category_excess"]>0 for x in districts),
+        "cell_key_hierarchy_excess_is_not_source_error":True,
         "original_geography_2022_05_15":True,
         "insurer_spatial_contracts_observed":False,
         "insurer_policy_to_building_1to1_proven":False,
