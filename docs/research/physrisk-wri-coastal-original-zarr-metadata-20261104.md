@@ -111,3 +111,29 @@ for CAT model calibration, or admit them for NextGen.
    supplied** by these surfaces.
 4. Keep source review and model-input admission blocked until all relevant
    gates and exact original-asset identities are satisfied.
+
+## Original WRI GeoTIFF catalogue-to-Physrisk coverage gate (4 November 2026)
+
+The authoritative [WRI Aqueduct Floods v2 file listing](https://aqueduct.wridata.org/AqueductFloods20/index.html) was fetched as an exact UTF-8 HTML original response via a bounded read-only HTTP request. At the observed 2026-11-04 retrieval, the original response was **59,487 bytes**, SHA-256
+`04157a7069d172a0e10f85db7b3e5db33007265ec33c0ec5720a6a346404b4ad`.
+This is the *HTML index response*, **not** a TIFF, tile, provider version/edition digest or confirmation that every linked large TIFF is accessible.
+
+The original WRI catalogue lists **ten** separate historical *coastal / no subsidence* single-band Float32 GeoTIFFs for return periods
+`[1.5, 2, 5, 10, 25, 50, 100, 250, 500, 1000]` years. Its file naming pattern is
+`inuncoast_historical_nosub_hist_rpXXXX_Y.tif`. In contrast, the exact Physrisk-derived `.zattrs` index lists **nine** return periods:
+`[2, 5, 10, 25, 50, 100, 250, 500, 1000]` years. The **1.5-year** original is missing from that specific Zarr array. This may be a deliberate producer subset; it is **not** assumed to be corruption, a missing site, an intensity-zero period, or a new independent event. Exclusion must be explicit when comparing marginal hazard distributions.
+
+The new executable, `research_runners/wri_physrisk_coastal_return_period_crosswalk_v0.py`, binds the exact original WRI index HTML and exact Physrisk `.zattrs` to separately provided SHA-256 receipts, checks all ten WRI hrefs and all nine Physrisk index values, refuses duplicates/missing periods or mixed subsidence/scenario names, and emits only the **nine potential WRI original GeoTIFF URLs corresponding to Physrisk** plus the one unmatched WRI 1.5-year file identity. It **does not** claim any original TIFF was fetched or pixel values matched.
+
+```bash
+python research_runners/wri_physrisk_coastal_return_period_crosswalk_v0.py \\
+  /private/original/wri-v2-index.html \\
+  /private/original/physrisk-wri-coastal.zattrs \\
+  --expected-wri-sha256 04157a7069d172a0e10f85db7b3e5db33007265ec33c0ec5720a6a346404b4ad \\
+  --expected-zattrs-sha256 b8135f52fa34025180c625ce65bb3b8b730bef8ef6796c98fb7ae6e296631305 \\
+  --out /tmp/wri-physrisk-coastal-crosswalk.json
+
+python -m unittest discover -s tests -p 'test_wri_physrisk_coastal_return_period_crosswalk_v0.py'
+```
+
+For original data comparison, choose **a bounded single return period and small window**, pin the WRI TIFF original asset revision, inspect and preserve both GeoTIFF and Zarr geotransforms/nodata conventions, and then compare paired pixel values against a tolerance informed by producer conversion. Do **not** construct annual independent events from these nine quantile/return-period surfaces. Full random-event chronology, inter-site peril correlation, defended depth, insured exposure and loss distribution are all additional missing layers.
