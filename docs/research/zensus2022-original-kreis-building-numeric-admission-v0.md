@@ -53,3 +53,44 @@ If the original-source workflow succeeds, county building opportunities can be a
 Do not use the GDV interactive natural-hazard maps for bulk data mining without their required permission; this new source lane is limited to independently published German official **Zensus** statistics.
 
 **Verification note:** existence of the script/CI alone is not evidence of live full Kreis admission. The exact-head source-audit job and source numeric receipt must be checked; report failure transparently if it fails.
+
+
+## **Verified public 400-Kreis original-source acquisition / model bridge (2026-11-04)**
+
+The live source-provenance workflow [#41907363439](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41907363439) **SUCCEEDED**, after exercising source-defensive cases for original Excel shared strings, suppressed subcategories and official **Cell-Key** non-additivity. The original-full workbook SHA is unchanged: `82da8578a4657e20752b436a756ed27846c77f96e3f7333bdea7f4fe29a8b551`. Canonical original 400-Kreis source row SHA: `a48c2d17a6e00c97fb4a151b1d990df78642de17dfd6ddf932479357e2589ca1`.
+
+**New canonical attributed source dataset, not a synthetic value:** [400 Kreis observed official values, 2022](../../research/observations/zensus2022_400_kreis_original_building_aggregates_v0.toml). It contains only 400 *published official county-level building aggregate* rows, not original personally identifying building addresses, insurance policies, insurer locations or original workbook binary. Original numeric category coverage and national sums (note that these are summations of published Kreis cells, not unperturbed underlying true counts):
+
+| 2022 official published Kreis aggregate | Kreis rows numeric / 400 | Sum where numeric |
+| --- | ---: | ---: |
+| Buildings with any residential use (`GEBAEUDEART_SYS_1`) | 400 | **19,957,288** |
+| Residential buildings including dormitories (`_11`) | 400 | **19,488,949** |
+| Residential buildings excluding dormitories (`_111`) | 400 | **19,474,175** |
+| Dormitories (`_112`) | **393** | **14,802 (in the 393 published numeric counties, NOT Germany total)** |
+| Other/mixed-use buildings with residential space (`_12`) | 400 | **468,301** |
+
+The separately printed 2022 **Germany total** in an independent government publication is **19,957,268**, **20 lower** than the sum of all 400 original Kreis cells. This is not an error to be repaired by adding/removing 20 buildings. The official publisher [Cell-Key confidentiality explanation](https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/Datenbank/geheimhaltung-cell-key-methode.html) warns that published census subtotals need not add to the published marginal total. A single Kreis category hierarchy had a published excess of **4**, inside the explicit scientific QC bound of 10. Seven dormitory cells were unavailable; these are stored as `"missing"`, **never zero**, with source coverage separately documented.
+
+**Now executable 2025 R+V study:** [`rva_2025_kreis_zensus_real_prior_fictional_book_v0.py`](../../research_runners/rva_2025_kreis_zensus_real_prior_fictional_book_v0.py) consumes actual 2022 public Kreis physical-building counts and the existing original **2025 R+V Allgemeine HGB solo national contract/premium** dataset. It generates three alternative **fictional insurer** county distribution hypotheses and conserves exactly:
+- **1,060,546** original published nationwide *year-end connected-building insurance contracts*;
+- **EUR 997,710,000** original HGB annual direct booked building GWP (not earned premium, risk TIV or regional underwriting tariff).
+
+The scenario variants are **(1) all buildings with residential use**, **(2) residential non-dormitory buildings**, **(3) invented fivefold affinity multiplier for mixed-use in addition to residential buildings**. The source building counts are true published *statistical observations* for 2022; their use as R+V 2025 county insurance-contract *weights* is **fictional** and not estimated from company records. No geography represents a company address list. No GDV data/rights are implicated in this step.
+
+Reproduce source and aggregate-conservation checks:
+
+```bash
+python research_runners/zensus_kreis_original_numeric_receipt_v0.py --official-live
+python research_runners/rva_2025_kreis_zensus_real_prior_fictional_book_v0.py
+python -m unittest discover -s tests -p 'test_rva_2025_kreis_zensus_real_prior_fictional_book_v0.py' -v
+```
+
+The last modeling step cannot claim a German native Oasis GUL/IL/RI/net catastrophe run or company-calibrated OEP/AEP. At least **2025 insured-policy geography, insured values and site coordinates, insured cover terms and endorsement mix, independent German peril catalogue/vulnerability, and outward treaty terms** remain unobserved. The 400 Kreis population improves the **real physical opportunity prior** while keeping these gaps explicit.
+
+### Citable original provenance
+
+- [Official Destatis regional Zensus 2022 spreadsheet product](https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/Publikationen/publikationen-akkordeon-regionaltabellen.html)
+- [Official German census building classifications, GEBAEUDEART_SYS classes](https://ergebnisse.zensus2022.de/datenbank/online/variables)
+- [Publisher Cell-Key disclosure control and marginal non-additivity](https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/Datenbank/geheimhaltung-cell-key-methode.html)
+- [Publisher German data license and attribution context](https://www.laiv-mv.de/Statistik/Zensus/Ergebnisse/)
+- [Actual source-download and admission evidence: GitHub Actions original workbook workflow](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41907363439)
