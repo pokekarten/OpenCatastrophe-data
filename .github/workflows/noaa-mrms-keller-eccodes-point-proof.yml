@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: NOAA MRMS Keller four-cell ecCodes research proof
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/noaa-mrms-keller-eccodes-point-proof.yml"
+      - "research_runners/noaa_mrms_keller_eccodes_point_v0.py"
+      - "research_runners/noaa_mrms_mesh_direct_https_proof_v0.py"
+      - "research_runners/noaa_mrms_mesh_original_preflight_v0.py"
+      - "tests/test_noaa_mrms_keller_eccodes_point_v0.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: noaa-mesh-keller-eccodes-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bounded-original-source-keller-field:
+    name: Verify source + decode only four site-neighbour MESH values
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Checkout exact PR ref without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Install fixed ecCodes Python binding and its wheel-delivered C library
+        run: |
+          python -m pip install --disable-pip-version-check --no-input "eccodes==2.50.0"
+          python -m pip check
+          python -c "import eccodes; print('ecCodes Python', eccodes.__version__)"
+      - name: Exercise synthetic nearest-four and missing/invalid-value regressions
+        run: python -m unittest tests.test_noaa_mrms_keller_eccodes_point_v0 -v
+      - name: Decode only four Keller-site MESH values from exact NOAA HTTPS source
+        run: python -m research_runners.noaa_mrms_keller_eccodes_point_v0
