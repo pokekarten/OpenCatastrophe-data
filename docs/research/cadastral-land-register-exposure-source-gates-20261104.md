@@ -175,3 +175,14 @@ python -m unittest tests.test_render_pdok_postgis_overlap_select_v0 -v
 ```
 
 **Blockers remain:** source provenance/rights admission, precise feature extraction lineage, full source geometry validation (including union/double overlap), feature-status time alignment, transfer into versioned exposure observations and separate insurer-specific allocation. The isolated query is a research result, not an operational source ingestion or a Monte Carlo CAT run.
+
+### 2026-11-05 follow-up: independent PostGIS union-vs-summed-area check
+
+Using a fresh, complete 19-parcel/9-BGT tiny-box PDOK sample at 2026-11-04T23:22:12Z and T23:22:14Z in an **ephemeral read-only** PostGIS query on Neon validation branch, calculate two independent coverage estimators per building:
+
+- Sum of positive `ST_Area(ST_Intersection(bgt.geom,parcel.geom))` per parcel.
+- `ST_Area(ST_Union(ST_Intersection(bgt.geom,parcel.geom)))` per building, i.e., geometric union independent of duplicate parcel area counting.
+
+**Observed:** building footprint total `483.946 m²`; summed parcel intersections **`480.570 m²`**; unioned intersections **`480.570 m²`**; excess from self-overlapping parcel intersections **`0.000000 m²`**; zero buildings with >0.0001m² local parcel polygon duplicate; union area coverage **`99.303%`**; weakest individual footprint union coverage **`97.646%`**.
+
+The public research code now computes `parcel_self_overlap_doublecount_sqm`, `parcel_polygon_overlap_buildings` and `union_intersection_area_sqm` in addition to overlap fractions. This confirms no observed geometric parcel-overlap double count in the **nine-building bounded sample** only; it is NOT a cadastral accuracy certificate, source entitlement, insured sum or evidence of wider market coverage. Construction year, vulnerability and height validation are outside this query's scope.
