@@ -37,6 +37,7 @@ def validate(payload):
         ids.add(row["source_id"])
         u = urlsplit(row["url"])
         assert u.scheme == "https" and u.hostname in DOMAINS and not u.username and not u.password
+        assert not row["source_id"].startswith("rv.group.") or row["scope"] == "group"
         assert row["scope"] in {
             "solo", "group", "issuer_unspecified", "industry_proxy",
             "physical_stock", "building_valuation", "meteorological",
@@ -109,9 +110,7 @@ class RvaExternalSourcesTests(unittest.TestCase):
             if r["source_id"] == "rv.group.bernd2021":
                 r["scope"] = "solo"
         with self.assertRaises(AssertionError):
-            # Validate source provenance at the semantic boundary.
-            rows = validate(d)
-            self.assertEqual(rows["rv.group.bernd2021"]["scope"], "group")
+            validate(d)
 
 
 if __name__ == "__main__":
