@@ -108,10 +108,14 @@ def inspect_metadata(raw: bytes) -> dict[str, Any]:
             raise ProbeBlocked("invalid Figshare file identifier")
         if type(f.get("size")) is not int or f["size"] <= 0:
             raise ProbeBlocked("invalid declared archive size")
-        md5 = f.get("supplied_md5") or f.get("computed_md5")
-        if md5 is not None and (type(md5) is not str or re.fullmatch(r"[a-fA-F0-9]{32}", md5) is None):
-            raise ProbeBlocked("invalid provider-declared MD5")
-        if (f["id"], f["size"], md5) != FROZEN_FILES[f["name"]]:
+        supplied = f.get("supplied_md5")
+        computed = f.get("computed_md5")
+        if (type(supplied) is not str or type(computed) is not str
+                or re.fullmatch(r"[a-fA-F0-9]{32}", supplied) is None
+                or re.fullmatch(r"[a-fA-F0-9]{32}", computed) is None):
+            raise ProbeBlocked("missing/invalid provider-declared MD5")
+        md5 = supplied.lower()
+        if computed.lower() != md5 or (f["id"], f["size"], md5) != FROZEN_FILES[f["name"]]:
             raise ProbeBlocked("provider-declared source file identity/hash changed")
         if f.get("is_link_only") is not False:
             raise ProbeBlocked("original asset unexpectedly became external link")
