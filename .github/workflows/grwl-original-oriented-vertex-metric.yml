@@ -7,6 +7,9 @@ on:
   pull_request:
     paths:
       - research_runners/grwl_original_oriented_vertex_metric_v0.py
+      - research_runners/grwl_original_aggregate_semantic_diff_v0.py
+      - research_runners/grwl_original_zip_structure_preflight_v0.py
+      - research_runners/grwl_trusted_original_byte_proof_v0.py
       - tests/test_grwl_original_oriented_vertex_metric_v0.py
       - docs/research/grwl-original-oriented-vertex-metric-20261104.md
       - .github/workflows/grwl-original-oriented-vertex-metric.yml
