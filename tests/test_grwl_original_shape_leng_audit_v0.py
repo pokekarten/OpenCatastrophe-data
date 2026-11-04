@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Synthetic-only SHAPE_LENG value, units and keyed source tests."""
 import io
+import math
+import struct
 import unittest
 import zipfile
 
@@ -11,7 +13,7 @@ from research_runners.grwl_original_aggregate_semantic_diff_v0 import (
 from research_runners.grwl_original_oriented_vertex_metric_v0 import read_original_polylines
 from research_runners.grwl_original_shape_leng_audit_v0 import (
     SCHEMA, compare_length_releases, main, read_keyed_source_lengths,
-    spherical_centerline_length_km,
+    spherical_centerline_length_km, planar_original_wgs84_length_in_degrees,
 )
 from tests.test_grwl_original_aggregate_semantic_diff_v0 import (
     A, B, C, artifact,
@@ -142,6 +144,44 @@ class SHAPELengthAuditTests(unittest.TestCase):
                       "flood_hazard_or_insured_loss_calculated",
                       "production_database_modified"):
             self.assertFalse(r[field], field)
+
+    def test_planar_degree_control_equator(self):
+        line = sample()[2][0]
+        self.assertEqual(planar_original_wgs84_length_in_degrees(line), 1.0)
+        self.assertGreater(spherical_centerline_length_km(line), 110)
+
+    def test_planar_degree_control_multipart_does_not_join_parts(self):
+        pts = ((0., 0.), (1., 0.), (10., 10.), (10., 11.))
+        coords = b"".join(struct.pack("<dd", *p) for p in pts)
+        self.assertEqual(planar_original_wgs84_length_in_degrees(((2, 2), coords)), 2)
+
+    def test_planar_degree_control_does_not_wrap_dateline(self):
+        coords = (struct.pack("<dd", 179.9, 0.) +
+                  struct.pack("<dd", -179.9, 0.))
+        self.assertAlmostEqual(
+            planar_original_wgs84_length_in_degrees(((2,), coords)), 359.8)
+
+    def test_same_geometry_2018_degree_units_and_2026_kilometres(self):
+        old = sample(rows=((1, "50", "1", "DE"), (2, "60", "1", "FR")))
+        new = sample(rows=((1, "50", "111.195", "DE"),
+                           (2, "60", "111.195", "FR")))
+        out = compare_length_releases(old, new)
+        degree_ratio = out["original_2018_shape_leng_over_wgs84_planar_degrees"]
+        km_ratio = out["reported_shape_leng_over_spherical_centerline_km_by_release"]["2026"]
+        self.assertEqual(degree_ratio["p50"], 1.0)
+        self.assertGreater(km_ratio["p50"], .99)
+        self.assertLess(km_ratio["p50"], 1.01)
+        self.assertEqual(out["original_2018_features_exceeding_planar_degree_rel_error"]["0.01"], 0)
+        self.assertEqual(out["original_2026_features_exceeding_spherical_km_rel_error"]["0.01"], 0)
+        self.assertTrue(out["planar_degree_control_is_not_ground_distance"])
+        self.assertFalse(out["source_formula_change_explained"])
+
+    def test_planar_degree_outlier_count_is_not_suppressed(self):
+        old = sample(rows=((1, "50", "2", "DE"), (2, "60", "1", "FR")))
+        new = sample()
+        out = compare_length_releases(old, new)
+        self.assertEqual(out["original_2018_features_exceeding_planar_degree_rel_error"]["0.01"], 1)
+        self.assertEqual(out["original_2018_abs_relative_error_vs_planar_degrees"]["count"], 2)
 
     def test_no_network_by_default(self):
         self.assertEqual(main([]), 2)
