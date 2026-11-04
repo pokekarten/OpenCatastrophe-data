@@ -51,3 +51,7 @@ jobs:
         run: python -m research_runners.noaa_mrms_keller_eccodes_point_v0 --product mesh_keller_2021_after
       - name: Decode NOAA 30-minute maximum hail swath four cells (60-second offset)
         run: python -m research_runners.noaa_mrms_keller_eccodes_point_v0 --product mesh_keller_2021_max30
+      - name: Decode second independent 2024 Arlington hail MESH four cells
+        run: python -m research_runners.noaa_mrms_keller_eccodes_point_v0 --product mesh_arlington_2024
+      - name: Decode 2024 Arlington rolling MESH maximum four cells
+        run: python -m research_runners.noaa_mrms_keller_eccodes_point_v0 --product mesh_arlington_2024_max30
