@@ -34,6 +34,22 @@ class GDWSpatialError(ValueError):
     """Original source, feature record or geospatial reader mismatch."""
 
 
+def _validity_reason_family(raw_reason: str) -> str:
+    """Return only a fixed coarse label, never GEOS' original coordinate detail."""
+    family = raw_reason.partition("[")[0].strip().lower()
+    return {
+        "self-intersection": "self_intersection",
+        "ring self-intersection": "ring_self_intersection",
+        "hole lies outside shell": "hole_outside_shell",
+        "nested shells": "nested_shells",
+        "holes are nested": "nested_holes",
+        "disconnected interior": "disconnected_interior",
+        "too few points in geometry component": "too_few_points",
+        "invalid coordinate": "invalid_coordinate",
+        "ring is not closed": "ring_not_closed",
+    }.get(family, "other_invalid_geos_reason")
+
+
 def _check_id(record, field_index: int) -> int:
     value = record[field_index]
     if type(value) is int:
@@ -74,6 +90,7 @@ def audit(path: Path, *, expected_sha256: str = PINNED_SHA256,
     """Read one local original archive; non-default bounds only for synthetic tests."""
     try:
         from shapely.geometry import Point, shape
+        from shapely.validation import explain_validity
         import shapely
     except ImportError as exc:
         raise GDWSpatialError("pinned Shapely/GEOS review dependency unavailable") from exc
@@ -85,6 +102,7 @@ def audit(path: Path, *, expected_sha256: str = PINNED_SHA256,
     points: dict[int, object] = {}
     count, invalid, conversion_error = 0, 0, 0
     inside, boundary, outside = 0, 0, 0
+    invalid_reason_families: Counter[str] = Counter()
     with zipfile.ZipFile(path) as z:
         members = pre._members(z)
         bars, bars_index = _open_reader(z, members, "GDW_barriers_v1_0")
@@ -115,8 +133,17 @@ def audit(path: Path, *, expected_sha256: str = PINNED_SHA256,
                     geom = shape(row.shape.__geo_interface__)
                     if geom.geom_type not in ("Polygon", "MultiPolygon"):
                         raise ValueError("unsupported reservoir geometry type")
-                    if geom.is_empty or geom.area <= 0 or not geom.is_valid:
+                    if geom.is_empty:
                         invalid += 1
+                        invalid_reason_families["empty_polygon"] += 1
+                        continue
+                    if not geom.is_valid:
+                        invalid += 1
+                        invalid_reason_families[_validity_reason_family(explain_validity(geom))] += 1
+                        continue
+                    if geom.area <= 0:
+                        invalid += 1
+                        invalid_reason_families["nonpositive_polygon_area"] += 1
                         continue
                     point = points[ident]
                     if geom.contains(point):
@@ -127,6 +154,7 @@ def audit(path: Path, *, expected_sha256: str = PINNED_SHA256,
                         outside += 1
                 except (ValueError, TypeError, OverflowError, shapely.errors.GEOSException):
                     conversion_error += 1
+                    invalid_reason_families["conversion_error"] += 1
         finally:
             regions.close()
     if count != expected_counts["GDW_reservoirs_v1_0"][1]:
@@ -135,6 +163,8 @@ def audit(path: Path, *, expected_sha256: str = PINNED_SHA256,
         raise GDWSpatialError("original spatial disposition count mismatch")
     if len(points) - len(paired) != receipt["dbf_point_only_id_count"]:
         raise GDWSpatialError("original spatial point-only count drift")
+    if sum(invalid_reason_families.values()) != invalid + conversion_error:
+        raise GDWSpatialError("aggregate original invalidity family counts drift")
     return {
         "schema_version": PROFILE,
         "source_id": "globaldamwatch.gdw.v1.0",
@@ -151,6 +181,7 @@ def audit(path: Path, *, expected_sha256: str = PINNED_SHA256,
         "valid_reservoir_polygons": inside + boundary + outside,
         "invalid_reservoir_polygons": invalid,
         "unparseable_or_error_reservoir_polygons": conversion_error,
+        "invalid_geometry_reason_family_counts": dict(sorted(invalid_reason_families.items())),
         "paired_barrier_within_polygon_interior": inside,
         "paired_barrier_on_polygon_boundary": boundary,
         "paired_barrier_outside_valid_polygon": outside,
