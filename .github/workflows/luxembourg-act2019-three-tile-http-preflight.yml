@@ -7,6 +7,9 @@ on:
     paths:
       - 'research_runners/lu_act2019_three_tile_http_preflight_v0.py'
       - 'tests/test_lu_act2019_three_tile_http_preflight_v0.py'
+      - 'docs/research/lu-act2019-three-tile-http-source-preflight-20261104.md'
+      - 'landscape/sources-europe-building-attribute-discovery.json'
+      - 'landscape/sources-europe-building-attribute-discovery.md'
       - '.github/workflows/luxembourg-act2019-three-tile-http-preflight.yml'
   workflow_dispatch:
 
