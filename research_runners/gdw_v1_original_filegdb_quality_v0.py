@@ -17,7 +17,6 @@ import logging
 import math
 from pathlib import Path, PurePosixPath
 import re
-import shutil
 import stat
 import sys
 import tempfile
@@ -27,7 +26,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from research_runners.gdw_v1_original_spatial_quality_v0 import (
-    _validity_reason_family, _check_id,
+    _validity_reason_family,
 )
 from research_runners.gdw_v1_original_shapefile_evidence_v0 import (
     GDW_V1_ORIGINAL_SHAPEFILE_EVIDENCE_V0 as SHAPEFILE,
@@ -188,7 +187,7 @@ def inspect_original_gdb(gdb: Path) -> dict:
                 if declared_crs != 4326:
                     raise GDWFileGDBError("source FileGDB CRS is not EPSG 4326")
                 for feature in layer:
-                    ident = _check_id(feature["properties"], identity) if False else _gdw_id(feature["properties"][identity])
+                    ident = _gdw_id(feature["properties"][identity])
                     if role == "GDW_barriers_v1_0":
                         if ident in points:
                             raise GDWFileGDBError("duplicate barrier GDW_ID")
