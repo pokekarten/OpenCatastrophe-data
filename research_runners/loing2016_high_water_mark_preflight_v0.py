@@ -24,7 +24,7 @@ class WatermarkBlocked(ValueError):
 
 _REQUIRED = {
     "site_id", "mark_id", "source_site_url", "watercourse", "event_date",
-    "survey_date", "mark_evidence", "survey_method", "vertical_datum",
+    "survey_date", "mark_evidence", "event_maximum_flag", "survey_method", "vertical_datum",
     "longitude_wgs84", "latitude_wgs84", "reference_kind",
     "reference_elevation_m", "water_offset_from_reference_m",
     "published_water_surface_elevation_m",
@@ -113,6 +113,8 @@ def _review_one(item):
     _coordinate(item["latitude_wgs84"], 47.5, 48.6, "latitude")
     if item["mark_evidence"] not in ("physical_flood_trace", "oral_testimony"):
         raise WatermarkBlocked("unknown mark-evidence class")
+    if type(item["event_maximum_flag"]) is not bool:
+        raise WatermarkBlocked("source maximum-of-event mark flag must be boolean")
     if item["survey_method"] != "GPS":
         raise WatermarkBlocked("survey method unverified for this cohort")
     kind = item["reference_kind"]
@@ -132,12 +134,14 @@ def _review_one(item):
         calculated = reference + offset
     if calculated != reported_water:
         raise WatermarkBlocked("water-surface elevation does not reconcile with reference and offset")
-    physical = item["mark_evidence"] == "physical_flood_trace"
+    physical = (item["mark_evidence"] == "physical_flood_trace"
+                and item["event_maximum_flag"])
     return {
         "site_id": item["site_id"], "mark_id": item["mark_id"],
         "water_surface_m_ngf_ign1969": str(reported_water),
         "event_date": event.isoformat(), "field_survey_date": surveyed.isoformat(),
         "source_type": item["mark_evidence"],
+        "reported_event_maximum": item["event_maximum_flag"],
         "arithmetic_reconciled": True,
         "independent_physical_trace_candidate": physical,
         "provider_original_bytes_attested": False,
