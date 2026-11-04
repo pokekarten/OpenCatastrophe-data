@@ -63,6 +63,24 @@ class RvaNrwPvOriginalTests(unittest.TestCase):
                     "original_sha_pinned_in_source_code"):
             self.assertIs(got[key], False)
 
+    def test_fail_closed_on_wrong_real_source_hash(self):
+        with self.assertRaisesRegex(ValueError, "SHA256_MISMATCH"):
+            m.parse_original(make_xlsx(), expected_sha256=m.EXPECTED_SHA256)
+
+    def test_fail_closed_on_wrong_real_source_byte_count(self):
+        with self.assertRaisesRegex(ValueError, "BYTE_LENGTH_MISMATCH"):
+            m.parse_original(make_xlsx(), expected_bytes=m.EXPECTED_BYTES)
+
+    def test_fail_closed_on_unexpected_source_sheet_shape(self):
+        with self.assertRaisesRegex(ValueError, "SHAPE_MISMATCH"):
+            m.parse_original(make_xlsx(), expected_structure=m.EXPECTED_STRUCTURE)
+
+    def test_exact_original_pins_are_syntactically_valid(self):
+        self.assertEqual(len(m.EXPECTED_SHA256), 64)
+        self.assertEqual(m.EXPECTED_BYTES, 1506519)
+        self.assertEqual(len(m.EXPECTED_STRUCTURE), 5)
+        self.assertEqual(sum(x[0] for x in m.EXPECTED_STRUCTURE), 1594)
+
     def test_reject_zip_with_macro(self):
         with self.assertRaisesRegex(ValueError, "UNSAFE"):
             m.parse_original(make_xlsx(extra=[("xl/vbaProject.bin", b"malicious")]))
