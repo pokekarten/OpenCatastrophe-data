@@ -2,13 +2,59 @@
 # SPDX-License-Identifier: Apache-2.0
 """Offline census county and MaStR-derived PV bridge guards. No external fetch."""
 from pathlib import Path
+import copy
+import tomllib
 import tempfile
 import unittest
 
 from research_runners import rva_nrw_53kreis_pv_zensus_physical_source_bridge_v0 as m
 
 
+
+def source_toml_fixture():
+    register=tomllib.loads(m.RECORDED_53_KREIS.read_text(encoding="utf-8"))
+    r={
+        "derived_2026_MaStR_original_sha256":
+            register["secondary_MaStR_derived_pinned_sha256"],
+        "kreis_aggregates":copy.deepcopy(register["kreise"]),
+        "observed_public_summary_counts":{
+            key.removeprefix("national_NRW_"): val for key,val in register.items()
+            if key.startswith("national_NRW_")
+        },
+    }
+    return register,r
+
+
 class NRW53CountyPhysicalBridgeTests(unittest.TestCase):
+    def test_53_original_county_source_receipt_has_all_53_and_no_insurer_claim(self):
+        source,result=source_toml_fixture()
+        self.assertEqual(len(source["kreise"]),53)
+        self.assertEqual(source["national_NRW_active_PV_generating_units"],1180822)
+        self.assertEqual(source["national_NRW_building_PV_generating_units"],876684)
+        self.assertEqual(source["national_NRW_zensus2022_published_buildings_with_living_space"],4042220)
+        self.assertTrue(m.verify_persisted_53_county_public_source(result,register=source)[
+            "53_Kreis_public_source_aggregates_match_original"
+        ])
+        self.assertFalse(source["company_RV_insurer_county_policies_observed"])
+
+    def test_tampered_public_county_solar_count_fails(self):
+        source,result=source_toml_fixture()
+        result["kreis_aggregates"][0]["building_PV_generating_units"]+=1
+        with self.assertRaisesRegex(ValueError,"PUBLISHED_VALUES_CHANGED"):
+            m.verify_persisted_53_county_public_source(result,register=source)
+
+    def test_source_claiming_original_primary_mastr_xml_fails(self):
+        source,result=source_toml_fixture()
+        source["secondary_source_is_primary_BNetzA_XML"]=True
+        with self.assertRaisesRegex(ValueError,"SCOPE_CHANGED"):
+            m.verify_persisted_53_county_public_source(result,register=source)
+
+    def test_source_falsely_claiming_insured_nrw_risk_positions_fails(self):
+        source,result=source_toml_fixture()
+        source["company_RV_insured_pv_geography_or_TIV_observed"]=True
+        with self.assertRaisesRegex(ValueError,"SCOPE_CHANGED"):
+            m.verify_persisted_53_county_public_source(result,register=source)
+
     def test_reproducible_official_53_county_source_population(self):
         b,a=m.load_public_county_context()
         self.assertEqual(len(b),53)
