@@ -301,6 +301,8 @@ def main(argv=None) -> int:
     parser.add_argument("--expected-original-sha256")
     args = parser.parse_args(argv)
     try:
+        if args.live and args.expected_original_sha256 not in (None, PINNED_ORIGINAL_SHA256):
+            raise EIA860ProofBlocked("live source expected SHA must equal independently recorded pinned receipt")
         if args.live:
             data = fetch_exact_official_source()
         else:
@@ -308,8 +310,6 @@ def main(argv=None) -> int:
             if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_ORIGINAL_BYTES:
                 raise EIA860ProofBlocked("require bounded local regular original archive")
             data = path.read_bytes()
-        if args.live and args.expected_original_sha256 not in (None, PINNED_ORIGINAL_SHA256):
-            raise EIA860ProofBlocked("live source expected SHA must equal independently recorded pinned receipt")
         expected = PINNED_ORIGINAL_SHA256 if args.live else args.expected_original_sha256
         report = check_original_archive(data, expected_sha256=expected)
         report["acquired_via_exact_official_https_this_run"] = args.live
