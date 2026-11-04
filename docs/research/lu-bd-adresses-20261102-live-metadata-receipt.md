@@ -77,3 +77,32 @@ than weakening path, digest or date validations.
 A passing metadata workflow proves only **the resource metadata matches
 the frozen 2026-11-02 catalogue**, not source bytes, real building identity,
 insurance interest, values or CAT loss suitability.
+
+## Actual publisher API metadata receipt (2026-11-04)
+
+The first exact-head original-source GitHub Action run
+[41799217860](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41799217860)
+**passed** all 11 synthetic parser/security tests and the three real fixed
+publisher metadata API GETs. GitHub's job output, recorded at about
+**2026-11-04 08:24:30 UTC**, returned the following provider-advertised
+file sizes and metadata-response SHA-256 hashes:
+
+| Exact frozen resource | API-reported file size (bytes) | Metadata response SHA-256 | Published file MD5 matches |
+| --- | ---: | --- | --- |
+| 2026-11-02 GeoJSON | 80,901,702 | `602a9c8eafba6d8cfddd071be4642170fb2202d4b37ef8ae47da43b4fc99bf49` | Yes |
+| 2026-11-02 CSV | 28,209,815 | `549f30d08e1b50fe9153f4807b58c5b559ff9d94107924a0accd229ad065c62a` | Yes |
+| 2026-11-02 Shapefile ZIP | 19,700,240 | `ed73882663ab19a0a2063ee00e9086f0f378b34e386a39c4c850b615093e5ea2` | Yes |
+
+All three resource IDs, fixed download paths, publisher MD5 values, timestamps
+and expected bounded sizes matched the previously pinned November 2 metadata
+contract. The report returned `asset_bytes_downloaded: 0` and explicit
+non-admission flags. The SHA-256 values above fingerprint **metadata JSON
+responses**, not ZIP/CSV/GeoJSON content. They may change with metadata JSON
+formatting or non-content attributes; do not use them in lieu of original
+source-file SHA-256, signed provenance, or a complete source licence review.
+
+**Next gate remains outstanding:** retrieve only one frozen original dataset
+file into an ephemeral authorized worker, independently calculate the actual
+file MD5/SHA-256 and review original columns, number of observed address points,
+coordinate precision, and any repeated coordinates. Full metadata agreement
+is not proof of valid location truth or an insured building crosswalk.
