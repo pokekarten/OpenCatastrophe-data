@@ -74,6 +74,28 @@ class NRW53CountyPhysicalBridgeTests(unittest.TestCase):
             for r in b.values()
         ))
 
+    def test_network_transient_then_pinned_download_retried_once(self):
+        calls=[]
+        def fake_fetch(*,open_url):
+            calls.append(1)
+            if len(calls)==1:
+                raise TimeoutError("temporary source timeout")
+            return b"SYNTHETIC_SOURCE"
+        self.assertEqual(
+            m.fetch_secondary_with_bounded_retry(fetch=fake_fetch),
+            b"SYNTHETIC_SOURCE",
+        )
+        self.assertEqual(len(calls),2)
+
+    def test_network_double_timeout_stays_fail_closed(self):
+        calls=[]
+        def fake_fetch(*,open_url):
+            calls.append(1)
+            raise TimeoutError("source offline")
+        with self.assertRaisesRegex(TimeoutError,"NETWORK_UNAVAILABLE"):
+            m.fetch_secondary_with_bounded_retry(fetch=fake_fetch)
+        self.assertEqual(len(calls),2)
+
     def test_no_company_location_claim_in_report_schema(self):
         text=(Path(__file__).resolve().parents[1] /
             "research_runners" /
