@@ -10,6 +10,7 @@ on:
       - ".github/workflows/gdw-v1-original-spatial-quality.yml"
       - "research_runners/gdw_v1_original_shapefile_evidence_v0.py"
       - "research_runners/gdw_v1_original_spatial_quality_v0.py"
+      - "research_runners/gdw_v1_original_spatial_source_receipt_v0.py"
       - "tests/test_gdw_v1_original_spatial_quality_v0.py"
   push:
     branches: [main]
@@ -53,7 +54,8 @@ jobs:
           set -euo pipefail
           umask 077
           original="$RUNNER_TEMP/GDW_v1_0_shp.zip"
-          trap 'rm -f "$original"' EXIT
+          aggregate="$RUNNER_TEMP/gdw-v1-spatial-aggregate.json"
+          trap 'rm -f "$original" "$aggregate"' EXIT
           curl --fail --location --silent --show-error \
             --proto '=https' --proto-redir '=https' \
             --connect-timeout 20 --max-time 240 --retry 0 \
@@ -64,5 +66,41 @@ jobs:
           # is checked before the in-memory geometry reader opens the archive.
           # Source ZIP is never committed, cached or uploaded as a GitHub artifact.
           python research_runners/gdw_v1_original_spatial_quality_v0.py \
-            --original-zip "$original"
+            --original-zip "$original" > "$aggregate"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from research_runners.gdw_v1_original_spatial_source_receipt_v0 import (
+              GDW_V1_ORIGINAL_SPATIAL_RECEIPT_V0 as e,
+          )
+          a = json.loads((Path(os.environ["RUNNER_TEMP"]) /
+                          "gdw-v1-spatial-aggregate.json").read_text())
+          expected = {
+              "barrier_points": e["barrier_points"],
+              "reservoir_polygons": e["reservoir_polygons"],
+              "expected_point_only_barriers": e["point_only_barriers"],
+              "valid_reservoir_polygons": e["valid_reservoir_polygons"],
+              "invalid_reservoir_polygons": e["invalid_reservoir_polygons"],
+              "unparseable_or_error_reservoir_polygons": e["unparseable_reservoir_polygons"],
+              "paired_barrier_within_polygon_interior":
+                  e["valid_polygon_matched_point_strict_interior"],
+              "paired_barrier_on_polygon_boundary":
+                  e["valid_polygon_matched_point_boundary"],
+              "paired_barrier_outside_valid_polygon":
+                  e["valid_polygon_matched_point_outside"],
+              "unassessable_pair_invalid_or_unparseable_polygon":
+                  e["unassessable_matched_pairs_due_to_invalid_polygon"],
+          }
+          assert all(a[k] == v for k, v in expected.items()), (
+              "BLOCKED: pinned real-source GDW GEOS aggregate drift"
+          )
+          assert a["original_archive_sha256_matched_frozen"]
+          assert not a["CAT_model_source_admitted"]
+          assert not a["source_coordinates_ids_attributes_exported"]
+          assert not a["polygon_repairs_or_snapping_performed"]
+          assert sum(a["invalid_geometry_reason_family_counts"].values()) == 221
+          print("GDW original independent GEOS family diagnostic, source-only, "
+                "no model admission:", json.dumps(a, sort_keys=True))
+          PY
           echo "GDW source spatial diagnostic complete; no model admission or source bytes exported."
