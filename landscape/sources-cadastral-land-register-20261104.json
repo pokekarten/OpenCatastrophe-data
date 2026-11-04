@@ -1,0 +1,291 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery of official cadastral parcel, land-register geometry and public property-sale sources for synthetic CAT exposures, with strict field-level property title and personal-data restrictions.",
+  "review_date": "2026-11-04",
+  "entries": [
+    {
+      "candidate_id": "de.nrw.inspire-alkis-parcels.2026",
+      "name": "NRW INSPIRE ALKIS cadastral parcels WFS",
+      "provider": "Geobasis NRW",
+      "categories": [
+        "cadastral_parcels",
+        "parcel_geometry",
+        "land_use_context",
+        "germany"
+      ],
+      "spatial_scope": "North Rhine-Westphalia, Germany",
+      "temporal_scope": "Official source metadata 2026-09-01; live WFS changes on refresh",
+      "resolution_or_granularity": "INSPIRE polygon geometry for parcels, cadastral units and districts via WFS; EPSG:25832 and EPSG:4258 supported",
+      "potential_roles": [
+        "parcel_building_geometry_join",
+        "spatial_hazard_overlay",
+        "urban_property_exposure_validation"
+      ],
+      "authoritative_url": "https://www.geoportal.de/info/6ee0316c-fff3-4c04-89c1-3aa2b453f95a",
+      "access_class_hint": "public_wfs_dl_de_zero_2_0_catalogue_provenance_and_bounded_probes",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Official listing states free DL-DE-Zero 2.0 terms, no access restriction and maximum 100000 objects per response; choose bounded spatial query or recommended stored dataset query. Parcel shape is not a building footprint, ownership record, dwelling count or insured value. Preserve ALKIS version, CRS and compound/split parcel identities."
+    },
+    {
+      "candidate_id": "de.nrw.grundsteuer-flurstuecke.2026",
+      "name": "NRW Grundsteuerdaten Flurstuecke 2026 CSV",
+      "provider": "Finanzverwaltung Nordrhein-Westfalen / Open.NRW",
+      "categories": [
+        "cadastral_parcels",
+        "land_use_context",
+        "tax_assessment",
+        "germany"
+      ],
+      "spatial_scope": "North Rhine-Westphalia, Germany",
+      "temporal_scope": "2022, 2023 and 2026 tax-year catalogue versions; 2026 resource metadata updated 2026-10-28",
+      "resolution_or_granularity": "Land-parcel tax context CSV with parcel ID, area and land use; 2023 format notes circa nine million parcels; includes restricted Grundbuchblattnummer field",
+      "potential_roles": [
+        "land_area_exposure_priors",
+        "parcel_alkis_id_crosswalk",
+        "tax_landuse_context"
+      ],
+      "authoritative_url": "https://data.gov.de/suche/daten/grundsteuerdaten-nrw-flurstucke06c57",
+      "access_class_hint": "mixed_field_terms_strip_restricted_grundbuchblattnummer_before_ingestion",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "CRITICAL FIELD-LEVEL EXCEPTION: NRW finance administration says Grundbuchblattnummer (title-register sheet identifier) may be used exclusively for Grundsteuererhebung, despite broad DL-DE-Zero rights for the downloadable CSV. Reject/drop this field at source-admission boundary for CAT purposes; do not persist it to public analytics or insurer models. Verify whether other fields have privacy/licence limits and snapshot individual year before any access. No owner or policy inference."
+    },
+    {
+      "candidate_id": "lu.act.pcn-cadastral-parcels-buildings.2026",
+      "name": "Luxembourg official Plan cadastral numerise PCN",
+      "provider": "Administration du cadastre et de la topographie (ACT)",
+      "categories": [
+        "cadastral_parcels",
+        "building_geometry",
+        "parcel_ids",
+        "luxembourg"
+      ],
+      "spatial_scope": "Grand Duchy of Luxembourg",
+      "temporal_scope": "Official resource updated 2026-11-02; immutable resource permalink and MD5 listed",
+      "resolution_or_granularity": "Cadastral parcels, buildings, topographic objects and toponyms; circa 180.6 MB SHP ZIP and circa 612 MB GeoJSON at listed vintage",
+      "potential_roles": [
+        "parcel_building_overlay",
+        "luxembourg_building_crosswalk",
+        "official_parcel_geometry_holdout"
+      ],
+      "authoritative_url": "https://data.public.lu/en/datasets/plan-cadastral-numerise-pcn/",
+      "access_class_hint": "cc_by_4_0_catalogue_original_bytes_hash_and_granularity_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Publisher declares CC BY 4.0, but exact original asset/version, CRS, geometry accuracy and attribution must be reviewed before admission. Distinct from ACT BD-Adresses and Geoportail INSPIRE CP derivative: INSPIRE snapshots may lag source PCN and historic parcels have heterogeneous accuracy. Cadastral geometry neither establishes owners nor insured properties."
+    },
+    {
+      "candidate_id": "fr.etalab.cadastre-parcels-buildings.2026",
+      "name": "France Cadastre Etalab parcel and building vectors",
+      "provider": "DINUM / Etalab from DGFiP PCI cadastral data",
+      "categories": [
+        "cadastral_parcels",
+        "building_geometry",
+        "parcel_ids",
+        "france"
+      ],
+      "spatial_scope": "France including Strasbourg cadastral lineage",
+      "temporal_scope": "October 2026 publication with September 2026 PCI source vintage",
+      "resolution_or_granularity": "Country/department/municipality GeoJSON and Shapefile parcels, buildings and other administrative parcel layers",
+      "potential_roles": [
+        "parcel_rnb_building_crosswalk",
+        "cadastral_footprint_validation",
+        "dvfplus_spatial_join"
+      ],
+      "authoritative_url": "https://cadastre.data.gouv.fr/datasets/cadastre-etalab",
+      "access_class_hint": "open_vector_derivative_exact_original_licence_and_shared_lineage_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Derived from PCI and Strasbourg source, not an independent ground truth or new building survey. ETALAB polygons are assembled without topological repair. France open cadastral maps exclude ownership/property files; any real-estate transaction join should respect event-to-parcel multiplicity and spatial/temporal vintage. Verify original licence and downstream anti-reidentification rules."
+    },
+    {
+      "candidate_id": "fr.cerema.dvfplus-open-transactions.2026",
+      "name": "France DVF+ open-data geolocated property transactions 2026.2",
+      "provider": "Cerema / DGFiP / DGALN",
+      "categories": [
+        "real_estate_transactions",
+        "valuation_proxy",
+        "cadastral_parcels",
+        "france"
+      ],
+      "spatial_scope": "France, with exclusions and vintage-specific coverage",
+      "temporal_scope": "2026.2 published 2026-10-15, published transaction coverage 2014-01-01 to 2026-06-30",
+      "resolution_or_granularity": "Geolocated real estate transactions in PostgreSQL/PostGIS, GeoPackage, CSV and GeoParquet; parcel-derived geolocation",
+      "potential_roles": [
+        "regional_sale_price_prior",
+        "residential_market_value_challenge",
+        "parcel_sale_temporal_crosswalk"
+      ],
+      "authoritative_url": "https://datafoncier.cerema.fr/actualites/la-nouvelle-version-dvf-open-data-20262-disponible",
+      "access_class_hint": "open_dvfplus_with_express_no_reidentification_and_no_indexing_limits",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Sale consideration is NOT building reinstatement cost, sum insured or land-free insured TIV. DVF+ geolocation is derived from PCI so is not an independent cadastral geometry validation. DGFiP anti-reidentification and search-indexing restrictions apply even where files are openly downloadable; aggregation and privacy review required; newest quarters incomplete."
+    },
+    {
+      "candidate_id": "uk.hmlr.inspire-freehold-polygons.2026",
+      "name": "HM Land Registry INSPIRE Index Polygons for freehold titles",
+      "provider": "HM Land Registry",
+      "categories": [
+        "cadastral_titles",
+        "freehold_polygons",
+        "land_registry",
+        "england_wales"
+      ],
+      "spatial_scope": "England and Wales, registered freehold only",
+      "temporal_scope": "Monthly publication; 2026-11-01 release available by local authority",
+      "resolution_or_granularity": "Indicative polygon extents in GML, unique INSPIRE ID per polygon, often many polygons per legal title",
+      "potential_roles": [
+        "title_geometry_reference",
+        "flood_overlay_property_matching",
+        "registered_freehold_exposure_proxy"
+      ],
+      "authoritative_url": "https://use-land-property-data.service.gov.uk/datasets/inspire",
+      "access_class_hint": "uk_ogl_conditions_with_hmlr_and_os_attribution_exact_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Freehold index polygons are not precise legal boundaries, all buildings, nor leasehold inventory. Multiple polygons per title, duplicated area authority boundaries and unregistered land must be handled. OGL attribution and separate OS geometry attribution required; terms not independently approved in CAT."
+    },
+    {
+      "candidate_id": "uk.hmlr.price-paid-data.2026",
+      "name": "HM Land Registry Price Paid Data residential sales",
+      "provider": "HM Land Registry",
+      "categories": [
+        "real_estate_transactions",
+        "valuation_proxy",
+        "england_wales"
+      ],
+      "spatial_scope": "England and Wales",
+      "temporal_scope": "Monthly publication; September 2026 first release updated 2026-10-28",
+      "resolution_or_granularity": "Transaction unique IDs, reported sale prices, property type, dates and address components for eligible sales",
+      "potential_roles": [
+        "regional_sales_price_prior",
+        "transaction_join_via_tuid",
+        "residential_type_distribution_proxy"
+      ],
+      "authoritative_url": "https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads",
+      "access_class_hint": "uk_ogl_with_third_party_address_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Price Paid Data covers registered eligible value sales, not a census of all dwellings or current valuations. Ordnance Survey and Royal Mail PAF-derived address data may carry separate rights. Transactions cannot be equated to building reinstatement cost, sum insured or insurer policy locations; deduplicate revision and lag."
+    },
+    {
+      "candidate_id": "uk.hmlr.tuid-inspireid-lookup.2026",
+      "name": "HM Land Registry Transaction UID to INSPIRE ID lookup",
+      "provider": "HM Land Registry",
+      "categories": [
+        "parcel_transaction_crosswalk",
+        "freehold_title_ids",
+        "england_wales"
+      ],
+      "spatial_scope": "England and Wales, matched freehold sales only",
+      "temporal_scope": "New dataset launched 2026-08-28; latest page updated 2026-10-28",
+      "resolution_or_granularity": "CSV links Price Paid transaction UID to unique INSPIRE polygon IDs, with possible one-to-many sale/polygon relations",
+      "potential_roles": [
+        "transaction_to_freehold_polygon_join",
+        "value_proxy_spatial_crosswalk",
+        "linkage_coverage_audit"
+      ],
+      "authoritative_url": "https://www.gov.uk/government/statistical-data-sets/transaction-unique-identifier-and-inspire-id-look-up-table-dataset",
+      "access_class_hint": "uk_ogl_related_but_separate_lookup_licence_and_exact_month_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "CRITICAL: technical specification states lookup is NOT back-dated and covers only new price-paid records with an available freehold INSPIRE polygon. Leasehold sales absent, some properties have multiple IDs; verify lookup-specific terms independently instead of inheriting Price Paid OGL. This is the strongest UK parcel-to-price join but suffers coverage and temporal selection bias."
+    },
+    {
+      "candidate_id": "nl.kadaster.brk-kadastrale-kaart-perceel.2026",
+      "name": "Dutch Kadaster BRK Kadastrale Kaart parcel OGC API",
+      "provider": "Kadaster / PDOK",
+      "categories": [
+        "cadastral_parcels",
+        "parcel_geometry",
+        "national_registry",
+        "netherlands"
+      ],
+      "spatial_scope": "The Netherlands",
+      "temporal_scope": "Live API catalogue updated 2026-11-04; mutable original geometry",
+      "resolution_or_granularity": "OGC API Features 'perceel' provides parcel polygons, identifiers and per-feature GeoJSON or JSON-FG; nationwide spatial bounds",
+      "potential_roles": [
+        "bag_building_to_parcel_join",
+        "parcel_geometry_hazard_overlay",
+        "property_exposure_spatial_validation"
+      ],
+      "authoritative_url": "https://api.pdok.nl/kadaster/brk-kadastrale-kaart/ogc/v1/collections/perceel?f=html",
+      "access_class_hint": "public_ogc_api_rights_rate_and_original_feature_test_required",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Not the existing BAG building register candidate: BRK Perceel is a distinct cadastral parcel identity layer. PDOK descriptions do not imply owner names, replacement value or insured coverage. Pin access date and exact feature geometry, avoid treating one parcel as one BAG pand/verblijfsobject."
+    },
+    {
+      "candidate_id": "ch.geneva.sitg-cad-parcelle-mensu.egrid.2026",
+      "name": "Geneva SITG CAD_PARCELLE_MENSU cadastral polygons and EGRID",
+      "provider": "SITG / Canton de Geneve",
+      "categories": [
+        "cadastral_parcels",
+        "parcel_ids",
+        "land_registry_crosswalk",
+        "switzerland"
+      ],
+      "spatial_scope": "Canton of Geneva, Switzerland",
+      "temporal_scope": "Current published ArcGIS feature service; original feature date varies",
+      "resolution_or_granularity": "ArcGIS polygon features, Swiss EGRID parcel ID, geometry area and mutation/source attributes in EPSG:2056",
+      "potential_roles": [
+        "parcel_stable_egrid_crosswalk",
+        "building_geometry_relation",
+        "swiss_hazard_exposure_overlay"
+      ],
+      "authoritative_url": "https://vector.sitg.ge.ch/arcgis/rest/services/CAD_PARCELLE_MENSU/FeatureServer/0",
+      "access_class_hint": "public_service_metadata_queryable_license_and_field_reuse_not_reviewed",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Service supports query/GeoJSON and EGRID identifiers but is NOT a public owner/land-registry contents dump. Confirm SITG data licence, terms and non-sensitive permitted fields before actual downloads. Separate land/parcel from building/ownership identity; data may be historic or topologically split."
+    },
+    {
+      "candidate_id": "es.catastro.nonprotected-parcels-attributes.2026",
+      "name": "Spain Catastro public cartography and non-protected alphanumeric data",
+      "provider": "Direccion General del Catastro",
+      "categories": [
+        "cadastral_parcels",
+        "cadastral_attributes",
+        "property_use",
+        "spain"
+      ],
+      "spatial_scope": "Spain under national Catastro jurisdiction; region-specific exceptions must be checked",
+      "temporal_scope": "Rolling online cadastral services and provincial download vintages",
+      "resolution_or_granularity": "Vector cadastral parcels and non-protected cadastral alphanumeric data via downloads and WMS/INSPIRE web services",
+      "potential_roles": [
+        "parcel_building_unit_crosswalk",
+        "use_and_area_exposure_enrichment",
+        "cadastral_hazard_overlay"
+      ],
+      "authoritative_url": "https://www.catastro.hacienda.gob.es/es-ES/acceso_infocat.html",
+      "access_class_hint": "public_nonprotected_fields_only_protected_owner_and_cadastral_values_blocked",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Distinct from already catalogued Spanish INSPIRE Buildings. Do not use protected owner/co-owner names or protected cadastral values from authenticated services; provider explicitly gates these to authorised users. No individual insurance cover or replacement value; exact national and local terms, attribute cardinality and approved raw fields require review."
+    }
+  ]
+}
