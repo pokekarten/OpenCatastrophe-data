@@ -17,6 +17,17 @@ GRWL segment width_mean is a mean wetted width under selected near-mean-discharg
 
 HydroRIVERS v1 (~8.5 million river reaches) is defined separately from the GRWL mapped river geometry: https://www.hydrosheds.org/products/hydrorivers. HydroATLAS enriches the HydroRIVERS network with many hydro-environmental attributes: https://www.hydrosheds.org/hydroatlas. No shared GRWL↔RiverATLAS identity key is established by these provider pages; joining requires spatial/topological evidence.
 
+## Original Zenodo API evidence captured 2026-11-04
+
+Two original-provider API JSON routes returned HTTP 200 through a read-only external-source checker:
+
+- `https://zenodo.org/api/records/1297434`: numeric ID 1297434, conceptrecid 1269594, DOI 10.5281/zenodo.1297434, metadata version `V01.01`, license claim `cc-by-4.0`. Three exact file metadata rows: simplified `GRWL_summaryStats_V01.01.zip` **43,194,162 bytes**, provider MD5 `c37021e144fbff19ae3fc4e701d85d38`; full vector `GRWL_vector_V01.01.zip` 3,104,998,836 bytes, MD5 `40171f15c0fccd470db32446dda0480e`; mask `GRWL_mask_V01.01.zip` 393,801,516 bytes, MD5 `4bd15bcd9cdcce7b620cd02f776749fa`.
+- `https://zenodo.org/api/records/18624542`: numeric ID 18624542, **same conceptrecid 1269594**, DOI 10.5281/zenodo.18624542, metadata version also `V01.01`, license claim `cc-by-4.0`. Its simplified file is **`GRWL_summaryStats_V01.02.zip` 43,282,861 bytes**, provider MD5 `cac403c1a59bce7a74432085d3f5bd3a`. Full vector and mask report the same filenames, byte counts and MD5 values as in the 2018 record.
+
+The simplified ZIP differs in **reported size by 88,699 bytes** and its listed checksum. No ZIP member list, row count, geometry/attribute change or physical river-width difference can be established from these API facts alone. API read-back is not an independent checksum verification of the ZIP bytes or authorization to publish dataset contents.
+
+Added `research_runners/grwl_zenodo_original_metadata_probe_v0.py` as a **no-network-by-default** optional preflight. `--live` permits precisely two fixed original Zenodo JSON GETs (maximum 128 KiB each, strict no-redirect and no open-ended URLs), reconciles original file names, sizes, listed MD5, DOI, version and license claim, and returns metadata-only evidence. `tests/test_grwl_zenodo_original_metadata_probe_v0.py` contains 16 fully synthetic positive/negative tests; GitHub CI is the source of independent exact-branch test execution. A failed or unavailable GET must be reported as blocked, never interpreted as an absent or approved source.
+
 ## Executed synthetic research step
 
 The script research_runners/grwl_riveratlas_synthetic_crosswalk_v0.py implements a **bounded, offline and synthetic-only** input contract. It rejects real geographic coordinate system declarations such as EPSG:4326. It requires exact release name, archive name and provider-listed MD5, a fictitious LOCAL_METRIC_SYNTHETIC coordinate frame, bounded 2-D fictional line strings and positive width in metres.
