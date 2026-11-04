@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-04`  
 **Purpose:** Non-admission discovery of non-CAT industrial facility identity, corporate asset ownership and firm operations data that may constrain synthetic physical exposure and business-interruption priors; no observed insured portfolio or model admission.
 
-**Entries:** 3
+**Entries:** 5
 
 ## Global Energy Monitor Global Energy Ownership Tracker
 
@@ -62,3 +62,32 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Separate published aggregates from confidential/anonymized and differently licensed country microdata. Sampling weights and standard errors matter. Electricity outage loss as a share of sales is a non-CAT disruption indicator, not a cyclone/flood occurrence probability, facility coordinate, insured claim, physical damage function or business interruption policy; never directly calibrate a CAT BI vulnerability curve without independent event-conditioned evidence.
+## US EIA Form 860 annual plant, generator, utility and generator ownership data (2025)
+
+**Candidate ID:** `us.eia.eia860.annual.2025`  
+**Provider:** US Energy Information Administration  
+**Categories:** `power_generation`, `industrial_assets`, `eia_plant_id`, `ownership`, `us_exposure`  
+**Spatial scope:** United States electric power plants above 1 MW combined nameplate threshold; EIA survey scope and exceptions apply  
+**Temporal scope:** EIA Form 860 reporting year 2025, exact official ZIP and workbook release/update date to be frozen  
+**Resolution / granularity:** Plant, utility and individual generator workbook tables, with a separate ownership table for jointly or third-party-owned generators; contains official plant and generator identifiers  
+**Potential roles:** `eia_plant_id_identity_bridge`, `epa_frs_eia860_plant_crosswalk`, `power_asset_capacity_prior`, `generator_owner_entity_research`  
+**Access hint:** `official_annual_zip_xlsx_public_download_original_hash_and_rights_review_pending`  
+**Authoritative source:** <https://www.eia.gov/electricity/data/eia860/>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Distinct from existing EIA-860M *preliminary monthly* candidate; annual 2025 reports plant/generator and operator/owner records and the EIA plant ID is a potential intermediate key to EPA FRS program EIA-860 ID (documented by USEPA FRS samples). The 2025 ownership schedule does not record each wholly operator-owned generator as a separate owner row. A plant may have multiple generators and owner shares. No FRS-GEM corporate/asset identity, installed replacement value, insured exposure, insurer membership or treaty can be concluded from EIA IDs alone. Pin exact original EIA sheet headers, release, source rights and vintage.
+
+## Global Energy Monitor Global Integrated Power Tracker September 2026
+
+**Candidate ID:** `gem.global-integrated-power-tracker.2026-09`  
+**Provider:** Global Energy Monitor  
+**Categories:** `power_generation`, `building_exposure_context`, `industrial_assets`, `facility_locations`, `owner_graph`  
+**Spatial scope:** Global power facility and unit/phase coverage with underlying tracker-specific minimum sizes and differing site-accuracy levels  
+**Temporal scope:** September 2026 release built from multiple constituent technology tracker releases of different dates  
+**Resolution / granularity:** GEM unit/phase ID and GEM location ID; technology, capacity, status, location-accuracy and stated owner/parent evidence at unit, plant or phase grain depending on technology  
+**Potential roles:** `gem_site_id_model`, `epa_eia_gem_crosswalk_research`, `power_facility_exposure_prior`, `source_vintage_and_location_accuracy_gate`  
+**Access hint:** `original_gem_release_download_page_workbook_exact_schema_terms_review_pending`  
+**Authoritative source:** <https://globalenergymonitor.org/projects/global-integrated-power-tracker>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Different product from existing GEM Global Energy Ownership Tracker (corporate hierarchy), and also from the registered GEM Global Gas Infrastructure Tracker. The GIPT methodology identifies unit or phase records separately from project-location IDs, and some coordinates are approximate. The verified methodology does not establish an automatic universal EPA FRS or EIA-860 plant-ID field on all GEM rows. Any EIA-to-GEM bridge requires distinct original source IDs and facility-vs-unit cardinality validation before linking owners, let alone inferring insured value.
