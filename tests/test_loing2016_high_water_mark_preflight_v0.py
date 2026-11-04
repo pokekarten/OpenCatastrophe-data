@@ -14,6 +14,7 @@ def mark():
         "source_site_url": "https://www.reperesdecrues.developpement-durable.gouv.fr/site/example-0",
         "watercourse": "Le Loing", "event_date": "2016-06-01",
         "survey_date": "2016-06-08", "mark_evidence": "physical_flood_trace",
+        "event_maximum_flag": True,
         "survey_method": "GPS", "vertical_datum": "NGF IGN 1969",
         "longitude_wgs84": 2.72, "latitude_wgs84": 48.01,
         "reference_kind": "external_reference", "reference_elevation_m": "100.375",
@@ -29,6 +30,20 @@ class WatermarkPreflightTest(unittest.TestCase):
         self.assertTrue(r["marks"][0]["independent_physical_trace_candidate"])
         self.assertFalse(r["marks"][0]["inundation_depth_at_building_established"])
         self.assertFalse(r["risk_or_insured_loss_model_admitted"])
+
+    def test_nonmaximum_mark_is_context_not_peak_validation(self):
+        x = mark()
+        x["event_maximum_flag"] = False
+        r = review_marks([x])
+        self.assertFalse(r["marks"][0]["independent_physical_trace_candidate"])
+        self.assertEqual(r["physical_trace_candidates"], 0)
+
+    def test_invalid_peak_flag_blocks(self):
+        for value in (1, None, "yes"):
+            with self.subTest(value=value), self.assertRaises(WatermarkBlocked):
+                x = mark()
+                x["event_maximum_flag"] = value
+                review_marks([x])
 
     def test_self_referenced_flood_mark_no_invented_zero_offset(self):
         x = mark()
