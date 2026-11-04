@@ -62,6 +62,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Separate published aggregates from confidential/anonymized and differently licensed country microdata. Sampling weights and standard errors matter. Electricity outage loss as a share of sales is a non-CAT disruption indicator, not a cyclone/flood occurrence probability, facility coordinate, insured claim, physical damage function or business interruption policy; never directly calibrate a CAT BI vulnerability curve without independent event-conditioned evidence.
+
 ## US EIA Form 860 annual plant, generator, utility and generator ownership data (2025)
 
 **Candidate ID:** `us.eia.eia860.annual.2025`  
