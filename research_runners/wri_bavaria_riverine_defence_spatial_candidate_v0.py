@@ -52,6 +52,12 @@ WIDTH, HEIGHT = 43200, 21600
 CELLS_PER_DEGREE = 120
 CHUNK_WIDTH = 1000
 EPS = 1e-8
+# The currently selected European ETRS89 -> WGS84 operation reports 1 m accuracy.
+# At Bavarian latitude a 30-arcsecond longitude pixel is >~580 m wide.
+# Budget at least ~1.5 m either side; keep the numerical 1 m uncertainty
+# rather than silently turning the selected geocentric translation into truth.
+MIN_RASTER_PIXEL_WIDTH_METRES = 450.0
+MIN_GRID_CRS_BOUNDARY_MARGIN_CELLS = 0.0025
 MAX_CROSSED_CELLS_PER_SEGMENT = 5000
 MAX_TOTAL_CELL_FEATURE_RELATIONS = 2_500_000
 
@@ -137,11 +143,16 @@ def verify_original_wri_riverine_tiff(ranges: dict[str, bytes]) -> dict:
     }
 
 
-def _axis_cells(value: float, count: int) -> tuple[int, ...]:
+def _axis_cells(
+    value: float, count: int, boundary_tolerance_cells: float = EPS
+) -> tuple[int, ...]:
     if not math.isfinite(value):
         raise SpatialCandidateError("non-finite transformed grid coordinate")
+    if (not math.isfinite(boundary_tolerance_cells)
+            or not EPS <= boundary_tolerance_cells <= 0.05):
+        raise SpatialCandidateError("invalid raster grid boundary uncertainty")
     rounded = round(value)
-    if abs(value - rounded) <= EPS:
+    if abs(value - rounded) <= boundary_tolerance_cells:
         choices = (rounded - 1, rounded)
     else:
         choices = (math.floor(value),)
@@ -162,12 +173,15 @@ def global_wri_cell(lon: float, lat: float) -> tuple[int, int]:
 
 
 def segment_candidate_cells(
-    start: tuple[float, float], end: tuple[float, float]
+    start: tuple[float, float], end: tuple[float, float],
+    boundary_tolerance_cells: float = EPS,
 ) -> set[tuple[int, int]]:
     """Conservative raster supercover including grid-line/corner touching.
 
     Each input point is already explicitly transformed to EPSG:4326 lon/lat.
-    At exact cell boundaries both adjacent cells are candidate intersections.
+    At exact and *source CRS uncertainty-adjacent* cell boundaries both
+    neighbouring cells are candidate intersections. The caller supplies a
+    documented approximate CRS-accuracy margin, not a protection buffer.
     No nearest-vertex-only shortcut: include every intervening grid crossing.
     """
     x0, y0 = start
@@ -197,8 +211,8 @@ def segment_candidate_cells(
     cells = set()
     for t in samples:
         u, v = u0+du*t, v0+dv*t
-        for row in _axis_cells(v, HEIGHT):
-            for col in _axis_cells(u, WIDTH):
+        for row in _axis_cells(v, HEIGHT, boundary_tolerance_cells):
+            for col in _axis_cells(u, WIDTH, boundary_tolerance_cells):
                 cells.add((row, col))
     if len(cells) > MAX_CROSSED_CELLS_PER_SEGMENT*4:
         raise SpatialCandidateError("unexpectedly many raster candidate cells")
@@ -242,6 +256,7 @@ def _raw_source_polyline_vertices(shp: bytes, expected: int):
 def aggregate_original_defence_candidate_cells(
     shp_by_kind: dict[str, bytes],
     transform_lonlat,
+    boundary_tolerance_cells: float = EPS,
 ) -> dict:
     if set(shp_by_kind) != set(EXPECTED_COUNTS):
         raise SpatialCandidateError("all three original LfU layer payloads required")
@@ -267,7 +282,8 @@ def aggregate_original_defence_candidate_cells(
                     row, col = global_wri_cell(*projected[0])
                     feature_cells.add((row, col))
                 for a, b in zip(projected, projected[1:]):
-                    feature_cells.update(segment_candidate_cells(a, b))
+                    feature_cells.update(segment_candidate_cells(
+                        a, b, boundary_tolerance_cells=boundary_tolerance_cells))
                 if not feature_cells:
                     raise SpatialCandidateError("empty source line part")
             feature_cell_relations += len(feature_cells)
@@ -305,12 +321,19 @@ def inspect_original_spatial_bridge(zip_path: Path, ranges: dict[str, bytes]) ->
     converter = Transformer.from_crs("EPSG:4258", "EPSG:4326", always_xy=True)
     if converter.accuracy < 0 or converter.accuracy > 10:
         raise SpatialCandidateError("ETRS89 to WGS84 transform accuracy unverified")
+    margin = max(
+        MIN_GRID_CRS_BOUNDARY_MARGIN_CELLS,
+        converter.accuracy / MIN_RASTER_PIXEL_WIDTH_METRES,
+    )
+    if margin > 0.05:
+        raise SpatialCandidateError("CRS uncertainty too high for this grid audit")
     with zipfile.ZipFile(zip_path) as src:
         layer_bytes = {
             kind: src.read(f"{kind}_epsg4258.shp") for kind in EXPECTED_COUNTS
         }
     candidates = aggregate_original_defence_candidate_cells(
-        layer_bytes, converter.transform
+        layer_bytes, converter.transform,
+        boundary_tolerance_cells=margin,
     )
     return {
         "profile": PROFILE,
@@ -322,6 +345,8 @@ def inspect_original_spatial_bridge(zip_path: Path, ranges: dict[str, bytes]) ->
         "wri_origin_and_resolution_source_verified": True,
         "mandatory_coordinate_operation": converter.description,
         "coordinate_operation_reported_accuracy_metres": converter.accuracy,
+        "conservative_grid_boundary_tolerance_cells": margin,
+        "grid_boundary_tolerance_is_not_protection_buffer": True,
         "candidate_geometry_aggregation": candidates,
         "source_records_aggregated_once": sum(EXPECTED_COUNTS.values()),
         "original_geometry_or_coordinates_exported": False,
