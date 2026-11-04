@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-name: NOAA MRMS two-object direct HTTPS proof
+name: NOAA MRMS fixed original HTTPS proof
 
 on:
   workflow_dispatch:
@@ -40,3 +40,5 @@ jobs:
         run: python -m research_runners.noaa_mrms_mesh_direct_https_proof_v0 --product mesh
       - name: Verify original NOAA 30-minute MESH-max bytes, TLS, gzip CRC and GRIB metadata
         run: python -m research_runners.noaa_mrms_mesh_direct_https_proof_v0 --product mesh_max_30min
+      - name: Verify 2021 Keller hail-case MESH original bytes and GRIB grid coordinates
+        run: python -m research_runners.noaa_mrms_mesh_direct_https_proof_v0 --product mesh_keller_2021
