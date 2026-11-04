@@ -9,6 +9,8 @@ on:
       - 'scripts/nhsl_v1_original_sauid_reconcile_v0.py'
       - 'scripts/nhsl_v1_original_binary_preflight_v0.py'
       - 'scripts/nhsl_v1_nunavut_spatial_support_v0.py'
+      - 'scripts/nhsl_v1_nunavut_geos_topology_challenge_v0.py'
+      - 'tests/test_nhsl_v1_nunavut_geos_topology_challenge_v0.py'
       - 'tests/test_nhsl_v1_nunavut_spatial_support_v0.py'
       - 'tests/test_nhsl_v1_original_sauid_reconcile_v0.py'
       - 'tests/test_nhsl_v1_original_binary_preflight_v0.py'
@@ -23,6 +25,7 @@ on:
       - 'scripts/nhsl_v1_original_sauid_reconcile_v0.py'
       - 'scripts/nhsl_v1_original_binary_preflight_v0.py'
       - 'scripts/nhsl_v1_nunavut_spatial_support_v0.py'
+      - 'scripts/nhsl_v1_nunavut_geos_topology_challenge_v0.py'
 
 permissions:
   contents: read
@@ -47,8 +50,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install repository-pinned geometry validation dependencies
+        run: python -m pip install --disable-pip-version-check --no-input -r requirements-validation.txt
+
       - name: Run synthetic-only source reconciliation tests
-        run: python -m unittest tests.test_nhsl_v1_original_binary_preflight_v0 tests.test_nhsl_v1_original_sauid_reconcile_v0 tests.test_nhsl_v1_nunavut_spatial_support_v0 -v
+        run: python -m unittest tests.test_nhsl_v1_original_binary_preflight_v0 tests.test_nhsl_v1_original_sauid_reconcile_v0 tests.test_nhsl_v1_nunavut_spatial_support_v0 tests.test_nhsl_v1_nunavut_geos_topology_challenge_v0 -v
 
       - name: Record reviewed executable identities
         run: |
@@ -56,6 +62,7 @@ jobs:
           sha256sum scripts/nhsl_v1_original_sauid_reconcile_v0.py
           sha256sum scripts/nhsl_v1_original_binary_preflight_v0.py
           sha256sum scripts/nhsl_v1_nunavut_spatial_support_v0.py
+          sha256sum scripts/nhsl_v1_nunavut_geos_topology_challenge_v0.py
 
       - name: Reconcile both original NHSL v1 Nunavut GeoPackages on trusted main
         if: github.event_name != 'pull_request'
@@ -166,5 +173,42 @@ jobs:
               "max_bbox_corner_radius_proxy_km": r["max_bbox_corner_radius_proxy_km"],
               "source_admitted": False,
               "can_export_oed": False,
+          }, sort_keys=True))
+          PY
+
+
+          # GEOS independently challenges the source centroid-in-polygon
+          # classification: this step requires exact successful original
+          # source integrity, seven-metric and spatial-support proofs above.
+          python scripts/nhsl_v1_nunavut_geos_topology_challenge_v0.py \
+            --polygon-zip "$tmp/s_nu.zip" \
+            --archetype-zip "$tmp/b_nu.zip" > "$tmp/geos.json"
+          python - "$tmp/geos.json" <<'PY'
+          import json
+          import sys
+          with open(sys.argv[1], encoding="utf-8") as stream:
+              r = json.load(stream)
+          def check(ok, message):
+              if not ok:
+                  raise SystemExit("NHSL GEOS ORIGINAL BLOCKED: " + message)
+          check(r["original_source_geos_crosscheck_passed"] is True, "independent topology")
+          check(r["polygons"] == 103, "original polygon count")
+          check(r["geos_invalid_geometry_count"] == 0, "invalid polygon topology")
+          check(r["geos_centroids_in_or_on_polygon_count"] + r["geos_reported_centroids_outside_polygon_count"] == 103, "centroid coverage")
+          check(r["geos_reported_centroids_outside_polygon_count"] == 3, "GEOS/previous source baseline")
+          check(r["source_admitted"] is False and r["oed_insured_locations_exportable"] is False, "insurance admission")
+          print(json.dumps({
+              "result": "original_nhsl_v1_nunavut_geos_centroid_topology_crosscheck_passed",
+              "polygons": r["polygons"],
+              "geos_invalid_geometry_count": r["geos_invalid_geometry_count"],
+              "geos_reported_centroids_outside_polygon_count": r["geos_reported_centroids_outside_polygon_count"],
+              "geos_reported_centroids_on_boundary_count": r["geos_reported_centroids_on_boundary_count"],
+              "geos_multipart_area_count": r["geos_multipart_area_count"],
+              "geos_interiors_hole_count": r["geos_interiors_hole_count"],
+              "outside_centroid_modeled_value_share": r["outside_centroid_modeled_value_share"],
+              "max_outside_centroid_to_polygon_nearest_point_km_proxy": r["max_outside_centroid_to_polygon_nearest_point_km_proxy"],
+              "max_original_centroid_to_geos_planar_centroid_km_proxy": r["max_original_centroid_to_geos_planar_centroid_km_proxy"],
+              "source_admitted": False,
+              "oed_insured_locations_exportable": False,
           }, sort_keys=True))
           PY
