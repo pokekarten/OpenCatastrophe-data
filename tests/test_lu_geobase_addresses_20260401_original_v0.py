@@ -19,7 +19,7 @@ from research_runners.lu_geobase_addresses_20260401_original_v0 import (
 
 def make_zip(folder: Path, *, epsg=2169, add_id_fields=True):
     dbpath = folder / "fictional-address.gpkg"
-    with sqlite3.connect(dbpath) as conn:
+    with contextlib.closing(sqlite3.connect(dbpath)) as conn:
         conn.execute("PRAGMA application_id=1196444487")
         conn.execute("CREATE TABLE gpkg_contents(table_name TEXT,data_type TEXT,srs_id INTEGER)")
         conn.execute("CREATE TABLE gpkg_geometry_columns(table_name TEXT,geometry_type_name TEXT,column_name TEXT,srs_id INTEGER)")
@@ -34,18 +34,30 @@ def make_zip(folder: Path, *, epsg=2169, add_id_fields=True):
         else:
             conn.execute('CREATE TABLE "Addresses_AD_Address" (geom BLOB, OtherField TEXT)')
             conn.execute('INSERT INTO "Addresses_AD_Address" VALUES(?,?)', (b"P","fictional"))
+        conn.commit()
     output = folder / "synthetic-original.zip"
     with zipfile.ZipFile(output,"w",compression=zipfile.ZIP_DEFLATED) as archive:
         archive.write(dbpath,arcname="Addresses.gpkg")
     return output
 
 
+def synthetic_pins(source: Path):
+    data = source.read_bytes()
+    with zipfile.ZipFile(source) as archive:
+        gpkg = [p for p in archive.infolist() if p.filename.lower().endswith(".gpkg")]
+        inner_sha = hashlib.sha256(archive.read(gpkg[0])).hexdigest() if len(gpkg) == 1 else "0" * 64
+    return {
+        "expected_md5": hashlib.md5(data).hexdigest(),
+        "expected_zip_sha256": hashlib.sha256(data).hexdigest(),
+        "expected_gpkg_sha256": inner_sha,
+    }
+
+
 class OriginalAddressTests(unittest.TestCase):
     def test_fake_original_zip_schema_and_id_aggregate(self):
         with tempfile.TemporaryDirectory() as d:
             p=make_zip(Path(d))
-            expected=hashlib.md5(p.read_bytes()).hexdigest()
-            r=inspect(p,expected_md5=expected)
+            r=inspect(p,**synthetic_pins(p))
             entry=r["gpkg_original_address_layers"][0]
             self.assertEqual(entry["original_feature_rows"],3)
             self.assertEqual(entry["aggregate_id_quality"]["AD_AddressID"]["distinct_nonblank_ids"],3)
@@ -65,12 +77,12 @@ class OriginalAddressTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             p=make_zip(Path(d),epsg=4326)
             with self.assertRaisesRegex(GeoBaseAddressError,"EPSG"):
-                inspect(p,expected_md5=hashlib.md5(p.read_bytes()).hexdigest())
+                inspect(p,**synthetic_pins(p))
 
     def test_missing_expected_fields_is_explicit_not_silent_match(self):
         with tempfile.TemporaryDirectory() as d:
             p=make_zip(Path(d),add_id_fields=False)
-            r=inspect(p,expected_md5=hashlib.md5(p.read_bytes()).hexdigest())
+            r=inspect(p,**synthetic_pins(p))
             entry=r["gpkg_original_address_layers"][0]
             self.assertFalse(entry["expected_address_keys_present"]["AD_AddressID"])
             self.assertFalse(entry["expected_address_keys_present"]["AlternativeIdentifier"])
@@ -94,7 +106,7 @@ class OriginalAddressTests(unittest.TestCase):
             with zipfile.ZipFile(p,"w") as archive:
                 archive.writestr("../evil.gpkg",b"data")
             with self.assertRaises(GeoBaseAddressError):
-                inspect(p,expected_md5=hashlib.md5(p.read_bytes()).hexdigest())
+                inspect(p,**synthetic_pins(p))
 
     def test_no_gpkg_file_fails_closed(self):
         with tempfile.TemporaryDirectory() as d:
@@ -102,7 +114,18 @@ class OriginalAddressTests(unittest.TestCase):
             with zipfile.ZipFile(p,"w") as archive:
                 archive.writestr("original.txt","synthetic")
             with self.assertRaises(GeoBaseAddressError):
-                inspect(p,expected_md5=hashlib.md5(p.read_bytes()).hexdigest())
+                inspect(p,**synthetic_pins(p))
+
+    def test_full_original_sha256_pins_are_required(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=make_zip(Path(d))
+            good=synthetic_pins(p)
+            zip_bad=dict(good,expected_zip_sha256="0"*64)
+            with self.assertRaisesRegex(GeoBaseAddressError,"ZIP SHA-256"):
+                inspect(p,**zip_bad)
+            gpkg_bad=dict(good,expected_gpkg_sha256="0"*64)
+            with self.assertRaisesRegex(GeoBaseAddressError,"GeoPackage SHA-256"):
+                inspect(p,**gpkg_bad)
 
     def test_cli_rejects_invalid_original_without_leaking_name(self):
         with tempfile.TemporaryDirectory() as d:
