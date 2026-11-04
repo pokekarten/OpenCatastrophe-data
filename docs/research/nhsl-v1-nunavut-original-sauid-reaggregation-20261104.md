@@ -75,3 +75,25 @@ A narrowly scoped [GitHub Actions original-source proof](../../.github/workflows
 4. **Fails closed** if any actual source value, SAUID count, grouping, ZIP identity or scientific tolerance changes; prints *only aggregate* values and exact source hashes, no GPKG/CSV/SAUID/site rows or source artifacts. `contents: read`, checkout credentials not persisted.
 
 The **original native SQLite run is not yet confirmed here**. CI success on PR-head is *not* equivalent to a successful trusted-main original-source run: after merging, inspect the exact GitHub Actions workflow result and retain the run URL/log-reported receipt before claiming native SQLite source proof. A source-side 403/429, zip drift or 0.02-CAD mismatch is a scientific/access blocker to report, **not** a reason to weaken the gate.
+
+
+## Original native SQLite geometry declaration blocker and bounded correction
+
+**Original main-run evidence (2026-11-04):** The first [trusted-main original provider workflow, run 41893082085](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41893082085), **failed** immediately after the original-file downloads in the existing GPKG structural gate with `BLOCKED: polygon: wrong feature table or geometry family`. The PR-head synthetic-only CI was green; it **had not covered the original publisher's generic geometry metadata**.
+
+A separate independent byte-level read of the source GeoPackage SQLite metadata table `gpkg_geometry_columns` resolved the ambiguity:
+
+| Actual original v1.0 GeoPackage | `geometry_type_name` | `column_name` | Internal `srs_id` |
+| --- | --- | --- | ---: |
+| Nunavut polygons `s_nu.gpkg` | **`GEOMETRY`** | `geom_poly` | **4326** |
+| Nunavut building archetypes `b_nu.gpkg` | **`GEOMETRY`** | `geom_point` | **4326** |
+
+Both original archives therefore declare a **generic GeoPackage geometric supertype** in their GPKG metadata, rather than `POLYGON`/`POINT`. This does **not** establish that their encoded feature geometry types are wrong. The original geometry header also specifies its SRS: `4326` here is a GeoPackage feature SRS identifier, **not** the live ArcGIS MapServer's EPSG:3857 display CRS.
+
+### Fail-closed fix
+
+The pinned source-file [GPKG checker](../../scripts/nhsl_v1_original_binary_preflight_v0.py) will accept `geometry_type_name=GEOMETRY` **only with an additional per-feature check**: every feature must have a non-empty `GP` header, version and flags valid, SRS matching `gpkg_geometry_columns`, well-formed WKB byte order and a supported ISO WKB base type. Polygon GPKG permits only **Polygon (3)** or **MultiPolygon (6)**; archetype GPKG only **Point (1)** or **MultiPoint (4)**. Any mismatch, missing geometry, empty/reserved flags, corrupt header or unsupported type fails closed. **Full coordinate bounds and polygon topology are still out of scope** and cannot be inferred from this type-level check.
+
+New synthetic regression fixtures cover `GEOMETRY` metadata with both valid and deliberately wrong **actual** WKB geometry types. This is not an exemption from scientific source validation and does not convert NHSL archetypes into real insured rooftops.
+
+**Evidence ceiling:** This correction must pass the exact-PR-head synthetic CI and then the reviewed-main original provider workflow before the **native SQLite source-check receipt** may be marked successful. The earlier independent 103↔2,087 numerical original-file proof remains separate and unchanged.
