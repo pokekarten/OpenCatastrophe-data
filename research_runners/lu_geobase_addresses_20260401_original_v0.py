@@ -27,6 +27,9 @@ URL = ("https://download.data.public.lu/resources/bd-l-geobase/"
        "20260401-011010/addresses-20260401.zip")
 RESOURCE_ID = "d76d095a-94a0-4426-af15-45f70881c63f"
 PUBLISHER_MD5 = "5157355db4b81736ad2e1d2d399a1bed"
+# Independently observed complete original source bytes in GitHub run 41885861174.
+EXPECTED_ZIP_SHA256 = "edaf17ed2c802c155fd75caecfe44cbd23581a4b0a59f25935fa2d71a5e0b2eb"
+EXPECTED_GPKG_SHA256 = "b357e7aa76a61ecabee45df28d68f3cdbce4ecdebf6f396d4d83ad2ba648fc12"
 MAX_ZIP_BYTES = 24 * 1024 * 1024
 MAX_EXPANDED_BYTES = 400 * 1024 * 1024
 MAX_MEMBERS = 50
@@ -150,12 +153,19 @@ def _gpkg_profile(gpkg: Path) -> dict:
     return {"gpkg_original_address_layers": outputs}
 
 
-def inspect(source_zip: Path, *, expected_md5: str = PUBLISHER_MD5) -> dict:
+def inspect(source_zip: Path, *, expected_md5: str = PUBLISHER_MD5,
+            expected_zip_sha256: str = EXPECTED_ZIP_SHA256,
+            expected_gpkg_sha256: str = EXPECTED_GPKG_SHA256) -> dict:
     if not isinstance(expected_md5, str) or not re.fullmatch(r"[a-f0-9]{32}", expected_md5):
         raise GeoBaseAddressError("invalid publisher source MD5 pin")
+    if any(not isinstance(d, str) or not re.fullmatch(r"[a-f0-9]{64}", d)
+           for d in (expected_zip_sha256, expected_gpkg_sha256)):
+        raise GeoBaseAddressError("invalid original SHA-256 pin")
     size, md5, zip_sha = _hash_file(source_zip)
     if md5 != expected_md5:
         raise GeoBaseAddressError("original publisher ZIP MD5 mismatch")
+    if zip_sha != expected_zip_sha256:
+        raise GeoBaseAddressError("original ZIP SHA-256 differs from independently observed baseline")
     with tempfile.TemporaryDirectory(prefix="oc-lu-geobase-address-") as temporary:
         target = Path(temporary) / "original.gpkg"
         with zipfile.ZipFile(source_zip) as arc:
@@ -194,6 +204,8 @@ def inspect(source_zip: Path, *, expected_md5: str = PUBLISHER_MD5) -> dict:
                     dest.write(chunk)
             if written != member.file_size or written == 0:
                 raise GeoBaseAddressError("original GeoPackage truncated")
+            if sha.hexdigest() != expected_gpkg_sha256:
+                raise GeoBaseAddressError("original GeoPackage SHA-256 differs from observed baseline")
         report = _gpkg_profile(target)
     return {
         "profile": "lu-geobase-addresses-20260401-original-schema-v0",
