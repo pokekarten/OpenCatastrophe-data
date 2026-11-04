@@ -115,7 +115,8 @@ class OriginalJSONReceiptTests(unittest.TestCase):
                                             cohort="DOVER", observed_date="2026-11-04")
 
     def test_malformed_response_structure_rejected(self):
-        for obj in ({}, {"Results":{"FRSFacility":{}}}, {"Results":{"FRSFacility":[]}}):
+        for obj in ({}, {"Results": None}, {"Results": []},
+                    {"Results":{"FRSFacility":{}}}, {"Results":{"FRSFacility":[]}}):
             raw=json.dumps(obj).encode()
             with self.assertRaises(w.FRSOriginalReceiptBlocked):
                 w.inspect_original_response(raw, hashlib.sha256(raw).hexdigest(),
