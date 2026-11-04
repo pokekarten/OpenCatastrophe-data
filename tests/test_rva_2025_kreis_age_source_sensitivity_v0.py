@@ -117,7 +117,6 @@ class RealCountyBuildingAgeVersusCompanyTest(unittest.TestCase):
     def test_wrong_solo_company_or_contract_total_blocked(self):
         self.h["entity"]="R+V Gruppe"
         with self.assertRaises(SyntheticBookError):simulate_age_prior(self.b,self.a,self.h)
-        self.h,self.a=sources()[2],sources()[1] if False else (self.h,self.a)  # overwritten below in test
         _,_,h=sources()
         h["building_contract_observations"]["years"][-1]["contracts"]+=1
         with self.assertRaises(SyntheticBookError):simulate_age_prior(self.b,self.a,h)
