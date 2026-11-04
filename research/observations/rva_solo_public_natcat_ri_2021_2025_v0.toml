@@ -138,3 +138,55 @@ inuring_order_known = false
 reinstatements_known = false
 non_cat_claims_ceded_aggregation_known = false
 
+
+# Original 2022 issuer report retrospectively reports the 2021 company's
+# gross CURRENT-YEAR insured catastrophe-event EXPENSE across its business.
+# This is not a single Bernd flood loss, not direct connected-building loss,
+# not a 1:200 PML, and not a ceded/net loss.
+[historical_solo_gross_natcat_shock_2021]
+source_report_year = 2022
+source_url = "https://www.ruv.de/dam/jcr:55c81597-b4fe-4df2-a3e0-65aedb9ba15a/2022-allgemeine.pdf"
+original_report_pdf_page = 9
+event_year = 2021
+gross_current_year_elemental_loss_expense_eur_million = "949.8"
+reporting_entity = "R+V Allgemeine Versicherung AG"
+single_bernd_event_value = false
+property_building_only_loss = false
+all_solo_yearly_natcat_treaty_cession_observed = false
+precise_hazard_event_catalogue_observed = false
+underlying_source_pdf_bytes_verified_here = false
+note = "2021 natural-hazard extraordinary annual gross current-year claim expense; includes June-July events Volker/Wolfgang/Xero/Bernd. Not one event and not a payout after any RI layer."
+
+# Excerpts from issuer ORIGINAL 2022/2023/2025 HGB direct-book
+# current-underwriting-year gross claim expense (TEUR), not balance-sheet
+# all-year gross expenses / paid cash / CAT-only building claims.
+[[connected_building_current_underwriting_year_claims]]
+year = 2021
+gross_current_year_claims_teuro = 804326
+source_report_year = 2022
+source_url = "https://www.ruv.de/dam/jcr:55c81597-b4fe-4df2-a3e0-65aedb9ba15a/2022-allgemeine.pdf"
+source_pdf_page = 10
+[[connected_building_current_underwriting_year_claims]]
+year = 2022
+gross_current_year_claims_teuro = 493862
+source_report_year = 2022
+source_url = "https://www.ruv.de/dam/jcr:55c81597-b4fe-4df2-a3e0-65aedb9ba15a/2022-allgemeine.pdf"
+source_pdf_page = 10
+[[connected_building_current_underwriting_year_claims]]
+year = 2023
+gross_current_year_claims_teuro = 539986
+source_report_year = 2023
+source_url = "https://www.ruv.de/dam/jcr:781b9b4f-3574-44c3-8183-24d4dde18195/2023-allgemeine.pdf"
+source_pdf_page = 10
+[[connected_building_current_underwriting_year_claims]]
+year = 2024
+gross_current_year_claims_teuro = 696566
+source_report_year = 2025
+source_url = "https://www.ruv.de/dam/jcr:e0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R+V%20Allgemeine%20Versicherung%20AG_final.2026-04-21-14-59-23.pdf"
+source_pdf_page = 10
+[[connected_building_current_underwriting_year_claims]]
+year = 2025
+gross_current_year_claims_teuro = 601698
+source_report_year = 2025
+source_url = "https://www.ruv.de/dam/jcr:e0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R+V%20Allgemeine%20Versicherung%20AG_final.2026-04-21-14-59-23.pdf"
+source_pdf_page = 10
