@@ -8,7 +8,7 @@ Only totals across 396 publisher municipalities are emitted, never raw rows.
 from __future__ import annotations
 
 from collections import defaultdict
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import io
 import json
 import re
@@ -45,6 +45,19 @@ def decimal_amount(raw: str) -> Decimal:
     if not val.is_finite() or val < 0 or val > MAX_AMOUNT:
         raise ValueError("SOURCE_NUMERIC_NEGATIVE_NONFINITE_OR_TOO_LARGE")
     return val
+
+
+def validate_source_category_subtotal_residual(residual: Decimal, units: str) -> Decimal:
+    # Original Excel holds long binary-converted float lexical tails.
+    # 0.01 W / 0.1 Wh is far below any source-model resolution; do not
+    # mistake nonzero floating serialisation tails for a real category miss.
+    tolerances = {"kW": Decimal("0.00001"), "kWh": Decimal("0.0001")}
+    if units not in tolerances:
+        raise ValueError("SOURCE_UNIT_NOT_RECOGNISED")
+    tolerance = tolerances[units]
+    if abs(residual) > tolerance:
+        raise ValueError("SOURCE_CLASS_SUM_OUTSIDE_LEXICAL_FLOAT_TOLERANCE")
+    return tolerance
 
 
 def expected_headers(prefix: str, is_yearly: bool) -> dict[int, str]:
@@ -119,8 +132,9 @@ def verify_and_aggregate(original: bytes) -> dict:
             nvals = len(CLASSES) * (len(YEARS) if is_yearly else 1)
             amount_keys = tuple(range(4, 4 + nvals))
             totals = {col: Decimal(0) for col in amount_keys}
-            mismatch = 0
+            lexical_nonzero = 0
             max_abs_residual = Decimal(0)
+            tolerance = Decimal('0')
             for row in rows:
                 if set(row) != set(wanted):
                     raise ValueError("SOURCE_ROW_CELL_COMPLETENESS_CHANGED")
@@ -131,16 +145,17 @@ def verify_and_aggregate(original: bytes) -> dict:
                     subtotal = sum((numeric[start+i] for i in range(6)), Decimal(0))
                     residual = subtotal - numeric[start+6]
                     if residual:
-                        mismatch += 1
+                        lexical_nonzero += 1
+                    tolerance = validate_source_category_subtotal_residual(residual, units)
                     max_abs_residual = max(max_abs_residual, abs(residual))
             if is_yearly:
                 # One selected column year is reported, not a cumulative fleet.
                 selected_year = 2025
                 first = 4 + (selected_year - YEARS[0]) * len(CLASSES)
-                selected = {CLASSES[j]: str(totals[first+j]) for j in range(len(CLASSES))}
+                selected = {CLASSES[j]: format(totals[first+j].quantize(Decimal("0.001"), rounding=ROUND_HALF_UP), "f") for j in range(len(CLASSES))}
             else:
                 selected_year = None
-                selected = {CLASSES[j]: str(totals[4+j]) for j in range(len(CLASSES))}
+                selected = {CLASSES[j]: format(totals[4+j].quantize(Decimal("0.001"), rounding=ROUND_HALF_UP), "f") for j in range(len(CLASSES))}
             aggregate.append({
                 "sheet_title": sheet_name,
                 "publisher_measure": prefix,
@@ -148,9 +163,12 @@ def verify_and_aggregate(original: bytes) -> dict:
                 "year_column_scope": "single_2025_publisher_column_not_known_as_installed_stock" if is_yearly else "nonannual_technical_potential",
                 "selected_column_year": selected_year,
                 "NRW_aggregate_by_building_type": selected,
+                "state_total_output_rounded_to_0_001_source_unit": True,
                 "sum_of_6_categories_vs_publisher_total":
-                    {"rows_or_row_year_groups_with_nonzero_difference": mismatch,
+                    {"original_lexical_float_residual_nonzero_groups": lexical_nonzero,
                      "maximum_abs_difference_in_source_units": str(max_abs_residual),
+                     "maximum_allowed_original_float_tolerance_in_source_units": str(tolerance),
+                     "any_group_above_tolerance": False,
                      "not_forced_to_balance": True},
             })
     return {
