@@ -53,6 +53,8 @@ INPUT_LIMITS = {
     "bavaria_atom": 60000,
     "bavaria_zip_25832_head": 512,
     "bavaria_zip_4258_head": 512,
+    "bavaria_zip_25832_tail": 2048,
+    "bavaria_zip_4258_tail": 2048,
 }
 PROFILE = "wri-flood-defence-sources-read-only-access-v0"
 
@@ -71,6 +73,8 @@ def read_bounded(path: Path, key: str) -> bytes:
         raise DefenceSourceGateError(key + " empty or exceeds bounded HTTP response cap")
     if key.endswith("_head") and len(raw) != 512:
         raise DefenceSourceGateError(key + ": the exact first 512 bytes are required")
+    if key.endswith("_tail") and len(raw) != 2048:
+        raise DefenceSourceGateError(key + ": the exact final 2048 bytes are required")
     return raw
 
 
@@ -244,6 +248,79 @@ def inspect_bavaria_zip_start(raw: bytes, epsg: str) -> dict:
     }
 
 
+def inspect_bavaria_zip_end(raw: bytes, epsg: str) -> dict:
+    """Inspect only ZIP EOCD and central directory from last 2048 original bytes.
+
+    No full archive download, decompression, shapefile parsing or CRC check.
+    Original ZIP must have a 22-byte EOCD and 12 members in three asset classes
+    x (.dbf,.prj,.shp,.shx), with no disjoint/disk-spanning archive.
+    """
+    if epsg not in BAVARIA_ZIPS or type(raw) is not bytes or len(raw) != 2048:
+        raise DefenceSourceGateError("Bavarian original suffix must be exact final 2048 bytes")
+    eocd = raw.rfind(b"PK\x05\x06")
+    if eocd != len(raw) - 22:
+        raise DefenceSourceGateError("missing final ZIP end-of-central-directory record")
+    disk, central_disk, this_disk_entries, total_entries, central_size, central_offset, comment_size = (
+        struct.unpack_from("<HHHHIIH", raw, eocd + 4))
+    if (disk, central_disk, this_disk_entries, total_entries, comment_size) != (
+            0, 0, 12, 12, 0):
+        raise DefenceSourceGateError("unexpected ZIP disk, member count or comment")
+    if central_size <= 0 or central_size > eocd:
+        raise DefenceSourceGateError("central directory not in original bounded ZIP suffix")
+    cursor = eocd - central_size
+    file_members = {}
+    for _ in range(total_entries):
+        if cursor + 46 > eocd or raw[cursor:cursor + 4] != b"PK\x01\x02":
+            raise DefenceSourceGateError("bad ZIP central file header")
+        method = struct.unpack_from("<H", raw, cursor + 10)[0]
+        compressed_size, uncompressed_size = struct.unpack_from("<II", raw, cursor + 20)
+        name_len, extra_len, note_len = struct.unpack_from("<HHH", raw, cursor + 28)
+        relative_offset = struct.unpack_from("<I", raw, cursor + 42)[0]
+        end = cursor + 46 + name_len + extra_len + note_len
+        if (end > eocd or name_len < 1 or method not in (0, 8)
+                or relative_offset >= central_offset):
+            raise DefenceSourceGateError("unreviewed ZIP member or unsafe central offset")
+        try:
+            name = raw[cursor + 46:cursor + 46 + name_len].decode("ascii")
+        except UnicodeError as exc:
+            raise DefenceSourceGateError("invalid ZIP member filename encoding") from exc
+        if name in file_members:
+            raise DefenceSourceGateError("duplicate ZIP central directory filename")
+        file_members[name] = {
+            "compressed_bytes": compressed_size,
+            "uncompressed_bytes": uncompressed_size,
+        }
+        cursor = end
+    if cursor != eocd:
+        raise DefenceSourceGateError("trailing or incomplete central directory entries")
+    expected = {
+        f"{kind}_epsg{epsg}.{extension}"
+        for kind in ("deich", "hwschutzwand", "hwschutzsystem")
+        for extension in ("dbf", "prj", "shp", "shx")
+    }
+    if set(file_members) != expected:
+        raise DefenceSourceGateError("ZIP does not list exact 3 flood-defence SHP layers")
+    potential_index_slots = {}
+    for kind in ("deich", "hwschutzwand", "hwschutzsystem"):
+        meta = file_members[f"{kind}_epsg{epsg}.shx"]
+        # Shape index v100: 100 header bytes + 8 bytes per shape index slot.
+        n = meta["uncompressed_bytes"]
+        if n < 100 or (n - 100) % 8:
+            raise DefenceSourceGateError("ZIP advertises inconsistent Shapefile index size")
+        potential_index_slots[kind] = (n - 100) // 8
+    return {
+        "native_epsg": int(epsg),
+        "original_zip_inferred_total_bytes": central_offset + central_size + 22,
+        "expected_shapefile_component_count": len(file_members),
+        "expected_asset_classes": ["deich", "hwschutzwand", "hwschutzsystem"],
+        "zip_central_directory_verified": True,
+        "index_record_slots_inferred_from_uncompressed_shx_sizes": potential_index_slots,
+        "index_records_or_geometries_actually_decoded": False,
+        "full_zip_crc_or_member_integrity_verified": False,
+        "crest_elevation_or_design_standard_verified": False,
+    }
+
+
 def audit(inputs: dict[str, bytes]) -> dict:
     if set(inputs) != set(INPUT_LIMITS):
         raise DefenceSourceGateError("missing or extra original response files")
@@ -265,6 +342,10 @@ def audit(inputs: dict[str, bytes]) -> dict:
             inputs["bavaria_zip_25832_head"], "25832"),
         "epsg_4258_first_512_bytes": inspect_bavaria_zip_start(
             inputs["bavaria_zip_4258_head"], "4258"),
+        "epsg_25832_last_2048_bytes": inspect_bavaria_zip_end(
+            inputs["bavaria_zip_25832_tail"], "25832"),
+        "epsg_4258_last_2048_bytes": inspect_bavaria_zip_end(
+            inputs["bavaria_zip_4258_tail"], "4258"),
     }
     return {
         "profile": PROFILE,
@@ -276,7 +357,7 @@ def audit(inputs: dict[str, bytes]) -> dict:
         "bavaria": by,
         "netherlands_original_catalogue_wfs_url_currently_blocked": True,
         "source_wfs_live_formal_trajectories_usable_for_GIS_research": True,
-        "bavaria_original_zip_magic_valid_but_full_download_not_checked": True,
+        "bavaria_original_zip_headers_and_central_directory_valid_but_full_download_not_checked": True,
         "user_access_or_public_data_not_sufficient_for_scientific_use": True,
         "spatial_inside_dike_or_protected_area_identified": False,
         "individual_dike_crest_elevation_verified": False,
