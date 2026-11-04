@@ -60,7 +60,7 @@ Executed **actual original HTTP response**, 2026-11-04:
 | [HELCOM HOLAS 3 Coastal defence/flood protection](https://data.europa.eu/data/datasets/ae284376-defd-4288-a98e-ac14aacda28e) | Baltic Sea built structures, physical **type and status**, marine protection | Data collected in **2022**, member coverage varies, reported operational/unknown classifications have important caveats; no currently retrieved original downloadable layer or downstream rights review. | \`official_catalogue_only\` |
 | [UK Environment Agency AIMS Spatial Flood Defences](https://www.data.gov.uk/dataset/cc76738e-fc17-49f9-a216-977c61858dda/aims-spatial-flood-defences-inc-standardised-attributes) | England up-to-date inspected/owned/managed defence line geometry; OGC API/WFS/GeoPackage options | Catalogue says **daily** updates and separately labels **Approval for Access product AfA345**. Open-government reuse indications need confirmation for the *specific* dataset, independent from the unrelated free real-time flood-monitoring API. **No original live OGC feature read** in this study. | \`catalogue_only_access_licence_review_required\` |
 
-### Critical scientific modelling decision for FFBK/NextGen
+### Critical scientific modelling decision for insurance catastrophe models
 
 Never implement \`if return_period <= protection_standard: depth = 0\` as a generic rule. It loses overtopping, breach/failure, coastal tidal interactions, defense-system topology, uncertainties in standards and the difference between a **legal risk objective** and the **actual achieved physical standard**. FLOPROS and local norms can provide **hypothesis bounds / priors** in explicit defended-vs-undefended sensitivity scenarios, *not* approved corrections to flood-depth pixels.
 
