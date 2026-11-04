@@ -66,6 +66,7 @@ def inspect_owner_worksheet(owner_xlsx:bytes, *,
     styles=[] if cell_xfs is None else [x.get("numFmtId","0") for x in cell_xfs]
     percent_styles=Counter()
     raw_le_one=raw_gt_one=0
+    native_percent_style_rows=unresolved_percent_style_rows=0
     hdr=None
     row_n=0
     source_rows=0
@@ -118,6 +119,14 @@ def inspect_owner_worksheet(owner_xlsx:bytes, *,
             pct=cells.get(hdr[3],"")
             style_index=cell_styles.get(hdr[3],"0")
             percent_styles[style_index]+=1
+            style_numfmt=(styles[int(style_index)]
+                          if style_index.isdigit() and int(style_index)<len(styles)
+                          else "UNRESOLVED")
+            uses_native_percent_style=style_numfmt in ("9","10")
+            if uses_native_percent_style:
+                native_percent_style_rows+=1
+            elif require_original_member_sha:
+                unresolved_percent_style_rows+=1
             group=groups[(plant,generator)]
             if not owner_name or len(owner_name)>180:
                 invalid_owner_identity+=1
@@ -141,11 +150,20 @@ def inspect_owner_worksheet(owner_xlsx:bytes, *,
                         raw_le_one+=1
                     elif share>Decimal("1"):
                         raw_gt_one+=1
-                    if not Decimal("0")<=share<=Decimal("100"):
+                    if require_original_member_sha and not uses_native_percent_style:
+                        # For a verified original workbook, absent/unknown format
+                        # must not be silently interpreted as percentage points.
                         unparsed_shares+=1
                         group["incomplete"]=True
                     else:
-                        group["total"]+=share
+                        # OOXML stores percent-formatted cells as fractions:
+                        # 0.40 with built-in numFmtId 10 is 40 percent points.
+                        percent_points=share*Decimal("100") if uses_native_percent_style else share
+                        if not Decimal("0")<=percent_points<=Decimal("100"):
+                            unparsed_shares+=1
+                            group["incomplete"]=True
+                        else:
+                            group["total"]+=percent_points
             elem.clear()
     except (ET.ParseError,eia.EIA860ProofBlocked) as exc:
         raise OwnerShareBlocked("malformed original owner XLSX row XML") from exc
@@ -178,7 +196,11 @@ def inspect_owner_worksheet(owner_xlsx:bytes, *,
             st:(styles[int(st)] if st.isdigit() and int(st)<len(styles) else "UNRESOLVED")
             for st in sorted(percent_styles)
         },
-        "percent_units_interpreted_using_original_xlsx_style":False,
+        "delaware_owner_rows_with_native_percent_format":native_percent_style_rows,
+        "delaware_owner_rows_with_unresolved_original_percent_format":unresolved_percent_style_rows,
+        "percent_units_interpreted_using_original_xlsx_style":(
+            require_original_member_sha and cohort_rows>0 and
+            native_percent_style_rows==cohort_rows and unresolved_percent_style_rows==0),
         "delaware_plant_ids_with_explicit_owner_schedule_rows":len({x[0] for x in groups}),
         "delaware_distinct_generators_with_owner_schedule_rows":len(groups),
         "delaware_generators_owner_sum_100_within_0_05_percentage_points":good,
