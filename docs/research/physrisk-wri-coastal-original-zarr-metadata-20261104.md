@@ -250,3 +250,60 @@ python scripts/check_all.py
 - Publisher original TIFF and derived Zarr **full-asset immutable versions and exact build commit remain unproven**. The listed hashes refer only to exact HTTP response ranges.
 - Source/product-specific rights and derivative redistribution require final review before a production, proprietary or public data build; no model input is admitted from this analysis.
 - Return-period maps give marginal exceedance-depth levels, not stochastic storm event IDs, spatial hazard dependence, financial insured losses, ELTs, YLTs or CAT treaty results.
+
+## Executed independent second WRI/Physrisk paired-pixel challenge: Bay of Bengal, 100 years (2026-11-04)
+
+**New source-backed result, independently positioned from the previous US Gulf Coast sample:** original WRI Aqueduct Floods v2 historical **coastal, no subsidence, 100-year** return-period GeoTIFF matched its corresponding Physrisk derived Zarr for **1,000** paired cells in a one-row Bay of Bengal transect. The return period is **100 years**, not the first sample's 2 years. The world grid row is **8100** (~22.4958333°N) and global columns are **32000–32999** (~86.6708333°E to 94.9958333°E). It spans parts of eastern India/Bangladesh and the surrounding area. This is NOT a stratified or global accuracy measure.
+
+### Exact source identities and byte-range receipts
+
+- WRI original: [`inuncoast_historical_nosub_hist_rp0100_0.tif`](https://aqueduct.wridata.org/AqueductFloods20/inuncoast_historical_nosub_hist_rp0100_0.tif). Its classic TIFF first IFD is at original byte **46,209,472**; the IFD width/height and Float32 LZW scheme were inspected through a separate bounded source metadata request. Original strip pointer for row 8100 = **17,824,039**, compressed strip size = **4,291 bytes**.
+- Physrisk-derived Zarr: [`0.8.32`](https://os-climate-physical-risk.s3.amazonaws.com/hazard-indicators/hazard.zarr/inundation/wri/v2/inuncoast_historical_nosub_hist_0/0.8.32), where the first chunk index is zero because the Zarr chunks all **nine** return periods in one physical chunk. Inside, 100 years corresponds to return-period **array index 5**. The selected Blosc compressed **block #38** starts at original object offset **1,380,254**, ends just before **1,466,009**, length **85,755** bytes. The S3 object was listed with compressed size **2,375,870 bytes**. The Blosc block consists of four compressed byte-shuffle streams; each expands to 131,072 bytes, allowing comparison of the exact selected source pixels.
+
+Seven independently fetched bounded original HTTP response parts (no complete TIFF, no entire Zarr object):
+
+| Original | Inclusive byte range | Bytes | SHA-256 of received original response |
+| --- | --- | ---: | --- |
+| WRI TIFF row-strip offset entry | `46328494–46328497` | 4 | `241a517ef24d0a4d13ecc1223a5e15673fd57de102e3b7e6e8414bce187b10e2` |
+| WRI TIFF row-strip bytecount entry | `46242094–46242097` | 4 | `d4251ca6381f532ec18b0ba155f27737f25a8abfddde141cab0ac80f7a171bf0` |
+| WRI original LZW strip | `17824039–17828329` | 4,291 | `272f3ca2ddb9c39e2218e96980c34d4ed60b04d651023a3e4da4e6ffa127b5fd` |
+| Zarr object Blosc header and offsets | `0–4095` | 4,096 | `d0d1abe763ca50acc59706516a12d744d359d81c235d0ba1b9c0e1fa4b8dfad8` |
+| Zarr Blosc block #38 — bounded segment 0 | `1380254–1410253` | 30,000 | `ea204ee2f7a0380e1ee0507c410690fded8173425a52aa933a3b54d7433464fd` |
+| Zarr Blosc block #38 — bounded segment 1 | `1410254–1440253` | 30,000 | `3aa2077b06753066c10b9bc1ae127e1dd986407bfeaa1e40a457b5c897a71d55` |
+| Zarr Blosc block #38 — bounded segment 2 | `1440254–1466008` | 25,755 | `0845dd587ce5d4ca91b718140de8e554cf12c47dadca0ded0b22c26796c68450` |
+
+The **concatenation of the three contiguous Zarr source responses**, in sequence, has SHA-256 `9144355508425d0f703c309d28e919c019ca4c52841ec2e000e3c69849a5d8f5`. Each segment and the reconstructed compressed block are pinned independently. The blocks never leave the local inspection workspace or enter Git. Original HTTP range body sizes were verified; none of these SHA-256s is a whole-TIFF or whole-Zarr object hash.
+
+### Actual paired source/derived pixel results
+
+| Pair category | Number | Outcome |
+| --- | ---: | --- |
+| Both source and derivative finite zero | **594** | All bit-identical Float32 |
+| Both finite positive coastal depth | **334** | All bit-identical Float32 |
+| Original `-9999` NoData -> derived IEEE `NaN` | **72** | All match as missing-value category |
+| Unexplained mismatches | **0** | None in this selected 1,000-cell section |
+
+Selected **exact matching positive depths** include source/derived column **32140 = 0.8493490219 m**, **32144 = 1.1128225327 m**, **32146 = 5.9934983253 m** and **32147 = 4.3581857681 m**. All 928 finite values match *exact Float32 bytes*; NoData is compared by category, not falsely claimed numerically equal.
+
+**Two independent locations and return periods now validated:** **2,000** cells total across the earlier US Gulf Coast 2-year transect and this East India/Bay of Bengal 100-year transect: **1,745 exact finite pairs** (1,407 zero and 338 positive), **255 original NoData correctly stored as `NaN`** and **zero observed discrepancies in these windows**. These counts are selected diagnostics, not an unbiased estimate of global CAT-model error.
+
+### Reproducible offline code and fail-closed scope
+
+The repository now includes `research_runners/wri_physrisk_coastal_second_window_preflight_v0.py` and accompanying **synthetic-only** regression tests `tests/test_wri_physrisk_coastal_second_window_preflight_v0.py`. The validator reads only the seven exact outside-Git original byte-range response files, checks each SHA/length and reassembled block SHA, verifies TIFF strip pointer/size, the Blosc 69-entry offset table and type/codec, decompresses the bounded LZW and four LZ4 streams, and challenges all 1,000 paired values/categories. It refuses invalid geometry, inconsistent lengths, unexpected positive/zero/NoData counts and any source drift. It reports `model_input_admitted=false`.
+
+```bash
+python research_runners/wri_physrisk_coastal_second_window_preflight_v0.py \
+  --tiff-offset /private/wri100/row8100-offset-4b.bin \
+  --tiff-bytecount /private/wri100/row8100-bytecount-4b.bin \
+  --tiff-strip /private/wri100/row8100-lzw-4291b.bin \
+  --zarr-header /private/physrisk100/chunk0.8.32-header-4096b.bin \
+  --zarr-part0 /private/physrisk100/block38-part0-30000b.bin \
+  --zarr-part1 /private/physrisk100/block38-part1-30000b.bin \
+  --zarr-part2 /private/physrisk100/block38-part2-25755b.bin \
+  --out /tmp/wri-physrisk-second-window-proof.json
+
+python -m unittest discover -s tests -p 'test_wri_physrisk_coastal_second_window_preflight_v0.py'
+python scripts/check_all.py
+```
+
+**No scientific or commercial admission:** The exact build/producer commit of public Zarr, the full TIFF and Zarr source-object fingerprints, original rights and derivative-use permissions, other coastal return periods/geographies, all riverine inputs, defence effects, vulnerability, exposure and risk dependence are still unverified. The 1.5-year WRI original return period remains absent in the nine-period Physrisk derived source. Neither return-period collection supplies event IDs, an annual occurrence/YLT generator, reinsurance losses nor insurers' actual insured TIV.
