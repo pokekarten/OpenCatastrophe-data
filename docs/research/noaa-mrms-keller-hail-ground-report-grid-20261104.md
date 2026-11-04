@@ -47,3 +47,30 @@ A second public S3 ListObjectsV2 query confirmed the *different* `CONUS/MESH_Max
 5. No dataset/source admission or downstream insurer loss use until dedicated rights, provenance and science review.
 
 The repository continues to publish only original-provider **references, source receipts, bounded validators and research findings**, not third-party raw data.
+
+
+## Executed real-byte/geolocation result — 2026-11-04
+
+GitHub-hosted [NOAA direct proof run #41797985117](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41797985117) was **successful**, checking all three pinned objects including the actual 2021 hail-positive case. This run performs **direct HTTPS GET, SHA-256, gzip CRC32, GRIB2 center/discipline/category/parameter, Section 3 template-0 grid geometry and external report site indexing**; no source file bytes are written to the repo or exported to artifacts.
+
+| Actual source verification | Observed/checked result |
+| --- | --- |
+| NCEI independent event report | `956694`, ~32.92°N, −97.29°, hail **63.5 mm** from ground report |
+| Original NOAA object time | **2021-04-29T01:36:39Z**, 21 seconds before report |
+| Compressed source bytes | **54,463** |
+| SHA-256 from actual direct HTTPS matches earlier intermediary | `7d1fc719f0791e25ddd2919cb5dcea1302caa4150712feebc42b6c0cbe84fdf6` |
+| GZIP independently verified by zlib | **CRC32 pass**, decoded GRIB **90,747 bytes** |
+| GRIB2 product identifier | NOAA center **161**, discipline **209**, category **3**, parameter **28** (MESH) |
+| Grid definition | Template 3.0 regular latitude/longitude, **7,000 × 3,500 = 24,500,000** cells |
+| Original grid first/last latitude | **54.995° N** (first) to **20.005001° N** (last); north-to-south scan |
+| Original grid first/last east-longitude | **230.005° E** (first) to **299.994998° E** (last), i.e. approximately −129.995° to −60.005° |
+| Angular steps | **0.01° longitude**, **0.01° latitude** |
+| GRIB2 scanning mode | **0**; i eastward and j southward |
+| Nearest nominal cell for ground-report point | **column 3270, row 2207** (zero-based); *cell value NOT decoded* |
+| Rigor / authority | Correct source identity, geometry and timestamp; **not** physical hail observation, quality skill, claim footprint, insured loss or source/model admission |
+
+### Important parser correction from actual original source
+
+The first execution of the new grid parser **blocked correctly** because the synthetic fixtures assumed only `(basic angle, subdivisions)=(0,0)`. The original source disclosed `(1,1000000)`, also exactly **10^-6 degree** per WMO GRIB2 Template 3.0 Note 1. The parser now validates the actual **ratio**, with fail-closed rejection of non-equivalent scales; unit tests cover both WMO zero/missing sentinels and the observed positive ratio. This is a standards-based correction, **not** removal of the grid checks. Invalid geometries still fail.
+
+**Remaining:** all source raster intensity values, no-data/bitmap semantics, event-vs-radar timing bias, and independent ground observation uncertainty remain untested. The 63.5 mm figure comes **exclusively from the NCEI report** and must not be represented as a decoded MESH value. Independent ecCodes/wgrib2 point sampling of this fixed source is the next defensible science step.
