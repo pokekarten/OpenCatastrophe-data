@@ -15,6 +15,9 @@ import zipfile
 from research_runners.gdw_v1_original_shapefile_evidence_v0 import (
     GDW_V1_ORIGINAL_SHAPEFILE_EVIDENCE_V0 as EVIDENCE,
 )
+from research_runners.gdw_v1_original_spatial_source_receipt_v0 import (
+    GDW_V1_ORIGINAL_SPATIAL_RECEIPT_V0 as SPATIAL_RECEIPT,
+)
 from research_runners import gdw_v1_original_spatial_quality_v0 as subject
 from research_runners import gdw_v1_shapefile_archive_preflight_v0 as pre
 from tests.test_gdw_v1_shapefile_archive_preflight_v0 import (
@@ -74,6 +77,7 @@ class GDWOriginalSpatialAuditTests(unittest.TestCase):
         self.assertEqual(r["paired_barrier_within_polygon_interior"], 1)
         self.assertEqual(r["paired_barrier_outside_valid_polygon"], 0)
         self.assertTrue(r["all_assessable_id_pairs_geometrically_covered"])
+        self.assertEqual(r["invalid_geometry_reason_family_counts"], {})
         self.assertTrue(r["source_original_structure_verified"])
         self.assertTrue(r["original_archive_sha256_matched_frozen"])
         self.assertFalse(r["CAT_model_source_admitted"])
@@ -99,6 +103,8 @@ class GDWOriginalSpatialAuditTests(unittest.TestCase):
                          r["unparseable_or_error_reservoir_polygons"], 1)
         self.assertEqual(r["unassessable_pair_invalid_or_unparseable_polygon"], 1)
         self.assertFalse(r["all_original_geometries_topologically_valid"])
+        self.assertEqual(sum(r["invalid_geometry_reason_family_counts"].values()), 1)
+        self.assertNotIn("[", str(r["invalid_geometry_reason_family_counts"]))
         self.assertFalse(r["polygon_repairs_or_snapping_performed"])
 
     def test_bad_archive_preflight_blocks_before_geom(self):
@@ -108,6 +114,28 @@ class GDWOriginalSpatialAuditTests(unittest.TestCase):
                 self.inspect(fixture(corrupt=case))
 
 class GDWFrozenOriginalEvidenceTests(unittest.TestCase):
+    def test_reason_classifier_strips_original_geos_coordinate_details(self):
+        self.assertEqual(subject._validity_reason_family("Self-intersection[13.0 52.1]"),
+                         "self_intersection")
+        self.assertEqual(subject._validity_reason_family("Ring Self-intersection[secret]"),
+                         "ring_self_intersection")
+        self.assertEqual(subject._validity_reason_family("Something with [record coordinates]"),
+                         "other_invalid_geos_reason")
+
+    def test_real_original_spatial_receipt_is_bounded_and_nonadmitted(self):
+        e = SPATIAL_RECEIPT
+        self.assertEqual(e["original_file_sha256"], EVIDENCE["independently_computed_from_original_sha256"])
+        self.assertEqual(e["reservoir_polygons"], 35295)
+        self.assertEqual(e["valid_reservoir_polygons"], 35074)
+        self.assertEqual(e["invalid_reservoir_polygons"], 221)
+        self.assertEqual(e["unparseable_reservoir_polygons"], 0)
+        self.assertEqual(e["valid_polygon_matched_point_strict_interior"], 35074)
+        self.assertEqual(e["valid_polygon_matched_point_outside"], 0)
+        self.assertEqual(e["unassessable_matched_pairs_due_to_invalid_polygon"], 221)
+        self.assertFalse(e["model_input_admitted"])
+        self.assertFalse(e["source_geometries_repaired"])
+        self.assertFalse(e["source_ids_or_coordinates_exported"])
+
     def test_frozen_original_receipt_no_model_promotion(self):
         self.assertEqual(EVIDENCE["original_file_bytes"], 69_745_749)
         self.assertEqual(EVIDENCE["barrier_point_records"], 41_145)
