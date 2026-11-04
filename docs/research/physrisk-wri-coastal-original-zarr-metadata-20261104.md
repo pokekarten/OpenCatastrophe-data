@@ -176,3 +176,13 @@ python -m unittest discover -s tests -p 'test_wri_aqueduct_original_tiff_range_p
 ```
 
 A scientifically meaningful next stage needs **a separately permitted, bounded original TIFF strip and corresponding Physrisk Zarr chunk**, preserving `-9999` nodata, `0.0` fill, compression and exact cell/return-period axes. No pixel equivalence claim, loss curve, simulated YLT or original-source admission yet.
+
+## OS-Climate importer source code vs currently published Zarr: vintage mismatch
+
+Original upstream code inspection at OS-Climate GitHub (2026-11-04):
+
+- [`src/hazard/onboard/wri_aqueduct_flood.py`](https://github.com/os-climate/hazard/blob/main/src/hazard/onboard/wri_aqueduct_flood.py), exact Git blob SHA `c9599366ba5e0f3f825d50a70caa6e987ec770b5`. `WRIAqueductFlood.__init__` hard-codes return periods `[2,5,10,25,50,100,250,500,1000]`; `onboard()` reads original WRI TIFF bands and explicitly executes `values[values == -9999.0] = float("nan")` before writing `z[i,:,:]`. `generate_tiles_single()` separately calls `create_tile_set(..., nodata=-9999.0, nodata_as_zero=True)` for visualization tiles; a map display rule is **not** a license to convert raw flood depth NoData to zero.
+- [`src/hazard/sources/osc_zarr.py`](https://github.com/os-climate/hazard/blob/main/src/hazard/sources/osc_zarr.py), exact Git blob SHA `24e269b3d3307aa55a477aacf51041387ba70b0d`, has `_zarr_create()` using `fill_value=float("nan")` and `write_empty_chunks=False`.
+- **In contrast**, the real distributed OS-Climate WRI Zarr `.zarray` fetched in this research has `fill_value=0.0` (see pinned original 369-byte response above).
+
+This is **positive evidence that the published derivative's actual binary encoding/producer revision cannot be inferred just from the current upstream code**. The source code explains an *intended* `-9999 -> NaN` transformation, but there is still no pinned provenance proving that the public Zarr object was built from these exact blobs or preserving NaNs at the chosen pixels. Treat this as a **source/code-vintage conflict**, not a confirmed scientific error. Do not equate producer `NaN`, TIFF `-9999` and Zarr fill `0.0`; keep importer and scientific model gates blocked until exact derived-object lineage and cellwise comparisons resolve which interpretation is correct. If the provider has a versioned build receipt, acquire that rather than guessing from `main`.
