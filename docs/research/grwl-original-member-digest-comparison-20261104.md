@@ -45,7 +45,7 @@ Synthetic-only unit tests:
 python -m unittest discover -s tests -p 'test_grwl_original_member_digest_compare_v0.py' -v
 ```
 
-13 synthetic tests passed in ChatGPT Linux against a test-only equivalent of the existing bounded ZIP member safety gate; exact-repository GitHub CI must independently verify integration against the actual merged preflight module. Tests cover identical uncompressed data in differently compressed ZIPs, XML-only differences, SHP/DBF/SHX differences, CRC corruption, path traversal, missing PRJ, deterministic ordering and non-admission outputs.
+15 synthetic tests passed in ChatGPT Linux against a test-only equivalent of the existing bounded ZIP member safety gate; exact-repository GitHub CI must independently verify integration against the actual merged preflight module. Tests additionally check that a changed original ZIP SHA-256 between preflight and member-byte streaming is blocked. Tests cover identical uncompressed data in differently compressed ZIPs, XML-only differences, SHP/DBF/SHX differences, CRC corruption, path traversal, missing PRJ, deterministic ordering and non-admission outputs.
 
 **Not yet done:** actual source download, independent SHA-256 original ZIP receipts, member-level original SHA-256 comparison, GRWL record-by-record semantic comparison, width uncertainty assessment, spatial join to RiverATLAS, scientific license/redistribution approval, flood hazard computation, NextGen integration.
 
