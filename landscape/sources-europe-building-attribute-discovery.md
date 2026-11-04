@@ -280,13 +280,13 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Categories:** `lidar`, `classified_point_cloud`, `tile_index`, `luxembourg`  
 **Spatial scope:** Luxembourg national LiDAR 2019 coverage; two frozen 100m public city and Berdorf windows  
 **Temporal scope:** 2019 airborne laser survey; original GeoJSON tile URL index issued February 2020  
-**Resolution / granularity:** Original 450512-byte CRS84 GeoJSON has 1287 tile polygons, only 2/1 polygons intersect fixed 100m city/Berdorf windows; official URL directory points to separate classified point-cloud ZIP tiles  
+**Resolution / granularity:** Original 450512-byte CRS84 GeoJSON has 1287 tile polygons, only 1 city / 2 Berdorf polygons intersect the respective fixed 100m windows; official URL directory points to separate classified point-cloud ZIP tiles  
 **Potential roles:** `original_tile_selection`, `different_processing_method_candidate`, `2019_roof_reconstruction_preflight`  
 **Access hint:** `catalogue_cc0_original_tile_index_full_sha_verified_no_pointcloud_bytes`  
 **Authoritative source:** <https://data.public.lu/en/datasets/lidar-2019-releve-3d-du-territoire-luxembourgeois/>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Official original tile-index full SHA256 2ad881f794e3699b83a0b312c84c2b0e467f21a7ec92bbf10a0c9a21aa4d1e6a and published SHA1 6fa8f0bd8afdf87bd175c9dab2d7b479b1b18874 verified in GitHub Action 41892606021. This is NOT verification of any source LAZ/ZIP tile or actual classified building points. Potential raw-sensor overlap with VDL 3D remains unresolved; independent validation not admitted.
+**Note:** Official original tile-index full SHA256 2ad881f794e3699b83a0b312c84c2b0e467f21a7ec92bbf10a0c9a21aa4d1e6a and published SHA1 6fa8f0bd8afdf87bd175c9dab2d7b479b1b18874 verified in GitHub Action 41892606021. This is NOT verification of any source LAZ/ZIP tile or actual classified building points. Potential raw-sensor overlap with VDL 3D remains unresolved; independent validation not admitted. This source cover-count was read from site-keyed original JSON: Luxembourg-city 1 and Berdorf-village 2; a previous sorted-log extraction had transposed these two labels, and the frozen code now rejects the incorrect mapping.
 
 ## Luxembourg ACT official 2019 orthophoto original geocatalogue
 
