@@ -41,4 +41,39 @@ The original-source workflow uses exactly one verified original download of each
 
 A 51/51 interior result in Luxembourg city centre from PR #1269 reflects two source products from ACT and should not be treated as accuracy, completeness or one-to-one insurance exposure. A village comparison may identify different candidate multiplicity, but no national/urban/rural causal estimate can be inferred from two preselected 100 m squares. Independent building entry points, survey-grade holdouts, dates, address-unit semantics, source-specific rights and risk asset linkage remain separate admission decisions.
 
-**Actual original-source results:** pending the exact branch CI, not yet asserted in this note.
+**Original-source results:** verified in the hosted source workflow, as documented below.
+
+
+## Executed original-source results (2026-11-04)
+
+**GitHub original-source workflow:** https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41819391418 (successful; exact code head 163eb2e4c4a109ef3fc9411294126438e8df3e42). Both exact original ACT source objects were SHA-validated; 17/17 synthetic tests passed. The same downloaded originals were processed sequentially at the two sites, no source data or individual matches were uploaded.
+
+| Measured original-source aggregate | Luxembourg city | Berdorf |
+| --- | ---: | ---: |
+| Address points in the fixed EPSG:3035 100m square | **51** | **6** |
+| GeoBase polygons intersecting original enclosing RTree rectangle | **107** | **18** |
+| GeoBase polygons with **positive area inside exact rotated square** | **104** | **16** |
+| Polygons excluded as rectangle-only spatial candidates | **3** | **2** |
+| Address points in exactly one original building polygon | **51** | **6** |
+| Ambiguous, boundary-only, or exterior address points | 0 | 0 |
+| Polygons containing exactly one sampled address point | **37** | **4** |
+| Polygons containing multiple sampled address points | **6** | **1** |
+| Addresses in these multi-address polygons | **14** | **2** |
+| Polygons without uniquely contained sampled address points | **61** | **11** |
+| Repeated CACLR address identifier rows inside the fixed window | 0 | 0 |
+
+**Count conservation:** city 104 = 37 + 6 + 61, and 51 = 37 + 14. Berdorf 16 = 4 + 1 + 11, and 6 = 4 + 2.
+
+### Method correction: 107 is not 104
+
+Parent PR #1269 originally reported **107 GeoBase polygons**, the number intersecting an enclosing EPSG:2169 bounding rectangle, not necessarily the exact equal-area square. The corrected positive-area city denominator is **104**. Three RTree/rectangle candidates had no positive-area overlap with the actual rotated square. Berdorf similarly had **18** rectangle candidates but **16** polygons crossing the true window with positive area. These were empirically observed differences of selection semantics; original bytes and hashes did not drift. Keep the original rectangle counts visible as historical evidence and use exact-area counts for new geographic comparisons.
+
+The original 51 city address points were still uniquely inside one actual positive-area polygon, so the point status is robust to this correction in the observed sample. The reduction of sampled polygon count is **not a loss of original buildings from the official dataset**; it is simply a change in geographic clipping.
+
+### Scientific limits
+
+- These are **two purposively preselected public-centre windows**, not random or representative urban/rural strata. No inference about national address coverage or geocoding accuracy is supported.
+- ACT address points can originate from parcel or largest-building centroids; both inputs are from ACT and may reuse the same cadastral source, so the 100% contained-point rate is **not independent ground truth**.
+- The 61 city and 11 Berdorf polygons without a sampled address *inside these small squares* are not proven unaddressed buildings. The polygon may be partially inside while its address point is outside, have different segmentation or lack an official georeferenced address.
+- The address snapshot is 2026-11-02, building snapshot 2026-10-01. These are candidate spatial links, not a verified temporal building-change history or a physical building/insurance unit ID.
+- No original source rows, polygons, IDs or private insurance data were saved to Git/Neon. No commercial rights, scientific model input, hazard/loss calculation or TIV admission is asserted.
