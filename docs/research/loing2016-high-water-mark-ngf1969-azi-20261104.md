@@ -42,7 +42,7 @@ An official later PPRI account notes that some original **1 June 2016 orthophoto
 
 ## Implemented falsifiable evidence gate
 
-[The standalone Python preflight](../../research_runners/loing2016_high_water_mark_preflight_v0.py) is **offline**, rejects unknown/non-official site URLs, wrong Loing event dates, separate GPS survey timing errors, unknown vertical datums, invalid coordinates, impossible or nonreconciled reference+offset elevations and duplicate mark/site identifiers. It distinguishes a self-levelled physical mark (no invented 0.000 m offset) from another levelling bench with an explicit offset. Oral testimony remains a weaker nonphysical evidence class. **12 synthetic offline regression tests**, runnable with:
+[The standalone Python preflight](../../research_runners/loing2016_high_water_mark_preflight_v0.py) is **offline**, rejects unknown/non-official site URLs, wrong Loing event dates, separate GPS survey timing errors, unknown vertical datums, invalid coordinates, impossible or nonreconciled reference+offset elevations and duplicate mark/site identifiers. It distinguishes a self-levelled physical mark (no invented 0.000 m offset) from another levelling bench with an explicit offset. Oral testimony remains a weaker nonphysical evidence class. The original platform must additionally label **maximum of the flood = yes**: a nonmaximum physical trace may document flooding but is **not** a candidate peak-water validation observation. The dedicated boolean is type-checked (numeric 1 is rejected), and the returned candidate flag is false when the source reports a nonmaximum. **14 synthetic offline regression tests**, runnable with:
 
 ```sh
 python -m unittest discover -s tests -p 'test_loing2016_high_water_mark_preflight_v0.py' -v
