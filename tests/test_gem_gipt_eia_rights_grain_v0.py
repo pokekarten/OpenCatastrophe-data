@@ -110,6 +110,18 @@ class GEMGIPTGates(unittest.TestCase):
         r=run([row(other="ORIS code 599; matching project name")])
         self.assertEqual(r["rows_with_no_explicit_eia860_token"],1)
 
+    def test_partial_fake_eia_token_is_not_id_evidence(self):
+        r=run([row(other="EIA-860: 599bad")])
+        self.assertEqual(r["rows_with_no_explicit_eia860_token"],1)
+
+    def test_tz_hyphen_underscore_markers_are_still_noncommercial(self):
+        for marker in ("TZ-ID: A", "TZ_ID: B", "TransitionZero record"):
+            with self.subTest(marker=marker):
+                r=run([row(other=marker+"; EIA-860: 599")])
+                self.assertEqual(r["rows_with_transitionzero_id"],1)
+                self.assertEqual(r["eia_de_claims_at_any_tz_quarantined_location"],1)
+                self.assertEqual(r["state"],"REVIEW_TZ_NONCOMMERCIAL_AND_IDENTITY")
+
     def test_duplicate_gem_unit_phase_id_blocks(self):
         with self.assertRaisesRegex(m.GIPTBlocked,"repeated GEM"):
             run([row(),row(location="L200")])
