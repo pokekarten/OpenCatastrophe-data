@@ -19,6 +19,7 @@ import sys
 from typing import Any
 
 from research_runners.noaa_mrms_mesh_direct_https_proof_v0 import (
+    ARLINGTON_REPORT_WINDOW,
     DirectSourceProofError,
     KELLER_REPORT_WINDOW,
     fetch_pinned_original_object,
@@ -43,22 +44,35 @@ KELLER_PRODUCT_SEMANTICS = {
     "mesh_keller_2021_max30": "rolling_30min_max_after_report",
 }
 
+# Distinct storm and date; NWS FWD preliminary mPING E3.25-inch report.
+ARLINGTON_PRODUCT_SEMANTICS = {
+    "mesh_arlington_2024": "instantaneous_2min_before_report",
+    "mesh_arlington_2024_max30": "rolling_30min_max_after_report",
+}
+HAIL_PRODUCT_SEMANTICS = {
+    **KELLER_PRODUCT_SEMANTICS,
+    **ARLINGTON_PRODUCT_SEMANTICS,
+}
+
 
 class PointDecodeError(ValueError):
     """The point comparison is not scientifically or technically grounded."""
 
 
-def _expected_four_indices(geography: dict) -> set[int]:
+def _expected_four_indices(
+    geography: dict, report_lat: float = REPORT_LAT,
+    report_lon: float = REPORT_LON,
+) -> set[int]:
     """The rounded report point is close to a *four-cell corner*, not unique."""
     if geography.get("geometry_checked") is not True:
         raise PointDecodeError("original GRIB geographic grid not checked")
     grid_nx, grid_ny = geography["nx"], geography["ny"]
-    longitude = REPORT_LON % 360
+    longitude = report_lon % 360
     step_i = geography["longitude_increment_deg"]
     step_j = geography["latitude_increment_deg"]
     fi = ((longitude - geography["longitude_first_east_0_360_deg"]) /
           (step_i * (1 if geography["i_eastward"] else -1)))
-    fj = ((REPORT_LAT - geography["latitude_first_deg"]) /
+    fj = ((report_lat - geography["latitude_first_deg"]) /
           (step_j * (1 if geography["j_northward"] else -1)))
     ii = math.floor(fi)
     jj = math.floor(fj)
@@ -72,17 +86,32 @@ def _expected_four_indices(geography: dict) -> set[int]:
 def decode_original_keller(
     blob: bytes, decoder: Any = None, product: str = PRODUCT
 ) -> dict:
-    """Source-verify and compare four independent ecCodes values per window."""
-    if product not in KELLER_PRODUCT_SEMANTICS:
-        raise PointDecodeError("unreviewed Keller time-window product")
+    """Source-verify four ecCodes neighbour values for pinned hail case."""
+    if product not in HAIL_PRODUCT_SEMANTICS:
+        raise PointDecodeError("unreviewed hail event/time-window product")
+    if product in KELLER_PRODUCT_SEMANTICS:
+        expected_utc, source_offset_s = KELLER_REPORT_WINDOW[product]
+        report_lat, report_lon = REPORT_LAT, REPORT_LON
+        report_mm = REPORTED_HAIL_MM
+        report_id = REPORT_NCEI_ID
+        report_utc = "2021-04-29T01:37:00Z"
+        report_reference = "NCEI Storm Events 956694, NWS Employee"
+        preliminary_report = False
+    else:
+        expected_utc, source_offset_s = ARLINGTON_REPORT_WINDOW[product]
+        report_lat, report_lon = 32.71, -97.10
+        report_mm = 82.55
+        report_id = 1186553
+        report_utc = "2024-05-28T00:43:00Z"
+        report_reference = "NWS FWD NWUS54 KFWD 280045, public mPING E3.25"
+        preliminary_report = True
     pinned = SOURCE_OBJECTS[product]
-    expected_utc, source_offset_s = KELLER_REPORT_WINDOW[product]
     try:
         receipt = audit_original(blob, product, pinned["basename"])
         if receipt["reference_utc"] != expected_utc:
             raise PointDecodeError("source UTC is not pinned report-window snapshot")
         geography = receipt["grid_geography"]
-        expected = _expected_four_indices(geography)
+        expected = _expected_four_indices(geography, report_lat, report_lon)
         message = inflate_gzip_capped(blob)
     except MRMSPreflightError as exc:
         raise PointDecodeError("original SHA/gzip/GRIB verification failed") from exc
@@ -112,7 +141,7 @@ def decode_original_keller(
         # ecCodes uses great-circle nearest-point logic instead of the
         # nominal row/column-only rounding of our independent GRIB parser.
         nearest = decoder.codes_grib_find_nearest(
-            handle, REPORT_LAT, REPORT_LON, is_lsm=False, npoints=4
+            handle, report_lat, report_lon, is_lsm=False, npoints=4
         )
         if len(nearest) != 4:
             raise PointDecodeError("ecCodes failed to return exactly four nearest points")
@@ -128,8 +157,8 @@ def decode_original_keller(
             if (idx not in expected or idx in received_indices
                     or not math.isfinite(lat) or not math.isfinite(lon)
                     or not math.isfinite(dist) or dist > MAX_RADIUS_KM
-                    or abs(lat - REPORT_LAT) > 0.02
-                    or abs(((lon - REPORT_LON + 180) % 360) - 180) > 0.02):
+                    or abs(lat - report_lat) > 0.02
+                    or abs(((lon - report_lon + 180) % 360) - 180) > 0.02):
                 raise PointDecodeError("ecCodes nearest four disagree with verified GRIB geography")
             received_indices.add(idx)
             # NOAA/NSSL MRMS GRIB2 user table, discipline 209/category 3,
@@ -167,11 +196,15 @@ def decode_original_keller(
         valid = [row["decoded_radar_mesh_mm"] for row in observations
                  if row["value_status"] == "decoded_radar_mesh_mm"]
         return {
-            "schema_version": "noaa-mrms-keller-eccodes-four-cell-v0",
-            "source_radar_product_semantics": KELLER_PRODUCT_SEMANTICS[product],
+            "schema_version": (
+                "noaa-mrms-keller-eccodes-four-cell-v0"
+                if product in KELLER_PRODUCT_SEMANTICS
+                else "noaa-mrms-arlington-eccodes-four-cell-v0"
+            ),
+            "source_radar_product_semantics": HAIL_PRODUCT_SEMANTICS[product],
             "source_relative_to_report_seconds": source_offset_s,
             "source_is_rolling_max_not_an_additional_event": (
-                product == "mesh_keller_2021_max30"
+                product in ("mesh_keller_2021_max30", "mesh_arlington_2024_max30")
             ),
             "original_object_key": pinned["key"],
             "original_compressed_sha256": receipt["compressed_sha256"],
@@ -179,11 +212,14 @@ def decode_original_keller(
             "grib2_decoded_message_size": receipt["decoded_grib_bytes"],
             "ecCodes_python_version": str(getattr(decoder, "__version__", "unreported")),
             "grib2_origin_utc": receipt["reference_utc"],
-            "independent_ground_report_ncei_id": REPORT_NCEI_ID,
-            "independent_report_utc": "2021-04-29T01:37:00Z",
-            "independent_report_latitude_deg": REPORT_LAT,
-            "independent_report_longitude_deg": REPORT_LON,
-            "independent_reported_hail_diameter_mm": REPORTED_HAIL_MM,
+            "independent_ground_report_ncei_id": report_id,
+            "ncei_event_id_original_csv_verified": not preliminary_report,
+            "report_source_identity": report_reference,
+            "preliminary_public_report_not_instrument_calibration": preliminary_report,
+            "independent_report_utc": report_utc,
+            "independent_report_latitude_deg": report_lat,
+            "independent_report_longitude_deg": report_lon,
+            "independent_reported_hail_diameter_mm": report_mm,
             "report_point_has_four_near_equal_neighbours": True,
             "source_grid_nx": geography["nx"],
             "source_grid_ny": geography["ny"],
@@ -223,7 +259,7 @@ def main() -> int:
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--product", choices=sorted(KELLER_PRODUCT_SEMANTICS),
+        "--product", choices=sorted(HAIL_PRODUCT_SEMANTICS),
         default=PRODUCT,
         help="One fixed researched source; not a URL or dynamic time window",
     )
@@ -256,7 +292,7 @@ def main() -> int:
             reason = "ecCodes_decoder"
         else:
             reason = "other_source_or_science_gate"
-        print("BLOCKED: Keller four-cell science gate " + reason, file=sys.stderr)
+        print("BLOCKED: hail four-cell science gate " + reason, file=sys.stderr)
         return 2
     print(json.dumps(receipt, sort_keys=True, indent=2))
     return 0

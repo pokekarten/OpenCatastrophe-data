@@ -42,6 +42,8 @@ class FakeEcCodes:
     def __init__(self):
         self.released = False
         self.override = {}
+        self.expected_lat = 32.92
+        self.expected_lon = -97.29
         self.nearest = [
             SimpleNamespace(index=2207 * 7000 + 3270, lat=32.925,
                             lon=262.705, distance=0.73, value=60.0),
@@ -67,7 +69,9 @@ class FakeEcCodes:
 
     def codes_grib_find_nearest(self, handle: object, lat: float, lon: float,
                                 is_lsm: bool, npoints: int):
-        assert (lat, lon, is_lsm, npoints) == (32.92, -97.29, False, 4)
+        assert (lat, lon, is_lsm, npoints) == (
+            self.expected_lat, self.expected_lon, False, 4
+        )
         return self.nearest
 
     def codes_release(self, handle: object) -> None:
@@ -150,6 +154,79 @@ class KellerEcCodesFourCellTests(unittest.TestCase):
         self.assertEqual(pins["mesh_keller_2021_max30"]["compressed_size"], 72464)
         self.assertEqual(pins["mesh_keller_2021_max30"]["compressed_sha256"],
                          "441cdeb5d6ba6406a4727b6a8c475be5f35920df398bcdfb7347e562999a25c2")
+
+    def test_second_independent_2024_arlington_storm_metadata(self):
+        self.assertEqual(
+            set(k.ARLINGTON_PRODUCT_SEMANTICS),
+            {"mesh_arlington_2024", "mesh_arlington_2024_max30"},
+        )
+        self.assertEqual(
+            k.SOURCE_OBJECTS["mesh_arlington_2024"]["compressed_sha256"],
+            "7dcca72784d7715a43dca5353726aaf2cee4066d2728500d0f3d0bce3d86397f",
+        )
+        self.assertEqual(
+            k.SOURCE_OBJECTS["mesh_arlington_2024_max30"]["compressed_sha256"],
+            "ddef94cad19ff39621b74563631ae0c9cf205fdf71abaa48c4b6d7715b75a806",
+        )
+        self.assertEqual(k._expected_four_indices(geo(), 32.71, -97.10),
+                         {row * 7000 + col
+                          for row in (2228, 2229) for col in (3289, 3290)})
+
+    def test_arlington_2024_is_a_separate_preliminary_report_case(self):
+        for product, time, offset, expected_param, rolling in (
+            ("mesh_arlington_2024", "2024-05-28T00:42:43+00:00", -17, 28, False),
+            ("mesh_arlington_2024_max30", "2024-05-28T00:44:00+00:00", 60, 29, True),
+        ):
+            with self.subTest(product=product):
+                fake = FakeEcCodes()
+                fake.expected_lat = 32.71
+                fake.expected_lon = -97.10
+                fake.override["parameterNumber"] = expected_param
+                fake.nearest = [
+                    SimpleNamespace(
+                        index=row * 7000 + col,
+                        lat=32.715 if row == 2228 else 32.705,
+                        lon=262.895 if col == 3289 else 262.905,
+                        distance=0.72,
+                        value=36.0 if col == 3289 else 52.0,
+                    )
+                    for row in (2228, 2229) for col in (3289, 3290)
+                ]
+                data = receipt()
+                data["reference_utc"] = time
+                result = decode(fake, data, product=product)
+                self.assertTrue(fake.released)
+                self.assertEqual(result["schema_version"],
+                                 "noaa-mrms-arlington-eccodes-four-cell-v0")
+                self.assertEqual(result["independent_ground_report_ncei_id"], 1186553)
+                self.assertEqual(result["independent_report_utc"],
+                                 "2024-05-28T00:43:00Z")
+                self.assertEqual(result["independent_reported_hail_diameter_mm"], 82.55)
+                self.assertEqual(result["independent_report_latitude_deg"], 32.71)
+                self.assertEqual(result["independent_report_longitude_deg"], -97.10)
+                self.assertEqual(result["source_relative_to_report_seconds"], offset)
+                self.assertEqual(
+                    result["source_is_rolling_max_not_an_additional_event"], rolling
+                )
+                self.assertTrue(result["preliminary_public_report_not_instrument_calibration"])
+                self.assertFalse(result["ncei_event_id_original_csv_verified"])
+                self.assertFalse(result["source_or_model_admitted"])
+                self.assertFalse(result["annual_hail_frequency_estimated"])
+
+    def test_arlington_source_swap_and_2021_report_reuse_blocked(self):
+        fake = FakeEcCodes()
+        fake.expected_lat, fake.expected_lon = 32.71, -97.10
+        fake.override["parameterNumber"] = 28
+        data = receipt()
+        data["reference_utc"] = "2021-04-29T01:36:39+00:00"
+        with self.assertRaisesRegex(k.PointDecodeError, "source UTC"):
+            decode(fake, data, product="mesh_arlington_2024")
+        fake = FakeEcCodes()
+        fake.expected_lat, fake.expected_lon = 32.71, -97.10
+        fake.override["parameterNumber"] = 29
+        data["reference_utc"] = "2024-05-28T00:42:43+00:00"
+        with self.assertRaisesRegex(k.PointDecodeError, "definition drift"):
+            decode(fake, data, product="mesh_arlington_2024")
 
     def test_missing_radar_neighbours_not_converted_to_zero(self):
         fake = FakeEcCodes()
