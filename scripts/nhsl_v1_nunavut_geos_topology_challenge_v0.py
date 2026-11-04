@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from shapely import wkb
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
 from shapely.ops import nearest_points
 
 if __package__:
@@ -72,6 +72,14 @@ def independent_topology(rows: list[dict[str, Any]]) -> dict[str, Any]:
     on_boundary = 0
     total = 0.0
     outside_value = 0.0
+    # A valid polygon may exclude its mathematical centroid for two disjoint
+    # reasons: a hole inside an exterior ring, or being outside every exterior
+    # shell (e.g. a concave exterior shape). Do not infer hole membership from
+    # the total number of interior rings.
+    in_hole_count = 0
+    outside_shell_count = 0
+    in_hole_value = 0.0
+    outside_shell_value = 0.0
     max_outside_distance_km = 0.0
     center_to_shape_centroid_km = []
     seen = set()
@@ -106,6 +114,22 @@ def independent_topology(rows: list[dict[str, Any]]) -> dict[str, Any]:
         if not geometry.covers(point):
             outside += 1
             outside_value += cost
+            # Use *only the corresponding original exterior shell(s)* to
+            # identify whether the missing coverage is caused by an interior
+            # ring. This is independent of our earlier ray-casting algorithm.
+            in_exterior_shell = any(
+                Polygon(part.exterior).covers(point) for part in parts
+            )
+            if in_exterior_shell:
+                # Exact source geometry valid, yet the point lies in an
+                # interior hole (not on a covered ring boundary).
+                in_hole_count += 1
+                in_hole_value += cost
+            else:
+                # Not covered by any exterior shell: includes concavity and,
+                # for MultiPolygons, gaps between exterior components.
+                outside_shell_count += 1
+                outside_shell_value += cost
             # Shapely/GEOS computes the nearest point in its planar lon/lat CRS.
             # Haversine of the returned endpoints is only a descriptive proxy.
             foot, pt = nearest_points(geometry, point)
@@ -119,6 +143,10 @@ def independent_topology(rows: list[dict[str, Any]]) -> dict[str, Any]:
         )
     if not rows:
         raise NHSLTopologyError("empty source polygon list")
+    if outside != in_hole_count + outside_shell_count:
+        raise NHSLTopologyError("outside centroid category totals disagree")
+    if total and abs(outside_value - in_hole_value - outside_shell_value) > 0.02:
+        raise NHSLTopologyError("outside centroid category cost totals disagree")
     return {
         "source_region": "Nunavut",
         "polygons": len(rows),
@@ -128,10 +156,18 @@ def independent_topology(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "geos_interiors_hole_count": holes,
         "geos_centroids_in_or_on_polygon_count": len(rows) - outside,
         "geos_reported_centroids_outside_polygon_count": outside,
+        "geos_outside_centroids_inside_an_interior_hole_count": in_hole_count,
+        "geos_outside_centroids_outside_all_exterior_shells_count": outside_shell_count,
         "geos_reported_centroids_on_boundary_count": on_boundary,
         "original_modeled_total_replacement_cad_2019": round(total, 3),
         "outside_centroid_modeled_value_share": (
             round(outside_value / total, 6) if total else 0.0
+        ),
+        "hole_centroid_modeled_value_share": (
+            round(in_hole_value / total, 6) if total else 0.0
+        ),
+        "outside_shell_centroid_modeled_value_share": (
+            round(outside_shell_value / total, 6) if total else 0.0
         ),
         "max_outside_centroid_to_polygon_nearest_point_km_proxy": round(
             max_outside_distance_km, 6
