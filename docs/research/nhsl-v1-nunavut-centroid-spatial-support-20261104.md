@@ -99,3 +99,30 @@ The native run emits only counts, source hashes, aggregated threshold/value shar
 **Method ceiling:** GEOS `covers` operates in a planar interpretation of geographic EPSG:4326 degrees. This is a useful independent *topological* challenge for these small original Nunavut polygons, **not a geodesic area overlay**, a surveyed site-location confirmation or an insured portfolio. Actual hazard-cell resolution mismatch and spatial asset distribution remain separate work.
 
 **Exact source GEOS results: pending the reviewed-main run.** Record the trusted main run URL, GEOS validity and count, value share, multipart/hole counts and maximum nearest-distance proxy **only after reading a successful original-data receipt**. The previous 100-inside/3-outside figures remain independently measured by the original in-house method, not yet corroborated by GEOS at this stage.
+
+
+## Confirmed independent GEOS original-source result — 2026-11-04
+
+**Final verification, superseding the GEOS pending statement above:** [PR #1322](https://github.com/pokekarten/OpenCatastrophe-data/pull/1322) passed the exact-head CI (Python 3.11–3.14, REUSE, geometry/negative tests and NHSL synthetic dedicated workflow) and was merged into `main` as **`bfacbd41bdae84fec0aaf2976f5ad148c8f42727`**. The subsequent **trusted-main original data** [GitHub Actions run **41905455961**](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41905455961) completed **successfully**, fetching/re-verifying the exact original v1.0 Nunavut ZIPs and rechecking seven source SAUID totals, WKB spatial-support metrics and **independent pinned Shapely/GEOS 2.1.2** topology. The run logs three aggregate-only JSON receipts; provider source geometry/SAUID values and ZIP bytes were not committed.
+
+### Independently validated results
+
+| Original provider topology check | Result |
+| --- | ---: |
+| Original Nunavut settled-area polygons | **103** |
+| Topologically valid polygons, GEOS | **103 / 103** |
+| Invalid polygons, GEOS | **0** |
+| Independent `geometry.covers(reported_centroid)` outside count | **3 / 103** |
+| Independent GEOS outside count vs original in-house WKB point-in-polygon | **exact match: 3** |
+| Reported centroids on polygon boundary | **0** |
+| Multipart settled-area polygons | **0** |
+| Total interior rings / holes over all source polygons | **3** |
+| Modeled replacement-value share in the 3 outside-centroid polygons | **3.4198%** |
+| Largest distance of outside center to nearest polygon footprint, planar-GEOS nearest-point then Haversine proxy | **0.029725 km (29.725 m)** |
+| Largest reported centroid vs GEOS planar geometric centroid separation | **0.000058 km (~5.8 cm)** |
+
+**Geometric interpretation, not a source-error claim:** All 103 source polygons are GEOS-valid. Both independent geometry methods find exactly **3 centers outside** their polygon support, and those three account for **3.42% of source-modeled 2019-CAD replacement cost**. No individual outside center is farther than **29.725 m** from its nearest original polygon point under this planar-nearest/geodesic-endpoint proxy. The reported centers align to the planar geometrical centroids within **about 5.8 cm maximum**, making the result compatible with **valid concave or holed polygons whose mathematical centroid is not guaranteed to be inside**. Although the product contains exactly **3 interior rings**, no per-polygon hole-membership crosscheck was published in this run: it would be **incorrect to assert those exact three outsides fall in the three holes** without a further independent aggregate-only classification.
+
+The 3.4198% share is **not** an insured exposure fraction, loss bias, claim that any roof is outside its SAUID, or probability that a 1-km hazard cell is incorrectly sampled. The 0.029725 km maximum is a *distance from nominal reported center to published polygon support*, not the distance from a roof to the correct location. A true model discrepancy requires an independently reviewed peril-specific hazard footprint and plausible asset-density/support allocation strategies.
+
+**Next causal action:** For the three outside centers, independently classify hole versus outside-exterior/concavity, then compare actual selected hazard grid intensities from centroid lookup with area-weighted and built-environment-weighted alternatives. All original NHSL fields remain `not_admitted`; no insured TIV, native OAS model, AEP/OEP, or gross/net financial claims arise from these geometric checks.
