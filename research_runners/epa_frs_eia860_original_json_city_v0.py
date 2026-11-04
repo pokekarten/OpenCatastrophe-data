@@ -77,7 +77,8 @@ def inspect_original_response(original: bytes, expected_sha256: str, *,
                              FRSOriginalReceiptBlocked("non-finite JSON constant")))
     except (ValueError, UnicodeError, TypeError) as exc:
         raise FRSOriginalReceiptBlocked("malformed original FRS JSON response") from exc
-    records = obj.get("Results", {}).get("FRSFacility") if isinstance(obj, dict) else None
+    result = obj.get("Results") if isinstance(obj, dict) else None
+    records = result.get("FRSFacility") if isinstance(result, dict) else None
     if not isinstance(records, list) or not 0 < len(records) <= MAX_FACILITIES:
         raise FRSOriginalReceiptBlocked("no bounded FRSFacility list")
     seen_frs = set()
