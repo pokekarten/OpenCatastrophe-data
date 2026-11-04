@@ -20,6 +20,19 @@ The [official documented datastore search endpoint](https://guide.data.gov.sg/de
 | NAKAMA RE PTE. LTD. | `202130681G` | 2021-09-02 | `RA18G` | Aon Insurance Managers Singapore |
 | TOMONI RE PTE. LTD. | `202206915M` | 2022-02-28 | `RA21G` | Aon Insurance Managers Singapore |
 
+### Independently hashed original ACRA government HTTP responses
+
+Each original official `datastore_search` response was checked for exactly one legal name, UEN, ACRA issuer, `Registered` status and `Local Company` type. The complete original JSON HTTP responses are intentionally **not** stored in this public repository. Exact SHA-256 hashes of those original response bytes and observed lengths:
+
+| Legal entity | UEN | Original JSON SHA-256 | Bytes |
+|---|---|---|---:|
+| ASTRO RE PTE. LTD. | `202117654Z` | `30fe030a25c1ca8bc9ee5fa1445981b0d860f5e487a7860e0f1695e392ab04f7` | 1098 |
+| MANATEE RE III PTE. LTD. | `201912999K` | `ab7a6f23aeae8fe139c4acd02f9b737adf9d88a06e8bb97600d12b5972452e89` | 1125 |
+| NAKAMA RE PTE. LTD. | `202130681G` | `5823e606096a940bcf832eb427d135f05884b76d877e518be82263c09fd5cfa2` | 1101 |
+| TOMONI RE PTE. LTD. | `202206915M` | `21816d16cf931eb584ffab76bec2af0e94717c772548dd50b0e48486b55be105` | 1101 |
+
+Official API: https://data.gov.sg/api/action/datastore_search?resource_id=d_3f960c10fed6145404ca7b821f263b87 with `limit=10` and the URL-encoded exact filter `{"entity_name":"COMPANY NAME"}`. The separate [NextGen PR #279](https://github.com/pokekarten/NextGen/pull/279) retains the per-entity encoded URLs and same digests. A hash proves identity of returned bytes, **not a government digital signature** or reproducible historical replay without separately preserved original bytes. Subsequent monthly source refreshes may change responses.
+
 Direct regulator references:
 - [MAS official Insurance Company Returns](https://www.mas.gov.sg/statistics/insurance-statistics/insurance-company-returns), which prints all four institution codes and names.
 - [Astro MAS Financial Institutions Directory](https://eservices.mas.gov.sg/fid/institution/detail/242727-ASTRO-RE-PTE-LTD).
@@ -56,7 +69,7 @@ A source-date caveat matters: the signed FY2024 annual report (note 13, printed 
 
 **Correct classification:** `NOT_CURRENTLY_LISTED_AT_BSX` for Class A, Class B and the identified note program as of 2026-11-04. This **does not prove** that the SPV has dissolved, that the cedant has no remaining claims, that all contractual obligations have expired, that investors received the full original face value, or that there are no newer ILS securities issued by this legal entity. The actual contractual wording, settlement notices and winding-up filings must be verified separately. Neither face value nor the Class A/B lifecycle is an active 2026 insurer portfolio line.
 
-The **canonical public source landscape** now includes the ACRA government company dataset, MAS SPRV regulator details, original Manatee FY2024 financial report and the two original BSX exit announcements in `landscape/sources-singapore-ils-acra-mas-20261104.json` with deterministic generated Markdown. Original ACRA singleton-response SHA-256 fingerprints and official query URLs are separately in `docs/research/acra-four-sprv-original-response-receipts-20261104.json`. No exchange-page HTML, raw government JSON, financial PDF or underlying reinsurance contract is checked in.
+The **canonical public source landscape** now includes the ACRA government company dataset, MAS SPRV regulator details, original Manatee FY2024 financial report and the two original BSX exit announcements in `landscape/sources-singapore-ils-acra-mas-20261104.json` with deterministic generated Markdown. Original ACRA singleton-response SHA-256 fingerprints and official query URLs are separately in the original ACRA response fingerprint table above and in the mirrored private NextGen source receipt. No exchange-page HTML, raw government JSON, financial PDF or underlying reinsurance contract is checked in.
 
 ## Implementation boundary
 
