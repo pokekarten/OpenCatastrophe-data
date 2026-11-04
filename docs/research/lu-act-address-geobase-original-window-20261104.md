@@ -55,10 +55,13 @@ The runner freshly downloaded both pinned original objects, verified their full 
 | Address points only touching a building boundary | 0 |
 | Address points outside all sampled building polygons | 0 |
 | Original address ID repeat excess within this local window | 0 |
+| Polygons with exactly one uniquely contained sampled address | **37** |
+| Polygons with two or more uniquely contained sampled addresses | **6** |
+| Sampled polygons with no uniquely contained address in this **window** | **64** |
 | Distinct polygons with 2+ uniquely contained addresses | **6** |
 | Address points in those 6 polygons | **14** |
 
-**Conservation:** 51 = 51 + 0 + 0 + 0 + 0. These are **observed candidate relationships**, not 51 independently validated physical building identities. All 51 original address points lie in exactly one of the 107 native ACT 2026 building polygons for this window; only 43 polygons might be occupied by at least one address if all unique-containing and 14 share exactly 6? That inference is *not directly asserted or calculated by the current runner*, so it should not be reported as an observed count.
+**Conservation:** 51 = 51 + 0 + 0 + 0 + 0. These are **observed candidate relationships**, not 51 independently validated physical building identities. The independent repeated original-source runner now directly counts 37 polygons with one sampled address and 6 with multiple, hence 43 of 107 original polygons have at least one uniquely contained sampled address point. **The other 64 polygons only lack a uniquely contained point in this 100 m window:** these polygon geometries merely *intersect* the window and may have entrances/addresses outside it, or may be non-addressed entities. This result is not a national building-address coverage rate or proof that 64 buildings lack addresses.
 
 **Interpretation / limits:** ACT may place an address at a largest-building or parcel centroid using its own cadastral geometry. The 100% polygon-interior relationship is likely affected by that shared upstream source and is **not independent location validation**, an insurer exposure coverage ratio, a proof that all 107 buildings are addressed, or evidence of no missing/incorrect buildings. Six of the polygons contain more than one address, directly warning against address-to-building 1:1 modelling. Address date 2026-11-02 and building date 2026-10-01 differ; no building-stock change conclusion follows from this diagnostic.
 
