@@ -37,3 +37,18 @@ Workflow: .github/workflows/luxembourg-act2019-three-tile-http-preflight.yml
 If all three source ZIPs appear accessible and support reliable byte-range delivery, choose a **separately rights-reviewed, fully byte-verified single original tile first** in an isolated ephemeral environment. Only then inspect ZIP central directory, actual LAS/LAZ member types, EPSG2169 axis/datum, LiDAR classification \`6\` building points and source QA. A small 100m crop derived from LAZ does not prove underlying VDL Bati3DVDL-independent ground truth: first compare original capture periods, upstream flight/sensor lineage, roof-vs-ground footprints, and the historical 2019/2026 time mismatch. No insurer building identity, TIV, risk attribution, vulnerability or CAT model input is admitted in this stage.
 
 **Pinned-admission gates:** actual 2019 ZIP bytes are not present in Git, each original tile ZIP full SHA256 remains unverified, and scientific/rights/independent control/model-input flags remain false.
+
+
+## Measured official original-source HTTP results (2026-11-04)
+
+**GitHub Actions real-provider run:** https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41903085731, **success**, 13/13 fictional no-network regression tests passed. Pinned original 450512-byte GeoJSON SHA256 stayed \`2ad881f794e3699b83a0b312c84c2b0e467f21a7ec92bbf10a0c9a21aa4d1e6a\`. After original GeoJSON validation, exactly three source ZIP URLs were selected by the same two fixed EPSG3035 research windows. The log contains **zero original individual tile URLs or coordinates**.
+
+| Predeclared public study site / candidate order | Server-reported full source ZIP Content-Length (bytes) | HEAD status | 4-byte Range status | Exact range-to-HEAD total | ZIP local header bytes |
+| --- | ---: | ---: | ---: | --- | --- |
+| Luxembourg-city, one index tile | **449275061** | 200 | 206 | matches | PK0304 |
+| Berdorf, first index tile | **410361626** | 200 | 206 | matches | PK0304 |
+| Berdorf, second index tile | **374704804** | 200 | 206 | matches | PK0304 |
+
+The sum of HTTP **server-advertised** source lengths is 1234341491 bytes (approximately 1.23 decimal GB), *not an independently hashed or acquired 1.23GB data receipt*. The first four bytes of all three resources match the common ZIP local-file-header signature, and each valid HTTP 206 Content-Range advertises the same total length as its HEAD response. A successful source-header preflight makes the next targeted source acquisition possible; it **does not** validate whole-file ZIP CRC, source SHA256, LAS/LAZ file signatures, 2019 point classification, point cloud spatial coverage, epoch, or building identity.
+
+The code is strictly limited to HEAD and a four-byte Range GET per official source ZIP; no full raw point-cloud ZIP has been downloaded, no data have been written to a database and nothing has been admitted to an insurance exposure/hazard/vulnerability model. **Actual original source metadata checks have passed; ZIP content and rights gates remain pending.**
