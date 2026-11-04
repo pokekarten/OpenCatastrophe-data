@@ -45,6 +45,10 @@ class TestNHSLIndependentGEOSChallenge(unittest.TestCase):
         self.assertEqual(r["geos_valid_geometry_count"], 3)
         self.assertEqual(r["geos_centroids_in_or_on_polygon_count"], 1)
         self.assertEqual(r["geos_reported_centroids_outside_polygon_count"], 2)
+        self.assertEqual(r["geos_outside_centroids_inside_an_interior_hole_count"], 1)
+        self.assertEqual(r["geos_outside_centroids_outside_all_exterior_shells_count"], 1)
+        self.assertEqual(r["hole_centroid_modeled_value_share"], 0.3)
+        self.assertEqual(r["outside_shell_centroid_modeled_value_share"], 0.6)
         self.assertEqual(r["geos_interiors_hole_count"], 1)
         self.assertEqual(r["geos_multipart_area_count"], 1)
         self.assertEqual(r["outside_centroid_modeled_value_share"], 0.9)
@@ -55,6 +59,49 @@ class TestNHSLIndependentGEOSChallenge(unittest.TestCase):
         self.assertEqual(r["admission_status"], "not_admitted")
         self.assertNotIn("SYNTH", str(r))
         self.assertNotIn("geom_poly", str(r))
+
+    def test_valid_concave_exterior_shell_does_not_imply_hole(self) -> None:
+        # U-shaped simple valid polygon, no holes, reported centroid in notch.
+        # Do not confuse these exterior-shell exclusions with an interior ring.
+        u = Polygon([
+            (0, 0), (4, 0), (4, 4), (3, 4), (3, 1), (1, 1),
+            (1, 4), (0, 4), (0, 0),
+        ])
+        self.assertTrue(u.is_valid)
+        self.assertEqual(len(u.interiors), 0)
+        self.assertFalse(u.covers(u.centroid))
+        rows = [{
+            "Sauid": "SYNTH-CONCAVE",
+            "E_SauidLon": u.centroid.x,
+            "E_SauidLat": u.centroid.y,
+            "Et_AssetValue": 500.0,
+            "geom_poly": gpkg(u),
+        }]
+        r = independent_topology(rows)
+        self.assertEqual(r["geos_reported_centroids_outside_polygon_count"], 1)
+        self.assertEqual(r["geos_outside_centroids_inside_an_interior_hole_count"], 0)
+        self.assertEqual(r["geos_outside_centroids_outside_all_exterior_shells_count"], 1)
+        self.assertEqual(r["hole_centroid_modeled_value_share"], 0)
+        self.assertEqual(r["outside_shell_centroid_modeled_value_share"], 1.0)
+
+    def test_hole_centroid_must_be_inside_exterior_shell(self) -> None:
+        # Synthetic valid polygon has centroid in the unoccupied interior hole.
+        hole = Polygon(
+            [(0, 0), (6, 0), (6, 6), (0, 6), (0, 0)],
+            holes=[[(2, 2), (4, 2), (4, 4), (2, 4), (2, 2)]],
+        )
+        self.assertTrue(hole.is_valid)
+        rows = [{
+            "Sauid": "SYNTH-HOLE",
+            "E_SauidLon": hole.centroid.x,
+            "E_SauidLat": hole.centroid.y,
+            "Et_AssetValue": 200.0,
+            "geom_poly": gpkg(hole),
+        }]
+        r = independent_topology(rows)
+        self.assertEqual(r["geos_outside_centroids_inside_an_interior_hole_count"], 1)
+        self.assertEqual(r["geos_outside_centroids_outside_all_exterior_shells_count"], 0)
+        self.assertEqual(r["hole_centroid_modeled_value_share"], 1.0)
 
     def test_on_boundary_is_covered(self) -> None:
         rows = fixture()
