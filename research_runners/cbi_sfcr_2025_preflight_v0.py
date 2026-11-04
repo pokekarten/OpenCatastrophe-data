@@ -50,6 +50,8 @@ def _number(raw: str) -> bool:
         raise PreflightError("non-numeric financial field") from exc
     if not value.is_finite():
         raise PreflightError("non-finite financial field")
+    if value.adjusted() > 18:
+        raise PreflightError("implausibly large numeric magnitude")
     return True
 
 
