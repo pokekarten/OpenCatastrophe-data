@@ -286,6 +286,31 @@
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
       "note": "Distinct from already catalogued Spanish INSPIRE Buildings. Do not use protected owner/co-owner names or protected cadastral values from authenticated services; provider explicitly gates these to authorised users. No individual insurance cover or replacement value; exact national and local terms, attribute cardinality and approved raw fields require review."
+    },
+    {
+      "candidate_id": "uk.hmlr.transaction-uid-uprn-lookup.2026",
+      "name": "HM Land Registry Price Paid transaction UID to UPRN lookup",
+      "provider": "HM Land Registry / Ordnance Survey",
+      "categories": [
+        "transaction_address_crosswalk",
+        "uprn_property_reference",
+        "england_wales"
+      ],
+      "spatial_scope": "England and Wales, addressable registered sale properties only",
+      "temporal_scope": "Published 2026-08-28 and updated monthly; September 2026 first releases, without backdating",
+      "resolution_or_granularity": "Two-column CSV with Price Paid transaction unique identifier and UPRN (addressable-property reference, not cadastral polygon or building ID); one-to-many per sale possible",
+      "potential_roles": [
+        "price_paid_to_addressable_unit_bridge",
+        "uk_building_vs_dwelling_crosswalk_research",
+        "freehold_leasehold_match_coverage_challenge"
+      ],
+      "authoritative_url": "https://www.gov.uk/government/statistical-data-sets/transaction-unique-identifier-and-uprn-look-up-table-dataset",
+      "access_class_hint": "uk_ogl_hmlr_plus_ordnance_survey_attribution_addressbase_paf_source_terms_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Published with OGL statements for both HM Land Registry and OS; any join with Price Paid address components remains subject to separate third-party address terms. Official technical spec says non-backdated, postcode address file-dependent, often absent for land-only sales and newly built or unmatched addresses; a single sale can have several UPRNs e.g. flats. UPRN is an addressable location, not a freehold polygon, building, owner, policy record, reinstatement cost or TIV. Distinct from transaction UID to INSPIRE ID lookup which excludes leaseholds."
     }
   ]
 }
