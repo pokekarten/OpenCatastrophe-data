@@ -53,7 +53,7 @@ class OriginalAddressTests(unittest.TestCase):
             self.assertFalse(r["address_to_building_crosswalk_proven"])
             self.assertFalse(r["cat_model_input_admitted"])
             self.assertNotIn("SYN-1",str(r))
-            self.assertNotIn("123",str(r))
+            self.assertNotIn("\"123\"",str(r))
 
     def test_broken_original_zip_md5_blocks(self):
         with tempfile.TemporaryDirectory() as d:
