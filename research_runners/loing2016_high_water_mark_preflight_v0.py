@@ -12,6 +12,7 @@ import argparse
 from datetime import date
 from decimal import Decimal, InvalidOperation
 import json
+import math
 from pathlib import Path
 import re
 from urllib.parse import urlsplit
@@ -80,7 +81,7 @@ def _coordinate(value, low, high, name):
     if type(value) not in (int, float):
         raise WatermarkBlocked(f"invalid coordinate {name}")
     # Compare bounds first to avoid float overflow on arbitrary-size JSON int.
-    if not low <= value <= high:
+    if not low <= value <= high or (type(value) is float and not math.isfinite(value)):
         raise WatermarkBlocked(f"coordinate {name} outside Loing research study envelope")
     return value
 
