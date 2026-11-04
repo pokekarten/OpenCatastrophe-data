@@ -138,3 +138,40 @@ python research_runners/rva_2025_kreis_age_source_sensitivity_v0.py
 ```
 
 The GitHub original-source workflow has a **separate fail-closed live step**, and 12 source-reader plus 14 insurer-bridge tests for the age extension. Source origin and legal reuse conditions require review before merge. The current working code does not approve actual 2025 R+V geographic insurance exposure, georeferenced OED, German peril hazard/vulnerability model or gross/net OEP/AEP.
+
+
+## Actual source-owner-code observations for all 400 Kreise — source verified 2026-11-04
+
+A further original exact-workbook source audit [#41929664598](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41929664598) was **SUCCESS**, including all 400 `CSV-Gebäude` rows and columns **T:AA** (`EIGENTUM__1`…`EIGENTUM__8`). Original workbook full SHA remains `82da8578a4657e20752b436a756ed27846c77f96e3f7333bdea7f4fe29a8b551`; 400-row owner canonical SHA is **`47d572d216e603bc5643997f7d1ed7f593c50ec88b6a63d82730a3be3f4c380a`**. The bounded official aggregate rows were committed as [400 Kreis original-coded ownership counts](../../research/observations/zensus2022_400_kreis_original_owner_code_aggregates_v0.toml), never private property/customer addresses.
+
+| Original `CSV-Gebäude` column (ownership semantic label **not individually admitted**) | Published numeric Kreis coverage | Sum of published numerically available values |
+| --- | ---: | ---: |
+| `EIGENTUM__1` | 400/400 | 1,771,256 |
+| `EIGENTUM__2` | 400/400 | 16,944,010 |
+| `EIGENTUM__3` | 390/400 | 295,192 |
+| `EIGENTUM__4` | 400/400 | 353,229 |
+| `EIGENTUM__5` | 400/400 | 359,057 |
+| `EIGENTUM__6` | 400/400 | 140,065 |
+| `EIGENTUM__7` | 394/400 | 25,345 |
+| `EIGENTUM__8` | 400/400 | 68,980 |
+
+Only **385/400** Kreise have all eight source numbers; ten `__3` and six `__7` observations are suppressed/unavailable, with overlaps among those sets. **Missing values remain `"missing"`, not 0**. In complete counties, the sum of the eight ownership categories differs from printed overall residential-use building count by **–140 in total** and at most **14 per county**, due published Zensus Cell-Key confidentiality perturbation. Nothing is forced to be additive. The actual building population is still 19,957,288 summed over 400 original county totals, regardless of unknown owner cells.
+
+**Critical original source mapping issue:** The reporter's numeric code order is **not** the ordinary list order of the questionnaire owner types. `EIGENTUM__2` (16.944m) is **consistent with** the independently published nationwide private-person aggregate, while `EIGENTUM__1` (1.771m) **matches** the national common apartment-owner association magnitude. A generic questionnaire list would have reversed them; consequently, the original 8-column vector **is preserved by source code with individual semantic labels NOT VERIFIED**, until an independent original data dictionary establishes the exact map for all eight. The source records and model explicitly say `individual_owner_code_name_mapping_confirmed = false`. No incorrect label is allowed into the machine data.
+
+[New executable R+V ownership-code sensitivity](../../research_runners/rva_2025_kreis_original_owner_code_sensitivity_v0.py) uses two numerically complete original source-code columns as alternative **fictional 50% relative carrier-affinity bonuses** versus a physical-building baseline; all **400 original Kreis** building counts remain a valid alternative. It is not an observed insurer ownership mix. The public **R+V Allgemeine solo** 2025 national 1,060,546 connected-building contracts and 997,710 TEUR annual booked property gross premiums remain exactly conserved (whole contracts, euro-cents). Its source validator recalculates the exact canonical source hash from the 400 committed rows and refuses changed/filled/relabelled source classes, wrong HGB company scope or global totals.
+
+```bash
+python research_runners/zensus_kreis_original_ownership_v0.py --official-live
+python research_runners/rva_2025_kreis_original_owner_code_sensitivity_v0.py
+python -m unittest discover -s tests -p 'test_zensus_kreis_original_ownership_v0.py' -v
+python -m unittest discover -s tests -p 'test_rva_2025_kreis_original_owner_code_sensitivity_v0.py' -v
+```
+
+### Georeferencing and hypothetical property reconstruction: follow-up sources and rights
+
+- Official [Zensus 2022 100m / 1km / 10km raster products](https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Zensus2022/_publikationen.html) are published **for free use with attribution**, including building type/size, construction age and dwelling counts. These **aggregated grid cells** are a candidate for **synthetic coordinates inside valid building-density cells**. They do **not** disclose an actual R+V insured address and 100m cells are not necessarily precise building sites. The original chosen ZIP, coordinate reference, cell keys, CKM suppression and per-file licence require a new exact-byte audit before adoption.
+- Official [BKG HU-DE house outlines](https://gdz.bkg.bund.de/index.php/default/amtliche-hausumringe-deutschland-hu-de.html) are georeferenced footprints but the central Germany-wide product **requires eligibility and licensing**, with restricted access. Publication of the HU-DE description does not grant open bulk access. Existing catalogue notes Bavaria/NRW **state-level open LoD2**, Overture/OSM alternative datasets, with their own source-date/geometry/type and rights controls.
+- Official [Destatis construction price index 61261](https://genesis.destatis.de/datenbank/online/statistic/61261) and existing **NHK 2010** building archetype table in the public ImmoWertV provide **construction-cost scenario factors**, but not real R+V sums insured, damageable TIV, building renovations, solar PV or occupancy. Do not treat annual booked premium as TIV or derive deductible/treaty from these public statistics.
+
+**New scientific status:** Company national 2025 stock is observed. Real physical 2022 Kreis counts, ten building-age classes, and now eight **source-coded ownership count classes** are observed. Actual 2025 R+V Kreis shares, source-to-insurer conversion rates, individual insured building coordinates, roof material/age, replacement sums insured, policy flood endorsements, outward RI and German event losses remain entirely **unobserved**. Ownership, age and total-building counts are **marginals**, not a proven joint county age×ownership table; do not infer a joint distribution by simple multiplication without declaring a coupling assumption.
