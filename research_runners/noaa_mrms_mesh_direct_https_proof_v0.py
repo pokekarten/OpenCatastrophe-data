@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-"""Opt-in, bounded direct HTTPS provenance check for two exact NOAA MRMS files.
+"""Opt-in, bounded direct HTTPS provenance check for pinned exact NOAA MRMS files.
 
 This is NOT a general-purpose scraper. It is intentionally excluded from
 unconditional check_all/CI to avoid network or NOAA outages failing the repo.
@@ -27,6 +27,7 @@ from research_runners.noaa_mrms_mesh_original_preflight_v0 import (
     MRMSPreflightError,
     SOURCE_OBJECTS,
     audit_original,
+    nominal_grid_cell,
 )
 
 ORIGIN = "https://noaa-mrms-pds.s3.amazonaws.com/"
@@ -89,6 +90,21 @@ def fetch_and_audit(product: str, opener: Any = None) -> dict:
         raise DirectSourceProofError("original byte/GRIB2 integrity gate failed: " + str(exc)) from exc
     if receipt["decoded_grib_bytes"] <= 0:
         raise DirectSourceProofError("empty original GRIB2 payload")
+    site_cell = None
+    if product == "mesh_keller_2021":
+        # Ground observation: NCEI Storm Events #956694, Keller Alta Vista.
+        # The source's UTC reference time is 21 seconds before the report.
+        if receipt["reference_utc"] != "2021-04-29T01:36:39+00:00":
+            raise DirectSourceProofError("Keller radar reference timestamp drift")
+        grid = receipt["grid_geography"]
+        if grid.get("geometry_checked") is not True:
+            raise DirectSourceProofError("Keller grid origin/increments not verified")
+        site_cell = nominal_grid_cell(grid, 32.92, -97.29)
+        if not site_cell["within_source_grid_bounds"]:
+            raise DirectSourceProofError("Keller observed report outside MESH grid")
+        site_cell["ncei_storm_events_report_id"] = 956694
+        site_cell["separately_reported_hail_diameter_mm"] = 63.5
+        site_cell["radar_source_utc_vs_report_seconds"] = -21
     return {
         "schema_version": "noaa-mrms-direct-https-source-proof-v0",
         "provider_https_host": "noaa-mrms-pds.s3.amazonaws.com",
@@ -106,12 +122,14 @@ def fetch_and_audit(product: str, opener: Any = None) -> dict:
             "parameter_number": receipt["parameter_number"],
             "grid_template_number": receipt["grid_template_number"],
             "grid_points_declared": receipt["grid_points_declared"],
+            "grid_geography": receipt["grid_geography"],
             "reference_utc": receipt["reference_utc"],
             "originating_center": receipt["originating_center"],
             "originating_subcenter": receipt["originating_subcenter"],
             "product_template_number": receipt["product_template_number"],
             "unit_per_published_noaa_table": receipt["source_parameter_unit_from_noaa_table"],
         },
+        "independent_ground_report_grid_location": site_cell,
         "source_bytes_written_to_disk": False,
         "source_bytes_uploaded_to_github": False,
         "scientific_model_admission": False,
