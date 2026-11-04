@@ -93,6 +93,12 @@ class GeocodeQualityTests(unittest.TestCase):
         self.assertGreater(result["rank1_p95_error_m"], result["rank1_median_error_m"])
         self.assertEqual(result["status_counts"]["known_shared_lineage"], 1)
 
+    def test_unhashable_precision_fails_as_contract_error(self):
+        case = row()
+        case["candidates"][0]["precision"] = []
+        with self.assertRaises(GeocodeEvidenceError):
+            benchmark([case])
+
     def test_invalid_score_threshold_fails_closed(self):
         for val in (-1, math.inf, True, 1e8):
             with self.subTest(threshold=val), self.assertRaises(GeocodeEvidenceError):
