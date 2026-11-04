@@ -57,3 +57,48 @@ until the dedicated workflow passes at the matching Git commit**.
 If the original source schema differs from the presumed UTF-8 CSV reader,
 do not weaken file hash/date/size checks: inspect the original publisher
 format and adjust only the parser with new synthetic regression evidence.
+
+## Verified original-data execution: first exact GitHub run
+
+The primary [GitHub original CSV workflow 41799817869](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41799817869) **passed** its ten synthetic security/parser tests and retrieved and inspected the pinned **real 2026-11-02 ACT address CSV** at 2026-11-04 approximately 08:29 UTC.
+
+The result from **original publisher bytes**, not a synthetic count or metadata inference:
+
+| Original-source property | Observed |
+| --- | ---: |
+| Full original file bytes | **28,209,815** |
+| Published original MD5, independently matched | `946114c1a24b49471b580bc225e4cb25` |
+| Original downloaded file SHA-256 | `f163ed856200eedd8b501da2d7787e01ee373be1a55a4d79abcf57c96982a99c` |
+| Actual CSV delimiter | semicolon (`;`) |
+| Actual original CSV columns | **13** |
+| Actual original address rows | **179,768** |
+| Valid numeric/in-range WGS84 latitude/longitude pairs | **179,768** |
+| Missing latitude/longitude pairs | **0** |
+| Malformed/out-of-range latitude/longitude pairs | **0** |
+| Extra repeated exact coordinate-text pairs | **33** |
+
+The 13 original field **names**, safely observed without values:
+`rue`, `numero`, `localite`, `code_postal`,
+`id_caclr_rue`, `id_caclr_bat`, `lat_wgs84`, `lon_wgs84`,
+`coord_est_luref`, `coord_nord_luref`, `id_geoportail`,
+`commune`, `lau2`.
+
+**Crucial limitations:** in-range WGS84 pairs are only syntactically valid;
+the current run did **not** verify LUREF/EPSG:2169 transformation parity,
+building polygon containment, survey-grade positional accuracy or public-source
+independence. The **33** repeated-coordinate excess pairs are not, by themselves,
+wrong/duplicated addresses or duplicate insured buildings: ACT explicitly
+warns that distinct addresses can share the same coordinate. The observed
+`id_caclr_bat` is an **original address-register field name**, not proof that
+it matches GeoBase's separately proven `BU_BuildingID` namespace.
+No raw record was printed or persisted. Original bytes were discarded after
+the bounded GitHub job.
+
+## Next causal proof
+
+Use exactly this content SHA-256 and 13-column schema to add a bounded
+**independent LUREF↔WGS84 numerical transformation QA** with
+`pyproj.Transformer(always_xy=True)`, and source-ID completeness/one-to-many
+aggregate diagnostics, then a separate rights-reviewed address-to-building
+geometry overlay. Keep source-level independence and an unbiased manual
+holdout explicit; do **not** infer a building crosswalk from column names.
