@@ -22,7 +22,15 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "access" / "globaldamwatch.gdw.v1.0.json"
 URL = "https://api.figshare.com/v2/articles/25988293/versions/1"
 DOI = "10.6084/m9.figshare.25988293.v1"
-ARCHIVES = ("GDW_v1_0_gdb.zip", "GDW_v1_0_shp.zip")
+# Frozen metadata verified from the exact original Figshare v1 REST response, 2026-11-04.
+# Two alternate GIS archives AND one separately listed final technical PDF.
+# These are provider-declared identities, not independent download hashes.
+FROZEN_FILES = {
+    "GDW_TechDoc_v1_0.pdf": (47913739, 716288, "5b2fc93c384f674414fa711b657bef5e"),
+    "GDW_v1_0_gdb.zip": (47913742, 57476758, "410d1ed16312ac613975fd092c193c65"),
+    "GDW_v1_0_shp.zip": (47913754, 69745749, "5064cf2315ef6159d9133b03596e761a"),
+}
+EXPECTED_TOTAL_BYTES = 127938795
 MAX_BYTES = 131072
 TIMEOUT = 30
 PROFILE = "oc-gdw-figshare-version1-metadata-receipt-v0"
@@ -90,12 +98,12 @@ def inspect_metadata(raw: bytes) -> dict[str, Any]:
     ):
         raise ProbeBlocked("provider licence URI drift")
     files = item.get("files")
-    if type(files) is not list or len(files) != 2:
-        raise ProbeBlocked("GDW must have exactly two alternate v1 archive files")
+    if type(files) is not list or len(files) != len(FROZEN_FILES):
+        raise ProbeBlocked("GDW version 1 must list two GIS archives plus its separate final PDF")
     out: list[dict[str, Any]] = []
     for f in files:
-        if type(f) is not dict or f.get("name") not in ARCHIVES:
-            raise ProbeBlocked("unreviewed archive filename")
+        if type(f) is not dict or f.get("name") not in FROZEN_FILES:
+            raise ProbeBlocked("unreviewed original-release filename")
         if type(f.get("id")) is not int or f["id"] <= 0:
             raise ProbeBlocked("invalid Figshare file identifier")
         if type(f.get("size")) is not int or f["size"] <= 0:
@@ -103,12 +111,19 @@ def inspect_metadata(raw: bytes) -> dict[str, Any]:
         md5 = f.get("supplied_md5") or f.get("computed_md5")
         if md5 is not None and (type(md5) is not str or re.fullmatch(r"[a-fA-F0-9]{32}", md5) is None):
             raise ProbeBlocked("invalid provider-declared MD5")
+        if (f["id"], f["size"], md5) != FROZEN_FILES[f["name"]]:
+            raise ProbeBlocked("provider-declared source file identity/hash changed")
+        if f.get("is_link_only") is not False:
+            raise ProbeBlocked("original asset unexpectedly became external link")
         out.append({"filename": f["name"], "figshare_file_id": f["id"],
                     "provider_declared_bytes": f["size"], "provider_declared_md5": md5})
-    if {f["filename"] for f in out} != set(ARCHIVES):
-        raise ProbeBlocked("missing or duplicated GDW archive representation")
+    if {f["filename"] for f in out} != set(FROZEN_FILES):
+        raise ProbeBlocked("missing or duplicated GDW release asset")
+    if type(item.get("size")) is not int or item["size"] != EXPECTED_TOTAL_BYTES:
+        raise ProbeBlocked("GDW article total declared size changed")
     return {"article_id": 25988293, "article_version": 1, "version_doi": DOI,
-            "source_licence": "CC BY 4.0", "archive_metadata": sorted(out, key=lambda x: x["filename"]),
+            "source_licence": "CC BY 4.0", "release_file_metadata": sorted(out, key=lambda x: x["filename"]),
+            "gis_archive_count": 2, "final_technical_pdf_count": 1,
             "provider_archive_bytes_verified": False}
 
 
