@@ -67,6 +67,7 @@ class WatermarkPreflightTest(unittest.TestCase):
         for field, value in (("watercourse", "Le Puiseaux"),
                              ("longitude_wgs84", True),
                              ("latitude_wgs84", 10 ** 3000),
+                             ("longitude_wgs84", float("nan")),
                              ("latitude_wgs84", -90)):
             x = mark()
             x[field] = value
