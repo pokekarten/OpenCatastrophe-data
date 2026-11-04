@@ -70,7 +70,7 @@ def default_open(url):
     handler = BoundedRedirects()
     opener = build_opener(ProxyHandler({}), HTTPSHandler(), handler)
     request = Request(url, headers={
-        "Accept": "application/octet-stream, application/zip",
+        "Accept": "*/*",
         "Accept-Encoding": "identity",
         "User-Agent": "OpenCatastrophe-GRWL-trusted-original-byte-evidence/0",
     }, method="GET")

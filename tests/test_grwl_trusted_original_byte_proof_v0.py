@@ -108,6 +108,22 @@ class GRWLTrustedOriginalTests(TestCase):
             with self.assertRaises(OriginalAcquisitionError):
                 download_fixed("2018",target,open_stream=lambda url: FakeResponse())
 
+    def test_original_request_accepts_provider_selected_media_type(self):
+        class RecordingOpener:
+            request = None
+
+            def open(self, request, timeout):
+                self.request = request
+                return FakeResponse(b"synthetic")
+
+        opener = RecordingOpener()
+        with patch("research_runners.grwl_trusted_original_byte_proof_v0.build_opener",
+                   return_value=opener):
+            source = default_open(ORIGINAL_URLS["2018"])
+            source.close()
+        self.assertEqual(opener.request.get_header("Accept"), "*/*")
+        self.assertEqual(opener.request.get_header("Accept-encoding"), "identity")
+
     def test_non_allowlisted_url_rejected_before_network(self):
         with self.assertRaises(OriginalAcquisitionError):
             default_open("https://attacker.invalid/evil.zip")

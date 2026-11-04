@@ -20,6 +20,10 @@ Zenodo original record evidence:
 
 Original provider API endpoints are frozen in `research_runners/grwl_trusted_original_byte_proof_v0.py`. It performs only anonymous HTTPS GET with bounded redirect host rules (Zenodo/CERN/AWS), no GitHub credentials in the checkout, a byte cap matching each provider record, streaming source-MD5/SHA-256 checks and deletion of temporary original ZIP bytes after source validation.
 
+## Provider content negotiation finding (2026-11-04)
+
+The second trusted-main run, commit `433330b16cf6694688519d48f4a31f4f373a8026`, workflow [41821762685](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41821762685), successfully reached the live source step but received `original Zenodo HTTP 406; no source proof` on the first download. The prior client advertised `Accept: application/octet-stream, application/zip`; this follow-up switches only that request header to `Accept: */*` while preserving `Accept-Encoding: identity`, two exact source URLs, fixed byte-length/MD5/SHA256 integrity, bounded redirects and fail-closed output. The change avoids assuming the provider's response MIME and is *not* evidence of successful original ZIP download until a reviewed-main run logs the exact source hashes. No redirect weakening, credential acquisition or data admission is authorized.
+
 ## CI execution and evidence boundaries
 
 `.github/workflows/grwl-original-summary-byte-receipt.yml` follows the existing `ghcnd-station-prefix.yml` review pattern:
