@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: NOAA MRMS two-object direct HTTPS proof
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/noaa-mrms-mesh-direct-https-proof.yml"
+      - "research_runners/noaa_mrms_mesh_direct_https_proof_v0.py"
+      - "research_runners/noaa_mrms_mesh_original_preflight_v0.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mrms-direct-proof-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-fixed-historical-objects:
+    name: Direct NOAA HTTPS fixed MESH object checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Checkout exact reviewed workflow ref, without credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Verify original NOAA MESH bytes, TLS, gzip CRC and GRIB metadata
+        run: python -m research_runners.noaa_mrms_mesh_direct_https_proof_v0 --product mesh
+      - name: Verify original NOAA 30-minute MESH-max bytes, TLS, gzip CRC and GRIB metadata
+        run: python -m research_runners.noaa_mrms_mesh_direct_https_proof_v0 --product mesh_max_30min
