@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-04`  
 **Purpose:** Non-admission discovery of official cadastral parcel, land-register geometry and public property-sale sources for synthetic CAT exposures, with strict field-level property title and personal-data restrictions.
 
-**Entries:** 11
+**Entries:** 12
 
 ## NRW INSPIRE ALKIS cadastral parcels WFS
 
@@ -182,3 +182,18 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Distinct from already catalogued Spanish INSPIRE Buildings. Do not use protected owner/co-owner names or protected cadastral values from authenticated services; provider explicitly gates these to authorised users. No individual insurance cover or replacement value; exact national and local terms, attribute cardinality and approved raw fields require review.
+
+## HM Land Registry Price Paid transaction UID to UPRN lookup
+
+**Candidate ID:** `uk.hmlr.transaction-uid-uprn-lookup.2026`  
+**Provider:** HM Land Registry / Ordnance Survey  
+**Categories:** `transaction_address_crosswalk`, `uprn_property_reference`, `england_wales`  
+**Spatial scope:** England and Wales, addressable registered sale properties only  
+**Temporal scope:** Published 2026-08-28 and updated monthly; September 2026 first releases, without backdating  
+**Resolution / granularity:** Two-column CSV with Price Paid transaction unique identifier and UPRN (addressable-property reference, not cadastral polygon or building ID); one-to-many per sale possible  
+**Potential roles:** `price_paid_to_addressable_unit_bridge`, `uk_building_vs_dwelling_crosswalk_research`, `freehold_leasehold_match_coverage_challenge`  
+**Access hint:** `uk_ogl_hmlr_plus_ordnance_survey_attribution_addressbase_paf_source_terms_review`  
+**Authoritative source:** <https://www.gov.uk/government/statistical-data-sets/transaction-unique-identifier-and-uprn-look-up-table-dataset>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Published with OGL statements for both HM Land Registry and OS; any join with Price Paid address components remains subject to separate third-party address terms. Official technical spec says non-backdated, postcode address file-dependent, often absent for land-only sales and newly built or unmatched addresses; a single sale can have several UPRNs e.g. flats. UPRN is an addressable location, not a freehold polygon, building, owner, policy record, reinstatement cost or TIV. Distinct from transaction UID to INSPIRE ID lookup which excludes leaseholds.
