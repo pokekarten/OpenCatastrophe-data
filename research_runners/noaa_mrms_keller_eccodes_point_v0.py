@@ -181,7 +181,8 @@ def main() -> int:
         original = fetch_pinned_original_object(PRODUCT)
         receipt = decode_original_keller(original)
     except (DirectSourceProofError, PointDecodeError) as exc:
-        print("BLOCKED: " + str(exc), file=sys.stderr)
+        # Never echo upstream exception text, source bodies or environment data.
+        print("BLOCKED: fixed NOAA source or ecCodes point validation failed", file=sys.stderr)
         return 2
     print(json.dumps(receipt, sort_keys=True, indent=2))
     return 0
