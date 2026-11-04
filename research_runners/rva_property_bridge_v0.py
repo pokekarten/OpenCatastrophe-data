@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Cross-repo R+V solo property-premium receipt -> explicitly fictional regional TIV.
 
-Reads an FFBK canonical source file from disk; never infers sites/TIV from premiums.
+Reads a separately verified official SFCR receipt; never infers sites/TIV from premiums.
 No external network or database access. Output is NOT model/OED-ready.
 """
 from __future__ import annotations
@@ -11,6 +11,7 @@ import argparse
 from decimal import Decimal, InvalidOperation, ROUND_FLOOR
 from hashlib import sha256
 import json
+import tomllib
 from pathlib import Path
 import re
 
@@ -20,8 +21,8 @@ class RvaBridgeError(ValueError):
 
 
 _PROFILE_ID = "RVA_DE_2025"
-_SOURCE_SCHEMA = "FFBK_SFCR_SOLO_CEDANT_REINSURER_PUBLIC_PROFILES_V0"
-_SOURCE_PROPERTY_GWP_M = Decimal("2223.182")  # pinned, externally reviewed FFBK observation
+_SOURCE_SCHEMA = "RVA_PUBLIC_SOLO_SFCR_PROFILE_V0"
+_SOURCE_PROPERTY_GWP_M = Decimal("2223.182")  # official issuer source, not exposure data
 _SOURCE_TOTAL_GWP_M = Decimal("5992.306")
 _REGION = re.compile(r"DE_[A-Z][A-Z0-9_]{1,39}\Z")
 _PERILS = {"windstorm", "hail", "flood", "earthquake"}
@@ -69,7 +70,7 @@ def _source_profile(document: dict) -> dict:
     if (type(document) is not dict or document.get("schema_version") != _SOURCE_SCHEMA
             or document.get("calibration_status") != "NOT_CALIBRATED"
             or type(document.get("profiles")) is not list):
-        raise RvaBridgeError("unexpected FFBK source schema/status")
+        raise RvaBridgeError("unexpected solo SFCR source schema/status")
     profiles = [p for p in document["profiles"] if p.get("profile_id") == _PROFILE_ID]
     if len(profiles) != 1:
         raise RvaBridgeError("expected exactly one RVA_DE_2025 solo profile")
@@ -134,7 +135,7 @@ def bridge(source: dict, scenario: dict) -> dict:
     return {"status": "SCENARIO_ONLY_NOT_OASIS_ADMISSIBLE", "source_profile_id": _PROFILE_ID,
             "reported_fire_other_property_gwp_eur": str(_SOURCE_PROPERTY_GWP_M * 1_000_000),
             "reported_total_solo_gwp_eur": str(_SOURCE_TOTAL_GWP_M * 1_000_000),
-            "ffbk_input_sha256": _digest(source), "scenario_sha256": _digest(scenario),
+            "public_sfcr_input_sha256": _digest(source), "scenario_sha256": _digest(scenario),
             "assumed_total_tiv_eur": str(tiv), "assumed_total_sites": sites,
             "perils_hypothetical": sorted(perils), "fictional_region_rows": out,
             "company_site_geography_observed": False, "company_tiv_observed": False,
@@ -147,16 +148,16 @@ def bridge(source: dict, scenario: dict) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("ffbk_source", type=Path, help="FFBK solo_sfcr_de_fr_profiles_2025_v0.json")
-    parser.add_argument("fictional_scenario", type=Path, help="synthetic parameter scenario JSON")
+    parser.add_argument("public_sfcr_receipt", type=Path, help="public R+V solo 2025 SFCR TOML receipt")
+    parser.add_argument("fictional_scenario", type=Path, help="synthetic parameter scenario TOML")
     args = parser.parse_args()
     try:
-        for file in (args.ffbk_source, args.fictional_scenario):
+        for file in (args.public_sfcr_receipt, args.fictional_scenario):
             if file.stat().st_size > 2_000_000:
                 raise RvaBridgeError("file size exceeds 2 MB")
-        result = bridge(json.loads(args.ffbk_source.read_text(encoding="utf-8")),
-                        json.loads(args.fictional_scenario.read_text(encoding="utf-8")))
-    except (OSError, UnicodeError, json.JSONDecodeError, RvaBridgeError) as exc:
+        result = bridge(tomllib.loads(args.public_sfcr_receipt.read_text(encoding="utf-8")),
+                        tomllib.loads(args.fictional_scenario.read_text(encoding="utf-8")))
+    except (OSError, UnicodeError, tomllib.TOMLDecodeError, RvaBridgeError) as exc:
         parser.exit(2, f"BLOCKED: {exc}\n")
     print(json.dumps(result, sort_keys=True, ensure_ascii=True))
     return 0
