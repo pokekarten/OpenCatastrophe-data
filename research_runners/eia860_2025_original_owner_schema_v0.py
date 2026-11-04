@@ -18,7 +18,13 @@ import re
 from xml.etree import ElementTree as ET
 from zipfile import ZipFile, BadZipFile
 
-from research_runners import eia860_annual_2025_original_zip_v0 as eia
+try:
+    from research_runners import eia860_annual_2025_original_zip_v0 as eia
+except ModuleNotFoundError as exc:
+    if exc.name != "research_runners":
+        raise
+    # Direct CLI invocation: Python places the script directory on sys.path.
+    import eia860_annual_2025_original_zip_v0 as eia
 
 OWNER_MEMBER = "4___Owner_Y2025.xlsx"
 MAX_OWNER_XLSX = 1_200_000
