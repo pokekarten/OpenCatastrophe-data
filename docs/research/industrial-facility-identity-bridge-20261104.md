@@ -56,7 +56,7 @@ Each native-to-normalized transform still needs a pinned original source version
 
 The original [EPA ECHO FRS download dictionary](https://echo.epa.gov/tools/data-downloads/frs-download-summary) documents native `FRS_FACILITIES.csv` columns `REGISTRY_ID`, `LATITUDE_MEASURE`, `LONGITUDE_MEASURE` and facility name/address attributes. Its ECHO subset differs from EPA's separately downloadable full FRS inventory; do **not** merge their observation perimeters or vintages without a crosswalk.
 
-The new [bounded native adapter](../../research_runners/epa_frs_native_projection_v0.py) and [synthetic tests](../../tests/test_epa_frs_native_projection_v0.py) consume an **already legally acquired, manually bounded** original FRS facilities CSV (max 2 MB / 10,000 rows), validate provided original-byte SHA-256, real release date, mandatory native headers, unique source identifiers and syntactically valid coordinate pairs, and generate deterministic sorted `frs_id,country_code,latitude,longitude` rows for the existing FRS-GEM crosswalk. Raw names and addresses are **not** projected; no source bytes are committed or downloaded by this script. The CLI writes the projection only to an explicitly supplied, previously nonexistent file *outside* the repository and prints aggregate receipts.
+The new [bounded native adapter](../../research_runners/epa_frs_native_projection_v0.py) and [synthetic tests](../../tests/test_epa_frs_native_projection_v0.py) consume an **already legally acquired, manually bounded native-format FRS facilities CSV slice** (max 2 MB / 10,000 rows), validate the caller-supplied slice SHA-256, real release date, mandatory native headers, unique source identifiers and syntactically valid coordinate pairs, and generate deterministic sorted `frs_id,country_code,latitude,longitude` rows for the existing FRS-GEM crosswalk. Raw names and addresses are **not** projected; no source bytes are committed or downloaded by this script. The CLI writes the projection only to an explicitly supplied, previously nonexistent file *outside* the repository and prints aggregate receipts.
 
 **Important geographic restraint:** The currently consulted provider dictionary confirms the native latitude/longitude fields, but not sufficient coordinate datum, coordinate quality and transformation evidence for this audit. Therefore the CLI **suppresses all coordinates by default** and only produces an ID-safe projection. A direct Python caller can set `coordinates_approved=True` for a separately reviewed, exact-source, datum-verified local experiment, but that flag is a caller assertion, **not independently authenticated provider evidence** and does not grant any model admission. Never interpret coordinate suppression as a statement that the facility lacks a location. This stage cannot produce a geospatially accepted crosswalk.
 
@@ -65,10 +65,12 @@ Example with local pre-reviewed input (the placeholders are not usable file iden
 ```bash
 python -m unittest discover -s tests -p 'test_epa_frs_native_projection_v0.py' -v
 python research_runners/epa_frs_native_projection_v0.py \
-  --original-facilities-csv /reviewed/private/FRS_FACILITIES_slice.csv \
-  --original-csv-sha256 ORIGINAL_SLICE_SHA256 \
+  --native-facilities-slice-csv /reviewed/private/FRS_FACILITIES_slice.csv \
+  --native-slice-sha256 NATIVE_SLICE_SHA256 \
   --release-date YYYY-MM-DD \
   --output /reviewed/private/frs_id_only_projection.csv
 ```
 
 This is a verified *transform contract*, not an EPA original dataset acquisition or an actual FRS-GEM match. A useful next measurement is the exact original ECHO-FRS ZIP or full-FRS source identity, the native facilities projection coverage, and an independent fixed coordinate reference/accuracy receipt before enabling geospatial comparison.
+
+**Original-file identity correction:** The hash of a manually bounded native-format FRS CSV slice proves only the supplied *slice* bytes, not the EPA provider ZIP/file, its publisher version, or the original extraction process. The adapter machine report explicitly sets `publisher_original_file_bytes_authenticated=false` and `native_csv_slice_is_publisher_original=false`. Original provider hashes, exact licence and audited extraction provenance remain separate prerequisites before a real asset join.
