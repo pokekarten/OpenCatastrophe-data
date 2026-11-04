@@ -143,7 +143,14 @@ def _review_one(item):
         "source_type": item["mark_evidence"],
         "reported_event_maximum": item["event_maximum_flag"],
         "arithmetic_reconciled": True,
-        "independent_physical_trace_candidate": physical,
+        "physical_event_maximum_trace_candidate": physical,
+        # Being an actual field mark does NOT establish independent validation:
+        # the official 2017 DRIEE reconstruction used 68 of 148 archived marks.
+        # The original 68-mark identity list has not been acquired/attested.
+        "independent_physical_trace_candidate": False,
+        "atlas_2017_calibration_membership": "unknown",
+        "atlas_2021_revision_calibration_membership": "unknown",
+        "independent_atlas_holdout_established": False,
         "provider_original_bytes_attested": False,
         "water_surface_uncertainty_m_established": False,
         "local_ground_elevation_verified": False,
@@ -163,7 +170,13 @@ def review_marks(rows):
     return {
         "profile": "oc-loing-2016-ngf1969-field-mark-research-v0",
         "marks_reviewed": len(reviewed),
-        "physical_trace_candidates": sum(r["independent_physical_trace_candidate"] for r in reviewed),
+        "physical_trace_candidates": sum(
+            r["physical_event_maximum_trace_candidate"] for r in reviewed
+        ),
+        "independent_atlas_holdout_candidates": 0,
+        "used_2017_driee_calibration_mark_count_documented": 68,
+        "2017_atlas_input_mark_identity_list_attested": False,
+        "2021_ddt_zi_challenge_lineage_attested": False,
         "marks": reviewed,
         "source_original_bytes_attested": False,
         "datum_transformation_authorized": False,
