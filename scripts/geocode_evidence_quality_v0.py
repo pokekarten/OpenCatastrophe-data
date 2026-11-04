@@ -133,7 +133,7 @@ def benchmark(rows: list[dict[str, Any]], *, threshold_metres: float = 50.0) -> 
                 raise GeocodeEvidenceError("duplicate source feature within one case")
             seen_sources.add((family, source_id, snapshot))
             _date(c["as_of"], "candidate.as_of")
-            if c["precision"] not in _ALLOWED_PRECISION:
+            if type(c["precision"]) is not str or c["precision"] not in _ALLOWED_PRECISION:
                 raise GeocodeEvidenceError("unknown candidate precision")
             ranked.append((c["rank"], c))
         ranked.sort(key=lambda item: item[0])
