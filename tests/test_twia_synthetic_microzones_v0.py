@@ -165,3 +165,90 @@ class SyntheticTWIAZoneTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class SyntheticTWIAIntegratedCSVTests(unittest.TestCase):
+    """Uses the actual merged source checker, not a test stub."""
+
+    def test_real_source_checker_to_alternative_worlds_with_fictional_csv(self):
+        import csv
+        from tempfile import TemporaryDirectory
+        from twia_liability_2025_reconciliation_v0 import COUNTY_FIELDS, CLASS_FIELDS
+        from twia_synthetic_microzones_v0 import allocate_from_csv
+
+        with TemporaryDirectory() as td:
+            county_path = Path(td) / "county.csv"
+            classes_path = Path(td) / "classes.csv"
+            class_rows = []
+            county_rows = []
+            for county in COUNTIES:
+                total_p = total_direct = total_premium = 0
+                for policy_class in CLASSES:
+                    n = 3 if policy_class == "Commercial" else 2
+                    direct = 101 * n
+                    premium = 9 * n
+                    class_rows.append({
+                        "record_kind": "county_class",
+                        "report_as_of": "2025-12-31", "county": county,
+                        "policy_class": policy_class,
+                        "policies_in_force": str(n),
+                        "risks_in_force": str(n + 1 if policy_class == "Commercial" else n),
+                        "direct_liability_usd": str(direct),
+                        "indirect_liability_usd": "7",
+                        "ytd_written_premium_usd": str(premium),
+                    })
+                    total_p += n
+                    total_direct += direct
+                    total_premium += premium
+                county_rows.append({
+                    "record_kind": "county", "report_as_of": "2025-12-31",
+                    "county": county, "policies_in_force": str(total_p),
+                    "direct_liability_usd": str(total_direct),
+                    "ytd_written_premium_usd": str(total_premium),
+                })
+            for out, header, rows in [
+                (county_path, COUNTY_FIELDS, county_rows),
+                (classes_path, CLASS_FIELDS, class_rows),
+            ]:
+                with out.open("w", encoding="utf-8", newline="") as stream:
+                    writer = csv.DictWriter(stream, fieldnames=header)
+                    writer.writeheader()
+                    writer.writerows(rows)
+            package = allocate_from_csv(county_path, classes_path, mode="synthetic")
+            self.assertTrue(package["source_marginals_conserved"])
+            self.assertEqual(len(package["scenarios"]), 2)
+            self.assertEqual(len(package["scenarios"][0]["cells"]), 135)
+            self.assertEqual(package["source_control_mode"], "synthetic")
+            self.assertFalse(package["original_provider_bytes_verified"])
+            self.assertFalse(package["model_input_approved"])
+
+    def test_real_source_checker_rejects_fictional_csv_in_published_mode(self):
+        """Even internally consistent invented data fail TWIA external 2025 totals."""
+        from tempfile import TemporaryDirectory
+        import csv
+        from twia_liability_2025_reconciliation_v0 import COUNTY_FIELDS, CLASS_FIELDS
+        from twia_synthetic_microzones_v0 import allocate_from_csv
+        with TemporaryDirectory() as td:
+            county_path, class_path = Path(td) / "county.csv", Path(td) / "class.csv"
+            for out, cols, records in [
+                (county_path, COUNTY_FIELDS, [
+                    {"record_kind": "county", "report_as_of": "2025-12-31", "county": county,
+                     "policies_in_force": "3", "direct_liability_usd": "300",
+                     "ytd_written_premium_usd": "30"}
+                    for county in COUNTIES
+                ]),
+                (class_path, CLASS_FIELDS, [
+                    {"record_kind": "county_class", "report_as_of": "2025-12-31",
+                     "county": county, "policy_class": cls,
+                     "policies_in_force": "1", "risks_in_force": "1",
+                     "direct_liability_usd": "100", "indirect_liability_usd": "0",
+                     "ytd_written_premium_usd": "10"}
+                    for county in COUNTIES for cls in CLASSES
+                ]),
+            ]:
+                with out.open("w", encoding="utf-8", newline="") as stream:
+                    writer=csv.DictWriter(stream, fieldnames=cols)
+                    writer.writeheader()
+                    writer.writerows(records)
+            with self.assertRaisesRegex(SyntheticAllocationError, "reconciliation failed"):
+                allocate_from_csv(county_path, class_path, mode="published-2025")
