@@ -198,6 +198,13 @@ class EIA860AnnualOriginalTests(unittest.TestCase):
         self.assertEqual(rc, 2)
         self.assertIn("BLOCKED", buf.getvalue())
 
+    def test_epa_frs_cohort_is_unique_and_kept_separate_from_pa_challenge(self):
+        self.assertEqual(len(w.EPA_DE_CODES), 15)
+        self.assertEqual(len(set(w.EPA_DE_CODES)), 15)
+        self.assertTrue(all(v.isdigit() and str(int(v)) == v for v in w.EPA_DE_CODES))
+        self.assertNotIn(w.EPA_PA_CHALLENGE, w.EPA_DE_CODES)
+        self.assertEqual(w.EPA_PA_CHALLENGE, "3136")
+
     def test_blank_original_bytes_rejected(self):
         with self.assertRaises(w.EIA860ProofBlocked):
             run(b"")
