@@ -69,3 +69,44 @@ The dataset is CC BY 4.0; its final original manual asks not to rehost the
 entire unmodified source release without written consent. All provider
 bytes remain outside Git. Neither the structural proof nor GEOS audit
 grants CAT-model admission, redistribution or production DB writes.
+
+## Subsequent original GEOS result (verified 2026-11-04)
+
+The above second-stage audit subsequently **completed successfully** on the
+reviewed main revision, in the original-data runner:
+https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41886824276
+
+The fresh original download reproduced the **exact same full-archive
+SHA-256** `2fe0b367ed3fcfb299160cd9652b16a8a19338951026ee2ac91edfebf1f3b7ae`.
+Using pinned pyshp 2.3.1 / Shapely 2.1.2 (GEOS), the actual original-source
+aggregate receipt reported:
+
+| Source geometry diagnostic | Original source count |
+| --- | ---: |
+| Barrier point records | 41,145 |
+| Reservoir polygon records | 35,295 |
+| Point-only barrier IDs (no polygon) | 5,850 |
+| GEOS-valid native reservoir polygons | 35,074 |
+| GEOS-invalid native reservoir polygons | **221** |
+| Conversion/unparseable polygons | 0 |
+| Paired points strictly inside valid polygons | 35,074 |
+| Paired points on valid polygon boundaries | 0 |
+| Paired points outside valid polygons | 0 |
+| Pairs not assessable due to invalid native polygon | **221** |
+
+Thus all **assessable valid source polygons** contain their paired point;
+**221 / 35,295 = approximately 0.626%** of the source reservoir polygons are
+GEOS-invalid in the tested original Shapefile representation. This is not
+proof that the remaining 221 paired source points lie inside or outside
+those invalid geometries. A passing job confirms these *measurements*, not
+universal geometry validity or model readiness. Neither georeferencing nor
+original coordinate order was changed; no auto-repair was applied.
+
+Source evidence is frozen in
+`research_runners/gdw_v1_original_spatial_source_receipt_v0.py`.
+The next safety-preserving diagnostic classifies the **invalidity reasons**
+into coarse aggregate families (never printing GEOS' original-coordinate
+explanations). Only after reviewing those families should we evaluate
+whether an author-supported fix or an alternative original GDB representation
+changes the outcome. A secondary GEOS-based parser is not an independent
+hydraulic or scientific validation.
