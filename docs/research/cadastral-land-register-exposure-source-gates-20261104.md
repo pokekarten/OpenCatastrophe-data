@@ -70,3 +70,17 @@ Eight tests were run locally 2026-11-04 successfully before upload. One illustra
 **Additional public-sector research lead, not yet catalogued/admitted:** Geobasis NRW's [INSPIRE WFS 'öffentliches Eigentum'](https://www.geoportal.de/info/5b576174-4cdc-46cb-afaf-d7b3abf5923d) publishes property-level *public ownership* context; the metadata says nonpublic owners are anonymised. This might help *municipal/public-sector* synthetic portfolios after field-level privacy and rights screening. DO NOT pull or retain `Eigentümer`, `Buchungsblattkennzeichen`, identifying free text or individual property owners into public CAT training/analytics. Public ownership status is not evidence that the building is insured by R&V.
 
 **Before model integration:** run canonical landscape contract + generated Markdown parity tests in the repository; inspect new source's licence and original per-field rights; use a small polygon-only, non-personal provider sample with a fixed snapshot and hash; quantify multi-parcel, multi-building and many-address relationships. No scientific/rights/source admission follows automatically from passing these checks.
+
+## Original API accessibility probes — 2026-11-04
+
+| Candidate | Original bounded/metadata endpoint | Observed response | Interpretation |
+| --- | --- | --- | --- |
+| Netherlands BRK perceel | https://api.pdok.nl/kadaster/brk-kadastrale-kaart/ogc/v1/collections/perceel/items?f=json&limit=1 | HTTP **200**, application/geo+json, one feature; timeStamp=2026-11-04T20:16:15Z | Operational bounded machine-readable response for one record; not licence/admission or BAG relation |
+| NRW INSPIRE ALKIS parcels | https://www.wfs.nrw.de/geobasis/wfs_nw_inspire-flurstuecke_alkis?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities | HTTP **500**, OGC Proxy Internal Server Error | Access not confirmed through this fetch route; block any claim of available feature bytes |
+| NRW INSPIRE ALKIS parcels, canonical provider syntax | https://www.wfs.nrw.de/geobasis/wfs_nw_inspire-flurstuecke_alkis?REQUEST=GetCapabilities&SERVICE=WFS | HTTP **500**, same error | Failure was not merely explicit VERSION parameter; provider/proxy path-specific issue remains possible |
+
+Response metadata and one Dutch feature structure were inspected only; **no raw provider feature bytes, owner/title identifiers, geometry dumps or full transaction files committed**. Dutch sample fields include cadastral identifier, municipality, area, validity/status and MultiPolygon geometry. Official CC BY 4.0 statement and live response do not equal model admission. See https://api.pdok.nl/kadaster/brk-kadastrale-kaart/ogc/v1?f=html and https://api.pdok.nl/kadaster/brk-kadastrale-kaart/ogc/v1/collections/perceel?f=json.
+
+**NRW source-vintage drift:** Geoportal's WFS metadata lists ALKIS source vintage **2026-09-01**, but GovData's current listing describes **2026-10-01** (https://www.govdata.de/suche/daten/inspire-nw-flurstucke-grundstucke-alkis1b731). This is unresolved catalogue inconsistency; do not pin raw features until original service responds and its actual version is captured.
+
+**Pilot choice updated:** first bounded live candidate ingestion should use the Netherlands' confirmed OGC parcels endpoint. NRW remains a Germany/R&V priority, blocked pending an independent service-health/proxy retry or sanctioned official alternative download. None of these probes establish BAG crosswalk, physical building identity, building replacement cost, insurer coverage or TIV.
