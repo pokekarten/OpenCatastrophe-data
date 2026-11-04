@@ -30,6 +30,28 @@ Source-specific GitHub workflow `.github/workflows/rva-nrw-mastr-derived-ags-cro
 - The NRW `Potenzial Leistung` is **modeled physical future capability**, whereas `Bestand Leistung [kW] 2025` field’s **annual year-tag semantics have not been verified**. Do **not** subtract secondary 2026 overall PV installed capacity from an incompatible technical rooftop potential or infer the 2025 insurer’s policy attachment rate.
 - The secondary data are for **2026-10-02**, while NRW potential is listed **2026-03-12** and issuer solo HGB contracts are **2025-12-31**. Any 2025 insurer regional distribution remains a hypothetical hypothesis, not an estimate measured by solar capacity.
 
+## Real original 10,759-municipality secondary CSV + official 396 NRW crosswalk result
+
+Actual original-source read-only GitHub workflow [PR #1338](https://github.com/pokekarten/OpenCatastrophe-data/pull/1338) **succeeded** after source-specific synthetic tests. The exact secondary file as downloaded from GitHub at the pinned commit was **2,258,397 bytes**, full-source **SHA-256 `32678e605fb6cc9c80e6b9dbce01b8ba2fcfc2f88fea4fcde8ddf97e1478b7dd`**, and independently verified Git **blob SHA-1 `38d2427b792eb7418e214da18281973bcbe9f897`**. It contained 10,759 German municipalities; exactly the **same 396 8-digit AGS in NRW** as the original official statewide `Potenzial Leistung` XLSX. There were **zero missing and zero additional NRW keys** in the crosswalk. No city identifiers, municipally disaggregated PV counts, exact installation coordinates or user/owner names were printed or committed.
+
+For the secondary **MaStR-derived snapshot 2026-10-02**, the NRW sum of publicly reported **in-operation generating units** is:
+
+| Reported secondary category | Units, NRW 396 municipalities |
+| --- | ---: |
+| Gebäude-Solaranlagen | **876,684** |
+| Balkonkraftwerke | **302,851** |
+| Freiflächenanlagen | **1,259** |
+| Sonstige PV units | **28** |
+| **In Betrieb, total** | **1,180,822** |
+
+All 396 municipal category-unit counts add to their published `einheiten_in_betrieb` row count; category non-additive municipality count **zero**. This is a real check of the **secondary file** only, not an independent raw federal original verification.
+
+Secondary **reported all-type installed PV generator nameplate power**: **15,864,876.7 kWp (15.865 GWp)**. This is **not roof-only kWp**, and there is no installed-power-by-building-category within the narrow secondary table. The independently original-verified **NRW potential model** says **84,309,002.198 kW** technical total rooftop PV opportunity, and the source includes a separate year-labelled 2025 `Bestand` field. **No ratio** of the 15.865 GWp secondary installed all-PV value to 84.309 GW technical roof potential may be represented as actual roof saturation, penetration of rooftop units or 2025 R+V covered PV.
+
+These aggregate observations are now independently preserved with both source IDs, original bytes, 396/396 join, **zero unpaired keys, attribution, scope and negative flags** in [typed state research receipt](../../research/observations/rva_nrw_pv_mastr_derived_20261002_original_checksum_v0.toml). Every source-run now rereads that receipt and fails on unexpected company/source identity, PV category unit sums, Git blob or full SHA-256, all-company-loss/nonadmission flag changes, or fabricated licensed model intake. The original secondary whole CSV and state XLSX raw bytes remain out of Git.
+
+**Scientific caveats:** (i) 2026 October secondary updated registry is not March 2026 publisher roof model and not 2025 insurer contract year; (ii) any generating unit could be small balcony/freefield/multiple units per roof, and no actual insurance contract or installed insured site is identified; (iii) MaStR public self-registered units are subject to late reporting, status changes and data quality issues; (iv) secondary municipality-key harmonization is a third-party transformation, not a primary BNetzA XML audit; (v) the older original NRW technical modeled building categories cannot be assumed independent of other NRW LoD2 or rooftop-potential source families.
+
 ## Product decision table
 
 | Question | Current supported state |
