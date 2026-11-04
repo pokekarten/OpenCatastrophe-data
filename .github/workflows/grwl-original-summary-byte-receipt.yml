@@ -8,6 +8,7 @@ on:
     paths:
       - research_runners/grwl_trusted_original_byte_proof_v0.py
       - tests/test_grwl_trusted_original_byte_proof_v0.py
+      - docs/research/grwl-trusted-original-byte-proof-20261104.md
       - .github/workflows/grwl-original-summary-byte-receipt.yml
   workflow_dispatch:
   # One trusted-main original-source run at first merge; no network on PR head.
