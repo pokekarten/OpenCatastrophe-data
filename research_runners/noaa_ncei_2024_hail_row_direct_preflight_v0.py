@@ -33,6 +33,9 @@ PROVIDER_URL = (
     + RELEASE_FILE
 )
 EXPECTED_COMPRESSED_BYTES = 12_693_243
+# SHA-256 independently computed on original NOAA HTTPS source, GitHub Actions
+# original direct run #41829444110, 2026-11-04. Any release byte drift blocks.
+EXPECTED_ORIGINAL_SHA256 = "2070b83eccab041b36360ab73645b9a249c3eefc5b92b5b3fc0cbba4d9fcc09c"
 MAX_COMPRESSED_BYTES = 13_500_000
 MAX_EXPANDED_BYTES = 250_000_000
 MAX_SINGLE_LINE_BYTES = 2_000_000
@@ -81,6 +84,8 @@ def audit_original_csv(blob: bytes) -> dict:
     if type(blob) is not bytes or len(blob) != EXPECTED_COMPRESSED_BYTES:
         raise NCEIProofBlocked("original NCEI release compressed size mismatch")
     digest = hashlib.sha256(blob).hexdigest()
+    if digest != EXPECTED_ORIGINAL_SHA256:
+        raise NCEIProofBlocked("pinned original annual NOAA release SHA256 mismatch")
     previous_size_limit = csv.field_size_limit()
     try:
         csv.field_size_limit(100_000)
