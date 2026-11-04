@@ -163,10 +163,6 @@ class SyntheticTWIAZoneTests(unittest.TestCase):
             self.assertEqual(sum(x['ytd_written_premium_usd'] for x in scenario['cells']), 9*45)
 
 
-if __name__ == '__main__':
-    unittest.main()
-
-
 class SyntheticTWIAIntegratedCSVTests(unittest.TestCase):
     """Uses the actual merged source checker, not a test stub."""
 
@@ -252,3 +248,7 @@ class SyntheticTWIAIntegratedCSVTests(unittest.TestCase):
                     writer.writerows(records)
             with self.assertRaisesRegex(SyntheticAllocationError, "reconciliation failed"):
                 allocate_from_csv(county_path, class_path, mode="published-2025")
+
+
+if __name__ == '__main__':
+    unittest.main()
