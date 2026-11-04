@@ -41,6 +41,7 @@ GEN_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.: -]{0,39}\Z")
 CODE = re.compile(r"[0-9]{1,8}\Z")
 MAX_SOURCE_ROWS = 120_000
 MAX_WORKSHEET_BYTES = schema.MAX_XML_FILE
+STATUS_CODES = frozenset(("CN","IP","L","OA","OP","OS","OT","P","RE","SB","T","TS","U","V"))
 
 
 class GeneratorOperatorJoinBlocked(ValueError):
@@ -139,7 +140,7 @@ def inspect_members(gen_raw:bytes, util_raw:bytes, owner_raw:bytes, *,
                     seen_this_tab.add(key)
                     memberships[key].add(tab)
                     status=r["Status"]
-                    if not status or len(status)>12:
+                    if status not in STATUS_CODES:
                         status_without_value[tab]+=1
                     else:
                         tab_statuses[tab][status]+=1
@@ -206,7 +207,7 @@ def inspect_members(gen_raw:bytes, util_raw:bytes, owner_raw:bytes, *,
     cross_tab=sum(len(m)>1 for m in memberships.values())
     state=("REVIEW_KEY_OR_SOURCE_STATUS" if owner_without_roster or cross_tab
            or operator_multiple or sum(duplicated_in_tab.values())
-           or sum(bad_key_rows.values()) else
+           or sum(bad_key_rows.values()) or sum(status_without_value.values()) else
            "GENERATOR_OPERATOR_KEYS_RESEARCH_ONLY")
     return {
         "profile":"eia860-2025-delaware-generator-utility-owner-key-coverage-v0",
@@ -224,7 +225,7 @@ def inspect_members(gen_raw:bytes, util_raw:bytes, owner_raw:bytes, *,
         "original_source_rows_with_bad_plant_or_generator_key_by_sheet":dict(bad_key_rows),
         "source_generator_status_code_counts_by_sheet":{
             t:dict(sorted(tab_statuses[t].items())) for t in tabs},
-        "source_generator_rows_with_empty_status_by_sheet":dict(status_without_value),
+        "source_generator_rows_with_missing_or_unknown_status_by_sheet":dict(status_without_value),
         "source_utility_distinct_ids_nationwide":len(utility_codes),
         "source_utility_duplicate_id_rows":utility_duplicates,
         "source_utility_empty_or_invalid_id_rows":utility_empty_or_invalid,
