@@ -66,7 +66,7 @@ def _cell_raw(cell: ET.Element) -> tuple[str,str]:
 
 
 def _read_original_rows(archive: ZipFile, sheet: str, *, max_columns: int = MAX_COLS) -> tuple[list[dict[str,tuple[str,str]]],set[int]]:
-    if not 9 <= max_columns <= 19:
+    if not 9 <= max_columns <= 27:
         raise OriginalReceiptError("original worksheet column scan outside bounded scope")
     if archive.getinfo(sheet).file_size>MAX_SHEET_BYTES:
         raise OriginalReceiptError("source worksheet too large")
