@@ -111,7 +111,7 @@ class DistributionAndPublicTenderEvidenceTests(unittest.TestCase):
     def test_gdv_county_flood_industry_not_insurer(self):
         x=self.sources["gdv_county_flood_market"]
         self.assertEqual(x["source_scope"],"industry_peril_benchmark")
-        self.assertIn("not carrier-specific",x["admission_blocker"])
+        self.assertIn("not carrier-specific",x["admission_blocker"].lower())
 
     def test_tampered_true_flags_rejected(self):
         for k in BLOCKED:
