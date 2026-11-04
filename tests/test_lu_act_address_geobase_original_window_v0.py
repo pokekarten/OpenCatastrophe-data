@@ -8,7 +8,7 @@ import unittest
 from shapely.geometry import Point, Polygon, box
 
 from research_runners.lu_act_address_geobase_original_window_v0 import (
-    AddressFootprintError, classify, run,
+    AddressFootprintError, STUDY_SITES, classify, exact_area_candidates, run,
 )
 
 
@@ -75,6 +75,29 @@ class SourceCandidateTests(unittest.TestCase):
         self.assertEqual(sum(result["status_counts"].values()),2)
         self.assertNotIn("coordinates",str(result))
         self.assertEqual(result["geobase_polygons_sampled"],1)
+
+    def test_predeclared_public_sites_only(self):
+        self.assertEqual(STUDY_SITES["luxembourg-city"], (6.1319,49.6116,107))
+        self.assertEqual(STUDY_SITES["berdorf-village"], (6.348821,49.820946,16))
+        self.assertEqual(set(STUDY_SITES), {"luxembourg-city","berdorf-village"})
+
+    def test_unapproved_site_fails_before_source_io(self):
+        from pathlib import Path
+        with self.assertRaisesRegex(AddressFootprintError, "Unapproved original research site"):
+            run(Path("absent.csv"),Path("absent.zip"),site="unreviewed-site")
+
+    def test_exact_area_filter_excludes_bbox_only_or_touching(self):
+        # Original RTree/bbox can include a geometry with zero true area in ROI.
+        window = box(0,0,10,10)
+        candidates = [box(1,1,2,2),box(10,0,12,4),box(12,1,14,3)]
+        kept = exact_area_candidates(candidates,window)
+        self.assertEqual(len(kept),1)
+        self.assertEqual(kept[0].area,1)
+
+    def test_exact_area_filter_invalid_source_fails_closed(self):
+        invalid = Polygon([(0,0),(8,8),(0,8),(8,0)])
+        with self.assertRaises(AddressFootprintError):
+            exact_area_candidates([invalid],box(0,0,10,10))
 
     def test_missing_actual_files_fail_closed(self):
         from pathlib import Path
