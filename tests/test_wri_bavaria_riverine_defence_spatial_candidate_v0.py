@@ -104,6 +104,35 @@ class RiverineBavariaSpatialCandidateTests(unittest.TestCase):
         self.assertIn((5001, 23000), cells)
         self.assertIn((5002, 23002), cells)
 
+    def test_crs_accuracy_near_border_adds_candidates_not_fake_protection(self):
+        # Synthetic straight segment 0.001 source cells from an exact WRI border.
+        # With a ~1 m-class datum operation and a conservative 0.0025-cell
+        # margin, both adjacent rows must remain *candidates*, not protected.
+        a = (lon_from_pixel(23000.2), lat_from_pixel(5000.001))
+        b = (lon_from_pixel(23000.8), lat_from_pixel(5000.001))
+        strict = m.segment_candidate_cells(a, b)
+        conservative = m.segment_candidate_cells(
+            a, b, boundary_tolerance_cells=0.0025)
+        self.assertIn((5000, 23000), strict)
+        self.assertNotIn((4999, 23000), strict)
+        self.assertIn((4999, 23000), conservative)
+        self.assertIn((5000, 23000), conservative)
+        self.assertGreater(len(conservative), len(strict))
+
+        # Beyond the declared uncertainty we do not add entire nearby rows.
+        farther = (
+            (lon_from_pixel(23000.2), lat_from_pixel(5000.01)),
+            (lon_from_pixel(23000.8), lat_from_pixel(5000.01)),
+        )
+        unchanged = m.segment_candidate_cells(
+            *farther, boundary_tolerance_cells=0.0025)
+        self.assertNotIn((4999, 23000), unchanged)
+        for bad in (-0.1, 0.0, 0.1, float("nan"), float("inf")):
+            with self.subTest(tolerance=bad):
+                with self.assertRaises(m.SpatialCandidateError):
+                    m.segment_candidate_cells(
+                        a, b, boundary_tolerance_cells=bad)
+
     def test_realistic_bavaria_tile_boundaries_are_candidates_only(self):
         synthetic = {k: synthetic_one_line_shp(n)
                      for k, n in EXPECTED_COUNTS.items()}
