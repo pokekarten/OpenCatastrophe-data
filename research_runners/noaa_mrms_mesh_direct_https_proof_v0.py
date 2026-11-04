@@ -41,6 +41,16 @@ KELLER_REPORT_WINDOW = {
     "mesh_keller_2021_max30": ("2021-04-29T01:38:00+00:00", 60),
 }
 
+# Independent *different year and physical storm* NWS FWD preliminary LSR:
+# 2024-05-27 19:43 CDT -> 2024-05-28 00:43 UTC. Public mPING categorical
+# E3.25in hail at 32.71 N, -97.10 W; not an instrument gauge observation.
+# Later NCEI Storm Events record reported as #1186553 (final primary CSV
+# identity review remains a separate gate).
+ARLINGTON_REPORT_WINDOW = {
+    "mesh_arlington_2024": ("2024-05-28T00:42:43+00:00", -17),
+    "mesh_arlington_2024_max30": ("2024-05-28T00:44:00+00:00", 60),
+}
+
 
 class DirectSourceProofError(ValueError):
     """The fixed first-party GET did not produce a trusted byte receipt."""
@@ -124,6 +134,25 @@ def fetch_and_audit(product: str, opener: Any = None) -> dict:
         site_cell["radar_source_utc_vs_report_seconds"] = seconds_delta
         site_cell["source_is_rolling_30min_max_not_independent_event"] = (
             product == "mesh_keller_2021_max30"
+        )
+    elif product in ARLINGTON_REPORT_WINDOW:
+        expected_utc, seconds_delta = ARLINGTON_REPORT_WINDOW[product]
+        if receipt["reference_utc"] != expected_utc:
+            raise DirectSourceProofError("Arlington radar UTC reference drift")
+        grid = receipt["grid_geography"]
+        if grid.get("geometry_checked") is not True:
+            raise DirectSourceProofError("Arlington GRIB2 grid not authenticated")
+        site_cell = nominal_grid_cell(grid, 32.71, -97.10)
+        if not site_cell["within_source_grid_bounds"]:
+            raise DirectSourceProofError("Arlington location outside source grid")
+        site_cell["candidate_ncei_storm_events_report_id"] = 1186553
+        site_cell["primary_nws_lsr_report"] = "NWUS54 KFWD 280045"
+        site_cell["report_source"] = "preliminary_public_mPING_size_category"
+        site_cell["not_an_instrument_hail_measurement"] = True
+        site_cell["separately_reported_hail_diameter_mm"] = 82.55
+        site_cell["radar_source_utc_vs_report_seconds"] = seconds_delta
+        site_cell["source_is_rolling_30min_max_not_independent_event"] = (
+            product == "mesh_arlington_2024_max30"
         )
     return {
         "schema_version": "noaa-mrms-direct-https-source-proof-v0",
