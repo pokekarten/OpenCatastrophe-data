@@ -51,3 +51,22 @@ Safe conceptual chain: **registered parcel → spatially intersecting physical b
 ## Execution status
 
 Original government/provider documentation verified by public web review 2026-11-04. **Not** an end-to-end downloader test, not a model calibration, not a legal opinion, not a production Neon import. Next step is one bounded nonpersonal public-data parcel-feature probe per priority region and independent source admission reviews.
+
+
+## Update 2026-11-04: operational cardinality gate and additional UPRN source
+
+**New discovery candidate:** \`uk.hmlr.transaction-uid-uprn-lookup.2026\` (12th catalogue entry). Official HM Land Registry [technical specification](https://www.gov.uk/government/statistical-data-sets/technical-specification-transaction-unique-identifier-and-uprn-look-up-table-dataset) confirms this is a *separate* monthly transaction UID → addressable UPRN relation, also without back-dating. Coverage includes matched freehold **and** leasehold registered sale transactions where OS/Royal Mail PAF address-linkage exists. Multiple UPRNs may correspond to one sale (e.g. several flats in a building), and unaddressed land/new builds may have none. UPRN is neither an INSPIRE freehold polygon nor a physical building ID. Supplier declares OGL 3.0 for HMLR **and** Ordnance Survey source contributions; Price Paid address-related licensing still applies. Do not join one UPRN to multiple buildings without independently verified object identity and matching vintage.
+
+**Executable bounded diagnostic:** \`scripts/audit_hmlr_inspire_sale_linkage_v0.py\` accepts a stripped, analysis-only JSON consisting of \`source_family\`, \`snapshot_date\`, \`transactions\` (transaction UID / sale date / positive integer GBP paid), \`lookup\` (UID/INSPIRE ID) and \`polygons\` (INSPIRE ID). It rejects all unexpected fields including owners, addresses, title references, and restricted Grundbuch identifiers; bounds rows/bytes and checks dates, identities, duplicates and missing references. Aggregate output distinguishes *unique transactions* from *polygon links* and explicitly blocks interpreting sales prices as insured values, reinstatement costs or insurer ownership.
+
+Run the **synthetic-only** unit tests:
+
+\`\`\`sh
+python -m unittest tests.test_audit_hmlr_inspire_sale_linkage_v0 -v
+\`\`\`
+
+Eight tests were run locally 2026-11-04 successfully before upload. One illustrative synthetic test has £400,000 and £300,000 matched sales; the £400,000 sale relates to two distinct polygons. Summing across polygon rows incorrectly gives £1,100,000 instead of the correct £700,000 distinct matched transaction total. The audit reports an artificial **£400,000** overcount and suppresses exact duplicate link rows. This is a correctness demonstration with fake IDs/prices, **not** a provider-byte/API integration or a real market claim.
+
+**Additional public-sector research lead, not yet catalogued/admitted:** Geobasis NRW's [INSPIRE WFS 'öffentliches Eigentum'](https://www.geoportal.de/info/5b576174-4cdc-46cb-afaf-d7b3abf5923d) publishes property-level *public ownership* context; the metadata says nonpublic owners are anonymised. This might help *municipal/public-sector* synthetic portfolios after field-level privacy and rights screening. DO NOT pull or retain \`Eigentümer\`, \`Buchungsblattkennzeichen\`, identifying free text or individual property owners into public CAT training/analytics. Public ownership status is not evidence that the building is insured by R&V.
+
+**Before model integration:** run canonical landscape contract + generated Markdown parity tests in the repository; inspect new source's licence and original per-field rights; use a small polygon-only, non-personal provider sample with a fixed snapshot and hash; quantify multi-parcel, multi-building and many-address relationships. No scientific/rights/source admission follows automatically from passing these checks.
