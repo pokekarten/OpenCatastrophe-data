@@ -23,7 +23,7 @@ SPDX-License-Identifier: Apache-2.0
 In an ordinary Git checkout with Python 3.11+:
 
 ```bash
-python -m unittest tests.test_geocode_evidence_quality_v0 -v
+python -m unittest discover -s tests -p 'test_geocode_evidence_quality_v0.py' -v
 python scripts/check_all.py
 ```
 
