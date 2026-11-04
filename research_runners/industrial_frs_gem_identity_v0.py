@@ -18,13 +18,14 @@ import io
 import json
 from math import asin, cos, radians, sin, sqrt, isfinite
 from pathlib import Path
+from urllib.parse import urlsplit
 import re
 
 MAX_BYTES = 1_000_000
 MAX_ROWS = 10_000
 FRS_COLUMNS = ("frs_id", "country_code", "latitude", "longitude")
 GEM_COLUMNS = ("gem_asset_id", "country_code", "latitude", "longitude")
-LINK_COLUMNS = ("frs_id", "gem_asset_id", "evidence_kind", "evidence_sha256")
+LINK_COLUMNS = ("frs_id", "gem_asset_id", "evidence_kind", "evidence_url", "evidence_sha256")
 SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,99}\Z")
 SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
@@ -142,6 +143,14 @@ def audit_identity(frs_blob: bytes, frs_sha256: str, gem_blob: bytes, gem_sha256
         kind = row["evidence_kind"]
         if kind not in EVIDENCE_KINDS:
             raise IdentityPreflightBlocked("unrecognized link evidence kind")
+        evidence_url = row["evidence_url"]
+        if kind != "name_or_proximity_only" or evidence_url:
+            parts = urlsplit(evidence_url)
+            if (len(evidence_url) > 512 or parts.scheme != "https" or
+                    not parts.hostname or parts.hostname in ("localhost", "127.0.0.1") or
+                    parts.username or parts.password or parts.query or parts.fragment or
+                    not parts.path or parts.path == "/"):
+                raise IdentityPreflightBlocked("original link evidence requires a safe fixed HTTPS URL")
         if kind != "name_or_proximity_only" and not SHA256.fullmatch(row["evidence_sha256"]):
             raise IdentityPreflightBlocked("documented link needs original evidence hash claim")
         if kind == "name_or_proximity_only" and row["evidence_sha256"] and not SHA256.fullmatch(row["evidence_sha256"]):
