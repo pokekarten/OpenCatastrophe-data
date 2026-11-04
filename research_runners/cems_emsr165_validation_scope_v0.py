@@ -59,10 +59,14 @@ def _utc(value, label):
 
 
 def _bounded_number(value, minimum, maximum, label):
-    if type(value) not in (int, float) or not math.isfinite(value):
+    if type(value) not in (int, float):
         raise ReviewBlocked(f"invalid numeric {label}")
+    # Compare bounds before isfinite: huge JSON integers may overflow
+    # float conversion performed internally by math.isfinite.
     if not minimum <= value <= maximum:
         raise ReviewBlocked(f"{label} outside accepted coordinate bounds")
+    if type(value) is float and not math.isfinite(value):
+        raise ReviewBlocked(f"nonfinite numeric {label}")
     return value
 
 
@@ -145,7 +149,7 @@ def preflight(candidate):
     ):
         raise ReviewBlocked("invalid AOI identifier")
     product_type = product["product_type"]
-    if product_type not in {"DEL", "GRA", "REF"}:
+    if not isinstance(product_type, str) or product_type not in {"DEL", "GRA", "REF"}:
         raise ReviewBlocked("unknown product class: preserve source semantics")
     inside_paris = _bbox_contains_station(product["aoi_bbox_wgs84"])
     imagery_time = _utc(product["image_acquired_utc"], "image_acquired_utc")
