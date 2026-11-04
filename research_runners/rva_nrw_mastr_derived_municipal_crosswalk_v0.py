@@ -43,7 +43,7 @@ EXPECTED_GERMANY_MUNICIPALITIES = 10759
 EXPECTED_NRW_MUNICIPALITIES = 396
 RE_AGS = re.compile(r"^[0-9]{8}$")
 RE_NONNEG_INTEGER = re.compile(r"^(0|[1-9][0-9]*)$")
-RE_NONNEG_DECIMAL = re.compile(r"^(0|[1-9][0-9]*)(\\.[0-9]+)?$")
+RE_NONNEG_DECIMAL = re.compile(r"^(0|[1-9][0-9]*)(\.[0-9]+)?$")
 FIELDS = (
     "ags", "einheiten_in_betrieb", "gebaeudesolaranlagen",
     "balkonkraftwerke", "freiflaeche", "sonstige", "kwp",
@@ -52,7 +52,7 @@ COUNTS = FIELDS[1:6]
 
 
 def git_blob_sha1(data: bytes) -> str:
-    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest()
+    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
 
 
 def fetch_secondary(*, open_url=urllib.request.urlopen) -> bytes:
