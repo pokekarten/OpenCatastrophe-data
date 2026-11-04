@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-name: GRWL 2018-2026 pinned original DBF and XY aggregate semantics
+name: GRWL 2018-2026 original width and OBJECTID-keyed XY proof
 
 on:
   pull_request:
@@ -47,6 +47,6 @@ jobs:
         run: |
           git rev-parse HEAD
           sha256sum research_runners/grwl_original_aggregate_semantic_diff_v0.py
-      - name: Original ZIP SHA-pinned DBF value and SHP XY aggregate comparison
+      - name: Original ZIP SHA-pinned widths and OBJECTID candidate geometry comparison
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: python -m research_runners.grwl_original_aggregate_semantic_diff_v0 --live
