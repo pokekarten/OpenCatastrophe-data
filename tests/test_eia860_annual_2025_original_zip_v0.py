@@ -177,6 +177,27 @@ class EIA860AnnualOriginalTests(unittest.TestCase):
                   "separate_pa_oris_3136_present_in_eia_2025"):
             self.assertEqual(r1[k],r2[k])
 
+    def test_live_pinned_official_hashes_from_independent_original_read(self):
+        self.assertEqual(w.PINNED_SOURCE_BYTES, 23622347)
+        self.assertEqual(
+            w.PINNED_ORIGINAL_SHA256,
+            "2b27929d26cc1da9ad6a530da1cac6718cd8496098ee560c4d47cfffd96d08ba")
+        self.assertEqual(
+            w.PINNED_PLANT_MEMBER_SHA256,
+            "3c338f5e9d2647bb487dee8b3f4ed5c3fdd3e82db3b1bc5fdf206cee5470e059")
+
+    def test_invalid_live_expected_hash_blocks_before_network(self):
+        from contextlib import redirect_stdout
+        from io import StringIO
+        from unittest.mock import patch
+        buf = StringIO()
+        with patch.object(w, "fetch_exact_official_source", side_effect=AssertionError("network must not run")) as fetch:
+            with redirect_stdout(buf):
+                rc = w.main(["--live", "--expected-original-sha256", "0"*64])
+            fetch.assert_not_called()
+        self.assertEqual(rc, 2)
+        self.assertIn("BLOCKED", buf.getvalue())
+
     def test_blank_original_bytes_rejected(self):
         with self.assertRaises(w.EIA860ProofBlocked):
             run(b"")
