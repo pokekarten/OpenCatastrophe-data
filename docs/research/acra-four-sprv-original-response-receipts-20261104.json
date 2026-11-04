@@ -1,0 +1,80 @@
+{
+  "schema_version": "OPENCATASTROPHE_DATA_SINGAPORE_ACRA_ORIGINAL_RESPONSE_RECEIPTS_RESEARCH_V0",
+  "as_of_day": "2026-11-04",
+  "publisher": "Singapore Accounting and Corporate Regulatory Authority (ACRA), via data.gov.sg",
+  "dataset_id": "d_3f960c10fed6145404ca7b821f263b87",
+  "official_metadata_url": "https://api-production.data.gov.sg/v2/public/api/datasets/d_3f960c10fed6145404ca7b821f263b87/metadata",
+  "metadata_last_updated": "2026-10-14T17:10:49+08:00",
+  "metadata_coverage_end": "2026-10-11T08:00:00+08:00",
+  "source_retrieval": "GET exact JSON filtered by entity_name, limit=10, original UTF8 HTTP JSON body independently SHA256 digested",
+  "parser_validation": [
+    "response.success true",
+    "response.result.resource_id exact",
+    "response.result.total 1",
+    "response.result.records length 1",
+    "exact expected entity_name",
+    "ACRA issuing agency",
+    "Registered status",
+    "Local Company type",
+    "exact prior UEN"
+  ],
+  "entries": [
+    {
+      "entity_name": "ASTRO RE PTE. LTD.",
+      "uen": "202117654Z",
+      "uen_issue_date": "2021-05-19",
+      "source_row_id_observed": 1907438,
+      "exact_source_request_url": "https://data.gov.sg/api/action/datastore_search?resource_id=d_3f960c10fed6145404ca7b821f263b87&filters=%7B%22entity_name%22%3A%22ASTRO%20RE%20PTE.%20LTD.%22%7D&limit=10",
+      "original_http_json_sha256": "30fe030a25c1ca8bc9ee5fa1445981b0d860f5e487a7860e0f1695e392ab04f7",
+      "original_http_body_length_bytes": 1098,
+      "result_count": 1,
+      "acra_registry_status": "Registered",
+      "company_type": "Local Company",
+      "independent_bizfile_certified_extract_verified": false
+    },
+    {
+      "entity_name": "MANATEE RE III PTE. LTD.",
+      "uen": "201912999K",
+      "uen_issue_date": "2019-04-23",
+      "source_row_id_observed": 711242,
+      "exact_source_request_url": "https://data.gov.sg/api/action/datastore_search?resource_id=d_3f960c10fed6145404ca7b821f263b87&filters=%7B%22entity_name%22%3A%22MANATEE%20RE%20III%20PTE.%20LTD.%22%7D&limit=10",
+      "original_http_json_sha256": "ab7a6f23aeae8fe139c4acd02f9b737adf9d88a06e8bb97600d12b5972452e89",
+      "original_http_body_length_bytes": 1125,
+      "result_count": 1,
+      "acra_registry_status": "Registered",
+      "company_type": "Local Company",
+      "independent_bizfile_certified_extract_verified": false
+    },
+    {
+      "entity_name": "NAKAMA RE PTE. LTD.",
+      "uen": "202130681G",
+      "uen_issue_date": "2021-09-02",
+      "source_row_id_observed": 250079,
+      "exact_source_request_url": "https://data.gov.sg/api/action/datastore_search?resource_id=d_3f960c10fed6145404ca7b821f263b87&filters=%7B%22entity_name%22%3A%22NAKAMA%20RE%20PTE.%20LTD.%22%7D&limit=10",
+      "original_http_json_sha256": "5823e606096a940bcf832eb427d135f05884b76d877e518be82263c09fd5cfa2",
+      "original_http_body_length_bytes": 1101,
+      "result_count": 1,
+      "acra_registry_status": "Registered",
+      "company_type": "Local Company",
+      "independent_bizfile_certified_extract_verified": false
+    },
+    {
+      "entity_name": "TOMONI RE PTE. LTD.",
+      "uen": "202206915M",
+      "uen_issue_date": "2022-02-28",
+      "source_row_id_observed": 463084,
+      "exact_source_request_url": "https://data.gov.sg/api/action/datastore_search?resource_id=d_3f960c10fed6145404ca7b821f263b87&filters=%7B%22entity_name%22%3A%22TOMONI%20RE%20PTE.%20LTD.%22%7D&limit=10",
+      "original_http_json_sha256": "21816d16cf931eb584ffab76bec2af0e94717c772548dd50b0e48486b55be105",
+      "original_http_body_length_bytes": 1101,
+      "result_count": 1,
+      "acra_registry_status": "Registered",
+      "company_type": "Local Company",
+      "independent_bizfile_certified_extract_verified": false
+    }
+  ],
+  "rights_research_only": true,
+  "raw_source_bytes_committed": false,
+  "source_reproduction_limit": "A checksum binds one server response, not source authentication, licensing or future publisher snapshot. ACGRA/data.gov.sg refresh may change exact response bytes and record IDs. Historical original raw responses are not archived in Git.",
+  "model_input_admitted": false,
+  "database_writes": false
+}
