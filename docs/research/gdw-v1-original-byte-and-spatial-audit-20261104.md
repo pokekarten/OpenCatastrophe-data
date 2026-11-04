@@ -110,3 +110,45 @@ explanations). Only after reviewing those families should we evaluate
 whether an author-supported fix or an alternative original GDB representation
 changes the outcome. A secondary GEOS-based parser is not an independent
 hydraulic or scientific validation.
+
+## Subsequent original GEOS reason-family proof (2026-11-04)
+
+Exact original-data workflow:
+https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41887835566
+
+The workflow independently downloaded the published GDW v1 Shapefile ZIP
+again, verified SHA-256
+`2fe0b367ed3fcfb299160cd9652b16a8a19338951026ee2ac91edfebf1f3b7ae`,
+and reproduced the previously pinned 35,074 GEOS-valid and **221 GEOS-invalid**
+original reservoir geometries. The 221 invalid polygons all have the
+same **GEOS validity reason family: `ring_self_intersection`**. There are
+no unparseable geometries or observed outside/boundary ID-paired points
+among the 35,074 valid polygons. The workflow did not emit original
+GEOS reason strings because those can embed source coordinates. Only
+one fixed aggregate reason-family count was published.
+
+Frozen reproducible receipt:
+`research_runners/gdw_v1_original_invalidity_family_receipt_v0.py`.
+
+### What the finding proves and does not prove
+
+- It proves a specific source-quality issue with the GDW v1 **Shapefile
+  representation** decoded by pinned PyShp and assessed by GEOS/Shapely.
+  A self-intersecting ring is not a valid boundary for unqualified
+  point-in-polygon overlays. The 221 paired dam points are therefore
+  **not yet spatially assessed**, rather than proven outside.
+- It does **not** establish that the alternate 57,476,758-byte original
+  Geodatabase representation exhibits identical geometry problems.
+  Compare exact GDB source identity/byte receipt and a second reader
+  before deciding whether the problems are encoding-dependent.
+- Do not apply `buffer(0)`, `make_valid`, snapping or automated ring
+  direction changes directly to model inputs. Potential geometry
+  repairs must produce separate reviewable derivatives with before/after
+  polygon-count, coverage/area-delta and GDW_ID linkage checks; preserve
+  original input and explicit modelling caveats.
+- No insurance portfolio/exposure is joined here. No hazard-return
+  period, dam-breach loss, inundation or insured CAT risk is inferred.
+- Next causal step: reproduce the invalidity group using the alternate
+  original GDB and independently reviewed GIS reader, then quantify
+  the impacts of possible corrections and audit the original attribute
+  null-sentinel coverage in a separate source-quality stage.
