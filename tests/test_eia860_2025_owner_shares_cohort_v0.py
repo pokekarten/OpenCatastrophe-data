@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import json
 import unittest
+from io import BytesIO
+from zipfile import ZipFile, ZIP_DEFLATED
 
 from research_runners import eia860_2025_owner_shares_cohort_v0 as m
 from tests.test_eia860_annual_2025_original_zip_v0 import fake_xlsx,cell,M
@@ -26,6 +28,29 @@ def fixture(rows=None):
     return fake_xlsx(sheet_name="Ownership",custom_sheet=sheet)
 
 
+def percent_format_fixture():
+    """Synthetic native OOXML 0.4 + 0.6 cells styled as 40% + 60%."""
+    raw=fixture(rows=[("599","G1","TEST OWNER A","0.4"),
+                      ("599","G1","TEST OWNER B","0.6")])
+    src=BytesIO(raw)
+    output=BytesIO()
+    with ZipFile(src) as read, ZipFile(output,"w",ZIP_DEFLATED) as write:
+        for path in read.namelist():
+            part=read.read(path)
+            if path=="xl/worksheets/sheet1.xml":
+                xml=part.decode("utf-8")
+                for row,pct in ((2,"0.4"),(3,"0.6")):
+                    existing=(f'<c r="D{row}" t="inlineStr"><is><t>{pct}</t></is></c>')
+                    assert existing in xml
+                    xml=xml.replace(existing,f'<c r="D{row}" s="1"><v>{pct}</v></c>')
+                part=xml.encode("utf-8")
+            write.writestr(path,part)
+        write.writestr("xl/styles.xml",
+            ('<styleSheet xmlns="'+M+'"><cellXfs count="2">'+
+             '<xf numFmtId="0"/><xf numFmtId="10"/></cellXfs></styleSheet>').encode())
+    return output.getvalue()
+
+
 class OriginalOwnerShareTests(unittest.TestCase):
     def test_generator_shares_not_plant_insurance_allocation(self):
         r=m.inspect_owner_worksheet(fixture())
@@ -37,6 +62,20 @@ class OriginalOwnerShareTests(unittest.TestCase):
         self.assertFalse(r["insurer_policies_or_tiv_inferred"])
         self.assertFalse(r["unreported_generators_are_operator_owned_proven"])
         self.assertNotIn("TEST OWNER A",json.dumps(r))
+
+    def test_native_xlsx_percentage_style_scales_fraction_to_100_percent(self):
+        r=m.inspect_owner_worksheet(percent_format_fixture())
+        self.assertEqual(r["delaware_generators_owner_sum_100_within_0_05_percentage_points"],1)
+        self.assertEqual(r["delaware_generators_owner_sum_below_99_95_pct"],0)
+        self.assertEqual(r["delaware_owner_rows_with_native_percent_format"],2)
+        self.assertEqual(r["delaware_percent_owned_style_number_format_ids"],{"1":"10"})
+        self.assertEqual(r["state"],"EIA_OWNER_GENERATOR_COACH_RESEARCH_ONLY")
+
+    def test_unstyled_fraction_must_not_be_misrepresented_as_100_percent(self):
+        r=m.inspect_owner_worksheet(fixture(rows=[
+            ("599","G1","OWNER A","0.4"),("599","G1","OWNER B","0.6")]))
+        self.assertEqual(r["delaware_generators_owner_sum_below_99_95_pct"],1)
+        self.assertEqual(r["delaware_owner_rows_with_native_percent_format"],0)
 
     def test_not_in_cohort_does_not_create_delaware_owner(self):
         r=m.inspect_owner_worksheet(fixture(rows=[("3136","GEN1","OTHER","100")]))
