@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from contextlib import closing
 import hashlib
 import json
 from pathlib import Path
@@ -95,7 +96,7 @@ def _quote(value: str) -> str:
 
 
 def _gpkg_profile(gpkg: Path) -> dict:
-    with sqlite3.connect(gpkg.resolve().as_uri() + "?mode=ro&immutable=1", uri=True) as db:
+    with closing(sqlite3.connect(gpkg.resolve().as_uri() + "?mode=ro&immutable=1", uri=True)) as db:
         db.execute("PRAGMA query_only=ON")
         if db.execute("PRAGMA application_id").fetchone()[0] not in (
             0x47504B47, 0x47503130, 0x47503131,
