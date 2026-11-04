@@ -35,3 +35,16 @@ A small [research-only original NOAA NCEI CSV row verifier](../../research_runne
 - A matching original row would establish **authoritative NCEI record identity**, **NOT** that the report and a particular mPING submission are identical nor that an insurance-catastrophe frequency or radar skill score is established.
 
 After that, investigate a **small permission-compliant CoCoRaHS hail report window** for independent 2021/2024 storms. Quantify explicit uncertainties before selecting a broader physically distinct storm-event holdout set. Rights/model approval and insurance losses remain **false**.
+
+
+## Executed authoritative 2024 NCEI event crosswalk — original bytes confirmed
+
+[GitHub original-provider HTTPS workflow #41829444110](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41829444110) **SUCCEEDED** for the 2024 archived annual original NCEI file. After one synthetic test-fixture correction (a deliberately header-truncated CSV fixture needed to discard extra artificial fields), the actual direct HTTPS/GZIP/CSV parser scanned **69,801 source data rows** and found exactly one **EVENT_ID=1186553**. This no longer rests on a secondary lookup.
+
+- **Original NOAA provider release:** `StormEvents_details-ftp_v1.0_d2024_c20260728.csv.gz`, **12,693,243 compressed bytes**, original fully downloaded with default CA TLS, redirect/proxy disabled. **SHA-256 `2070b83eccab041b36360ab73645b9a249c3eefc5b92b5b3fc0cbba4d9fcc09c`**; frozen by the subsequent code revision, not provided by NCEI as a published checksum.
+- **Authoritative event identity:** `EVENT_ID=1186553`, **`EPISODE_ID=190994`**, `YEAR=2024`, `STATE=TEXAS`, `CZ_NAME=TARRANT`, `EVENT_TYPE=Hail`, `SOURCE=Public`.
+- **Original NOAA time and location fields:** `BEGIN_DATE_TIME=27-MAY-24 18:43:00`, `CZ_TIMEZONE=CST-6`, `BEGIN_LAT=32.71`, `BEGIN_LON=-97.1`, `BEGIN_LOCATION=DALWORTHINGTON`. The time label is **fixed UTC−6**, so 18:43 + 6h = **2024-05-28 00:43Z**; it matches the preliminary NWS 19:43 CDT (UTC−5) in absolute UTC even though the wall-clock and locality text differ.
+- **Original size/source fields:** `MAGNITUDE=3.25`, `SOURCE=Public`, **`MAGNITUDE_TYPE` is empty**. Do not invent an `E` magnitude type in the final NCEI row merely because the preliminary NWS report says `E3.25`; the original NWS report explicitly attributes its estimate to **mPING**. The final NCEI original line does not prove the raw phone report ID, observer measurement method, or that other same-storm reports are independent.
+- **Data-use boundary:** only the source release identity/digest and the selected *public event metadata* were printed by the direct proof; raw third-party archive, 69,800 other rows, narratives, private reporter identifiers, source files and claim records are **not committed or published**. Exact source hash/row fields are now asserted fail-closed; new historic release requires a reviewed new pin.
+
+This resolves the **NCEI original event ID/episode/source-row link**, not meteorological calibration or causal independence. The earlier table's “candidate/unverified” label documents the initial discovery state; the later executed direct receipt is now the authoritative research outcome.
