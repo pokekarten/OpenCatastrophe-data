@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg ACT LiDAR2019 3 original tiles HEAD / 4-byte Range
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/lu_act2019_three_tile_http_preflight_v0.py'
+      - 'tests/test_lu_act2019_three_tile_http_preflight_v0.py'
+      - 'docs/research/lu-act2019-three-tile-http-source-preflight-20261104.md'
+      - 'landscape/sources-europe-building-attribute-discovery.json'
+      - 'landscape/sources-europe-building-attribute-discovery.md'
+      - '.github/workflows/luxembourg-act2019-three-tile-http-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-three-tile-http-metadata:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout controlled source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Synthetic no-network and 4-byte proof tests
+        run: python -m unittest discover -s tests -p 'test_lu_act2019_three_tile_http_preflight_v0.py' -v
+      - name: Pin original spatial libraries
+        run: python -m pip install --disable-pip-version-check 'pyproj==3.7.2' 'shapely==2.1.2'
+      - name: Verify exact original tile index and request headers for exactly three selected source ZIPs
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          original="$RUNNER_TEMP/lu-2019-lidar-original-index.geojson"
+          trap 'rm -f "$original"' EXIT
+          curl --fail --location --silent --show-error --retry 0 \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 90 --max-filesize 600000 \
+            -o "$original" \
+            'https://download.data.public.lu/resources/lidar-2019-releve-3d-du-territoire-luxembourgeois/20200225-183349/lidar-urls.geojson'
+          python -m research_runners.lu_act2019_three_tile_http_preflight_v0 \
+            --original-index "$original"
+          # No cloud ZIP bytes, point cloud, geometry, per-tile URL or feature IDs
+          # leave ephemeral runner storage.
