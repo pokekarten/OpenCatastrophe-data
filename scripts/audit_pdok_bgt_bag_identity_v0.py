@@ -18,9 +18,14 @@ import json
 from pathlib import Path
 import sys
 
-from scripts.audit_pdok_brk_bag_centroid_v0 import (
-    ALLOWED_SNAPSHOT_GAP_SECONDS, ParcelBagError, _bbox, _collection, load,
-)
+if __package__:
+    from .audit_pdok_brk_bag_centroid_v0 import (
+        ALLOWED_SNAPSHOT_GAP_SECONDS, ParcelBagError, _bbox, _collection, load,
+    )
+else:
+    from audit_pdok_brk_bag_centroid_v0 import (
+        ALLOWED_SNAPSHOT_GAP_SECONDS, ParcelBagError, _bbox, _collection, load,
+    )
 
 
 def audit(bgt, bag, *, bbox):
