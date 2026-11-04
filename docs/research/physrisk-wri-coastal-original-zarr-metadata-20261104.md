@@ -186,3 +186,67 @@ Original upstream code inspection at OS-Climate GitHub (2026-11-04):
 - **In contrast**, the real distributed OS-Climate WRI Zarr `.zarray` fetched in this research has `fill_value=0.0` (see pinned original 369-byte response above).
 
 This is **positive evidence that the published derivative's actual binary encoding/producer revision cannot be inferred just from the current upstream code**. The source code explains an *intended* `-9999 -> NaN` transformation, but there is still no pinned provenance proving that the public Zarr object was built from these exact blobs or preserving NaNs at the chosen pixels. Treat this as a **source/code-vintage conflict**, not a confirmed scientific error. Do not equate producer `NaN`, TIFF `-9999` and Zarr fill `0.0`; keep importer and scientific model gates blocked until exact derived-object lineage and cellwise comparisons resolve which interpretation is correct. If the provider has a versioned build receipt, acquire that rather than guessing from `main`.
+
+## Executed paired original GeoTIFF / derived Zarr **cell values** — 4 November 2026
+
+**Outcome:** A real, bounded 1,000-cell **Float32** comparison was executed on the *same WRI historical coastal/no-subsidence 2-year depth surface* in its original GeoTIFF and a public OS-Climate Physrisk transformed Zarr. Original TIFF LZW and derived Zarr Blosc/LZ4 byte-shuffle were independently decoded in-memory. No raster array/chunk/strip bytes are added to Git.
+
+### Exact geographic and array selection
+
+- Global grid row **7206**, centre latitude `29.9458333333° N`; global columns **10000–10999**, centre longitudes approximately **-96.6625° to -88.3375°**, covering a narrow, one-row US Gulf Coast transect, **not a representative global sample**.
+- WRI original: [historical/no-subsidence/rp0002_0.tif](https://aqueduct.wridata.org/AqueductFloods20/inuncoast_historical_nosub_hist_rp0002_0.tif); first IFD identifies Float32, LZW and **one row per strip**.
+- Derived Physrisk: [Zarr `0.7.10` chunk](https://os-climate-physical-risk.s3.amazonaws.com/hazard-indicators/hazard.zarr/inundation/wri/v2/inuncoast_historical_nosub_hist_0/0.7.10), with *Zarr index 0 = 2-year return period*, 1,000 × 1,000 spatial chunk; Blosc **block index 1**, offset **37004** of a **1,162,420-byte compressed object**.
+- The chosen partial Blosc block covers **131,072 Float32 cells** of the 9 × 1,000 × 1,000 chunk; its four independently LZ4-compressed byte-shuffle streams were decoded to 131,072 bytes each.
+
+### Minimal exact read-only source-byte receipts
+
+| Source | Absolute byte range | Bytes | SHA-256 of *that returned range* |
+| --- | --- | ---: | --- |
+| WRI TIFF row-offset table entry (row 7206) | `44935666–44935669` | 4 | `3b68c20cb1b4c84524ca3ff529add0a4a8301a65e89737010d66add57e0f6085` |
+| WRI TIFF row-bytecount table entry (row 7206) | `44849266–44849269` | 4 | `73127703586268c82467f1ee6461b3377cf3ecb535acc8cd3bd0c55eb9c2e768` |
+| WRI compressed original LZW row | `15020376–15022920` | 2,545 | `9e1003f381fc224621d88ea901f40a12daadcfa7112b1fe8fc942c68cd8bca5d` |
+| Physrisk Zarr chunk Blosc header and block-offset table | `0–4095` | 4,096 | `ae3cfe008420624c637d489d4f6faaaf496ddc906a4430f512c7580619540120` |
+| Physrisk compressed Blosc block 1 | `37004–60269` | 23,266 | `cc8272a08fc242b33123d099a76abec19d6e64f9668b3d3931cc34485a494c0b` |
+
+The TIFF row-offset bytes decode to **15,020,376**, and its row-bytecount decodes to **2,545**. The Blosc header reports 36,000,000 logical uncompressed bytes, 524,288-byte blocks, Float32 (4-byte type), compressed object size 1,162,420, and the block-offset table independently pins block 1 to 37,004. **Only these bounded ranges, not either entire raster asset, were retrieved.**
+
+### Independent paired comparison result
+
+| Category on 1,000 selected cells | WRI original Float32 | Physrisk Float32 | Pairing |
+| --- | ---: | ---: | --- |
+| Numeric zero | 813 | 813 | **813 exact Float32 byte matches** |
+| Positive depths | 4 | 4 | **4 exact Float32 byte matches** |
+| Original NoData | 183 at `-9999` | 183 as IEEE `NaN` | **183 / 183 category matches** |
+| Unexplained discrepancy | — | — | **0** |
+
+Example positive matched original and derived cells at columns 10889, 10939, 10940 and 10941:
+**0.2220311165 m, 0.8582940698 m, 0.7227445841 m, 0.4280654192 m**, respectively. The 817 non-NoData cells match *exact Float32 byte values*, not a rounded visual or approximate tolerance. The 183 NoData cells match in category (`-9999 → NaN`), **not in numeric value**.
+
+**Key conclusion:** For this one sampled region and 2-year return period, the on-disk published Zarr data preserve **NaN** for the original TIFF `-9999` cells even though that Zarr array metadata declares a default `fill_value=0.0`. The fill metadata and the actual compressed blocks describe different concepts. This is consistent with the current OS-Climate WRI source code converting `-9999 → NaN`, but cannot prove the historical production commit or any unsampled/unwritten chunk semantics.
+
+### Reproducible offline source-byte gate
+
+`research_runners/wri_physrisk_coastal_paired_strip_preflight_v0.py` accepts the **five independently acquired, exact original HTTP response byte files** above, pins their SHA-256 and lengths, decodes TIFF LZW + Blosc/LZ4 with only Python standard library, verifies pairing and class counts, and produces a small receipt with
+`published_build_revision_proven=false`, `all_return_periods_verified=false`, `model_input_admitted=false`. The paired geographic cells are not released as a raster product or copied into Git. Synthetic-only unit tests cover codecs, malformed input, Float32 exact match, missing-value conversion and incorrect alignment.
+
+The offline gate deliberately refuses any changed source bytes, re-ordered/index-drift original artefacts, unsafe decoded sizes or changed sample-class counts. To re-run it, save **only the five allowed original byte-range responses** outside Git, use the exact original URLs and byte ranges above and then run:
+
+```bash
+python research_runners/wri_physrisk_coastal_paired_strip_preflight_v0.py \
+  --tiff-offset /private/original/tiff-row-offset-4b.bin \
+  --tiff-bytecount /private/original/tiff-row-bytecount-4b.bin \
+  --tiff-strip /private/original/tiff-row-2545b.bin \
+  --zarr-header /private/original/zarr-chunk-header-4096b.bin \
+  --zarr-block /private/original/zarr-block1-23266b.bin \
+  --out /tmp/wri-physrisk-paired-1000-cell-receipt.json
+
+python -m unittest discover -s tests -p 'test_wri_physrisk_coastal_paired_strip_preflight_v0.py'
+python scripts/check_all.py
+```
+
+### Scientific and legal remaining blockers
+
+- **One row/one period is not a global validation:** Other regions, 8 other Physrisk return-period surfaces, 1.5-year upstream-only original, geospatial boundary cases, unsampled chunks and year/scenario variants remain unchecked.
+- Publisher original TIFF and derived Zarr **full-asset immutable versions and exact build commit remain unproven**. The listed hashes refer only to exact HTTP response ranges.
+- Source/product-specific rights and derivative redistribution require final review before a production, proprietary or public data build; no model input is admitted from this analysis.
+- Return-period maps give marginal exceedance-depth levels, not stochastic storm event IDs, spatial hazard dependence, financial insured losses, ELTs, YLTs or CAT treaty results.
