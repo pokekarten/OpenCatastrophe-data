@@ -22,11 +22,15 @@ RELEASE_URL = f"https://github.com/{REPO}/releases/tag/{TAG}"
 API_URL = f"https://api.github.com/repos/{REPO}/releases/tags/{TAG}"
 ASSET_PREFIX = f"https://github.com/{REPO}/releases/download/{TAG}/"
 # Names published on Canada's official NHSL Physical Exposure resource page.
-REQUIRED_ASSETS = (
-    "nhsl_physical_exposure_attributes_en.xlsx",
-    "nhsl_physical_exposure_indicators_b.zip",
-    "nhsl_physical_exposure_indicators_s.zip",
-)
+# Verified from the provider's 2026-11-04 GitHub Release REST metadata (not raw bytes).
+# Freeze both release asset ID and provider-reported file size to catch silent drift.
+PINNED_ASSETS = {
+    "nhsl_physical_exposure_attributes_en.xlsx": (61543484, 17888),
+    "nhsl_physical_exposure_indicators_b.zip": (61551864, 115408117),
+    "nhsl_physical_exposure_indicators_s.zip": (61551969, 197526923),
+}
+REQUIRED_ASSETS = tuple(PINNED_ASSETS)
+PINNED_RELEASE_ID = 49557713
 MAX_METADATA_BYTES = 2_000_000
 MAX_ASSET_SIZE = 1_000_000_000
 SHA256 = re.compile(r"[0-9a-f]{64}")
@@ -42,6 +46,8 @@ def audit_release(metadata: dict[str, Any], original_metadata_sha256: str) -> di
         raise NHSLPreflightError("release must be an object")
     if not isinstance(original_metadata_sha256, str) or not SHA256.fullmatch(original_metadata_sha256):
         raise NHSLPreflightError("metadata SHA-256 must be 64 lowercase hex characters")
+    if metadata.get("id") != PINNED_RELEASE_ID:
+        raise NHSLPreflightError("unexpected publisher release ID")
     if metadata.get("tag_name") != TAG or metadata.get("html_url") != RELEASE_URL:
         raise NHSLPreflightError("unexpected release tag or release URL")
     if metadata.get("draft") is not False or metadata.get("prerelease") is not False:
@@ -70,8 +76,12 @@ def audit_release(metadata: dict[str, Any], original_metadata_sha256: str) -> di
             or not re.fullmatch(r"sha256:[0-9a-f]{64}", declared_digest)
         ):
             raise NHSLPreflightError(f"invalid publisher-declared digest: {name}")
+        asset_id, expected_size = PINNED_ASSETS[name]
+        if asset.get("id") != asset_id or size != expected_size:
+            raise NHSLPreflightError(f"publisher release asset ID / size drift: {name}")
         found[name] = {
             "filename": name,
+            "publisher_asset_id": asset_id,
             "publisher_reported_bytes": size,
             "publisher_reported_digest": declared_digest,
             "asset_url": ASSET_PREFIX + name,
@@ -87,6 +97,7 @@ def audit_release(metadata: dict[str, Any], original_metadata_sha256: str) -> di
         "source_candidate_id": "can.nrcan.nhsl.physical-exposure.2016-2020",
         "repository": REPO,
         "release_tag": TAG,
+        "publisher_release_id": PINNED_RELEASE_ID,
         "metadata_source_url": API_URL,
         "release_url": RELEASE_URL,
         "original_metadata_sha256": original_metadata_sha256,
