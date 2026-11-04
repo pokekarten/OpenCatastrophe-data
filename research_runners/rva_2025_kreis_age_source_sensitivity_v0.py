@@ -108,7 +108,6 @@ def _hamilton(n: int, weights: list[int]) -> list[int]:
     floors=[n*x//denom for x in weights]
     rem=n-sum(floors)
     # Sort by exact numerator remainder and source age cohort order.
-    order=sorted(range(10),key=lambda i:(-(n*weights[i])%denom,i))
     # Explicitly sort by negative *remainder*, not modular negative.
     order=sorted(range(10),key=lambda i:(-((n*weights[i])%denom),i))
     for i in order[:rem]:
