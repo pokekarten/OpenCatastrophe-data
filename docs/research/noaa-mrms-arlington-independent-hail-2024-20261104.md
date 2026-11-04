@@ -38,3 +38,31 @@ The same fixed-GRIB2 metadata verifier and independent ecCodes **2.50.0** four-n
 This study challenges whether the difference between a 2-minute instantaneous MESH estimate and a 30-minute rolling MESH maximum also matters in a **physically independent 2024 storm**. It does **not** confer statistical independence to storm reports within the same NWS episode, nor does it make event-year occurrence rates estimable from two selected positive-hail storms. The 2024 mPING source is an estimated/categorical report, not an instrument-ground-truth calibration; the 2021 report was a different NWS source and likewise selected, not a randomized holdout. A meaningful CAT hazard model would require controlled event-independent train/test splits, precision/recall/coverage, physically validated storm-event object clustering, scientific product-version lineage, exposure and vulnerability sources, and explicit source rights review.
 
 **Remaining gates:** Direct 2024 source SHA/CRC/GRIB verification, independent ecCodes radar size values, historical NOAA MRMS algorithm/product-version review, NCEI original CSV event-row identity, uncertainties of mPING size and location, broader events and misses. Raw data, insured claims, synthetic portfolios and ELT/YLT are out of scope.
+
+
+## Executed direct original-source and ecCodes results (2026-11-04)
+
+The original-provenance proof [GitHub Actions run #41827143546](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41827143546) **succeeded** for all previously pinned files **and both new 2024 objects**. The GitHub-hosted Ubuntu runner independently downloaded directly from fixed NOAA public S3 HTTPS URLs, verified original **byte lengths / SHA-256 / GZIP CRC32 / GRIB2 product identity, grid and UTC**, with TLS trust, redirects and ambient proxies disabled. Therefore both 2024 SHA-256 values above are no longer merely intermediary-generated hashes. **No original NOAA binary source bytes were committed, uploaded as artifacts, or published as output.**
+
+The independent [ecCodes 2.50.0 original-field run #41827143477](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41827143477) also **succeeded** with both new 2024 objects, validating grid geometry/parameter 28 versus 29 and reading the **four exact source grid cells around the report point**, not a whole raster output.
+
+### Original independent time-window comparison for the separate 2024 storm
+
+| Source and offset from original NWS report 00:43Z | NW (32.715 N, 262.894999 E) | NE (32.715 N, 262.904999 E) | SW (32.705 N, 262.894999 E) | SE (32.705 N, 262.904999 E) | Missing |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `MESH_00.50` instantaneous **00:42:43Z, −17s** | **11.8 mm** | **18.4 mm** | **16.2 mm** | **23.6 mm** | 0 of 4 |
+| `MESH_Max_30min_00.50` rolling max **00:44:00Z, +60s** | **20.0 mm** | **28.5 mm** | **22.0 mm** | **24.2 mm** | 0 of 4 |
+| **Separate NWS mPING E3.25-inch categorical hail report at 00:43Z** | colspan concept only | | | **82.55 mm estimated** | n/a |
+
+**Interpretation:** Both the 2-minute and the rolling-30-minute source estimates at the rounded report location are substantially lower than the NWS preliminary reported **82.55 mm** category. Unlike the selected **2021 Keller** case, whose 30-minute four-neighbour maxima were **67.8–77.8 mm** against a separately reported **63.5 mm**, the selected **2024 Arlington** case's rolling maxima at the same four-neighbour protocol are only **20.0–28.5 mm** against a categorical **82.55 mm**. This **falsifies the unwarranted generalization** that one positive Keller 30-minute near-match establishes broad algorithm quality. It is **not** proof that the 2024 radar algorithm was physically wrong: a mPING category is not instrument-calibrated, its point coordinate can be rounded, storm motion and nearby spatial maxima can differ, and the 30-minute product's time support and QC require investigation.
+
+The original NWS product contains a second same-minute hail report of **E1.75 inch** at **32.71 N, −97.11 W**, alongside **E3.25 inch** at **32.71 N, −97.10 W**. They must **not** be treated as two independently arriving catastrophic events. The NCEI later storm-events row identity `1186553` is a candidate based on secondary indexing; acquisition/validation of its exact original NOAA NCEI event CSV is still an open provenance gate.
+
+### Guardrails and next scientific step
+
+- **Independence is by historical physical storm**, not by hailstones, four radar cells, product timestamps, 30-minute windows, NWS/mPING or NCEI reports. There are now *two selected dated storm tests*, not a representative sampling framework, a validation dataset or an event-rate estimator.
+- Missing MRMS codes `−1` (source missing) and `−3` (no coverage) are kept distinct from valid `0` and positive hail estimates in each source product. This case has **zero missing among the four selected cells**, not evidence of complete nationwide coverage.
+- The future falsifiable experiment should compare **a small independently pinned bounded spatial neighbourhood and several clock windows**, plus independent NWS/NCEI location uncertainties, without inferring insured losses, damage cost, portfolio TIV or CAT model fitness.
+- No automated production ingest, vendor-style event catalogue, ELT/YLT or risk-model admission follows from this experiment; those require event-clustering, population-level observational controls, NOAA algorithm-version evidence, source licensing and model validation.
+
+**No third-party original pixels/files or mPING users' private records enter public GitHub; only fixed source references and selected bounded public-science verification results appear here.**
