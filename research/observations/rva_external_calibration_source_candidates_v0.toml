@@ -83,7 +83,7 @@ model_input_admitted = false
 limitation = "150m 2025 and 442m 2024 at group scope, not solo property, gross/net or AAL."
 
 [[records]]
-source_id = "rv.group.water2025"
+source_id = "rv.unspecified.water2025"
 publisher = "R+V Versicherung"
 title = "Residential building 2025 damage frequency mix"
 url = "https://www.ruv.de/newsroom/pressemitteilungen/2026-03-12-leitungswasser-schaden-haus"
