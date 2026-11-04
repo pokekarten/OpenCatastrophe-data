@@ -52,7 +52,8 @@ The independent [ecCodes 2.50.0 original-field run #41827143477](https://github.
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `MESH_00.50` instantaneous **00:42:43Z, −17s** | **11.8 mm** | **18.4 mm** | **16.2 mm** | **23.6 mm** | 0 of 4 |
 | `MESH_Max_30min_00.50` rolling max **00:44:00Z, +60s** | **20.0 mm** | **28.5 mm** | **22.0 mm** | **24.2 mm** | 0 of 4 |
-| **Separate NWS mPING E3.25-inch categorical hail report at 00:43Z** | colspan concept only | | | **82.55 mm estimated** | n/a |
+
+**Separate original NWS point report (not a radar grid cell):** E3.25 in = **82.55 mm**, public mPING categorical estimate at 00:43Z.
 
 **Interpretation:** Both the 2-minute and the rolling-30-minute source estimates at the rounded report location are substantially lower than the NWS preliminary reported **82.55 mm** category. Unlike the selected **2021 Keller** case, whose 30-minute four-neighbour maxima were **67.8–77.8 mm** against a separately reported **63.5 mm**, the selected **2024 Arlington** case's rolling maxima at the same four-neighbour protocol are only **20.0–28.5 mm** against a categorical **82.55 mm**. This **falsifies the unwarranted generalization** that one positive Keller 30-minute near-match establishes broad algorithm quality. It is **not** proof that the 2024 radar algorithm was physically wrong: a mPING category is not instrument-calibrated, its point coordinate can be rounded, storm motion and nearby spatial maxima can differ, and the 30-minute product's time support and QC require investigation.
 
