@@ -10,6 +10,8 @@ on:
       - "research_runners/zensus_regional_original_receipt_v0.py"
       - "tests/test_zensus_regional_original_receipt_v0.py"
       - "research_runners/zensus_regional_worksheet_schema_v0.py"
+      - "research_runners/zensus_kreis_original_numeric_receipt_v0.py"
+      - "tests/test_zensus_kreis_original_numeric_receipt_v0.py"
       - "tests/test_zensus_regional_worksheet_schema_v0.py"
       - "docs/research/zensus-gdv-2022-2025-insurer-district-bridge-20261103.md"
   workflow_dispatch:
@@ -37,6 +39,8 @@ jobs:
         with:
           python-version: "3.14"
       - name: Run hermetic original-package negative tests
-        run: python -m unittest tests.test_zensus_regional_original_receipt_v0 tests.test_zensus_regional_worksheet_schema_v0 -v
+        run: python -m unittest tests.test_zensus_regional_original_receipt_v0 tests.test_zensus_regional_worksheet_schema_v0 tests.test_zensus_kreis_original_numeric_receipt_v0 -v
       - name: Acquire and audit one exact publisher original in memory
         run: python research_runners/zensus_regional_original_receipt_v0.py --official-live --schema-preview
+      - name: Verify exact-source 2022 Kreis building totals and emit attributed aggregate rows
+        run: python research_runners/zensus_kreis_original_numeric_receipt_v0.py --official-live --emit-kreis-tsv
