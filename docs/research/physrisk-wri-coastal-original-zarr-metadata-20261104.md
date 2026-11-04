@@ -137,3 +137,42 @@ python -m unittest discover -s tests -p 'test_wri_physrisk_coastal_return_period
 ```
 
 For original data comparison, choose **a bounded single return period and small window**, pin the WRI TIFF original asset revision, inspect and preserve both GeoTIFF and Zarr geotransforms/nodata conventions, and then compare paired pixel values against a tolerance informed by producer conversion. Do **not** construct annual independent events from these nine quantile/return-period surfaces. Full random-event chronology, inter-site peril correlation, defended depth, insured exposure and loss distribution are all additional missing layers.
+
+## Original WRI 2-year GeoTIFF byte-range geometry / NoData preflight (2026-11-04)
+
+**Actual provider original, not a filename-only check:** read-only HTTP `Range` requests to the provider's exact
+[`inuncoast_historical_nosub_hist_rp0002_0.tif`](https://aqueduct.wridata.org/AqueductFloods20/inuncoast_historical_nosub_hist_rp0002_0.tif).
+The three independently bounded response bodies (no complete TIFF) are:
+
+| Absolute original HTTP byte range | Returned bytes | SHA-256 |
+| --- | ---: | --- |
+| `0-1023` (classic TIFF header) | 1,024 | `a715eac20b82b4f9fe377e69a279d5445f46b3a58e0818d56be207af7c58f1ee` |
+| `44820220-44822267` (first IFD) | 2,048 | `c722b9ba36751d0331fe961730c5865024dc183b58233e33e02a5c47194c638e` |
+| `44993200-44993711` (GeoTIFF auxiliary data, through provider EOF) | 208 | `1d7f0b4f46c6d2f97979794ba8858b954a445dcfa218e15ab04bcf4e73c84a3e` |
+
+Decoded, exact original TIFF header/IFD evidence:
+- little-endian classic TIFF, IFD pointer at **44,820,220**; 18 IFD entries;
+- image width **43,200**, height **21,600**, single-band **Float32**, compression **LZW**, one raster row per strip;
+- `ModelPixelScaleTag` = 1/120 by 1/120 degree, `ModelTiepointTag` = grid (0, 0) at longitude -180, latitude +90;
+- GeoKey confirms EPSG:**4326** (WGS84); **original WRI TIFF NoData = `-9999`**, identified in GDAL NoData ASCII tag 42113.
+
+**Material cross-format gap:** Physrisk's separately fetched derived Zarr `.zarray` declares `fill_value=0.0`.
+The raster grid dimensions and georeferencing *appear consistent*, but **`-9999` versus `0.0` is not an established mapping**. It may reflect legitimate transformation, masking or source conventions, and must **not** be converted into zero inundation depth, filled into building losses or treated as resolved without original paired cell comparison. The original TIFF band has not been decoded and the transformed Zarr has not been sampled. An open-file HTTP byte-range probe does **not** grant a licence or scientific approval.
+
+New offline validator `research_runners/wri_aqueduct_original_tiff_range_preflight_v0.py` accepts only these exact, independently SHA-pinned original range responses, validates TIFF width, height, data type, original GeoTIFF tiepoints/CRS and original NoData, and emits only a fail-closed metadata receipt, including
+`nodata_to_zarr_fill_transformation_verified=false`, `pixel_values_read=false` and `model_input_admitted=false`. Its tests are purely synthetic and preserve rejection of changed source offsets, EPSG, georeference, NoData, broken range lengths and wrong SHA.
+
+```bash
+python research_runners/wri_aqueduct_original_tiff_range_preflight_v0.py \
+  /private/original/tiff-header.range \
+  /private/original/tiff-first-ifd.range \
+  /private/original/tiff-geodata.range \
+  --expected-header-sha256 a715eac20b82b4f9fe377e69a279d5445f46b3a58e0818d56be207af7c58f1ee \
+  --expected-ifd-sha256 c722b9ba36751d0331fe961730c5865024dc183b58233e33e02a5c47194c638e \
+  --expected-geo-sha256 1d7f0b4f46c6d2f97979794ba8858b954a445dcfa218e15ab04bcf4e73c84a3e \
+  --out /tmp/wri-original-geo-metadata-receipt.json
+
+python -m unittest discover -s tests -p 'test_wri_aqueduct_original_tiff_range_preflight_v0.py'
+```
+
+A scientifically meaningful next stage needs **a separately permitted, bounded original TIFF strip and corresponding Physrisk Zarr chunk**, preserving `-9999` nodata, `0.0` fill, compression and exact cell/return-period axes. No pixel equivalence claim, loss curve, simulated YLT or original-source admission yet.
