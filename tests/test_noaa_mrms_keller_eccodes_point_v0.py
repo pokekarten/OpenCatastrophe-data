@@ -195,15 +195,44 @@ class KellerEcCodesFourCellTests(unittest.TestCase):
                 with self.assertRaises(k.PointDecodeError):
                     decode(fake)
 
+    def test_noaa_source_missing_and_no_coverage_are_not_zero_hail(self):
+        fake = FakeEcCodes()
+        fake.nearest[0].value = -1.0  # NOAA MESH original missing marker
+        fake.nearest[1].value = -3.0  # NOAA MESH original no-coverage marker
+        result = decode(fake)
+        self.assertEqual(result["missing_neighbour_count"], 2)
+        self.assertEqual(result["source_missing_neighbour_count"], 1)
+        self.assertEqual(result["source_no_coverage_neighbour_count"], 1)
+        self.assertEqual(result["grib_encoded_missing_neighbour_count"], 0)
+        self.assertEqual(result["valid_neighbour_count"], 2)
+        self.assertEqual(result["decoded_local_min_radar_mesh_mm"], 63.0)
+        self.assertEqual(result["decoded_local_max_radar_mesh_mm"], 67.0)
+        self.assertEqual(
+            [r["value_status"] for r in result["four_nearest_radar_cells"]][:2],
+            ["source_missing", "source_no_coverage"],
+        )
+        self.assertTrue(all(
+            r["decoded_radar_mesh_mm"] is None
+            for r in result["four_nearest_radar_cells"][:2]
+        ))
+        self.assertFalse(result["physical_model_skill_established"])
+
+    def test_noaa_zero_is_a_valid_value_but_not_evidence_of_no_storm(self):
+        fake = FakeEcCodes()
+        fake.nearest[1].value = 0.0
+        result = decode(fake)
+        self.assertEqual(result["valid_neighbour_count"], 4)
+        self.assertEqual(result["four_nearest_radar_cells"][1]["decoded_radar_mesh_mm"], 0.0)
+        self.assertEqual(result["four_nearest_radar_cells"][1]["value_status"], "decoded_radar_mesh_mm")
+        self.assertFalse(result["physical_model_skill_established"])
+
     def test_out_of_range_value_rejected_not_labeled_intensity(self):
-        fake = FakeEcCodes()
-        fake.nearest[1].value = -1
-        with self.assertRaisesRegex(k.PointDecodeError, "unphysical"):
-            decode(fake)
-        fake = FakeEcCodes()
-        fake.nearest[1].value = 1001
-        with self.assertRaisesRegex(k.PointDecodeError, "unphysical"):
-            decode(fake)
+        for invalid in (-99.0, -999.0, -2.0, 1001.0):
+            with self.subTest(invalid=invalid):
+                fake = FakeEcCodes()
+                fake.nearest[1].value = invalid
+                with self.assertRaisesRegex(k.PointDecodeError, "unphysical"):
+                    decode(fake)
 
     def test_source_timestamp_or_grid_is_not_trusted_from_comments(self):
         fake = FakeEcCodes()
