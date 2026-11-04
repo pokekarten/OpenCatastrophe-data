@@ -24,8 +24,8 @@ HEADERS = ("gem_unit_phase_id", "gem_location_id", "country_area",
            "other_ids_unit_phase")
 HEXDIGEST = re.compile(r"[0-9a-f]{64}\Z")
 SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,79}\Z")
-EIA_TOKEN = re.compile(r"(?<![A-Za-z0-9])EIA[ -]860\s*:\s*0*([1-9][0-9]{0,5})(?![0-9])", re.I)
-TZ_TOKEN = re.compile(r"(?:\bTZ\s*ID\b|\bTransitionZero\b)", re.I)
+EIA_TOKEN = re.compile(r"(?<![A-Za-z0-9])EIA[ -]860\s*:\s*0*([1-9][0-9]{0,5})(?![A-Za-z0-9])", re.I)
+TZ_TOKEN = re.compile(r"(?:\bTZ[\s_-]*ID\b|\bTransitionZero\b)", re.I)
 # FRS original JSON city proof / EIA 2025 original ZIP proof (#1259, #1291):
 DE_EPA_EIA_CODES = frozenset((
     "599", "7318", "57337", "57349", "67391", "10030", "63700",
