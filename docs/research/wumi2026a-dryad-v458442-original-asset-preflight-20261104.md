@@ -30,6 +30,10 @@ python -m unittest tests.test_wumi2026a_dryad_original_asset_receipt_v0 -v
 
 Outputs only publisher metadata identities and non-admission flags. The script never fetches URLs, unpacks ZIPs, reads individual fires, writes model hazard, uses credentials, stores private observations or uploads data.
 
+## Optional byte-identical ZIP and safe-members gate (prepared; not yet run on original)
+
+The CLI also accepts `--original-zip /private/WUMI2026a_final_wildfire_lists.zip` **after an authorized download**. The ZIP checker first enforces **exact original publisher size and SHA-256**, then inspects entries *in memory* without extraction, rejecting traversal/absolute paths, case-fold duplicates, symlinks, encryption, unsupported compression and oversized expanded members. It validates ZIP CRC values and emits only member counts, not their names or content. **These tests use synthetic ZIPs only**; no real ZIP has yet been successfully fetched. Even a successful original ZIP checksum/CRC check does not settle parent/subfire semantics, scientific validity, actual fire coverage or data reuse rights.
+
 ## Next original-byte gate (currently blocked)
 
 On an authorized machine with provider access, download **only** `/api/v2/files/4917545/download`, store the ZIP outside the public repository, check the downloaded byte count **4,683,571** and SHA-256 **8d8a59588935b832bf8e382a0c94b8a6705e6a8fa2bed161bacf1d9fe78726d0**, then inspect ZIP member list and syntax *without* extracting unsafe member paths. Inspect source `README.md` for its parent-only vs with-subfires wildfire event-list semantics and the six-state 2026a extension; retain label provenance. Evaluate rights for scientific, redistributed and commercial model uses **separately**. Do not ingest into NextGen/Neon as approved source until those checks pass. The original dataset may have differing publisher licence/access settings for metadata and actual files.
