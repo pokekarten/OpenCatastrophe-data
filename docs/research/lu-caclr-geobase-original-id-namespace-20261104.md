@@ -84,3 +84,67 @@ Independent, adjudicated truth and source-rights review remain required.
 **Execution status:** this note records the experiment contract only.
 An actual observed overlap count must be appended **only after**
 the original-source GitHub job completes successfully at exact head.
+
+## Executed full-original result (2026-11-04)
+
+The pinned [GitHub original-source workflow 41884857865](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41884857865)
+completed successfully at tested code head `9aad5a4baec73aa8edda1bca968335f2465c4bcd`.
+**12/12 synthetic anti-false-join tests passed**, then the exact original
+ACT BD-Adresses CSV and ACT GeoBase Buildings ZIP/GPKG were independently
+SHA-verified and compared in temporary runner storage.
+
+| Measured original national identifier population | Distinct nonblank strings | Blank rows | Duplicate-excess rows | Maximum rows per original ID |
+| --- | ---: | ---: | ---: | ---: |
+| BD-Adresses `id_caclr_bat` (179,768 rows) | **179,184** | **0** | **584** | **5** |
+| BD-Adresses `id_geoportail` (179,768 rows) | **179,768** | **0** | **0** | **1** |
+| GeoBase Buildings `BU_BuildingID` (230,353 rows) | **230,353** | **0** | **0** | **1** |
+
+**Literal exact text intersection between all 179,184 distinct
+`id_caclr_bat` and all 230,353 `BU_BuildingID`: 0.**
+
+**Literal exact text intersection between all 179,768 distinct
+`id_geoportail` and all 230,353 `BU_BuildingID`: 0.**
+
+All three nonblank original populations were fully accounted for, no
+surrounding-whitespace anomalies were observed, and the outputs included
+`id_namespace_equivalence_proven=false` and
+`scientific_model_input_admitted=false`. These are **original-source
+measurements**, not estimates or sampled counts.
+
+**Conclusion specific to pinned releases:** the simple raw equality join
+between BD-Adresses' either address ID and GeoBase's building ID **has no
+matching rows**. Do **not** retry by stripping an arbitrary prefix, converting
+numeric strings or reformatting IDs without an independently documented
+namespace mapping. The zero overlap does not mean there are no common real
+buildings, uninsured buildings, or an absence of physical correspondence.
+
+## Primary ACT schema documentation
+
+The ACT's official
+[BD-L-GeoBase dataset contents description, version 1.0 (2024)](https://download.data.public.lu/resources/bd-l-geobase/20240925-163507/contentsdescription-bd-l-geobase-v1.pdf)
+states:
+- **Section 4.1**: the *Addresses* theme is drawn from the CACLR register;
+  `AD_AddressID` is the unique GeoBase address identifier, and
+  `AlternativeIdentifier` is an identifier from CACLR.
+- **Section 4.4**: `BU_BuildingID` is a **unique GeoBase building identifier**,
+  with footprints sourced from Bati3DACT, Bati3DVDL, cadastral PCN,
+  official mensuration (MO) or orthophotos.
+
+This documentation distinguishes the **Address** and **Building**
+feature layers and identifies their separate key roles. It does **not**
+declare that BD-Adresses CSV `id_caclr_bat` or `id_geoportail`
+equals GeoBase `BU_BuildingID`. The original 2026 source QA above
+independently rejects such a verbatim equality hypothesis for the actual
+two frozen releases. To investigate an authoritative address crosswalk,
+first inspect and pin the official GeoBase **Addresses theme**, particularly
+`AD_AddressID` and `AlternativeIdentifier`, instead of equating
+addresses to building objects; verify its 2026 revision and source dependencies.
+
+## Recommendation
+
+Keep both source namespaces separate and use the already validated small
+address-to-footprint point containment proof in merged PR #1272 as a
+**geometric candidate relationship**. For proper insurer exposure units,
+record one-to-many and many-to-one address-building mappings, area/vintage,
+source-family dependence and independent adjudication. No source admission
+or production CAT calculation is authorized here.
