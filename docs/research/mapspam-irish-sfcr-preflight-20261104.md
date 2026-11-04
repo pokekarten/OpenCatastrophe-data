@@ -57,3 +57,11 @@ SPDX-License-Identifier: Apache-2.0
 - This is a plausible additional crop-footprint prior and cross-model comparator for MAPSPAM, but **not automatically independent validation**. CROPGRIDS incorporates older Monfreda maps, published gridded crop products and FAOSTAT 2020 totals, so source overlap with MapSPAM and its upstream calibrators must be established before using one as an out-of-sample spatial holdout.
 - The FAO/CGIAR page declares **CC BY 4.0**, whereas MapSPAM has unresolved original/derivative commercial-use terms. Do not silently transfer FAO rights to any IFPRI-derived dataset. Exact CROPGRIDS original Figshare asset/version and derivative-file permissions still require asset-specific review before admission.
 - New *discovery-only* record: `landscape/sources-fao-cropgrids-20261104.json` and its generated Markdown view. No raw crop data were committed, original bytes acquired or risk model validated.
+
+## 5. Additional same-family regulator sources: Luxembourg CAA
+
+Official [Luxembourg CAA non-life SFCR directory](https://www.caa.lu/en/information/solvency-and-financial-condition-reports-sfcr-of-non-life-insurance-undertakings) and [life directory](https://www.caa.lu/en/information/solvency-and-financial-condition-reports-sfcr-of-life-insurance-undertakings) were inspected through public provider pages on 2026-11-04. These are **not** the same kind of data product as the Irish regulator's downloadable QRT CSV: CAA pages list named undertakings, visible LEIs, last communicated **solo solvency ratios** and company-specific SFCR document/page links.
+
+The CAA non-life directory expressly excludes captive undertakings and captive-like portfolios from its displayed sector; treating it as a complete Luxembourg insurance population would bias reconstruction. Ratios do not identify CAT PML, AEL, TIV or gross/ceded premiums, and may come from different fiscal/report dates. Use these as insurer legal-entity mapping and public SFCR discovery leads only. Group/solo duplication, LEI alignment and source-specific PDF rights need further evidence.
+
+Two canonical non-admission records are in `landscape/sources-luxembourg-caa-sfcr-20261104.json`, with a deterministically generated human-readable Markdown view. No original company PDF, file or table has been committed or admitted.
