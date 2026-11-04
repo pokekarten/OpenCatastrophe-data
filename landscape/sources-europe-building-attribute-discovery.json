@@ -445,7 +445,7 @@
       ],
       "spatial_scope": "Luxembourg national LiDAR 2019 coverage; two frozen 100m public city and Berdorf windows",
       "temporal_scope": "2019 airborne laser survey; original GeoJSON tile URL index issued February 2020",
-      "resolution_or_granularity": "Original 450512-byte CRS84 GeoJSON has 1287 tile polygons, only 2/1 polygons intersect fixed 100m city/Berdorf windows; official URL directory points to separate classified point-cloud ZIP tiles",
+      "resolution_or_granularity": "Original 450512-byte CRS84 GeoJSON has 1287 tile polygons, only 1 city / 2 Berdorf polygons intersect the respective fixed 100m windows; official URL directory points to separate classified point-cloud ZIP tiles",
       "potential_roles": [
         "original_tile_selection",
         "different_processing_method_candidate",
@@ -457,7 +457,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Official original tile-index full SHA256 2ad881f794e3699b83a0b312c84c2b0e467f21a7ec92bbf10a0c9a21aa4d1e6a and published SHA1 6fa8f0bd8afdf87bd175c9dab2d7b479b1b18874 verified in GitHub Action 41892606021. This is NOT verification of any source LAZ/ZIP tile or actual classified building points. Potential raw-sensor overlap with VDL 3D remains unresolved; independent validation not admitted."
+      "note": "Official original tile-index full SHA256 2ad881f794e3699b83a0b312c84c2b0e467f21a7ec92bbf10a0c9a21aa4d1e6a and published SHA1 6fa8f0bd8afdf87bd175c9dab2d7b479b1b18874 verified in GitHub Action 41892606021. This is NOT verification of any source LAZ/ZIP tile or actual classified building points. Potential raw-sensor overlap with VDL 3D remains unresolved; independent validation not admitted. This source cover-count was read from site-keyed original JSON: Luxembourg-city 1 and Berdorf-village 2; a previous sorted-log extraction had transposed these two labels, and the frozen code now rejects the incorrect mapping."
     },
     {
       "candidate_id": "lu.act.orthophoto2019.official",
