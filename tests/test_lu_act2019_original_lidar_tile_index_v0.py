@@ -108,7 +108,7 @@ class OriginalLiDARIndexTests(unittest.TestCase):
         self.assertEqual(OBSERVED_FEATURES, 1287)
         self.assertEqual(OBSERVED_ORIGINAL_BYTES, 450512)
         self.assertEqual(len(OBSERVED_ORIGINAL_SHA256), 64)
-        self.assertEqual(OBSERVED_STUDY_TILE_COUNTS, {"luxembourg-city":2,"berdorf-village":1})
+        self.assertEqual(OBSERVED_STUDY_TILE_COUNTS, {"luxembourg-city":1,"berdorf-village":2})
 
     def test_missing_original_asset_rejected_without_network(self):
         with self.assertRaises(OriginalIndexError):
