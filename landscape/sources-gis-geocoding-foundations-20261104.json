@@ -1,0 +1,202 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery of geospatial address, gazetteer, temporal-building, soil and self-hosted geocoding foundations for global CAT exposure linkage and map production.",
+  "review_date": "2026-11-04",
+  "entries": [
+    {
+      "candidate_id": "openaddresses.global-source-collection.2026",
+      "name": "OpenAddresses worldwide authoritative address and parcel source index",
+      "provider": "OpenAddresses community and underlying national/local data providers",
+      "categories": [
+        "addresses",
+        "geocoding",
+        "cadastral_parcels",
+        "building_geometry",
+        "global"
+      ],
+      "spatial_scope": "Global patchwork; uneven coverage and source completeness by jurisdiction",
+      "temporal_scope": "Rolling weekly pipeline; each country/state/source has its own vintage",
+      "resolution_or_granularity": "Per-source address point records with street, house number, postcode and coordinate; catalog also locates parcel, building and road-centerline products",
+      "potential_roles": [
+        "address_to_coordinate_matching",
+        "building_address_join",
+        "source_discovery_by_country",
+        "property_geocoding_quality_challenge"
+      ],
+      "authoritative_url": "https://github.com/openaddresses/openaddresses",
+      "access_class_hint": "public_source_catalogue_and_per_source_batch_data_exact_rights_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Repository source definitions are CC0, but processed records retain each upstream government's original data license; do not treat the full batch as uniformly cleared. Preserve source ID, extraction vintage, coordinate precision and address-to-structure match ambiguity. Address points are not parcel valuation, building TIV or an independently verified structure footprint."
+    },
+    {
+      "candidate_id": "geonames.global-gazetteer.daily.2026",
+      "name": "GeoNames global place-name gazetteer and daily country extracts",
+      "provider": "GeoNames",
+      "categories": [
+        "gazetteer",
+        "geocoding",
+        "placenames",
+        "postal_codes",
+        "global"
+      ],
+      "spatial_scope": "Global place-name and administrative-feature coverage, uneven by region",
+      "temporal_scope": "Continuously revised; provider daily dumps and separate postal-code extracts",
+      "resolution_or_granularity": "Over 13 million named geographic features with WGS84 point coordinates, feature classes, alternate names, hierarchies and optional elevation/population",
+      "potential_roles": [
+        "historical_event_place_resolution",
+        "place_alias_normalisation",
+        "geocode_fallback",
+        "regional_event_join"
+      ],
+      "authoritative_url": "https://www.geonames.org/export/",
+      "access_class_hint": "daily_public_text_dump_web_api_username_quota_and_attribution_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Publisher advertises CC BY and commercial data use, but API service limits and exact extract/license version need documented review. This is mainly a WGS84 point gazetteer, not high-resolution polygon geometry, parcel geocoding truth or independent CAT event observations. Keep GeoNames IDs, feature codes, aliases, source date and ambiguous matches."
+    },
+    {
+      "candidate_id": "whosonfirst.global-place-hierarchies.geojson",
+      "name": "Who's On First global gazetteer and administrative place hierarchies",
+      "provider": "Who's On First / whosonfirst-data maintainers",
+      "categories": [
+        "gazetteer",
+        "administrative_boundaries",
+        "geocoding",
+        "place_hierarchies",
+        "global"
+      ],
+      "spatial_scope": "Global administrative places, neighborhoods, postal-code and venue repositories with variable completeness",
+      "temporal_scope": "Version and revision tracked per individual GeoJSON record; source-specific vintages",
+      "resolution_or_granularity": "Record-level GeoJSON geometry, stable 64-bit WOF identifiers, parent hierarchies, concordances and alternate names",
+      "potential_roles": [
+        "place_identity_concordance",
+        "administrative_region_crosswalk",
+        "geocode_quality_control",
+        "historical_locality_normalisation"
+      ],
+      "authoritative_url": "https://github.com/whosonfirst-data",
+      "access_class_hint": "public_geojson_and_sqlite_extracts_record_provenance_and_component_licence_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Not independent of GeoNames/OSM or other upstream gazetteers where concordances and geometry sources overlap. Inspect per-record source attribution, geometry accuracy, disputed or superseded boundaries, placetype and licenses before any commercial reuse. No insurer exposure or event-loss labels are implied."
+    },
+    {
+      "candidate_id": "microsoft.tempo.building-density-height.cog.2026",
+      "name": "Microsoft TEMPO global temporal building density and height rasters",
+      "provider": "Microsoft AI for Good",
+      "categories": [
+        "building_attributes",
+        "building_density",
+        "building_height",
+        "urban_growth",
+        "remote_sensing",
+        "global"
+      ],
+      "spatial_scope": "Global approximately 100 m grids for two public periods; 40 m quarterly data for five named locations",
+      "temporal_scope": "Global 2020 Q4 and 2023 Q4; five regions quarterly 2020 Q2 through 2025 Q2; repository update 2026-05-19",
+      "resolution_or_granularity": "Tile-index GeoPackage and two-band Cloud-Optimized GeoTIFF, building density fraction and height scaled to metres; ~100 m global/~40 m selected regions",
+      "potential_roles": [
+        "building_stock_change_prior",
+        "urban_growth_exposure_backcast",
+        "footprint_coverage_challenge",
+        "height_proxy_with_uncertainty"
+      ],
+      "authoritative_url": "https://github.com/microsoft/buildings",
+      "access_class_hint": "public_cog_gpkg_tile_index_cdla_permissive_2_rights_asset_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Distinct from the already admitted/discovered Microsoft Global ML Building Footprints polygon inventory. Repository explicitly licenses its COGs and GeoPackage tile index under CDLA Permissive 2.0, while code is MIT; still review selected asset/version. Both raster bands are model-derived from Planet imagery and training priors (including Overture/Google labels); they are not observed individual building heights, claims or independent holdout truth."
+    },
+    {
+      "candidate_id": "openlandmap.soildb.global-30m.2026",
+      "name": "OpenLandMap-soildb gridded predicted global soil properties",
+      "provider": "OpenLandMap / OpenGeoHub",
+      "categories": [
+        "soil",
+        "terrain_context",
+        "landslide",
+        "flood_runoff",
+        "global"
+      ],
+      "spatial_scope": "Global excluding deserts and permanent ice for documented 30 m model",
+      "temporal_scope": "Target 2000 through 2022+ with modeled five-year periods; publication/asset availability varies",
+      "resolution_or_granularity": "Approximately 30 m modelled soil texture, bulk density, carbon and pH by depth 0-30, 30-60 and 60-100 cm; predicted mean and uncertainty intervals",
+      "potential_roles": [
+        "soil_hydrology_parameter_prior",
+        "landslide_susceptibility_context",
+        "infiltration_runoff_prior",
+        "soil_model_uncertainty_challenge"
+      ],
+      "authoritative_url": "https://github.com/openlandmap/soildb",
+      "access_class_hint": "public_documentation_stac_or_s3_exact_layer_release_and_licence_review",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Predictions use spatiotemporal machine learning from heterogeneous soil samples. Soil properties do not directly give landslide probability, river flood depth or site-level ground truth. Some underlying soil-sample catalogs have access restrictions or degraded coordinates. Check exact STAC asset, depth, unit, vintage, uncertainty and commercial licensing per layer before downloading."
+    },
+    {
+      "candidate_id": "pelias.geocoder.open-source.workflow",
+      "name": "Pelias self-hosted multi-source geocoding workflow",
+      "provider": "Pelias contributors",
+      "categories": [
+        "geocoding",
+        "software_workflow",
+        "addresses",
+        "place_hierarchies",
+        "global"
+      ],
+      "spatial_scope": "Potentially global according to independently licensed imported source extracts",
+      "temporal_scope": "Continuously maintained code and versioned input-data snapshots",
+      "resolution_or_granularity": "Forward/reverse geocoding API with importers for OpenAddresses, OpenStreetMap, GeoNames, Who's On First and custom CSV",
+      "potential_roles": [
+        "reproducible_address_geocoding_pipeline",
+        "cross_source_geocode_concordance",
+        "local_batch_geocoding_without_public_api_dependence"
+      ],
+      "authoritative_url": "https://github.com/pelias/pelias",
+      "access_class_hint": "self_hosted_open_source_software_imported_data_rights_separate",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "This is software (MIT) rather than a new location dataset. Its output depends on the imported records; each input data license, snapshot, quality profile and address privacy boundary must be reviewed separately. Record version, input-source fingerprints and candidate score; ambiguous matches must not become false building locations."
+    },
+    {
+      "candidate_id": "komoot.photon.osm-geocoder.workflow",
+      "name": "Photon OpenStreetMap forward and reverse geocoder",
+      "provider": "komoot / Photon contributors",
+      "categories": [
+        "geocoding",
+        "software_workflow",
+        "openstreetmap",
+        "search",
+        "global"
+      ],
+      "spatial_scope": "According to imported OpenStreetMap coverage; potentially planet-wide",
+      "temporal_scope": "Continuously maintained importer and optional OSM update feed",
+      "resolution_or_granularity": "OpenSearch-backed multilingual search-as-you-type, bounded-area and reverse-geocoding endpoints with OSM-based data",
+      "potential_roles": [
+        "osm_address_resolution_comparison",
+        "geocoding_candidate_generation",
+        "local_reverse_geocoding"
+      ],
+      "authoritative_url": "https://github.com/komoot/photon",
+      "access_class_hint": "self_hosted_apache_2_software_osm_odbl_data_demo_api_not_for_bulk_use",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "Software is Apache-2.0 but its underlying OSM database retains ODbL obligations. The public Photon demo is limited and may throttle bulk workloads; use a self-hosted, version-pinned instance if justified. This is not independent of OSM, Nominatim or Overture OSM-derived building data."
+    }
+  ]
+}
