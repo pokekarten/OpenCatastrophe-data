@@ -128,3 +128,50 @@ python scripts/audit_pdok_bgt_bag_identity_v0.py --bgt /private/pdok-bgt-bebouwi
 ```
 
 **Next scientific gate:** use approved/verified original feature bytes with an independent exact ID and geometry receipt. In projected CRS EPSG:28992, calculate ST_Area(ST_Intersection(bgt.geom, parcel.geom))/ST_Area(bgt.geom) for all intersecting parcels, report multi-parcel/multi-building topology and coverage including polygons outside the query bbox. Do not allocate 100% of one building's cost to every overlapping parcel. Only then consider building-level exposure priors from independently justified construction replacement-cost inputs. Unit tests/CI and rights admission remain independent.
+
+## 2026-11-05: exact projected PostGIS area-overlay receipt, real bounded PDOK source geometry
+
+**Isolated read-only execution:** connected Neon `insurance-risk-core`, database `insurance`, branch `validation-schema-20261031` (not production `main`); PostGIS `3.5.7`, PROJ `9.1.1`. The query was one ephemeral `WITH ... SELECT` with public technical geometry and ID fields only; no temp tables, DML, provider raw records retained in Git or Neon, no insurer/customer data. All input geometries transformed from OGC:CRS84 / EPSG:4326 to **EPSG:28992** for valid metre-square area calculations.
+
+**Official bounded source snapshot:** 2026-11-04 UTC 23:17:06 / 23:17:08 / 23:17:10 (`perceel`, `bebouwing`, `pand` responses). Same micro-bbox `5.1202,52.0902,5.1206,52.0906`, `limit=40`, complete returned response with no next page, **19 parcels, 9 BGT-derived `bebouwing` footprints, 21 BAG buildings**. All 9 Bebouwing IDs directly matched BAG `pand` IDs with status `Pand in gebruik`. These HTTP response timestamps are *retrieval timestamps*, not proof of equal historical source revision.
+
+**PostGIS results on 9 BGT-derived building geometries:**
+
+| Quality metric | Original bounded result |
+| --- | ---: |
+| Invalid parcel / BGT geometries (`ST_IsValid`) | 0 / 0 |
+| Buildings with no positive parcel polygon intersection | 0 |
+| Buildings with 1 positive parcel polygon intersection | 2 |
+| Buildings with 2+ positive parcel polygon intersections | 7 |
+| Buildings with 2+ intersections each exceeding 1 m² | **1** |
+| Buildings with 2+ intersections each exceeding 5% of their footprint | **1** |
+| Buildings whose *summed* parcel-overlap areas exceed their own footprint | 0 |
+| Total BGT footprint area | **483.95 m²** |
+| Sum of parcel/building intersection areas | **480.57 m²** |
+| Capped aggregate footprint area overlap ratio | **99.30%** |
+| Sum of dominant (largest) parcel intersection per building | **412.53 m²** (85.24% of building footprint area) |
+| Largest secondary parcel intersection fraction on any one building | **29.62%** |
+
+**Key scientific correction:** the centroid-based 9/9 single-parcel candidates were NOT one-to-one property facts. Exact area geometry finds multiple positive overlaps for 7/9, **but 6 of those 7 only have tiny secondary overlaps**. Treat a geometric positive intersection, 1 m² threshold, and 5% area threshold as distinct classes. Such thresholds are research *sensitivity diagnostics*, **not validated proof of actual parcel titles, ownership or legal boundary allocation**. A parcel cartographic boundary remains indicative; multipolygon/source geometry splits, tolerance, boundary touching, geometry accuracy and original data validity must be explicitly reviewed.
+
+**No model assumption from 99.30%:** this is *coverage of 9 sampled BGT footprint polygons by the 19 returned cadastral parcel polygons*, not completeness of Dutch BAG buildings, flood exposure, replacement values or insured portfolios. No 1:1 reconstruction cost attribution, no property owner and no R&V insurer allocation may be derived. Even if total intersection area is <= building area, local overlapping parcel polygons may exist and be offset by uncovered gaps; a follow-up union-intersection comparison should quantify this.
+
+**New reproducibility deliverables:**
+
+- `scripts/render_pdok_postgis_overlap_select_v0.py`: builds a **private read-only PostGIS SELECT** from the three independently obtained bounded GeoJSON collections (exact IDs/geometries are never checked in). The template rejects pagination, invalid CRS84 coordinate data, sensitive owner/title/address fields, unexpected IDs, stale >1d source retrieval times and any output file placed inside the repository checkout. It produces aggregate-only output and keeps `source_admitted=false`, `model_input_approved=false`.
+- `tests/test_render_pdok_postgis_overlap_select_v0.py`: synthetic generator/CLI/privacy/negative-input checks; CI results must be observed, not assumed.
+- `research_runners/sql/nl_pdok_area_overlay_synthetic_invariants_v0.sql`: **executed successfully on Neon validation branch 2026-11-05**: 5 invented buildings; detects 1 uncovered, 1 single-parcel, 3 multiple-positive-overlap, 2 meaningful-overlap (one deliberately invalid/duplicated), 1 double-count building; 450 m² naive vs 400 m² capped, `invariants_passed=true`.
+
+To generate a *private* query for independent review (after source-specific rights review), use local files outside Git:
+
+```sh
+python scripts/render_pdok_postgis_overlap_select_v0.py \
+  --parcels /private/pdok-parcels.json \
+  --bgt /private/pdok-bgt-bebouwing.json \
+  --bag /private/pdok-bag-panden.json \
+  --bbox 5.1202,52.0902,5.1206,52.0906 \
+  --out /private/pdok-projected-overlap-select.sql
+python -m unittest tests.test_render_pdok_postgis_overlap_select_v0 -v
+```
+
+**Blockers remain:** source provenance/rights admission, precise feature extraction lineage, full source geometry validation (including union/double overlap), feature-status time alignment, transfer into versioned exposure observations and separate insurer-specific allocation. The isolated query is a research result, not an operational source ingestion or a Monte Carlo CAT run.
