@@ -106,9 +106,8 @@ class OriginalTileHTTPTests(unittest.TestCase):
         self.assertEqual(len(opener.requests),1)
 
     def test_invalid_original_url_rejected_before_network(self):
-        fake=FakeOpen(*self.fake()[:1]) if False else None
         with self.assertRaisesRegex(ValueError,"Unreviewed original"):
-            probe_one("https://other.example/private.zip",opener=fake)
+            probe_one("https://other.example/private.zip")
 
     def test_redirect_origin_rejected_without_unsafe_echo(self):
         with self.assertRaises(TileProbeError):
