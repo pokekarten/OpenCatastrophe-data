@@ -86,7 +86,7 @@ def _read_original_rows(archive: ZipFile, sheet: str, *, max_columns: int = MAX_
                     ix=_column(cell.get("r",""))
                     if ix>max_columns:
                         continue
-                    key=chr(64+ix)
+                    key=REF.fullmatch(cell.get("r", "")).group(1)
                     if key in row:
                         raise OriginalReceiptError("duplicate original column in row")
                     raw=_cell_raw(cell)
