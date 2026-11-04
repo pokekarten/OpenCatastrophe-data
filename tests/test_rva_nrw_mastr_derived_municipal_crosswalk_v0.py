@@ -42,8 +42,12 @@ class NRWMaStRDerivedCrosswalkTests(unittest.TestCase):
         self.assertEqual(got["nrw_unit_sums"]["einheiten_in_betrieb"], 10)
         self.assertEqual(got["nrw_unit_sums"]["gebaeudesolaranlagen"], 6)
         self.assertEqual(Decimal(got["nrw_all_generation_pv_capacity_kwp"]), Decimal("45.80"))
-        self.assertNotIn("PRIVATE_SYN_A", str(got))
-        self.assertNotIn("05162020", str(got))
+        # The temporary key set is intentionally private until crosswalk().
+        # Only the published receipt may be checked for non-disclosure.
+        published = {k: v for k, v in got.items() if k != "nrw_key_set_private_only"}
+        self.assertNotIn("PRIVATE_SYN_A", str(published))
+        self.assertNotIn("05162020", str(published))
+        self.assertEqual(got["nrw_key_set_private_only"], {"05162020"})
         self.assertFalse(got["source_is_federal_original_export"])
 
     def test_synthetic_is_rejected_by_pinned_git_sha(self):
