@@ -204,8 +204,12 @@ def main(argv=None):
     args=parser.parse_args(argv)
     try:
         report=verify_original(args.original_index)
-    except (OriginalIndexError,OSError,ValueError,TypeError):
-        # Avoid errors leaking original per-tile URLs or geometry.
+    except OriginalIndexError as exc:
+        # All error messages originate from constant, hand-reviewed stage labels.
+        # Never print raw provider URL, per-tile coordinate or other original values.
+        print("BLOCKED: reviewed original index rule: " + str(exc))
+        return 2
+    except (OSError,ValueError,TypeError):
         print("BLOCKED: original LiDAR2019 tile-index integrity or spatial preflight")
         return 2
     print(json.dumps(report,sort_keys=True,indent=2,allow_nan=False))
