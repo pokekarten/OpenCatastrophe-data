@@ -111,8 +111,20 @@ class OriginalKreisNumericReceiptTests(unittest.TestCase):
             inspect_original_kreis_building_counts(build(edit=(4,-1)),require_original_sha=False)
 
     def test_cannot_invert_building_type_hierarchy(self):
-        with self.assertRaisesRegex(OriginalReceiptError,"hierarchy impossible"):
+        with self.assertRaisesRegex(OriginalReceiptError,"hierarchy excess"):
             inspect_original_kreis_building_counts(build(edit=(4,30)),require_original_sha=False)
+
+    def test_cell_key_bounded_original_subcategory_non_nesting(self):
+        receipt,rows=inspect_original_kreis_building_counts(build(edit=(5,1002)),
+                                                             require_original_sha=False)
+        self.assertEqual(rows[0]["published_cell_key_category_excess"],2)
+        self.assertEqual(receipt["cell_key_hierarchy_overage_max"],2)
+        self.assertEqual(receipt["cell_key_hierarchy_overage_kreis_count"],1)
+        self.assertTrue(receipt["cell_key_hierarchy_excess_is_not_source_error"])
+
+    def test_cell_key_excess_above_hard_qc_bound_blocked(self):
+        with self.assertRaisesRegex(OriginalReceiptError,"outside 10-count"):
+            inspect_original_kreis_building_counts(build(edit=(5,1011)),require_original_sha=False)
 
     def test_too_few_kreise_not_admitted(self):
         with self.assertRaisesRegex(OriginalReceiptError,"missing Kreis rows|incomplete"):
