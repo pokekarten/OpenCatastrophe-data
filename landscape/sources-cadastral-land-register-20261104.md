@@ -24,14 +24,14 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Provider:** Geobasis NRW  
 **Categories:** `cadastral_parcels`, `parcel_geometry`, `land_use_context`, `germany`  
 **Spatial scope:** North Rhine-Westphalia, Germany  
-**Temporal scope:** Official source metadata 2026-09-01; live WFS changes on refresh  
+**Temporal scope:** Geoportal metadata records 2026-09-01; GovData current listing cites 2026-10-01. Actual mutable WFS vintage unresolved pending original data receipt.  
 **Resolution / granularity:** INSPIRE polygon geometry for parcels, cadastral units and districts via WFS; EPSG:25832 and EPSG:4258 supported  
 **Potential roles:** `parcel_building_geometry_join`, `spatial_hazard_overlay`, `urban_property_exposure_validation`  
 **Access hint:** `public_wfs_dl_de_zero_2_0_catalogue_provenance_and_bounded_probes`  
 **Authoritative source:** <https://www.geoportal.de/info/6ee0316c-fff3-4c04-89c1-3aa2b453f95a>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Official listing states free DL-DE-Zero 2.0 terms, no access restriction and maximum 100000 objects per response; choose bounded spatial query or recommended stored dataset query. Parcel shape is not a building footprint, ownership record, dwelling count or insured value. Preserve ALKIS version, CRS and compound/split parcel identities.
+**Note:** Official listing states free DL-DE-Zero 2.0 terms, no access restriction and maximum 100000 objects per response; choose bounded spatial query or recommended stored dataset query. Parcel shape is not a building footprint, ownership record, dwelling count or insured value. Preserve ALKIS version, CRS and compound/split parcel identities. Original provider GetCapabilities URL probed twice on 2026-11-04 (with and without VERSION=2.0.0); both returned HTTP 500 OGC Proxy Internal Server Error through the research fetch path. Do not claim usable original feature bytes or a working download until independent retry/alternate official access succeeds. Source vintage differs between Geoportal (Sep) and GovData (Oct).
 
 ## NRW Grundsteuerdaten Flurstuecke 2026 CSV
 
@@ -151,7 +151,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Authoritative source:** <https://api.pdok.nl/kadaster/brk-kadastrale-kaart/ogc/v1/collections/perceel?f=html>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Not the existing BAG building register candidate: BRK Perceel is a distinct cadastral parcel identity layer. PDOK descriptions do not imply owner names, replacement value or insured coverage. Pin access date and exact feature geometry, avoid treating one parcel as one BAG pand/verblijfsobject.
+**Note:** Not the existing BAG building register candidate: BRK Perceel is a distinct cadastral parcel identity layer. PDOK descriptions do not imply owner names, replacement value or insured coverage. Pin access date and exact feature geometry, avoid treating one parcel as one BAG pand/verblijfsobject. Bounded original OGC API test on 2026-11-04: GET collections/perceel/items?f=json&amp;limit=1 returned HTTP 200 application/geo+json with exactly one MultiPolygon feature, parcel identifier, municipality, area and validity metadata. Feature bytes and any person-level fields were not committed. This establishes one machine-readable response, not field rights/admission or BAG crosswalk quality.
 
 ## Geneva SITG CAD_PARCELLE_MENSU cadastral polygons and EGRID
 
