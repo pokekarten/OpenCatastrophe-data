@@ -71,6 +71,28 @@ SOURCE_OBJECTS = {
         "compressed_sha256": "441cdeb5d6ba6406a4727b6a8c475be5f35920df398bcdfb7347e562999a25c2",
         "mrms_grib_parameter_number": 29,
     },
+    "mesh_arlington_2024": {
+        # Second independent historical storm/date. NWS FWD preliminary
+        # 2024-05-27 19:43 CDT (2024-05-28 00:43Z), 3.25-inch mPING
+        # report at 32.71 N, 97.10 W; do NOT treat as instrument truth.
+        # Digest assembled from read-only intermediary bounded HTTP ranges,
+        # awaiting GitHub-hosted independent original S3 direct/TLS/CRC check.
+        "basename": "MRMS_MESH_00.50_20240528-004243.grib2.gz",
+        "key": "CONUS/MESH_00.50/20240528/MRMS_MESH_00.50_20240528-004243.grib2.gz",
+        "compressed_size": 62367,
+        "compressed_sha256": "7dcca72784d7715a43dca5353726aaf2cee4066d2728500d0f3d0bce3d86397f",
+        "mrms_grib_parameter_number": 28,
+    },
+    "mesh_arlington_2024_max30": {
+        # Same physical storm, separate rolling-maximum representation.
+        # 2024-05-28 00:44:00Z, 60s after NWS mPING report.
+        # Digest is intermediary-assembled, not yet direct/TLS verified.
+        "basename": "MRMS_MESH_Max_30min_00.50_20240528-004400.grib2.gz",
+        "key": "CONUS/MESH_Max_30min_00.50/20240528/MRMS_MESH_Max_30min_00.50_20240528-004400.grib2.gz",
+        "compressed_size": 105601,
+        "compressed_sha256": "ddef94cad19ff39621b74563631ae0c9cf205fdf71abaa48c4b6d7715b75a806",
+        "mrms_grib_parameter_number": 29,
+    },
 }
 MAX_COMPRESSED_BYTES = 128_000
 MAX_DECOMPRESSED_BYTES = 2_000_000
