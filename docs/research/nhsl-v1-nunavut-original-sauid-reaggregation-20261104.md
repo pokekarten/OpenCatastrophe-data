@@ -97,3 +97,26 @@ The pinned source-file [GPKG checker](../../scripts/nhsl_v1_original_binary_pref
 New synthetic regression fixtures cover `GEOMETRY` metadata with both valid and deliberately wrong **actual** WKB geometry types. This is not an exemption from scientific source validation and does not convert NHSL archetypes into real insured rooftops.
 
 **Evidence ceiling:** This correction must pass the exact-PR-head synthetic CI and then the reviewed-main original provider workflow before the **native SQLite source-check receipt** may be marked successful. The earlier independent 103↔2,087 numerical original-file proof remains separate and unchanged.
+
+
+## Confirmed trusted-main original-source proof — 2026-11-04 19:10 UTC
+
+**Status update, superseding the earlier pending/blocked notes above:** The reviewed [WKB geometry fix PR #1309](https://github.com/pokekarten/OpenCatastrophe-data/pull/1309) was **merged** after passing all Python 3.11–3.14/REUSE/GIS and new synthetic geometry rejection tests. The next **trusted-main** original source run, [GitHub Actions run **41894323152**](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41894323152), was **completed successfully** on exact merged commit `a750a705bec95cbc00226dd9c04db3a6ee1679bb`.
+
+This run (unlike PR-head synthetic CI) actually fetched both original NHSL v1.0 Nunavut ZIPs and passed the native Python binary preflight, including **pinned SHA-256, member CRC/size, SQLite `PRAGMA integrity_check`, GPKG header/SRS, per-feature WKB geometry family validation and seven SAUID cross-layer stock/value conservation tests**. The original official `gpkg_geometry_columns.geometry_type_name=GEOMETRY` was handled by verifying the actual WKB families instead of trusting its generic metadata label.
+
+**Exact machine-readable aggregate receipt printed by the main job**, excluding provider source rows:
+
+| Evidence | Native original-source result |
+| --- | --- |
+| Original ZIP byte checks | both pinned SHA-256 verified |
+| Original matched settled-area SAUID groups | **103 / 103** |
+| Original archetype features | **2,087** |
+| Estimated building count | **6,307** |
+| Total modeled floor area | **32,616,779 ft²** |
+| Original modelled replacement costs incl. contents | **7,031,084,592.666673 CAD, base year 2019** |
+| Seven per-SAUID conservation checks | **all within declared tolerances** |
+| Original SQLite integrity / WKB type checks | **passed** |
+| `source_admitted` / `oed_insured_locations_exportable` | **false / false** |
+
+**Scientific interpretation:** source-native structural/numeric reproducibility is now established for these exact **Nunavut v1.0** files. Neither the original source, the validated conservation, nor the runner receipt establishes individual surveyed roof coordinates, earthquake/flood loss accuracy, insurance uptake/limits, commercial insurer portfolio composition, or permission to label replacement cost as insured TIV. A geometry type/SRS check is **not** a full geographic topology/centroid accuracy validation. These remain separate scientific and admission tasks.
