@@ -452,12 +452,12 @@
         "2019_roof_reconstruction_preflight"
       ],
       "authoritative_url": "https://data.public.lu/en/datasets/lidar-2019-releve-3d-du-territoire-luxembourgeois/",
-      "access_class_hint": "catalogue_cc0_original_tile_index_full_sha_verified_no_pointcloud_bytes",
+      "access_class_hint": "original_index_sha_verified_three_source_zip_head_range_confirmed_full_tile_integrity_pending",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Official original tile-index full SHA256 2ad881f794e3699b83a0b312c84c2b0e467f21a7ec92bbf10a0c9a21aa4d1e6a and published SHA1 6fa8f0bd8afdf87bd175c9dab2d7b479b1b18874 verified in GitHub Action 41892606021. This is NOT verification of any source LAZ/ZIP tile or actual classified building points. Potential raw-sensor overlap with VDL 3D remains unresolved; independent validation not admitted. This source cover-count was read from site-keyed original JSON: Luxembourg-city 1 and Berdorf-village 2; a previous sorted-log extraction had transposed these two labels, and the frozen code now rejects the incorrect mapping."
+      "note": "Official original tile-index full SHA256 2ad881f794e3699b83a0b312c84c2b0e467f21a7ec92bbf10a0c9a21aa4d1e6a and published SHA1 6fa8f0bd8afdf87bd175c9dab2d7b479b1b18874 verified in GitHub Action 41892606021. This is NOT verification of any source LAZ/ZIP tile or actual classified building points. Potential raw-sensor overlap with VDL 3D remains unresolved; independent validation not admitted. This source cover-count was read from site-keyed original JSON: Luxembourg-city 1 and Berdorf-village 2; a previous sorted-log extraction had transposed these two labels, and the frozen code now rejects the incorrect mapping. Targeted original-provider HTTP HEAD and 4-byte Range run 41903085731 (2026-11-04) verifies three source ZIP HTTP 200/206, matching content-range totals and ZIP PK0304 prefixes: Luxembourg city one ZIP advertises 449275061 bytes; Berdorf two ZIPs advertise 410361626 and 374704804 bytes. These are response headers / four-byte signatures only, NOT original full ZIP-byte SHA256, actual LAZ building points or independent 2019 building truth. No original tile ZIPs downloaded."
     },
     {
       "candidate_id": "lu.act.orthophoto2019.official",
