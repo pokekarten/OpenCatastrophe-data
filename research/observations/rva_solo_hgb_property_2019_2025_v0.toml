@@ -158,3 +158,61 @@ solvency_ii_fire_other_property_thousand_eur = 2223182
 status = "non_equivalent_premium_classifications_reconciliation_not_established"
 hgb_source_url = "https://www.ruv.de/dam/jcr:e0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R+V%20Allgemeine%20Versicherung%20AG_final.pdf"
 solvency_source_url = "https://www.ruv.de/dam/jcr:9c8441a7-28dd-4d98-9b79-3eb3c8b4afa5/2025-SFCR-Allgemeine.pdf"
+
+# Direct HGB policy-count observations recovered from the issuer's insurance-stock movement table.
+# These measure year-end CONTRACTS, not addresses, physical buildings, or CAT-covered locations.
+[building_contract_observations]
+basis = "solo_HGB_self_written_connected_buildings_year_end"
+unit = "contracts"
+company_insured_building_coordinates_observed = false
+company_natcat_covered_building_count_observed = false
+company_geographic_contract_shares_observed = false
+warning = "Contract counts need not equal independently geocoded buildings; merged insurer legacy, multi-building and coverage splits remain unknown."
+
+[[building_contract_observations.years]]
+year = 2023
+contracts = 1036338
+source_report_year = 2024
+source_document_page = 74
+source_url = "https://www.ruv.de/dam/jcr:71a5e2d0-4f86-4e5f-a716-f3f3f6aa5102/Allgemeine-2024.pdf"
+perimeter_break = false
+
+[[building_contract_observations.years]]
+year = 2024
+contracts = 1073802
+source_report_year = 2024
+source_document_page = 74
+source_url = "https://www.ruv.de/dam/jcr:71a5e2d0-4f86-4e5f-a716-f3f3f6aa5102/Allgemeine-2024.pdf"
+perimeter_break = true
+prior_year_condor_building_contracts = 68847
+merger_warning = "Condor 2023 separate-stock column is not equal to observed net inflow or organic growth."
+
+[[building_contract_observations.years]]
+year = 2025
+contracts = 1060546
+source_report_year = 2025
+source_document_page = 78
+source_url = "https://www.ruv.de/dam/jcr:e0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R+V%20Allgemeine%20Versicherung%20AG_final.2026-04-21-14-59-23.pdf"
+perimeter_break = true
+prior_year_direkt_building_contracts = 0
+merger_warning = "R+V Direktversicherung prior-year column reports no connected-building policies, but has motor business."
+
+# Whole-sparten self-written incurred claims, NOT catastrophe, event, flood, hail or wind claims.
+[building_gross_claims_observations]
+legal_entity = "R+V Allgemeine Versicherung AG"
+basis = "HGB_bruttoaufwendungen_fuer_versicherungsfaelle_self_written_connected_buildings"
+unit = "EUR"
+observed_peril_split = false
+observed_event_split = false
+observed_net_natcat_loss = false
+source_url = "https://www.ruv.de/dam/jcr:e0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R+V%20Allgemeine%20Versicherung%20AG_final.2026-04-21-14-59-23.pdf"
+source_document_page = 67
+warning = "All-cause financial statement gross claims expense, not catastrophe-event loss; cannot infer geography, hazard or outward treaty."
+
+[[building_gross_claims_observations.years]]
+year = 2024
+gross_claims_eur = "717388635.00"
+
+[[building_gross_claims_observations.years]]
+year = 2025
+gross_claims_eur = "577492703.97"
