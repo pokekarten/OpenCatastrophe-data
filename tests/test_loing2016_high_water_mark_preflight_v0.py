@@ -27,7 +27,10 @@ class WatermarkPreflightTest(unittest.TestCase):
     def test_exact_addition_reconciles_but_never_becomes_depth(self):
         r = review_marks([mark()])
         self.assertEqual(r["marks"][0]["water_surface_m_ngf_ign1969"], "100.625")
-        self.assertTrue(r["marks"][0]["independent_physical_trace_candidate"])
+        self.assertTrue(r["marks"][0]["physical_event_maximum_trace_candidate"])
+        self.assertFalse(r["marks"][0]["independent_physical_trace_candidate"])
+        self.assertFalse(r["marks"][0]["independent_atlas_holdout_established"])
+        self.assertEqual(r["independent_atlas_holdout_candidates"], 0)
         self.assertFalse(r["marks"][0]["inundation_depth_at_building_established"])
         self.assertFalse(r["risk_or_insured_loss_model_admitted"])
 
@@ -35,6 +38,7 @@ class WatermarkPreflightTest(unittest.TestCase):
         x = mark()
         x["event_maximum_flag"] = False
         r = review_marks([x])
+        self.assertFalse(r["marks"][0]["physical_event_maximum_trace_candidate"])
         self.assertFalse(r["marks"][0]["independent_physical_trace_candidate"])
         self.assertEqual(r["physical_trace_candidates"], 0)
 
@@ -44,6 +48,23 @@ class WatermarkPreflightTest(unittest.TestCase):
                 x = mark()
                 x["event_maximum_flag"] = value
                 review_marks([x])
+
+    def test_observed_mark_cannot_be_2017_atlas_holdout_without_lineage(self):
+        r = review_marks([mark()])
+        mark_result = r["marks"][0]
+        self.assertTrue(mark_result["physical_event_maximum_trace_candidate"])
+        self.assertFalse(mark_result["independent_atlas_holdout_established"])
+        self.assertEqual(mark_result["atlas_2017_calibration_membership"], "unknown")
+        self.assertEqual(mark_result["atlas_2021_revision_calibration_membership"], "unknown")
+        self.assertFalse(r["2017_atlas_input_mark_identity_list_attested"])
+        self.assertEqual(r["used_2017_driee_calibration_mark_count_documented"], 68)
+        self.assertFalse(r["2021_ddt_zi_challenge_lineage_attested"])
+
+    def test_no_caller_can_inject_false_holdout_certification(self):
+        x = mark()
+        x["atlas_2017_calibration_membership"] = "verified_not_used"
+        with self.assertRaises(WatermarkBlocked):
+            review_marks([x])
 
     def test_self_referenced_flood_mark_no_invented_zero_offset(self):
         x = mark()
@@ -92,7 +113,9 @@ class WatermarkPreflightTest(unittest.TestCase):
     def test_oral_testimony_remains_weaker_context(self):
         x = mark()
         x["mark_evidence"] = "oral_testimony"
-        self.assertFalse(review_marks([x])["marks"][0]["independent_physical_trace_candidate"])
+        r = review_marks([x])
+        self.assertFalse(r["marks"][0]["physical_event_maximum_trace_candidate"])
+        self.assertFalse(r["marks"][0]["independent_physical_trace_candidate"])
 
     def test_untrusted_provider_host_and_query_block(self):
         for url in ("https://example.net/site/example-0",
