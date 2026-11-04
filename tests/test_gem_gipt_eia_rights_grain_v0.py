@@ -71,13 +71,30 @@ class GEMGIPTGates(unittest.TestCase):
         r=run([row(other="TZ ID: TZ-MAP-123; EIA-860: 599")])
         self.assertEqual(r["rows_with_transitionzero_id"],1)
         self.assertEqual(r["state"],"REVIEW_TZ_NONCOMMERCIAL_AND_IDENTITY")
+        self.assertEqual(r["eia_de_claims_at_any_tz_quarantined_location"],1)
+        self.assertEqual(r["eia_de_claims_only_at_non_tz_locations_still_rights_unverified"],0)
         self.assertFalse(r["transitionzero_marked_rows_permitted_for_commercial_use"])
 
     def test_mixed_license_at_same_location_is_reported(self):
         r=run([row(unit="G1",other="TZ ID: A"),
                row(unit="G2",other="EIA-860: 599")])
         self.assertEqual(r["locations_containing_both_tz_and_non_tz_units"],1)
+        self.assertEqual(r["gem_locations_with_any_tz_unit"],1)
+        self.assertEqual(r["eia_de_claims_at_any_tz_quarantined_location"],1)
+        self.assertEqual(r["eia_de_claims_only_at_non_tz_locations_still_rights_unverified"],0)
         self.assertEqual(r["state"],"REVIEW_TZ_NONCOMMERCIAL_AND_IDENTITY")
+
+    def test_non_tz_location_remains_rights_unverified(self):
+        r=run([row(other="EIA-860: 599")])
+        self.assertEqual(r["eia_de_claims_only_at_non_tz_locations_still_rights_unverified"],1)
+        self.assertEqual(r["eia_de_claims_at_any_tz_quarantined_location"],0)
+        self.assertFalse(r["source_rights_or_model_admission_granted"])
+
+    def test_same_eia_code_at_tz_and_non_tz_sites_still_quarantined(self):
+        r=run([row(unit="G1",location="L1",other="TZ ID: 123; EIA-860: 599"),
+               row(unit="G2",location="L2",other="EIA-860: 599")])
+        self.assertEqual(r["eia_de_claims_at_any_tz_quarantined_location"],1)
+        self.assertEqual(r["eia_de_claims_only_at_non_tz_locations_still_rights_unverified"],0)
 
     def test_country_mismatch_is_not_us_eia_link(self):
         r=run([row(country="Germany",other="EIA-860: 599")])
