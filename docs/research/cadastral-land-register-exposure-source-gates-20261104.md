@@ -103,3 +103,28 @@ python scripts/audit_pdok_brk_bag_centroid_v0.py --parcels /private/pdok-parcels
 ```
 
 **Validation status:** current CI is pending as of this research note; do not claim these new Python unit tests have passed until execution evidence is available. No parcel/building source records, household details, addresses, or provider bytes have been committed.
+
+## Direct official building crosswalk: BGT Bebouwing → BAG pand — 2026-11-04
+
+**Important change of plan:** The official BRK Kadastrale Kaart [Bebouwing collection](https://api.pdok.nl/kadaster/brk-kadastrale-kaart/ogc/v1/collections/bebouwing?f=html) is a BGT-derived building-footprint subset with an explicit `identificatie_bag_pnd` field linking to BAG `pand.identificatie`. It is neither the same entity as the cadastral `Perceel` nor an independent validation source: the BGT building geometry and BAG ID share documented official lineage. Catalogued separately as `nl.kadaster.bgt-bebouwing-bagid.2026` because the *feature class and intended role* are distinct from parcel geometry, not because it is an independently measured hazard observation.
+
+Live source check in the same bounded CRS84 window `5.1202,52.0902,5.1206,52.0906` with `limit=40` (all responses `numberReturned` consistent, **no `next` links**):
+
+| Source collection | 2026-11-04 response timestamp | Feature count | What it contains |
+| --- | --- | ---: | --- |
+| BRK `perceel` | `20:32:13Z` | 19 | parcel geometries / stable cadastral IDs, not owners |
+| BRK `bebouwing` | `20:32:15Z` | 9 | BGT-derived building geometries and explicit BAG pand IDs |
+| BAG `pand` | `20:32:11Z` | 21 | registered building attributes and lifecycle status |
+
+**Direct official ID relation:** all 9 BGT features have nonempty `identificatie_bag_pnd` and each matched one of the 21 returned BAG IDs: **9/9 unique matched BAG pand identities**. All 9 matched BAG buildings have status `Pand in gebruik`; BGT statuses were `bestaand`. An exploratory stabilised-centroid containment test additionally placed all **9/9** BGT building centres in one of the 19 BRK parcel geometries. That latter parcel relation is **not** an official ID link; it remains an unverified spatial candidate until correct EPSG:28992 projected polygon intersection, share-of-footprint areas, partial overlap, split parcels and temporal geometry are assessed.
+
+**Interpretation:** a valuable provisional chain exists: `BRK cadastral parcel polygon ⇢ BGT-derived Bebouwing polygon ⇢ explicit BAG pand ID ⇢ BAG building characteristics`. Never assert 9/9 nationwide completeness or apply the 9/9 statistic to the other 12 BAG buildings (BGT is explicitly a subset). A building can occur on multiple parcels; a parcel can host multiple buildings; one BAG pand may have multiple BGT source geometries. This chain is still not a legal ownership record, a policy assignment, a reconstruction-cost estimate or an insured total value.
+
+**Executable, offline fail-closed identity diagnostic:** `scripts/audit_pdok_bgt_bag_identity_v0.py` plus `tests/test_audit_pdok_bgt_bag_identity_v0.py`. It counts exact ID matches, duplicate geometries per BAG ID, missing/ambiguous source IDs and lifecycle status in aggregate without outputting individual identifiers or addresses. No provider bytes have been checked into Git.
+
+```sh
+python -m unittest tests.test_audit_pdok_brk_bag_centroid_v0 tests.test_audit_pdok_bgt_bag_identity_v0 -v
+python scripts/audit_pdok_bgt_bag_identity_v0.py --bgt /private/pdok-bgt-bebouwing.json --bag /private/pdok-bag-panden.json --bbox 5.1202,52.0902,5.1206,52.0906
+```
+
+**Next scientific gate:** use approved/verified original feature bytes with an independent exact ID and geometry receipt. In projected CRS EPSG:28992, calculate ST_Area(ST_Intersection(bgt.geom, parcel.geom))/ST_Area(bgt.geom) for all intersecting parcels, report multi-parcel/multi-building topology and coverage including polygons outside the query bbox. Do not allocate 100% of one building's cost to every overlapping parcel. Only then consider building-level exposure priors from independently justified construction replacement-cost inputs. Unit tests/CI and rights admission remain independent.
