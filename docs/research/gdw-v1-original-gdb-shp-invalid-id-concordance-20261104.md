@@ -63,3 +63,49 @@ insured asset exposure or CAT loss curve readiness. Never automatically
 repair, snap or accept these 221 native invalid source polygons.
 The original authors' CC BY attribution/no-wholesale-mirror guidance
 and the repository's separate admission policy continue to apply.
+
+
+## Observed exact-ID result (main workflow, 2026-11-04)
+
+The real original-data workflow has now run successfully:
+https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41893588594
+
+Both source archives were downloaded **anew**, verified against their
+separately frozen full original ZIP SHA-256s, and processed in one
+temporary runner with PyShp and Fiona/OpenFileGDB, respectively.
+
+| Exact original GDW_ID set comparison | Result |
+| --- | ---: |
+| Source barrier GDW_IDs shared by both formats | 41,145 |
+| Barrier IDs unique to Shapefile | 0 |
+| Barrier IDs unique to Geodatabase | 0 |
+| Source reservoir GDW_IDs shared by both formats | 35,295 |
+| Reservoir IDs unique to Shapefile | 0 |
+| Reservoir IDs unique to Geodatabase | 0 |
+| GEOS-invalid native ring GDW_IDs shared by both formats | **221** |
+| Invalid polygon IDs unique to Shapefile | **0** |
+| Invalid polygon IDs unique to Geodatabase | **0** |
+
+Therefore **all 221 native invalid polygon source IDs are identical
+between the two original formats**. This is substantially stronger
+than equal counts and helps exclude format-specific record differences
+as the explanation for the observed invalidity. It does not establish
+bitwise identical underlying geometry coordinates or independently
+validate the GEOS topology algorithm.
+
+The evidence is frozen in
+research_runners/gdw_v1_original_crossformat_id_receipt_v0.py.
+
+### Follow-up quality gate
+
+The 221 polygons are **not admitted** as unqualified CAT model input.
+No automatic ring repair, clipping, snapping or silent deletion is
+permitted. Next quantify the consequences of possible modifications
+separately, e.g. native polygon area, conservative area change under
+a named repair method, feature-count change, paired point coverage,
+and the extent of geometry changes. Those are what-if diagnostics,
+not approval to modify the original inventory or assign a loss value.
+
+A full independently verified hydraulic model, source coverage,
+risk exposure values and insurer hazard/vulnerability calibration
+remain outside the evidence of these GIS source quality checks.
