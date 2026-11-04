@@ -73,7 +73,13 @@ class GeneratorSourceSchemaTests(unittest.TestCase):
              ("Proposed",["Plant Code","Generator ID"]),
              ("Retired and Canceled",["Plant Code","Generator ID"]),
         ],source_secret=True),scope="generator")
-        rendered=json.dumps(x)
+        # The synthetic input's SHA-256 can naturally contain "599" as
+        # hexadecimal digits; an integrity digest is not an exported generator
+        # ID. Redact only the trusted digest field before checking that
+        # source row values and labels never leak into any output metadata.
+        digest=x["source_xlsx_sha256"]
+        self.assertEqual(len(digest),64)
+        rendered=json.dumps(x).replace(digest,"<source-sha256>")
         self.assertNotIn("SECRET OWNERSHIP",rendered)
         self.assertNotIn("GEN-X",rendered)
         self.assertNotIn("599",rendered)

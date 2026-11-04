@@ -79,7 +79,17 @@ The change is **not** evidence of broad spatial relocation or altered river widt
 
 ### Next targeted experiment: single anomalous 2026 line
 
-One 2026 source length exceeds the spherical-km comparison by a factor of 222.0488. The new follow-up code classifies, without emitting any source coordinate or `OBJECTID`, whether source segments crossing longitude ±180° account for that >1% spherical-km outlier. A source longitude jump over 180° does **not** alone prove why `SHAPE_LENG` was calculated differently; this is a classification/triage signal. New antimeridian counts are **pending** until the reviewed-main workflow completes.
+**The original-data classification completed successfully:** [GitHub Actions main run 41908088082](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41908088082), checkout SHA `6bc0e58cde8cdac48541bfb6e98a049738639d8f`, rechecked the exact pinned original 2018/2026 ZIP SHA-256s.
+
+- Exactly **one** 2026 polyline segment has an original consecutive-vertex longitude jump greater than 180°, crossing the antimeridian in the source representation.
+- Exactly **one** 2026 source-length / spherical-km relative-error outlier exceeds 1%, and **it is the same antimeridian-crossing segment**.
+- There are **zero** >1% spherical-km outliers among non-antimeridian source segments.
+- The one outlier's source-length/spherical-km ratio remains **222.0488171062**; this is an issue with source length-vs-reference consistency, **not** a 222-fold increase in actual river length.
+- The angular-degree proof for 2018 remains unchanged: all 42,077 source `SHAPE_LENG` values match the source planar XY degree control to better than 1e-9 fractional tolerance.
+
+**Scientific interpretation:** geographic-dateline treatment is a strong candidate for the single 2026 discrepancy, but this count correlation does *not* establish the source author's software, geodesic conventions, line segmentation, or original processing bug. Do not silently replace the source length, apply a global factor, or claim a geodetically validated per-feature length correction.
+
+**Practical data-quality gate:** reject 2018 `SHAPE_LENG` as kilometres; it represents planar WGS84 coordinate degrees. Treat 2026 `SHAPE_LENG` as generally kilometre-consistent but with one explicitly observed antimeridian anomaly; keep source and derived metrics separate, retain the original source ZIP SHA-256 and attributes, and require independently checked WGS84 ellipsoidal or suitable regional projected length before hydrologic/network-model admission. The original GRWL width measurements and all downstream flood/insured-loss claims remain separate and unvalidated.
 
 ## How to interpret
 
@@ -95,7 +105,7 @@ python -m unittest tests.test_grwl_original_shape_leng_audit_v0 -v
 
 Live source processing is allowed only from reviewed `main` via `.github/workflows/grwl-original-shape-leng-audit.yml` and `python -m research_runners.grwl_original_shape_leng_audit_v0 --live`. PR heads run **offline tests only**. Full repository CI remains required.
 
-**Both source-lengthed and original-planar-degree comparison runs have completed successfully**, as documented above. The additional antimeridian-outlier classification has not yet run on trusted main; its result must be read from the exact completed source workflow log.
+**All three original-data length checks completed successfully** (initial ratio evidence, direct planar-degree confirmation, and antimeridian outlier classification), with exact GitHub runs linked above. The interpretation of the 2026 vendor algorithm and an independent ellipsoidal/projection-based correction remains open.
 
 ## Model boundaries
 
