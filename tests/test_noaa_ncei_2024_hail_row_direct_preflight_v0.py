@@ -15,7 +15,7 @@ from research_runners import noaa_ncei_2024_hail_row_direct_preflight_v0 as p
 def rows(*entries: dict, fieldnames=None) -> bytes:
     cols = list(fieldnames or p.SELECTED_FIELDS)
     buffer = io.StringIO(newline="")
-    writer = csv.DictWriter(buffer, fieldnames=cols)
+    writer = csv.DictWriter(buffer, fieldnames=cols, extrasaction="ignore")
     writer.writeheader()
     for entry in entries:
         writer.writerow(entry)
