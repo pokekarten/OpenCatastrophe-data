@@ -93,6 +93,7 @@ def inspect_site(conn, layer: dict, site: str) -> dict:
     study, expected = study_rect(site)
     try:
         from shapely import wkb
+        from shapely.geometry import box
     except ImportError as exc:
         raise SourceLineageError("Pinned Shapely required") from exc
     if (layer["table"] != EXPECTED_LAYER or layer["feature_count"] != GEOBASE_NATIONAL_ROWS
@@ -110,8 +111,14 @@ def inspect_site(conn, layer: dict, site: str) -> dict:
         "ORDER BY b.id LIMIT ?"
     )
     rows = conn.execute(query,(a,c,b,d,MAX_GEOBASE_POLYGONS+1)).fetchall()
-    if len(rows) != ENCLOSING_RECTANGLE_COUNTS[site]:
-        raise SourceLineageError("Source enclosing-rectangle count drifted")
+    if len(rows) > MAX_GEOBASE_POLYGONS:
+        raise SourceLineageError("RTree raw candidate count exceeded fixed limit")
+    # The RTree query returns overlapping *envelope rectangles*, not necessarily
+    # polygons intersecting even the enclosing native-coordinate rectangle.
+    # Reproduce the prior GeoBase native-bbox geometric sampler exactly before
+    # applying positive area clipping against the rotated EPSG:3035 square.
+    enclosing_native = box(a,b,c,d)
+    rectangle_polygon_count = 0
     observed_labels = []
     for label, blob in rows:
         if not isinstance(blob, bytes) or len(blob) > MAX_ORIGINAL_GEOMETRY_BYTES:
@@ -123,14 +130,20 @@ def inspect_site(conn, layer: dict, site: str) -> dict:
         if (geometry.geom_type not in ("Polygon", "MultiPolygon")
                 or geometry.is_empty or not geometry.is_valid or geometry.area <= 0):
             raise SourceLineageError("Invalid original building geometry")
+        if not geometry.intersects(enclosing_native):
+            continue
+        rectangle_polygon_count += 1
         if geometry.intersects(study) and geometry.intersection(study).area > 0:
             observed_labels.append(label)
+    if rectangle_polygon_count != ENCLOSING_RECTANGLE_COUNTS[site]:
+        raise SourceLineageError("Geometry-filtered enclosing rectangle population drifted")
     if len(observed_labels) != expected:
         raise SourceLineageError("Original positive-area population drifted")
     return {
         "site": site,
-        "bbox_candidates": len(rows),
-        "bbox_only_excluded": len(rows)-len(observed_labels),
+        "raw_rtree_envelope_hits": len(rows),
+        "enclosing_rectangle_polygon_candidates": rectangle_polygon_count,
+        "rectangle_only_candidates_excluded": rectangle_polygon_count-len(observed_labels),
         "true_area_building_polygons": len(observed_labels),
         "publisher_source_categories": summarize_source_codes(observed_labels,expected=expected),
         "original_source_labels_per_feature_exported": False,
