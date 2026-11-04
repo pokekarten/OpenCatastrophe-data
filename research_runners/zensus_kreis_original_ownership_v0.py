@@ -25,16 +25,12 @@ from zensus_kreis_original_numeric_receipt_v0 import (
 from zensus_kreis_original_age_cohorts_v0 import BASELINE,FIRST,read_pinned_baseline
 
 OWNER_CODES=tuple(f"EIGENTUM__{i}" for i in range(1,9))
-OWNER_LABELS=(
-    "Privatperson/-en",
-    "Gemeinschaft von Wohnungseigentuemer/-innen",
-    "Kommune oder kommunales Wohnungsunternehmen",
-    "Privatwirtschaftliches Wohnungsunternehmen",
-    "Wohnungsgenossenschaft",
-    "Anderes privatwirtschaftliches Unternehmen",
-    "Organisation ohne Erwerbszweck",
-    "Bund oder Land",
-)
+# These are SOURCE COLUMN CODES, not validated semantic names. The original
+# aggregate code order is not the order of the questionnaire; e.g. code 2
+# carries ~16.94m buildings and matches the national private-person category,
+# while code 1 carries ~1.77m and matches WEG. Group comparisons are NOT
+# sufficient to certify all eight individual code labels.
+OWNER_LABELS=tuple(f"Publisher ownership column EIGENTUM__{i}; exact name unverified" for i in range(1,9))
 SOURCE_DEFINITION="https://ergebnisse.zensus2022.de/datenbank/online/variables"
 MAX_OWNER_CELL=10_000_000
 
@@ -122,6 +118,8 @@ def extract_original_kreis_ownership(raw: bytes, baseline: dict[str,int],
         "buildings_with_residential_use_2022_count":sum(baseline.values()),
         "rva_2025_company_ownership_distribution_observed":False,
         "census_building_owner_equals_insurer_policyholder":False,
+        "eight_exact_owner_column_labels_source_verified":False,
+        "source_group_to_code_mapping_requires_independent_table_check":True,
         "owner_type_equals_self_occupied_household":False,
         "insurer_2025_covered_properties_or_tiv_observed":False,
         "geographic_loss_model_admitted":False,
