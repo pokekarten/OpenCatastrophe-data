@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: GRWL original SHAPE_LENG recalculation and units audit
+
+on:
+  pull_request:
+    paths:
+      - research_runners/grwl_original_shape_leng_audit_v0.py
+      - tests/test_grwl_original_shape_leng_audit_v0.py
+      - research_runners/grwl_original_aggregate_semantic_diff_v0.py
+      - research_runners/grwl_original_oriented_vertex_metric_v0.py
+      - research_runners/grwl_original_zip_structure_preflight_v0.py
+      - research_runners/grwl_trusted_original_byte_proof_v0.py
+      - docs/research/grwl-original-shape-leng-audit-20261104.md
+      - .github/workflows/grwl-original-shape-leng-audit.yml
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/grwl-original-shape-leng-audit.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grwl-original-shape-leng-audit
+  cancel-in-progress: false
+
+jobs:
+  pinned-original-length:
+    name: Pinned GRWL original length ratios and approximate spherical references
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout reviewed exact commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Offline source and synthetic length audit tests
+        run: |
+          python -m unittest tests.test_grwl_original_shape_leng_audit_v0 -v
+          python -m unittest tests.test_grwl_original_oriented_vertex_metric_v0 -v
+          python -m unittest tests.test_grwl_original_aggregate_semantic_diff_v0 -v
+          python -m unittest tests.test_grwl_trusted_original_byte_proof_v0 -v
+      - name: Reviewed code identity
+        run: |
+          git rev-parse HEAD
+          sha256sum research_runners/grwl_original_shape_leng_audit_v0.py
+      - name: Exact original GRWL SHAPE_LENG and spherical centreline comparison
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: python -m research_runners.grwl_original_shape_leng_audit_v0 --live
