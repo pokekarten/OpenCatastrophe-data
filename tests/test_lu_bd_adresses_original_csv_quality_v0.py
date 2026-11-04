@@ -31,6 +31,7 @@ class OriginalQualityTests(unittest.TestCase):
         original = sample(repeated=True)
         outcome = verify_original_stream(io.BytesIO(original), expected_size=len(original),
                                          expected_md5=hashlib.md5(original).hexdigest(),
+                                         expected_sha256=hashlib.sha256(original).hexdigest(),
                                          transformer=FakeTransformer())
         self.assertEqual(outcome["row_count"], 2)
         self.assertEqual(outcome["duplicate_exact_coordinate_rows"], 1)
@@ -44,6 +45,12 @@ class OriginalQualityTests(unittest.TestCase):
         original = sample()
         with self.assertRaises(OriginalAddressError):
             verify_original_stream(io.BytesIO(original), expected_size=len(original), expected_md5="0" * 32)
+
+    def test_pinned_full_sha256_rejects_unreviewed_changes(self):
+        original = sample()
+        with self.assertRaises(OriginalAddressError):
+            verify_original_stream(io.BytesIO(original), expected_size=len(original),
+                                   expected_md5=hashlib.md5(original).hexdigest())
 
     def test_truncation_fails(self):
         original = sample()
