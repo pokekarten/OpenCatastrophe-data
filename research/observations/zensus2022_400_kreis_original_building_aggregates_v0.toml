@@ -1,0 +1,2835 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Re-extracted original 2022 Destatis official Kreis aggregates; DL-DE-BY-2.0 attribution.
+# Date and source status do not imply 2025 insurer insured site locations.
+schema_version = "ZENSUS2022_400_KREIS_ORIGINAL_BUILDING_AGGREGATES_V0"
+publisher = "Statistisches Bundesamt (Destatis) / Statistische Aemter des Bundes und der Laender"
+official_source_url = "https://www.destatis.de/static/DE/zensus/gitterdaten/Regionaltabelle_Gebaeude_Wohnungen.xlsx"
+original_full_file_sha256 = "82da8578a4657e20752b436a756ed27846c77f96e3f7333bdea7f4fe29a8b551"
+source_values_canonical_sha256 = "a48c2d17a6e00c97fb4a151b1d990df78642de17dfd6ddf932479357e2589ca1"
+source_verification_workflow = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41907363439"
+original_source_sheet = "CSV-Gebäude"
+source_event_date = "2022-05-15"
+source_original_reported_date_raw = "20220515"
+source_geography = "Stadtkreis/kreisfreie Stadt/Landkreis"
+source_geo_key = "_RS"
+source_category_total = "GEBAEUDEART_SYS_1"
+source_category_residential = "GEBAEUDEART_SYS_11"
+source_category_residential_nondormitory = "GEBAEUDEART_SYS_111"
+source_category_residential_dormitory = "GEBAEUDEART_SYS_112"
+source_category_mixeduse = "GEBAEUDEART_SYS_12"
+license = "Datenlizenz Deutschland – Namensnennung – Version 2.0"
+classification_hierarchy_perturbation = "publisher_CKM_cell_key_disclosure_control"
+physical_building_count_2022_is_insurer_contract_count_2025 = false
+observed_rva_kreis_policies = false
+observed_rva_site_coordinates = false
+observed_rva_tiv = false
+observed_rva_flood_coverage = false
+real_insurer_model_admitted = false
+region_rows = 400
+original_printed_kreis_total_buildings_with_residential_use = 19957288
+original_printed_kreis_total_residential_buildings = 19488949
+original_printed_kreis_total_mixeduse = 468301
+dormitories_non_numeric_kreise = 7
+notes = "County-level published aggregate values vary slightly from independent German/16-state print totals due CKM disclosure control; no imputation, no address records, no assumed insurer geography."
+
+[[kreise]]
+ags = "01001"
+geb_mit_wohnraum = 17984
+wohngebaeude = 17706
+wohngebaeude_ohne_wohnheime = 17679
+wohnheime = 30
+sonstige_gebaeude_mit_wohnraum = 275
+[[kreise]]
+ags = "01002"
+geb_mit_wohnraum = 38247
+wohngebaeude = 37680
+wohngebaeude_ohne_wohnheime = 37608
+wohnheime = 70
+sonstige_gebaeude_mit_wohnraum = 565
+[[kreise]]
+ags = "01003"
+geb_mit_wohnraum = 45664
+wohngebaeude = 44890
+wohngebaeude_ohne_wohnheime = 44834
+wohnheime = 54
+sonstige_gebaeude_mit_wohnraum = 777
+[[kreise]]
+ags = "01004"
+geb_mit_wohnraum = 19715
+wohngebaeude = 19390
+wohngebaeude_ohne_wohnheime = 19378
+wohnheime = 12
+sonstige_gebaeude_mit_wohnraum = 326
+[[kreise]]
+ags = "01051"
+geb_mit_wohnraum = 52486
+wohngebaeude = 50925
+wohngebaeude_ohne_wohnheime = 50907
+wohnheime = 17
+sonstige_gebaeude_mit_wohnraum = 1559
+[[kreise]]
+ags = "01053"
+geb_mit_wohnraum = 60938
+wohngebaeude = 59584
+wohngebaeude_ohne_wohnheime = 59563
+wohnheime = 19
+sonstige_gebaeude_mit_wohnraum = 1351
+[[kreise]]
+ags = "01054"
+geb_mit_wohnraum = 69417
+wohngebaeude = 67230
+wohngebaeude_ohne_wohnheime = 67192
+wohnheime = 36
+sonstige_gebaeude_mit_wohnraum = 2190
+[[kreise]]
+ags = "01055"
+geb_mit_wohnraum = 69879
+wohngebaeude = 68192
+wohngebaeude_ohne_wohnheime = 68160
+wohnheime = 34
+sonstige_gebaeude_mit_wohnraum = 1685
+[[kreise]]
+ags = "01056"
+geb_mit_wohnraum = 86019
+wohngebaeude = 84265
+wohngebaeude_ohne_wohnheime = 84233
+wohnheime = 33
+sonstige_gebaeude_mit_wohnraum = 1752
+[[kreise]]
+ags = "01057"
+geb_mit_wohnraum = 44488
+wohngebaeude = 43447
+wohngebaeude_ohne_wohnheime = 43426
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 1044
+[[kreise]]
+ags = "01058"
+geb_mit_wohnraum = 92774
+wohngebaeude = 90588
+wohngebaeude_ohne_wohnheime = 90551
+wohnheime = 36
+sonstige_gebaeude_mit_wohnraum = 2188
+[[kreise]]
+ags = "01059"
+geb_mit_wohnraum = 73894
+wohngebaeude = 72258
+wohngebaeude_ohne_wohnheime = 72242
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 1634
+[[kreise]]
+ags = "01060"
+geb_mit_wohnraum = 80170
+wohngebaeude = 78443
+wohngebaeude_ohne_wohnheime = 78398
+wohnheime = 46
+sonstige_gebaeude_mit_wohnraum = 1729
+[[kreise]]
+ags = "01061"
+geb_mit_wohnraum = 44489
+wohngebaeude = 43016
+wohngebaeude_ohne_wohnheime = 43002
+wohnheime = 12
+sonstige_gebaeude_mit_wohnraum = 1472
+[[kreise]]
+ags = "01062"
+geb_mit_wohnraum = 70688
+wohngebaeude = 69485
+wohngebaeude_ohne_wohnheime = 69458
+wohnheime = 30
+sonstige_gebaeude_mit_wohnraum = 1200
+[[kreise]]
+ags = "02000"
+geb_mit_wohnraum = 260630
+wohngebaeude = 256713
+wohngebaeude_ohne_wohnheime = 256339
+wohnheime = 376
+sonstige_gebaeude_mit_wohnraum = 3915
+[[kreise]]
+ags = "03101"
+geb_mit_wohnraum = 44493
+wohngebaeude = 43679
+wohngebaeude_ohne_wohnheime = 43628
+wohnheime = 52
+sonstige_gebaeude_mit_wohnraum = 812
+[[kreise]]
+ags = "03102"
+geb_mit_wohnraum = 23818
+wohngebaeude = 23389
+wohngebaeude_ohne_wohnheime = 23385
+wohnheime = 4
+sonstige_gebaeude_mit_wohnraum = 428
+[[kreise]]
+ags = "03103"
+geb_mit_wohnraum = 28462
+wohngebaeude = 28072
+wohngebaeude_ohne_wohnheime = 28062
+wohnheime = 12
+sonstige_gebaeude_mit_wohnraum = 388
+[[kreise]]
+ags = "03151"
+geb_mit_wohnraum = 59361
+wohngebaeude = 58310
+wohngebaeude_ohne_wohnheime = 58301
+wohnheime = 8
+sonstige_gebaeude_mit_wohnraum = 1053
+[[kreise]]
+ags = "03153"
+geb_mit_wohnraum = 39686
+wohngebaeude = 38600
+wohngebaeude_ohne_wohnheime = 38557
+wohnheime = 46
+sonstige_gebaeude_mit_wohnraum = 1083
+[[kreise]]
+ags = "03154"
+geb_mit_wohnraum = 30656
+wohngebaeude = 29950
+wohngebaeude_ohne_wohnheime = 29948
+wohnheime = "missing"
+sonstige_gebaeude_mit_wohnraum = 704
+[[kreise]]
+ags = "03155"
+geb_mit_wohnraum = 41283
+wohngebaeude = 40130
+wohngebaeude_ohne_wohnheime = 40122
+wohnheime = 9
+sonstige_gebaeude_mit_wohnraum = 1152
+[[kreise]]
+ags = "03157"
+geb_mit_wohnraum = 43050
+wohngebaeude = 42221
+wohngebaeude_ohne_wohnheime = 42215
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 831
+[[kreise]]
+ags = "03158"
+geb_mit_wohnraum = 36423
+wohngebaeude = 35798
+wohngebaeude_ohne_wohnheime = 35786
+wohnheime = 12
+sonstige_gebaeude_mit_wohnraum = 623
+[[kreise]]
+ags = "03159"
+geb_mit_wohnraum = 85330
+wohngebaeude = 83158
+wohngebaeude_ohne_wohnheime = 82919
+wohnheime = 241
+sonstige_gebaeude_mit_wohnraum = 2169
+[[kreise]]
+ags = "03241"
+geb_mit_wohnraum = 237681
+wohngebaeude = 233343
+wohngebaeude_ohne_wohnheime = 233235
+wohnheime = 111
+sonstige_gebaeude_mit_wohnraum = 4336
+[[kreise]]
+ags = "03251"
+geb_mit_wohnraum = 72852
+wohngebaeude = 70758
+wohngebaeude_ohne_wohnheime = 70745
+wohnheime = 16
+sonstige_gebaeude_mit_wohnraum = 2094
+[[kreise]]
+ags = "03252"
+geb_mit_wohnraum = 43419
+wohngebaeude = 42396
+wohngebaeude_ohne_wohnheime = 42387
+wohnheime = 5
+sonstige_gebaeude_mit_wohnraum = 1022
+[[kreise]]
+ags = "03254"
+geb_mit_wohnraum = 75976
+wohngebaeude = 74424
+wohngebaeude_ohne_wohnheime = 74408
+wohnheime = 14
+sonstige_gebaeude_mit_wohnraum = 1555
+[[kreise]]
+ags = "03255"
+geb_mit_wohnraum = 22849
+wohngebaeude = 22215
+wohngebaeude_ohne_wohnheime = 22211
+wohnheime = 7
+sonstige_gebaeude_mit_wohnraum = 632
+[[kreise]]
+ags = "03256"
+geb_mit_wohnraum = 39196
+wohngebaeude = 37852
+wohngebaeude_ohne_wohnheime = 37847
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 1344
+[[kreise]]
+ags = "03257"
+geb_mit_wohnraum = 47100
+wohngebaeude = 45811
+wohngebaeude_ohne_wohnheime = 45804
+wohnheime = 10
+sonstige_gebaeude_mit_wohnraum = 1286
+[[kreise]]
+ags = "03351"
+geb_mit_wohnraum = 59961
+wohngebaeude = 58770
+wohngebaeude_ohne_wohnheime = 58759
+wohnheime = 13
+sonstige_gebaeude_mit_wohnraum = 1188
+[[kreise]]
+ags = "03352"
+geb_mit_wohnraum = 70385
+wohngebaeude = 68619
+wohngebaeude_ohne_wohnheime = 68609
+wohnheime = 9
+sonstige_gebaeude_mit_wohnraum = 1768
+[[kreise]]
+ags = "03353"
+geb_mit_wohnraum = 83807
+wohngebaeude = 82360
+wohngebaeude_ohne_wohnheime = 82345
+wohnheime = 13
+sonstige_gebaeude_mit_wohnraum = 1449
+[[kreise]]
+ags = "03354"
+geb_mit_wohnraum = 19135
+wohngebaeude = 18306
+wohngebaeude_ohne_wohnheime = 18303
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 832
+[[kreise]]
+ags = "03355"
+geb_mit_wohnraum = 52954
+wohngebaeude = 51810
+wohngebaeude_ohne_wohnheime = 51772
+wohnheime = 41
+sonstige_gebaeude_mit_wohnraum = 1141
+[[kreise]]
+ags = "03356"
+geb_mit_wohnraum = 39673
+wohngebaeude = 38735
+wohngebaeude_ohne_wohnheime = 38729
+wohnheime = 5
+sonstige_gebaeude_mit_wohnraum = 940
+[[kreise]]
+ags = "03357"
+geb_mit_wohnraum = 58198
+wohngebaeude = 56738
+wohngebaeude_ohne_wohnheime = 56718
+wohnheime = 15
+sonstige_gebaeude_mit_wohnraum = 1462
+[[kreise]]
+ags = "03358"
+geb_mit_wohnraum = 46328
+wohngebaeude = 45218
+wohngebaeude_ohne_wohnheime = 45215
+wohnheime = 6
+sonstige_gebaeude_mit_wohnraum = 1107
+[[kreise]]
+ags = "03359"
+geb_mit_wohnraum = 65677
+wohngebaeude = 64426
+wohngebaeude_ohne_wohnheime = 64404
+wohnheime = 27
+sonstige_gebaeude_mit_wohnraum = 1253
+[[kreise]]
+ags = "03360"
+geb_mit_wohnraum = 31484
+wohngebaeude = 30666
+wohngebaeude_ohne_wohnheime = 30659
+wohnheime = 9
+sonstige_gebaeude_mit_wohnraum = 816
+[[kreise]]
+ags = "03361"
+geb_mit_wohnraum = 44434
+wohngebaeude = 43401
+wohngebaeude_ohne_wohnheime = 43394
+wohnheime = 5
+sonstige_gebaeude_mit_wohnraum = 1032
+[[kreise]]
+ags = "03401"
+geb_mit_wohnraum = 22111
+wohngebaeude = 21684
+wohngebaeude_ohne_wohnheime = 21681
+wohnheime = "missing"
+sonstige_gebaeude_mit_wohnraum = 426
+[[kreise]]
+ags = "03402"
+geb_mit_wohnraum = 15685
+wohngebaeude = 15359
+wohngebaeude_ohne_wohnheime = 15349
+wohnheime = 8
+sonstige_gebaeude_mit_wohnraum = 327
+[[kreise]]
+ags = "03403"
+geb_mit_wohnraum = 45969
+wohngebaeude = 45181
+wohngebaeude_ohne_wohnheime = 45153
+wohnheime = 29
+sonstige_gebaeude_mit_wohnraum = 786
+[[kreise]]
+ags = "03404"
+geb_mit_wohnraum = 33366
+wohngebaeude = 32690
+wohngebaeude_ohne_wohnheime = 32558
+wohnheime = 129
+sonstige_gebaeude_mit_wohnraum = 673
+[[kreise]]
+ags = "03405"
+geb_mit_wohnraum = 17875
+wohngebaeude = 17408
+wohngebaeude_ohne_wohnheime = 17397
+wohnheime = 9
+sonstige_gebaeude_mit_wohnraum = 464
+[[kreise]]
+ags = "03451"
+geb_mit_wohnraum = 45410
+wohngebaeude = 44220
+wohngebaeude_ohne_wohnheime = 44215
+wohnheime = 7
+sonstige_gebaeude_mit_wohnraum = 1191
+[[kreise]]
+ags = "03452"
+geb_mit_wohnraum = 79117
+wohngebaeude = 76669
+wohngebaeude_ohne_wohnheime = 76663
+wohnheime = 9
+sonstige_gebaeude_mit_wohnraum = 2447
+[[kreise]]
+ags = "03453"
+geb_mit_wohnraum = 53421
+wohngebaeude = 52087
+wohngebaeude_ohne_wohnheime = 52074
+wohnheime = 11
+sonstige_gebaeude_mit_wohnraum = 1335
+[[kreise]]
+ags = "03454"
+geb_mit_wohnraum = 108304
+wohngebaeude = 105621
+wohngebaeude_ohne_wohnheime = 105563
+wohnheime = 59
+sonstige_gebaeude_mit_wohnraum = 2681
+[[kreise]]
+ags = "03455"
+geb_mit_wohnraum = 39726
+wohngebaeude = 38634
+wohngebaeude_ohne_wohnheime = 38633
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 1095
+[[kreise]]
+ags = "03456"
+geb_mit_wohnraum = 47183
+wohngebaeude = 46230
+wohngebaeude_ohne_wohnheime = 46207
+wohnheime = 23
+sonstige_gebaeude_mit_wohnraum = 953
+[[kreise]]
+ags = "03457"
+geb_mit_wohnraum = 66224
+wohngebaeude = 64235
+wohngebaeude_ohne_wohnheime = 64223
+wohnheime = 15
+sonstige_gebaeude_mit_wohnraum = 1986
+[[kreise]]
+ags = "03458"
+geb_mit_wohnraum = 45809
+wohngebaeude = 44493
+wohngebaeude_ohne_wohnheime = 44493
+wohnheime = "missing"
+sonstige_gebaeude_mit_wohnraum = 1319
+[[kreise]]
+ags = "03459"
+geb_mit_wohnraum = 102723
+wohngebaeude = 99235
+wohngebaeude_ohne_wohnheime = 99222
+wohnheime = 17
+sonstige_gebaeude_mit_wohnraum = 3491
+[[kreise]]
+ags = "03460"
+geb_mit_wohnraum = 44200
+wohngebaeude = 43137
+wohngebaeude_ohne_wohnheime = 43130
+wohnheime = 9
+sonstige_gebaeude_mit_wohnraum = 1062
+[[kreise]]
+ags = "03461"
+geb_mit_wohnraum = 31987
+wohngebaeude = 30893
+wohngebaeude_ohne_wohnheime = 30892
+wohnheime = 4
+sonstige_gebaeude_mit_wohnraum = 1095
+[[kreise]]
+ags = "03462"
+geb_mit_wohnraum = 23407
+wohngebaeude = 22254
+wohngebaeude_ohne_wohnheime = 22251
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 1151
+[[kreise]]
+ags = "04011"
+geb_mit_wohnraum = 122273
+wohngebaeude = 120413
+wohngebaeude_ohne_wohnheime = 120327
+wohnheime = 84
+sonstige_gebaeude_mit_wohnraum = 1861
+[[kreise]]
+ags = "04012"
+geb_mit_wohnraum = 21765
+wohngebaeude = 21380
+wohngebaeude_ohne_wohnheime = 21371
+wohnheime = 7
+sonstige_gebaeude_mit_wohnraum = 387
+[[kreise]]
+ags = "05111"
+geb_mit_wohnraum = 74932
+wohngebaeude = 73385
+wohngebaeude_ohne_wohnheime = 73231
+wohnheime = 152
+sonstige_gebaeude_mit_wohnraum = 1549
+[[kreise]]
+ags = "05112"
+geb_mit_wohnraum = 82785
+wohngebaeude = 81586
+wohngebaeude_ohne_wohnheime = 81296
+wohnheime = 289
+sonstige_gebaeude_mit_wohnraum = 1198
+[[kreise]]
+ags = "05113"
+geb_mit_wohnraum = 91289
+wohngebaeude = 89928
+wohngebaeude_ohne_wohnheime = 89824
+wohnheime = 102
+sonstige_gebaeude_mit_wohnraum = 1360
+[[kreise]]
+ags = "05114"
+geb_mit_wohnraum = 47132
+wohngebaeude = 46157
+wohngebaeude_ohne_wohnheime = 46124
+wohnheime = 34
+sonstige_gebaeude_mit_wohnraum = 973
+[[kreise]]
+ags = "05116"
+geb_mit_wohnraum = 57340
+wohngebaeude = 56344
+wohngebaeude_ohne_wohnheime = 56289
+wohnheime = 53
+sonstige_gebaeude_mit_wohnraum = 998
+[[kreise]]
+ags = "05117"
+geb_mit_wohnraum = 31841
+wohngebaeude = 31389
+wohngebaeude_ohne_wohnheime = 31332
+wohnheime = 58
+sonstige_gebaeude_mit_wohnraum = 455
+[[kreise]]
+ags = "05119"
+geb_mit_wohnraum = 39267
+wohngebaeude = 38716
+wohngebaeude_ohne_wohnheime = 38642
+wohnheime = 74
+sonstige_gebaeude_mit_wohnraum = 550
+[[kreise]]
+ags = "05120"
+geb_mit_wohnraum = 21065
+wohngebaeude = 20667
+wohngebaeude_ohne_wohnheime = 20658
+wohnheime = 12
+sonstige_gebaeude_mit_wohnraum = 402
+[[kreise]]
+ags = "05122"
+geb_mit_wohnraum = 33718
+wohngebaeude = 32966
+wohngebaeude_ohne_wohnheime = 32952
+wohnheime = 17
+sonstige_gebaeude_mit_wohnraum = 756
+[[kreise]]
+ags = "05124"
+geb_mit_wohnraum = 55637
+wohngebaeude = 54552
+wohngebaeude_ohne_wohnheime = 54490
+wohnheime = 65
+sonstige_gebaeude_mit_wohnraum = 1085
+[[kreise]]
+ags = "05154"
+geb_mit_wohnraum = 97521
+wohngebaeude = 95341
+wohngebaeude_ohne_wohnheime = 95298
+wohnheime = 40
+sonstige_gebaeude_mit_wohnraum = 2183
+[[kreise]]
+ags = "05158"
+geb_mit_wohnraum = 100339
+wohngebaeude = 98684
+wohngebaeude_ohne_wohnheime = 98643
+wohnheime = 41
+sonstige_gebaeude_mit_wohnraum = 1655
+[[kreise]]
+ags = "05162"
+geb_mit_wohnraum = 111336
+wohngebaeude = 109728
+wohngebaeude_ohne_wohnheime = 109671
+wohnheime = 58
+sonstige_gebaeude_mit_wohnraum = 1607
+[[kreise]]
+ags = "05166"
+geb_mit_wohnraum = 87752
+wohngebaeude = 85926
+wohngebaeude_ohne_wohnheime = 85903
+wohnheime = 21
+sonstige_gebaeude_mit_wohnraum = 1830
+[[kreise]]
+ags = "05170"
+geb_mit_wohnraum = 118546
+wohngebaeude = 116337
+wohngebaeude_ohne_wohnheime = 116293
+wohnheime = 45
+sonstige_gebaeude_mit_wohnraum = 2212
+[[kreise]]
+ags = "05314"
+geb_mit_wohnraum = 57982
+wohngebaeude = 56885
+wohngebaeude_ohne_wohnheime = 56795
+wohnheime = 88
+sonstige_gebaeude_mit_wohnraum = 1100
+[[kreise]]
+ags = "05315"
+geb_mit_wohnraum = 142726
+wohngebaeude = 139848
+wohngebaeude_ohne_wohnheime = 139653
+wohnheime = 198
+sonstige_gebaeude_mit_wohnraum = 2878
+[[kreise]]
+ags = "05316"
+geb_mit_wohnraum = 31147
+wohngebaeude = 30735
+wohngebaeude_ohne_wohnheime = 30721
+wohnheime = 11
+sonstige_gebaeude_mit_wohnraum = 407
+[[kreise]]
+ags = "05334"
+geb_mit_wohnraum = 126361
+wohngebaeude = 124000
+wohngebaeude_ohne_wohnheime = 123906
+wohnheime = 97
+sonstige_gebaeude_mit_wohnraum = 2357
+[[kreise]]
+ags = "05358"
+geb_mit_wohnraum = 79823
+wohngebaeude = 78433
+wohngebaeude_ohne_wohnheime = 78409
+wohnheime = 26
+sonstige_gebaeude_mit_wohnraum = 1389
+[[kreise]]
+ags = "05362"
+geb_mit_wohnraum = 124156
+wohngebaeude = 122439
+wohngebaeude_ohne_wohnheime = 122377
+wohnheime = 60
+sonstige_gebaeude_mit_wohnraum = 1711
+[[kreise]]
+ags = "05366"
+geb_mit_wohnraum = 65414
+wohngebaeude = 64050
+wohngebaeude_ohne_wohnheime = 64028
+wohnheime = 25
+sonstige_gebaeude_mit_wohnraum = 1361
+[[kreise]]
+ags = "05370"
+geb_mit_wohnraum = 86082
+wohngebaeude = 84593
+wohngebaeude_ohne_wohnheime = 84564
+wohnheime = 33
+sonstige_gebaeude_mit_wohnraum = 1487
+[[kreise]]
+ags = "05374"
+geb_mit_wohnraum = 77452
+wohngebaeude = 76107
+wohngebaeude_ohne_wohnheime = 76071
+wohnheime = 37
+sonstige_gebaeude_mit_wohnraum = 1341
+[[kreise]]
+ags = "05378"
+geb_mit_wohnraum = 75548
+wohngebaeude = 74335
+wohngebaeude_ohne_wohnheime = 74320
+wohnheime = 17
+sonstige_gebaeude_mit_wohnraum = 1211
+[[kreise]]
+ags = "05382"
+geb_mit_wohnraum = 171528
+wohngebaeude = 169065
+wohngebaeude_ohne_wohnheime = 168995
+wohnheime = 69
+sonstige_gebaeude_mit_wohnraum = 2465
+[[kreise]]
+ags = "05512"
+geb_mit_wohnraum = 24512
+wohngebaeude = 24190
+wohngebaeude_ohne_wohnheime = 24185
+wohnheime = 9
+sonstige_gebaeude_mit_wohnraum = 319
+[[kreise]]
+ags = "05513"
+geb_mit_wohnraum = 39896
+wohngebaeude = 39300
+wohngebaeude_ohne_wohnheime = 39251
+wohnheime = 45
+sonstige_gebaeude_mit_wohnraum = 600
+[[kreise]]
+ags = "05515"
+geb_mit_wohnraum = 57451
+wohngebaeude = 56339
+wohngebaeude_ohne_wohnheime = 56170
+wohnheime = 171
+sonstige_gebaeude_mit_wohnraum = 1114
+[[kreise]]
+ags = "05554"
+geb_mit_wohnraum = 108382
+wohngebaeude = 106113
+wohngebaeude_ohne_wohnheime = 106069
+wohnheime = 45
+sonstige_gebaeude_mit_wohnraum = 2272
+[[kreise]]
+ags = "05558"
+geb_mit_wohnraum = 64232
+wohngebaeude = 62718
+wohngebaeude_ohne_wohnheime = 62688
+wohnheime = 26
+sonstige_gebaeude_mit_wohnraum = 1517
+[[kreise]]
+ags = "05562"
+geb_mit_wohnraum = 140768
+wohngebaeude = 138707
+wohngebaeude_ohne_wohnheime = 138639
+wohnheime = 69
+sonstige_gebaeude_mit_wohnraum = 2061
+[[kreise]]
+ags = "05566"
+geb_mit_wohnraum = 130018
+wohngebaeude = 127227
+wohngebaeude_ohne_wohnheime = 127185
+wohnheime = 40
+sonstige_gebaeude_mit_wohnraum = 2793
+[[kreise]]
+ags = "05570"
+geb_mit_wohnraum = 77673
+wohngebaeude = 75808
+wohngebaeude_ohne_wohnheime = 75773
+wohnheime = 37
+sonstige_gebaeude_mit_wohnraum = 1869
+[[kreise]]
+ags = "05711"
+geb_mit_wohnraum = 63859
+wohngebaeude = 62711
+wohngebaeude_ohne_wohnheime = 62649
+wohnheime = 60
+sonstige_gebaeude_mit_wohnraum = 1150
+[[kreise]]
+ags = "05754"
+geb_mit_wohnraum = 93734
+wohngebaeude = 91393
+wohngebaeude_ohne_wohnheime = 91336
+wohnheime = 54
+sonstige_gebaeude_mit_wohnraum = 2343
+[[kreise]]
+ags = "05758"
+geb_mit_wohnraum = 68571
+wohngebaeude = 66716
+wohngebaeude_ohne_wohnheime = 66690
+wohnheime = 28
+sonstige_gebaeude_mit_wohnraum = 1852
+[[kreise]]
+ags = "05762"
+geb_mit_wohnraum = 42860
+wohngebaeude = 41762
+wohngebaeude_ohne_wohnheime = 41721
+wohnheime = 44
+sonstige_gebaeude_mit_wohnraum = 1093
+[[kreise]]
+ags = "05766"
+geb_mit_wohnraum = 95099
+wohngebaeude = 92871
+wohngebaeude_ohne_wohnheime = 92802
+wohnheime = 66
+sonstige_gebaeude_mit_wohnraum = 2231
+[[kreise]]
+ags = "05770"
+geb_mit_wohnraum = 87460
+wohngebaeude = 84507
+wohngebaeude_ohne_wohnheime = 84483
+wohnheime = 22
+sonstige_gebaeude_mit_wohnraum = 2956
+[[kreise]]
+ags = "05774"
+geb_mit_wohnraum = 75983
+wohngebaeude = 74785
+wohngebaeude_ohne_wohnheime = 74734
+wohnheime = 50
+sonstige_gebaeude_mit_wohnraum = 1196
+[[kreise]]
+ags = "05911"
+geb_mit_wohnraum = 59490
+wohngebaeude = 58572
+wohngebaeude_ohne_wohnheime = 58477
+wohnheime = 96
+sonstige_gebaeude_mit_wohnraum = 920
+[[kreise]]
+ags = "05913"
+geb_mit_wohnraum = 97442
+wohngebaeude = 95968
+wohngebaeude_ohne_wohnheime = 95889
+wohnheime = 84
+sonstige_gebaeude_mit_wohnraum = 1474
+[[kreise]]
+ags = "05914"
+geb_mit_wohnraum = 30615
+wohngebaeude = 29996
+wohngebaeude_ohne_wohnheime = 29971
+wohnheime = 26
+sonstige_gebaeude_mit_wohnraum = 618
+[[kreise]]
+ags = "05915"
+geb_mit_wohnraum = 39914
+wohngebaeude = 39312
+wohngebaeude_ohne_wohnheime = 39286
+wohnheime = 30
+sonstige_gebaeude_mit_wohnraum = 602
+[[kreise]]
+ags = "05916"
+geb_mit_wohnraum = 24692
+wohngebaeude = 24324
+wohngebaeude_ohne_wohnheime = 24297
+wohnheime = 30
+sonstige_gebaeude_mit_wohnraum = 365
+[[kreise]]
+ags = "05954"
+geb_mit_wohnraum = 66105
+wohngebaeude = 64683
+wohngebaeude_ohne_wohnheime = 64651
+wohnheime = 28
+sonstige_gebaeude_mit_wohnraum = 1420
+[[kreise]]
+ags = "05958"
+geb_mit_wohnraum = 74592
+wohngebaeude = 72699
+wohngebaeude_ohne_wohnheime = 72684
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 1890
+[[kreise]]
+ags = "05962"
+geb_mit_wohnraum = 95602
+wohngebaeude = 93366
+wohngebaeude_ohne_wohnheime = 93302
+wohnheime = 62
+sonstige_gebaeude_mit_wohnraum = 2238
+[[kreise]]
+ags = "05966"
+geb_mit_wohnraum = 37427
+wohngebaeude = 36692
+wohngebaeude_ohne_wohnheime = 36685
+wohnheime = 9
+sonstige_gebaeude_mit_wohnraum = 734
+[[kreise]]
+ags = "05970"
+geb_mit_wohnraum = 77335
+wohngebaeude = 75945
+wohngebaeude_ohne_wohnheime = 75883
+wohnheime = 64
+sonstige_gebaeude_mit_wohnraum = 1387
+[[kreise]]
+ags = "05974"
+geb_mit_wohnraum = 84271
+wohngebaeude = 82442
+wohngebaeude_ohne_wohnheime = 82392
+wohnheime = 52
+sonstige_gebaeude_mit_wohnraum = 1826
+[[kreise]]
+ags = "05978"
+geb_mit_wohnraum = 95518
+wohngebaeude = 93984
+wohngebaeude_ohne_wohnheime = 93926
+wohnheime = 55
+sonstige_gebaeude_mit_wohnraum = 1537
+[[kreise]]
+ags = "06411"
+geb_mit_wohnraum = 24524
+wohngebaeude = 24053
+wohngebaeude_ohne_wohnheime = 23947
+wohnheime = 103
+sonstige_gebaeude_mit_wohnraum = 474
+[[kreise]]
+ags = "06412"
+geb_mit_wohnraum = 80679
+wohngebaeude = 79158
+wohngebaeude_ohne_wohnheime = 79004
+wohnheime = 155
+sonstige_gebaeude_mit_wohnraum = 1520
+[[kreise]]
+ags = "06413"
+geb_mit_wohnraum = 14538
+wohngebaeude = 14262
+wohngebaeude_ohne_wohnheime = 14228
+wohnheime = 37
+sonstige_gebaeude_mit_wohnraum = 273
+[[kreise]]
+ags = "06414"
+geb_mit_wohnraum = 40114
+wohngebaeude = 39181
+wohngebaeude_ohne_wohnheime = 39148
+wohnheime = 32
+sonstige_gebaeude_mit_wohnraum = 935
+[[kreise]]
+ags = "06431"
+geb_mit_wohnraum = 71115
+wohngebaeude = 69566
+wohngebaeude_ohne_wohnheime = 69524
+wohnheime = 39
+sonstige_gebaeude_mit_wohnraum = 1548
+[[kreise]]
+ags = "06432"
+geb_mit_wohnraum = 78660
+wohngebaeude = 77120
+wohngebaeude_ohne_wohnheime = 77080
+wohnheime = 37
+sonstige_gebaeude_mit_wohnraum = 1541
+[[kreise]]
+ags = "06433"
+geb_mit_wohnraum = 58070
+wohngebaeude = 57069
+wohngebaeude_ohne_wohnheime = 57025
+wohnheime = 46
+sonstige_gebaeude_mit_wohnraum = 999
+[[kreise]]
+ags = "06434"
+geb_mit_wohnraum = 55882
+wohngebaeude = 54851
+wohngebaeude_ohne_wohnheime = 54830
+wohnheime = 22
+sonstige_gebaeude_mit_wohnraum = 1030
+[[kreise]]
+ags = "06435"
+geb_mit_wohnraum = 104292
+wohngebaeude = 102342
+wohngebaeude_ohne_wohnheime = 102280
+wohnheime = 64
+sonstige_gebaeude_mit_wohnraum = 1948
+[[kreise]]
+ags = "06436"
+geb_mit_wohnraum = 52822
+wohngebaeude = 52064
+wohngebaeude_ohne_wohnheime = 52025
+wohnheime = 36
+sonstige_gebaeude_mit_wohnraum = 755
+[[kreise]]
+ags = "06437"
+geb_mit_wohnraum = 28377
+wohngebaeude = 27642
+wohngebaeude_ohne_wohnheime = 27629
+wohnheime = 11
+sonstige_gebaeude_mit_wohnraum = 736
+[[kreise]]
+ags = "06438"
+geb_mit_wohnraum = 73048
+wohngebaeude = 71596
+wohngebaeude_ohne_wohnheime = 71555
+wohnheime = 43
+sonstige_gebaeude_mit_wohnraum = 1452
+[[kreise]]
+ags = "06439"
+geb_mit_wohnraum = 50092
+wohngebaeude = 49186
+wohngebaeude_ohne_wohnheime = 49156
+wohnheime = 30
+sonstige_gebaeude_mit_wohnraum = 904
+[[kreise]]
+ags = "06440"
+geb_mit_wohnraum = 81878
+wohngebaeude = 80227
+wohngebaeude_ohne_wohnheime = 80176
+wohnheime = 50
+sonstige_gebaeude_mit_wohnraum = 1653
+[[kreise]]
+ags = "06531"
+geb_mit_wohnraum = 65270
+wohngebaeude = 63980
+wohngebaeude_ohne_wohnheime = 63876
+wohnheime = 104
+sonstige_gebaeude_mit_wohnraum = 1287
+[[kreise]]
+ags = "06532"
+geb_mit_wohnraum = 75266
+wohngebaeude = 73945
+wohngebaeude_ohne_wohnheime = 73905
+wohnheime = 42
+sonstige_gebaeude_mit_wohnraum = 1320
+[[kreise]]
+ags = "06533"
+geb_mit_wohnraum = 52330
+wohngebaeude = 51290
+wohngebaeude_ohne_wohnheime = 51261
+wohnheime = 29
+sonstige_gebaeude_mit_wohnraum = 1039
+[[kreise]]
+ags = "06534"
+geb_mit_wohnraum = 64221
+wohngebaeude = 63044
+wohngebaeude_ohne_wohnheime = 62912
+wohnheime = 131
+sonstige_gebaeude_mit_wohnraum = 1178
+[[kreise]]
+ags = "06535"
+geb_mit_wohnraum = 34916
+wohngebaeude = 33879
+wohngebaeude_ohne_wohnheime = 33856
+wohnheime = 19
+sonstige_gebaeude_mit_wohnraum = 1041
+[[kreise]]
+ags = "06611"
+geb_mit_wohnraum = 32480
+wohngebaeude = 31853
+wohngebaeude_ohne_wohnheime = 31779
+wohnheime = 77
+sonstige_gebaeude_mit_wohnraum = 630
+[[kreise]]
+ags = "06631"
+geb_mit_wohnraum = 57544
+wohngebaeude = 56220
+wohngebaeude_ohne_wohnheime = 56154
+wohnheime = 63
+sonstige_gebaeude_mit_wohnraum = 1327
+[[kreise]]
+ags = "06632"
+geb_mit_wohnraum = 37298
+wohngebaeude = 36444
+wohngebaeude_ohne_wohnheime = 36413
+wohnheime = 33
+sonstige_gebaeude_mit_wohnraum = 853
+[[kreise]]
+ags = "06633"
+geb_mit_wohnraum = 71290
+wohngebaeude = 69915
+wohngebaeude_ohne_wohnheime = 69889
+wohnheime = 25
+sonstige_gebaeude_mit_wohnraum = 1376
+[[kreise]]
+ags = "06634"
+geb_mit_wohnraum = 56855
+wohngebaeude = 55664
+wohngebaeude_ohne_wohnheime = 55639
+wohnheime = 23
+sonstige_gebaeude_mit_wohnraum = 1195
+[[kreise]]
+ags = "06635"
+geb_mit_wohnraum = 49139
+wohngebaeude = 47611
+wohngebaeude_ohne_wohnheime = 47592
+wohnheime = 21
+sonstige_gebaeude_mit_wohnraum = 1529
+[[kreise]]
+ags = "06636"
+geb_mit_wohnraum = 32628
+wohngebaeude = 31789
+wohngebaeude_ohne_wohnheime = 31770
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 836
+[[kreise]]
+ags = "07111"
+geb_mit_wohnraum = 21835
+wohngebaeude = 21402
+wohngebaeude_ohne_wohnheime = 21375
+wohnheime = 28
+sonstige_gebaeude_mit_wohnraum = 431
+[[kreise]]
+ags = "07131"
+geb_mit_wohnraum = 42061
+wohngebaeude = 41241
+wohngebaeude_ohne_wohnheime = 41205
+wohnheime = 34
+sonstige_gebaeude_mit_wohnraum = 822
+[[kreise]]
+ags = "07132"
+geb_mit_wohnraum = 45041
+wohngebaeude = 44213
+wohngebaeude_ohne_wohnheime = 44193
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 830
+[[kreise]]
+ags = "07133"
+geb_mit_wohnraum = 50499
+wohngebaeude = 49271
+wohngebaeude_ohne_wohnheime = 49238
+wohnheime = 36
+sonstige_gebaeude_mit_wohnraum = 1225
+[[kreise]]
+ags = "07134"
+geb_mit_wohnraum = 28990
+wohngebaeude = 28252
+wohngebaeude_ohne_wohnheime = 28224
+wohnheime = 25
+sonstige_gebaeude_mit_wohnraum = 742
+[[kreise]]
+ags = "07135"
+geb_mit_wohnraum = 24036
+wohngebaeude = 23253
+wohngebaeude_ohne_wohnheime = 23245
+wohnheime = 9
+sonstige_gebaeude_mit_wohnraum = 781
+[[kreise]]
+ags = "07137"
+geb_mit_wohnraum = 68357
+wohngebaeude = 67009
+wohngebaeude_ohne_wohnheime = 66964
+wohnheime = 44
+sonstige_gebaeude_mit_wohnraum = 1349
+[[kreise]]
+ags = "07138"
+geb_mit_wohnraum = 58108
+wohngebaeude = 56978
+wohngebaeude_ohne_wohnheime = 56946
+wohnheime = 33
+sonstige_gebaeude_mit_wohnraum = 1128
+[[kreise]]
+ags = "07140"
+geb_mit_wohnraum = 36382
+wohngebaeude = 35559
+wohngebaeude_ohne_wohnheime = 35543
+wohnheime = 19
+sonstige_gebaeude_mit_wohnraum = 822
+[[kreise]]
+ags = "07141"
+geb_mit_wohnraum = 39222
+wohngebaeude = 38280
+wohngebaeude_ohne_wohnheime = 38252
+wohnheime = 26
+sonstige_gebaeude_mit_wohnraum = 943
+[[kreise]]
+ags = "07143"
+geb_mit_wohnraum = 68912
+wohngebaeude = 67572
+wohngebaeude_ohne_wohnheime = 67545
+wohnheime = 30
+sonstige_gebaeude_mit_wohnraum = 1338
+[[kreise]]
+ags = "07211"
+geb_mit_wohnraum = 21286
+wohngebaeude = 20756
+wohngebaeude_ohne_wohnheime = 20706
+wohnheime = 52
+sonstige_gebaeude_mit_wohnraum = 529
+[[kreise]]
+ags = "07231"
+geb_mit_wohnraum = 41598
+wohngebaeude = 40214
+wohngebaeude_ohne_wohnheime = 40204
+wohnheime = 13
+sonstige_gebaeude_mit_wohnraum = 1381
+[[kreise]]
+ags = "07232"
+geb_mit_wohnraum = 37459
+wohngebaeude = 36439
+wohngebaeude_ohne_wohnheime = 36422
+wohnheime = 15
+sonstige_gebaeude_mit_wohnraum = 1022
+[[kreise]]
+ags = "07233"
+geb_mit_wohnraum = 24344
+wohngebaeude = 23749
+wohngebaeude_ohne_wohnheime = 23744
+wohnheime = 6
+sonstige_gebaeude_mit_wohnraum = 595
+[[kreise]]
+ags = "07235"
+geb_mit_wohnraum = 50976
+wohngebaeude = 49876
+wohngebaeude_ohne_wohnheime = 49854
+wohnheime = 24
+sonstige_gebaeude_mit_wohnraum = 1101
+[[kreise]]
+ags = "07311"
+geb_mit_wohnraum = 9105
+wohngebaeude = 8920
+wohngebaeude_ohne_wohnheime = 8913
+wohnheime = 10
+sonstige_gebaeude_mit_wohnraum = 182
+[[kreise]]
+ags = "07312"
+geb_mit_wohnraum = 21022
+wohngebaeude = 20636
+wohngebaeude_ohne_wohnheime = 20570
+wohnheime = 60
+sonstige_gebaeude_mit_wohnraum = 383
+[[kreise]]
+ags = "07313"
+geb_mit_wohnraum = 11114
+wohngebaeude = 10801
+wohngebaeude_ohne_wohnheime = 10781
+wohnheime = 25
+sonstige_gebaeude_mit_wohnraum = 308
+[[kreise]]
+ags = "07314"
+geb_mit_wohnraum = 28228
+wohngebaeude = 27720
+wohngebaeude_ohne_wohnheime = 27686
+wohnheime = 31
+sonstige_gebaeude_mit_wohnraum = 510
+[[kreise]]
+ags = "07315"
+geb_mit_wohnraum = 33359
+wohngebaeude = 32631
+wohngebaeude_ohne_wohnheime = 32544
+wohnheime = 84
+sonstige_gebaeude_mit_wohnraum = 728
+[[kreise]]
+ags = "07316"
+geb_mit_wohnraum = 14237
+wohngebaeude = 13806
+wohngebaeude_ohne_wohnheime = 13793
+wohnheime = 11
+sonstige_gebaeude_mit_wohnraum = 429
+[[kreise]]
+ags = "07317"
+geb_mit_wohnraum = 10501
+wohngebaeude = 10217
+wohngebaeude_ohne_wohnheime = 10203
+wohnheime = 13
+sonstige_gebaeude_mit_wohnraum = 287
+[[kreise]]
+ags = "07318"
+geb_mit_wohnraum = 10404
+wohngebaeude = 10132
+wohngebaeude_ohne_wohnheime = 10128
+wohnheime = "missing"
+sonstige_gebaeude_mit_wohnraum = 270
+[[kreise]]
+ags = "07319"
+geb_mit_wohnraum = 19657
+wohngebaeude = 19214
+wohngebaeude_ohne_wohnheime = 19194
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 444
+[[kreise]]
+ags = "07320"
+geb_mit_wohnraum = 9567
+wohngebaeude = 9377
+wohngebaeude_ohne_wohnheime = 9369
+wohnheime = 11
+sonstige_gebaeude_mit_wohnraum = 188
+[[kreise]]
+ags = "07331"
+geb_mit_wohnraum = 43077
+wohngebaeude = 42012
+wohngebaeude_ohne_wohnheime = 41991
+wohnheime = 24
+sonstige_gebaeude_mit_wohnraum = 1066
+[[kreise]]
+ags = "07332"
+geb_mit_wohnraum = 45164
+wohngebaeude = 44038
+wohngebaeude_ohne_wohnheime = 44028
+wohnheime = 7
+sonstige_gebaeude_mit_wohnraum = 1130
+[[kreise]]
+ags = "07333"
+geb_mit_wohnraum = 26098
+wohngebaeude = 25494
+wohngebaeude_ohne_wohnheime = 25480
+wohnheime = 13
+sonstige_gebaeude_mit_wohnraum = 606
+[[kreise]]
+ags = "07334"
+geb_mit_wohnraum = 36992
+wohngebaeude = 36299
+wohngebaeude_ohne_wohnheime = 36274
+wohnheime = 23
+sonstige_gebaeude_mit_wohnraum = 690
+[[kreise]]
+ags = "07335"
+geb_mit_wohnraum = 40931
+wohngebaeude = 40283
+wohngebaeude_ohne_wohnheime = 40275
+wohnheime = 11
+sonstige_gebaeude_mit_wohnraum = 645
+[[kreise]]
+ags = "07336"
+geb_mit_wohnraum = 27532
+wohngebaeude = 26961
+wohngebaeude_ohne_wohnheime = 26954
+wohnheime = 10
+sonstige_gebaeude_mit_wohnraum = 572
+[[kreise]]
+ags = "07337"
+geb_mit_wohnraum = 38451
+wohngebaeude = 37284
+wohngebaeude_ohne_wohnheime = 37274
+wohnheime = 10
+sonstige_gebaeude_mit_wohnraum = 1167
+[[kreise]]
+ags = "07338"
+geb_mit_wohnraum = 48337
+wohngebaeude = 47503
+wohngebaeude_ohne_wohnheime = 47482
+wohnheime = 19
+sonstige_gebaeude_mit_wohnraum = 831
+[[kreise]]
+ags = "07339"
+geb_mit_wohnraum = 63606
+wohngebaeude = 62081
+wohngebaeude_ohne_wohnheime = 62048
+wohnheime = 32
+sonstige_gebaeude_mit_wohnraum = 1528
+[[kreise]]
+ags = "07340"
+geb_mit_wohnraum = 35623
+wohngebaeude = 34983
+wohngebaeude_ohne_wohnheime = 34982
+wohnheime = 5
+sonstige_gebaeude_mit_wohnraum = 638
+[[kreise]]
+ags = "08111"
+geb_mit_wohnraum = 77857
+wohngebaeude = 75601
+wohngebaeude_ohne_wohnheime = 75267
+wohnheime = 337
+sonstige_gebaeude_mit_wohnraum = 2259
+[[kreise]]
+ags = "08115"
+geb_mit_wohnraum = 85278
+wohngebaeude = 83184
+wohngebaeude_ohne_wohnheime = 83143
+wohnheime = 45
+sonstige_gebaeude_mit_wohnraum = 2092
+[[kreise]]
+ags = "08116"
+geb_mit_wohnraum = 117447
+wohngebaeude = 114247
+wohngebaeude_ohne_wohnheime = 114156
+wohnheime = 88
+sonstige_gebaeude_mit_wohnraum = 3196
+[[kreise]]
+ags = "08117"
+geb_mit_wohnraum = 63928
+wohngebaeude = 62185
+wohngebaeude_ohne_wohnheime = 62137
+wohnheime = 46
+sonstige_gebaeude_mit_wohnraum = 1745
+[[kreise]]
+ags = "08118"
+geb_mit_wohnraum = 116564
+wohngebaeude = 113812
+wohngebaeude_ohne_wohnheime = 113707
+wohnheime = 106
+sonstige_gebaeude_mit_wohnraum = 2749
+[[kreise]]
+ags = "08119"
+geb_mit_wohnraum = 97564
+wohngebaeude = 94586
+wohngebaeude_ohne_wohnheime = 94514
+wohnheime = 69
+sonstige_gebaeude_mit_wohnraum = 2978
+[[kreise]]
+ags = "08121"
+geb_mit_wohnraum = 22598
+wohngebaeude = 22016
+wohngebaeude_ohne_wohnheime = 21977
+wohnheime = 37
+sonstige_gebaeude_mit_wohnraum = 578
+[[kreise]]
+ags = "08125"
+geb_mit_wohnraum = 95251
+wohngebaeude = 93161
+wohngebaeude_ohne_wohnheime = 93108
+wohnheime = 55
+sonstige_gebaeude_mit_wohnraum = 2088
+[[kreise]]
+ags = "08126"
+geb_mit_wohnraum = 30991
+wohngebaeude = 30233
+wohngebaeude_ohne_wohnheime = 30211
+wohnheime = 23
+sonstige_gebaeude_mit_wohnraum = 757
+[[kreise]]
+ags = "08127"
+geb_mit_wohnraum = 54508
+wohngebaeude = 53072
+wohngebaeude_ohne_wohnheime = 53040
+wohnheime = 37
+sonstige_gebaeude_mit_wohnraum = 1432
+[[kreise]]
+ags = "08128"
+geb_mit_wohnraum = 39415
+wohngebaeude = 38318
+wohngebaeude_ohne_wohnheime = 38284
+wohnheime = 32
+sonstige_gebaeude_mit_wohnraum = 1100
+[[kreise]]
+ags = "08135"
+geb_mit_wohnraum = 36683
+wohngebaeude = 35749
+wohngebaeude_ohne_wohnheime = 35728
+wohnheime = 24
+sonstige_gebaeude_mit_wohnraum = 933
+[[kreise]]
+ags = "08136"
+geb_mit_wohnraum = 85341
+wohngebaeude = 82998
+wohngebaeude_ohne_wohnheime = 82913
+wohnheime = 84
+sonstige_gebaeude_mit_wohnraum = 2344
+[[kreise]]
+ags = "08211"
+geb_mit_wohnraum = 11762
+wohngebaeude = 11454
+wohngebaeude_ohne_wohnheime = 11435
+wohnheime = 20
+sonstige_gebaeude_mit_wohnraum = 306
+[[kreise]]
+ags = "08212"
+geb_mit_wohnraum = 43145
+wohngebaeude = 42332
+wohngebaeude_ohne_wohnheime = 42206
+wohnheime = 128
+sonstige_gebaeude_mit_wohnraum = 811
+[[kreise]]
+ags = "08215"
+geb_mit_wohnraum = 120339
+wohngebaeude = 118021
+wohngebaeude_ohne_wohnheime = 117948
+wohnheime = 70
+sonstige_gebaeude_mit_wohnraum = 2314
+[[kreise]]
+ags = "08216"
+geb_mit_wohnraum = 57807
+wohngebaeude = 56635
+wohngebaeude_ohne_wohnheime = 56590
+wohnheime = 44
+sonstige_gebaeude_mit_wohnraum = 1169
+[[kreise]]
+ags = "08221"
+geb_mit_wohnraum = 20842
+wohngebaeude = 20310
+wohngebaeude_ohne_wohnheime = 20162
+wohnheime = 150
+sonstige_gebaeude_mit_wohnraum = 530
+[[kreise]]
+ags = "08222"
+geb_mit_wohnraum = 43095
+wohngebaeude = 42175
+wohngebaeude_ohne_wohnheime = 42055
+wohnheime = 118
+sonstige_gebaeude_mit_wohnraum = 923
+[[kreise]]
+ags = "08225"
+geb_mit_wohnraum = 44180
+wohngebaeude = 43196
+wohngebaeude_ohne_wohnheime = 43155
+wohnheime = 37
+sonstige_gebaeude_mit_wohnraum = 980
+[[kreise]]
+ags = "08226"
+geb_mit_wohnraum = 140524
+wohngebaeude = 137813
+wohngebaeude_ohne_wohnheime = 137739
+wohnheime = 71
+sonstige_gebaeude_mit_wohnraum = 2709
+[[kreise]]
+ags = "08231"
+geb_mit_wohnraum = 19384
+wohngebaeude = 18918
+wohngebaeude_ohne_wohnheime = 18874
+wohnheime = 46
+sonstige_gebaeude_mit_wohnraum = 469
+[[kreise]]
+ags = "08235"
+geb_mit_wohnraum = 42188
+wohngebaeude = 40857
+wohngebaeude_ohne_wohnheime = 40814
+wohnheime = 42
+sonstige_gebaeude_mit_wohnraum = 1330
+[[kreise]]
+ags = "08236"
+geb_mit_wohnraum = 57978
+wohngebaeude = 56684
+wohngebaeude_ohne_wohnheime = 56663
+wohnheime = 25
+sonstige_gebaeude_mit_wohnraum = 1291
+[[kreise]]
+ags = "08237"
+geb_mit_wohnraum = 32535
+wohngebaeude = 31206
+wohngebaeude_ohne_wohnheime = 31183
+wohnheime = 20
+sonstige_gebaeude_mit_wohnraum = 1331
+[[kreise]]
+ags = "08311"
+geb_mit_wohnraum = 27692
+wohngebaeude = 26847
+wohngebaeude_ohne_wohnheime = 26682
+wohnheime = 164
+sonstige_gebaeude_mit_wohnraum = 843
+[[kreise]]
+ags = "08315"
+geb_mit_wohnraum = 63364
+wohngebaeude = 60722
+wohngebaeude_ohne_wohnheime = 60680
+wohnheime = 38
+sonstige_gebaeude_mit_wohnraum = 2641
+[[kreise]]
+ags = "08316"
+geb_mit_wohnraum = 39025
+wohngebaeude = 37671
+wohngebaeude_ohne_wohnheime = 37650
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 1353
+[[kreise]]
+ags = "08317"
+geb_mit_wohnraum = 106653
+wohngebaeude = 103133
+wohngebaeude_ohne_wohnheime = 103045
+wohnheime = 86
+sonstige_gebaeude_mit_wohnraum = 3519
+[[kreise]]
+ags = "08325"
+geb_mit_wohnraum = 41521
+wohngebaeude = 39747
+wohngebaeude_ohne_wohnheime = 39728
+wohnheime = 22
+sonstige_gebaeude_mit_wohnraum = 1772
+[[kreise]]
+ags = "08326"
+geb_mit_wohnraum = 49650
+wohngebaeude = 47604
+wohngebaeude_ohne_wohnheime = 47543
+wohnheime = 59
+sonstige_gebaeude_mit_wohnraum = 2045
+[[kreise]]
+ags = "08327"
+geb_mit_wohnraum = 38832
+wohngebaeude = 37663
+wohngebaeude_ohne_wohnheime = 37633
+wohnheime = 29
+sonstige_gebaeude_mit_wohnraum = 1172
+[[kreise]]
+ags = "08335"
+geb_mit_wohnraum = 60013
+wohngebaeude = 58247
+wohngebaeude_ohne_wohnheime = 58123
+wohnheime = 121
+sonstige_gebaeude_mit_wohnraum = 1769
+[[kreise]]
+ags = "08336"
+geb_mit_wohnraum = 51660
+wohngebaeude = 50261
+wohngebaeude_ohne_wohnheime = 50217
+wohnheime = 47
+sonstige_gebaeude_mit_wohnraum = 1396
+[[kreise]]
+ags = "08337"
+geb_mit_wohnraum = 42734
+wohngebaeude = 40890
+wohngebaeude_ohne_wohnheime = 40861
+wohnheime = 32
+sonstige_gebaeude_mit_wohnraum = 1842
+[[kreise]]
+ags = "08415"
+geb_mit_wohnraum = 73749
+wohngebaeude = 71520
+wohngebaeude_ohne_wohnheime = 71467
+wohnheime = 52
+sonstige_gebaeude_mit_wohnraum = 2232
+[[kreise]]
+ags = "08416"
+geb_mit_wohnraum = 52459
+wohngebaeude = 51172
+wohngebaeude_ohne_wohnheime = 51002
+wohnheime = 173
+sonstige_gebaeude_mit_wohnraum = 1290
+[[kreise]]
+ags = "08417"
+geb_mit_wohnraum = 61138
+wohngebaeude = 59146
+wohngebaeude_ohne_wohnheime = 59109
+wohnheime = 37
+sonstige_gebaeude_mit_wohnraum = 1995
+[[kreise]]
+ags = "08421"
+geb_mit_wohnraum = 21832
+wohngebaeude = 21365
+wohngebaeude_ohne_wohnheime = 21298
+wohnheime = 66
+sonstige_gebaeude_mit_wohnraum = 468
+[[kreise]]
+ags = "08425"
+geb_mit_wohnraum = 57493
+wohngebaeude = 55848
+wohngebaeude_ohne_wohnheime = 55817
+wohnheime = 36
+sonstige_gebaeude_mit_wohnraum = 1640
+[[kreise]]
+ags = "08426"
+geb_mit_wohnraum = 60122
+wohngebaeude = 58013
+wohngebaeude_ohne_wohnheime = 57975
+wohnheime = 37
+sonstige_gebaeude_mit_wohnraum = 2110
+[[kreise]]
+ags = "08435"
+geb_mit_wohnraum = 50724
+wohngebaeude = 48928
+wohngebaeude_ohne_wohnheime = 48895
+wohnheime = 36
+sonstige_gebaeude_mit_wohnraum = 1794
+[[kreise]]
+ags = "08436"
+geb_mit_wohnraum = 71611
+wohngebaeude = 68545
+wohngebaeude_ohne_wohnheime = 68472
+wohnheime = 74
+sonstige_gebaeude_mit_wohnraum = 3065
+[[kreise]]
+ags = "08437"
+geb_mit_wohnraum = 39518
+wohngebaeude = 37761
+wohngebaeude_ohne_wohnheime = 37739
+wohnheime = 19
+sonstige_gebaeude_mit_wohnraum = 1760
+[[kreise]]
+ags = "09161"
+geb_mit_wohnraum = 28360
+wohngebaeude = 27934
+wohngebaeude_ohne_wohnheime = 27890
+wohnheime = 40
+sonstige_gebaeude_mit_wohnraum = 428
+[[kreise]]
+ags = "09162"
+geb_mit_wohnraum = 147196
+wohngebaeude = 144148
+wohngebaeude_ohne_wohnheime = 143816
+wohnheime = 330
+sonstige_gebaeude_mit_wohnraum = 3049
+[[kreise]]
+ags = "09163"
+geb_mit_wohnraum = 10877
+wohngebaeude = 10557
+wohngebaeude_ohne_wohnheime = 10530
+wohnheime = 28
+sonstige_gebaeude_mit_wohnraum = 318
+[[kreise]]
+ags = "09171"
+geb_mit_wohnraum = 31256
+wohngebaeude = 30469
+wohngebaeude_ohne_wohnheime = 30459
+wohnheime = 14
+sonstige_gebaeude_mit_wohnraum = 786
+[[kreise]]
+ags = "09172"
+geb_mit_wohnraum = 23912
+wohngebaeude = 22882
+wohngebaeude_ohne_wohnheime = 22862
+wohnheime = 23
+sonstige_gebaeude_mit_wohnraum = 1027
+[[kreise]]
+ags = "09173"
+geb_mit_wohnraum = 30336
+wohngebaeude = 28877
+wohngebaeude_ohne_wohnheime = 28857
+wohnheime = 22
+sonstige_gebaeude_mit_wohnraum = 1461
+[[kreise]]
+ags = "09174"
+geb_mit_wohnraum = 36471
+wohngebaeude = 35640
+wohngebaeude_ohne_wohnheime = 35630
+wohnheime = 7
+sonstige_gebaeude_mit_wohnraum = 832
+[[kreise]]
+ags = "09175"
+geb_mit_wohnraum = 35331
+wohngebaeude = 34369
+wohngebaeude_ohne_wohnheime = 34351
+wohnheime = 15
+sonstige_gebaeude_mit_wohnraum = 966
+[[kreise]]
+ags = "09176"
+geb_mit_wohnraum = 41248
+wohngebaeude = 40554
+wohngebaeude_ohne_wohnheime = 40530
+wohnheime = 23
+sonstige_gebaeude_mit_wohnraum = 695
+[[kreise]]
+ags = "09177"
+geb_mit_wohnraum = 35971
+wohngebaeude = 34958
+wohngebaeude_ohne_wohnheime = 34932
+wohnheime = 24
+sonstige_gebaeude_mit_wohnraum = 1016
+[[kreise]]
+ags = "09178"
+geb_mit_wohnraum = 42409
+wohngebaeude = 41446
+wohngebaeude_ohne_wohnheime = 41382
+wohnheime = 66
+sonstige_gebaeude_mit_wohnraum = 961
+[[kreise]]
+ags = "09179"
+geb_mit_wohnraum = 50709
+wohngebaeude = 49780
+wohngebaeude_ohne_wohnheime = 49758
+wohnheime = 21
+sonstige_gebaeude_mit_wohnraum = 924
+[[kreise]]
+ags = "09180"
+geb_mit_wohnraum = 21609
+wohngebaeude = 20522
+wohngebaeude_ohne_wohnheime = 20514
+wohnheime = 9
+sonstige_gebaeude_mit_wohnraum = 1086
+[[kreise]]
+ags = "09181"
+geb_mit_wohnraum = 35323
+wohngebaeude = 34151
+wohngebaeude_ohne_wohnheime = 34141
+wohnheime = 6
+sonstige_gebaeude_mit_wohnraum = 1170
+[[kreise]]
+ags = "09182"
+geb_mit_wohnraum = 25822
+wohngebaeude = 24518
+wohngebaeude_ohne_wohnheime = 24500
+wohnheime = 16
+sonstige_gebaeude_mit_wohnraum = 1305
+[[kreise]]
+ags = "09183"
+geb_mit_wohnraum = 32507
+wohngebaeude = 31427
+wohngebaeude_ohne_wohnheime = 31417
+wohnheime = 8
+sonstige_gebaeude_mit_wohnraum = 1079
+[[kreise]]
+ags = "09184"
+geb_mit_wohnraum = 72397
+wohngebaeude = 71012
+wohngebaeude_ohne_wohnheime = 70962
+wohnheime = 50
+sonstige_gebaeude_mit_wohnraum = 1383
+[[kreise]]
+ags = "09185"
+geb_mit_wohnraum = 29035
+wohngebaeude = 28318
+wohngebaeude_ohne_wohnheime = 28322
+wohnheime = "missing"
+sonstige_gebaeude_mit_wohnraum = 715
+[[kreise]]
+ags = "09186"
+geb_mit_wohnraum = 37828
+wohngebaeude = 37026
+wohngebaeude_ohne_wohnheime = 37011
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 805
+[[kreise]]
+ags = "09187"
+geb_mit_wohnraum = 69575
+wohngebaeude = 66681
+wohngebaeude_ohne_wohnheime = 66655
+wohnheime = 30
+sonstige_gebaeude_mit_wohnraum = 2897
+[[kreise]]
+ags = "09188"
+geb_mit_wohnraum = 35721
+wohngebaeude = 34899
+wohngebaeude_ohne_wohnheime = 34887
+wohnheime = 15
+sonstige_gebaeude_mit_wohnraum = 823
+[[kreise]]
+ags = "09189"
+geb_mit_wohnraum = 48799
+wohngebaeude = 46700
+wohngebaeude_ohne_wohnheime = 46692
+wohnheime = 12
+sonstige_gebaeude_mit_wohnraum = 2096
+[[kreise]]
+ags = "09190"
+geb_mit_wohnraum = 37614
+wohngebaeude = 36132
+wohngebaeude_ohne_wohnheime = 36120
+wohnheime = 10
+sonstige_gebaeude_mit_wohnraum = 1481
+[[kreise]]
+ags = "09261"
+geb_mit_wohnraum = 13843
+wohngebaeude = 13515
+wohngebaeude_ohne_wohnheime = 13491
+wohnheime = 21
+sonstige_gebaeude_mit_wohnraum = 330
+[[kreise]]
+ags = "09262"
+geb_mit_wohnraum = 11101
+wohngebaeude = 10796
+wohngebaeude_ohne_wohnheime = 10752
+wohnheime = 41
+sonstige_gebaeude_mit_wohnraum = 305
+[[kreise]]
+ags = "09263"
+geb_mit_wohnraum = 10812
+wohngebaeude = 10541
+wohngebaeude_ohne_wohnheime = 10530
+wohnheime = 12
+sonstige_gebaeude_mit_wohnraum = 270
+[[kreise]]
+ags = "09271"
+geb_mit_wohnraum = 36464
+wohngebaeude = 35532
+wohngebaeude_ohne_wohnheime = 35496
+wohnheime = 35
+sonstige_gebaeude_mit_wohnraum = 930
+[[kreise]]
+ags = "09272"
+geb_mit_wohnraum = 26210
+wohngebaeude = 25305
+wohngebaeude_ohne_wohnheime = 25299
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 902
+[[kreise]]
+ags = "09273"
+geb_mit_wohnraum = 36715
+wohngebaeude = 35843
+wohngebaeude_ohne_wohnheime = 35828
+wohnheime = 17
+sonstige_gebaeude_mit_wohnraum = 870
+[[kreise]]
+ags = "09274"
+geb_mit_wohnraum = 50176
+wohngebaeude = 48960
+wohngebaeude_ohne_wohnheime = 48945
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 1213
+[[kreise]]
+ags = "09275"
+geb_mit_wohnraum = 61521
+wohngebaeude = 59690
+wohngebaeude_ohne_wohnheime = 59672
+wohnheime = 16
+sonstige_gebaeude_mit_wohnraum = 1834
+[[kreise]]
+ags = "09276"
+geb_mit_wohnraum = 24828
+wohngebaeude = 23889
+wohngebaeude_ohne_wohnheime = 23884
+wohnheime = 6
+sonstige_gebaeude_mit_wohnraum = 941
+[[kreise]]
+ags = "09277"
+geb_mit_wohnraum = 39658
+wohngebaeude = 38362
+wohngebaeude_ohne_wohnheime = 38349
+wohnheime = 16
+sonstige_gebaeude_mit_wohnraum = 1292
+[[kreise]]
+ags = "09278"
+geb_mit_wohnraum = 34837
+wohngebaeude = 33948
+wohngebaeude_ohne_wohnheime = 33943
+wohnheime = 8
+sonstige_gebaeude_mit_wohnraum = 888
+[[kreise]]
+ags = "09279"
+geb_mit_wohnraum = 31963
+wohngebaeude = 31158
+wohngebaeude_ohne_wohnheime = 31142
+wohnheime = 20
+sonstige_gebaeude_mit_wohnraum = 807
+[[kreise]]
+ags = "09361"
+geb_mit_wohnraum = 9791
+wohngebaeude = 9551
+wohngebaeude_ohne_wohnheime = 9535
+wohnheime = 15
+sonstige_gebaeude_mit_wohnraum = 239
+[[kreise]]
+ags = "09362"
+geb_mit_wohnraum = 23282
+wohngebaeude = 22819
+wohngebaeude_ohne_wohnheime = 22740
+wohnheime = 78
+sonstige_gebaeude_mit_wohnraum = 460
+[[kreise]]
+ags = "09363"
+geb_mit_wohnraum = 9728
+wohngebaeude = 9433
+wohngebaeude_ohne_wohnheime = 9416
+wohnheime = 15
+sonstige_gebaeude_mit_wohnraum = 297
+[[kreise]]
+ags = "09371"
+geb_mit_wohnraum = 32437
+wohngebaeude = 31642
+wohngebaeude_ohne_wohnheime = 31623
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 799
+[[kreise]]
+ags = "09372"
+geb_mit_wohnraum = 41909
+wohngebaeude = 40551
+wohngebaeude_ohne_wohnheime = 40540
+wohnheime = 13
+sonstige_gebaeude_mit_wohnraum = 1356
+[[kreise]]
+ags = "09373"
+geb_mit_wohnraum = 40566
+wohngebaeude = 39661
+wohngebaeude_ohne_wohnheime = 39639
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 904
+[[kreise]]
+ags = "09374"
+geb_mit_wohnraum = 30320
+wohngebaeude = 29558
+wohngebaeude_ohne_wohnheime = 29549
+wohnheime = 7
+sonstige_gebaeude_mit_wohnraum = 765
+[[kreise]]
+ags = "09375"
+geb_mit_wohnraum = 58596
+wohngebaeude = 57604
+wohngebaeude_ohne_wohnheime = 57579
+wohnheime = 25
+sonstige_gebaeude_mit_wohnraum = 991
+[[kreise]]
+ags = "09376"
+geb_mit_wohnraum = 45369
+wohngebaeude = 44270
+wohngebaeude_ohne_wohnheime = 44264
+wohnheime = 8
+sonstige_gebaeude_mit_wohnraum = 1097
+[[kreise]]
+ags = "09377"
+geb_mit_wohnraum = 22938
+wohngebaeude = 22170
+wohngebaeude_ohne_wohnheime = 22163
+wohnheime = 5
+sonstige_gebaeude_mit_wohnraum = 766
+[[kreise]]
+ags = "09461"
+geb_mit_wohnraum = 13583
+wohngebaeude = 13154
+wohngebaeude_ohne_wohnheime = 13080
+wohnheime = 76
+sonstige_gebaeude_mit_wohnraum = 427
+[[kreise]]
+ags = "09462"
+geb_mit_wohnraum = 13813
+wohngebaeude = 13450
+wohngebaeude_ohne_wohnheime = 13381
+wohnheime = 68
+sonstige_gebaeude_mit_wohnraum = 364
+[[kreise]]
+ags = "09463"
+geb_mit_wohnraum = 9839
+wohngebaeude = 9573
+wohngebaeude_ohne_wohnheime = 9556
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 265
+[[kreise]]
+ags = "09464"
+geb_mit_wohnraum = 10003
+wohngebaeude = 9703
+wohngebaeude_ohne_wohnheime = 9685
+wohnheime = 16
+sonstige_gebaeude_mit_wohnraum = 302
+[[kreise]]
+ags = "09471"
+geb_mit_wohnraum = 43424
+wohngebaeude = 42415
+wohngebaeude_ohne_wohnheime = 42403
+wohnheime = 15
+sonstige_gebaeude_mit_wohnraum = 1007
+[[kreise]]
+ags = "09472"
+geb_mit_wohnraum = 33778
+wohngebaeude = 32908
+wohngebaeude_ohne_wohnheime = 32896
+wohnheime = 10
+sonstige_gebaeude_mit_wohnraum = 873
+[[kreise]]
+ags = "09473"
+geb_mit_wohnraum = 26497
+wohngebaeude = 25822
+wohngebaeude_ohne_wohnheime = 25817
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 671
+[[kreise]]
+ags = "09474"
+geb_mit_wohnraum = 34512
+wohngebaeude = 33656
+wohngebaeude_ohne_wohnheime = 33653
+wohnheime = 6
+sonstige_gebaeude_mit_wohnraum = 854
+[[kreise]]
+ags = "09475"
+geb_mit_wohnraum = 32652
+wohngebaeude = 31540
+wohngebaeude_ohne_wohnheime = 31523
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 1110
+[[kreise]]
+ags = "09476"
+geb_mit_wohnraum = 22698
+wohngebaeude = 22014
+wohngebaeude_ohne_wohnheime = 22007
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 688
+[[kreise]]
+ags = "09477"
+geb_mit_wohnraum = 23081
+wohngebaeude = 22452
+wohngebaeude_ohne_wohnheime = 22441
+wohnheime = 13
+sonstige_gebaeude_mit_wohnraum = 627
+[[kreise]]
+ags = "09478"
+geb_mit_wohnraum = 21056
+wohngebaeude = 20443
+wohngebaeude_ohne_wohnheime = 20430
+wohnheime = 11
+sonstige_gebaeude_mit_wohnraum = 615
+[[kreise]]
+ags = "09479"
+geb_mit_wohnraum = 23251
+wohngebaeude = 22515
+wohngebaeude_ohne_wohnheime = 22503
+wohnheime = 13
+sonstige_gebaeude_mit_wohnraum = 737
+[[kreise]]
+ags = "09561"
+geb_mit_wohnraum = 9816
+wohngebaeude = 9536
+wohngebaeude_ohne_wohnheime = 9526
+wohnheime = 8
+sonstige_gebaeude_mit_wohnraum = 283
+[[kreise]]
+ags = "09562"
+geb_mit_wohnraum = 20087
+wohngebaeude = 19657
+wohngebaeude_ohne_wohnheime = 19550
+wohnheime = 104
+sonstige_gebaeude_mit_wohnraum = 429
+[[kreise]]
+ags = "09563"
+geb_mit_wohnraum = 20206
+wohngebaeude = 19839
+wohngebaeude_ohne_wohnheime = 19834
+wohnheime = 8
+sonstige_gebaeude_mit_wohnraum = 367
+[[kreise]]
+ags = "09564"
+geb_mit_wohnraum = 73805
+wohngebaeude = 72350
+wohngebaeude_ohne_wohnheime = 72257
+wohnheime = 98
+sonstige_gebaeude_mit_wohnraum = 1450
+[[kreise]]
+ags = "09565"
+geb_mit_wohnraum = 10073
+wohngebaeude = 9889
+wohngebaeude_ohne_wohnheime = 9884
+wohnheime = 9
+sonstige_gebaeude_mit_wohnraum = 188
+[[kreise]]
+ags = "09571"
+geb_mit_wohnraum = 57363
+wohngebaeude = 55686
+wohngebaeude_ohne_wohnheime = 55629
+wohnheime = 54
+sonstige_gebaeude_mit_wohnraum = 1674
+[[kreise]]
+ags = "09572"
+geb_mit_wohnraum = 41181
+wohngebaeude = 40387
+wohngebaeude_ohne_wohnheime = 40374
+wohnheime = 11
+sonstige_gebaeude_mit_wohnraum = 792
+[[kreise]]
+ags = "09573"
+geb_mit_wohnraum = 32702
+wohngebaeude = 32133
+wohngebaeude_ohne_wohnheime = 32119
+wohnheime = 12
+sonstige_gebaeude_mit_wohnraum = 571
+[[kreise]]
+ags = "09574"
+geb_mit_wohnraum = 49394
+wohngebaeude = 48327
+wohngebaeude_ohne_wohnheime = 48299
+wohnheime = 26
+sonstige_gebaeude_mit_wohnraum = 1069
+[[kreise]]
+ags = "09575"
+geb_mit_wohnraum = 31656
+wohngebaeude = 30660
+wohngebaeude_ohne_wohnheime = 30646
+wohnheime = 11
+sonstige_gebaeude_mit_wohnraum = 993
+[[kreise]]
+ags = "09576"
+geb_mit_wohnraum = 38617
+wohngebaeude = 37767
+wohngebaeude_ohne_wohnheime = 37750
+wohnheime = 16
+sonstige_gebaeude_mit_wohnraum = 853
+[[kreise]]
+ags = "09577"
+geb_mit_wohnraum = 28274
+wohngebaeude = 27384
+wohngebaeude_ohne_wohnheime = 27374
+wohnheime = 9
+sonstige_gebaeude_mit_wohnraum = 891
+[[kreise]]
+ags = "09661"
+geb_mit_wohnraum = 13478
+wohngebaeude = 13104
+wohngebaeude_ohne_wohnheime = 13088
+wohnheime = 12
+sonstige_gebaeude_mit_wohnraum = 372
+[[kreise]]
+ags = "09662"
+geb_mit_wohnraum = 9291
+wohngebaeude = 9011
+wohngebaeude_ohne_wohnheime = 9000
+wohnheime = 9
+sonstige_gebaeude_mit_wohnraum = 280
+[[kreise]]
+ags = "09663"
+geb_mit_wohnraum = 20856
+wohngebaeude = 20291
+wohngebaeude_ohne_wohnheime = 20188
+wohnheime = 107
+sonstige_gebaeude_mit_wohnraum = 561
+[[kreise]]
+ags = "09671"
+geb_mit_wohnraum = 50637
+wohngebaeude = 49583
+wohngebaeude_ohne_wohnheime = 49570
+wohnheime = 14
+sonstige_gebaeude_mit_wohnraum = 1051
+[[kreise]]
+ags = "09672"
+geb_mit_wohnraum = 31396
+wohngebaeude = 30562
+wohngebaeude_ohne_wohnheime = 30546
+wohnheime = 14
+sonstige_gebaeude_mit_wohnraum = 836
+[[kreise]]
+ags = "09673"
+geb_mit_wohnraum = 25962
+wohngebaeude = 25196
+wohngebaeude_ohne_wohnheime = 25187
+wohnheime = 13
+sonstige_gebaeude_mit_wohnraum = 764
+[[kreise]]
+ags = "09674"
+geb_mit_wohnraum = 27103
+wohngebaeude = 26275
+wohngebaeude_ohne_wohnheime = 26268
+wohnheime = 11
+sonstige_gebaeude_mit_wohnraum = 824
+[[kreise]]
+ags = "09675"
+geb_mit_wohnraum = 27637
+wohngebaeude = 26683
+wohngebaeude_ohne_wohnheime = 26678
+wohnheime = 8
+sonstige_gebaeude_mit_wohnraum = 951
+[[kreise]]
+ags = "09676"
+geb_mit_wohnraum = 37832
+wohngebaeude = 36861
+wohngebaeude_ohne_wohnheime = 36858
+wohnheime = 4
+sonstige_gebaeude_mit_wohnraum = 969
+[[kreise]]
+ags = "09677"
+geb_mit_wohnraum = 40533
+wohngebaeude = 39521
+wohngebaeude_ohne_wohnheime = 39511
+wohnheime = 9
+sonstige_gebaeude_mit_wohnraum = 1013
+[[kreise]]
+ags = "09678"
+geb_mit_wohnraum = 35467
+wohngebaeude = 34709
+wohngebaeude_ohne_wohnheime = 34703
+wohnheime = 8
+sonstige_gebaeude_mit_wohnraum = 755
+[[kreise]]
+ags = "09679"
+geb_mit_wohnraum = 48539
+wohngebaeude = 47517
+wohngebaeude_ohne_wohnheime = 47506
+wohnheime = 8
+sonstige_gebaeude_mit_wohnraum = 1025
+[[kreise]]
+ags = "09761"
+geb_mit_wohnraum = 39439
+wohngebaeude = 38614
+wohngebaeude_ohne_wohnheime = 38490
+wohnheime = 122
+sonstige_gebaeude_mit_wohnraum = 826
+[[kreise]]
+ags = "09762"
+geb_mit_wohnraum = 9530
+wohngebaeude = 9242
+wohngebaeude_ohne_wohnheime = 9234
+wohnheime = 4
+sonstige_gebaeude_mit_wohnraum = 291
+[[kreise]]
+ags = "09763"
+geb_mit_wohnraum = 10985
+wohngebaeude = 10602
+wohngebaeude_ohne_wohnheime = 10582
+wohnheime = 21
+sonstige_gebaeude_mit_wohnraum = 380
+[[kreise]]
+ags = "09764"
+geb_mit_wohnraum = 9569
+wohngebaeude = 9184
+wohngebaeude_ohne_wohnheime = 9179
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 389
+[[kreise]]
+ags = "09771"
+geb_mit_wohnraum = 39473
+wohngebaeude = 38665
+wohngebaeude_ohne_wohnheime = 38658
+wohnheime = 10
+sonstige_gebaeude_mit_wohnraum = 810
+[[kreise]]
+ags = "09772"
+geb_mit_wohnraum = 70993
+wohngebaeude = 69477
+wohngebaeude_ohne_wohnheime = 69462
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 1518
+[[kreise]]
+ags = "09773"
+geb_mit_wohnraum = 30880
+wohngebaeude = 30030
+wohngebaeude_ohne_wohnheime = 30025
+wohnheime = 10
+sonstige_gebaeude_mit_wohnraum = 847
+[[kreise]]
+ags = "09774"
+geb_mit_wohnraum = 38717
+wohngebaeude = 37311
+wohngebaeude_ohne_wohnheime = 37295
+wohnheime = 15
+sonstige_gebaeude_mit_wohnraum = 1405
+[[kreise]]
+ags = "09775"
+geb_mit_wohnraum = 45052
+wohngebaeude = 43970
+wohngebaeude_ohne_wohnheime = 43950
+wohnheime = 21
+sonstige_gebaeude_mit_wohnraum = 1081
+[[kreise]]
+ags = "09776"
+geb_mit_wohnraum = 19775
+wohngebaeude = 18697
+wohngebaeude_ohne_wohnheime = 18692
+wohnheime = 7
+sonstige_gebaeude_mit_wohnraum = 1082
+[[kreise]]
+ags = "09777"
+geb_mit_wohnraum = 42067
+wohngebaeude = 40026
+wohngebaeude_ohne_wohnheime = 40009
+wohnheime = 16
+sonstige_gebaeude_mit_wohnraum = 2042
+[[kreise]]
+ags = "09778"
+geb_mit_wohnraum = 46452
+wohngebaeude = 44237
+wohngebaeude_ohne_wohnheime = 44216
+wohnheime = 23
+sonstige_gebaeude_mit_wohnraum = 2214
+[[kreise]]
+ags = "09779"
+geb_mit_wohnraum = 41560
+wohngebaeude = 40305
+wohngebaeude_ohne_wohnheime = 40300
+wohnheime = 7
+sonstige_gebaeude_mit_wohnraum = 1252
+[[kreise]]
+ags = "09780"
+geb_mit_wohnraum = 39379
+wohngebaeude = 37039
+wohngebaeude_ohne_wohnheime = 37007
+wohnheime = 33
+sonstige_gebaeude_mit_wohnraum = 2338
+[[kreise]]
+ags = "10041"
+geb_mit_wohnraum = 85239
+wohngebaeude = 83909
+wohngebaeude_ohne_wohnheime = 83881
+wohnheime = 32
+sonstige_gebaeude_mit_wohnraum = 1326
+[[kreise]]
+ags = "10042"
+geb_mit_wohnraum = 38247
+wohngebaeude = 37534
+wohngebaeude_ohne_wohnheime = 37527
+wohnheime = 4
+sonstige_gebaeude_mit_wohnraum = 715
+[[kreise]]
+ags = "10043"
+geb_mit_wohnraum = 43232
+wohngebaeude = 42614
+wohngebaeude_ohne_wohnheime = 42612
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 621
+[[kreise]]
+ags = "10044"
+geb_mit_wohnraum = 67680
+wohngebaeude = 66610
+wohngebaeude_ohne_wohnheime = 66610
+wohnheime = "missing"
+sonstige_gebaeude_mit_wohnraum = 1068
+[[kreise]]
+ags = "10045"
+geb_mit_wohnraum = 48403
+wohngebaeude = 47671
+wohngebaeude_ohne_wohnheime = 47657
+wohnheime = 16
+sonstige_gebaeude_mit_wohnraum = 726
+[[kreise]]
+ags = "10046"
+geb_mit_wohnraum = 31816
+wohngebaeude = 31292
+wohngebaeude_ohne_wohnheime = 31290
+wohnheime = 4
+sonstige_gebaeude_mit_wohnraum = 524
+[[kreise]]
+ags = "11000"
+geb_mit_wohnraum = 338663
+wohngebaeude = 332436
+wohngebaeude_ohne_wohnheime = 331791
+wohnheime = 646
+sonstige_gebaeude_mit_wohnraum = 6230
+[[kreise]]
+ags = "12051"
+geb_mit_wohnraum = 14092
+wohngebaeude = 13869
+wohngebaeude_ohne_wohnheime = 13850
+wohnheime = 20
+sonstige_gebaeude_mit_wohnraum = 221
+[[kreise]]
+ags = "12052"
+geb_mit_wohnraum = 16074
+wohngebaeude = 15752
+wohngebaeude_ohne_wohnheime = 15713
+wohnheime = 37
+sonstige_gebaeude_mit_wohnraum = 319
+[[kreise]]
+ags = "12053"
+geb_mit_wohnraum = 8791
+wohngebaeude = 8629
+wohngebaeude_ohne_wohnheime = 8577
+wohnheime = 49
+sonstige_gebaeude_mit_wohnraum = 165
+[[kreise]]
+ags = "12054"
+geb_mit_wohnraum = 23749
+wohngebaeude = 23314
+wohngebaeude_ohne_wohnheime = 23232
+wohnheime = 82
+sonstige_gebaeude_mit_wohnraum = 438
+[[kreise]]
+ags = "12060"
+geb_mit_wohnraum = 55767
+wohngebaeude = 54931
+wohngebaeude_ohne_wohnheime = 54892
+wohnheime = 36
+sonstige_gebaeude_mit_wohnraum = 839
+[[kreise]]
+ags = "12061"
+geb_mit_wohnraum = 55213
+wohngebaeude = 54176
+wohngebaeude_ohne_wohnheime = 54158
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 1038
+[[kreise]]
+ags = "12062"
+geb_mit_wohnraum = 33992
+wohngebaeude = 32939
+wohngebaeude_ohne_wohnheime = 32930
+wohnheime = 6
+sonstige_gebaeude_mit_wohnraum = 1053
+[[kreise]]
+ags = "12063"
+geb_mit_wohnraum = 50984
+wohngebaeude = 50322
+wohngebaeude_ohne_wohnheime = 50252
+wohnheime = 71
+sonstige_gebaeude_mit_wohnraum = 660
+[[kreise]]
+ags = "12064"
+geb_mit_wohnraum = 63147
+wohngebaeude = 62189
+wohngebaeude_ohne_wohnheime = 62165
+wohnheime = 25
+sonstige_gebaeude_mit_wohnraum = 958
+[[kreise]]
+ags = "12065"
+geb_mit_wohnraum = 63899
+wohngebaeude = 62961
+wohngebaeude_ohne_wohnheime = 62947
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 939
+[[kreise]]
+ags = "12066"
+geb_mit_wohnraum = 30198
+wohngebaeude = 29402
+wohngebaeude_ohne_wohnheime = 29381
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 797
+[[kreise]]
+ags = "12067"
+geb_mit_wohnraum = 53945
+wohngebaeude = 53076
+wohngebaeude_ohne_wohnheime = 53071
+wohnheime = 6
+sonstige_gebaeude_mit_wohnraum = 868
+[[kreise]]
+ags = "12068"
+geb_mit_wohnraum = 30099
+wohngebaeude = 29389
+wohngebaeude_ohne_wohnheime = 29370
+wohnheime = 21
+sonstige_gebaeude_mit_wohnraum = 711
+[[kreise]]
+ags = "12069"
+geb_mit_wohnraum = 68934
+wohngebaeude = 67849
+wohngebaeude_ohne_wohnheime = 67833
+wohnheime = 13
+sonstige_gebaeude_mit_wohnraum = 1087
+[[kreise]]
+ags = "12070"
+geb_mit_wohnraum = 25519
+wohngebaeude = 24766
+wohngebaeude_ohne_wohnheime = 24764
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 752
+[[kreise]]
+ags = "12071"
+geb_mit_wohnraum = 35061
+wohngebaeude = 34208
+wohngebaeude_ohne_wohnheime = 34191
+wohnheime = 20
+sonstige_gebaeude_mit_wohnraum = 854
+[[kreise]]
+ags = "12072"
+geb_mit_wohnraum = 50068
+wohngebaeude = 49119
+wohngebaeude_ohne_wohnheime = 49100
+wohnheime = 16
+sonstige_gebaeude_mit_wohnraum = 951
+[[kreise]]
+ags = "12073"
+geb_mit_wohnraum = 33140
+wohngebaeude = 32275
+wohngebaeude_ohne_wohnheime = 32248
+wohnheime = 25
+sonstige_gebaeude_mit_wohnraum = 868
+[[kreise]]
+ags = "13003"
+geb_mit_wohnraum = 22951
+wohngebaeude = 22491
+wohngebaeude_ohne_wohnheime = 22440
+wohnheime = 47
+sonstige_gebaeude_mit_wohnraum = 457
+[[kreise]]
+ags = "13004"
+geb_mit_wohnraum = 14658
+wohngebaeude = 14331
+wohngebaeude_ohne_wohnheime = 14322
+wohnheime = 10
+sonstige_gebaeude_mit_wohnraum = 326
+[[kreise]]
+ags = "13071"
+geb_mit_wohnraum = 69662
+wohngebaeude = 68103
+wohngebaeude_ohne_wohnheime = 68068
+wohnheime = 33
+sonstige_gebaeude_mit_wohnraum = 1560
+[[kreise]]
+ags = "13072"
+geb_mit_wohnraum = 67033
+wohngebaeude = 65639
+wohngebaeude_ohne_wohnheime = 65619
+wohnheime = 21
+sonstige_gebaeude_mit_wohnraum = 1395
+[[kreise]]
+ags = "13073"
+geb_mit_wohnraum = 65264
+wohngebaeude = 63768
+wohngebaeude_ohne_wohnheime = 63717
+wohnheime = 53
+sonstige_gebaeude_mit_wohnraum = 1494
+[[kreise]]
+ags = "13074"
+geb_mit_wohnraum = 46736
+wohngebaeude = 45794
+wohngebaeude_ohne_wohnheime = 45770
+wohnheime = 24
+sonstige_gebaeude_mit_wohnraum = 941
+[[kreise]]
+ags = "13075"
+geb_mit_wohnraum = 65533
+wohngebaeude = 64084
+wohngebaeude_ohne_wohnheime = 63998
+wohnheime = 87
+sonstige_gebaeude_mit_wohnraum = 1450
+[[kreise]]
+ags = "13076"
+geb_mit_wohnraum = 67564
+wohngebaeude = 65968
+wohngebaeude_ohne_wohnheime = 65924
+wohnheime = 43
+sonstige_gebaeude_mit_wohnraum = 1597
+[[kreise]]
+ags = "14511"
+geb_mit_wohnraum = 33925
+wohngebaeude = 33208
+wohngebaeude_ohne_wohnheime = 33179
+wohnheime = 27
+sonstige_gebaeude_mit_wohnraum = 719
+[[kreise]]
+ags = "14521"
+geb_mit_wohnraum = 84723
+wohngebaeude = 81684
+wohngebaeude_ohne_wohnheime = 81666
+wohnheime = 22
+sonstige_gebaeude_mit_wohnraum = 3036
+[[kreise]]
+ags = "14522"
+geb_mit_wohnraum = 80239
+wohngebaeude = 77655
+wohngebaeude_ohne_wohnheime = 77614
+wohnheime = 43
+sonstige_gebaeude_mit_wohnraum = 2581
+[[kreise]]
+ags = "14523"
+geb_mit_wohnraum = 60020
+wohngebaeude = 58095
+wohngebaeude_ohne_wohnheime = 58077
+wohnheime = 16
+sonstige_gebaeude_mit_wohnraum = 1926
+[[kreise]]
+ags = "14524"
+geb_mit_wohnraum = 74527
+wohngebaeude = 72290
+wohngebaeude_ohne_wohnheime = 72257
+wohnheime = 28
+sonstige_gebaeude_mit_wohnraum = 2242
+[[kreise]]
+ags = "14612"
+geb_mit_wohnraum = 62188
+wohngebaeude = 60679
+wohngebaeude_ohne_wohnheime = 60610
+wohnheime = 69
+sonstige_gebaeude_mit_wohnraum = 1513
+[[kreise]]
+ags = "14625"
+geb_mit_wohnraum = 81756
+wohngebaeude = 79348
+wohngebaeude_ohne_wohnheime = 79329
+wohnheime = 18
+sonstige_gebaeude_mit_wohnraum = 2409
+[[kreise]]
+ags = "14626"
+geb_mit_wohnraum = 68358
+wohngebaeude = 66190
+wohngebaeude_ohne_wohnheime = 66168
+wohnheime = 20
+sonstige_gebaeude_mit_wohnraum = 2171
+[[kreise]]
+ags = "14627"
+geb_mit_wohnraum = 60983
+wohngebaeude = 59106
+wohngebaeude_ohne_wohnheime = 59089
+wohnheime = 19
+sonstige_gebaeude_mit_wohnraum = 1875
+[[kreise]]
+ags = "14628"
+geb_mit_wohnraum = 60840
+wohngebaeude = 58879
+wohngebaeude_ohne_wohnheime = 58851
+wohnheime = 25
+sonstige_gebaeude_mit_wohnraum = 1964
+[[kreise]]
+ags = "14713"
+geb_mit_wohnraum = 64821
+wohngebaeude = 63264
+wohngebaeude_ohne_wohnheime = 63176
+wohnheime = 88
+sonstige_gebaeude_mit_wohnraum = 1560
+[[kreise]]
+ags = "14729"
+geb_mit_wohnraum = 72979
+wohngebaeude = 71150
+wohngebaeude_ohne_wohnheime = 71131
+wohnheime = 22
+sonstige_gebaeude_mit_wohnraum = 1826
+[[kreise]]
+ags = "14730"
+geb_mit_wohnraum = 55732
+wohngebaeude = 54300
+wohngebaeude_ohne_wohnheime = 54292
+wohnheime = 9
+sonstige_gebaeude_mit_wohnraum = 1433
+[[kreise]]
+ags = "15001"
+geb_mit_wohnraum = 18663
+wohngebaeude = 18385
+wohngebaeude_ohne_wohnheime = 18365
+wohnheime = 15
+sonstige_gebaeude_mit_wohnraum = 283
+[[kreise]]
+ags = "15002"
+geb_mit_wohnraum = 30389
+wohngebaeude = 29599
+wohngebaeude_ohne_wohnheime = 29561
+wohnheime = 40
+sonstige_gebaeude_mit_wohnraum = 792
+[[kreise]]
+ags = "15003"
+geb_mit_wohnraum = 35911
+wohngebaeude = 35319
+wohngebaeude_ohne_wohnheime = 35291
+wohnheime = 27
+sonstige_gebaeude_mit_wohnraum = 594
+[[kreise]]
+ags = "15081"
+geb_mit_wohnraum = 27755
+wohngebaeude = 27038
+wohngebaeude_ohne_wohnheime = 27033
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 718
+[[kreise]]
+ags = "15082"
+geb_mit_wohnraum = 48454
+wohngebaeude = 47478
+wohngebaeude_ohne_wohnheime = 47454
+wohnheime = 23
+sonstige_gebaeude_mit_wohnraum = 977
+[[kreise]]
+ags = "15083"
+geb_mit_wohnraum = 56147
+wohngebaeude = 55080
+wohngebaeude_ohne_wohnheime = 55071
+wohnheime = 10
+sonstige_gebaeude_mit_wohnraum = 1064
+[[kreise]]
+ags = "15084"
+geb_mit_wohnraum = 48834
+wohngebaeude = 47547
+wohngebaeude_ohne_wohnheime = 47545
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 1286
+[[kreise]]
+ags = "15085"
+geb_mit_wohnraum = 62945
+wohngebaeude = 61583
+wohngebaeude_ohne_wohnheime = 61573
+wohnheime = 11
+sonstige_gebaeude_mit_wohnraum = 1364
+[[kreise]]
+ags = "15086"
+geb_mit_wohnraum = 30014
+wohngebaeude = 29487
+wohngebaeude_ohne_wohnheime = 29477
+wohnheime = 7
+sonstige_gebaeude_mit_wohnraum = 529
+[[kreise]]
+ags = "15087"
+geb_mit_wohnraum = 45003
+wohngebaeude = 44083
+wohngebaeude_ohne_wohnheime = 44081
+wohnheime = 4
+sonstige_gebaeude_mit_wohnraum = 923
+[[kreise]]
+ags = "15088"
+geb_mit_wohnraum = 56588
+wohngebaeude = 55578
+wohngebaeude_ohne_wohnheime = 55570
+wohnheime = 6
+sonstige_gebaeude_mit_wohnraum = 1014
+[[kreise]]
+ags = "15089"
+geb_mit_wohnraum = 56603
+wohngebaeude = 55439
+wohngebaeude_ohne_wohnheime = 55427
+wohnheime = 11
+sonstige_gebaeude_mit_wohnraum = 1162
+[[kreise]]
+ags = "15090"
+geb_mit_wohnraum = 35281
+wohngebaeude = 34505
+wohngebaeude_ohne_wohnheime = 34500
+wohnheime = 6
+sonstige_gebaeude_mit_wohnraum = 773
+[[kreise]]
+ags = "15091"
+geb_mit_wohnraum = 41150
+wohngebaeude = 40185
+wohngebaeude_ohne_wohnheime = 40183
+wohnheime = "missing"
+sonstige_gebaeude_mit_wohnraum = 963
+[[kreise]]
+ags = "16051"
+geb_mit_wohnraum = 31283
+wohngebaeude = 30462
+wohngebaeude_ohne_wohnheime = 30408
+wohnheime = 51
+sonstige_gebaeude_mit_wohnraum = 825
+[[kreise]]
+ags = "16052"
+geb_mit_wohnraum = 15618
+wohngebaeude = 15169
+wohngebaeude_ohne_wohnheime = 15161
+wohnheime = 6
+sonstige_gebaeude_mit_wohnraum = 452
+[[kreise]]
+ags = "16053"
+geb_mit_wohnraum = 15904
+wohngebaeude = 15615
+wohngebaeude_ohne_wohnheime = 15548
+wohnheime = 70
+sonstige_gebaeude_mit_wohnraum = 287
+[[kreise]]
+ags = "16054"
+geb_mit_wohnraum = 8423
+wohngebaeude = 8156
+wohngebaeude_ohne_wohnheime = 8151
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 271
+[[kreise]]
+ags = "16055"
+geb_mit_wohnraum = 11548
+wohngebaeude = 11289
+wohngebaeude_ohne_wohnheime = 11259
+wohnheime = 33
+sonstige_gebaeude_mit_wohnraum = 260
+[[kreise]]
+ags = "16061"
+geb_mit_wohnraum = 28945
+wohngebaeude = 28108
+wohngebaeude_ohne_wohnheime = 28099
+wohnheime = 6
+sonstige_gebaeude_mit_wohnraum = 840
+[[kreise]]
+ags = "16062"
+geb_mit_wohnraum = 23193
+wohngebaeude = 22519
+wohngebaeude_ohne_wohnheime = 22503
+wohnheime = 14
+sonstige_gebaeude_mit_wohnraum = 676
+[[kreise]]
+ags = "16063"
+geb_mit_wohnraum = 45870
+wohngebaeude = 44655
+wohngebaeude_ohne_wohnheime = 44648
+wohnheime = 10
+sonstige_gebaeude_mit_wohnraum = 1212
+[[kreise]]
+ags = "16064"
+geb_mit_wohnraum = 31125
+wohngebaeude = 30140
+wohngebaeude_ohne_wohnheime = 30131
+wohnheime = 7
+sonstige_gebaeude_mit_wohnraum = 986
+[[kreise]]
+ags = "16065"
+geb_mit_wohnraum = 26263
+wohngebaeude = 25511
+wohngebaeude_ohne_wohnheime = 25508
+wohnheime = 5
+sonstige_gebaeude_mit_wohnraum = 756
+[[kreise]]
+ags = "16066"
+geb_mit_wohnraum = 40139
+wohngebaeude = 39015
+wohngebaeude_ohne_wohnheime = 39002
+wohnheime = 14
+sonstige_gebaeude_mit_wohnraum = 1124
+[[kreise]]
+ags = "16067"
+geb_mit_wohnraum = 37532
+wohngebaeude = 36498
+wohngebaeude_ohne_wohnheime = 36491
+wohnheime = 4
+sonstige_gebaeude_mit_wohnraum = 1036
+[[kreise]]
+ags = "16068"
+geb_mit_wohnraum = 22657
+wohngebaeude = 22092
+wohngebaeude_ohne_wohnheime = 22085
+wohnheime = 5
+sonstige_gebaeude_mit_wohnraum = 567
+[[kreise]]
+ags = "16069"
+geb_mit_wohnraum = 20607
+wohngebaeude = 19875
+wohngebaeude_ohne_wohnheime = 19871
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 734
+[[kreise]]
+ags = "16070"
+geb_mit_wohnraum = 29358
+wohngebaeude = 28507
+wohngebaeude_ohne_wohnheime = 28465
+wohnheime = 47
+sonstige_gebaeude_mit_wohnraum = 852
+[[kreise]]
+ags = "16071"
+geb_mit_wohnraum = 25959
+wohngebaeude = 25259
+wohngebaeude_ohne_wohnheime = 25258
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 696
+[[kreise]]
+ags = "16072"
+geb_mit_wohnraum = 17531
+wohngebaeude = 16997
+wohngebaeude_ohne_wohnheime = 16995
+wohnheime = 3
+sonstige_gebaeude_mit_wohnraum = 531
+[[kreise]]
+ags = "16073"
+geb_mit_wohnraum = 29939
+wohngebaeude = 28949
+wohngebaeude_ohne_wohnheime = 28941
+wohnheime = 10
+sonstige_gebaeude_mit_wohnraum = 993
+[[kreise]]
+ags = "16074"
+geb_mit_wohnraum = 24868
+wohngebaeude = 24085
+wohngebaeude_ohne_wohnheime = 24073
+wohnheime = 10
+sonstige_gebaeude_mit_wohnraum = 785
+[[kreise]]
+ags = "16075"
+geb_mit_wohnraum = 25949
+wohngebaeude = 24781
+wohngebaeude_ohne_wohnheime = 24774
+wohnheime = 7
+sonstige_gebaeude_mit_wohnraum = 1170
+[[kreise]]
+ags = "16076"
+geb_mit_wohnraum = 30346
+wohngebaeude = 29046
+wohngebaeude_ohne_wohnheime = 29039
+wohnheime = 11
+sonstige_gebaeude_mit_wohnraum = 1301
+[[kreise]]
+ags = "16077"
+geb_mit_wohnraum = 24356
+wohngebaeude = 23518
+wohngebaeude_ohne_wohnheime = 23510
+wohnheime = 9
+sonstige_gebaeude_mit_wohnraum = 838
