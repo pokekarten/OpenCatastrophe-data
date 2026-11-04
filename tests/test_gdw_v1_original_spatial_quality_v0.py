@@ -18,6 +18,9 @@ from research_runners.gdw_v1_original_shapefile_evidence_v0 import (
 from research_runners.gdw_v1_original_spatial_source_receipt_v0 import (
     GDW_V1_ORIGINAL_SPATIAL_RECEIPT_V0 as SPATIAL_RECEIPT,
 )
+from research_runners.gdw_v1_original_invalidity_family_receipt_v0 import (
+    GDW_V1_ORIGINAL_INVALIDITY_REASON_RECEIPT_V0 as INVALIDITY_RECEIPT,
+)
 from research_runners import gdw_v1_original_spatial_quality_v0 as subject
 from research_runners import gdw_v1_shapefile_archive_preflight_v0 as pre
 from tests.test_gdw_v1_shapefile_archive_preflight_v0 import (
@@ -121,6 +124,27 @@ class GDWFrozenOriginalEvidenceTests(unittest.TestCase):
                          "ring_self_intersection")
         self.assertEqual(subject._validity_reason_family("Something with [record coordinates]"),
                          "other_invalid_geos_reason")
+
+    def test_original_geos_ring_self_intersection_receipt_consistent(self):
+        r = INVALIDITY_RECEIPT
+        prev = SPATIAL_RECEIPT
+        self.assertEqual(r["original_file_sha256"], prev["original_file_sha256"])
+        self.assertEqual(r["original_reservoir_polygons"], prev["reservoir_polygons"])
+        self.assertEqual(r["geos_valid_original_reservoir_polygons"],
+                         prev["valid_reservoir_polygons"])
+        self.assertEqual(r["geos_invalid_original_reservoir_polygons"],
+                         prev["invalid_reservoir_polygons"])
+        self.assertEqual(r["invalid_geos_reason_families"],
+                         {"ring_self_intersection": 221})
+        self.assertEqual(sum(r["invalid_geos_reason_families"].values()),
+                         r["geos_invalid_original_reservoir_polygons"])
+        for key in ("original_geodatabase_alternate_format_crosschecked",
+                    "independent_topology_engine_crosschecked",
+                    "invalid_geometries_automatically_repaired",
+                    "source_features_or_coordinates_exported",
+                    "model_input_admitted"):
+            self.assertFalse(r[key])
+        self.assertNotIn("[", str(r["invalid_geos_reason_families"]))
 
     def test_real_original_spatial_receipt_is_bounded_and_nonadmitted(self):
         e = SPATIAL_RECEIPT
