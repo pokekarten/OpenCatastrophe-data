@@ -46,3 +46,39 @@ PR-head CI runs **only synthetic** 103-area/2,087-archetype test fixtures, wrong
 Select a **real open and licensed hazard footprint at a stated peril/resolution**, overlay it on the actual polygon supports and compare a single-centroid lookup to polygon-area-weighted hazard intensities. Where an independent building-density source can be used lawfully (e.g. classified footprint or settlement probability), use it as a **separate scenario** with uncertainty bounds. Preserve original NHSL polygon `Sauid` and archetype construction/occupancy totals while documenting hazard-support uncertainty, rather than turning 2,087 archetypes into 2,087 surveyed policy rooftops.
 
 **Risk/admission boundaries:** original NHSL modeling values are replacement-cost stock **not insured BuildingTIV/ContentsTIV**. This script never makes source admission, insuring fraction, hazard vulnerability or AEP/OEP/EP curve claims. All relevant model-use/legal/scientific approvals remain separately pending.
+
+
+## Observed original-source execution receipt — **passed** (2026-11-04)
+
+**This section supersedes the earlier `Evidence pending` paragraph above.** The reviewed [PR #1317](https://github.com/pokekarten/OpenCatastrophe-data/pull/1317) passed the complete CI (Python 3.11–3.14, REUSE, synthetic WKB/centroid adversarial tests) and was squash-merged into `main` as **`03c8f59ef73d75d68eb5342a2a25d8dffb5d9567`**.
+
+The trusted-main original source workflow [run **41903569037**](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41903569037) subsequently **completed successfully** with both exact original v1.0 Nunavut ZIP downloads, pinned byte identity and native SQLite/GP/WKB validation. The script performed 103 polygon and 2,087 archetype comparisons **on the original provider data**, not synthetic fixtures. The separate seven-field original numeric conservation remained green.
+
+### Actual measured Nunavut geometry-support diagnostics
+
+| Metric from native original provider GPKG geometry | Observed value |
+| --- | ---: |
+| Settled-area polygons | **103** |
+| Building archetype rows | **2,087** |
+| Archetype coordinate mismatches vs parent reported centroid (1e-6 degree tolerance) | **0** |
+| Reported centroids inside/on footprint, *planar lon/lat test* | **100** |
+| Reported centroids outside footprint, *planar lon/lat test* | **3** |
+| Center-to-farthest-original-WKB-vertex distance: median/p50 | **0.497527 km** |
+| Same radius proxy: p90 | **0.932649 km** |
+| Same radius proxy: p95 | **1.020144 km** |
+| Largest center-to-vertex distance | **11.267188 km** |
+| Largest center-to-lon/lat-bounding-box corner proxy | **12.753365 km** |
+| Internal source admission / OED location export | **false / false** |
+
+| Strictly descriptive polygon vertex radius threshold | Area count above threshold | Share of settled areas | Share of original modelled **2019-CAD replacement value** in those areas |
+| --- | ---: | ---: | ---: |
+| Greater than **0.25 km** | **94/103** | **91.26%** | **99.04%** |
+| Greater than **1 km** | **6/103** | **5.83%** | **23.74%** |
+| Greater than **5 km** | **1/103** | **0.97%** | **2.96%** |
+| Greater than **10 km** | **1/103** | **0.97%** | **2.96%** |
+
+**Interpretation:** The six SAUIDs larger than a 1-km *center-to-vertex distance proxy* contain **23.74% of total modeled replacement cost** across this regional source. This indicates a **concentrated spatial-support sensitivity worth testing** with actual hazard resolution, **not** an observed 23.74% model error, a measured insured-loss exposure proportion, a claim of uncertain real roof positions or the probability that a building falls in a wrong hazard cell.
+
+The **three reported centers outside the WKB footprint** are *diagnostics only*. Causes could include non-convex polygons, holes, mismatched centroid construction, planar ring handling or source geometry peculiarities. Do not silently move these points or classify them as missing insured buildings. Next bounded source challenge: independently compare these three situations with exact polygon topology (e.g. a vetted geospatial geometry engine), report only aggregate counts and the value share, then perform a real hazard-cell support sensitivity analysis.
+
+The native run emits only counts, source hashes, aggregated threshold/value shares and radius quantiles. No SAUID strings, original WKB, raw coordinates, source files, hazard events or insurance-level data are committed. The source remains **`not_admitted`**; no conversion from NHSL replacement value to actual or synthetic insurer TIV is asserted by this verification.
