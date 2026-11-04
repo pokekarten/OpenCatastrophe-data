@@ -104,6 +104,8 @@ def inspect_original_members(generator_xlsx: bytes, owner_xlsx: bytes, *,
     by_ownership = defaultdict(Counter)
     by_family = defaultdict(Counter)
     capacity_sums = defaultdict(lambda:Decimal(0))
+    status_capacity_sums = defaultdict(lambda:Decimal(0))
+    family_capacity_sums = defaultdict(lambda:Decimal(0))
     missing_capacity = Counter()
     zero_capacity = Counter()
     unknown_owner_code = Counter()
@@ -160,6 +162,9 @@ def inspect_original_members(generator_xlsx: bytes, owner_xlsx: bytes, *,
                     if mw==0:
                         zero_capacity[tab]+=1
                     capacity_sums[tab]+=mw
+                    status_capacity_sums[status]+=mw
+                    if prime in PRIME_FAMILY:
+                        family_capacity_sums[(tab,PRIME_FAMILY[prime])]+=mw
                     if capacity_sums[tab]>MAX_SUM_MW:
                         raise NativeCapacityBlocked("implausible total in bounded source cohort")
     except (keyjoin.GeneratorOperatorJoinBlocked, eia.EIA860ProofBlocked) as exc:
@@ -222,6 +227,12 @@ def inspect_original_members(generator_xlsx: bytes, owner_xlsx: bytes, *,
         "source_generator_status_counts":dict(sorted(by_status.items())),
         "by_reporting_tab_nameplate_mw_not_tiv":{
             t:_fmt_mw(capacity_sums[t]) for t in by_tab},
+        "by_exact_2025_source_status_nameplate_mw_not_tiv":{
+            st:_fmt_mw(status_capacity_sums[st]) for st in sorted(by_status)},
+        "by_reporting_tab_prime_mover_family_nameplate_mw_not_tiv":{
+            tab:{fam:_fmt_mw(family_capacity_sums[(tab,fam)])
+                 for fam in FAMILY_KEYS if by_family[tab][fam]}
+            for tab in by_tab},
         "by_reporting_tab_nameplate_missing_or_invalid":{
             t:missing_capacity[t] for t in by_tab},
         "by_reporting_tab_zero_nameplate_mw":{t:zero_capacity[t] for t in by_tab},
