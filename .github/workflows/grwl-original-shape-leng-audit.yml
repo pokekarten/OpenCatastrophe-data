@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 
-name: GRWL original SHAPE_LENG planar-degree and spherical-km control
+name: GRWL original SHAPE_LENG degree proof and dateline outlier audit
 
 on:
   pull_request:
@@ -52,6 +52,6 @@ jobs:
         run: |
           git rev-parse HEAD
           sha256sum research_runners/grwl_original_shape_leng_audit_v0.py
-      - name: Original GRWL SHAPE_LENG planar-degree and spherical kilometre control
+      - name: Original GRWL angular-degree proof and dateline length anomaly classification
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: python -m research_runners.grwl_original_shape_leng_audit_v0 --live
