@@ -3,8 +3,10 @@
 """Synthetic Dryad file inventories only; no provider bytes checked into Git."""
 import copy
 import hashlib
+from io import BytesIO
 import json
 import unittest
+from zipfile import ZipFile
 
 from research_runners import wumi2026a_dryad_original_asset_receipt_v0 as mod
 
@@ -114,3 +116,29 @@ class DryadWumiOriginalMetadataTests(unittest.TestCase):
         raw, _ = encode(fixture())
         with self.assertRaisesRegex(mod.DryadReceiptBlocked, "SHA256 mismatch"):
             mod.inspect_dryad_files_metadata(raw, "0"*64, expected_version=458442)
+
+    def test_structural_zip_check_passes_synthetic_file_without_extracting(self):
+        stream = BytesIO()
+        with ZipFile(stream, "w") as zipfile:
+            zipfile.writestr("lists/parent.txt", "synthetic only, no original events")
+            zipfile.writestr("lists/children.txt", "synthetic only")
+        result = mod.inspect_zip_members_untrusted(stream.getvalue())
+        self.assertEqual(result["zip_file_count"], 2)
+        self.assertTrue(result["zip_structure_crc_checked"])
+        self.assertFalse(result["zip_extraction_performed"])
+        with self.assertRaisesRegex(mod.DryadReceiptBlocked, "byte count"):
+            mod.inspect_original_zip_pinned(stream.getvalue())
+
+    def test_zip_traversal_symlink_and_duplicate_block(self):
+        for names in (("../unsafe.txt",), ("/unsafe.txt",),
+                      ("a.txt", "A.txt"), ("c:\\\\unsafe.txt",)):
+            stream = BytesIO()
+            with ZipFile(stream, "w") as zipfile:
+                for name in names:
+                    zipfile.writestr(name, "synthetic")
+            with self.subTest(names=names), self.assertRaises(mod.DryadReceiptBlocked):
+                mod.inspect_zip_members_untrusted(stream.getvalue())
+
+    def test_corrupted_zip_rejected(self):
+        with self.assertRaises(mod.DryadReceiptBlocked):
+            mod.inspect_zip_members_untrusted(b"not a ZIP")
