@@ -32,6 +32,34 @@ Dedicated original-source GitHub workflow in .github/workflows/luxembourg-act-ad
 
 python -m unittest discover -s tests -p 'test_lu_act_address_geobase_original_window_v0.py' -v
 
-Twelve synthetic tests cover a sole interior candidate, overlapping polygons, boundary and hole handling, many addresses in one footprint, invalid topology and missing input. The original pair's actual observed candidate counts **remain unverified until the exact-head original-source GitHub run is inspected**.
+Twelve synthetic tests cover a sole interior candidate, overlapping polygons, boundary and hole handling, many addresses in one footprint, invalid topology and missing input. The original pair was subsequently executed on an exact-head GitHub runner; see the empirical aggregate evidence below.
 
 The next scientific gate is a genuinely independent, manually adjudicated control set with original source lineage, address placement method, multi-unit buildings, cadastral changes, footprint segmentation, survey date and source rights. No model-input admission, insurer risk identity or independent coordinate error has been established.
+
+
+## Executed two-original-source spatial result, 2026-11-04
+
+**Exact-head original source run:** https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41812143721 (successful, 12/12 synthetic tests also passed).
+
+The runner freshly downloaded both pinned original objects, verified their full national SHA-256 receipts, checked original ZIP/GeoPackage metadata and feature counts, then selected points and polygons in the previously frozen same 100 x 100 m EPSG:3035 square. Source feature IDs, point coordinates, geometries, linked pairs and individual address strings remained unpublished.
+
+| Full original data / bounded window | Verified count |
+| --- | ---: |
+| Original 2026-11-02 BD-Adresses national address rows | **179,768** |
+| Original 2026-10-01 GeoBase national building object rows | **230,353** |
+| BD-Adresses points in the frozen city-centre window | **51** |
+| GeoBase2026 building polygons in the SAME window | **107** |
+| Address points strictly inside exactly one original building polygon | **51** |
+| Address points inside multiple building polygons | 0 |
+| Address point inside one polygon while touching another | 0 |
+| Address points only touching a building boundary | 0 |
+| Address points outside all sampled building polygons | 0 |
+| Original address ID repeat excess within this local window | 0 |
+| Distinct polygons with 2+ uniquely contained addresses | **6** |
+| Address points in those 6 polygons | **14** |
+
+**Conservation:** 51 = 51 + 0 + 0 + 0 + 0. These are **observed candidate relationships**, not 51 independently validated physical building identities. All 51 original address points lie in exactly one of the 107 native ACT 2026 building polygons for this window; only 43 polygons might be occupied by at least one address if all unique-containing and 14 share exactly 6? That inference is *not directly asserted or calculated by the current runner*, so it should not be reported as an observed count.
+
+**Interpretation / limits:** ACT may place an address at a largest-building or parcel centroid using its own cadastral geometry. The 100% polygon-interior relationship is likely affected by that shared upstream source and is **not independent location validation**, an insurer exposure coverage ratio, a proof that all 107 buildings are addressed, or evidence of no missing/incorrect buildings. Six of the polygons contain more than one address, directly warning against address-to-building 1:1 modelling. Address date 2026-11-02 and building date 2026-10-01 differ; no building-stock change conclusion follows from this diagnostic.
+
+The printed original SHA-256s matched the prior independently established receipts. No raw address/building data or individual match was uploaded as an artifact, no model inputs or insurer records were admitted, and the public repository retains only source-reference metadata, QA code and aggregate evidence.
