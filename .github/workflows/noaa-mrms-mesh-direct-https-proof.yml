@@ -42,3 +42,7 @@ jobs:
         run: python -m research_runners.noaa_mrms_mesh_direct_https_proof_v0 --product mesh_max_30min
       - name: Verify 2021 Keller hail-case MESH original bytes and GRIB grid coordinates
         run: python -m research_runners.noaa_mrms_mesh_direct_https_proof_v0 --product mesh_keller_2021
+      - name: Verify post-report 2021 Keller MESH source bytes against pinned SHA
+        run: python -m research_runners.noaa_mrms_mesh_direct_https_proof_v0 --product mesh_keller_2021_after
+      - name: Verify 30-minute Keller rolling hail swath source separately
+        run: python -m research_runners.noaa_mrms_mesh_direct_https_proof_v0 --product mesh_keller_2021_max30

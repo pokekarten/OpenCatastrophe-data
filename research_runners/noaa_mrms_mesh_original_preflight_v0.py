@@ -51,6 +51,26 @@ SOURCE_OBJECTS = {
         "compressed_sha256": "7d1fc719f0791e25ddd2919cb5dcea1302caa4150712feebc42b6c0cbe84fdf6",
         "mrms_grib_parameter_number": 28,
     },
+    "mesh_keller_2021_after": {
+        # 98 seconds after NCEI report; exact 2-min instantaneous MESH source.
+        # Hash originally calculated over bounded web-delivered source bytes;
+        # full independent NOAA TLS/SHA/CRC and GRIB QC pending this PR.
+        "basename": "MRMS_MESH_00.50_20210429-013838.grib2.gz",
+        "key": "CONUS/MESH_00.50/20210429/MRMS_MESH_00.50_20210429-013838.grib2.gz",
+        "compressed_size": 54575,
+        "compressed_sha256": "f9dbacf40c9d68e222830aa3b50588231d8897e0a1745e16f348ef81c0f2fba3",
+        "mrms_grib_parameter_number": 28,
+    },
+    "mesh_keller_2021_max30": {
+        # 60 seconds after report; rolling 30-minute maximum, NOT new event.
+        # Hash originally computed after complete 72,464-byte web Range
+        # reconstruction; original direct provider verification pending.
+        "basename": "MRMS_MESH_Max_30min_00.50_20210429-013800.grib2.gz",
+        "key": "CONUS/MESH_Max_30min_00.50/20210429/MRMS_MESH_Max_30min_00.50_20210429-013800.grib2.gz",
+        "compressed_size": 72464,
+        "compressed_sha256": "441cdeb5d6ba6406a4727b6a8c475be5f35920df398bcdfb7347e562999a25c2",
+        "mrms_grib_parameter_number": 29,
+    },
 }
 MAX_COMPRESSED_BYTES = 128_000
 MAX_DECOMPRESSED_BYTES = 2_000_000

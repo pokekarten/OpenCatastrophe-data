@@ -74,10 +74,13 @@ class FakeEcCodes:
         self.released = True
 
 
-def decode(fake: FakeEcCodes, data: dict | None = None):
+def decode(fake: FakeEcCodes, data: dict | None = None,
+           product: str = k.PRODUCT):
     with (patch.object(k, "audit_original", return_value=data or receipt()),
           patch.object(k, "inflate_gzip_capped", return_value=b"GRIB-test-only")):
-        return k.decode_original_keller(b"synthetic-never-source-bytes", fake)
+        return k.decode_original_keller(
+            b"synthetic-never-source-bytes", fake, product=product
+        )
 
 
 class KellerEcCodesFourCellTests(unittest.TestCase):
@@ -100,6 +103,53 @@ class KellerEcCodesFourCellTests(unittest.TestCase):
         self.assertFalse(result["annual_hail_frequency_estimated"])
         self.assertFalse(result["insured_losses_or_tiv_inferred"])
         self.assertFalse(result["original_source_bytes_committed_or_uploaded"])
+
+    def test_fixed_time_windows_distinguish_independent_readings(self):
+        for product, time, delta, kind, parameter in (
+            ("mesh_keller_2021", "2021-04-29T01:36:39+00:00", -21,
+             "instantaneous_2min_before_report", 28),
+            ("mesh_keller_2021_after", "2021-04-29T01:38:38+00:00", 98,
+             "instantaneous_2min_after_report", 28),
+            ("mesh_keller_2021_max30", "2021-04-29T01:38:00+00:00", 60,
+             "rolling_30min_max_after_report", 29),
+        ):
+            with self.subTest(product=product):
+                data = receipt()
+                data["reference_utc"] = time
+                fake = FakeEcCodes()
+                fake.override["parameterNumber"] = parameter
+                result = decode(fake, data, product=product)
+                self.assertEqual(result["source_relative_to_report_seconds"], delta)
+                self.assertEqual(result["source_radar_product_semantics"], kind)
+                self.assertEqual(
+                    result["source_is_rolling_max_not_an_additional_event"],
+                    parameter == 29,
+                )
+                self.assertFalse(result["source_or_model_admitted"])
+                self.assertFalse(result["annual_hail_frequency_estimated"])
+
+    def test_wrong_window_parameter_and_unpinned_dynamic_source_fail(self):
+        with self.assertRaisesRegex(k.PointDecodeError, "unreviewed"):
+            decode(FakeEcCodes(), product="latest")
+        for product, parameter in (
+            ("mesh_keller_2021_after", 29),
+            ("mesh_keller_2021_max30", 28),
+        ):
+            data = receipt()
+            data["reference_utc"] = k.KELLER_REPORT_WINDOW[product][0]
+            fake = FakeEcCodes()
+            fake.override["parameterNumber"] = parameter
+            with self.assertRaisesRegex(k.PointDecodeError, "definition drift"):
+                decode(fake, data, product=product)
+
+    def test_research_pins_for_bracketing_and_max_source_are_fixed(self):
+        pins = k.SOURCE_OBJECTS
+        self.assertEqual(pins["mesh_keller_2021_after"]["compressed_size"], 54575)
+        self.assertEqual(pins["mesh_keller_2021_after"]["compressed_sha256"],
+                         "f9dbacf40c9d68e222830aa3b50588231d8897e0a1745e16f348ef81c0f2fba3")
+        self.assertEqual(pins["mesh_keller_2021_max30"]["compressed_size"], 72464)
+        self.assertEqual(pins["mesh_keller_2021_max30"]["compressed_sha256"],
+                         "441cdeb5d6ba6406a4727b6a8c475be5f35920df398bcdfb7347e562999a25c2")
 
     def test_missing_radar_neighbours_not_converted_to_zero(self):
         fake = FakeEcCodes()
@@ -145,15 +195,44 @@ class KellerEcCodesFourCellTests(unittest.TestCase):
                 with self.assertRaises(k.PointDecodeError):
                     decode(fake)
 
+    def test_noaa_source_missing_and_no_coverage_are_not_zero_hail(self):
+        fake = FakeEcCodes()
+        fake.nearest[0].value = -1.0  # NOAA MESH original missing marker
+        fake.nearest[1].value = -3.0  # NOAA MESH original no-coverage marker
+        result = decode(fake)
+        self.assertEqual(result["missing_neighbour_count"], 2)
+        self.assertEqual(result["source_missing_neighbour_count"], 1)
+        self.assertEqual(result["source_no_coverage_neighbour_count"], 1)
+        self.assertEqual(result["grib_encoded_missing_neighbour_count"], 0)
+        self.assertEqual(result["valid_neighbour_count"], 2)
+        self.assertEqual(result["decoded_local_min_radar_mesh_mm"], 63.0)
+        self.assertEqual(result["decoded_local_max_radar_mesh_mm"], 67.0)
+        self.assertEqual(
+            [r["value_status"] for r in result["four_nearest_radar_cells"]][:2],
+            ["source_missing", "source_no_coverage"],
+        )
+        self.assertTrue(all(
+            r["decoded_radar_mesh_mm"] is None
+            for r in result["four_nearest_radar_cells"][:2]
+        ))
+        self.assertFalse(result["physical_model_skill_established"])
+
+    def test_noaa_zero_is_a_valid_value_but_not_evidence_of_no_storm(self):
+        fake = FakeEcCodes()
+        fake.nearest[1].value = 0.0
+        result = decode(fake)
+        self.assertEqual(result["valid_neighbour_count"], 4)
+        self.assertEqual(result["four_nearest_radar_cells"][1]["decoded_radar_mesh_mm"], 0.0)
+        self.assertEqual(result["four_nearest_radar_cells"][1]["value_status"], "decoded_radar_mesh_mm")
+        self.assertFalse(result["physical_model_skill_established"])
+
     def test_out_of_range_value_rejected_not_labeled_intensity(self):
-        fake = FakeEcCodes()
-        fake.nearest[1].value = -1
-        with self.assertRaisesRegex(k.PointDecodeError, "unphysical"):
-            decode(fake)
-        fake = FakeEcCodes()
-        fake.nearest[1].value = 1001
-        with self.assertRaisesRegex(k.PointDecodeError, "unphysical"):
-            decode(fake)
+        for invalid in (-99.0, -999.0, -2.0, 1001.0):
+            with self.subTest(invalid=invalid):
+                fake = FakeEcCodes()
+                fake.nearest[1].value = invalid
+                with self.assertRaisesRegex(k.PointDecodeError, "unphysical"):
+                    decode(fake)
 
     def test_source_timestamp_or_grid_is_not_trusted_from_comments(self):
         fake = FakeEcCodes()

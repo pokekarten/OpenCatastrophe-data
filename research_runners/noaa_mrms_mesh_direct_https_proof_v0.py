@@ -33,6 +33,14 @@ from research_runners.noaa_mrms_mesh_original_preflight_v0 import (
 ORIGIN = "https://noaa-mrms-pds.s3.amazonaws.com/"
 NETWORK_TIMEOUT_S = 15
 
+# Relative to independent NCEI report 956694 at 2021-04-29 01:37:00 UTC.
+# Note: a 30min hail swath is a time-window maximum, not a second event.
+KELLER_REPORT_WINDOW = {
+    "mesh_keller_2021": ("2021-04-29T01:36:39+00:00", -21),
+    "mesh_keller_2021_after": ("2021-04-29T01:38:38+00:00", 98),
+    "mesh_keller_2021_max30": ("2021-04-29T01:38:00+00:00", 60),
+}
+
 
 class DirectSourceProofError(ValueError):
     """The fixed first-party GET did not produce a trusted byte receipt."""
@@ -99,10 +107,11 @@ def fetch_and_audit(product: str, opener: Any = None) -> dict:
     if receipt["decoded_grib_bytes"] <= 0:
         raise DirectSourceProofError("empty original GRIB2 payload")
     site_cell = None
-    if product == "mesh_keller_2021":
-        # Ground observation: NCEI Storm Events #956694, Keller Alta Vista.
-        # The source's UTC reference time is 21 seconds before the report.
-        if receipt["reference_utc"] != "2021-04-29T01:36:39+00:00":
+    if product in KELLER_REPORT_WINDOW:
+        # Source time is checked against each original object's specific
+        # product/window, while NCEI report time remains a separate record.
+        expected_utc, seconds_delta = KELLER_REPORT_WINDOW[product]
+        if receipt["reference_utc"] != expected_utc:
             raise DirectSourceProofError("Keller radar reference timestamp drift")
         grid = receipt["grid_geography"]
         if grid.get("geometry_checked") is not True:
@@ -112,7 +121,10 @@ def fetch_and_audit(product: str, opener: Any = None) -> dict:
             raise DirectSourceProofError("Keller observed report outside MESH grid")
         site_cell["ncei_storm_events_report_id"] = 956694
         site_cell["separately_reported_hail_diameter_mm"] = 63.5
-        site_cell["radar_source_utc_vs_report_seconds"] = -21
+        site_cell["radar_source_utc_vs_report_seconds"] = seconds_delta
+        site_cell["source_is_rolling_30min_max_not_independent_event"] = (
+            product == "mesh_keller_2021_max30"
+        )
     return {
         "schema_version": "noaa-mrms-direct-https-source-proof-v0",
         "provider_https_host": "noaa-mrms-pds.s3.amazonaws.com",

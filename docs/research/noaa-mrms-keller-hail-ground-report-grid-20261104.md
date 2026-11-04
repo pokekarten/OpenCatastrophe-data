@@ -94,3 +94,50 @@ The first execution of the new grid parser **blocked correctly** because the syn
 The original NCEI report says **NWS Employee**, event ID 956694, `1.5NNW KELLER ALTA VISTA AR`, with local historical `04/28/2021 19:37 CST-6` label. Beware that NOAA uses an explicit fixed `CST-6` offset: converting the timestamp to UTC is **01:37Z**, whereas wall-clock daylight local labels seen on some secondary sites may show **20:37 CDT** for the same event. The corresponding NCEI `40.00M` property-damage field, if read, is **not a policy claim, independent insurer paid-loss dataset, or per-coordinate ground truth**. Source: https://www.ncei.noaa.gov/access/storm-events-database/event-details/956694.
 
 **Next falsifiable science checks:** read exact `MESH_Max_30min` swath for the same episode and 2–3 adjacent two-minute instantaneous source records; verify the maximum within a bounded time window, true missing/zero semantics and radar version, and compare across multiple de-duplicated NCEI point reports. A 30-minute rolling swath is **not an additional physical event** and must not be added to instantaneous MESH as an independent occurrence. This remains **research-only** with no hazard, vulnerability, pricing, TIV, insurer loss or model-input admission.
+
+
+## Follow-up research: time window around actual 2021 hail report
+
+The **instantaneous at 01:36:39Z** first result (four local cells **4.4–16.8 mm** versus independently reported **63.5 mm** at **01:37:00Z**) warrants timing/aggregation challenge before any skill conclusion. The exact additional NOAA original S3 keys and **research-observed** hashes were found and are pinned in the source-byte preflight, awaiting independent **direct GitHub-hosted HTTPS/CRC32/ecCodes** validation:
+
+| NOAA product | UTC | Offset from NCEI report | Original source compressed bytes | Preflight SHA-256 (intermediary-derived, *not yet direct-verified*) |
+| --- | --- | --- | ---: | --- |
+| `MESH_00.50` instantaneous | 2021-04-29 01:38:38 | **+98 seconds** | **54,575** | `f9dbacf40c9d68e222830aa3b50588231d8897e0a1745e16f348ef81c0f2fba3` |
+| `MESH_Max_30min_00.50` max swath | 2021-04-29 01:38:00 | **+60 seconds** | **72,464** | `441cdeb5d6ba6406a4727b6a8c475be5f35920df398bcdfb7347e562999a25c2` |
+
+The exact [instantaneous 01:38:38 NOAA original object](https://noaa-mrms-pds.s3.amazonaws.com/CONUS/MESH_00.50/20210429/MRMS_MESH_00.50_20210429-013838.grib2.gz) was delivered in full via a read-only web intermediary (54,575-byte size matches original S3 listing). For the [30-minute 01:38:00 NOAA original object](https://noaa-mrms-pds.s3.amazonaws.com/CONUS/MESH_Max_30min_00.50/20210429/MRMS_MESH_Max_30min_00.50_20210429-013800.grib2.gz), a single intermediary response delivered only **59,198 of the listed 72,464 bytes**, and was explicitly rejected as **truncated**. Three independently bounded HTTP Range representations (0–29,999; 30,000–59,999; 60,000–72,463, inclusive) then yielded **72,464 total bytes**, a full gzip header and a published-filename-matching embedded gzip basename, with the research SHA shown above. **These are not yet authenticated original direct-download receipts**, and the full source gzip CRC/meteorological content has not been verified at this preflight stage.
+
+The official NOAA/NSSL [operational MRMS GRIB2 table](https://www.nssl.noaa.gov/projects/mrms/operational/tables.php) identifies **MESH (discipline 209/category 3/parameter 28)** and **MESHMax30min (209/3/29)** in **mm**. NOAA's original [MESH Tracks guide](https://vlab.noaa.gov/web/wdtd/-/mesh-trac-3) defines the 30-minute track as a **maximum of MESH over that interval**, not a separate physical storm. An instantaneous radar estimate at t−21 s, an instantaneous estimate at t+98 s, and a rolling maximum at t+60 s are *different product semantics*, and cannot each be independently counted in annual CAT event frequency or insurer losses.
+
+The scientific aim is to compare **same four report-neighbour cells, same independent event ID**, across these **three pinned source windows** using the existing direct-TLS / SHA / gzip CRC and ecCodes source field checks. No additional report points, whole-grid raster download, new source admission, or paid-loss data are authorized by the time-window study.
+
+
+## Executed independent three-product Keller source test (2026-11-04)
+
+**First successful real time-window comparison:** [GitHub Actions #41801684662](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41801684662) completed successfully on PR #1264's candidate head after fixed-source NOAA HTTPS/SHA256/CRC32 and WMO-grid checks, with independent **ecCodes Python 2.50.0** decoding **only the same four nearest Keller report cells**, not full gridded field export. The separate [direct-original-source run #41801684681](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41801684681) also succeeded for **all five** source files, including the two newly pinned 2021 files.
+
+### Measured radar/source values at fixed report location
+
+The NCEI Storm Events #956694 reported hail diameter **63.5 mm** at **2021-04-29T01:37:00 UTC**. Report location approximately 32.92°N, −97.29° and rounded such that four original GRIB cell centres lie around **0.725 km** away.
+
+| Original NOAA source and reported time offset | NW | NE | SW | SE | Scientific reading |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 2-minute MESH 01:36:39Z (**−21 seconds**) | 5.8 mm | 14.6 mm | 4.4 mm | 16.8 mm | 4 valid instantaneous estimates; local min/max 4.4–16.8 mm |
+| 2-minute MESH 01:38:38Z (**+98 seconds**) | **missing (-1)** | 1.1 mm | **missing (-1)** | 2.0 mm | 2 valid instantaneous estimates; 2 source-defined **missing**, not zero hail |
+| 30-minute rolling MESHMax30min 01:38:00Z (**+60 seconds**) | **71.7 mm** | **67.8 mm** | **77.8 mm** | **73.0 mm** | 4 valid **rolling 30-minute maxima**, local min/max **67.8–77.8 mm** |
+
+The 30-minute **rolling source maxima exceed the 63.5-mm reported hail size in all four adjacent cells**, whereas the two **instantaneous** samples do not reproduce that reported maximum. This is **one targeted event challenge**, *not* population-level validation or an independently measured time series. Rolling/instantaneous products must not be treated as independent disaster events, and four adjacent cell maxima must not be counted as four hailstones/claims.
+
+### Real source discovery exposed an additional scientifically material encoding
+
+The initial direct source hashes and metadata passed, but the ecCodes source decoder rejected the **post-report instantaneous** file because two real neighbour cells decoded to **−1 mm**. The authoritative [NOAA/NSSL operational MRMS GRIB2 table](https://www.nssl.noaa.gov/projects/mrms/operational/tables.php) defines MESH (discipline 209 / category 3 / parameter 28) and MESHMax30min (parameter 29) in **mm**, with **Missing −1** and **No Coverage −3**. The table is current for MRMS v12.2, so historical 2021 algorithm/calibration equivalence is *not* asserted. Negative values `-1` and `-3` are now classified as distinct **source missing** and **source no coverage**, respectively, in the bounded ecCodes output, **never replaced with 0.0**. Arbitrary negative codes (including `-99`/`-999` associated with other radar parameters) remain scientifically **rejected**, and tests challenge those boundaries. Genuinely decoded valid `0.0` remains a valid numeric radar field value, without proving a verified absence of hail.
+
+### Implications for OpenCatastrophe / NextGen
+
+- Temporal product type is a **first-class semantic dimension**: instantaneous MESH versus rolling MESHMax30min, original UTC and report offset; a rolling source maximum may be much closer to the NCEI **reported local hail maximum** than a single instantaneous radar slice. That difference cannot be used to assert general algorithm skill from this one case.
+- **Missing / no coverage / valid zero / positive decoded hail** must remain different cell statuses. Otherwise a consumer invents low-hail regions or suppresses real tails.
+- A future source-consumer contract should include `event_id`, `peril=hail`, `product_time_aggregation`, `source_version`, `original_source_sha256`, `measurement_unit=mm`, `report_location_uncertainty`, `valid_cell_count` and `source_lineage`. These are *proposed fields*, not accepted production schema changes.
+- Do **not** independently count the two-minute snapshots or rolling 30-minute maximum in event frequency, event loss tables, catastrophe years, OEP/AEP or insurer/ILS portfolios. Those are representations of **one evolving storm**, not independent catastrophe arrivals.
+- Further science gate: multiple disjoint historical hailstorms/independent report sources, event-relative 30-min swath alignment, radar/gauge/version biases, vulnerability and exposure. **No insured/ground-up damage or model admission was derived**.
+
+No raw NOAA GRIB2 bytes were committed to public Git or exported as Actions artifacts. The code logs four selected public-science site values and metadata only.

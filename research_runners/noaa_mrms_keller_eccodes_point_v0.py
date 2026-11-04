@@ -20,6 +20,7 @@ from typing import Any
 
 from research_runners.noaa_mrms_mesh_direct_https_proof_v0 import (
     DirectSourceProofError,
+    KELLER_REPORT_WINDOW,
     fetch_pinned_original_object,
 )
 from research_runners.noaa_mrms_mesh_original_preflight_v0 import (
@@ -35,6 +36,12 @@ REPORT_LON = -97.29
 REPORTED_HAIL_MM = 63.5
 REPORT_NCEI_ID = 956694
 MAX_RADIUS_KM = 2.0
+
+KELLER_PRODUCT_SEMANTICS = {
+    "mesh_keller_2021": "instantaneous_2min_before_report",
+    "mesh_keller_2021_after": "instantaneous_2min_after_report",
+    "mesh_keller_2021_max30": "rolling_30min_max_after_report",
+}
 
 
 class PointDecodeError(ValueError):
@@ -62,13 +69,18 @@ def _expected_four_indices(geography: dict) -> set[int]:
     return {row * grid_nx + col for row in (jj, jj + 1) for col in (ii, ii + 1)}
 
 
-def decode_original_keller(blob: bytes, decoder: Any = None) -> dict:
-    """Validate original provider object then read four ecCodes nearest cells."""
-    pinned = SOURCE_OBJECTS[PRODUCT]
+def decode_original_keller(
+    blob: bytes, decoder: Any = None, product: str = PRODUCT
+) -> dict:
+    """Source-verify and compare four independent ecCodes values per window."""
+    if product not in KELLER_PRODUCT_SEMANTICS:
+        raise PointDecodeError("unreviewed Keller time-window product")
+    pinned = SOURCE_OBJECTS[product]
+    expected_utc, source_offset_s = KELLER_REPORT_WINDOW[product]
     try:
-        receipt = audit_original(blob, PRODUCT, pinned["basename"])
-        if receipt["reference_utc"] != "2021-04-29T01:36:39+00:00":
-            raise PointDecodeError("source UTC is not fixed report-window snapshot")
+        receipt = audit_original(blob, product, pinned["basename"])
+        if receipt["reference_utc"] != expected_utc:
+            raise PointDecodeError("source UTC is not pinned report-window snapshot")
         geography = receipt["grid_geography"]
         expected = _expected_four_indices(geography)
         message = inflate_gzip_capped(blob)
@@ -87,7 +99,7 @@ def decode_original_keller(blob: bytes, decoder: Any = None) -> dict:
         exact = {
             "discipline": 209,
             "parameterCategory": 3,
-            "parameterNumber": 28,
+            "parameterNumber": pinned["mrms_grib_parameter_number"],
             "numberOfPoints": 24_500_000,
             "Ni": 7000,
             "Nj": 3500,
@@ -120,7 +132,19 @@ def decode_original_keller(blob: bytes, decoder: Any = None) -> dict:
                     or abs(((lon - REPORT_LON + 180) % 360) - 180) > 0.02):
                 raise PointDecodeError("ecCodes nearest four disagree with verified GRIB geography")
             received_indices.add(idx)
-            is_missing = not math.isfinite(val) or val == missing_sentinel or val > 1e10
+            # NOAA/NSSL MRMS GRIB2 user table, discipline 209/category 3,
+            # parameters 28/29: -1 = Missing, -3 = No Coverage (mm scale).
+            # These are ordinary encoded numeric values, NOT the ecCodes GRIB
+            # missing sentinel; never convert them to physical zero hail.
+            # The strict source-specific values are version-review evidence,
+            # not permission to mask any arbitrary negative number.
+            no_coverage = val == -3.0
+            mrms_missing = val == -1.0
+            grib_missing = (
+                not math.isfinite(val)
+                or val == missing_sentinel or val > 1e10
+            )
+            is_missing = no_coverage or mrms_missing or grib_missing
             if not is_missing and (val < 0 or val > 1000):
                 raise PointDecodeError("unphysical or wrongly scaled decoded MESH")
             observations.append({
@@ -130,7 +154,11 @@ def decode_original_keller(blob: bytes, decoder: Any = None) -> dict:
                 "latitude_deg": round(lat, 6),
                 "longitude_deg_east_0_360": round(lon % 360, 6),
                 "distance_to_report_km": round(dist, 4),
-                "value_status": "missing" if is_missing else "decoded_radar_mesh_mm",
+                "value_status": (
+                    "source_no_coverage" if no_coverage else
+                    "source_missing" if mrms_missing else
+                    "grib_missing" if grib_missing else "decoded_radar_mesh_mm"
+                ),
                 "decoded_radar_mesh_mm": None if is_missing else round(val, 3),
             })
         if received_indices != expected:
@@ -140,6 +168,11 @@ def decode_original_keller(blob: bytes, decoder: Any = None) -> dict:
                  if row["value_status"] == "decoded_radar_mesh_mm"]
         return {
             "schema_version": "noaa-mrms-keller-eccodes-four-cell-v0",
+            "source_radar_product_semantics": KELLER_PRODUCT_SEMANTICS[product],
+            "source_relative_to_report_seconds": source_offset_s,
+            "source_is_rolling_max_not_an_additional_event": (
+                product == "mesh_keller_2021_max30"
+            ),
             "original_object_key": pinned["key"],
             "original_compressed_sha256": receipt["compressed_sha256"],
             "original_verified_gzip_crc32": receipt["gzip_crc32_checked"],
@@ -159,6 +192,15 @@ def decode_original_keller(blob: bytes, decoder: Any = None) -> dict:
             "four_nearest_radar_cells": observations,
             "valid_neighbour_count": len(valid),
             "missing_neighbour_count": 4 - len(valid),
+            "source_no_coverage_neighbour_count": sum(
+                row["value_status"] == "source_no_coverage" for row in observations
+            ),
+            "source_missing_neighbour_count": sum(
+                row["value_status"] == "source_missing" for row in observations
+            ),
+            "grib_encoded_missing_neighbour_count": sum(
+                row["value_status"] == "grib_missing" for row in observations
+            ),
             "decoded_local_min_radar_mesh_mm": min(valid) if valid else None,
             "decoded_local_max_radar_mesh_mm": max(valid) if valid else None,
             "physical_model_skill_established": False,
@@ -177,12 +219,44 @@ def decode_original_keller(blob: bytes, decoder: Any = None) -> dict:
 
 
 def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--product", choices=sorted(KELLER_PRODUCT_SEMANTICS),
+        default=PRODUCT,
+        help="One fixed researched source; not a URL or dynamic time window",
+    )
+    args = parser.parse_args()
     try:
-        original = fetch_pinned_original_object(PRODUCT)
-        receipt = decode_original_keller(original)
-    except (DirectSourceProofError, PointDecodeError) as exc:
-        # Never echo upstream exception text, source bodies or environment data.
-        print("BLOCKED: fixed NOAA source or ecCodes point validation failed", file=sys.stderr)
+        original = fetch_pinned_original_object(args.product)
+        receipt = decode_original_keller(original, product=args.product)
+    except DirectSourceProofError:
+        print("BLOCKED: pinned original NOAA HTTPS source integrity", file=sys.stderr)
+        return 2
+    except PointDecodeError as exc:
+        # Only static identifiers enter public CI logs, never external error
+        # text, source bytes, headers or provider-supplied strings.
+        message = str(exc)
+        if message == "source UTC is not pinned report-window snapshot":
+            reason = "source_utc"
+        elif message == "original SHA/gzip/GRIB verification failed":
+            reason = "preflight_integrity"
+        elif message == "source report point is not near four-cell corner":
+            reason = "report_coordinate"
+        elif message.startswith("ecCodes original grid/product definition drift:"):
+            reason = "ecCodes_grid_identity"
+        elif message.startswith("ecCodes nearest four"):
+            reason = "ecCodes_nearest_location"
+        elif message == "ecCodes failed to return exactly four nearest points":
+            reason = "ecCodes_nearest_count"
+        elif message == "unphysical or wrongly scaled decoded MESH":
+            reason = "decoded_value_domain"
+        elif message == "independent ecCodes decoding/metadata check failed":
+            reason = "ecCodes_decoder"
+        else:
+            reason = "other_source_or_science_gate"
+        print("BLOCKED: Keller four-cell science gate " + reason, file=sys.stderr)
         return 2
     print(json.dumps(receipt, sort_keys=True, indent=2))
     return 0
