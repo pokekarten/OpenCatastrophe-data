@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Loing May/June 2016: observed high-water marks as independent field validation candidates
+# Loing May/June 2016: observed high-water marks as field evidence (holdout independence unverified)
 
 **Reviewed 2026-11-04. Research only; no new source admission or original external data file stored in Git.** This source analysis is narrower than the broad geographical Loing/CEMS event and does not assert ownership, redistribution rights for source photography/geodata, or any building-level flood depth.
 
@@ -25,6 +25,28 @@ The exact elevation arithmetic was checked with a separate, manually entered two
 3. **Reference offset is not inundation depth.** At Ecuelles, 0.250 m is the **water-mark level above the levelling reference bench**. It does not measure water above terrain at a building. A valid building depth requires a local and temporally matched terrain/threshold elevation in the same vertical datum and approved hydraulic spatial interpolation.
 4. **Published decimal precision is not guaranteed survey accuracy.** The records show three decimals but no independent survey uncertainty budget was established here. Do not infer millimetric accuracy or use the marks to create point-level zero-variance likelihoods.
 5. **Mark evidence classes differ.** A documented physical `Laisse d'inondation` is stronger field evidence than a 2016 oral testimony with a later GPS-located site. The [Montargis Sous-préfecture entry](https://www.reperesdecrues.developpement-durable.gouv.fr/site/sous-prefecture) is explicitly `Témoignage oral`: valid *context* but not interchangeable with a surviving physical trace. Likewise [Souppes-sur-Loing Quai de la gare](https://www.reperesdecrues.developpement-durable.gouv.fr/site/quai-de-la-gare) gives a published water figure yet does **not** explicitly state the same vertical datum in the accessible page; exclude from this strict NGF1969 pilot unless verified elsewhere.
+
+## 2026-11-04 primary-method audit: do not leak atlas calibration marks into validation
+
+**DRIEE/DRIEAT original source, 2017 (official [Annexe 1 – 26 October 2017 methodology](https://www.loiret.gouv.fr/contenu/telechargement/54073/372059/file/Annexe%201.pdf)):** For roughly 100 km of Loing–Ouanne, the report counts **191 collected flood marks/testimonies**, **148 validated/archived** in the national source, and **68 selected to construct the 2016 river-water-surface profile**. These counts describe the full study, not Montargis or one particular map sheet. The **original source lists no individually identified 68 calibration-mark IDs in the reviewed main-text table**. Neither the Montargis police-mark ID nor the Ecuelles lock-mark ID has been proven inside/outside those 68. All 148 archived records are **not 148 independent validation marks**; nor are the remaining 80 automatically a holdout.
+
+**DDT 2021 reworked final 2016 Loing Aval atlas:** The separate official [Annexe 3 – DDT Loiret methodology, final 2021 release](https://www.loiret.gouv.fr/contenu/telechargement/54071/372051/file/Annexe%203_20211116.pdf) explicitly says it **compiled, supplemented, corrected and amended** the previous DRIEE/Cerema reconstructions. It added field surveys, witnesses, flood photography, new virtual high-water points and exchanges with municipalities; it cross-checked and adjusted reported elevations. It used **451 transversal profiles and 14 ordered water-surface sheets**, including the distinct interacting Loing, Puiseaux/Vernisson, canal and tributary water planes at Montargis. Thus even a mark not used in the 2017 selected 68 can still have **influenced the revised 2021 atlas indirectly**. The precise input/verification role of each named physical mark must be reconstructed from original per-point metadata and working GIS lineage before any independent validation claim.
+
+| Original provider parameter | DRIEE v1.0, 2017 Loing–Ouanne reconstruction | DDT Loiret 2021 revision |
+| --- | --- | --- |
+| Vertical accuracy of referenced IGN RGE ALTI terrain (source-stated RMS) | **30 cm** | **20 cm** |
+| Terrain input nominal resolution | **1 m** LiDAR | **1 m** LiDAR; some partial later LiDAR updates |
+| Working flood-depth raster | **2 m** | **1 m**, as stated in the final processing |
+| Classification into hydraulic depth intervals | 50-cm examples in initial method | Explicit **0–0.5, 0.5–1, 1–2, greater than 2 m** categories |
+| Raster/vector smoothing | repeated five-pixel smoothing | **five smoothing passes**, then vector generalization |
+| Removal threshold for small polygons/islands | **2,500 m²** | **500 m²** |
+| 2016 flood water-surface logic | river longitudinal profile + interpolated cross-sections | **451 profiles**, **14 hierarchical water sheets**; includes canal/backwater interactions |
+
+**Scientific implications:** These are **two source-specific production vintages**, not one uniform 2016 observation. A digitized 2021 PDF or classified flood-depth polygon is **provider-derived reconstruction**, not exact ground truth. Its 0–0.5, 0.5–1, 1–2 and greater-than-2-m classes are intervals, not measured depth at a precise parcel: **never replace class 1–2 m by a fictitious exact 1.5 m measurement**, and do not infer an upper bound for `>2 m`. Smoothing and polygon deletion create censoring and spatial selection bias for small flooded urban assets. The DEM's 20/30-cm **RMS** is neither the full depth-error budget nor an event-level confidence interval. In addition the 2017 note says satellite data from the original 2016 mission were not used because of timing, image quality and resolution (this is a study-specific 2017 conclusion, **not** proof every later CEMS Rapid Mapping product is unusable).
+
+**Executed code update:** [Loing 2016 high-water-mark preflight](../../research_runners/loing2016_high_water_mark_preflight_v0.py) now reports separate `physical_event_maximum_trace_candidate` and `independent_atlas_holdout_established=false`, with both 2017- and 2021-calibration membership `unknown`. The formerly misleading `independent_physical_trace_candidate` alias is **false, not a science or calibration certification**. The cohort count `physical_trace_candidates` still counts credible physical high-water-mark candidates, while `independent_atlas_holdout_candidates` is exactly **zero** until source lineage is attested. Synthetic regression tests enforce those boundaries. Nothing alters any production Neon data, original provider assets, source rights or model admissions.
+
+**Next executable source acquisition, separate from PDF discovery:** Request from DRIEAT/DDT Loiret the **2017 68-mark inclusion list**, the 2021 DDT source/point and 14-water-plane GIS lineage (including cross-profile to source-mark mapping), the original ZICH/raster depth intervals and original IGN RGE ALTI release provenance, with exact licence, size and SHA. Only then predeclare a geographical and measurement-quality holdout that excludes both direct and indirect 2017/2021 calibration evidence. If unknown, classify as **context or calibration-overlap-unknown**, not independent scientific validation.
 
 ## Direct link to the 2016 Loing Aval flooded-area and water-depth atlas
 
