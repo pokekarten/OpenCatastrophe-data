@@ -42,12 +42,12 @@ Executed **actual original HTTP response**, 2026-11-04:
 - The ATOM feed returned **16,541 bytes**, confirmed \`Hochwasserschutzanlagen - Downloaddienst\`, source rights **CC BY-SA 4.0** and both exact download links:
   - \`https://www.lfu.bayern.de/gdi/dls/daten/hwsa/hwsa_epsg25832_shp.zip\`
   - \`https://www.lfu.bayern.de/gdi/dls/daten/hwsa/hwsa_epsg4258_shp.zip\`
-- Both links replied to **independent 512-byte HTTP Range probes** with ZIP local-header magic \`PK\x03\x04\`, not HTML errors: EPSG:25832 ZIP's first member \`deich_epsg25832.dbf\`, EPSG:4258 ZIP's first member \`deich_epsg4258.dbf\`. **The ZIP central directory, file integrity and actual Shapefile features have not yet been fetched or parsed**, so do *not* misclassify the whole archive as verified.
+- Both links replied to **independent 512-byte HTTP Range probes** with ZIP local-header magic \`PK\x03\x04\`, not HTML errors: EPSG:25832 ZIP's first member \`deich_epsg25832.dbf\`, EPSG:4258 ZIP's first member \`deich_epsg4258.dbf\`. **In a second source probe**, the exact final **2,048 HTTP response bytes** of each ZIP were independently fetched and their EOCD and complete central directories inspected: **12 members in each archive**, corresponding to three asset types (`deich`, `hwschutzwand`, `hwschutzsystem`) and each required `.dbf`, `.prj`, `.shp` and `.shx` sidecar. The central-directory offsets imply total ZIP lengths **1,072,960 bytes** (EPSG:25832) and **1,095,279 bytes** (EPSG:4258). Uncompressed SHX size metadata implies **2,171**, **801** and **891** *potential index slots* for `deich`, `hwschutzwand` and `hwschutzsystem`, respectively (per ZIP, **not independent assets across both projections**). **These are only counts inferred from metadata and were not independently confirmed from decompressed SHX/geometry.** No full ZIP member payload, CRC, actual geometries, crest heights or scientific protection reliability was decoded or approved; do *not* confuse a complete directory check with a fully verified dataset.
 - WMS \`GetCapabilities\` separately returned relevant structure layers including \`deich\`, \`hwschutzwand\` and \`hwschutzsystem\`. Do not treat an imagery WMS as a vector feature endpoint. The ATOM feed's own descriptive updated timestamp is old (2015); the separately published LfU service catalogue lists a weekly update cadence, but we have **not yet established the actual version/age of the ZIP contents**.
 - Provider attribution: **"Datenquelle: Bayerisches Landesamt für Umwelt, www.lfu.bayern.de"**. **CC BY-SA 4.0 share-alike conditions are distinct from WRI's CC BY 4.0 and NBPW public-domain conditions**; derivative rights and distribution require independent review.
 - Physical source covers deikes, walls and **mobile** systems that may only be installed during flood events. A mobile barrier's mapped location does *not* prove deployment, state or protection success in a particular simulation year.
 
-**Status:** \`ATOM_verified_zip_header_verified_archive_unparsed\`, **not admitted**.
+**Status:** \`ATOM_verified_zip_headers_and_complete_directory_verified_archive_members_unparsed\`, **not admitted**.
 
 ## Additional promising source families (research references, not byte-verified this turn)
 
@@ -72,7 +72,7 @@ Suggested minimum machine-recorded source bridge, before any insured building is
 
 ## Offline source-contract preflight now in repository
 
-\`research_runners/wri_flood_defence_source_access_preflight_v0.py\` takes **seven outside-Git original HTTP response byte files** (NL WFS capabilities, DescribeFeatureType, GetFeature resultType=hits, one GeoJSON feature, Bavarian ATOM and both first-512-byte ZIP response headers). With **only Python stdlib**, it validates that the corrected NL WFS is a successful versioned service, formal layer and schema are intact, dynamic feature count is positive, sample CRS/geometry/norms are not mistaken for WGS84 or site-specific flood depth, and Bavarian ZIP endpoints are truly ZIP local-file responses with CC BY-SA rights and expected members. It emits a **research-only** small receipt, including exact SHA-256 of whatever live original response bytes were captured, without committing source bytes or pretending WFS timestamps make a stable immutable dataset hash. Its \`model_input_admitted\` and \`protection_factor_or_return_period_threshold_inferred\` fields are always \`false\`.
+\`research_runners/wri_flood_defence_source_access_preflight_v0.py\` takes **nine outside-Git original HTTP response byte files** (NL WFS capabilities, DescribeFeatureType, GetFeature resultType=hits, one GeoJSON feature, Bavarian ATOM, both first-512-byte ZIP response headers and both final-2048-byte ZIP directory suffixes). With **only Python stdlib**, it validates that the corrected NL WFS is a successful versioned service, formal layer and schema are intact, dynamic feature count is positive, sample CRS/geometry/norms are not mistaken for WGS84 or site-specific flood depth, and Bavarian ZIP endpoints expose exact ZIP local-file headers and central-directory structures containing the three expected flood-defence classes with CC BY-SA rights. It emits a **research-only** small receipt, including exact SHA-256 of whatever live original response bytes were captured, without committing source bytes or pretending WFS timestamps make a stable immutable dataset hash. Its \`model_input_admitted\` and \`protection_factor_or_return_period_threshold_inferred\` fields are always \`false\`.
 
 Tests in \`tests/test_wri_flood_defence_source_access_preflight_v0.py\` are **entirely synthetic** and challenge wrong endpoint, XML exception, missing formal layer, missing fields, wrong CRS, zero/rejected feature counts, invalid legal norm encoding, missing attribution/licence, fake ZIP content and attempts to overwrite original source files.
 
@@ -87,6 +87,8 @@ python research_runners/wri_flood_defence_source_access_preflight_v0.py \
   --bavaria-atom /private/defence/by-atom-feed.xml \
   --bavaria-zip-25832-head /private/defence/by25832-zip-first512b.bin \
   --bavaria-zip-4258-head /private/defence/by4258-zip-first512b.bin \
+  --bavaria-zip-25832-tail /private/defence/by25832-zip-last2048b.bin \
+  --bavaria-zip-4258-tail /private/defence/by4258-zip-last2048b.bin \
   --out /tmp/wri-flood-defence-source-access-receipt.json
 
 python -m unittest discover -s tests -p 'test_wri_flood_defence_source_access_preflight_v0.py'
