@@ -26,10 +26,13 @@ from zipfile import BadZipFile, ZipFile
 SOURCE_URL = "https://www.eia.gov/electricity/data/eia860/xls/eia8602025.zip"
 SOURCE_RIGHTS_URL = "https://www.eia.gov/about/copyrights_reuse.php"
 PLANT_MEMBER = "2___Plant_Y2025.xlsx"
+PINNED_ORIGINAL_SHA256 = "2b27929d26cc1da9ad6a530da1cac6718cd8496098ee560c4d47cfffd96d08ba"
+PINNED_PLANT_MEMBER_SHA256 = "3c338f5e9d2647bb487dee8b3f4ed5c3fdd3e82db3b1bc5fdf206cee5470e059"
 MAX_ORIGINAL_BYTES = 28_000_000
-# The 2026-11-04 byte-range central-directory inspection indicated 23,622,347
-# archive bytes. It did not authenticate the complete ZIP or prove immutability.
-PROVISIONAL_BYTE_RANGE_LENGTH = 23_622_347
+# The original 2025 EIA provider ZIP and nested Plant workbook were acquired
+# and independently hashed in the 2026-11-04 GitHub original-source job
+# (run 41885583270). Mutated provider bytes now fail closed.
+PINNED_SOURCE_BYTES = 23_622_347
 MAX_MEMBER_BYTES = 8_000_000
 MAX_XML_BYTES = 150_000_000
 MAX_WORKBOOK_FILES = 100
@@ -222,6 +225,8 @@ def check_original_archive(original: bytes, *, expected_sha256: str | None = Non
     if type(original) is not bytes or not 0 < len(original) <= MAX_ORIGINAL_BYTES:
         raise EIA860ProofBlocked("missing or oversized official source original ZIP")
     actual = sha256(original).hexdigest()
+    if expected_sha256 == PINNED_ORIGINAL_SHA256 and len(original) != PINNED_SOURCE_BYTES:
+        raise EIA860ProofBlocked("source ZIP size changed from pinned original receipt")
     if expected_sha256 is not None and (
             type(expected_sha256) is not str or not HEX.fullmatch(expected_sha256) or
             expected_sha256 != actual):
@@ -233,6 +238,8 @@ def check_original_archive(original: bytes, *, expected_sha256: str | None = Non
             sheet_bytes = _read_member(outer, PLANT_MEMBER, MAX_MEMBER_BYTES)
     except (BadZipFile, OSError, RuntimeError) as exc:
         raise EIA860ProofBlocked("corrupt or unrecognized original EIA annual ZIP") from exc
+    if expected_sha256 == PINNED_ORIGINAL_SHA256 and sha256(sheet_bytes).hexdigest() != PINNED_PLANT_MEMBER_SHA256:
+        raise EIA860ProofBlocked("inner Plant workbook checksum differs from pinned original member")
     count, states = _plant_rows(sheet_bytes)
     de_found = sum(x in states and states[x] == "DE" for x in EPA_DE_CODES)
     de_wrong = sum(x in states and states[x] != "DE" for x in EPA_DE_CODES)
@@ -301,7 +308,10 @@ def main(argv=None) -> int:
             if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_ORIGINAL_BYTES:
                 raise EIA860ProofBlocked("require bounded local regular original archive")
             data = path.read_bytes()
-        report = check_original_archive(data, expected_sha256=args.expected_original_sha256)
+        if args.live and args.expected_original_sha256 not in (None, PINNED_ORIGINAL_SHA256):
+            raise EIA860ProofBlocked("live source expected SHA must equal independently recorded pinned receipt")
+        expected = PINNED_ORIGINAL_SHA256 if args.live else args.expected_original_sha256
+        report = check_original_archive(data, expected_sha256=expected)
         report["acquired_via_exact_official_https_this_run"] = args.live
         report["capture_date_utc"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     except (OSError, EIA860ProofBlocked) as exc:
