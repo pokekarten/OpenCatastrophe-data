@@ -3,14 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 """Same-window original ACT 2026 addresses versus GeoBase building polygons.
 
-Research-only; one exact 100m Luxembourg city window, full original SHA-256
+Research-only; two previously published 100m research windows, full SHA-256
 proof for both source families, ephemeral coordinates, aggregates only.
 This does NOT establish independent ground truth or insured building identity.
 """
 from __future__ import annotations
 
 import argparse
-from collections import Counter, defaultdict
+from collections import Counter
 import csv
 import hashlib
 import json
@@ -36,10 +36,12 @@ from research_runners.luxembourg_gpkg_schema_window_v0 import (
     GeoPackageGateError, inspect as inspect_gpkg, sample as sample_gpkg,
 )
 
-CENTRE_LON = 6.1319
-CENTRE_LAT = 49.6116
+# Two predeclared public research locations, previously used in ACT-GIS work.
+STUDY_SITES = {
+    "luxembourg-city": (6.1319, 49.6116, 107),
+    "berdorf-village": (6.348821, 49.820946, 16),
+}
 HALFWIDTH_M = 50.0
-GEOBASE_WINDOW_POLYGONS = 107  # previously observed in same 100m square
 MAX_ADDRESSES_IN_WINDOW = 400
 MAX_GEOBASE_POLYGONS = 400
 NATIONAL_ADDRESS_ROWS = 179_768
@@ -133,14 +135,34 @@ def _verified_geobase_gpkg(source_zip: Path, work: Path) -> Path:
     return target
 
 
-def run(address_csv: Path, geobase_zip: Path) -> dict:
+def exact_area_candidates(polygons, native_window):
+    """Reject bounding-box-only RTree samples and zero-area boundary touches."""
+    if (not isinstance(polygons, list) or not 1 <= len(polygons) <= MAX_GEOBASE_POLYGONS
+            or native_window.is_empty or not native_window.is_valid or native_window.area <= 0):
+        raise AddressFootprintError("Invalid fixed exact-area polygon candidates")
+    accepted = []
+    for polygon in polygons:
+        if (polygon.geom_type not in ("Polygon", "MultiPolygon") or polygon.is_empty
+                or not polygon.is_valid or polygon.area <= 0):
+            raise AddressFootprintError("Invalid original building geometry candidate")
+        if polygon.intersects(native_window) and polygon.intersection(native_window).area > 0:
+            accepted.append(polygon)
+    if not accepted:
+        raise AddressFootprintError("No positive-area building intersections in approved window")
+    return accepted
+
+
+def run(address_csv: Path, geobase_zip: Path, *, site: str = "luxembourg-city") -> dict:
     """Only original pinned data accepted, no original records or geometries emitted."""
     try:
         from pyproj import Transformer
-        from shapely.geometry import box, Point, shape
+        from shapely.geometry import box, Point, shape, Polygon
     except ImportError as exc:
         raise AddressFootprintError("Pinned PyProj/Shapely runtime required") from exc
 
+    if site not in STUDY_SITES:
+        raise AddressFootprintError("Unapproved original research site")
+    centre_lon, centre_lat, expected_polygons = STUDY_SITES[site]
     if any(p.is_symlink() or not p.is_file() for p in (address_csv, geobase_zip)):
         raise AddressFootprintError("Original inputs must be local regular nonsymlink files")
     if address_csv.stat().st_size != ADDRESS_BYTES:
@@ -155,13 +177,16 @@ def run(address_csv: Path, geobase_zip: Path) -> dict:
 
     to_3035 = Transformer.from_crs(4326, 3035, always_xy=True)
     to_2169 = Transformer.from_crs(3035, 2169, always_xy=True)
-    cx, cy = to_3035.transform(CENTRE_LON, CENTRE_LAT)
+    cx, cy = to_3035.transform(centre_lon, centre_lat)
     square = box(cx-HALFWIDTH_M,cy-HALFWIDTH_M,cx+HALFWIDTH_M,cy+HALFWIDTH_M)
     corners = [to_2169.transform(x,y) for x,y in (
         (cx-HALFWIDTH_M,cy-HALFWIDTH_M),(cx+HALFWIDTH_M,cy-HALFWIDTH_M),
         (cx+HALFWIDTH_M,cy+HALFWIDTH_M),(cx-HALFWIDTH_M,cy+HALFWIDTH_M))]
     if not all(math.isfinite(a) and math.isfinite(b) for a,b in corners):
         raise AddressFootprintError("Non-finite local source bounding box")
+    native_window = Polygon(corners)
+    if native_window.is_empty or not native_window.is_valid or native_window.area <= 0:
+        raise AddressFootprintError("Invalid transformed original research window")
     bbox = (min(x for x,y in corners), min(y for x,y in corners),
             max(x for x,y in corners), max(y for x,y in corners))
 
@@ -179,12 +204,16 @@ def run(address_csv: Path, geobase_zip: Path) -> dict:
                                          bbox=bbox,limit=MAX_GEOBASE_POLYGONS,output=local_geojson)
         finally:
             conn.close()
-        if building_count != GEOBASE_WINDOW_POLYGONS:
-            raise AddressFootprintError("Same-window building population differed from prior official pilot")
         provider_geojson = json.loads(local_geojson.read_text(encoding="utf-8"))
         if provider_geojson.get("type") != "FeatureCollection" or len(provider_geojson.get("features",[])) != building_count:
             raise AddressFootprintError("Unexpected bounded original geometry collection")
-        polygons = [shape(item["geometry"]) for item in provider_geojson["features"]]
+        # RTree is an enclosing rectangle, so remove zero-area/bbox-only hits.
+        polygons = exact_area_candidates(
+            [shape(item["geometry"]) for item in provider_geojson["features"]],
+            native_window,
+        )
+        if len(polygons) != expected_polygons:
+            raise AddressFootprintError("Exact-area original building count differs from prior site proof")
         # All points are compared in native EPSG2169 metre coordinates. Only
         # the WGS84 versions decide the independent, frozen EPSG3035 window.
         points = []
@@ -218,7 +247,8 @@ def run(address_csv: Path, geobase_zip: Path) -> dict:
         result = classify(points, polygons)
     return {
         "profile": "lu-act20261102-address-vs-geobase20261001-original-100m-v0",
-        "study_area": "fixed Luxembourg-city 100m x 100m EPSG3035 research window",
+        "study_site": site,
+        "study_area": "fixed 100m x 100m EPSG3035 original research window",
         "original_source_evidence": {
             "address_csv_sha256": ADDRESS_SHA,
             "address_csv_national_rows": NATIONAL_ADDRESS_ROWS,
@@ -244,9 +274,10 @@ def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--address-csv", required=True, type=Path)
     p.add_argument("--geobase-zip", required=True, type=Path)
+    p.add_argument("--site", choices=tuple(STUDY_SITES), default="luxembourg-city")
     args = p.parse_args(argv)
     try:
-        result = run(args.address_csv, args.geobase_zip)
+        result = run(args.address_csv, args.geobase_zip, site=args.site)
     except (AddressFootprintError, GeoBaseError, GeoPackageGateError,
             OSError, UnicodeError, ValueError, RuntimeError, csv.Error,
             zipfile.BadZipFile, OverflowError):
