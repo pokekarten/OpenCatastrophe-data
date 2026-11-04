@@ -22,8 +22,8 @@ import struct
 import sys
 import zlib
 
-# Only the specific two historical files independently digested after bytes
-# were delivered by a read-only web-content intermediary, 2026-11-04.
+# Three fixed historical source objects; earlier two independently verified
+# by direct GitHub Actions. Keller 2021 digest is intermediary-only at intake.
 # These digests are NOT proof of authentic original direct NOAA acquisition.
 SOURCE_OBJECTS = {
     "mesh": {
@@ -39,6 +39,17 @@ SOURCE_OBJECTS = {
         "compressed_size": 44683,
         "compressed_sha256": "5f139328e25c9b87b8c120a7b67dfb9128717e526c301a0f1b55046d11ca1337",
         "mrms_grib_parameter_number": 29,
+    },
+    "mesh_keller_2021": {
+        # 2.5-inch Keller hail ground report: NOAA NCEI Storm Events 956694,
+        # 2021-04-29T01:37Z. Source tile is 21 seconds earlier.
+        # Byte hash observed via web intermediary, awaiting independently
+        # verified direct NOAA HTTPS retrieval and calibrated value decode.
+        "basename": "MRMS_MESH_00.50_20210429-013639.grib2.gz",
+        "key": "CONUS/MESH_00.50/20210429/MRMS_MESH_00.50_20210429-013639.grib2.gz",
+        "compressed_size": 54463,
+        "compressed_sha256": "7d1fc719f0791e25ddd2919cb5dcea1302caa4150712feebc42b6c0cbe84fdf6",
+        "mrms_grib_parameter_number": 28,
     },
 }
 MAX_COMPRESSED_BYTES = 128_000
@@ -79,6 +90,117 @@ def inflate_gzip_capped(blob: bytes) -> bytes:
         return decoded
     except (zlib.error, OverflowError) as exc:
         raise MRMSPreflightError("invalid gzip DEFLATE stream or CRC32") from exc
+
+
+def _grib_signed_magnitude_i32(chunk: bytes) -> int:
+    """Decode WMO GRIB2 sign-magnitude 32-bit coordinate, not two's complement."""
+    if len(chunk) != 4:
+        raise MRMSPreflightError("bad GRIB2 signed-coordinate field length")
+    raw = int.from_bytes(chunk, "big")
+    if raw == 0xffffffff:
+        raise MRMSPreflightError("missing GRIB2 coordinate")
+    value = raw & 0x7fffffff
+    return -value if raw & 0x80000000 else value
+
+
+def template0_grid_geography(section3: bytes, expected_points: int) -> dict:
+    """Extract only 3.0 regular lat/lon geometry, never hail field values.
+
+    WMO GRIB2 Section 3.0 octet positions from
+    https://codes.ecmwf.int/grib/format/grib2/templates/3/0/ .
+    Original datasets may use longitude in the 0..360 degree convention.
+    """
+    if len(section3) != 72 or section3[4] != 3:
+        raise MRMSPreflightError("unsupported GRIB2 grid-template-0 section length")
+    if int.from_bytes(section3[12:14], "big") != 0:
+        raise MRMSPreflightError("not GRIB2 regular latitude/longitude template")
+    count = int.from_bytes(section3[6:10], "big")
+    ni = int.from_bytes(section3[30:34], "big")
+    nj = int.from_bytes(section3[34:38], "big")
+    if (count != expected_points or not 0 < ni <= 10000 or
+            not 0 < nj <= 10000 or ni * nj != count):
+        raise MRMSPreflightError("inconsistent GRIB2 grid dimensions/point count")
+    basic_angle = int.from_bytes(section3[38:42], "big")
+    subdivisions = int.from_bytes(section3[42:46], "big")
+    # WMO Template 3.0 Note 1: a zero or *missing* basic angle and
+    # subdivisions mean the recommended 10^-6 degree unit. ecCodes implements
+    # missing() for subdivisions as all-one bits (0xffffffff).
+    normalized_angle = 1 if basic_angle in (0, 0xffffffff) else basic_angle
+    normalized_subdivisions = (
+        1_000_000 if subdivisions in (0, 0xffffffff) else subdivisions
+    )
+    # Permit only the exact 10^-6 degree unit established for this fixed
+    # MRMS vintage; this includes original provider (1, 1_000_000).
+    # Any coarser/finer/non-rational grid scale remains fail-closed.
+    if normalized_angle * 1_000_000 != normalized_subdivisions:
+        raise MRMSPreflightError(
+            f"unreviewed GRIB2 angular scale ({basic_angle}, {subdivisions})"
+        )
+    latitude_first = _grib_signed_magnitude_i32(section3[46:50]) / 1_000_000
+    longitude_first = _grib_signed_magnitude_i32(section3[50:54]) / 1_000_000
+    latitude_last = _grib_signed_magnitude_i32(section3[55:59]) / 1_000_000
+    longitude_last = _grib_signed_magnitude_i32(section3[59:63]) / 1_000_000
+    di = int.from_bytes(section3[63:67], "big") / 1_000_000
+    dj = int.from_bytes(section3[67:71], "big") / 1_000_000
+    scanning = section3[71]
+    if (not (-90 <= latitude_first <= 90 and -90 <= latitude_last <= 90) or
+            not (0 <= longitude_first <= 360 and 0 <= longitude_last <= 360) or
+            not (0 < di < 10 and 0 < dj < 10)):
+        raise MRMSPreflightError("GRIB2 latitude/longitude or increments invalid")
+    if scanning & 0x3f:
+        raise MRMSPreflightError("unreviewed GRIB2 scanning mode low bits")
+    # Scan bit 1: 0 means +i (east); 1 means -i.
+    # Scan bit 2: 0 means -j (south); 1 means +j.
+    eastward = not bool(scanning & 0x80)
+    northward = bool(scanning & 0x40)
+    end_lon_expected = longitude_first + (ni - 1) * di * (1 if eastward else -1)
+    end_lat_expected = latitude_first + (nj - 1) * dj * (1 if northward else -1)
+    # 2 microdegrees allow integer-increment and endpoint storage rounding.
+    if (abs(end_lon_expected - longitude_last) > 0.000002 or
+            abs(end_lat_expected - latitude_last) > 0.000002):
+        raise MRMSPreflightError("GRIB2 grid endpoints contradict scan/increments")
+    return {
+        "geometry_checked": True,
+        "template": 0,
+        "nx": ni,
+        "ny": nj,
+        "points": count,
+        "latitude_first_deg": latitude_first,
+        "longitude_first_east_0_360_deg": longitude_first,
+        "latitude_last_deg": latitude_last,
+        "longitude_last_east_0_360_deg": longitude_last,
+        "latitude_increment_deg": dj,
+        "longitude_increment_deg": di,
+        "scanning_mode": scanning,
+        "i_eastward": eastward,
+        "j_northward": northward,
+        "coordinate_system": "regular_geographic_latlon_WGS84_assumed_from_GRIB_template_3_0",
+        "pixel_values_decoded": False,
+    }
+
+
+def nominal_grid_cell(grid: dict, latitude_deg: float, longitude_deg: float) -> dict:
+    """Compute nearest nominal cell index only. Not an observed hail value."""
+    if grid.get("geometry_checked") is not True:
+        raise MRMSPreflightError("unverified grid geometry")
+    if not (-90 <= latitude_deg <= 90 and -180 <= longitude_deg <= 180):
+        raise MRMSPreflightError("invalid external observation coordinates")
+    lon = longitude_deg + 360 if longitude_deg < 0 else longitude_deg
+    x = ((lon - grid["longitude_first_east_0_360_deg"]) /
+         (grid["longitude_increment_deg"] * (1 if grid["i_eastward"] else -1)))
+    y = ((latitude_deg - grid["latitude_first_deg"]) /
+         (grid["latitude_increment_deg"] * (1 if grid["j_northward"] else -1)))
+    col, row = round(x), round(y)
+    within = 0 <= col < grid["nx"] and 0 <= row < grid["ny"]
+    return {
+        "external_report_latitude_deg": latitude_deg,
+        "external_report_longitude_deg": longitude_deg,
+        "nearest_grid_column": col if within else None,
+        "nearest_grid_row": row if within else None,
+        "within_source_grid_bounds": within,
+        "same_location_as_actual_radar_maximum_not_established": True,
+        "raster_cell_value_read": False,
+    }
 
 
 def parse_grib2_structure(grib: bytes, expected_parameter: int) -> dict:
@@ -141,7 +263,13 @@ def parse_grib2_structure(grib: bytes, expected_parameter: int) -> dict:
         raise MRMSPreflightError("unreviewed GRIB2 product template")
     if (param_category, param_number) != (CATEGORY, expected_parameter):
         raise MRMSPreflightError("wrong MESH product category/parameter")
+    grid_geography = (
+        template0_grid_geography(sec3, number_of_points)
+        if grid_template == 0 and len(sec3) >= 72
+        else {"geometry_checked": False, "reason": "synthetic_or_unreviewed_section3"}
+    )
     return {
+        "grid_geography": grid_geography,
         "grib_edition": edition,
         "grib_discipline": discipline,
         "originating_center": center,
