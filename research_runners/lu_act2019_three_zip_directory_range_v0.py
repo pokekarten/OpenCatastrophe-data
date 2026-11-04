@@ -226,6 +226,23 @@ def inspect_one_zip(url: str, *, expected_size: int, opener=None) -> dict:
     }
 
 
+def freeze_original_directory_receipts(site: str, metadata: list[dict]) -> None:
+    """Fail on even same-size altered metadata; this is NOT a full-archive hash."""
+    expected = OBSERVED_DIRECTORY_SHA256_BY_SITE.get(site)
+    if not isinstance(metadata, list) or expected is None or len(metadata) != len(expected):
+        raise DirectoryError("Original selected archive metadata population changed")
+    for item, digest in zip(metadata, expected, strict=True):
+        if (not isinstance(item, dict)
+                or item.get("central_directory_sha256_partial_metadata_only") != digest
+                or item.get("central_member_total") != OBSERVED_LAZ_MEMBER_COUNT_PER_ZIP
+                or not isinstance(item.get("member_extension_counts"), dict)
+                or item["member_extension_counts"].get("laz") != OBSERVED_LAZ_MEMBER_COUNT_PER_ZIP
+                or sum(v for v in item["member_extension_counts"].values()
+                       if type(v) is int) != OBSERVED_LAZ_MEMBER_COUNT_PER_ZIP
+                or item.get("directory_records") != 0 or item.get("encrypted_flag_count") != 0):
+            raise DirectoryError("Original ZIP central-directory receipt changed")
+
+
 def run(index: Path, *, opener=None) -> dict:
     receipt = verify_original(index)
     try:
@@ -244,14 +261,7 @@ def run(index: Path, *, opener=None) -> dict:
             inspect_one_zip(url, expected_size=size, opener=opener)
             for url, size in zip(selected, expected_sizes, strict=True)
         ]
-        for item, observed_digest in zip(
-                metadata, OBSERVED_DIRECTORY_SHA256_BY_SITE[site], strict=True):
-            if (item["central_directory_sha256_partial_metadata_only"] != observed_digest
-                    or item["central_member_total"] != OBSERVED_LAZ_MEMBER_COUNT_PER_ZIP
-                    or item["member_extension_counts"]["laz"] != OBSERVED_LAZ_MEMBER_COUNT_PER_ZIP
-                    or sum(item["member_extension_counts"].values()) != OBSERVED_LAZ_MEMBER_COUNT_PER_ZIP
-                    or item["directory_records"] != 0 or item["encrypted_flag_count"] != 0):
-                raise DirectoryError("Original ZIP central-directory receipt changed")
+        freeze_original_directory_receipts(site, metadata)
         results[site] = {
             "original_index_tiles": len(selected),
             "ordered_archive_central_directory": metadata,
