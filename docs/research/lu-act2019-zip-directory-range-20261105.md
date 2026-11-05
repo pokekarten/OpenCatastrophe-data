@@ -49,4 +49,30 @@ Do not claim that the three provider archives contain LAZ rather than LAS, any c
 
 Original 2019 observation and 2026 GeoBase building-vintage differences, source reuse rights, vertical/horizontal datum, original data licences, independent evidence and insurer valuation are all separately blocked. No CAT exposure model admission.
 
-**Actual metadata counts and source directory hashes: unverified until GitHub Actions original-source job.**
+## Successful original-provider range inspection — 2026-11-05
+
+Dedicated original-source GitHub Actions [run 41988484850](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41988484850) **SUCCESS**, and **16/16 synthetic ZIP/HTTP security and structure tests passed** at first reviewed implementation head. The official fixed-source 2019 GeoJSON original SHA256 remained 2ad881f794e3699b83a0b312c84c2b0e467f21a7ec92bbf10a0c9a21aa4d1e6a.
+
+The original official ZIP central directories produced the following **aggregate member metadata only**:
+
+| Site and original archive order | HTTP reported ZIP bytes | Central-directory file entries | Aggregated file type | ZIP compression method | Exact downloaded metadata-range bytes |
+| --- | ---: | ---: | --- | --- | ---: |
+| Luxembourg city | **449,275,061** | **9** | 9 LAZ-suffixed entries | Deflate / method 8 | **65,557** |
+| Berdorf first | **410,361,626** | **9** | 9 LAZ-suffixed entries | Deflate / method 8 | **65,557** |
+| Berdorf second | **374,704,804** | **9** | 9 LAZ-suffixed entries | Deflate / method 8 | **65,557** |
+| **All three** | **1,234,341,491** (advertised HTTP) | **27** | **27 LAZ-suffixed** | 27 Deflate members | **196,671** |
+
+Each archive used only **one** read of its trailing 65,557 bytes. The original ZIP standard EOCD and central-directory offsets, member structure, and source range totals were checked. All three EOCDs indicated ordinary single-disk central directories; no ZIP64 handling was required for these original samples.
+
+Original source per-directory SHA256 (SHA of central-directory raw metadata bytes only, NOT whole ZIP/LAZ data bytes):
+
+| Original ZIP site and order | Central-directory-only SHA256 |
+| --- | --- |
+| Luxembourg city | a7d96dc5a21b578e617d359f0b793e85db67de028164677ee22c39c5f472bf58 |
+| Berdorf first | 7bc9e106577a4ef7c81fc30572f8d280118c47ffe79425d5360bb2329d69ddf1 |
+| Berdorf second | 3b7ce099b4918321030d92710dd917b873e62104903f69ab5a69608c4d4addd6 |
+
+The source parser was subsequently strengthened to **pin the three observed archive sizes, ordered central-directory hashes, 9 LAZ-suffixed entries and method code 8 for each archive**, so a later source drift fails closed. A further exact-head original-source CI is required to validate those new pins. These counts are original ZIP directory *claims about their members*, **not** fully inspected LAZ payload headers or real 2019 classified LiDAR returns. A ZIP member ending in .laz could be incorrect, truncated or unrelated without full member-byte checking.
+
+**Next scientific gate:** inspect the first bytes of a single decompressed LAZ member from a bounded original range, if practical, and confirm its LASF header, LAS version, point-format/classification and geodetic metadata. This still would not prove any original point data integrity, buildings or independent VDL source observations. Full ZIP and per-member SHA256 remain unverified, all original coordinates/feature names remain internal, and CAT/model/insurer admission remains false.
+
