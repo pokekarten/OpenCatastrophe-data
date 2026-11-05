@@ -70,6 +70,9 @@ jobs:
           assert r["original_reference_worksheet_rows"]==815
           assert r["economic_loss_2020_eur_million_present"]==720
           assert r["economic_loss_2020_eur_million_missing"]==638
+          assert (r["economic_loss_2020_eur_million_numeric"] +
+                  r["economic_loss_2020_eur_million_non_numeric"] == 720)
+          assert r["economic_loss_non_numeric_rows_admitted_as_claims"] is False
           assert r["explicit_publisher_modelled_cds_loss_rows"]==299
           assert r["named_kyrill_country_rows"]==12
           g=r["kyrill_source_country_review_candidate"]
@@ -90,6 +93,10 @@ jobs:
           print("countries:",r["country_code_count"])
           print("publisher_modelled_CDS_rows:",r["explicit_publisher_modelled_cds_loss_rows"])
           print("missing_economic_losses:",r["economic_loss_2020_eur_million_missing"])
+          print("numeric_economic_losses:",r["economic_loss_2020_eur_million_numeric"])
+          print("non_numeric_publisher_economic_values:",r["economic_loss_2020_eur_million_non_numeric"])
+          print("source_row_ids_needing_economic_value_review:",
+                [x["source_id"] for x in r["economic_loss_2020_eur_million_non_numeric_source_rows"]])
           print("Kyrill_country_reports:",g["country_report_rows"])
           print("source_rights_or_CAT_admitted:",r["original_data_rights_admitted"])
           PY
