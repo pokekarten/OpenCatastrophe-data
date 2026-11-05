@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# Official original public Berlin Senate PDFs, with verified bytes/pdftotext markers.
+# This IS NOT an insurer risk-level property schedule.
+schema_version = "RVA_BERLIN_SENATE_2025_ORIGINAL_PDF_BYTES_V0"
+observed_original_pdf_proof_first_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41985712848"
+original_files_acquired_and_hashed_in_ephemeral_github_action = true
+raw_pdf_files_committed_or_redistributed = false
+verified_original_source_is_public_official_berlin_senate = true
+original_PDF_full_2025_building_insurer_contract_or_site_schedule = false
+actual_RV_insured_berlin_building_sites_verified = false
+actual_RV_degewo_coinsurance_participation_verified = false
+real_RV_site_TIV_and_policy_limits_verified = false
+official_2025_RV_insurer_named_housing_accounts = ["GESOBAU AG", "WBM", "degewo Allianz/R+V consortium"]
+related_2025_corporate_dwellings_are_insured_buildings = false
+degewo_RV_participation_0_50_100_cases_are_hypotheses = true
+model_CAT_admission = false
+insurance_and_statistical_reporting_vintages_are_distinct = true
+source_rights_scope = "Government public PDF, review factual small excerpts; do not redistribute original PDFs or owner address listings"
+
+[[documents]]
+id = "BERLIN_SENATE_19_22033_20250401"
+document_number = "19/22033"
+url = "https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/SchrAnfr/S19-22033.pdf"
+official_answer_date = "2025-04-01"
+publisher_received_date = "2025-04-03"
+original_bytes = 22528
+original_sha256 = "0671a38d440b0628088399c0ee0fa521e24d31738d19c2d8b93d65424c87143f"
+original_pages = 6
+positive_semantic_marker_count = 7
+source_science_role = "Named 2025 building-insurance corporate counterparty; 2025 contract master not individual insured locations"
+company_specific_insured_asset_count_observed = false
+
+[[documents]]
+id = "BERLIN_SENATE_19_24229_20251111"
+document_number = "19/24229"
+url = "https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/SchrAnfr/S19-24229.pdf"
+official_answer_date = "2025-11-11"
+publisher_received_date = "2025-11-12"
+original_bytes = 21842
+original_sha256 = "1269725e4ff8427f32db22a66a0745bc12a75dc1281ca62de7d21ddcaead307e"
+original_pages = 5
+positive_semantic_marker_count = 8
+source_science_role = "Borough aggregate seven landowner dwelling counts, June/Sep 2025, not insurance schedules"
+company_specific_insured_asset_count_observed = false
