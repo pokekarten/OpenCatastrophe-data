@@ -58,3 +58,25 @@ The [official C3S dataset catalogue](https://cds.climate.copernicus.eu/datasets/
 If all training-year event counts are zero, the Poisson MLE rate is exactly zero, but the sample-variance-to-mean ratio is **undefined (0/0)**. The research receipt now records `train_variance_to_mean_ratio: null` and `train_dispersion_ratio_defined: false`, not a misleading zero implying adequate dispersion. If positive storms occur in the independent holdout, `holdout_log_likelihood` remains `null` with an explicit diagnostic failure; neither case is a calibrated CAT model. Separate synthetic-only tests challenge both the unfinished-year boundary and the zero-mean cases.
 
 **Still unproven:** original provider annual-summary CSV bytes, NUTS vintage/joins, track IDs, multi-region common physical storm identity, dependent/severe hazard event footprints, calibrated vulnerability and insurer Gross/Net AEP/OEP. The full exact-head CI must pass before technical review, and technical success is **not source/science admission**.
+
+
+## 2026-11-05 — original CDS form verified and safe acquisition prepared
+
+**Direct metadata verification (not a CSV download):** The current ECMWF [C3S EWS STAC collection](https://cds.climate.copernicus.eu/api/catalogue/v1/collections/sis-european-wind-storm-reanalysis) was fetched; its linked [original download form](https://object-store.os-api.cci2.ecmwf.int/cci2-prod-catalogue/resources/sis-european-wind-storm-reanalysis/form_412cb1af4fc7a078f99700f0647e24bbd7681c2d43c9b03949e251b351318b63.json) and [conditional selection constraints](https://object-store.os-api.cci2.ecmwf.int/cci2-prod-catalogue/resources/sis-european-wind-storm-reanalysis/constraints_3fd6d9cc11e6b4a27abbea37af4c05e698f7ee392c514786a767c330e8dec470.json) were accessed independently. The annual summary branch's verified provider selectors are:
+
+    {"product":"windstorm_summary_indicator","variable":["all"],"tracking_algorithm":["hodges","tempestextremes"]}
+
+The provider form also exposes event_aggregation, year/month/day, footprint resolution and spatial extent; **these belong to different product branches**. There is no verified annual summary per-region/year selector; the full original provider CSV must be acquired and only then locally filtered by year, algorithm, region and threshold. The two tracking algorithms are not additive physical storms.
+
+Added an offline-safe, opt-in intake script at research_runners/c3s_ews_annual_original_acquisition_v0.py: by default it only prints the exact provider request; --execute requires an existing user-controlled, licensed and authenticated CDS API environment. For a future original response it accepts a source CSV or a one-CSV ZIP, conserves separate raw package and CSV member SHA-256 values, checks the original ten-column scientific schema, refuses package overwrite, refuses raw data under Git, rejects login HTML, non-CSV ZIPs, ambiguous ZIP members and source schema drift. Its output is always a **non-admitted research receipt**, never a fitted regional windstorm model.
+
+    # Offline safe request inspection (no network, secrets or licence acceptance):
+    PYTHONPATH=. python3 research_runners/c3s_ews_annual_original_acquisition_v0.py
+
+    # ONLY after manual licence acceptance and local CDS token configuration:
+    python3 -m pip install 'cdsapi>=0.7.7'
+    PYTHONPATH=. python3 research_runners/c3s_ews_annual_original_acquisition_v0.py --execute --out-dir /private/local-c3s-original-downloads
+
+Per [CDS API setup](https://cds.climate.copernicus.eu/how-to-api), the actual data download requires an individual personal-access token and **manual acceptance of that specific dataset's terms**. In this work no user credentials were obtained, no terms were accepted on the user's behalf, no authenticated data retrieval was executed, and no original C3S annual CSV bytes were downloaded. Metadata inspection does not bypass the download rights gate.
+
+**Next actual source gate:** authorized download, external original ZIP/CSV SHA-256 receipt, strict CSV schema verification and independent per-year completeness / NUTS-version review. Until then the physical event catalogue, multi-region covariance, actual insured exposures, calibration and NextGen insurer gross/net/AEP/OEP claims remain blocked. Keep PR draft and scientific admission false.
