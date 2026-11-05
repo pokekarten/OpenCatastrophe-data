@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Explicit opt-in acquisition of ONE original JRC EuroCrops GeoParquet file.
 
-Stores the original in a fresh EXTERNAL directory only. No source bytes in Git,
-no automatic network action in CI, no data/licence/scientific model admission.
+Stores original bytes in a fresh EXTERNAL directory only. No source bytes
+in Git or default CI; the dedicated source-only, deliberately path-triggered
+one-shot workflow may opt in using --live. No scientific/model admission.
 """
 from __future__ import annotations
 
