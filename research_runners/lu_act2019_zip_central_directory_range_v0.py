@@ -40,6 +40,19 @@ ZIP_CENTRAL_FIXED = 46
 RANGE_DATA_LIMIT_PER_ZIP = MAX_EOCD_TAIL_BYTES + MAX_CENTRAL_DIRECTORY_BYTES
 RANGE_RX = re.compile(r"^bytes ([0-9]+)-([0-9]+)/([0-9]+)$")
 
+# Real official-provider ZIP central-directory receipts observed in successful
+# GitHub Actions 41988484850. They identify only directory METADATA, never
+# actual archive contents or original LAZ point data.
+PINNED_DIRECTORY_RECEIPTS = {
+    "luxembourg-city": [
+        (449275061, "a7d96dc5a21b578e617d359f0b793e85db67de028164677ee22c39c5f472bf58"),
+    ],
+    "berdorf-village": [
+        (410361626, "7bc9e106577a4ef7c81fc30572f8d280118c47ffe79425d5360bb2329d69ddf1"),
+        (374704804, "3b7ce099b4918321030d92710dd917b873e62104903f69ab5a69608c4d4addd6"),
+    ],
+}
+
 class DirectoryAuditError(ValueError):
     """Only fixed source-authored stage messages can enter public logs."""
 
@@ -214,6 +227,24 @@ def probe_one_zip(url, *, opener=None) -> dict:
     }
 
 
+def verify_directory_metadata_receipts(site_reports: dict) -> None:
+    """Pin real HTTP-reported size + directory bytes fingerprint, NOT full ZIP."""
+    if not isinstance(site_reports,dict) or set(site_reports)!=set(PINNED_DIRECTORY_RECEIPTS):
+        raise DirectoryAuditError("Original archive site receipt population drifted")
+    for site,entries in site_reports.items():
+        pinned=PINNED_DIRECTORY_RECEIPTS[site]
+        if len(entries)!=len(pinned):
+            raise DirectoryAuditError("Original archive directory count drifted")
+        for item,(size,directory_hash) in zip(entries,pinned,strict=True):
+            if (item.get("http_provider_reported_zip_bytes") != size
+                    or item.get("central_directory_sha256_not_full_archive") != directory_hash
+                    or item.get("entry_count") != 9
+                    or item.get("entry_type_counts") != {"laz":9}
+                    or item.get("compression_method_codes") != {"8":9}
+                    or item.get("zip_metadata_exact_range_get_count") != 1):
+                raise DirectoryAuditError("Pinned original ZIP directory metadata drifted")
+
+
 def run(index_path: Path, *, opener=None):
     original=verify_original(index_path)
     try:
@@ -226,6 +257,7 @@ def run(index_path: Path, *, opener=None):
         raise DirectoryAuditError("Expected exactly three selected source archives")
     result={s:[probe_one_zip(url,opener=opener) for url in urls]
             for s,urls in targets.items()}
+    verify_directory_metadata_receipts(result)
     return {
         "profile":"lu-act2019-3-tile-zip-central-directory-range-only-v0",
         "source_index_original_sha256":original["original_index_sha256"],
