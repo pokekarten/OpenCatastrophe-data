@@ -35,7 +35,7 @@ Usage (after a trusted original file download and independent checksum receipt):
 
 Synthetic tests:
 
-    python -m unittest -q tests.test_eurocrops_v202_preflight_v0
+    python -m unittest discover -s tests -p test_eurocrops_v202_preflight_v0.py -q
 
 ## Execution boundary, observations and next step
 
