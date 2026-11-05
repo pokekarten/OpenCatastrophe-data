@@ -71,7 +71,7 @@ def parse_directory(data:bytes,expected_entries:int)->list[dict]:
             or any(part in (".","..","") for part in safe_path.split("/"))
             or len(name)>255):
             raise OriginalZipBlocked("dangerous member filename")
-        records.append({"name":name,"compressed_bytes":compressed,
+        records.append({"name":name,"local_header_offset":offset,"compressed_bytes":compressed,
                         "uncompressed_bytes":uncompressed,"method":method,
                         "crc32_hex":f"{crc:08x}"})
         i=j
