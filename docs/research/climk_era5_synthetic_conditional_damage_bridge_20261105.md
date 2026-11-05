@@ -129,3 +129,9 @@ exact wind samples, exact conditional loss and all non-admission disclaimers.
 The CI workflow now independently compares current original-source output to
 this pinned receipt rather than accepting only self-reported source labels. The repository prohibits tracked JSON/JSONL artifacts outside specifically registered projections; therefore the compact structured receipt is embedded in the single licensed Markdown evidence page.
 All underlying native NetCDF files and grid arrays remain outside Git.
+
+## Native-cell multiplicity / nonindependence guard (2026-11-05)
+
+The original-source-to-conditional-loss wrapper now reports `distinct_native_hazard_grid_cells_sampled`, `source_sites_share_a_native_grid_cell`, and `max_fictional_assets_sharing_one_native_grid_cell`. The current fixed Kyrill receipt must show **2 synthetic site labels → 1 distinct native ERA5 cell → 24 invented assets associated with that same cell**. The existing source-locked live workflow checks these fields and the original evidence receipt; no additional provider observation is inferred by introducing more site or asset labels.
+
+The conditional point adapter additionally rejects contradictory native gust, center or relative climatology values when two synthetic site labels refer to the *same* `(native_cell_x,native_cell_y)`. New synthetic-only tests challenge both consistent and inconsistent shared-cell scenarios and the distinct-cell case. This specifically blocks false geographic diversification and fabricated independent wind observations. It does not establish physical building location, insurance ownership, storm frequency, primary terms, reinsurance, vulnerability calibration or EP curves. The original CLIMK source file remains external, exact-SHA-pinned and re-read only by the special CI; do not claim scientific or production admission from this gate.
