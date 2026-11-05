@@ -59,7 +59,13 @@ class NativeNameplateOwnerTests(unittest.TestCase):
         payload=json.dumps(r)
         self.assertNotIn("GEN-1",payload)
         self.assertNotIn("GEN-2",payload)
-        self.assertNotIn("599",payload)
+        # A numerical source-ID substring can occur by chance inside a
+        # SHA-256 digest. Exclude only crypto source digests, not output data,
+        # when checking that raw plant IDs are absent from published results.
+        public_non_digest = {
+            k: v for k, v in r.items() if not k.endswith("_sha256")
+        }
+        self.assertNotIn("599", json.dumps(public_non_digest))
 
     def test_single_ownership_with_owner_schedule_requires_review(self):
         r=m.inspect_original_members(*source(owners=[("599","GEN-1"),("599","GEN-2"),
