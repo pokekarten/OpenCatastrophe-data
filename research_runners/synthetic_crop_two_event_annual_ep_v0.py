@@ -16,7 +16,10 @@ from itertools import product
 import json
 
 from shapely.geometry import box, mapping
-from research_runners.synthetic_crop_value_impact_v0 import hypothetical_impact
+if __package__:
+    from .synthetic_crop_value_impact_v0 import hypothetical_impact
+else:
+    from synthetic_crop_value_impact_v0 import hypothetical_impact
 
 YEARS = 10000
 SEED = 20261105
