@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: CLIMK ERA5 Original Source Conditional Loss Research Receipt
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/climk-era5-synthetic-conditional-loss-live.yml'
+      - 'scripts/climk_era5_synthetic_damage_preview_v0.py'
+      - 'scripts/climk_era5_conditional_damage_live_receipt_v0.py'
+      - 'tests/test_climk_era5_synthetic_damage_preview_v0.py'
+      - 'tests/test_climk_era5_conditional_damage_live_receipt_v0.py'
+      - 'scripts/climk_era5_synthetic_native_sample_v0.py'
+      - 'scripts/inspect_climk_winds_era5_v0.py'
+      - 'requirements-glofas-acquisition.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: climk-conditional-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-source-conditional-damage:
+    name: Exact CLIMK ERA5 → 24 fictional buildings (not calibrated)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact PR commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Install existing pinned NetCDF4 reader only
+        run: |
+          python -m pip install --no-input --disable-pip-version-check -r requirements-glofas-acquisition.txt
+          python -m pip check
+      - name: Prove offline contracts and adversarial controls
+        run: |
+          python -m unittest tests.test_climk_era5_synthetic_damage_preview_v0 tests.test_climk_era5_conditional_damage_live_receipt_v0 -v
+      - name: Reproduce original Zenodo bytes, gust points, and conditional physical loss
+        run: |
+          python scripts/climk_era5_conditional_damage_live_receipt_v0.py --out "$RUNNER_TEMP/climk-original-24-fictional-buildings.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path(os.environ['RUNNER_TEMP']) / 'climk-original-24-fictional-buildings.json'
+          o = json.loads(p.read_text(encoding='utf-8'))
+          assert o['source_sha256'] == '92856dea4578ac556ff5598176ff33411b56baa7c2af0170150e288bd5581102'
+          assert o['source_size_bytes'] == 6_792_278
+          assert o['point_reextract_exact_original'] is True
+          assert o['synthetic_asset_count'] == 24
+          assert o['synthetic_total_replacement_cost_eur'] == 240_000_000
+          assert o['annual_AAL'] is None and o['annual_AEP'] is None and o['annual_OEP'] is None
+          assert o['model_calibrated'] is False
+          assert o['insurer_original_gross'] is None and o['insurer_retained_net'] is None
+          print('Genuine original source conditional physical loss receipt (NOT annual insurer CAT):')
+          print(json.dumps(o, indent=2, sort_keys=True, allow_nan=False))
+          PY
