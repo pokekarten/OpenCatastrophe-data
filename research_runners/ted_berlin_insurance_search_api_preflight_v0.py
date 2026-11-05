@@ -22,6 +22,14 @@ ACCEPTED_NOTICE_FIELDS = (
     "publication-number", "buyer-name", "notice-title", "publication-date",
     "ojs-number",
 )
+# These are the *exact* official Search field list names. They are retrieved
+# only by the separate WBM research-only candidate path. An indexed
+# winner-name is NOT a confirmed SettledContract -> LotTender evidence edge.
+WBM_AWARD_CANDIDATE_FIELDS = ACCEPTED_NOTICE_FIELDS + (
+    "winner-name", "winner-identifier", "winner-selection-status",
+    "contract-identifier", "contract-tender-id", "contract-conclusion-date",
+    "winner-decision-date",
+)
 
 
 def _no_duplicate_json(pairs: list[tuple[str, object]]) -> dict:
@@ -44,12 +52,18 @@ def _strings(value):
             yield from _strings(v)
 
 
-def query_body(notice: str) -> bytes:
+def query_body(notice: str, *, fields: tuple[str,...] | None = None) -> bytes:
     if notice not in SOURCES:
         raise ValueError("TED_API_NOTICE_NOT_ALLOWLISTED")
+    if fields is None:
+        fields = ACCEPTED_NOTICE_FIELDS
+    if fields not in (ACCEPTED_NOTICE_FIELDS, WBM_AWARD_CANDIDATE_FIELDS):
+        raise ValueError("TED_API_UNAPPROVED_FIELD_SELECTION")
+    if fields == WBM_AWARD_CANDIDATE_FIELDS and notice != "668506-2026":
+        raise ValueError("TED_API_AWARD_FIELDS_NOT_ALLOWED_FOR_TENDER")
     return json.dumps({
         "query": f"publication-number = {notice}",
-        "fields": list(ACCEPTED_NOTICE_FIELDS),
+        "fields": list(fields),
         "limit": 2,
         "page": 1,
         "scope": "ALL",
@@ -59,9 +73,12 @@ def query_body(notice: str) -> bytes:
     }, sort_keys=True).encode("utf-8")
 
 
-def fetch(notice: str, *, opener=urllib.request.urlopen) -> bytes:
+def fetch(
+    notice: str, *, fields: tuple[str,...] | None = None,
+    opener=urllib.request.urlopen,
+) -> bytes:
     request = urllib.request.Request(
-        ENDPOINT, data=query_body(notice),
+        ENDPOINT, data=query_body(notice, fields=fields),
         headers={
             "Content-Type": "application/json",
             "Accept": "application/json",

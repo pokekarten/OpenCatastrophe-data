@@ -10,13 +10,19 @@ on:
       - "research_runners/ted_berlin_insurance_daily_xml_preflight_v0.py"
       - "research_runners/ted_berlin_insurance_search_api_preflight_v0.py"
       - "research_runners/ted_wbm_eforms_winner_role_v0.py"
+      - "research_runners/ted_wbm_contract_search_index_candidates_v0.py"
+      - "research_runners/ted_wbm_original_award_graph_receipt_v0.py"
+      - "research/observations/ted_wbm_2026_original_eforms_award_graph_receipt_v0.toml"
       - "tests/test_ted_berlin_insurance_original_xml_preflight_v0.py"
       - "tests/test_ted_berlin_insurance_original_http202_retry_v0.py"
       - "tests/test_ted_berlin_insurance_daily_xml_preflight_v0.py"
       - "tests/test_ted_berlin_insurance_search_api_preflight_v0.py"
       - "tests/test_ted_wbm_eforms_winner_role_v0.py"
+      - "tests/test_ted_wbm_contract_search_index_candidates_v0.py"
+      - "tests/test_ted_wbm_original_award_graph_receipt_v0.py"
       - "docs/research/berlin-insurer-ted-original-xml-preflight-20261105.md"
       - "docs/research/berlin-wbm-2026-ted-eforms-winner-role-v0.md"
+      - "docs/research/berlin-wbm-2026-ted-search-index-contract-candidates.md"
   workflow_dispatch:
 
 permissions:
@@ -56,6 +62,16 @@ jobs:
       - name: Query TED primary publication metadata as separate fallback
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: python -m research_runners.ted_berlin_insurance_search_api_preflight_v0
+      - name: Offline WBM official TED index contract candidate safeguard tests
+        run: python -m unittest discover -s tests -p "test_ted_wbm_contract_search_index_candidates_v0.py" -v
+      - name: Query official WBM award index candidate and contract fields separately
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: python -m research_runners.ted_wbm_contract_search_index_candidates_v0
+      - name: Offline WBM original awarded-contract graph receipt tamper tests
+        run: python -m unittest discover -s tests -p "test_ted_wbm_original_award_graph_receipt_v0.py" -v
+      - name: Re-verify three saved official WBM contract-to-company edges
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: python -m research_runners.ted_wbm_original_award_graph_receipt_v0
       - name: Try official TED daily OJ S archive fallback for 202 Accepted
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: python -m research_runners.ted_berlin_insurance_daily_xml_preflight_v0
