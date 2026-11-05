@@ -16,7 +16,7 @@ The complete JRC corrected original asset was downloaded and re-hashed in isolat
 - Independently observed original 16,266-byte footer SHA-256: `3ccb9177c49914f95e63d3942977c0d95a174b8434c004ba31f523be574b8d53`.
 - Original Parquet footer: **285,606** records in one row group, GeoParquet geometry field **`geometry`** (not `geom`), WKB and EPSG:3035.
 - Evidence: [first full-byte receipt](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42114631274), [complete area-column QC](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42115645801), [65 zero-area original WKB diagnostic](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42116494785), [complete WKB and crop hierarchy QC](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42117394009).
-- Canonical machine-readable quality observation: `research/observations/eurocrops_de4_2023_original_full_area_qc_20261105.json`.
+- Canonical machine-readable quality observation: `research/observations/eurocrops_de4_2023_original_full_area_qc_20261105.toml`.
 
 ## Measured on all 285,606 original field records
 
@@ -47,6 +47,6 @@ At publisher repo commit `b556d10651b98684d5d5269916f8f34c9e017151`, `eurocrops.
 - `research_runners/eurocrops_jrc_original_run_v0.py`: file hash/footer provenance, 1,024 uniform sample, complete area attribute QC and codebook pin.
 - `research_runners/eurocrops_original_zero_area_geometry_v0.py`: read WKB only for the 65 zero-area source records.
 - `research_runners/eurocrops_original_full_geometry_code_qc_v0.py`: complete original WKB topology, source area, original field-ID uniqueness and DE4 HCAT4 mapping census.
-- `.github/workflows/eurocrops-de4-original-one-shot.yml`: deliberately limited original-file action; aggregate JSON artifacts only; removes raw file from ephemeral runner.
+- `.github/workflows/eurocrops-de4-original-one-shot.yml`: the earlier path-triggered source runs uploaded aggregate JSON artifacts only; the workflow is now **manual dispatch only** and uses solely the repository's allowed actions, with **no artifact upload on future runs**. It deletes original raw bytes from the ephemeral runner. Prior historical aggregate receipts are still available on the linked successful GitHub run.
 
 The original source has **technical topology and codebook QC evidence**, but still lacks independent coverage/overlap verification, legal/scientific admission for model use, real dated physical flood/hail hazards, crop valuations and vulnerability calibration, insurer contracts and stochastic event frequencies. Existing invented OEP/AEP and crop direct-value experiments remain synthetic arithmetic, **not actual insurer gross/net CAT curves**.
