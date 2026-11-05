@@ -9,10 +9,13 @@ on:
       - "research_runners/ted_berlin_insurance_original_xml_preflight_v0.py"
       - "research_runners/ted_berlin_insurance_daily_xml_preflight_v0.py"
       - "research_runners/ted_berlin_insurance_search_api_preflight_v0.py"
+      - "research_runners/ted_wbm_eforms_winner_role_v0.py"
       - "tests/test_ted_berlin_insurance_original_xml_preflight_v0.py"
       - "tests/test_ted_berlin_insurance_daily_xml_preflight_v0.py"
       - "tests/test_ted_berlin_insurance_search_api_preflight_v0.py"
+      - "tests/test_ted_wbm_eforms_winner_role_v0.py"
       - "docs/research/berlin-insurer-ted-original-xml-preflight-20261105.md"
+      - "docs/research/berlin-wbm-2026-ted-eforms-winner-role-v0.md"
   workflow_dispatch:
 
 permissions:
@@ -37,6 +40,8 @@ jobs:
         run: python -m unittest discover -s tests -p "test_ted_berlin_insurance_original_xml_preflight_v0.py" -v
       - name: Offline exact original-publication ZIP member and source refusal tests
         run: python -m unittest discover -s tests -p "test_ted_berlin_insurance_daily_xml_preflight_v0.py" -v
+      - name: Offline WBM award winner-role graph tests
+        run: python -m unittest discover -s tests -p "test_ted_wbm_eforms_winner_role_v0.py" -v
       - name: Independently fetch official TED publication XML (no raw-XML retention)
         # External source availability is not under our CI control. PR remains
         # regression-checkable when TED is down; a manually dispatched run
@@ -51,3 +56,6 @@ jobs:
       - name: Try official TED daily OJ S archive fallback for 202 Accepted
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: python -m research_runners.ted_berlin_insurance_daily_xml_preflight_v0
+      - name: Re-fetch exact-pinned WBM award and resolve only role-linked winners
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: python -m research_runners.ted_wbm_eforms_winner_role_v0
