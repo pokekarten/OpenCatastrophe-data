@@ -52,9 +52,16 @@ KNOWN_INELIGIBLE_EXAMPLES = {
     "2460": "Gebaeude_zum_Parken",
     "2461": "Parkhaus",
     "2462": "Parkdeck",
+    "2463": "Garage",
+    "2522": "Umspannwerk",
+    "2523": "Umformer",
     "2720": "Land_und_forstwirtschaftliches_Betriebsgebaeude",
+    "2723": "Schuppen",
+    "2724": "Stall",
     "2740": "Treibhaus_Gewaechshaus",
     "3000": "Gebaeude_fuer_oeffentliche_Zwecke",
+    "3021": "Allgemein_bildende_Schule",
+    "1313": "Gartenhaus",
 }
 
 def classify_gfk(raw: str) -> tuple[str, str | None]:
