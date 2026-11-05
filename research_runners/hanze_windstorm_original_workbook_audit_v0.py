@@ -271,6 +271,8 @@ def audit_workbook(
     countries = set()
     years = []
     has_econ = 0
+    numeric_econ = 0
+    invalid_econ = []
     has_nominal = 0
     modelled = 0
     kyrill = []
@@ -304,15 +306,25 @@ def audit_workbook(
                 cells.get("F") and str(cells["F"]).isdigit()):
             date_serials += 1
         if cells.get("P") not in (None, ""):
+            # Nonempty publisher cells are NOT automatically validated numbers.
+            # The original source includes textual/non-numeric exception cells.
+            # Surface them as explicit UNKNOWN numeric losses instead of
+            # silently converting to zero or pretending they are observations.
             raw = cells["P"]
+            has_econ += 1
             try:
                 from decimal import Decimal, InvalidOperation
                 val = Decimal(raw)
+                if not val.is_finite() or val < 0:
+                    raise InvalidOperation("nonfinite or negative source loss")
             except (InvalidOperation, ValueError):
-                raise OriginalHanzeError("invalid economic loss amount") from None
-            if not val.is_finite() or val < 0:
-                raise OriginalHanzeError("invalid economic loss units/value")
-            has_econ += 1
+                invalid_econ.append({
+                    "source_id": key,
+                    "country_code": code,
+                    "problem": "NON_NUMERIC_OR_INVALID_PUBLISHED_ECONOMIC_LOSS",
+                })
+            else:
+                numeric_econ += 1
         if cells.get("N") not in (None, ""):
             has_nominal += 1
         source_modelled_cds = bool(re.search(
@@ -351,6 +363,10 @@ def audit_workbook(
         "original_reference_worksheet_rows": len(references) - 1,
         "economic_loss_2020_eur_million_present": has_econ,
         "economic_loss_2020_eur_million_missing": len(data) - has_econ,
+        "economic_loss_2020_eur_million_numeric": numeric_econ,
+        "economic_loss_2020_eur_million_non_numeric": len(invalid_econ),
+        "economic_loss_2020_eur_million_non_numeric_source_rows": invalid_econ,
+        "economic_loss_non_numeric_rows_admitted_as_claims": False,
         "nominal_economic_loss_value_present": has_nominal,
         "explicit_publisher_modelled_cds_loss_rows": modelled,
         "rows_with_excel_date_serials": date_serials,
