@@ -7,6 +7,7 @@ import hashlib
 import io
 import unittest
 import zipfile
+from unittest.mock import patch
 
 from research_runners import ted_berlin_insurance_daily_xml_preflight_v0 as m
 
@@ -49,6 +50,17 @@ class FakeResponse:
 
 
 class TEDDailyArchiveOriginalPreflight(unittest.TestCase):
+    def setUp(self):
+        # Archive fixtures are NOT official TED original bytes; clear only
+        # inside synthetic tests. Production scripts keep exact immutable pins.
+        p = patch.dict(m.SOURCES, {
+            k: dict(v, original_xml_sha256_pinned=None,
+                    original_xml_bytes_pinned=None)
+            for k, v in m.SOURCES.items()
+        })
+        p.start()
+        self.addCleanup(p.stop)
+
     def test_two_pinned_daily_oj_s_packages(self):
         self.assertEqual(m.url_for("558592-2024"),
                          "https://ted.europa.eu/packages/notice/daily/202400181")
