@@ -13,6 +13,7 @@ are checked before any selected file can be exported.
 from __future__ import annotations
 
 from collections import Counter
+from functools import lru_cache
 import hashlib
 import heapq
 import math
@@ -83,6 +84,12 @@ def inspect_headers(shp,dbf,shx_length:int,*,expected_count:int)->None:
         raise SourceBlocked("original Polygon/record/DBF/SHX contract drift")
 
 
+@lru_cache(maxsize=1)
+def _pinned_transformer():
+    from pyproj import Transformer
+    return Transformer.from_crs("EPSG:4647","EPSG:4326",always_xy=True)
+
+
 def _point_from_shape(payload:bytes)->tuple[float,float,float]:
     """Return interior WGS84 (lon,lat) and geometric footprint area (m2).
 
@@ -90,7 +97,6 @@ def _point_from_shape(payload:bytes)->tuple[float,float,float]:
     handled; multipart/hole topologies stay unadmitted rather than guessing.
     """
     from shapely.geometry import Polygon
-    from pyproj import Transformer
     if not 48<=len(payload)<=MAX_RECORD_BYTES or struct.unpack_from("<I",payload,0)[0]!=5:
         raise SourceBlocked("candidate is not supported Polygon5")
     n_parts,n_points=struct.unpack_from("<II",payload,36)
@@ -109,8 +115,7 @@ def _point_from_shape(payload:bytes)->tuple[float,float,float]:
     point=poly.representative_point()
     if not (32_200_000<point.x<32_600_000 and 5_500_000<point.y<5_900_000):
         raise SourceBlocked("candidate source CRS coordinates outside NRW")
-    transformer=Transformer.from_crs("EPSG:4647","EPSG:4326",always_xy=True)
-    lon,lat=transformer.transform(point.x,point.y)
+    lon,lat=_pinned_transformer().transform(point.x,point.y)
     if not (5.5<lon<10 and 50<lat<52.8):
         raise SourceBlocked("candidate WGS84 coordinates outside NRW")
     return round(lon,7),round(lat,7),round(poly.area,2)
