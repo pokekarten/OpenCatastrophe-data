@@ -8,13 +8,10 @@ independently reproduced, rights-cleared, or suitable for insurer CAT calibratio
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import re
-import shutil
-import subprocess
 import sys
-import tempfile
-from pathlib import Path
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
@@ -82,41 +79,43 @@ def semantic_check(extracted_text: str, markers: tuple[str, ...]) -> int:
     return len(markers)
 
 
-def inspect(source: dict, raw: bytes, *, extractor: str = "pdftotext", page_tool: str = "pdfinfo") -> dict:
+def inspect(source: dict, raw: bytes) -> dict:
     if not (raw.startswith(b"%PDF-") and len(raw) <= MAX_BYTES):
         raise ValueError("RVA_SOURCE_INVALID_BYTES")
     sha = hashlib.sha256(raw).hexdigest()
     pinned = source.get("exact_original_sha256")
     if pinned is not None and sha != pinned:
         raise ValueError("RVA_ORIGINAL_SOURCE_SHA_DRIFT")
-    if not shutil.which(extractor) or not shutil.which(page_tool):
-        raise ValueError("RVA_POPPLER_UTILITIES_REQUIRED")
-    with tempfile.TemporaryDirectory(prefix="rva-public-financial-original-") as d:
-        local = Path(d) / "issuer-original.pdf"
-        local.write_bytes(raw)
-        text_result = subprocess.run(
-            [extractor, "-layout", "-enc", "UTF-8", str(local), "-"],
-            capture_output=True, timeout=45, check=False)
-        info_result = subprocess.run(
-            [page_tool, str(local)], capture_output=True, timeout=25, check=False)
-    if text_result.returncode or info_result.returncode or len(text_result.stdout) > MAX_TEXT_BYTES * 4:
-        raise ValueError("RVA_ORIGINAL_PDF_EXTRACTOR_FAILED")
+    # PDF bytes stay in memory. The only optional dependency is a precisely
+    # pinned pypdf reader, never network-loaded at extraction time.
+    from pypdf import PdfReader, __version__ as pypdf_version
+    if pypdf_version != "5.9.0":
+        raise ValueError("RVA_UNPINNED_PDF_READER")
     try:
-        extracted = text_result.stdout.decode("utf-8", "strict")
-        info = info_result.stdout.decode("utf-8", "strict")
-    except UnicodeError as exc:
-        raise ValueError("RVA_ORIGINAL_PDF_DECODE_FAILED") from exc
-    match = re.search(r"^Pages:\s*(\d+)\s*$", info, re.M)
-    if match is None or int(match.group(1)) != source["pages_expected"]:
-        raise ValueError("RVA_ORIGINAL_PAGE_COUNT_DRIFT")
+        reader = PdfReader(io.BytesIO(raw), strict=True)
+        pages = len(reader.pages)
+        if pages != source["pages_expected"]:
+            raise ValueError("RVA_ORIGINAL_PAGE_COUNT_DRIFT")
+        extracted_parts = []
+        for page in reader.pages:
+            page_text = page.extract_text(extraction_mode="layout") or ""
+            extracted_parts.append(page_text)
+            if sum(map(len, extracted_parts)) > MAX_TEXT_BYTES:
+                raise ValueError("RVA_PDF_TEXT_INVALID")
+        extracted = "\n".join(extracted_parts)
+    except (ValueError, RuntimeError):
+        raise
+    except Exception as exc:
+        raise ValueError("RVA_ORIGINAL_PDF_READER_FAILED") from exc
     marker_count = semantic_check(extracted, source["required_markers"])
     return {
         "source_id": source["source_id"],
         "original_issuer_url": source["url"],
         "original_sha256": sha,
         "original_bytes": len(raw),
-        "pages_original": int(match.group(1)),
+        "pages_original": pages,
         "original_markers_verified": marker_count,
+        "source_pdf_reader": "pypdf==5.9.0",
         "original_sha_previously_pinned": pinned is not None,
         "source_byte_receipt_complete": True,
         "independently_reproduced_source_sha_via_second_environment": False,
@@ -147,6 +146,6 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
-    except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
+    except (OSError, ValueError) as exc:
         print(f"RVA_ORIGINAL_ISSUER_FINANCIAL_PDF_BLOCKED: {type(exc).__name__}: {str(exc)[:110]}", file=sys.stderr)
         raise SystemExit(2)
