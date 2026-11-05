@@ -20,6 +20,8 @@ from .ted_berlin_insurance_original_xml_preflight_v0 import MAX_BYTES
 
 NOTICE = "286307-2026"
 URL = "https://ted.europa.eu/en/notice/286307-2026/xml"
+PINNED_ORIGINAL_SHA256 = "54c0c84b379a9629f3e5774245ca763f66159e2cf45704ba985589202adcf9a1"
+PINNED_ORIGINAL_BYTES = 41307
 MAX_TRIES = 2
 EXPECTED = {
     "buyer": r"\bWBM\b",
@@ -69,7 +71,11 @@ def fetch(*, opener=urllib.request.urlopen) -> bytes:
     raise ValueError("TED_WBM_COMPETITION_SOURCE_UNAVAILABLE")
 
 
-def inspect(data: bytes) -> dict:
+def inspect(
+    data: bytes, *,
+    expected_sha256: str = PINNED_ORIGINAL_SHA256,
+    expected_bytes: int = PINNED_ORIGINAL_BYTES,
+) -> dict:
     if type(data) is not bytes or not 100 <= len(data) <= MAX_BYTES:
         raise ValueError("TED_WBM_COMPETITION_SOURCE_SIZE_INVALID")
     if re.search(rb"<!\s*(?:DOCTYPE|ENTITY)\b", data, re.I):
@@ -93,8 +99,10 @@ def inspect(data: bytes) -> dict:
     for key, pattern in EXPECTED.items():
         if not re.search(pattern, text, re.I):
             raise ValueError("TED_WBM_COMPETITION_MISSING_SOURCE_MARKER_" + key)
+    if hashlib.sha256(data).hexdigest() != expected_sha256 or len(data) != expected_bytes:
+        raise ValueError("TED_WBM_COMPETITION_IMMUTABLE_ORIGINAL_PIN_MISMATCH")
     return {
-        "schema_version": "TED_WBM_2026_COMPETITION_FIRST_ORIGINAL_RETRIEVAL_V0",
+        "schema_version": "TED_WBM_2026_COMPETITION_PINNED_ORIGINAL_REPLAY_V0",
         "notice": NOTICE,
         "official_url": URL,
         "xml_root": "ContractNotice",
@@ -104,7 +112,7 @@ def inspect(data: bytes) -> dict:
         "follower_writing_minimum_15_percent_in_2026_tender_text": True,
         "commercial_object_count_described_not_geocoded": 9,
         "storm_flood_earthquake_in_requested_coverage": True,
-        "original_xml_retrieval_independently_rechecked_against_reviewed_sha": False,
+        "original_xml_retrieval_independently_rechecked_against_reviewed_sha": True,
         "final_policy_coverage_quotas_or_rv_10_percent_verified": False,
         "insured_building_risk_coordinates_or_tiv_admitted": False,
         "raw_original_xml_committed_or_printed": False,
