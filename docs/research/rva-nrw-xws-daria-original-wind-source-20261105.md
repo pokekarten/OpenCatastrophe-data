@@ -124,6 +124,17 @@ The actual live receipt printed in the workflow job log reports:
 
 The provider's `daria_mean`, `daria_lower95` and `daria_upper95` are **alternative estimates for one historical physical event**, not three storms or stochastic years. The observed 10k threshold is a property of the specifically selected, historic extreme storm and fictional candidate buildings: it does not establish a hazard return period, damage ratio or real R+V portfolio composition. The 1990 / 2022 / 2025 source-vintage mismatch is material.
 
+The **actual full downloaded original CSV byte identities** in this run (SHA-256 calculated on the complete source bytes, not publisher-signed checksums) were:
+
+| Exact XWS original input | Bytes | Observed SHA-256 |
+| --- | ---: | --- |
+| `grid_locations.csv` | 550,415 | `decb09d473db9086df7a497bcebc95641238d4ee365ff26d8e83c266a6f32599` |
+| `Daria_biasL95.csv` | 350,030 | `4381de5fdb5e66489efde09ac587e295b93906cac643325ad5517a278d5e2bff` |
+| `Daria_biasMean.csv` | 350,061 | `34b9c02768aa6f54aa541e185381e4735f3b2cd852fc23a724ddc00c301a1d50` |
+| `Daria_biasU95.csv` | 350,179 | `8b63a95adf0961da00c1e8874fbb99a49cd38b58de6263f8c4f1c65637cc6007` |
+
+These hashes fix the reproducible **observed source version** in permanent Git metadata after time-limited Action artifacts expire. They do not grant broader reuse rights, prove the provider published these digests, or imply the storm has an independently estimated annual frequency.
+
 Generated research artifacts, temporarily available for 14 days (not committed source files):
 
 - [Source-grounded public-site historical gust ZIP, artifact #13455338570](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42112975393/artifacts/13455338570). It contains derived site/county gust and provenance only, **not** an insurer loss table.
