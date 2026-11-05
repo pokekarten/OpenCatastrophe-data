@@ -149,7 +149,7 @@ class TEDSyntheticOriginalXMLSourceTests(unittest.TestCase):
 
     def test_doctype_and_entity_refused(self):
         for injected in (
-            b'<!DOCTYPE foo [ <!ENTITY xxe SYSTEM "file:///etc/passwd"> ]>',
+            b'<!DOCTYPE foo [ <!ENTITY xxe SYSTEM "urn:example:untrusted-external-entity"> ]>',
             b'<!ENTITY unsafe "anything">',
         ):
             test = b'<?xml version="1.0"?>' + injected + make_notice(
