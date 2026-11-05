@@ -59,3 +59,44 @@ Gust in m/s is converted to **mm/s** with decimal half-up rounding. Damage ratio
 - [ ] Run producer-admitted event/asset physical losses through NextGen **original insured → outward/inward Cat XL → external retro**, preserving all zero-event years and physical event identities, then Gross/Net AAL/AEP/OEP with independently rebuilt curve receipts.
 
 No original/provider raw data, derived grid values, person information, actual insurer contracts or production database rows are committed in this research PR.
+
+## Live end-to-end ORIGINAL NetCDF → 24 fictional assets (2026-11-05 addition)
+
+The added `scripts/climk_era5_conditional_damage_live_receipt_v0.py`
+executes a bounded, **nonannual** single-event source test. It reuses the
+original already-reviewed live source URL, hashes the 6,792,278 original bytes
+against the pinned SHA256, extracts **storm index 0** at two original-source-
+preflight synthetic coordinate pairs from `docs/CROSS_PERIL_PHYSICAL_EVENT_EVIDENCE_V0.md`,
+and then rereads the *same original NetCDF* inside the new conditional damage
+adapter to ensure the supplied gust sample JSON matches exactly. No raw source
+file or raster is saved to this repo.
+
+Precisely **24 invented commercial assets** at two fictional point markers
+(12 each), each EUR 10m replacement cost, total invented EUR 240m, are
+processed with the displayed **unfitted** monotone piecewise-linear wind/VLT
+curve. Do not call these *Zurich* insured risks; the Zurich-labelled name is
+a research tag only. The result keeps original source sha, source-specific
+storm label, exactly two native grid point values, assumed VLT SHA and an
+exact rational per-event conditional physical ground-up loss. It does not
+produce a sampled occurrence loss, a primary insured loss, inward/retro claim,
+or any AEP/OEP/annual AAL.
+
+To run online from a complete repository checkout:
+
+```sh
+python -m pip install -r requirements-glofas-acquisition.txt
+python -m unittest tests.test_climk_era5_synthetic_damage_preview_v0 tests.test_climk_era5_conditional_damage_live_receipt_v0 -v
+python scripts/climk_era5_conditional_damage_live_receipt_v0.py --out /tmp/climk-original-24-fictional-buildings.json
+```
+
+The specifically triggered `CLIMK ERA5 Original Source Conditional Loss Research
+Receipt` workflow (`.github/workflows/climk-era5-synthetic-conditional-loss-live.yml`)
+runs these commands with **source-immutable digest and scientific negative
+assertions** on GitHub Actions. Its output contains no confidential information.
+
+The new **4/4 offline live-orchestration tests** challenge synthetic inventory,
+mocked source-reader wiring (EUR 13.2m hand calculation from fake 20/30 m/s
+gusts), original-byte SHA mismatch, and fabricated re-verification status.
+These are *not* live-NetCDF tests. The real output's storm gusts and actual
+conditional loss can only be quoted after the linked workflow succeeds.
+The separate baseline adapter unit suite remains 15/15 locally green.
