@@ -38,9 +38,23 @@
   "run": "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42115645801",
   "aggregated_result_artifact_id": 13455712676,
   "original_geo_values_all_individually_validated": false,
-  "original_geometries_of_65_zero_area_rows_examined": false,
+  "original_geometries_of_65_zero_area_rows_examined": true,
   "source_license_and_scientific_admission": "NOT_ADMITTED",
   "raw_original_asset_data_committed": false,
   "true_insurer_exposure_tiv_or_loss_estimated": false,
-  "important_scope_limit": "Whole area_ha field was scanned. Only 1024 uniformly selected actual geometries were parsed. Sample representativeness and true farm insured values are not established."
+  "important_scope_limit": "All 285606 original area_ha values scanned; all 65 zero-area rows additionally inspected as WKB, each empty. A uniform 1024-row original WKB sample passed. Validity of every other original polygon and total unique agricultural area not established.",
+  "original_zero_area_wkb_quality": {
+    "rows_with_stored_area_ha_exactly_zero": 65,
+    "all_original_rows_reexamined_for_zero_area_attributes": 285606,
+    "empty_wkb_geometry_rows": 65,
+    "nonempty_valid_polygon_with_positive_geometric_area_rows": 0,
+    "nonempty_polygon_with_zero_geometric_area_rows": 0,
+    "invalid_topology_nonempty_rows": 0,
+    "nonpolygon_geometry_rows": 0,
+    "invalid_or_missing_wkb_rows": 0,
+    "individual_original_parcel_coordinates_or_ids_emitted": false,
+    "verification_run": "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42116494785",
+    "original_aggregate_artifact_id": 13456856332,
+    "interpretation": "Exactly 65 original source records have zero area_ha and empty WKB geometry; these 65 records have no usable spatial polygon and must be quarantined rather than made into point locations or synthetic insured assets."
+  }
 }
