@@ -90,7 +90,7 @@ class C3SOriginalAcquisitionTests(unittest.TestCase):
         raw = toy_csv()
         # A syntactically valid CSV still cannot silently claim an unrelated
         # algorithm, an unrequested second tracker or omit one selected tracker.
-        altered = raw.replace(b",hodges\\n", b",TRACK\\n")
+        altered = raw.replace(b",hodges\n", b",TRACK\n")
         with self.assertRaisesRegex(mod.AcquisitionError, "unknown source tracking"):
             mod.inspect_provider_package(altered)
         only_hodges = mod.official_request(("hodges",))
@@ -98,20 +98,20 @@ class C3SOriginalAcquisitionTests(unittest.TestCase):
             mod.inspect_provider_package(raw, request=only_hodges)
         # Provider documentation uses two different spellings for the same
         # canonical TempestExtremes algorithm; retain the original CSV labels.
-        source_case = raw.replace(b",tempestextremes\\n", b",TempestExtremes\\n")
+        source_case = raw.replace(b",tempestextremes\n", b",TempestExtremes\n")
         report = mod.inspect_provider_package(source_case)
         self.assertIn("TempestExtremes", report["official_annual_parser_algorithms"])
         self.assertEqual(report["source_canonical_algorithms"],
                          ["hodges", "tempestextremes"])
         # A forged CSV using two labels for the SAME canonical tracker cannot
         # make the declared single-algorithm request look fully satisfied.
-        collided = raw.replace(b",hodges\\n", b",tempest extreme\\n")
+        collided = raw.replace(b",hodges\n", b",tempest extreme\n")
         with self.assertRaisesRegex(mod.AcquisitionError, "differs from exact"):
             mod.inspect_provider_package(collided, request=mod.official_request(("tempestextremes",)))
         # Single-tracker request passes when the CSV indeed contains only it.
         lines = raw.decode().splitlines(keepends=True)
         single = "".join([lines[0]] + [line for line in lines[1:]
-                                    if line.endswith(",hodges\\n")]).encode()
+                                    if line.endswith(",hodges\n")]).encode()
         found = mod.inspect_provider_package(single, request=only_hodges)
         self.assertEqual(found["source_canonical_algorithms"], ["hodges"])
         self.assertTrue(found["source_algorithms_match_exact_request"])
