@@ -29,6 +29,8 @@ Executed 2026-11-05 against the **independent** Neon project `insurance-risk-cor
 | `entity.published_metric` rows | 0 |
 | `entity.licence_observation` rows | 58 |
 
+**Counting-semantics guard (review update):** The SQL output `organization_relationship_rows_total` is a raw count of `entity.organization_relationship` rows, **not** a count of independently verified, effective-dated insurer group memberships. Likewise, a nonzero `entity.published_metric` row count alone would not prove that its values are licensed, relevant P&C premium numerators or share-ready. Source rights, metric type, entity identity, year, LoB and denominators remain mandatory before any market-share calculation.
+
 **Result:** `BLOCKED_NO_COMPANY_PREMIUM_METRICS`. There is no supported basis in **core main** today to calculate a named legal insurer's country × line-of-business premium market share. The zero NAIC counts are about **this core table**, not the external universe or the separate validation branch. The 18,180 secondary names may duplicate legal companies, groups, historical names, branches and other establishments; no coverage percentage against a regulator-complete all-insurers universe is justified.
 
 The earlier 2026-11-04 receipt on **validation** branch `br-summer-sky-bawujqu8` reported 442 Florida company × statewide policy-type rows (160 reported NAIC codes), plus 9,194 Texas ZIP × policy-type observations (no issuer in the Texas ZIP population). Those records are **not on core main** and must not be represented as a single materialized company-market-share join. Both branches and rights gates remain separate.
