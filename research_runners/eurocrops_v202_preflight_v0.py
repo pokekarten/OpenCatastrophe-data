@@ -214,6 +214,69 @@ def read_spread_sample(
     return rows, visited
 
 
+def footer_statistics_quality(parquet, geometry_column: str) -> dict:
+    """Original-source Parquet footer QA only: statistics are not row proofs.
+
+    In particular, one zero minimum area can hide in a large source even if a
+    sample of 512 is clean. Distinguish missing footer stats from clean stats.
+    """
+    if geometry_column not in GEOMETRY_COLUMNS:
+        raise Blocked("footer cannot select an unreviewed geometry field")
+    wanted = ("cropfield", "original_code", geometry_column, "area_ha")
+    meta = parquet.metadata
+    if not 1 <= meta.num_row_groups <= 20000:
+        raise Blocked("invalid row group count for footer statistics")
+    nulls: dict[str, int | None] = {name: 0 for name in wanted}
+    areas_min: list[float] = []
+    areas_max: list[float] = []
+    complete_areas = True
+    for group_no in range(meta.num_row_groups):
+        group = meta.row_group(group_no)
+        columns = {}
+        for index in range(group.num_columns):
+            col = group.column(index)
+            name = col.path_in_schema
+            if name in wanted:
+                if name in columns:
+                    raise Blocked("duplicate original Parquet footer column")
+                columns[name] = col
+        if set(columns) != set(wanted):
+            raise Blocked("footer row group lacks required original crop fields")
+        for name in wanted:
+            statistics = columns[name].statistics
+            reported = None if statistics is None else statistics.null_count
+            if reported is None:
+                nulls[name] = None
+            elif type(reported) is not int or reported < 0:
+                raise Blocked("malformed original footer null statistic")
+            elif nulls[name] is not None:
+                nulls[name] += reported
+        area_stats = columns["area_ha"].statistics
+        if area_stats is None or not area_stats.has_min_max:
+            complete_areas = False
+            continue
+        try:
+            minimum = float(area_stats.min)
+            maximum = float(area_stats.max)
+        except (ValueError, TypeError, OverflowError) as exc:
+            raise Blocked("invalid original footer area min/max types") from exc
+        if not (math.isfinite(minimum) and math.isfinite(maximum)) or minimum > maximum:
+            raise Blocked("invalid original footer area min/max values")
+        areas_min.append(minimum)
+        areas_max.append(maximum)
+    return {
+        "footer_area_ha_minimum_if_all_groups_have_stats":
+            min(areas_min) if complete_areas and areas_min else None,
+        "footer_area_ha_maximum_if_all_groups_have_stats":
+            max(areas_max) if complete_areas and areas_max else None,
+        "footer_area_statistics_complete": complete_areas,
+        "any_row_group_footer_min_area_nonpositive": any(x <= 0 for x in areas_min),
+        "footer_null_counts_if_all_groups_have_stats": nulls,
+        "footer_stats_are_original_provider_claims_not_row_validation": True,
+        "footer_quality_does_not_establish_real_polygon_area_or_geometry_validity": True,
+    }
+
+
 def inspect_local(
     path: Path, expected_sha256: str, max_rows: int = 512,
     mapping: Path | None = None, mapping_git_blob_sha1: str | None = None,
@@ -238,6 +301,7 @@ def inspect_local(
         raise Blocked("install optional pyarrow to inspect original file") from exc
     parquet = pq.ParquetFile(path)
     geo = geo_metadata(parquet.schema_arrow.metadata, parquet.schema_arrow.names)
+    footer_quality = footer_statistics_quality(parquet, geo["primary_geometry_column"])
     positions = sampled_row_positions(parquet.metadata.num_rows, max_rows, actual)
     rows, sampled_groups = read_spread_sample(
         parquet, positions, geo["primary_geometry_column"]
@@ -281,6 +345,7 @@ def inspect_local(
         "schema_fields": list(parquet.schema_arrow.names),
         "geo": geo, "pyarrow_version": pa.__version__,
         "sample": stats,
+        "original_footer_column_quality": footer_quality,
         "sample_selection": "source_sha256_seeded_uniform_without_replacement",
         "sampled_row_groups": sampled_groups,
         "sampled_positions_exported": False,
