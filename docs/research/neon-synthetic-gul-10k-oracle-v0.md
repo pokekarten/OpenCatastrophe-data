@@ -144,3 +144,13 @@ not Neon data. The static offline test also asserts the new spatial/taxonomy
 gates are present. Exact-head GitHub CI must still independently pass before
 integration. This is deliberately not a native OpenCatastrophe/NextGen/Oasis/
 OpenQuake model or production model-input qualification.
+
+## 2026-11-05: independent dual-peril annual-world conservation witness
+
+Added two explicit research-only columns to the same guarded read-only `research_runners/sql/neon_synthetic_gul_10k_v0.sql` final projection: `two_distinct_peril_event_years` and `invalid_extra_event_years`. **Exact committed GitHub SQL blob** `ca2fdb1c142c66d7b3890c8dc8971a7e511db8bb` was fetched directly from this PR and executed unchanged on **Neon validation branch only** `br-summer-sky-bawujqu8` (`insurance-risk-core / insurance`); no writes or changes to `main`.
+
+Observed: 10,000 years, 1,541 invented peril-tagged events, 8,509 zero-event years, **50 years with exactly two distinct synthetic peril events**, **0 years with more than two events**. Annual conservation is exact: `1541 = (10000 - 8509) + 50`. Independent SHA/MD5 world generator in `tests/test_neon_synthetic_gul_10k_v0.py` now checks the same 50-world count and this invariant.
+
+All previous read-only results remain byte-for-byte numerically equal: 12 fictional positions; 3,150,000 EUR invented values; invented GUL 285,494,000 EUR across 10,000 years; invented AAL 28,549.40 EUR; AEP 99.5% quantile 366,250 EUR; OEP 99.5% quantile 351,250 EUR. This toy algorithm explicitly has one possible **separate** Bernoulli event per peril/year. A year containing windstorm and flood is **not proof of one joint physical storm or spatially coupled hazard**. It must not be merged into one occurrence ID without a separately modeled and validated physical-event calendar, common-world dependence, footprint overlap and contractual hours/occurrence semantics.
+
+The NextGen global CAT v1 proposal uses unique `(world_id, physical_event_id)` for each real physical event; same-event multi-peril components are nonadditive until an explicit overlap rule combines them. The present two independent toy peril events have **no shared physical-event identity or occurrence-day chronology**, and they do not qualify for outward/inward treaty, CAT XL/reinstatement, Retro, IP or Net EP calculations. This is an **annual identity QA gate only**, not native NextGen verification, original source validation or real insurer model admission. Recheck new exact-head repository CI before any merge.
