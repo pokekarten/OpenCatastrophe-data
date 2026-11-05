@@ -49,3 +49,19 @@ All confirmed September WBM awarded company relationships and BT-150 source perc
 When `/en/notice/{publication}/xml` is temporarily unavailable (observed official HTTP 202), the dedicated [Search API candidate runner](../../research_runners/ted_wbm_2026_procedure_search_index_v0.py) can query **only** the original EU publisher `https://api.ted.europa.eu/v3/notices/search` for exact `286307-2026` and `668506-2026`, reading the documented source fields `procedure-identifier` (BT-04), `previous-notice-id-proc` (OPP-090), `publication-number`, `buyer-name`, and `notice-title`. The [official field list](https://docs.ted.europa.eu/ODS/latest/reuse/field-list.html) explicitly lists these field names. Requests have `checkQuerySyntax: false` so they **execute** rather than merely validate queries, and are bounded to two rows, exact notice, WBM buyer and insurance subject, one properly formed UUIDv4 value per document. The [22 no-network Search API tests](../../tests/test_ted_wbm_2026_procedure_search_index_v0.py) check source host, JSON/cardinality, publication, UUID, wrong roles and false provenance.
 
 **Interpretation:** `INDEXED_SAME_BT04_REQUIRES_ORIGINAL_REPLAY` or `INDEXED_DIFFERENT_BT04_REQUIRES_ORIGINAL_REPLAY` are *provisional indexed clues*, not pinned original XML receipt. The Index API response is not treated as an original XML document. Publisher response SHA/bytes are recorded only as dated structured metadata receipts, not immutable TED original source pins; raw API responses are not printed or committed. The original-source validator remains the stronger gate and is necessary to confirm the exact published UUID.
+
+## Observed official Search API result on 2026-11-05 — different procedure IDs
+
+The live, exact-notice official publisher Search API call succeeded in [GitHub Actions run 42104879468](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42104879468). The **indexed procedure UUIDs differ**:
+
+| Notice | Official Search API BT-04 | API JSON response byte count | API response SHA-256 |
+| --- | --- | ---: | --- |
+| 286307-2026 (April competition) | `7df98c35-4cae-41ff-8385-141125426a4a` | 7,127 | `1998036c56be615eeba7a7b2c518a428fb544b802b5d079076319af4f27aa844` |
+| 668506-2026 (September award) | `0988b2e4-9489-4b3b-9487-cd3a2a624cf5` | 7,127 | `565057622b9d69bbd48aef73ec74a17f35e80500bf86dc35ca99427c1d2e1829` |
+
+The `previous-notice-id-proc` index field did not return April's `286307-2026` as an explicit predecessor of the September award. **This negative search field is not proof that no reference exists in the XML.** The comparison is recorded in a [source observation](../../research/observations/ted_wbm_2026_search_bt04_lineage_observation_v0.toml) with 8 anti-merge tests.
+
+**Corrected scientific inference:** two distinct official *indexed* BT-04 values are strong evidence **against automatically treating the publications as one procedure**. Do not imply that the April 30% lead, 15% follower and residual below-minimum exception governed the September HDI/Helvetia/R+V award. The April terms and exceptions remain accurate for April's own verified source, while the September three company-contract edges and 50/40/10 *business identifier texts* remain accurate for September's own verified source. Their connection remains under review, not assumed.
+
+The exact-head original-XML two-source comparison attempted in that run was **blocked by TED HTTP 202 for the April competition**, so the two BT-04 values are *currently confirmed only in official Search API metadata*, not in a fresh simultaneous exact-original replay. Their dated API response SHA values are audit receipts, not immutable publisher original XML hashes. A future original re-fetch may confirm or contradict the indexed UUID values; treat the raw source as decisive.
+
