@@ -79,6 +79,8 @@ class TestWindCoverGapAudit(unittest.TestCase):
             self.assertEqual(sum(r["SyntheticAssetCount"] for r in report["cell_rows"]),3)
             self.assertEqual(sum(r["SyntheticBuildingTIVEUR"] for r in report["cell_rows"]),600000)
             self.assertEqual(sum(r["SyntheticAssetCount"] for r in report["gfk_rows"]),3)
+            self.assertEqual(sum(r["SyntheticAssetCount"] for r in report["kreis_rows"]),3)
+            self.assertEqual(sum(r["SyntheticBuildingTIVEUR"] for r in report["kreis_rows"]),600000)
             self.assertEqual(summary["sites_with_wind_material_roof_vulnerability_mapped"],0)
             self.assertEqual(summary["sites_with_actual_C3S_footprint_guessed_gust_values"],0)
             self.assertFalse(summary["native_Germany_GUL_IL_RI_OEP_AEP_executed"])
@@ -99,6 +101,22 @@ class TestWindCoverGapAudit(unittest.TestCase):
                 source=Path(td)/"s.zip";fixture(source,**kwargs)
                 with self.assertRaises(CoverageBlocked):
                     audit(source,expected_count=3,expected_kreise=3,expected_tiv=600000)
+
+
+    def test_known_nonresidential_hu_function_not_a_wind_taxonomy(self):
+        with tempfile.TemporaryDirectory() as td:
+            source=Path(td)/"s.zip";fixture(source)
+            with zipfile.ZipFile(source) as z:
+                data=json.loads(z.read("nextgen_c3s_spatial_handoff.json"))
+                meta=json.loads(z.read("source_boundary_receipt.json"))
+            data["crosswalk_assignments"][0]["taxonomy"]="UNMAPPED_HU22_GFK_31001_2463"
+            blob=json.dumps(data,sort_keys=True,separators=(",",":")).encode()
+            meta["handoff_json_sha256"]=hashlib.sha256(blob).hexdigest()
+            with zipfile.ZipFile(source,"w",compression=zipfile.ZIP_DEFLATED) as z:
+                z.writestr("nextgen_c3s_spatial_handoff.json",blob)
+                z.writestr("source_boundary_receipt.json",json.dumps(meta))
+            with self.assertRaises(CoverageBlocked):
+                audit(source,expected_count=3,expected_kreise=3,expected_tiv=600000)
 
     def test_fail_closed_count_and_tiv_change(self):
         with tempfile.TemporaryDirectory() as td:
