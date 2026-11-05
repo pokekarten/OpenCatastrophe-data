@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import sys
 import tempfile
+import tomllib
 import unittest
 import zipfile
 
@@ -82,6 +83,12 @@ def make_source(path,*,invalid_gfk=False,invalid_geo=False,invalid_source=False,
 
 
 class TestNextGenC3SSpatialHandoff(unittest.TestCase):
+    def test_source_fixture_toml_same_exact_unadmitted_grid(self):
+        fixture=ROOT/"research/fixtures/rva_nrw_c3s_synthetic_grid_demo_v0.toml"
+        with fixture.open("rb") as stream:
+            spec=tomllib.load(stream)
+        self.assertEqual(spec,demo_grid())
+        self.assertTrue(spec["grid"]["grid_id"].startswith("SYNTH-NRW-"))
     def test_three_physical_points_project_to_stable_0p25_grid_no_real_wind(self):
         with tempfile.TemporaryDirectory() as d:
             src=Path(d)/"fictional_source.zip"
