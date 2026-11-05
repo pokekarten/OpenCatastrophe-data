@@ -14,6 +14,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tomllib
 import tempfile
 from pathlib import Path
 import urllib.parse
@@ -140,10 +141,56 @@ def inspect_original(source: dict, raw: bytes, *, extractor="pdftotext") -> dict
     }
 
 
+REGISTER=Path(__file__).resolve().parents[1]/"research"/"observations"/"rva_berlin_senate_2025_original_pdf_receipts_v0.toml"
+
+
+def verify_saved_exact_original_source_receipts(audited: list[dict], *, register=None) -> dict:
+    if register is None:
+        register=tomllib.loads(REGISTER.read_text(encoding="utf-8"))
+    if (
+        register.get("schema_version")!="RVA_BERLIN_SENATE_2025_ORIGINAL_PDF_BYTES_V0"
+        or register.get("original_files_acquired_and_hashed_in_ephemeral_github_action") is not True
+        or register.get("verified_original_source_is_public_official_berlin_senate") is not True
+        or register.get("raw_pdf_files_committed_or_redistributed") is not False
+        or register.get("model_CAT_admission") is not False
+        or register.get("actual_RV_insured_berlin_building_sites_verified") is not False
+        or register.get("actual_RV_degewo_coinsurance_participation_verified") is not False
+        or register.get("real_RV_site_TIV_and_policy_limits_verified") is not False
+    ):
+        raise ValueError("SOURCE_PDF_ORIGINAL_RESEARCH_SCOPE_CHANGED")
+    entries=register.get("documents",[])
+    if len(entries)!=len(SOURCES) or len(audited)!=len(SOURCES):
+        raise ValueError("SOURCE_PDF_RECORDED_DOCUMENT_COUNT_CHANGED")
+    for source,record,obs in zip(SOURCES,entries,audited):
+        if any((
+            record.get("id")!=source["id"],
+            record.get("url")!=source["url"],
+            record.get("original_sha256")!=source["exact_original_sha256"],
+            record.get("original_bytes")!=source["exact_original_bytes"],
+            record.get("original_pages")!=source["pages_expected"],
+            record.get("positive_semantic_marker_count")!=len(source["markers"]),
+            record.get("company_specific_insured_asset_count_observed") is not False,
+            obs.get("original_sha256")!=record.get("original_sha256"),
+            obs.get("original_bytes")!=record.get("original_bytes"),
+            obs.get("source_pdf_pages_extracted")!=record.get("original_pages"),
+            obs.get("semantic_marker_count")!=record.get("positive_semantic_marker_count"),
+            obs.get("exact_source_sha_pinned") is not True,
+            obs.get("raw_pdf_stored_or_exported") is not False,
+            obs.get("CAT_model_exposure_admitted") is not False,
+        )):
+            raise ValueError("SOURCE_PDF_RECORDED_ORIGINAL_VALUES_OR_SCOPE_DRIFT")
+    return {
+        "exact_official_original_sha_byte_page_marker_receipts_conserved":True,
+        "actual_insurer_portfolio_source_admitted":False,
+    }
+
+
 def main():
+    receipts=[inspect_original(s,fetch_original(s["url"])) for s in SOURCES]
     print(json.dumps({
         "schema":"RVA_BERLIN_SENATE_2025_OFFICIAL_PDF_ORIGINAL_BYTES_V0",
-        "source_receipts":[inspect_original(s,fetch_original(s["url"])) for s in SOURCES],
+        "source_receipts":receipts,
+        "persisted_original_receipts_check":verify_saved_exact_original_source_receipts(receipts),
         "original_publisher_bytes_written_to_github":False,
         "actual_RV_insured_2025_corporate_building_sites_observed":False,
         "validated_model_exposure":False,
