@@ -40,6 +40,7 @@ jobs:
           python -m unittest discover -s tests -p 'test_rva_nrw_hu_full_zip_stratified_reservoir_v0.py' -v
           python -m unittest discover -s tests -p 'test_rva_nrw_hu22_full_original_download_v0.py' -v
           python -m unittest discover -s tests -p 'test_rva_nrw_hu_gfk_residential_candidate_v0.py' -v
+          python -m compileall -q research_runners/rva_nrw_hu_full_zip_stratified_reservoir_v0.py research_runners/rva_nrw_hu22_full_source_to_fictional_oed_v0.py research_runners/rva_nrw_hu22_full_original_download_v0.py
       - name: Build exactly 10k source-pinned fictional 53-Kreis NRW OED contracts
         run: |
           python research_runners/export_rva_nrw_53kreis_oed_pilot_v0.py \
