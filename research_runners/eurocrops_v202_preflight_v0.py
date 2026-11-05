@@ -8,6 +8,17 @@ Requires optional pyarrow and shapely for original Parquet inspection.
 """
 from __future__ import annotations
 
+if __package__:
+    from .eurocrops_codebook_qc_v0 import (
+        Blocked as CodebookBlocked, _read_local, _read_rows, audit,
+        MAP_HEADER, HCAT_HEADER, sample_mapping_coverage,
+    )
+else:
+    from eurocrops_codebook_qc_v0 import (
+        Blocked as CodebookBlocked, _read_local, _read_rows, audit,
+        MAP_HEADER, HCAT_HEADER, sample_mapping_coverage,
+    )
+
 import argparse
 import hashlib
 import json
@@ -115,9 +126,18 @@ def audit_rows(rows: list[dict]) -> dict:
     return stats
 
 
-def inspect_local(path: Path, expected_sha256: str, max_rows: int = 512) -> dict:
+def inspect_local(
+    path: Path, expected_sha256: str, max_rows: int = 512,
+    mapping: Path | None = None, mapping_git_blob_sha1: str | None = None,
+    hierarchy: Path | None = None, hierarchy_git_blob_sha1: str | None = None,
+) -> dict:
     if max_rows < 1 or max_rows > 5000:
         raise Blocked("sample size must be 1..5000")
+    codebooks = (mapping, mapping_git_blob_sha1, hierarchy, hierarchy_git_blob_sha1)
+    if any(value is not None for value in codebooks) and not all(
+        value is not None for value in codebooks
+    ):
+        raise Blocked("both original codebooks and their pinned Git blob SHA1s required")
     if not re.fullmatch(r"[0-9a-f]{64}", expected_sha256):
         raise Blocked("explicit expected original SHA256 required")
     region, year, actual = asset_identity(path)
@@ -139,6 +159,31 @@ def inspect_local(path: Path, expected_sha256: str, max_rows: int = 512) -> dict
     if not rows:
         raise Blocked("source contains no readable rows")
     stats = audit_rows(rows)
+    mapping_coverage = None
+    if mapping is not None and hierarchy is not None:
+        try:
+            mapping_raw = _read_local(mapping)
+            hierarchy_raw = _read_local(hierarchy)
+            codebook_report = audit(
+                mapping_raw, mapping_git_blob_sha1,
+                hierarchy_raw, hierarchy_git_blob_sha1,
+            )
+            original_mapping_rows = _read_rows(
+                mapping_raw, mapping_git_blob_sha1, MAP_HEADER,
+            )
+            original_hierarchy_rows = _read_rows(
+                hierarchy_raw, hierarchy_git_blob_sha1, HCAT_HEADER,
+            )
+            mapping_coverage = sample_mapping_coverage(
+                rows, region, original_mapping_rows, original_hierarchy_rows,
+            )
+            mapping_coverage["codebook_missing_hcat4_reference_count"] = (
+                codebook_report["unresolved_hcat4_reference_count"]
+            )
+            mapping_coverage["mapping_git_blob_sha1"] = mapping_git_blob_sha1
+            mapping_coverage["hierarchy_git_blob_sha1"] = hierarchy_git_blob_sha1
+        except CodebookBlocked as exc:
+            raise Blocked("original taxonomy preflight failed: " + str(exc)) from exc
     return {
         "profile": "eurocrops-v202-local-source-qc-v0",
         "source_candidate_id": "eu.jrc.eurocropsv2.gsa-parcels",
@@ -152,6 +197,8 @@ def inspect_local(path: Path, expected_sha256: str, max_rows: int = 512) -> dict
         "schema_fields": list(parquet.schema_arrow.names),
         "geo": geo, "pyarrow_version": pa.__version__,
         "sample": stats,
+        "sample_taxonomy_crosswalk": mapping_coverage,
+        "taxonomy_crosswalk_checked": mapping_coverage is not None,
         "sample_is_full_dataset": stats["sampled"] == parquet.metadata.num_rows,
         "research_qc_only": True,
         "rights_and_scientific_admission": "NOT_REVIEWED_NOT_ADMITTED",
@@ -164,9 +211,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--expected-sha256", required=True)
     parser.add_argument("--sample-rows", type=int, default=512)
+    parser.add_argument("--mapping", type=Path, help="locally obtained original eurocrops.csv")
+    parser.add_argument("--mapping-git-blob-sha1", help="source-pinned Git blob SHA1")
+    parser.add_argument("--hierarchy", type=Path, help="locally obtained original hcat4.csv")
+    parser.add_argument("--hierarchy-git-blob-sha1", help="source-pinned Git blob SHA1")
     args = parser.parse_args(argv)
     try:
-        result = inspect_local(args.input, args.expected_sha256, args.sample_rows)
+        result = inspect_local(
+            args.input, args.expected_sha256, args.sample_rows,
+            args.mapping, args.mapping_git_blob_sha1,
+            args.hierarchy, args.hierarchy_git_blob_sha1,
+        )
     except (Blocked, OSError, RuntimeError) as exc:
         print("BLOCKED: " + str(exc), file=sys.stderr)
         return 2
