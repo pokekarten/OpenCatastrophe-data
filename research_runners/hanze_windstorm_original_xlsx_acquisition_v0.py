@@ -82,7 +82,7 @@ def inspect_source_bytes(
             type(publisher_md5) is not str or len(publisher_md5) != 32 or
             type(expected_sha256) is not str or len(expected_sha256) != 64):
         raise OriginalHanzeError("bounded exact original source and hash expectations required")
-    if len(blob) != size or not blob.startswith(b"PK\\x03\\x04"):
+    if len(blob) != size or not blob.startswith(b"PK\x03\x04"):
         raise OriginalHanzeError("original source size or XLSX magic mismatch")
     md5_actual = md5(blob).hexdigest()
     sha_actual = sha256(blob).hexdigest()
@@ -167,7 +167,7 @@ def acquire(*, output_dir: Path, opener=None) -> dict:
         f.write(blob)
     with receipt_path.open("x", encoding="utf-8") as f:
         json.dump(receipt, f, sort_keys=True, indent=2, allow_nan=False)
-        f.write("\\n")
+        f.write("\n")
     return receipt
 
 
