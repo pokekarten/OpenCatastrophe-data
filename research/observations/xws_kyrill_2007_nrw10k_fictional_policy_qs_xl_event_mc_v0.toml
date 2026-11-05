@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+# One historic Kyrill physical wind event, fictional policy/treaty and secondary
+# uncertainty; NEVER infer source-backed annual frequency, EP or real R+V risk.
+schema_version = "XWS_KYRILL_2007_ONE_EVENT_FICTIONAL_GUL_IL_QS_XL_MC_V0"
+source_original_xws_hazard_10k_zip_sha256 = "631ef3b4f25ac5512bb8c71d936fc2d1ee6922af2f3ab01df17ca3f987a0f918"
+source_original_oed_fictional_10k_zip_sha256 = "5b0055ce71314f7d7baf4f67008cd4abba3df28a4bce0690bbe9521a3cc35757"
+source_original_nrw_hu22_full_sha256 = "10e5b9fd1d299ef0efa883bfadce7c4c3fd2ed7b42076557cbdff887a0d277da"
+source_storm = "Kyrill, 2007-01-18"
+source_historical_physical_storm_count = 1
+source_windfield = "XWS Kyrill 2007 recalibrated mean, 3-second max gust over 72 hours"
+source_impact_reference = "Schwierz et al. 2010 numerical PAA × MDD, independently interpolated, not German insurer calibrated"
+original_previous_stochastic_unmodified_conditional_expected_gul_eur = "53686.91"
+synthetic_NRW_site_count = 10000
+synthetic_NRW_counties = 53
+synthetic_total_tiv_eur = 4826029500
+seed_specific_to_this_toy_not_FFBK_or_RIM = 20261105
+trials_per_dependence_case = 2048
+source_live_approval_run = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42113435111"
+exact_machine_summary_json_sha256 = "3c0046d0b60974b22e1cd46ae338202b8eec153f10485ae31c2d515975db1f25"
+toy_site_damage_presence_model = "Independent Bernoulli at each site with original published PAA(v), sensitivity dependence changes common U only"
+toy_site_damage_severity_model = "deterministic MDD(v) × fictional BuildingTIV when triggered, nearest cent, not empirical conditional severity"
+independent_and_shared_mixture_preserve_the_same_theoretical_marginal_PAA = true
+dependence_mix_is_empirically_fitted_pairwise_loss_correlation = false
+conditional_results_AEP_OEP_or_return_periods = false
+actual_RV_policy_terms_observed = false
+actual_RV_reinsurance_treaty_observed = false
+native_Oasis_or_NextGen_Kyrill_financial_chain_executed = false
+real_event_frequency_or_annual_YLT_established = false
+site_level_hazard_or_original_netCDF_republished = false
+source_licensed_german_2025_building_material_or_vulnerability_validated = false
+empirical_annual_net_storm_CAT_model_calibrated = false
+
+[fictional_policy]
+per_risk_deductible_eur = 250
+per_risk_max_payment_eur = 50000
+quote_share_ceded_percent_post_policy_IL = 20
+occurrence_XL_retained_attachment_eur = 15000
+occurrence_XL_retained_limit_eur = 250000
+independent_one_event_financial_conservation = "IL = QS ceded + occurrence XL recovered + insurer net, per trial exact cent"
+
+[scenario.site_independent_hypothetical]
+shared_uniform_mix_weight = "0"
+mean_affected_fictional_sites = "63.416"
+mean_groundup_eur = "53703.74"
+mean_groundup_mc_standard_error_eur = "174.78"
+groundup_one_event_q95_eur = "67020.93"
+groundup_one_event_q99_eur = "72832.16"
+groundup_one_event_max_eur = "79604.03"
+mean_insured_IL_eur = "37849.73"
+mean_QS_ceded_eur = "7569.95"
+mean_XL_recovered_eur = "15279.78"
+mean_insurer_net_eur = "15000.00"
+net_one_event_q95_eur = "15000.00"
+net_one_event_q99_eur = "15000.00"
+net_one_event_max_eur = "15000.00"
+
+[scenario.mixture_25pct_shared_uniform_hypothetical]
+shared_uniform_mix_weight = "0.25"
+mean_affected_fictional_sites = "59.643"
+mean_groundup_eur = "50581.96"
+mean_groundup_mc_standard_error_eur = "2713.00"
+groundup_one_event_q95_eur = "53358.20"
+groundup_one_event_q99_eur = "207357.38"
+groundup_one_event_max_eur = "2096660.32"
+mean_insured_IL_eur = "35671.32"
+mean_QS_ceded_eur = "7134.27"
+mean_XL_recovered_eur = "10156.33"
+mean_insurer_net_eur = "18380.71"
+net_one_event_q95_eur = "15000.00"
+net_one_event_q99_eur = "15000.00"
+net_one_event_max_eur = "906528.11"
+net_mc_standard_error_eur = "1098.34"
