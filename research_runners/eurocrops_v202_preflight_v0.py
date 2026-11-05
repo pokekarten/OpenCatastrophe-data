@@ -31,7 +31,8 @@ import sys
 JRC_BASE = "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/DRLL/EuroCropsV2/gpqtv202/"
 NUTS = frozenset("at be2 be3 bg cz de4 dea dk ee es fi fr ie iti1 nl pt si sk".split())
 NAME = re.compile(r"([a-z][a-z0-9]*)_(20\d\d)\.parquet\Z")
-REQUIRED = ("cropfield", "original_code", "area_ha", "geom")
+REQUIRED = ("cropfield", "original_code", "area_ha")
+GEOMETRY_COLUMNS = ("geometry", "geom")
 MAX_FILE_BYTES = 2_500_000_000
 
 class Blocked(ValueError):
@@ -68,9 +69,12 @@ def geo_metadata(metadata: dict | None, names: list[str]) -> dict:
     try:
         geo = json.loads(metadata[b"geo"].decode("utf-8"))
         primary = geo["primary_column"]
-        if primary != "geom":
-            raise Blocked("wrong geometry column")
-        crs = geo["columns"][primary]["crs"]
+        if primary not in GEOMETRY_COLUMNS or primary not in names:
+            raise Blocked("unexpected or absent original GeoParquet geometry column")
+        geometry_details = geo["columns"][primary]
+        if geometry_details.get("encoding") != "WKB":
+            raise Blocked("original GeoParquet geometry is not explicitly WKB")
+        crs = geometry_details["crs"]
         if isinstance(crs, str):
             is_3035 = crs.upper() == "EPSG:3035"
         elif isinstance(crs, dict):
@@ -83,10 +87,13 @@ def geo_metadata(metadata: dict | None, names: list[str]) -> dict:
         raise Blocked("invalid GeoParquet metadata") from exc
     if not is_3035:
         raise Blocked("not independently evidenced as EPSG:3035")
-    return {"primary_geometry_column": "geom", "crs": "EPSG:3035"}
+    return {"primary_geometry_column": primary, "geometry_encoding": "WKB",
+            "crs": "EPSG:3035"}
 
 
-def audit_rows(rows: list[dict]) -> dict:
+def audit_rows(rows: list[dict], geometry_column: str = "geom") -> dict:
+    if geometry_column not in GEOMETRY_COLUMNS:
+        raise Blocked("unexpected original geometry column")
     try:
         from shapely import wkb
         from shapely.errors import GEOSException
@@ -104,7 +111,7 @@ def audit_rows(rows: list[dict]) -> dict:
         else:
             seen.add(str(field))
         code = row.get("original_code")
-        if code is None or not str(code).strip():
+        if not isinstance(code, str) or not code.strip():
             stats["missing_crop_code"] += 1
         area = row.get("area_ha")
         valid_area = (not isinstance(area, bool) and isinstance(area, (int, float))
@@ -112,7 +119,7 @@ def audit_rows(rows: list[dict]) -> dict:
         if not valid_area:
             stats["invalid_area_ha"] += 1
         try:
-            binary = row.get("geom")
+            binary = row.get(geometry_column)
             geom = wkb.loads(bytes(binary)) if isinstance(binary, (bytes, bytearray, memoryview)) else None
             if geom is None or geom.is_empty or not geom.is_valid:
                 stats["invalid_or_empty_geometry"] += 1
@@ -146,7 +153,11 @@ def sampled_row_positions(total_rows: int, max_rows: int, source_sha256: str) ->
     return sorted(rng.sample(range(total_rows), n))
 
 
-def read_spread_sample(parquet, positions: list[int]) -> tuple[list[dict], int]:
+def read_spread_sample(
+    parquet, positions: list[int], geometry_column: str = "geom"
+) -> tuple[list[dict], int]:
+    if geometry_column not in GEOMETRY_COLUMNS:
+        raise Blocked("invalid source geometry column")
     """Retrieve selected global rows without loading any entire row group.
 
     Iterate only sampled row groups, reading batches capped at 512 rows.
@@ -179,7 +190,7 @@ def read_spread_sample(parquet, positions: list[int]) -> tuple[list[dict], int]:
             batch_start = 0
             local_ptr = 0
             for batch in parquet.iter_batches(
-                batch_size=512, columns=list(REQUIRED), row_groups=[group_no]
+                batch_size=512, columns=[*REQUIRED, geometry_column], row_groups=[group_no]
             ):
                 if not 0 < batch.num_rows <= 512:
                     raise Blocked("invalid or oversized Parquet sample batch")
@@ -228,8 +239,10 @@ def inspect_local(
     parquet = pq.ParquetFile(path)
     geo = geo_metadata(parquet.schema_arrow.metadata, parquet.schema_arrow.names)
     positions = sampled_row_positions(parquet.metadata.num_rows, max_rows, actual)
-    rows, sampled_groups = read_spread_sample(parquet, positions)
-    stats = audit_rows(rows)
+    rows, sampled_groups = read_spread_sample(
+        parquet, positions, geo["primary_geometry_column"]
+    )
+    stats = audit_rows(rows, geo["primary_geometry_column"])
     mapping_coverage = None
     if mapping is not None and hierarchy is not None:
         try:
