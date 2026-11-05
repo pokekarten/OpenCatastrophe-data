@@ -31,7 +31,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Authoritative source:** <https://github.com/OasisLMF/OasisPiWind>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Existing FFBK benchmark pins OasisPiWind commit 94820c59f169b222d4c1a72256ff0a8f86a9e5bf and reconstructs 1000-year sample AAL/OEP/AEP from published IL SPLT/PALT/PSEPT. PiWind is a fictional demo, not observed UK hazard or a calibrated insurer model. Independent licence review for each embedded asset remains required; do not import source bytes by registry entry.
+**Note:** An independent external benchmark pins OasisPiWind commit 94820c59f169b222d4c1a72256ff0a8f86a9e5bf and reconstructs 1000-year sample AAL/OEP/AEP from published IL SPLT/PALT/PSEPT. PiWind is a fictional demo, not observed UK hazard or a calibrated insurer model. Independent licence review for each embedded asset remains required; do not import source bytes by registry entry.
 
 ## UKWind large-scale wind performance model
 
