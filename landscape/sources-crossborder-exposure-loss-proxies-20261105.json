@@ -22,8 +22,8 @@
         "occupancy_archetype_challenge"
       ],
       "authoritative_url": "https://www.geo.be/catalog/details/857b351e-51ca-11eb-a86d-3448ed25ad7c?l=en",
-      "access_class_hint": "public_zip_csv_bespoke_cadastral_plan_terms_scope_not_established",
-      "note": "Official FPS Finance geo.be catalogue offers 2026-01-01 ZIP CSV, geographic classes and links to French/Dutch terms. Its linked French licence explicitly defines 'plan cadastral' (cadastral map), so do NOT silently infer that it also licenses these building-condition statistical tables or relabel it CC BY 4.0. Product-specific statistical reuse/commercial and derived-data terms remain unknown pending publisher clarification. Parcel totals are not building totals, dwellings, insured risk locations or replacement values. Acquire and SHA-pin exact ZIP only outside public Git after rights/provenance review.",
+      "access_class_hint": "public_zip_csv_provider_unified_ccby_based_license_commercial_use_yes_exact_scope_review",
+      "note": "Publisher FPS Finance explicitly says ALL its open patrimony datasets share one licence based on CC BY and can be used commercially (https://finance.belgium.be/en/experts-partners/open-data-patrimony/datasets). The individual geo.be catalogue links a bespoke 'plan cadastral' PDF whose defined scope is cadastral map, so do not label the exact statistical CSV ZIP automatically as standard CC BY 4.0 or assert raw redistribution eligibility without reviewing the applicable licence text and attribution obligations. Original source catalogue gives 2026-01-01 ZIP and seven administrative statistical levels. Physical parcel counts are neither actual building or dwelling totals nor insured risk locations or replacement values. Freeze original ZIP bytes and source specification outside Git before any numerical model use.",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
@@ -48,8 +48,8 @@
         "asset_class_distribution_challenge"
       ],
       "authoritative_url": "https://www.geo.be/catalog/details/89209670-51ca-11eb-beeb-3448ed25ad7c?l=en",
-      "access_class_hint": "public_zip_csv_bespoke_cadastral_plan_terms_scope_not_established",
-      "note": "Official geo.be catalogue specifies original 2025-06-30 ZIP and transaction technical specification; it links to a bespoke French/Dutch cadastral-plan licence, not an explicit CC BY 4.0 grant for the transactions table. Specific re-use rights for these statistical CSVs need authoritative scope review before distribution or commercial modelling. Cadastral transaction values concern selected transferred interests and include market/land components; never equate with total stock, replacement TIV, policy contracts or insured locations.",
+      "access_class_hint": "public_zip_csv_provider_unified_ccby_based_license_commercial_use_yes_exact_scope_review",
+      "note": "Publisher FPS Finance explicitly says ALL its open patrimony datasets share one licence based on CC BY and can be used commercially (https://finance.belgium.be/en/experts-partners/open-data-patrimony/datasets). The individual geo.be catalogue links a bespoke 'plan cadastral' PDF whose defined scope is cadastral map, so do not label the exact statistical CSV ZIP automatically as standard CC BY 4.0 or assert raw redistribution eligibility without reviewing the applicable licence text and attribution obligations. Original source catalogue gives 2025-06-30 ZIP and technical specification; counts and market values concern selected real-property transfers, not all asset stock, building-only replacement TIV, policy contracts or insured risk locations. Freeze source bytes, assess selection and land-share before valuation modelling.",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
