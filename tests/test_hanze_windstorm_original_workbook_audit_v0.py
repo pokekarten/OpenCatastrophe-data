@@ -120,6 +120,14 @@ class FullHANZEOriginalWorkbookAudit(unittest.TestCase):
         self.assertEqual(mod.EXPECTED_SOURCE_MISSING_ECONOMIC_LOSS, 638)
         self.assertEqual(mod.EXPECTED_SOURCE_NUMERIC_ECONOMIC_LOSS, 687)
         self.assertEqual(mod.EXPECTED_SOURCE_NONNUMERIC_ECONOMIC_LOSS, 33)
+        self.assertEqual(mod.EXPECTED_SOURCE_ORIGIN_MATRIX, {
+            "explicit_publisher_CDS_modelled": {
+                "numeric": 278, "non_numeric": 21, "blank": 0,
+            },
+            "not_flagged_CDS_independence_unverified": {
+                "numeric": 409, "non_numeric": 12, "blank": 638,
+            },
+        })
         self.assertEqual(mod.EXPECTED_SOURCE_KYRILL, 12)
         self.assertEqual(mod.EXPECTED_SOURCE_KYRILL_CDS, 4)
 
