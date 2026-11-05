@@ -48,7 +48,8 @@ class FakeParquet:
     def iter_batches(self, *, row_groups, batch_size, columns):
         assert len(row_groups) == 1
         assert batch_size <= 512
-        assert columns == ["cropfield", "original_code", "area_ha", "geom"]
+        assert columns in (["cropfield", "original_code", "area_ha", "geom"],
+                           ["cropfield", "original_code", "area_ha", "geometry"])
         i = row_groups[0]
         self.groups_requested.append(i)
         for start in range(0, len(self.groups[i]), batch_size):
@@ -72,18 +73,38 @@ class EuroCropsPreflight(unittest.TestCase):
                 asset_identity(path)
 
     def test_metadata_is_fail_closed(self):
-        names = ["cropfield", "original_code", "area_ha", "geom"]
-        good = {b"geo": json.dumps({"primary_column": "geom", "columns": {
-            "geom": {"crs": {"id": {"authority": "EPSG", "code": 3035}}}}}).encode()}
-        self.assertEqual(geo_metadata(good, names)["crs"], "EPSG:3035")
+        # The REAL corrected DE4 2023 JRC footer uses "geometry", not
+        # "geom", with WKB encoding, EPSG:3035 and six original columns.
+        names = ["cropfield", "original_code", "original_name",
+                 "off_area", "geometry", "area_ha"]
+        geo = {"primary_column": "geometry", "columns": {
+            "geometry": {"encoding": "WKB", "crs": {
+                "id": {"authority": "EPSG", "code": 3035}}}}}
+        good = {b"geo": json.dumps(geo).encode()}
+        report = geo_metadata(good, names)
+        self.assertEqual(report["crs"], "EPSG:3035")
+        self.assertEqual(report["primary_geometry_column"], "geometry")
+        self.assertEqual(report["geometry_encoding"], "WKB")
         with self.assertRaises(Blocked):
             geo_metadata(None, names)
         with self.assertRaises(Blocked):
-            geo_metadata(good, names[:-1])
-        bad = {b"geo": json.dumps({"primary_column": "geom", "columns": {
-            "geom": {"crs": "EPSG:4326"}}}).encode()}
+            geo_metadata(good, names[:-2])
+        bad_crs = {"primary_column": "geometry", "columns": {
+            "geometry": {"encoding": "WKB", "crs": "EPSG:4326"}}}
         with self.assertRaises(Blocked):
-            geo_metadata(bad, names)
+            geo_metadata({b"geo": json.dumps(bad_crs).encode()}, names)
+        bad_encoding = {"primary_column": "geometry", "columns": {
+            "geometry": {"encoding": "WKT", "crs": "EPSG:3035"}}}
+        with self.assertRaises(Blocked):
+            geo_metadata({b"geo": json.dumps(bad_encoding).encode()}, names)
+        # A separate original can explicitly use "geom", provided the
+        # GeoParquet primary-column metadata really says so.
+        alternative = {"primary_column": "geom", "columns": {
+            "geom": {"encoding": "WKB", "crs": "EPSG:3035"}}}
+        self.assertEqual(
+            geo_metadata({b"geo": json.dumps(alternative).encode()},
+                         ["cropfield", "original_code", "area_ha", "geom"])[
+                             "primary_geometry_column"], "geom")
 
     def test_partial_or_unpinned_taxonomy_is_blocked(self):
         with self.assertRaisesRegex(Blocked, "both original codebooks"):
@@ -146,6 +167,21 @@ class EuroCropsPreflight(unittest.TestCase):
             read_spread_sample(parquet, [2, 99])
         with self.assertRaises(Blocked):
             read_spread_sample(parquet, [1, 1])
+
+    def test_real_jrc_geometry_column_works_for_sample_and_geometry_qa(self):
+        square = Polygon([(0, 0), (100, 0), (100, 100), (0, 100)])
+        parcels = [{"cropfield": n, "original_code": "429",
+                    "area_ha": 1.0, "geometry": wkb.dumps(square)}
+                   for n in range(16)]
+        parquet = FakeParquet([parcels[:8], parcels[8:]])
+        positions = sampled_row_positions(16, 8, "c" * 64)
+        sampled, groups = read_spread_sample(parquet, positions, "geometry")
+        self.assertEqual(groups, 2)
+        self.assertEqual([row["cropfield"] for row in sampled], positions)
+        self.assertEqual(audit_rows(sampled, "geometry")["invalid_or_empty_geometry"], 0)
+        self.assertEqual(audit_rows(sampled, "geometry")["sampled"], 8)
+        with self.assertRaises(Blocked):
+            read_spread_sample(parquet, positions, "not-a-source-column")
 
     def test_polygon_errors(self):
         square = Polygon([(0, 0), (100, 0), (100, 100), (0, 100)])
