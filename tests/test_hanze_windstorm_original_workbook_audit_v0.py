@@ -24,7 +24,8 @@ COLS = tuple(chr(65 + n) for n in range(20))
 
 
 def fixture(*, duplicate_id=False, malformed_header=False, formula=False,
-            date1904=False, malicious_dtd=False, missing_econ=False) -> bytes:
+            date1904=False, malicious_dtd=False, missing_econ=False,
+            invalid_econ=None) -> bytes:
     """Minimal Office XLSX with original header semantics and adversarial rows."""
     values = []
     def strid(text):
@@ -63,12 +64,14 @@ def fixture(*, duplicate_id=False, malformed_header=False, formula=False,
     ]
     if missing_econ:
         del cases[0]["P"]
+    if invalid_econ is not None:
+        cases[2]["P"] = invalid_econ
     for i, fields in enumerate(cases, start=2):
         cols = []
         for col in COLS:
             if col in fields:
                 cols.append(cell(col, i, fields[col],
-                                 numeric=col in ("P",) or
+                                 numeric=(col == "P" and invalid_econ is None) or
                                  col in ("E", "F") and fields[col].isdigit(),
                                  with_formula=formula and i == 2 and col == "P"))
             elif col == "P":
@@ -126,6 +129,8 @@ class FullHANZEOriginalWorkbookAudit(unittest.TestCase):
         self.assertEqual(r["country_code_count"], 4)
         self.assertEqual(r["original_reference_worksheet_rows"], 1)
         self.assertEqual(r["economic_loss_2020_eur_million_present"], 2)
+        self.assertEqual(r["economic_loss_2020_eur_million_numeric"], 2)
+        self.assertEqual(r["economic_loss_2020_eur_million_non_numeric"], 0)
         self.assertEqual(r["economic_loss_2020_eur_million_missing"], 2)
         self.assertEqual(r["nominal_economic_loss_value_present"], 0)
         self.assertEqual(r["explicit_publisher_modelled_cds_loss_rows"], 1)
@@ -258,6 +263,23 @@ class FullHANZEOriginalWorkbookAudit(unittest.TestCase):
         r2 = report(fixture(missing_econ=True))
         self.assertEqual(r2["economic_loss_2020_eur_million_present"], 1)
         self.assertEqual(r2["economic_loss_2020_eur_million_missing"], 3)
+
+    def test_source_non_numeric_economic_loss_not_silently_zero_or_observed(self):
+        for value in ("not reported", "n/a", "NaN", "Infinity", "-100"):
+            with self.subTest(value=value):
+                receipt = report(fixture(invalid_econ=value))
+                self.assertEqual(receipt["economic_loss_2020_eur_million_present"], 2)
+                self.assertEqual(receipt["economic_loss_2020_eur_million_missing"], 2)
+                self.assertEqual(receipt["economic_loss_2020_eur_million_numeric"], 1)
+                self.assertEqual(receipt["economic_loss_2020_eur_million_non_numeric"], 1)
+                self.assertEqual(receipt["economic_loss_2020_eur_million_non_numeric_source_rows"], [
+                    {"source_id": "20003", "country_code": "ES",
+                     "problem": "NON_NUMERIC_OR_INVALID_PUBLISHED_ECONOMIC_LOSS"}])
+                self.assertFalse(receipt["economic_loss_non_numeric_rows_admitted_as_claims"])
+                self.assertFalse(receipt["published_loss_equals_observed_claim"])
+                self.assertIsNone(receipt["annual_AAL"])
+                self.assertIsNone(receipt["annual_AEP"])
+                self.assertIsNone(receipt["annual_OEP"])
 
     def test_provider_identity_never_inferred_from_synthetic_zip(self):
         with self.assertRaisesRegex(OriginalHanzeError, "original source"):
