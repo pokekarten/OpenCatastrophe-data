@@ -35,6 +35,26 @@ See [runner](../../research_runners/nine_fictional_oed_10k_curve_catxl_v0.py), [
 
 The [existing synthetic OED compatibility GitHub workflow](../../.github/workflows/synthetic-oed-compat.yml) first validates the nine-site CSV with pinned official `ods-tools==5.0.8`, and then independently runs these invented annual calculations. **Do not call that an OasisLMF model run.** It is two demonstrators in the same CI, not validated physical hazard/insured loss calibration.
 
+## Independent integer-math toy oracle (synthetic, uncalibrated)
+
+A separate in-memory integer-only check reconstructed the exact fixed MD5 year/event recipe and 1–3 response factors without calling the repo's vulnerability interpolator. The following figures have been added as **expected values for exact-head automated parity testing**, not as observed Berlin or insurer risk metrics:
+
+| Purely invented quantity | Oracle result |
+| --- | ---: |
+| Annual worlds | 10,000 |
+| Fictional storm / flood events | 1,051 / 481 |
+| Zero-event years / two-peril years | 8,520 / 52 |
+| GUL = assumed policy gross aggregate | EUR 9,869,840,000 across 10,000 toy years |
+| Toy CAT-XL ceded aggregate | EUR 2,945,200,000 |
+| Toy retained net aggregate | EUR 6,924,640,000 |
+| **Toy** gross / net annual average | EUR 986,984 / 692,464 |
+| **Toy** gross 99% / 99.5% AEP | EUR 12,000,000 / 13,000,000 |
+| **Toy** gross 99% / 99.5% OEP | EUR 11,800,000 / 12,600,000 |
+| **Toy** net 99% / 99.5% AEP | EUR 7,280,000 / 8,300,000 |
+| **Toy** net 99% / 99.5% OEP | EUR 6,800,000 / 7,600,000 |
+
+The expected **annual-row SHA-256** is `b36e41340ec8428315af8fc59077c2f4d4d8705a244c2c7d3fa2041d5bc7ef04` and **event-row SHA-256** `92b62f63927b2aa8e85a9f25ce24ad2ef71b37ed7152b937bd3997071ab04590`. They are exact byte-recipe consistency checks over *invented internal rows*, never source authenticity receipts. The expected test numbers must pass against the implementation in hosted CI before this code is merged. AEP/OEP values refer solely to 10,000 made-up probability worlds and cannot be interpreted as predictive 1-in-100 or 1-in-200 catastrophe loss estimates.
+
 ## Gates before real modelling and OEP/AEP
 
 1. Obtain a Germany-compatible, releasable and calibrated hazard event catalogue and intensity field with defined event IDs / frequency / period weights, storm/flood treatment and correlation assumptions.
