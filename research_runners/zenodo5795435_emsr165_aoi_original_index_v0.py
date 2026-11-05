@@ -79,18 +79,32 @@ def audit_index(document):
         raise AOISourceBlocked("bounded source AOI collection required")
     selected = {}
     spring2016 = summer2016 = 0
+    published_year_conflicts = []
     for row in rows:
         _one_coordinate_pair(row)
         props = row.get("properties")
         if not isinstance(props, dict) or not _FIELDS <= set(props):
             raise AOISourceBlocked("incomplete original AOI index properties")
         year, season = props["YEAR_START"], props["SEASON"]
-        if type(year) is not int or not 2012 <= year <= 2020:
-            raise AOISourceBlocked("year malformed/outside archive scope")
+        if type(year) is not int or not (2012 <= year <= 2020 or year == 2000):
+            raise AOISourceBlocked("year malformed/outside reviewed archive anomalies")
         if type(props["YEAR_END"]) is not int:
             raise AOISourceBlocked("event end-year malformed")
         if season not in {"winter", "spring", "summer", "autumn"}:
             raise AOISourceBlocked("unknown seasonal mosaic identifier")
+        source_file = props["geo_harmonizer_raster"]
+        if not isinstance(source_file, str):
+            raise AOISourceBlocked("seasonal original raster reference missing")
+        m = re.search(r"_(\d{8})\.\.(\d{8})_eumap_", source_file)
+        if m is None:
+            raise AOISourceBlocked("unreviewed seasonal raster naming structure")
+        raster_start_year = int(m.group(1)[:4])
+        if raster_start_year != year:
+            # An actual published anomaly, not permission to infer YEAR_START=2020.
+            if (year != 2000 or raster_start_year != 2020 or
+                    props["EMS_ID"] not in {"EMSR441", "EMSR442", "EMSR445"}):
+                raise AOISourceBlocked("unreviewed year-vs-raster conflict")
+            published_year_conflicts.append(props["EMS_ID"])
         if year == 2016 and season == "spring":
             spring2016 += 1
         if year == 2016 and season == "summer":
@@ -120,6 +134,9 @@ def audit_index(document):
         "treat_coordinates_as_wgs84_lon_lat": False,
         "all_index_aoi_point_rows": len(rows),
         "2016_spring_index_aoi_point_rows": spring2016,
+        "original_index_year_mismatch_count": len(published_year_conflicts),
+        "year_mismatch_activation_codes": sorted(set(published_year_conflicts)),
+        "year_2000_metadata_may_not_be_silently_corrected": True,
         "2016_summer_index_aoi_point_rows": summer2016,
         "emsr165_aoi_points_in_this_archive": len(selected),
         "emsr165_aoi_names_in_this_archive": sorted(selected),
@@ -150,7 +167,8 @@ def audit_original_bytes(raw):
     except (UnicodeError, json.JSONDecodeError) as exc:
         raise AOISourceBlocked("malformed original GeoJSON") from exc
     report = audit_index(data)
-    if report["all_index_aoi_point_rows"] != 455:
+    if (report["all_index_aoi_point_rows"] != 455 or
+            report["original_index_year_mismatch_count"] != 13):
         raise AOISourceBlocked("original record AOI cardinality changed")
     report["geojson_publisher_md5_matches_local_bytes"] = True
     report["geojson_sha256_local_bytes"] = hashlib.sha256(raw).hexdigest()
