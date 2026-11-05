@@ -73,3 +73,13 @@ A computed premium market share is a **financial benchmark**, not insured buildi
 5. **Acceptance:** Require original-source provenance, permitted rights, numeric and statutory semantic reconciliation, verified legal entity, matched numerator/denominator, zero group/member double counts, and holdout validation against published regulator shares. Run an explicit status matrix: `SOURCE_OBSERVED`, `SOURCE_BYTES_VERIFIED`, `RIGHTS_REVIEWED`, `IDENTITY_VERIFIED`, `DENOMINATOR_MATCHED`, `SHARE_RECONCILED`, `MODEL_NOT_ADMITTED`.
 
 **Outcome of this PR:** adds one rerunnable **read-only** SQL readiness check and this source-linked research handoff. No insurer market shares, financial reports or legal identities were inserted, no source was promoted and no CAT portfolio was fabricated.
+
+## Independently repeated exact-query live receipt (2026-11-05)
+
+The **current GitHub-branch SQL blob** `cf45a654d48d10cfed3684e8a663586d505650a9`, including the corrected `organization_relationship_rows_total` alias, was fetched directly from this PR and executed unchanged as a **single read-only SELECT** against the explicitly selected `insurance-risk-core / insurance / main` Neon branch `br-late-recipe-ba1cr8hc`. No source data, schema objects or production rows were written.
+
+Observed output: `candidate_rows=18180`, `country_slugs=181`, `distinct_name_market_pairs=18176`, `verified_legal_entities=22`, `verified_us_entities=0`, `verified_lei_rows=18`, `verified_naic_identifier_rows=0`, `organization_relationship_rows_total=0`, `published_company_metric_rows=0`, `admitted_directory_rows=0`, `original_sha_rows=0`, `licence_observation_rows=58`. The gate remains **`BLOCKED_NO_COMPANY_PREMIUM_METRICS`**.
+
+The live database schema was separately inspected via read-only `information_schema.columns`: `entity.organization_relationship` has parent/child IDs, relationship type, effective dates and source key, but **no verified boolean**. Even when rows exist, a verified and effective-dated relationship cannot be inferred by row count alone. `entity.published_metric` has `metric_name`, `business_scope`, `gross_net_basis`, `measurement_kind`, `year`, `country_code`, `currency_code` and `source_key`; counting rows alone is therefore not enough to establish a direct-written-premium insurer numerator or an admissible market share.
+
+This is a current database-readiness check, **not** an original regulatory premium data import or a verified worldwide insurer census. Source-specific rights, official market denominator and dated legal identity must pass independently before market-share calculations or location allocation.
