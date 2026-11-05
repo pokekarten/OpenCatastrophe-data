@@ -107,9 +107,9 @@ def _scan_rows(stream, expected_rows: int) -> dict[str, int]:
                 else:
                     counts["bin_well_formed_nonplaceholder"] += 1
                 doitt = cells[index["doitt_id"]].strip()
-                if not INTEGER.fullmatch(doitt):
+                if len(doitt) > 16 or not INTEGER.fullmatch(doitt):
                     counts["doitt_missing_or_invalid"] += 1
-                elif int(doitt) == 0:
+                elif not doitt.strip("0"):
                     counts["doitt_zero_unknown_historic_identity"] += 1
                 else:
                     counts["doitt_positive_numeric_unverified_unique"] += 1
@@ -123,7 +123,7 @@ def _scan_rows(stream, expected_rows: int) -> dict[str, int]:
                     counts["base_bbl_equal_billing"] += base == mappluto
                     counts["base_bbl_different_billing"] += base != mappluto
                 feature = cells[index["feature_code"]].strip()
-                if not INTEGER.fullmatch(feature):
+                if len(feature) > 16 or not INTEGER.fullmatch(feature):
                     counts["feature_code_missing_or_invalid"] += 1
                 elif feature == "2100":
                     counts["standard_building_feature_code_2100"] += 1
