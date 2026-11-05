@@ -24,9 +24,11 @@ from research_runners.c3s_wind_annual_summary_v0 import (
 
 CONTRACT = 'C3S_EWS_SINGLE_REGION_HOLDOUT_POISSON_COUNT_V0'
 HEX_SHA = re.compile(r'[a-f0-9]{64}\Z')
-# Fixed evidence cutoff for research v0 on 2026-11-05. The original monthly
-# C3S service still has an unfinished 2026 calendar year; never annualise it.
-# Revise this gate with an independently dated source coverage receipt in v1.
+# Fixed evidence window for research v0 on 2026-11-05. Official C3S STAC
+# coverage starts in February 1940, and the monthly-updated service ends
+# in an unfinished 2026 year. Neither boundary is a complete calendar year.
+# Widen only after independently verifying dated original source coverage.
+FIRST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0 = 1941
 LAST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0 = 2025
 
 
@@ -35,8 +37,8 @@ class CalibrationError(ValueError):
 
 
 def _year(value, name):
-    if type(value) is not int or not 1940 <= value <= LAST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0:
-        raise CalibrationError(f'{name}: only complete historical years 1940..2025 admissible in research v0')
+    if type(value) is not int or not FIRST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0 <= value <= LAST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0:
+        raise CalibrationError(f'{name}: only conservatively complete historical years 1941..2025 admissible in research v0')
     return value
 
 
@@ -139,6 +141,7 @@ def fit_c3s_count_rate(*, original_csv_bytes: bytes, expected_csv_sha256: str,
             'train_sample_variance_counts':variance,
             'train_variance_to_mean_ratio':dispersion,
             'train_dispersion_ratio_defined':rate>0,
+            'first_eligible_complete_calendar_year_v0':FIRST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0,
             'last_eligible_complete_calendar_year_v0':LAST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0,
             'poisson_probability_at_least_one_event':p_any,
             'holdout_mean_count':sum(holdout)/len(holdout),
@@ -146,7 +149,7 @@ def fit_c3s_count_rate(*, original_csv_bytes: bytes, expected_csv_sha256: str,
             'holdout_log_likelihood':holdout_log_likelihood,
             'zero_train_positive_holdout_failure':zero_train_positive_holdout,
             'explicit_limits':['Only one exact original regional annual count selector',
-               'Running calendar year 2026 is incomplete and excluded from this 2026 research revision',
+               'Boundary years 1940 (source begins February) and 2026 (unfinished year) are excluded',
                'No NUTS version verified or automatic asset geography join',
                'No physical event IDs, catalogue weights, event footprints or insured loss',
                'No full intra-peril stochastic annual occurrence or dependence calibration',
