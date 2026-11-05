@@ -69,6 +69,7 @@ def inspect_provider_package(original: bytes, *, request=None) -> dict:
                     raise AcquisitionError("CDS ZIP must contain exactly one original CSV member")
                 info = members[0]
                 if (info.is_dir() or info.filename != Path(info.filename).name or
+                        chr(92) in info.filename or ":" in info.filename or
                         not info.filename.lower().endswith(".csv") or
                         not 1 <= info.file_size <= MAX_CSV_BYTES or
                         info.flag_bits & 1 or (info.external_attr >> 16) & 0o170000 == 0o120000):
