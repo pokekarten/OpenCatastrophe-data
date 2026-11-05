@@ -69,7 +69,7 @@ class TEDSearchAPIPrimaryReceiptTests(unittest.TestCase):
             m.parse("558592-2024", bad)
 
     def test_zero_or_multiple_rows_not_exact_proof(self):
-        empty = json.dumps({"notices": []}).encode("utf-8")
+        empty = json.dumps({"notices": [], "padding": "synthetic source shape " * 4}).encode("utf-8")
         multi = json.dumps({"notices": [json.loads(fixture())["notices"][0]] * 2}).encode()
         with self.assertRaisesRegex(ValueError, "EXPECT_ONE_EXACT_PUBLICATION"):
             m.parse("668506-2026", empty)
@@ -89,7 +89,7 @@ class TEDSearchAPIPrimaryReceiptTests(unittest.TestCase):
             m.parse("668506-2026", fixture(row=x))
 
     def test_duplicate_keys_not_silently_accepted(self):
-        raw = b'{"notices":[],"notices":[]}'
+        raw = b'{"notices":[],"notices":[],"padding":"synthetic test duplicate key check"}'
         with self.assertRaisesRegex(ValueError, "DUPLICATE_JSON_KEY"):
             m.parse("668506-2026", raw)
 
@@ -124,7 +124,7 @@ class TEDSearchAPIPrimaryReceiptTests(unittest.TestCase):
                     FakeResponse(b"x" * (m.MAX_BYTES + 1), m.ENDPOINT))
 
     def test_wrong_syntax_or_nonfinite_json_rejected(self):
-        bad = b'{"notices":[NaN]}'
+        bad = b'{"notices":[NaN],"padding":"synthetic source nonfinite numerical data"}'
         with self.assertRaisesRegex(ValueError, "NONFINITE"):
             m.parse("668506-2026", bad)
 
