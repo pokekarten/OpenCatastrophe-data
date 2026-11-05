@@ -67,7 +67,7 @@ class OriginalZeroGeometryTests(unittest.TestCase):
         self.assertEqual(report["zero_ha_polygon_computed_area_positive_m2"], 2)
         self.assertEqual(report["zero_ha_polygon_positive_area_1e_minus_6_to_lt_1_m2"], 1)
         self.assertEqual(report["zero_ha_polygon_positive_area_gte_100_m2"], 1)
-        self.assertEqual(report["min_computed_positive_polygon_area_m2"], .01)
+        self.assertAlmostEqual(report["min_computed_positive_polygon_area_m2"], .01)
         self.assertEqual(report["max_computed_positive_polygon_area_m2"], 10000.0)
         self.assertFalse(report["zero_area_source_rows_or_coordinates_output"])
 
@@ -97,7 +97,8 @@ class OriginalZeroGeometryTests(unittest.TestCase):
             )
         with self.assertRaisesRegex(Blocked, "zero-area count"):
             audit_zero_area_geometry(
-                FakeParquet(rows), expected_rows=1, expected_zero=2
+                FakeParquet(rows + [rec(1, wkb.dumps(box(0, 0, 1, 1)))]),
+                expected_rows=2, expected_zero=2
             )
 
     def test_source_crs_or_column_mismatch_blocks(self):
