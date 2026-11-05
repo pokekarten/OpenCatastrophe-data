@@ -9,6 +9,10 @@ on:
       - "research_runners/rva_2025_oed_staging_v0.py"
       - "research_runners/validate_rva_2025_oed_staging_ods_v0.py"
       - "research_runners/export_rva_2025_oed_scenario_matrix_v0.py"
+      - "research_runners/export_rva_nrw_53kreis_oed_pilot_v0.py"
+      - "research_runners/validate_rva_nrw_53kreis_oed_pilot_ods_v0.py"
+      - "tests/test_export_rva_nrw_53kreis_oed_pilot_v0.py"
+      - "research/observations/rva_nrw_53_kreis_census2022_pv2026_source_bridge_v0.toml"
       - "tests/test_rva_2025_oed_staging_v0.py"
       - "research_runners/rva_2025_kreis_age_source_sensitivity_v0.py"
       - "research_runners/rva_2025_kreis_zensus_real_prior_fictional_book_v0.py"
@@ -42,6 +46,7 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_rva_2025_oed_staging_v0.py' -v
           python -m unittest discover -s tests -p 'test_rva_2025_kreis_age_source_sensitivity_v0.py' -v
+          python -m unittest discover -s tests -p 'test_export_rva_nrw_53kreis_oed_pilot_v0.py' -v
           python -m compileall -q research_runners/rva_2025_oed_staging_v0.py research_runners/validate_rva_2025_oed_staging_ods_v0.py tests/test_rva_2025_oed_staging_v0.py
       - name: Authentic 400-Kreis input + OED format validation (no model run)
         run: python research_runners/validate_rva_2025_oed_staging_ods_v0.py
@@ -52,6 +57,16 @@ jobs:
         with:
           name: rva-2025-400kreis-oed-synthetic-six-scenarios-not-geocoded
           path: ${{ runner.temp }}/rva-oed-research-matrix/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
+      - name: Official source-validated NRW 53-Kreis two-case OED 5.0 pilot
+        run: python research_runners/validate_rva_nrw_53kreis_oed_pilot_ods_v0.py "${{ runner.temp }}/rva-nrw-53-oed-conditional-pilot"
+      - name: Save 53-Kreis NRW synthetic only OED research variants
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rva-nrw-53kreis-oed-two-conditional-synthetic-scenarios-NOT-insurer-sites
+          path: ${{ runner.temp }}/rva-nrw-53-oed-conditional-pilot/
           if-no-files-found: error
           retention-days: 14
           compression-level: 6
