@@ -21,6 +21,8 @@ import re
 import sys
 import zipfile
 
+from rva_nrw_hu_gfk_residential_candidate_v0 import classify_gfk
+
 SCENARIOS={
     "low_single_storey_1800_eur_per_m2":(1,1800),
     "central_two_storeys_2200_eur_per_m2":(2,2200),
@@ -94,7 +96,7 @@ def build(source_zip:Path,output_zip:Path)->dict:
             if (not ags.startswith("KREIS-05") or len(ags)!=11
                 or ev["KreisAGS2022"]!=ags[6:]
                 or ev["SourcePhysicalCandidateNotInsuredSite"]!="true"
-                or not re.fullmatch(r"31001_\d{4}",ev["SourceGFK"])
+                or classify_gfk(ev["SourceGFK"])[0]!="residential_function_candidate_only"
                 or not re.fullmatch(r"[0-9a-f]{64}",ev["SourceOiSHA256"])
                 or site["CountryCode"]!="DE" or site["OEDVersion"]!="5.0.0"):
                 raise ValueError("source geometry, code or hypothetical insurer association changed")
