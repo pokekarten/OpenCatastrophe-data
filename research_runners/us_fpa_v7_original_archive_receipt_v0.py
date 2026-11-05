@@ -27,6 +27,8 @@ DATA_NAME = "RDS-2013-0009.7_Data_Format3_GPKG.zip"
 DATA_BYTES = 238_170_979
 DATA_SHA256 = "9e36ecd0d70dd5fa126be7b5ce5b02003867da04c41f3bd137f5ccdfca81b9b2"
 GPKG_MEMBER = "Data/FPA_FOD_20260615.gpkg"
+VARIABLES_MEMBER = "Data/_variable_descriptions.csv"
+VARIABLES_MEMBER_BYTES = 31_310
 EXPECTED_META_MEMBERS = {
     "_fileindex_RDS-2013-0009.7.html",
     "_metadata_RDS-2013-0009.7.html",
@@ -139,8 +141,10 @@ def verify_original_gpkg_zip(path: Path, *, expected_bytes=DATA_BYTES, expected_
         with ZipFile(path, "r") as archive:
             entries = _safe_members(archive)
             names = [item.filename for item in entries if not item.is_dir()]
-            if names != [GPKG_MEMBER]:
-                raise ArchiveBlocked("pinned seventh-edition source ZIP lacks exact GPKG")
+            if set(names) != {GPKG_MEMBER, VARIABLES_MEMBER} or len(names) != 2:
+                raise ArchiveBlocked("pinned seventh-edition ZIP GPKG/variable-descriptions membership drift")
+            if archive.getinfo(VARIABLES_MEMBER).file_size != VARIABLES_MEMBER_BYTES:
+                raise ArchiveBlocked("original publisher variable descriptions size drifted")
             info = archive.getinfo(GPKG_MEMBER)
             if not 100_000 <= info.file_size <= 10_000_000_000:
                 raise ArchiveBlocked("implausible original FPA GPKG file length")
@@ -156,6 +160,8 @@ def verify_original_gpkg_zip(path: Path, *, expected_bytes=DATA_BYTES, expected_
         "archive_original_bytes": expected_bytes,
         "original_archive_sha256_verified": digest.hexdigest(),
         "source_gpkg_member_exists": True,
+        "original_variable_descriptions_member_exists": True,
+        "original_variable_descriptions_uncompressed_bytes": VARIABLES_MEMBER_BYTES,
         "member_sqlite_header_checked": True,
         "full_member_sqlite_table_or_spatial_integrity_checked": False,
         "source_event_rows_extracted_or_published": False,
