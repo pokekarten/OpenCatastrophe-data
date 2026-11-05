@@ -36,6 +36,14 @@ from xws_daria_1990_original_csv_preflight_v0 import (
     _gusts as _xws_gusts, ALLOWED_SOURCE_IDS, XWSSourceBlocked
 )
 
+# Exact original provider full-byte SHA-256 from successful public original source
+# GH Actions run 42112975393. Any revised upstream artifact blocks this v0 replay.
+PINNED_SOURCE_FILES = {
+    "grid": (550415, "decb09d473db9086df7a497bcebc95641238d4ee365ff26d8e83c266a6f32599"),
+    "daria_lower95": (350030, "4381de5fdb5e66489efde09ac587e295b93906cac643325ad5517a278d5e2bff"),
+    "daria_mean": (350061, "34b9c02768aa6f54aa541e185381e4735f3b2cd852fc23a724ddc00c301a1d50"),
+    "daria_upper95": (350179, "8b63a95adf0961da00c1e8874fbb99a49cd38b58de6263f8c4f1c65637cc6007"),
+}
 MAX_DISTANCE_KM = 45.0
 EARTH_RADIUS_KM = 6371.0088
 NAMES = {
@@ -130,6 +138,12 @@ def overlay(xws:dict[str,bytes],nrw_zip:Path,
         or type(expected_tiv) is not int or not 1<=expected_tiv<=10**15):
         raise OverlayBlocked("bounded research site / county / TIV controls required")
     source_receipt=validate_original_bundle(xws)
+    actual={
+        name:(entry["full_bytes"],entry["full_sha256"])
+        for name,entry in source_receipt["original_files"].items()
+    }
+    if actual != PINNED_SOURCE_FILES:
+        raise OverlayBlocked("original XWS Daria full-file SHA256/size changed since independently validated source run")
     original_grid=_xws_grid(xws["grid"])
     gusts={k:_xws_gusts(xws[k],len(original_grid),source_name=k)
            for k in ("daria_lower95","daria_mean","daria_upper95")}
