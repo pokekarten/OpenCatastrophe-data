@@ -10,12 +10,16 @@ constructs loss models or claims CAT admission.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import hashlib
 from io import BytesIO
 import json
 from pathlib import Path
 import re
+import shutil
+import sqlite3
 import stat
+import tempfile
 from zipfile import ZipFile, BadZipFile, ZIP_STORED, ZIP_DEFLATED
 
 RELEASE = "FPA_FOD_20260615"
@@ -122,7 +126,83 @@ def verify_original_metadata_zip(
     }
 
 
-def verify_original_gpkg_zip(path: Path, *, expected_bytes=DATA_BYTES, expected_sha256=DATA_SHA256):
+
+def audit_extracted_fires_2024_sqlite(
+    original_db: Path, *, expected_records=87_708, expected_mtbs_id_present=415,
+    expected_state_codes=53, expected_state_size_cells=299,
+):
+    """Read-only, source-aggregated 2024 numbers; no event-level rows emitted.
+
+    Called by the original SHA-verified ZIP gate after private temporary
+    extraction. Expected values are independently obtained ArcGIS totals.
+    """
+    if not original_db.is_file():
+        raise ArchiveBlocked("missing original extracted source GPKG file")
+    try:
+        db = sqlite3.connect(
+            "file:" + original_db.as_posix() + "?mode=ro&immutable=1", uri=True
+        )
+        try:
+            db.execute("PRAGMA query_only = ON")
+            sources = {
+                row[0] for row in db.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                )
+            }
+            if "Fires" not in sources:
+                raise ArchiveBlocked("publisher Fires feature table not found")
+            columns = {
+                row[1].upper() for row in db.execute('PRAGMA table_info("Fires")')
+            }
+            if not {"FIRE_YEAR", "STATE", "FIRE_SIZE_CLASS", "MTBS_ID"}.issubset(columns):
+                raise ArchiveBlocked("publisher Fires native linkage fields absent")
+            groups = list(db.execute(
+                "SELECT STATE,FIRE_SIZE_CLASS,COUNT(*),"
+                "SUM(CASE WHEN MTBS_ID IS NOT NULL THEN 1 ELSE 0 END) "
+                'FROM "Fires" WHERE FIRE_YEAR=2024 '
+                "GROUP BY STATE,FIRE_SIZE_CLASS"
+            ))
+        finally:
+            db.close()
+    except (sqlite3.Error, OSError) as exc:
+        raise ArchiveBlocked("read-only source GPKG database query failed") from exc
+    codes = set()
+    a = Counter()
+    linked = Counter()
+    for state, size, total, yes in groups:
+        if not isinstance(state, str) or not re.fullmatch("[A-Z]{2}", state):
+            raise ArchiveBlocked("original FPA state code malformed")
+        if type(size) is not str or size not in "ABCDEFG":
+            raise ArchiveBlocked("unknown source NWCG fire-size class")
+        if type(total) is not int or type(yes) is not int or not 0 <= yes <= total:
+            raise ArchiveBlocked("original archive invalid source group count")
+        codes.add(state)
+        a[size] += total
+        linked[size] += yes
+    if (len(codes) != expected_state_codes or len(groups) != expected_state_size_cells
+            or sum(a.values()) != expected_records
+            or sum(linked.values()) != expected_mtbs_id_present):
+        raise ArchiveBlocked("original archived 2024 cohort differs from source control")
+    if set(a) != set("ABCDEFG"):
+        raise ArchiveBlocked("original 2024 A-G reported classes incomplete")
+    return {
+        "original_2024_fpa_report_count": sum(a.values()),
+        "original_2024_mtbs_id_nonnull_count": sum(linked.values()),
+        "original_2024_state_codes": len(codes),
+        "original_2024_state_size_group_count": len(groups),
+        "original_2024_size_class_record_counts": {
+            key: a[key] for key in "ABCDEFG"
+        },
+        "original_2024_size_class_mtbs_id_counts": {
+            key: linked[key] for key in "ABCDEFG"
+        },
+        "archived_2024_counts_match_independently_read_original_arcgis": True,
+        "original_fire_ids_coordinates_geometries_or_loss_rows_emitted": False,
+        "source_identity_join_or_insurance_loss_model_admitted": False,
+    }
+
+
+def verify_original_gpkg_zip(path: Path, *, expected_bytes=DATA_BYTES, expected_sha256=DATA_SHA256, audit_2024=False):
     """Stream SHA, read ZIP metadata and first 16 bytes only; no data extraction."""
     if not path.is_file() or path.stat().st_size != expected_bytes:
         raise ArchiveBlocked("missing/incorrect full original GPKG archive length")
@@ -151,9 +231,20 @@ def verify_original_gpkg_zip(path: Path, *, expected_bytes=DATA_BYTES, expected_
             with archive.open(info) as original_gpkg:
                 if original_gpkg.read(len(SQLITE_HEADER)) != SQLITE_HEADER:
                     raise ArchiveBlocked("original GPKG does not have SQLite header")
+            cohort = None
+            if audit_2024:
+                if info.file_size != 1_082_466_304:
+                    raise ArchiveBlocked("original complete GPKG expanded byte length drift")
+                with tempfile.TemporaryDirectory(prefix="source-fpa-v7-") as directory:
+                    temporary_gpkg = Path(directory) / "FPA_FOD_20260615.gpkg"
+                    with archive.open(info) as original, temporary_gpkg.open("wb") as output:
+                        shutil.copyfileobj(original, output, length=4 * 1024 * 1024)
+                    if temporary_gpkg.stat().st_size != info.file_size:
+                        raise ArchiveBlocked("truncated original GPKG member extraction")
+                    cohort = audit_extracted_fires_2024_sqlite(temporary_gpkg)
     except (BadZipFile, OSError, RuntimeError) as exc:
         raise ArchiveBlocked("unreadable original GPKG ZIP") from exc
-    return {
+    result = {
         "audit": "us-fpa-fod-v7-gpkg-full-original-archive-v0",
         "state": "ORIGINAL_GPKG_ARCHIVE_SHA_AND_SQLITE_MAGIC_VERIFIED_NOT_EVENT_ADMITTED",
         "release": RELEASE,
@@ -168,20 +259,29 @@ def verify_original_gpkg_zip(path: Path, *, expected_bytes=DATA_BYTES, expected_
         "MTBS_fire_identity_join_or_wildfire_footprint_verified": False,
         "CAT_model_scientific_admission_granted": False,
     }
+    if cohort is not None:
+        result["original_2024_sqlite_aggregate"] = cohort
+    return result
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--metadata-zip", required=True, type=Path)
     parser.add_argument("--data-gpkg-zip", type=Path)
+    parser.add_argument("--audit-2024-sqlite", action="store_true",
+                        help="Extract the already SHA-verified ~1.08 GB GPKG privately and query only 2024 aggregate counts")
     args = parser.parse_args(argv)
     try:
         file = args.metadata_zip
         if not file.is_file() or file.stat().st_size != METADATA_BYTES:
             raise ArchiveBlocked("missing or wrong-sized original metadata archive")
         report = verify_original_metadata_zip(file.read_bytes())
+        if args.audit_2024_sqlite and args.data_gpkg_zip is None:
+            raise ArchiveBlocked("2024 SQL audit requires the SHA-verified full GPKG archive")
         if args.data_gpkg_zip is not None:
-            report["optional_full_gpkg_receipt"] = verify_original_gpkg_zip(args.data_gpkg_zip)
+            report["optional_full_gpkg_receipt"] = verify_original_gpkg_zip(
+                args.data_gpkg_zip, audit_2024=args.audit_2024_sqlite
+            )
             report["state"] = "METADATA_AND_ORIGINAL_GPKG_ARCHIVE_BYTES_VERIFIED_NOT_CAT_ADMITTED"
     except (ArchiveBlocked, OSError) as exc:
         print(json.dumps({"state": "BLOCKED", "reason": str(exc)}))
