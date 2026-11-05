@@ -15,7 +15,7 @@ from rva_nrw_hu_gfk_residential_candidate_v0 import (
 
 class TestHistoricalHUFunction(unittest.TestCase):
     def test_only_official_building_type_plus_residential_function(self):
-        for suffix in ("1000","1010","1100","1220","1223"):
+        for suffix in ("1000","1010","1100","1110","1120","1121","1122","1123","1130","1131","1220","1221","1222","1223"):
             self.assertEqual(classify_gfk("31001_"+suffix)[0],
                              "residential_function_candidate_only")
             self.assertIn(suffix,RESIDENTIAL_CANDIDATES)
@@ -24,8 +24,10 @@ class TestHistoricalHUFunction(unittest.TestCase):
     def test_other_object_type_or_unverified_function_is_quarantined(self):
         for value in ("31002_1010","31003_1100","32001_1000"):
             self.assertEqual(classify_gfk(value)[0],"non_building_object_quarantine")
-        for value in ("31001_1222","31001_1120","31001_9999"):
+        for value in ("31001_9999","31001_3100","31001_1313"):
             self.assertEqual(classify_gfk(value)[0],"unmapped_quarantine")
+        for value in ("31001_1020","31001_1022","31001_1024"):
+            self.assertEqual(classify_gfk(value)[0],"special_occupancy_quarantine")
         for value in ("31001_2460","31001_2462","31001_2000","31001_2720"):
             self.assertEqual(classify_gfk(value)[0],"known_nonresidential_example")
         for value in ("1010","31001","31001_10","31001_10100","garbage",
@@ -35,7 +37,7 @@ class TestHistoricalHUFunction(unittest.TestCase):
 
     def test_count_receipt_no_invented_residential_classification(self):
         source={"31001_1010":8,"31001_1100":2,"31001_2460":5,
-                "31002_1010":1,"31001_1222":10,"":2}
+                "31002_1010":1,"31001_3100":10,"":2}
         a=audit_gfk_counts(source)
         self.assertEqual(sum(a["source_gfk_categories"].values()),28)
         self.assertEqual(a["source_gfk_categories"]["residential_function_candidate_only"],10)
