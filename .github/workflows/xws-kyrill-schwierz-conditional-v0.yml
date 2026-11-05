@@ -54,7 +54,7 @@ jobs:
       - name: Enforce no source promotion and check 12 scenario x 53 county totals
         run: |
           python - <<'PY'
-          import csv,json,os,pathlib,hashlib
+          import csv,json,os,pathlib,hashlib,tomllib
           root=pathlib.Path(os.environ["RUNNER_TEMP"])
           p=root/"xws-kyrill-10k-schwierz-summary.json"
           c=root/"xws-kyrill-53kreis-conditional-scenarios.csv"
@@ -69,6 +69,23 @@ jobs:
           assert data["native_Oasis_or_NextGen_GUL_IL_RI_executed"] is False
           assert data["insurer_RV_actual_risks_or_tiv_observed"] is False
           assert hashlib.sha256(c.read_bytes()).hexdigest()==data["per_county_csv_sha256"]
+          source=tomllib.loads(pathlib.Path(
+            "research/observations/xws_kyrill_2007_nrw10k_schwierz_one_event_sensitivity_v0.toml"
+          ).read_text(encoding="utf-8"))
+          assert source["results_per_county_csv_sha256"]==data["per_county_csv_sha256"]
+          assert source["results_machine_summary_json_sha256"]==hashlib.sha256(p.read_bytes()).hexdigest()
+          assert source["source_annual_event_frequency_established"] is False
+          assert source["annual_gross_net_OEP_AEP_authorized"] is False
+          actual={r["historical_wind_source_variant"]:{} for r in data["results"]}
+          for r in data["results"]:
+            actual[r["historical_wind_source_variant"]][
+              r["hypothetical_damage_sensitivity"]
+            ]=r["conditional_expected_groundup_eur"]
+          for r in source["wind_scenario"]:
+            got=actual[r["name"]]
+            assert got["low_half_reference"]==r["loss_reference_0_5_eur"]
+            assert got["reference_unmodified"]==r["loss_reference_1_0_eur"]
+            assert got["high_double_reference"]==r["loss_reference_2_0_eur"]
           print("SOURCE_XWS_SCHWIERZ_10K_CONDITIONAL_ONLY_QC_PASS")
           print("COUNTY_CSV_SHA256", data["per_county_csv_sha256"])
           print("SCENARIO_SUMMARY_SHA256",hashlib.sha256(p.read_bytes()).hexdigest())
