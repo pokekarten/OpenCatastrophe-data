@@ -131,3 +131,29 @@ The exact GitHub SQL was executed on Neon main and isolated branch after the tra
 | next gate | `BLOCKED_UNVERIFIED_OR_AMBIGUOUS_SOLO_LEGAL_ENTITY` | `BLOCKED_COMPANY_SYNTHETIC_EXPOSURE_NOT_REGISTERED` |
 
 **Important:** No production Neon writes were made. The isolated three financial rows are **verified source-specific observations**, not insurance TIV, insured site counts, CAT model frequency, peril losses, net PML, source bulk-reuse rights, or a licence to upload original PDFs. The GitHub authoring branch and isolated Neon branch must **not** be merged/promoted automatically. The next milestone is separately source-bound, explicitly nongeocoded synthetic OED/Neon portfolio-version metadata from [PR #1373](https://github.com/pokekarten/OpenCatastrophe-data/pull/1373); a native German GUL/IL/RI/AEP/OEP is **still blocked** until actual model-compatible hazard/vulnerability, WGS84 synthetic placement and validated insurance-financial terms.
+
+
+## 2026-11-05 final research rehearsal: exact OED sample provenance, never a geolocated model
+
+A separate Neon **research-only isolated branch** transaction registered **one** company-linked synthetic portfolio, **one** 2025 scenario version, **one** non-geocoded `regional_aggregate` exposure-unit **and one source metadata record** based on the independently validated [PR #1373 original OED six-scenario audit](https://github.com/pokekarten/OpenCatastrophe-data/blob/research/rva-2025-oed-staging-20261105/docs/research/rva-2025-oed-validated-scenario-comparison-20261105.md), exact Git blob `3df8b815ded3d01e1e60f99bf71982801bf0372c`, [source CI #42077035364](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42077035364).
+
+- `portfolio_type=synthetic`, uniquely named `RVA_LIKE_2025_10K_FLAT_NONGEOCODED_RESEARCH`, solo insurer-linked for reproducibility, **NOT an observed R+V policy portfolio**.
+- One version `UNIFORM_PHYSICAL_2022_AGE_FLAT_450K_SAMPLE_10K`; scenario weight `PHYSICAL_BUILDINGS_UNIFORM_AGE_AFFINITY`, invented flat 450k EUR per sample location, **10,000 fictional policies only**, **EUR 4.5bn hypothetical sample TIV**. The published 2025 national stock **1,060,546 contracts** is an *independent company control*, not an asset count assigned to 10,000 insurer locations. This toy value is not company TIV, a CAT loss, a premium-to-TIV inference or an estimate of insured assets.
+- `exposure_unit.unit_type=regional_aggregate`, `region_code=DE_AGGREGATE_NOT_GEOLOCATED`, `assumption_status=synthetic`, **location IS NULL**. No hazards, taxonomies, policy coverages, reinsurers, treaties, event occurrence rates or loss simulations were inserted.
+- `portfolio_version.scenario_hash=NULL` deliberately until the exact OED artifact manifest scenario hash is independently recovered. A Git blob SHA is source-document evidence, not the scenario byte SHA.
+- Original OED 5.0 policy CSV files and third-party physical building geometries were **not** imported into Neon. The source registry record remains **non-admitted for raw data**, with no geocoded model-input licence.
+
+The exact updated GitHub SQL query now counts separately whether the synthetic exposure unit actually has geometry. Tested on both DB branches:
+
+| Gate row | Neon default main | Neon isolated research branch |
+| --- | ---: | ---: |
+| solo company and exact LEI | 0 / 0 | 1 / 1 |
+| source-reviewed original 2025 financial metrics | 0 | 3 |
+| company-linked synthetic portfolio versions | 0 | 1 |
+| company-linked exposure units | 0 | 1 |
+| synthetic exposure units with non-null geometry | 0 | **0** |
+| next gate | `BLOCKED_UNVERIFIED_OR_AMBIGUOUS_SOLO_LEGAL_ENTITY` | **`BLOCKED_SYNTHETIC_EXPOSURE_HAS_NO_GEOMETRY`** |
+
+Even if geometry were provided in future, the terminal report remains `RESEARCH_ONLY_NEEDS_HAZARD_VULNERABILITY_RIGHTS_AND_TREATY_REVIEW`. This is **not** validation of source-compatible WGS84 coordinate semantics, German stochastic event frequency, vulnerability, a native Oasis GUL/IL/RI run or gross/net OEP/AEP.
+
+The realistic next workflow is to admit/transform original source-licensed 2022 NRW physical footprints and validate EPSG:4647 → 4326, *then* select explicitly fictional site locations independent of the carrier's unknown customers. Existing [#1373](https://github.com/pokekarten/OpenCatastrophe-data/pull/1373) should own OED/geocoding; this PR remains the independent database evidence gate. **No Neon main writes, no raw-PDF or OED policy CSV redistributions.**
