@@ -10,7 +10,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from research_runners.c3s_wind_frequency_candidate_v0 import CalibrationError,fit_c3s_count_rate
+from research_runners.c3s_wind_frequency_candidate_v0 import (CalibrationError, fit_c3s_count_rate, _year, LAST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0)
 
 COLUMNS=['year','region','threshold','storm_number','mean_wind_gust',
          'ssi','normalised_ssi','area_ratio','wind_gust_ratio','algorithm']
@@ -53,6 +53,9 @@ class C3SWindFrequencyCandidateTests(unittest.TestCase):
         self.assertAlmostEqual(x['holdout_log_likelihood'], -2+2*math.log(1)-math.lgamma(3))
         self.assertEqual(x['automatic_nuts_join_permitted'],False)
         self.assertEqual(x['status'],'UNADMITTED_RESEARCH_COUNT_RATE_ONLY')
+        self.assertEqual(x['train_variance_to_mean_ratio'],1.0)
+        self.assertTrue(x['train_dispersion_ratio_defined'])
+        self.assertEqual(x['last_eligible_complete_calendar_year_v0'],2025)
 
     def test_different_algorithms_are_separate_not_added(self):
         other=calculate(algorithm='TRACK')
@@ -86,6 +89,29 @@ class C3SWindFrequencyCandidateTests(unittest.TestCase):
         self.assertEqual(r['poisson_lambda_events_per_year'],0)
         self.assertTrue(r['zero_train_positive_holdout_failure'])
         self.assertIsNone(r['holdout_log_likelihood'])
+        self.assertIsNone(r['train_variance_to_mean_ratio'])
+        self.assertFalse(r['train_dispersion_ratio_defined'])
+
+    def test_unfinished_calendar_year_cannot_bias_annual_frequency(self):
+        self.assertEqual(LAST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0,2025)
+        self.assertEqual(_year(2025,'holdout_end'),2025)
+        # The official monthly C3S service can publish partial 2026 annual
+        # indicators. Those are not full-year zeros or one-year observations.
+        for bad in (2026,2027,True):
+            with self.subTest(bad=bad),self.assertRaisesRegex(CalibrationError,'complete historical years'):
+                _year(bad,'holdout_end')
+        with self.assertRaisesRegex(CalibrationError,'complete historical years'):
+            calculate(holdout_end=2026)
+
+    def test_zero_training_mean_has_undefined_not_zero_dispersion(self):
+        original=source([(1950+i,'TRACK','25',n) for i,n in enumerate([0,0,0,0])])
+        r=calculate(data=original,algorithm='TRACK',threshold_mps='25',
+                    train_start=1950,train_end=1951,holdout_start=1952,holdout_end=1953)
+        self.assertEqual(r['train_sample_variance_counts'],0)
+        self.assertIsNone(r['train_variance_to_mean_ratio'])
+        self.assertFalse(r['train_dispersion_ratio_defined'])
+        self.assertEqual(r['holdout_log_likelihood'],0)
+        self.assertFalse(r['zero_train_positive_holdout_failure'])
 
     def test_nested_threshold_source_monotonicity_is_upstream_validated(self):
         # At a *higher* gust threshold, event count may not increase.
