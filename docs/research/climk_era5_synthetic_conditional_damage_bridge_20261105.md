@@ -15,7 +15,7 @@ The **existing** OpenCatastrophe-data source route must be reused rather than du
 2. `scripts/climk_era5_synthetic_native_sample_v0.py` independently samples one source-specific storm index at synthetic lon/lat points on the native grid, preserving source names/date annotations and the original unit `m s**-1`. No claimed mapping to the distinct C3S EWS physical storm event IDs.
 3. **New** `scripts/climk_era5_synthetic_damage_preview_v0.py` takes that strict original JSON *shape* and separately authored synthetic assets and wind-gust damage curves. It computes exact-rational per-asset *conditional expected ground-up loss* without pretending to be original policy-insured gross, inward reinsurance or net retained loss.
 
-The scientific paper [Flynn et al., *Earth System Science Data* 17, 4431–4453 (2025)](https://doi.org/10.5194/essd-17-4431-2025) confirms each of the four meteorological input sources selects its own top 50 extreme storms. The source dates and storm IDs **cannot** be assumed to match across source models. The publisher README states **CC BY 4.0**; attribution, third-party licenses and a source-specific publication review remain mandatory. An original sample's embedded SHA256 is only a declared source binding: **this new downstream adapter cannot prove the forwarded JSON gust values still equal the original NetCDF**. It explicitly exports `source_sample_gust_values_independently_reverified=false`.
+The scientific paper [Flynn et al., *Earth System Science Data* 17, 4431–4453 (2025)](https://doi.org/10.5194/essd-17-4431-2025) confirms each of the four meteorological input sources selects its own top 50 extreme storms. The source dates and storm IDs **cannot** be assumed to match across source models. The publisher README states **CC BY 4.0**; attribution, third-party licenses and a source-specific publication review remain mandatory. An original sample's embedded SHA256 is only a declared source binding. Without additional flags, the downstream adapter **cannot prove that forwarded JSON gust values still equal original NetCDF** and exports `source_sample_gust_values_independently_reverified=false`. With both optional `--original-netcdf` and `--original-sites`, it invokes the existing source-authentic native CLIMK sampler again against pinned original bytes and fails if **any** forwarded sample field differs; only this actual re-extraction produces the `true` flag. The 15 local unit tests mock this optional dependency to verify wiring and corruption detection; they do **not** independently rerun real publisher NetCDF bytes.
 
 ## Explicit new input contracts
 
@@ -32,6 +32,8 @@ python scripts/climk_era5_synthetic_damage_preview_v0.py \
   --source-sample /tmp/climk-synthetic-source-native-sites.json \
   --synthetic-assets /tmp/climk-synthetic-assets.json \
   --vlt /tmp/climk-assumed-wind-vlt.json \
+  --original-netcdf /tmp/ERA5_StormFootprint_Database_Europe_Winter_1995-2015.nc \
+  --original-sites /tmp/synthetic-sites-as-used-to-create-source-sample.json \
   --out /tmp/climk-synthetic-conditional-damage-preview.json
 python -m unittest discover -s tests -p test_climk_era5_synthetic_damage_preview_v0.py -v
 ```
@@ -49,8 +51,9 @@ Gust in m/s is converted to **mm/s** with decimal half-up rounding. Damage ratio
 
 ## Local executed gates and next steps
 
-- 2026-11-05: **13/13 local Python stdlib tests passed**, including a 2-asset exact hand-oracle, invalid source identity and event key, unsupported C3S gust substitution, duplicate assets, incomplete site mapping, nonmonotone VLT, unbounded gust, invalid JSON and CLI source-overwrite protection. Tests use **invented source-shaped JSON**, not original CLIMK event values.
-- [ ] Cross-check a fresh exact-source sample **against the original NetCDF** at the same event index and 24 invented coordinates, produce separate raw+point+damage SHA evidence.
+- 2026-11-05: **15/15 local Python stdlib tests passed**, including a 2-asset exact hand-oracle, invalid source identity and event key, unsupported C3S gust substitution, duplicate assets, incomplete site mapping, nonmonotone VLT, unbounded gust, invalid JSON, CLI source-overwrite protection, optional original-reader wiring with mock re-extraction and tampered JSON challenge. Tests use **invented source-shaped JSON**, not original CLIMK event values. The mocked reader is **not** a live authentic NetCDF proof.
+- [x] Implement optional original-byte-bound re-extraction and complete JSON equality check (tests via mock reader; no original binary fetched in this PR).
+- [ ] Actually execute that real-source option against original SHA-pinned CLIMK NetCDF at the same event index and 24 invented coordinates, producing separate raw+point+damage SHA evidence.
 - [ ] Obtain independent event-level historical *observed impact* samples for a real test/holdout damage-function calibration; do not fit to a published insurer net AEL/PML directly.
 - [ ] Build scientifically admitted annual physical-event frequency/occurrence law and correlation, then **sample** physical damage with validated dependency and explicit positive integer EUR handling.
 - [ ] Run producer-admitted event/asset physical losses through NextGen **original insured → outward/inward Cat XL → external retro**, preserving all zero-event years and physical event identities, then Gross/Net AAL/AEP/OEP with independently rebuilt curve receipts.
