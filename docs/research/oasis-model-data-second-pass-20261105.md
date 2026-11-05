@@ -16,7 +16,7 @@ Canonical discoveries are in
 [`landscape/sources-oasis-model-input-leads-20261105.json`](../../landscape/sources-oasis-model-input-leads-20261105.json).
 Its generated Markdown twin is a **read-only projection**, not a separate truth.
 
-This pass adds eight distinct research leads. A live search of the main
+This pass adds nine distinct research leads. A live search of the main
 repository found the following original sources **already present**, so they
 were *not* re-added:
 
@@ -110,6 +110,35 @@ It is **not** an Oasis model. A future original-source-rights-gated
 adapter could convert metres of water depth, damage-fraction curves and
 occupancy classes to Oasis intensity/damage bins. The MIT software
 licence does not override third-party scientific damage function rights.
+
+## Independent WISC academic wind loss code (newly found)
+
+[ElcoK/WISC](https://github.com/ElcoK/WISC) is the original academic
+European windstorm loss/risk modelling Python research implementation
+(Elco Koks / Vrije Universiteit Amsterdam), with a directly inspected
+**MIT software licence** (LICENSE Git blob
+`638dd62ec2a1b317979f283a533cee683dbdb447`).
+Its [`scripts/functions.py`](https://github.com/ElcoK/WISC/blob/master/scripts/functions.py)
+(Git blob `da6278d5dc61fb05dd89018fa854d77b36f16f2b`) contains
+`region_exposure`, `region_losses`, `loss_calculation`,
+`load_curves` and `load_max_dam`; region orchestration is in
+[`scripts/analyze.py`](https://github.com/ElcoK/WISC/blob/master/scripts/analyze.py)
+(Git blob `79b311c58354bb478088ec547dc53b23c625f483`).
+This is relevant as a **WISC exposure/vulnerability methodology
+challenger** and possible alternative to proprietary and
+noncommercial damage functions.
+
+**Hard stop:** it is **not** a native Oasis model package and does not
+include a licensed original 22,980-event C3S NetCDF archive, complete
+versioned externally required exposure/curve data, original insurer
+locations, OED financial contracts, or a confirmed contemporary
+runnable loss path. The MIT licence on academic SOFTWARE must not be
+propagated to externally sourced WISC weather data, OSM buildings,
+construction costs or damage curves. Scientific calibration,
+compatibility with current geo libraries and per-asset legal rights
+remain open. It is independently registered as
+`research.elcok.wisc.european-wind-damage` with
+`admission_status=not_admitted`.
 
 ## Additional validation and licensed model sourcing
 
