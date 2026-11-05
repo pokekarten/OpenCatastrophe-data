@@ -37,6 +37,14 @@ rule_documented_in_original_competition_notice = true
 rv_actual_use_of_residual_exception_verified = false
 
 [unresolved]
+# Critical new source-index finding 2026-11-05: April and September
+# have different officially indexed BT-04 procedure UUIDs. This is a
+# numeric comparison of 10 and 15, NOT a proved legal inconsistency.
+award_and_april_competition_bt04_search_index_match = false
+april_procurement_conditions_proved_to_govern_september_award = false
+different_bt04_search_index_requires_original_lineage_review = true
+published_residual_exception_proved_applied_to_september_award = false
+september_award_undisputed_link_to_april_contract_notice = false
 R_and_V_10_percent_label_below_15_percent_tender_minimum = true
 specific_reason_for_rv_10_percent_allocation_verified = false
 procurement_exemption_possible_but_application_not_proven = true
