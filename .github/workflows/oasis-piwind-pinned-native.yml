@@ -6,7 +6,7 @@ name: Pinned native Oasis PiWind research smoke
 on:
   push:
     branches:
-      - agent/1380-piwind-native-smoke
+      - main
     paths:
       - ".github/workflows/oasis-piwind-pinned-native.yml"
       - "research_runners/oasis_piwind_native_smoke_v0.py"
