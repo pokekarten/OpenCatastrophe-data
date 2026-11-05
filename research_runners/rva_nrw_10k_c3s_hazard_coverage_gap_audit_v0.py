@@ -16,6 +16,8 @@ import hashlib
 import io
 import json
 from pathlib import Path
+
+from rva_nrw_hu_gfk_residential_candidate_v0 import classify_gfk
 import re
 import sys
 import zipfile
@@ -33,6 +35,8 @@ CELL_FIELDS=("CellId","GridColumn","GridRow","SyntheticAssetCount",
              "WindVulnerabilityMapped")
 GFK_FIELDS=("HU2022GFKCandidate","SyntheticAssetCount","SyntheticBuildingTIVEUR",
             "WindMaterialRoofVulnerabilityMapped")
+KREIS_FIELDS=("KreisAGS2022","SyntheticAssetCount","SyntheticBuildingTIVEUR",
+             "ObservedRVInsuredCountyShare")
 
 class CoverageBlocked(ValueError):
     pass
@@ -107,6 +111,7 @@ def audit(path:Path,*,expected_count=EXPECTED_COUNT,expected_kreise=EXPECTED_KRE
     gfk_n=Counter()
     gfk_tiv=Counter()
     county_n=Counter()
+    county_tiv=Counter()
     in_cell=defaultdict(set)
     for item in sites:
         if (type(item) is not dict
@@ -119,7 +124,9 @@ def audit(path:Path,*,expected_count=EXPECTED_COUNT,expected_kreise=EXPECTED_KRE
         if (not re.fullmatch(r"SYN-NRW-(05\d{3})-\d{2}-\d{6}",aid)
             or item["cedant_id"]!="FICTITIOUS_RVA_LIKE_NRW_NOT_OBSERVED"
             or item["country_iso2"]!="DE"
-            or not re.fullmatch(r"UNMAPPED_HU22_GFK_31001_\d{4}",item["taxonomy"])):
+            or not re.fullmatch(r"UNMAPPED_HU22_GFK_31001_\d{4}",item["taxonomy"])
+            or classify_gfk(item["taxonomy"].removeprefix("UNMAPPED_HU22_GFK_"))[0]
+               !="residential_function_candidate_only"):
             raise CoverageBlocked("site insurer/ground GFK identity would be overstated")
         if any(type(item[k]) is not int for k in ("lon_e6","lat_e6","col","row")):
             raise CoverageBlocked("source geocoordinates or cell indexes not precise integers")
@@ -134,6 +141,7 @@ def audit(path:Path,*,expected_count=EXPECTED_COUNT,expected_kreise=EXPECTED_KRE
         cell_n[cell]+=1
         cell_tiv[cell]+=tiv
         county_n[county]+=1
+        county_tiv[county]+=tiv
         gfk_n[item["taxonomy"]]+=1
         gfk_tiv[item["taxonomy"]]+=tiv
         in_cell[cell].add(county)
@@ -158,6 +166,12 @@ def audit(path:Path,*,expected_count=EXPECTED_COUNT,expected_kreise=EXPECTED_KRE
          "WindMaterialRoofVulnerabilityMapped":"false"}
         for k in sorted(gfk_n)
     ]
+    kreisrows=[{"KreisAGS2022":k,"SyntheticAssetCount":county_n[k],
+                "SyntheticBuildingTIVEUR":county_tiv[k],
+                "ObservedRVInsuredCountyShare":"false"} for k in sorted(county_n)]
+    if (sum(r["SyntheticBuildingTIVEUR"] for r in kreisrows)!=expected_tiv
+        or sum(r["SyntheticAssetCount"] for r in kreisrows)!=expected_count):
+        raise CoverageBlocked("source-only Kreis portfolio exposure conservation failed")
     if sum(r["SyntheticBuildingTIVEUR"] for r in cellrows)!=expected_tiv:
         raise CoverageBlocked("cell-level TIV balance broken")
     summary={
@@ -184,7 +198,8 @@ def audit(path:Path,*,expected_count=EXPECTED_COUNT,expected_kreise=EXPECTED_KRE
         "native_Germany_GUL_IL_RI_OEP_AEP_executed":False,
         "GFK_function_taxonomy_is_not_a_valid_wind_vulnerability_mapping":True,
     }
-    return {"summary":summary,"cell_rows":cellrows,"gfk_rows":gfkrows}
+    return {"summary":summary,"cell_rows":cellrows,"gfk_rows":gfkrows,
+            "kreis_rows":kreisrows}
 
 
 def write_report(out:Path,study:dict)->dict:
@@ -193,14 +208,17 @@ def write_report(out:Path,study:dict)->dict:
     summary=dict(study["summary"])
     cell_bytes=_csv(study["cell_rows"],CELL_FIELDS)
     gfk_bytes=_csv(study["gfk_rows"],GFK_FIELDS)
+    kreis_bytes=_csv(study["kreis_rows"],KREIS_FIELDS)
     summary["output_sha256"]={
         "invented_grid_cell_exposure.csv":hashlib.sha256(cell_bytes).hexdigest(),
-        "unknown_wind_taxonomy_exposure.csv":hashlib.sha256(gfk_bytes).hexdigest()
+        "unknown_wind_taxonomy_exposure.csv":hashlib.sha256(gfk_bytes).hexdigest(),
+        "fictional_Kreis_exposure.csv":hashlib.sha256(kreis_bytes).hexdigest()
     }
     try:
         with zipfile.ZipFile(out,"x",compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
             z.writestr("invented_grid_cell_exposure.csv",cell_bytes)
             z.writestr("unknown_wind_taxonomy_exposure.csv",gfk_bytes)
+            z.writestr("fictional_Kreis_exposure.csv",kreis_bytes)
             z.writestr("summary.json",json.dumps(summary,sort_keys=True,indent=2)+"\n")
     except Exception:
         out.unlink(missing_ok=True)
