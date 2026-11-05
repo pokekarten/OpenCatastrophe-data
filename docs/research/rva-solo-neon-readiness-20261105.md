@@ -100,3 +100,34 @@ The exact read-only SQL from this PR was executed **twice**, once against defaul
 The public issuer PDF text was rechecked externally against the [2025 SFCR](https://www.ruv.de/dam/jcr%3A9c8441a7-28dd-4d98-9b79-3eb3c8b4afa5/2025-SFCR-Allgemeine.pdf), Fire/Other Property `2.223.182 TEuro` (PDF index page 12), and [2025 HGB](https://www.ruv.de/dam/jcr%3Ae0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R%2BV%20Allgemeine%20Versicherung%20AG_final.2026-04-21-14-59-23.pdf), `997.710 TEuro` (PDF index page 8) and `1.060.546` year-end contracts (PDF index page 77). The web PDF page-image inspection and separate original-byte download were unavailable in this check, so **no new original provider PDF SHA-256, page-image proof, or financial production approval** is claimed. The typed TOML values and observed source text agree; independent source-byte admission is still required.
 
 **Promotion process:** keep main unchanged; independently acquire/pin original publisher file hashes and usage-rights decisions, review source contracts, and only then prepare separately reviewed idempotent legal-person/metric registration. Do **not** merge the Neon rehearsal branch as a replacement for main and do not import the fictional 10k Oasis OED sample as an observed company portfolio.
+
+
+## 2026-11-05 update: original publisher PDFs pinned and isolated financial metric rehearsal
+
+**This section supersedes any earlier statement in this document that the 2025 publisher PDFs were not hash-verified.** Actual original PDF bytes were downloaded ephemerally by [GitHub original-byte workflow #42095783671](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42095783671) and checked for source URL, complete PDF signature, issuer/financial text markers and exact page counts. A second run, [#42096075662](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42096075662), **PASS**, confirmed the same bytes and compared them against hard-coded SHA-256 and byte-length pins. Both were GitHub-hosted; **independent verification from a second execution environment has not been done**. The original PDFs were not copied to GitHub or Neon.
+
+| Official source, 2025 | Original SHA-256 | Exact bytes | PDF pages | Semantic marker gate |
+| --- | --- | ---: | ---: | --- |
+| Solo SFCR, [issuer PDF](https://www.ruv.de/dam/jcr%3A9c8441a7-28dd-4d98-9b79-3eb3c8b4afa5/2025-SFCR-Allgemeine.pdf) | `0a941b729dc6b490a5ad285ae1e1f15f4aa8ec183fb00b3d470f780a99ff996a` | 2,069,226 | 86 | 4/4 |
+| Solo HGB, [issuer PDF](https://www.ruv.de/dam/jcr%3Ae0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R%2BV%20Allgemeine%20Versicherung%20AG_final.2026-04-21-14-59-23.pdf) | `85a82b7a199d583e1e07efbc93317ce8bd3bab99381f54b742e997d70e2c19fa` | 1,468,631 | 98 | 4/4 |
+
+New machine-readable, no-original-byte research source receipts: [SFCR TOML](../../research/observations/rva_solo_2025_sfcr_original_pdf_sha_receipt_v0.toml) and [HGB TOML](../../research/observations/rva_solo_2025_hgb_original_pdf_sha_receipt_v0.toml). New bounded [source runner](../../research_runners/rva_solo_original_financial_pdf_receipt_v0.py) and [11+ offline tests](../../tests/test_rva_solo_original_financial_pdf_receipt_v0.py) reject nonpublisher redirects, truncated/oversized PDFs, exact SHA drift and false financial vs insured-location claims. The runner uses pinned `pypdf==5.9.0` **only in the source-proof workflow** and never uploads PDFs, retains sensitive addresses or writes database rows.
+
+**Isolated Neon research branch** `rva-solo-identity-rehearsal-20261105`, ID `br-steep-hill-bahgylx3`: after existing verified legal-person metadata, an atomic transaction registered **two additional original-source-only financial receipts** (`admissible_for_raw=false`, redistribution rights not cleared) and three separate 2025 typed *national financial/accounting observations*:
+
+- SFCR Fire and Other Property solo GWP **EUR 2,223,182,000**, business_scope=solo_direct, gross, 2025.
+- HGB direct Connected Buildings GWP **EUR 997,710,000**, separate HGB source and accounting scope.
+- HGB Connected Buildings **1,060,546 year-end contracts**, as-of date **2025-12-31**, unit=contracts (not a geocoded building or location count).
+
+The exact GitHub SQL was executed on Neon main and isolated branch after the transaction:
+
+| Readiness evidence | Neon main | Neon isolated branch |
+| --- | ---: | ---: |
+| verified solo company and exact LEI | 0 / 0 | 1 / 1 |
+| source-reviewed SFCR gross property premium | 0 | 1 |
+| source-reviewed HGB connected-buildings gross premium | 0 | 1 |
+| source-reviewed HGB connected-buildings year-end contracts | 0 | 1 |
+| company-linked synthetic portfolios / portfolio versions / exposure units | 0 / 0 / 0 | 0 / 0 / 0 |
+| next gate | `BLOCKED_UNVERIFIED_OR_AMBIGUOUS_SOLO_LEGAL_ENTITY` | `BLOCKED_COMPANY_SYNTHETIC_EXPOSURE_NOT_REGISTERED` |
+
+**Important:** No production Neon writes were made. The isolated three financial rows are **verified source-specific observations**, not insurance TIV, insured site counts, CAT model frequency, peril losses, net PML, source bulk-reuse rights, or a licence to upload original PDFs. The GitHub authoring branch and isolated Neon branch must **not** be merged/promoted automatically. The next milestone is separately source-bound, explicitly nongeocoded synthetic OED/Neon portfolio-version metadata from [PR #1373](https://github.com/pokekarten/OpenCatastrophe-data/pull/1373); a native German GUL/IL/RI/AEP/OEP is **still blocked** until actual model-compatible hazard/vulnerability, WGS84 synthetic placement and validated insurance-financial terms.
