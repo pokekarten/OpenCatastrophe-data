@@ -66,6 +66,49 @@ class NZJoinPreflightTests(unittest.TestCase):
         self.assertEqual(counts["reference_invalid_key_rows"], 1)
         self.assertEqual(counts["current_outline_duplicate_building_ids"], 1)
 
+    def test_rated_boundary_only_and_shared_building_blocks_one_to_one(self) -> None:
+        # Even if a fallback parcel carries a stray rating-unit key, it is
+        # not an official rated-property boundary.
+        vals = [{"unit_of_property_id": "P1"}, {"unit_of_property_id": "P2"},
+                {"unit_of_property_id": "P3"}]
+        bounds = [
+            {"source": "NZ Unit of Property", "unit_of_property_id": "P1"},
+            {"source": "NZ Property Titles", "unit_of_property_id": "P2"},
+            {"source": "NZ Unit of Property", "unit_of_property_id": "P3"},
+        ]
+        refs = [
+            {"unit_of_property_id": "P1", "building_id": "B1"},
+            {"unit_of_property_id": "P2", "building_id": "B2"},
+            {"unit_of_property_id": "P3", "building_id": "B1"},
+        ]
+        outlines = [{"building_id": "B1"}, {"building_id": "B2"}]
+        out = evaluate(vals, bounds, refs, outlines)
+        c = out["counts"]
+        self.assertEqual(c["valuation_units_with_boundary_in_sample"], 2)
+        self.assertEqual(c["non_rated_fallback_rows_with_unit_id"], 1)
+        self.assertEqual(c["current_outline_ids_referenced_by_multiple_properties"], 1)
+        self.assertEqual(c["conservative_one_to_one_join_candidates_in_sample"], 0)
+        self.assertTrue(out["cautions"]["one_to_one_candidates_do_not_prove_physical_or_insured_assets"])
+
+        # Distinct building references and exactly one dated source *candidate*
+        # per unit become structurally unambiguous, not model-admitted.
+        refs[-1] = {"unit_of_property_id": "P3", "building_id": "B3"}
+        outlines.append({"building_id": "B3"})
+        c = evaluate(vals, bounds, refs, outlines)["counts"]
+        self.assertEqual(c["conservative_one_to_one_join_candidates_in_sample"], 2)
+        self.assertEqual(c["current_outline_ids_referenced_by_multiple_properties"], 0)
+
+        # Duplicate rated-property boundary or duplicate outline must block
+        # the corresponding otherwise-unique candidate.
+        bounds.append({"source": "NZ Unit of Property", "unit_of_property_id": "P1"})
+        c = evaluate(vals, bounds, refs, outlines)["counts"]
+        self.assertEqual(c["rated_boundary_duplicate_unit_id_rows"], 1)
+        self.assertEqual(c["conservative_one_to_one_join_candidates_in_sample"], 1)
+        outlines.append({"building_id": "B3"})
+        c = evaluate(vals, bounds, refs, outlines)["counts"]
+        self.assertEqual(c["conservative_one_to_one_join_candidates_in_sample"], 0)
+        self.assertEqual(c["current_outline_duplicate_building_ids"], 1)
+
     def test_csv_header_and_row_bound_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "synthetic.csv"
