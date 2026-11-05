@@ -123,6 +123,11 @@ SELECT (SELECT n FROM gate) AS synthetic_assets,
        count(*) AS worlds,
        sum(event_count)::bigint AS physical_synthetic_events,
        count(*) FILTER(WHERE event_count=0) AS zero_event_years,
+       -- Two distinct fictional peril events may occur in one shared year.
+       -- Never collapse wind/flood into one physical occurrence or multiply
+       -- by a second sample-year probability.
+       count(*) FILTER(WHERE event_count=2) AS two_distinct_peril_event_years,
+       count(*) FILTER(WHERE event_count>2) AS invalid_extra_event_years,
        sum(gross_loss_eur)::numeric AS total_annual_loss_eur,
        ROUND(avg(gross_loss_eur),2) AS aal_eur,
        percentile_disc(0.99) WITHIN GROUP(ORDER BY gross_loss_eur) AS aep99_loss_eur,
