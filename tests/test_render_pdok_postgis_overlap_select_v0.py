@@ -87,6 +87,27 @@ class PostGISQueryGenerationTests(unittest.TestCase):
         with self.assertRaises(ParcelBagError):
             render(p, b, a, bbox=BBOX)
 
+    def test_requires_parcel_bbox_to_enclose_entire_offscreen_bgt_footprint(self):
+        p, b, a = fixture()
+        # Feature intersects the original query window, but most of its
+        # footprint lies across its east edge (a real PDOK failure mode).
+        b["features"][0]["geometry"] = sq(5.0049, 52.00015, 0.0004)
+        with self.assertRaisesRegex(ParcelBagError, "parcel_bbox excludes"):
+            render(p, b, a, bbox=BBOX)
+
+        # A separately fetched, complete parcel query may use wider bounds.
+        wider = [5.0, 52.0, 5.0055, 52.005]
+        sql = render(p, b, a, bbox=BBOX, parcel_bbox=wider)
+        self.assertIn("Full-footprint parcel query CRS84 bbox:", sql)
+        self.assertIn("Building/BAG query CRS84 bbox:", sql)
+        self.assertIn("ST_Union", sql)
+
+        # The widened parcel window cannot simply be replaced by a tiny
+        # bounding box that excludes part of the building geometry.
+        with self.assertRaisesRegex(ParcelBagError, "parcel_bbox excludes"):
+            render(p, b, a, bbox=BBOX,
+                   parcel_bbox=[5.0, 52.0, 5.005, 52.005])
+
     def test_rejects_missing_bag_id_and_non_ascii_sql_ids(self):
         p, b, a = fixture()
         del b["features"][0]["properties"]["identificatie_bag_pnd"]
