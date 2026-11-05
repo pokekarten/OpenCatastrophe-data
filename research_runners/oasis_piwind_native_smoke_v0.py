@@ -103,15 +103,17 @@ def native_run(model_dir: Path, *, timeout_seconds: int) -> dict[str, object]:
     if not cli:
         raise PiWindNativeSmokeError("oasislmf executable not on PATH")
     output_root = model_dir / "runs"
-    if output_root.exists():
+    if output_root.exists() or output_root.is_symlink():
         raise PiWindNativeSmokeError("model checkout already contains run outputs; use a fresh clone")
 
     env = os.environ.copy()
     env.update({"NUMBA_NUM_THREADS": "2", "OMP_NUM_THREADS": "2"})
     log_path = model_dir.parent / "native-piwind-output.log"
+    if log_path.exists() or log_path.is_symlink():
+        raise PiWindNativeSmokeError("refuse to overwrite existing native log")
     started = time.monotonic()
     try:
-        with log_path.open("wb") as log:
+        with log_path.open("xb") as log:
             process = subprocess.run(
                 [cli, "model", "run", "-C", "oasislmf.json"],
                 cwd=model_dir, stdout=log, stderr=subprocess.STDOUT,
@@ -153,14 +155,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--receipt", type=Path, help="output research JSON outside the repository")
     args = parser.parse_args(argv)
     try:
-        result = native_run(args.model_dir.resolve(), timeout_seconds=args.timeout_seconds)
-        payload = json.dumps(result, sort_keys=True, indent=2) + "\n"
         if args.receipt is not None:
-            if args.receipt.exists():
+            if args.receipt.exists() or args.receipt.is_symlink():
                 raise PiWindNativeSmokeError("refuse to overwrite an existing output receipt")
             if not args.receipt.parent.is_dir():
                 raise PiWindNativeSmokeError("receipt parent must exist")
-            args.receipt.write_text(payload, encoding="utf-8")
+        result = native_run(args.model_dir.resolve(), timeout_seconds=args.timeout_seconds)
+        payload = json.dumps(result, sort_keys=True, indent=2) + "\n"
+        if args.receipt is not None:
+            try:
+                with args.receipt.open("x", encoding="utf-8") as handle:
+                    handle.write(payload)
+            except FileExistsError as exc:
+                raise PiWindNativeSmokeError("refuse to overwrite an existing output receipt") from exc
+            except OSError as exc:
+                raise PiWindNativeSmokeError("could not write output receipt") from exc
         print(payload, end="")
         return 0
     except PiWindNativeSmokeError as exc:
