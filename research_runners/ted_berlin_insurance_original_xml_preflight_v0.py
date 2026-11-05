@@ -14,6 +14,7 @@ import hashlib
 import json
 import re
 import sys
+import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -46,36 +47,65 @@ def official_url(notice: str) -> str:
     return BASE + notice + "/xml"
 
 
-def fetch(notice: str, *, opener=urllib.request.urlopen) -> bytes:
+def fetch(
+    notice: str, *, opener=urllib.request.urlopen, sleep_fn=time.sleep,
+    max_attempts: int = 4,
+) -> bytes:
+    """Fetch official XML with at most four *HTTP 202-only* bounded retries.
+
+    A 202 Accepted is never original XML, even if a response body looks like
+    XML. Only an exact official HTTPS 200 URL returns source bytes. The
+    independent inspect() SHA + byte-count pins still govern source approval.
+    """
     url = official_url(notice)
+    if type(max_attempts) is not int or not 1 <= max_attempts <= 4:
+        raise ValueError("TED_RETRY_ATTEMPTS_OUT_OF_BOUNDS")
     request = urllib.request.Request(
         url, headers={
             "Accept": "application/xml, text/xml;q=0.9",
             "User-Agent": "OpenCatastrophe-public-source-provenance/1.0",
         }
     )
-    with opener(request, timeout=35) as response:
-        effective = urllib.parse.urlsplit(response.geturl())
-        if (effective.scheme != "https" or effective.hostname != "ted.europa.eu"
-                or effective.path != urllib.parse.urlsplit(url).path):
-            raise ValueError("TED_NOTICE_REDIRECT_CHANGED_OR_NOT_OFFICIAL")
-        status = getattr(response, "status", 200)
-        if status != 200:
-            raise ValueError(f"TED_HTTP_NON_200_STATUS_{status}")
-        chunks = []
-        length = 0
-        while True:
-            chunk = response.read(65536)
-            if not chunk:
-                break
-            length += len(chunk)
-            if length > MAX_BYTES:
-                raise ValueError("TED_SOURCE_EXCEEDS_MAX_BYTES")
-            chunks.append(chunk)
-    data = b"".join(chunks)
-    if not data or len(data) < 100:
-        raise ValueError("TED_SOURCE_TRUNCATED")
-    return data
+    for attempt in range(max_attempts):
+        with opener(request, timeout=35) as response:
+            effective = urllib.parse.urlsplit(response.geturl())
+            if (effective.scheme != "https" or effective.hostname != "ted.europa.eu"
+                    or effective.path != urllib.parse.urlsplit(url).path
+                    or effective.query or effective.fragment):
+                raise ValueError("TED_NOTICE_REDIRECT_CHANGED_OR_NOT_OFFICIAL")
+            status = getattr(response, "status", 200)
+            if status == 202:
+                # Never print/use a provider's pending payload as XML. Retry
+                # only this specific HTTP status; all other errors are terminal.
+                if attempt == max_attempts - 1:
+                    raise ValueError("TED_HTTP_NON_200_STATUS_202_RETRY_EXHAUSTED")
+                headers = getattr(response, "headers", None)
+                retry_after = headers.get("Retry-After") if headers is not None else None
+                if isinstance(retry_after, str) and retry_after.isascii() and retry_after.isdigit():
+                    delay = min(2, int(retry_after[:6]))
+                else:
+                    delay = min(2, attempt + 1)
+            elif status != 200:
+                raise ValueError(f"TED_HTTP_NON_200_STATUS_{status}")
+            else:
+                chunks = []
+                length = 0
+                while True:
+                    chunk = response.read(65536)
+                    if not chunk:
+                        break
+                    length += len(chunk)
+                    if length > MAX_BYTES:
+                        raise ValueError("TED_SOURCE_EXCEEDS_MAX_BYTES")
+                    chunks.append(chunk)
+                data = b"".join(chunks)
+                if not data or len(data) < 100:
+                    raise ValueError("TED_SOURCE_TRUNCATED")
+                return data
+        # Close each accepted response BEFORE the next request; <= 6 seconds
+        # total delay per notice with the defaults (1+2+2 = 5 seconds).
+        sleep_fn(delay)
+    raise ValueError("TED_HTTP_NO_COMPLETED_ORIGINAL")
 
 
 def inspect(notice: str, body: bytes) -> dict:
