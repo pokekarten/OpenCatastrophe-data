@@ -107,6 +107,53 @@ def audit(mapping_raw: bytes, mapping_git_sha: str,
     }
 
 
+
+def sample_mapping_coverage(
+    parcel_rows: list[dict], region: str,
+    mapping_rows: list[dict], hierarchy_rows: list[dict],
+) -> dict:
+    """Return ONLY sample counts: never provider crop codes, names, parcel IDs or locations.
+
+    Crop-code keys are exact region+original string; coercing numeric codes
+    silently loses leading zeroes and can cross-classify other regions.
+    """
+    if not isinstance(region, str) or not re.fullmatch(r"[a-z][a-z0-9]{0,5}", region):
+        raise Blocked("invalid source region")
+    if not parcel_rows or len(parcel_rows) > 5000:
+        raise Blocked("source sample must have 1..5000 rows")
+    mapping = {}
+    for row in mapping_rows:
+        key = (row["nuts"], row["original_code"])
+        if key in mapping:
+            raise Blocked("ambiguous source crop mapping")
+        mapping[key] = row["hcat4_code"]
+    if not any(key[0] == region for key in mapping):
+        raise Blocked("region missing from original codebook")
+    taxonomy = {row["hcat4_code"] for row in hierarchy_rows}
+    result = {
+        "sampled_rows": len(parcel_rows),
+        "resolved_to_hcat4_rows": 0,
+        "code_not_in_region_mapping_rows": 0,
+        "mapping_to_missing_hcat4_rows": 0,
+        "blank_or_nonstring_original_code_rows": 0,
+    }
+    for row in parcel_rows:
+        code = row.get("original_code")
+        if not isinstance(code, str) or not code or code.strip() != code:
+            result["blank_or_nonstring_original_code_rows"] += 1
+            continue
+        hcat = mapping.get((region, code))
+        if hcat is None:
+            result["code_not_in_region_mapping_rows"] += 1
+        elif hcat not in taxonomy:
+            result["mapping_to_missing_hcat4_rows"] += 1
+        else:
+            result["resolved_to_hcat4_rows"] += 1
+    if sum(v for k, v in result.items() if k != "sampled_rows") != len(parcel_rows):
+        raise Blocked("crop crosswalk did not conserve parcel sample counts")
+    return result
+
+
 def _read_local(path: Path) -> bytes:
     if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_BYTES:
         raise Blocked("input must be a bounded regular local file, not a symlink")
