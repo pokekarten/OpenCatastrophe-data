@@ -17,6 +17,20 @@ Research date: 2026-11-05. RESEARCH ONLY, NOT_ADMITTED. No insurance exposure, s
 - Provider release history describes initial gpqt, v201 stack correction and v202 overlapping-polygon geometry correction (mainly Spain). Do not silently mix vintages or compare flawed stacked outputs as independent truth.
 - 2008–2023 observed national paying-agency declarations vary by region and year. Some fields may be missing, self-declared or overlapped. NL BRP is an underlying source for EuroCrops, so the two must not be treated as independent observations.
 
+## Manual original-file acquisition path (operator opt-in only)
+
+A fixed-origin, fail-closed original download helper is now available:
+
+    mkdir -p /tmp/oc-eurocrops-originals
+    python research_runners/eurocrops_jrc_acquire_v0.py \
+      --live --destination-dir /tmp/oc-eurocrops-originals
+
+It makes an explicit opt-in **GET** for exactly `gpqtv202/de4_2023.parquet` on the official JRC host over HTTPS (only the equivalent JRC public distribution URL may redirect); refuses a symlink directory, overwrite, Git-checkout destination, unexpected HTTP status/final URL or encoding; streams a maximum of **180 MiB**; verifies the Parquet magic before retaining the file; removes its partial file on error; emits only a JSON first-seen provenance receipt including observed SHA-256. The original bytes and resulting CSVs must **not be committed**.
+
+**Important provenance limit:** SHA-256 observed during this transfer is a **first-seen download checksum**, not a separately published or publisher-signed checksum and therefore does **not** independently prove publisher authenticity or source immutability. Preserve source URL, retrieval timestamp, byte count and hash to enable repeatable re-download comparisons. The EuroCrops source, licence and scientific eligibility stay `NOT_ADMITTED`. This manual helper does not run in GitHub CI and cannot bypass source review. No real publisher bytes were downloaded during the current isolated run (JRC DNS resolution failed). Its six offline synthetic network-stub tests are in `tests/test_eurocrops_jrc_acquire_v0.py`.
+
+Once the download succeeded on an authorized host, use the receipt's `original_sha256` with the file preflight below, then separately verify the original mapping CSV source pin and its HCAT4 coverage. Don't confuse a successful byte transfer with taxonomy, geographical completeness, insured value or risk-model readiness.
+
 ## Executable research-only quality gate
 
 Run research_runners/eurocrops_v202_preflight_v0.py offline, against a locally acquired exact original JRC file and an independently captured original SHA256. It does not download data, put coordinates in Git or modify Neon. For a local sample it:
