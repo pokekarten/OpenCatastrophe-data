@@ -9,13 +9,14 @@ single dimensionless temporal escalation factor.
 Only COMPLETELY INVENTED site volumes/rates are accepted. Real BAG, 3DBAG,
 insurer, policy, address, coordinate or provider source data are forbidden.
 The min/max of three LoD volumes is a geometry sensitivity envelope, NOT a
-confidence interval. No CAT/OED/FFBK/NextGen input or insurer association.
+confidence interval. No production exposure, CAT or treaty input.
 """
 from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import argparse
 import json
+import tomllib
 from pathlib import Path
 import re
 import sys
@@ -31,25 +32,13 @@ class FictionalRebuildError(ValueError):
     """Unjustified cost assumptions, unsafe source data or broken units."""
 
 
-def _pairs(kvs):
-    obj = {}
-    for k, value in kvs:
-        if k in obj:
-            raise FictionalRebuildError("duplicate JSON key")
-        obj[k] = value
-    return obj
-
-
-def _constant(_):
-    raise FictionalRebuildError("nonfinite JSON value")
-
-
 def read_fixture(path):
     p = Path(path)
     if p.stat().st_size > MAX_BYTES:
         raise FictionalRebuildError("research input over budget")
-    return json.loads(p.read_text(encoding="utf-8"),
-                      object_pairs_hook=_pairs, parse_constant=_constant)
+    # TOML is the repository's established scenario format. The standard
+    # library parser rejects duplicate keys and nonfinite unquoted numbers.
+    return tomllib.loads(p.read_text(encoding="utf-8"))
 
 
 def _keys(value, required, name):
