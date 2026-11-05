@@ -31,6 +31,8 @@ DATA_NAME = "RDS-2013-0009.7_Data_Format3_GPKG.zip"
 DATA_BYTES = 238_170_979
 DATA_SHA256 = "9e36ecd0d70dd5fa126be7b5ce5b02003867da04c41f3bd137f5ccdfca81b9b2"
 GPKG_MEMBER = "Data/FPA_FOD_20260615.gpkg"
+PUBLISHER_2024_SIZE_COUNTS = dict(A=43445, B=34441, C=7296, D=1263, E=640, F=388, G=235)
+PUBLISHER_2024_LINK_COUNTS = dict(A=1, B=0, C=0, D=6, E=31, F=224, G=153)
 VARIABLES_MEMBER = "Data/_variable_descriptions.csv"
 VARIABLES_MEMBER_BYTES = 31_310
 EXPECTED_META_MEMBERS = {
@@ -130,6 +132,7 @@ def verify_original_metadata_zip(
 def audit_extracted_fires_2024_sqlite(
     original_db: Path, *, expected_records=87_708, expected_mtbs_id_present=415,
     expected_state_codes=53, expected_state_size_cells=299,
+    expected_size_counts=None, expected_link_counts=None,
 ):
     """Read-only, source-aggregated 2024 numbers; no event-level rows emitted.
 
@@ -185,6 +188,13 @@ def audit_extracted_fires_2024_sqlite(
         raise ArchiveBlocked("original archived 2024 cohort differs from source control")
     if set(a) != set("ABCDEFG"):
         raise ArchiveBlocked("original 2024 A-G reported classes incomplete")
+    if expected_size_counts is None:
+        expected_size_counts = PUBLISHER_2024_SIZE_COUNTS
+    if expected_link_counts is None:
+        expected_link_counts = PUBLISHER_2024_LINK_COUNTS
+    if any(a[key] != expected_size_counts.get(key) or linked[key] != expected_link_counts.get(key)
+           for key in "ABCDEFG"):
+        raise ArchiveBlocked("source archive A-G totals differ from independently observed ArcGIS cohort")
     return {
         "original_2024_fpa_report_count": sum(a.values()),
         "original_2024_mtbs_id_nonnull_count": sum(linked.values()),
