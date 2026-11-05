@@ -116,6 +116,11 @@ class RvaSoloNeonReadinessTests(unittest.TestCase):
                      "annual_cat_ep_calibrated_by_these_sources"):
             with self.subTest(term=term):
                 self.assertIn(term, self.sql)
+        # Financial source receipts must carry an independently checked original
+        # PDF and explicit metric-scope review, not merely a source-key join.
+        self.assertEqual(self.sql.count("verified_original_financial_observation"), 3)
+        self.assertEqual(self.sql.count("publisher_original_sha256_verified"), 3)
+        self.assertEqual(self.sql.count("accounting_line_and_basis_verified"), 3)
         self.assertIn("false::boolean AS annual_cat_ep_calibrated_by_these_sources", self.sql)
         self.assertIn("false::boolean AS company_geolocated_insured_tiv_observed_by_these_sources", self.sql)
 
