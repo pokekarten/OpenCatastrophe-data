@@ -24,6 +24,7 @@ SOURCE_FILES = {
     "damage_metadata": "metadata.csv",
     "exposure_zip": "data-files.zip",
     "damage_zip": "data-files.zip",
+    "code_zip": "raphael-portmann/202403_crop_hail_damage_footprint-1.0.zip",
     "radar_metadata": "metadata.csv",
     "radar_meshs_h5": "hail_MESHS_CH_12_events_2017_2021.h5",
     "radar_poh_h5": "hail_POH_CH_12_events_2017_2021.h5",
@@ -52,6 +53,8 @@ def source_url(asset: str) -> str:
     if asset not in SOURCE_FILES:
         raise Blocked("asset not explicitly allowlisted")
     record_id = ASSETS[asset][0]
+    if asset == "code_zip":
+        return f"https://{HOST}/api/records/12784190/files/raphael-portmann/202403_crop_hail_damage_footprint-1.0.zip/content"
     return f"https://{HOST}/records/{record_id}/files/{quote(SOURCE_FILES[asset])}?download=1"
 
 
@@ -126,12 +129,15 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--include-radar", action="store_true")
     parser.add_argument("--include-archives", action="store_true", help="also verify original two crop data ZIPs")
+    parser.add_argument("--include-code", action="store_true", help="verify original Zenodo software archive (never execute)")
     args = parser.parse_args()
     assets = ("exposure_metadata", "damage_metadata", "radar_metadata")
     if args.include_radar:
         assets += ("radar_meshs_h5", "radar_poh_h5")
     if args.include_archives:
         assets += ("exposure_zip", "damage_zip")
+    if args.include_code:
+        assets += ("code_zip",)
     try:
         print(json.dumps(verify(assets), sort_keys=True))
     except Blocked as exc:
