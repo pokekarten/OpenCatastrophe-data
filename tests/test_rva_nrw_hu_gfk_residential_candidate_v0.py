@@ -24,11 +24,11 @@ class TestHistoricalHUFunction(unittest.TestCase):
     def test_other_object_type_or_unverified_function_is_quarantined(self):
         for value in ("31002_1010","31003_1100","32001_1000"):
             self.assertEqual(classify_gfk(value)[0],"non_building_object_quarantine")
-        for value in ("31001_9999","31001_3100","31001_1313"):
+        for value in ("31001_9999","31001_3100","31001_1312"):
             self.assertEqual(classify_gfk(value)[0],"unmapped_quarantine")
         for value in ("31001_1020","31001_1022","31001_1024"):
             self.assertEqual(classify_gfk(value)[0],"special_occupancy_quarantine")
-        for value in ("31001_2460","31001_2462","31001_2000","31001_2720"):
+        for value in ("31001_2460","31001_2462","31001_2463","31001_2723","31001_1313","31001_2000","31001_2720"):
             self.assertEqual(classify_gfk(value)[0],"known_nonresidential_example")
         for value in ("1010","31001","31001_10","31001_10100","garbage",
                       "31001_1010/../etc",""):
