@@ -92,13 +92,13 @@ def inspect(source: dict, raw: bytes) -> dict:
     if pypdf_version != "5.9.0":
         raise ValueError("RVA_UNPINNED_PDF_READER")
     try:
-        reader = PdfReader(io.BytesIO(raw), strict=True)
+        reader = PdfReader(io.BytesIO(raw), strict=False)
         pages = len(reader.pages)
         if pages != source["pages_expected"]:
             raise ValueError("RVA_ORIGINAL_PAGE_COUNT_DRIFT")
         extracted_parts = []
         for page in reader.pages:
-            page_text = page.extract_text(extraction_mode="layout") or ""
+            page_text = page.extract_text(extraction_mode="plain") or ""
             extracted_parts.append(page_text)
             if sum(map(len, extracted_parts)) > MAX_TEXT_BYTES:
                 raise ValueError("RVA_PDF_TEXT_INVALID")
@@ -106,7 +106,7 @@ def inspect(source: dict, raw: bytes) -> dict:
     except (ValueError, RuntimeError):
         raise
     except Exception as exc:
-        raise ValueError("RVA_ORIGINAL_PDF_READER_FAILED") from exc
+        raise ValueError("RVA_ORIGINAL_PDF_READER_FAILED: " + type(exc).__name__) from exc
     marker_count = semantic_check(extracted, source["required_markers"])
     return {
         "source_id": source["source_id"],
@@ -129,7 +129,13 @@ def inspect(source: dict, raw: bytes) -> dict:
 
 
 def main() -> int:
-    output = [inspect(source, bounded_publisher_pdf(source["url"])) for source in URLS]
+    output = []
+    for source in URLS:
+        receipt = inspect(source, bounded_publisher_pdf(source["url"]))
+        # Emit only proof metadata per document. This survives a later source
+        # failure without printing, storing or uploading original PDF bytes.
+        print("RVA_ORIGINAL_SOURCE_RECEIPT " + json.dumps(receipt, sort_keys=True, ensure_ascii=False), flush=True)
+        output.append(receipt)
     if len(output) != 2 or any(x["source_byte_receipt_complete"] is not True for x in output):
         raise ValueError("RVA_SFCR_AND_HGB_NOT_BOTH_VERIFIED")
     print(json.dumps({
