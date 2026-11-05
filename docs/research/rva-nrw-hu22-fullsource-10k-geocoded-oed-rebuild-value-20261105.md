@@ -44,3 +44,23 @@ The 2022 official HU physical candidate population is distinct from the **2022-0
 4. **Full ~901MB source acquisition is now manual-only** using explicit `workflow_dispatch` on `.github/workflows/rva-nrw-hu22-full-one-shot.yml`, to prevent expensive downloads on every normal PR commit. The previously successful first full source run is already documented; further normal PR tests do not need repeating it.
 
 **Status:** Source-verified, geometrically geocoded public building-candidate **synthetic** OED book available; **actual insurer sites/TIV/coverage and German CAT GUL/IL/RI/OEP/AEP remain NO-GO**.
+
+
+## Independent 10k original-footprint versus fictional-TIV diagnostic (2026-11-05)
+
+A separate **full-artifact** audit independently opened the immutable successful [original physical-source 10k artifact #13447603258](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42097472463/artifacts/13447603258) (ZIP digest `5b0055ce71314f7d7baf4f67008cd4abba3df28a4bce0690bbe9521a3cc35757`), checked **all three** published CSV SHA-256 digests against `manifest.json`, matched 10,000 fictional location, account and original physical-candidate-evidence IDs, retained 53 Kreis codes and the original 4.8260295bn EUR **toy** national NRW sample TIV, and calculated the following **diagnostic only**:
+
+| Metric on 10,000 fictional policies joined to public physical footprint candidates | Measured or computed value |
+| --- | ---: |
+| Original HU physical ground footprint p1 / median / p95 / p99 | 24.83 / 103.32 / 250.35 / 470.45 m² |
+| Existing invented OED BuildingTIV ÷ *ground footprint* p1 / median / p95 / p99 | 737.63 / 3,903.85 / 14,641.60 / 24,765.15 EUR/m² |
+| Fictional cases above 10,000 EUR per **ground footprint** m² | 1,137 / 10,000 = 11.37% |
+| Fictional cases below 2,000 EUR per **ground footprint** m² | 1,488 / 10,000 = 14.88% |
+| Original measured ground footprint area vs **invented** OED BuildingTIV (Pearson) | **−0.003029** |
+| Same pair, rank correlation (Spearman with average-rank ties) | **−0.002655** |
+
+**Interpretation:** The initial OED 10k `age_archetype` valuation is effectively *uncorrelated* with measured physical footprint area; it is an intentional, source-unfitted fictional assignment, not evidence of the market or insured valuation. Rates above 10,000 EUR per *ground* m² are **not inherently an error**: footprint area is not usable gross floor area, and unknown storeys, partial structures, building category and building quality matter. But the huge resulting fictional range is a quantitative reason to prefer the existing **three area × explicitly assumed floor count × rebuilding-cost** sensitivity variants for future structural exposure analyses, retaining the same geometry and county weights. Their 2.2008–11.0039bn EUR toy TIV spread remains scenario uncertainty, **not a source-calibrated confidence interval**.
+
+The full artifacts, original HU22 source ZIP SHA and 10k sample IDs remain distinct from real R+V premises. No individual original source OI identifiers, original third-party ZIP, R+V customers, personally attributed addresses or hazard/treaty risk claims were added to this note. For a future defensible primary valuation, independently source/pin floor counts or a probabilistic height/story proxy, functional occupancy, region-specific indexed rebuilding rates, construction, and separately validate the reconstructed *gross floor* value basis. Never calibrate a Germany wind vulnerability function from a near-zero correlation of fictional TIV to physical footprint.
+
+**Availability note:** The original GitHub Actions artifact currently has 14-day retention; the pinned output source/hash and derived *aggregate-only* statistics must be preserved independently of that retention window.
