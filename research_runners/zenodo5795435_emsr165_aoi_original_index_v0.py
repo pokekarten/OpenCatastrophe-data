@@ -90,7 +90,7 @@ def audit_index(document):
             raise AOISourceBlocked("year malformed/outside reviewed archive anomalies")
         if type(props["YEAR_END"]) is not int:
             raise AOISourceBlocked("event end-year malformed")
-        if season not in {"winter", "spring", "summer", "autumn"}:
+        if not isinstance(season, str) or season not in {"winter", "spring", "summer", "autumn"}:
             raise AOISourceBlocked("unknown seasonal mosaic identifier")
         source_file = props["geo_harmonizer_raster"]
         if not isinstance(source_file, str):
