@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import io
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -37,6 +38,28 @@ class OriginalFinancialSourceReceiptTests(unittest.TestCase):
                           "85a82b7a199d583e1e07efbc93317ce8bd3bab99381f54b742e997d70e2c19fa"])
         self.assertEqual([s["exact_original_bytes"] for s in m.URLS], [2069226, 1468631])
         self.assertTrue(all(s["url"].startswith("https://www.ruv.de/dam/") for s in m.URLS))
+
+    def test_pinned_typed_original_receipts_are_source_scoped(self):
+        root = Path(m.__file__).resolve().parents[1]
+        paths = [
+            root / "research/observations/rva_solo_2025_sfcr_original_pdf_sha_receipt_v0.toml",
+            root / "research/observations/rva_solo_2025_hgb_original_pdf_sha_receipt_v0.toml",
+        ]
+        rows = [tomllib.loads(p.read_text(encoding="utf-8")) for p in paths]
+        self.assertEqual(len(rows), len(m.URLS))
+        for receipt, expected in zip(rows, m.URLS):
+            self.assertEqual(receipt["source_url"], expected["url"])
+            self.assertEqual(receipt["original_pdf_sha256"], expected["exact_original_sha256"])
+            self.assertEqual(receipt["original_pdf_bytes"], expected["exact_original_bytes"])
+            self.assertEqual(receipt["original_pdf_pages"], expected["pages_expected"])
+            self.assertTrue(receipt["verified_original_pdf_bytes_and_text_markers"])
+            self.assertFalse(receipt["independently_verified_by_second_environment"])
+            self.assertFalse(receipt["publisher_raw_pdf_committed"])
+            self.assertFalse(receipt["publisher_bulk_redistribution_rights_cleared"])
+            self.assertFalse(receipt["cat_model_input_approved"])
+        self.assertEqual(rows[0]["gross_written_property_premium_eur"], "2223182000")
+        self.assertEqual(rows[1]["connected_buildings_direct_gross_written_premium_eur"], "997710000")
+        self.assertEqual(rows[1]["connected_buildings_contracts_at_2025_year_end"], "1060546")
 
     def test_foreign_source_url_fails(self):
         with self.assertRaisesRegex(ValueError, "NOT_ALLOWLISTED"):
