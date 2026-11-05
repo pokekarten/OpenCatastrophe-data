@@ -36,7 +36,8 @@ SOURCES=(
             r"Allianz\s+AG",
             r"Sturm\s*/\s*Hagel",
         ),
-        "exact_original_sha256":None,
+        "exact_original_sha256":"0671a38d440b0628088399c0ee0fa521e24d31738d19c2d8b93d65424c87143f",
+        "exact_original_bytes":22528,
     },
     {
         "id":"BERLIN_SENATE_19_24229_20251111",
@@ -52,7 +53,8 @@ SOURCES=(
             r"18\.666",
             r"Charlottenburg-Wilmers",
         ),
-        "exact_original_sha256":None,
+        "exact_original_sha256":"1269725e4ff8427f32db22a66a0745bc12a75dc1281ca62de7d21ddcaead307e",
+        "exact_original_bytes":21842,
     },
 )
 
@@ -100,6 +102,9 @@ def inspect_original(source: dict, raw: bytes, *, extractor="pdftotext") -> dict
     expected=source.get("exact_original_sha256")
     if expected is not None and expected!=sha:
         raise ValueError("SOURCE_PDF_ORIGINAL_SHA_CHANGED")
+    exact_bytes=source.get("exact_original_bytes")
+    if exact_bytes is not None and len(raw)!=exact_bytes:
+        raise ValueError("SOURCE_PDF_ORIGINAL_BYTE_COUNT_CHANGED")
     exe=shutil.which(extractor)
     if not exe:raise ValueError("SOURCE_PDF_EXTRACTOR_UNAVAILABLE")
     with tempfile.TemporaryDirectory(prefix="rva-public-senate-") as folder:
