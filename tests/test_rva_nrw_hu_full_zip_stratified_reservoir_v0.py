@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import importlib.util
 import io
 import json
 from pathlib import Path
@@ -80,6 +81,9 @@ def base_oed(directory):
 
 
 class TestOriginalFullSourceReservoir(unittest.TestCase):
+    @unittest.skipUnless(
+        importlib.util.find_spec("pyproj") is not None and importlib.util.find_spec("shapely") is not None,
+        "pinned geospatial runtime is optional in generic repository CI")
     def test_six_original_style_records_all_gfk_categories_and_two_counties(self):
         s,d,n=fake_source()
         target={"05362":1,"05974":1}
@@ -109,6 +113,9 @@ class TestOriginalFullSourceReservoir(unittest.TestCase):
                 sample_hu_stream(io.BytesIO(s),io.BytesIO(d),
                     expected_count=n,shx_length=100+n*8,county_targets=target)
 
+    @unittest.skipUnless(
+        importlib.util.find_spec("pyproj") is not None and importlib.util.find_spec("shapely") is not None,
+        "pinned geospatial runtime is optional in generic repository CI")
     def test_mock_real_geometry_join_preserves_fictional_insurance_identity(self):
         s,d,n=fake_source()
         selected,audit=sample_hu_stream(io.BytesIO(s),io.BytesIO(d),
