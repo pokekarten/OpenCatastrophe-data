@@ -24,14 +24,14 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Provider:** Centraal Bureau voor de Statistiek (CBS)  
 **Categories:** `residential_construction`, `cost_index`, `labor_materials`, `netherlands`, `temporal_rebasing`  
 **Spatial scope:** Netherlands aggregate; not a postcode or building-class price survey  
-**Temporal scope:** Monthly provisional observations through September 2026; table metadata changed 2026-10-30  
+**Temporal scope:** CBS OData v4 metadata Version 202610300000 (Modified 2026-10-30); provisional monthly input-index values through 2026-09, mutable/revisable.  
 **Resolution / granularity:** 2021=100 index, components total/labour/materials by month and year; dimensionless time escalation, no €/m² or €/m³ base price  
 **Potential roles:** `temporal_cost_index_challenge`, `scenario_escalation_of_independently_licensed_rebuild_cost_base`, `construction_cost_inflation_uncertainty`  
-**Access hint:** `cbs_statline_open_catalogue_terms_and_series_revision_review`  
+**Access hint:** `cbs_odata_v4_metadata_confirms_cc_by_4_0_attribution_version_and_asset_review_still_required`  
 **Authoritative source:** <https://www.cbs.nl/nl-nl/cijfers/detail/85728NED>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** CBS 2026 September provisional total input-cost index is 129.5 (2021=100); it is NOT a reconstruction value or independently measured building-specific replacement cost. Revisions and different source-series definitions must be versioned. Do not use to uplift an insurer's 2026 table if that table already incorporates CBS escalation.
+**Note:** CBS 2026 September provisional total input-cost index is 129.5 (2021=100); it is NOT a reconstruction value or independently measured building-specific replacement cost. Revisions and different source-series definitions must be versioned. Do not use to uplift an insurer's 2026 table if that table already incorporates CBS escalation. Live original OData v4 Properties endpoint https://datasets.cbs.nl/odata/v1/CBS/85728NED/Properties returned version 202610300000 and explicit CC BY 4.0 licence, and /Observations?$top=1 returned a typed one-row dataset with fields Measure, Value, Componenten and Perioden on 2026-11-05. No complete observations downloaded or new insurance pricing/admission authorised.
 
 ## Netherlands CBS new residential construction output-price index 2021=100
 
@@ -39,14 +39,14 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Provider:** Centraal Bureau voor de Statistiek (CBS)  
 **Categories:** `residential_construction`, `output_price_index`, `new_housing`, `netherlands`, `temporal_rebasing`  
 **Spatial scope:** Netherlands aggregate new housing, including contractor overhead/profit, excluding land and project developer or broker costs  
-**Temporal scope:** Quarterly observations through provisional 2026 Q2; table metadata changed 2026-09-30  
+**Temporal scope:** CBS OData v4 metadata Version 202609300000 (Modified 2026-09-30); provisional quarterly output-index values through 2026-Q2.  
 **Resolution / granularity:** 2021=100 index of new-residential-build construction output price incl/excl VAT, not physical house reconstruction amount  
 **Potential roles:** `construction_cost_time_trend_reference`, `alternative_to_input_cost_index_sensitivity`, `rebuild_cost_index_external_challenge`  
-**Access hint:** `cbs_statline_open_catalogue_terms_and_series_revision_review`  
+**Access hint:** `cbs_odata_v4_metadata_confirms_cc_by_4_0_attribution_version_and_asset_review_still_required`  
 **Authoritative source:** <https://www.cbs.nl/nl-nl/cijfers/detail/85772NED>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** 2026 Q2 provisional output price index is 133.4 (2021=100), not €/m² or €/m³. The output and input series are related signals, NOT independent price observations for an individual building and cannot be multiplied together. Their vintages and index bases must align before ratio-based escalation.
+**Note:** 2026 Q2 provisional output price index is 133.4 (2021=100), not €/m² or €/m³. The output and input series are related signals, NOT independent price observations for an individual building and cannot be multiplied together. Their vintages and index bases must align before ratio-based escalation. Live original OData v4 Properties endpoint https://datasets.cbs.nl/odata/v1/CBS/85772NED/Properties returned version 202609300000 and explicit CC BY 4.0 licence, and /Observations?$top=1 returned a typed one-row dataset with fields Measure, Value and Perioden on 2026-11-05. No complete observations downloaded or valuation baselines authorised.
 
 ## AnsvarIdéa / Turien &amp; Co Netherlands residential rebuilding-value meter 2026
 
