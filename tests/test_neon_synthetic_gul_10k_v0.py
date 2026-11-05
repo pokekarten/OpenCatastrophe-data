@@ -12,7 +12,7 @@ PREFIX = 'OC_NEON_10K_SYNTH_GUL_V0'
 ASSETS = tuple((f'SYNTH-{i:02}', 100000 + 25000 * i) for i in range(1, 13))
 EXPECTED = {
     'worlds': 10000, 'assets': 12, 'value': 3150000,
-    'events': 1541, 'zero_event_years': 8509,
+    'events': 1541, 'zero_event_years': 8509, 'two_peril_years': 50,
     'annual_sum': 285494000, 'aal_cents': 2854940,
     'aep99': 342500, 'aep995': 366250,
     'oep99': 333750, 'oep995': 351250,
@@ -40,6 +40,7 @@ def compute(assets=ASSETS, *, synthetic=True):
     count = {'windstorm': 0, 'flood': 0}
     totals = {'windstorm': 0, 'flood': 0}
     zero_event = 0
+    two_peril_years = 0
     for yr in range(10000):
         losses = []
         for peril, threshold in (('windstorm', 26), ('flood', 13)):
@@ -60,9 +61,11 @@ def compute(assets=ASSETS, *, synthetic=True):
         ann.append(sum(losses))
         biggest.append(max(losses, default=0))
         zero_event += not bool(losses)
+        two_peril_years += len(losses) == 2
     return {
         'worlds': len(ann), 'assets': len(assets), 'value': sum(v for _, v in assets),
         'events': count['windstorm'] + count['flood'], 'zero_event_years': zero_event,
+        'two_peril_years': two_peril_years,
         'annual_sum': sum(ann), 'aal_cents': sum(ann) * 100 // len(ann),
         'aep99': disc(ann, 99, 100), 'aep995': disc(ann, 995, 1000),
         'oep99': disc(biggest, 99, 100), 'oep995': disc(biggest, 995, 1000),
@@ -153,6 +156,21 @@ class TestSyntheticNeonGul10k(unittest.TestCase):
         self.assertEqual(EXPECTED['wind_events'] + EXPECTED['flood_events'],
                          EXPECTED['events'])
 
+
+    def test_shared_annual_world_preserves_both_distinct_toy_perils(self):
+        result = compute()
+        self.assertEqual(result['two_peril_years'], 50)
+        self.assertEqual(result['events'] - (result['worlds'] - result['zero_event_years']),
+                         result['two_peril_years'])
+        self.assertEqual(result['events'],
+                         result['wind_events'] + result['flood_events'])
+        sql = (Path(__file__).resolve().parents[1]
+               / 'research_runners/sql/neon_synthetic_gul_10k_v0.sql').read_text(encoding='utf-8')
+        self.assertIn('AS two_distinct_peril_event_years', sql)
+        self.assertIn('AS invalid_extra_event_years', sql)
+        # A peril-tagged toy occurrence is not a real joint multi-peril event,
+        # treaty hours clause, insured or reinsured loss.
+        self.assertNotIn('AS ceded_loss_eur', sql)
 
     def test_sql_pins_full_synthetic_fixture_geography_and_taxonomy(self):
         from pathlib import Path
