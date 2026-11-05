@@ -1,0 +1,70 @@
+{
+  "schema": "fictional-dutch-rebuild-cost-sensitivity-v0",
+  "provenance": {
+    "source_kind": "invented_fixture_only",
+    "real_provider_rows": 0,
+    "licensed_cost_baseline": false,
+    "real_insurer_identity": false,
+    "source_admitted": false,
+    "model_input_approved": false
+  },
+  "scenario": {
+    "currency": "EUR",
+    "rate_unit": "EUR_per_m3",
+    "cost_rate_baseline_period": "2025-01",
+    "target_period": "2026-01",
+    "rate_was_already_indexed_to_target": false,
+    "fictional_low_rate_eur_per_m3": "100.00",
+    "fictional_high_rate_eur_per_m3": "200.00",
+    "fictional_base_period_index": "100.0",
+    "fictional_target_period_index": "110.0",
+    "fictional_index_style": "independent_CBS_style_synthetic_numbers"
+  },
+  "buildings": [
+    {
+      "id": "SYNTH-BLDG-001",
+      "usage_class": "synthetic_standard_residential",
+      "volumes_m3": {
+        "lod12": "110",
+        "lod13": "100",
+        "lod22": "90"
+      }
+    },
+    {
+      "id": "SYNTH-BLDG-002",
+      "usage_class": "synthetic_standard_residential",
+      "volumes_m3": {
+        "lod12": "110",
+        "lod13": "100",
+        "lod22": "90"
+      }
+    },
+    {
+      "id": "SYNTH-BLDG-003",
+      "usage_class": "synthetic_standard_residential",
+      "volumes_m3": {
+        "lod12": "110",
+        "lod13": "100",
+        "lod22": "90"
+      }
+    },
+    {
+      "id": "SYNTH-BLDG-004",
+      "usage_class": "synthetic_standard_residential",
+      "volumes_m3": {
+        "lod12": "110",
+        "lod13": "100",
+        "lod22": "90"
+      }
+    },
+    {
+      "id": "SYNTH-BLDG-005",
+      "usage_class": "synthetic_standard_residential",
+      "volumes_m3": {
+        "lod12": "110",
+        "lod13": "100",
+        "lod22": "90"
+      }
+    }
+  ]
+}
