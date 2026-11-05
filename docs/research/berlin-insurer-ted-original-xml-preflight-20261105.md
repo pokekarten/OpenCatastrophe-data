@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Berlin 2024/2026 insurance procurements: independent official TED XML source preflight
 
-**Status (2026-11-05): original provider XML immutable hash not yet pinned, not a CAT model source admission.** This supplements [the prior Gewobag ADO and WBM property-segment research](berlin-gewobag-ado-wbm-2026-commercial-contract-segments.md), where the source claims were grounded in a 2024 issuer report and secondary public notice mirrors. The strongest available next verification is the exact primary EU TED source body, not a second portal copy.
+**Status (2026-11-05): two original official TED XML HTTP byte receipts observed and their exact SHA-256/byte counts now pinned for independent re-fetch; NOT a CAT model source admission.** This supplements [the prior Gewobag ADO and WBM property-segment research](berlin-gewobag-ado-wbm-2026-commercial-contract-segments.md), where the source claims were grounded in a 2024 issuer report and secondary public notice mirrors. The strongest available next verification is the exact primary EU TED source body, not a second portal copy.
 
 ## Publisher's original unambiguous download interface
 
@@ -38,10 +38,23 @@ The [dedicated GitHub Action](../../.github/workflows/berlin-insurance-ted-origi
 
 ## Live GitHub Action source availability findings, 2026-11-05
 
-The first original publisher HTTPS attempts from GitHub Actions **did not retrieve original XML**. Both the individual `/en/notice/{number}/xml` path and original daily archive `/packages/notice/daily/{yyyy+issue}` returned **HTTP 202 Accepted**, not the requested body. The first two offline synthetic verification suites (18 + 14 tests) passed; because the live steps were explicitly nonblocking in pull requests, green workflow status is **not original source acquisition**. No external XML/ZIP sha is claimed/pinned, and the source register in #1359 continues to mark these original-file checks false.
+The first original publisher HTTPS attempts from GitHub Actions **did not retrieve original XML**. Both the individual `/en/notice/{number}/xml` path and original daily archive `/packages/notice/daily/{yyyy+issue}` returned **HTTP 202 Accepted**, not the requested body. The first two offline synthetic verification suites (18 + 14 tests) passed; because the live steps were explicitly nonblocking in pull requests, green workflow status by itself is **not original source acquisition**. The subsequent direct original XML retrieval on the same PR **succeeded**, as recorded separately below. The older source register in #1359 remains truthful about checks performed during *that earlier* run.
 
 The [official TED Search API](https://docs.ted.europa.eu/api/latest/search.html) supplies an independent third publisher path: unauthenticated `POST https://api.ted.europa.eu/v3/notices/search` with `query: publication-number = 668506-2026`, bounded fields and source-only exact match. The [read-only Search API preflight](../../research_runners/ted_berlin_insurance_search_api_preflight_v0.py) and offline tests independently check exact publication number, buyer and subject and emit only source JSON receipt SHA and size. **Even successful Search API responses establish original publisher metadata, not an original eForms XML body or who carries each insured risk.** A source API response is not accepted if it returns HTTP 202, a malformed/duplicate JSON field, multiple matches or mismatching buyer/title.
 
 The [separate official daily ZIP alternative](../../research_runners/ted_berlin_insurance_daily_xml_preflight_v0.py) only selects one matching XML member from OJ S **181/2024** and **188/2026**, checks publisher archive hashes and exact extracted XML, and refuses ZIP bombs, duplicate notice members or corrupted archives. It does not unzip a bulk source archive to disk. The source may remain inaccessible from GitHub's network even though public EU documentation describes it. Do not modify this result to imply full original provider verification while access returns 202.
 
 A new future publisher download attempt should be independently verified as a **complete HTTP 200 response** with exact extracted original bytes and notice-number/format semantics. If all EU official paths remain blocked, retain the source as **research-only** and do not ingest secondary mirrored notices as if they were primary, even if the secondary metadata is useful for research.
+
+## First exact source retrieval succeeded after initial HTTP 202 (2026-11-05)
+
+The official XML acquisition step in [GitHub Actions run 42025930149](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42025930149) eventually returned **both complete publisher eForms XML documents** with exact notice-number literal, expected buyer/title and XML document root. The evidence was printed as *metadata receipts only* (no original XML bytes stored or printed):
+
+| Notice | XML root | Exact original bytes | SHA-256 of complete official HTTP source body |
+| --- | --- | ---: | --- |
+| 558592-2024 | `ContractNotice` | 39,733 | `51698e01c01caa9a0c58d41baf161d73a585d3b30f3b3dba12d95a3859b56b2f` |
+| 668506-2026 | `ContractAwardNotice` | 21,837 | `7650720183d0c26430e0433858bf2e8b854ea68bb93fbf679e96ee696ee8fc78` |
+
+These exact observed values have now been reviewed for notice identity and entered into the source preflight's **fixed SHA-256 and byte-count pins**. Subsequent successful GitHub Action fetches must match them **exactly**, not just return HTTP 200. The direct source checks still **do not establish** exact eForms role-level winner/consortium allocations, insured building sites, 2026 Gewobag contract continuity, premiums, insured value or loss.
+
+The first metadata run's *separate* Search API synthetic test job exposed three fixtures shorter than the input boundary; those fixtures were corrected without lowering the response-size limit. Preserve distinct outcomes: initial 202 blocked; later original XML body acquired; pinned re-fetch check pending until successful exact-head run.
