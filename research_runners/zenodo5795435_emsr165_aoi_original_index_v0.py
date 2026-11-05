@@ -67,8 +67,11 @@ def _one_coordinate_pair(feature):
 
 
 def audit_index(document):
-    if not isinstance(document, dict) or document.get("type") != "FeatureCollection":
-        raise AOISourceBlocked("not the archived GeoJSON FeatureCollection")
+    if (not isinstance(document, dict) or
+            set(document) != {"type", "name", "crs", "features"} or
+            document.get("type") != "FeatureCollection" or
+            document.get("name") != "clm_flood"):
+        raise AOISourceBlocked("not the strict archived GeoJSON source profile")
     crs = document.get("crs")
     if (not isinstance(crs, dict) or crs.get("type") != "name" or
             not isinstance(crs.get("properties"), dict) or
