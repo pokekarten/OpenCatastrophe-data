@@ -15,7 +15,7 @@
         "temporal_rebasing"
       ],
       "spatial_scope": "Netherlands aggregate; not a postcode or building-class price survey",
-      "temporal_scope": "Monthly provisional observations through September 2026; table metadata changed 2026-10-30",
+      "temporal_scope": "CBS OData v4 metadata Version 202610300000 (Modified 2026-10-30); provisional monthly input-index values through 2026-09, mutable/revisable.",
       "resolution_or_granularity": "2021=100 index, components total/labour/materials by month and year; dimensionless time escalation, no €/m² or €/m³ base price",
       "potential_roles": [
         "temporal_cost_index_challenge",
@@ -23,12 +23,12 @@
         "construction_cost_inflation_uncertainty"
       ],
       "authoritative_url": "https://www.cbs.nl/nl-nl/cijfers/detail/85728NED",
-      "access_class_hint": "cbs_statline_open_catalogue_terms_and_series_revision_review",
+      "access_class_hint": "cbs_odata_v4_metadata_confirms_cc_by_4_0_attribution_version_and_asset_review_still_required",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "CBS 2026 September provisional total input-cost index is 129.5 (2021=100); it is NOT a reconstruction value or independently measured building-specific replacement cost. Revisions and different source-series definitions must be versioned. Do not use to uplift an insurer's 2026 table if that table already incorporates CBS escalation."
+      "note": "CBS 2026 September provisional total input-cost index is 129.5 (2021=100); it is NOT a reconstruction value or independently measured building-specific replacement cost. Revisions and different source-series definitions must be versioned. Do not use to uplift an insurer's 2026 table if that table already incorporates CBS escalation. Live original OData v4 Properties endpoint https://datasets.cbs.nl/odata/v1/CBS/85728NED/Properties returned version 202610300000 and explicit CC BY 4.0 licence, and /Observations?$top=1 returned a typed one-row dataset with fields Measure, Value, Componenten and Perioden on 2026-11-05. No complete observations downloaded or new insurance pricing/admission authorised."
     },
     {
       "candidate_id": "nl.cbs.new-build-output-cost-index.85772ned",
@@ -42,7 +42,7 @@
         "temporal_rebasing"
       ],
       "spatial_scope": "Netherlands aggregate new housing, including contractor overhead/profit, excluding land and project developer or broker costs",
-      "temporal_scope": "Quarterly observations through provisional 2026 Q2; table metadata changed 2026-09-30",
+      "temporal_scope": "CBS OData v4 metadata Version 202609300000 (Modified 2026-09-30); provisional quarterly output-index values through 2026-Q2.",
       "resolution_or_granularity": "2021=100 index of new-residential-build construction output price incl/excl VAT, not physical house reconstruction amount",
       "potential_roles": [
         "construction_cost_time_trend_reference",
@@ -50,12 +50,12 @@
         "rebuild_cost_index_external_challenge"
       ],
       "authoritative_url": "https://www.cbs.nl/nl-nl/cijfers/detail/85772NED",
-      "access_class_hint": "cbs_statline_open_catalogue_terms_and_series_revision_review",
+      "access_class_hint": "cbs_odata_v4_metadata_confirms_cc_by_4_0_attribution_version_and_asset_review_still_required",
       "candidate_status": "evidence_checked",
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "2026 Q2 provisional output price index is 133.4 (2021=100), not €/m² or €/m³. The output and input series are related signals, NOT independent price observations for an individual building and cannot be multiplied together. Their vintages and index bases must align before ratio-based escalation."
+      "note": "2026 Q2 provisional output price index is 133.4 (2021=100), not €/m² or €/m³. The output and input series are related signals, NOT independent price observations for an individual building and cannot be multiplied together. Their vintages and index bases must align before ratio-based escalation. Live original OData v4 Properties endpoint https://datasets.cbs.nl/odata/v1/CBS/85772NED/Properties returned version 202609300000 and explicit CC BY 4.0 licence, and /Observations?$top=1 returned a typed one-row dataset with fields Measure, Value and Perioden on 2026-11-05. No complete observations downloaded or valuation baselines authorised."
     },
     {
       "candidate_id": "nl.ansvaridea.turien-residential-rebuild-meter.2026",
