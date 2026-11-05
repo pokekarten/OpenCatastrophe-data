@@ -45,6 +45,7 @@ jobs:
           python -m unittest
           tests.test_eurocrops_jrc_acquire_v0
           tests.test_eurocrops_jrc_original_run_v0
+          tests.test_eurocrops_original_zero_area_geometry_v0
           tests.test_eurocrops_v202_preflight_v0
           tests.test_eurocrops_codebook_qc_v0
           -v
@@ -73,6 +74,16 @@ jobs:
             --original-sha256 "$EXPECTED_SHA" \
             --output "${RUNNER_TEMP}/oc-de4-aggregate-qc.json" \
             --sample-rows 1024
+      - name: Classify 65 exact original zero-area records via transient WKB
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPECTED_SHA=$(python -c 'import json,os,pathlib; print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"]) / "oc-de4-first-seen-receipt.json").read_text())["original_sha256"])')
+          python -m research_runners.eurocrops_original_zero_area_geometry_v0 \
+            --live \
+            --original "${RUNNER_TEMP}/oc-eurocrops-de4-2023-original/de4_2023.parquet" \
+            --expected-sha256 "$EXPECTED_SHA" \
+            --output "${RUNNER_TEMP}/oc-de4-zero-area-geometry-qc.json"
       - name: Print aggregate-only original-source summary
         if: success()
         shell: bash
@@ -84,11 +95,15 @@ jobs:
           report = json.loads((Path(os.environ["RUNNER_TEMP"]) / "oc-de4-aggregate-qc.json").read_text())
           scan = report["complete_area_ha_attribute_quality"]
           sample = report["sample_taxonomy_crosswalk_statistics"]
+          zero_shapes = json.loads((Path(os.environ["RUNNER_TEMP"]) / "oc-de4-zero-area-geometry-qc.json").read_text())
           lines = [
               "## JRC DE4 2023 — research-only original-source QC",
               f"Original footer row count: {report['parquet_total_rows']}",
               f"Full original area column rows: {scan['original_area_rows_scanned']}",
               f"Original zero-area values: {scan['original_area_ha_zero_count']}",
+              f"Zero-area source records with VALID positive-size polygons: {zero_shapes['zero_ha_polygon_computed_area_positive_m2']}",
+              f"Zero-area source records with ZERO geometric polygon area: {zero_shapes['zero_ha_polygon_computed_area_zero_m2']}",
+              f"Zero-area source records with invalid/empty/nonpolygon/missing WKB: {zero_shapes['zero_ha_geometry_invalid_topology'] + zero_shapes['zero_ha_geometry_empty'] + zero_shapes['zero_ha_geometry_nonpolygon'] + zero_shapes['zero_ha_wkb_invalid_or_missing']}",
               f"Original negative-area values: {scan['original_area_ha_negative_count']}",
               f"Original null/nonfinite areas: {scan['original_area_ha_null_count']}/{scan['original_area_ha_nonfinite_count']}",
               f"WKB sample rows: {report['sampled_wkb_rows']}",
@@ -109,6 +124,7 @@ jobs:
           path: |
             ${{ runner.temp }}/oc-de4-first-seen-receipt.json
             ${{ runner.temp }}/oc-de4-aggregate-qc.json
+            ${{ runner.temp }}/oc-de4-zero-area-geometry-qc.json
           if-no-files-found: warn
           retention-days: 30
       - name: Delete the original file from ephemeral runner
