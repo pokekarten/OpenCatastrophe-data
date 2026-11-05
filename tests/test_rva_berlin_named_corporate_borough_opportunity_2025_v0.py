@@ -5,13 +5,47 @@ from pathlib import Path
 import copy,tomllib,unittest,sys
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"research_runners"))
-from rva_berlin_named_corporate_borough_opportunity_sensitivity_v0 import validate,run,EXPECTED,OTHER  # noqa: E402
+from rva_berlin_named_corporate_borough_opportunity_sensitivity_v0 import validate,run,EXPECTED,OTHER,validate_pinned_original_pdf_receipt,ORIGINAL_PDFS  # noqa: E402
 STOCK=ROOT/"research/observations/rva_berlin_senate_housing_borough_stock_2025_v0.toml"
 INSURER=ROOT/"research/observations/rva_berlin_senate_housing_insurer_relations_2025_v0.toml"
 def load():return tomllib.loads(STOCK.read_text()),tomllib.loads(INSURER.read_text())
 
 class NamedRvaBerlinCorporateBoroughOpportunity(unittest.TestCase):
     def setUp(self):self.s,self.i=load()
+
+    def test_both_exact_original_pdfs_are_a_required_scenario_prerequisite(self):
+        receipt=tomllib.loads(ORIGINAL_PDFS.read_text(encoding="utf-8"))
+        proof=validate_pinned_original_pdf_receipt(receipt)
+        self.assertTrue(proof["official_2025_senate_two_original_pdf_hashes_matched"])
+        self.assertFalse(proof["current_run_fetched_original_pdf_bytes"])
+        self.assertFalse(proof["specific_insured_rva_buildings_observed"])
+        self.assertTrue(validate(self.s,self.i)["official_source_pdf_provenance"][
+            "official_2025_senate_two_original_pdf_hashes_matched"
+        ])
+
+    def test_original_insurer_pdf_sha_mismatch_blocks(self):
+        receipt=tomllib.loads(ORIGINAL_PDFS.read_text(encoding="utf-8"))
+        receipt["documents"][0]["original_sha256"]="0"*64
+        with self.assertRaisesRegex(ValueError,"source hash/bytes/scope drift"):
+            validate_pinned_original_pdf_receipt(receipt)
+
+    def test_original_dwelling_pdf_page_count_mismatch_blocks(self):
+        receipt=tomllib.loads(ORIGINAL_PDFS.read_text(encoding="utf-8"))
+        receipt["documents"][1]["original_pages"]=4
+        with self.assertRaisesRegex(ValueError,"source hash/bytes/scope drift"):
+            validate_pinned_original_pdf_receipt(receipt)
+
+    def test_false_insured_property_sites_from_govt_pdf_blocks(self):
+        receipt=tomllib.loads(ORIGINAL_PDFS.read_text(encoding="utf-8"))
+        receipt["actual_RV_insured_berlin_building_sites_verified"]=True
+        with self.assertRaisesRegex(ValueError,"non-insurer source scope changed"):
+            validate_pinned_original_pdf_receipt(receipt)
+
+    def test_missing_one_original_pdf_blocks_all_scenarios(self):
+        receipt=tomllib.loads(ORIGINAL_PDFS.read_text(encoding="utf-8"))
+        receipt["documents"].pop()
+        with self.assertRaisesRegex(ValueError,"PDF receipts missing"):
+            validate_pinned_original_pdf_receipt(receipt)
 
     def test_exact_official_six_lwu_plus_berlinovo_reconciled(self):
         a=validate(self.s,self.i)

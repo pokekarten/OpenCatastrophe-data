@@ -16,6 +16,15 @@ from fractions import Fraction
 HERE=Path(__file__).resolve().parents[1]
 STOCK=HERE/"research/observations/rva_berlin_senate_housing_borough_stock_2025_v0.toml"
 INSURER=HERE/"research/observations/rva_berlin_senate_housing_insurer_relations_2025_v0.toml"
+ORIGINAL_PDFS=HERE/"research/observations/rva_berlin_senate_2025_original_pdf_receipts_v0.toml"
+EXPECTED_ORIGINAL_PDFS=(
+    ("BERLIN_SENATE_19_22033_20250401","2025-04-01",
+     "https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/SchrAnfr/S19-22033.pdf",
+     "0671a38d440b0628088399c0ee0fa521e24d31738d19c2d8b93d65424c87143f",22528,6,7),
+    ("BERLIN_SENATE_19_24229_20251111","2025-11-11",
+     "https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/SchrAnfr/S19-24229.pdf",
+     "1269725e4ff8427f32db22a66a0745bc12a75dc1281ca62de7d21ddcaead307e",21842,5,8),
+)
 COMPANIES=("degewo","gesobau","gewobag","howoge","stadt_und_land","wbm","berlinovo")
 EXPECTED=(82637,49054,75091,82152,53304,34040,18666)
 OTHER=(2541,307,329,276,1066,0,0)
@@ -35,7 +44,48 @@ def invalid(message:str):
     raise ValueError(message)
 
 
+def validate_pinned_original_pdf_receipt(receipt:dict|None=None)->dict:
+    """Source *attestation* gate, never an insured site or all-cell proof.
+
+    Exact original bytes independently reread in source workflow #1342.
+    This function ties the scenario to that provenance receipt; it does not
+    itself fetch source PDF bytes or re-verify all 12×7 numeric facts.
+    """
+    if receipt is None:
+        receipt=tomllib.loads(ORIGINAL_PDFS.read_text(encoding="utf-8"))
+    if (receipt.get("schema_version")!="RVA_BERLIN_SENATE_2025_ORIGINAL_PDF_BYTES_V0"
+        or receipt.get("original_files_acquired_and_hashed_in_ephemeral_github_action") is not True
+        or receipt.get("verified_original_source_is_public_official_berlin_senate") is not True
+        or receipt.get("raw_pdf_files_committed_or_redistributed") is not False
+        or receipt.get("actual_RV_insured_berlin_building_sites_verified") is not False
+        or receipt.get("actual_RV_degewo_coinsurance_participation_verified") is not False
+        or receipt.get("real_RV_site_TIV_and_policy_limits_verified") is not False
+        or receipt.get("model_CAT_admission") is not False):
+        invalid("Original Senate PDF provenance or non-insurer source scope changed")
+    records=receipt.get("documents",[])
+    if len(records)!=2:invalid("Original Senate PDF receipts missing")
+    for source,expected in zip(records,EXPECTED_ORIGINAL_PDFS):
+        ID,dt,url,sha,size,pages,markers=expected
+        if (source.get("id")!=ID
+            or source.get("official_answer_date")!=dt
+            or source.get("url")!=url
+            or source.get("original_sha256")!=sha
+            or source.get("original_bytes")!=size
+            or source.get("original_pages")!=pages
+            or source.get("positive_semantic_marker_count")!=markers
+            or source.get("company_specific_insured_asset_count_observed") is not False):
+            invalid("Original Senate PDF source hash/bytes/scope drift")
+    return {
+        "official_2025_senate_two_original_pdf_hashes_matched":True,
+        "original_pdf_bytes_checked_from_previous_independent_workflow":True,
+        "current_run_fetched_original_pdf_bytes":False,
+        "specific_insured_rva_buildings_observed":False,
+        "cat_exposure_model_admitted":False,
+    }
+
+
 def validate(s:dict, i:dict)->dict:
+    pdf_provenance=validate_pinned_original_pdf_receipt()
     if (s.get("schema_version")!="BERLIN_SENATE_2025_LWU_12_BOROUGH_CORPORATE_DWELLING_MATRIX_V0"
         or s.get("source_official_url")!="https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/SchrAnfr/S19-24229.pdf"
         or s.get("source_document_number")!="Drucksache 19/24229"
@@ -100,7 +150,8 @@ def validate(s:dict, i:dict)->dict:
     for j,k in enumerate(COMPANIES):
         if sums[k]+unassigned[k]!=EXPECTED[j]:
             invalid("per-corporation original Senate borough totals not reconciled")
-    return {"boroughs":rows,"published_company_totals":total,
+    return {"boroughs":rows,"official_source_pdf_provenance":pdf_provenance,
+            "published_company_totals":total,
             "published_other_not_borough_assignable":unassigned,
             "published_berlin_12_borough_totals":sums,
             "three_named_RV_linked_corporate_total_dwellings_including_other":
