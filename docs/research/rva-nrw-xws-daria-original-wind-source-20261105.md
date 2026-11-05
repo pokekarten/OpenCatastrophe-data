@@ -36,3 +36,44 @@ The [independent small live original-source CI](../../.github/workflows/rva-nrw-
 - Before a native Oasis/NextGen Germany CAT model can run: independently source the **original wind vulnerability**, coverage/values/terms, event frequency/occurrence, and financial model crosswalk. Only then run pathwise wind damage, insured financial module, reinsurance and valid annual EP curves.
 
 **No source-specific loss calculations, licence transfer, registered insurer-site data or production admission have occurred here.**
+
+## Original-source Daria spatial application (first 10k hazard overlay code)
+
+A second source-specific implementation now exists:
+`research_runners/rva_nrw_xws_daria_10k_original_gust_overlay_v0.py` and
+`tests/test_rva_nrw_xws_daria_10k_original_gust_overlay_v0.py`.
+It streams four actual original XWS CSVs in ephemeral CI storage and obtains the
+already-validated, source-geocoded 10k fictional NRW OED from the prior successful
+[original NRW source run #42097472463](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42097472463).
+
+The spatial method **uses the original WGS84 grid-point lon/lat from XWS**, not
+the invented 0.25° C3S-style grid. It searches nearby half-degree geographical
+buckets, chooses the minimum exact spherical great-circle distance to the original
+source point (tie-break by original integer grid ID), and **rejects** any point
+with no original grid point within 45 km. The original source's ~0.22° rotated
+grid is only a provenance descriptor; the algorithm does not assume its native
+rotated-pole coordinates are already ordinary WGS84.
+
+Outputs after a passing live original CI will be:
+- 10,000 *fictional* NRW policy/sample asset IDs with matched **original Daria
+  1990 3-second wind gusts (lower 95%, mean and upper 95% in m/s)** and exact
+  original XWS grid ID and nearest-point distance;
+- a 53-Kreis summary of fictional building value exposed to the **same**
+  original Daria event, including source mean gust >=25 m/s;
+- original four full-file XWS SHA-256s, prior full original HU22 archive SHA,
+  XWS CC-BY-4.0 attribution and explicit false model/insurer/yearly-event claims.
+
+No original XWS grid/footprint files are committed or uploaded to GitHub
+artifacts. The public source-derived 10k *site-gust* table is shared under
+its original CC BY 4.0 attribution. A single original **1990** historical storm
+on **2022** public building locations with entirely fictional **2025** insurer
+values is a retrospective *counterfactual* hazard exposure; it cannot be
+interpreted as historical insured claims, today's underwriting exposure,
+a calibrated conditional damage model, a sample of independent years or
+a premium / solvency-risk estimate.
+
+**CI admission:** The exact live original-source and 10k join workflows must
+show a completed SUCCESS before any site-gust artifacts or numerical results
+are called verified. A failed source row schema, drifted original URL,
+missing county, unusually distant grid mapping, source uncertainty inversion
+or source artifact mismatch must remain NO-GO.
