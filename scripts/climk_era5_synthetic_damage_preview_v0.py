@@ -28,6 +28,7 @@ MEASURE = 'MAX_WIND_GUST_ASSOCIATED_WITH_STORM_FOOTPRINT'
 SAMPLE_FIELDS = {
     'schema_version','status','peril','source_dataset','source_sha256',
     'source_sha_pinned','event_key','storm_index_zero_based','source_storm_name',
+    'event_identity_cross_model_matched',
     'source_storm_date_label','source_storm_date_parsed_as_utc',
     'grid_coordinate_system','spatial_sampling','physical_intensity_measure',
     'physical_intensity_unit','relative_intensity_measure','relative_intensity_unit',
@@ -100,6 +101,7 @@ def _sample_sites(sample):
         'status': 'SOURCE_VERIFIED_SYNTHETIC_HAZARD_SAMPLE_NOT_LOSS',
         'peril': 'WINDSTORM', 'source_dataset': 'CLIMK-WINDS v2 / ERA5',
         'source_sha256': PINNED_ERA5_SHA256, 'source_sha_pinned': True,
+        'event_identity_cross_model_matched': False,
         'source_storm_date_parsed_as_utc': False,
         'grid_coordinate_system': 'source_native_lat_lon_degrees',
         'spatial_sampling': 'nearest_native_grid_center_no_extrapolation',
