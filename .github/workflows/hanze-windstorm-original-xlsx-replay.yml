@@ -73,6 +73,15 @@ jobs:
           assert (r["economic_loss_2020_eur_million_numeric"] +
                   r["economic_loss_2020_eur_million_non_numeric"] == 720)
           assert r["economic_loss_non_numeric_rows_admitted_as_claims"] is False
+          m=r["economic_loss_by_publisher_CDS_flag_and_numeric_class"]
+          source_modelled=m["explicit_publisher_CDS_modelled"]
+          source_unflagged=m["not_flagged_CDS_independence_unverified"]
+          assert sum(source_modelled.values()) == 299
+          assert sum(source_unflagged.values()) == 1059
+          assert source_modelled["numeric"] + source_unflagged["numeric"] == 687
+          assert source_modelled["non_numeric"] + source_unflagged["non_numeric"] == 33
+          assert source_modelled["blank"] + source_unflagged["blank"] == 638
+          assert r["not_flagged_CDS_means_independently_observed"] is False
           assert r["explicit_publisher_modelled_cds_loss_rows"]==299
           assert r["named_kyrill_country_rows"]==12
           g=r["kyrill_source_country_review_candidate"]
@@ -95,6 +104,8 @@ jobs:
           print("missing_economic_losses:",r["economic_loss_2020_eur_million_missing"])
           print("numeric_economic_losses:",r["economic_loss_2020_eur_million_numeric"])
           print("non_numeric_publisher_economic_values:",r["economic_loss_2020_eur_million_non_numeric"])
+          print("publisher_CDS_modelled_economic_status:",source_modelled)
+          print("non_CDS_flagged_independence_unverified_economic_status:",source_unflagged)
           print("source_row_ids_needing_economic_value_review:",
                 [x["source_id"] for x in r["economic_loss_2020_eur_million_non_numeric_source_rows"]])
           print("Kyrill_country_reports:",g["country_report_rows"])
