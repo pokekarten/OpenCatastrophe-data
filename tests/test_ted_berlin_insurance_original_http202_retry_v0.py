@@ -181,7 +181,7 @@ class TEDHTTP202BoundedRetryTests(unittest.TestCase):
                           m.fetch("668506-2026", opener=source))
 
     def test_200_html_payload_cannot_be_accepted_as_xml(self):
-        bad = b"<html><body>Gewobag Gebäudeversicherung</body></html>" + b"x"*150
+        bad = "<html><body>Gewobag Gebäudeversicherung</body></html>".encode("utf-8") + b"x"*150
         source = Source([Response(200, m.official_url("558592-2024"), bad)])
         with self.assertRaisesRegex(ValueError, "INVALID_DOCUMENT"):
             m.inspect("558592-2024",
