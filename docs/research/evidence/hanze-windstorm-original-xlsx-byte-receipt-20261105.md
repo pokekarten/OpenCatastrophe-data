@@ -46,3 +46,19 @@ Example `Kyrill` entries in the parsed view have country-specific IDs for Austri
 5. Only then attempt source-bounded country-level economic-loss calibration/benchmarking. This source is **not** a stochastic occurrence-rate model, a fitted 24-asset damage-correlation coefficient, a direct insurer portfolio, a treaty/retro record, or a Gross/Net AEP/OEP result.
 
 **All admission flags remain false; PR research Draft.**
+
+
+## Reproducible pinned source acquisition implementation
+
+The exact source receipt and the previously checked 8-range HTTP transport are implemented as a **standard-library-only** research utility, `research_runners/hanze_windstorm_original_xlsx_acquisition_v0.py`. Its default CLI only prints the expected file identity and performs **no network access**. The optional execution explicitly requests the same eight source byte ranges, requires exact HTTP 206 and Content-Range offsets and complete lengths, independently checks the pinned MD5 and SHA-256, and then checks Office XLSX ZIP members and CRCs. The original response and machine-readable, non-admitted receipt are written only to a caller-controlled external directory, with exclusive file creation and no overwriting.
+
+```bash
+# Always safe: no download, no authentication.
+PYTHONPATH=. python3 research_runners/hanze_windstorm_original_xlsx_acquisition_v0.py
+
+# Explicit public original-data acquisition. Choose a directory OUTSIDE Git.
+PYTHONPATH=. python3 research_runners/hanze_windstorm_original_xlsx_acquisition_v0.py \
+  --execute --out-dir /private/local-hanze-original-downloads
+```
+
+New offline tests use a **generated toy XLSX**, an injected fake HTTP range responder, and controlled malformed original-source inputs; they **do not embed, download or assert admission** of actual provider data. The live 2026-11-05 source hash in this receipt was independently calculated by byte-range reconstruction in the connected source-fetch environment, **not** by a CI run of the new Python utility. A green repo CI for the new tests confirms defensive code only, not a separate executed native source download.
