@@ -136,6 +136,37 @@ class NineFictionalOed10kCurveCatXLTests(unittest.TestCase):
                             self.r["toy_event_rows_sha256"])
         self.assertFalse(self.r["md5_seed_is_provider_data_authentication"])
 
+    def test_fixed_independent_integer_math_oracle_10k_worlds(self):
+        # Independently recomputed from 9x invented integer TIV, hash
+        # thresholds and ratio=score*factor/100, NOT source model data.
+        r = self.r
+        self.assertEqual((r["fictional_event_count"],r["zero_event_years"],
+                          r["years_with_two_perils"]), (1532,8520,52))
+        self.assertEqual(r["peril_event_counts"],
+                         {"flood":481,"windstorm":1051})
+        self.assertEqual(r["peril_gul_totals_eur"],
+                         {"flood":3165540000,"windstorm":6704300000})
+        self.assertEqual(
+            (r["toy_gul_aggregate_eur"],r["toy_ceded_aggregate_eur"],
+             r["toy_net_aggregate_eur"]),
+            (9869840000,2945200000,6924640000))
+        self.assertEqual((r["toy_gross_aal_eur"],r["toy_net_aal_eur"]),
+                         ("986984","692464"))
+        self.assertEqual(
+            (r["toy_aep99_gross_eur"],r["toy_aep995_gross_eur"],
+             r["toy_oep99_gross_eur"],r["toy_oep995_gross_eur"]),
+            (12000000,13000000,11800000,12600000))
+        self.assertEqual(
+            (r["toy_aep99_net_eur"],r["toy_aep995_net_eur"],
+             r["toy_oep99_net_eur"],r["toy_oep995_net_eur"]),
+            (7280000,8300000,6800000,7600000))
+        self.assertEqual(
+            r["toy_annual_rows_sha256"],
+            "b36e41340ec8428315af8fc59077c2f4d4d8705a244c2c7d3fa2041d5bc7ef04")
+        self.assertEqual(
+            r["toy_event_rows_sha256"],
+            "92b62f63927b2aa8e85a9f25ce24ad2ef71b37ed7152b937bd3997071ab04590")
+
     def test_fixed_toy_treaty_retention_and_aggregate_reset(self):
         r = self.r
         self.assertEqual(r["toy_catxl_attachment_per_event_eur"],5_000_000)
