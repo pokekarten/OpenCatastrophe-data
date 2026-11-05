@@ -42,11 +42,11 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Temporal scope:** synthetic 100000-year test set  
 **Resolution / granularity:** 10,000 events/100,000 simulated years and advertised 20m-location scaling test; GitHub model_data includes events.bin (40,000 B), occurrence.bin (21,435,572 B), vulnerability.bin (12,716,004 B), damage_bin_dict.bin, returnperiods.bin. External script references footprint.bin.z, footprint.idx.z, location_full.parquet on a public S3 endpoint.  
 **Potential roles:** `large_scale_oasis_engine_testing`, `event_period_measure_benchmark`, `synthetic_portfolio_stress`  
-**Access hint:** `github_example_bsd3_code_large_files_s3_unverified_rights`  
+**Access hint:** `github_bsd3_software_s3_32byte_range_retrieved_full_asset_rights_unreviewed`  
 **Authoritative source:** <https://github.com/OasisLMF/OasisModels/tree/main/UKWind>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Pinned source review: OasisModels/UKWind/get_large_data.sh Git blob 3f8678c873d6eaf7dfb637aadab5597eadf103e7; GitHub file listings were accessible as metadata. S3 URL existence is SOURCE-DECLARED only: HEAD requests via this execution environment failed DNS or retrieval, so HTTP status, byte lengths, hashes, provider asset licensing and current downloadability are UNVERIFIED. Root OasisModels software BSD-3-Clause does NOT authenticate separately hosted S3 licence; no historical hazard or insurer calibration inferred.
+**Note:** Pinned source review: OasisModels/UKWind/get_large_data.sh Git blob 3f8678c873d6eaf7dfb637aadab5597eadf103e7; GitHub file listings were accessible as metadata. A bounded public connector HTTP Range: bytes=0-31 probe on 2026-11-05 retrieved exactly 32 binary bytes each from footprint.bin.z, footprint.idx.z and location_full.parquet (content type binary/octet-stream). This is first-byte public-access evidence ONLY, not proof of complete successful downloads, content lengths, file integrity, stable object versions, SHA-256, reproducible model execution or permission to reuse/redistribute assets; direct Linux DNS and generic web reader did not support the test. Root OasisModels software BSD-3-Clause does NOT authenticate separately hosted S3 licence; no historical hazard or insurer calibration inferred.
 
 ## ParisWindstorm example
 
