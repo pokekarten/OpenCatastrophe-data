@@ -27,6 +27,23 @@ MAX_PACKAGE_BYTES = 280_000_000
 ALGORITHMS = ("hodges", "tempestextremes")
 
 
+def _canonical_algorithm_label(value):
+    """Check bounded publisher CSV spelling without conflating source trackers.
+
+    The ECMWF guide distinguishes Hodges and TempestExtremes; it also uses
+    the footprint attribute spelling 'tempest extreme'. This is an explicitly
+    bounded label check, not an external source/authenticity verification.
+    """
+    if type(value) is not str or not 1 <= len(value) <= 40:
+        raise AcquisitionError("unsupported original tracking algorithm label")
+    identity = value.casefold().replace(" ", "").replace("_", "")
+    if identity == "hodges":
+        return "hodges"
+    if identity in ("tempestextreme", "tempestextremes"):
+        return "tempestextremes"
+    raise AcquisitionError("unknown source tracking algorithm cannot match CDS request")
+
+
 class AcquisitionError(ValueError):
     """Source/data-rights boundary was not satisfied."""
 
@@ -93,6 +110,11 @@ def inspect_provider_package(original: bytes, *, request=None) -> dict:
     except AnnualSummaryError as exc:
         raise AcquisitionError("CDS source does not satisfy strict annual-summary CSV schema") from exc
     years = parsed["observed_years"]
+    source_labels = parsed["observed_tracking_algorithm_labels"]
+    canonical_labels = [_canonical_algorithm_label(label) for label in source_labels]
+    if (len(set(canonical_labels)) != len(source_labels) or
+            set(canonical_labels) != set(request["tracking_algorithm"])):
+        raise AcquisitionError("original CSV algorithm selection differs from exact CDS request")
     return {
         "receipt_version": RECEIPT_VERSION,
         "status": "ORIGINAL_CDS_RESPONSE_SCHEMA_CHECKED_RESEARCH_NOT_ADMITTED",
@@ -108,7 +130,9 @@ def inspect_provider_package(original: bytes, *, request=None) -> dict:
         "official_annual_parser_rows": parsed["observed_row_count"],
         "official_annual_parser_min_year": min(years),
         "official_annual_parser_max_year": max(years),
-        "official_annual_parser_algorithms": parsed["observed_tracking_algorithm_labels"],
+        "official_annual_parser_algorithms": source_labels,
+        "source_algorithms_match_exact_request": True,
+        "source_canonical_algorithms": sorted(canonical_labels),
         "observed_nuts_levels": parsed["observed_nuts_levels"],
         "rights_admitted": False,
         "original_bytes_independently_publisher_signed": False,
