@@ -66,6 +66,19 @@ Source repository commit: b556d10651b98684d5d5269916f8f34c9e017151
 
 The emitted `sample_taxonomy_crosswalk` is **counts only**: resolved, missing NUTS-specific mapping, mapping to an absent HCAT4 code, and blank/non-string original codes. A real JRC source code must be joined on **(NUTS, exact string original_code)**. Missing classification, upstream synthetic placeholder codes and missing actual original polygons must never become fabricated crop types, insured area, crop yield, TIV or loss. When taxonomy files are omitted, the output explicitly records `taxonomy_crosswalk_checked=false`, never a silent positive result.
 
+### Exact original area-only verification (optional, requires full source file)
+
+The original JRC DE4 2023 footer **declares `area_ha` minimum 0.0**. A 512-row random sample will not reliably find rare zero-valued fields. After downloading the exact corrected Parquet and independently pinning its **full-file** SHA-256, run:
+
+    python research_runners/eurocrops_v202_preflight_v0.py \
+      --input /external-originals/de4_2023.parquet \
+      --expected-sha256 <full-original-file-sha256> \
+      --sample-rows 512 --scan-full-area
+
+This **additional opt-in scan** reads only the entire `area_ha` attribute column in batches of at most 4,096 values and checks exact footer row-count conservation. It returns aggregate counts of zero, negative, nonfinite, null and nonnumeric source areas, plus the minimum/maximum positive source value. It never emits parcel IDs, original code values, geometries or crop values, and it does **not** validate the complete geometry or unique agricultural area. The existing polygon WKB sample remains a separate, bounded QA step. Absence of Parquet page/column offset indexes in the observed footer prevents trivial page-index lookup of the zero-area record.
+
+The original metadata/zero-area warning and its footer-only SHA-256 are documented in [the exact original JRC footer receipt](eurocrops-v202-de4-2023-original-parquet-footer-20261105.md). **The full original file has not yet been downloaded in this isolated environment, so the exact scan is implemented but has not run against original JRC rows.**
+
 Synthetic tests:
 
     python -m unittest discover -s tests -p test_eurocrops_v202_preflight_v0.py -q
