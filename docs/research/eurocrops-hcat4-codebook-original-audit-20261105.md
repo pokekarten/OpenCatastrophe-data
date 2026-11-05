@@ -24,14 +24,14 @@ Both exact source files were fetched and read as text. Results from a quote-awar
 | Measure | Exact observation |
 | --- | --- |
 | Mapping header | nuts, original_code, original_name, translated_name, hcat4_code, hcat4_name, usage_code, usage_name |
-| Mapping rows | 5,772 |
+| Mapping rows | 5,772 total: **5,754 joinable regional crop codes** and **18 exact blank-code unknown-crop sentinels** |
 | Source-region keys in mapping | 18 |
 | Duplicated (nuts, original_code) pairs | 0 |
 | Malformed mapping column widths | 0 |
 | Distinct HCAT4 hierarchy codes | 353 |
 | Mapping rows pointing to absent HCAT4 code | **3** |
-| DE4 (Brandenburg) mapping rows / distinct source codes | 300 / 300 |
-| DEA (North Rhine-Westphalia) mapping rows / distinct source codes | 289 / 289 |
+| DE4 (Brandenburg) mapping rows / joinable nonblank source codes | **300 / 299** |
+| DEA (North Rhine-Westphalia) mapping rows / joinable nonblank source codes | **289 / 288** |
 
 Missing joins, not missing parcels:
 
@@ -42,6 +42,8 @@ Missing joins, not missing parcels:
 | dea | 776 | Veilchen und Stiefmütterchen (violets and pansies) | 3310851000 |
 
 The same absent HCAT4 code 3310201050 occurs in two **different regional** mapping rows. Thus there are 3 unmatched mapping rows but only 2 distinct missing HCAT4 hierarchy identifiers. These are taxonomy integrity findings; the mapping file supplies a human-readable name but the standalone hierarchy has no row for that key. Preserve the unmapped status; never quietly join it to an arbitrary parent class or drop a field from the crop exposure model.
+
+The **18 sentinel lines** have empty original_code/original_name/translated_name and contain the exact unknown classification HCAT4 3390000000, label `not_known_and_other`, usage_code 0. These are source-level *unknown* sentinels, not joinable field crop codes; the audited runner now explicitly validates and skips them instead of treating an empty string as a crop type. [The 285,606-row original DE4 2023 census](eurocrops-v202-de4-2023-original-full-qc-20261105.md) encountered **6 actual field records** mapped to DE4 crop code 429 / missing HCAT4 reference, while all remaining **285,600** source rows resolved to an existing HCAT4 code. This does not certify the agricultural value or completeness of any crop.
 
 ## Reproducible offline check
 
@@ -66,7 +68,7 @@ Offline synthetic tests (do not need the source CSVs):
 ## Next scientific and rights gates
 
 - Obtain a source-rights confirmation for original taxonomy CSV, explicit linkage to JRC distributable source/release; do not infer code rights from JRC data license without verification.
-- Link the exact DE4/DEA original **gpqtv202 yearly Parquet** geometries (not stack) only after the original file SHA-256 and GeoParquet preflight succeed.
+- The exact **DE4 2023** gpqtv202 original GeoParquet has now been downloaded, repeat-hashed and fully quality scanned; see [the complete original source report](eurocrops-v202-de4-2023-original-full-qc-20261105.md). The full **DEA** original source has not been checked here; keep its geometry and source vintage separate.
 - For each Parquet row, join by **(nuts, original_code)** with original_code kept as a string, preserving leading zeros and source-year provenance; never join on original_code alone.
 - Report unknown/missing crop taxonomy as explicit undecided fraction; do not infer crop type from nearest taxonomy code or produce insured values from crop declarations alone.
 - Cross-check JRC, national paying agency, Copernicus WorldCereal and independent historical yields without treating correlated upstream observations as independent. No source is admitted into a CAT pipeline by this taxonomy check.
