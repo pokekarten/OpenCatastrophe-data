@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Bounded publisher-original R+V 2025 PDF receipts; original PDF bytes remain ephemeral.
 
-First successful run discovers source SHA-256, but never claims the hash was pinned,
-independently reproduced, rights-cleared, or suitable for insurer CAT calibration.
+Exact issuer PDF SHA-256 and byte lengths were captured by 2026-11-05 GitHub
+run #42095783671. The hashes are now pinned, but independent external
+reproduction, source reuse rights and CAT admission remain unproven.
 """
 from __future__ import annotations
 
@@ -28,7 +29,8 @@ URLS = (
             r"Feuer-?\s*und\s+andere\s+Sachversicherungen\s+2\.223\.182",
             r"Gesamt\s+5\.992\.306",
         ),
-        "exact_original_sha256": None,
+        "exact_original_sha256": "0a941b729dc6b490a5ad285ae1e1f15f4aa8ec183fb00b3d470f780a99ff996a",
+        "exact_original_bytes": 2069226,
     },
     {
         "source_id": "RVA_SOLO_HGB_2025_ISSUER_PDF",
@@ -40,7 +42,8 @@ URLS = (
             r"Verbundene\s+Gebäude\s+1\.060\.546\s+1\.073\.802",
             r"R\+V\s+Direktversicherung\s+AG",
         ),
-        "exact_original_sha256": None,
+        "exact_original_sha256": "85a82b7a199d583e1e07efbc93317ce8bd3bab99381f54b742e997d70e2c19fa",
+        "exact_original_bytes": 1468631,
     },
 )
 
@@ -86,6 +89,9 @@ def inspect(source: dict, raw: bytes) -> dict:
     pinned = source.get("exact_original_sha256")
     if pinned is not None and sha != pinned:
         raise ValueError("RVA_ORIGINAL_SOURCE_SHA_DRIFT")
+    size_pinned = source.get("exact_original_bytes")
+    if size_pinned is not None and len(raw) != size_pinned:
+        raise ValueError("RVA_ORIGINAL_SOURCE_BYTE_SIZE_DRIFT")
     # PDF bytes stay in memory. The only optional dependency is a precisely
     # pinned pypdf reader, never network-loaded at extraction time.
     from pypdf import PdfReader, __version__ as pypdf_version
