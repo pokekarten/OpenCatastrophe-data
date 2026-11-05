@@ -1,0 +1,151 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission cross-insurer discovery of source products surfaced by R+V 2025 research: observed public-sector insurance account relationships, independent housing geography and parcels, insurance procurement discovery, and indirect cooperative-bank distribution prior.",
+  "review_date": "2026-11-05",
+  "entries": [
+    {
+      "candidate_id": "de.berlin.senate.housing-insurer-relations.2025",
+      "name": "Berlin Senate 2025 insurer relationships of six state-owned housing companies",
+      "provider": "Senatsverwaltung für Stadtentwicklung, Bauen und Wohnen Berlin",
+      "categories": [
+        "insurance",
+        "corporate_account",
+        "public_housing",
+        "named_insurer",
+        "property",
+        "primary_government_evidence"
+      ],
+      "spatial_scope": "Berlin, Germany, six public housing companies; corporate account relationships only",
+      "temporal_scope": "Official reply dated 2025-04-01; 2026 coverage or renewal not established",
+      "resolution_or_granularity": "Named corporate housing company and named building-insurance provider or consortium; source answers questions 2-4 on contracts and general perils",
+      "potential_roles": [
+        "carrier_to_corporate_account_evidence",
+        "insurer_named_client_discovery",
+        "public_housing_property_book_prior",
+        "cross_insurer_negative_control"
+      ],
+      "authoritative_url": "https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/SchrAnfr/S19-22033.pdf",
+      "access_class_hint": "official_parliamentary_pdf_public_fact_research_only_rights_and_original_hash_review_pending",
+      "note": "Original Berlin Senate answer 19/22033 names R+V Allgemeine for GESOBAU and WBM, R+V together with Allianz in degewo consortium, ERGO/Generali for Gewobag, Provinzial for HOWOGE and Allianz for STADT UND LAND. Master/blanket corporate building insurance is not one individual home-building policy per dwelling. No geocoded insured property list, carrier share of the degewo consortium, insured TIV, insurer CAT loss, claims or 2026 renewal. Existing typed research observation: research/observations/rva_berlin_senate_housing_insurer_relations_2025_v0.toml. Parliamentary PDF original-byte checksum not pinned. Do not infer 2025 physical location risk or treaty terms.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "de.berlin.senate.housing-borough-inventory.2025",
+      "name": "Berlin Senate 2025 borough by public housing company dwelling inventory",
+      "provider": "Senatsverwaltung für Stadtentwicklung, Bauen und Wohnen Berlin",
+      "categories": [
+        "residential_property",
+        "housing",
+        "borough",
+        "geography",
+        "corporate_account",
+        "exposure_opportunity"
+      ],
+      "spatial_scope": "Berlin's twelve boroughs, seven state-owned housing companies; separate additional other-stock row",
+      "temporal_scope": "Official reply 2025-11-11, main six companies as of 2025-06-30, Berlinovo as of 2025-09-30",
+      "resolution_or_granularity": "Twelve boroughs by seven public housing operators, unit is dwellings, including documented non-borough or other stock",
+      "potential_roles": [
+        "named_corporate_account_spatial_opportunity",
+        "public_housing_borough_inventory",
+        "insurer_client_geography_challenge",
+        "physical_stock_validation_prior"
+      ],
+      "authoritative_url": "https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/SchrAnfr/S19-24229.pdf",
+      "access_class_hint": "official_parliamentary_pdf_bounded_numeric_research_rights_and_original_hash_review_pending",
+      "note": "Original Berlin Senate reply 19/24229 reports 376278 dwellings for the six principal operators plus 18666 Berlinovo dwellings on different reference dates. The linked typed research/observations/rva_berlin_senate_housing_borough_stock_2025_v0.toml records the original table's 12 borough rows. This is corporate dwelling stock, not physical insured building units or risk addresses. A separate earlier Senate reply identifies some insurers but does not establish that all corporate dwellings are covered or the identity of insured premises, TIV or coinsurance fraction. Never add these dwellings to an insurer's count of individual building policies.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "de.berlin.open-data.public-housing-property-wfs.2026",
+      "name": "Berlin Open Data state-owned housing property parcels WFS",
+      "provider": "Senatsverwaltung für Stadtentwicklung, Bauen und Wohnen Berlin",
+      "categories": [
+        "buildings",
+        "housing",
+        "gis",
+        "wfs",
+        "parcels",
+        "exposure_opportunity"
+      ],
+      "spatial_scope": "Berlin, Germany, land-owned housing company properties with at least four dwellings per reported address",
+      "temporal_scope": "Public dataset dated 2025-12-31, metadata updated 2026-04-07; dataset vintage must be independently pinned",
+      "resolution_or_granularity": "Public cadastral parcel WFS geometry based on geocoded public housing stock; data layer schema and WFS original snapshot need explicit verification",
+      "potential_roles": [
+        "public_housing_parcel_opportunity",
+        "building_footprint_geospatial_context",
+        "regional_residential_portfolio_spatial_validation"
+      ],
+      "authoritative_url": "https://daten.berlin.de/datensaetze/wohnungsbestand-der-landeseigenen-wohnungsunternehmen-wfs-4c4e0115",
+      "access_class_hint": "public_berlin_open_data_dl_de_zero_2_0_page_only_wfs_version_and_scientific_review_pending",
+      "note": "Publisher's catalog names Datenlizenz Deutschland Zero 2.0 and WFS resources for land-owned residential parcels with four or more dwellings per address. The separately reviewed published WFS codebook lists gisid and typ but no verified carrier or housing-company owner key. Thus this source does not establish which parcel belongs to R+V-insured WBM, GESOBAU or degewo; do not spatially join it to named insurer corporate accounts without an independent verified owner linkage. No WFS bytes or risk addresses admitted.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "eu.ted.insurance-public-procurement-notice-search",
+      "name": "TED European procurement notices for public-sector insurance contracts",
+      "provider": "Publications Office of the European Union, Tenders Electronic Daily",
+      "categories": [
+        "insurance",
+        "procurement",
+        "corporate_account",
+        "public_sector",
+        "contract",
+        "international"
+      ],
+      "spatial_scope": "European public procurement notices, contracting-authority and performance-location scope vary by notice",
+      "temporal_scope": "Notice-specific publication and contract or award vintage; example 2023 and 2026 Berlin housing notices are not the same policy period",
+      "resolution_or_granularity": "Individual notices by notice ID, authority, tender, contract type and potentially named awarded provider, lot and effective dates",
+      "potential_roles": [
+        "named_insurer_corporate_account_discovery",
+        "municipal_property_insurance_award_evidence",
+        "carrier_contract_vintage_monitoring",
+        "public_procurement_research_prior"
+      ],
+      "authoritative_url": "https://ted.europa.eu/en/",
+      "access_class_hint": "public_ted_search_interface_and_developer_resources_notice_specific_rights_and_content_review_pending",
+      "note": "Reusable public insurance-contract discovery method; the R+V research identified Berlin WBM notice numbers 783307-2023 and 668506-2026, documented separately in research/observations/rva_distribution_bancassurance_public_awards_20261105_v0.toml. This generic catalogue entry DOES NOT independently verify awarded insurer share, all original notice fields, insured property schedule, current policy term or TIV. A notice or secondary award listing must not be transformed into geocoded insured risks. Verify exact official award and complete original record before carrier-specific assertion.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "de.bvr.cooperative-bank-network.2025",
+      "name": "BVR 2025 cooperative bank network and association regional statistics",
+      "provider": "Bundesverband der Deutschen Volksbanken und Raiffeisenbanken (BVR)",
+      "categories": [
+        "insurance",
+        "banking",
+        "distribution",
+        "regional_statistics",
+        "financial_intermediaries",
+        "bancassurance"
+      ],
+      "spatial_scope": "Germany cooperative-bank reporting population and audit-association categories; not a unique 16-state insurer geography",
+      "temporal_scope": "Observed year-end 2024 and 2025 counts in the official BVR 2025 annual report",
+      "resolution_or_granularity": "Bank institutions, branch offices and cooperative members by reporting association plus special Sparda/PSD/other national categories",
+      "potential_roles": [
+        "bancassurance_channel_prior",
+        "insurance_distribution_network_context",
+        "branch_network_scenario_challenge",
+        "cooperative_bank_market_opportunity"
+      ],
+      "authoritative_url": "https://berichte.bvr.de/jahresbericht-2025/ergebnisse/regionale-statistik/",
+      "access_class_hint": "public_bvr_html_aggregates_exact_html_bytes_not_pinned_reuse_terms_review_pending",
+      "note": "Official 2025 BVR panel gives 646 reporting banks, 6167 branch offices and 17542193 members, with 2024 comparison in research/observations/bvr_regional_association_counts_2024_2025_v0.toml. Audit associations are NOT the same as German Länder; counts of BVR institutions are not counts of R+V bank partners or R+V agencies. Bank branches and members cannot be treated as insurer policies, building locations, regional sales weights, insured TIV or evidence of the nearest building's insurance status.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    }
+  ]
+}
