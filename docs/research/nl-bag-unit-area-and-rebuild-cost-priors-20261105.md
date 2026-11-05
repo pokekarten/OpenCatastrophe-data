@@ -21,7 +21,7 @@ Official existing register candidate `nl.kadaster.bag` in `landscape/sources-eur
 - `status`, `gebruiksdoel` and technical IDs, with address/house-number/postcode and other potentially identifying fields. **Do not acquire or store addresses, inhabitants, personal names or consumer-policy information** in CAT exposure discovery.
 - BAG `pand` status `Pand in gebruik` and the unit's in-use status belong to different lifecycle entities; demolition/non-realisation and historic records must be excluded or retained as uncertain. A 'current' HTTP response timestamp does not prove the same underlying source-effective date.
 
-**Research-only chain:** `BGT Bebouwing identficatie_bag_pnd → BAG pand identity → BAG verblijfsobject[].pand → eligible unit oppervlakte m²`. Note that `verblijfsobject` may span several `pand`, which cannot be automatically split without independent spatial/effective-date evidence. `identficatie` is an ID, not an address or ownership claim.
+**Research-only chain:** `BGT Bebouwing identificatie_bag_pnd → BAG pand identity → BAG verblijfsobject[].pand → eligible unit oppervlakte m²`. Note that `verblijfsobject` may span several `pand`, which cannot be automatically split without independent spatial/effective-date evidence. `identificatie` is an ID, not an address or ownership claim.
 
 ## Three new cost/pricing candidate metadata records
 
