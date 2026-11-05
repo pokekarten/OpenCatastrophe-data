@@ -11,12 +11,14 @@ on:
       - "research_runners/rva_nrw_hu_2022_original_zip_range_receipt_v0.py"
       - "research_runners/rva_nrw_hu_2022_original_member_headers_v0.py"
       - "research_runners/rva_nrw_hu_2022_first_polygons_v0.py"
+      - "research_runners/rva_nrw_hu_gfk_residential_candidate_v0.py"
       - "research_runners/export_rva_nrw_hu_2022_geocoded_oed_smoke_v0.py"
       - "requirements-eu-flood-spatial.txt"
       - "tests/test_rva_nrw_hu_2022_original_index_receipt_v0.py"
       - "tests/test_rva_nrw_hu_2022_original_zip_range_receipt_v0.py"
       - "tests/test_rva_nrw_hu_2022_original_member_headers_v0.py"
       - "tests/test_rva_nrw_hu_2022_first_polygons_v0.py"
+      - "tests/test_rva_nrw_hu_gfk_residential_candidate_v0.py"
       - "tests/test_export_rva_nrw_hu_2022_geocoded_oed_smoke_v0.py"
       - "docs/research/rva-nrw-historical-hu-2022-footprint-oed-source-gate-20261105.md"
   workflow_dispatch:
@@ -56,6 +58,7 @@ jobs:
       - name: Source-only first physical polygons and EPSG4647 to WGS84 smoke
         run: |
           python -m unittest discover -s tests -p 'test_rva_nrw_hu_2022_first_polygons_v0.py' -v
+          python -m unittest discover -s tests -p 'test_rva_nrw_hu_gfk_residential_candidate_v0.py' -v
           python research_runners/rva_nrw_hu_2022_first_polygons_v0.py --live
       - name: Install pinned official Oasis ODS Tools 5.0.8
         run: |
