@@ -17,6 +17,7 @@ def synthetic() -> bytes:
   <Buyer>WBM Wohnungsbaugesellschaft Berlin-Mitte mbH</Buyer>
   <Title>Industrielle Sachversicherung für neun reine Gewerbeobjekte</Title>
   <Info>Für ein Führungsangebot wird eine Zeichnungsquote von mindestens 30 % vorausgesetzt, für ein Beteiligungsangebot mindestens 15 %</Info>
+  <AwardEvaluation>Gibt es günstigere Beteiligungsangebote, wird das Führungsangebot nur mit einer Haftungsquote von max. 50 % berücksichtigt. Sofern ein Anteil übrigbleibt, der unterhalb der Mindestquote liegt, kann auch unterhalb der Mindestquote ein Beteiligungsangebot berücksichtigt werden.</AwardEvaluation>
   <Perils>Sturm Hagel Überschwemmung Erdbeben Feuer</Perils>
 </ContractNotice>""").encode("utf-8")
 
@@ -58,6 +59,9 @@ class OfficialWBMCompetitionSourceTests(unittest.TestCase):
         self.assertEqual(x["original_source_sha256"], hashlib.sha256(raw).hexdigest())
         self.assertTrue(x["lead_writing_minimum_30_percent_in_2026_tender_text"])
         self.assertTrue(x["follower_writing_minimum_15_percent_in_2026_tender_text"])
+        self.assertTrue(x["lead_capped_at_50_if_cheaper_followers_in_tender_text"])
+        self.assertTrue(x["remaining_below_minimum_participation_may_be_accepted_in_tender"])
+        self.assertFalse(x["specific_exception_proved_to_have_been_applied_to_rv"])
         self.assertFalse(x["final_policy_coverage_quotas_or_rv_10_percent_verified"])
         self.assertTrue(x["original_xml_retrieval_independently_rechecked_against_reviewed_sha"])
         self.assertEqual(x["commercial_object_count_described_not_geocoded"], 9)
@@ -109,6 +113,19 @@ class OfficialWBMCompetitionSourceTests(unittest.TestCase):
     def test_missing_15_percent_condition_fails_source_preflight(self):
         raw = synthetic().replace(b"15 %", b"14 %")
         with self.assertRaisesRegex(ValueError, "MISSING_SOURCE_MARKER_participating_minimum_15"):
+            self.inspect_fixture(raw)
+
+    def test_residual_below_minimum_exception_must_be_original(self):
+        raw = synthetic().replace(
+            b"ein Beteiligungsangebot ber",
+            b"ein anderes Angebot ber",
+        )
+        with self.assertRaisesRegex(ValueError, "MISSING_SOURCE_MARKER_below_minimum_residual_exception"):
+            self.inspect_fixture(raw)
+
+    def test_50_percent_lead_cap_must_be_original(self):
+        raw = synthetic().replace(b"max. 50 %", b"max. 55 %")
+        with self.assertRaisesRegex(ValueError, "MISSING_SOURCE_MARKER_lead_offer_50_cap"):
             self.inspect_fixture(raw)
 
     def test_wrong_notice_id_fails_preflight(self):
