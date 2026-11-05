@@ -118,6 +118,19 @@ def run_live(*, original=None, sampler=None, previewer=None):
     expected = sum(r['replacement_cost_eur'] for r in assets['rows'])
     if expected != EXPECTED_TIV_EUR:
         raise AssertionError('source-authored synthetic total TIV drifted')
+    # Two synthetic site labels do not imply two independent physical
+    # hazard cells: the actual fixed Kyrill source sites resolve to one cell.
+    # Keep this count independent of the invented building/insurance roster.
+    cells_by_site = {
+        row['site_id']: (row['native_cell_x'], row['native_cell_y'])
+        for row in sample['site_samples']
+    }
+    asset_cells = [cells_by_site[row['site_id']] for row in assets['rows']]
+    distinct_cells = set(cells_by_site.values())
+    if (len(cells_by_site) != len(SITES) or not distinct_cells or
+            len(asset_cells) != 24):
+        raise ValueError('synthetic sites/native source-cell crosswalk drift')
+    most_assets_in_one_cell = max(asset_cells.count(cell) for cell in distinct_cells)
     raw_sha = sha256(raw).hexdigest()
     if raw_sha != PINNED_SHA256:
         raise ValueError('provider original bytes differ from independently pinned SHA256')
@@ -148,6 +161,9 @@ def run_live(*, original=None, sampler=None, previewer=None):
             for x in sample['site_samples']
         ],
         'point_reextract_exact_original': True,
+        'distinct_native_hazard_grid_cells_sampled': len(distinct_cells),
+        'source_sites_share_a_native_grid_cell': len(distinct_cells) < len(cells_by_site),
+        'max_fictional_assets_sharing_one_native_grid_cell': most_assets_in_one_cell,
         'synthetic_asset_count': 24,
         'synthetic_total_replacement_cost_eur': EXPECTED_TIV_EUR,
         'synthetic_vlt_sha256': damage['uncalibrated_vlt_sha256'],
