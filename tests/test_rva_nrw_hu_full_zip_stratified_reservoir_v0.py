@@ -12,6 +12,7 @@ from pathlib import Path
 import struct
 import tempfile
 import unittest
+from unittest.mock import patch
 import sys
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -80,11 +81,25 @@ def base_oed(directory):
             w.writerow({"PortNumber":"TEST","AccNumber":key,"PolNumber":key})
 
 
+class SyntheticFixtureTransformer:
+    """Offline geometric fixture only; never a tested EPSG:4647 projection.
+
+    The actual EPSG:4647 -> EPSG:4326 transformation runs under the
+    pinned GIS dependencies in the dedicated original-source workflow.
+    """
+    def transform(self, x: float, y: float) -> tuple[float, float]:
+        if not (32_200_000 < x < 32_600_000 and 5_500_000 < y < 5_900_000):
+            raise AssertionError("fictional projected source coordinate out of fixture range")
+        return 7.5 + (x - 32_280_000) / 1_000_000, 51.2 + (y - 5_578_000) / 1_000_000
+
+
 class TestOriginalFullSourceReservoir(unittest.TestCase):
     @unittest.skipUnless(
         importlib.util.find_spec("pyproj") is not None and importlib.util.find_spec("shapely") is not None,
         "pinned geospatial runtime is optional in generic repository CI")
-    def test_six_original_style_records_all_gfk_categories_and_two_counties(self):
+    @patch("rva_nrw_hu_full_zip_stratified_reservoir_v0._pinned_transformer",
+           return_value=SyntheticFixtureTransformer())
+    def test_six_original_style_records_all_gfk_categories_and_two_counties(self, _fixture_crs):
         s,d,n=fake_source()
         target={"05362":1,"05974":1}
         selected,audit=sample_hu_stream(io.BytesIO(s),io.BytesIO(d),
@@ -116,7 +131,9 @@ class TestOriginalFullSourceReservoir(unittest.TestCase):
     @unittest.skipUnless(
         importlib.util.find_spec("pyproj") is not None and importlib.util.find_spec("shapely") is not None,
         "pinned geospatial runtime is optional in generic repository CI")
-    def test_mock_real_geometry_join_preserves_fictional_insurance_identity(self):
+    @patch("rva_nrw_hu_full_zip_stratified_reservoir_v0._pinned_transformer",
+           return_value=SyntheticFixtureTransformer())
+    def test_mock_real_geometry_join_preserves_fictional_insurance_identity(self, _fixture_crs):
         s,d,n=fake_source()
         selected,audit=sample_hu_stream(io.BytesIO(s),io.BytesIO(d),
             expected_count=n,shx_length=100+n*8,county_targets={"05362":1,"05974":1})
