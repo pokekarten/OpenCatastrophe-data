@@ -81,7 +81,9 @@ def _load_rows(blob: bytes) -> list[list[str]]:
 
 def _grid(blob: bytes) -> dict[int, tuple[Decimal, Decimal]]:
     records = _load_rows(blob)
-    if records.pop(0) != ["Grid number", "Longitude", "Latitude"]:
+    # Historical original publisher CSV spells Latitde without the second u.
+    # Match the source exactly instead of silently normalizing drifted headers.
+    if records.pop(0) != ["Grid number", "Longitude", "Latitde"]:
         raise XWSSourceBlocked("official WGS84 grid location CSV header changed")
     if not MIN_ROWS <= len(records) <= MAX_ROWS:
         raise XWSSourceBlocked("original rotated grid expected bounded population")
