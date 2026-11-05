@@ -42,6 +42,29 @@ class FakeResponse:
 
 
 class TEDSyntheticOriginalXMLSourceTests(unittest.TestCase):
+    def setUp(self):
+        # Real source code uses immutable publisher original pins. Synthetic
+        # fixtures intentionally have different bytes and must not weaken
+        # the production exact-hash path or claim to be original TED assets.
+        original = {
+            key: dict(value, original_xml_sha256_pinned=None,
+                      original_xml_bytes_pinned=None)
+            for key, value in m.SOURCES.items()
+        }
+        self.original_pins = {
+            key: (value["original_xml_sha256_pinned"], value["original_xml_bytes_pinned"])
+            for key, value in m.SOURCES.items()
+        }
+        patcher = patch.dict(m.SOURCES, original)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_two_real_pinned_original_sha_and_byte_receipts_exist(self):
+        self.assertEqual(self.original_pins["558592-2024"],
+                         ("51698e01c01caa9a0c58d41baf161d73a585d3b30f3b3dba12d95a3859b56b2f", 39733))
+        self.assertEqual(self.original_pins["668506-2026"],
+                         ("7650720183d0c26430e0433858bf2e8b854ea68bb93fbf679e96ee696ee8fc78", 21837))
+
     def test_exact_two_official_notice_identifiers(self):
         self.assertEqual(set(m.SOURCES), {"558592-2024", "668506-2026"})
         self.assertEqual(m.official_url("558592-2024"),
