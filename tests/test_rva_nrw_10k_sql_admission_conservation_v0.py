@@ -69,7 +69,7 @@ class NRWGeocodedCohortGateTests(unittest.TestCase):
         self.assertFalse(self.receipt["science_CAT_model_input_admitted"])
         self.assertFalse(self.receipt["native_German_CAT_GUL_IL_RI_OEP_AEP_verified"])
         self.assertIn('"source_2022_GFK_codebook_verified":true', self.sql)
-        self.assertIn("source_admitted_complete_10k_nrw_oed_versions", self.sql)
+        self.assertIn("complete_source_admitted_10k_nrw_oed_versions", self.sql)
         self.assertIn("false::boolean AS annual_cat_ep_calibrated_by_these_sources", self.sql)
 
     def test_sql_remains_one_read_only_select(self):
