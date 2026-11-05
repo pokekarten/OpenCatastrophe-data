@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   original-data-receipt:
-    name: Original radar H5 + three metadata files (non-admission)
+    name: Exact seven Zenodo source files (non-admission)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -40,7 +40,7 @@ jobs:
           python -m unittest -v
           tests.test_swiss_crop_hail_asset_preflight_v0
           tests.test_swiss_crop_hail_zenodo_original_acquire_v0
-      - name: Re-fetch exact five original Zenodo v1 files, receipt only
+      - name: Re-fetch exact seven original Zenodo v1 files, receipt only
         env:
           PYTHONDONTWRITEBYTECODE: "1"
-        run: python -m research_runners.swiss_crop_hail_zenodo_original_acquire_v0 --include-radar
+        run: python -m research_runners.swiss_crop_hail_zenodo_original_acquire_v0 --include-radar --include-archives
