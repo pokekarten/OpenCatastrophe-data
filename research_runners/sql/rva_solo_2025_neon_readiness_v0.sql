@@ -106,11 +106,13 @@ versions AS (
 ),
 units AS (
  SELECT count(*)::bigint AS company_linked_exposure_units,
-        count(*) FILTER (WHERE p.portfolio_type='synthetic' AND u.location IS NOT NULL)::bigint
-           AS synthetic_exposure_units_with_geometry
+        count(*) FILTER (WHERE p.portfolio_type='synthetic' AND u.location IS NOT NULL)::bigint AS synthetic_exposure_units_with_geometry,
+        count(*) FILTER (WHERE p.portfolio_type='synthetic' AND u.unit_type='asset' AND u.assumption_status='synthetic' AND u.country_code='DE' AND u.region_code ~ '^05[0-9]{3}$' AND u.location IS NOT NULL AND ST_SRID(u.location)=4326 AND ST_IsValid(u.location) AND CASE WHEN ST_GeometryType(u.location)='ST_Point' THEN ST_X(u.location) BETWEEN 5.5 AND 10.0 AND ST_Y(u.location) BETWEEN 50.0 AND 52.8 ELSE false END AND u.insured_value>0 AND u.value_basis LIKE 'FICTIONAL%')::bigint AS synthetic_nrw_wgs84_source_candidate_units,
+        count(*) FILTER (WHERE p.portfolio_type='synthetic' AND u.unit_type='asset' AND u.assumption_status='synthetic' AND u.country_code='DE' AND u.region_code ~ '^05[0-9]{3}$' AND u.location IS NOT NULL AND ST_SRID(u.location)=4326 AND ST_IsValid(u.location) AND CASE WHEN ST_GeometryType(u.location)='ST_Point' THEN ST_X(u.location) BETWEEN 5.5 AND 10.0 AND ST_Y(u.location) BETWEEN 50.0 AND 52.8 ELSE false END AND u.insured_value>0 AND u.value_basis LIKE 'FICTIONAL%' AND sr.canonical_url='https://www.opengeodata.nrw.de/produkte/geobasis/lk/hist/hist_hu_shp/2022_hu_EPSG4647_Shape.zip' AND sr.rights_status='reviewed_derivative_usage_permitted' AND sr.raw_metadata @> '{"original_hu_archive_full_sha256_verified":true,"source_member_CRCs_verified":true,"source_2022_GFK_codebook_verified":true,"source_transformation_EPSG4647_to_4326_verified":true,"publisher_dataset_license_reviewed":true,"fictional_policy_linkage":true}'::jsonb AND v.scenario_hash ~ '^[0-9a-f]{64}$')::bigint AS source_admitted_synthetic_nrw_wgs84_units
  FROM exposure.exposure_unit u
  JOIN exposure.portfolio_version v USING (portfolio_version_id)
  JOIN exposure.portfolio p USING (portfolio_id)
+ LEFT JOIN registry.source_record sr ON sr.source_key=u.source_key
  WHERE p.organization_id IN (SELECT organization_id FROM solo)
 ),
 audit AS (
@@ -142,6 +144,8 @@ SELECT 'RVA_SOLO_2025_RESEARCH_READINESS_V1'::text AS report_id,
               OR company_linked_exposure_units=0
               THEN 'BLOCKED_COMPANY_SYNTHETIC_EXPOSURE_NOT_REGISTERED'
          WHEN synthetic_exposure_units_with_geometry=0 THEN 'BLOCKED_SYNTHETIC_EXPOSURE_HAS_NO_GEOMETRY'
+         WHEN synthetic_nrw_wgs84_source_candidate_units=0 THEN 'BLOCKED_NRW_SYNTHETIC_WGS84_ASSET_POINTS_MISSING'
+         WHEN source_admitted_synthetic_nrw_wgs84_units=0 THEN 'BLOCKED_FULL_ORIGINAL_HU_CRS_RIGHTS_AND_SCENARIO_PROVENANCE'
          ELSE 'RESEARCH_ONLY_NEEDS_HAZARD_VULNERABILITY_RIGHTS_AND_TREATY_REVIEW'
        END::text AS next_gate
 FROM audit;
