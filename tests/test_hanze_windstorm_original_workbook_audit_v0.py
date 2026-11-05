@@ -87,7 +87,7 @@ def fixture(*, duplicate_id=False, malformed_header=False, formula=False,
     impact = pre + "".join(rows) + "</sheetData></worksheet>"
     sources = pre + refrows + "</sheetData></worksheet>"
     if malicious_dtd:
-        impact = '<!DOCTYPE worksheet [<!ENTITY x SYSTEM "file:///etc/passwd">]>' + impact
+        impact = '<!DOCTYPE worksheet [<!ENTITY x "blocked-test-only">]>' + impact
     buf = BytesIO()
     with ZipFile(buf, "w") as z:
         z.writestr("[Content_Types].xml", '<Types/>')
