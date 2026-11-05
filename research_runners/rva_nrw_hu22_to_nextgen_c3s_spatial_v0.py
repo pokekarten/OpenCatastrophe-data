@@ -21,6 +21,7 @@ import json
 from pathlib import Path
 import re
 import sys
+import tomllib
 import zipfile
 
 from rva_nrw_hu_gfk_residential_candidate_v0 import classify_gfk
@@ -246,13 +247,13 @@ def write_zip(result:dict,out:Path)->dict:
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source_geocoded_nrw_oed_zip",type=Path)
-    parser.add_argument("synthetic_c3s_grid_fixture_json",type=Path)
+    parser.add_argument("synthetic_c3s_grid_fixture_toml",type=Path)
     parser.add_argument("output_zip",type=Path)
     args=parser.parse_args()
     try:
-        if args.synthetic_c3s_grid_fixture_json.stat().st_size>16384:
-            raise CrosswalkBlocked("bounded explicit demo grid JSON required")
-        grid=json.loads(args.synthetic_c3s_grid_fixture_json.read_text(encoding="utf-8"))
+        if args.synthetic_c3s_grid_fixture_toml.stat().st_size>16384:
+            raise CrosswalkBlocked("bounded explicit SPDX-tagged demo TOML required")
+        grid=tomllib.loads(args.synthetic_c3s_grid_fixture_toml.read_text(encoding="utf-8"))
         receipt=write_zip(build(args.source_geocoded_nrw_oed_zip,grid),args.output_zip)
         print(json.dumps({k:receipt[k] for k in ("schema","status","source_physical_synthetic_OED_count",
             "original_NRW_counties","synthetic_source_building_TIV_eur",
