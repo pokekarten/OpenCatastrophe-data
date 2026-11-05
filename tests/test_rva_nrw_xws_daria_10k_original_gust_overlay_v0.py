@@ -73,7 +73,7 @@ def fake_xws_source(*,inverted=False, missing=False):
     n=1000
     points=[(7.020,50.804),(8.378,51.453),(8.659,51.519)]
     points.extend((-25+(i%30)*.1,35+(i//30)*.1) for i in range(n-3))
-    grid=("Grid number,Longitude,Latitude\n"+
+    grid=("Grid number,Longitude,Latitde\n"+
           "".join(f"{i},{lon:.3f},{lat:.3f}\n" for i,(lon,lat) in enumerate(points))).encode()
     source={"grid":grid}
     for name,field in (("daria_lower95",[10,20,30]),
