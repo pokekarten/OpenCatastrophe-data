@@ -114,6 +114,8 @@ def audit(wfs, model_docs, *, wfs_source_url):
     safe_wfs = audit_wfs(wfs, source_url=wfs_source_url)
     if not safe_wfs["conservation_check_passed"]:
         raise ModelledVolumeError("WFS completeness guard failed")
+    if safe_wfs["count_suppressed_for_privacy"]:
+        raise ModelledVolumeError("WFS in-use unit sample below privacy publication threshold")
     observed = wfs["features"]
     expected = {
         str(f["properties"]["pandidentificatie"])
@@ -176,6 +178,7 @@ def audit(wfs, model_docs, *, wfs_source_url):
         "model_3d_reference_system": "EPSG:7415",
         "cityjson_format_version": "2.0",
         "exact_3dbag_release_verified": False,
+        "provider_response_origin_or_hash_verified": False,
         "complete_multi_pand_relation_verified": False,
         "source_rights_reviewed": False,
         "source_admitted": False,
