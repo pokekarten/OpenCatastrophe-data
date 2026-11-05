@@ -105,3 +105,49 @@ The immense conditional range is a **diagnostic**, not the 95% confidence interv
 5. Only after admitted joint occurrence/rate and loss distributions do native Oasis/NextGen `GUL → IL → RI` and proper gross/net OEP/AEP become scientifically meaningful.
 
 This is a **major engineering demonstration** of a physical original historical storm hazard joining public buildings through a literature-based conditional loss-reference sensitivity; it is **not** an insurer-calibrated stochastic CAT model. Both PR #1389 and related #1372/#1373 remain Draft; productive Neon main remains unchanged.
+
+
+## First actual stochastic fictional-policy / reinsurance one-event experiment — 2026-11-05
+
+**Live verified initial source-bound Monte Carlo** [workflow #42113435111](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42113435111) **PASS**, 8 offline arithmetic/governance tests. The existing exact original provider physical Kyrill 2007 XWS historical `recalibrated_mean` WGS84 geojoin research ZIP (SHA-256 `631ef3b4f25ac5512bb8c71d936fc2d1ee6922af2f3ab01df17ca3f987a0f918`) and the original 10k county-conserving fictional OED ZIP (`5b0055ce71314f7d7baf4f67008cd4abba3df28a4bce0690bbe9521a3cc35757`) are independently checked *again* before the new simulation. The previous 10,000-site 1× Schwierz expected ground-up source reference **EUR 53,686.91** is recomputed **exactly** before any random drawing. No insurer sites or original third-party NetCDF files are downloaded into the repository, no actual R+V customer or treaty is used, and neither the underlying original historic four XWS windfield views nor these 2,048 hypothetical loss replicates are *annual events*.
+
+### Explicit **invented** stochastic claim and contract model
+
+For each artificial site `i`, after reading its physically sourced original XWS historic gust `v_i` and fictional `TIV_i`, independently interpolate published numeric [Schwierz 2010](https://doi.org/10.1007/s10584-009-9712-1) `PAA_i` and `MDD_i`. Assume a **two-point Bernoulli severity model**, a *research assumption not supplied by the source*:
+
+- Site impact `A_i = 1{U_i < PAA(v_i)}`. If damaged, fictional **damage = TIV_i × MDD(v_i)**, rounded to EUR cents; otherwise zero. **This assumes fixed severity conditional on damage**, does not estimate a damage severity law, clustering, debris losses, climate trend or structural material. Its analytic marginal mean `PAA_i × MDD_i × TIV_i` mirrors the prior source-referenced calculation apart from cent rounding.
+- Each fictional property policy independently pays `IL_i = min(max(D_i − EUR 250, 0), EUR 50,000)`. This is not a real R+V deductible/limit.
+- Each fictional post-policy claim cedes **20% quota share**, cent rounding half-up. The insurer aggregates **all 10k risks of the one historical Kyrill occurrence** only *after* applying individual policy terms and quota share.
+- Fictional occurrence **cat-XL EUR 250,000 xs EUR 15,000** applies only to that post-quota-share retained occurrence sum; no hours clause, attachment reinstatement, aggregate annual exhaustion or competing treaties is modelled. It uses loss-first financial ordering: `IL = QS ceded + occurrence XL recovered + insurer net`, **verified to the cent in every simulated trial**.
+- **Shared random draw hypothesis:** in each of 2,048 independent *replicates of this one historic storm*, every site draws one own uniform and a Bernoulli selector; with a **fictitious 25% shared-uniform mixing weight**, it may instead use the same event-wide uniform. The alternative sets the mixing weight to **zero**. This creates illustrative positive dependence without changing *theoretical per-site PAA*, but **25% mixing weight ≠ 25% pairwise damage correlation**, and the two sample means can be unequal due to finite Monte Carlo noise. The deterministic RNG seed **20261105** is **specific to this toy** and is not the legacy FFBK/RIM seed or a 10,000-run exact parity claim. Trial count is 2,048 per hypothesis.
+
+### Actual one-event results from exact original input, seed 20261105
+
+| Simulated event-level euro amount (sample mean unless noted) | Independent site shocks | Invented common-25%-mixture shocks |
+| --- | ---: | ---: |
+| Source-referenced *analytical* expected ground-up, before per-risk stochastic rounding | EUR 53,686.91 | EUR 53,686.91 |
+| Monte Carlo ground-up | EUR **53,703.74** | EUR **50,581.96** |
+| MC standard error for the above mean | EUR 174.78 | EUR 2,713.00 |
+| MC ground-up conditional one-event Q95 | EUR 67,020.93 | EUR 53,358.20 |
+| MC ground-up conditional one-event Q99 | EUR 72,832.16 | EUR 207,357.38 |
+| MC ground-up **maximum in this sample**, not an estimated annual max | EUR 79,604.03 | EUR 2,096,660.32 |
+| MC insured IL (post-policy, pre-reinsurance) | EUR 37,849.73 | EUR 35,671.32 |
+| MC 20% quota share recovered | EUR 7,569.95 | EUR 7,134.27 |
+| MC occurrence cat-XL recovered | EUR 15,279.78 | EUR 10,156.33 |
+| MC insurer net after fictional QS and occurrence XL | **EUR 15,000.00** | **EUR 18,380.71** |
+| MC net Q99 across *one-storm* damage replicates | EUR 15,000.00 | EUR 15,000.00 |
+| MC **maximum net** across 2,048 damage replicates | EUR 15,000.00 | EUR 906,528.11 |
+| MC net mean standard error | EUR 0.00 | EUR 1,098.34 |
+
+The severe difference in event-tail maxima demonstrates **nonlinear occurrence XL exhaustion when damages are dependent**, not an empirical `R+V` CAT tail. In the independent toy, all **2,048** draws have retained pre-XL between the attachment and the attachment plus limit, so net is exactly the **EUR 15,000 attachment** by construction. In the uncalibrated shared-uniform alternative, rare large joint payouts exhaust the artificial 250k XL; the mean is **sampling noisy** (several times less stable than independent), and **even its Q99 net remains 15k**. This does not establish any realistic systemic wind-damage correlation or an insurer's return period. The XWS dataset contains hand-selected historic severe storms, not an unbiased annual event generator, and neither this event-selection nor these 2,048 damage replicates provide OEP/AEP/Gross/Net annual return-period curves.
+
+Source and numerical machine-readable [typed, non-personal, no-geolocation receipt](../../research/observations/xws_kyrill_2007_nrw10k_fictional_policy_qs_xl_event_mc_v0.toml), exact independently replayed result JSON SHA-256 `3c0046d0b60974b22e1cd46ae338202b8eec153f10485ae31c2d515975db1f25`. The new [standard-library risk simulation](../../research_runners/xws_kyrill_nrw10k_fictional_policy_ri_event_mc_v0.py) and [closed-form finance and random-seed tests](../../tests/test_xws_kyrill_nrw10k_fictional_policy_ri_event_mc_v0.py) live in draft PR #1389, and [.github/workflows/xws-kyrill-2007-fictional-policy-qs-xl-event-mc.yml](../../.github/workflows/xws-kyrill-2007-fictional-policy-qs-xl-event-mc.yml) replays **the same original input artifacts** only while original external artifact retention remains valid. The output JSON remains ephemeral in GitHub Actions; the SHA, no-claims flags and aggregate sample statistics are persisted under Apache-2.0 original text, not licensed third-party binaries.
+
+### Evidence required to advance beyond the toy
+
+1. Replace both independent and shared-uniform mixture with an empirical, Germany-applicable **conditional joint site damage and severity model**, tied to construction, roof, vulnerability, spatial dependence and storm-specific uncertainty (PAA/MDD alone cannot identify loss tails).
+2. Calibrate per-policy deductible/limits and real or separately declared fictional treaty **attachment bases, QS order, occurrence definitions, reinstatements and covered loss components** with named documentation. The current illustrated tower is **not a carrier treaty**.
+3. Test exact shared event sample IDs and GUL→IL→RI ordering against **native Oasis** and/or existing NextGen engines; this standalone stdlib Monte Carlo does **not** establish native CAT-model interface interoperability.
+4. Obtain an independently licence-admitted annual European event set, model frequency/occurrence clusters, historical nonstationarity and event identity; **then**, and only then, separate conditional event-tail quantiles from true yearly stochastic **AEP/OEP** including genuine Gross, IL and Net EP curves.
+
+**Admission decision:** `ONE_EVENT_CONDITIONAL_RESEARCH_FINANCIAL_EXPERIMENT_PASS`; `CARRIER_CALIBRATED_STOCHASTIC_CAT_GUL_IL_RI_AND_ANNUAL_EP_NO_GO`. No production Neon or original R+V risk records were changed.
