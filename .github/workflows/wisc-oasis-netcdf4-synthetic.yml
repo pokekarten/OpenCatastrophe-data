@@ -38,10 +38,11 @@ jobs:
       - name: Install bounded synthetic NetCDF-4 validation dependencies
         run: |
           python -m pip install --disable-pip-version-check --no-input \
-            "netCDF4==1.7.3" "xarray==2025.1.2"
+            "netCDF4==1.7.3" "xarray==2025.1.2" "oasislmf==2.5.8"
           python -m pip check
+          command -v csvtobin
 
-      - name: Execute pure core and real binary synthetic NetCDF-4 tests
+      - name: Execute real NetCDF-4 to native Oasis footprint binary validation
         run: |
           python -m unittest discover -s tests \
             -p 'test_wisc_netcdf_oasis_tile_v0.py' -v
@@ -56,5 +57,6 @@ jobs:
             echo "- Test uses only an invented 2 x 3 geographic array written as NetCDF-4 at runtime."
             echo "- Original Copernicus WISC bytes were not downloaded or admitted."
             echo "- Four output CSV types: events, footprint, intensity bins, area-peril centroid mapping."
+            echo "- The synthetic footprint CSV is accepted by the native OasisLMF 2.5.8 csvtobin footprint converter with validation enabled."
             echo "- No occurrence series, vendor vulnerability, native CAT run or annual EP proof."
           } >> "$GITHUB_STEP_SUMMARY"
