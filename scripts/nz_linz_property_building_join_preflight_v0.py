@@ -13,7 +13,7 @@ import argparse
 import csv
 import json
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Iterable
 
@@ -67,8 +67,19 @@ def evaluate(
     val_ids = [_id(row.get("unit_of_property_id")) for row in v_rows]
     val_nonempty = [value for value in val_ids if value]
     unique_val = set(val_nonempty)
-    boundary_ids = {_id(row.get("unit_of_property_id")) for row in b_rows}
-    boundary_ids.discard("")
+    # Only the official rated-property source constitutes a candidate for a
+    # unit_of_property_id boundary join. Title/parcel fallback geometries must
+    # never silently turn into an observed rated-property match.
+    boundary_rated_keys = [
+        _id(row.get("unit_of_property_id"))
+        for row in b_rows if row.get("source") == "NZ Unit of Property"
+    ]
+    boundary_id_counts = Counter(key for key in boundary_rated_keys if key)
+    boundary_ids = set(boundary_id_counts)
+    fallback_rows_with_unit_id = sum(
+        bool(_id(row.get("unit_of_property_id")))
+        for row in b_rows if row.get("source") != "NZ Unit of Property"
+    )
     refs: dict[str, set[str]] = defaultdict(set)
     ref_pairs: set[tuple[str, str]] = set()
     invalid_refs = 0
@@ -86,6 +97,29 @@ def evaluate(
     outline_ids = [_id(row.get("building_id")) for row in o_rows]
     outlined = set(outline_ids)
     outlined.discard("")
+    outline_id_counts = Counter(bid for bid in outline_ids if bid)
+    inverse_refs: dict[str, set[str]] = defaultdict(set)
+    for uid, bids in refs.items():
+        for bid in bids:
+            inverse_refs[bid].add(uid)
+    shared_outline_ids = {
+        bid for bid in outlined if len(inverse_refs.get(bid, set())) > 1
+    }
+    valuation_id_counts = Counter(val_nonempty)
+
+    # A purely *structural* 1:1 candidate needs exactly one valuation row,
+    # one rated boundary, one reference building, one outline record and no
+    # other property claiming the same building. This is never a rights,
+    # source-vintage, insured-asset, or replacement-value admission.
+    one_to_one_candidates = 0
+    for uid in unique_val & boundary_ids:
+        bids = refs.get(uid, set())
+        if (valuation_id_counts[uid] != 1 or boundary_id_counts[uid] != 1
+                or len(bids) != 1):
+            continue
+        bid = next(iter(bids))
+        if outline_id_counts[bid] == 1 and len(inverse_refs[bid]) == 1:
+            one_to_one_candidates += 1
 
     with_ref = {uid for uid in unique_val if refs.get(uid)}
     with_outline = {uid for uid in with_ref if refs[uid] & outlined}
@@ -102,6 +136,9 @@ def evaluate(
             "valuation_duplicate_id_rows": len(val_nonempty) - len(unique_val),
             "boundary_rows": len(b_rows),
             "boundary_rows_with_unit_id": sum(bool(_id(row.get("unit_of_property_id"))) for row in b_rows),
+            "rated_boundary_rows_with_unit_id": sum(boundary_id_counts.values()),
+            "non_rated_fallback_rows_with_unit_id": fallback_rows_with_unit_id,
+            "rated_boundary_duplicate_unit_id_rows": sum(boundary_id_counts.values()) - len(boundary_ids),
             "valuation_units_with_boundary_in_sample": len(unique_val & boundary_ids),
             "reference_rows": len(r_rows),
             "reference_invalid_key_rows": invalid_refs,
@@ -112,11 +149,15 @@ def evaluate(
             "current_outline_duplicate_building_ids": len(outline_ids) - len(outlined) - outline_ids.count(""),
             "valuation_units_with_linked_current_outline_in_sample": len(with_outline),
             "distinct_matched_current_outline_ids_in_sample": len(confirmed_outline_keys),
+            "current_outline_ids_referenced_by_multiple_properties": len(shared_outline_ids),
+            "conservative_one_to_one_join_candidates_in_sample": one_to_one_candidates,
         },
         "cautions": {
             "inputs_may_be_unaligned_subsets": True,
             "source_release_or_vintage_alignment_verified": False,
             "links_do_not_prove_single_building_per_property": True,
+            "non_rated_boundary_fallback_is_not_a_rated_property_match": True,
+            "one_to_one_candidates_do_not_prove_physical_or_insured_assets": True,
             "valuation_is_not_replacement_cost_or_insured_tiv": True,
             "insured_exposure_admitted": False,
             "cat_model_input_admitted": False,
