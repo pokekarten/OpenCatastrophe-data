@@ -186,3 +186,37 @@ Using a fresh, complete 19-parcel/9-BGT tiny-box PDOK sample at 2026-11-04T23:22
 **Observed:** building footprint total `483.946 m²`; summed parcel intersections **`480.570 m²`**; unioned intersections **`480.570 m²`**; excess from self-overlapping parcel intersections **`0.000000 m²`**; zero buildings with >0.0001m² local parcel polygon duplicate; union area coverage **`99.303%`**; weakest individual footprint union coverage **`97.646%`**.
 
 The public research code now computes `parcel_self_overlap_doublecount_sqm`, `parcel_polygon_overlap_buildings` and `union_intersection_area_sqm` in addition to overlap fractions. This confirms no observed geometric parcel-overlap double count in the **nine-building bounded sample** only; it is NOT a cadastral accuracy certificate, source entitlement, insured sum or evidence of wider market coverage. Construction year, vulnerability and height validation are outside this query's scope.
+
+## 2026-11-05: multi-window challenge and full-building-envelope correction
+
+**Research purpose:** Test whether the first Utrecht-area micro-window result generalises even a little, while distinguishing *absence of buildings*, *missing original source coverage*, and *false gaps caused by a parcel bbox too small for the complete BGT building footprint*. Windows are deliberately tiny geographic case studies, **not representative architectural/urban-class samples**, and cannot calibrate insured portfolios.
+
+| Approximate geographic test window | CRS84 requested bbox | `perceel` count | `bebouwing` count | BAG `pand` count | Initial area-union coverage on BGT footprint |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Amsterdam | `4.8978,52.3733,4.8981,52.37355` | 5 | 3 | 3 | **73.520%** |
+| Rotterdam (zero-building control) | `4.4790,51.9213,4.4793,51.92155` | 2 | **0** | **0** | **Not defined** (no sampled buildings) |
+| Eindhoven | `5.4794,51.4393,5.4797,51.43955` | 4 | 2 | 2 | **88.548%** |
+| Wageningen | `5.6615,51.9680,5.6618,51.96825` | 1 | 1 | 1 | **100.000%** |
+
+All 12 initial original-source OGC API queries returned complete, bounded, no-pagination responses at approximately 2026-11-05 07:14 UTC. Later read-only projected geometry calculations were conducted solely on the isolated insurance Neon `validation-schema-20261031` branch, with no persistent table creation. The candidate `bebouwing` ↔ BAG ID linkage was 3/3 Amsterdam, 2/2 Eindhoven, and 1/1 Wageningen; **these are not legal parcel title, insured-location or owner identities**.
+
+### Root-cause proof: initial bbox did not enclose returned full BGT polygons
+
+- Amsterdam BGT geometry envelope was approximately `4.89795679,52.37318012,4.89855569,52.37342693`; original query east/south omitted building geometry. Expansion of the **parcel** query to `4.897877,52.3731,4.898636,52.373507` retrieved **25** complete parcels (no pagination) and restored **100.000%** union coverage of all 3 sampled BGT buildings (500.614 m² of 500.614 m²), zero parcel overlap-double count. There was 1 case where >1 m² AND >5% of a single footprint intersected a second parcel.
+- Eindhoven full BGT geometry envelope approximately `5.47852183,51.43786032,5.48151203,51.44009372`, much wider than original `5.4794,51.4393,5.4797,51.43955`. Expanded parcel query `5.478442,51.43778,5.481592,51.440174` required **12 pages at limit=10**, yielding **111 unique parcels** with complete `next/self` traversal and no observed duplicate parcel IDs. Official API timestamps spanned 2026-11-05 07:22:42–07:23:10 UTC. A second complete 12-page read-only PostGIS analysis found **100.000%** union coverage of both BGT buildings: 21,756.568 m² of 21,756.568 m², no parcel self-overlap-double count, zero invalid source geometries, both polygons intersecting multiple parcels; on 1/2 buildings, two or more intersections each exceeded 5% of footprint.
+- The initial Eindhoven expanded single-response request exceeded the research connector's response size and could not be safely parsed; this was **not** classified as provider outage or incomplete source data. Bounded cursor paging resolved the transport issue. Raw feature pages and per-object IDs have never been checked into Git.
+- Rotterdam zero-building result means **no BGT/BAG features in that specific tiny bbox**; it is not proof of no buildings in Rotterdam or a service failure. A zero denominator must produce null/NA coverage, not 0% or 100%. Wageningen's one-building full coverage is likewise not representative of its town.
+
+**Critical methodological correction:** OGC bbox filters *which features are returned* but can return a **whole polygon** extending outside the bbox. To judge its intersection with parcels, request parcels against the full BGT footprint envelope (plus a modest documented buffer) rather than the initial window. `scripts/render_pdok_postgis_overlap_select_v0.py` now accepts `--parcel-bbox` and **fails closed** when that bbox excludes any returned full BGT geometry (even with an apparently high or low coverage ratio). Fully complete cursor pagination must precede downstream SQL rendering.
+
+### Added reproducible offline bounded cursor assembler
+
+`scripts/assemble_pdok_parcel_pages_v0.py` + `tests/test_assemble_pdok_parcel_pages_v0.py` validate **ordered original PDOK OGC API `perceel` pages** using: trusted source host/path, matching CRS84 bbox, fixed `limit` and JSON format, exact cursor `next/self` chain, no missing final page, duplicate parcel IDs, strict polygon validation, no sensitive owner/address/title properties, bounded feature count/bytes and ≤1h pagination timestamp spread. Assembled original features can only be saved to a **private local path outside the Git checkout**; output carries per-page/time bounds and an explicit `atomic_provider_snapshot_verified=false` flag. Cursor traversal is a best-effort consistency control, **not** evidence of a transactionally frozen historical release.
+
+```sh
+python -m unittest tests.test_assemble_pdok_parcel_pages_v0 tests.test_render_pdok_postgis_overlap_select_v0 -v
+python scripts/assemble_pdok_parcel_pages_v0.py --pages /private/pdok/page-01.json /private/pdok/page-02.json --bbox 5.478442,51.43778,5.481592,51.440174 --limit 10 --out /private/pdok/eindhoven-parcels-assembled.json
+python scripts/render_pdok_postgis_overlap_select_v0.py --parcels /private/pdok/eindhoven-parcels-assembled.json --bgt /private/pdok/eindhoven-bgt.json --bag /private/pdok/eindhoven-bag.json --bbox 5.4794,51.4393,5.4797,51.43955 --parcel-bbox 5.478442,51.43778,5.481592,51.440174 --out /private/pdok/eindhoven-area-overlap.sql
+```
+
+**Open quality gates:** The exact original licence/vintage/attribution terms still require review before source admission. Provider Kadastrale Kaart metadata states cadastral boundaries are indicative, not precise survey measurements (https://api.pdok.nl/kadaster/brk-kadastrale-kaart/ogc/v1?f=html). `timeStamp` is a mutable API response time, not a frozen source version. These findings do not identify property owners, policyholders, insured sums, insurer territories or market share. Stratified representative validation with larger and other countries' official source vintages is still outstanding.
