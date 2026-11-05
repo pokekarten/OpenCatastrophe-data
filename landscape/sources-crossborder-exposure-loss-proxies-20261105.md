@@ -27,11 +27,11 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Temporal scope:** 2026-01-01 technical vintage; official catalogue metadata revised 2026-07-24; annual series  
 **Resolution / granularity:** Downloadable zipped CSV by type of built parcel, including totals, physical-condition indicators, central heating and pre-1900 construction; administrative and statistical-sector class summaries  
 **Potential roles:** `regional_building_stock_prior`, `construction_age_sensitivity`, `occupancy_archetype_challenge`  
-**Access hint:** `public_zip_csv_bespoke_cadastral_plan_terms_scope_not_established`  
+**Access hint:** `public_zip_csv_provider_unified_ccby_based_license_commercial_use_yes_exact_scope_review`  
 **Authoritative source:** <https://www.geo.be/catalog/details/857b351e-51ca-11eb-a86d-3448ed25ad7c?l=en>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Official FPS Finance geo.be catalogue offers 2026-01-01 ZIP CSV, geographic classes and links to French/Dutch terms. Its linked French licence explicitly defines 'plan cadastral' (cadastral map), so do NOT silently infer that it also licenses these building-condition statistical tables or relabel it CC BY 4.0. Product-specific statistical reuse/commercial and derived-data terms remain unknown pending publisher clarification. Parcel totals are not building totals, dwellings, insured risk locations or replacement values. Acquire and SHA-pin exact ZIP only outside public Git after rights/provenance review.
+**Note:** Publisher FPS Finance explicitly says ALL its open patrimony datasets share one licence based on CC BY and can be used commercially (https://finance.belgium.be/en/experts-partners/open-data-patrimony/datasets). The individual geo.be catalogue links a bespoke 'plan cadastral' PDF whose defined scope is cadastral map, so do not label the exact statistical CSV ZIP automatically as standard CC BY 4.0 or assert raw redistribution eligibility without reviewing the applicable licence text and attribution obligations. Original source catalogue gives 2026-01-01 ZIP and seven administrative statistical levels. Physical parcel counts are neither actual building or dwelling totals nor insured risk locations or replacement values. Freeze original ZIP bytes and source specification outside Git before any numerical model use.
 
 ## Belgian FPS Finance real estate transactions by cadastral geography
 
@@ -42,11 +42,11 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Temporal scope:** Quarterly maintained series; provider technical specifications identify 2025-06-30 vintage; exact current downloadable extract to be version-pinned  
 **Resolution / granularity:** Zipped CSV with real estate transaction counts and market values by type of property/right and cadastral nature, aggregated geographically  
 **Potential roles:** `regional_property_value_prior`, `replacement_cost_crosscheck_not_direct_measure`, `asset_class_distribution_challenge`  
-**Access hint:** `public_zip_csv_bespoke_cadastral_plan_terms_scope_not_established`  
+**Access hint:** `public_zip_csv_provider_unified_ccby_based_license_commercial_use_yes_exact_scope_review`  
 **Authoritative source:** <https://www.geo.be/catalog/details/89209670-51ca-11eb-beeb-3448ed25ad7c?l=en>  
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
-**Note:** Official geo.be catalogue specifies original 2025-06-30 ZIP and transaction technical specification; it links to a bespoke French/Dutch cadastral-plan licence, not an explicit CC BY 4.0 grant for the transactions table. Specific re-use rights for these statistical CSVs need authoritative scope review before distribution or commercial modelling. Cadastral transaction values concern selected transferred interests and include market/land components; never equate with total stock, replacement TIV, policy contracts or insured locations.
+**Note:** Publisher FPS Finance explicitly says ALL its open patrimony datasets share one licence based on CC BY and can be used commercially (https://finance.belgium.be/en/experts-partners/open-data-patrimony/datasets). The individual geo.be catalogue links a bespoke 'plan cadastral' PDF whose defined scope is cadastral map, so do not label the exact statistical CSV ZIP automatically as standard CC BY 4.0 or assert raw redistribution eligibility without reviewing the applicable licence text and attribution obligations. Original source catalogue gives 2025-06-30 ZIP and technical specification; counts and market values concern selected real-property transfers, not all asset stock, building-only replacement TIV, policy contracts or insured risk locations. Freeze source bytes, assess selection and land-share before valuation modelling.
 
 ## France Cerema DVF+ geolocated real-estate transactions
 
