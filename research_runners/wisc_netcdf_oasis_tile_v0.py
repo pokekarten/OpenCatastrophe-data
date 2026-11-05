@@ -34,7 +34,7 @@ MAX_GRID_CELLS = 2_147_483_647
 DEFAULT_BINS = "0,10,20,30,40,50,60,80,120,200"
 CSV_HEADERS = {
     "events.csv": ["event_id"],
-    "footprint.csv": ["event_id", "areaperil_id", "intensity_bin_index", "prob"],
+    "footprint.csv": ["event_id", "areaperil_id", "intensity_bin_id", "probability"],
     "intensity_bin_dict.csv": ["bin_index", "bin_from", "bin_to", "interpolation", "interval_type"],
     "areaperil_dict.csv": ["areaperil_id", "latitude", "longitude", "source_row", "source_col"],
 }
