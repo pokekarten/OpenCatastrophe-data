@@ -94,7 +94,7 @@ class LiveOriginalReceiptOfflineTests(unittest.TestCase):
             'relative_max_gust_dimensionless':source['site_samples'][0]['relative_max_gust_dimensionless'],
         })
         fake_sampler=SimpleNamespace(sample_climk_era5=lambda **kwargs:copy.deepcopy(source))
-        with patch.object(mod,'PINNED_SHA256',sha256(FAKE).hexdigest()),\\
+        with patch.object(mod,'PINNED_SHA256',sha256(FAKE).hexdigest()),\
              patch.dict(sys.modules,{'climk_era5_synthetic_native_sample_v0':fake_sampler}):
             report=mod.run_live(original=lambda:FAKE,
                                 sampler=lambda **kwargs:copy.deepcopy(source),
