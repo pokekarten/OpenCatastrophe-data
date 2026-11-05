@@ -149,6 +149,84 @@ def _excel_date(raw: str | None) -> str | None:
     return None
 
 
+
+def kyrill_country_source_candidate(rows: list[dict]) -> dict:
+    """One *country-report review grouping*, never a physical cyclone ID.
+
+    For named Kyrill reports only, use an exact 2007 shared calendar-day
+    intersection and original distinct per-country report identities. A
+    common date is necessary here but does NOT prove common meteorology,
+    geographic footprint, independence or insurer coverage. The result
+    cannot represent a dated annual event in NextGen or Oasis.
+    """
+    if type(rows) is not list or not rows or len(rows) > 33:
+        raise OriginalHanzeError("bounded Kyrill source-country review requires rows")
+    seen_ids = set()
+    seen_countries = set()
+    starts = []
+    ends = []
+    modelled = []
+    without_loss = []
+    indexed = []
+    for row in rows:
+        if type(row) is not dict:
+            raise OriginalHanzeError("invalid Kyrill source row type")
+        sid, code = row.get("source_id"), row.get("country_code")
+        start, end = row.get("date_start"), row.get("date_end")
+        model = row.get("publisher_modelled_cds_loss")
+        value_present = row.get("economic_loss_value_present")
+        if (type(sid) is not str or not re.fullmatch(r"[0-9]{1,10}", sid) or
+                type(code) is not str or not re.fullmatch(r"[A-Z]{2}", code) or
+                sid in seen_ids or code in seen_countries or
+                type(model) is not bool or type(value_present) is not bool or
+                type(start) is not str or type(end) is not str):
+            raise OriginalHanzeError("Kyrill candidate contains invalid or duplicate report identity")
+        try:
+            start_day, end_day = date.fromisoformat(start), date.fromisoformat(end)
+        except ValueError:
+            raise OriginalHanzeError("invalid Kyrill calendar day") from None
+        if (start_day.year != 2007 or end_day.year != 2007 or start_day > end_day or
+                start_day < date(2007, 1, 16) or end_day > date(2007, 1, 21)):
+            raise OriginalHanzeError("Kyrill dates outside bounded publisher review window")
+        seen_ids.add(sid)
+        seen_countries.add(code)
+        starts.append(start_day)
+        ends.append(end_day)
+        indexed.append((code, sid))
+        if model:
+            modelled.append(code)
+        if not value_present:
+            without_loss.append(code)
+    if max(starts) > min(ends):
+        raise OriginalHanzeError("Kyrill countries have no common review-window date intersection")
+    return {
+        "contract": "OC_HANZE_KYRILL_2007_COUNTRY_REPORT_REVIEW_CANDIDATE_V0",
+        "status": "SOURCE_COUNTRY_ROWS_CANDIDATE_ONLY_NOT_VERIFIED_STORM_PARENT",
+        "source_storm_label": "Kyrill",
+        "review_day_intersection_start": max(starts).isoformat(),
+        "review_day_intersection_end": min(ends).isoformat(),
+        "country_report_rows": len(rows),
+        "country_codes": sorted(seen_countries),
+        "source_country_id_pairs": [
+            {"country_code": code, "publisher_row_id": sid}
+            for code, sid in sorted(indexed)
+        ],
+        "country_codes_explicitly_modelled_cds": sorted(modelled),
+        "country_codes_without_economic_loss_value": sorted(without_loss),
+        "country_codes_not_explicitly_modelled_cds": sorted(seen_countries - set(modelled)),
+        "other_country_rows_independently_observed": False,
+        "source_impact_is_insured_loss": False,
+        "published_cross_country_parent_storm_id": None,
+        "native_c3s_climk_oasis_parent_id": None,
+        "independent_physical_hazard_occurrences": None,
+        "annual_event_frequency": None, "annual_AAL": None,
+        "annual_AEP": None, "annual_OEP": None,
+        "insurer_gross_net_validated": False,
+        "scientific_or_rights_admitted": False,
+    }
+
+
+
 def audit_workbook(
     original: bytes, *, expected_size: int = ORIGINAL_BYTES,
     expected_md5: str = ORIGINAL_PUBLISHER_MD5,
@@ -271,6 +349,9 @@ def audit_workbook(
         "unresolved_date_rows": bad_dates,
         "named_kyrill_country_rows": len(kyrill),
         "kyrill_candidates": sorted(kyrill, key=lambda x: x["country_code"]),
+        "kyrill_source_country_review_candidate": (
+            kyrill_country_source_candidate(kyrill) if kyrill else None
+        ),
         "published_loss_equals_observed_claim": False,
         "modelled_loss_eligible_for_independent_empirical_holdout": False,
         "other_loss_rows_independently_verified": False,
