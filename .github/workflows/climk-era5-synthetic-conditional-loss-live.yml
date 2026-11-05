@@ -66,8 +66,8 @@ jobs:
           evidence = Path('docs/research/evidence/climk-era5-kyrill-24-fictional-buildings-source-loss-20261105.md').read_text(encoding='utf-8')
           newline = chr(10)
           assert evidence.count('```json' + newline) == 1
-          assert evidence.count(newline + '```') == 1
-          raw_json = evidence.split('```json' + newline, 1)[1].split(newline + '```', 1)[0]
+          assert evidence.count(newline + '```' + newline) == 1
+          raw_json = evidence.split('```json' + newline, 1)[1].split(newline + '```' + newline, 1)[0]
           e = json.loads(raw_json)
           assert o['source_sha256'] == e['source_sha256']
           assert o['source_size_bytes'] == e['source_size_bytes']
