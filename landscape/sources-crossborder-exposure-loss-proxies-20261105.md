@@ -16,7 +16,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review date:** `2026-11-05`  
 **Purpose:** Non-admission public-source research: cross-border building and property value priors, insurer product mix, government impact benchmarks and overlooked ground-instability layers; no source-data bytes, rights, science or CAT model admission.
 
-**Entries:** 7
+**Entries:** 8
 
 ## Belgian FPS Finance cadastral building condition statistics, 2026 vintage
 
@@ -47,6 +47,21 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 **Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
 
 **Note:** Publisher FPS Finance explicitly says ALL its open patrimony datasets share one licence based on CC BY and can be used commercially (https://finance.belgium.be/en/experts-partners/open-data-patrimony/datasets). The individual geo.be catalogue links a bespoke 'plan cadastral' PDF whose defined scope is cadastral map, so do not label the exact statistical CSV ZIP automatically as standard CC BY 4.0 or assert raw redistribution eligibility without reviewing the applicable licence text and attribution obligations. Original source catalogue gives 2025-06-30 ZIP and technical specification; counts and market values concern selected real-property transfers, not all asset stock, building-only replacement TIV, policy contracts or insured risk locations. Freeze source bytes, assess selection and land-share before valuation modelling.
+
+## Belgian Statbel 2026 cadastral building stock and dwelling characteristics
+
+**Candidate ID:** `be.statbel.cadastral-building-stock.2026`  
+**Provider:** Statistics Belgium (Statbel), using Belgian FPS Finance patrimonial documentation  
+**Categories:** `building_stock`, `housing`, `building_attributes`, `construction_age`, `exposure_calibration`  
+**Spatial scope:** Belgium; national and regional be.STAT tables, further administrative geography available in official bulk archives pending exact member and code list verification  
+**Temporal scope:** Annual building-stock register as of 1 January reference year; online 2026 be.STAT view last modified 2026-10-15; archived yearly source files also available through Statbel Open Data  
+**Resolution / granularity:** Be.STAT 2026 building and dwelling counts by four displayed residential construction types, post-1981 age indicator, built-ground-surface bins, heating, bathrooms and parking indicators where applicable; machine-accessible yearly XLSX and TXT ZIP offerings  
+**Potential roles:** `official_building_count_mass_control`, `building_dwelling_parcel_definition_reconciliation`, `regional_construction_type_prior`, `building_size_footprint_distribution_prior`  
+**Access hint:** `public_xlsx_zip_statbel_open_data_cc_by_4_2026_exact_archive_and_lineage_review`  
+**Authoritative source:** <https://statbel.fgov.be/en/open-data?category=1489>  
+**Review state:** candidate `evidence_checked`; rights `not_reviewed`; scientific `not_reviewed`; admission `not_admitted`.
+
+**Note:** Statbel explicitly states its Open Data use CC BY 4.0 and are usable commercially. Its official 2026 be.STAT table (https://bestat.statbel.fgov.be/bestat/crosstable.xhtml?view=43d7cdce-3647-4f5c-86f1-a4e0c864f692) was modified 2026-10-15. This counts buildings and dwellings rather than cadastral built-on parcels in the separate FPS Finance condition dataset; four displayed residential types are NOT a complete total of all insured buildings or business classes. Freeze exact 2026 ZIP/XLSX member and version, check administrative geography, suppression/blank bins, stock-vintage alignment and publisher attribution; no original data or inferred insurer coverage is committed.
 
 ## France Cerema DVF+ geolocated real-estate transactions
 
