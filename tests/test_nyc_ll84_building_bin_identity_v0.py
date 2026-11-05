@@ -17,13 +17,13 @@ def fixture():
     ll84 = [
         {"property_id": str(2000 + i),
          "nyc_borough_block_and_lot": f"1000{i:06d}",
-         "nyc_building_identification": f"100{i:04d}",
+         "nyc_building_identification": f"100{i+1:04d}",
          "parent_property_id": "Not Applicable: Standalone Property",
          "number_of_buildings": "1", "report_year": "2024"}
         for i in range(N)
     ]
     fp = [
-        {"bin": f"100{i:04d}",
+        {"bin": f"100{i+1:04d}",
          "doitt_id": str(70000 + i),
          "base_bbl": f"1000{i if i < 22 else i + 1000:06d}",
          "feature_code": "2100"}
@@ -56,7 +56,7 @@ class NYCBuildingFootprintTests(unittest.TestCase):
         self.assertEqual(q["$limit"], ["30"])
         self.assertEqual(q["$order"], ["property_id ASC"])
         self.assertNotIn("address", q["$select"][0])
-        bins = tuple(f"100{i:04d}" for i in range(5))
+        bins = tuple(f"100{i+1:04d}" for i in range(5))
         u = urlsplit(footprint_url(bins))
         q = parse_qs(u.query)
         self.assertEqual(u.scheme, "https")
@@ -67,7 +67,7 @@ class NYCBuildingFootprintTests(unittest.TestCase):
 
     def test_reject_query_injection_or_unbounded_batch(self):
         for x in [(), ("1000001",) * 2,
-                  tuple(f"100{i:04d}" for i in range(6)),
+                  tuple(f"100{i+1:04d}" for i in range(6)),
                   ("1000000); DROP TABLE building",),
                   ("1000000.00",), (1000001,)]:
             with self.subTest(x=x), self.assertRaises(ProbeError):
@@ -98,7 +98,7 @@ class NYCBuildingFootprintTests(unittest.TestCase):
             if url == ll84_url():
                 return json.dumps(ll84).encode()
             keys = parse_qs(urlsplit(url).query)["$where"][0].split("(")[1].rstrip(")").split(",")
-            if len(keys) == 5 and keys[0] == "1000005":
+            if len(keys) == 5 and keys[0] == "1000006":
                 count["failed"] += 1
                 raise TransportError("simulated outage")
             if len(keys) == 1:
