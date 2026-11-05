@@ -13,6 +13,7 @@ archive hashes are emitted.
 from __future__ import annotations
 
 import argparse
+from hashlib import sha256
 import json
 from pathlib import Path
 import struct
@@ -37,6 +38,10 @@ LOCAL_HEADER_BYTES = 30
 MAX_LOCAL_NAME_AND_EXTRA_BYTES = 4_096
 LOCAL_STRUCT = struct.Struct("<IHHHHHIIIHH")
 PUBLIC_LAS_HEADER_VERSIONS = {2: 227, 3: 235, 4: 375}
+# Minimum standard point record lengths; LAS extra-byte records may be longer.
+MIN_POINT_RECORD_LENGTHS = {0:20, 1:28, 2:26, 3:34, 4:57,
+                            5:63, 6:30, 7:36, 8:38, 9:59, 10:67}
+MAX_POINT_FORMAT_BY_LAS_MINOR = {2:3, 3:5, 4:10}
 
 
 class PublicHeaderError(ValueError):
@@ -119,20 +124,24 @@ def classify_public_las_prefix(prefix:bytes, *, member_uncompressed_bytes:int) -
     raw_format=prefix[104]
     record_bytes=struct.unpack_from("<H",prefix,105)[0]
     legacy_declared_points=struct.unpack_from("<I",prefix,107)[0]
+    point_format=raw_format&0x3F
     if (major!=1 or minor not in PUBLIC_LAS_HEADER_VERSIONS
             or header_bytes!=PUBLIC_LAS_HEADER_VERSIONS[minor]
             or not header_bytes<=point_offset<member_uncompressed_bytes
             or not 0<=vlr_count<=512
-            or raw_format&0x40 or (raw_format&0x3f)>10
-            or not 1<=record_bytes<=1024):
+            or raw_format&0x40
+            or point_format>MAX_POINT_FORMAT_BY_LAS_MINOR.get(minor,-1)
+            or not MIN_POINT_RECORD_LENGTHS.get(point_format,1025)<=record_bytes<=1024):
         raise PublicHeaderError("Original LAS version, point-format or header offsets invalid")
     return {
         "original_decompressed_member_begins_LASF":True,
+        # Hash of ONLY 111 public prefix bytes; never the full member ZIP/LAZ digest.
+        "las_public_first111_sha256_not_member_sha256":sha256(prefix).hexdigest(),
         "las_major":major,"las_minor":minor,
         "las_header_bytes_declared":header_bytes,
         "las_point_data_offset_declared":point_offset,
         "las_vlr_count_declared":vlr_count,
-        "las_point_format_code_declared":raw_format&0x3f,
+        "las_point_format_code_declared":point_format,
         "laszip_compressed_header_flag_declared":bool(raw_format&0x80),
         "las_point_record_bytes_declared":record_bytes,
         "las_legacy_point_count_field_unverified":legacy_declared_points,
