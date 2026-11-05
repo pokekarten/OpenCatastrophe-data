@@ -39,7 +39,7 @@
       ],
       "spatial_scope": "United Kingdom",
       "temporal_scope": "synthetic 100000-year test set",
-      "resolution_or_granularity": "Repository README reports 10000 events, 100000 simulated years and an example portfolio of 20 million locations; full footprint and exposure downloads via get_large_data.sh",
+      "resolution_or_granularity": "10,000 events/100,000 simulated years and advertised 20m-location scaling test; GitHub model_data includes events.bin (40,000 B), occurrence.bin (21,435,572 B), vulnerability.bin (12,716,004 B), damage_bin_dict.bin, returnperiods.bin. External script references footprint.bin.z, footprint.idx.z, location_full.parquet on a public S3 endpoint.",
       "potential_roles": [
         "large_scale_oasis_engine_testing",
         "event_period_measure_benchmark",
@@ -51,7 +51,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "OasisModels root LICENSE is BSD-3-Clause for repository code, not proof that all large S3 assets or derivative uses are cleared. Original get_large_data.sh names footprint.bin.z, footprint.idx.z and location_full.parquet at a public S3 bucket; availability, size, checksum, upstream rights and model calibration have not been tested. This is a scaling test, not a German stochastic storm model."
+      "note": "Pinned source review: OasisModels/UKWind/get_large_data.sh Git blob 3f8678c873d6eaf7dfb637aadab5597eadf103e7; GitHub file listings were accessible as metadata. S3 URL existence is SOURCE-DECLARED only: HEAD requests via this execution environment failed DNS or retrieval, so HTTP status, byte lengths, hashes, provider asset licensing and current downloadability are UNVERIFIED. Root OasisModels software BSD-3-Clause does NOT authenticate separately hosted S3 licence; no historical hazard or insurer calibration inferred."
     },
     {
       "candidate_id": "oasislmf.oasismodels.paris-windstorm",
@@ -281,8 +281,8 @@
         "model_demo"
       ],
       "spatial_scope": "Europe",
-      "temporal_scope": "scenarios and model profile 1.0.0",
-      "resolution_or_granularity": "ImpactForecasting/EUWS/1.0.0 includes oasislmf.json, keys_data, model_data, tests and OED location/account example paths",
+      "temporal_scope": "Two actual November 2023 windstorms: Ciarán 1-2 Nov and Domingos 4-7 Nov; 3 alternative interpolated hazard footprints for each; not a complete stochastic annual catalogue",
+      "resolution_or_granularity": "Model version CSV: ImpactForecasting,EUWS,1.0.0; two 12-byte event-set files; footprint.bin 4,518,908 B, vulnerability.bin 17,085,348 B; occurrence.bin 0 B; separate source_data/EUWS.zip 25,243,236 B. Footprint alternatives use 15/30/40 station neighbours.",
       "potential_roles": [
         "european_storm_scenario_benchmark",
         "german_carrier_stress_scenario"
@@ -293,7 +293,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Scenarios README says footprints were supplied by external vendors and may have extra terms; full vendor stochastic model and vulnerability functions may differ. Deterministic scenario is not a German stochastic event-frequency catalogue. Keep all vendor model/output rights separate from root code licence."
+      "note": "Source README blob dc47f484937fe5d55415868694c917c5b15ddc6b, model_settings.json blob 08f07cf6d8b52c1d0fc2c47af390ec8c6cd5fd1e. Ciarán and Domingos are two 2023 physical storm scenarios with three alternative spatial wind-field reconstructions each: NOT six independent stochastic occurrences. Source declares pan-European measured-station interpolation and includes Germany. The example analysis_settings.json selects 'ciaran', but model_settings.json declares default 'cieren' absent from option IDs 'ciaran' and 'domingos' — CONFIGURATION DEFECT CANDIDATE, verify with real model runtime before calling it an execution blocker. Empty occurrence.bin means a complete annual event probability measure is not established by this folder. Repository BSD-3-Clause text and vendor-specific footprint terms require version-by-version review; no PML/AEP/OEP or German exposure claim."
     },
     {
       "candidate_id": "oasislmf.scenarios.impact-forecasting.maeq",
@@ -466,8 +466,8 @@
         "scenario_footprint"
       ],
       "spatial_scope": "France",
-      "temporal_scope": "single or limited scenario set; exact vintages require model metadata",
-      "resolution_or_granularity": "Includes oasislmf.json, model_data, keys_data, meta-data, source_data, analysis_settings and tests",
+      "temporal_scope": "Historical storm Ela, 6-10 June 2014; six model event IDs 11-16 all assigned to period 1 of the example occurrence.csv",
+      "resolution_or_granularity": "Source contains 6 events and a single period in occurrence.csv; model_data includes footprint.bin.z (9,108 B), footprint.csv (40,959 B), vulnerability.bin (9,476 B), vulnerability.csv (6,340 B), occurrence.bin (80 B), and events/occurrence CSV. Source contains areaperil_dict.parquet (22,014,048 B).",
       "potential_roles": [
         "europe_hail_scenario_benchmark",
         "hail_oed_test"
@@ -478,7 +478,7 @@
       "rights_review_status": "not_reviewed",
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
-      "note": "Public scenario does not establish commercial reuse permission for IPE footprints nor justify direct German hazard calibration; cross-border model transfer requires geographic and vulnerability validation."
+      "note": "Original source metadata: model_settings.json Git blob 5f9361339f2acfd31975b32dc15c2438ee8351f9 (Ela, June 2014); events.csv blob bf415bd0437f066ee593d37503fc50bb17f19fcf (IDs 11-16); occurrence.csv blob dde40cb030a4a1de06f6cb4d3f04d5b07c709900 (all period_no=1); source_data/Read Me blob 133cc294221a4033b8b8ae215a30aaf221a9e9bb (homeowners code 102, general auto 105). Analysis settings request GUL and example AEP/OEP but IL is disabled and a one-period historical example does not establish a validated annual stochastic measure, cedant net losses or reliable return periods. Neither six IDs nor identical placeholder dates prove six independent physical events. Regional damage functions require validation before German property use; vendor source rights remain unverified despite Scenarios repository BSD-3-Clause."
     },
     {
       "candidate_id": "oasislmf.vulnerability-library.gem",
