@@ -121,6 +121,25 @@ class NZJoinPreflightTests(unittest.TestCase):
             with self.assertRaises(NZJoinPreflightError):
                 _read_bounded_csv(path, ("unit_of_property_id",), 100_001)
 
+    def test_raw_personal_or_valuation_fields_never_enter_join_preflight(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "unstripped-synthetic.csv"
+            for header in (
+                "unit_of_property_id,PROPERTY_ADDRESS",
+                "unit_of_property_id,TOTAL_VALUE",
+                "unit_of_property_id,source",
+            ):
+                path.write_text(header + "\nSYN_A,forbidden\n", encoding="utf-8")
+                with self.subTest(header=header):
+                    with self.assertRaises(NZJoinPreflightError):
+                        _read_bounded_csv(path, ("unit_of_property_id",), 10)
+            path.write_text("unit_of_property_id\n" + "X" * 129 + "\n", encoding="utf-8")
+            with self.assertRaises(NZJoinPreflightError):
+                _read_bounded_csv(path, ("unit_of_property_id",), 10)
+            path.write_text("unit_of_property_id,building_id\nSYN_A\n", encoding="utf-8")
+            with self.assertRaises(NZJoinPreflightError):
+                _read_bounded_csv(path, ("unit_of_property_id", "building_id"), 10)
+
     def test_cli_reports_aggregate_only_no_source_identifiers(self) -> None:
         vals, bounds, refs, outlines = _fixture()
         with tempfile.TemporaryDirectory() as folder:
