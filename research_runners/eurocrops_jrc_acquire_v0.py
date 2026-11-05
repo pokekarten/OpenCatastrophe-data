@@ -4,8 +4,8 @@
 """Explicit opt-in acquisition of ONE original JRC EuroCrops GeoParquet file.
 
 Stores original bytes in a fresh EXTERNAL directory only. No source bytes
-in Git or default CI; the dedicated source-only, deliberately path-triggered
-one-shot workflow may opt in using --live. No scientific/model admission.
+in Git or default CI; the dedicated source-only, now manual-dispatch-only
+workflow may opt in using --live. No scientific/model admission.
 """
 from __future__ import annotations
 
