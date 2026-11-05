@@ -129,17 +129,27 @@ def _sample_sites(sample):
     if sample['site_count'] != len(sites) or type(sample['site_count']) is not int:
         raise DamagePreviewError('site_count does not match supplied gust observations')
     result = {}
+    seen_native_cells = {}
     for row in sites:
         _exact(row, SITE_FIELDS, 'source-native sampled site')
         sid = _identifier(row['site_id'], 'site_id')
         if sid in result:
             raise DamagePreviewError('duplicate sampled site')
-        _integer(row['native_cell_x'], 'native lon index', 0, 268)
-        _integer(row['native_cell_y'], 'native lat index', 0, 180)
-        _finite(row['selected_cell_center_lon'], 'selected native longitude', -180, 180)
-        _finite(row['selected_cell_center_lat'], 'selected native latitude', -90, 90)
-        _finite(row['relative_max_gust_dimensionless'], 'native gust ratio', 0, 100)
-        result[sid] = _millimeters_per_second(row['absolute_max_gust_m_s'])
+        x = _integer(row['native_cell_x'], 'native lon index', 0, 268)
+        y = _integer(row['native_cell_y'], 'native lat index', 0, 180)
+        lon = _finite(row['selected_cell_center_lon'], 'selected native longitude', -180, 180)
+        lat = _finite(row['selected_cell_center_lat'], 'selected native latitude', -90, 90)
+        ratio = _finite(row['relative_max_gust_dimensionless'], 'native gust ratio', 0, 100)
+        gust = _millimeters_per_second(row['absolute_max_gust_m_s'])
+        # Repeated marker labels at the very same original grid cell are
+        # not independent samples; they must have identical source fields.
+        # No spatial diversification or extra hazard observation is inferred.
+        cell = (x, y)
+        source_values = (lon, lat, ratio, gust)
+        if cell in seen_native_cells and seen_native_cells[cell] != source_values:
+            raise DamagePreviewError('conflicting native source values for one ERA5 grid cell')
+        seen_native_cells[cell] = source_values
+        result[sid] = gust
     return result
 
 
