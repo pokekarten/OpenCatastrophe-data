@@ -24,6 +24,10 @@ from research_runners.c3s_wind_annual_summary_v0 import (
 
 CONTRACT = 'C3S_EWS_SINGLE_REGION_HOLDOUT_POISSON_COUNT_V0'
 HEX_SHA = re.compile(r'[a-f0-9]{64}\Z')
+# Fixed evidence cutoff for research v0 on 2026-11-05. The original monthly
+# C3S service still has an unfinished 2026 calendar year; never annualise it.
+# Revise this gate with an independently dated source coverage receipt in v1.
+LAST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0 = 2025
 
 
 class CalibrationError(ValueError):
@@ -31,8 +35,8 @@ class CalibrationError(ValueError):
 
 
 def _year(value, name):
-    if type(value) is not int or not 1940 <= value <= 2026:
-        raise CalibrationError(f'{name}: expected calendar year 1940..2026')
+    if type(value) is not int or not 1940 <= value <= LAST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0:
+        raise CalibrationError(f'{name}: only complete historical years 1940..2025 admissible in research v0')
     return value
 
 
@@ -99,7 +103,9 @@ def fit_c3s_count_rate(*, original_csv_bytes: bytes, expected_csv_sha256: str,
     rate=float(lam)
     mean=float(lam)
     variance=sum((x-mean)**2 for x in train)/(len(train)-1)
-    dispersion=variance/rate if rate>0 else (0 if variance==0 else None)
+    # For a zero-count training sample, Var/Mean = 0/0 is undefined,
+    # NOT evidence of perfect Poisson dispersion or zero model error.
+    dispersion=variance/rate if rate>0 else None
     p_any=1-math.exp(-rate)
     # Log likelihood is a held-out *predictive* log score, not proof Poisson fit.
     if total==0 and any(x>0 for x in holdout):
@@ -132,12 +138,15 @@ def fit_c3s_count_rate(*, original_csv_bytes: bytes, expected_csv_sha256: str,
             'poisson_lambda_exact':{'numerator':lam.numerator,'denominator':lam.denominator},
             'train_sample_variance_counts':variance,
             'train_variance_to_mean_ratio':dispersion,
+            'train_dispersion_ratio_defined':rate>0,
+            'last_eligible_complete_calendar_year_v0':LAST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0,
             'poisson_probability_at_least_one_event':p_any,
             'holdout_mean_count':sum(holdout)/len(holdout),
             'holdout_occurrence_brier_score':brier,
             'holdout_log_likelihood':holdout_log_likelihood,
             'zero_train_positive_holdout_failure':zero_train_positive_holdout,
             'explicit_limits':['Only one exact original regional annual count selector',
+               'Running calendar year 2026 is incomplete and excluded from this 2026 research revision',
                'No NUTS version verified or automatic asset geography join',
                'No physical event IDs, catalogue weights, event footprints or insured loss',
                'No full intra-peril stochastic annual occurrence or dependence calibration',
