@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+"""Conservative NRW 2022 HU GFK classification against official cadastral code table.
+
+This is a *candidate* source-purpose filter, never a measured residential
+insurance exposure, occupancy/roof construction, or sole evidence of a
+Hauptgebäude. Unknown codes fail closed instead of being guessed.
+"""
+from __future__ import annotations
+
+import re
+
+OFFICIAL_NRW_REFERENCE = "https://recht.nrw.de/system/files/VA/16644-28824-mbl32-2anlage3.pdf"
+SOURCE_VINTAGE = "2017 GFK classification reference, compared with 2022 HU source fields"
+# The 2017 official 'Anlage 3 zu den Jahresberichten der Katasterbehörden'
+# identifies the listed functions as buildings with residential component.
+# Its H/N distinction has an explicit *address/numbering precondition*.
+# It does NOT state that every physical polygon with these functions has a
+# 2022-Zensus residential-unit match, nor that the 2022 ALKIS codebook is unchanged.
+RESIDENTIAL_CANDIDATES = {
+    "1000": "Wohngebaeude",
+    "1010": "Wohnhaus",
+    "1100": "Gemischt_genutztes_Gebaeude_mit_Wohnen",
+    "1220": "Land_und_forstwirtschaftliches_Wohn_und_Betriebsgebaeude",
+    "1223": "Forsthaus",
+}
+# Selected independently identified non-residential/building-part examples
+# for strict negative tests. This is NOT an exhaustive code registry.
+KNOWN_INELIGIBLE_EXAMPLES = {
+    "2000": "Gebaeude_fuer_Wirtschaft_oder_Gewerbe",
+    "2460": "Gebaeude_zum_Parken",
+    "2461": "Parkhaus",
+    "2462": "Parkdeck",
+    "2720": "Land_und_forstwirtschaftliches_Betriebsgebaeude",
+    "2740": "Treibhaus_Gewaechshaus",
+    "3000": "Gebaeude_fuer_oeffentliche_Zwecke",
+}
+
+def classify_gfk(raw: str) -> tuple[str, str | None]:
+    """Conservative raw 4-digit HU building-function code category."""
+    if not isinstance(raw, str):
+        return "malformed", None
+    value=raw.strip()
+    if not re.fullmatch(r"[0-9]{4}",value):
+        return "malformed", None
+    if value in RESIDENTIAL_CANDIDATES:
+        return "residential_function_candidate_only", RESIDENTIAL_CANDIDATES[value]
+    if value in KNOWN_INELIGIBLE_EXAMPLES:
+        return "known_nonresidential_example", KNOWN_INELIGIBLE_EXAMPLES[value]
+    return "unmapped_quarantine", None
+
+
+def audit_gfk_counts(observed_counts: dict[str,int]) -> dict:
+    if not isinstance(observed_counts,dict):
+        raise ValueError("GFK distribution must be counted from original source")
+    category={}
+    code_count={}
+    for raw,count in observed_counts.items():
+        if type(count) is not int or count<0:
+            raise ValueError("invalid source GFK frequency")
+        label,_=classify_gfk(raw)
+        category[label]=category.get(label,0)+count
+        code_count[raw]=count
+    return {
+        "source_gfk_distribution":dict(sorted(code_count.items())),
+        "source_gfk_categories":dict(sorted(category.items())),
+        "official_reference_url":OFFICIAL_NRW_REFERENCE,
+        "mapped_code_count":len(RESIDENTIAL_CANDIDATES),
+        "function_classes_not_verified_as_actual_residential_insurance_sites":True,
+        "actual_RV_insurer_building_identity_known":False,
+        "source_2022_HU_vs_2022_Zensus_occupancy_reconciled":False,
+        "source_2022_HU_vs_2017_GFK_code_vintage_fully_reconciled":False,
+    }
