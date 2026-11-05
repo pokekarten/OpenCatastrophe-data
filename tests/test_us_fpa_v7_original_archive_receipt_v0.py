@@ -45,6 +45,7 @@ def zip_gpkg(contents=None, member=None, extras=None):
     stream = BytesIO()
     with ZipFile(stream, "w", ZIP_DEFLATED) as z:
         z.writestr(member, contents)
+        z.writestr(gate.VARIABLES_MEMBER, b"synthetic-only-variable-metadata" + b"0" * (gate.VARIABLES_MEMBER_BYTES - len(b"synthetic-only-variable-metadata")))
         for name, text in extras or ():
             z.writestr(name, text)
     return stream.getvalue()
