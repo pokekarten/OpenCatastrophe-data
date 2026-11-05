@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from research_runners.hanze_windstorm_original_xlsx_acquisition_v0 import OriginalHanzeError
 from research_runners.hanze_windstorm_original_workbook_audit_v0 import (
     HEADERS, CONTRACT, _excel_date, audit_workbook,
+    kyrill_country_source_candidate, EXPECTED_KYRILL_COUNTRY_ID_PAIRS,
 )
 
 NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
@@ -154,6 +155,89 @@ class FullHANZEOriginalWorkbookAudit(unittest.TestCase):
         self.assertIsNone(r["annual_event_frequency"])
         self.assertIsNone(r["annual_AEP"])
         self.assertIsNone(r["annual_OEP"])
+
+    def test_kyrill_source_country_candidacy_never_becomes_physical_event(self):
+        source = report(fixture())
+        group = source["kyrill_source_country_review_candidate"]
+        self.assertEqual(group["country_codes"], ["DE", "FR"])
+        self.assertEqual(group["review_day_intersection_start"], "2007-01-18")
+        self.assertEqual(group["review_day_intersection_end"], "2007-01-18")
+        self.assertEqual(group["country_report_rows"], 2)
+        self.assertEqual(group["country_codes_explicitly_modelled_cds"], ["DE"])
+        self.assertEqual(group["country_codes_without_economic_loss_value"], ["FR"])
+        self.assertEqual(group["country_codes_not_explicitly_modelled_cds"], ["FR"])
+        self.assertEqual(group["source_country_id_pairs"], [
+            {"country_code": "DE", "publisher_row_id": "20001"},
+            {"country_code": "FR", "publisher_row_id": "20002"},
+        ])
+        self.assertFalse(group["other_country_rows_independently_observed"])
+        self.assertIsNone(group["published_cross_country_parent_storm_id"])
+        self.assertIsNone(group["native_c3s_climk_oasis_parent_id"])
+        self.assertIsNone(group["independent_physical_hazard_occurrences"])
+        for metric in ("annual_event_frequency", "annual_AAL", "annual_AEP", "annual_OEP"):
+            self.assertIsNone(group[metric])
+        self.assertFalse(group["scientific_or_rights_admitted"])
+
+    def test_all_twelve_original_country_identifiers_are_only_review_candidates(self):
+        self.assertEqual(len(EXPECTED_KYRILL_COUNTRY_ID_PAIRS), 12)
+        rows = []
+        modelled = {"AT", "IE", "LU", "PL"}
+        for code, sid in EXPECTED_KYRILL_COUNTRY_ID_PAIRS:
+            rows.append({
+                "source_id": sid, "country_code": code,
+                "date_start": "2007-01-17" if code in ("DK", "IE", "NL", "CH", "UK")
+                              else "2007-01-18",
+                "date_end": "2007-01-19" if code in ("DE", "DK", "IE", "PL", "UK")
+                            else "2007-01-18",
+                "publisher_modelled_cds_loss": code in modelled,
+                "economic_loss_value_present": True,
+            })
+        result = kyrill_country_source_candidate(rows)
+        self.assertEqual(result["review_day_intersection_start"], "2007-01-18")
+        self.assertEqual(result["review_day_intersection_end"], "2007-01-18")
+        self.assertEqual(result["country_report_rows"], 12)
+        self.assertEqual(result["country_codes_explicitly_modelled_cds"],
+                         ["AT", "IE", "LU", "PL"])
+        self.assertEqual(
+            [(x["country_code"], x["publisher_row_id"])
+             for x in result["source_country_id_pairs"]],
+            list(EXPECTED_KYRILL_COUNTRY_ID_PAIRS))
+        self.assertIsNone(result["independent_physical_hazard_occurrences"])
+
+    def test_kyrill_cross_country_group_rejects_duplicate_and_inconsistent_horizon(self):
+        cases = [
+            {"source_id":"20001", "country_code":"DE",
+             "date_start":"2007-01-18", "date_end":"2007-01-19",
+             "publisher_modelled_cds_loss":False,
+             "economic_loss_value_present":True},
+            {"source_id":"20002", "country_code":"FR",
+             "date_start":"2007-01-18", "date_end":"2007-01-18",
+             "publisher_modelled_cds_loss":False,
+             "economic_loss_value_present":True},
+        ]
+        self.assertEqual(kyrill_country_source_candidate(cases)["country_report_rows"],2)
+        trials = [
+            [cases[0], cases[0]],
+            [cases[0], {**cases[1], "source_id":cases[0]["source_id"]}],
+            [cases[0], {**cases[1], "country_code":cases[0]["country_code"]}],
+            [cases[0], {**cases[1], "date_start":"2007-01-20",
+                        "date_end":"2007-01-20"}],
+            [cases[0], {**cases[1], "date_start":"2007-01-21",
+                        "date_end":"2007-01-20"}],
+            [cases[0], {**cases[1], "date_start":"2008-01-18",
+                        "date_end":"2008-01-18"}],
+            [cases[0], {**cases[1], "date_start":"2007-99-99"}],
+            [cases[0], {**cases[1], "publisher_modelled_cds_loss":1}],
+            [cases[0], {**cases[1], "economic_loss_value_present":"unknown"}],
+            [cases[0], {**cases[1], "country_code":"D3"}],
+            [cases[0], {**cases[1], "source_id":True}],
+        ]
+        for index, candidate in enumerate(trials):
+            with self.subTest(index=index),self.assertRaises(OriginalHanzeError):
+                kyrill_country_source_candidate(candidate)
+        for candidate in ([], None, "Kyrill", [{}] * 34):
+            with self.subTest(candidate_type=type(candidate).__name__),self.assertRaises(OriginalHanzeError):
+                kyrill_country_source_candidate(candidate)
 
     def test_excel_serials_and_bad_dates_are_distinct(self):
         self.assertEqual(_excel_date("31263"), "1985-08-04")
