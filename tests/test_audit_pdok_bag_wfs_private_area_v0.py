@@ -126,6 +126,23 @@ class BagWfsPrivateAreaTests(unittest.TestCase):
         with self.assertRaises(BagWfsPrivacyError):
             audit(data, source_url=URL)
 
+    def test_rejects_outside_bbox_and_malformed_point(self):
+        doc = fixture()
+        doc["features"][0]["geometry"]["coordinates"] = [140000.0, 455820.0]
+        with self.assertRaisesRegex(BagWfsPrivacyError, "outside approved"):
+            audit(doc, source_url=URL)
+        doc = fixture()
+        doc["features"][0]["geometry"]["coordinates"] = [136709.0]
+        with self.assertRaisesRegex(BagWfsPrivacyError, "unexpected RD New"):
+            audit(doc, source_url=URL)
+
+    def test_rejects_provider_bytes_staged_in_repository_checkout(self):
+        # Synthetic payload is safe but a real provider response must never
+        # be staged as an original source asset inside the Git checkout.
+        from scripts.audit_pdok_bag_wfs_private_area_v0 import ROOT
+        with self.assertRaisesRegex(BagWfsPrivacyError, "outside Git checkout"):
+            load_private(ROOT / "private-source-should-not-exist.json")
+
     def test_rejects_unsafe_wfs_request(self):
         candidates = [
             URL.replace("https://service.pdok.nl", "https://evil.example"),
