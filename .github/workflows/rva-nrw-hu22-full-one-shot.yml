@@ -2,10 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 name: R+V NRW full 2022 HU original 53-Kreis geocoded OED research one-shot
 
+# A complete ~901MB provider download + 11.23m source scan must never run
+# on every PR update. One-shot execution requires explicit workflow_dispatch.
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/rva-nrw-hu22-full-one-shot.yml"
   workflow_dispatch:
 
 permissions:
