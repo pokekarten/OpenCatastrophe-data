@@ -118,6 +118,8 @@ class FullHANZEOriginalWorkbookAudit(unittest.TestCase):
         self.assertEqual(mod.EXPECTED_SOURCE_CODES, 33)
         self.assertEqual(mod.EXPECTED_SOURCE_MODELLED_CDS, 299)
         self.assertEqual(mod.EXPECTED_SOURCE_MISSING_ECONOMIC_LOSS, 638)
+        self.assertEqual(mod.EXPECTED_SOURCE_NUMERIC_ECONOMIC_LOSS, 687)
+        self.assertEqual(mod.EXPECTED_SOURCE_NONNUMERIC_ECONOMIC_LOSS, 33)
         self.assertEqual(mod.EXPECTED_SOURCE_KYRILL, 12)
         self.assertEqual(mod.EXPECTED_SOURCE_KYRILL_CDS, 4)
 
@@ -131,6 +133,11 @@ class FullHANZEOriginalWorkbookAudit(unittest.TestCase):
         self.assertEqual(r["economic_loss_2020_eur_million_present"], 2)
         self.assertEqual(r["economic_loss_2020_eur_million_numeric"], 2)
         self.assertEqual(r["economic_loss_2020_eur_million_non_numeric"], 0)
+        self.assertEqual(r["economic_loss_by_publisher_CDS_flag_and_numeric_class"], {
+            "explicit_publisher_CDS_modelled": {"numeric": 1, "non_numeric": 0, "blank": 0},
+            "not_flagged_CDS_independence_unverified": {"numeric": 1, "non_numeric": 0, "blank": 2},
+        })
+        self.assertFalse(r["not_flagged_CDS_means_independently_observed"])
         self.assertEqual(r["economic_loss_2020_eur_million_missing"], 2)
         self.assertEqual(r["nominal_economic_loss_value_present"], 0)
         self.assertEqual(r["explicit_publisher_modelled_cds_loss_rows"], 1)
@@ -272,6 +279,10 @@ class FullHANZEOriginalWorkbookAudit(unittest.TestCase):
                 self.assertEqual(receipt["economic_loss_2020_eur_million_missing"], 2)
                 self.assertEqual(receipt["economic_loss_2020_eur_million_numeric"], 1)
                 self.assertEqual(receipt["economic_loss_2020_eur_million_non_numeric"], 1)
+                self.assertEqual(receipt["economic_loss_by_publisher_CDS_flag_and_numeric_class"], {
+                    "explicit_publisher_CDS_modelled": {"numeric": 1, "non_numeric": 0, "blank": 0},
+                    "not_flagged_CDS_independence_unverified": {"numeric": 0, "non_numeric": 1, "blank": 2},
+                })
                 self.assertEqual(receipt["economic_loss_2020_eur_million_non_numeric_source_rows"], [
                     {"source_id": "20003", "country_code": "ES",
                      "problem": "NON_NUMERIC_OR_INVALID_PUBLISHED_ECONOMIC_LOSS"}])
