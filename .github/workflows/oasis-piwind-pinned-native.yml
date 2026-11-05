@@ -51,7 +51,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install --no-install-recommends -y libspatialindex-dev
-          python -m pip install --disable-pip-version-check --no-input 'oasislmf==2.5.8'
+          python -m pip install --disable-pip-version-check --no-input 'oasislmf[extra]==2.5.8'
           python -m pip check
 
       - name: Clone and pin public toy PiWind model
