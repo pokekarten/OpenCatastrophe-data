@@ -10,7 +10,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from research_runners.c3s_wind_frequency_candidate_v0 import (CalibrationError, fit_c3s_count_rate, _year, LAST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0)
+from research_runners.c3s_wind_frequency_candidate_v0 import (CalibrationError, fit_c3s_count_rate, _year, FIRST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0, LAST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0)
 
 COLUMNS=['year','region','threshold','storm_number','mean_wind_gust',
          'ssi','normalised_ssi','area_ratio','wind_gust_ratio','algorithm']
@@ -55,6 +55,7 @@ class C3SWindFrequencyCandidateTests(unittest.TestCase):
         self.assertEqual(x['status'],'UNADMITTED_RESEARCH_COUNT_RATE_ONLY')
         self.assertEqual(x['train_variance_to_mean_ratio'],1.0)
         self.assertTrue(x['train_dispersion_ratio_defined'])
+        self.assertEqual(x['first_eligible_complete_calendar_year_v0'],1941)
         self.assertEqual(x['last_eligible_complete_calendar_year_v0'],2025)
 
     def test_different_algorithms_are_separate_not_added(self):
@@ -93,15 +94,19 @@ class C3SWindFrequencyCandidateTests(unittest.TestCase):
         self.assertFalse(r['train_dispersion_ratio_defined'])
 
     def test_unfinished_calendar_year_cannot_bias_annual_frequency(self):
+        self.assertEqual(FIRST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0,1941)
         self.assertEqual(LAST_ELIGIBLE_COMPLETE_CALENDAR_YEAR_V0,2025)
+        self.assertEqual(_year(1941,'train_start'),1941)
         self.assertEqual(_year(2025,'holdout_end'),2025)
         # The official monthly C3S service can publish partial 2026 annual
         # indicators. Those are not full-year zeros or one-year observations.
-        for bad in (2026,2027,True):
+        for bad in (1940,2026,2027,True):
             with self.subTest(bad=bad),self.assertRaisesRegex(CalibrationError,'complete historical years'):
                 _year(bad,'holdout_end')
         with self.assertRaisesRegex(CalibrationError,'complete historical years'):
             calculate(holdout_end=2026)
+        with self.assertRaisesRegex(CalibrationError,'complete historical years'):
+            calculate(train_start=1940)
         # The original provider CSV may already contain a PARTIAL 2026 row.
         # Research v0 still selects exactly four finished calendar years.
         blob=source([(2022+i,'TRACK','25',v) for i,v in enumerate([2,0,1,0,0])])
