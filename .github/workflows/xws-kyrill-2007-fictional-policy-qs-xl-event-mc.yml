@@ -55,7 +55,7 @@ jobs:
       - name: Check exact one-event model boundary and 2x financial experiments
         run: |
           python - <<'PY'
-          import json,hashlib,os,pathlib
+          import json,hashlib,os,pathlib,tomllib
           p=pathlib.Path(os.environ["RUNNER_TEMP"])/"fictional-Kyrill-2007-one-event-financial-mc-summary.json"
           d=json.loads(p.read_text())
           assert d["historical_event_count"]==1
@@ -71,6 +71,27 @@ jobs:
           assert d["actual_RV_policy_terms_or_reinsurance_observed"] is False
           assert all(x["n_conditionally_simulated_replicates_of_one_Kyrill_event"]==2048
                      for x in d["scenario_results"].values())
+          receipt=tomllib.loads(pathlib.Path(
+            "research/observations/xws_kyrill_2007_nrw10k_fictional_policy_qs_xl_event_mc_v0.toml"
+          ).read_text(encoding="utf-8"))
+          assert receipt["exact_machine_summary_json_sha256"]==hashlib.sha256(p.read_bytes()).hexdigest()
+          assert receipt["seed_specific_to_this_toy_not_FFBK_or_RIM"]==d["fixed_rng_seed_specific_to_this_toy_not_FFBK_RIM"]
+          assert receipt["trials_per_dependence_case"]==d["n_trials_per_dependence_scenario"]
+          assert receipt["original_previous_stochastic_unmodified_conditional_expected_gul_eur"]==d["conditional_marginal_expected_reference"]["original_Schwierz_one_event_reference_conditional_GUL_EUR"]
+          assert receipt["source_original_xws_hazard_10k_zip_sha256"]==d["XWS_original_site_wind_zip_SHA256"]
+          assert receipt["source_original_oed_fictional_10k_zip_sha256"]==d["fictional_NRW_OED_10k_zip_SHA256"]
+          actual=d["scenario_results"]
+          for name,expect in receipt["scenario"].items():
+            series=actual[name]["summary"]
+            assert series["groundup_eur"]["sample_mean"]==expect["mean_groundup_eur"]
+            assert series["groundup_eur"]["q95_one_event_eur"]==expect["groundup_one_event_q95_eur"]
+            assert series["groundup_eur"]["q99_one_event_eur"]==expect["groundup_one_event_q99_eur"]
+            assert series["insured_before_reinsurance_eur"]["sample_mean"]==expect["mean_insured_IL_eur"]
+            assert series["quota_share_ceded_eur"]["sample_mean"]==expect["mean_QS_ceded_eur"]
+            assert series["occurrence_xl_recovery_eur"]["sample_mean"]==expect["mean_XL_recovered_eur"]
+            assert series["insurer_net_after_qs_xl_eur"]["sample_mean"]==expect["mean_insurer_net_eur"]
+            assert series["insurer_net_after_qs_xl_eur"]["q99_one_event_eur"]==expect["net_one_event_q99_eur"]
+          assert receipt["conditional_results_AEP_OEP_or_return_periods"] is False
           print("PASS one-event FICTIONAL GUL->IL->QS->occ XL->NET numerical trial sensitivity")
           print("HISTORICAL_SINGLE_STORM_MC_SUMMARY_SHA256",hashlib.sha256(p.read_bytes()).hexdigest())
           PY
