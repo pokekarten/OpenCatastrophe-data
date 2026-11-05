@@ -129,6 +129,8 @@ class RvaSoloNeonReadinessTests(unittest.TestCase):
                      "company_linked_reported_aggregate_portfolios",
                      "company_linked_real_restricted_portfolios",
                      "company_linked_exposure_units",
+                     "synthetic_exposure_units_with_geometry",
+                     "BLOCKED_SYNTHETIC_EXPOSURE_HAS_NO_GEOMETRY",
                      "RESEARCH_ONLY_NEEDS_HAZARD_VULNERABILITY_RIGHTS_AND_TREATY_REVIEW"):
             self.assertIn(term, self.sql)
 
