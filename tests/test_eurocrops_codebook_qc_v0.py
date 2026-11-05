@@ -6,7 +6,8 @@ from __future__ import annotations
 import unittest
 
 from research_runners.eurocrops_codebook_qc_v0 import (
-    Blocked, audit, git_blob_sha, sample_mapping_coverage,
+    Blocked, audit, git_blob_sha, sample_mapping_coverage, _read_rows,
+    MAP_HEADER, HCAT_HEADER,
 )
 
 
@@ -58,6 +59,41 @@ class EuroCropsCodebookTests(unittest.TestCase):
         bad = HCAT + b"100,other,0,NA\n"
         with self.assertRaisesRegex(Blocked, "duplicate HCAT4"):
             run(hcat=bad)
+
+    def test_exact_publisher_unknown_sentinels_do_not_become_crop_codes(self):
+        sentinels = (
+            b"de4,,,,3390000000,not_known_and_other,0,No specified use\n"
+            b"dea,,,,3390000000,not_known_and_other,0,No specified use\n"
+        )
+        mapping = MAPPING + sentinels
+        hierarchy = HCAT + b"3390000000,not_known_and_other,0,NA\n"
+        report = run(mapping=mapping, hcat=hierarchy)
+        self.assertEqual(report["mapping_rows"], 5)
+        self.assertEqual(report["joinable_original_code_rows"], 3)
+        self.assertEqual(report["unknown_cultivation_sentinel_rows_not_joinable"], 2)
+        self.assertEqual(report["unknown_cultivation_sentinel_regions"], ["de4", "dea"])
+        self.assertEqual(report["unresolved_hcat4_reference_count"], 1)
+        source_rows = _read_rows(mapping, git_blob_sha(mapping), MAP_HEADER)
+        taxonomy_rows = _read_rows(hierarchy, git_blob_sha(hierarchy), HCAT_HEADER)
+        coverage = sample_mapping_coverage(
+            [{"original_code": "0001"}, {"original_code": ""},
+             {"original_code": "0002"}], "de4", source_rows, taxonomy_rows,
+        )
+        self.assertEqual(coverage["resolved_to_hcat4_rows"], 1)
+        self.assertEqual(coverage["blank_or_nonstring_original_code_rows"], 1)
+        self.assertEqual(coverage["mapping_to_missing_hcat4_rows"], 1)
+        self.assertEqual(sum(v for k, v in coverage.items() if k != "sampled_rows"), 3)
+
+    def test_malformed_or_duplicate_unknown_sentinel_fails_closed(self):
+        sentinel = b"de4,,,,3390000000,not_known_and_other,0,No specified use\n"
+        taxonomy = HCAT + b"3390000000,not_known_and_other,0,NA\n"
+        with self.assertRaisesRegex(Blocked, "malformed or duplicate"):
+            run(mapping=MAPPING + sentinel + sentinel, hcat=taxonomy)
+        with self.assertRaisesRegex(Blocked, "malformed or duplicate"):
+            run(mapping=MAPPING + b"de4,,unknown,,3390000000,not_known_and_other,0,No specified use\n",
+                hcat=taxonomy)
+        with self.assertRaisesRegex(Blocked, "sentinel absent"):
+            run(mapping=MAPPING + sentinel)
 
     def test_join_is_region_specific_and_preserves_leading_zero(self):
         mapping = [
