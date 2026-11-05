@@ -4,8 +4,9 @@
 
 Read the official 668506-2026 WBM ContractAwardNotice from the already
 allowlisted TED original XML fetch. Trace only the SDK-described link:
-LotResult[selec-w] -> LotTender -> TenderingParty -> Tenderer ->
-Organization/Company. Do NOT promote mere name occurrences to winners.
+LotResult[selec-w] -> SettledContract[CON] -> LotTender[TEN] ->
+TenderingParty[TPA] -> Tenderer[ORG] -> Organization/Company.
+Crucial: LotResult/LotTender can enumerate *received* tenders, not just winners. Do NOT promote mere name occurrences to winners.
 This reports award group membership, never nine per-carrier insured buildings,
 policy limits, premiums, coinsurance shares, or CAT insured sums.
 """
@@ -138,7 +139,10 @@ def parse_award_roles(original: bytes, *, notice: str = NOTICE) -> dict:
     tenders = index_nodes(result, "efac:LotTender", "TEN", "LOT_TENDER")
     parties = index_nodes(result, "efac:TenderingParty", "TPA", "TENDERING_PARTY")
     lot_results = index_nodes(result, "efac:LotResult", "RES", "LOT_RESULT")
+    settled = index_nodes(result, "efac:SettledContract", "CON", "SETTLED_CONTRACT")
     winners = []
+    used_contracts: set[str] = set()
+    used_contract_tender_links: set[tuple[str, str, str]] = set()
     for result_id in sorted(lot_results):
         row = lot_results[result_id]
         status = row.findall("cbc:TenderResultCode", NS)
@@ -146,52 +150,114 @@ def parse_award_roles(original: bytes, *, notice: str = NOTICE) -> dict:
             error("RESULT_WINNER_STATUS_MISSING")
         if status[0].text.strip() != "selec-w":
             continue
+
         lot_id = _single_child_reference(row, "efac:TenderLot", "LOT")
-        winner_refs = row.findall("efac:LotTender", NS)
-        if not winner_refs:
-            error("WINNER_RESULT_WITHOUT_TENDER_REFERENCE")
-        for ref in winner_refs:
-            ten_id = _get_id(ref, "TEN")
-            tender = tenders.get(ten_id)
-            if tender is None:
-                error("WINNING_TENDER_NOT_FOUND")
-            referenced_lot = _single_child_reference(
-                tender, "efac:TenderLot", "LOT"
+        received_tender_nodes = row.findall("efac:LotTender", NS)
+        # Official SDK: these are the *received* tenders. Never interpret
+        # them as winner-only, even if the LotResult says "selec-w".
+        received_ids = [_get_id(ref, "TEN") for ref in received_tender_nodes]
+        if len(received_ids) != len(set(received_ids)):
+            error("DUPLICATE_RECEIVED_TENDER_REFERENCE")
+        if any(ref not in tenders for ref in received_ids):
+            error("RECEIVED_TENDER_ID_NOT_FOUND")
+        for ref in received_ids:
+            if _single_child_reference(tenders[ref], "efac:TenderLot", "LOT") != lot_id:
+                error("RECEIVED_TENDER_WRONG_LOT")
+
+        # The actual winning tender(s) are identified by each settled
+        # contract's tender links, and by a contract reference from this
+        # selected result. This is a graph join, NOT a name match.
+        con_nodes = row.findall("efac:SettledContract", NS)
+        if not con_nodes:
+            error("SELECTED_RESULT_WITHOUT_SETTLED_CONTRACT")
+        contract_ids = [_get_id(ref, "CON") for ref in con_nodes]
+        if len(contract_ids) != len(set(contract_ids)):
+            error("DUPLICATE_CONTRACT_REFERENCE_IN_RESULT")
+        for con_id in sorted(contract_ids):
+            contract = settled.get(con_id)
+            if contract is None:
+                error("SETTLED_CONTRACT_NOT_FOUND")
+            used_contracts.add(con_id)
+
+            referenced_tenders = contract.findall("efac:LotTender", NS)
+            if not referenced_tenders:
+                error("SETTLED_CONTRACT_WITHOUT_TENDER_REFERENCES")
+            contract_tender_ids = [_get_id(ref, "TEN") for ref in referenced_tenders]
+            if len(contract_tender_ids) != len(set(contract_tender_ids)):
+                error("DUPLICATE_CONTRACT_TENDER_REFERENCE")
+
+            signatory_elems = contract.findall(
+                "cac:SignatoryParty/cac:PartyIdentification/cbc:ID", NS
             )
-            if referenced_lot != lot_id:
-                error("TENDER_LOT_MISMATCH")
-            party_id = _single_child_reference(
-                tender, "efac:TenderingParty", "TPA"
-            )
-            party = parties.get(party_id)
-            if party is None:
-                error("WINNING_TENDERING_PARTY_NOT_FOUND")
-            ref_nodes = party.findall("efac:Tenderer/cbc:ID", NS)
-            if not ref_nodes:
-                error("WINNING_TENDERING_PARTY_WITHOUT_ORGANIZATIONS")
-            member_ids = [required_id(n, expected_prefix="ORG") for n in ref_nodes]
-            if len(member_ids) != len(set(member_ids)) or buyer_id in member_ids:
-                error("DUPLICATE_OR_BUYER_IN_WINNER_GROUP")
-            if any(n not in companies for n in member_ids):
-                error("WINNER_ORGANIZATION_ID_NOT_FOUND")
-            winners.append({
-                "lot_result_id": result_id,
-                "lot_id": lot_id,
-                "winning_tender_id": ten_id,
-                "winning_party_id": party_id,
-                "winning_party_member_organizations": [
-                    {"xml_organization_id": n, "source_company_name": companies[n]}
-                    for n in sorted(member_ids)
-                ],
-                "this_group_documents_insured_object_allocations": False,
-                "this_group_documents_coinsurance_percentages": False,
-                "this_group_documents_reinsurance_or_net_retention": False,
-            })
+            signatory_ids = [
+                required_id(n, expected_prefix="ORG") for n in signatory_elems
+            ]
+            if len(signatory_ids) != len(set(signatory_ids)):
+                error("DUPLICATE_CONTRACT_SIGNATORY")
+            if any(n not in companies for n in signatory_ids):
+                error("CONTRACT_SIGNATORY_NOT_REGISTERED")
+            signatories = [
+                {"xml_organization_id": org, "source_company_name": companies[org]}
+                for org in sorted(signatory_ids)
+            ]
+            applicable_tenders = 0
+            for ten_id in sorted(contract_tender_ids):
+                tender = tenders.get(ten_id)
+                if tender is None:
+                    error("CONTRACT_TENDER_NOT_FOUND")
+                linked_lot = _single_child_reference(tender, "efac:TenderLot", "LOT")
+                if linked_lot != lot_id:
+                    # A single contract can involve multiple lots. Only the
+                    # current winning LotResult's own lot is admitted.
+                    continue
+                applicable_tenders += 1
+                if received_ids and ten_id not in received_ids:
+                    error("SETTLED_WINNER_NOT_AMONG_RECEIVED_TENDERS")
+                edge_id = (result_id, con_id, ten_id)
+                if edge_id in used_contract_tender_links:
+                    error("DUPLICATE_RESULT_CONTRACT_TENDER_EDGE")
+                used_contract_tender_links.add(edge_id)
+
+                party_id = _single_child_reference(
+                    tender, "efac:TenderingParty", "TPA"
+                )
+                party = parties.get(party_id)
+                if party is None:
+                    error("WINNING_TENDERING_PARTY_NOT_FOUND")
+                ref_nodes = party.findall("efac:Tenderer/cbc:ID", NS)
+                if not ref_nodes:
+                    error("WINNING_TENDERING_PARTY_WITHOUT_ORGANIZATIONS")
+                member_ids = [
+                    required_id(n, expected_prefix="ORG") for n in ref_nodes
+                ]
+                if len(member_ids) != len(set(member_ids)) or buyer_id in member_ids:
+                    error("DUPLICATE_OR_BUYER_IN_WINNER_GROUP")
+                if any(n not in companies for n in member_ids):
+                    error("WINNER_ORGANIZATION_ID_NOT_FOUND")
+                winners.append({
+                    "lot_result_id": result_id,
+                    "lot_id": lot_id,
+                    "settled_contract_id": con_id,
+                    "winning_tender_id": ten_id,
+                    "winning_party_id": party_id,
+                    "winning_party_member_organizations": [
+                        {"xml_organization_id": n, "source_company_name": companies[n]}
+                        for n in sorted(member_ids)
+                    ],
+                    "contract_signatories_separate_from_winning_tenderers": signatories,
+                    "contract_signatories_are_automatically_winning_underwriters": False,
+                    "this_group_documents_insured_object_allocations": False,
+                    "this_group_documents_coinsurance_percentages": False,
+                    "this_group_documents_reinsurance_or_net_retention": False,
+                })
+            if applicable_tenders == 0:
+                error("CONTRACT_HAS_NO_TENDER_FOR_SELECTED_LOT")
+
     if not winners:
         error("NO_EXPLICIT_WINNER_RESULT")
-    winner_ids = [x["winning_tender_id"] for x in winners]
+    winner_ids = [(x["lot_result_id"], x["settled_contract_id"], x["winning_tender_id"]) for x in winners]
     if len(set(winner_ids)) != len(winner_ids):
-        error("DUPLICATE_WINNING_TENDER")
+        error("DUPLICATE_RESULT_CONTRACT_TENDER_EDGE")
     observed_names = sorted({
         m["source_company_name"] for win in winners
         for m in win["winning_party_member_organizations"]
@@ -203,7 +269,10 @@ def parse_award_roles(original: bytes, *, notice: str = NOTICE) -> dict:
         "exact_original_xml_sha256_and_bytes_pin_matched_this_execution": True,
         "official_original_xml_url": receipt["official_original_xml_url"],
         "actual_award_buyer_original_organization_name": buyer_name,
-        "winner_lot_result_count": len(winners),
+        "winner_lot_result_count": len({x["lot_result_id"] for x in winners}),
+        "winning_result_contract_tender_links": len(winners),
+        "settled_contracts_linked_to_winning_results": len(used_contracts),
+        "won_tenders_selected_by_settled_contract_not_received_tender_list": True,
         "source_organization_names_in_winning_tendering_parties": observed_names,
         "source_winner_names_exactly_match_secondary_mirror_names": (
             observed_names == sorted(MIRROR_LABELS)
