@@ -102,6 +102,16 @@ class C3SWindFrequencyCandidateTests(unittest.TestCase):
                 _year(bad,'holdout_end')
         with self.assertRaisesRegex(CalibrationError,'complete historical years'):
             calculate(holdout_end=2026)
+        # The original provider CSV may already contain a PARTIAL 2026 row.
+        # Research v0 still selects exactly four finished calendar years.
+        blob=source([(2022+i,'TRACK','25',v) for i,v in enumerate([2,0,1,0,0])])
+        result=calculate(data=blob,algorithm='TRACK',threshold_mps='25',
+                         train_start=2022,train_end=2023,
+                         holdout_start=2024,holdout_end=2025)
+        self.assertEqual(result['train_annual_counts'],[2,0])
+        self.assertEqual(result['holdout_annual_counts'],[1,0])
+        self.assertEqual(result['train_year_count'],2)
+        self.assertEqual(result['holdout_year_count'],2)
 
     def test_zero_training_mean_has_undefined_not_zero_dispersion(self):
         original=source([(1950+i,'TRACK','25',n) for i,n in enumerate([0,0,0,0])])
