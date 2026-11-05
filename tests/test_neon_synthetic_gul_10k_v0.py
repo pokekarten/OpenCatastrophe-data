@@ -6,6 +6,7 @@ All values, peril rates and vulnerabilities are INVENTED. No native CAT,
 insurance indemnity, treaty or regulatory output is asserted.
 """
 import hashlib
+from pathlib import Path
 import unittest
 
 PREFIX = 'OC_NEON_10K_SYNTH_GUL_V0'
