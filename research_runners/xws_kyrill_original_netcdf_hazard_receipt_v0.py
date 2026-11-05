@@ -25,6 +25,14 @@ PRODUCTS = {
     "recalibrated_mean": "Kyrill_biasMean.nc",
     "recalibrated_upper_95": "Kyrill_biasU95.nc",
 }
+ORIGINAL_SHA256 = {
+    "uncontaminated_raw": "bf18bd37b0fa441bd02a00860c0fa74474c77691efe316efd46bde0ca8b483f5",
+    "recalibrated_lower_95": "5ac73f78239ef62bb177c210dbefaf7608e0dbac7cccc53cf10819bf3cbb64e0",
+    "recalibrated_mean": "aef5c8cd7ed2cf475c190e08f5dc0148231fd91dd47bdb541a6360552ccd28bb",
+    "recalibrated_upper_95": "ab4bc78cc1b330f5c3a4a5ab9e67422865a0fbd44c0c6585dd127a0e95826f82",
+}
+ORIGINAL_BYTES = 122304
+ORIGINAL_RUN = "https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42106677697"
 EXPECTED_LICENSE = "CC BY 4.0"
 XWS_METHOD = "https://www.europeanwindstorms.org/method/footprint/"
 EXPECTED_CDF_MAGIC = b"CDF\x01"
@@ -76,6 +84,8 @@ def inspect(name: str, data: bytes) -> dict:
         raise SourceBlocked("unrecognized storm product")
     if len(data) > MAX_SOURCE_BYTES or data[:4] != EXPECTED_CDF_MAGIC:
         raise SourceBlocked("original NetCDF bytes invalid")
+    if len(data) != ORIGINAL_BYTES or hashlib.sha256(data).hexdigest() != ORIGINAL_SHA256[name]:
+        raise SourceBlocked("original issuer Kyrill NetCDF size/SHA-256 changed")
     try:
         import numpy as np
         from scipy.io import netcdf_file
