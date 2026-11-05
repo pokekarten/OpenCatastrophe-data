@@ -58,7 +58,9 @@ finances AS (
   SELECT
    (SELECT count(*) FROM entity.published_metric m JOIN solo s USING (organization_id)
     JOIN registry.source_record sr ON sr.source_key=m.source_key CROSS JOIN target t
-    WHERE m.metric_name='fire_and_other_property_gwp'
+    WHERE sr.review_status='verified_original_financial_observation'
+      AND sr.raw_metadata @> '{"publisher_original_sha256_verified":true,"accounting_line_and_basis_verified":true}'::jsonb
+      AND m.metric_name='fire_and_other_property_gwp'
       AND m.measurement_kind='published_observation'
       AND m.year=t.report_year AND m.value=t.sfcr_property_gwp_eur
       AND m.unit='EUR' AND m.currency_code='EUR'
@@ -67,7 +69,9 @@ finances AS (
    )::bigint AS source_bound_exact_sfcr_property_gwp_rows,
    (SELECT count(*) FROM entity.published_metric m JOIN solo s USING (organization_id)
     JOIN registry.source_record sr ON sr.source_key=m.source_key CROSS JOIN target t
-    WHERE m.metric_name='connected_buildings_year_end_contracts'
+    WHERE sr.review_status='verified_original_financial_observation'
+      AND sr.raw_metadata @> '{"publisher_original_sha256_verified":true,"accounting_line_and_basis_verified":true}'::jsonb
+      AND m.metric_name='connected_buildings_year_end_contracts'
       AND m.measurement_kind='published_observation'
       AND m.year=t.report_year AND m.value=t.hgb_building_year_end_contracts
       AND m.unit='contracts' AND m.business_scope='solo_direct'
@@ -77,7 +81,9 @@ finances AS (
    )::bigint AS source_bound_exact_hgb_building_contract_rows,
    (SELECT count(*) FROM entity.published_metric m JOIN solo s USING (organization_id)
     JOIN registry.source_record sr ON sr.source_key=m.source_key CROSS JOIN target t
-    WHERE m.metric_name='connected_buildings_direct_gwp'
+    WHERE sr.review_status='verified_original_financial_observation'
+      AND sr.raw_metadata @> '{"publisher_original_sha256_verified":true,"accounting_line_and_basis_verified":true}'::jsonb
+      AND m.metric_name='connected_buildings_direct_gwp'
       AND m.measurement_kind='published_observation'
       AND m.year=t.report_year AND m.value=t.hgb_building_direct_gwp_eur
       AND m.unit='EUR' AND m.currency_code='EUR'
