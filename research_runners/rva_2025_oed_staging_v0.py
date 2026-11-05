@@ -22,15 +22,44 @@ AGES = ROOT / 'research/observations/zensus2022_400_kreis_original_building_age_
 HGB = ROOT / 'research/observations/rva_solo_hgb_property_2019_2025_v0.toml'
 CASES = ('PHYSICAL_BUILDINGS_UNIFORM_AGE_AFFINITY', 'HISTORIC_PRE1950_AFFINITY_1_5X', 'MODERN_POST2000_AFFINITY_1_5X')
 VALUES = {'low': 250_000, 'central': 450_000, 'high': 750_000}
+# Explicit counterfactual assumptions; NOT a regional cost model or observed type mix.
+AGE_TIV_FACTOR_PCT = (135,125,110,95,90,90,100,110,115,120)
+FICTIONAL_ARCHETYPES = (
+    ('small_residential', 45, 60),     # toy selection weight and value factor (%)
+    ('standard_residential', 42, 100),
+    ('multiunit_residential', 10, 260),
+    ('mixed_use_residential', 3, 175),
+)
+VALUATION_PATTERNS = ('flat', 'age_archetype')
 NATIONAL = 1_060_546
 GWP_CENTS = 99_771_000_000
 PORT = 'RVA-LIKE-2025-SYNTHETIC-RESEARCH'
 LOC = ('PortNumber','AccNumber','LocNumber','LocGroup','CountryCode','Latitude','Longitude','LocCurrency','LocPerilsCovered','BuildingTIV','ContentsTIV','BITIV','OtherTIV','NumberOfBuildings','OEDVersion')
 ACC = ('PortNumber','AccNumber','PolNumber','AccCurrency','PolPerilsCovered','OEDVersion')
-CELL = ('KreisAGS2022','AgeBandIndex','Published2022BuildingAgeCount','Fictional2025FullContractCount','Fictional2025ExportedContractCount')
+CELL = ('KreisAGS2022','AgeBandIndex','Published2022BuildingAgeCount','Fictional2025FullContractCount','Fictional2025ExportedContractCount','FictionalExportedBuildingTIVEUR')
 
 class StagingError(ValueError):
     pass
+
+
+def hypothetical_value(base: int, age: int, synthetic_id: str, pattern: str) -> tuple[int,str]:
+    """Toy hypothetical variance; never inferred from policy premiums or real assets."""
+    if pattern not in VALUATION_PATTERNS or type(age) is not int or age not in range(10):
+        raise StagingError('invalid valuation pattern or 2022 physical age class')
+    if pattern == 'flat':
+        return base, 'flat_one_building_per_contract'
+    # Hash-derived archetype gives stable synthetic diversity, not actual R+V type probabilities.
+    roll = int.from_bytes(hashlib.sha256(synthetic_id.encode('ascii')).digest()[:8],'big') % 100
+    running = 0
+    for name,weight,factor in FICTIONAL_ARCHETYPES:
+        running += weight
+        if roll < running:
+            # Integer euros: exact deterministic HALF_UP for hypothetical value.
+            value = (base * AGE_TIV_FACTOR_PCT[age] * factor + 5000) // 10000
+            if value <= 0:
+                raise StagingError('invalid fictional building value')
+            return value,name
+    raise StagingError('fictional archetype prior is not normalized')
 
 
 def allocate_sample(cells: list[dict], size: int) -> list[int]:
@@ -82,11 +111,13 @@ def rows_from_validated_sources(inputs: list[dict], case: str) -> list[dict]:
 
 
 def export(cells: list[dict], out: Path, case: str, valuation: str,
-           requested_sample_size: int, input_hashes: dict[str,str]) -> dict:
-    if case not in CASES or valuation not in VALUES:
+           requested_sample_size: int, input_hashes: dict[str,str], valuation_pattern: str = 'flat') -> dict:
+    if case not in CASES or valuation not in VALUES or valuation_pattern not in VALUATION_PATTERNS:
         raise StagingError('unapproved fictional scenario')
     selected = allocate_sample(cells,requested_sample_size)
     nrows = sum(selected)
+    total_tiv = 0
+    archetype_counts: dict[str,int] = {}
     if out.exists() or not out.parent.is_dir():
         raise StagingError('output directory must not exist; parent must exist')
     out.mkdir(mode=0o700)
@@ -100,17 +131,22 @@ def export(cells: list[dict], out: Path, case: str, valuation: str,
             cw=csv.DictWriter(cf,CELL,lineterminator='\n'); cw.writeheader()
             for c,n in zip(cells,selected):
                 ags,age=c['ags'],c['age']
-                cw.writerow(dict(zip(CELL,(ags,str(age+1),str(c['published_2022']),str(c['count']),str(n)))))
+                cohort_tiv = 0
                 for serial in range(1,n+1):
                     ident=f'SYN-{ags}-{age+1:02d}-{serial:06d}'
+                    tiv,archetype=hypothetical_value(VALUES[valuation],age,ident,valuation_pattern)
+                    total_tiv += tiv
+                    cohort_tiv += tiv
+                    archetype_counts[archetype] = archetype_counts.get(archetype,0)+1
                     lw.writerow({'PortNumber':PORT,'AccNumber':ident,'LocNumber':ident,
                                  'LocGroup':'KREIS-'+ags,'CountryCode':'DE',
                                  'Latitude':'','Longitude':'','LocCurrency':'EUR',
-                                 'LocPerilsCovered':'WW2','BuildingTIV':str(VALUES[valuation]),
+                                 'LocPerilsCovered':'WW2','BuildingTIV':str(tiv),
                                  'ContentsTIV':'0','BITIV':'0','OtherTIV':'0',
                                  'NumberOfBuildings':'1','OEDVersion':'5.0.0'})
                     aw.writerow({'PortNumber':PORT,'AccNumber':ident,'PolNumber':ident,
                                  'AccCurrency':'EUR','PolPerilsCovered':'WW2','OEDVersion':'5.0.0'})
+                cw.writerow(dict(zip(CELL,(ags,str(age+1),str(c['published_2022']),str(c['count']),str(n),str(cohort_tiv)))))
         receipt = {
             'schema':'RVA_LIKE_OED_RESEARCH_STAGING_V0','status':'NOT_GEOLOCATED_NOT_MODEL_READY',
             'legal_entity_accounting_anchor':'R+V Allgemeine Versicherung AG solo 2025',
@@ -118,10 +154,17 @@ def export(cells: list[dict], out: Path, case: str, valuation: str,
             'company_2025_national_annual_building_gwp_eur_cents_observed':GWP_CENTS,
             'observed_2022_building_age_opportunities_only':True,
             'fictional_county_age_allocation_case':case,'fictional_per_site_valuation_case':valuation,
-            'fictional_per_site_building_tiv_eur':VALUES[valuation],
+            'fictional_per_site_building_tiv_base_eur':VALUES[valuation],
+            'fictional_valuation_pattern':valuation_pattern,
+            'fictional_age_factor_pct':list(AGE_TIV_FACTOR_PCT) if valuation_pattern!='flat' else None,
+            'fictional_archetype_weights_and_tiv_factors_pct':[
+                {'name':name,'selection_weight_pct':weight,'tiv_factor_pct':factor}
+                for name,weight,factor in FICTIONAL_ARCHETYPES
+            ] if valuation_pattern!='flat' else None,
+            'fictional_exported_archetype_counts':dict(sorted(archetype_counts.items())),
             'requested_sample_size_0_means_full':requested_sample_size,
             'exported_fictional_locations_and_policies':nrows,
-            'exported_fictional_building_tiv_eur':nrows*VALUES[valuation],
+            'exported_fictional_building_tiv_eur':total_tiv,
             'full_fictional_2025_book_exported':nrows==NATIONAL,
             'sample_not_a_financially_scaled_full_portfolio':nrows!=NATIONAL,
             'physical_site_coordinates_observed':False,
@@ -148,6 +191,8 @@ def main() -> int:
     parser.add_argument('--case',choices=CASES,default=CASES[0])
     parser.add_argument('--valuation',choices=tuple(VALUES),default='central')
     parser.add_argument('--sample-size',type=int,default=10000,help='0 exports the full 1,060,546 fictional policy set')
+    parser.add_argument('--valuation-pattern',choices=VALUATION_PATTERNS,default='flat',
+                        help='flat or explicitly fictional age/archetype TIV sensitivity')
     args=parser.parse_args()
     try:
         paths={'census_2022':CENSUS,'age_2022':AGES,'hgb_2019_2025':HGB}
@@ -157,7 +202,7 @@ def main() -> int:
         inputs=[tomllib.loads(b.decode('utf8')) for b in blobs.values()]
         cells=rows_from_validated_sources(inputs,args.case)
         receipt=export(cells,args.outdir,args.case,args.valuation,args.sample_size,
-                       {k:hashlib.sha256(b).hexdigest() for k,b in blobs.items()})
+                       {k:hashlib.sha256(b).hexdigest() for k,b in blobs.items()},args.valuation_pattern)
         print(json.dumps(receipt,sort_keys=True,indent=2))
     except (OSError,ValueError,KeyError,ImportError) as exc:
         parser.exit(2,f'BLOCKED: {exc}\n')
