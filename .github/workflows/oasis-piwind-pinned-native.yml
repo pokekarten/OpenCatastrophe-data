@@ -70,12 +70,12 @@ jobs:
               "## Pinned native OasisPiWind research-only run",
               "",
               f"- Engine: oasislmf {receipt['oasislmf_version']}",
-              f"- Source commit: \`{receipt['model_commit']}\`",
+              f"- Source commit: `{receipt['model_commit']}`",
               f"- Verified output families: {', '.join(receipt['result_loss_streams'])}",
               f"- Hashed ORD CSV outputs: {len(receipt['ord_csv'])}",
               "- No real insurer portfolio, original site geographies, scientific hazard calibration or approved net EP.",
               "",
           ]
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
-              handle.write("\\n".join(report))
+              handle.write("\n".join(report))
           PY
