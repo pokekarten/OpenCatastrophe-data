@@ -14,7 +14,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Schema version:** `1.0.0`  
 **Review date:** `2026-11-05`  
-**Purpose:** Source discovery of original agricultural parcel and physical infrastructure inventories surfaced by Exa research on 2026-11-05. Candidate records only; no original assets, insurer locations, licenses approved for OpenCatastrophe, or model admission.
+**Purpose:** Non-admission source discovery of original agricultural parcel and physical infrastructure inventories surfaced by Exa research on 2026-11-05. Candidate records only; no original assets, insurer locations, rights approvals, or model admission.
 
 **Entries:** 4
 
