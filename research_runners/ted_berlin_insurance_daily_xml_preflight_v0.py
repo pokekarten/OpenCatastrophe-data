@@ -109,7 +109,6 @@ def audit_package(notice: str, package: bytes) -> dict:
     r["original_zip_sha256"] = hashlib.sha256(package).hexdigest()
     r["original_zip_extracted_file_basename"] = entry.filename.rsplit("/", 1)[-1]
     r["original_daily_zip_bytes_stored_in_repository"] = False
-    r["original_xml_sha256_immutable_pin_verified"] = False
     return r
 
 
@@ -122,7 +121,9 @@ def main() -> int:
         print(json.dumps({
             "schema": "TED_BERLIN_INSURANCE_OFFICIAL_DAILY_XML_ORIGINAL_PREFLIGHT_V0",
             "original_publisher_archive_retrieved": True,
-            "fixed_original_source_sha256_pins_verified": False,
+            "fixed_original_source_sha256_pins_verified": all(
+                r["original_sha256_immutable_pin_verified"] for r in results
+            ),
             "original_xml_bytes_committed": False,
             "original_insurer_exposure_locations_or_policy_tiv_admitted": False,
             "receipts": results,
