@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: R+V NRW 2022 historical HU original index only
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/rva-nrw-hu-2022-source-index.yml"
+      - "research_runners/rva_nrw_hu_2022_original_index_receipt_v0.py"
+      - "tests/test_rva_nrw_hu_2022_original_index_receipt_v0.py"
+      - "docs/research/rva-nrw-historical-hu-2022-footprint-oed-source-gate-20261105.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  official-source-listing:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Read exact research commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Run bounded source index negative tests offline
+        run: python -m unittest discover -s tests -p 'test_rva_nrw_hu_2022_original_index_receipt_v0.py' -v
+      - name: Probe primary NRW index only, not 859MB original ZIP
+        run: python research_runners/rva_nrw_hu_2022_original_index_receipt_v0.py --live
