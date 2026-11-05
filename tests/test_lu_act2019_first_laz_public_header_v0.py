@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import io
+import hashlib
 import re
 import struct
 import unittest
@@ -150,6 +151,24 @@ class PublicHeaderTests(unittest.TestCase):
         prefix=fake_las(format_code=0x40|3)[:111]
         with self.assertRaisesRegex(PublicHeaderError,"point-format"):
             classify_public_las_prefix(prefix,member_uncompressed_bytes=300)
+
+    def test_las12_cannot_claim_las13_only_point_format(self):
+        prefix=fake_las(format_code=0x84)[:111]
+        with self.assertRaisesRegex(PublicHeaderError,"point-format"):
+            classify_public_las_prefix(prefix,member_uncompressed_bytes=300)
+
+    def test_point_format_three_minimum_record_width_enforced(self):
+        header=bytearray(fake_las()[:111])
+        struct.pack_into("<H",header,105,20)
+        with self.assertRaisesRegex(PublicHeaderError,"point-format"):
+            classify_public_las_prefix(bytes(header),member_uncompressed_bytes=300)
+
+    def test_public_fragment_digest_does_not_claim_member_checksum(self):
+        prefix=fake_las()[:111]
+        info=classify_public_las_prefix(prefix,member_uncompressed_bytes=300)
+        self.assertEqual(info["las_public_first111_sha256_not_member_sha256"],
+                         hashlib.sha256(prefix).hexdigest())
+        self.assertFalse(info["point_records_or_las_vlrs_read"])
 
     def test_nondeflate_zip_first_member_blocks(self):
         raw=fake_zip(compression=ZIP_STORED)
