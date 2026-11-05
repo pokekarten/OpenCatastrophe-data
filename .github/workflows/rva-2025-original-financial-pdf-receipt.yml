@@ -31,9 +31,9 @@ jobs:
         run: |
           python -m unittest tests.test_rva_solo_original_financial_pdf_receipt_v0 -v
           python -m compileall -q research_runners/rva_solo_original_financial_pdf_receipt_v0.py
-      - name: Require Poppler without installing unpinned packages
+      - name: Install exact pure-Python PDF reader, no Poppler required
         run: |
-          command -v pdftotext
-          command -v pdfinfo
+          python -m pip install --disable-pip-version-check --no-input pypdf==5.9.0
+          python -m pip check
       - name: Fetch ephemeral official issuer PDFs and emit only hashes/positive receipts
         run: python research_runners/rva_solo_original_financial_pdf_receipt_v0.py
