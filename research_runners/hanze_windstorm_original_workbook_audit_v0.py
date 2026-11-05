@@ -41,6 +41,13 @@ EXPECTED_SOURCE_MODELLED_CDS = 299
 EXPECTED_SOURCE_KYRILL = 12
 EXPECTED_SOURCE_KYRILL_CDS = 4
 EXPECTED_SOURCE_MISSING_ECONOMIC_LOSS = 638
+# Twelve publisher COUNTRY-report IDs of one named windstorm, not event IDs.
+EXPECTED_KYRILL_COUNTRY_ID_PAIRS = (
+    ("AT", "20034"), ("BE", "20076"), ("CH", "21154"),
+    ("CZ", "20104"), ("DE", "20457"), ("DK", "20128"),
+    ("FR", "20250"), ("IE", "20576"), ("LU", "20741"),
+    ("NL", "20763"), ("PL", "20911"), ("UK", "21290"),
+)
 
 
 def _safe_root(blob: bytes, *, member: str):
@@ -327,6 +334,8 @@ def audit_workbook(
         modelled != EXPECTED_SOURCE_MODELLED_CDS or
         len(kyrill) != EXPECTED_SOURCE_KYRILL or
         sum(item["publisher_modelled_cds_loss"] for item in kyrill) != EXPECTED_SOURCE_KYRILL_CDS or
+        tuple(sorted((item["country_code"], item["source_id"]) for item in kyrill)) !=
+        EXPECTED_KYRILL_COUNTRY_ID_PAIRS or
         len(data) - has_econ != EXPECTED_SOURCE_MISSING_ECONOMIC_LOSS
     ):
         raise OriginalHanzeError("pinned original XLSX fails independently reviewed row profile")
