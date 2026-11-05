@@ -39,3 +39,21 @@ The 18 offline regression tests cover a selected result whose Search index shows
 ### Explicitly not proven
 
 No carrier-specific insured property site, addresses, sums insured, property replacement TIV, participation shares, limits, deductibles, effective policy status, R+V-specific actual insurer portfolio, ceded reinsurance coverage or OEP/AEP input exposure is established by the index. Existing WBM 2025 residential apartments are not the nine 2026 commercial objects. No database/model admission or cross-insurer aggregation occurs.
+
+## Actual 2026-11-05 live official source results
+
+[GitHub Actions preflight run 42091432185](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42091432185) successfully executed both official data paths.
+
+**Official Search API notice-level record:** published metadata response 7,702 bytes, SHA-256 `ffc15a755c9bfa4f0690e2f6ce8671f2d7c9d25b62d2114eaf8a684d9e6ee827`. The search field `winner-name` returned exactly HDI Global SE, Helvetia Schweizerische Versicherungsgesellschaft AG, R+V Allgemeine Versicherung AG; `contract-tender-id` returned TEN-0001, TEN-0002, TEN-0003; the flattened metadata contained three `contract-identifier` values and conclusion date `2026-09-21+02:00`. **The API field arrays alone still do not determine which company belongs to which contract.** The source API names could include only tender-index candidates because of the official published index path through received tenders.
+
+**Independent immutable original-UBL re-fetch:** in *the same run* the original TED `ContractAwardNotice` 668506-2026 was successfully retrieved again and matched its pinned **21,837 original bytes** and **SHA-256 `7650720183d0c26430e0433858bf2e8b854ea68bb93fbf679e96ee696ee8fc78`**. The corrected `RES → CON → TEN → TPA → ORG` parser confirmed three **separate awarded contract role edges on the same technical lot `LOT-0000`**:
+
+| Result | Settled contract | Winning tender | Party | Verified source company |
+| --- | --- | --- | --- | --- |
+| RES-0001 | CON-0001 | TEN-0001 | TPA-0001 | ORG-9000 — HDI Global SE |
+| RES-0002 | CON-0002 | TEN-0002 | TPA-0002 | ORG-9001 — Helvetia Schweizerische Versicherungsgesellschaft AG |
+| RES-0003 | CON-0003 | TEN-0003 | TPA-0003 | ORG-9002 — R+V Allgemeine Versicherung AG |
+
+All contract-signatory references in this original receipt indicate WBM `ORG-0001`, the **buyer**, not an awarded carrier. The evidence is preserved separately in the [canonical TOML](../../research/observations/ted_wbm_2026_original_eforms_award_graph_receipt_v0.toml) and [original source graph replay validator](../../research_runners/ted_wbm_original_award_graph_receipt_v0.py), with 16 fail-closed anti-drift tests.
+
+**Interpretation:** we can now state the **official award-publication contract-to-company mappings**, rather than mere secondary mirror or Search index guesses. Three contracts covering the *same technical lot* do **not** mean 3 × nine risks, nor 1/3 coinsurance each, nor currently operative signed individual policies. No policy schedules, individual building IDs, insured replacement TIV, reinsurance shares or actual insured CAT locations were observed. Original notices, TED index and award graphs remain *research-only*.
