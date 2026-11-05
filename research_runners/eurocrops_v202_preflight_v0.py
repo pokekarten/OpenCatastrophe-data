@@ -277,10 +277,77 @@ def footer_statistics_quality(parquet, geometry_column: str) -> dict:
     }
 
 
+def scan_full_area_column(parquet) -> dict:
+    """Exact-value audit of one original DOUBLE column, without field identities.
+
+    Optional because a real source file must first have a pinned full SHA-256.
+    The area column is read in small batches, never the geometry or whole row
+    group; this does NOT check overlaps, actual polygons or insured exposure.
+    """
+    total_rows = parquet.metadata.num_rows
+    if type(total_rows) is not int or not 1 <= total_rows <= 50000000:
+        raise Blocked("full area scan exceeds reviewed row budget")
+    count = 0
+    zero_count = 0
+    negative_count = 0
+    nonfinite_count = 0
+    null_count = 0
+    wrong_type_count = 0
+    positive_min = None
+    max_area = None
+    for batch in parquet.iter_batches(batch_size=4096, columns=["area_ha"]):
+        if not 0 < batch.num_rows <= 4096:
+            raise Blocked("full area scan produced an invalid batch size")
+        values = batch.column(0).to_pylist()
+        if len(values) != batch.num_rows:
+            raise Blocked("area column batch length drift")
+        for raw in values:
+            count += 1
+            if raw is None:
+                null_count += 1
+            elif isinstance(raw, bool) or not isinstance(raw, (int, float)):
+                wrong_type_count += 1
+            else:
+                try:
+                    area = float(raw)
+                except (ValueError, TypeError, OverflowError):
+                    wrong_type_count += 1
+                    continue
+                if not math.isfinite(area):
+                    nonfinite_count += 1
+                elif area < 0:
+                    negative_count += 1
+                elif area == 0:
+                    zero_count += 1
+                else:
+                    positive_min = (
+                        area if positive_min is None else min(positive_min, area)
+                    )
+                    max_area = area if max_area is None else max(max_area, area)
+            if count > total_rows:
+                raise Blocked("full area scan exceeds Parquet footer row count")
+    if count != total_rows:
+        raise Blocked("full area scan shorter than Parquet footer row count")
+    return {
+        "scan_scope": "original full area_ha attribute only",
+        "original_area_rows_scanned": count,
+        "original_area_ha_zero_count": zero_count,
+        "original_area_ha_negative_count": negative_count,
+        "original_area_ha_nonfinite_count": nonfinite_count,
+        "original_area_ha_null_count": null_count,
+        "original_area_ha_wrong_type_count": wrong_type_count,
+        "original_area_ha_minimum_positive_value": positive_min,
+        "original_area_ha_maximum_positive_value": max_area,
+        "all_original_geometry_and_topology_validated": False,
+        "sum_of_parcel_areas_is_not_unique_cultivated_area": True,
+    }
+
+
 def inspect_local(
     path: Path, expected_sha256: str, max_rows: int = 512,
     mapping: Path | None = None, mapping_git_blob_sha1: str | None = None,
     hierarchy: Path | None = None, hierarchy_git_blob_sha1: str | None = None,
+    scan_full_area: bool = False,
 ) -> dict:
     if max_rows < 1 or max_rows > 5000:
         raise Blocked("sample size must be 1..5000")
@@ -307,6 +374,7 @@ def inspect_local(
         parquet, positions, geo["primary_geometry_column"]
     )
     stats = audit_rows(rows, geo["primary_geometry_column"])
+    full_area_scan = scan_full_area_column(parquet) if scan_full_area else None
     mapping_coverage = None
     if mapping is not None and hierarchy is not None:
         try:
@@ -346,6 +414,8 @@ def inspect_local(
         "geo": geo, "pyarrow_version": pa.__version__,
         "sample": stats,
         "original_footer_column_quality": footer_quality,
+        "full_original_area_ha_scan": full_area_scan,
+        "full_original_area_ha_scan_checked": full_area_scan is not None,
         "sample_selection": "source_sha256_seeded_uniform_without_replacement",
         "sampled_row_groups": sampled_groups,
         "sampled_positions_exported": False,
@@ -364,6 +434,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--expected-sha256", required=True)
     parser.add_argument("--sample-rows", type=int, default=512)
+    parser.add_argument("--scan-full-area", action="store_true",
+                        help="opt-in exact original area_ha column-only scan")
     parser.add_argument("--mapping", type=Path, help="locally obtained original eurocrops.csv")
     parser.add_argument("--mapping-git-blob-sha1", help="source-pinned Git blob SHA1")
     parser.add_argument("--hierarchy", type=Path, help="locally obtained original hcat4.csv")
@@ -374,6 +446,7 @@ def main(argv: list[str] | None = None) -> int:
             args.input, args.expected_sha256, args.sample_rows,
             args.mapping, args.mapping_git_blob_sha1,
             args.hierarchy, args.hierarchy_git_blob_sha1,
+            scan_full_area=args.scan_full_area,
         )
     except (Blocked, OSError, RuntimeError) as exc:
         print("BLOCKED: " + str(exc), file=sys.stderr)
