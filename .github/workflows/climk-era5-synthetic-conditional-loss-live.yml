@@ -59,6 +59,9 @@ jobs:
           assert o['point_reextract_exact_original'] is True
           assert o['synthetic_asset_count'] == 24
           assert o['synthetic_total_replacement_cost_eur'] == 240_000_000
+          assert o['distinct_native_hazard_grid_cells_sampled'] == 1
+          assert o['source_sites_share_a_native_grid_cell'] is True
+          assert o['max_fictional_assets_sharing_one_native_grid_cell'] == 24
           assert o['annual_AAL'] is None and o['annual_AEP'] is None and o['annual_OEP'] is None
           assert o['model_calibrated'] is False
           assert o['insurer_original_gross'] is None and o['insurer_retained_net'] is None
@@ -79,6 +82,8 @@ jobs:
           assert o['synthetic_vlt_sha256'] == e['synthetic_vulnerability_sha256']
           assert o['synthetic_asset_roster_sha256'] == e['synthetic_asset_roster_sha256']
           assert o['conditional_physical_ground_up_eur_exact'] == e['conditional_expected_physical_groundup_loss_eur_exact']
+          assert e['two_synthetic_sites_coincident_native_grid_cell'] is True
+          assert len({(p['native_cell_x'],p['native_cell_y']) for p in e['source_points']}) == o['distinct_native_hazard_grid_cells_sampled']
           actual_points = o['source_point_samples']
           expected_points = e['source_points']
           assert len(actual_points) == len(expected_points)
