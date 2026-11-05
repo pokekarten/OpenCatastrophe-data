@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Synthetic-only original FPA FOD archive release and ZIP security tests."""
 import hashlib
+import sqlite3
 from io import BytesIO
 from pathlib import Path
 import tempfile
@@ -128,4 +129,59 @@ class PublisherArchiveReceiptTests(unittest.TestCase):
             with self.assertRaisesRegex(gate.ArchiveBlocked, "SHA256 mismatch"):
                 gate.verify_original_gpkg_zip(
                     path, expected_bytes=len(raw), expected_sha256="0"*64
+                )
+
+    def test_private_sqlite_2024_exact_grouped_source_counts(self):
+        with tempfile.TemporaryDirectory() as folder:
+            db_path = Path(folder) / "synthetic-fires.gpkg"
+            with sqlite3.connect(db_path) as conn:
+                conn.execute(
+                    "CREATE TABLE Fires (FIRE_YEAR INTEGER, STATE TEXT, "
+                    "FIRE_SIZE_CLASS TEXT, MTBS_ID TEXT)"
+                )
+                rows = [(2024, "CA", cls, "linked" if cls in ("A", "F") else None)
+                        for cls in "ABCDEFG"]
+                rows += [(2024, "OR", "F", None), (2024, "OR", "G", "linked"),
+                         (2023, "CA", "A", "historical")]
+                conn.executemany("INSERT INTO Fires VALUES (?,?,?,?)", rows)
+            expected_all = dict(A=1, B=1, C=1, D=1, E=1, F=2, G=2)
+            expected_linked = dict(A=1, B=0, C=0, D=0, E=0, F=1, G=1)
+            result = gate.audit_extracted_fires_2024_sqlite(
+                db_path,
+                expected_records=9,
+                expected_mtbs_id_present=3,
+                expected_state_codes=2,
+                expected_state_size_cells=9,
+                expected_size_counts=expected_all,
+                expected_link_counts=expected_linked,
+            )
+            self.assertEqual(result["original_2024_fpa_report_count"], 9)
+            self.assertEqual(result["original_2024_mtbs_id_nonnull_count"], 3)
+            self.assertTrue(result["archived_2024_counts_match_independently_read_original_arcgis"])
+            self.assertFalse(result["source_identity_join_or_insurance_loss_model_admitted"])
+            with self.assertRaisesRegex(gate.ArchiveBlocked, "A-G totals differ"):
+                gate.audit_extracted_fires_2024_sqlite(
+                    db_path, expected_records=9, expected_mtbs_id_present=3,
+                    expected_state_codes=2, expected_state_size_cells=9,
+                    expected_size_counts={**expected_all, "F": 3},
+                    expected_link_counts=expected_linked,
+                )
+
+    def test_unrecognized_sqlite_schema_never_indicates_valid_source(self):
+        with tempfile.TemporaryDirectory() as folder:
+            db_path = Path(folder) / "unknown.gpkg"
+            with sqlite3.connect(db_path) as conn:
+                conn.execute("CREATE TABLE Other (x INTEGER)")
+            with self.assertRaisesRegex(gate.ArchiveBlocked, "Fires feature table"):
+                gate.audit_extracted_fires_2024_sqlite(db_path)
+
+    def test_optional_full_sqlite_audit_requires_exact_original_gpkg_length(self):
+        raw = zip_gpkg()
+        with tempfile.TemporaryDirectory() as folder:
+            p = Path(folder) / gate.DATA_NAME
+            p.write_bytes(raw)
+            with self.assertRaisesRegex(gate.ArchiveBlocked, "expanded byte length drift"):
+                gate.verify_original_gpkg_zip(
+                    p, expected_bytes=len(raw),
+                    expected_sha256=hashlib.sha256(raw).hexdigest(), audit_2024=True
                 )
