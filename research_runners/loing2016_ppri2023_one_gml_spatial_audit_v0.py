@@ -113,6 +113,8 @@ def audit_one_gml(raw: bytes):
     geom = feature.find(MS + "geometry")
     if geom is None:
         raise GMLReviewBlocked("no original geometry element")
+    if geom.find(GML + "MultiSurface") is None:
+        raise GMLReviewBlocked("not the reviewed projected multisurface GML geometry")
     polygons = geom.findall(".//" + GML + "Polygon")
     if not 1 <= len(polygons) <= 5000:
         raise GMLReviewBlocked("invalid bounded polygon count")
