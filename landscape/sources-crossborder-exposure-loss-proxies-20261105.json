@@ -1,0 +1,190 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission public-source research: cross-border building and property value priors, insurer product mix, government impact benchmarks and overlooked ground-instability layers; no source-data bytes, rights, science or CAT model admission.",
+  "review_date": "2026-11-05",
+  "entries": [
+    {
+      "candidate_id": "be.fpsfin.cadastral-building-condition.20260101",
+      "name": "Belgian FPS Finance cadastral building condition statistics, 2026 vintage",
+      "provider": "Belgian FPS Finance, General Administration of Patrimonial Documentation",
+      "categories": [
+        "building_attributes",
+        "building_age",
+        "cadastral_aggregates",
+        "europe"
+      ],
+      "spatial_scope": "Belgium; national, regional, province, arrondissement, municipality, cadastral division and statistical sector aggregates; no building-level insured-site claim",
+      "temporal_scope": "2026-01-01 technical vintage; official catalogue metadata revised 2026-07-24; annual series",
+      "resolution_or_granularity": "Downloadable zipped CSV by type of built parcel, including totals, physical-condition indicators, central heating and pre-1900 construction; administrative and statistical-sector class summaries",
+      "potential_roles": [
+        "regional_building_stock_prior",
+        "construction_age_sensitivity",
+        "occupancy_archetype_challenge"
+      ],
+      "authoritative_url": "https://www.geo.be/catalog/details/857b351e-51ca-11eb-a86d-3448ed25ad7c?l=en",
+      "access_class_hint": "public_zip_csv_bespoke_cadastral_plan_terms_scope_not_established",
+      "note": "Official FPS Finance geo.be catalogue offers 2026-01-01 ZIP CSV, geographic classes and links to French/Dutch terms. Its linked French licence explicitly defines 'plan cadastral' (cadastral map), so do NOT silently infer that it also licenses these building-condition statistical tables or relabel it CC BY 4.0. Product-specific statistical reuse/commercial and derived-data terms remain unknown pending publisher clarification. Parcel totals are not building totals, dwellings, insured risk locations or replacement values. Acquire and SHA-pin exact ZIP only outside public Git after rights/provenance review.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "be.fpsfin.real-estate-transactions.20250630",
+      "name": "Belgian FPS Finance real estate transactions by cadastral geography",
+      "provider": "Belgian FPS Finance, General Administration of Patrimonial Documentation",
+      "categories": [
+        "property_transactions",
+        "asset_valuation",
+        "cadastral_aggregates",
+        "europe"
+      ],
+      "spatial_scope": "Belgium; seven published administrative/cadastral geography levels down to statistical sectors",
+      "temporal_scope": "Quarterly maintained series; provider technical specifications identify 2025-06-30 vintage; exact current downloadable extract to be version-pinned",
+      "resolution_or_granularity": "Zipped CSV with real estate transaction counts and market values by type of property/right and cadastral nature, aggregated geographically",
+      "potential_roles": [
+        "regional_property_value_prior",
+        "replacement_cost_crosscheck_not_direct_measure",
+        "asset_class_distribution_challenge"
+      ],
+      "authoritative_url": "https://www.geo.be/catalog/details/89209670-51ca-11eb-beeb-3448ed25ad7c?l=en",
+      "access_class_hint": "public_zip_csv_bespoke_cadastral_plan_terms_scope_not_established",
+      "note": "Official geo.be catalogue specifies original 2025-06-30 ZIP and transaction technical specification; it links to a bespoke French/Dutch cadastral-plan licence, not an explicit CC BY 4.0 grant for the transactions table. Specific re-use rights for these statistical CSVs need authoritative scope review before distribution or commercial modelling. Cadastral transaction values concern selected transferred interests and include market/land components; never equate with total stock, replacement TIV, policy contracts or insured locations.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "fr.cerema.dvfplus.opendata.2026",
+      "name": "France Cerema DVF+ geolocated real-estate transactions",
+      "provider": "Cerema and DGALN, based on French DGFiP property transaction data",
+      "categories": [
+        "property_transactions",
+        "geocoded_property",
+        "valuation_prior",
+        "europe"
+      ],
+      "spatial_scope": "France with DVF geographic/legal exclusions and cadastral-geocoding coverage; not a nationwide inventory of every existing building",
+      "temporal_scope": "Historical five-year rolling DVF transaction source; Cerema data product updated during 2026, exact download release to be pinned",
+      "resolution_or_granularity": "Transaction-level DVF+ database and cadastral localisation; source page advertises CSV/Shapefile or PostgreSQL/PostGIS distribution routes",
+      "potential_roles": [
+        "local_property_value_prior",
+        "geospatial_transaction_validation",
+        "synthetic_tiv_sensitivity"
+      ],
+      "authoritative_url": "https://www.data.gouv.fr/datasets/dvf-open-data",
+      "access_class_hint": "public_distribution_open_licence_2_provider_specific_dvf_privacy_rules_review",
+      "note": "Official Cerema portal identifies Licence Ouverte/Open Licence v2.0, but underlying DGFiP DVF rules warn against indirect reidentification and search-index exposure. Do not ingest parcel-level person-linkable transaction rows into public Git. Sale price is not reinstatement cost and sale population is not insured stock. Validate current asset endpoints, exact version, rights and aggregation before use.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "uk.fca.gi-value-measures.2025",
+      "name": "UK FCA general insurance value measures 2025 by firm and retail product",
+      "provider": "UK Financial Conduct Authority",
+      "categories": [
+        "insurance_market",
+        "insurer_product_mix",
+        "claims_frequency",
+        "portfolio_calibration"
+      ],
+      "spatial_scope": "United Kingdom reporting firms and retail products; firm-by-region building exposure and insured-address locations are not supplied",
+      "temporal_scope": "Reporting year 2025; published 2026-07-21 and updated 2026-09-11; underlying fixed snapshot 2026-05-05",
+      "resolution_or_granularity": "FCA-published XLSX with product/firm level claims frequency, acceptance, average paid amount and complaints; market product-level claims-cost/premium ratios",
+      "potential_roles": [
+        "insurer_product_loss_ratio_prior",
+        "home_buildings_contents_business_mix_screen",
+        "cross_carrier_claim_severity_challenge"
+      ],
+      "authoritative_url": "https://www.fca.org.uk/data/general-insurance-value-measures-data-2025",
+      "access_class_hint": "public_fca_xlsx_publication_exact_table_and_reuse_rights_review_required",
+      "note": "FCA source is the 2025 firm/product Value Measures publication, with direct provider XLSX at https://www.fca.org.uk/publication/data/gi-value-measures-data-2025.xlsx (publication/link verified, original XLSX bytes not obtained). Firm product reporting applies above GBP400k written retail premiums AND above 3000 in-force policies; home buildings/contents aggregate claim costs are 48 percent of premiums but individual firm statistics do not identify natural-peril claims, risk locations or TIV. FCA explicitly warns of home acceptance-rate reporting inconsistency and post-snapshot corrections. Rights to distribute/downloaded workbook require independent verification.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "id.bnpb.rrrp-damage-loss-proposals.2017-2024",
+      "name": "Indonesia BNPB post-disaster rehabilitation and reconstruction damage-loss proposals 2017-2024",
+      "provider": "Indonesia National Disaster Management Authority (BNPB), Directorate of Rehabilitation and Reconstruction Planning",
+      "categories": [
+        "observed_impacts",
+        "post_disaster_reconstruction",
+        "loss_benchmarks",
+        "asia"
+      ],
+      "spatial_scope": "Indonesia province and district-level reported rehabilitation/reconstruction proposal records; event and geographic completeness must be measured",
+      "temporal_scope": "Named 2017-2024 reconstruction proposals, portal published 2025-03-14",
+      "resolution_or_granularity": "Government CKAN catalogue offering year-wise XLSX damage and loss amount tables, province/district, event year and disaster category fields where present",
+      "potential_roles": [
+        "post_disaster_economic_impact_validation",
+        "peril_event_date_reconciliation",
+        "observed_vs_model_loss_boundary_test"
+      ],
+      "authoritative_url": "https://data.bnpb.go.id/dataset/rekapr3p2017-2024",
+      "access_class_hint": "public_xlsx_download_ckan_dataset_resource_license_reconfirm",
+      "note": "Amounts originate from local-government rehabilitation and reconstruction submissions; they must not be equated with independently verified paid insured claims, final damage cost or ground-up CAT loss. Catalogue lists multiple XLSX resources; exact resource IDs, vintages, file hashes and licence need independent verification. BNPB DIBI event maps already have a separate source candidate; this is a distinct loss-proposal product.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "mx.cdmx.reconstruction-damaged-buildings.featureserver",
+      "name": "Mexico City reconstruction-program damaged-building point layer",
+      "provider": "Mexico City Secretariat for Comprehensive Risk Management and Civil Protection (SGIRPC)",
+      "categories": [
+        "building_damage",
+        "earthquake_validation",
+        "geospatial",
+        "latin_america"
+      ],
+      "spatial_scope": "Mexico City reconstruction programme coverage only; neither complete city building stock nor comprehensive earthquake damage universe",
+      "temporal_scope": "2017 earthquake reconstruction context; ArcGIS service current visible state must be pinned with a dated response before analysis",
+      "resolution_or_granularity": "ArcGIS REST FeatureServer layer 4: point geometries, phenomena and building typology fields; query supports JSON/GeoJSON and pagination; provider also exposes potentially sensitive address fields",
+      "potential_roles": [
+        "earthquake_damage_footprint_holdout",
+        "building_typology_damage_challenge",
+        "event_specific_damage_validation"
+      ],
+      "authoritative_url": "https://serviciosatlas.sgirpc.cdmx.gob.mx/arcgis/rest/services/AtlasCapasPublicas/Reconstruccion/FeatureServer/4",
+      "access_class_hint": "public_queryable_arcgis_rest_no_clear_reuse_licence_privacy_review_required",
+      "note": "Live provider service metadata identifies feature layer, geometry type point, JSON/GeoJSON and query capabilities, not independent proof of unrestricted redistribution. Do not import individual building/address fields or claims into public repo. Reconstruct programme inclusion criteria, observation dates, missingness, taxonomy, coordinate system EPSG:6369 and authoritative reuse rules; insured losses are not reported.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "lt.inspire.natural-risk-zones.flood-instability",
+      "name": "Lithuanian INSPIRE natural risk zones: flooding, subsidence, karst and ground instability",
+      "provider": "Lithuanian Environment Protection Agency and Geological Survey via national INSPIRE geoportal",
+      "categories": [
+        "flood",
+        "ground_instability",
+        "subsidence",
+        "karst",
+        "europe"
+      ],
+      "spatial_scope": "Lithuania; national INSPIRE risk-zone coverage with source-layer gaps and class-specific map-scale limits",
+      "temporal_scope": "INSPIRE portal dataset publication and resource update dates vary; exact ZIP and WMS service response versions must be recorded",
+      "resolution_or_granularity": "INSPIRE ATOM download ZIP with natural risk zones and WMS service layers including NZ.Flood, NZ.SubsidenceAndCollapse and NZ.NaturalGroundInstability",
+      "potential_roles": [
+        "national_flood_hazard_context",
+        "ground_subsidence_susceptibility",
+        "non_flood_multi_peril_validation"
+      ],
+      "authoritative_url": "https://inspire-geoportal.ec.europa.eu/srv/api/records/a72edbdc-7c24-428c-a085-b3b4b7c4d28d",
+      "access_class_hint": "public_inspire_atom_zip_wms_metadata_declares_cc_by_4_rights_scope_review",
+      "note": "The official INSPIRE metadata records CC BY 4.0 as an 'Other restrictions' use constraint, a 2023-01-06 dataset revision and 2026-04-14 metadata timestamp; original national ZIP URL https://inspire-geoportal.lt/resources/atom/nz/data/NZ_INSPIRE2.zip. This is catalogue-level license evidence, not completed artifact-specific rights/attribution and privacy review. Check original ZIP, GML layer content, area coverage, hazard-zone taxonomy and class vintage before risk interpretation. Flood/instability susceptibility layers are not return-period event loss or insurer portfolios.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    }
+  ]
+}
