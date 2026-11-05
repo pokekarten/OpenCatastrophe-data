@@ -25,16 +25,16 @@ SOURCES = {
     "558592-2024": {
         "role": "gewobag_2024_insurance_competition_not_an_award",
         "expected_terms": (r"Gewobag", r"Gebäudeversicherung"),
-        "original_xml_sha256_pinned": None,
-        "original_xml_bytes_pinned": None,
+        "original_xml_sha256_pinned": "51698e01c01caa9a0c58d41baf161d73a585d3b30f3b3dba12d95a3859b56b2f",
+        "original_xml_bytes_pinned": 39733,
         "insurer_winner_as_of_2026_verified": False,
     },
     "668506-2026": {
         "role": "wbm_2026_nine_pure_commercial_object_award",
         "expected_terms": (r"WBM", r"Industrielle\s+Sachversicherung",
                            r"neun\s+reine\s+Gewerbeobjekte"),
-        "original_xml_sha256_pinned": None,
-        "original_xml_bytes_pinned": None,
+        "original_xml_sha256_pinned": "7650720183d0c26430e0433858bf2e8b854ea68bb93fbf679e96ee696ee8fc78",
+        "original_xml_bytes_pinned": 21837,
         "per_carrier_property_allocation_verified": False,
     },
 }
