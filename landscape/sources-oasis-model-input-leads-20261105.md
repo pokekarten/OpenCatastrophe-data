@@ -14,7 +14,7 @@ Change the canonical JSON and run `python scripts/render_public_views.py --write
 
 **Schema version:** `1.0.0`  
 **Review date:** `2026-11-05`  
-**Purpose:** Source-checked second pass of Oasis-relevant native model projects, synthetic storm catalogues, reusable exposure and vulnerability transformation leads, independent loss benchmarks, and licensed vendor discovery, deduplicated against the main OpenCatastrophe-data landscape. Metadata only: no model/data admission, rights grant, asset upload, successful external model execution or insurer-specific EP approval.
+**Purpose:** Non-admission source-checked second pass of Oasis-relevant native model projects, synthetic storm catalogues, reusable exposure and vulnerability transformation leads, independent loss benchmarks, and licensed vendor discovery, deduplicated against the main OpenCatastrophe-data landscape. Metadata only: no model/data admission, rights grant, asset upload, successful external model execution or insurer-specific EP approval.
 
 **Entries:** 8
 
