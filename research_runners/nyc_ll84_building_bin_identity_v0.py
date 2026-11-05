@@ -7,6 +7,7 @@ Reads a fixed 30-row, nonrepresentative LL84 2024 cohort and a small set
 of identifier-only NYC OTI BUILDING 5zhs-2jue records. No geometry, addresses,
 owner details, policy records, insured values or source rows are exported.
 A matching BIN/DOITT_ID is NOT a validated physical building or insured risk.
+Compare physical BASE_BBL to the independently published MAPPLUTO_BBL billing key.
 """
 
 from __future__ import annotations
@@ -35,7 +36,7 @@ LL_FIELDS = (
     "nyc_building_identification", "parent_property_id",
     "number_of_buildings", "report_year",
 )
-FP_FIELDS = ("bin", "doitt_id", "base_bbl", "feature_code")
+FP_FIELDS = ("bin", "doitt_id", "base_bbl", "mappluto_bbl", "feature_code")
 
 
 class ProbeError(ValueError):
@@ -154,10 +155,13 @@ def summarize(ll84: list[dict], footprints: list[dict]) -> dict:
         doitt = _identifier(row, "doitt_id")
         feature = _identifier(row, "feature_code")
         base = _identifier(row, "base_bbl")
+        mappluto = _identifier(row, "mappluto_bbl")
         if not BIN.fullmatch(bin_value) or not DECIMAL_ID.fullmatch(doitt) or not DECIMAL_ID.fullmatch(feature):
             raise ProbeError("malformed original footprint BIN, DOITT or feature code")
         if base and not BBL.fullmatch(base):
             raise ProbeError("malformed footprint BASE_BBL; do not guess")
+        if mappluto and not BBL.fullmatch(mappluto):
+            raise ProbeError("malformed footprint MAPPLUTO_BBL; do not guess")
         if doitt in doitt_seen:
             raise ProbeError("repeated footprint DOITT_ID; ambiguous feature identity")
         doitt_seen.add(doitt)
@@ -165,7 +169,7 @@ def summarize(ll84: list[dict], footprints: list[dict]) -> dict:
 
     reasons = Counter()
     base_relation = Counter()
-    footprint_feature_rows = 0
+    mappluto_relation = Counter()
     for row, bbls, bins in parsed:
         if len(bbls) != 1 or not BBL.fullmatch(bbls[0]):
             reason = "ll84_missing_multilot_or_invalid_bbl"
@@ -183,7 +187,6 @@ def summarize(ll84: list[dict], footprints: list[dict]) -> dict:
                 reason = "nonunique_bin_multiple_footprint_features"
             else:
                 footprint = matches[0]
-                footprint_feature_rows += 1
                 if footprint["feature_code"] != "2100":
                     reason = "non_standard_building_or_placeholder_feature"
                 elif row.get("parent_property_id") != "Not Applicable: Standalone Property":
@@ -192,12 +195,19 @@ def summarize(ll84: list[dict], footprints: list[dict]) -> dict:
                     reason = "ll84_reported_building_count_not_one"
                 elif not footprint.get("base_bbl"):
                     reason = "missing_base_bbl"
-                elif footprint["base_bbl"] == bbls[0]:
-                    reason = "unique_bin_matching_base_bbl_unverified"
-                    base_relation["same"] += 1
+                elif not footprint.get("mappluto_bbl"):
+                    reason = "missing_mappluto_bbl"
                 else:
-                    reason = "unique_bin_different_base_bbl_requires_billing_crosswalk"
-                    base_relation["different"] += 1
+                    base_equal = footprint["base_bbl"] == bbls[0]
+                    map_equal = footprint["mappluto_bbl"] == bbls[0]
+                    base_relation["same" if base_equal else "different"] += 1
+                    mappluto_relation["same" if map_equal else "different"] += 1
+                    if not map_equal:
+                        reason = "unique_bin_mappluto_bbl_mismatch_unresolved"
+                    elif base_equal:
+                        reason = "unique_bin_pluto_and_base_bbl_agree_unverified"
+                    else:
+                        reason = "unique_bin_mappluto_agrees_base_diff_unverified"
         reasons[reason] += 1
 
     if sum(reasons.values()) != N:
@@ -211,6 +221,7 @@ def summarize(ll84: list[dict], footprints: list[dict]) -> dict:
         "distinct_doitt_features": len(doitt_seen),
         "reason_counts": dict(sorted(reasons.items())),
         "single_bin_base_bbl_relation": dict(sorted(base_relation.items())),
+        "single_bin_mappluto_bbl_relation": dict(sorted(mappluto_relation.items())),
         "nonrepresentative_sample": True,
         "actual_polygon_geometries_examined": False,
         "building_identity_proven": False,
