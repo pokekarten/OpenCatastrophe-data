@@ -81,7 +81,19 @@ class BerlinSenateOriginalPDFSourceTests(unittest.TestCase):
     def test_publisher_dates_differ_and_not_insurer_renewal(self):
         self.assertEqual(m.SOURCES[0]["pages_expected"],6)
         self.assertEqual(m.SOURCES[1]["pages_expected"],5)
-        self.assertFalse(any(s["exact_original_sha256"] for s in m.SOURCES))
+        self.assertTrue(all(len(s["exact_original_sha256"])==64 for s in m.SOURCES))
+        self.assertEqual([s["exact_original_bytes"] for s in m.SOURCES],[22528,21842])
+
+    def test_wrong_but_valid_pdf_sha_is_rejected_before_text_extraction(self):
+        raw=b"%PDF-1.4\\n"+b"x"*2500+b"%%EOF"
+        with self.assertRaisesRegex(ValueError,"ORIGINAL_SHA_CHANGED"):
+            m.inspect_original(m.SOURCES[0],raw,extractor="nonexistent")
+
+    def test_wrong_byte_count_is_rejected_before_text_extraction(self):
+        raw=b"%PDF-1.4\\n"+b"x"*2500+b"%%EOF"
+        src=dict(m.SOURCES[0],exact_original_sha256=hashlib.sha256(raw).hexdigest())
+        with self.assertRaisesRegex(ValueError,"BYTE_COUNT_CHANGED"):
+            m.inspect_original(src,raw,extractor="nonexistent")
 
 
 if __name__=="__main__":
