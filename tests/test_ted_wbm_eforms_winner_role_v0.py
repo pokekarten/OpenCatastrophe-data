@@ -24,6 +24,8 @@ def xml_fixture() -> bytes:
   <efac:LotResult><cbc:ID>RES-0001</cbc:ID>
     <cbc:TenderResultCode listName="winner-selection-status">selec-w</cbc:TenderResultCode>
     <efac:LotTender><cbc:ID>TEN-0001</cbc:ID></efac:LotTender>
+    <efac:LotTender><cbc:ID>TEN-0003</cbc:ID></efac:LotTender>
+    <efac:SettledContract><cbc:ID>CON-0001</cbc:ID></efac:SettledContract>
     <efac:TenderLot><cbc:ID>LOT-0001</cbc:ID></efac:TenderLot>
   </efac:LotResult>
   <efac:LotResult><cbc:ID>RES-0002</cbc:ID>
@@ -39,6 +41,10 @@ def xml_fixture() -> bytes:
     <efac:TenderingParty><cbc:ID>TPA-0002</cbc:ID></efac:TenderingParty>
     <efac:TenderLot><cbc:ID>LOT-0002</cbc:ID></efac:TenderLot>
   </efac:LotTender>
+  <efac:LotTender><cbc:ID>TEN-0003</cbc:ID>
+    <efac:TenderingParty><cbc:ID>TPA-0002</cbc:ID></efac:TenderingParty>
+    <efac:TenderLot><cbc:ID>LOT-0001</cbc:ID></efac:TenderLot>
+  </efac:LotTender>
   <efac:TenderingParty><cbc:ID>TPA-0001</cbc:ID>
     <efac:Tenderer><cbc:ID>ORG-0002</cbc:ID></efac:Tenderer>
     <efac:Tenderer><cbc:ID>ORG-0003</cbc:ID></efac:Tenderer>
@@ -47,6 +53,16 @@ def xml_fixture() -> bytes:
   <efac:TenderingParty><cbc:ID>TPA-0002</cbc:ID>
     <efac:Tenderer><cbc:ID>ORG-0005</cbc:ID></efac:Tenderer>
   </efac:TenderingParty>
+  <efac:SettledContract><cbc:ID>CON-0001</cbc:ID>
+    <cbc:AwardDate>2026-09-21</cbc:AwardDate>
+    <cac:SignatoryParty><cac:PartyIdentification>
+      <cbc:ID>ORG-0001</cbc:ID>
+    </cac:PartyIdentification></cac:SignatoryParty>
+    <cac:SignatoryParty><cac:PartyIdentification>
+      <cbc:ID>ORG-0005</cbc:ID>
+    </cac:PartyIdentification></cac:SignatoryParty>
+    <efac:LotTender><cbc:ID>TEN-0001</cbc:ID></efac:LotTender>
+  </efac:SettledContract>
 </efac:NoticeResult>
 <efac:Organizations>
 <efac:Organization><efac:Company>
@@ -103,6 +119,11 @@ class EformsWinnerRoleContractTests(unittest.TestCase):
                           win["winning_tender_id"], win["winning_party_id"]),
                          ("RES-0001", "LOT-0001", "TEN-0001", "TPA-0001"))
         self.assertEqual(len(win["winning_party_member_organizations"]), 3)
+        self.assertEqual(win["settled_contract_id"], "CON-0001")
+        self.assertEqual(r["settled_contracts_linked_to_winning_results"], 1)
+        self.assertEqual(r["winning_result_contract_tender_links"], 1)
+        self.assertTrue(r["won_tenders_selected_by_settled_contract_not_received_tender_list"])
+        self.assertFalse(win["contract_signatories_are_automatically_winning_underwriters"])
 
     def test_nonwinning_bidder_occurrence_excluded(self):
         r = m.parse_award_roles(self.raw)
@@ -133,17 +154,18 @@ class EformsWinnerRoleContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "NO_EXPLICIT_WINNER_RESULT"):
             self.parse_modified(altered)
 
-    def test_no_winning_tender_reference_rejected(self):
+    def test_no_settled_contract_reference_rejected(self):
         altered = self.raw.replace(
-            b'<efac:LotTender><cbc:ID>TEN-0001</cbc:ID></efac:LotTender>', b'')
-        with self.assertRaisesRegex(ValueError, "WINNER_RESULT_WITHOUT_TENDER_REFERENCE"):
+            b'<efac:SettledContract><cbc:ID>CON-0001</cbc:ID></efac:SettledContract>',
+            b'')
+        with self.assertRaisesRegex(ValueError, "SELECTED_RESULT_WITHOUT_SETTLED_CONTRACT"):
             self.parse_modified(altered)
 
-    def test_dangling_tender_reference_rejected(self):
+    def test_dangling_received_tender_reference_rejected(self):
         altered = self.raw.replace(
             b'<efac:LotTender><cbc:ID>TEN-0001</cbc:ID></efac:LotTender>',
-            b'<efac:LotTender><cbc:ID>TEN-9999</cbc:ID></efac:LotTender>')
-        with self.assertRaisesRegex(ValueError, "WINNING_TENDER_NOT_FOUND"):
+            b'<efac:LotTender><cbc:ID>TEN-9999</cbc:ID></efac:LotTender>', 1)
+        with self.assertRaisesRegex(ValueError, "RECEIVED_TENDER_ID_NOT_FOUND"):
             self.parse_modified(altered)
 
     def test_lot_mismatch_rejected(self):
@@ -151,7 +173,7 @@ class EformsWinnerRoleContractTests(unittest.TestCase):
             b'<efac:TenderLot><cbc:ID>LOT-0001</cbc:ID></efac:TenderLot>',
             b'<efac:TenderLot><cbc:ID>LOT-0003</cbc:ID></efac:TenderLot>',
             1)
-        with self.assertRaisesRegex(ValueError, "TENDER_LOT_MISMATCH"):
+        with self.assertRaisesRegex(ValueError, "RECEIVED_TENDER_WRONG_LOT"):
             self.parse_modified(altered)
 
     def test_winner_party_reference_missing_rejected(self):
