@@ -87,6 +87,7 @@ class RvaSoloNeonReadinessTests(unittest.TestCase):
         self.assertEqual(data["unit"], "contracts")
         self.assertFalse(data["company_insured_building_coordinates_observed"])
         self.assertFalse(data["company_geographic_contract_shares_observed"])
+        self.assertIn("m.as_of_date = DATE '2025-12-31'", self.sql)
 
     def test_corporate_perimeter_breaks_2024_2025(self) -> None:
         years = {r["year"]: r for r in self.hgb["years"]}
