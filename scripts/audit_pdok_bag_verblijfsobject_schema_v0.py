@@ -114,10 +114,8 @@ def main(argv=None):
                         help="Downloaded PUBLIC official schema metadata JSON, not feature data")
     args = parser.parse_args(argv)
     try:
+        doc = read_schema(args.schema)
         raw = args.schema.read_bytes()
-        if len(raw) > MAX_BYTES:
-            raise BagSchemaError("schema metadata exceeds bounded read budget")
-        doc = json.loads(raw.decode("utf-8"), object_pairs_hook=_distinct)
         result = audit(doc)
         result["schema_metadata_sha256"] = hashlib.sha256(raw).hexdigest()
     except (ValueError, OSError, UnicodeDecodeError) as exc:
