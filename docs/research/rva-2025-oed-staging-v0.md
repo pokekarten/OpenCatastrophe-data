@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # R+V-like 2025: deterministic synthetic OED staging v0
 
 **Scope:** research only. No real R+V insured site, insured TIV, financial contract, territory distribution, outward treaty or calibrated Germany model is identified. The carrier anchor is R+V Allgemeine Versicherung AG **solo** and its 2025 connected-building **year-end contracts** and HGB **annual written premium**, not the whole R+V group.
