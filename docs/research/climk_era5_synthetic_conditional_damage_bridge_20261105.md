@@ -122,10 +122,10 @@ buildings and the declared *unfitted* damage VLT, the conditional **physical**
 expected loss is the exact rational **EUR530700800 / 11 = about EUR48.2455m**.
 This is NOT a calibrated insurer loss, an annual AAL, or an AEP/OEP value.
 
-The reviewable machine-readable *original successful run receipt* is committed at
-`docs/research/evidence/climk-era5-kyrill-24-fictional-buildings-source-loss-20261105.jsonl`,
+The reviewable machine-readable JSON-in-Markdown *original successful run receipt* is committed at
+`docs/research/evidence/climk-era5-kyrill-24-fictional-buildings-source-loss-20261105.md`,
 including source, synthetic asset and VLT SHA-256, selected source storm/date,
 exact wind samples, exact conditional loss and all non-admission disclaimers.
 The CI workflow now independently compares current original-source output to
-this pinned receipt rather than accepting only self-reported source labels.
+this pinned receipt rather than accepting only self-reported source labels. The repository prohibits tracked JSON/JSONL artifacts outside specifically registered projections; therefore the compact structured receipt is embedded in the single licensed Markdown evidence page.
 All underlying native NetCDF files and grid arrays remain outside Git.
