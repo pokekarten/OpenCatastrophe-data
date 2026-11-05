@@ -116,7 +116,7 @@ class PublisherArchiveReceiptTests(unittest.TestCase):
     def test_wrong_gpkg_signature_and_extra_member_block(self):
         with self.assertRaisesRegex(gate.ArchiveBlocked, "SQLite header"):
             verify_gpkg(zip_gpkg(contents=b"not a SQLite source" + b"\x00"*100_100))
-        with self.assertRaisesRegex(gate.ArchiveBlocked, "lacks exact GPKG"):
+        with self.assertRaisesRegex(gate.ArchiveBlocked, "membership drift"):
             verify_gpkg(zip_gpkg(extras=[("Data/another.gpkg", "other")]))
 
     def test_full_gpkg_archive_declared_sha_and_length_required(self):
