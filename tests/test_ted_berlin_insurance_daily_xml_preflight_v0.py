@@ -78,7 +78,7 @@ class TEDDailyArchiveOriginalPreflight(unittest.TestCase):
                                  hashlib.sha256(raw).hexdigest())
                 self.assertEqual(out["original_xml_acquisition_mode"],
                                  "publisher_daily_oj_s_archive")
-                self.assertFalse(out["original_xml_sha256_immutable_pin_verified"])
+                self.assertFalse(out["original_sha256_immutable_pin_verified"])
                 self.assertFalse(out["actual_real_insured_location_or_tiv_admitted"])
 
     def test_normal_short_filename_is_accepted(self):
