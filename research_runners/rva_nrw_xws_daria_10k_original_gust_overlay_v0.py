@@ -131,7 +131,7 @@ def overlay(xws:dict[str,bytes],nrw_zip:Path,
         raise OverlayBlocked("bounded research site / county / TIV controls required")
     source_receipt=validate_original_bundle(xws)
     original_grid=_xws_grid(xws["grid"])
-    gusts={k:_xws_gusts(xws[k],len(original_grid))
+    gusts={k:_xws_gusts(xws[k],len(original_grid),source_name=k)
            for k in ("daria_lower95","daria_mean","daria_upper95")}
     buckets=_nearest_index(original_grid)
     if (nrw_zip.is_symlink() or not nrw_zip.is_file() or nrw_zip.stat().st_size>30_000_000):
