@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: Luxembourg ACT LiDAR2019 first LAZ public LASF header through bounded ZIP deflate
+
+on:
+  pull_request:
+    paths:
+      - 'research_runners/lu_act2019_first_laz_public_header_v0.py'
+      - 'tests/test_lu_act2019_first_laz_public_header_v0.py'
+      - '.github/workflows/luxembourg-act2019-first-laz-public-header.yml'
+      - 'docs/research/lu-act2019-first-laz-public-header-20261105.md'
+      - 'landscape/sources-europe-building-attribute-discovery.json'
+      - 'landscape/sources-europe-building-attribute-discovery.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-2019-laz-public-header:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout immutable-reviewed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python 3.13
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Test fictional ZIP/Deflate LASF prefix and no-member-bytes boundary
+        run: python -m unittest discover -s tests -p 'test_lu_act2019_first_laz_public_header_v0.py' -v
+      - name: Install pinned GIS dependencies for original index site selection
+        run: python -m pip install --disable-pip-version-check 'pyproj==3.7.2' 'shapely==2.1.2'
+      - name: Verify immutable source, three ZIP directories and only first 111 LASF header bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          index="$RUNNER_TEMP/act2019-source-pinned-index.geojson"
+          trap 'rm -f "$index"' EXIT
+          curl --fail --location --silent --show-error --retry 0 \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 90 --max-filesize 600000 \
+            -o "$index" \
+            'https://download.data.public.lu/resources/lidar-2019-releve-3d-du-territoire-luxembourgeois/20200225-183349/lidar-urls.geojson'
+          python -m research_runners.lu_act2019_first_laz_public_header_v0 \
+            --original-index "$index"
+          # No original ZIP/LAZ archive, LAS VLR, individual point records,
+          # original member filenames, provider tile URLs or coordinates.
