@@ -1,94 +1,138 @@
 -- SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 -- SPDX-License-Identifier: Apache-2.0
--- Research-only read-only R+V Allgemeine 2025 SOLO insurer-to-CAT admission preflight.
--- The official SFCR accounting value is a guard, NEVER insured TIV or loss.
-
+-- Read-only research gate: exactly one legally identified R+V Allgemeine SOLO carrier.
+-- Never infer insurer-site locations, sums insured, CAT EP or treaty terms from premiums.
 WITH
 target AS (
-  SELECT 'R+V Allgemeine Versicherung AG'::text AS legal_name,
+  SELECT 'R+V Allgemeine Versicherung Aktiengesellschaft'::text AS legal_name,
+         'R+V Allgemeine Versicherung AG'::text AS issuer_alias,
+         '5299009UN4CBXZ336M65'::text AS solo_lei,
+         '529900Z5KBA9KJP6EK09'::text AS parent_lei,
          2025::integer AS report_year,
-         2223182000::numeric AS property_gwp_eur
+         2223182000::numeric AS sfcr_property_gwp_eur,
+         1060546::numeric AS hgb_building_year_end_contracts,
+         997710000::numeric AS hgb_building_direct_gwp_eur
 ),
 solo AS (
-  SELECT o.organization_id
+  SELECT o.organization_id, o.source_key
   FROM entity.organization AS o CROSS JOIN target AS t
-  WHERE (o.legal_name = t.legal_name OR o.display_name = t.legal_name)
+  WHERE o.legal_name IN (t.legal_name, t.issuer_alias)
     AND o.identity_status = 'verified'
     AND o.domicile_country = 'DE'
     AND o.organization_type = 'insurer'
+    AND (o.valid_from IS NULL OR o.valid_from <= DATE '2025-12-31')
+    AND (o.valid_to IS NULL OR o.valid_to >= DATE '2025-12-31')
 ),
-solo_counts AS (
+solo_identity AS (
   SELECT count(*)::bigint AS verified_solo_entities,
-         (SELECT count(*) FROM entity.organization_identifier AS i
-          WHERE i.organization_id IN (SELECT organization_id FROM solo)
-            AND i.is_verified) AS verified_solo_identifiers
+    (SELECT count(*) FROM solo s JOIN registry.source_record sr ON sr.source_key=s.source_key
+     WHERE sr.canonical_url LIKE 'https://www.ruv.de/%')::bigint AS issuer_source_linked_solo_entities,
+    (SELECT count(*) FROM entity.organization_identifier i JOIN solo s USING (organization_id)
+     WHERE i.is_verified)::bigint AS verified_solo_identifier_rows,
+    (SELECT count(*) FROM entity.organization_identifier i JOIN solo s USING (organization_id)
+     JOIN registry.source_record sr ON sr.source_key=i.source_key CROSS JOIN target t
+     WHERE i.identifier_scheme='GLEIF_LEI' AND i.identifier_value=t.solo_lei
+       AND i.is_verified
+       AND sr.canonical_url IN ('https://lei.bloomberg.com/leis/view/5299009UN4CBXZ336M65',
+                                'https://api.gleif.org/api/v1/lei-records/5299009UN4CBXZ336M65')
+       AND sr.review_status <> 'non_admission_discovery_only')::bigint AS exact_source_bound_solo_lei_rows,
+    (SELECT count(*) FROM entity.organization_identifier i JOIN solo s USING (organization_id)
+     CROSS JOIN target t WHERE i.identifier_scheme='GLEIF_LEI'
+       AND i.identifier_value=t.parent_lei)::bigint AS parent_lei_wrongly_on_solo_rows
   FROM solo
 ),
 candidates AS (
-  SELECT
-    (SELECT count(*) FROM entity.organization_candidate
-     WHERE display_name IN ('R+V Versicherung','R+V Versicherung AG'))::bigint
-      AS non_solo_group_or_other_candidates,
-    (SELECT count(*) FROM research.insurer_directory_candidate_v0
-     WHERE display_name IN ('R+V Allgemeine Versicherung AG',
-                            'R+V Allgemeine Versicherung Aktiengesellschaft'))::bigint
-      AS solo_directory_candidates,
-    (SELECT count(*) FROM research.insurer_directory_candidate_v0
-     WHERE display_name LIKE 'R+V%' AND
-           display_name NOT IN ('R+V Allgemeine Versicherung AG',
-                                'R+V Allgemeine Versicherung Aktiengesellschaft'))::bigint
-      AS other_rv_directory_candidates
+ SELECT
+   (SELECT count(*) FROM entity.organization_candidate
+    WHERE display_name IN ('R+V Versicherung', 'R+V Versicherung AG'))::bigint AS group_or_other_candidates,
+   (SELECT count(*) FROM research.insurer_directory_candidate_v0
+    WHERE display_name IN ('R+V Allgemeine Versicherung AG',
+                           'R+V Allgemeine Versicherung Aktiengesellschaft'))::bigint AS solo_directory_candidates,
+   (SELECT count(*) FROM research.insurer_directory_candidate_v0
+    WHERE display_name LIKE 'R+V%' AND display_name NOT IN
+      ('R+V Allgemeine Versicherung AG','R+V Allgemeine Versicherung Aktiengesellschaft')
+   )::bigint AS other_rv_directory_candidates
 ),
 finances AS (
-  SELECT count(*)::bigint AS source_linked_exact_property_gwp_rows
-  FROM entity.published_metric AS m
-  JOIN solo AS s USING (organization_id)
-  JOIN registry.source_record AS sr ON sr.source_key = m.source_key
-  CROSS JOIN target AS t
-  WHERE m.metric_name = 'fire_and_other_property_gwp'
-    AND m.measurement_kind = 'published_observation'
-    AND m.year = t.report_year
-    AND m.value = t.property_gwp_eur
-    AND m.unit = 'EUR'
-    AND m.currency_code = 'EUR'
-    AND m.business_scope = 'solo_direct'
-    AND m.gross_net_basis = 'gross'
+  SELECT
+   (SELECT count(*) FROM entity.published_metric m JOIN solo s USING (organization_id)
+    JOIN registry.source_record sr ON sr.source_key=m.source_key CROSS JOIN target t
+    WHERE m.metric_name='fire_and_other_property_gwp'
+      AND m.measurement_kind='published_observation'
+      AND m.year=t.report_year AND m.value=t.sfcr_property_gwp_eur
+      AND m.unit='EUR' AND m.currency_code='EUR'
+      AND m.business_scope='solo_direct' AND m.gross_net_basis='gross'
+      AND sr.canonical_url LIKE 'https://www.ruv.de/dam/%/2025-SFCR-Allgemeine.pdf'
+   )::bigint AS source_bound_exact_sfcr_property_gwp_rows,
+   (SELECT count(*) FROM entity.published_metric m JOIN solo s USING (organization_id)
+    JOIN registry.source_record sr ON sr.source_key=m.source_key CROSS JOIN target t
+    WHERE m.metric_name='connected_buildings_year_end_contracts'
+      AND m.measurement_kind='published_observation'
+      AND m.year=t.report_year AND m.value=t.hgb_building_year_end_contracts
+      AND m.unit='contracts' AND m.business_scope='solo_direct'
+      AND sr.canonical_url LIKE 'https://www.ruv.de/dam/%'
+      AND (sr.canonical_url LIKE '%Allgemeine%Gesch%C3%A4ftsbericht%202025.pdf'
+           OR sr.canonical_url LIKE '%01_GB%202025_R+V%')
+   )::bigint AS source_bound_exact_hgb_building_contract_rows,
+   (SELECT count(*) FROM entity.published_metric m JOIN solo s USING (organization_id)
+    JOIN registry.source_record sr ON sr.source_key=m.source_key CROSS JOIN target t
+    WHERE m.metric_name='connected_buildings_direct_gwp'
+      AND m.measurement_kind='published_observation'
+      AND m.year=t.report_year AND m.value=t.hgb_building_direct_gwp_eur
+      AND m.unit='EUR' AND m.currency_code='EUR'
+      AND m.business_scope='solo_direct' AND m.gross_net_basis='gross'
+      AND sr.canonical_url LIKE 'https://www.ruv.de/dam/%'
+      AND (sr.canonical_url LIKE '%Allgemeine%Gesch%C3%A4ftsbericht%202025.pdf'
+           OR sr.canonical_url LIKE '%01_GB%202025_R+V%')
+   )::bigint AS source_bound_exact_hgb_building_gwp_rows
 ),
-p AS (
-  SELECT count(*)::bigint AS company_linked_portfolios
-  FROM exposure.portfolio AS p
-  WHERE p.organization_id IN (SELECT organization_id FROM solo)
+books AS (
+ SELECT count(*)::bigint AS company_linked_portfolios,
+        count(*) FILTER (WHERE p.portfolio_type='synthetic')::bigint AS company_linked_synthetic_portfolios,
+        count(*) FILTER (WHERE p.portfolio_type='reported_aggregate')::bigint AS company_linked_reported_aggregate_portfolios,
+        count(*) FILTER (WHERE p.portfolio_type='real_restricted')::bigint AS company_linked_real_restricted_portfolios
+ FROM exposure.portfolio p WHERE p.organization_id IN (SELECT organization_id FROM solo)
 ),
-pv AS (
-  SELECT count(*)::bigint AS company_linked_portfolio_versions
-  FROM exposure.portfolio_version AS v
-  JOIN exposure.portfolio AS p ON p.portfolio_id = v.portfolio_id
-  WHERE p.organization_id IN (SELECT organization_id FROM solo)
+versions AS (
+ SELECT count(*)::bigint AS company_linked_portfolio_versions
+ FROM exposure.portfolio_version v JOIN exposure.portfolio p USING (portfolio_id)
+ WHERE p.organization_id IN (SELECT organization_id FROM solo)
 ),
-eu AS (
-  SELECT count(*)::bigint AS company_linked_exposure_units
-  FROM exposure.exposure_unit AS u
-  JOIN exposure.portfolio_version AS v ON v.portfolio_version_id = u.portfolio_version_id
-  JOIN exposure.portfolio AS p ON p.portfolio_id = v.portfolio_id
-  WHERE p.organization_id IN (SELECT organization_id FROM solo)
+units AS (
+ SELECT count(*)::bigint AS company_linked_exposure_units
+ FROM exposure.exposure_unit u
+ JOIN exposure.portfolio_version v USING (portfolio_version_id)
+ JOIN exposure.portfolio p USING (portfolio_id)
+ WHERE p.organization_id IN (SELECT organization_id FROM solo)
 ),
-combined AS (
-  SELECT sc.*, c.*, f.*, p.*, pv.*, eu.*
-  FROM solo_counts AS sc CROSS JOIN candidates AS c
-  CROSS JOIN finances AS f CROSS JOIN p AS p CROSS JOIN pv CROSS JOIN eu
+audit AS (
+ SELECT si.*,c.*,f.*,b.*,v.*,u.*
+ FROM solo_identity si CROSS JOIN candidates c CROSS JOIN finances f
+ CROSS JOIN books b CROSS JOIN versions v CROSS JOIN units u
 )
-SELECT 'RVA_SOLO_2025_RESEARCH_READINESS_V0'::text AS report_id,
+SELECT 'RVA_SOLO_2025_RESEARCH_READINESS_V1'::text AS report_id,
        (SELECT report_year FROM target) AS reference_year,
-       (SELECT property_gwp_eur FROM target) AS official_solo_property_gwp_eur,
-       combined.*,
-       false::boolean AS insurer_tiv_observed_from_sfcr,
-       false::boolean AS annual_cat_ep_calibrated_from_sfcr,
+       (SELECT solo_lei FROM target) AS exact_solo_lei_reference,
+       (SELECT parent_lei FROM target) AS excluded_parent_lei_reference,
+       (SELECT sfcr_property_gwp_eur FROM target) AS issuer_sfcr_property_gwp_eur,
+       (SELECT hgb_building_year_end_contracts FROM target) AS issuer_hgb_building_year_end_contracts,
+       (SELECT hgb_building_direct_gwp_eur FROM target) AS issuer_hgb_building_direct_gwp_eur,
+       audit.*,
+       false::boolean AS company_geolocated_insured_tiv_observed_by_these_sources,
+       false::boolean AS annual_cat_ep_calibrated_by_these_sources,
        CASE
-         WHEN verified_solo_entities <> 1 THEN 'BLOCKED_UNVERIFIED_OR_AMBIGUOUS_SOLO_LEGAL_ENTITY'
-         WHEN verified_solo_identifiers = 0 THEN 'BLOCKED_SOLO_IDENTIFIER_EVIDENCE'
-         WHEN source_linked_exact_property_gwp_rows = 0 THEN 'BLOCKED_SOLO_SFCR_METRIC_NOT_SOURCE_LINKED'
-         WHEN company_linked_portfolio_versions = 0 OR company_linked_exposure_units = 0
-              THEN 'BLOCKED_COMPANY_EXPOSURE_NOT_REGISTERED'
+         WHEN verified_solo_entities<>1 THEN 'BLOCKED_UNVERIFIED_OR_AMBIGUOUS_SOLO_LEGAL_ENTITY'
+         WHEN issuer_source_linked_solo_entities<>1 THEN 'BLOCKED_SOLO_ISSUER_SOURCE_LINEAGE'
+         WHEN exact_source_bound_solo_lei_rows<>1 OR parent_lei_wrongly_on_solo_rows<>0
+              THEN 'BLOCKED_EXACT_SOLO_LEI_OR_PARENT_COLLISION'
+         WHEN source_bound_exact_sfcr_property_gwp_rows<>1
+              THEN 'BLOCKED_SOLO_SFCR_METRIC_NOT_SOURCE_LINKED'
+         WHEN source_bound_exact_hgb_building_contract_rows<>1
+              OR source_bound_exact_hgb_building_gwp_rows<>1
+              THEN 'BLOCKED_HGB_BUILDING_CONTRACTS_AND_PREMIUM_NOT_SOURCE_LINKED'
+         WHEN company_linked_synthetic_portfolios=0 OR company_linked_portfolio_versions=0
+              OR company_linked_exposure_units=0
+              THEN 'BLOCKED_COMPANY_SYNTHETIC_EXPOSURE_NOT_REGISTERED'
          ELSE 'RESEARCH_ONLY_NEEDS_HAZARD_VULNERABILITY_RIGHTS_AND_TREATY_REVIEW'
        END::text AS next_gate
-FROM combined;
+FROM audit;
