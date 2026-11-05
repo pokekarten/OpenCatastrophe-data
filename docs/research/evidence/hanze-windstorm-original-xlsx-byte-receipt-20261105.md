@@ -62,3 +62,25 @@ PYTHONPATH=. python3 research_runners/hanze_windstorm_original_xlsx_acquisition_
 ```
 
 New offline tests use a **generated toy XLSX**, an injected fake HTTP range responder, and controlled malformed original-source inputs; they **do not embed, download or assert admission** of actual provider data. The live 2026-11-05 source hash in this receipt was independently calculated by byte-range reconstruction in the connected source-fetch environment, **not** by a CI run of the new Python utility. A green repo CI for the new tests confirms defensive code only, not a separate executed native source download.
+
+
+## 2026-11-05 – full original two-worksheet row audit (not just workbook preview)
+
+The **entire original 292,136-byte SHA-256-pinned file** was reconstructed in eight verified Zenodo byte ranges, decompressed as XLSX ZIP/XML and all original two worksheets inspected with original shared strings. This supersedes the prior truncated preview limitation for workbook structure. It does **not** establish that every publisher impact record is independent, observational or an insured claim.
+
+- Archive: **12 ZIP parts**; **5,294 shared strings**.
+- Impact worksheet dimension **A1:T1359**: 20 exact source columns; **1,358 impact country-event rows**, **1,358 unique publisher row IDs**, **33 country codes**, event year range **1950–2020**.
+- References worksheet dimension **A1:E816**: **815 source/reference entries**, not 815 independently observed disaster events.
+- The original economic-loss column named **"Losses (2020 euro) in milions"** (publisher spelling) has **720 nonblank cells** and **638 genuinely blank cells**. A preliminary unanchored pattern matcher incorrectly attached subsequent cell content to Excel self-closing blank cells, temporarily reporting 935 nonblank/423 blank. Strict cell-closed parsing corrected that. **Missing economic loss is unknown, never zero**.
+- The separate original **CDS column S** contains **299 entries**, with the exact publisher text **"Modelled economic loss from CDS"**. These 299 are explicitly modelled economic losses, not independently observed claims or external truth for C3S/WISC/CLIMK calibration. The 1,059 other publisher rows are **not automatically independent observations**: original reference/circularity/insured/economic status must be checked.
+- Twelve country-scoped named KYRILL rows occur around 18 January 2007; **four (AT, IE, LU, PL)** explicitly carry the modelled-CDS label. They are at most candidate country contributions to a potentially shared physical storm, **not twelve separately sampled annual storm events**.
+- Preliminary literal-date comparisons flagged four apparent start-after-end cases. On strict review, **three** have valid source Excel 1900-system serial dates that must first be normalized. For example: raw 31263 = 1985-08-04; 31296 = 1985-09-06; 43641 = 2019-06-25. One source QA anomaly remains: publisher row **21072 (Spain)** with raw start 42768 = **2017-02-02**, raw end 41672 = **2014-02-02**. Do not silently alter the original row or infer that either date is the correct storm date.
+- The original source file **does not give a verified unique cross-country physical parent-event ID**. Its 1,358 reported country impacts must never be treated as 1,358 annual independent occurrences or used directly to infer a storm Poisson rate.
+
+New strict stdlib reader: research_runners/hanze_windstorm_original_workbook_audit_v0.py, with synthetic-only regression tests in tests/test_hanze_windstorm_original_workbook_audit_v0.py. The reader checks the exact original published file MD5 and full-source SHA-256 before parsing, validates 20 original column names, blocks unexpected formulas/DTD/entity declarations, handles shared strings, preserves truly missing cells and Excel date serials, ensures unique publisher IDs and produces only an aggregate **research not-admitted** report with Kyrill country IDs. Source-specific invariant checks pin observed dataset dimension, modelled row count and missing economic-loss count to detect drift. It never promotes country economic loss to insured claims or builds an annual OEP/AEP curve.
+
+Optional existing-original-file, **no network** replay after authorized source download to an external directory:
+
+    PYTHONPATH=. python3 research_runners/hanze_windstorm_original_workbook_audit_v0.py --original-xlsx "/private/local-hanze-original-downloads/HANZE European Windstorm Impact Database 1950-2020.xlsx"
+
+The complete original workbook *was* analyzed as bytes in the research tool environment. The new Python regression and exact full-checkout CI are separate execution gates; until those are checked, do not claim the new local Python CLI has parsed the real original. No original XLSX was committed. No scientific provider/circularity/rights admission or insurer Gross/Net AAL, AEP or OEP has occurred.
