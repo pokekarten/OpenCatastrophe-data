@@ -71,6 +71,7 @@ finances AS (
       AND m.measurement_kind='published_observation'
       AND m.year=t.report_year AND m.value=t.hgb_building_year_end_contracts
       AND m.unit='contracts' AND m.business_scope='solo_direct'
+      AND m.as_of_date = DATE '2025-12-31'
       AND sr.canonical_url LIKE 'https://www.ruv.de/dam/%'
       AND (sr.canonical_url LIKE 'https://www.ruv.de/dam/%/01_GB%202025_R%Allgemeine%Versicherung%AG_final.2026-04-21-14-59-23.pdf')
    )::bigint AS source_bound_exact_hgb_building_contract_rows,
