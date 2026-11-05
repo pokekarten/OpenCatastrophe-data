@@ -47,7 +47,24 @@ class TEDSearchAPIPrimaryReceiptTests(unittest.TestCase):
         self.assertEqual(q["query"], "publication-number = 558592-2024")
         self.assertEqual(q["limit"], 2)
         self.assertEqual(q["scope"], "ALL")
+        self.assertIs(q["checkQuerySyntax"], False)
+        self.assertIs(q["onlyLatestVersions"], False)
         self.assertIn("buyer-name", q["fields"])
+
+    def test_validation_only_envelope_never_passes_as_a_source_result(self):
+        raw = json.dumps({
+            "notices": [], "totalNoticeCount": None, "timedOut": False,
+            "queryConfirmed": True,
+        }).encode("utf-8")
+        with self.assertRaisesRegex(ValueError, "SYNTAX_ONLY_RESPONSE_NOT_SEARCH_RESULT"):
+            m.parse("668506-2026", raw)
+
+    def test_search_timeout_is_not_zero_results(self):
+        raw = json.dumps({
+            "notices": [], "totalNoticeCount": 0, "timedOut": True,
+        }).encode("utf-8")
+        with self.assertRaisesRegex(ValueError, "SEARCH_TIMED_OUT"):
+            m.parse("668506-2026", raw)
 
     def test_exact_records_pass_without_overclaiming_xml_or_insurer_tiv(self):
         for notice in ("558592-2024", "668506-2026"):
