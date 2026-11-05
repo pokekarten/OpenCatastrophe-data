@@ -7,7 +7,9 @@ on:
     paths:
       - ".github/workflows/berlin-insurance-ted-original-xml-preflight.yml"
       - "research_runners/ted_berlin_insurance_original_xml_preflight_v0.py"
+      - "research_runners/ted_berlin_insurance_daily_xml_preflight_v0.py"
       - "tests/test_ted_berlin_insurance_original_xml_preflight_v0.py"
+      - "tests/test_ted_berlin_insurance_daily_xml_preflight_v0.py"
       - "docs/research/berlin-insurer-ted-original-xml-preflight-20261105.md"
   workflow_dispatch:
 
@@ -31,9 +33,14 @@ jobs:
           python-version: "3.11"
       - name: Offline synthetic malformed source/refusal regression
         run: python -m unittest discover -s tests -p "test_ted_berlin_insurance_original_xml_preflight_v0.py" -v
+      - name: Offline exact original-publication ZIP member and source refusal tests
+        run: python -m unittest discover -s tests -p "test_ted_berlin_insurance_daily_xml_preflight_v0.py" -v
       - name: Independently fetch official TED publication XML (no raw-XML retention)
         # External source availability is not under our CI control. PR remains
         # regression-checkable when TED is down; a manually dispatched run
         # MUST succeed before anyone marks primary source evidence verified.
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: python -m research_runners.ted_berlin_insurance_original_xml_preflight_v0
+      - name: Try official TED daily OJ S archive fallback for 202 Accepted
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: python -m research_runners.ted_berlin_insurance_daily_xml_preflight_v0
