@@ -64,9 +64,10 @@ jobs:
           assert o['insurer_original_gross'] is None and o['insurer_retained_net'] is None
           # Lock this proof to the independently reviewed research evidence receipt.
           evidence = Path('docs/research/evidence/climk-era5-kyrill-24-fictional-buildings-source-loss-20261105.md').read_text(encoding='utf-8')
-          assert evidence.count('```json\\n') == 1
-          assert evidence.count('\\n```') == 1
-          raw_json = evidence.split('```json\\n', 1)[1].split('\\n```', 1)[0]
+          newline = chr(10)
+          assert evidence.count('```json' + newline) == 1
+          assert evidence.count(newline + '```') == 1
+          raw_json = evidence.split('```json' + newline, 1)[1].split(newline + '```', 1)[0]
           e = json.loads(raw_json)
           assert o['source_sha256'] == e['source_sha256']
           assert o['source_size_bytes'] == e['source_size_bytes']
