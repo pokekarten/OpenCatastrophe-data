@@ -144,8 +144,10 @@ class TEDWBMProcedureSearchIndexTests(unittest.TestCase):
 
     def test_timed_out_and_syntax_only_response_refused(self):
         for obj in (
-            {"notices": [], "totalNoticeCount": None},
-            {"notices": [], "totalNoticeCount": 0, "timedOut": True},
+            {"notices": [], "totalNoticeCount": None,
+             "padding": "deliberately sized offline JSON test fixture"},
+            {"notices": [], "totalNoticeCount": 0, "timedOut": True,
+             "padding": "deliberately sized offline JSON test fixture"},
         ):
             with self.assertRaisesRegex(ValueError, "TIMED_OUT_OR_SYNTAX_ONLY"):
                 m.parse(m.NOTICES[0], json.dumps(obj).encode())
