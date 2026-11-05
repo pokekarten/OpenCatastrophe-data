@@ -84,3 +84,18 @@ Optional existing-original-file, **no network** replay after authorized source d
     PYTHONPATH=. python3 research_runners/hanze_windstorm_original_workbook_audit_v0.py --original-xlsx "/private/local-hanze-original-downloads/HANZE European Windstorm Impact Database 1950-2020.xlsx"
 
 The complete original workbook *was* analyzed as bytes in the research tool environment. The new Python regression and exact full-checkout CI are separate execution gates; until those are checked, do not claim the new local Python CLI has parsed the real original. No original XLSX was committed. No scientific provider/circularity/rights admission or insurer Gross/Net AAL, AEP or OEP has occurred.
+
+
+## Kyrill cross-country report candidate contract – 2026-11-05
+
+A strictly **non-admitted** candidate report grouping is now attached to the original workbook audit via `kyrill_country_source_candidate`. It recognizes the original twelve different **country-report publisher row IDs**, not twelve storms and not a verified shared physical event. The pinned original-source pairs are:
+
+`AT/20034`, `BE/20076`, `CH/21154`, `CZ/20104`, `DE/20457`, `DK/20128`, `FR/20250`, `IE/20576`, `LU/20741`, `NL/20763`, `PL/20911`, `UK/21290`.
+
+All their reported date windows share **18 January 2007**. The auditor checks each individual country's original reported start/end dates, a bounded 16–21 January source-review window, uniqueness of each original country+row identity, consistency of original source-country ID pairs on the **exact** pinned source file, and an actual common calendar-date intersection. It retains modelled-CDS country exclusion flags for **AT, IE, LU, PL** and explicitly reports countries with missing economic-loss values if any.
+
+The candidate has **no native CLIMK/C3S/Oasis parent event ID**, no count of independently observed physical occurrences, no independently proven empirical loss, no annual frequency or AAL/AEP/OEP, and no insurer Gross/Net rights/admission. A common storm name and overlapping country dates are **necessary evidence to investigate**, but not sufficient to establish meteorological identity, original loss-source independence or attribution to a physical storm footprint. In particular, publisher ID `20457` is a **Germany country report identifier**, not an Oasis physical event ID.
+
+The synthetic-only tests cover all twelve exact country IDs, both valid and invalid date intersections, duplicate publisher IDs, duplicate countries, invalid Python pseudo-Boolean original fields and improper attempts to classify the grouping as an independently observed or annually sampled insurance event. The **new exact HEAD Python/native source replay** is separately tracked in CI; the previous green HEAD does not validate this new crosswalk.
+
+**Next research acceptance gate:** obtain and compare original physical storm path/footprint/event tags from an independently documented track (and the original CLIMK storm index/ERA5 day) before assigning even a provisional physical parent key. Then challenge *country-level economic* impact references independently; do not use the four modelled CDS country losses as independent held-out claims. A full 1950–2020 country impact report timeline is not an annual occurrence tape: omitted country reports and years without reports cannot be treated as no-events.
