@@ -21,6 +21,7 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import shutil
 import sys
 from urllib.request import Request, urlopen
 
@@ -192,12 +193,26 @@ def main() -> int:
                         help="opt in to FOUR public original CSV GETs; bounded, no raw file output")
     parser.add_argument("--out-receipt", type=Path,
                         help="write JSON metadata receipt, not third-party original CSV")
+    parser.add_argument("--out-ephemeral-original-dir", type=Path,
+                        help="retain original four CSVs ONLY on the ephemeral runner; never in Git/artifact")
     args = parser.parse_args()
     if not args.live:
         parser.exit(2, "BLOCKED: explicit --live required for source retrieval\n")
     try:
-        receipt = validate_original_bundle(download_official_original())
+        original_blobs = download_official_original()
+        receipt = validate_original_bundle(original_blobs)
         payload = json.dumps(receipt, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+        if args.out_ephemeral_original_dir:
+            folder = args.out_ephemeral_original_dir
+            if folder.exists() or not folder.parent.is_dir():
+                raise XWSSourceBlocked("ephemeral original source directory already exists")
+            folder.mkdir(mode=0o700)
+            try:
+                for name, blob in original_blobs.items():
+                    (folder / (name + ".csv")).write_bytes(blob)
+            except Exception:
+                shutil.rmtree(folder)
+                raise
         if args.out_receipt:
             if args.out_receipt.exists() or not args.out_receipt.parent.is_dir():
                 raise XWSSourceBlocked("receipt output path exists or parent is missing")
