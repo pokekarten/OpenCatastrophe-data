@@ -34,7 +34,8 @@ solo_identity AS (
      WHERE i.identifier_scheme='GLEIF_LEI' AND i.identifier_value=t.solo_lei
        AND i.is_verified
        AND sr.canonical_url IN ('https://lei.bloomberg.com/leis/view/5299009UN4CBXZ336M65',
-                                'https://api.gleif.org/api/v1/lei-records/5299009UN4CBXZ336M65')
+                                'https://api.gleif.org/api/v1/lei-records/5299009UN4CBXZ336M65',
+                                'https://acpr.banque-france.fr/fr/fiche-detaillee/rv-allgemeine-versicherung-aktiengesellschaft-0')
        AND sr.review_status <> 'non_admission_discovery_only')::bigint AS exact_source_bound_solo_lei_rows,
     (SELECT count(*) FROM entity.organization_identifier i JOIN solo s USING (organization_id)
      CROSS JOIN target t WHERE i.identifier_scheme='GLEIF_LEI'
@@ -71,8 +72,7 @@ finances AS (
       AND m.year=t.report_year AND m.value=t.hgb_building_year_end_contracts
       AND m.unit='contracts' AND m.business_scope='solo_direct'
       AND sr.canonical_url LIKE 'https://www.ruv.de/dam/%'
-      AND (sr.canonical_url LIKE '%Allgemeine%Gesch%C3%A4ftsbericht%202025.pdf'
-           OR sr.canonical_url LIKE '%01_GB%202025_R+V%')
+      AND (sr.canonical_url LIKE 'https://www.ruv.de/dam/%/01_GB%202025_R%Allgemeine%Versicherung%AG_final.2026-04-21-14-59-23.pdf')
    )::bigint AS source_bound_exact_hgb_building_contract_rows,
    (SELECT count(*) FROM entity.published_metric m JOIN solo s USING (organization_id)
     JOIN registry.source_record sr ON sr.source_key=m.source_key CROSS JOIN target t
@@ -82,8 +82,7 @@ finances AS (
       AND m.unit='EUR' AND m.currency_code='EUR'
       AND m.business_scope='solo_direct' AND m.gross_net_basis='gross'
       AND sr.canonical_url LIKE 'https://www.ruv.de/dam/%'
-      AND (sr.canonical_url LIKE '%Allgemeine%Gesch%C3%A4ftsbericht%202025.pdf'
-           OR sr.canonical_url LIKE '%01_GB%202025_R+V%')
+      AND (sr.canonical_url LIKE 'https://www.ruv.de/dam/%/01_GB%202025_R%Allgemeine%Versicherung%AG_final.2026-04-21-14-59-23.pdf')
    )::bigint AS source_bound_exact_hgb_building_gwp_rows
 ),
 books AS (
