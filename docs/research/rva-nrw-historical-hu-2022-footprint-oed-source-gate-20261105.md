@@ -54,3 +54,32 @@ Reproduction:
 - python research_runners/rva_nrw_hu_2022_original_index_receipt_v0.py --live
 
 No live index response should ever be presented as the original ZIP-byte SHA-256.
+
+
+## Follow-up: bounded original ZIP header, EOCD and central directory probe
+
+An additional source-aware probe is now implemented in
+research_runners/rva_nrw_hu_2022_original_zip_range_receipt_v0.py .
+It requests **HEAD** from exactly the pinned official 2022 ZIP and, **only
+when the provider returns a true HTTP 206 with the expected Content-Range**,
+downloads at most ~65 KiB from EOF and at most 1 MiB for the ZIP central
+directory. It rejects absent/ambiguous end-of-central-directory signatures,
+unsupported multidisk/ZIP64 structures, path traversal, invalid central
+signatures, missing SHP/SHX/DBF/PRJ members, duplicate names and oversized
+metadata. The script does not read full geometry, DBF rows, or individual
+insured policy sites. Original ZIP **full SHA-256 is still unverified**, and a
+ZIP header/footer by itself cannot prove member integrity.
+
+Run locally **only on an explicitly authorised machine** after reviewing
+the original source URL and bounding the network requests:
+
+- python -m unittest discover -s tests -p test_rva_nrw_hu_2022_original_zip_range_receipt_v0.py -v
+- python research_runners/rva_nrw_hu_2022_original_zip_range_receipt_v0.py --live
+
+A separate [bounded original-source workflow](../../.github/workflows/rva-nrw-hu-2022-source-index.yml)
+runs negative fixtures, official source directory listing preflight and this
+exact optional historical archive metadata probe. If source byte ranges are
+unsupported, the probe should remain **BLOCKED**, rather than downloading the
+entire ~859 MB ZIP as a fallback.
+
+Do not conflate an HTTP Content-Length with a full SHA-256 receipt.
