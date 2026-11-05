@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Actual original Zenodo Geo-Harmonizer CEMS AOI index: 2016 Loing source gap and year/CRS audit
 
-**Reviewed live 2026-11-05.** The archive's **original 203,733-character GeoJSON text** was fetched from the publisher endpoint into a bounded read-only research session and parsed: **455 point features**, exact published record id, licence, CRS, EMSR165 subset and year anomalies examined. **Original data were not stored in Git or imported into any production/insurance model database.** The published MD5 was obtained from the official Zenodo record but the browser-transferred original bytes were **not independently saved and hash-matched in a trusted execution environment**.
+**Reviewed live 2026-11-05.** The archive's **203,733 original UTF-8 bytes** were fetched from the publisher endpoint into a bounded read-only research session and parsed: **455 point features**, exact published record id, licence, CRS, EMSR165 subset and year anomalies examined. A standalone JavaScript MD5 implementation was self-tested against the standard `abc` digest before hashing the retrieved original UTF-8 source text in memory. **Calculated MD5 = `cda186323fe76195b183316fd06c2547`, EXACTLY matching the publisher's original asset checksum**, with exact matching length **203,733 bytes**. **No original data were committed to Git, saved durably as a local source artifact or imported into any production/insurance model database.** This verifies the retrieved index's published checksum, not original satellite imagery rights, source AOI record correctness or access to separate restricted CEMS products.
 
 ## Primary archive, licence and exact reproducible source receipt
 
