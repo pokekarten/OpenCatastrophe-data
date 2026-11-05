@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # First genuine, licence-labelled European wind footprints for the NRW 10k physical portfolio
 
-**2026-11-05 / Stage 1: primary-source discovery + exact original CSV source preflight; no 10k source-wind overlay or CAT loss result yet.**
+**2026-11-05 / Live original Daria source and 10,000-site historic wind overlay verified. No actual insured sites, wind vulnerability, CAT loss or OEP/AEP.**
 
 The current public physical NRW portfolio has 10,000 sample source-geometry positions spread across all 53 2022 Kreise, with solely **hypothetical** R+V-like insurance policies and valuation (source Draft PR #1373). Its 20 × 13 synthetic 0.25° grid is **NOT an actual meteorological source grid**.
 
@@ -104,3 +104,29 @@ The original XWS reference grid has **28,124 longitude/latitude positions**. Fro
 All 10,000 fictional exposure sites have Daria **mean gust ≥25 m/s** in this original nearest-grid replay. Aggregate value of the **explicitly imaginary** underlying 2025 R+V-like policies remains **EUR 4,826,029,500**; this is an ecological counterfactual on 2022 public physical buildings, not 1990/2025 R+V observed insurance liabilities. The source uncertainty branches are the **same physical storm**, not 3 independent storms or 3 simulated years. No German annual rate, calibrated damage, original insurance, RI or EP has been calculated.
 
 Implementation file `research_runners/rva_nrw_xws_daria_10k_original_gust_overlay_v0.py` now **requires all four exact independently recorded original source file byte counts and SHA-256s**. Upstream source mutation will fail closed rather than silently change the research data basis. The CI replays the original public source in an ephemeral runner and never republishes raw original site-grid CSVs, but it can publish the 10k derived site-gust table with explicit CC BY attribution and a no-CAT-loss manifest. Licence citation required: **(c) Copyright Met Office, University of Reading and University of Exeter. Licensed under Creative Commons CC BY 4.0 International.**
+
+## Observed exact-head original-source run — 2026-11-05
+
+[GitHub Actions #42112975393](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42112975393) completed **SUCCESS** on source-branch commit `599cc4c82dd1fcd1a1b9caa9a0fe625bdf261ac5`, including original four XWS CSV retrieval/parsing, original 2022 NRW 10k research-artifact retrieval, strict geographic matching, synthetic negative tests and two limited research artifact uploads.
+
+The actual live receipt printed in the workflow job log reports:
+
+| Measured/declared output | Verified result |
+| --- | ---: |
+| Original XWS published grid points | 28,124 |
+| Public 2022 NRW building candidates with original XWS gust assignment | 10,000 |
+| Source 2022 NRW administrative counties represented | 53 |
+| Distinct original XWS grid points matched | 79 |
+| Maximum nearest original XWS grid distance | 17.11 km |
+| Sites whose Daria-1990 *mean 3-second gust* is at least 25 m/s | 10,000 / 10,000 |
+| **Invented** 2025-like building values attached to those candidates | EUR 4,826,029,500 |
+| Genuine carrier losses or annual occurrence probabilities | **None** |
+
+The provider's `daria_mean`, `daria_lower95` and `daria_upper95` are **alternative estimates for one historical physical event**, not three storms or stochastic years. The observed 10k threshold is a property of the specifically selected, historic extreme storm and fictional candidate buildings: it does not establish a hazard return period, damage ratio or real R+V portfolio composition. The 1990 / 2022 / 2025 source-vintage mismatch is material.
+
+Generated research artifacts, temporarily available for 14 days (not committed source files):
+
+- [Source-grounded public-site historical gust ZIP, artifact #13455338570](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42112975393/artifacts/13455338570). It contains derived site/county gust and provenance only, **not** an insurer loss table.
+- [Original four-file XWS checksum and rights receipt, artifact #13454413160](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42112975393/artifacts/13454413160). It does not include the publisher's original CSV bytes.
+
+**Next actual model gate:** Independently review a Germany-relevant wind-intensity→damage vulnerability response, mark synthetic scenario assumptions separately from any scientifically calibrated response, and only then calculate *event-conditional direct damage* on the matched sites. A single selected Daria storm, even with real gust bytes, is not a basis for annual gross/net OEP, AEP or pricing.
