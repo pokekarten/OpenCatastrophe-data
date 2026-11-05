@@ -17,7 +17,7 @@ The runnable standard-library module `research_runners/rva_nrw_hu22_to_nextgen_c
 - NextGen-shaped `insured_asset_values` have only `asset_id` and `replacement_cost_eur`. The field name comes from the existing downstream interface, not from actual insurer records.
 - `grid` has exact fields `grid_id`, `west_lon_e6`, `south_lat_e6`, `width_e6`, `height_e6`, `num_lon`, `num_lat`, `crs`, with one-to-one half-open 0.25° cell mapping, exact source seven-decimal locations rounded to microdegrees, rejection of boundary ambiguity and out-of-crop records.
 
-**No real storm grid is available at this point.** The bundled `research/fixtures/rva_nrw_c3s_synthetic_grid_demo_v0.json` declares a **completely invented grid** at 5.5°E–10.5°E, 50.0°N–53.25°N with 20 × 13 fictitious 0.25° cells. The importer **refuses** all grid requests without `INVENTED_RECTANGULAR_GRID_NOT_AUTHENTICATED_C3S`, and its generated receipt cannot claim C3S provenance, storm gusts, annual EP or German-catastrophe model admission. The synthetic grid does **not** reflect the original cell centers or spatial extent of any actual C3S event. Real NetCDF grid geometry must be supplied via a distinct original-source-attested stage, with all 10k assigned to complete coherent source grid mosaics; a 64×64 cropped example may not span every country or location for some higher-resolution inputs.
+**No real storm grid is available at this point.** The bundled `research/fixtures/rva_nrw_c3s_synthetic_grid_demo_v0.toml` declares a **completely invented grid** at 5.5°E–10.5°E, 50.0°N–53.25°N with 20 × 13 fictitious 0.25° cells. The importer **refuses** all grid requests without `INVENTED_RECTANGULAR_GRID_NOT_AUTHENTICATED_C3S`, and its generated receipt cannot claim C3S provenance, storm gusts, annual EP or German-catastrophe model admission. The synthetic grid does **not** reflect the original cell centers or spatial extent of any actual C3S event. Real NetCDF grid geometry must be supplied via a distinct original-source-attested stage, with all 10k assigned to complete coherent source grid mosaics; a 64×64 cropped example may not span every country or location for some higher-resolution inputs.
 
 **No vulnerability curves are provided.** The original ALKIS residential/commercial building-function code cannot establish wall material, roof form, construction year, fragility or intensity bin. This intentionally makes a direct NextGen `stage_wind_footprint` invocation fail for missing source-authenticated grid cells and absent matching vulnerability taxonomy. Filling the missing curve with a default material or a fictional universal loss ratio would silently promote invented damage. Stop there.
 
@@ -35,7 +35,7 @@ After downloading the ephemeral source-derived 10k OED archive and extracting th
 python -m unittest discover -s tests -p 'test_rva_nrw_hu22_to_nextgen_c3s_spatial_v0.py' -v
 python research_runners/rva_nrw_hu22_to_nextgen_c3s_spatial_v0.py \
   rva-nrw-2022-10k-source-geocoded-oed-fictitious-insurance.zip \
-  research/fixtures/rva_nrw_c3s_synthetic_grid_demo_v0.json \
+  research/fixtures/rva_nrw_c3s_synthetic_grid_demo_v0.toml \
   /tmp/rva-nrw-nextgen-unadmitted-spatial-handoff.zip
 ```
 
