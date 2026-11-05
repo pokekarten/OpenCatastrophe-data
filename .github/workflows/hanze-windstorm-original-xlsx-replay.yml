@@ -78,6 +78,8 @@ jobs:
           source_unflagged=m["not_flagged_CDS_independence_unverified"]
           assert sum(source_modelled.values()) == 299
           assert sum(source_unflagged.values()) == 1059
+          assert source_modelled == {"numeric":278, "non_numeric":21, "blank":0}
+          assert source_unflagged == {"numeric":409, "non_numeric":12, "blank":638}
           assert source_modelled["numeric"] + source_unflagged["numeric"] == 687
           assert source_modelled["non_numeric"] + source_unflagged["non_numeric"] == 33
           assert source_modelled["blank"] + source_unflagged["blank"] == 638
