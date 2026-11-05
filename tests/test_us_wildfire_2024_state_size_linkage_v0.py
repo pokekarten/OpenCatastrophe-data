@@ -30,7 +30,7 @@ def fixture():
 
 def original(cells):
     return {
-        "fields": FIELDS,
+        "fields": [dict(field) for field in FIELDS],
         "features": [
             {"attributes": {"state": state, "fire_size_class": cls, "n": count}}
             for (state, cls), count in cells.items() if count
