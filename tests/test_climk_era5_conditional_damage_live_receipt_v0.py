@@ -31,6 +31,7 @@ def sample():
         'storm_index_zero_based':0,'source_storm_name':'SYNTH TEST STORM',
         'source_storm_date_label':'1999-12-26',
         'source_storm_date_parsed_as_utc':False,
+        'event_identity_cross_model_matched':False,
         'grid_coordinate_system':'source_native_lat_lon_degrees',
         'spatial_sampling':'nearest_native_grid_center_no_extrapolation',
         'physical_intensity_measure':'MAX_WIND_GUST_ASSOCIATED_WITH_STORM_FOOTPRINT',
