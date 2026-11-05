@@ -32,7 +32,10 @@ class OriginalFinancialSourceReceiptTests(unittest.TestCase):
     def test_exact_two_solo_publishers_no_false_sha_pin(self):
         self.assertEqual(len(m.URLS), 2)
         self.assertEqual([s["pages_expected"] for s in m.URLS], [86, 98])
-        self.assertTrue(all(s["exact_original_sha256"] is None for s in m.URLS))
+        self.assertEqual([s["exact_original_sha256"] for s in m.URLS],
+                         ["0a941b729dc6b490a5ad285ae1e1f15f4aa8ec183fb00b3d470f780a99ff996a",
+                          "85a82b7a199d583e1e07efbc93317ce8bd3bab99381f54b742e997d70e2c19fa"])
+        self.assertEqual([s["exact_original_bytes"] for s in m.URLS], [2069226, 1468631])
         self.assertTrue(all(s["url"].startswith("https://www.ruv.de/dam/") for s in m.URLS))
 
     def test_foreign_source_url_fails(self):
