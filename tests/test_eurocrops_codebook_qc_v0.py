@@ -6,7 +6,7 @@ from __future__ import annotations
 import unittest
 
 from research_runners.eurocrops_codebook_qc_v0 import (
-    Blocked, audit, git_blob_sha,
+    Blocked, audit, git_blob_sha, sample_mapping_coverage,
 )
 
 
@@ -58,6 +58,38 @@ class EuroCropsCodebookTests(unittest.TestCase):
         bad = HCAT + b"100,other,0,NA\n"
         with self.assertRaisesRegex(Blocked, "duplicate HCAT4"):
             run(hcat=bad)
+
+    def test_join_is_region_specific_and_preserves_leading_zero(self):
+        mapping = [
+            {"nuts": "de4", "original_code": "001", "hcat4_code": "100"},
+            {"nuts": "de4", "original_code": "2", "hcat4_code": "999"},
+            {"nuts": "dea", "original_code": "1", "hcat4_code": "100"},
+        ]
+        taxonomy = [{"hcat4_code": "100"}]
+        rows = [
+            {"original_code": "001"}, {"original_code": "1"},
+            {"original_code": "2"}, {"original_code": "missing"},
+            {"original_code": 1}, {"original_code": "001 "},
+        ]
+        report = sample_mapping_coverage(rows, "de4", mapping, taxonomy)
+        self.assertEqual(report, {
+            "sampled_rows": 6,
+            "resolved_to_hcat4_rows": 1,
+            "code_not_in_region_mapping_rows": 2,
+            "mapping_to_missing_hcat4_rows": 1,
+            "blank_or_nonstring_original_code_rows": 2,
+        })
+        self.assertNotIn("original_code", report)
+        with self.assertRaisesRegex(Blocked, "region missing"):
+            sample_mapping_coverage(rows, "nl", mapping, taxonomy)
+
+    def test_duplicate_mapping_prevents_ambiguous_coverage(self):
+        mapping = [
+            {"nuts": "de4", "original_code": "1", "hcat4_code": "100"},
+            {"nuts": "de4", "original_code": "1", "hcat4_code": "999"},
+        ]
+        with self.assertRaisesRegex(Blocked, "ambiguous"):
+            sample_mapping_coverage([{"original_code": "1"}], "de4", mapping, [])
 
 
 if __name__ == "__main__":
