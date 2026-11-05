@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import io
 import unittest
+from pathlib import Path
 
 from research_runners import rva_solo_original_financial_pdf_receipt_v0 as m
 
@@ -92,11 +93,11 @@ class OriginalFinancialSourceReceiptTests(unittest.TestCase):
         raw = b"%PDF-1.7\n" + b"x" * 60000 + b"%%EOF"
         src = dict(m.URLS[0], exact_original_sha256="0" * 64)
         with self.assertRaisesRegex(ValueError, "SHA_DRIFT"):
-            m.inspect(src, raw, extractor="nonexistent", page_tool="nonexistent")
+            m.inspect(src, raw)
 
     def test_explicit_nonadmission_flags_in_report_contract(self):
         names = m.inspect.__code__.co_consts
-        source = open(m.__file__, encoding="utf-8").read()
+        source = Path(m.__file__).read_text(encoding="utf-8")
         for marker in ("production_financial_metric_admitted",
                        "copyright_and_bulk_reuse_rights_cleared",
                        "insurer_building_coordinates_or_tiv_observed",
