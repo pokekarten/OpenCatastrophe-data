@@ -53,7 +53,7 @@ class WiscTileOfflineTests(unittest.TestCase):
                                       "intensity_bin_dict.csv", "areaperil_dict.csv"})
         self.assertEqual(files["events.csv"], b"event_id\n7\n")
         rows = files["footprint.csv"].decode().splitlines()
-        self.assertEqual(rows[0], "event_id,areaperil_id,intensity_bin_index,prob")
+        self.assertEqual(rows[0], "event_id,areaperil_id,intensity_bin_id,probability")
         self.assertEqual(rows[1:], [
             "7,1,1,1.0",
             "7,2,2,1.0",
