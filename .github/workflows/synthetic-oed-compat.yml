@@ -10,6 +10,9 @@ on:
       - "research_runners/export_synthetic_oed_v0.py"
       - "research_runners/export_relational_synthetic_oed_v1.py"
       - "research_runners/wbm_like_nine_fictional_oed_v0.py"
+      - "research_runners/nine_fictional_oed_10k_curve_catxl_v0.py"
+      - "tests/test_nine_fictional_oed_10k_curve_catxl_v0.py"
+      - "docs/research/wbm-nine-fictional-10k-curve-catxl-v0.md"
       - "research_runners/validate_wbm_like_nine_fictional_ods_tools_v0.py"
       - "research/observations/wbm_2025_group_commercial_metrics_separate_from_nine_award_v0.toml"
       - "tests/test_wbm_like_nine_fictional_oed_v0.py"
@@ -55,3 +58,7 @@ jobs:
         run: python research_runners/validate_synthetic_oed_ods_tools_v0.py
       - name: Validate separately generated nine entirely fictional Berlin-grid OED sites
         run: python -m research_runners.validate_wbm_like_nine_fictional_ods_tools_v0
+      - name: Reproduce nine-site entirely fictional ten-thousand-year curve GUL/net toy
+        run: |
+          python -m unittest discover -s tests -p "test_nine_fictional_oed_10k_curve_catxl_v0.py" -v
+          python -m research_runners.nine_fictional_oed_10k_curve_catxl_v0
