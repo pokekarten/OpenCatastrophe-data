@@ -29,6 +29,8 @@ on:
       - "tests/test_ted_wbm_2026_competition_original_preflight_v0.py"
       - "tests/test_ted_wbm_2026_procedure_lineage_v0.py"
       - "tests/test_ted_wbm_2026_procedure_search_index_v0.py"
+      - "tests/test_ted_wbm_2026_procedure_index_observation_v0.py"
+      - "research/observations/ted_wbm_2026_search_bt04_lineage_observation_v0.toml"
       - "tests/test_ted_wbm_original_contract_quota_label_register_v0.py"
       - "docs/research/berlin-insurer-ted-original-xml-preflight-20261105.md"
       - "docs/research/berlin-wbm-2026-ted-eforms-winner-role-v0.md"
@@ -106,6 +108,8 @@ jobs:
       - name: Query WBM 2026 April and September BT-04 official Search index candidates
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: python -m research_runners.ted_wbm_2026_procedure_search_index_v0
+      - name: Offline source-receipt guard for indexed BT-04 disagreement and policy nonadmission
+        run: python -m unittest discover -s tests -p "test_ted_wbm_2026_procedure_index_observation_v0.py" -v
       - name: Try official TED daily OJ S archive fallback for 202 Accepted
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: python -m research_runners.ted_berlin_insurance_daily_xml_preflight_v0
