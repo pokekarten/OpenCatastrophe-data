@@ -59,8 +59,8 @@ def _one_coordinate_pair(feature):
     for value in coords:
         if type(value) not in (float, int):
             raise AOISourceBlocked("invalid projected AOI coordinate type")
-        if not 0 < value < 10_000_000:
-            raise AOISourceBlocked("AOI coordinate outside plausible EPSG3035 range")
+        if not 1_000_000 <= value <= 7_000_000:
+            raise AOISourceBlocked("AOI coordinate is not a projected EPSG3035 metre value")
         if type(value) is float and not math.isfinite(value):
             raise AOISourceBlocked("nonfinite AOI coordinate")
     return coords
