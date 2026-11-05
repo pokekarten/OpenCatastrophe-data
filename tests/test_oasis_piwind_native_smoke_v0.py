@@ -6,9 +6,11 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 from research_runners.oasis_piwind_native_smoke_v0 import (
     EXPECTED_FILES,
@@ -17,6 +19,7 @@ from research_runners.oasis_piwind_native_smoke_v0 import (
     attest_output_csv,
     blob_sha256,
     inspect_piwind_outputs,
+    main,
     native_run,
     verify_model_checkout,
 )
@@ -110,6 +113,53 @@ class NativePiWindReceiptTests(unittest.TestCase):
         with TemporaryDirectory() as d:
             with self.assertRaisesRegex(PiWindNativeSmokeError, "runtime limit"):
                 native_run(Path(d), timeout_seconds=10)
+
+    def test_dangling_native_output_and_log_symlinks_block_before_cli(self) -> None:
+        with TemporaryDirectory() as d:
+            root = Path(d)
+            model = root / "model"
+            model.mkdir()
+            with (
+                patch("research_runners.oasis_piwind_native_smoke_v0.verify_model_checkout", return_value=MODEL_COMMIT),
+                patch("research_runners.oasis_piwind_native_smoke_v0.metadata.version", return_value="2.5.8"),
+                patch("research_runners.oasis_piwind_native_smoke_v0.shutil.which", return_value="/not-called"),
+                patch("research_runners.oasis_piwind_native_smoke_v0.subprocess.run", side_effect=AssertionError("native CLI invoked")),
+            ):
+                output = model / "runs"
+                output.symlink_to(root / "missing-runs", target_is_directory=True)
+                with self.assertRaisesRegex(PiWindNativeSmokeError, "already contains run outputs"):
+                    native_run(model, timeout_seconds=600)
+                output.unlink()
+                log = root / "native-piwind-output.log"
+                log.symlink_to(root / "missing-log")
+                with self.assertRaisesRegex(PiWindNativeSmokeError, "overwrite existing native log"):
+                    native_run(model, timeout_seconds=600)
+                self.assertFalse((root / "missing-log").exists())
+                log.unlink()
+                log.write_text("untouched", encoding="utf-8")
+                with self.assertRaisesRegex(PiWindNativeSmokeError, "overwrite existing native log"):
+                    native_run(model, timeout_seconds=600)
+                self.assertEqual(log.read_text(encoding="utf-8"), "untouched")
+
+    def test_dangling_receipt_symlink_refused_before_native_run(self) -> None:
+        with TemporaryDirectory() as d:
+            root = Path(d)
+            receipt = root / "receipt.json"
+            receipt.symlink_to(root / "missing-receipt")
+            with patch("research_runners.oasis_piwind_native_smoke_v0.native_run", side_effect=AssertionError("native run invoked")):
+                self.assertEqual(main([str(root), "--receipt", str(receipt)]), 2)
+            self.assertFalse((root / "missing-receipt").exists())
+
+    def test_fresh_receipt_exclusive_creation_and_existing_file_preserved(self) -> None:
+        with TemporaryDirectory() as d:
+            root = Path(d)
+            receipt = root / "receipt.json"
+            with patch("research_runners.oasis_piwind_native_smoke_v0.native_run", return_value={"status": "fictional"}):
+                self.assertEqual(main([str(root), "--receipt", str(receipt)]), 0)
+            self.assertEqual(json.loads(receipt.read_text(encoding="utf-8"))["status"], "fictional")
+            with patch("research_runners.oasis_piwind_native_smoke_v0.native_run", side_effect=AssertionError("native run invoked")):
+                self.assertEqual(main([str(root), "--receipt", str(receipt)]), 2)
+            self.assertEqual(json.loads(receipt.read_text(encoding="utf-8"))["status"], "fictional")
 
 
 if __name__ == "__main__":
