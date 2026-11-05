@@ -130,8 +130,8 @@ def allocate_nrw_sample(cells:list[dict],county:dict[str,dict],pv_case:str,
     if len(bycounty)!=53 or len(cells)!=530 or any(len(v)!=10 for v in bycounty.values()):
         raise StagingError('wrong NRW source county-age cells')
     counts={ags:sum(cells[i]['count'] for i in indexes) for ags,indexes in bycounty.items()}
-    if min(counts.values())<sample_size//50:  # no guarantee each county can fit a sample?
-        pass
+    if min(counts.values())<=0:
+        raise StagingError('a NRW county has no fictional building contracts')
     full=sum(counts.values())
     if full<=sample_size:raise StagingError('NRW fictional book smaller than pilot')
     keys=sorted(counts)
