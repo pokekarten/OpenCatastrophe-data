@@ -61,6 +61,12 @@ jobs:
         run: |
           set -euo pipefail
           EXPECTED_SHA=$(python -c 'import json,os,pathlib; print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"]) / "oc-de4-first-seen-receipt.json").read_text())["original_sha256"])')
+          # Compare to an INDEPENDENT full-file first-seen download from
+          # completed prior run 42114631274. Still NOT publisher-signed.
+          if [[ "$EXPECTED_SHA" != "4fc38f688a117db6cd0821c7aafc71fbbd2e7a493044c51266ae289929d7b2b6" ]]; then
+            echo "BLOCKED: original JRC full-file bytes changed since prior first-seen receipt" >&2
+            exit 2
+          fi
           python -m research_runners.eurocrops_jrc_original_run_v0 \
             --live \
             --original "${RUNNER_TEMP}/oc-eurocrops-de4-2023-original/de4_2023.parquet" \
