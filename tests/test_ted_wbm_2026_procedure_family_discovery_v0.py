@@ -25,7 +25,8 @@ def fixture(procedure=LATE, *, pubs=("668506-2026",), rows=None, total=None):
         } for pub in pubs]
     if total is None:
         total = len(rows)
-    return json.dumps({"totalNoticeCount": total, "notices": rows},
+    return json.dumps({"totalNoticeCount": total, "notices": rows,
+                       "fixture_padding": "bounded offline source shape"},
                       ensure_ascii=False).encode("utf-8")
 
 
