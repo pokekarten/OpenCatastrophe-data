@@ -12,7 +12,7 @@ on:
       - "research_runners/rva_nrw_hu22_geocoded_area_rebuild_tiv_v0.py"
       - "research_runners/rva_nrw_hu22_to_nextgen_c3s_spatial_v0.py"
       - "tests/test_rva_nrw_hu22_to_nextgen_c3s_spatial_v0.py"
-      - "research/fixtures/rva_nrw_c3s_synthetic_grid_demo_v0.json"
+      - "research/fixtures/rva_nrw_c3s_synthetic_grid_demo_v0.toml"
       - "tests/test_rva_nrw_hu22_geocoded_area_rebuild_tiv_v0.py"
       - "research_runners/export_rva_nrw_53kreis_oed_pilot_v0.py"
       - "research_runners/validate_rva_nrw_53kreis_oed_pilot_ods_v0.py"
