@@ -167,6 +167,7 @@ def build(source_zip:Path,output_zip:Path)->dict:
                         "synthetic_mean_building_TIV_eur":round(sum(values)/EXPECTED_N),
                         "location_csv_sha256":scenario_manifest["output_SHA256"]["location.csv"],
                     }
+                target.writestr("physical_candidate_evidence.csv",z.read("physical_candidate_evidence.csv"))
                 target.writestr("scenario_comparison.json",json.dumps(output_summary,sort_keys=True,indent=2)+"\n")
         except Exception:
             output_zip.unlink(missing_ok=True)
