@@ -73,6 +73,18 @@ class TestOriginalXWSDaria(unittest.TestCase):
         with self.assertRaises(source.XWSSourceBlocked):
             source.validate_original_bundle({"daria_mean":fixture()["daria_mean"]})
 
+    def test_original_upper95_statistical_200mps_allowed_but_never_model_admitted(self):
+        f=fixture()
+        f["daria_upper95"]=f["daria_upper95"].replace(b"9,30.0",b"9,200.0",1)
+        receipt=source.validate_original_bundle(f)
+        summary=receipt["three_uncertainty_variants"]["daria_upper95"]
+        self.assertEqual(summary["points_above_150_mps_and_not_admitted_to_standard_wind_VLT"],1)
+        self.assertTrue(receipt["source_values_over_150_mps_not_clipped_or_model_admitted"])
+        self.assertFalse(receipt["full_Germany_modelled_GUL_IL_RI_OEP_AEP"])
+        f["daria_upper95"]=f["daria_upper95"].replace(b"9,200.0",b"9,301.0",1)
+        with self.assertRaises(source.XWSSourceBlocked):
+            source.validate_original_bundle(f)
+
     def test_exact_public_urls_and_bounded_fully_read_get(self):
         f=fixture()
         visited=[]
