@@ -26,6 +26,10 @@ from gtsm_era5_e_author_family_return_qa_v0 import (
     GtsmFamilyReturnAuditBlocked, COUNTER_FIELDS,
     require_verified_author_station_join,
 )
+from gtsm_era5_e_return_band_severity_v0 import (
+    audit_return_band_severity_by_family_and_year,
+    OriginalBandSeverityBlocked,
+)
 from gtsm_era5_e_original_receipt_v0 import (
     GtsmReceiptError, PINNED_SHA256, SOURCE_BYTES, SOURCE_DOWNLOAD_URL,
     SOURCE_NAME, _ZenodoOnlyRedirect, verify_original,
@@ -159,6 +163,9 @@ def original_author_identity_receipt() -> dict[str, object]:
         family_quality = audit_return_levels_by_author_name_family(
             station, native_extremes, catalogue
         )
+        severity = audit_return_band_severity_by_family_and_year(
+            station, native_extremes, catalogue
+        )
         independently_verified_global = verified_source["return_level_quality"]
         for key in COUNTER_FIELDS:
             if family_quality["source_global_quality_counts"][key] != independently_verified_global[key]:
@@ -175,6 +182,7 @@ def original_author_identity_receipt() -> dict[str, object]:
             "author_catalogue_derived_data_only": overlap,
             "hypothetical_100_id_batch_aggregate_quality": batch_check,
             "source_return_level_quality_by_author_name_family": family_quality,
+            "source_return_band_size_by_name_family_and_period": severity,
             "original_provider_source_files_redistributed": False,
             "original_source_station_ids_or_coordinate_pairs_emitted": False,
             "original_source_files_persisted_after_probe": False,
@@ -187,7 +195,8 @@ if __name__ == "__main__":
     try:
         print(json.dumps(original_author_identity_receipt(), sort_keys=True, allow_nan=False))
     except (GtsmReceiptError, AuthorCatalogueAuditBlocked,
-            GtsmFamilyReturnAuditBlocked, HTTPError, URLError,
+            GtsmFamilyReturnAuditBlocked, OriginalBandSeverityBlocked,
+            HTTPError, URLError,
             TimeoutError, OSError, ValueError) as exc:
         # None of these sanitized exception messages contain individual
         # source rows, station IDs, coordinates or file bytes.
