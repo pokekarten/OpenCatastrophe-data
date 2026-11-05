@@ -12,6 +12,9 @@ on:
       - "research_runners/ted_wbm_eforms_winner_role_v0.py"
       - "research_runners/ted_wbm_contract_search_index_candidates_v0.py"
       - "research_runners/ted_wbm_original_award_graph_receipt_v0.py"
+      - "research_runners/ted_wbm_original_contract_identifier_labels_v0.py"
+      - "research_runners/ted_wbm_2026_competition_original_preflight_v0.py"
+      - "research/observations/ted_wbm_2026_original_contract_share_labels_v0.toml"
       - "research/observations/ted_wbm_2026_original_eforms_award_graph_receipt_v0.toml"
       - "tests/test_ted_berlin_insurance_original_xml_preflight_v0.py"
       - "tests/test_ted_berlin_insurance_original_http202_retry_v0.py"
@@ -20,9 +23,13 @@ on:
       - "tests/test_ted_wbm_eforms_winner_role_v0.py"
       - "tests/test_ted_wbm_contract_search_index_candidates_v0.py"
       - "tests/test_ted_wbm_original_award_graph_receipt_v0.py"
+      - "tests/test_ted_wbm_original_contract_identifier_labels_v0.py"
+      - "tests/test_ted_wbm_2026_competition_original_preflight_v0.py"
+      - "tests/test_ted_wbm_original_contract_quota_label_register_v0.py"
       - "docs/research/berlin-insurer-ted-original-xml-preflight-20261105.md"
       - "docs/research/berlin-wbm-2026-ted-eforms-winner-role-v0.md"
       - "docs/research/berlin-wbm-2026-ted-search-index-contract-candidates.md"
+      - "docs/research/berlin-wbm-2026-contract-bt150-share-labels-and-tender-minimum.md"
   workflow_dispatch:
 
 permissions:
@@ -72,6 +79,18 @@ jobs:
       - name: Re-verify three saved official WBM contract-to-company edges
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: python -m research_runners.ted_wbm_original_award_graph_receipt_v0
+      - name: Offline original WBM BT-150 contract percent-label regression
+        run: python -m unittest discover -s tests -p "test_ted_wbm_original_contract_identifier_labels_v0.py" -v
+      - name: Check exact original WBM contract identifiers without policy share admission
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: python -m research_runners.ted_wbm_original_contract_identifier_labels_v0
+      - name: Offline official WBM 2026 original competition provenance checks
+        run: python -m unittest discover -s tests -p "test_ted_wbm_2026_competition_original_preflight_v0.py" -v
+      - name: Retrieve official WBM 2026 original competition and quote minima separately
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: python -m research_runners.ted_wbm_2026_competition_original_preflight_v0
+      - name: Offline immutable original source quota-label register and no CAT admission tests
+        run: python -m unittest discover -s tests -p "test_ted_wbm_original_contract_quota_label_register_v0.py" -v
       - name: Try official TED daily OJ S archive fallback for 202 Accepted
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: python -m research_runners.ted_berlin_insurance_daily_xml_preflight_v0

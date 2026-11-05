@@ -1,0 +1,76 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+schema_version = "WBM_2026_ORIGINAL_TED_CONTRACT_LABEL_SHARE_CANDIDATES_V0"
+source_type = "primary_publisher_original_eforms_two_separate_notices"
+source_publisher = "Publications Office of the European Union / TED"
+source_issuer_buyer = "WBM Wohnungsbaugesellschaft Berlin-Mitte mbH"
+source_award_notice = "668506-2026"
+source_award_original_sha256 = "7650720183d0c26430e0433858bf2e8b854ea68bb93fbf679e96ee696ee8fc78"
+source_award_original_bytes = 21837
+source_competition_notice = "286307-2026"
+source_competition_original_sha256 = "54c0c84b379a9629f3e5774245ca763f66159e2cf45704ba985589202adcf9a1"
+source_competition_original_bytes = 41307
+source_original_xml_bytes_committed = false
+original_technical_procurement_lot_id = "LOT-0000"
+number_of_distinct_technical_award_contracts = 3
+described_pure_commercial_property_count = 9
+percent_label_numbers_sum = 100
+percent_labels_are_actual_signed_policy_participation_shares = false
+actual_per_insurer_insured_property_sites_verified = false
+actual_per_insurer_insured_sum_or_replacement_tiv_verified = false
+policy_terms_limits_deductibles_or_retention_verified = false
+signed_policy_currently_in_force_verified = false
+ceded_retention_or_NET_CAT_exposure_verified = false
+CAT_model_actual_insurer_exposure_admitted = false
+qualifier = "BT-150 published contract reference text only, not signed co-insurance allocation"
+
+[competition_minimum]
+minimum_lead_offer_writing_percent_in_notice_text = 30
+minimum_participating_offer_writing_percent_in_notice_text = 15
+planned_period_start = "2027-01-01"
+planned_period_end = "2028-01-01"
+planned_extension_count = 7
+final_policy_terms_reflected_by_earlier_advertisement = false
+lead_offer_may_be_capped_at_50_if_cheaper_followers = true
+remaining_share_below_15_percent_may_be_awarded_to_follower = true
+rule_documented_in_original_competition_notice = true
+rv_actual_use_of_residual_exception_verified = false
+
+[unresolved]
+R_and_V_10_percent_label_below_15_percent_tender_minimum = true
+specific_reason_for_rv_10_percent_allocation_verified = false
+procurement_exemption_possible_but_application_not_proven = true
+insurer_share_weights_for_ACTUAL_CAT_portfolio_approved = false
+sum_of_label_percentages_validates_risk_sharing = false
+
+[[contract_identifier_labels]]
+settled_contract_id = "CON-0001"
+winning_tender_id = "TEN-0001"
+winning_organization_id = "ORG-9000"
+winning_organization_name = "HDI Global SE"
+original_Bt150_contract_identifier = "Status Quo 50% Beteiligung"
+percentage_in_identifier = 50
+
+[[contract_identifier_labels]]
+settled_contract_id = "CON-0002"
+winning_tender_id = "TEN-0002"
+winning_organization_id = "ORG-9001"
+winning_organization_name = "Helvetia Schweizerische Versicherungsgesellschaft AG"
+original_Bt150_contract_identifier = "40% Beteiligung Status Quo"
+percentage_in_identifier = 40
+
+[[contract_identifier_labels]]
+settled_contract_id = "CON-0003"
+winning_tender_id = "TEN-0003"
+winning_organization_id = "ORG-9002"
+winning_organization_name = "R+V Allgemeine Versicherung AG"
+original_Bt150_contract_identifier = "10% Beteiligung"
+percentage_in_identifier = 10
+
+[requested_peril_markers]
+storm = true
+hail = true
+flood = true
+earthquake = true
+fire = true
+real_policy_peril_coverage_limits_verified = false
