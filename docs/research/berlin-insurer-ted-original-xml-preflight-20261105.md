@@ -74,3 +74,14 @@ A follow-up review of [European Publications Office Search API documentation](ht
 The official **Search API response is structured secondary metadata delivered by the primary EU publisher**, not a complete original eForms XML file. Even when its exact notice metadata is successfully fetched, it does **not** satisfy the separately pinned direct XML SHA/byte proof, the WBM contract→winning tender role chain, individual risk values, coinsurance shares or model exposure admission. The Search API response is not written to GitHub; the bounded metadata receipt includes only the source JSON SHA and byte size. The 17 offline Search API tests now include distinct validation-only and timeout fail-closed cases.
 
 **Follow-up:** assess the actual successful/failed Search API call in the exact-head GitHub Actions logs. A green nonblocking workflow alone is not positive provider-source evidence.
+
+## Successful official TED Search API exact-publication receipts (2026-11-05)
+
+The corrected `checkQuerySyntax: false` query succeeded on [GitHub Actions run 42036609295](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42036609295) for **both exact official TED publication numbers**, returning one buyer/title-matching publisher metadata record each. These are original structured TED publisher API responses, **not the original eForms XML bytes**:
+
+| Notice | Original API JSON response bytes | SHA-256 of complete API JSON response | Scope |
+| --- | ---: | --- | --- |
+| `558592-2024` (Gewobag property insurance tender) | 6,832 | `766921588c53b468fe9ea9e55125a77e2c90625e095befae081db592ddee922f` | One exact publication and matching Gewobag buyer/title |
+| `668506-2026` (WBM nine-commercial-object award) | 7,127 | `cdb17ef87ecc977e76b4bf5ba0141cc90cb698cbb4024157d7591561d6db7473` | One exact publication and matching WBM buyer/title |
+
+The API JSON response may change across index refreshes, so the JSON SHA values are **dated audit receipts**, not asserted immutable publisher-file pins or a proof of unchanging metadata. In the same run the direct original XML and the WBM structural eForms winner-role extraction still returned `HTTP 202 Accepted` after exhausting four strictly bounded attempts per request; the official daily archive also returned HTTP 202. Thus **official publication metadata is confirmed, but the live original XML role graph and actual insurer contract-participation shares remain unconfirmed**. This difference is enforced in the code and in the displayed receipt flags.
