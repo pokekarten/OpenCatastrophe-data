@@ -11,7 +11,8 @@ from __future__ import annotations
 import re
 
 OFFICIAL_NRW_REFERENCE = "https://recht.nrw.de/system/files/VA/16644-28824-mbl32-2anlage3.pdf"
-SOURCE_VINTAGE = "2017 GFK classification reference, compared with 2022 HU source fields"
+OFFICIAL_NRW_HU_SOURCE_FORMAT = "https://www.bezreg-koeln.nrw.de/system/files/media/document/file/geobasis_lk_hist_dfb_hu_2020.pdf"
+SOURCE_VINTAGE = "NRW historic HU source DFB v2.6 (2019) and official cadastral GFK table"
 # The 2017 official 'Anlage 3 zu den Jahresberichten der Katasterbehörden'
 # identifies the listed functions as buildings with residential component.
 # Its H/N distinction has an explicit *address/numbering precondition*.
@@ -41,8 +42,15 @@ def classify_gfk(raw: str) -> tuple[str, str | None]:
     if not isinstance(raw, str):
         return "malformed", None
     value=raw.strip()
-    if not re.fullmatch(r"[0-9]{4}",value):
+    # Official historical HU DFB version 2.6, source example 31001_1222:
+    # AX_Gebaeude ALKIS object type + four-digit building-function suffix.
+    # The bare suffix is insufficient to prove a HU building object.
+    match=re.fullmatch(r"(3[0-9]{4})_([0-9]{4})",value)
+    if match is None:
         return "malformed", None
+    if match.group(1)!="31001":
+        return "non_building_object_quarantine", None
+    value=match.group(2)
     if value in RESIDENTIAL_CANDIDATES:
         return "residential_function_candidate_only", RESIDENTIAL_CANDIDATES[value]
     if value in KNOWN_INELIGIBLE_EXAMPLES:
@@ -65,6 +73,8 @@ def audit_gfk_counts(observed_counts: dict[str,int]) -> dict:
         "source_gfk_distribution":dict(sorted(code_count.items())),
         "source_gfk_categories":dict(sorted(category.items())),
         "official_reference_url":OFFICIAL_NRW_REFERENCE,
+        "official_hu_source_format_url":OFFICIAL_NRW_HU_SOURCE_FORMAT,
+        "source_gfk_requires_AX_Gebaeude_31001_prefix":True,
         "mapped_code_count":len(RESIDENTIAL_CANDIDATES),
         "function_classes_not_verified_as_actual_residential_insurance_sites":True,
         "actual_RV_insurer_building_identity_known":False,
