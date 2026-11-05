@@ -62,8 +62,18 @@ class OriginalContractQuotaLabelRegisterTests(unittest.TestCase):
                          ["minimum_participating_offer_writing_percent_in_notice_text"], 15)
         self.assertTrue(self.reg["unresolved"]
                         ["R_and_V_10_percent_label_below_15_percent_tender_minimum"])
-        self.assertFalse(self.reg["unresolved"]
-                         ["difference_is_commercially_or_legally_explained"])
+        self.assertTrue(
+            self.reg["competition_minimum"]["lead_offer_may_be_capped_at_50_if_cheaper_followers"])
+        self.assertTrue(
+            self.reg["competition_minimum"]["remaining_share_below_15_percent_may_be_awarded_to_follower"])
+        self.assertTrue(
+            self.reg["competition_minimum"]["rule_documented_in_original_competition_notice"])
+        self.assertFalse(
+            self.reg["competition_minimum"]["rv_actual_use_of_residual_exception_verified"])
+        self.assertTrue(
+            self.reg["unresolved"]["procurement_exemption_possible_but_application_not_proven"])
+        self.assertFalse(
+            self.reg["unresolved"]["specific_reason_for_rv_10_percent_allocation_verified"])
 
     def test_no_actual_exposure_tiv_or_retention_claim(self):
         for key in (
