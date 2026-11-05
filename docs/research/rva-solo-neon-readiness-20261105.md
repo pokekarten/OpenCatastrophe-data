@@ -3,45 +3,61 @@ SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# R+V Allgemeine 2025 — Neon company/exposure readiness gate
+# R+V Allgemeine 2025 — source-bound Neon research readiness v1
 
-**Research-only, 2026-11-05.** Read-only reconciliation, not legal-entity registration, raw-data import, source approval, observed insured portfolio or CAT run.
+**Rechecked 2026-11-05.** A read-only research-only [SQL gate](../../research_runners/sql/rva_solo_2025_neon_readiness_v0.sql), not a new legal-entity registration, insured CAT portfolio, licensed source import or model approval. It can never assert that the real insurer lacks customers or locations merely because the research database has zero registered positions.
 
-Executable SQL: [rva_solo_2025_neon_readiness_v0.sql](../../research_runners/sql/rva_solo_2025_neon_readiness_v0.sql).
+## Reused legal identity evidence, not a second directory
 
-## Exact issuer source and identity boundary
+- **German solo underwriter:** R+V Allgemeine Versicherung Aktiengesellschaft (publisher alias R+V Allgemeine Versicherung AG), Wiesbaden, HRB 2188 per [official issuer imprint](https://www.ruv.de/impressum). Solo LEI **5299009UN4CBXZ336M65**, also recorded against HRB 2188 by [Bloomberg's LEI record](https://lei.bloomberg.com/leis/view/5299009UN4CBXZ336M65). Crucially, our repository already has an [ACPR regulator LEI/source proof](../../research/observations/berlin_named_carrier_lei_temporal_preflight_20261105_v0.toml), [regulator record 225615](https://acpr.banque-france.fr/fr/fiche-detaillee/rv-allgemeine-versicherung-aktiengesellschaft-0), and [working independent identity-checker](../../research_runners/public_named_insurer_lei_identity_gate_v0.py). Reuse those exact canonical observations; do not invent another register or treat the Italian branch as a German company.
+- **Separate parent:** R+V Versicherung AG, HRB 7934, LEI **529900Z5KBA9KJP6EK09** per [its own publisher imprint](https://www.rv-re.com/de/imprint). The SQL excludes this identifier from the solo company. The unrelated Italian R+V branch LEI **815600FA8F92119B8D12** was already excluded by the referenced Berlin preflight.
+- **Different parent concepts:** The original [2025 HGB report](https://www.ruv.de/ueber-uns/unternehmen/geschaeftsberichte) states R+V KOMPOSIT Holding GmbH holds **94.5%** of R+V Allgemeine and is 100% held by R+V Versicherung AG. A LEI consolidation parent is **not necessarily the immediate equity owner**.
 
-- **Solo legal entity**: R+V Allgemeine Versicherung AG, **not** R+V Versicherung AG (group parent) or another R+V-branded company. The [official 2025 solo SFCR](https://www.ruv.de/dam/jcr%3A9c8441a7-28dd-4d98-9b79-3eb3c8b4afa5/2025-SFCR-Allgemeine.pdf) identifies HRB 2188, Amtsgericht Wiesbaden, 31 December 2025 reporting date; the [issuer legal notice](https://www.ruv.de/impressum) independently states HRB 2188. These sources do not independently establish a verified LEI, insurer-location allocations or bulk reuse rights.
-- **2025 accounting anchor**: EUR 2,223,182,000 *gross written premium* for Feuer- und andere Sachversicherungen, solo SFCR A.2. Reusable typed internal source receipt: [rva_solo_2025_public_sfcr_v0.toml](../../research/observations/rva_solo_2025_public_sfcr_v0.toml); FFBK cross-check: research/reinsurance/solo_sfcr_de_fr_profiles_2025_v0.json, profile RVA_DE_2025. This number is **not** insurer TIV, CAT-only premium, insured site count, PML, annual loss or market share.
-- **Names must not auto-merge**: The directory label R+V Allgemeine Versicherung Aktiengesellschaft is a research-only legal-person **candidate**. The organization candidates R+V Versicherung and R+V Versicherung AG are **not** independent proof of the R+V Allgemeine solo carrier.
+## Three non-interchangeable observed anchors (2025)
 
-## Verified live read-only execution
+| Exact issuer/accounting population | Original issuer source | Amount or count |
+| --- | --- | ---: |
+| **Solo Solvency II SFCR**, Fire & Other Property, 2025 gross written premium | [2025 solo SFCR](https://www.ruv.de/dam/jcr%3A9c8441a7-28dd-4d98-9b79-3eb3c8b4afa5/2025-SFCR-Allgemeine.pdf), printed p. 11 | **EUR 2,223,182,000** |
+| **Solo HGB**, self-written connected-buildings gross booked premium | [Publisher 2025 HGB report index](https://www.ruv.de/ueber-uns/unternehmen/geschaeftsberichte), printed p. 8 | **EUR 997,710,000** |
+| **Solo HGB**, connected-buildings year-end policies/contracts | Same 2025 HGB, movement table printed p. 77 | **1,060,546 contracts** |
 
-Target: Neon **insurance-risk-core**, default branch, **insurance** database. The exact committed SQL file was fetched from GitHub and executed verbatim via the Neon SQL interface; no Neon database writes.
+All are issuer financial/accounting observations; **none is physical building inventory, address, company-specific regional share, replacement value, insured TIV or catastrophe claims**. The premiums use different accounting scopes and may not be reconciled or divided by the year-end contract count as an earned premium proxy.
 
-| Output column | 2026-11-05 result |
+The [2019–2025 source-typed HGB research](../../research/observations/rva_solo_hgb_property_2019_2025_v0.toml) already flags **two corporate perimeter breaks**: a Condor merger in 2024, and the 2025 **R+V Direktversicherung AG** merger effective **1 August 2025** with **economic effect back to 1 January 2025**. Distinguish changes in legal entity mix from underwriting growth; never interpret naive 2024-to-2025 differences as physical portfolio growth. The [2025 SFCR typed observation](../../research/observations/rva_solo_2025_public_sfcr_v0.toml) remains a distinct accounting source.
+
+## Current Neon result (exact SQL fetched from this branch and executed as one SELECT)
+
+Neon project: **insurance-risk-core**; default branch; database **insurance**; 2026-11-05. No DML or DDL.
+
+| Output | Live count |
 | --- | ---: |
 | verified_solo_entities | 0 |
-| verified_solo_identifiers | 0 |
-| non_solo_group_or_other_candidates | 2 |
+| issuer_source_linked_solo_entities | 0 |
+| verified_solo_identifier_rows | 0 |
+| exact_source_bound_solo_lei_rows | 0 |
+| parent_lei_wrongly_on_solo_rows | 0 |
+| group_or_other_candidates | 2 |
 | solo_directory_candidates | 1 |
 | other_rv_directory_candidates | 3 |
-| source_linked_exact_property_gwp_rows | 0 |
-| company_linked_portfolios | 0 |
+| source_bound_exact_sfcr_property_gwp_rows | 0 |
+| source_bound_exact_hgb_building_contract_rows | 0 |
+| source_bound_exact_hgb_building_gwp_rows | 0 |
+| company_linked_portfolios (all types) | 0 |
+| company_linked_synthetic_portfolios | 0 |
+| company_linked_reported_aggregate_portfolios | 0 |
+| company_linked_real_restricted_portfolios | 0 |
 | company_linked_portfolio_versions | 0 |
 | company_linked_exposure_units | 0 |
 | next_gate | BLOCKED_UNVERIFIED_OR_AMBIGUOUS_SOLO_LEGAL_ENTITY |
 
-These are database state and evidence-gate results, not assertions that the actual insurer has no properties. Counts are not worldwide completeness measures. The query first requires exact legal-person name, verified identity state, DE domicile and insurer type, then looks up source-linked 2025 gross property premium and company-linked portfolio versions and exposure. A registered source key does not independently establish rights, original-byte authenticity or scientific admission.
+**Why still blocked?** A research directory candidate, GLEIF LEI observed in a GitHub research file, and an issuer PDF citation are **not the same as a registered, source-key-linked, verified Neon legal-entity row**. This gate requires a matching complete legal person, source-backed exact LEI (not a generic identifier), separate original-accounting metric rows and an independently versioned research portfolio. The final status even when those are filled is **RESEARCH_ONLY_NEEDS_HAZARD_VULNERABILITY_RIGHTS_AND_TREATY_REVIEW**.
 
-## Ordered next steps
+## Exact next admission tasks (proposed, not executed)
 
-1. **Identify the exact solo company**: review the original official issuer/legal-register record, HRB 2188 and lineage, and resolve authoritative identifier (including LEI only if independently verified). Register a matching organization and verified identifier only after actual evidence review. Never infer the solo identity from a group candidate.
-2. **Link source-qualified financial evidence**: independently recheck PDF original bytes/typed issuer receipt, publisher accounting basis and 2025 figures. The intended metric schema contract is metric_name=fire_and_other_property_gwp, value=2223182000, unit=EUR, currency_code=EUR, year=2025, business_scope=solo_direct, gross_net_basis=gross and measurement_kind=published_observation. It additionally needs a canonical registered source key. This is a contract, not authorization to write a metric now.
-3. **Version synthetic scenarios separately**: use the existing [R+V fictional property bridge](rva-oasis-portfolio-bridge-v0.md), maintain distinct assumed site counts and TIV, require explicit scenario provenance. Never reverse-engineer actual insured site values directly from GWP or a bank/agency distribution map.
-4. **Validate physical peril and financial stack**: independently review original hazard/vulnerability source rights, event geographies, perils, OED/ORD, explicitly fictional treaty assumptions, and a native reproducible multi-year loss engine. This SQL never declares CAT production-ready even after accounting and database registration; it deliberately returns RESEARCH_ONLY_NEEDS_HAZARD_VULNERABILITY_RIGHTS_AND_TREATY_REVIEW.
-5. **Re-run and preserve proof**: record immutable Git blob, execution date, Neon project/database, returned row and any actual admitted source hashes. Git blob identity is distinct from the issuer PDF's original SHA-256.
+1. **Verify and version source bytes and permissions:** official company imprint, original HGB/SFCR PDF hashes and original ACPR/GLEIF record status. Earlier TOML and retrieved PDF text **do not** establish newly independently hash-verified provider bytes or bulk redistribution rights.
+2. **Register legal entity with issuer evidence:** exact long German legal name, HRB 2188 and issuer source key; attach verified LEI 5299009UN4CBXZ336M65 under separately reviewed identity source, not parent LEI or Italian branch. Re-run identity gate.
+3. **Register three distinct published financial observations:** source-keyed 2025 SFCR Fire/Other Property premium EUR 2,223,182,000, HGB connected-buildings direct premium EUR 997,710,000, and year-end connected-buildings stock 1,060,546 contracts. Preserve both accounting bases and scopes.
+4. **Build scenario-only exposure:** use [existing company-anchored national macro scenario sensitivity](rva-2025-issuer-anchored-geography-identification-v0.md), without GWP-to-TIV mapping. Create a versioned synthetic portfolio, independent geography weights and explicit coverage assumptions only after separate review.
+5. **Native CAT/finance gate:** compatible original hazard and vulnerability, checked rights, geocoded OED exposures, scenario-bound policy terms and explicit fictional reinsurance; independently review annual occurrence/sample probabilities and Gross/Net EP. No model or insurer scientific approval implied.
 
-## Scope and related work
-
-This specialized company-specific database admission gate complements the generic insurer market-share research in OpenCatastrophe-data PR #1351 and the fictional Zurich gross/net research in NextGen PR #280; it does not replace them. No SQL DDL, DML, customer locations, provider binaries or production model approval are included.
+The [offline source-contract tests](../../tests/test_rva_solo_neon_readiness_v0.py) check consistency of existing typed source records, both LEIs, accounting distinctions, two merger years and absence of database mutation SQL. They **do not replace running SQL against Neon**. The SQL was successfully executed; full GitHub CI and independent code review must be checked separately. No productive Neon rows or external original PDF bytes were added.
