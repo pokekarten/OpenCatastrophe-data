@@ -37,8 +37,10 @@ identifiers AS (
     FROM entity.organization_identifier
 ),
 other AS (
+  -- Raw relationship rows are NOT necessarily verified group linkages.
+  -- Never equate mere table presence with dated legal-identity proof.
   SELECT (SELECT count(*) FROM entity.organization_relationship)
-           AS verified_group_relationship_rows,
+           AS organization_relationship_rows_total,
          (SELECT count(*) FROM entity.published_metric)
            AS published_company_metric_rows,
          (SELECT count(*) FROM entity.licence_observation)
