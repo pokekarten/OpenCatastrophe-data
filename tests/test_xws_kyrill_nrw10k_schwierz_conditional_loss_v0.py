@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 import sys
 import tempfile
+import tomllib
 import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -117,6 +118,40 @@ class SchwierzConditionalTests(unittest.TestCase):
             self.assertIn('"site_level_original_hazard_and_policy_positions_published": false',body)
             with self.assertRaisesRegex(m.SensitivityBlocked,"fresh"):
                 m.write(o,c,m.simulate(wind,site) if False else report)
+
+
+    def test_original_10k_pinned_source_receipt_and_conditional_amounts(self):
+        path=ROOT/"research/observations/xws_kyrill_2007_nrw10k_schwierz_one_event_sensitivity_v0.toml"
+        receipt=tomllib.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(receipt["fictional_NRW_site_count"],10000)
+        self.assertEqual(receipt["fictional_NRW_Kreis_count"],53)
+        self.assertEqual(receipt["fictional_total_TIV_eur"],4826029500)
+        self.assertEqual(receipt["county_output_row_count"],636)
+        self.assertEqual(receipt["original_source_XWS_10k_hazard_zip_sha256"],m.XWS_ZIP_SHA)
+        self.assertEqual(receipt["source_fictional_NRW_10k_oed_zip_sha256"],m.OED_ZIP_SHA)
+        self.assertEqual(receipt["results_per_county_csv_sha256"],
+                         "d106dac99d6981cd0c4cb3c30839b97f40c5df75aef4076f6b3b3fe01b96c40b")
+        expected={
+            "recalibrated_lower95":("4.84","13.13","27.25"),
+            "recalibrated_mean":("26845.16","53686.91","107374.62"),
+            "recalibrated_upper95":("5518768.68","11037541.04","22075083.03"),
+            "uncontaminated_raw":("5689.49","11384.17","22763.46"),
+        }
+        rows=receipt["wind_scenario"]
+        self.assertEqual(len(rows),4)
+        for row in rows:
+            self.assertEqual(tuple(row[key] for key in
+                ("loss_reference_0_5_eur","loss_reference_1_0_eur","loss_reference_2_0_eur")),
+                expected[row["name"]])
+        for marker in (
+            "source_annual_event_frequency_established",
+            "insured_contract_terms_deductibles_limits_applied",
+            "real_RV_assets_tiv_or_loss_observed",
+            "Oasis_or_NextGen_native_Kyrill_GUL_IL_RI_executed",
+            "annual_gross_net_OEP_AEP_authorized",
+            "German_residential_wind_vulnerability_calibrated",
+        ):
+            self.assertIs(receipt[marker],False)
 
 
 if __name__=="__main__":
