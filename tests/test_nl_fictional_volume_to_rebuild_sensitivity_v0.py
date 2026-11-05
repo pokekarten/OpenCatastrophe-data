@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import copy
-import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -141,13 +140,16 @@ class FictionalRebuildSensitivityTests(unittest.TestCase):
         with self.assertRaisesRegex(FictionalRebuildError, "back-date"):
             calculate(d)
 
-    def test_cli_and_duplicate_json_field_rejection(self):
+    def test_cli_and_duplicate_toml_field_rejection(self):
+        sample = (Path(__file__).resolve().parents[1] / "research" / "scenarios"
+                  / "nl_fictional_volume_rebuild_math_v0.toml")
         with tempfile.TemporaryDirectory() as temp:
-            file = Path(temp) / "purely-invented.json"
-            file.write_text(json.dumps(fixture()), encoding="utf-8")
+            file = Path(temp) / "purely-invented.toml"
+            file.write_bytes(sample.read_bytes())
+            self.assertEqual(read_fixture(file), fixture())
             self.assertEqual(main(["--fixture", str(file)]), 0)
-            file.write_text('{"schema":"x","schema":"y"}', encoding="utf-8")
-            with self.assertRaises(FictionalRebuildError):
+            file.write_text('schema = "x"\nschema = "y"\n', encoding="utf-8")
+            with self.assertRaises(ValueError):
                 read_fixture(file)
             self.assertEqual(main(["--fixture", str(file)]), 2)
 
