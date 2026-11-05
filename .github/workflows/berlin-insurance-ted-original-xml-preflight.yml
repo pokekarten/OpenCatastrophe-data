@@ -11,6 +11,7 @@ on:
       - "research_runners/ted_berlin_insurance_search_api_preflight_v0.py"
       - "research_runners/ted_wbm_eforms_winner_role_v0.py"
       - "tests/test_ted_berlin_insurance_original_xml_preflight_v0.py"
+      - "tests/test_ted_berlin_insurance_original_http202_retry_v0.py"
       - "tests/test_ted_berlin_insurance_daily_xml_preflight_v0.py"
       - "tests/test_ted_berlin_insurance_search_api_preflight_v0.py"
       - "tests/test_ted_wbm_eforms_winner_role_v0.py"
@@ -38,6 +39,8 @@ jobs:
           python-version: "3.11"
       - name: Offline synthetic malformed source/refusal regression
         run: python -m unittest discover -s tests -p "test_ted_berlin_insurance_original_xml_preflight_v0.py" -v
+      - name: Offline HTTP 202 bounded retry and authenticity gates
+        run: python -m unittest discover -s tests -p "test_ted_berlin_insurance_original_http202_retry_v0.py" -v
       - name: Offline exact original-publication ZIP member and source refusal tests
         run: python -m unittest discover -s tests -p "test_ted_berlin_insurance_daily_xml_preflight_v0.py" -v
       - name: Offline WBM award winner-role graph tests
