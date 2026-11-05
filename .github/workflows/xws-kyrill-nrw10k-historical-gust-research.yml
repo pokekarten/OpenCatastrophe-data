@@ -66,13 +66,8 @@ jobs:
           assert x["actual_RV_insured_site_identity_or_tiv_observed"] is False
           print("SOURCE_REAL_HISTORIC_KYRILL_ROTATED_GRID_10K_FICTIONAL_SITE_GUST_QC_PASS")
           PY
-      - name: Publish ONLY fictional research gust samples and no-model source receipt
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: xws-kyrill-2007-NRW-10k-fictitious-site-hazard-NO-GUL-NO-AEP
-          path: |
-            ${{ runner.temp }}/xws-kyrill-2007-fictitious-nrw-10k-gust-only.csv
-            ${{ runner.temp }}/xws-kyrill-2007-source-and-no-loss-receipt.json
-          if-no-files-found: error
-          retention-days: 14
-          compression-level: 6
+      - name: Verify derived source SHA receipt in job logs without upload action
+        run: |
+          sha256sum "${{ runner.temp }}/xws-kyrill-2007-fictitious-nrw-10k-gust-only.csv"
+          test -s "${{ runner.temp }}/xws-kyrill-2007-source-and-no-loss-receipt.json"
+          rm -- "${{ runner.temp }}/xws-kyrill-2007-fictitious-nrw-10k-gust-only.csv" "${{ runner.temp }}/xws-kyrill-2007-source-and-no-loss-receipt.json"
