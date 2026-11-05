@@ -7,12 +7,15 @@ on:
     paths:
       - ".github/workflows/rva-nrw-xws-daria-source.yml"
       - "research_runners/xws_daria_1990_original_csv_preflight_v0.py"
+      - "research_runners/rva_nrw_xws_daria_10k_original_gust_overlay_v0.py"
+      - "tests/test_rva_nrw_xws_daria_10k_original_gust_overlay_v0.py"
       - "tests/test_xws_daria_1990_original_csv_preflight_v0.py"
       - "docs/research/rva-nrw-xws-daria-original-wind-source-20261105.md"
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   original-xws-daria-public-wind:
@@ -32,7 +35,49 @@ jobs:
       - name: Source-original FULL CSV byte hashes and licence receipt (no raw upload)
         run: |
           python research_runners/xws_daria_1990_original_csv_preflight_v0.py --live \
-            --out-receipt "${{ runner.temp }}/xws-daria-1990-original-metadata-receipt.json"
+            --out-receipt "${{ runner.temp }}/xws-daria-1990-original-metadata-receipt.json" \
+            --out-ephemeral-original-dir "${{ runner.temp }}/xws-daria-original-csv"
+      - name: Offline 1990 XWS 3-second original site overlay negative checks
+        run: python -m unittest discover -s tests -p 'test_rva_nrw_xws_daria_10k_original_gust_overlay_v0.py' -v
+      - name: Read exact earlier full-source NRW 10k OED research artifact via GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 42097472463 --repo "${{ github.repository }}" \
+            --name "rva-nrw-hu2022-10k-official-physical-candidates-fictional-insurance-NOT-CAT-model" \
+            --dir "${{ runner.temp }}/nrw-source-geocoded-10k"
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import zipfile
+          root=Path(os.environ["RUNNER_TEMP"])
+          source=root/"nrw-source-geocoded-10k"
+          expected={"location.csv","account.csv","physical_candidate_evidence.csv","manifest.json"}
+          assert {p.name for p in source.iterdir()}==expected
+          with zipfile.ZipFile(root/"nrw-original-10k-verified-repacked.zip","x",
+                               compression=zipfile.ZIP_DEFLATED) as out:
+              for name in sorted(expected):
+                  out.write(source/name,arcname=name)
+          PY
+      - name: Historical original Daria 1990 XWS gust over 10k public NRW buildings
+        run: |
+          python research_runners/rva_nrw_xws_daria_10k_original_gust_overlay_v0.py \
+            --original-xws-csv-dir "${{ runner.temp }}/xws-daria-original-csv" \
+            --original-geocoded-nrw-oed-zip "${{ runner.temp }}/nrw-original-10k-verified-repacked.zip" \
+            --out-derived-gust-zip "${{ runner.temp }}/rva-nrw-10k-original-XWS-Daria1990-gust-NOT-INSURED-LOSS.zip"
+      - name: Remove original public CSV bytes before any source-derived research artifact
+        run: |
+          rm -rf -- "${{ runner.temp }}/xws-daria-original-csv"
+          rm -rf -- "${{ runner.temp }}/nrw-source-geocoded-10k"
+          rm -f -- "${{ runner.temp }}/nrw-original-10k-verified-repacked.zip"
+      - name: Publish only historical original XWS hazard assigned to fictional NRW buildings
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rva-nrw-10k-physical-public-XWS-Daria-1990-historical-wind-gust-NOT-CAT-LOSS
+          path: ${{ runner.temp }}/rva-nrw-10k-original-XWS-Daria1990-gust-NOT-INSURED-LOSS.zip
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
       - name: Publish only original file SHAs/source statistics/rights/no-CAT-admission
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
