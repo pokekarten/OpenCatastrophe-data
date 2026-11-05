@@ -236,6 +236,88 @@ class EformsWinnerRoleContractTests(unittest.TestCase):
                                 b'<cac:PartyIdentification><cbc:ID>ORG-0004</cbc:ID>'
                                 b'</cac:PartyIdentification>'))
 
+    def test_received_losing_tender_for_same_lot_is_not_a_winner(self):
+        self.assertIn(
+            b'<efac:LotTender><cbc:ID>TEN-0003</cbc:ID></efac:LotTender>',
+            self.raw,
+        )
+        result = self.parse_modified(self.raw)
+        self.assertEqual(result["winning_result_contract_tender_links"], 1)
+        self.assertEqual(result["award_role_paths"][0]["winning_tender_id"], "TEN-0001")
+        self.assertNotIn(
+            "NOT THE WINNER Versicherung AG",
+            result["source_organization_names_in_winning_tendering_parties"],
+        )
+
+    def test_selected_result_unknown_contract_reference_blocked(self):
+        raw = self.raw.replace(
+            b'<efac:SettledContract><cbc:ID>CON-0001</cbc:ID></efac:SettledContract>',
+            b'<efac:SettledContract><cbc:ID>CON-9999</cbc:ID></efac:SettledContract>',
+        )
+        with self.assertRaisesRegex(ValueError, "SETTLED_CONTRACT_NOT_FOUND"):
+            self.parse_modified(raw)
+
+    def test_contract_without_tender_references_blocked(self):
+        token = b'<efac:LotTender><cbc:ID>TEN-0001</cbc:ID></efac:LotTender>\n  </efac:SettledContract>'
+        self.assertIn(token, self.raw)
+        raw = self.raw.replace(token, b'</efac:SettledContract>')
+        with self.assertRaisesRegex(ValueError, "SETTLED_CONTRACT_WITHOUT_TENDER_REFERENCES"):
+            self.parse_modified(raw)
+
+    def test_contract_links_received_other_company_without_name_fallback(self):
+        token = b'<efac:LotTender><cbc:ID>TEN-0001</cbc:ID></efac:LotTender>\n  </efac:SettledContract>'
+        self.assertIn(token, self.raw)
+        raw = self.raw.replace(
+            token,
+            b'<efac:LotTender><cbc:ID>TEN-0003</cbc:ID></efac:LotTender>\n  </efac:SettledContract>',
+        )
+        result = self.parse_modified(raw)
+        self.assertEqual(result["winning_result_contract_tender_links"], 1)
+        self.assertEqual(
+            result["source_organization_names_in_winning_tendering_parties"],
+            ["NOT THE WINNER Versicherung AG"],
+        )
+        self.assertFalse(result["source_winner_names_exactly_match_secondary_mirror_names"])
+
+    def test_contract_referencing_only_other_lot_cannot_win_this_lot(self):
+        token = b'<efac:LotTender><cbc:ID>TEN-0001</cbc:ID></efac:LotTender>\n  </efac:SettledContract>'
+        self.assertIn(token, self.raw)
+        raw = self.raw.replace(
+            token,
+            b'<efac:LotTender><cbc:ID>TEN-0002</cbc:ID></efac:LotTender>\n  </efac:SettledContract>',
+        )
+        with self.assertRaisesRegex(ValueError, "CONTRACT_HAS_NO_TENDER_FOR_SELECTED_LOT"):
+            self.parse_modified(raw)
+
+    def test_duplicate_selected_result_contract_reference_blocked(self):
+        token = b'<efac:SettledContract><cbc:ID>CON-0001</cbc:ID></efac:SettledContract>'
+        with self.assertRaisesRegex(ValueError, "DUPLICATE_CONTRACT_REFERENCE_IN_RESULT"):
+            self.parse_modified(self.raw.replace(token, token + token))
+
+    def test_signatory_mention_does_not_make_a_winner(self):
+        result = self.parse_modified(self.raw)
+        signs = {
+            x["source_company_name"]
+            for x in result["award_role_paths"][0][
+                "contract_signatories_separate_from_winning_tenderers"]
+        }
+        self.assertIn("NOT THE WINNER Versicherung AG", signs)
+        self.assertIn("WBM Wohnungsbaugesellschaft Berlin-Mitte mbH", signs)
+        self.assertFalse(result["award_role_paths"][0][
+            "contract_signatories_are_automatically_winning_underwriters"])
+        self.assertNotIn("NOT THE WINNER Versicherung AG",
+                         result["source_organization_names_in_winning_tendering_parties"])
+
+    def test_unknown_contract_signatory_id_blocks(self):
+        token = b'<cbc:ID>ORG-0005</cbc:ID>\n    </cac:PartyIdentification></cac:SignatoryParty>'
+        self.assertIn(token, self.raw)
+        raw = self.raw.replace(
+            token,
+            b'<cbc:ID>ORG-9999</cbc:ID>\n    </cac:PartyIdentification></cac:SignatoryParty>',
+        )
+        with self.assertRaisesRegex(ValueError, "CONTRACT_SIGNATORY_NOT_REGISTERED"):
+            self.parse_modified(raw)
+
     def parse_modified(self, raw):
         local = dict(original.SOURCES[m.NOTICE],
                      original_xml_sha256_pinned=hashlib.sha256(raw).hexdigest(),
