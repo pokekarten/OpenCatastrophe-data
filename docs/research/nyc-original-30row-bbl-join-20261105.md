@@ -40,6 +40,20 @@ The default invocation refuses network access. With `--live`, the code uses a fi
 
 Source schemas and expected PLUTO release must be reverified when the provider refreshes the dataset. The script intentionally labels the 26v2 identity as **expected, not independently snapshotted by the runner**. This bounded preflight is not a production data ingestion connector and does not write into Neon, a repository table or OED/NextGen.
 
+## Official NYC Open Data reuse-policy context (reviewed 2026-11-05)
+
+NYC's [official Open Data FAQ](https://www.nyc.gov/opendata/get-started/FAQs)
+states no general use restrictions on its open data; its
+[public policies and terms](https://cityofnewyork.github.io/opendatatsm/publicpolicies.html)
+also describe source/version/modification attribution expectations and
+**additional terms imposed by data-providing agencies**, while disclaiming
+completeness, accuracy and suitability. This is stronger original-provider
+evidence for bounded research access than mere public reachability.
+It is **not** a sign-off on redistributing provider bytes, cross-source
+license compatibility, sensitive/confidential records or model-grade
+scientific admission. Exact dataset-specific attribution and commercial
+integration must still be reviewed before real-data promotion.
+
 ## Scientific and legal gates before model use
 
 1. Original NYC source rights and any limitations on onward redistribution and commercial derivative combinations require exact-scope review. This pilot did not authorize source data redistribution, model admission or real insurance portfolio inference.
