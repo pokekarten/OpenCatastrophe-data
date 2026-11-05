@@ -7,12 +7,13 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from types import SimpleNamespace
 
 from shapely import wkb
 from shapely.geometry import Polygon
 from research_runners.eurocrops_v202_preflight_v0 import (
     Blocked, asset_identity, audit_rows, geo_metadata, inspect_local,
-    sampled_row_positions, read_spread_sample,
+    sampled_row_positions, read_spread_sample, footer_statistics_quality,
 )
 
 
@@ -182,6 +183,67 @@ class EuroCropsPreflight(unittest.TestCase):
         self.assertEqual(audit_rows(sampled, "geometry")["sampled"], 8)
         with self.assertRaises(Blocked):
             read_spread_sample(parquet, positions, "not-a-source-column")
+
+    @staticmethod
+    def _fake_footer(*, area_min=0.0, area_max=248.87,
+                     area_stats_present=True, missing_geometry=False):
+        names = ["cropfield", "original_code", "geometry", "area_ha"]
+        if missing_geometry:
+            names.remove("geometry")
+        columns = []
+        for name in names:
+            stats = SimpleNamespace(null_count=0, has_min_max=False)
+            if name == "area_ha" and area_stats_present:
+                stats = SimpleNamespace(
+                    null_count=0, has_min_max=True,
+                    min=area_min, max=area_max,
+                )
+            elif name == "area_ha":
+                stats = None
+            columns.append(SimpleNamespace(path_in_schema=name, statistics=stats))
+        group = SimpleNamespace(
+            num_columns=len(columns), column=lambda i: columns[i]
+        )
+        meta = SimpleNamespace(
+            num_row_groups=1, row_group=lambda i: group
+        )
+        return SimpleNamespace(metadata=meta)
+
+    def test_real_footer_zero_min_is_reported_even_if_random_sample_misses_it(self):
+        result = footer_statistics_quality(self._fake_footer(), "geometry")
+        self.assertTrue(result["any_row_group_footer_min_area_nonpositive"])
+        self.assertEqual(result["footer_area_ha_minimum_if_all_groups_have_stats"], 0)
+        self.assertAlmostEqual(
+            result["footer_area_ha_maximum_if_all_groups_have_stats"], 248.87)
+        self.assertEqual(result["footer_null_counts_if_all_groups_have_stats"], {
+            "cropfield": 0, "original_code": 0, "geometry": 0, "area_ha": 0,
+        })
+        self.assertTrue(result["footer_stats_are_original_provider_claims_not_row_validation"])
+
+    def test_unknown_area_footer_stats_are_not_reported_clean(self):
+        report = footer_statistics_quality(
+            self._fake_footer(area_stats_present=False), "geometry"
+        )
+        self.assertIsNone(report["footer_area_ha_minimum_if_all_groups_have_stats"])
+        self.assertFalse(report["footer_area_statistics_complete"])
+        self.assertFalse(report["any_row_group_footer_min_area_nonpositive"])
+        self.assertIsNone(
+            report["footer_null_counts_if_all_groups_have_stats"]["area_ha"]
+        )
+
+    def test_footer_rejects_missing_geometry_and_reversed_area_range(self):
+        with self.assertRaisesRegex(Blocked, "lacks required"):
+            footer_statistics_quality(
+                self._fake_footer(missing_geometry=True), "geometry"
+            )
+        with self.assertRaisesRegex(Blocked, "min/max values"):
+            footer_statistics_quality(
+                self._fake_footer(area_min=9.0, area_max=1.0), "geometry"
+            )
+        with self.assertRaises(Blocked):
+            footer_statistics_quality(
+                self._fake_footer(), "not-the-original-geometry"
+            )
 
     def test_polygon_errors(self):
         square = Polygon([(0, 0), (100, 0), (100, 100), (0, 100)])
