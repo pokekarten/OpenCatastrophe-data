@@ -58,6 +58,10 @@ The `cropfield` maximum of 285,783 exceeds the row count of 285,606, so IDs are 
 
 Parquet physical types are `INT64` for `cropfield`, `BYTE_ARRAY` for `original_code`, `original_name` and `geometry`, and `DOUBLE` for `off_area` and `area_ha`. All six chunks report ZSTD compression (`CompressionCodec=6`). The provider originally described a `geom` field in its general README; **the actual corrected DE4 2023 file instead uses `geometry`**, as corroborated by its own GeoParquet primary-column metadata. Never hardcode `geom` for this source or mistake `off_area` for the computed projected polygon area `area_ha`.
 
+The original six column chunks publish **no column-index or offset-index references** in the footer. This rules out an easy page-index shortcut to localizing the zero-`area_ha` record; it does not prove that all other Parquet seeking mechanisms are unavailable.
+
+An additional **opt-in complete area-column reader** was implemented in `research_runners/eurocrops_v202_preflight_v0.py` (`--scan-full-area`). When the full original byte-verified file becomes accessible, it will report the actual number of zero, negative, null, nonfinite and invalid-type area values by scanning only `area_ha`, with bounded 4,096-row batches. It refuses footer/count drift and does not emit source rows or pretend an area sum is unique cultivated geography. **The original-column scan has not run yet**, so the actual number of zero-area fields remains **unknown**.
+
 The six `null_count=0` values are **publisher footer statistics**. They do not prove that any geometry is valid, that `area_ha` matches it, that crop codes are semantically known, that rows are unique, or that all fields in Brandenburg are represented. A `BYTE_ARRAY` original code may still be blank, synthetic, mismapped, or have a missing HCAT4 reference. No individual fields, farmer identities, coordinates, actual damage, or insurance exposure values were inspected.
 
 ## Engineering correction / remaining gate
