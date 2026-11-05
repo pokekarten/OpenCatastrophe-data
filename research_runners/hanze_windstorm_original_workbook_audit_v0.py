@@ -43,6 +43,12 @@ EXPECTED_SOURCE_KYRILL_CDS = 4
 EXPECTED_SOURCE_MISSING_ECONOMIC_LOSS = 638
 EXPECTED_SOURCE_NUMERIC_ECONOMIC_LOSS = 687
 EXPECTED_SOURCE_NONNUMERIC_ECONOMIC_LOSS = 33
+# Publisher source-data origin matrix independently established by exact-source
+# GitHub Actions full original run 42092640290; not evidence of claims.
+EXPECTED_SOURCE_ORIGIN_MATRIX = {
+    "explicit_publisher_CDS_modelled": {"numeric": 278, "non_numeric": 21, "blank": 0},
+    "not_flagged_CDS_independence_unverified": {"numeric": 409, "non_numeric": 12, "blank": 638},
+}
 # Twelve publisher COUNTRY-report IDs of one named windstorm, not event IDs.
 EXPECTED_KYRILL_COUNTRY_ID_PAIRS = (
     ("AT", "20034"), ("BE", "20076"), ("CH", "21154"),
@@ -362,7 +368,8 @@ def audit_workbook(
         EXPECTED_KYRILL_COUNTRY_ID_PAIRS or
         len(data) - has_econ != EXPECTED_SOURCE_MISSING_ECONOMIC_LOSS or
         numeric_econ != EXPECTED_SOURCE_NUMERIC_ECONOMIC_LOSS or
-        len(invalid_econ) != EXPECTED_SOURCE_NONNUMERIC_ECONOMIC_LOSS
+        len(invalid_econ) != EXPECTED_SOURCE_NONNUMERIC_ECONOMIC_LOSS or
+        loss_origin_matrix != EXPECTED_SOURCE_ORIGIN_MATRIX
     ):
         raise OriginalHanzeError("pinned original XLSX fails independently reviewed row profile")
     return {
