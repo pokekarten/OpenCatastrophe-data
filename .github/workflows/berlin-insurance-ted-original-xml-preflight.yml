@@ -17,6 +17,7 @@ on:
       - "research_runners/ted_wbm_2026_procedure_lineage_v0.py"
       - "research_runners/ted_wbm_2026_procedure_search_index_v0.py"
       - "research_runners/ted_wbm_2026_procedure_family_discovery_v0.py"
+      - "research_runners/wbm_rib_205349_public_documents_preflight_v0.py"
       - "research/observations/ted_wbm_2026_original_contract_share_labels_v0.toml"
       - "research/observations/ted_wbm_2026_original_eforms_award_graph_receipt_v0.toml"
       - "tests/test_ted_berlin_insurance_original_xml_preflight_v0.py"
@@ -32,6 +33,9 @@ on:
       - "tests/test_ted_wbm_2026_procedure_search_index_v0.py"
       - "tests/test_ted_wbm_2026_procedure_family_discovery_v0.py"
       - "tests/test_ted_wbm_2026_procedure_family_observation_v0.py"
+      - "tests/test_wbm_rib_205349_public_documents_preflight_v0.py"
+      - "tests/test_wbm_rib_205349_public_access_observation_v0.py"
+      - "research/observations/wbm_2026_rib_205349_public_access_v0.toml"
       - "research/observations/ted_wbm_2026_bt04_procedure_family_members_v0.toml"
       - "tests/test_ted_wbm_2026_procedure_index_observation_v0.py"
       - "research/observations/ted_wbm_2026_search_bt04_lineage_observation_v0.toml"
@@ -42,6 +46,7 @@ on:
       - "docs/research/berlin-wbm-2026-contract-bt150-share-labels-and-tender-minimum.md"
       - "docs/research/berlin-wbm-2026-ted-bt04-procedure-lineage.md"
       - "docs/research/berlin-wbm-2026-ted-procedure-family-discovery.md"
+      - "docs/research/berlin-wbm-2026-rib-205349-document-access-and-request.md"
   workflow_dispatch:
 
 permissions:
@@ -122,6 +127,13 @@ jobs:
         run: python -m research_runners.ted_wbm_2026_procedure_family_discovery_v0
       - name: Offline dated official WBM single-notice procedure family observation guards
         run: python -m unittest discover -s tests -p "test_ted_wbm_2026_procedure_family_observation_v0.py" -v
+      - name: Offline RIB WBM tender 205349 public landing availability classification tests
+        run: python -m unittest discover -s tests -p "test_wbm_rib_205349_public_documents_preflight_v0.py" -v
+      - name: Offline RIB WBM 205349 source receipt and no actual insured exposure guards
+        run: python -m unittest discover -s tests -p "test_wbm_rib_205349_public_access_observation_v0.py" -v
+      - name: Check exact public RIB 205349 notice accessibility without credential escalation
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: python -m research_runners.wbm_rib_205349_public_documents_preflight_v0
       - name: Try official TED daily OJ S archive fallback for 202 Accepted
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: python -m research_runners.ted_berlin_insurance_daily_xml_preflight_v0
