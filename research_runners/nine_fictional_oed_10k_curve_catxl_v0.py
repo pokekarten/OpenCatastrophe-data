@@ -59,14 +59,16 @@ def toy_year_financial(events: tuple[tuple[str, int], ...]) -> dict[str, Any]:
     No premium, hours clause, deductible, reinstatement price or signed
     participation share. Zero-event years must remain in AEP/OEP.
     """
-    if (type(events) is not tuple or len(events) > 2
-            or tuple(x[0] for x in events) != tuple(sorted(set(x[0] for x in events)))):
-        raise ValueError("fictional events must be unique, sorted and max two")
+    if type(events) is not tuple or len(events) > 2:
+        raise ValueError("fictional events must be tuple with max two events")
     if any(type(x) is not tuple or len(x) != 2
            or x[0] not in ("flood", "windstorm")
            or type(x[1]) is not int or not 0 <= x[1] <= 108_000_000
            for x in events):
         raise ValueError("unsupported invented event or gross loss amount")
+    names = tuple(x[0] for x in events)
+    if names != tuple(sorted(set(names))):
+        raise ValueError("fictional event perils must be unique and sorted")
     gross = ceded = max_gross = max_net = 0
     per_event = []
     for peril, loss in events:
@@ -85,7 +87,8 @@ def toy_year_financial(events: tuple[tuple[str, int], ...]) -> dict[str, Any]:
             "peril": peril, "gross_eur": loss,
             "ceded_eur": cession, "net_eur": net,
         })
-    if not 0 <= ceded <= TOY_ANNUAL_AGGREGATE_LIMIT_EUR or gross != gross-ceded+ceded:
+    if (not 0 <= ceded <= TOY_ANNUAL_AGGREGATE_LIMIT_EUR
+            or sum(e["net_eur"] for e in per_event) + ceded != gross):
         raise AssertionError("toy annual gross/ceded/net not conserved")
     return {
         "gross_eur": gross, "ceded_eur": ceded, "net_eur": gross - ceded,
