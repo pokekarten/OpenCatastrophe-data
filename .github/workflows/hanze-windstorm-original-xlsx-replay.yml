@@ -45,11 +45,11 @@ jobs:
           -v
       - name: Fetch exact fixed original Zenodo byte ranges outside Git
         run: |
-          python -B research_runners/hanze_windstorm_original_xlsx_acquisition_v0.py \
+          python -B -m research_runners.hanze_windstorm_original_xlsx_acquisition_v0 \
             --execute --out-dir "$RUNNER_TEMP/hanze-windstorm-original"
       - name: Replay full row audit against the actual pinned original XLSX
         run: |
-          python -B research_runners/hanze_windstorm_original_workbook_audit_v0.py \
+          python -B -m research_runners.hanze_windstorm_original_workbook_audit_v0 \
             --original-xlsx "$RUNNER_TEMP/hanze-windstorm-original/HANZE European Windstorm Impact Database 1950-2020.xlsx" \
             > "$RUNNER_TEMP/hanze-original-complete-row-audit.json"
       - name: Fail closed on full original row numbers, modelled losses and parent-event restrictions
