@@ -75,10 +75,35 @@ class LiveOriginalReceiptOfflineTests(unittest.TestCase):
                          {'numerator':13_200_000,'denominator':1})
         self.assertEqual(report['synthetic_total_replacement_cost_eur'],240_000_000)
         self.assertTrue(report['point_reextract_exact_original'])
+        self.assertEqual(report['distinct_native_hazard_grid_cells_sampled'], 2)
+        self.assertFalse(report['source_sites_share_a_native_grid_cell'])
+        self.assertEqual(report['max_fictional_assets_sharing_one_native_grid_cell'], 12)
         for key in ('annual_AAL','annual_OEP','annual_AEP','insurer_original_gross','insurer_retained_net'):
             self.assertIsNone(report[key])
         self.assertFalse(report['model_calibrated'])
         self.assertEqual(report['source_sha256'],sha256(FAKE).hexdigest())
+
+    def test_coincident_synthetic_sites_report_one_native_cell_for_all_assets(self):
+        source=sample()
+        source['site_samples'][1].update({
+            'native_cell_x':source['site_samples'][0]['native_cell_x'],
+            'native_cell_y':source['site_samples'][0]['native_cell_y'],
+            'selected_cell_center_lon':source['site_samples'][0]['selected_cell_center_lon'],
+            'selected_cell_center_lat':source['site_samples'][0]['selected_cell_center_lat'],
+            'absolute_max_gust_m_s':source['site_samples'][0]['absolute_max_gust_m_s'],
+            'relative_max_gust_dimensionless':source['site_samples'][0]['relative_max_gust_dimensionless'],
+        })
+        fake_sampler=SimpleNamespace(sample_climk_era5=lambda **kwargs:copy.deepcopy(source))
+        with patch.object(mod,'PINNED_SHA256',sha256(FAKE).hexdigest()),\\
+             patch.dict(sys.modules,{'climk_era5_synthetic_native_sample_v0':fake_sampler}):
+            report=mod.run_live(original=lambda:FAKE,
+                                sampler=lambda **kwargs:copy.deepcopy(source),
+                                previewer=preview_conditional_damage)
+        self.assertEqual(report['distinct_native_hazard_grid_cells_sampled'],1)
+        self.assertTrue(report['source_sites_share_a_native_grid_cell'])
+        self.assertEqual(report['max_fictional_assets_sharing_one_native_grid_cell'],24)
+        self.assertEqual(report['conditional_physical_ground_up_eur_exact'],
+                         {'numerator':1_200_000,'denominator':1})
 
     def test_provider_sha_drift_cannot_claim_original_source(self):
         sample_fake=sample()
