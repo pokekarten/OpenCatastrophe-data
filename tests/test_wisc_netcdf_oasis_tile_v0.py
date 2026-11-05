@@ -243,5 +243,31 @@ class WiscNetcdf4SyntheticIntegration(unittest.TestCase):
                 )
 
 
+@unittest.skipUnless(__import__("shutil").which("csvtobin"),
+                     "native Oasis pytools csvtobin binary is optional in core CI")
+class WiscNativeOasisFootprintValidation(unittest.TestCase):
+    def test_native_oasis_footprint_converter_accepts_synthetic_tile(self):
+        import subprocess
+        import shutil
+
+        self.assertIsNotNone(shutil.which("csvtobin"))
+        files, receipt = synthetic()
+        self.assertFalse(receipt["annual_oep_aep_authorized"])
+        with TemporaryDirectory() as d:
+            directory = Path(d)
+            for filename, body in files.items():
+                (directory / filename).write_bytes(body)
+            binary = directory / "footprint.bin"
+            index = directory / "footprint.idx"
+            process = subprocess.run(
+                ["csvtobin", "footprint", "-i", str(directory / "footprint.csv"),
+                 "-o", str(binary), "-x", str(index), "-m", "5"],
+                capture_output=True, text=True, timeout=45, check=False,
+            )
+            self.assertEqual(process.returncode, 0, process.stderr[-3000:])
+            self.assertTrue(binary.is_file() and binary.stat().st_size > 8)
+            self.assertTrue(index.is_file() and index.stat().st_size > 0)
+
+
 if __name__ == "__main__":
     unittest.main()
