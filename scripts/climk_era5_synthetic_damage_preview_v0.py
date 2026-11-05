@@ -186,7 +186,8 @@ def _ratio(gust_mm_s, points):
     return Fraction(lo[1]) + Fraction(gust_mm_s-lo[0], hi[0]-lo[0]) * (hi[1]-lo[1])
 
 
-def preview_conditional_damage(*, sample, synthetic_assets, vulnerabilities):
+def preview_conditional_damage(*, sample, synthetic_assets, vulnerabilities,
+                               original_netcdf_bytes=None, original_sites_json_bytes=None):
     """Source-labeled, secondary-uncertainty-free conditional damage expectation.
 
     Even with the original publisher SHA, this forwarded JSON can be tampered.
@@ -194,6 +195,28 @@ def preview_conditional_damage(*, sample, synthetic_assets, vulnerabilities):
     original sampling against the pinned NetCDF for provider-grounded use.
     """
     site_gusts = _sample_sites(sample)
+    if (original_netcdf_bytes is None) != (original_sites_json_bytes is None):
+        raise DamagePreviewError('both original NetCDF and original sites JSON required for re-verification')
+    reverified = original_netcdf_bytes is not None
+    if reverified:
+        if (type(original_netcdf_bytes) is not bytes or
+                not 1 <= len(original_netcdf_bytes) <= 7_500_000 or
+                type(original_sites_json_bytes) is not bytes or
+                not 1 <= len(original_sites_json_bytes) <= 5_000_000):
+            raise DamagePreviewError('bounded original source bytes required')
+        # Import inside this optional real-source path so the 13 offline
+        # financial/contract tests do not depend on a NetCDF provider reader.
+        try:
+            from climk_era5_synthetic_native_sample_v0 import sample_climk_era5
+            reproduced = sample_climk_era5(
+                original=original_netcdf_bytes,
+                synthetic_sites_json=original_sites_json_bytes,
+                storm_index=sample['storm_index_zero_based'],
+            )
+        except Exception as exc:
+            raise DamagePreviewError('original NetCDF gust point-sampling re-verification failed') from exc
+        if reproduced != sample:
+            raise DamagePreviewError('forwarded point sample differs from independently reread source NetCDF')
     _exact(synthetic_assets, {'schema_version','synthetic_only','currency',
                               'insurer_label','rows'}, 'synthetic asset roster')
     if (synthetic_assets['schema_version'] != ASSETS_SCHEMA or
@@ -233,7 +256,7 @@ def preview_conditional_damage(*, sample, synthetic_assets, vulnerabilities):
         'status':'HISTORICAL_EXTREME_STORM_CONDITIONAL_SYNTHETIC_DAMAGE_PREVIEW_ONLY',
         'source_era5_sha256_declared':PINNED_ERA5_SHA256,
         'source_sample_json_sha256':_sha(sample),
-        'source_sample_gust_values_independently_reverified':False,
+        'source_sample_gust_values_independently_reverified':reverified,
         'synthetic_asset_roster_sha256':_sha(synthetic_assets),
         'uncalibrated_vlt_sha256':_sha(vulnerabilities),
         'source_storm_key':sample['event_key'],
@@ -288,15 +311,23 @@ def main(argv=None):
     parser.add_argument('--source-sample',type=Path,required=True)
     parser.add_argument('--synthetic-assets',type=Path,required=True)
     parser.add_argument('--vlt',type=Path,required=True)
+    parser.add_argument('--original-netcdf',type=Path,help='optional exact original pinned NetCDF source')
+    parser.add_argument('--original-sites',type=Path,help='optional original synthetic-site JSON used by sampler')
     parser.add_argument('--out',type=Path,required=True)
     args = parser.parse_args(argv)
-    if (args.out.is_symlink() or args.out.resolve() in
-            {args.source_sample.resolve(),args.synthetic_assets.resolve(),args.vlt.resolve()} or
+    if (args.original_netcdf is None) != (args.original_sites is None):
+        parser.error('both --original-netcdf and --original-sites must be supplied together')
+    inputs = [args.source_sample,args.synthetic_assets,args.vlt]
+    if args.original_netcdf is not None:
+        inputs.extend((args.original_netcdf,args.original_sites))
+    if (args.out.is_symlink() or args.out.resolve() in {p.resolve() for p in inputs} or
             args.out.exists()):
         parser.error('output exists or aliases an input; source overwrite forbidden')
     result = preview_conditional_damage(sample=_load_json(args.source_sample),
          synthetic_assets=_load_json(args.synthetic_assets),
-         vulnerabilities=_load_json(args.vlt))
+         vulnerabilities=_load_json(args.vlt),
+         original_netcdf_bytes=(args.original_netcdf.read_bytes() if args.original_netcdf else None),
+         original_sites_json_bytes=(args.original_sites.read_bytes() if args.original_sites else None))
     args.out.parent.mkdir(parents=True,exist_ok=True)
     args.out.write_text(json.dumps(result,sort_keys=True,indent=2,allow_nan=False)+'\n',encoding='utf-8')
     return 0
