@@ -10,7 +10,7 @@ import unittest
 
 from shapely import wkb
 from shapely.geometry import Polygon
-from research_runners.eurocrops_v202_preflight_v0 import Blocked, asset_identity, audit_rows, geo_metadata
+from research_runners.eurocrops_v202_preflight_v0 import Blocked, asset_identity, audit_rows, geo_metadata, inspect_local
 
 
 class EuroCropsPreflight(unittest.TestCase):
@@ -40,6 +40,20 @@ class EuroCropsPreflight(unittest.TestCase):
             "geom": {"crs": "EPSG:4326"}}}).encode()}
         with self.assertRaises(Blocked):
             geo_metadata(bad, names)
+
+    def test_partial_or_unpinned_taxonomy_is_blocked(self):
+        with self.assertRaisesRegex(Blocked, "both original codebooks"):
+            inspect_local(
+                Path("/nonexistent/de4_2023.parquet"), "0" * 64,
+                mapping=Path("/nonexistent/eurocrops.csv"),
+            )
+        with self.assertRaisesRegex(Blocked, "both original codebooks"):
+            inspect_local(
+                Path("/nonexistent/de4_2023.parquet"), "0" * 64,
+                mapping=Path("/nonexistent/eurocrops.csv"),
+                mapping_git_blob_sha1="1" * 40,
+                hierarchy=Path("/nonexistent/hcat4.csv"),
+            )
 
     def test_polygon_errors(self):
         square = Polygon([(0, 0), (100, 0), (100, 100), (0, 100)])
