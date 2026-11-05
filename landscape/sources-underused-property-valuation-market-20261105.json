@@ -1,0 +1,163 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Non-admission discovery of six underused public property valuation, construction-cost, insurer-distribution and post-disaster recovery source products for synthetic insurance exposure research; no individual insured assets, commercial model inputs or third-party source bytes admitted.",
+  "review_date": "2026-11-05",
+  "entries": [
+    {
+      "candidate_id": "nz.linz.dvr-public-subset.2026",
+      "name": "New Zealand LINZ public National District Valuation Roll subset",
+      "provider": "Toitu Te Whenua Land Information New Zealand (LINZ)",
+      "categories": [
+        "property_valuation",
+        "cadastral_reference",
+        "residential_property",
+        "exposure_value_proxy"
+      ],
+      "spatial_scope": "New Zealand; only territorial authorities permitting public publication; not a complete national valuation roll",
+      "temporal_scope": "Public table updated weekly; official page last updated 2026-07-23 at source inspection",
+      "resolution_or_granularity": "Non-spatial property valuation table with unit_of_property_id, valuation and property descriptors; approximately 287,243 publicly listed rows on inspected source page, dependent on current version and related LINZ tables",
+      "potential_roles": [
+        "assessed_value_and_property_type_prior",
+        "property_spine_identifier_join_research",
+        "replacement_cost_vs_tax_valuation_challenge"
+      ],
+      "authoritative_url": "https://data.linz.govt.nz/table/114085-nz-properties-national-district-valuation-roll/",
+      "access_class_hint": "public_partial_dvr_table_cc_by_4_claimed_by_provider_exact_field_terms_and_spatial_join_review_pending",
+      "note": "Publisher explicitly differentiates this public partial CC BY 4.0 table from government-only full National DVR. Owner/ratepayer information is excluded. The table itself has null/empty geometries, so a verified unit_of_property_id to separately licensed spatial table join is required before asset geolocation. Tax/rating value is not insured replacement cost, TIV, market value or actual carrier exposure; preserve authority participation/selection bias and valuation date. No raw records acquired or committed.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "ca.mb.roll-entry.assessment.2026",
+      "name": "Manitoba ROLL ENTRY assessed-property GIS layer",
+      "provider": "Government of Manitoba / Manitoba Maps",
+      "categories": [
+        "cadastral_parcels",
+        "property_assessment",
+        "dwelling_units",
+        "geospatial_exposure_proxy"
+      ],
+      "spatial_scope": "Province of Manitoba, Canada; jurisdictional assessment coverage, not all Canada or a verified footprint inventory",
+      "temporal_scope": "Official Canada open-data record updated 2026-03-11; individual ASMT_ROLL valuation tax year and version vary by record",
+      "resolution_or_granularity": "Parcel/roll boundaries and summary assessment fields, including municipality, civic/short legal address, DWELLING_UNITS, TOTAL_VALUE and assessment version; listed CSV, GeoJSON, GeoPackage and ArcGIS FeatureServer access",
+      "potential_roles": [
+        "spatial_assessed_value_prior",
+        "dwelling_unit_density_and_parcel_join",
+        "parcel_to_building_cardinality_challenge"
+      ],
+      "authoritative_url": "https://open.canada.ca/data/dataset/1cf8672a-2258-2917-0c8e-4cb8eb6401d9",
+      "access_class_hint": "public_geoportal_arcgis_geopackage_csv_dataset_specific_licence_and_privacy_review_pending",
+      "note": "A ROLL ENTRY is an assessed-property or parcel unit, not one building, insured location or loss. TOTAL_VALUE is a tax-assessment measure, not replacement cost/TIV. The publisher describes a civic or legal-location field and parcel-like geometry: assess personal-data risk and record-level exclusions before any acquisition; no property-owner or policy inference. Verify the current ArcGIS service schema, geometry quality, rate-year versions and the dataset-specific rights statement. No third-party bytes stored.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "eu.eurostat.sts-copi-q.2026",
+      "name": "Eurostat quarterly construction producer price/cost index for new residential buildings",
+      "provider": "Eurostat / European Commission",
+      "categories": [
+        "construction_cost",
+        "price_indices",
+        "replacement_cost_inflation_proxy",
+        "europe"
+      ],
+      "spatial_scope": "Reporting European countries with available Eurostat quarterly series; country-level, not city/building-level rates",
+      "temporal_scope": "Official quarterly series sts_copi_q, with source catalogue showing updates in October 2026 and historical coverage varying by country",
+      "resolution_or_granularity": "Eurostat SDMX/CSV quarterly national index series for construction producer prices or costs of new residential buildings; associated view teiis510",
+      "potential_roles": [
+        "residential_building_replacement_cost_escalation",
+        "cross_country_inflation_sensitivity",
+        "tiv_vintage_normalization_challenge"
+      ],
+      "authoritative_url": "https://ec.europa.eu/eurostat/databrowser/view/sts_copi_q/default/table?lang=en",
+      "access_class_hint": "public_eurostat_sdmx_csv_country_frequency_unit_base_year_rights_review_pending",
+      "note": "An index of cost change is not an absolute EUR/m2 reconstruction price, per-building insured sum, actual claims inflation or non-residential cost series. Preserve units, base-year rebasings, seasonal adjustment, country gaps, residential NACE code and vintage when applying to separate independently justified replacement value priors. Source data are not copied here.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "it.ivass.geographic-premiums.2024",
+      "name": "IVASS geographic distribution of Italian insurance premiums, reference year 2024",
+      "provider": "IVASS - Istituto per la Vigilanza sulle Assicurazioni",
+      "categories": [
+        "insurance_market",
+        "regional_premiums",
+        "market_statistics",
+        "portfolio_geography"
+      ],
+      "spatial_scope": "Italy; geography published by the Italian insurance supervisor, not verified individual insurer risk-site geocodes",
+      "temporal_scope": "2024 reference-year geographic-premium analysis published 2026-02-19",
+      "resolution_or_granularity": "Regulator statistical publication and downloadable XLSX tables on geographic premium distribution; exact regional/class and entity dimensions require workbook inspection",
+      "potential_roles": [
+        "regional_insurance_market_allocation_prior",
+        "premium_geographic_concentration_crosscheck",
+        "country_specific_insurer_portfolio_constraints"
+      ],
+      "authoritative_url": "https://www.ivass.it/pubblicazioni-e-statistiche/statistiche/comunicazioni-statistiche/2026/cs-n-2-2026/index.html?com.dotmarketing.htmlpage.language=1",
+      "access_class_hint": "public_ivass_pdf_xlsx_exact_table_dimensions_and_reuse_rights_review_pending",
+      "note": "Only the published report topic, 2024 reference year, 2026 date and XLSX availability were checked. Per-carrier, per-peril, regional granularity and workbook values were not independently verified. Premium collection geography does not identify insured asset coordinates, building counts, TIV, claims or ceded reinsurance share. Do not infer insurer-specific geographic allocation without confirmed table dimensions.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "us.fema.public-assistance-projects.v2",
+      "name": "OpenFEMA Public Assistance Funded Projects Details v2",
+      "provider": "Federal Emergency Management Agency (FEMA), United States",
+      "categories": [
+        "disaster_recovery",
+        "observed_damage_proxy",
+        "public_infrastructure",
+        "financial_assistance"
+      ],
+      "spatial_scope": "United States federally supported public-assistance disaster recipients and eligible facilities; excludes most private insurance claims",
+      "temporal_scope": "Continuously updated OpenFEMA v2 public data; obligated projects only, with ongoing historic migration and revisions",
+      "resolution_or_granularity": "Project worksheet and applicant-linked obligations; public OpenFEMA v2 REST API and published data dictionary, not directly site-level validated insured losses",
+      "potential_roles": [
+        "disaster_recovery_cost_observation",
+        "public_facility_impact_validation",
+        "hazard_event_to_aid_scope_challenge"
+      ],
+      "authoritative_url": "https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v2",
+      "access_class_hint": "public_openfema_v2_api_daily_revision_terms_and_record_join_review_pending",
+      "note": "FEMA explicitly warns that these grant obligations are from grant-management systems, not official federal financial reporting or complete economic damages. Project worksheets are only funded/obligated work and may cover debris or mitigation, not physical replacement. Data migration changed record counts; do not treat v1 and v2 as independent observations or sum with actual insured claims. Candidate is not an insured loss calibration dataset without selection/inflation and project-class controls.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    },
+    {
+      "candidate_id": "au.apra.intermediated-general-insurance.2026h1",
+      "name": "APRA intermediated general insurance statistical series through June 2026",
+      "provider": "Australian Prudential Regulation Authority (APRA)",
+      "categories": [
+        "insurance_distribution",
+        "broker_channels",
+        "market_statistics",
+        "insurance_market"
+      ],
+      "spatial_scope": "Australia, APRA-authorised general insurance, Lloyd's and reported unauthorised foreign insurance intermediated channel; some reported regional categories for foreign risks",
+      "temporal_scope": "December 2010 to June 2026 series, official 2026-09-29 release; semiannual",
+      "resolution_or_granularity": "Public APRA XLSX database and explanatory notes, industry aggregate intermediated placements; foreign insurer segments may be shown by region, exemption, atypical risk and reason",
+      "potential_roles": [
+        "distribution_channel_market_prior",
+        "broker_placement_trend_crosscheck",
+        "insurer_portfolio_non_identifiability_constraint"
+      ],
+      "authoritative_url": "https://www.apra.gov.au/news-and-publications/intermediated-general-insurance-statistics",
+      "access_class_hint": "public_apra_xlsx_data_definitions_confidentiality_and_rights_review_pending",
+      "note": "This official intermediated-business publication is distinct from APRA's older insurer institution-level series. It is industry-level, not a geolocated named insurer portfolio or customer-level policy file; its regional breakdown for unauthorised foreign insurers must not be conflated with all Australian property risks. Do not assume 2024-2026 institution-level disclosure remains available: APRA notes the quarterly institution-level general-insurance series is on hiatus. Inspect workbook and licence before numerical reuse.",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted"
+    }
+  ]
+}
