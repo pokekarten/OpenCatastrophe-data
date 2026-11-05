@@ -11,11 +11,13 @@ on:
       - "research_runners/rva_nrw_hu_2022_original_zip_range_receipt_v0.py"
       - "research_runners/rva_nrw_hu_2022_original_member_headers_v0.py"
       - "research_runners/rva_nrw_hu_2022_first_polygons_v0.py"
+      - "research_runners/export_rva_nrw_hu_2022_geocoded_oed_smoke_v0.py"
       - "requirements-eu-flood-spatial.txt"
       - "tests/test_rva_nrw_hu_2022_original_index_receipt_v0.py"
       - "tests/test_rva_nrw_hu_2022_original_zip_range_receipt_v0.py"
       - "tests/test_rva_nrw_hu_2022_original_member_headers_v0.py"
       - "tests/test_rva_nrw_hu_2022_first_polygons_v0.py"
+      - "tests/test_export_rva_nrw_hu_2022_geocoded_oed_smoke_v0.py"
       - "docs/research/rva-nrw-historical-hu-2022-footprint-oed-source-gate-20261105.md"
   workflow_dispatch:
 
@@ -55,3 +57,19 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_rva_nrw_hu_2022_first_polygons_v0.py' -v
           python research_runners/rva_nrw_hu_2022_first_polygons_v0.py --live
+      - name: Install pinned official Oasis ODS Tools 5.0.8
+        run: |
+          python -m pip install --disable-pip-version-check --no-input ods-tools==5.0.8
+          python -m pip check
+      - name: Three public physical source WGS84 geometries to fictitious OED location/account
+        run: |
+          python -m unittest discover -s tests -p 'test_export_rva_nrw_hu_2022_geocoded_oed_smoke_v0.py' -v
+          python research_runners/export_rva_nrw_hu_2022_geocoded_oed_smoke_v0.py "${{ runner.temp }}/rva-nrw-hu2022-3-geocoded-test" --live
+      - name: Publish source physical coordinates, fictional financial OED CSV (NOT insured sites)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rva-nrw-hu2022-three-public-physical-geocodes-fictitious-OED-NOT-insurer-sites
+          path: ${{ runner.temp }}/rva-nrw-hu2022-3-geocoded-test/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
