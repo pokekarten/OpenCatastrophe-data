@@ -65,3 +65,38 @@ Neon project: **insurance-risk-core**; default branch; database **insurance**; 2
 [OpenCatastrophe-data PR #1373](https://github.com/pokekarten/OpenCatastrophe-data/pull/1373) already prepares an OED 5.0 **synthetic** 10,000-policy sample (or optional full fictional policy population) from the separate 400-Kreis × ten-age-band research allocator. Its outputs deliberately have **no geolocated insured site positions** and are marked NOT_GEOLOCATED_NOT_MODEL_READY. The new database source/identity gate here is therefore a **precondition** before any company-labelled OED rows from #1373 could be registered as Neon insurer exposure, and #1373 must not be treated as a native loss/OEP/AEP result. Reuse #1373; do not create a redundant OED exporter in #1372.
 
 The [offline source-contract tests](../../tests/test_rva_solo_neon_readiness_v0.py) check consistency of existing typed source records, both LEIs, accounting distinctions, two merger years and absence of database mutation SQL. They **do not replace running SQL against Neon**. The SQL was successfully executed; full GitHub CI and independent code review must be checked separately. No productive Neon rows or external original PDF bytes were added.
+
+
+## Isolated Neon identity-stage rehearsal (2026-11-05)
+
+**Not production:** A disposable Neon branch named `rva-solo-identity-rehearsal-20261105`, branch ID `br-steep-hill-bahgylx3`, was created from default `main`. Only this branch received two metadata-only `registry.source_record` rows, one verified-legal-identity `entity.organization` row and its exact `GLEIF_LEI` identifier row. All four INSERTs were executed as one transaction. No source PDFs, model output, third-party raw data, personal customer information or company exposure were inserted.
+
+Source metadata keys, based on canonical existing GitHub blobs:
+
+| Source key | Existing canonical GitHub file, immutable blob SHA | Original reference and rights |
+| --- | --- | --- |
+| `research:rva:issuer:sfcr2025` | `research/observations/rva_solo_2025_public_sfcr_v0.toml`, `5425011d27d1e18d6b892066ed0c1b0c0e36c20c` | [Issuer imprint](https://www.ruv.de/impressum), publisher original bytes not re-hashed; use limited to legal identity metadata |
+| `research:rva:acpr:lei20261105` | `research/observations/berlin_named_carrier_lei_temporal_preflight_20261105_v0.toml`, `912ca18ce95d61bfd5efea1388cbb003cbdc1bd2` | [ACPR ID 225615](https://acpr.banque-france.fr/fr/fiche-detaillee/rv-allgemeine-versicherung-aktiengesellschaft-0), original response bytes not re-hashed; metadata-only |
+
+Both rows have `classification=landscape_candidate`, `admissible_for_raw=false`, explicit non-cleared third-party source rights and `provider_original_bytes_hashed=false`. Only the independent **legal-person identity** is verified, by corroborated publisher imprint + regulatory LEI + [external LEI record](https://lei.bloomberg.com/leis/view/5299009UN4CBXZ336M65), not the right to reuse documents or a company's risk placements. In particular, do not conflate legal identity `verified` with `model_input_ready`.
+
+The exact read-only SQL from this PR was executed **twice**, once against default main and once against the isolated branch:
+
+| Exact gate | Main | Isolated branch |
+| --- | ---: | ---: |
+| `verified_solo_entities` | 0 | 1 |
+| `issuer_source_linked_solo_entities` | 0 | 1 |
+| `exact_source_bound_solo_lei_rows` | 0 | 1 |
+| `parent_lei_wrongly_on_solo_rows` | 0 | 0 |
+| `source_bound_exact_sfcr_property_gwp_rows` | 0 | 0 |
+| `source_bound_exact_hgb_building_contract_rows` | 0 | 0 |
+| `source_bound_exact_hgb_building_gwp_rows` | 0 | 0 |
+| `company_linked_portfolio_versions` | 0 | 0 |
+| `company_linked_exposure_units` | 0 | 0 |
+| `next_gate` | `BLOCKED_UNVERIFIED_OR_AMBIGUOUS_SOLO_LEGAL_ENTITY` | `BLOCKED_SOLO_SFCR_METRIC_NOT_SOURCE_LINKED` |
+
+**New fail-closed financial requirement:** After this isolated test, the SQL now counts a published financial metric only when the source record has `review_status='verified_original_financial_observation'` plus both typed flags `publisher_original_sha256_verified=true` and `accounting_line_and_basis_verified=true`. This prevents an arbitrary research-only source-key from advancing financial readiness. It is deliberately **not** a requirement to redistribute the publisher PDF or to admit restricted original bytes as CAT loss input.
+
+The public issuer PDF text was rechecked externally against the [2025 SFCR](https://www.ruv.de/dam/jcr%3A9c8441a7-28dd-4d98-9b79-3eb3c8b4afa5/2025-SFCR-Allgemeine.pdf), Fire/Other Property `2.223.182 TEuro` (PDF index page 12), and [2025 HGB](https://www.ruv.de/dam/jcr%3Ae0e32e31-09ff-4b0f-b693-2c6c9bee9bb5/01_GB%202025_R%2BV%20Allgemeine%20Versicherung%20AG_final.2026-04-21-14-59-23.pdf), `997.710 TEuro` (PDF index page 8) and `1.060.546` year-end contracts (PDF index page 77). The web PDF page-image inspection and separate original-byte download were unavailable in this check, so **no new original provider PDF SHA-256, page-image proof, or financial production approval** is claimed. The typed TOML values and observed source text agree; independent source-byte admission is still required.
+
+**Promotion process:** keep main unchanged; independently acquire/pin original publisher file hashes and usage-rights decisions, review source contracts, and only then prepare separately reviewed idempotent legal-person/metric registration. Do **not** merge the Neon rehearsal branch as a replacement for main and do not import the fictional 10k Oasis OED sample as an observed company portfolio.
