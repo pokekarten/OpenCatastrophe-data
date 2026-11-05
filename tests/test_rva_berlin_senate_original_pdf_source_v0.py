@@ -3,6 +3,8 @@
 """No-network synthetic original Senate PDF source-provenance tests."""
 import hashlib
 import io
+import copy
+import tomllib
 import unittest
 from unittest.mock import patch
 
@@ -22,6 +24,43 @@ class FakeResponse:
 
 
 class BerlinSenateOriginalPDFSourceTests(unittest.TestCase):
+    def test_recorded_original_bytes_and_semantics_still_match_source(self):
+        reg=tomllib.loads(m.REGISTER.read_text(encoding="utf-8"))
+        rec=[{
+            "original_sha256":x["original_sha256"],
+            "original_bytes":x["original_bytes"],
+            "source_pdf_pages_extracted":x["original_pages"],
+            "semantic_marker_count":x["positive_semantic_marker_count"],
+            "exact_source_sha_pinned":True,
+            "raw_pdf_stored_or_exported":False,
+            "CAT_model_exposure_admitted":False,
+        } for x in reg["documents"]]
+        self.assertTrue(m.verify_saved_exact_original_source_receipts(rec,register=reg)[
+            "exact_official_original_sha_byte_page_marker_receipts_conserved"
+        ])
+        self.assertEqual(len(rec),2)
+
+    def test_tampering_original_byte_size_is_rejected(self):
+        reg=tomllib.loads(m.REGISTER.read_text(encoding="utf-8"))
+        rec=[{
+            "original_sha256":x["original_sha256"],
+            "original_bytes":x["original_bytes"],
+            "source_pdf_pages_extracted":x["original_pages"],
+            "semantic_marker_count":x["positive_semantic_marker_count"],
+            "exact_source_sha_pinned":True,
+            "raw_pdf_stored_or_exported":False,
+            "CAT_model_exposure_admitted":False,
+        } for x in reg["documents"]]
+        rec[0]["original_bytes"]+=1
+        with self.assertRaisesRegex(ValueError,"VALUES_OR_SCOPE_DRIFT"):
+            m.verify_saved_exact_original_source_receipts(rec,register=reg)
+
+    def test_false_real_rv_insured_sites_source_claim_is_rejected(self):
+        reg=tomllib.loads(m.REGISTER.read_text(encoding="utf-8"))
+        reg["actual_RV_insured_berlin_building_sites_verified"]=True
+        with self.assertRaisesRegex(ValueError,"RESEARCH_SCOPE_CHANGED"):
+            m.verify_saved_exact_original_source_receipts([],register=reg)
+
     def test_two_exact_official_pdf_sources(self):
         self.assertEqual(len(m.SOURCES),2)
         self.assertTrue(all(x["url"].startswith(
