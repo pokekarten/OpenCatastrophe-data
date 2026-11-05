@@ -137,6 +137,25 @@ class SyntheticClimkConditionalDamage(unittest.TestCase):
         with self.assertRaisesRegex(DamagePreviewError,'exact schema'):
             preview_conditional_damage(sample=a,synthetic_assets=b,vulnerabilities=c)
 
+    def test_same_native_cell_cannot_report_conflicting_source_gusts(self):
+        a,b,c=fixtures()
+        source=a['site_samples']
+        source[1]['native_cell_x']=source[0]['native_cell_x']
+        source[1]['native_cell_y']=source[0]['native_cell_y']
+        source[1]['selected_cell_center_lon']=source[0]['selected_cell_center_lon']
+        source[1]['selected_cell_center_lat']=source[0]['selected_cell_center_lat']
+        # Same cell with a different gust would be a fabricated independent
+        # source observation; the adapter must reject it.
+        with self.assertRaisesRegex(DamagePreviewError,'conflicting native source'):
+            preview_conditional_damage(sample=a,synthetic_assets=b,vulnerabilities=c)
+        source[1]['absolute_max_gust_m_s']=source[0]['absolute_max_gust_m_s']
+        result=preview_conditional_damage(sample=a,synthetic_assets=b,vulnerabilities=c)
+        self.assertEqual(result['total_conditional_ground_up_eur_exact'],
+                         {'numerator':100_000,'denominator':1})
+        source[1]['relative_max_gust_dimensionless']=1.5
+        with self.assertRaisesRegex(DamagePreviewError,'conflicting native source'):
+            preview_conditional_damage(sample=a,synthetic_assets=b,vulnerabilities=c)
+
     def test_wrong_gust_measure_or_unit_rejected(self):
         for key,val in [('physical_intensity_measure','MAX_3_SECOND_10M_GUST_OVER_72_HOURS'),
                         ('physical_intensity_unit','mph')]:
