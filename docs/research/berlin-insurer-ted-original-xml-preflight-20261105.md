@@ -1,0 +1,37 @@
+<!--
+SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+SPDX-License-Identifier: Apache-2.0
+-->
+
+# Berlin 2024/2026 insurance procurements: independent official TED XML source preflight
+
+**Status (2026-11-05): original provider XML immutable hash not yet pinned, not a CAT model source admission.** This supplements [the prior Gewobag ADO and WBM property-segment research](berlin-gewobag-ado-wbm-2026-commercial-contract-segments.md), where the source claims were grounded in a 2024 issuer report and secondary public notice mirrors. The strongest available next verification is the exact primary EU TED source body, not a second portal copy.
+
+## Publisher's original unambiguous download interface
+
+The [TED European Publications Office developer guidance](https://ted.europa.eu/en/simap/developers-corner-for-reusers) and [original-XML download docs](https://docs.ted.europa.eu/ODS/latest/reuse/download-direct.html) explicitly document the direct URL scheme `https://ted.europa.eu/en/notice/{publication-number}/xml`.
+
+| Official original XML | Issuer buyer + published subject to check | Known secondary evidence already researched | Not proven |
+| --- | --- | --- | --- |
+| [TED 558592-2024 XML](https://ted.europa.eu/en/notice/558592-2024/xml) | Gewobag, **Gebäudeversicherung**, issued 2024-09-13 | [Public notice](https://de.openprocurements.com/tender/2024-gebaudeversicherung-mkn/) with 2024 procurement 221-24, ADO side-contract vs existing Gewobag main property contract | An awardee, 2026 renewal, exact contract legal obligor, insurer split, site-level TIV, 2024 official XML SHA |
+| [TED 668506-2026 XML](https://ted.europa.eu/en/notice/668506-2026/xml) | WBM, **Industrielle Sachversicherung für neun reine Gewerbeobjekte**, award notice 2026-09-29 | [Secondary award rendering](https://auftragsatlas.de/ausschreibung/industrielle-sachversicherung-fuer-reine-gewerbeobjekte-1172391) names HDI Global, Helvetia and R+V for nine purely commercial objects | Original eForms field-based awardee classification, actual three-way shares, exact object allocation, insurance premium/limit/TIV, XML SHA |
+
+The two original publications are different: **2024 competition/tender is not a winner**; **2026 contract award** is for commercial property, not WBM's 2025 main residential company stock. An indexed *EUR 0* published award value is not a premium or an insured sum. The original eForms schema must be interpreted by explicit roles; mere occurrence of a legal company name anywhere in XML is **not enough** to assert it is an awarded underwriter.
+
+## Offline and original source checks
+
+```bash
+python -m unittest discover -s tests -p 'test_ted_berlin_insurance_original_xml_preflight_v0.py' -v
+python -m research_runners.ted_berlin_insurance_original_xml_preflight_v0
+```
+
+The [read-only runner](../../research_runners/ted_berlin_insurance_original_xml_preflight_v0.py) follows a strict *two-notice allowlist*, exact official HTTPS domain and path after redirects, bounded response bytes, XML-only parsing with DTD/ENTITY refusal, expected buyer/product text markers, and an ephemeral SHA-256 of the exact original HTTP body. **No raw source XML is written to the repository or echoed**; only size, hash, document root and bounded PASS/fail metadata are printed. Code semantics explicitly reject insurer contract, insured site location and TIV assertions from this source preflight.
+
+There are two separate verification levels:
+
+- **First independent retrieval:** if the official endpoint returns complete expected XML, output includes observed original `sha256` and byte count; the flags `original_sha256_immutable_pin_verified=false` and `original_byte_count_immutable_pin_verified=false` remain **false**. That is **source discovery**, not pinned immutable provenance. Source publication number in body is disclosed as observed true/false rather than invented.
+- **Next controlled pin:** independently review the exact original eForms source, its publication ID, XML schema/awardee element roles and rights; only then set the two fixed expected SHA/byte counts, re-fetch original bytes and require exact SHA/size and semantic matches in a second run. Cross-validate the buyer, awardee roles, lot and dates from original elements, then add a versioned typed observation. Do not assume a secondary index's winner list is verified by presence of names alone.
+
+The [dedicated GitHub Action](../../.github/workflows/berlin-insurance-ted-original-xml-preflight.yml) executes synthetic negative tests before attempting a live public publisher fetch. **PR network failures do not falsely become source verification:** the live step is explicitly non-blocking for PR builds because of external-source availability; manually dispatched runs are strict. CI green therefore means the source parser/tests work, not necessarily that TED served a valid original notice. This is separate from normal repository CI.
+
+**Source rights:** TED is public for reuse via its documented interfaces, subject to current fair use and licence terms; the tool does not store or redistribute original data bytes or individual insured customer/asset identifiers. One publication notices cannot be converted into actual insurance exposure, reinsurance programme or insurer market share on their own.
