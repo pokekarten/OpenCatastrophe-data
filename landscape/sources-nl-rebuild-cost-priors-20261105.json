@@ -83,6 +83,34 @@
       "scientific_review_status": "not_reviewed",
       "admission_status": "not_admitted",
       "note": "Private insurer/adviser 2026 method is based on 2025 Verbond van Verzekeraars meter and indexed using CBS inputs. It is NOT a continuing 2026 sector-wide Verband publication: sector association's central meter stopped in 2026. Its own 2026 prices must not be inflated again by the same cost-index period. Needs building external volume in m³, not a dwelling's BAG area in m² or a cadastral parcel area. Provider copyright/redistribution/commercial modelling terms not established. Do not embed price tables in public code, import raw insurer rates into CAT, or claim automatic reconstruction cost/TIV."
+    },
+    {
+      "candidate_id": "nl.cbs.new-housing-permit-eur-per-m3-region-tenure.83673ned",
+      "name": "CBS Netherlands permitted new housing costs per m³ by tenure and landsdeel (83673NED)",
+      "provider": "Centraal Bureau voor de Statistiek (CBS)",
+      "categories": [
+        "construction_cost_level",
+        "new_housing_permits",
+        "euro_per_m3",
+        "region_and_tenure",
+        "netherlands",
+        "permit_stage"
+      ],
+      "spatial_scope": "Netherlands aggregate, four CBS landsdelen (NL01, LD01-LD04); no municipalities, addresses or individual buildings",
+      "temporal_scope": "Rolling 12-month permit periods (3-month step); observed original series version 202608200000, latest queried period 2026VJ06 = July 2025–June 2026, provisional/revisable",
+      "resolution_or_granularity": "Measure M002974 EUR/m³, new residential construction permit budgets excluding VAT (projects >= EUR 50,000); split Eigendom A028867 rental, A028868 owner-occupied and 5 CBS regions, 10 observations per period. Not rebuilt insured reinstatement unit cost, not gross TIV.",
+      "potential_roles": [
+        "independently_observed_construction_cost_price_level_challenge",
+        "regional_tenure_cost_differentiation_prior",
+        "research_only_rebuilding_value_external_benchmark"
+      ],
+      "authoritative_url": "https://www.cbs.nl/nl-nl/cijfers/detail/83673NED",
+      "access_class_hint": "original_cbs_odata_v4_cc_by_4_0_version_202608200000_research_nonadmitted",
+      "candidate_status": "evidence_checked",
+      "rights_review_status": "not_reviewed",
+      "scientific_review_status": "not_reviewed",
+      "admission_status": "not_admitted",
+      "note": "2026-11-05 original live /Properties confirms Version=202608200000, Modified=2026-08-20, CC BY 4.0. /MeasureCodes confirms M002974 'Gemiddelde bouwkosten per m³', /EigendomCodes A028867 rent/A028868 owner, /RegioSCodes NL01 NL, LD01 N, LD02 E, LD03 W, LD04 S. Original /Observations?$filter=Perioden eq '2026VJ06' and Measure eq 'M002974' returned all 10 rows with no next page, no ValueAttribute missing. NL EUR/m³ rental 488/400/446/552/417, owner 438/442/417/481/394 (order NL,N,E,W,S). These are preliminary permit-stage 12-month averages excluding VAT for PURE new residential projects only; mixed housing/commercial projects and other categories excluded. These are price-level OBSERVATIONS unlike existing dimensionless CBS cost indices, but not rebuild costs of existing stock. Do not multiply by mixed-use 3DBAG buildings' volumes or conflate dwelling-specific permitted m³ with 3DBAG LoD1.2/1.3/2.2 external building m³. No real TIV or insurer-specific financial loss inferred."
     }
   ]
 }
