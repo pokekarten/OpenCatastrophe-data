@@ -95,6 +95,8 @@ class C3SOriginalAcquisitionTests(unittest.TestCase):
     def test_fail_closed_on_zip_path_traversal_multi_member_and_invalid_payload(self):
         cases = [
             toy_zip(("../outside.csv", toy_csv())),
+            toy_zip((".."+chr(92)+"outside.csv", toy_csv())),
+            toy_zip(("C:outside.csv", toy_csv())),
             toy_zip(("a.csv", toy_csv()), ("b.csv", toy_csv())),
             toy_zip(("index.txt", toy_csv())),
             toy_zip(("a.csv", b"not-a-csv")),
