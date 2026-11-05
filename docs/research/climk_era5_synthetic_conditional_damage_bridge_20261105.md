@@ -100,3 +100,32 @@ gusts), original-byte SHA mismatch, and fabricated re-verification status.
 These are *not* live-NetCDF tests. The real output's storm gusts and actual
 conditional loss can only be quoted after the linked workflow succeeds.
 The separate baseline adapter unit suite remains 15/15 locally green.
+
+
+## Completed first original-source CI receipt (source commit `f4379d4`)
+
+[GitHub Actions successful run 42012362586](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42012362586)
+executed against the authentic Zenodo **6,792,278-byte** original ERA5 v2
+NetCDF, pinned SHA256 `92856dea4578ac556ff5598176ff33411b56baa7c2af0170150e288bd5581102`.
+The workflow completed **20/20 Python tests** followed by an actual source
+read and an independent *second* original-NetCDF point-sampling equality check.
+An initial live run exposed the original source's previously unmodelled
+`event_identity_cross_model_matched=false` field; the exact schema and
+negative challenge were corrected before the successful rerun.
+
+The source-selected historical storm index 0 is **KYRILL**, date label
+`20070118` (not an independently parsed UTC timestamp). Both fictional
+sites happen to choose **the same native ERA5 cell (x=112, y=78)**;
+both observed native source gusts equal **35.21054044063598 m/s**. We make no
+claim of geographic risk diversification. For 24 × EUR10m fictitious
+buildings and the declared *unfitted* damage VLT, the conditional **physical**
+expected loss is the exact rational **EUR530700800 / 11 = about EUR48.2455m**.
+This is NOT a calibrated insurer loss, an annual AAL, or an AEP/OEP value.
+
+The reviewable machine-readable *original successful run receipt* is committed at
+`docs/research/evidence/climk-era5-kyrill-24-fictional-buildings-source-loss-20261105.json`,
+including source, synthetic asset and VLT SHA-256, selected source storm/date,
+exact wind samples, exact conditional loss and all non-admission disclaimers.
+The CI workflow now independently compares current original-source output to
+this pinned receipt rather than accepting only self-reported source labels.
+All underlying native NetCDF files and grid arrays remain outside Git.
