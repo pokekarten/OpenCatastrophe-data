@@ -406,16 +406,32 @@ def run_live(fetch=_fetch) -> dict:
         try:
             a = _decode(fetch(old))
         except CopyTransportError:
-            singles = []
+            source_features = []
             for b in group:
-                singles.extend(_old_records(_decode(fetch(feature_urls((b,))[0])), {b}).values())
-            # These are the already validated per-BIN records. Preserve
-            # schema to reuse the central original-feature validator below.
-            raise CopyProbeError("ArcGIS batch timeout: retry only via explicit reviewed source runner")  # no inferred matches
+                single = _decode(fetch(feature_urls((b,))[0]))
+                if type(single) is not dict:
+                    raise CopyProbeError("malformed single-BIN ArcGIS fallback")
+                _old_records(single, {b})
+                if len(single["features"]) != 1:
+                    raise CopyProbeError("incomplete single-BIN ArcGIS fallback")
+                source_features.extend(single["features"])
+            a = {
+                "spatialReference": {"wkid": 4326, "latestWkid": 4326},
+                "features": source_features,
+            }
         try:
             c = _decode(fetch(current))
         except CopyTransportError:
-            raise CopyProbeError("NYC batch transport unavailable; no negative-match inference")
+            source_features = []
+            for b in group:
+                single = _decode(fetch(feature_urls((b,))[1]))
+                if type(single) is not list:
+                    raise CopyProbeError("malformed single-BIN city fallback")
+                _city_records(single, {b})
+                if len(single) != 1:
+                    raise CopyProbeError("incomplete single-BIN city fallback")
+                source_features.extend(single)
+            c = source_features
         old_groups.append(a)
         current_groups.append(c)
     return summarize(item, layer, count, ll84, old_groups, current_groups)
