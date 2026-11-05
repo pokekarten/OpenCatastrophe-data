@@ -41,6 +41,8 @@ EXPECTED_SOURCE_MODELLED_CDS = 299
 EXPECTED_SOURCE_KYRILL = 12
 EXPECTED_SOURCE_KYRILL_CDS = 4
 EXPECTED_SOURCE_MISSING_ECONOMIC_LOSS = 638
+EXPECTED_SOURCE_NUMERIC_ECONOMIC_LOSS = 687
+EXPECTED_SOURCE_NONNUMERIC_ECONOMIC_LOSS = 33
 # Twelve publisher COUNTRY-report IDs of one named windstorm, not event IDs.
 EXPECTED_KYRILL_COUNTRY_ID_PAIRS = (
     ("AT", "20034"), ("BE", "20076"), ("CH", "21154"),
@@ -273,6 +275,10 @@ def audit_workbook(
     has_econ = 0
     numeric_econ = 0
     invalid_econ = []
+    loss_origin_matrix = {
+        "explicit_publisher_CDS_modelled": {"numeric": 0, "non_numeric": 0, "blank": 0},
+        "not_flagged_CDS_independence_unverified": {"numeric": 0, "non_numeric": 0, "blank": 0},
+    }
     has_nominal = 0
     modelled = 0
     kyrill = []
@@ -305,6 +311,7 @@ def audit_workbook(
         if (cells.get("E") and str(cells["E"]).isdigit() or
                 cells.get("F") and str(cells["F"]).isdigit()):
             date_serials += 1
+        economic_kind = "blank"
         if cells.get("P") not in (None, ""):
             # Nonempty publisher cells are NOT automatically validated numbers.
             # The original source includes textual/non-numeric exception cells.
@@ -318,12 +325,14 @@ def audit_workbook(
                 if not val.is_finite() or val < 0:
                     raise InvalidOperation("nonfinite or negative source loss")
             except (InvalidOperation, ValueError):
+                economic_kind = "non_numeric"
                 invalid_econ.append({
                     "source_id": key,
                     "country_code": code,
                     "problem": "NON_NUMERIC_OR_INVALID_PUBLISHED_ECONOMIC_LOSS",
                 })
             else:
+                economic_kind = "numeric"
                 numeric_econ += 1
         if cells.get("N") not in (None, ""):
             has_nominal += 1
@@ -332,6 +341,9 @@ def audit_workbook(
             " ".join((cells.get("S", ""), cells.get("R", ""))), re.IGNORECASE))
         if source_modelled_cds:
             modelled += 1
+        origin = ("explicit_publisher_CDS_modelled" if source_modelled_cds
+                  else "not_flagged_CDS_independence_unverified")
+        loss_origin_matrix[origin][economic_kind] += 1
         if (cells.get("H") or "").casefold().strip() == "kyrill":
             kyrill.append({
                 "source_id": key, "country_code": code, "date_start": start,
@@ -348,7 +360,9 @@ def audit_workbook(
         sum(item["publisher_modelled_cds_loss"] for item in kyrill) != EXPECTED_SOURCE_KYRILL_CDS or
         tuple(sorted((item["country_code"], item["source_id"]) for item in kyrill)) !=
         EXPECTED_KYRILL_COUNTRY_ID_PAIRS or
-        len(data) - has_econ != EXPECTED_SOURCE_MISSING_ECONOMIC_LOSS
+        len(data) - has_econ != EXPECTED_SOURCE_MISSING_ECONOMIC_LOSS or
+        numeric_econ != EXPECTED_SOURCE_NUMERIC_ECONOMIC_LOSS or
+        len(invalid_econ) != EXPECTED_SOURCE_NONNUMERIC_ECONOMIC_LOSS
     ):
         raise OriginalHanzeError("pinned original XLSX fails independently reviewed row profile")
     return {
@@ -367,6 +381,8 @@ def audit_workbook(
         "economic_loss_2020_eur_million_non_numeric": len(invalid_econ),
         "economic_loss_2020_eur_million_non_numeric_source_rows": invalid_econ,
         "economic_loss_non_numeric_rows_admitted_as_claims": False,
+        "economic_loss_by_publisher_CDS_flag_and_numeric_class": loss_origin_matrix,
+        "not_flagged_CDS_means_independently_observed": False,
         "nominal_economic_loss_value_present": has_nominal,
         "explicit_publisher_modelled_cds_loss_rows": modelled,
         "rows_with_excel_date_serials": date_serials,
