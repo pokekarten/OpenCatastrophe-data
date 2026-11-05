@@ -58,10 +58,10 @@ def inspect_provider_package(original: bytes, *, request=None) -> dict:
     if type(original) is not bytes or not 1 <= len(original) <= MAX_PACKAGE_BYTES:
         raise AcquisitionError("bounded original CDS response bytes required")
     request = official_request() if request is None else request
-    if request != official_request(request.get("tracking_algorithm", ())) or type(request) is not dict:
+    if type(request) is not dict or request != official_request(request.get("tracking_algorithm", ())) :
         raise AcquisitionError("unexpected source request schema")
     package_sha = sha256(original).hexdigest()
-    if original.startswith(b"PK\\x03\\x04"):
+    if original.startswith(b"PK\x03\x04"):
         try:
             with ZipFile(BytesIO(original)) as archive:
                 members = archive.infolist()
@@ -71,7 +71,7 @@ def inspect_provider_package(original: bytes, *, request=None) -> dict:
                 if (info.is_dir() or info.filename != Path(info.filename).name or
                         not info.filename.lower().endswith(".csv") or
                         not 1 <= info.file_size <= MAX_CSV_BYTES or
-                        info.flag_bits & 1 or info.external_attr >> 16 & 0o170000 == 0o120000):
+                        info.flag_bits & 1 or (info.external_attr >> 16) & 0o170000 == 0o120000):
                     raise AcquisitionError("unsafe or unsupported original ZIP member")
                 with archive.open(info) as source:
                     csv_bytes = source.read(MAX_CSV_BYTES + 1)
