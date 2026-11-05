@@ -105,7 +105,9 @@ versions AS (
  WHERE p.organization_id IN (SELECT organization_id FROM solo)
 ),
 units AS (
- SELECT count(*)::bigint AS company_linked_exposure_units
+ SELECT count(*)::bigint AS company_linked_exposure_units,
+        count(*) FILTER (WHERE p.portfolio_type='synthetic' AND u.location IS NOT NULL)::bigint
+           AS synthetic_exposure_units_with_geometry
  FROM exposure.exposure_unit u
  JOIN exposure.portfolio_version v USING (portfolio_version_id)
  JOIN exposure.portfolio p USING (portfolio_id)
@@ -139,6 +141,7 @@ SELECT 'RVA_SOLO_2025_RESEARCH_READINESS_V1'::text AS report_id,
          WHEN company_linked_synthetic_portfolios=0 OR company_linked_portfolio_versions=0
               OR company_linked_exposure_units=0
               THEN 'BLOCKED_COMPANY_SYNTHETIC_EXPOSURE_NOT_REGISTERED'
+         WHEN synthetic_exposure_units_with_geometry=0 THEN 'BLOCKED_SYNTHETIC_EXPOSURE_HAS_NO_GEOMETRY'
          ELSE 'RESEARCH_ONLY_NEEDS_HAZARD_VULNERABILITY_RIGHTS_AND_TREATY_REVIEW'
        END::text AS next_gate
 FROM audit;
