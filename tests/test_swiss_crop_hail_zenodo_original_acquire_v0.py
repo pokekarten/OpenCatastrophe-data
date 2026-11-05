@@ -44,10 +44,14 @@ class OriginalAcquisitionTests(unittest.TestCase):
         self.url = subject.source_url("radar_metadata")
 
     def test_fixed_original_urls(self):
-        self.assertEqual(len(subject.SOURCE_FILES), 7)
+        self.assertEqual(len(subject.SOURCE_FILES), 8)
         for asset in subject.SOURCE_FILES:
-            self.assertTrue(subject.source_url(asset).startswith(
-                "https://zenodo.org/records/" + str(existing.ASSETS[asset][0]) + "/files/"))
+            if asset == "code_zip":
+                self.assertEqual(subject.source_url(asset),
+                    "https://zenodo.org/api/records/12784190/files/raphael-portmann/202403_crop_hail_damage_footprint-1.0.zip/content")
+            else:
+                self.assertTrue(subject.source_url(asset).startswith(
+                    "https://zenodo.org/records/" + str(existing.ASSETS[asset][0]) + "/files/"))
 
     def test_no_arbitrary_host_or_asset(self):
         with self.assertRaises(subject.Blocked): subject.source_url("random")
