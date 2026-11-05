@@ -109,7 +109,12 @@ def _gusts(blob: bytes, count: int, *, source_name: str = "unspecified") -> list
         if len(row) != 2 or row[0] != str(expected):
             raise XWSSourceBlocked("storm grid ID missing, reordered or repeated")
         try:
-            value = _decimal(row[1], minimum=Decimal(0), maximum=Decimal(150))
+            # The XWS upper95 statistical bound can exceed 150 m/s in the
+            # original source. Preserve those bytes with an explicit NO-GO for
+            # wind vulnerability model intensity ranges; never clip to 150.
+            # The mean/lower fields remain inside the stricter physical pilot.
+            maximum = Decimal(300) if source_name == "daria_upper95" else Decimal(150)
+            value = _decimal(row[1], minimum=Decimal(0), maximum=maximum)
         except XWSSourceBlocked as exc:
             raise XWSSourceBlocked(f"original {source_name} gust row {expected} invalid token {row[1]!r}") from exc
         result.append(value)
@@ -136,6 +141,7 @@ def validate_original_bundle(blobs: dict[str, bytes]) -> dict:
             "wind_gust_mps_mean": str(sum(values) / Decimal(len(values))),
             "wind_gust_mps_max": str(max(values)),
             "points_ge_25_mps": sum(v >= 25 for v in values),
+            "points_above_150_mps_and_not_admitted_to_standard_wind_VLT":sum(v>150 for v in values),
         }
         for name, values in fields.items()
     }
@@ -160,6 +166,8 @@ def validate_original_bundle(blobs: dict[str, bytes]) -> dict:
         "wind_gust_unit": "m/s",
         "storm": "Daria / Burns Day storm, January 1990",
         "three_uncertainty_variants": summaries,
+        "upper95_statistical_confidence_values_not_validated_as_physical_damage_intensities":True,
+        "source_values_over_150_mps_not_clipped_or_model_admitted":True,
         "source_license": "CC-BY-4.0",
         "required_attribution": ATTRIBUTION,
         "original_source_files_not_uploaded_to_repo": True,
