@@ -13,7 +13,7 @@ import xws_daria_1990_original_csv_preflight_v0 as source
 
 
 def fixture(n=1000):
-    grid = "Grid number,Longitude,Latitude\n" + "".join(
+    grid = "Grid number,Longitude,Latitde\n" + "".join(
         f"{i},{-10+(i%40)*0.2:.3f},{40+(i//40)*0.2:.3f}\n" for i in range(n))
     speeds = {}
     for name,wind in (("daria_lower95","10.0"),("daria_mean","20.0"),
@@ -55,7 +55,7 @@ class TestOriginalXWSDaria(unittest.TestCase):
     def test_bad_original_row_grid_loss_lineage_or_units_block(self):
         for key,blob in (
             ("grid",b"no-grid"),
-            ("grid",fixture()["grid"].replace(b"Grid number,Longitude,Latitude",
+            ("grid",fixture()["grid"].replace(b"Grid number,Longitude,Latitde",
                                               b"Grid,Longitude,Latitude")),
             ("grid",fixture()["grid"].replace(b"0,-10.000",b"1,-10.000",1)),
             ("daria_mean",fixture()["daria_mean"].replace(b"5,20.0",b"5,-999.0",1)),
