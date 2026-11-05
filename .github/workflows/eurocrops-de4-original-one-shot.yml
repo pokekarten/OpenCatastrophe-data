@@ -46,6 +46,7 @@ jobs:
           tests.test_eurocrops_jrc_acquire_v0
           tests.test_eurocrops_jrc_original_run_v0
           tests.test_eurocrops_original_zero_area_geometry_v0
+          tests.test_eurocrops_original_full_geometry_code_qc_v0
           tests.test_eurocrops_v202_preflight_v0
           tests.test_eurocrops_codebook_qc_v0
           -v
@@ -84,6 +85,16 @@ jobs:
             --original "${RUNNER_TEMP}/oc-eurocrops-de4-2023-original/de4_2023.parquet" \
             --expected-sha256 "$EXPECTED_SHA" \
             --output "${RUNNER_TEMP}/oc-de4-zero-area-geometry-qc.json"
+      - name: Audit ALL original WKB geometries, source IDs and regional HCAT4 codes
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPECTED_SHA=$(python -c 'import json,os,pathlib; print(json.loads((pathlib.Path(os.environ["RUNNER_TEMP"]) / "oc-de4-first-seen-receipt.json").read_text())["original_sha256"])')
+          python -m research_runners.eurocrops_original_full_geometry_code_qc_v0 \
+            --live \
+            --original "${RUNNER_TEMP}/oc-eurocrops-de4-2023-original/de4_2023.parquet" \
+            --expected-sha256 "$EXPECTED_SHA" \
+            --output "${RUNNER_TEMP}/oc-de4-full-wkb-code-qc.json"
       - name: Print aggregate-only original-source summary
         if: success()
         shell: bash
@@ -96,6 +107,8 @@ jobs:
           scan = report["complete_area_ha_attribute_quality"]
           sample = report["sample_taxonomy_crosswalk_statistics"]
           zero_shapes = json.loads((Path(os.environ["RUNNER_TEMP"]) / "oc-de4-zero-area-geometry-qc.json").read_text())
+          full = json.loads((Path(os.environ["RUNNER_TEMP"]) / "oc-de4-full-wkb-code-qc.json").read_text())
+          full_stats = full["full_original_geometry_and_code_quality"]
           lines = [
               "## JRC DE4 2023 — research-only original-source QC",
               f"Original footer row count: {report['parquet_total_rows']}",
@@ -105,6 +118,13 @@ jobs:
               f"Zero-area source records with ZERO geometric polygon area: {zero_shapes['zero_ha_polygon_computed_area_zero_m2']}",
               f"Zero-area source records with invalid/empty/nonpolygon/missing WKB: {zero_shapes['zero_ha_geometry_invalid_topology'] + zero_shapes['zero_ha_geometry_empty'] + zero_shapes['zero_ha_geometry_nonpolygon'] + zero_shapes['zero_ha_wkb_invalid_or_missing']}",
               f"Original negative-area values: {scan['original_area_ha_negative_count']}",
+              f"Valid positive WKB polygon rows in FULL file: {full_stats['geometry_valid_positive_polygon_rows']}",
+              f"Invalid original polygon topologies (full scan): {full_stats['geometry_invalid_topology_rows']}",
+              f"Unparseable or absent WKB (full scan): {full_stats['wkb_missing_or_unreadable_rows']}",
+              f"Duplicate subsequent cropfield IDs (full scan): {full_stats['source_cropfield_duplicate_subsequent_rows']}",
+              f"Complete source code-to-HCAT4 resolved rows: {full_stats['source_code_mapping_resolved_to_hcat4_rows']}",
+              f"Complete source code-to-HCAT4 hierarchy-gap rows: {full_stats['source_code_mapping_to_absent_hcat4_rows']}",
+              f"Geometry/source area disagreement >5%: {full_stats['valid_positive_polygon_area_delta_gt_5pct_rows']}",
               f"Original null/nonfinite areas: {scan['original_area_ha_null_count']}/{scan['original_area_ha_nonfinite_count']}",
               f"WKB sample rows: {report['sampled_wkb_rows']}",
               f"Crop taxonomy resolved in sample: {sample['resolved_to_hcat4_rows']}",
@@ -125,6 +145,7 @@ jobs:
             ${{ runner.temp }}/oc-de4-first-seen-receipt.json
             ${{ runner.temp }}/oc-de4-aggregate-qc.json
             ${{ runner.temp }}/oc-de4-zero-area-geometry-qc.json
+            ${{ runner.temp }}/oc-de4-full-wkb-code-qc.json
           if-no-files-found: warn
           retention-days: 30
       - name: Delete the original file from ephemeral runner
