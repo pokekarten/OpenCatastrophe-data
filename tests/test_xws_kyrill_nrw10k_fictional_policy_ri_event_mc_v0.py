@@ -9,6 +9,7 @@ from unittest.mock import patch
 import json
 import sys
 import tempfile
+import tomllib
 import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -123,6 +124,56 @@ class EventFinancialMcTests(unittest.TestCase):
         self.assertEqual(report["fixed_rng_seed_specific_to_this_toy_not_FFBK_RIM"],20261105)
         self.assertIn("Bernoulli",report["invented_secondary_uncertainty"])
         self.assertNotIn("annual_ep",json.dumps(report).lower())
+
+
+    def test_persisted_one_event_proof_is_source_locked_and_explicitly_nonannual(self):
+        path=ROOT/"research/observations/xws_kyrill_2007_nrw10k_fictional_policy_qs_xl_event_mc_v0.toml"
+        proof=tomllib.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(proof["schema_version"],m.SCHEMA)
+        self.assertEqual(proof["source_original_xws_hazard_10k_zip_sha256"],m.XWS_ZIP_SHA)
+        self.assertEqual(proof["source_original_oed_fictional_10k_zip_sha256"],m.OED_ZIP_SHA)
+        self.assertEqual(proof["source_original_nrw_hu22_full_sha256"],m.HU22_SHA)
+        self.assertEqual(proof["original_previous_stochastic_unmodified_conditional_expected_gul_eur"],"53686.91")
+        self.assertEqual(proof["synthetic_NRW_site_count"],10000)
+        self.assertEqual(proof["synthetic_NRW_counties"],53)
+        self.assertEqual(proof["synthetic_total_tiv_eur"],4826029500)
+        self.assertEqual(proof["seed_specific_to_this_toy_not_FFBK_or_RIM"],m.SEED)
+        self.assertEqual(proof["trials_per_dependence_case"],m.TRIALS)
+        self.assertRegex(proof["exact_machine_summary_json_sha256"],r"^[0-9a-f]{64}$")
+        for label,value in (
+            ("per_risk_deductible_eur",m.POLICY_DEDUCTIBLE_EUR),
+            ("per_risk_max_payment_eur",m.POLICY_LIMIT_EUR),
+            ("quote_share_ceded_percent_post_policy_IL",m.QS_CEDED_PERCENT),
+            ("occurrence_XL_retained_attachment_eur",m.OCC_XL_ATTACHMENT_EUR),
+            ("occurrence_XL_retained_limit_eur",m.OCC_XL_LIMIT_EUR),
+        ):
+            self.assertEqual(proof["fictional_policy"][label],value)
+        self.assertEqual(set(proof["scenario"]),set(m.SHARED_UNIFORM_WEIGHTS))
+        for name,weights in m.SHARED_UNIFORM_WEIGHTS.items():
+            row=proof["scenario"][name]
+            self.assertEqual(Decimal(row["shared_uniform_mix_weight"]),Decimal(str(weights)))
+            il=Decimal(row["mean_insured_IL_eur"])
+            recovered=(Decimal(row["mean_QS_ceded_eur"])+Decimal(row["mean_XL_recovered_eur"])
+                       +Decimal(row["mean_insurer_net_eur"]))
+            self.assertLessEqual(abs(il-recovered),Decimal("0.02"))
+            self.assertLessEqual(Decimal(row["groundup_one_event_q95_eur"]),
+                                 Decimal(row["groundup_one_event_q99_eur"]))
+        self.assertGreater(
+            Decimal(proof["scenario"]["mixture_25pct_shared_uniform_hypothetical"]["groundup_one_event_q99_eur"]),
+            Decimal(proof["scenario"]["site_independent_hypothetical"]["groundup_one_event_q99_eur"]),
+        )
+        for field in (
+            "conditional_results_AEP_OEP_or_return_periods",
+            "actual_RV_policy_terms_observed",
+            "actual_RV_reinsurance_treaty_observed",
+            "native_Oasis_or_NextGen_Kyrill_financial_chain_executed",
+            "real_event_frequency_or_annual_YLT_established",
+            "site_level_hazard_or_original_netCDF_republished",
+            "source_licensed_german_2025_building_material_or_vulnerability_validated",
+            "empirical_annual_net_storm_CAT_model_calibrated",
+            "dependence_mix_is_empirically_fitted_pairwise_loss_correlation",
+        ):
+            with self.subTest(field=field):self.assertIs(proof[field],False)
 
 
 if __name__=="__main__":
