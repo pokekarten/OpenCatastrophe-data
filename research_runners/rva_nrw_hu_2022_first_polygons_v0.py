@@ -166,6 +166,11 @@ def probe():
         prefixes[ext]=data
     physical,audit=parse_first_original_records(prefixes["shp"],prefixes["dbf"])
     result=reproject_first_valid_physical_building(physical)
+    # Retain aggregate-only genuine source-code observations, without OI,
+    # individual source building use or insured-asset assertions.
+    from rva_nrw_hu_gfk_residential_candidate_v0 import audit_gfk_counts
+    counter=Counter(row["gfk"] for row in physical)
+    result["original_prefix_GFK_candidate_function_audit"]=audit_gfk_counts(dict(counter))
     result["bounded_original_prefix_audit"]=audit
     result["original_zip_byte_count"]=total
     result["original_source_member_sha256_digests_are_full_file"]=False
