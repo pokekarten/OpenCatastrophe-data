@@ -15,6 +15,7 @@ from research_runners.lu_act2019_zip_central_directory_range_v0 import (
     DirectoryAuditError, MAX_EOCD_TAIL_BYTES, MAX_CENTRAL_DIRECTORY_BYTES,
     RANGE_DATA_LIMIT_PER_ZIP, _bounded_http_get_range,
     _parse_central_directory, _parse_eocd, probe_one_zip, main,
+    PINNED_DIRECTORY_RECEIPTS, verify_directory_metadata_receipts,
 )
 
 TEST_URL=("https://download.data.public.lu/resources/"
@@ -182,6 +183,40 @@ class SyntheticZipDirectoryTests(unittest.TestCase):
             _bounded_http_get_range(TEST_URL,start=0,end=MAX_CENTRAL_DIRECTORY_BYTES,
                                     total=MAX_CENTRAL_DIRECTORY_BYTES+2,
                                     opener=FakeOpen(data))
+
+    def test_actual_source_central_directory_pins_are_structurally_conserved(self):
+        site_data = {
+            site: [
+                {
+                    "http_provider_reported_zip_bytes": size,
+                    "central_directory_sha256_not_full_archive": cd_sha,
+                    "entry_count": 9,
+                    "entry_type_counts": {"laz": 9},
+                    "compression_method_codes": {"8": 9},
+                    "zip_metadata_exact_range_get_count": 1,
+                } for size, cd_sha in receipts
+            ]
+            for site, receipts in PINNED_DIRECTORY_RECEIPTS.items()
+        }
+        verify_directory_metadata_receipts(site_data)
+
+    def test_original_central_directory_fingerprint_drift_fails_closed(self):
+        site_data = {
+            site: [
+                {
+                    "http_provider_reported_zip_bytes": size,
+                    "central_directory_sha256_not_full_archive": cd_sha,
+                    "entry_count": 9,
+                    "entry_type_counts": {"laz": 9},
+                    "compression_method_codes": {"8": 9},
+                    "zip_metadata_exact_range_get_count": 1,
+                } for size, cd_sha in receipts
+            ]
+            for site, receipts in PINNED_DIRECTORY_RECEIPTS.items()
+        }
+        site_data["luxembourg-city"][0]["central_directory_sha256_not_full_archive"]="0"*64
+        with self.assertRaisesRegex(DirectoryAuditError,"metadata drifted"):
+            verify_directory_metadata_receipts(site_data)
 
     def test_missing_index_blocks_without_network(self):
         self.assertEqual(main(["--original-index","synthetic-nonexistent-original-index.json"]),2)
