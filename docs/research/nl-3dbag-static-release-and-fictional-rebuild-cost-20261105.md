@@ -33,7 +33,7 @@ python scripts/audit_3dbag_static_release_provenance_v0.py --release-metadata /p
 
 ## 2. Fictional 3D volume × rebuilding-cost scenarios (no real insurer value)
 
-**Separate math-only experiment:** `research_runners/nl_fictional_volume_to_rebuild_sensitivity_v0.py` with a checked-in *wholly invented* source-free fixture `research/scenarios/nl_fictional_volume_rebuild_math_v0.json` and synthetic test `tests/test_nl_fictional_volume_to_rebuild_sensitivity_v0.py`.
+**Separate math-only experiment:** `research_runners/nl_fictional_volume_to_rebuild_sensitivity_v0.py` with a checked-in *wholly invented* source-free fixture `research/scenarios/nl_fictional_volume_rebuild_math_v0.toml` and synthetic test `tests/test_nl_fictional_volume_to_rebuild_sensitivity_v0.py`.
 
 One illustrated fictional scenario deliberately assumes **five imaginary standard residential buildings**, each with non-provider model-like volumes: LoD1.2 110m³, LoD1.3 100m³, LoD2.2 90m³. Fictional residential reconstruction unit rates: **€100/m³ to €200/m³** (deliberately arbitrary, **not CBS, AnsvarIdéa, Verbond or actual observed Dutch rates**). Hypothetical index 100 → 110 is likewise **not** an observed CBS value. It exists only to test the ratio mechanics and accidental double escalation:
 
@@ -51,7 +51,7 @@ The cost component is kept separate from geometry because **BAG usable unit area
 
 ```sh
 python -m unittest tests.test_nl_fictional_volume_to_rebuild_sensitivity_v0 -v
-python research_runners/nl_fictional_volume_to_rebuild_sensitivity_v0.py --fixture research/scenarios/nl_fictional_volume_rebuild_math_v0.json
+python research_runners/nl_fictional_volume_to_rebuild_sensitivity_v0.py --fixture research/scenarios/nl_fictional_volume_rebuild_math_v0.toml
 python scripts/check_all.py
 ```
 
