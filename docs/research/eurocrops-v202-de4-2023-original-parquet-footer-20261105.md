@@ -44,6 +44,18 @@ The exact original field names and observed column metadata:
 | `geometry` | 285,606 | 0 | 138,108,208 |
 | `area_ha` | 285,606 | 0 | 2,437,343 |
 
+Further independently inspected original **footer-level min/max statistics**, not row observations:
+
+| Source column | Reported footer minimum | Reported footer maximum |
+| --- | ---: | ---: |
+| `cropfield` (integer ID) | 1 | 285,783 |
+| `off_area` (original submitted area) | 0.0002 | 248.7114 |
+| **`area_ha` (computed projected area)** | **0.0** | **248.87251** |
+
+The **zero minimum for `area_ha` is an actual original-metadata QA flag**. It indicates that the publisher's row-group statistics contain at least one reported zero value if the statistics are accurate. It does **not** yet prove that the corresponding polygon has zero geometric area: the stored area might have been rounded, truncated, or the source may have other production anomalies. A uniformly chosen subset of a few hundred rows could easily miss the affected record. We therefore added `original_footer_column_quality.any_row_group_footer_min_area_nonpositive` to the executable preflight, independently of its WKB sample, and require a targeted row-level follow-up before model admission.
+
+The `cropfield` maximum of 285,783 exceeds the row count of 285,606, so IDs are **not a contiguous 1..N series**; this alone does not establish duplicates, omissions or portfolio counts. GeoParquet metadata also advertises an EPSG:3035 geometry bounding box `[4408648.375721003, 3145780.632999396, 4650737.518133259, 3382476.106293644]`. This is an original-metadata extent, not a verified union or the boundaries of every agricultural field.
+
 Parquet physical types are `INT64` for `cropfield`, `BYTE_ARRAY` for `original_code`, `original_name` and `geometry`, and `DOUBLE` for `off_area` and `area_ha`. All six chunks report ZSTD compression (`CompressionCodec=6`). The provider originally described a `geom` field in its general README; **the actual corrected DE4 2023 file instead uses `geometry`**, as corroborated by its own GeoParquet primary-column metadata. Never hardcode `geom` for this source or mistake `off_area` for the computed projected polygon area `area_ha`.
 
 The six `null_count=0` values are **publisher footer statistics**. They do not prove that any geometry is valid, that `area_ha` matches it, that crop codes are semantically known, that rows are unique, or that all fields in Brandenburg are represented. A `BYTE_ARRAY` original code may still be blank, synthetic, mismapped, or have a missing HCAT4 reference. No individual fields, farmer identities, coordinates, actual damage, or insurance exposure values were inspected.
@@ -54,6 +66,7 @@ The previous research preflight assumed `geom` and inspected only the first samp
 - reads the declared GeoParquet `primary_column` (`geometry` or `geom` only), verifies it is an actual schema column, with WKB and EPSG:3035 explicitly evidenced;
 - uses a source-SHA-seeded, deterministic uniform without-replacement sample **from all original file rows**, not the first 512. This DE4 asset has one row group, so multiple groups are not evidence of representativeness: row offsets across the single 285,606-row group are what matter;
 - reads sample rows in bounded Arrow batches without materializing the entire row group, checks area/geometry/code integrity, and reports only aggregate counts;
+- checks original footer area min/max and reported null counts **even if the random sample misses nonpositive fields**; missing footer statistics remain explicitly unknown, never a clean pass;
 - preserves all source, rights, scientific and CAT admission as `NOT_REVIEWED_NOT_ADMITTED`.
 
 The full corrected Parquet file was **not** acquired in the local runtime (JRC DNS inaccessible there), so original **full-file SHA-256, actual WKB geometries, source-row code frequencies and actual parcel area totals remain unverified**. Only targeted original header and footer byte ranges were read through the separate web retrieval route. No original file bytes were committed to this repository.
