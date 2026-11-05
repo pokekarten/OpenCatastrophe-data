@@ -3,6 +3,7 @@
 
 """Synthetic-only regressions for dated third-party NYC ArcGIS-copy comparison."""
 
+from collections import Counter
 import json
 import unittest
 from urllib.parse import parse_qs, urlsplit
