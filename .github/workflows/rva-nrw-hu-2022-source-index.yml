@@ -8,7 +8,9 @@ on:
     paths:
       - ".github/workflows/rva-nrw-hu-2022-source-index.yml"
       - "research_runners/rva_nrw_hu_2022_original_index_receipt_v0.py"
+      - "research_runners/rva_nrw_hu_2022_original_zip_range_receipt_v0.py"
       - "tests/test_rva_nrw_hu_2022_original_index_receipt_v0.py"
+      - "tests/test_rva_nrw_hu_2022_original_zip_range_receipt_v0.py"
       - "docs/research/rva-nrw-historical-hu-2022-footprint-oed-source-gate-20261105.md"
   workflow_dispatch:
 
@@ -32,3 +34,7 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_rva_nrw_hu_2022_original_index_receipt_v0.py' -v
       - name: Probe primary NRW index only, not 859MB original ZIP
         run: python research_runners/rva_nrw_hu_2022_original_index_receipt_v0.py --live
+      - name: Challenge ZIP EOCD and central directory with <=1.1 MiB official byte ranges
+        run: |
+          python -m unittest discover -s tests -p 'test_rva_nrw_hu_2022_original_zip_range_receipt_v0.py' -v
+          python research_runners/rva_nrw_hu_2022_original_zip_range_receipt_v0.py --live
