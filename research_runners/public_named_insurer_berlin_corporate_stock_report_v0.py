@@ -91,7 +91,7 @@ def build(stock: dict, insurer: dict, *, insurer_sha256: str, stock_sha256: str)
             "public_stock_corporate_dwelling_total_in_12_berlin_boroughs": assigned,
             "public_stock_corporate_dwelling_total_unassigned_other": unassigned_total,
             "boroughs": boroughs,
-            "all_named_corporate_dwellings_insured_by_this_carrier": False,
+            "full_corporate_dwelling_stock_insured_by_this_carrier_observed": False,
             "carrier_real_insured_location_count_observed": False,
             "carrier_real_insured_tiv_observed": False,
             "carrier_real_coinsurance_share_observed": False,
