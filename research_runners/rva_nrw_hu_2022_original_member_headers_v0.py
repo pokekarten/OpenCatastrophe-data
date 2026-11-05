@@ -25,7 +25,10 @@ MAX_LOCAL_EXTRA=4096
 MAX_OUTPUT=8192
 
 
-def read_member_prefix(member:dict,total:int,*,range_fn=_range)->tuple[bytes,bool]:
+def read_member_prefix(member:dict,total:int,*,range_fn=_range,max_compressed:int=MAX_MEMBER_PREFIX,max_output:int=MAX_OUTPUT)->tuple[bytes,bool]:
+    if (type(max_compressed) is not int or not 1<=max_compressed<=256*1024
+        or type(max_output) is not int or not 1<=max_output<=1024*1024):
+        raise OriginalZipBlocked("member decompression research budget outside bound")
     off=member["local_header_offset"]
     if type(off) is not int or not 0<=off<total-30:
         raise OriginalZipBlocked("ZIP local member offset invalid")
@@ -49,18 +52,18 @@ def read_member_prefix(member:dict,total:int,*,range_fn=_range)->tuple[bytes,boo
     if (type(compressed_length) is not int or compressed_length<1
         or compressed_start+compressed_length>total):
         raise OriginalZipBlocked("ZIP member data region outside archive")
-    nbytes=min(compressed_length,MAX_MEMBER_PREFIX)
+    nbytes=min(compressed_length,max_compressed)
     compressed=range_fn(compressed_start,compressed_start+nbytes-1,total)
     if len(compressed)!=nbytes:
         raise OriginalZipBlocked("compressed member prefix length changed")
     decoder=zlib.decompressobj(-15)
     try:
-        data=decoder.decompress(compressed,MAX_OUTPUT)
+        data=decoder.decompress(compressed,max_output)
     except zlib.error as exc:
         raise OriginalZipBlocked("ZIP compressed member prefix corrupt") from exc
-    if len(data)>MAX_OUTPUT or len(data)==0:
+    if len(data)>max_output or len(data)==0:
         raise OriginalZipBlocked("ZIP member prefix decode missing or oversized")
-    complete=compressed_length<=MAX_MEMBER_PREFIX
+    complete=compressed_length<=max_compressed
     if complete:
         if (not decoder.eof or len(data)!=member["uncompressed_bytes"]
             or zlib.crc32(data)&0xffffffff != int(member["crc32_hex"],16)):
