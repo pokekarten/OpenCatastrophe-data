@@ -18,10 +18,10 @@ from urllib.error import URLError
 
 URL="https://www.opengeodata.nrw.de/produkte/geobasis/lk/hist/hist_hu_shp/2022_hu_EPSG4647_Shape.zip"
 MAX_TAIL=65557       # 22-byte EOCD + 65535 max comment
-MAX_DIRECTORY=128*1024
+MAX_DIRECTORY=1024*1024
 MIN_ZIP_SIZE=800_000_000
 MAX_ZIP_SIZE=1_100_000_000
-MAX_MEMBERS=100
+MAX_MEMBERS=10000
 
 
 class OriginalZipBlocked(ValueError):
@@ -66,8 +66,9 @@ def parse_directory(data:bytes,expected_entries:int)->list[dict]:
             name=filename_bytes.decode("utf-8" if (flags & 0x800) else "cp437")
         except UnicodeDecodeError as exc:
             raise OriginalZipBlocked("invalid ZIP member name encoding") from exc
-        if (not name or name.startswith("/") or "\\" in name
-            or any(part in (".","..","") for part in name.split("/"))
+        safe_path = name[:-1] if name.endswith("/") else name
+        if (not safe_path or name.startswith("/") or "\\" in name
+            or any(part in (".","..","") for part in safe_path.split("/"))
             or len(name)>255):
             raise OriginalZipBlocked("dangerous member filename")
         records.append({"name":name,"compressed_bytes":compressed,
