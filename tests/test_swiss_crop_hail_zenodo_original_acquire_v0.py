@@ -44,7 +44,7 @@ class OriginalAcquisitionTests(unittest.TestCase):
         self.url = subject.source_url("radar_metadata")
 
     def test_fixed_original_urls(self):
-        self.assertEqual(len(subject.SOURCE_FILES), 5)
+        self.assertEqual(len(subject.SOURCE_FILES), 7)
         for asset in subject.SOURCE_FILES:
             self.assertTrue(subject.source_url(asset).startswith(
                 "https://zenodo.org/records/" + str(existing.ASSETS[asset][0]) + "/files/"))
