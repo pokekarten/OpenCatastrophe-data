@@ -63,7 +63,7 @@ class TestOriginalXWSDaria(unittest.TestCase):
             ("daria_mean",fixture()["daria_mean"].replace(b"4,20.0",b"4,NaN",1)),
             ("daria_mean",fixture()["daria_mean"].replace(b"2,20.0",b"2,40.0",1)),
             ("daria_upper95",fixture()["daria_upper95"].replace(b"7,30.0",b"7,5.0",1)),
-            ("daria_lower95",fixture()["daria_lower95"][:-1]),
+            ("daria_lower95",fixture()["daria_lower95"].rsplit(b"\n",2)[0]+b"\n"),
         ):
             with self.subTest(key=key,first=blob[:35]):
                 f=fixture()
