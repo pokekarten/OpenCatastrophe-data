@@ -33,7 +33,7 @@ The converter reads **only a bounded tile** of up to 10,000 cells and
 emits exactly:
 
 - `events.csv`: single local synthetic event ID. Not a probability.
-- `footprint.csv`: `event_id,areaperil_id,intensity_bin_index,prob`;
+- `footprint.csv`: `event_id,areaperil_id,intensity_bin_id,probability`;
   an unambiguous deterministic gust bin per original cell and
   probability **1.0** within that cell. This is hazard conditional on
   the declared event, not occurrence frequency.
@@ -147,3 +147,16 @@ This work deliberately avoids the separate
 [C3S historical frequency research PR #1308](https://github.com/pokekarten/OpenCatastrophe-data/pull/1308),
 the [synthetic carrier-OED PR #1373](https://github.com/pokekarten/OpenCatastrophe-data/pull/1373),
 and the existing regional wind-footprint overlay scripts.
+
+## Native converter format discrepancy, caught by real execution
+
+The native OasisLMF **2.5.8** `csvtobin footprint` parser requires CSV
+fields `event_id,areaperil_id,intensity_bin_id,probability`. Older
+Oasis kernel reference pages still present `intensity_bin_index,prob`.
+The initial core NetCDF-4 tests passed with the older spelling, but
+actual native Oasis execution rejected it. The output header has now
+been changed to match the exact observed OasisLMF 2.5.8 input schema.
+The dedicated workflow invokes `csvtobin footprint` with validation
+**enabled**, producing a binary footprint and index. No compatibility
+claim to other engine versions or the full hazard/vulnerability/finance
+chain is implied. See the PR's actual CI run for the tested conclusion.
