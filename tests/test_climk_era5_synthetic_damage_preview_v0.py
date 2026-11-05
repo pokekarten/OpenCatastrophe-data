@@ -7,6 +7,8 @@ import copy
 from fractions import Fraction
 import json
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 import subprocess
 import sys
 import tempfile
@@ -181,6 +183,35 @@ class SyntheticClimkConditionalDamage(unittest.TestCase):
                 p.write_text(raw)
                 with self.subTest(raw=raw),self.assertRaises(DamagePreviewError):
                     _load_json(p)
+
+    def test_original_source_reverification_wiring_and_tamper_detection(self):
+        # The *real* provider reader is imported only when both original inputs
+        # are provided. A mocked reader validates wiring and exact JSON equality,
+        # NOT NetCDF parsing or original source authenticity.
+        a,b,c=fixtures()
+        reader=SimpleNamespace(sample_climk_era5=lambda **kw:copy.deepcopy(a))
+        with patch.dict(sys.modules,{'climk_era5_synthetic_native_sample_v0':reader}):
+            receipt=preview_conditional_damage(sample=a,synthetic_assets=b,
+                vulnerabilities=c,original_netcdf_bytes=b'header',
+                original_sites_json_bytes=b'{"synthetic":true}')
+            self.assertTrue(receipt['source_sample_gust_values_independently_reverified'])
+            reader.sample_climk_era5=lambda **kw:{**a,'event_key':'altered'}
+            with self.assertRaisesRegex(DamagePreviewError,'differs'):
+                preview_conditional_damage(sample=a,synthetic_assets=b,vulnerabilities=c,
+                    original_netcdf_bytes=b'header',original_sites_json_bytes=b'{}')
+
+    def test_original_source_both_required_and_reader_fail_closed(self):
+        a,b,c=fixtures()
+        for raw,sites in ((b'netcdf',None),(None,b'{}'),('netcdf',b'{}'),(b'',b'{}')):
+            with self.subTest(raw=raw,sites=sites),self.assertRaises(DamagePreviewError):
+                preview_conditional_damage(sample=a,synthetic_assets=b,vulnerabilities=c,
+                    original_netcdf_bytes=raw,original_sites_json_bytes=sites)
+        reader=SimpleNamespace(sample_climk_era5=lambda **kw: (_ for _ in ()).throw(ValueError('failed')))
+        with patch.dict(sys.modules,{'climk_era5_synthetic_native_sample_v0':reader}):
+            with self.assertRaisesRegex(DamagePreviewError,'re-verification failed'):
+                preview_conditional_damage(sample=a,synthetic_assets=b,vulnerabilities=c,
+                    original_netcdf_bytes=b'not-a-real-netcdf',
+                    original_sites_json_bytes=b'{}')
 
     def test_cli_produces_only_conditional_preview_and_refuses_overwrite(self):
         a,b,c=fixtures()
