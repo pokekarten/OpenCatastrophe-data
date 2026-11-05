@@ -24,6 +24,17 @@ MAP_HEADER = (
 )
 HCAT_HEADER = ("hcat4_code", "hcat4_name", "seasonality_code", "seasonality_name")
 MAX_BYTES = 2_000_000
+# Publisher's commit-pinned mapping contains one blank original-code sentinel
+# per region (18 in this exact version). A sentinel is NOT a joinable crop code.
+UNKNOWN_SENTINEL = {
+    "original_code": "",
+    "original_name": "",
+    "translated_name": "",
+    "hcat4_code": "3390000000",
+    "hcat4_name": "not_known_and_other",
+    "usage_code": "0",
+    "usage_name": "No specified use",
+}
 
 
 class Blocked(ValueError):
@@ -70,19 +81,32 @@ def audit(mapping_raw: bytes, mapping_git_sha: str,
             raise Blocked("empty, non-numeric or duplicate HCAT4 hierarchy code")
         taxonomy_codes.add(code)
     observed_pairs: set[tuple[str, str]] = set()
+    sentinel_regions: set[str] = set()
     per_region: Counter[str] = Counter()
     gaps = []
     for row in mappings:
         region = row["nuts"].strip()
         code = row["original_code"].strip()
         hcat = row["hcat4_code"].strip()
-        if not re.fullmatch(r"[a-z][a-z0-9]{0,5}", region) or not code or not hcat.isdecimal():
+        if not re.fullmatch(r"[a-z][a-z0-9]{0,5}", region):
+            raise Blocked("malformed regional original codebook region")
+        per_region[region] += 1
+        if not code:
+            # One *exact* publisher-specified blank sentinel per region.
+            # Never form a mapping key ("de4", "") and never infer a crop.
+            if (any(row.get(k) != v for k, v in UNKNOWN_SENTINEL.items())
+                    or region in sentinel_regions):
+                raise Blocked("malformed or duplicate unknown-crop sentinel")
+            if hcat not in taxonomy_codes:
+                raise Blocked("publisher unknown-crop sentinel absent from HCAT4")
+            sentinel_regions.add(region)
+            continue
+        if not hcat.isdecimal():
             raise Blocked("missing or malformed regional original code / HCAT4")
         key = region, code
         if key in observed_pairs:
             raise Blocked("duplicate NUTS+original_code mapping would multiply asset rows")
         observed_pairs.add(key)
-        per_region[region] += 1
         if hcat not in taxonomy_codes:
             gaps.append({
                 "nuts": region,
@@ -95,6 +119,9 @@ def audit(mapping_raw: bytes, mapping_git_sha: str,
         "mapping_git_blob_sha1": mapping_git_sha,
         "hierarchy_git_blob_sha1": hierarchy_git_sha,
         "mapping_rows": len(mappings),
+        "joinable_original_code_rows": len(observed_pairs),
+        "unknown_cultivation_sentinel_rows_not_joinable": len(sentinel_regions),
+        "unknown_cultivation_sentinel_regions": sorted(sentinel_regions),
         "hierarchy_rows": len(taxonomy),
         "region_count": len(per_region),
         "mapping_rows_by_region": dict(sorted(per_region.items())),
@@ -122,7 +149,14 @@ def sample_mapping_coverage(
     if not parcel_rows or len(parcel_rows) > 5000:
         raise Blocked("source sample must have 1..5000 rows")
     mapping = {}
+    sentinel_regions: set[str] = set()
     for row in mapping_rows:
+        if row["original_code"] == "":
+            if (any(row.get(k) != v for k, v in UNKNOWN_SENTINEL.items())
+                    or row["nuts"] in sentinel_regions):
+                raise Blocked("malformed or duplicate unknown-crop sentinel")
+            sentinel_regions.add(row["nuts"])
+            continue
         key = (row["nuts"], row["original_code"])
         if key in mapping:
             raise Blocked("ambiguous source crop mapping")
