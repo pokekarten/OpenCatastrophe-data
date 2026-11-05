@@ -12,6 +12,7 @@ import re
 
 OFFICIAL_NRW_REFERENCE = "https://recht.nrw.de/system/files/VA/16644-28824-mbl32-2anlage3.pdf"
 OFFICIAL_NRW_HU_SOURCE_FORMAT = "https://www.bezreg-koeln.nrw.de/system/files/media/document/file/geobasis_lk_hist_dfb_hu_2020.pdf"
+OFFICIAL_NRW_ALKIS_2021 = "https://recht.nrw.de/system/files/VA/19858-35606-mbl31-3anlage.pdf"
 SOURCE_VINTAGE = "NRW historic HU source DFB v2.6 (2019) and official cadastral GFK table"
 # The 2017 official 'Anlage 3 zu den Jahresberichten der Katasterbehörden'
 # identifies the listed functions as buildings with residential component.
@@ -22,8 +23,27 @@ RESIDENTIAL_CANDIDATES = {
     "1000": "Wohngebaeude",
     "1010": "Wohnhaus",
     "1100": "Gemischt_genutztes_Gebaeude_mit_Wohnen",
+    "1110": "Wohngebaeude_mit_Gemeinbedarf",
+    "1120": "Wohngebaeude_mit_Handel_und_Dienstleistungen",
+    "1121": "Wohn_und_Verwaltungsgebaeude",
+    "1122": "Wohn_und_Buerogebaeude",
+    "1123": "Wohn_und_Geschaeftsgebaeude",
+    "1130": "Wohngebaeude_mit_Gewerbe_und_Industrie",
+    "1131": "Wohn_und_Betriebsgebaeude",
     "1220": "Land_und_forstwirtschaftliches_Wohn_und_Betriebsgebaeude",
+    "1221": "Bauernhaus",
+    "1222": "Wohn_und_Wirtschaftsgebaeude",
     "1223": "Forsthaus",
+}
+# These official building functions may contain residents but represent
+# special/institutional occupancy, not admitted as standard home insurance.
+SPECIAL_OCCUPANCY_QUARANTINE = {
+    "1020": "Wohnheim",
+    "1021": "Kinderheim",
+    "1022": "Seniorenheim",
+    "1023": "Schwesternwohnheim",
+    "1024": "Studenten_Schuelerwohnheim",
+    "1025": "Schullandheim",
 }
 # Selected independently identified non-residential/building-part examples
 # for strict negative tests. This is NOT an exhaustive code registry.
@@ -53,6 +73,8 @@ def classify_gfk(raw: str) -> tuple[str, str | None]:
     value=match.group(2)
     if value in RESIDENTIAL_CANDIDATES:
         return "residential_function_candidate_only", RESIDENTIAL_CANDIDATES[value]
+    if value in SPECIAL_OCCUPANCY_QUARANTINE:
+        return "special_occupancy_quarantine", SPECIAL_OCCUPANCY_QUARANTINE[value]
     if value in KNOWN_INELIGIBLE_EXAMPLES:
         return "known_nonresidential_example", KNOWN_INELIGIBLE_EXAMPLES[value]
     return "unmapped_quarantine", None
@@ -74,6 +96,8 @@ def audit_gfk_counts(observed_counts: dict[str,int]) -> dict:
         "source_gfk_categories":dict(sorted(category.items())),
         "official_reference_url":OFFICIAL_NRW_REFERENCE,
         "official_hu_source_format_url":OFFICIAL_NRW_HU_SOURCE_FORMAT,
+        "official_2021_alkis_building_function_codebook":OFFICIAL_NRW_ALKIS_2021,
+        "special_residential_occupancy_quarantined":True,
         "source_gfk_requires_AX_Gebaeude_31001_prefix":True,
         "mapped_code_count":len(RESIDENTIAL_CANDIDATES),
         "function_classes_not_verified_as_actual_residential_insurance_sites":True,
