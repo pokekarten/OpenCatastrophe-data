@@ -56,11 +56,34 @@ def _values(rows, label):
     return ",\n".join("(" + ",".join(fields) + ")" for fields in rows)
 
 
-def render(parcels, bgt, bag, *, bbox):
+def _require_full_building_footprint_coverage(bgt_rows, parcel_bounds):
+    """Reject a parcel query window that cuts off any returned BGT geometry.
+
+    OGC API Features returns full building geometry even when only a piece
+    intersects the small initial building bbox. Reusing that initial bbox for
+    parcels creates false absence and false low coverage in CAT exposure QA.
+    """
+    west, south, east, north = parcel_bounds
+    tolerance = 1e-9
+    for _id, _props, polygons in bgt_rows:
+        for poly in polygons:
+            for ring in poly:
+                for lon, lat in ring:
+                    if not (west - tolerance <= lon <= east + tolerance
+                            and south - tolerance <= lat <= north + tolerance):
+                        raise ParcelBagError(
+                            "parcel_bbox excludes part of an original BGT footprint; "
+                            "request all intersecting parcels over the full building envelope"
+                        )
+
+
+def render(parcels, bgt, bag, *, bbox, parcel_bbox=None):
     """Produce a no-writes SQL SELECT; returns SQL string with private source IDs."""
     bounds = _bbox(bbox)
-    ptime, par = _collection(parcels, "parcel", bounds)
+    parcel_bounds = _bbox(parcel_bbox if parcel_bbox is not None else bbox)
     btime, bgt_rows = _collection(bgt, "parcel", bounds)
+    _require_full_building_footprint_coverage(bgt_rows, parcel_bounds)
+    ptime, par = _collection(parcels, "parcel", parcel_bounds)
     atime, bag_rows = _collection(bag, "building", bounds)
     if (max(ptime, btime, atime) - min(ptime, btime, atime)).total_seconds() > ALLOWED_SNAPSHOT_GAP_SECONDS:
         raise ParcelBagError("source timestamps too far apart")
@@ -94,7 +117,8 @@ def render(parcels, bgt, bag, *, bbox):
     query = (
         "-- RESEARCH ONLY: original PDOK sources are not admitted CAT model inputs.\n"
         "-- Strictly read-only PostGIS SELECT. Never save this generated SQL to public Git.\n"
-        "-- Bounding CRS84 window (west,south,east,north): " + ",".join(map(str, bounds)) + "\n"
+        "-- Building/BAG query CRS84 bbox: " + ",".join(map(str, bounds)) + "\n"
+        "-- Full-footprint parcel query CRS84 bbox: " + ",".join(map(str, parcel_bounds)) + "\n"
         "WITH parcels(id,source_status,geo) AS (VALUES " + _values(parcel_sql, "parcels") + "),\n"
         "bgt(id,bag_id,source_status,geo) AS (VALUES " + _values(bgt_sql, "BGT") + "),\n"
         "bag(id,source_status) AS (VALUES " + _values(bag_sql, "BAG") + "),\n"
@@ -163,7 +187,10 @@ def main(argv=None):
     parser.add_argument("--parcels", type=Path, required=True)
     parser.add_argument("--bgt", type=Path, required=True)
     parser.add_argument("--bag", type=Path, required=True)
-    parser.add_argument("--bbox", required=True)
+    parser.add_argument("--bbox", required=True,
+                        help="BGT/BAG original response bbox, CRS84 west,south,east,north")
+    parser.add_argument("--parcel-bbox",
+                        help="Original parcel response bbox; must cover full BGT geometries")
     parser.add_argument("--out", type=Path, required=True,
                         help="PRIVATE local output path OUTSIDE the repository")
     args = parser.parse_args(argv)
@@ -172,7 +199,9 @@ def main(argv=None):
         if dest == ROOT or ROOT in dest.parents:
             raise ParcelBagError("output path may not be inside repository checkout")
         sql = render(load(args.parcels), load(args.bgt), load(args.bag),
-                     bbox=[float(v) for v in args.bbox.split(",")])
+                     bbox=[float(v) for v in args.bbox.split(",")],
+                     parcel_bbox=([float(v) for v in args.parcel_bbox.split(",")]
+                                  if args.parcel_bbox else None))
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(sql, encoding="utf-8")
     except (ValueError, OSError) as exc:
