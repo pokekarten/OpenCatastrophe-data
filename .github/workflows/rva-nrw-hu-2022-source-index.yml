@@ -12,6 +12,9 @@ on:
       - "research_runners/rva_nrw_hu_2022_original_member_headers_v0.py"
       - "research_runners/rva_nrw_hu_2022_first_polygons_v0.py"
       - "research_runners/rva_nrw_hu_gfk_residential_candidate_v0.py"
+      - "research_runners/rva_nrw_hu_full_zip_stratified_reservoir_v0.py"
+      - "research_runners/rva_nrw_hu22_full_source_to_fictional_oed_v0.py"
+      - "tests/test_rva_nrw_hu_full_zip_stratified_reservoir_v0.py"
       - "research_runners/export_rva_nrw_hu_2022_geocoded_oed_smoke_v0.py"
       - "requirements-eu-flood-spatial.txt"
       - "tests/test_rva_nrw_hu_2022_original_index_receipt_v0.py"
@@ -59,6 +62,7 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_rva_nrw_hu_2022_first_polygons_v0.py' -v
           python -m unittest discover -s tests -p 'test_rva_nrw_hu_gfk_residential_candidate_v0.py' -v
+          python -m unittest discover -s tests -p 'test_rva_nrw_hu_full_zip_stratified_reservoir_v0.py' -v
           python research_runners/rva_nrw_hu_2022_first_polygons_v0.py --live
       - name: Install pinned official Oasis ODS Tools 5.0.8
         run: |
