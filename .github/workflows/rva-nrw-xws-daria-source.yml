@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: NRW XWS Daria 1990 original open wind source preflight
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/rva-nrw-xws-daria-source.yml"
+      - "research_runners/xws_daria_1990_original_csv_preflight_v0.py"
+      - "tests/test_xws_daria_1990_original_csv_preflight_v0.py"
+      - "docs/research/rva-nrw-xws-daria-original-wind-source-20261105.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-xws-daria-public-wind:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - name: Source commit read-only checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Stable Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Original XWS CSV source, geographic identity and no-model negative tests
+        run: python -m unittest discover -s tests -p 'test_xws_daria_1990_original_csv_preflight_v0.py' -v
+      - name: Source-original FULL CSV byte hashes and licence receipt (no raw upload)
+        run: |
+          python research_runners/xws_daria_1990_original_csv_preflight_v0.py --live \
+            --out-receipt "${{ runner.temp }}/xws-daria-1990-original-metadata-receipt.json"
+      - name: Publish only original file SHAs/source statistics/rights/no-CAT-admission
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rva-nrw-xws-Daria-1990-original-wind-CSV-source-only-receipt
+          path: ${{ runner.temp }}/xws-daria-1990-original-metadata-receipt.json
+          if-no-files-found: error
+          retention-days: 14
