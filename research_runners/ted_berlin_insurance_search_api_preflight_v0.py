@@ -54,7 +54,8 @@ def query_body(notice: str) -> bytes:
         "page": 1,
         "scope": "ALL",
         "paginationMode": "PAGE_NUMBER",
-        "checkQuerySyntax": True,
+        "checkQuerySyntax": False,
+        "onlyLatestVersions": False,
     }, sort_keys=True).encode("utf-8")
 
 
@@ -92,6 +93,13 @@ def parse(notice: str, raw: bytes) -> dict:
         raise ValueError("TED_API_NOT_COMPLETE_JSON") from exc
     if not isinstance(value, dict):
         raise ValueError("TED_API_WRONG_JSON_SHAPE")
+    # The TED API's checkQuerySyntax=true mode validates the query only;
+    # it deliberately does NOT execute an actual search. A validation
+    # envelope must not be treated as real zero-result research evidence.
+    if value.get("totalNoticeCount", "__absent__") is None:
+        raise ValueError("TED_API_SYNTAX_ONLY_RESPONSE_NOT_SEARCH_RESULT")
+    if value.get("timedOut") is True:
+        raise ValueError("TED_API_SEARCH_TIMED_OUT")
     notices = value.get("notices")
     if not isinstance(notices, list) or len(notices) != 1 or not isinstance(notices[0], dict):
         raise ValueError("TED_API_EXPECT_ONE_EXACT_PUBLICATION")
