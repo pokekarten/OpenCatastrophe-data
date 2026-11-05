@@ -143,13 +143,16 @@ def parse(procedure_uuid: str, raw: bytes,
         titles = index._values(row.get("notice-title"))
         if not titles or any(len(t) > MAX_TITLE for t in titles):
             raise ValueError("TED_WBM_FAMILY_MISSING_OR_OVERSIZED_TITLE")
+        # The official API may return 24 translated titles. Publish one
+        # stable display sample; never flood CI logs with redundant locales.
+        title = next((t for t in titles if t.startswith("Deutschland")), sorted(titles)[0])
         dates = sorted(set(index._values(row.get("publication-date"))))
         if len(dates) > 2:
             raise ValueError("TED_WBM_FAMILY_UNEXPECTED_PUBLICATION_DATES")
         result.append({
             "publication_number": pubs[0],
             "official_notice_url": "https://ted.europa.eu/en/notice/" + pubs[0],
-            "publisher_index_notice_titles": sorted(set(titles)),
+            "publisher_index_notice_title_example": title,
             "publisher_index_publication_dates": dates,
             "indexed_same_BT04_as_queried": True,
             "same_procedure_confirmed_by_pinned_original_xml": False,
