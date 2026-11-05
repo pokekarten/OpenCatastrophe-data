@@ -24,6 +24,7 @@ import re
 import sys
 from urllib.parse import parse_qsl, urlsplit
 
+ROOT = Path(__file__).resolve().parents[1]
 ALLOWED_PATH = "/kadaster/bag/wfs/v2_0"
 ALLOWED_FIELDS = frozenset({
     "identificatie", "oppervlakte", "pandidentificatie", "status", "gebruiksdoel"
@@ -55,7 +56,9 @@ def _bad_constant(_value):
 
 
 def load_private(path):
-    p = Path(path)
+    p = Path(path).resolve()
+    if p == ROOT or ROOT in p.parents:
+        raise BagWfsPrivacyError("original feature bytes must remain outside Git checkout")
     if p.stat().st_size > MAX_BYTES:
         raise BagWfsPrivacyError("private input exceeds 1MB bound")
     return json.loads(p.read_text(encoding="utf-8"),
@@ -185,8 +188,15 @@ def audit(doc, *, source_url):
         geom = feature.get("geometry")
         if not isinstance(geom, dict) or geom.get("type") != "Point":
             raise BagWfsPrivacyError("expected original BAG WFS unit point")
-        if not isinstance(geom.get("coordinates"), list):
-            raise BagWfsPrivacyError("unexpected unit geometry shape")
+        coords = geom.get("coordinates")
+        if (not isinstance(coords, list) or len(coords) != 2
+                or any(type(v) not in (int, float) or not math.isfinite(v)
+                       for v in coords)):
+            raise BagWfsPrivacyError("unexpected RD New point coordinates")
+        xmin, ymin, xmax, ymax = request["bbox"]
+        if not (xmin - 1e-6 <= coords[0] <= xmax + 1e-6
+                and ymin - 1e-6 <= coords[1] <= ymax + 1e-6):
+            raise BagWfsPrivacyError("feature point outside approved query bbox")
 
         statuses[status] += 1
         if status == ACTIVE_STATUS:
