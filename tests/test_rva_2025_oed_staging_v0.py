@@ -1,3 +1,4 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
 """Offline exporter-only synthetic tests; original 400-Kreis gate is upstream."""
 import csv
