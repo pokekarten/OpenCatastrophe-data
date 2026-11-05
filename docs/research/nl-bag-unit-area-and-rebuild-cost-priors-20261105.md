@@ -56,3 +56,16 @@ python scripts/check_all.py
 ```
 
 **Do not merge or claim implemented empirical usable-area evaluation until CI passes.** Before requesting any real BAG `verblijfsobject` feature bytes, validate a provider-side field/projection filter that excludes all addresses and personal fields, record source rights, inspect one bounded non-personal response schema, and verify unit→pand links without publishing source IDs. Next: independently sourced residential volume and real replacement-cost baseline after a rights-review and expert-built benchmark, not by inventing rates.
+
+## Original CBS OData v4 machine-accessibility receipts — 2026-11-05
+
+Original provider live-read **metadata and bounded single-row observations**, no bulk provider data downloaded:
+
+| CBS index | Original `Properties` endpoint | Verified version / licence | Bounded observation proof |
+| --- | --- | --- | --- |
+| Residential construction input `85728NED` | https://datasets.cbs.nl/odata/v1/CBS/85728NED/Properties | `Version=202610300000`, `License=https://creativecommons.org/licenses/by/4.0/` | `/Observations?$top=1` yielded 1 typed row with `Measure`, `Value`, `Componenten`, `Perioden` |
+| Residential construction output `85772NED` | https://datasets.cbs.nl/odata/v1/CBS/85772NED/Properties | `Version=202609300000`, same CC BY 4.0 licence | `/Observations?$top=1` yielded 1 typed row with `Measure`, `Value`, `Perioden` |
+
+**Corrected API probe detail:** OData v4 `Properties` is a singleton entity; applying `$top=1` to `/Properties` is invalid because `$top` works only on collections. Direct `/Properties` without `$top` succeeds. `/Observations?$top=1` is valid and returns one observation; a one-row response is **not** a full data series. The original CBS [StatLine-as-open-data guide](https://www.cbs.nl/nl-nl/onze-diensten/open-data/statline-als-open-data) documents the API and table revision risks.
+
+This verifies **technical access** and an explicit metadata licence for the two CBS index tables, but not compatibility with any individual house, not licence/terms for the separate private insurer PDF, not a valid commercial CAT model valuation, and not a freeze of the full observations. If later admitted, persist table ID, metadata version, component, `Perioden`, `Measure`, `Value`, provisional flag, original response hash and required CBS attribution.
