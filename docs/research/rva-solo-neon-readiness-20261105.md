@@ -157,3 +157,33 @@ The exact updated GitHub SQL query now counts separately whether the synthetic e
 Even if geometry were provided in future, the terminal report remains `RESEARCH_ONLY_NEEDS_HAZARD_VULNERABILITY_RIGHTS_AND_TREATY_REVIEW`. This is **not** validation of source-compatible WGS84 coordinate semantics, German stochastic event frequency, vulnerability, a native Oasis GUL/IL/RI run or gross/net OEP/AEP.
 
 The realistic next workflow is to admit/transform original source-licensed 2022 NRW physical footprints and validate EPSG:4647 → 4326, *then* select explicitly fictional site locations independent of the carrier's unknown customers. Existing [#1373](https://github.com/pokekarten/OpenCatastrophe-data/pull/1373) should own OED/geocoding; this PR remains the independent database evidence gate. **No Neon main writes, no raw-PDF or OED policy CSV redistributions.**
+
+
+## 2026-11-05: complete 2022 NRW HU original and 10,000 geocoded fictional OED receipts
+
+The separate [OpenCatastrophe-data PR #1373](https://github.com/pokekarten/OpenCatastrophe-data/pull/1373) has now successfully executed the complete official historical **2022 NRW Hausumringe** original archive. [Exact-head source workflow #42097472463](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42097472463) read **901,092,946 original bytes**, full SHA-256 `10e5b9fd1d299ef0efa883bfadce7c4c3fd2ed7b42076557cbdff887a0d277da`, checked all four source ZIP member CRCs, and streamed **11,232,755** original source records. It produced **10,000 geographically placed, fully fictional OED 5.0 policies** across all **53 NRW AGS-2022 Kreise**. The original large ZIP was deleted from the GitHub runner before publishing.
+
+[Exact OED artifact ID 13447603258](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42097472463/artifacts/13447603258), SHA-256 `5b0055ce71314f7d7baf4f67008cd4abba3df28a4bce0690bbe9521a3cc35757`, contains `location.csv`, `account.csv`, `physical_candidate_evidence.csv`, `manifest.json`; it expires after the workflow retention period. A separate downloader independently inspected all four ZIP files and verified output CSV hashes, 10,000 distinct location IDs, account links and source-OI hashes, preserved leading-zero county IDs, realistic NRW WGS84 bounds and the separate real-source versus fictional-insurance marker. The `manifest.json` original byte SHA-256 is **`b4713a9a09a55193d39b64550bc1408ba588303d8a4e658f05536b3dbe14b416`**. The fictional 10,000-location BuildingTIV total is **EUR 4,826,029,500**; it is NOT R+V insured TIV or the year-end national 1,060,546 contract stock.
+
+The [official NRW source page](https://www.opengeodata.nrw.de/produkte/geobasis/lk/hist/hist_hu_shp/) explicitly lists the historical HU dataset as **Datenlizenz Deutschland – Zero – 2.0**, while also specifying **EPSG:4647**. That source licence supports independent research use; it does **not** turn a 2022 HU physical polygon into a 2025 R+V insured risk or establish valid German wind-vulnerability/occupancy classification.
+
+Persistent, machine-readable **research-only receipts**: [53-Kreis totals and exact original ZIP/OED SHA pins](../../research/observations/rva_nrw_hu22_original_full_10k_53kreis_oed_research_v0.toml) and [offline source-conservation tests](../../tests/test_rva_nrw_hu22_original_full_research_receipt_v0.py). The 53 fictional county summaries were **rehearsed in the isolated Neon branch only** under a unique linked synthetic version and the exact OED manifest SHA; no raw provider archive or 10,000 individual source OED CSV rows were uploaded to Neon.
+
+| Evidence on isolated Neon branch | Observed |
+| --- | ---: |
+| Source-linked standalone synthetic study portfolios | 3 |
+| Study scenario versions | 3 |
+| Total registered units (two earlier studies + 53 Kreis summaries) | 57 |
+| WGS84 public-source *prefix-only* physical sample point geometries | 3 |
+| Full-source 10k site geometries actually imported into Neon | **0** |
+| Source-admitted model-eligible synthetic NRW WGS84 units | **0** |
+| Full-source 53-Kreis study aggregates | 53 |
+| Aggregate fictional contracts represented in that study | 10,000 |
+| Aggregate fictional TIV of that study | EUR 4,826,029,500 |
+| Source-rights scope | publisher DL-DE Zero 2.0 observed and link stored |
+| Exact 2022 HU GFK codebook vintage and real insurer coverage | **not independently established** |
+| Readiness `next_gate` | `BLOCKED_FULL_ORIGINAL_HU_CRS_RIGHTS_AND_SCENARIO_PROVENANCE` |
+
+The last gate deliberately requires **source-linked individual synthetic asset points**, WGS84+NRW validity, pinned complete original archive SHA and matching OED manifest, permitted derivative-use provenance and independently resolved historical source function-code vocabulary. A 53-Kreis centroid or an aggregate county row must **never** be counted as one of 10,000 insured buildings. For real insurer CAT modelling, official event/hazard, vulnerability mapping, stochastic frequency, sample semantics, coverage/treaty and reinsurance contract validation still remain separate, unpassed gates.
+
+**Main Neon remains unchanged; the test branch is not a production ingest.** The full original provider archive and insurer customer information were not placed in GitHub or Neon.
