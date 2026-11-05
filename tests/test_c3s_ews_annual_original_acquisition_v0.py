@@ -26,7 +26,7 @@ FIELDS = ("year", "region", "threshold", "storm_number", "mean_wind_gust",
 
 def toy_csv():
     dest = StringIO(newline="")
-    writer = csv.DictWriter(dest, fieldnames=FIELDS, lineterminator="\\n")
+    writer = csv.DictWriter(dest, fieldnames=FIELDS, lineterminator="\n")
     writer.writeheader()
     for year in (1950, 1951, 1952):
         for alg in ("hodges", "tempestextremes"):
@@ -100,7 +100,7 @@ class C3SOriginalAcquisitionTests(unittest.TestCase):
             toy_zip(("a.csv", b"not-a-csv")),
             b"<html>Login required</html>",
             b"",
-            b"PK\\x03\\x04bad-archive",
+            b"PK\x03\x04bad-archive",
         ]
         for data in cases:
             with self.subTest(first=data[:16]), self.assertRaises(mod.AcquisitionError):
