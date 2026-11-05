@@ -23,6 +23,7 @@ import argparse
 import hashlib
 import json
 import math
+import random
 from pathlib import Path
 import re
 import sys
@@ -126,6 +127,82 @@ def audit_rows(rows: list[dict]) -> dict:
     return stats
 
 
+def sampled_row_positions(total_rows: int, max_rows: int, source_sha256: str) -> list[int]:
+    """A reproducible bounded uniform sample across the WHOLE original file.
+
+    The validated full-file SHA fixes the seed. Positions are neither returned
+    in the public report nor treated as independent crop-area observations.
+    This is a QA sample and does NOT establish full-source completeness.
+    """
+    if (type(total_rows) is not int or total_rows < 1 or
+            type(max_rows) is not int or not 1 <= max_rows <= 5000 or
+            not isinstance(source_sha256, str) or
+            re.fullmatch(r"[0-9a-f]{64}", source_sha256) is None):
+        raise Blocked("invalid original row count, sample limit or source hash")
+    n = min(total_rows, max_rows)
+    rng = random.Random(int.from_bytes(
+        hashlib.sha256(("EuroCropsV202-uniform-QA|" + source_sha256).encode("ascii")
+                       ).digest(), "big"))
+    return sorted(rng.sample(range(total_rows), n))
+
+
+def read_spread_sample(parquet, positions: list[int]) -> tuple[list[dict], int]:
+    """Retrieve selected global rows without loading any entire row group.
+
+    Iterate only sampled row groups, reading batches capped at 512 rows.
+    Metadata row-group counts MUST sum to the complete footer row count.
+    """
+    if not positions or len(positions) > 5000 or any(
+        type(p) is not int or p < 0 for p in positions
+    ) or positions != sorted(set(positions)):
+        raise Blocked("invalid selected source sample positions")
+    meta = parquet.metadata
+    if not 1 <= meta.num_row_groups <= 20000 or meta.num_rows <= 0:
+        raise Blocked("invalid or unbounded Parquet footer row groups")
+    rows: list[dict] = []
+    checked_start = 0
+    selected_ptr = 0
+    visited = 0
+    for group_no in range(meta.num_row_groups):
+        size = meta.row_group(group_no).num_rows
+        if type(size) is not int or size < 0:
+            raise Blocked("invalid original row-group length")
+        next_start = checked_start + size
+        local: list[int] = []
+        while selected_ptr < len(positions) and positions[selected_ptr] < next_start:
+            if positions[selected_ptr] < checked_start:
+                raise Blocked("source sample offset moved backward")
+            local.append(positions[selected_ptr] - checked_start)
+            selected_ptr += 1
+        if local:
+            visited += 1
+            batch_start = 0
+            local_ptr = 0
+            for batch in parquet.iter_batches(
+                batch_size=512, columns=list(REQUIRED), row_groups=[group_no]
+            ):
+                if not 0 < batch.num_rows <= 512:
+                    raise Blocked("invalid or oversized Parquet sample batch")
+                stop = batch_start + batch.num_rows
+                while local_ptr < len(local) and local[local_ptr] < stop:
+                    row_offset = local[local_ptr] - batch_start
+                    selected = batch.slice(row_offset, 1).to_pylist()
+                    if len(selected) != 1 or not isinstance(selected[0], dict):
+                        raise Blocked("incomplete original Parquet sample row")
+                    rows.append(selected[0])
+                    local_ptr += 1
+                batch_start = stop
+                if local_ptr == len(local):
+                    break
+            if local_ptr != len(local):
+                raise Blocked("original Parquet row group shorter than footer claims")
+        checked_start = next_start
+    if (checked_start != meta.num_rows or selected_ptr != len(positions) or
+            len(rows) != len(positions)):
+        raise Blocked("Parquet row group totals or sampled rows inconsistent")
+    return rows, visited
+
+
 def inspect_local(
     path: Path, expected_sha256: str, max_rows: int = 512,
     mapping: Path | None = None, mapping_git_blob_sha1: str | None = None,
@@ -150,14 +227,8 @@ def inspect_local(
         raise Blocked("install optional pyarrow to inspect original file") from exc
     parquet = pq.ParquetFile(path)
     geo = geo_metadata(parquet.schema_arrow.metadata, parquet.schema_arrow.names)
-    rows: list[dict] = []
-    for batch in parquet.iter_batches(batch_size=min(512, max_rows), columns=list(REQUIRED)):
-        take = min(max_rows - len(rows), batch.num_rows)
-        rows.extend(batch.slice(0, take).to_pylist())
-        if len(rows) == max_rows:
-            break
-    if not rows:
-        raise Blocked("source contains no readable rows")
+    positions = sampled_row_positions(parquet.metadata.num_rows, max_rows, actual)
+    rows, sampled_groups = read_spread_sample(parquet, positions)
     stats = audit_rows(rows)
     mapping_coverage = None
     if mapping is not None and hierarchy is not None:
@@ -197,9 +268,13 @@ def inspect_local(
         "schema_fields": list(parquet.schema_arrow.names),
         "geo": geo, "pyarrow_version": pa.__version__,
         "sample": stats,
+        "sample_selection": "source_sha256_seeded_uniform_without_replacement",
+        "sampled_row_groups": sampled_groups,
+        "sampled_positions_exported": False,
+        "sample_is_full_dataset": stats["sampled"] == parquet.metadata.num_rows,
+        "sample_represents_independently_verified_source_coverage": False,
         "sample_taxonomy_crosswalk": mapping_coverage,
         "taxonomy_crosswalk_checked": mapping_coverage is not None,
-        "sample_is_full_dataset": stats["sampled"] == parquet.metadata.num_rows,
         "research_qc_only": True,
         "rights_and_scientific_admission": "NOT_REVIEWED_NOT_ADMITTED",
         "loss_or_insurer_exposure_model_ready": False,
