@@ -59,8 +59,9 @@ def fetch(notice: str, *, opener=urllib.request.urlopen) -> bytes:
         if (effective.scheme != "https" or effective.hostname != "ted.europa.eu"
                 or effective.path != urllib.parse.urlsplit(url).path):
             raise ValueError("TED_NOTICE_REDIRECT_CHANGED_OR_NOT_OFFICIAL")
-        if getattr(response, "status", 200) != 200:
-            raise ValueError("TED_HTTP_NON_200")
+        status = getattr(response, "status", 200)
+        if status != 200:
+            raise ValueError(f"TED_HTTP_NON_200_STATUS_{status}")
         chunks = []
         length = 0
         while True:
