@@ -9,7 +9,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'research_runners'))
-from rva_2025_oed_staging_v0 import allocate_sample, export, StagingError, NATIONAL, GWP_CENTS
+from rva_2025_oed_staging_v0 import allocate_sample, export, hypothetical_value, StagingError, NATIONAL, GWP_CENTS
 
 
 def fixture():
@@ -59,6 +59,28 @@ class TestStage(unittest.TestCase):
             for name,sha in rec['output_sha256'].items():
                 self.assertEqual(hashlib.sha256((out/name).read_bytes()).hexdigest(),sha)
             self.assertEqual(json.loads((out/'manifest.json').read_text())['status'],'NOT_GEOLOCATED_NOT_MODEL_READY')
+
+    def test_nonuniform_age_archetype_sensitivity_is_explicit(self):
+        self.assertEqual(hypothetical_value(450000,0,'SYN-01001-01-000001','flat'),(450000,'flat_one_building_per_contract'))
+        with self.assertRaises(StagingError):
+            hypothetical_value(450000,10,'SYN-01001-11-000001','age_archetype')
+        with tempfile.TemporaryDirectory() as td:
+            out=Path(td)/'heterogeneous'
+            receipt=export(fixture(),out,'PHYSICAL_BUILDINGS_UNIFORM_AGE_AFFINITY',
+                           'central',10000,{'test':'00'*32},'age_archetype')
+            self.assertEqual(receipt['fictional_valuation_pattern'],'age_archetype')
+            self.assertEqual(sum(receipt['fictional_exported_archetype_counts'].values()),10000)
+            self.assertGreater(len(receipt['fictional_exported_archetype_counts']),2)
+            with (out/'location.csv').open(encoding='utf8',newline='') as f:
+                loc=list(csv.DictReader(f))
+            with (out/'cohort_receipt.csv').open(encoding='utf8',newline='') as f:
+                cohort=list(csv.DictReader(f))
+            tiv=sum(int(r['BuildingTIV']) for r in loc)
+            self.assertEqual(tiv,receipt['exported_fictional_building_tiv_eur'])
+            self.assertEqual(sum(int(r['FictionalExportedBuildingTIVEUR']) for r in cohort),tiv)
+            self.assertGreater(len({int(r['BuildingTIV']) for r in loc}),15)
+            self.assertNotEqual(tiv,4500000000)
+            self.assertFalse(receipt['germany_peril_model_lookup_allowed'])
 
     def test_fail_closed(self):
         cells=fixture()
