@@ -26,6 +26,7 @@ def fixture():
         {"bin": f"100{i+1:04d}",
          "doitt_id": str(70000 + i),
          "base_bbl": f"1000{i if i < 22 else i + 1000:06d}",
+         "mappluto_bbl": f"1000{i:06d}",
          "feature_code": "2100"}
         for i in range(N)
     ]
@@ -39,9 +40,10 @@ class NYCBuildingFootprintTests(unittest.TestCase):
         self.assertEqual(report["ll84_property_year_rows"], 30)
         self.assertEqual(report["distinct_footprint_bin_values"], 30)
         self.assertEqual(report["single_bin_base_bbl_relation"], {"different": 8, "same": 22})
+        self.assertEqual(report["single_bin_mappluto_bbl_relation"], {"same": 30})
         self.assertEqual(report["reason_counts"], {
-            "unique_bin_different_base_bbl_requires_billing_crosswalk": 8,
-            "unique_bin_matching_base_bbl_unverified": 22,
+            "unique_bin_mappluto_agrees_base_diff_unverified": 8,
+            "unique_bin_pluto_and_base_bbl_agree_unverified": 22,
         })
         for key in ("building_identity_proven", "source_admitted_for_models",
                     "insured_value_or_losses_inferred", "actual_polygon_geometries_examined",
@@ -61,7 +63,7 @@ class NYCBuildingFootprintTests(unittest.TestCase):
         q = parse_qs(u.query)
         self.assertEqual(u.scheme, "https")
         self.assertEqual(u.hostname, "data.cityofnewyork.us")
-        self.assertEqual(q["$select"], ["bin,doitt_id,base_bbl,feature_code"])
+        self.assertEqual(q["$select"], ["bin,doitt_id,base_bbl,mappluto_bbl,feature_code"])
         self.assertEqual(q["$limit"], ["100"])
         self.assertNotIn("the_geom", str(q))
 
@@ -88,6 +90,7 @@ class NYCBuildingFootprintTests(unittest.TestCase):
             return json.dumps([lookup[b] for b in bins]).encode()
         result = run_live(mock_fetch)
         self.assertEqual(result["single_bin_base_bbl_relation"], {"different": 8, "same": 22})
+        self.assertEqual(result["single_bin_mappluto_bbl_relation"], {"same": 30})
         self.assertEqual(len(calls), 7)
 
     def test_transport_batch_timeout_retried_as_individual_bins(self):
@@ -168,6 +171,20 @@ class NYCBuildingFootprintTests(unittest.TestCase):
             summarize(ll84, fp)
         ll84, fp = fixture()
         fp[0]["base_bbl"] = "1000000001.00000000"
+        with self.assertRaises(ProbeError):
+            summarize(ll84, fp)
+
+    def test_wrong_or_missing_mappluto_billing_key_not_automatically_matched(self):
+        ll84, fp = fixture()
+        fp[0]["mappluto_bbl"] = "1000005678"
+        report = summarize(ll84, fp)
+        self.assertEqual(report["reason_counts"]["unique_bin_mappluto_bbl_mismatch_unresolved"], 1)
+        self.assertEqual(report["single_bin_mappluto_bbl_relation"], {"different": 1, "same": 29})
+        ll84, fp = fixture()
+        fp[0]["mappluto_bbl"] = ""
+        self.assertEqual(summarize(ll84, fp)["reason_counts"]["missing_mappluto_bbl"], 1)
+        ll84, fp = fixture()
+        fp[0]["mappluto_bbl"] = "1000000000.0000"
         with self.assertRaises(ProbeError):
             summarize(ll84, fp)
 
