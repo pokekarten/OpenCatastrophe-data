@@ -31,6 +31,8 @@ on:
       - "tests/test_ted_wbm_2026_procedure_lineage_v0.py"
       - "tests/test_ted_wbm_2026_procedure_search_index_v0.py"
       - "tests/test_ted_wbm_2026_procedure_family_discovery_v0.py"
+      - "tests/test_ted_wbm_2026_procedure_family_observation_v0.py"
+      - "research/observations/ted_wbm_2026_bt04_procedure_family_members_v0.toml"
       - "tests/test_ted_wbm_2026_procedure_index_observation_v0.py"
       - "research/observations/ted_wbm_2026_search_bt04_lineage_observation_v0.toml"
       - "tests/test_ted_wbm_original_contract_quota_label_register_v0.py"
@@ -118,6 +120,8 @@ jobs:
       - name: Query all official indexed sibling notices for both WBM 2026 BT04 families
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: python -m research_runners.ted_wbm_2026_procedure_family_discovery_v0
+      - name: Offline dated official WBM single-notice procedure family observation guards
+        run: python -m unittest discover -s tests -p "test_ted_wbm_2026_procedure_family_observation_v0.py" -v
       - name: Try official TED daily OJ S archive fallback for 202 Accepted
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: python -m research_runners.ted_berlin_insurance_daily_xml_preflight_v0
