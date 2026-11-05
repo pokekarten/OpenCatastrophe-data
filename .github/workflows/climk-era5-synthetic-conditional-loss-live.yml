@@ -14,6 +14,7 @@ on:
       - 'scripts/climk_era5_synthetic_native_sample_v0.py'
       - 'scripts/inspect_climk_winds_era5_v0.py'
       - 'requirements-glofas-acquisition.txt'
+      - 'docs/research/evidence/climk-era5-kyrill-24-fictional-buildings-source-loss-20261105.json'
   workflow_dispatch:
 
 permissions:
@@ -61,6 +62,26 @@ jobs:
           assert o['annual_AAL'] is None and o['annual_AEP'] is None and o['annual_OEP'] is None
           assert o['model_calibrated'] is False
           assert o['insurer_original_gross'] is None and o['insurer_retained_net'] is None
+          # Lock this proof to the independently reviewed research evidence receipt.
+          e = json.loads(Path('docs/research/evidence/climk-era5-kyrill-24-fictional-buildings-source-loss-20261105.json').read_text(encoding='utf-8'))
+          assert o['source_sha256'] == e['source_sha256']
+          assert o['source_size_bytes'] == e['source_size_bytes']
+          assert o['selected_storm_index_zero_based'] == e['source_storm_index_zero_based']
+          assert o['selected_storm_name'] == e['source_storm_name']
+          assert o['selected_storm_date_label_not_utc'] == e['source_date_label_not_exact_utc']
+          assert o['synthetic_asset_count'] == e['synthetic_asset_count']
+          assert o['synthetic_total_replacement_cost_eur'] == e['synthetic_replacement_cost_total_eur']
+          assert o['synthetic_vlt_sha256'] == e['synthetic_vulnerability_sha256']
+          assert o['synthetic_asset_roster_sha256'] == e['synthetic_asset_roster_sha256']
+          assert o['conditional_physical_ground_up_eur_exact'] == e['conditional_expected_physical_groundup_loss_eur_exact']
+          actual_points = o['source_point_samples']
+          expected_points = e['source_points']
+          assert len(actual_points) == len(expected_points)
+          for actual, expected in zip(actual_points, expected_points, strict=True):
+              assert actual['synthetic_site_id'] == expected['synthetic_site_id']
+              assert actual['native_cell_x'] == expected['native_cell_x']
+              assert actual['native_cell_y'] == expected['native_cell_y']
+              assert actual['maximum_wind_gust_m_s'] == expected['absolute_max_gust_m_s']
           print('Genuine original source conditional physical loss receipt (NOT annual insurer CAT):')
           print(json.dumps(o, indent=2, sort_keys=True, allow_nan=False))
           PY
