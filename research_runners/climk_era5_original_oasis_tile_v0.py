@@ -16,6 +16,9 @@ import math
 from pathlib import Path
 import sys
 
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
 from research_runners.wisc_netcdf_oasis_tile_v0 import (
     WiscTileError, bins_from_text, csv_content, number, strict_vector,
     MAX_TILE_CELLS,
