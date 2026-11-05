@@ -35,18 +35,25 @@ def _read_bounded_csv(path: Path, fields: tuple[str, ...], max_rows: int) -> lis
     if max_rows < 1 or max_rows > 100_000:
         raise NZJoinPreflightError("max_rows must be in range 1..100000")
     try:
+        if path.stat().st_size > 12_000_000:
+            raise NZJoinPreflightError("input CSV exceeds bounded byte budget")
         with path.open("r", encoding="utf-8-sig", newline="") as stream:
             reader = csv.DictReader(stream)
             headers = reader.fieldnames
-            if not headers or len(headers) != len(set(headers)) or not set(fields).issubset(headers):
-                raise NZJoinPreflightError("missing or duplicate required CSV header")
+            # Projection MUST happen before this tool: DictReader otherwise
+            # materialises raw, possibly personal/address/valuation columns,
+            # even if the final output discards them.
+            if not headers or len(headers) != len(set(headers)) or set(headers) != set(fields):
+                raise NZJoinPreflightError("CSV must contain exactly the approved key columns")
             records: list[dict[str, str]] = []
             for record in reader:
                 if len(records) >= max_rows:
                     raise NZJoinPreflightError("CSV exceeds bounded pilot row limit")
-                if None in record:
-                    raise NZJoinPreflightError("CSV row has excess columns")
-                records.append({field: _id(record.get(field)) for field in fields})
+                if None in record or any(record.get(field) is None for field in fields):
+                    raise NZJoinPreflightError("CSV row has missing or excess columns")
+                if any(len(record[field]) > 128 for field in fields):
+                    raise NZJoinPreflightError("oversized public join key")
+                records.append({field: _id(record[field]) for field in fields})
     except (OSError, UnicodeError, csv.Error) as exc:
         raise NZJoinPreflightError("unreadable CSV input") from exc
     return records
