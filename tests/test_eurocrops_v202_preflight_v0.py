@@ -14,6 +14,7 @@ from shapely.geometry import Polygon
 from research_runners.eurocrops_v202_preflight_v0 import (
     Blocked, asset_identity, audit_rows, geo_metadata, inspect_local,
     sampled_row_positions, read_spread_sample, footer_statistics_quality,
+    scan_full_area_column,
 )
 
 
@@ -244,6 +245,56 @@ class EuroCropsPreflight(unittest.TestCase):
             footer_statistics_quality(
                 self._fake_footer(), "not-the-original-geometry"
             )
+
+    def test_exact_original_area_column_count_flags_all_bad_value_classes(self):
+        # These are invented scalar values, not sourced DE4 parcels.
+        values = [2.5, 0.0, -0.5, None, float("nan"), float("inf"),
+                  True, "2.0", 0.01]
+        class AreaBatch:
+            def __init__(self, batch):
+                self.num_rows = len(batch)
+                self.batch = batch
+
+            def column(self, index):
+                assert index == 0
+                return SimpleNamespace(to_pylist=lambda: list(self.batch))
+
+        class AreaParquet:
+            metadata = SimpleNamespace(num_rows=len(values))
+
+            def iter_batches(self, *, batch_size, columns):
+                assert batch_size == 4096
+                assert columns == ["area_ha"]
+                yield AreaBatch(values[:4])
+                yield AreaBatch(values[4:])
+
+        report = scan_full_area_column(AreaParquet())
+        self.assertEqual(report["original_area_rows_scanned"], 9)
+        self.assertEqual(report["original_area_ha_zero_count"], 1)
+        self.assertEqual(report["original_area_ha_negative_count"], 1)
+        self.assertEqual(report["original_area_ha_null_count"], 1)
+        self.assertEqual(report["original_area_ha_nonfinite_count"], 2)
+        self.assertEqual(report["original_area_ha_wrong_type_count"], 2)
+        self.assertEqual(report["original_area_ha_minimum_positive_value"], 0.01)
+        self.assertEqual(report["original_area_ha_maximum_positive_value"], 2.5)
+        self.assertFalse(report["all_original_geometry_and_topology_validated"])
+
+        class ShortAreaParquet(AreaParquet):
+            metadata = SimpleNamespace(num_rows=10)
+
+        with self.assertRaisesRegex(Blocked, "shorter than"):
+            scan_full_area_column(ShortAreaParquet())
+
+        class ExtraAreaParquet(AreaParquet):
+            metadata = SimpleNamespace(num_rows=8)
+
+        with self.assertRaisesRegex(Blocked, "exceeds Parquet footer"):
+            scan_full_area_column(ExtraAreaParquet())
+
+        with self.assertRaisesRegex(Blocked, "reviewed row budget"):
+            scan_full_area_column(SimpleNamespace(
+                metadata=SimpleNamespace(num_rows=50000001)
+            ))
 
     def test_polygon_errors(self):
         square = Polygon([(0, 0), (100, 0), (100, 100), (0, 100)])
