@@ -91,13 +91,16 @@ def _grid(blob: bytes) -> dict[int, tuple[Decimal, Decimal]]:
     for expected, row in enumerate(records):
         if len(row) != 3 or row[0] != str(expected):
             raise XWSSourceBlocked("grid identifier missing, reordered or duplicated")
-        lon = _decimal(row[1], minimum=Decimal(-180), maximum=Decimal(180))
-        lat = _decimal(row[2], minimum=Decimal(-90), maximum=Decimal(90))
+        try:
+            lon = _decimal(row[1], minimum=Decimal(-180), maximum=Decimal(180))
+            lat = _decimal(row[2], minimum=Decimal(-90), maximum=Decimal(90))
+        except XWSSourceBlocked as exc:
+            raise XWSSourceBlocked(f"original grid row {expected} invalid longitude/latitude tokens {row[1:]}") from exc
         grid[expected] = (lon, lat)
     return grid
 
 
-def _gusts(blob: bytes, count: int) -> list[Decimal]:
+def _gusts(blob: bytes, count: int, *, source_name: str = "unspecified") -> list[Decimal]:
     records = _load_rows(blob)
     if len(records) != count:
         raise XWSSourceBlocked("storm footprint does not cover exact original XWS grid")
@@ -105,7 +108,11 @@ def _gusts(blob: bytes, count: int) -> list[Decimal]:
     for expected, row in enumerate(records):
         if len(row) != 2 or row[0] != str(expected):
             raise XWSSourceBlocked("storm grid ID missing, reordered or repeated")
-        result.append(_decimal(row[1], minimum=Decimal(0), maximum=Decimal(150)))
+        try:
+            value = _decimal(row[1], minimum=Decimal(0), maximum=Decimal(150))
+        except XWSSourceBlocked as exc:
+            raise XWSSourceBlocked(f"original {source_name} gust row {expected} invalid token {row[1]!r}") from exc
+        result.append(value)
     return result
 
 
@@ -114,7 +121,7 @@ def validate_original_bundle(blobs: dict[str, bytes]) -> dict:
     if type(blobs) is not dict or set(blobs) != set(ALLOWED_SOURCE_IDS):
         raise XWSSourceBlocked("required four publisher original CSV families missing")
     grid = _grid(blobs["grid"])
-    fields = {name: _gusts(blobs[name], len(grid))
+    fields = {name: _gusts(blobs[name], len(grid), source_name=name)
               for name in ("daria_lower95", "daria_mean", "daria_upper95")}
     low = fields["daria_lower95"]
     mean = fields["daria_mean"]
