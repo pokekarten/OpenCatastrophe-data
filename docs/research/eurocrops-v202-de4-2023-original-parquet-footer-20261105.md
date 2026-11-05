@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Original JRC EuroCropsV2 corrected DE4 2023: Parquet footer receipt
 
-Observed 2026-11-05. **Original partial-byte evidence only. NOT source/model admission.**
+Observed 2026-11-05. This note preserves the initial independent **partial-byte footer evidence**; subsequent full-original source quality is documented in [the complete WKB/HCAT4 audit](eurocrops-v202-de4-2023-original-full-qc-20261105.md). **NOT source/model admission.**
 
 ## Fixed original asset and byte-range observations
 
@@ -52,7 +52,7 @@ Further independently inspected original **footer-level min/max statistics**, no
 | `off_area` (original submitted area) | 0.0002 | 248.7114 |
 | **`area_ha` (computed projected area)** | **0.0** | **248.87251** |
 
-The **zero minimum for `area_ha` is an actual original-metadata QA flag**. It indicates that the publisher's row-group statistics contain at least one reported zero value if the statistics are accurate. It does **not** yet prove that the corresponding polygon has zero geometric area: the stored area might have been rounded, truncated, or the source may have other production anomalies. A uniformly chosen subset of a few hundred rows could easily miss the affected record. We therefore added `original_footer_column_quality.any_row_group_footer_min_area_nonpositive` to the executable preflight, independently of its WKB sample, and require a targeted row-level follow-up before model admission.
+The **zero minimum for `area_ha` originally flagged a real quality issue**. Subsequent complete original scans verified exactly **65** records with stored area zero, and all 65 contain **empty WKB geometry** (not merely small valid polygons rounded to zero). These records must be quarantined for spatial overlays. Details: [complete original WKB and crop-code QC](eurocrops-v202-de4-2023-original-full-qc-20261105.md).
 
 The `cropfield` maximum of 285,783 exceeds the row count of 285,606, so IDs are **not a contiguous 1..N series**; this alone does not establish duplicates, omissions or portfolio counts. GeoParquet metadata also advertises an EPSG:3035 geometry bounding box `[4408648.375721003, 3145780.632999396, 4650737.518133259, 3382476.106293644]`. This is an original-metadata extent, not a verified union or the boundaries of every agricultural field.
 
@@ -60,7 +60,7 @@ Parquet physical types are `INT64` for `cropfield`, `BYTE_ARRAY` for `original_c
 
 The original six column chunks publish **no column-index or offset-index references** in the footer. This rules out an easy page-index shortcut to localizing the zero-`area_ha` record; it does not prove that all other Parquet seeking mechanisms are unavailable.
 
-An additional **opt-in complete area-column reader** was implemented in `research_runners/eurocrops_v202_preflight_v0.py` (`--scan-full-area`). When the full original byte-verified file becomes accessible, it will report the actual number of zero, negative, null, nonfinite and invalid-type area values by scanning only `area_ha`, with bounded 4,096-row batches. It refuses footer/count drift and does not emit source rows or pretend an area sum is unique cultivated geography. **The original-column scan has not run yet**, so the actual number of zero-area fields remains **unknown**.
+The **opt-in complete area-column reader** in `research_runners/eurocrops_v202_preflight_v0.py` (`--scan-full-area`) was executed against all **285,606** original source rows on [run 42115645801](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42115645801): **65 zero**, **0 negative**, **0 null**, **0 nonfinite** and **0 wrong-type** area values. All 65 associated WKB geometries were then examined and found empty on [run 42116494785](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42116494785). The original whole-file WKB and codebook audit is on [run 42117394009](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42117394009).
 
 The six `null_count=0` values are **publisher footer statistics**. They do not prove that any geometry is valid, that `area_ha` matches it, that crop codes are semantically known, that rows are unique, or that all fields in Brandenburg are represented. A `BYTE_ARRAY` original code may still be blank, synthetic, mismapped, or have a missing HCAT4 reference. No individual fields, farmer identities, coordinates, actual damage, or insurance exposure values were inspected.
 
@@ -73,6 +73,6 @@ The previous research preflight assumed `geom` and inspected only the first samp
 - checks original footer area min/max and reported null counts **even if the random sample misses nonpositive fields**; missing footer statistics remain explicitly unknown, never a clean pass;
 - preserves all source, rights, scientific and CAT admission as `NOT_REVIEWED_NOT_ADMITTED`.
 
-The full corrected Parquet file was **not** acquired in the local runtime (JRC DNS inaccessible there), so original **full-file SHA-256, actual WKB geometries, source-row code frequencies and actual parcel area totals remain unverified**. Only targeted original header and footer byte ranges were read through the separate web retrieval route. No original file bytes were committed to this repository.
+The full corrected original Parquet **was downloaded on isolated GitHub Actions runners**, although the separate local Linux runtime still could not resolve the JRC hostname. The full original file is **143,006,611 bytes**, and its first-seen complete SHA-256 **`4fc38f688a117db6cd0821c7aafc71fbbd2e7a493044c51266ae289929d7b2b6`** was independently reproduced on subsequent runner downloads. It is not a publisher-signed checksum. All 285,606 WKB geometries, area records and regional codebook mappings were checked in [the full source audit](eurocrops-v202-de4-2023-original-full-qc-20261105.md). No original bytes were committed to Git or uploaded as artifacts.
 
-To graduate, execute the opt-in original-file acquisition outside Git, record full-file SHA-256 and publisher attribution, verify rights and run the schema/geometry preflight against the full original file. Do not promote a positive metadata receipt or a QC sample to actual agricultural exposure or CAT-model readiness.
+Next scientific blockers are publisher/national-rights admission, independent polygon-overlap and regional coverage checks, crop-season/land-use semantics, valid hazard-event intensities and uncertainty, and agricultural insurer values/policy/financial assumptions. Original schema/topology quality has now been demonstrated for **this one DE4 2023 file**; actual agricultural insured exposure and CAT model readiness **remain blocked**.
