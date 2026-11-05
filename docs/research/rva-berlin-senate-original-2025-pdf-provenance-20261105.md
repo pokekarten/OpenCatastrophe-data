@@ -18,7 +18,14 @@ The overlap of the three *R+V named corporate relationship* companies is a publi
 
 Source-only runner `research_runners/rva_berlin_senate_original_pdf_source_v0.py` downloads **only two allowlisted original `pardok.parlament-berlin.de` PDFs**, bounded at 5 MiB each, reject cross-site redirects and malformed/truncated PDF. `pdftotext` extracts transient text in a temporary directory, never exported to Git, artifacts, private files, stdout, or insurer database. The runner prints only per-document **actual SHA-256 digest, original bytes, page counts, count of positive source markers** and mandatory negative insurer-model admission flags. Revisions of the publisher PDF under an unchanged URL are not silently accepted after the first SHA is pinned.
 
-**Initial run is for SHA discovery, so `exact_original_sha256=None` is honest rather than fictional.** A follow-up exact HEAD/CI-reviewed commit must pin both SHA hashes, byte sizes and re-run both original sources, then update the prior source receipts with *actual* original evidence. Success at merely finding a PDF does **not** validate all copied 12×7 cells; the original source was visually checked separately and the independent 12-row/7-column totals are all within source factual conservation tests.
+**Original source bytes have now been acquired in successful first GitHub Action [#41985712848](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/41985712848)** with eleven synthetic tests and original publisher source extraction, and subsequently pinned in code and the new [original-PDF receipt TOML](../../research/observations/rva_berlin_senate_2025_original_pdf_receipts_v0.toml):
+
+| Original Berlin Senate PDF | Original bytes | Full SHA-256 | Pages | Located bounded semantic markers |
+| --- | ---: | --- | ---: | ---: |
+| `19/22033` (1 Apr 2025) | **22,528** | `0671a38d440b0628088399c0ee0fa521e24d31738d19c2d8b93d65424c87143f` | 6 | 7/7 |
+| `19/24229` (11 Nov 2025) | **21,842** | `1269725e4ff8427f32db22a66a0745bc12a75dc1281ca62de7d21ddcaead307e` | 5 | 8/8 |
+
+The current code MUST re-download these unchanged original PDF bytes and match exact SHA-256, byte size, page count, semantic markers and the fixed source receipt; additional synthetic tests reject source SHA drift and false insurer object data. An unchanged SHA proves **original byte identity**, not a proprietary risk schedule, degewo co-share, exact 2025 covered buildings, market participation or a native CAT model. No raw PDFs or extracted text are stored. Success at merely finding a PDF does **not** validate all copied 12×7 cells; the original source was visually checked separately and the independent 12-row/7-column totals are all within source factual conservation tests.
 
 The workflow uses fixed 40-hex GitHub Actions, read-only token, explicit `poppler-utils` installation and 11 synthetic negative tests for source scope, redirect, truncation, malformed numeric/categorical extraction, over-size, and truthful original-vs-fake model claims. No raw publisher PDFs are committed.
 
