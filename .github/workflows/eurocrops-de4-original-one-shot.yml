@@ -3,14 +3,10 @@
 
 name: EuroCrops DE4 original bounded one-shot QC
 
-# Deliberately ONE source run on workflow-file creation, not each PR update.
-# Later manual workflow_dispatch needs the workflow on default branch.
+# Source-only opt-in execution. The research branch's earlier original
+# runs are durable GitHub run evidence; future downloads must be manual.
+# GitHub exposes workflow_dispatch only after this workflow is on default branch.
 on:
-  push:
-    branches:
-      - research/agri-parcels-infrastructure-20261105
-    paths:
-      - .github/workflows/eurocrops-de4-original-one-shot.yml
   workflow_dispatch:
 
 permissions:
@@ -136,18 +132,6 @@ jobs:
               out.write(summary)
           print(summary)
           PY
-      - name: Upload ONLY first-seen receipt and aggregate quality JSON
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: eurocrops-de4-2023-aggregate-only
-          path: |
-            ${{ runner.temp }}/oc-de4-first-seen-receipt.json
-            ${{ runner.temp }}/oc-de4-aggregate-qc.json
-            ${{ runner.temp }}/oc-de4-zero-area-geometry-qc.json
-            ${{ runner.temp }}/oc-de4-full-wkb-code-qc.json
-          if-no-files-found: warn
-          retention-days: 30
       - name: Delete the original file from ephemeral runner
         if: always()
         shell: bash
