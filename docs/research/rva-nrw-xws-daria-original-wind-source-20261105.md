@@ -77,3 +77,30 @@ show a completed SUCCESS before any site-gust artifacts or numerical results
 are called verified. A failed source row schema, drifted original URL,
 missing county, unusually distant grid mapping, source uncertainty inversion
 or source artifact mismatch must remain NO-GO.
+
+## Verified original source and 10k real-source hazard replay (2026-11-05)
+
+**COMPLETED** original-source and 10k WGS84 building-gust overlay [GitHub run #42112975393](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42112975393). The full repository CI plus the XWS, source HU, R+V OED and Berlin BLD4 workflows all passed at the source-replay head before subsequent metadata-hardening commits.
+
+Independently calculated and pinned **FULL original files**:
+
+| XWS original file | Complete bytes | Full SHA-256 |
+| --- | ---: | --- |
+| `grid_locations.csv` (source column is literally `Latitde`, not `Latitude`) | 550,415 | `decb09d473db9086df7a497bcebc95641238d4ee365ff26d8e83c266a6f32599` |
+| `Daria_biasL95.csv` | 350,030 | `4381de5fdb5e66489efde09ac587e295b93906cac643325ad5517a278d5e2bff` |
+| `Daria_biasMean.csv` | 350,061 | `34b9c02768aa6f54aa541e185381e4735f3b2cd852fc23a724ddc00c301a1d50` |
+| `Daria_biasU95.csv` | 350,179 | `8b63a95adf0961da00c1e8874fbb99a49cd38b58de6263f8c4f1c65637cc6007` |
+
+The original XWS reference grid has **28,124 longitude/latitude positions**. From the entire source grid, maximum modelled gust values across lower/mean/upper variants are respectively **72.317, 113.005, 176.587 m/s**. The upper statistical 95% field contains **39** original points above 150 m/s; these must **not** be clipped or silently ingested into NextGen's 0–150 m/s physical wind VLT domain. XWS original grid metadata uses an actual misspelling `Latitde`, admitted by an exact provenance-specific parser only.
+
+[Derived 10k public-source building gust research artifact](https://github.com/pokekarten/OpenCatastrophe-data/actions/runs/42112975393/artifacts/13455338570), not original XWS raw CSVs: **10,000 public 2022 NRW building candidates**, all **53 NRW Kreise**, **79 original XWS grid locations assigned**, maximum nearest original source-grid distance **17.11 km**. The 10k physical-building site sampled wind gust distribution in m/s:
+
+| Daria 1990 gust branch | Minimum | Median | Maximum |
+| --- | ---: | ---: | ---: |
+| Lower 95% | 18.743 | 20.388 | 21.985 |
+| Recalibrated mean | 27.852 | 30.339 | 33.361 |
+| Upper 95% | 41.378 | 45.162 | 50.964 |
+
+All 10,000 fictional exposure sites have Daria **mean gust ≥25 m/s** in this original nearest-grid replay. Aggregate value of the **explicitly imaginary** underlying 2025 R+V-like policies remains **EUR 4,826,029,500**; this is an ecological counterfactual on 2022 public physical buildings, not 1990/2025 R+V observed insurance liabilities. The source uncertainty branches are the **same physical storm**, not 3 independent storms or 3 simulated years. No German annual rate, calibrated damage, original insurance, RI or EP has been calculated.
+
+Implementation file `research_runners/rva_nrw_xws_daria_10k_original_gust_overlay_v0.py` now **requires all four exact independently recorded original source file byte counts and SHA-256s**. Upstream source mutation will fail closed rather than silently change the research data basis. The CI replays the original public source in an ephemeral runner and never republishes raw original site-grid CSVs, but it can publish the 10k derived site-gust table with explicit CC BY attribution and a no-CAT-loss manifest. Licence citation required: **(c) Copyright Met Office, University of Reading and University of Exeter. Licensed under Creative Commons CC BY 4.0 International.**
