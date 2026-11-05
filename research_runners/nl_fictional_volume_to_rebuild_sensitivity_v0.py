@@ -37,7 +37,7 @@ def read_fixture(path):
     if p.stat().st_size > MAX_BYTES:
         raise FictionalRebuildError("research input over budget")
     # TOML is the repository's established scenario format. The standard
-    # library parser rejects duplicate keys and nonfinite unquoted numbers.
+    # library parser rejects duplicate keys; _number rejects nonfinite inputs.
     return tomllib.loads(p.read_text(encoding="utf-8"))
 
 
