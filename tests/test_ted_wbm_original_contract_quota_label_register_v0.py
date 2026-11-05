@@ -75,6 +75,14 @@ class OriginalContractQuotaLabelRegisterTests(unittest.TestCase):
         self.assertFalse(
             self.reg["unresolved"]["specific_reason_for_rv_10_percent_allocation_verified"])
 
+    def test_april_minima_not_assumed_to_govern_september_award(self):
+        unresolved = self.reg["unresolved"]
+        self.assertFalse(unresolved["award_and_april_competition_bt04_search_index_match"])
+        self.assertFalse(unresolved["april_procurement_conditions_proved_to_govern_september_award"])
+        self.assertTrue(unresolved["different_bt04_search_index_requires_original_lineage_review"])
+        self.assertFalse(unresolved["published_residual_exception_proved_applied_to_september_award"])
+        self.assertFalse(unresolved["september_award_undisputed_link_to_april_contract_notice"])
+
     def test_no_actual_exposure_tiv_or_retention_claim(self):
         for key in (
             "actual_per_insurer_insured_property_sites_verified",
