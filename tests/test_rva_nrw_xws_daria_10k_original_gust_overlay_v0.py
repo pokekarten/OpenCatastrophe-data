@@ -87,6 +87,16 @@ def fake_xws_source(*,inverted=False, missing=False):
 
 
 class TestXWSDariaOriginalGustOverlay(unittest.TestCase):
+    def setUp(self):
+        # The real 28,124-grid four original Daria file SHA-256s are frozen in
+        # production. Invented microfixture hashes are test-only scope changes.
+        src=fake_xws_source()
+        mocked={name:(len(blob),hashlib.sha256(blob).hexdigest())
+                for name,blob in src.items()}
+        self.fake_source_pin=patch.object(overlay,"PINNED_SOURCE_FILES",mocked)
+        self.fake_source_pin.start()
+        self.addCleanup(self.fake_source_pin.stop)
+
     def test_original_historical_gust_on_toy_public_geocodes_no_loss(self):
         with tempfile.TemporaryDirectory() as t:
             root=Path(t);source=root/"nrw.zip";out=root/"hazard.zip"
