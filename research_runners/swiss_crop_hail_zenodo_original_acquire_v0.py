@@ -22,11 +22,13 @@ from research_runners.swiss_crop_hail_asset_preflight_v0 import (
 SOURCE_FILES = {
     "exposure_metadata": "metadata.csv",
     "damage_metadata": "metadata.csv",
+    "exposure_zip": "data-files.zip",
+    "damage_zip": "data-files.zip",
     "radar_metadata": "metadata.csv",
     "radar_meshs_h5": "hail_MESHS_CH_12_events_2017_2021.h5",
     "radar_poh_h5": "hail_POH_CH_12_events_2017_2021.h5",
 }
-MAX_TOTAL = 27_000_000
+MAX_TOTAL = 80_000_000
 HOST = "zenodo.org"
 
 
@@ -123,10 +125,13 @@ def verify(assets: tuple[str, ...], opener=None) -> dict[str, object]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--include-radar", action="store_true")
+    parser.add_argument("--include-archives", action="store_true", help="also verify original two crop data ZIPs")
     args = parser.parse_args()
     assets = ("exposure_metadata", "damage_metadata", "radar_metadata")
     if args.include_radar:
         assets += ("radar_meshs_h5", "radar_poh_h5")
+    if args.include_archives:
+        assets += ("exposure_zip", "damage_zip")
     try:
         print(json.dumps(verify(assets), sort_keys=True))
     except Blocked as exc:
