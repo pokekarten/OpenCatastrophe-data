@@ -101,9 +101,9 @@ class NativePiWindReceiptTests(unittest.TestCase):
     def test_missing_model_checkout_fails_without_using_network_or_cli(self) -> None:
         with TemporaryDirectory() as d:
             root = Path(d)
-            with self.assertRaisesRegex(PiWindNativeSmokeError, "pinned public Git"):
+            with self.assertRaisesRegex(PiWindNativeSmokeError, "verify model git commit"):
                 verify_model_checkout(root)
-            with self.assertRaisesRegex(PiWindNativeSmokeError, "pinned public Git"):
+            with self.assertRaisesRegex(PiWindNativeSmokeError, "verify model git commit"):
                 native_run(root, timeout_seconds=600)
 
     def test_invalid_timeout_blocks_before_running(self) -> None:
