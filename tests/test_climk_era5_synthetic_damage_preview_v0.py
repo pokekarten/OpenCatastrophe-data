@@ -40,6 +40,7 @@ def fixtures():
         'storm_index_zero_based':0,'source_storm_name':'SYNTHETIC TEST STORM',
         'source_storm_date_label':'2000-01-01',
         'source_storm_date_parsed_as_utc':False,
+        'event_identity_cross_model_matched':False,
         'grid_coordinate_system':'source_native_lat_lon_degrees',
         'spatial_sampling':'nearest_native_grid_center_no_extrapolation',
         'physical_intensity_measure':'MAX_WIND_GUST_ASSOCIATED_WITH_STORM_FOOTPRINT',
@@ -125,6 +126,16 @@ class SyntheticClimkConditionalDamage(unittest.TestCase):
             a,b,c=fixtures();a[field]=True
             with self.subTest(field=field),self.assertRaises(DamagePreviewError):
                 preview_conditional_damage(sample=a,synthetic_assets=b,vulnerabilities=c)
+
+    def test_source_model_cross_identity_must_remain_explicitly_unmatched(self):
+        a,b,c=fixtures()
+        a['event_identity_cross_model_matched']=True
+        with self.assertRaisesRegex(DamagePreviewError,'cross_model|event_identity'):
+            preview_conditional_damage(sample=a,synthetic_assets=b,vulnerabilities=c)
+        a,b,c=fixtures()
+        del a['event_identity_cross_model_matched']
+        with self.assertRaisesRegex(DamagePreviewError,'exact schema'):
+            preview_conditional_damage(sample=a,synthetic_assets=b,vulnerabilities=c)
 
     def test_wrong_gust_measure_or_unit_rejected(self):
         for key,val in [('physical_intensity_measure','MAX_3_SECOND_10M_GUST_OVER_72_HOURS'),
