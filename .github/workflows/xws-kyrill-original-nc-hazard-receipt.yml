@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
+# SPDX-License-Identifier: Apache-2.0
+name: XWS Kyrill original historical wind NetCDF source receipts only
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/xws-kyrill-original-nc-hazard-receipt.yml"
+      - "research_runners/xws_kyrill_original_netcdf_hazard_receipt_v0.py"
+      - "tests/test_xws_kyrill_original_netcdf_hazard_receipt_v0.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-xws-kyrill:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Read-only exact PR checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Pinned Python 3.11
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Strict offline source guard and provenance tests
+        run: |
+          python -m unittest discover -s tests -p 'test_xws_kyrill_original_netcdf_hazard_receipt_v0.py' -v
+          python -m compileall -q research_runners/xws_kyrill_original_netcdf_hazard_receipt_v0.py
+      - name: Pinned NetCDF3 scientific reader (original source is CDF1)
+        run: |
+          python -m pip install --disable-pip-version-check --no-input scipy==1.16.3
+          python -m pip check
+      - name: Download exact public Kyrill source, ephemeral only, output byte receipts
+        run: |
+          python research_runners/xws_kyrill_original_netcdf_hazard_receipt_v0.py \
+            | tee "${{ runner.temp }}/xws-kyrill-original-source-receipts.log"
+      - name: Publish source hashes and aggregate metadata only (never external NetCDF)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: xws-kyrill-four-original-nc-metadata-not-a-CAT-model
+          path: ${{ runner.temp }}/xws-kyrill-original-source-receipts.log
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
