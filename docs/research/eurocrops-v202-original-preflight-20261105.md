@@ -33,9 +33,29 @@ Usage (after a trusted original file download and independent checksum receipt):
 
     python research_runners/eurocrops_v202_preflight_v0.py --input /external-originals/de4_2023.parquet --expected-sha256 <64-lowercase-hex-source-sha256> --sample-rows 512
 
+### Optional exact source-taxonomy join for the bounded original sample
+
+To measure how many **real JRC source codes would resolve** to the publisher's HCAT4 hierarchy, pass both of the original, commit-pinned source taxonomy CSVs; incomplete or unpinned inputs are blocked.
+
+Source repository commit: b556d10651b98684d5d5269916f8f34c9e017151
+
+- EuroCrops mapping: https://github.com/Martincccc/EuroCropsV2/blob/b556d10651b98684d5d5269916f8f34c9e017151/data/cropcodemapping/eurocrops.csv (Git blob SHA-1: 37a58061df29036300862dc680c769a1b2727e15)
+- HCAT4: https://github.com/Martincccc/EuroCropsV2/blob/b556d10651b98684d5d5269916f8f34c9e017151/data/cropcodemapping/hcat4.csv (Git blob SHA-1: 7b4a7d1b5f3312d011958d0a1943c1324c3610ca)
+
+    python research_runners/eurocrops_v202_preflight_v0.py \
+      --input /external-originals/de4_2023.parquet \
+      --expected-sha256 <trusted-original-parquet-sha256> \
+      --mapping /external-originals/eurocrops.csv \
+      --mapping-git-blob-sha1 37a58061df29036300862dc680c769a1b2727e15 \
+      --hierarchy /external-originals/hcat4.csv \
+      --hierarchy-git-blob-sha1 7b4a7d1b5f3312d011958d0a1943c1324c3610ca
+
+The emitted `sample_taxonomy_crosswalk` is **counts only**: resolved, missing NUTS-specific mapping, mapping to an absent HCAT4 code, and blank/non-string original codes. A real JRC source code must be joined on **(NUTS, exact string original_code)**. Missing classification, upstream synthetic placeholder codes and missing actual original polygons must never become fabricated crop types, insured area, crop yield, TIV or loss. When taxonomy files are omitted, the output explicitly records `taxonomy_crosswalk_checked=false`, never a silent positive result.
+
 Synthetic tests:
 
     python -m unittest discover -s tests -p test_eurocrops_v202_preflight_v0.py -q
+    python -m unittest discover -s tests -p test_eurocrops_codebook_qc_v0.py -q
 
 ## Execution boundary, observations and next step
 
