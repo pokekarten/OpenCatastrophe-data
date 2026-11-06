@@ -83,6 +83,26 @@ def coordinate_key_coverage(exposure_positions, damage_positions) -> dict[str, o
     }
 
 
+def unmatched_positive_impact_summary(
+    exposure_positions, damage_positions, impact_indices, impact_values
+) -> dict[str, int]:
+    """Count only nonzero impact cells on unmatched damage coordinates.
+
+    No original impact values or coordinates leave memory or enter the report.
+    """
+    source_keys = {(round(float(lat), 5), round(float(lon), 5))
+                   for lat, lon in exposure_positions}
+    missing = {i for i, (lat, lon) in enumerate(damage_positions)
+               if (round(float(lat), 5), round(float(lon), 5)) not in source_keys}
+    positive = [int(i) for i, value in zip(impact_indices, impact_values)
+                if float(value) > 0 and int(i) in missing]
+    return {
+        "unmatched_damage_grid_positions": len(missing),
+        "unmatched_positions_with_positive_impact": len(set(positive)),
+        "positive_impact_matrix_cells_on_unmatched_positions": len(positive),
+    }
+
+
 def source_pair_summary(exposure, damage, hazard_dates) -> dict[str, object]:
     import numpy as np
     # pandas/PyTables fixed release layout observed from real ZIP schema.
@@ -124,6 +144,7 @@ def source_pair_summary(exposure, damage, hazard_dates) -> dict[str, object]:
     if not (np.isfinite(values).all() and np.all(values >= 0)):
         raise Blocked("reported crop impact values contain nonfinite/negative entries")
     observed_dates = sorted(int(x) for x in dates)
+    nonjoin = unmatched_positive_impact_summary(expected, positions, indices, values)
     return {
         "exposure_position_count": exposure_count,
         "damage_position_count": damage_count,
@@ -136,6 +157,7 @@ def source_pair_summary(exposure, damage, hazard_dates) -> dict[str, object]:
         "observed_event_ordinals": observed_dates,
         "nonzero_impact_cells": len(values),
         "csr_structurally_valid": True,
+        **nonjoin,
         "individual_observed_impacts_exported": False,
         "interpretable_as_insured_loss_currency": False,
     }
@@ -186,6 +208,8 @@ def main() -> int:
         "all_event_date_sets_subset": True,
         "all_damage_position_keys_covered": all(x["full_damage_coordinate_key_coverage"] for x in summaries),
         "all_same_rows_in_same_order": all(x["positions_equal_count_and_order"] for x in summaries),
+        "sum_unmatched_positive_impact_matrix_cells": sum(x["positive_impact_matrix_cells_on_unmatched_positions"] for x in summaries),
+        "sum_unmatched_positions_with_positive_impact": sum(x["unmatched_positions_with_positive_impact"] for x in summaries),
         "pair_summaries": summaries,
         "source_bytes_retained": False,
         "raw_coordinates_exported": False,
