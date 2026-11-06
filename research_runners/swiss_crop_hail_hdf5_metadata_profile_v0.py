@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-"""Profile only metadata of verified original Swiss crop hail HDF5 files.
+"""Profile only metadata and bounded field names of original Swiss crop hail HDF5.
 
-No original file or HDF5 payload values are committed, exported or retained.
+No original grid coordinates, field counts or impact values are exported or retained.
 A valid HDF5 schema does not imply scientific validity or CAT admission.
 """
 from __future__ import annotations
@@ -72,6 +72,27 @@ def h5_metadata(file_handle) -> dict[str, object]:
                                      "dtype": str(value.dtype)[:64]})
             h5.visititems(visit)
             attrs = sorted(str(n)[:80] for n in h5.attrs.keys())[:32]
+            # A fixed maximum of 16 original *column-name labels* per table;
+            # not crop area, coordinate, field-count or insurer-damage values.
+            column_names = {}
+            for label_path in (
+                "exposures/block0_items", "exposures/block1_items",
+                "exposures/block2_items",
+            ):
+                if label_path not in h5:
+                    continue
+                ds = h5[label_path]
+                if not isinstance(ds, h5py.Dataset) or ds.ndim != 1 or len(ds) > 16:
+                    raise Blocked("original source column labels exceed metadata bound")
+                cleaned = []
+                for label in ds[()]:
+                    name = label.decode("ascii") if isinstance(label, bytes) else str(label)
+                    if (not 1 <= len(name) <= 40 or not
+                            all(letter.isascii() and (letter.isalnum() or letter == "_")
+                                for letter in name)):
+                        raise Blocked("invalid original source metadata column name")
+                    cleaned.append(name)
+                column_names[label_path] = cleaned
     except (OSError, RuntimeError, ValueError) as exc:
         raise Blocked("invalid original HDF5 structural metadata") from exc
     if not datasets:
@@ -81,7 +102,8 @@ def h5_metadata(file_handle) -> dict[str, object]:
         "dataset_count": len(datasets),
         "root_attribute_names": attrs,
         "dataset_shape_dtype_sample": datasets[:20],
-        "no_dataset_values_read": True,
+        "exposure_column_names_only": column_names,
+        "no_numeric_grid_or_impact_values_read": True,
         "physical_units_validated": False,
         "crs_validated": False,
     }
