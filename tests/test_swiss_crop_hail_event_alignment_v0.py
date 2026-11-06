@@ -46,6 +46,24 @@ class SwissHailEventJoinTests(unittest.TestCase):
         self.assertEqual(summary["source_duplicate_key_count"], 1)
         self.assertFalse(summary["full_damage_coordinate_key_coverage"])
 
+    def test_unmatched_grid_positions_with_actual_positive_impacts(self):
+        result = audit.unmatched_positive_impact_summary(
+            [(46.3, 8.2), (46.4, 8.3)],
+            [(46.3, 8.2), (47.0, 9.0), (47.1, 9.1)],
+            [0, 1, 1, 2, 2], [12, 0, 3, 1, 2],
+        )
+        self.assertEqual(result["unmatched_damage_grid_positions"], 2)
+        self.assertEqual(result["unmatched_positions_with_positive_impact"], 2)
+        self.assertEqual(result["positive_impact_matrix_cells_on_unmatched_positions"], 3)
+
+    def test_extra_zero_damage_grid_positions_do_not_imply_actual_impacts(self):
+        result = audit.unmatched_positive_impact_summary(
+            [(46.3, 8.2)], [(46.3, 8.2), (47.0, 9.0)],
+            [0, 1], [1, 0],
+        )
+        self.assertEqual(result["unmatched_damage_grid_positions"], 1)
+        self.assertEqual(result["positive_impact_matrix_cells_on_unmatched_positions"], 0)
+
     def test_source_regression_12_radar_events_24_crop_grid_pairs(self):
         from research_runners.swiss_crop_hail_hdf5_metadata_profile_v0 import (
             CROPS, RESOLUTIONS_KM,
