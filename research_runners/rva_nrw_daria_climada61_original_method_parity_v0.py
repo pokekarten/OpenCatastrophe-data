@@ -225,8 +225,8 @@ def audit_methods(
             mismatch = int(np.count_nonzero(diffs))
             sum_original = int(native_method_cents.sum())
             sum_bridge = int(selfreported.sum())
-            if max_diff > 1 or abs(sum_original - sum_bridge) > expected_sites:
-                raise OriginalMethodParityBlocked("original method cent results exceed float64 parity tolerance")
+            if mismatch != 0 or max_diff != 0 or sum_original != sum_bridge:
+                raise OriginalMethodParityBlocked("original method must match every asset to the exact EUR cent")
             proof.append({
                 "source_method": method_name, "same_original_storm_view": view,
                 "locations": expected_sites,
@@ -253,6 +253,8 @@ def audit_methods(
         "fictional_TIV_eur": expected_tiv_eur,
         "published_European_methods_NOT_German_RV_validated": True,
         "no_real_insurer_loss_treaty_or_annual_OEP_AEP": True,
+        "all_60k_source_method_asset_results_exact_to_eur_cent": True,
+        "max_allowed_site_eur_cent_disagreement": 0,
         "separate_original_method_numerical_parity": proof,
     }
 
