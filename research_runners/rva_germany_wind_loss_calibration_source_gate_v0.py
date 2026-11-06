@@ -189,7 +189,8 @@ def validate_registry(doc: dict) -> dict:
         "annual_OEP_AEP_return_frequency_estimated": False,
         "external_workbook_original_bytes_ingested": False,
         "EIOPA_original_loss_binary_retrieved_from_source_proxy": True,
-        "EIOPA_original_exposure_binary_complete": False,
+        "EIOPA_original_exposure_binary_complete": True,
+        "EIOPA_original_exposure_OOXML_quarantine_passed": False,
         "licence_or_data_reuse_approval_inferred": False,
     }
 
