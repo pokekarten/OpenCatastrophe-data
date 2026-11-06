@@ -10,6 +10,8 @@ on:
       - "tests/test_fhwa_nbi_socrata_metadata_gate_v0.py"
       - "research_runners/fhwa_nbi_socrata_original_rows_v0.py"
       - "tests/test_fhwa_nbi_socrata_original_rows_v0.py"
+      - "research_runners/ntad_nbi_2025_point_layer_schema_v0.py"
+      - "tests/test_ntad_nbi_2025_point_layer_schema_v0.py"
   workflow_dispatch:
 
 permissions:
@@ -88,3 +90,20 @@ jobs:
               --expected-year 2025 --expected-state-code "$CODE"
           done
           # No raw bridge identifiers, geocoordinates, row values or DB writes.
+      - name: Test independent NTAD bridge 2025 GIS layer metadata schema
+        run: python -m unittest tests.test_ntad_nbi_2025_point_layer_schema_v0 -v
+      - name: Read original NTAD ArcGIS source metadata only (no bridge geometries)
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          ORIGINAL="$RUNNER_TEMP/ntad-nbi-2025-layer-metadata.json"
+          trap 'rm -f "$ORIGINAL"' EXIT
+          curl --fail --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 20 --max-time 90 --retry 0 \
+            --max-filesize 1000000 --output "$ORIGINAL" \
+            'https://services.arcgis.com/xOi1kZaI0eWDREZv/ArcGIS/rest/services/NTAD_National_Bridge_Inventory/FeatureServer/0?f=pjson'
+          python -m research_runners.ntad_nbi_2025_point_layer_schema_v0 \
+            --original-layer-metadata "$ORIGINAL"
+          # The NTAD source feature/geometry endpoint is never queried.
