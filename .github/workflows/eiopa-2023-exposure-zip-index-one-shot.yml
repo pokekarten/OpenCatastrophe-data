@@ -1,14 +1,13 @@
 # SPDX-FileCopyrightText: 2026 OpenCatastrophe contributors
 # SPDX-License-Identifier: Apache-2.0
-name: EIOPA 2023 original exposure OOXML ZIP-index research (NO XLSX rows)
+name: EIOPA 2023 exposure OOXML metadata on-demand (NO XLSX rows)
 
-# One initial PR run, then remove pull_request trigger and retain dispatch only.
-# NOTE GitHub evaluates PR paths over the entire PR file diff, not latest commit.
-# Official source data live only in tempfile and are NOT uploaded.
+# Original-source SHA-pinned OOXML metadata run #42292320403 passed.
+# From this commit: MANUAL DISPATCH ONLY. GitHub PR path filters would
+# re-download 5.6 MB on unrelated commits because they match entire PR diff.
+# Available for new dispatch once reviewed and merged onto default branch.
+# No provider original XLSX/rows are published in GitHub artifacts.
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/eiopa-2023-exposure-zip-index-one-shot.yml"
   workflow_dispatch:
 
 permissions:
