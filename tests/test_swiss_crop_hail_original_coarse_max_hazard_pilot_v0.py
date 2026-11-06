@@ -42,7 +42,7 @@ class SwissCoarseHailAggregationTests(unittest.TestCase):
         import numpy as np
         from scipy.sparse import csr_matrix
         from pyproj import Transformer
-        x = [2600500, 2601400]
+        x = [2600200, 2600800]
         y = [1200500, 1200500]
         to_wgs = Transformer.from_crs("EPSG:2056", "EPSG:4326", always_xy=True)
         lon, lat = to_wgs.transform(x, y)
