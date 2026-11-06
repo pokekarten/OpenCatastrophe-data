@@ -51,6 +51,8 @@ class C3SWindFrequencyCandidateTests(unittest.TestCase):
         self.assertAlmostEqual(x['poisson_probability_at_least_one_event'],1-math.exp(-1))
         self.assertAlmostEqual(x['holdout_mean_count'],1.)
         self.assertAlmostEqual(x['holdout_log_likelihood'], -2+2*math.log(1)-math.lgamma(3))
+        self.assertAlmostEqual(x['holdout_poisson_count_deviance'], 4*math.log(2))
+        self.assertAlmostEqual(x['holdout_mean_poisson_count_deviance'], 2*math.log(2))
         self.assertEqual(x['automatic_nuts_join_permitted'],False)
         self.assertEqual(x['status'],'UNADMITTED_RESEARCH_COUNT_RATE_ONLY')
         self.assertEqual(x['train_variance_to_mean_ratio'],1.0)
@@ -90,6 +92,8 @@ class C3SWindFrequencyCandidateTests(unittest.TestCase):
         self.assertEqual(r['poisson_lambda_events_per_year'],0)
         self.assertTrue(r['zero_train_positive_holdout_failure'])
         self.assertIsNone(r['holdout_log_likelihood'])
+        self.assertIsNone(r['holdout_poisson_count_deviance'])
+        self.assertIsNone(r['holdout_mean_poisson_count_deviance'])
         self.assertIsNone(r['train_variance_to_mean_ratio'])
         self.assertFalse(r['train_dispersion_ratio_defined'])
 
@@ -126,6 +130,8 @@ class C3SWindFrequencyCandidateTests(unittest.TestCase):
         self.assertIsNone(r['train_variance_to_mean_ratio'])
         self.assertFalse(r['train_dispersion_ratio_defined'])
         self.assertEqual(r['holdout_log_likelihood'],0)
+        self.assertEqual(r['holdout_poisson_count_deviance'],0)
+        self.assertEqual(r['holdout_mean_poisson_count_deviance'],0)
         self.assertFalse(r['zero_train_positive_holdout_failure'])
 
     def test_nested_threshold_source_monotonicity_is_upstream_validated(self):

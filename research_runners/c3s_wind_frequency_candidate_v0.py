@@ -120,6 +120,19 @@ def fit_c3s_count_rate(*, original_csv_bytes: bytes, expected_csv_sha256: str,
         holdout_log_likelihood=sum(k*math.log(rate)-rate-math.lgamma(k+1) for k in holdout)
         zero_train_positive_holdout=False
     brier=sum(((int(x>0))-p_any)**2 for x in holdout)/len(holdout)
+    # Held-out Poisson count deviance, not event severity and not CAT admission.
+    # Lambda=0 with positive held-out counts has infinite deviance; encode
+    # undefined as null with the explicit failure flag, never JSON Infinity.
+    if rate == 0:
+        holdout_deviance = 0.0 if not any(holdout) else None
+    else:
+        holdout_deviance = 2.0 * sum(
+            rate if k == 0 else k * math.log(k / rate) - k + rate
+            for k in holdout
+        )
+    holdout_mean_deviance = (
+        holdout_deviance / len(holdout) if holdout_deviance is not None else None
+    )
     selector={'region':region,'algorithm':algorithm,'threshold_mps':threshold,
               'train_years':[train_start,train_end], 'holdout_years':[holdout_start,holdout_end]}
     payload={'selector':selector, 'source_csv_sha256':expected_csv_sha256,
@@ -147,12 +160,15 @@ def fit_c3s_count_rate(*, original_csv_bytes: bytes, expected_csv_sha256: str,
             'holdout_mean_count':sum(holdout)/len(holdout),
             'holdout_occurrence_brier_score':brier,
             'holdout_log_likelihood':holdout_log_likelihood,
+            'holdout_poisson_count_deviance':holdout_deviance,
+            'holdout_mean_poisson_count_deviance':holdout_mean_deviance,
             'zero_train_positive_holdout_failure':zero_train_positive_holdout,
             'explicit_limits':['Only one exact original regional annual count selector',
                'Boundary years 1940 (source begins February) and 2026 (unfinished year) are excluded',
                'No NUTS version verified or automatic asset geography join',
                'No physical event IDs, catalogue weights, event footprints or insured loss',
                'No full intra-peril stochastic annual occurrence or dependence calibration',
+               'Poisson count deviance is a holdout diagnostic, not a physical-event CAT validation',
                'Neither model validation nor Zurich group wind CAT pricing']}
 
 
