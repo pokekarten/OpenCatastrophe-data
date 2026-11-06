@@ -10,6 +10,7 @@ on:
       - 'scripts/dwd_kyrill_2007_station_validity_v0.py'
       - 'tests/test_dwd_kyrill_2007_station_validity_v0.py'
       - 'docs/research/dwd_kyrill_2007_three_station_metadata_probe_20261106.md'
+      - 'docs/research/evidence/dwd-kyrill-2007-three-station-history-source-receipt-20261106.md'
   workflow_dispatch:
 permissions:
   contents: read
@@ -53,5 +54,24 @@ jobs:
           python -m scripts.dwd_kyrill_2007_station_validity_v0 \
             --zip-00433 "$tmp/Meta_Daten_zehn_min_fx_00433.zip" \
             --zip-01262 "$tmp/Meta_Daten_zehn_min_fx_01262.zip" \
-            --zip-03379 "$tmp/Meta_Daten_zehn_min_fx_03379.zip"
+            --zip-03379 "$tmp/Meta_Daten_zehn_min_fx_03379.zip" > "$tmp/source-time-valid-2007.json"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import os
+          actual=json.loads((Path(os.environ['RUNNER_TEMP'])/'dwd-kyrill-metadata-2007'/'source-time-valid-2007.json').read_text())
+          source=Path('docs/research/evidence/dwd-kyrill-2007-three-station-history-source-receipt-20261106.md').read_text(encoding='utf-8')
+          nl=chr(10)
+          assert source.count('```json'+nl)==1
+          assert source.count(nl+'```'+nl)==1
+          expected=json.loads(source.split('```json'+nl,1)[1].split(nl+'```'+nl,1)[0])
+          assert actual==expected, 'time-valid original DWD geography/device/FX_10 research receipt drift'
+          assert len(actual['stations'])==3
+          assert [x['station_id'] for x in actual['stations']]==['00433','01262','03379']
+          assert [x['maxwind_instrument_sensor_height_over_ground_m'] for x in actual['stations']]==['10','10','29.28']
+          assert all(x['historical_2007_station_sensor_source_join_verified'] is True and
+                     x['QN1_data_reclassified_as_QN3'] is False for x in actual['stations'])
+          assert actual['scientific_model_admitted'] is False
+          print('ORIGINAL SOURCE VERIFIED three historical DWD sensor heights & FX_10 parameter dates: 10m, 10m, 29.28m; NOT calibrated wind')
+          PY
           # All original metadata ZIPs stay ephemeral; no meteorological observations are read.
