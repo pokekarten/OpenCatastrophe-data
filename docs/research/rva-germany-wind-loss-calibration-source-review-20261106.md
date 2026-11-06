@@ -176,14 +176,19 @@ Daria calibration**:
    **RES+COM** instead. Inferring a particular R&V insured building,
    individual company loss, postcode or NRW Kreis claim from
    these aggregates is not scientifically or ethically supported.
-5. The public EIOPA site lists both original XLSX attachments,
-   but direct workbook access **did not succeed** during this
-   research (web extraction unsupported and the direct historical
-   loss XLSX transfer failed). Therefore **no original XLSX
-   workbook was downloaded, parsed, hash-authenticated or stored
-   in this repository**; no workbook sheet names, data columns,
-   original byte SHA-256, row-level event loss amounts or further
-   EIOPA-specific redistribution permissions are asserted.
+5. The public EIOPA site lists both original XLSX attachments.
+   The first direct accesses failed, but a subsequent original-byte
+   proxy fetch returned the complete **historical loss** XLSX,
+   **28,209 bytes**; independently repeated SHA-256
+   `201bef4a15dccf4cb56edfe80fd2327b9bcd51ce3d815befb0730ffec5394fd6`.
+   Its ZIP central directory has **29 members, one worksheet part**.
+   The **exposure** XLSX proxy result was truncated and still has
+   **NO full SHA-256**. Neither original workbook has been
+   stored in GitHub; no workbook sheet *contents*, claim columns,
+   row amounts, per-insurer exposures, source CRC test or
+   workbook-specific third-party permission is established.
+   See `research/observations/eiopa_2023_original_xlsx_binary_source_receipt_20261106.toml`
+   for exact source-proxy provenance and fail-closed receipt.
 
 Reproducible metadata-only original-source receipt:
 `research/observations/eiopa_catastrophe_hub_2023_original_dossier_v0.toml`.
